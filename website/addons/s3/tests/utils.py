@@ -11,4 +11,8 @@ class S3AddonTestCase(OAuthAddonTestCaseMixin, AddonTestCase):
     Provider = S3Provider
     Serializer = S3Serializer
     client = None
-    folder = 'bucket'
+    folder = {
+    	'path': 'bucket',
+    	'name': 'bucket',
+    	'id': 'bucket'
+	}

@@ -9,6 +9,7 @@ from tests.base import ApiTestCase
 from tests.factories import (
     CollectionFactory,
     NodeFactory,
+    RegistrationFactory,
     ProjectFactory,
     AuthUserFactory
 )
@@ -691,9 +692,13 @@ class TestCollectionNodeLinksList(ApiTestCase):
         self.collection = CollectionFactory(creator=self.user_one)
         self.project = ProjectFactory(is_public=False, creator=self.user_one)
         self.public_project = ProjectFactory(is_public=True, creator=self.user_two)
-        self.private_project = ProjectFactory(is_public=False, creator=self.user_two)
+        self.registration = RegistrationFactory(is_public=False, creator=self.user_one)
+        self.public_registration = RegistrationFactory(is_public=True, creator=self.user_two)
+        # self.private_project = ProjectFactory(is_public=False, creator=self.user_two)
         self.collection.add_pointer(self.project, auth=Auth(self.user_one))
         self.collection.add_pointer(self.public_project, auth=Auth(self.user_one))
+        self.collection.add_pointer(self.registration, auth=Auth(self.user_one))
+        self.collection.add_pointer(self.public_registration, auth=Auth(self.user_one))
         self.url = '/{}collections/{}/node_links/'.format(API_BASE, self.collection._id)
 
     def test_do_not_return_node_pointers_logged_out(self):
@@ -704,12 +709,15 @@ class TestCollectionNodeLinksList(ApiTestCase):
     def test_return_node_pointers_logged_in(self):
         res = self.app.get(self.url, auth=self.user_one.auth)
         res_json = res.json['data']
-        assert_equal(len(res_json), 2)
+        assert_equal(len(res_json), 4)
         assert_equal(res.status_code, 200)
         assert_equal(res.content_type, 'application/vnd.api+json')
         first_embedded = res_json[0]['embeds']['target_node']['data']['id']
         second_embedded = res_json[1]['embeds']['target_node']['data']['id']
-        assert_items_equal([first_embedded, second_embedded], [self.project._id, self.public_project._id])
+        # node_links end point does not handle registrations correctly
+        third_embedded = res_json[2]['embeds']['target_node']['errors'][0]['detail']
+        fourth_embedded = res_json[3]['embeds']['target_node']['errors'][0]['detail']
+        assert_items_equal([first_embedded, second_embedded, third_embedded, fourth_embedded], [self.project._id, self.public_project._id, 'Not found.', 'Not found.'])
 
     def test_return_private_node_pointers_logged_in_non_contributor(self):
         res = self.app.get(self.url, auth=self.user_two.auth, expect_errors=True)
@@ -742,8 +750,12 @@ class TestCollectionNodeLinkCreate(ApiTestCase):
 
         self.project = ProjectFactory(is_public=False, creator=self.user_one)
         self.public_project = ProjectFactory(is_public=True, creator=self.user_one)
+        self.registration = RegistrationFactory(is_public=False, creator=self.user_one)
+        self.public_registration = RegistrationFactory(is_public=True, creator=self.user_one)
         self.user_two_private_project = ProjectFactory(is_public=False, creator=self.user_two)
         self.user_two_public_project = ProjectFactory(is_public=True, creator=self.user_two)
+        self.user_two_private_registration = RegistrationFactory(is_public=False, creator=self.user_two)
+        self.user_two_public_registration = RegistrationFactory(is_public=True, creator=self.user_two)
 
         self.url = node_link_string.format(API_BASE, self.collection._id)
         self.fake_node_id = 'fakeident'
@@ -791,6 +803,16 @@ class TestCollectionNodeLinkCreate(ApiTestCase):
         assert_equal(embedded_node_id, self.public_project._id)
 
     @assert_logs(NodeLog.POINTER_CREATED, 'collection')
+    def test_creates_node_link_to_public_registration_logged_in(self):
+        res = self.app.post_json_api(self.url, self.post_payload(self.public_registration._id), auth=self.user_one.auth)
+        assert_equal(res.status_code, 201)
+        assert_equal(res.content_type, 'application/vnd.api+json')
+        res_json = res.json['data']
+        # node_links end point does not handle registrations correctly
+        embedded_node_id = res_json['embeds']['target_node']['errors'][0]['detail']
+        assert_equal(embedded_node_id, 'Not found.')
+
+    @assert_logs(NodeLog.POINTER_CREATED, 'collection')
     def test_creates_node_link_to_private_project_logged_in(self):
         res = self.app.post_json_api(self.url, self.post_payload(self.project._id), auth=self.user_one.auth)
         assert_equal(res.status_code, 201)
@@ -798,8 +820,22 @@ class TestCollectionNodeLinkCreate(ApiTestCase):
         embedded_node_id = res_json['embeds']['target_node']['data']['id']
         assert_equal(embedded_node_id, self.project._id)
 
+    @assert_logs(NodeLog.POINTER_CREATED, 'collection')
+    def test_creates_node_link_to_private_registration_logged_in(self):
+        res = self.app.post_json_api(self.url, self.post_payload(self.registration._id), auth=self.user_one.auth)
+        assert_equal(res.status_code, 201)
+        res_json = res.json['data']
+        # node_links end point does not handle registrations correctly
+        embedded_node_id = res_json['embeds']['target_node']['errors'][0]['detail']
+        assert_equal(embedded_node_id, 'Not found.')
+
     def test_does_not_create_node_link_unauthorized(self):
         res = self.app.post_json_api(self.url, self.post_payload(self.user_two_private_project._id), auth=self.user_two.auth, expect_errors=True)
+        assert_equal(res.status_code, 403)
+        assert_in('detail', res.json['errors'][0])
+
+    def test_does_not_create_registration_link_unauthorized(self):
+        res = self.app.post_json_api(self.url, self.post_payload(self.user_two_private_registration._id), auth=self.user_two.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
         assert_in('detail', res.json['errors'][0])
 
@@ -811,6 +847,16 @@ class TestCollectionNodeLinkCreate(ApiTestCase):
         res_json = res.json['data']
         embedded_node_id = res_json['embeds']['target_node']['data']['id']
         assert_equal(embedded_node_id, self.user_two_public_project._id)
+
+    @assert_logs(NodeLog.POINTER_CREATED, 'collection')
+    def test_create_node_link_to_non_contributing_registration(self):
+        res = self.app.post_json_api(self.url, self.post_payload(self.user_two_public_registration._id), auth=self.user_one.auth)
+        assert_equal(res.status_code, 201)
+        assert_equal(res.content_type, 'application/vnd.api+json')
+        res_json = res.json['data']
+        # node_links end point does not handle registrations correctly
+        embedded_node_id = res_json['embeds']['target_node']['errors'][0]['detail']
+        assert_equal(embedded_node_id, 'Not found.')
 
     def test_create_node_link_to_fake_node(self):
         res = self.app.post_json_api(self.url, self.post_payload(self.fake_node_id), auth=self.user_one.auth, expect_errors=True)
@@ -879,13 +925,24 @@ class TestCollectionNodeLinkDetail(ApiTestCase):
         self.collection = CollectionFactory(creator=self.user_one)
         self.project = ProjectFactory(creator=self.user_one, is_public=False)
         self.project_public = ProjectFactory(creator=self.user_one, is_public=False)
+        self.registration = RegistrationFactory(creator=self.user_one, is_public=False)
+        self.registration_public = RegistrationFactory(creator=self.user_one, is_public=False)
         self.node_link = self.collection.add_pointer(self.project, auth=Auth(self.user_one), save=True)
         self.node_link_public = self.collection.add_pointer(self.project_public, auth=Auth(self.user_one), save=True)
+        self.registration_link = self.collection.add_pointer(self.registration, auth=Auth(self.user_one), save=True)
+        self.registration_link_public = self.collection.add_pointer(self.registration_public, auth=Auth(self.user_one), save=True)
         self.url = '/{}collections/{}/node_links/{}/'.format(API_BASE, self.collection._id, self.node_link._id)
         self.url_public = '/{}collections/{}/node_links/{}/'.format(API_BASE, self.collection._id, self.node_link_public._id)
+        self.reg_url = '/{}collections/{}/node_links/{}/'.format(API_BASE, self.collection._id, self.registration_link._id)
+        self.reg_url_public = '/{}collections/{}/node_links/{}/'.format(API_BASE, self.collection._id, self.registration_link_public._id)
 
     def test_returns_error_public_node_link_detail_unauthenticated(self):
         res = self.app.get(self.url_public, expect_errors=True)
+        assert_equal(res.status_code, 401)
+        assert_in('detail', res.json['errors'][0])
+
+    def test_returns_error_public_registration_link_detail_unauthenticated(self):
+        res = self.app.get(self.reg_url_public, expect_errors=True)
         assert_equal(res.status_code, 401)
         assert_in('detail', res.json['errors'][0])
 
@@ -897,8 +954,22 @@ class TestCollectionNodeLinkDetail(ApiTestCase):
         embedded = res_json['embeds']['target_node']['data']['id']
         assert_equal(embedded, self.project_public._id)
 
+    def test_returns_public_registration_pointer_detail_authorized(self):
+        res = self.app.get(self.reg_url_public, auth=self.user_one.auth)
+        res_json = res.json['data']
+        assert_equal(res.status_code, 200)
+        assert_equal(res.content_type, 'application/vnd.api+json')
+        # node_links end point does not handle registrations correctly
+        embedded = res_json['embeds']['target_node']['errors'][0]['detail']
+        assert_equal(embedded, 'Not found.')
+
     def test_returns_error_private_node_link_detail_unauthenticated(self):
         res = self.app.get(self.url, expect_errors=True)
+        assert_equal(res.status_code, 401)
+        assert_in('detail', res.json['errors'][0])
+
+    def test_returns_error_private_registration_link_detail_unauthenticated(self):
+        res = self.app.get(self.reg_url, expect_errors=True)
         assert_equal(res.status_code, 401)
         assert_in('detail', res.json['errors'][0])
 
@@ -910,8 +981,22 @@ class TestCollectionNodeLinkDetail(ApiTestCase):
         embedded = res_json['embeds']['target_node']['data']['id']
         assert_equal(embedded, self.project._id)
 
+    def test_returns_private_registration_link_detail_authorized(self):
+        res = self.app.get(self.reg_url, auth=self.user_one.auth)
+        res_json = res.json['data']
+        assert_equal(res.status_code, 200)
+        assert_equal(res.content_type, 'application/vnd.api+json')
+        # node_links end point does not handle registrations correctly
+        embedded = res_json['embeds']['target_node']['errors'][0]['detail']
+        assert_equal(embedded, 'Not found.')
+
     def test_returns_error_private_node_link_detail_unauthorized(self):
         res = self.app.get(self.url, auth=self.user_two.auth, expect_errors=True)
+        assert_equal(res.status_code, 403)
+        assert_in('detail', res.json['errors'][0])
+
+    def test_returns_error_private_registration_link_detail_unauthorized(self):
+        res = self.app.get(self.reg_url, auth=self.user_two.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
         assert_in('detail', res.json['errors'][0])
 
@@ -952,6 +1037,14 @@ class TestCollectionNodeLinkDetail(ApiTestCase):
         assert_equal(node_count_before - 1, len(self.collection.nodes_pointer))
 
     @assert_logs(NodeLog.POINTER_REMOVED, 'collection')
+    def test_delete_public_registration_pointer_authorized(self):
+        node_count_before = len(self.collection.nodes_pointer)
+        res = self.app.delete(self.reg_url_public, auth=self.user_one.auth)
+        self.collection.reload()
+        assert_equal(res.status_code, 204)
+        assert_equal(node_count_before - 1, len(self.collection.nodes_pointer))
+
+    @assert_logs(NodeLog.POINTER_REMOVED, 'collection')
     def test_delete_private_node_link_authorized(self):
         node_count_before = len(self.collection.nodes_pointer)
         res = self.app.delete(self.url, auth=self.user_one.auth)
@@ -959,8 +1052,21 @@ class TestCollectionNodeLinkDetail(ApiTestCase):
         assert_equal(res.status_code, 204)
         assert_equal(node_count_before - 1, len(self.collection.nodes_pointer))
 
+    @assert_logs(NodeLog.POINTER_REMOVED, 'collection')
+    def test_delete_private_registration_link_authorized(self):
+        node_count_before = len(self.collection.nodes_pointer)
+        res = self.app.delete(self.reg_url, auth=self.user_one.auth)
+        self.collection.reload()
+        assert_equal(res.status_code, 204)
+        assert_equal(node_count_before - 1, len(self.collection.nodes_pointer))
+
     def test_can_not_delete_collection_private_node_link_unauthorized(self):
         res = self.app.delete(self.url, auth=self.user_two.auth, expect_errors=True)
+        assert_equal(res.status_code, 403)
+        assert_in('detail', res.json['errors'][0])
+
+    def test_can_not_delete_collection_private_registration_link_unauthorized(self):
+        res = self.app.delete(self.reg_url, auth=self.user_two.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
         assert_in('detail', res.json['errors'][0])
 
@@ -974,12 +1080,30 @@ class TestCollectionNodeLinkDetail(ApiTestCase):
         assert_equal(res.status_code, 404)
 
     @assert_logs(NodeLog.POINTER_REMOVED, 'collection')
+    def test_can_not_return_deleted_collection_public_registration_pointer(self):
+        res = self.app.delete(self.reg_url_public, auth=self.user_one.auth)
+        self.collection.reload()
+        assert_equal(res.status_code, 204)
+
+        res = self.app.get(self.reg_url_public, auth=self.user_one.auth, expect_errors=True)
+        assert_equal(res.status_code, 404)
+
+    @assert_logs(NodeLog.POINTER_REMOVED, 'collection')
     def test_return_deleted_private_node_pointer(self):
         res = self.app.delete(self.url, auth=self.user_one.auth)
         self.project.reload()
         assert_equal(res.status_code, 204)
 
         res = self.app.get(self.url, auth=self.user_one.auth, expect_errors=True)
+        assert_equal(res.status_code, 404)
+
+    @assert_logs(NodeLog.POINTER_REMOVED, 'collection')
+    def test_return_deleted_private_registration_pointer(self):
+        res = self.app.delete(self.reg_url, auth=self.user_one.auth)
+        self.project.reload()
+        assert_equal(res.status_code, 204)
+
+        res = self.app.get(self.reg_url, auth=self.user_one.auth, expect_errors=True)
         assert_equal(res.status_code, 404)
 
     # Regression test for https://openscience.atlassian.net/browse/OSF-4322
@@ -1041,7 +1165,7 @@ class TestCollectionBulkCreate(ApiTestCase):
                     'title': self.title,
                 }
         }
-        
+
         self.collection_two = {
                 'type': 'collections',
                 'attributes': {
@@ -1462,6 +1586,8 @@ class TestCollectionLinksBulkCreate(ApiTestCase):
         self.collection_one = CollectionFactory(is_public=False, creator=self.user)
         self.private_pointer_project = ProjectFactory(is_public=False, creator=self.user)
         self.private_pointer_project_two = ProjectFactory(is_public=False, creator=self.user)
+        self.private_pointer_registration = RegistrationFactory(is_public=False, creator=self.user)
+        self.private_pointer_registration_two = RegistrationFactory(is_public=False, creator=self.user)
 
         self.collection_url = '/{}collections/{}/node_links/'.format(API_BASE, self.collection_one._id)
 
@@ -1475,7 +1601,6 @@ class TestCollectionLinksBulkCreate(ApiTestCase):
                             "type": 'nodes'
                         }
                     }
-
                 }
             },
             {
@@ -1487,7 +1612,28 @@ class TestCollectionLinksBulkCreate(ApiTestCase):
                             "type": 'nodes'
                         }
                     }
-
+                }
+            },
+            {
+                "type": "node_links",
+                "relationships": {
+                    'nodes': {
+                        'data': {
+                            "id": self.private_pointer_registration._id,
+                            "type": 'nodes'
+                        }
+                    }
+                }
+            },
+            {
+                "type": "node_links",
+                "relationships": {
+                    'nodes': {
+                        'data': {
+                            "id": self.private_pointer_registration_two._id,
+                            "type": 'nodes'
+                        }
+                    }
                 }
             }]
         }
@@ -1498,6 +1644,7 @@ class TestCollectionLinksBulkCreate(ApiTestCase):
         self.user_two = AuthUserFactory()
         self.user_two_collection = CollectionFactory(creator=self.user_two)
         self.user_two_project = ProjectFactory(is_public=True, creator=self.user_two)
+        self.user_two_registration = RegistrationFactory(is_public=True, creator=self.user_two)
         self.user_two_url = '/{}collections/{}/node_links/'.format(API_BASE, self.user_two_collection._id)
         self.user_two_payload = {'data': [{
             'type': 'node_links',
@@ -1505,6 +1652,16 @@ class TestCollectionLinksBulkCreate(ApiTestCase):
                 'nodes': {
                      'data': {
                          'id': self.user_two_project._id,
+                         'type': 'nodes'
+                     }
+                }
+            }
+        },
+        { 'type': 'node_links',
+            'relationships': {
+                'nodes': {
+                     'data': {
+                         'id': self.user_two_registration._id,
                          'type': 'nodes'
                      }
                 }
@@ -1557,6 +1714,14 @@ class TestCollectionLinksBulkCreate(ApiTestCase):
         embedded = res_json[1]['embeds']['target_node']['data']['id']
         assert_equal(embedded, self.private_pointer_project_two._id)
 
+        # linked_node endpoint can create linked_registrations,
+        # but will not return a valid embed
+        embedded = res_json[2]['embeds']['target_node']['errors'][0]['detail']
+        assert_equal(embedded, 'Not found.')
+
+        embedded = res_json[3]['embeds']['target_node']['errors'][0]['detail']
+        assert_equal(embedded, 'Not found.')
+
     def test_bulk_creates_node_pointers_collection_to_non_contributing_node(self):
         res = self.app.post_json_api(self.collection_url, self.user_two_payload, auth=self.user.auth, bulk=True)
         assert_equal(res.status_code, 201)
@@ -1564,11 +1729,15 @@ class TestCollectionLinksBulkCreate(ApiTestCase):
         res_json = res.json['data']
         embedded = res_json[0]['embeds']['target_node']['data']['id']
         assert_equal(embedded, self.user_two_project._id)
+        embedded = res_json[1]['embeds']['target_node']['errors'][0]['detail']
+        assert_equal(embedded, 'Not found.')
 
         res = self.app.get(self.collection_url, auth=self.user.auth)
         res_json = res.json['data']
         embedded = res_json[0]['embeds']['target_node']['data']['id']
         assert_equal(embedded, self.user_two_project._id)
+        embedded = res_json[1]['embeds']['target_node']['errors'][0]['detail']
+        assert_equal(embedded, 'Not found.')
 
     def test_bulk_creates_pointers_non_contributing_node_to_fake_node(self):
         fake_payload = {'data': [{'type': 'node_links', 'relationships': {'nodes': {'data': {'id': 'fdxlq', 'type': 'nodes'}}}}]}
@@ -1607,6 +1776,14 @@ class TestCollectionLinksBulkCreate(ApiTestCase):
 
         embedded_two = res_json[1]['embeds']['target_node']['data']['id']
         assert_equal(embedded_two, self.private_pointer_project_two._id)
+
+        # linked_node endpoint can create linked_registrations,
+        # but will not return a valid embed
+        embedded = res_json[2]['embeds']['target_node']['errors'][0]['detail']
+        assert_equal(embedded, 'Not found.')
+
+        embedded = res_json[3]['embeds']['target_node']['errors'][0]['detail']
+        assert_equal(embedded, 'Not found.')
 
         res = self.app.post_json_api(self.collection_url, self.collection_payload, auth=self.user.auth, expect_errors=True, bulk=True)
         assert_equal(res.status_code, 400)
@@ -1787,13 +1964,20 @@ class TestCollectionRelationshipNodeLinks(ApiTestCase):
         self.contributor_node.save()
         self.other_node = NodeFactory()
         self.private_node = NodeFactory(creator=self.user)
+        self.private_registration = RegistrationFactory(creator=self.user)
         self.public_node = NodeFactory(is_public=True)
+        self.public_registration = RegistrationFactory(is_public=True)
         self.collection.add_pointer(self.private_node, auth=self.auth)
+        self.collection.add_pointer(self.private_registration, auth=self.auth)
         self.public_collection = CollectionFactory(is_public=True, creator=self.user2)
         self.public_collection.add_pointer(self.private_node, auth=Auth(self.user2))
+        self.public_collection.add_pointer(self.private_registration, auth=Auth(self.user2))
         self.public_collection.add_pointer(self.public_node, auth=Auth(self.user2))
+        self.public_collection.add_pointer(self.public_registration, auth=Auth(self.user2))
         self.url = '/{}collections/{}/relationships/linked_nodes/'.format(API_BASE, self.collection._id)
+        self.reg_url = '/{}collections/{}/relationships/linked_registrations/'.format(API_BASE, self.collection._id)
         self.public_url = '/{}collections/{}/relationships/linked_nodes/'.format(API_BASE, self.public_collection._id)
+        self.public_reg_url = '/{}collections/{}/relationships/linked_registrations/'.format(API_BASE, self.public_collection._id)
 
     def payload(self, node_ids=None):
         node_ids = node_ids or [self.admin_node._id]
@@ -1811,6 +1995,17 @@ class TestCollectionRelationshipNodeLinks(ApiTestCase):
         assert_in(self.collection.linked_nodes_related_url, res.json['links']['html'])
         assert_equal(res.json['data'][0]['id'], self.private_node._id)
 
+    def test_get_relationship_linked_registrations(self):
+        res = self.app.get(
+            self.reg_url, auth=self.user.auth
+        )
+
+        assert_equal(res.status_code, 200)
+
+        assert_in(self.collection.linked_registrations_self_url, res.json['links']['self'])
+        assert_in(self.collection.linked_registrations_related_url, res.json['links']['html'])
+        assert_equal(res.json['data'][0]['id'], self.private_registration._id)
+
     def test_get_public_relationship_linked_nodes_logged_out(self):
         res = self.app.get(self.public_url)
 
@@ -1818,14 +2013,32 @@ class TestCollectionRelationshipNodeLinks(ApiTestCase):
         assert_equal(len(res.json['data']), 1)
         assert_equal(res.json['data'][0]['id'], self.public_node._id)
 
+    def test_get_public_relationship_linked_registrations_logged_out(self):
+        res = self.app.get(self.public_reg_url)
+
+        assert_equal(res.status_code, 200)
+        assert_equal(len(res.json['data']), 1)
+        assert_equal(res.json['data'][0]['id'], self.public_registration._id)
+
     def test_get_public_relationship_linked_nodes_logged_in(self):
         res = self.app.get(self.public_url, auth=self.user.auth)
 
         assert_equal(res.status_code, 200)
         assert_equal(len(res.json['data']), 2)
 
+    def test_get_public_relationship_linked_registrations_logged_in(self):
+        res = self.app.get(self.public_reg_url, auth=self.user.auth)
+
+        assert_equal(res.status_code, 200)
+        assert_equal(len(res.json['data']), 2)
+
     def test_get_private_relationship_linked_nodes_logged_out(self):
         res = self.app.get(self.url, expect_errors=True)
+
+        assert_equal(res.status_code, 401)
+
+    def test_get_private_relationship_linked_registrations_logged_out(self):
+        res = self.app.get(self.reg_url, expect_errors=True)
 
         assert_equal(res.status_code, 401)
 
@@ -1990,7 +2203,11 @@ class TestCollectionRelationshipNodeLinks(ApiTestCase):
         res = self.app.get(
             self.url, auth=self.user.auth
         )
-        assert_equal(len(res.json['data']), number_of_links)
+
+        reg_res = self.app.get(
+            self.reg_url, auth=self.user.auth
+        )
+        assert_equal(len(res.json['data']) + len(reg_res.json['data']), number_of_links)
 
     def test_access_other_collection(self):
         other_collection = CollectionFactory(creator=self.user2)
@@ -2089,7 +2306,13 @@ class TestCollectionRelationshipNodeLinks(ApiTestCase):
             '/{}collections/{}/node_links/'.format(API_BASE, self.collection._id),
             auth=self.user.auth
         )
-        node_links_id = [data['embeds']['target_node']['data']['id'] for data in res_node_links.json['data']]
+        node_links_id = []
+        for data in res_node_links.json['data']:
+            try:
+                node_links_id.append(data['embeds']['target_node']['data']['id'])
+            # node_links does not handle registrations correctly, skip them
+            except KeyError:
+                continue
         relationship_id = [data['id'] for data in res_relationship.json['data']]
 
         assert_equal(set(node_links_id), set(relationship_id))
@@ -2112,73 +2335,120 @@ class TestCollectionLinkedNodes(ApiTestCase):
         self.collection = CollectionFactory(creator=self.user)
         self.linked_node = NodeFactory(creator=self.user)
         self.linked_node2 = NodeFactory(creator=self.user)
+        self.linked_registration = RegistrationFactory(creator=self.user)
+        self.linked_registration2 = RegistrationFactory(creator=self.user)
         self.public_node = NodeFactory(is_public=True, creator=self.user)
+        self.public_registration = RegistrationFactory(is_public=True, creator=self.user)
         self.collection.add_pointer(self.linked_node, auth=self.auth)
         self.collection.add_pointer(self.linked_node2, auth=self.auth)
+        self.collection.add_pointer(self.linked_registration, auth=self.auth)
+        self.collection.add_pointer(self.linked_registration2, auth=self.auth)
         self.collection.add_pointer(self.public_node, auth=self.auth)
+        self.collection.add_pointer(self.public_registration, auth=self.auth)
         self.collection.save()
         self.url = '/{}collections/{}/linked_nodes/'.format(API_BASE, self.collection._id)
+        self.reg_url = '/{}collections/{}/linked_registrations/'.format(API_BASE, self.collection._id)
         self.node_ids = [pointer.node._id for pointer in self.collection.nodes_pointer]
 
     def test_linked_nodes_returns_everything(self):
         res = self.app.get(self.url, auth=self.user.auth)
+        reg_res = self.app.get(self.reg_url, auth=self.user.auth)
 
         assert_equal(res.status_code, 200)
         nodes_returned = [linked_node['id'] for linked_node in res.json['data']]
-        assert_equal(len(nodes_returned), len(self.node_ids))
+        registrations_returned = [linked_registration['id'] for linked_registration in reg_res.json['data']]
+        assert_equal(len(nodes_returned) + len(registrations_returned), len(self.node_ids))
 
-        for node_id in self.node_ids:
-            assert_in(node_id, nodes_returned)
+        for node_returned in nodes_returned:
+            assert_in(node_returned, self.node_ids)
+        for registration_returned in registrations_returned:
+            assert_in(registration_returned, self.node_ids)
 
     def test_linked_nodes_only_return_viewable_nodes(self):
         user = AuthUserFactory()
         collection = CollectionFactory(creator=user)
         self.linked_node.add_contributor(user, auth=self.auth, save=True)
         self.linked_node2.add_contributor(user, auth=self.auth, save=True)
+        self.linked_registration.add_contributor(user, auth=self.auth, save=True)
+        self.linked_registration2.add_contributor(user, auth=self.auth, save=True)
         self.public_node.add_contributor(user, auth=self.auth, save=True)
+        self.public_registration.add_contributor(user, auth=self.auth, save=True)
         collection.add_pointer(self.linked_node, auth=Auth(user))
         collection.add_pointer(self.linked_node2, auth=Auth(user))
+        collection.add_pointer(self.linked_registration, auth=Auth(user))
+        collection.add_pointer(self.linked_registration2, auth=Auth(user))
         collection.add_pointer(self.public_node, auth=Auth(user))
+        collection.add_pointer(self.public_registration, auth=Auth(user))
         collection.save()
 
         res = self.app.get(
             '/{}collections/{}/linked_nodes/'.format(API_BASE, collection._id),
             auth=user.auth
         )
+        reg_res = self.app.get(
+            '/{}collections/{}/linked_registrations/'.format(API_BASE, collection._id),
+            auth=user.auth
+        )
 
         assert_equal(res.status_code, 200)
+        assert_equal(reg_res.status_code, 200)
         nodes_returned = [linked_node['id'] for linked_node in res.json['data']]
-        assert_equal(len(nodes_returned), len(self.node_ids))
+        registrations_returned = [linked_registration['id'] for linked_registration in res.json['data']]
+        assert_equal(len(nodes_returned) + len(registrations_returned), len(self.node_ids))
 
-        for node_id in self.node_ids:
-            assert_in(node_id, nodes_returned)
+        for node_returned in nodes_returned:
+            assert_in(node_returned, self.node_ids)
+        for registration_returned in registrations_returned:
+            assert_in(registration_returned, self.node_ids)
 
         self.linked_node2.remove_contributor(user, auth=self.auth)
         self.public_node.remove_contributor(user, auth=self.auth)
+        self.linked_registration2.remove_contributor(user, auth=self.auth)
+        self.public_registration.remove_contributor(user, auth=self.auth)
 
         res = self.app.get(
             '/{}collections/{}/linked_nodes/'.format(API_BASE, collection._id),
             auth=user.auth
         )
+        reg_res = self.app.get(
+            '/{}collections/{}/linked_registrations/'.format(API_BASE, collection._id),
+            auth=user.auth
+        )
         nodes_returned = [linked_node['id'] for linked_node in res.json['data']]
-        assert_equal(len(nodes_returned), len(self.node_ids) - 1)
+        registrations_returned = [linked_registration['id'] for linked_registration in reg_res.json['data']]
+        assert_equal(len(nodes_returned) + len(registrations_returned), len(self.node_ids) - 2)
 
         assert_in(self.linked_node._id, nodes_returned)
         assert_in(self.public_node._id, nodes_returned)
+        assert_in(self.linked_registration._id, registrations_returned)
+        assert_in(self.public_registration._id, registrations_returned)
         assert_not_in(self.linked_node2._id, nodes_returned)
+        assert_not_in(self.linked_registration2._id, registrations_returned)
 
     def test_linked_nodes_doesnt_return_deleted_nodes(self):
         self.linked_node.is_deleted = True
         self.linked_node.save()
         res = self.app.get(self.url, auth=self.user.auth)
 
+        self.linked_registration.is_deleted = True
+        self.linked_registration.save()
+        reg_res = self.app.get(self.reg_url, auth=self.user.auth)
+
         assert_equal(res.status_code, 200)
         nodes_returned = [linked_node['id'] for linked_node in res.json['data']]
-        assert_equal(len(nodes_returned), len(self.node_ids) - 1)
+        assert_equal(len(nodes_returned), len(self.node_ids) - 4)
+
+        assert_equal(reg_res.status_code, 200)
+        registrations_returned = [linked_registration['id'] for linked_registration in reg_res.json['data']]
+        assert_equal(len(registrations_returned), len(self.node_ids) - 4)
 
         assert_not_in(self.linked_node._id, nodes_returned)
         assert_in(self.linked_node2._id, nodes_returned)
         assert_in(self.public_node._id, nodes_returned)
+
+        assert_not_in(self.linked_registration._id, registrations_returned)
+        assert_in(self.linked_registration2._id, registrations_returned)
+        assert_in(self.public_registration._id, registrations_returned)
 
     def test_attempt_to_return_linked_nodes_logged_out(self):
         res = self.app.get(

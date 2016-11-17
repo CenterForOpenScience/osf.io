@@ -12,7 +12,7 @@ from website.project.model import (
     Comment, PrivateLink, MetaData,
     AlternativeCitation,
     DraftRegistration,
-    DraftRegistrationLog,
+    DraftRegistrationLog
 )
 from website.project.sanctions import (
     DraftRegistrationApproval,
@@ -35,6 +35,8 @@ from website.notifications.model import NotificationDigest
 from website.notifications.model import NotificationSubscription
 from website.archiver.model import ArchiveJob, ArchiveTarget
 from website.project.licenses import NodeLicense, NodeLicenseRecord
+from website.project.taxonomies import Subject
+from website.preprints.model import PreprintService, PreprintProvider
 
 # All models
 MODELS = (
@@ -49,7 +51,8 @@ MODELS = (
     ArchiveJob, ArchiveTarget, BlacklistGuid,
     QueuedMail, AlternativeCitation,
     DraftRegistration, DraftRegistrationApproval, DraftRegistrationLog,
-    NodeLicense, NodeLicenseRecord
+    NodeLicense, NodeLicenseRecord,
+    Subject, PreprintProvider, PreprintService
 )
 
 GUID_MODELS = (User, Node, Comment, MetaData)

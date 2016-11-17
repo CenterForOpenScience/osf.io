@@ -91,6 +91,20 @@ class NodeCommentsListMixin(object):
         assert_in(self.comment._id, comment_ids)
         assert_in(deleted_comment._id, comment_ids)
 
+    def test_node_comments_list_pagination(self):
+        self._set_up_public_project_with_comment()
+        url = '{}?filter[target]={}&related_counts=False'.format(self.public_url, self.public_project._id)
+        res = self.app.get(url, user=self.user, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json['links']['meta']['unread'], 0)
+
+    def test_node_comments_list_updated_pagination(self):
+        self._set_up_public_project_with_comment()
+        url = '{}?filter[target]={}&related_counts=False&version=2.1'.format(self.public_url, self.public_project._id)
+        res = self.app.get(url, user=self.user, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json['meta']['unread'], 0)
+
 
 class TestNodeCommentsList(NodeCommentsListMixin, ApiTestCase):
 

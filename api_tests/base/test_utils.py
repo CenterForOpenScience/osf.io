@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from nose.tools import *  # flake8: noqa
 import mock # noqa
+import unittest
 
 from rest_framework import fields
 from rest_framework.exceptions import ValidationError
@@ -20,6 +21,24 @@ class TruthyFalsyTestCase(ApiTestCase):
 
     def test_falsy(self):
         assert_equal(api_utils.FALSY, fields.BooleanField.FALSE_VALUES)
+
+
+class TestIsDeprecated(unittest.TestCase):
+
+    def setUp(self):
+        super(TestIsDeprecated, self).setUp()
+        self.min_version = '2.0'
+        self.max_version = '2.5'
+
+    def test_is_deprecated(self):
+        request_version = '2.6'
+        is_deprecated = api_utils.is_deprecated(request_version, self.min_version, self.max_version)
+        assert_equal(is_deprecated, True)
+
+    def test_is_not_deprecated(self):
+        request_version = '2.5'
+        is_deprecated = api_utils.is_deprecated(request_version, self.min_version, self.max_version)
+        assert_equal(is_deprecated, False)
 
 
 class FlaskDjangoIntegrationTestCase(ApiTestCase):

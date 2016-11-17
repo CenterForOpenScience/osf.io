@@ -77,6 +77,8 @@ var FolderPickerViewModel = oop.defclass({
         self.currentDisplay = ko.observable(null);
         // Whether the folders have been loaded from the API
         self.loadedFolders = ko.observable(false);
+        // Button text for changing folders
+        self.toggleChangeText = ko.observable('Change');
 
         var addonSafeName = $osf.htmlEscape(self.addonName);
         self.messages = {
@@ -259,7 +261,7 @@ var FolderPickerViewModel = oop.defclass({
             self.afterUpdate();
             ret.resolve();
         };
-        if (typeof data === 'undefined'){
+        if (typeof data === 'undefined' || $.isEmptyObject(data)){
             self.fetchFromServer()
                 .done(applySettings)
                 .fail(ret.reject);
@@ -432,14 +434,17 @@ var FolderPickerViewModel = oop.defclass({
         this.selected(null);
     },
     /**
-     *  Toggles the visibility of the folder picker.
+     *  Toggles the visibility of the folder picker and toggles
+     *  Change button text between 'Change' and 'Close'
      */
     togglePicker: function() {
         var shown = this.currentDisplay() === this.PICKER;
         if (!shown) {
             this.currentDisplay(this.PICKER);
+            this.toggleChangeText('Close');
             this.activatePicker();
         } else {
+            this.toggleChangeText('Change');
             this.currentDisplay(null);
             // Clear selection
             this.cancelSelection();
@@ -515,11 +520,7 @@ var FolderPickerViewModel = oop.defclass({
                 // Also handle data from API -- squash `attributes` to what TB expects
                 // TODO: [OSF-6384] DRY this up when PR #5240 goes in
                 if (data.data) {
-                    $.each(data.data, function(i, obj) {
-                        var savedAttributes = obj.attributes;
-                        delete obj.attributes;
-                        $.extend(true, obj, savedAttributes);
-                    });
+                    return $osf.squashAPIAttributes(data);
                 }
                 return data;
             },

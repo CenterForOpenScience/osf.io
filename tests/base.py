@@ -25,7 +25,6 @@ from django.test import TestCase as DjangoTestCase
 
 
 from api.base.wsgi import application as api_django_app
-from admin.base.wsgi import application as admin_django_app
 from framework.mongo import set_up_storage
 from framework.auth import User
 from framework.auth.core import Auth
@@ -129,8 +128,6 @@ class DbTestCase(unittest.TestCase):
 
         cls._original_db_name = settings.DB_NAME
         settings.DB_NAME = cls.DB_NAME
-        cls._original_piwik_host = settings.PIWIK_HOST
-        settings.PIWIK_HOST = None
         cls._original_enable_email_subscriptions = settings.ENABLE_EMAIL_SUBSCRIPTIONS
         settings.ENABLE_EMAIL_SUBSCRIPTIONS = False
 
@@ -156,12 +153,39 @@ class DbTestCase(unittest.TestCase):
 
         teardown_database(database=database_proxy._get_current_object())
         settings.DB_NAME = cls._original_db_name
-        settings.PIWIK_HOST = cls._original_piwik_host
         settings.ENABLE_EMAIL_SUBSCRIPTIONS = cls._original_enable_email_subscriptions
         settings.BCRYPT_LOG_ROUNDS = cls._original_bcrypt_log_rounds
 
 
-class   AppTestCase(unittest.TestCase):
+class DbIsolationMixin(object):
+    """Use this mixin when test-level database isolation is desired.
+
+    DbTestCase only wipes the database during *class* setup and teardown. This
+    leaks database state across test cases, which smells pretty bad. Place this
+    mixin before DbTestCase (or derivatives, such as OsfTestCase) in your test
+    class definition to empty your database during *test* setup and teardown.
+
+    This removes all documents from all collections on tearDown. It doesn't
+    drop collections and it doesn't touch indexes.
+
+    """
+
+    def tearDown(self):
+        super(DbIsolationMixin, self).tearDown()
+        # eval is deprecated in Mongo 3, and may be removed in the future. It's
+        # nice here because it saves us collections.length database calls.
+        self.db.eval('''
+
+            var collections = db.getCollectionNames();
+            for (var collection, i=0; collection = collections[i]; i++) {
+                if (collection.indexOf('system.') === 0) continue
+                db[collection].remove();
+            }
+
+        ''')
+
+
+class AppTestCase(unittest.TestCase):
     """Base `TestCase` for OSF tests that require the WSGI app (but no database).
     """
 
@@ -176,7 +200,10 @@ class   AppTestCase(unittest.TestCase):
         self.app = TestApp(test_app)
         if not self.PUSH_CONTEXT:
             return
-        self.context = test_app.test_request_context()
+        self.context = test_app.test_request_context(headers={
+            'Remote-Addr': '146.9.219.56',
+            'User-Agent': 'Mozilla/5.0 (X11; U; SunOS sun4u; en-US; rv:0.9.4.1) Gecko/20020518 Netscape6/6.2.3'
+        })
         self.context.push()
         with self.context:
             celery_before_request()

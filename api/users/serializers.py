@@ -7,9 +7,10 @@ from api.base.serializers import AllowMissing, JSONAPIRelationshipSerializer, Hi
 from website.models import User
 
 from api.base.serializers import (
-    JSONAPISerializer, LinksField, RelationshipField, DevOnly, IDField, TypeField
+    JSONAPISerializer, LinksField, RelationshipField, DevOnly, IDField, TypeField,
+    DateByVersion,
 )
-from api.base.utils import absolute_reverse
+from api.base.utils import absolute_reverse, get_user_auth
 
 from framework.auth.views import send_confirm_email
 
@@ -29,7 +30,7 @@ class UserSerializer(JSONAPISerializer):
     middle_names = ser.CharField(required=False, allow_blank=True, help_text='For bibliographic citations')
     family_name = ser.CharField(required=False, allow_blank=True, help_text='For bibliographic citations')
     suffix = HideIfDisabled(ser.CharField(required=False, allow_blank=True, help_text='For bibliographic citations'))
-    date_registered = HideIfDisabled(ser.DateTimeField(read_only=True))
+    date_registered = HideIfDisabled(DateByVersion(read_only=True))
     active = HideIfDisabled(ser.BooleanField(read_only=True, source='is_active'))
 
     # Social Fields are broken out to get around DRF complex object bug and to make API updating more user friendly.
@@ -57,6 +58,8 @@ class UserSerializer(JSONAPISerializer):
                                                       allow_blank=True, help_text='AcademiaProfileID Field'), required=False, source='social.academiaProfileID')))
     baiduscholar = DevOnly(HideIfDisabled(AllowMissing(ser.CharField(required=False, source='social.baiduScholar',
                                                            allow_blank=True, help_text='Baidu Scholar Account'), required=False, source='social.baiduScholar')))
+    ssrn = DevOnly(HideIfDisabled(AllowMissing(ser.CharField(required=False, source='social.ssrn',
+                                                           allow_blank=True, help_text='SSRN Account'), required=False, source='social.ssrn')))
     timezone = HideIfDisabled(ser.CharField(required=False, help_text="User's timezone, e.g. 'Etc/UTC"))
     locale = HideIfDisabled(ser.CharField(required=False, help_text="User's locale, e.g.  'en_US'"))
 
@@ -70,6 +73,7 @@ class UserSerializer(JSONAPISerializer):
     nodes = HideIfDisabled(RelationshipField(
         related_view='users:user-nodes',
         related_view_kwargs={'user_id': '<pk>'},
+        related_meta={'projects_in_common': 'get_projects_in_common'},
     ))
 
     registrations = DevOnly(HideIfDisabled(RelationshipField(
@@ -87,13 +91,22 @@ class UserSerializer(JSONAPISerializer):
     class Meta:
         type_ = 'users'
 
+    def get_projects_in_common(self, obj):
+        user = get_user_auth(self.context['request']).user
+        if obj == user:
+            return len(user.contributor_to)
+        return len(obj.get_projects_in_common(user, primary_keys=True))
+
     def absolute_url(self, obj):
         if obj is not None:
             return obj.absolute_url
         return None
 
     def get_absolute_url(self, obj):
-        return absolute_reverse('users:user-detail', kwargs={'user_id': obj._id})
+        return absolute_reverse('users:user-detail', kwargs={
+            'user_id': obj._id,
+            'version': self.context['request'].parser_context['kwargs']['version']
+        })
 
     def profile_image_url(self, user):
         size = self.context['request'].query_params.get('profile_image_size')
@@ -154,12 +167,12 @@ class UserAddonSettingsSerializer(JSONAPISerializer):
         type_ = 'user_addons'
 
     def get_absolute_url(self, obj):
-        user_id = self.context['request'].parser_context['kwargs']['user_id']
         return absolute_reverse(
             'users:user-addon-detail',
             kwargs={
-                'user_id': user_id,
-                'provider': obj.config.short_name
+                'provider': obj.config.short_name,
+                'user_id': self.context['request'].parser_context['kwargs']['user_id'],
+                'version': self.context['request'].parser_context['kwargs']['version']
             }
         )
 
@@ -168,7 +181,12 @@ class UserAddonSettingsSerializer(JSONAPISerializer):
         if hasattr(obj, 'external_accounts'):
             return {
                 account._id: {
-                    'account': absolute_reverse('users:user-external_account-detail', kwargs={'user_id': obj.owner._id, 'provider': obj.config.short_name, 'account_id': account._id}),
+                    'account': absolute_reverse('users:user-external_account-detail', kwargs={
+                        'user_id': obj.owner._id,
+                        'provider': obj.config.short_name,
+                        'account_id': account._id,
+                        'version': self.context['request'].parser_context['kwargs']['version']
+                    }),
                     'nodes_connected': [n.absolute_api_v2_url for n in obj.get_attached_nodes(account)]
                 }
                 for account in obj.external_accounts
@@ -198,10 +216,16 @@ class UserInstitutionsRelationshipSerializer(ser.Serializer):
                         'html': 'get_related_url'})
 
     def get_self_url(self, obj):
-        return absolute_reverse('users:user-institutions-relationship', kwargs={'user_id': obj['self']._id})
+        return absolute_reverse('users:user-institutions-relationship', kwargs={
+            'user_id': obj['self']._id,
+            'version': self.context['request'].parser_context['kwargs']['version']
+        })
 
     def get_related_url(self, obj):
-        return absolute_reverse('users:user-institutions', kwargs={'user_id': obj['self']._id})
+        return absolute_reverse('users:user-institutions', kwargs={
+            'user_id': obj['self']._id,
+            'version': self.context['request'].parser_context['kwargs']['version']
+        })
 
     def get_absolute_url(self, obj):
         return obj.absolute_api_v2_url

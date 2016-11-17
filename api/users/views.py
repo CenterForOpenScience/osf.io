@@ -17,7 +17,9 @@ from api.base.serializers import AddonAccountSerializer
 from api.base.views import JSONAPIBaseView
 from api.base.filters import ODMFilterMixin, ListFilterMixin
 from api.base.parsers import JSONAPIRelationshipParser, JSONAPIRelationshipParserForRegularJSON
+from api.nodes.filters import NodePreprintsFilterMixin
 from api.nodes.serializers import NodeSerializer
+from api.preprints.serializers import PreprintSerializer
 from api.institutions.serializers import InstitutionSerializer
 from api.registrations.serializers import RegistrationSerializer
 from api.base.utils import default_node_list_query, default_node_permission_query
@@ -53,7 +55,7 @@ class UserMixin(object):
         return obj
 
 
-class UserList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMixin):
+class UserList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
     """List of users registered on the OSF.
 
     Paginated list of users ordered by the date they registered.  Each resource contains the full representation of the
@@ -108,7 +110,7 @@ class UserList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMixin):
     )
 
     required_read_scopes = [CoreScopes.USERS_READ]
-    required_write_scopes = [CoreScopes.USERS_CREATE]
+    required_write_scopes = [CoreScopes.NULL]
 
     serializer_class = UserSerializer
 
@@ -423,7 +425,7 @@ class UserAddonAccountDetail(JSONAPIBaseView, generics.RetrieveAPIView, UserMixi
         return account
 
 
-class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, ODMFilterMixin):
+class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, NodePreprintsFilterMixin):
     """List of nodes that the user contributes to. *Read-only*.
 
     Paginated list of nodes that the user contributes to ordered by `date_modified`.  User registrations are not available
@@ -504,6 +506,38 @@ class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, ODMFilterMixin
     def get_queryset(self):
         return Node.find(self.get_query_from_request())
 
+
+class UserPreprints(UserNodes):
+    required_read_scopes = [CoreScopes.USERS_READ, CoreScopes.NODE_PREPRINTS_READ]
+    required_write_scopes = [CoreScopes.USERS_WRITE, CoreScopes.NODE_PREPRINTS_WRITE]
+
+    serializer_class = PreprintSerializer
+    view_category = 'users'
+    view_name = 'user-preprints'
+
+    # overrides ODMFilterMixin
+    def get_default_odm_query(self):
+        user = self.get_user()
+
+        query = (
+            Q('is_deleted', 'ne', True) &
+            Q('contributors', 'eq', user._id) &
+            Q('preprint_file', 'ne', None) &
+            Q('is_public', 'eq', True)
+        )
+
+        return query
+
+    def get_queryset(self):
+        nodes = Node.find(self.get_query_from_request())
+        preprints = []
+        # TODO [OSF-7090]: Rearchitect how `.is_preprint` is determined,
+        # so that a query that is guaranteed to return only
+        # preprints can be constructed.
+        for node in nodes:
+            for preprint in node.preprints:
+                preprints.append(preprint)
+        return preprints
 
 class UserInstitutions(JSONAPIBaseView, generics.ListAPIView, UserMixin):
     permission_classes = (

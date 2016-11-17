@@ -11,6 +11,8 @@ var lodashGet = require('lodash.get');
 var QuickSearchProject = require('js/home-page/quickProjectSearchPlugin');
 var NewAndNoteworthy = require('js/home-page/newAndNoteworthyPlugin');
 var MeetingsAndConferences = require('js/home-page/meetingsAndConferencesPlugin');
+var Preprints = require('js/home-page/preprintsPlugin');
+var Prereg = require('js/home-page/preregPlugin');
 var InstitutionsPanel = require('js/home-page/institutionsPanelPlugin');
 var ensureUserTimezone = require('js/ensureUserTimezone');
 
@@ -24,8 +26,8 @@ $(document).ready(function(){
             var affiliatedInstitutions = _affiliatedInstitutions.map(function(inst) {
                 return {logoPath: inst.logo_path, id: inst.id, name: inst.name};
             });
-            var _allInstitutions = lodashGet(window, 'contextVars.allInstitutions') || [];
-            var allInstitutions = _allInstitutions.map(function(inst) {
+            var _dashboardInstitutions = lodashGet(window, 'contextVars.dashboardInstitutions') || [];
+            var dashboardInstitutions = _dashboardInstitutions.map(function(inst) {
                 return {logoPath: inst.logo_path, id: inst.id, name: inst.name};
             });
             return [
@@ -42,7 +44,7 @@ $(document).ready(function(){
                         m('.row', [
                             m(columnSizeClass,  m.component(InstitutionsPanel, {
                                 affiliatedInstitutions: affiliatedInstitutions,
-                                allInstitutions: allInstitutions
+                                allInstitutions: dashboardInstitutions
                             }))
                         ])
                     ]
@@ -58,10 +60,26 @@ $(document).ready(function(){
 
                     ]
                 )),
+                m('.prereg', m('.container',
+                    [
+                        m('.row', [
+                            m(columnSizeClass,  m.component(Prereg, {}))
+                        ])
+
+                    ]
+                )),
                 m('.meetings', m('.container',
                     [
                         m('.row', [
                             m(columnSizeClass,  m.component(MeetingsAndConferences, {}))
+                        ])
+
+                    ]
+                )),
+                m('.preprints', m('.container',
+                    [
+                        m('.row', [
+                            m(columnSizeClass,  m.component(Preprints, {}))
                         ])
 
                     ]

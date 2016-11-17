@@ -4,7 +4,7 @@ import os
 import warnings
 
 from modularodm import fields, Q
-from modularodm.exceptions import NoResultsFound
+from modularodm.exceptions import KeyExistsException
 
 from framework.mongo import (
     ObjectId,
@@ -32,13 +32,23 @@ def serialize_node_license_record(node_license_record):
     return ret
 
 
-@mongo_utils.unique_on(['id', '_id'])
+@mongo_utils.unique_on(['id'])
+@mongo_utils.unique_on(['name'])
 class NodeLicense(StoredObject):
 
     _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
 
-    id = fields.StringField(required=True, unique=True, editable=False)
-    name = fields.StringField(required=True, unique=True)
+    id = fields.StringField(
+        required=True,
+        unique=False,   # Skip modular-odm's uniqueness implementation, depending on MongoDB's
+                        # instead (the decorator will install the proper index), so that we can
+                        # kludge a non-racey upsert in ensure_licenses.
+        editable=False
+    )
+    name = fields.StringField(
+        required=True,
+        unique=False    # Ditto.
+    )
     text = fields.StringField(required=True)
     properties = fields.StringField(list=True)
 
@@ -78,6 +88,13 @@ class NodeLicenseRecord(StoredObject):
 
 
 def ensure_licenses(warn=True):
+    """Upsert the licenses in our database based on a JSON file.
+
+    :return tuple: (number inserted, number updated)
+
+    """
+    ninserted = 0
+    nupdated = 0
     with open(
             os.path.join(
                 settings.APP_PATH,
@@ -89,27 +106,29 @@ def ensure_licenses(warn=True):
             name = info['name']
             text = info['text']
             properties = info.get('properties', [])
-            node_license = None
             try:
-                node_license = NodeLicense.find_one(
-                    Q('id', 'eq', id)
-                )
-            except NoResultsFound:
-                if warn:
-                    warnings.warn(
-                        'License {name} ({id}) not already in the database. Adding it now.'.format(
-                            name=name,
-                            id=id
-                        )
-                    )
-                node_license = NodeLicense(
+                NodeLicense(
                     id=id,
                     name=name,
                     text=text,
                     properties=properties
+                ).save()
+            except KeyExistsException:
+                node_license = NodeLicense.find_one(
+                    Q('id', 'eq', id)
                 )
-            else:
                 node_license.name = name
                 node_license.text = text
                 node_license.properties = properties
-            node_license.save()
+                node_license.save()
+                nupdated += 1
+            else:
+                if warn:
+                    warnings.warn(
+                        'License {name} ({id}) added to the database.'.format(
+                            name=name,
+                            id=id
+                        )
+                    )
+                ninserted += 1
+    return ninserted, nupdated

@@ -44,7 +44,7 @@ class TestAuthViews(DropboxAddonTestCase, views_testing.OAuthAddonAuthViewsTestC
 class TestConfigViews(DropboxAddonTestCase, views_testing.OAuthAddonConfigViewsTestCaseMixin):
 
     folder = {
-        'path': '/Foo',
+        'path': '12234',
         'id': '12234'
     }
     Serializer = DropboxSerializer

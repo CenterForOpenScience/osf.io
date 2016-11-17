@@ -1,28 +1,45 @@
+import abc
+import logging
 from datetime import datetime
 
 from modularodm import fields
 from modularodm.exceptions import ValidationTypeError, ValidationValueError
 
 from framework.mongo import StoredObject
+from website import settings
 from website.project.model import User
+from website.util import akismet
+from website.util.akismet import AkismetClientError
+
+logger = logging.getLogger(__name__)
 
 
-def validate_reports(value, *args, **kwargs):
+def _get_client():
+    return akismet.AkismetClient(
+        apikey=settings.AKISMET_APIKEY,
+        website=settings.DOMAIN,
+        verify=True
+    )
+
+
+def _validate_reports(value, *args, **kwargs):
     for key, val in value.iteritems():
         if not User.load(key):
             raise ValidationValueError('Keys must be user IDs')
         if not isinstance(val, dict):
             raise ValidationTypeError('Values must be dictionaries')
-        if (
-            'category' not in val or
-            'text' not in val or
-            'date' not in val or
-            'retracted' not in val
-        ):
+        if ('category' not in val or 'text' not in val or 'date' not in val or 'retracted' not in val):
             raise ValidationValueError(
                 ('Values must include `date`, `category`, ',
                  '`text`, `retracted` keys')
             )
+
+
+class SpamStatus(object):
+    UNKNOWN = None
+    FLAGGED = 1
+    SPAM = 2
+    HAM = 4
 
 
 class SpamMixin(StoredObject):
@@ -33,12 +50,21 @@ class SpamMixin(StoredObject):
         'abstract': True
     }
 
-    UNKNOWN = None
-    FLAGGED = 1
-    SPAM = 2
-    HAM = 4
-
-    spam_status = fields.IntegerField(default=UNKNOWN, index=True)
+    # # Node fields that trigger an update to search on save
+    # SPAM_UPDATE_FIELDS = {
+    #     'spam_status',
+    # }
+    spam_status = fields.IntegerField(default=SpamStatus.UNKNOWN, index=True)
+    spam_pro_tip = fields.StringField(default=None)
+    # Data representing the original spam indication
+    # - author: author name
+    # - author_email: email of the author
+    # - content: data flagged
+    # - headers: request headers
+    #   - Remote-Addr: ip address from request
+    #   - User-Agent: user agent from request
+    #   - Referer: referrer header from request (typo +1, rtd)
+    spam_data = fields.DictionaryField(default=dict)
     date_last_reported = fields.DateTimeField(default=None, index=True)
 
     # Reports is a dict of reports keyed on reporting user
@@ -48,39 +74,31 @@ class SpamMixin(StoredObject):
     #  - category: What type of spam does the reporter believe this is
     #  - text: Comment on the comment
     reports = fields.DictionaryField(
-        default=dict, validate=validate_reports
+        default=dict, validate=_validate_reports
     )
 
-    def flag_spam(self, save=False):
+    def flag_spam(self):
         # If ham and unedited then tell user that they should read it again
-        if self.spam_status == self.UNKNOWN:
-            self.spam_status = self.FLAGGED
-        if save:
-            self.save()
+        if self.spam_status == SpamStatus.UNKNOWN:
+            self.spam_status = SpamStatus.FLAGGED
 
     def remove_flag(self, save=False):
-        if self.spam_status != self.FLAGGED:
+        if self.spam_status != SpamStatus.FLAGGED:
             return
         for report in self.reports.values():
             if not report.get('retracted', True):
                 return
-        self.spam_status = self.UNKNOWN
-        if save:
-            self.save()
-
-    def confirm_ham(self, save=False):
-        self.spam_status = self.HAM
-        if save:
-            self.save()
-
-    def confirm_spam(self, save=False):
-        self.spam_status = self.SPAM
+        self.spam_status = SpamStatus.UNKNOWN
         if save:
             self.save()
 
     @property
     def is_spam(self):
-        return self.spam_status == self.SPAM
+        return self.spam_status == SpamStatus.SPAM
+
+    @property
+    def is_spammy(self):
+        return self.spam_status in [SpamStatus.FLAGGED, SpamStatus.SPAM]
 
     def report_abuse(self, user, save=False, **kwargs):
         """Report object is spam or other abuse of OSF
@@ -120,3 +138,77 @@ class SpamMixin(StoredObject):
             raise ValueError('User has not reported this content')
         if save:
             self.save()
+
+    def confirm_ham(self, save=False):
+        # not all mixins will implement check spam pre-req, only submit ham when it was incorrectly flagged
+        if settings.SPAM_CHECK_ENABLED and self.spam_data and self.spam_status in [SpamStatus.FLAGGED, SpamStatus.SPAM]:
+            client = _get_client()
+            client.submit_ham(
+                user_ip=self.spam_data['headers']['Remote-Addr'],
+                user_agent=self.spam_data['headers'].get('User-Agent'),
+                referrer=self.spam_data['headers'].get('Referer'),
+                comment_content=self.spam_data['content'],
+                comment_author=self.spam_data['author'],
+                comment_author_email=self.spam_data['author_email'],
+            )
+            logger.info('confirm_ham update sent')
+        self.spam_status = SpamStatus.HAM
+        if save:
+            self.save()
+
+    def confirm_spam(self, save=False):
+        # not all mixins will implement check spam pre-req, only submit spam when it was incorrectly flagged
+        if settings.SPAM_CHECK_ENABLED and self.spam_data and self.spam_status in [SpamStatus.UNKNOWN, SpamStatus.HAM]:
+            client = _get_client()
+            client.submit_spam(
+                user_ip=self.spam_data['headers']['Remote-Addr'],
+                user_agent=self.spam_data['headers'].get('User-Agent'),
+                referrer=self.spam_data['headers'].get('Referer'),
+                comment_content=self.spam_data['content'],
+                comment_author=self.spam_data['author'],
+                comment_author_email=self.spam_data['author_email'],
+            )
+            logger.info('confirm_spam update sent')
+        self.spam_status = SpamStatus.SPAM
+        if save:
+            self.save()
+
+    @abc.abstractmethod
+    def check_spam(self, user, saved_fields, request_headers, save=False):
+        """Must return is_spam"""
+        pass
+
+    def do_check_spam(self, author, author_email, content, request_headers):
+        if self.spam_status == SpamStatus.HAM:
+            return False
+        if self.is_spammy:
+            return True
+
+        client = _get_client()
+        remote_addr = request_headers['Remote-Addr']
+        user_agent = request_headers.get('User-Agent')
+        referer = request_headers.get('Referer')
+        try:
+            is_spam, pro_tip = client.check_comment(
+                user_ip=remote_addr,
+                user_agent=user_agent,
+                referrer=referer,
+                comment_content=content,
+                comment_author=author,
+                comment_author_email=author_email
+            )
+        except AkismetClientError:
+            logger.exception('Error performing SPAM check')
+            return False
+        self.spam_pro_tip = pro_tip
+        self.spam_data['headers'] = {
+            'Remote-Addr': remote_addr,
+            'User-Agent': user_agent,
+            'Referer': referer,
+        }
+        self.spam_data['content'] = content
+        self.spam_data['author'] = author
+        self.spam_data['author_email'] = author_email
+        if is_spam:
+            self.flag_spam()
+        return is_spam

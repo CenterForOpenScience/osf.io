@@ -87,3 +87,14 @@ class TestNodeEmbeds(ApiTestCase):
         assert_equal(res.status_code, 400)
         assert_equal(res.json['errors'][0]['detail'], "The following fields are not embeddable: title")
 
+    def test_embed_contributors_pagination(self):
+        url = '/{}nodes/{}/?embed=contributors'.format(API_BASE, self.root_node._id)
+        res = self.app.get(url, auth=self.contrib1.auth)
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json['data']['embeds']['contributors']['links']['meta']['total_bibliographic'], 3)
+
+    def test_embed_contributors_updated_pagination(self):
+        url = '/{}nodes/{}/?version=2.1&embed=contributors'.format(API_BASE, self.root_node._id)
+        res = self.app.get(url, auth=self.contrib1.auth)
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json['data']['embeds']['contributors']['meta']['total_bibliographic'], 3)

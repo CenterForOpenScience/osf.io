@@ -151,6 +151,14 @@
 </script>
 <%def name="javascript_bottom()">
     ${parent.javascript_bottom()}
+    <script>
+        window.contextVars.analyticsMeta = $.extend(true, {}, window.contextVars.analyticsMeta, {
+            pageMeta: {
+                title: 'Registrations',
+                public: true,
+            },
+        });
+    </script>
 
     <script src=${"/static/public/js/project-registrations-page.js" | webpack_asset}> </script>
 </%def>

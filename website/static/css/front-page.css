@@ -130,6 +130,20 @@ h6 {
 #hero-signup a:hover {
     text-decoration: none;
 }
+
+@media(max-width: 767px){
+
+    #home-hero {
+        height: 1000px;
+    }
+
+    .sign-up-div {
+        position: relative;
+        margin-top: -100px;
+    }
+
+}
+
 #signUpScope button, #signUpScope input, #signUpScope .help-block {
     z-index: 9;
     position: relative;

@@ -1,78 +1,93 @@
- <div id="s3Scope" class="scripted">
+<div id="${addon_short_name}Scope" class="scripted">
 
     <!-- Add credentials modal -->
     <%include file="s3_credentials_modal.mako"/>
 
     <h4 class="addon-title">
-        <img class="addon-icon" src="${addon_icon_url}">
-        Amazon S3
+        <img class="addon-icon" src=${addon_icon_url}>
+        ${addon_full_name}
         <small class="authorized-by">
             <span data-bind="if: nodeHasAuth">
                 authorized by <a data-bind="attr: {href: urls().owner}, text: ownerName"></a>
                 % if not is_registration:
-                    <a data-bind="click: deauthorizeNode" class="text-danger pull-right addon-auth">
-                      Disconnect Account
-                    </a>
+                    <a data-bind="click: deauthorize, visible: validCredentials"
+                        class="text-danger pull-right addon-auth">Disconnect Account</a>
                 % endif
             </span>
+
+             <!-- Import Access Token Button -->
             <span data-bind="if: showImport">
-                <a data-bind="click: importAuth" class="text-primary pull-right addon-auth">
-                  Import Account from Profile
+                <a data-bind="click: importAuth" href="#" class="text-primary pull-right addon-auth">
+                    Import Account from Profile
                 </a>
             </span>
-            <span data-bind="if: showCreateCredentials">
+
+            <!-- Loading Import Text -->
+            <span data-bind="if: showLoading">
+                <p class="text-muted pull-right addon-auth">
+                    Loading ...
+                </p>
+            </span>
+
+            <!-- Oauth Start Button -->
+            <span data-bind="if: showTokenCreateButton">
                 <a href="#s3InputCredentials" data-toggle="modal" class="pull-right text-primary addon-auth">
                     Connect  Account
                 </a>
             </span>
         </small>
     </h4>
-    <div data-bind="if: showSettings">
-      <div class="row">
-      <div class="col-md-12">
-        <p>
-          <strong>Current Bucket:</strong>
-          <span data-bind="ifnot: currentBucket">
-            None
-          </span>
-          <a data-bind="if: currentBucket, attr: {href: urls().files}">
-              <span data-bind="text: currentBucket"></span>
-          </a>
-        </p>
-        <div data-bind="attr: {disabled: creating}">
-          <button data-bind="visible: canChange, click: toggleSelect,
-                             css: {active: showSelect}" class="btn btn-primary">Change</button>
-          <button data-bind="visible: showNewBucket, click: openCreateBucket,
-                             attr: {disabled: creating}" class="btn btn-success" id="newBucket">Create Bucket</button>
+    <!-- Settings Pane -->
+    <div class="${addon_short_name}-settings" data-bind='visible: showSettings'>
+        <div class="row">
+            <div class="col-md-12">
+                <p class="break-word">
+                    <strong>Current Bucket:</strong>
+                    <span data-bind="if: folderName">
+                        <a data-bind="attr: {href: urls().files}, text: folderName"></a>
+                    </span>
+                    <span class="text-muted" data-bind="ifnot: folderName">
+                        None
+                    </span>
+                </p>
+                <!-- Folder buttons -->
+                <div class="form-group" data-bind="visible: userIsOwner() && validCredentials()">
+                    <button data-bind="click: togglePicker,
+                                       css: {active: currentDisplay() === PICKER}" class="btn btn-primary">
+                                       <span data-bind="text: toggleChangeText"></span></button>
+                    <button data-bind="visible: userIsOwner() && validCredentials(), click: openCreateBucket" class="btn btn-success" id="newBucket">Create bucket</button>
+                </div>
+                <!-- Folder picker -->
+                <div class="m-t-sm addon-folderpicker-widget ${addon_short_name}-widget">
+                    <p class="text-muted text-center ${addon_short_name}-loading-text" data-bind="visible: loading">
+                        Loading buckets...</p>
+                    <div data-bind="visible: currentDisplay() === PICKER">
+                        <div id="${addon_short_name}Grid" class="filebrowser ${addon_short_name}-folder-picker"></div>
+                    </div>
+                    <!-- Queued selection -->
+                    <div class="${addon_short_name}-confirm-selection" data-bind="visible: currentDisplay() == PICKER && selected()">
+                        <form data-bind="submit: submitSettings">
+                            <div class="break-word">
+                                <div data-bind="if: selected" class="alert alert-info ${addon_short_name}-confirm-dlg">
+                                    Connect <b>&ldquo;<span data-bind="text: selectedFolderName"></span>&rdquo;</b>?
+                                </div>
+                            </div>
+                            <div class="pull-right">
+                                <button class="btn btn-default" data-bind="click: cancelSelection">
+                                    Cancel
+                                </button>
+                                <input type="submit" class="btn btn-success" value="Save" />
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <!-- end col -->
         </div>
-        <br />
-        <br />
-        <div class="row" data-bind="if: showSelect">
-          <div class="form-group col-md-8">
-            <select class="form-control" id="s3_bucket" name="s3_bucket"
-                    data-bind="value: selectedBucket,
-                               attr: {disabled: !loadedBucketList()},
-                               options: bucketList"> </select>
-          </div>
-          ## Remove comments to enable user toggling of file upload encryption
-          ## <div class="col-md-3">
-          ##   <input type="checkbox" id="encryptUploads" name="encryptUploads"
-          ##         data-bind="checked: encryptUploads" />  Encrypt file uploads
-          ## </div>
-          <div class="col-md-2">
-            <button data-bind="click: selectBucket,
-                               attr: {disabled: !allowSelectBucket()},
-                               text: saveButtonText"
-                    class="btn btn-success">
-              Save
-            </button>
-          </div>
-        </div>
-      </div>
-      </div>
+        <!-- end row -->
     </div>
     <!-- Flashed Messages -->
     <div class="help-block">
-        <p data-bind="html: node_message, attr: {class: messageClass}"></p>
+        <p data-bind="html: message, attr: {class: messageClass}"></p>
     </div>
 </div>

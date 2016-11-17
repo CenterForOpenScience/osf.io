@@ -93,8 +93,13 @@ REST_FRAMEWORK = {
     ),
     'EXCEPTION_HANDLER': 'api.base.exceptions.json_api_exception_handler',
     'DEFAULT_CONTENT_NEGOTIATION_CLASS': 'api.base.content_negotiation.JSONAPIContentNegotiation',
-    'DEFAULT_VERSIONING_CLASS': 'rest_framework.versioning.AcceptHeaderVersioning',
+    'DEFAULT_VERSIONING_CLASS': 'api.base.versioning.BaseVersioning',
     'DEFAULT_VERSION': '2.0',
+    'ALLOWED_VERSIONS': (
+        '2.0',
+        '2.1',
+        '2.2',
+    ),
     'DEFAULT_FILTER_BACKENDS': ('api.base.filters.ODMOrderingFilter',),
     'DEFAULT_PAGINATION_CLASS': 'api.base.pagination.JSONAPIPagination',
     'ORDERING_PARAM': 'sort',
@@ -104,6 +109,19 @@ REST_FRAMEWORK = {
         'api.base.authentication.drf.OSFSessionAuthentication',
         'api.base.authentication.drf.OSFCASAuthentication'
     ),
+    'DEFAULT_THROTTLE_CLASSES': (
+        'rest_framework.throttling.UserRateThrottle',
+        'api.base.throttling.NonCookieAuthThrottle',
+    ),
+    'DEFAULT_THROTTLE_RATES': {
+        'user': '10000/day',
+        'non-cookie-auth': '100/hour',
+        'add-contributor': '10/second',
+        'create-guid': '1000/hour',
+        'root-anon-throttle': '1000/hour',
+        'test-user': '2/hour',
+        'test-anon': '1/hour',
+    }
 }
 
 # Settings related to CORS Headers addon: allow API to receive authenticated requests from OSF
@@ -196,7 +214,7 @@ SWAGGER_SETTINGS = {
         'title': 'OSF APIv2 Documentation',
     },
     'doc_expansion': 'list',
-    'exclude_namespaces': ['applications', 'tokens'],
+    'exclude_namespaces': ['applications', 'tokens', 'test'],
 }
 
 NODE_CATEGORY_MAP = osf_settings.NODE_CATEGORY_MAP
@@ -211,5 +229,7 @@ ENABLE_ESI = osf_settings.ENABLE_ESI
 VARNISH_SERVERS = osf_settings.VARNISH_SERVERS
 ESI_MEDIA_TYPES = osf_settings.ESI_MEDIA_TYPES
 
-ADDONS_FOLDER_CONFIGURABLE = ['box', 'dropbox', 's3', 'googledrive']
-ADDONS_OAUTH = ADDONS_FOLDER_CONFIGURABLE + ['dataverse', 'github', 'mendeley', 'zotero']
+ADDONS_FOLDER_CONFIGURABLE = ['box', 'dropbox', 's3', 'googledrive', 'owncloud']
+ADDONS_OAUTH = ADDONS_FOLDER_CONFIGURABLE + ['dataverse', 'github', 'mendeley', 'zotero', 'forward']
+
+BYPASS_THROTTLE_TOKEN = 'test-token'

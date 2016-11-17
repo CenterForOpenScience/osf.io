@@ -23,7 +23,6 @@ from modularodm import Q
 from modularodm.exceptions import NoResultsFound
 
 from framework.auth import User, Auth
-from framework.auth.core import generate_verification_key
 from framework.auth.utils import impute_names_model, impute_names
 from framework.guid.model import Guid
 from framework.mongo import StoredObject
@@ -38,6 +37,7 @@ from website.oauth.models import (
     ExternalAccount,
     ExternalProvider
 )
+from website.preprints.model import PreprintProvider, PreprintService
 from website.project.model import (
     Comment, DraftRegistration, MetaSchema, Node, NodeLog, Pointer,
     PrivateLink, Tag, WatchConfig, AlternativeCitation,
@@ -49,12 +49,16 @@ from website.project.sanctions import (
     Retraction,
     Sanction,
 )
+from website.project.taxonomies import Subject
 from website.notifications.model import NotificationSubscription, NotificationDigest
 from website.archiver.model import ArchiveTarget, ArchiveJob
 from website.identifiers.model import Identifier
 from website.archiver import ARCHIVER_SUCCESS
 from website.project.licenses import NodeLicense, NodeLicenseRecord, ensure_licenses
 from website.util import permissions
+from website.files.models.osfstorage import OsfStorageFile, FileVersion
+from website.exceptions import InvalidSanctionApprovalToken
+
 
 ensure_licenses = functools.partial(ensure_licenses, warn=False)
 
@@ -104,7 +108,7 @@ class UserFactory(ModularOdmFactory):
         model = User
         abstract = False
 
-    username = Sequence(lambda n: 'fred{0}@example.com'.format(n))
+    username = Sequence(lambda n: 'fred{0}@mail.com'.format(n))
     # Don't use post generation call to set_password because
     # It slows down the tests dramatically
     password = 'password'
@@ -115,6 +119,7 @@ class UserFactory(ModularOdmFactory):
     merged_by = None
     email_verifications = {}
     verification_key = None
+    verification_key_v2 = {}
 
     @post_generation
     def set_names(self, create, extracted):
@@ -212,6 +217,100 @@ class NodeFactory(AbstractNodeFactory):
     parent = SubFactory(ProjectFactory)
 
 
+class PreprintProviderFactory(ModularOdmFactory):
+    name = 'OSFArxiv'
+    description = 'Preprint service for the OSF'
+
+    class Meta:
+        model = PreprintProvider
+
+    @classmethod
+    def _create(cls, target_class, name=None, description=None, *args, **kwargs):
+        provider = target_class(*args, **kwargs)
+        provider.name = name
+        provider.description = description
+        provider.save()
+
+        return provider
+
+
+class PreprintFactory(ModularOdmFactory):
+    creator = None
+    category = 'project'
+    doi = Sequence(lambda n: '10.12345/0{}'.format(n))
+    provider = SubFactory(PreprintProviderFactory)
+    external_url = 'http://hello.org'
+
+    class Meta:
+        model = PreprintService
+
+    @classmethod
+    def _create(cls, target_class, project=None, is_public=True, filename='preprint_file.txt', provider=None, 
+                doi=None, external_url=None, is_published=True, subjects=None, finish=True, *args, **kwargs):
+        save_kwargs(**kwargs)
+        user = None
+        if project:
+            user = project.creator
+        user = kwargs.get('user') or kwargs.get('creator') or user or UserFactory()
+        kwargs['creator'] = user
+        # Original project to be converted to a preprint
+        project = project or AbstractNodeFactory(*args, **kwargs)
+        if user._id not in project.permissions:
+            project.add_contributor(
+                contributor=user,
+                permissions=permissions.CREATOR_PERMISSIONS,
+                log=False,
+                save=False
+            )
+        project.save()
+        project.reload()
+
+        file = OsfStorageFile.create(
+            is_file=True,
+            node=project,
+            path='/{}'.format(filename),
+            name=filename,
+            materialized_path='/{}'.format(filename))
+        file.save()
+
+        preprint = target_class(node=project, provider=provider)
+
+        auth = Auth(project.creator)
+
+        if finish:
+            preprint.set_primary_file(file, auth=auth)
+            subjects = subjects or [[SubjectFactory()._id]]
+            preprint.set_subjects(subjects, auth=auth)
+            preprint.set_published(is_published, auth=auth)
+        
+        if not preprint.is_published:
+            project._has_abandoned_preprint = True
+
+        project.preprint_article_doi = doi
+        project.save()
+        preprint.save()
+
+        return preprint
+
+
+class SubjectFactory(ModularOdmFactory):
+
+    text = Sequence(lambda n: 'Example Subject #{}'.format(n))
+    class Meta:
+        model = Subject
+
+    @classmethod
+    def _create(cls, target_class, text=None, parents=[], *args, **kwargs):
+        try:
+            subject = Subject.find_one(Q('text', 'eq', text))
+        except NoResultsFound:
+            subject = target_class(*args, **kwargs)
+            subject.text = text
+            subject.parents = parents
+            subject.save()
+        return subject
+
+
 class RegistrationFactory(AbstractNodeFactory):
 
     creator = None
@@ -298,11 +397,15 @@ class WithdrawnRegistrationFactory(AbstractNodeFactory):
 
         registration.retract_registration(user)
         withdrawal = registration.retraction
-        token = withdrawal.approval_state.values()[0]['approval_token']
-        withdrawal.approve_retraction(user, token)
-        withdrawal.save()
 
-        return withdrawal
+        for token in withdrawal.approval_state.values():
+            try:
+                withdrawal.approve_retraction(user, token['approval_token'])
+                withdrawal.save()
+
+                return withdrawal
+            except InvalidSanctionApprovalToken:
+                continue
 
 
 class ForkFactory(ModularOdmFactory):
@@ -527,7 +630,7 @@ class DeprecatedUnregUserFactory(base.Factory):
         model = DeprecatedUnregUser
 
     nr_name = Sequence(lambda n: "Tom Jones{0}".format(n))
-    nr_email = Sequence(lambda n: "tom{0}@example.com".format(n))
+    nr_email = Sequence(lambda n: "tom{0}@mail.com".format(n))
 
     @classmethod
     def _create(cls, target_class, *args, **kwargs):
@@ -824,7 +927,6 @@ def create_fake_user():
         fullname=name,
         is_registered=True,
         is_claimed=True,
-        verification_key=generate_verification_key(),
         date_registered=fake.date_time(),
         emails=[email],
         **parsed

@@ -18,12 +18,12 @@ SECURE_MODE = not DEBUG_MODE  # Disable osf secure cookie
 PROTOCOL = 'https://' if SECURE_MODE else 'http://'
 DOMAIN = PROTOCOL + 'localhost:5000/'
 API_DOMAIN = PROTOCOL + 'localhost:8000/'
+ENABLE_INSTITUTIONS = True
 
 SEARCH_ENGINE = 'elastic'
 
 USE_EMAIL = False
 USE_CELERY = False
-USE_GNUPG = False
 
 # Email
 MAIL_SERVER = 'localhost:1025'  # For local testing
@@ -55,3 +55,21 @@ VARNISH_SERVERS = ['http://localhost:8080']
 
 # if ENABLE_VARNISH isn't set in python read it from the env var and set it
 locals().setdefault('ENABLE_VARNISH', os.environ.get('ENABLE_VARNISH') == 'True')
+
+KEEN = {
+    'public': {
+        'project_id': '123456789abcdef101112131415161718191a1b1c1d1e1f20212223242526272',
+        'master_key': '123456789abcdef101112131415161718191a1b1c1d1e1f20212223242526272',
+        'write_key': '123456789abcdef101112131415161718191a1b1c1d1e1f20212223242526272',
+        'read_key': '123456789abcdef101112131415161718191a1b1c1d1e1f20212223242526272',
+    },
+    'private': {
+        'project_id': '123456789abcdef101112131415161718191a1b1c1d1e1f20212223242526272',
+        'write_key': '123456789abcdef101112131415161718191a1b1c1d1e1f20212223242526272',
+        'read_key': '123456789abcdef101112131415161718191a1b1c1d1e1f20212223242526272',
+    },
+}
+
+NEW_AND_NOTEWORTHY_LINKS_NODE = 'helloo'
+POPULAR_LINKS_NODE = 'hiyah'
+POPULAR_LINKS_REGISTRATIONS = 'woooo'

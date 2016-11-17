@@ -179,7 +179,13 @@ def project_new_node(auth, node, **kwargs):
         if form.inherit_contributors.data and node.has_permission(user, WRITE):
             for contributor in node.contributors:
                 perm = CREATOR_PERMISSIONS if contributor is user else node.get_permissions(contributor)
-                new_component.add_contributor(contributor, permissions=perm, auth=auth)
+                if contributor is user and not contributor.is_registered:
+                    new_component.add_unregistered_contributor(
+                        fullname=contributor.fullname, email=contributor.email,
+                        permissions=perm, auth=auth, existing_user=contributor
+                    )
+                else:
+                    new_component.add_contributor(contributor, permissions=perm, auth=auth)
 
             new_component.save()
             redirect_url = new_component.url + 'contributors/'
@@ -424,9 +430,9 @@ def project_reorder_components(node, **kwargs):
 @must_be_valid_project
 @must_be_contributor_or_public
 def project_statistics(auth, node, **kwargs):
-    if not (node.can_edit(auth) or node.is_public):
-        raise HTTPError(http.FORBIDDEN)
-    return _view_project(node, auth, primary=True)
+    ret = _view_project(node, auth, primary=True)
+    ret['node']['keenio_read_key'] = node.keenio_read_key
+    return ret
 
 
 @must_be_valid_project
@@ -724,7 +730,6 @@ def _view_project(node, auth, primary=False):
             'link': view_only_link,
             'anonymous': anonymous,
             'points': len(node.get_points(deleted=False, folders=False)),
-            'piwik_site_id': node.piwik_site_id,
             'comment_level': node.comment_level,
             'has_comments': bool(Comment.find(Q('node', 'eq', node))),
             'has_children': bool(Comment.find(Q('node', 'eq', node))),
@@ -735,7 +740,11 @@ def _view_project(node, auth, primary=False):
             'institutions': get_affiliated_institutions(node) if node else [],
             'alternative_citations': [citation.to_json() for citation in node.alternative_citations],
             'has_draft_registrations': node.has_active_draft_registrations,
-            'contributors': [contributor._id for contributor in node.contributors]
+            'contributors': [contributor._id for contributor in node.contributors],
+            'is_preprint': node.is_preprint,
+            'is_preprint_orphan': node.is_preprint_orphan,
+            'preprint_file_id': node.preprint_file._id if node.preprint_file else None,
+            'preprint_url': node.preprint_url
         },
         'parent_node': {
             'exists': parent is not None,
@@ -759,7 +768,6 @@ def _view_project(node, auth, primary=False):
             'has_read_permissions': node.has_permission(user, READ),
             'permissions': node.get_permissions(user) if user else [],
             'is_watching': user.is_watching(node) if user else False,
-            'piwik_token': user.piwik_token if user else '',
             'id': user._id if user else None,
             'username': user.username if user else None,
             'fullname': user.fullname if user else '',

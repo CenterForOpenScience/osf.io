@@ -8,7 +8,7 @@ import __builtin__ as builtins
 from nose.tools import *  # flake8: noqa (PEP8 asserts)
 import mock
 from modularodm import Q
-from modularodm.exceptions import NoResultsFound
+from modularodm.exceptions import NoResultsFound, KeyExistsException
 
 from framework.auth import Auth
 
@@ -92,10 +92,15 @@ class TestNodeLicenses(OsfTestCase):
         for prop in ('id', 'name', 'node_license'):
             assert_equal(getattr(record, prop), getattr(copied, prop))
 
-    def test_ensure_licenses_existing_licenses(self):
-        with mock.patch('website.project.licenses.NodeLicense.__init__', autospec=True) as MockNodeLicense:
-            ensure_licenses()
-        assert_false(MockNodeLicense.called)
+    def test_license_uniqueness_on_id_is_enforced_in_the_database(self):
+        # Using MongoDB's uniqueness instead of modular-odm's allows us to
+        # kludge a race-less upsert in ensure_licenses.
+        NodeLicense(id='foo', name='bar', text='baz').save()
+        assert_raises(KeyExistsException, NodeLicense(id='foo', name='buz', text='boo').save)
+        # modular-odm's uniqueness constraint would raise ValidationValueError instead.
+
+    def test_ensure_licenses_updates_existing_licenses(self):
+        assert_equal(ensure_licenses(), (0, 16))
 
     def test_ensure_licenses_no_licenses(self):
         before_count = NodeLicense.find().count()
@@ -118,15 +123,6 @@ class TestNodeLicenses(OsfTestCase):
             Q('id', 'eq', 'LGPL3')
         )
         assert_is_not_none(found)
-
-    def test_ensure_licenses_updates_existing(self):
-        with mock.patch.object(builtins, 'open', mock.mock_open(read_data=LICENSE_TEXT)):
-            ensure_licenses()
-        MIT = NodeLicense.find_one(
-            Q('id', 'eq', 'MIT')
-        )
-        assert_equal(MIT.text, CHANGED_TEXT)
-        assert_equal(MIT.properties, CHANGED_PROPERTIES)
 
     def test_ensure_licenses_updates_existing(self):
         with mock.patch.object(builtins, 'open', mock.mock_open(read_data=LICENSE_TEXT)):

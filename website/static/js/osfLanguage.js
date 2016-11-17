@@ -82,7 +82,18 @@ module.exports = {
                 'This will revoke access to Google Drive for all projects you have ' +
                 'associated with this account.',
             deauthError: 'Could not disconnect the Google Drive account at this time',
-        }
+        },
+        owncloud: {
+            authError: 'Invalid ownCloud server',
+            authInvalid: 'Invalid credentials. Please enter a valid username and password.',
+            userSettingsError: 'Could not retrieve settings. Please refresh the page or ' +
+                'contact ' + SUPPORT_LINK + ' if the problem persists.',
+            confirmAuth : 'Are you sure you want to authorize this project with your ownCloud credentials?',
+            updateAccountsError : 'Could not retrieve ownCloud account list at ' +
+                        'this time. Please refresh the page. If the problem persists, email ' +
+                        '<a href="mailto:support@osf.io">support@osf.io</a>.',
+            submitSettingsSuccess : 'Folder Successfully linked',
+        },
     },
     apiOauth2Application: {
         discardUnchanged: 'Are you sure you want to discard your unsaved changes?',

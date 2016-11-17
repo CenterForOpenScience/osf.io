@@ -6,7 +6,7 @@
 var m = require('mithril');
 var $ = require('jquery');
 var URI = require('URIjs');
-var Fangorn = require('js/fangorn');
+var Fangorn = require('js/fangorn').Fangorn;
 var waterbutler = require('js/waterbutler');
 var $osf = require('js/osfHelpers');
 
@@ -14,7 +14,18 @@ var $osf = require('js/osfHelpers');
 var commandKeys = [224, 17, 91, 93];
 
 function _uploadUrl(item, file) {
-    return waterbutler.buildTreeBeardUpload(item, file, {branch: item.data.branch});
+    // WB v1 update syntax is PUT <file_path>?kind=file
+    // WB v1 upload syntax is PUT <parent_path>/?kind=file&name=<filename>
+    // If upload target file name already exists don't pass file.name.  WB v1 rejects updates that
+    // include a filename.
+    var updateUrl;
+    $.each(item.children, function( index, value ) {
+        if (file.name === value.data.name) {
+            updateUrl = waterbutler.buildTreeBeardUpload(value, {branch: value.data.branch});
+            return false;
+        }
+    });
+    return updateUrl || waterbutler.buildTreeBeardUpload(item, {name: file.name, branch: item.data.branch});
 }
 
 function _removeEvent (event, items) {
@@ -34,10 +45,8 @@ function _removeEvent (event, items) {
         }).done(function (data) {
                 // delete view
                 tb.deleteNode(item.parentID, item.id);
-                Fangorn.Utils.dismissToolbar.call(tb);
                 tb.modal.dismiss();
                 tb.clearMultiselect();
-
         }).fail(function (data) {
                 tb.modal.dismiss();
                 Fangorn.Utils.dismissToolbar.call(tb);
@@ -52,20 +61,53 @@ function _removeEvent (event, items) {
         });
     }
 
+    function doDelete() {
+        var folder = items[0];
+        if (folder.data.permissions.edit) {
+            var mithrilContent = m('div', [
+                    m('p.text-danger', 'This folder and ALL its contents will be deleted. This action is irreversible.')
+                ]);
+            var mithrilButtons = m('div', [
+                    m('span.btn.btn-default', { onclick : function() { cancelDelete.call(tb); } }, 'Cancel'),
+                    m('span.btn.btn-danger', {  onclick : function() { runDelete(folder); }  }, 'Delete')
+                ]);
+            tb.modal.update(mithrilContent, mithrilButtons, m('h3.break-word.modal-title', 'Delete "' + folder.data.name+ '"?'));
+        } else {
+            folder.notify.update('You don\'t have permission to delete this file.', 'info', undefined, 3000);
+        }
+    }
+
     // If there is only one item being deleted, don't complicate the issue:
     if(items.length === 1) {
-        var parent = items[0].parent();
-        var mithrilContentSingle = m('div', [
-            m('p', 'This action is irreversible.'),
-            parent.children.length < 2 ? m('p', 'If a folder in Github has no children it will automatically be removed.') : ''
-        ]);
-        var mithrilButtonsSingle = m('div', [
-            m('span.btn.btn-default', { onclick : function() { cancelDelete(); } }, 'Cancel'),
-            m('span.btn.btn-danger', { onclick : function() { runDelete(items[0]); }  }, 'Delete')
-        ]);
-        // This is already being checked before this step but will keep this edit permission check
-        if(items[0].data.permissions.edit){
-            tb.modal.update(mithrilContentSingle, mithrilButtonsSingle, m('h3.break-word.modal-title', 'Delete "' + items[0].data.name + '"?'));
+        if(items[0].kind !== 'folder') {
+            var parent = items[0].parent();
+            var mithrilContentSingle = m('div', [
+                m('p', 'This action is irreversible.'),
+                parent.children.length < 2 ? m('p', 'If a folder in Github has no children it will automatically be removed.') : ''
+            ]);
+            var mithrilButtonsSingle = m('div', [
+                m('span.btn.btn-default', {
+                    onclick: function () {
+                        cancelDelete();
+                    }
+                }, 'Cancel'),
+                m('span.btn.btn-danger', {
+                    onclick: function () {
+                        runDelete(items[0]);
+                    }
+                }, 'Delete')
+            ]);
+            // This is already being checked before this step but will keep this edit permission check
+            if (items[0].data.permissions.edit) {
+                tb.modal.update(mithrilContentSingle, mithrilButtonsSingle, m('h3.break-word.modal-title', 'Delete "' + items[0].data.name + '"?'));
+            }
+        }
+        if(items[0].kind === 'folder') {
+            if (!items[0].open) {
+                tb.updateFolder(null, items[0], doDelete);
+            } else {
+                doDelete();
+            }
         }
     } else {
         // Check if all items can be deleted
@@ -85,7 +127,7 @@ function _removeEvent (event, items) {
         // If all items can be deleted
         if(canDelete){
             mithrilContentMultiple = m('div', [
-                    m('p.text-danger', 'This folder and ALL its contents will be deleted. This action is irreversible.'),
+                    m('p.text-danger', 'This action is irreversible.'),
                     deleteList.map(function(item){
                         return m('.fangorn-canDelete.text-success', item.data.name);
                     })
@@ -124,7 +166,7 @@ var _githubItemButtons = {
         var buttons = [];
         function _downloadEvent(event, item, col) {
             event.stopPropagation();
-            window.location = waterbutler.buildTreeBeardDownload(item, {fileSha: item.data.extra.fileSha});
+            window.location = waterbutler.buildTreeBeardDownload(item, {fileSha: item.data.extra.fileSha, branch: item.data.branch});
         }
         // Download Zip File
         if (item.kind === 'folder') {
@@ -184,7 +226,7 @@ var _githubItemButtons = {
                     buttons.push(
                         m.component(Fangorn.Components.button, {
                             onclick: function (event) {
-                                window.location = item.data.urls.zip;
+                                window.location = waterbutler.buildTreeBeardDownloadZip(item, {'branch': item.data.branch});
                             },
                             icon: 'fa fa-download',
                             className: 'text-primary'
@@ -246,7 +288,6 @@ var _githubItemButtons = {
                     onclick: function() {
                         tb.toolbarMode(Fangorn.Components.toolbarModes.RENAME);
                     },
-                    tooltip: 'Change the name of the item',
                     icon: 'fa fa-pencil',
                     className : 'text-info'
                 }, 'Rename')
@@ -348,6 +389,12 @@ function _fangornColumns (item) {
             sortInclude : false,
             filter : false,
             custom : function() {return m('');}
+        });
+        columns.push({
+            data: 'version',
+            filter: false,
+            sortInclude : false,
+            custom: function() {return m('');}
         });
     }
     if(tb.options.placement !== 'fileview') {

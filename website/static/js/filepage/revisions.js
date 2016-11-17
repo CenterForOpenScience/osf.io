@@ -25,13 +25,14 @@ var model = {
 
 
 var FileRevisionsTable = {
-    controller: function(file, node, enableEditing, canEdit) {
+    controller: function(file, node, enableEditing, canEdit, selectLatest) {
         var self = {};
         self.node = node;
         self.file = file;
         self.canEdit = canEdit;
         self.enableEditing = enableEditing;
         self.baseUrl = (window.location.href).split('?')[0];
+        self.selectLatest = selectLatest;
 
         model.hasDate = self.file.provider !== 'dataverse';
 
@@ -44,6 +45,7 @@ var FileRevisionsTable = {
                 url: self.file.urls.revisions,
                 beforeSend: $osf.setXHRAuthorization
             }).done(function(response) {
+                response = waterbutler.wbLazyLoadPreprocess.call(this, response);
                 m.startComputation();
                 var urlParmas = $osf.urlParams();
                 model.revisions = response.data.map(function(rev, index) {
@@ -57,6 +59,7 @@ var FileRevisionsTable = {
                 // Can only edit the latest version of a file
                 if (model.selectedRevision === 0) {
                     self.enableEditing();
+                    self.selectLatest();
                 }
                 model.hasUser = model.revisions[0] && model.revisions[0].extra && model.revisions[0].extra.user;
                 model.hasHashes = model.revisions && model.revisions[0] && model.revisions[0].extra.hashes;
@@ -80,6 +83,7 @@ var FileRevisionsTable = {
                         url: self.file.urls.metadata,
                         beforeSend: $osf.setXHRAuthorization
                     }).done(function(resp) {
+                        resp = waterbutler.wbLazyLoadPreprocess.call(this, resp);
                         self.canEdit(self.canEdit() && resp.data.extra.canDelete);
                         m.redraw();
                     }).fail(function(xhr) {
@@ -125,11 +129,11 @@ var FileRevisionsTable = {
                   m('a', {href: parseInt(revision.displayVersion) === model.revisions.length ? self.baseUrl : revision.osfViewUrl}, revision.displayVersion)
                 ),
                 model.hasDate ? m('td', revision.displayDate) : false,
-                model.hasUser ?
+                model.hasUser && !window.contextVars.node.anonymous ?
                     m('td', revision.extra.user.url ?
                             m('a', {href: revision.extra.user.url}, revision.extra.user.name) :
                             revision.extra.user.name
-                    ) : false,
+                    ) : m('td', 'Anonymous Contributor'),
                 m('td', revision.extra.downloads > -1 ? m('.badge', revision.extra.downloads) : ''),
                 m('td',
                     m('a.btn.btn-primary.btn-sm.file-download', {
@@ -190,7 +194,7 @@ var FileRevisionsTable = {
         }
         options[revision.versionIdentifier] = revision.version;
 
-        revision.date = new $osf.FormattableDate(revision.modified);
+        revision.date = new $osf.FormattableDate(revision.modified_utc);
         revision.displayDate = revision.date.local !== 'Invalid date' ?
             revision.date.local :
             revision.date;

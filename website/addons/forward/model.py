@@ -14,6 +14,7 @@ from website.addons.base import AddonNodeSettingsBase
 class ForwardNodeSettings(AddonNodeSettingsBase):
 
     complete = True
+    has_auth = True
 
     url = fields.StringField(validate=URLValidator())
     label = fields.StringField(validate=sanitized)

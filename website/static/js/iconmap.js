@@ -18,7 +18,8 @@ module.exports = {
         registration:  'fa fa-th-list text-muted',
         component:  'fa fa-th-large',
         registeredComponent:  'fa fa-th-large text-muted',
-        link:  'fa fa-link'
+        link:  'fa fa-link',
+        preprint: 'fa fa-file-text'
     },
     info: 'fa fa-info-circle',
     smaller: 'iconmap-smaller',

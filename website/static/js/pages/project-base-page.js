@@ -19,10 +19,6 @@ if (!window.contextVars.currentUser.isContributor) {
     new AccountClaimer('.contributor-unregistered');
 }
 
-if (node.isPublic && node.piwikSiteID) {
-    $osf.trackPiwik(node.piwikHost, node.piwikSiteID);
-}
-
 // Used for clearing backward/forward cache issues
 $(window).unload(function(){
     return 'Unload';

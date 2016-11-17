@@ -1,6 +1,6 @@
 {
   "github_file_added" : "${user} added file ${path} to GitHub repo ${repo} in ${node}",
-  "github_file_removed" : "${user} removed file ${path} in GitHub repo ${repo} in ${node}",
+  "github_file_removed" : "${user} removed ${path_type} ${path} in GitHub repo ${repo} in ${node}",
   "github_file_updated" : "${user} updated file ${path} in GitHub repo ${repo} in ${node}",
   "github_folder_created" : "${user} created folder ${path} in GitHub repo ${repo} in ${node}",
   "github_node_authorized" : "${user} authorized the GitHub addon for ${node}",

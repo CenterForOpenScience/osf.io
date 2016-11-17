@@ -71,19 +71,19 @@ class BulkDestroyJSONAPIView(bulk_generics.BulkDestroyAPIView):
     Custom BulkDestroyAPIView that handles validation and permissions for
     bulk delete
     """
-    def get_requested_resources(self, request):
+    def get_requested_resources(self, request, request_data):
         """
         Retrieves resources in request body
         """
         model_cls = request.parser_context['view'].model_class
-        requested_ids = [data['id'] for data in request.data]
+        requested_ids = [data['id'] for data in request_data]
         resource_object_list = model_cls.find(Q('_id', 'in', requested_ids))
 
         for resource in resource_object_list:
             if getattr(resource, 'is_deleted', None):
                 raise Gone
 
-        if len(resource_object_list) != len(request.data):
+        if len(resource_object_list) != len(request_data):
             raise ValidationError({'non_field_errors': 'Could not find all objects to delete.'})
 
         return resource_object_list
@@ -109,7 +109,25 @@ class BulkDestroyJSONAPIView(bulk_generics.BulkDestroyAPIView):
 
         Handles some validation and enforces bulk limit.
         """
-        num_items = len(request.data)
+        if hasattr(request, 'query_params') and 'id' in request.query_params:
+            if hasattr(request, 'data') and len(request.data) > 0:
+                raise Conflict('A bulk DELETE can only have a body or query parameters, not both.')
+
+            ids = request.query_params['id'].split(',')
+
+            if 'type' in request.query_params:
+                request_type = request.query_params['type']
+                data = []
+                for id in ids:
+                    data.append({'type': request_type, 'id': id})
+            else:
+                raise ValidationError('Type query parameter is also required for a bulk DELETE using query parameters.')
+        elif not request.data:
+            raise ValidationError('Request must contain array of resource identifier objects.')
+        else:
+            data = request.data
+
+        num_items = len(data)
         bulk_limit = BULK_SETTINGS['DEFAULT_BULK_LIMIT']
 
         if num_items > bulk_limit:
@@ -119,15 +137,12 @@ class BulkDestroyJSONAPIView(bulk_generics.BulkDestroyAPIView):
         user = self.request.user
         object_type = self.serializer_class.Meta.type_
 
-        if not request.data:
-            raise ValidationError('Request must contain array of resource identifier objects.')
+        resource_object_list = self.get_requested_resources(request=request, request_data=data)
 
-        resource_object_list = self.get_requested_resources(request)
-
-        for item in request.data:
+        for item in data:
             item_type = item[u'type']
             if item_type != object_type:
-                raise Conflict()
+                raise Conflict('Type needs to match type expected at this endpoint.')
 
         if not self.allow_bulk_destroy_resources(user, resource_object_list):
             raise PermissionDenied

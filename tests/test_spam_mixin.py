@@ -7,6 +7,7 @@ from framework.auth import Auth
 
 from tests.base import OsfTestCase
 from tests.factories import UserFactory, CommentFactory
+from website.project.spam.model import SpamStatus
 
 
 class TestSpamMixin(OsfTestCase):
@@ -21,7 +22,7 @@ class TestSpamMixin(OsfTestCase):
         time = datetime.utcnow()
         self.comment.report_abuse(
                 user, date=time, category='spam', text='ads', save=True)
-        assert_equal(self.comment.spam_status, self.comment.FLAGGED)
+        assert_equal(self.comment.spam_status, SpamStatus.FLAGGED)
         equivalent = dict(
             date=time,
             category='spam',
@@ -38,7 +39,7 @@ class TestSpamMixin(OsfTestCase):
                 category='spam', text='ads',
                 save=True
             )
-        assert_equal(self.comment.spam_status, self.comment.UNKNOWN)
+        assert_equal(self.comment.spam_status, SpamStatus.UNKNOWN)
 
     def test_retract_report(self):
         user = UserFactory()
@@ -46,9 +47,9 @@ class TestSpamMixin(OsfTestCase):
         self.comment.report_abuse(
                 user, date=time, category='spam', text='ads', save=True
         )
-        assert_equal(self.comment.spam_status, self.comment.FLAGGED)
+        assert_equal(self.comment.spam_status, SpamStatus.FLAGGED)
         self.comment.retract_report(user, save=True)
-        assert_equal(self.comment.spam_status, self.comment.UNKNOWN)
+        assert_equal(self.comment.spam_status, SpamStatus.UNKNOWN)
         equivalent = {
             'date': time,
             'category': 'spam',
@@ -66,7 +67,7 @@ class TestSpamMixin(OsfTestCase):
         )
         with assert_raises(ValueError):
             self.comment.retract_report(non_reporter, save=True)
-        assert_equal(self.comment.spam_status, self.comment.FLAGGED)
+        assert_equal(self.comment.spam_status, SpamStatus.FLAGGED)
 
     def test_retract_one_report_of_many(self):
         user_1 = UserFactory()
@@ -75,7 +76,7 @@ class TestSpamMixin(OsfTestCase):
         self.comment.report_abuse(
                 user_1, date=time, category='spam', text='ads', save=True
         )
-        assert_equal(self.comment.spam_status, self.comment.FLAGGED)
+        assert_equal(self.comment.spam_status, SpamStatus.FLAGGED)
         self.comment.report_abuse(
                 user_2, date=time, category='spam', text='all', save=True
         )
@@ -88,11 +89,12 @@ class TestSpamMixin(OsfTestCase):
         }
         assert_in(user_1._id, self.comment.reports)
         assert_equal(self.comment.reports[user_1._id], equivalent)
-        assert_equal(self.comment.spam_status, self.comment.FLAGGED)
+        assert_equal(self.comment.spam_status, SpamStatus.FLAGGED)
 
     def test_flag_spam(self):
-        self.comment.flag_spam(save=True)
-        assert_equal(self.comment.spam_status, self.comment.FLAGGED)
+        self.comment.flag_spam()
+        self.comment.save()
+        assert_equal(self.comment.spam_status, SpamStatus.FLAGGED)
 
     def test_cannot_remove_flag_not_retracted(self):
         user = UserFactory()
@@ -100,21 +102,22 @@ class TestSpamMixin(OsfTestCase):
                 user, category='spam', text='ads', save=True
         )
         self.comment.remove_flag(save=True)
-        assert_equal(self.comment.spam_status, self.comment.FLAGGED)
+        assert_equal(self.comment.spam_status, SpamStatus.FLAGGED)
 
     def test_remove_flag(self):
-        self.comment.flag_spam(save=True)
-        assert_equal(self.comment.spam_status, self.comment.FLAGGED)
+        self.comment.flag_spam()
+        self.comment.save()
+        assert_equal(self.comment.spam_status, SpamStatus.FLAGGED)
         self.comment.remove_flag(save=True)
-        assert_equal(self.comment.spam_status, self.comment.UNKNOWN)
+        assert_equal(self.comment.spam_status, SpamStatus.UNKNOWN)
 
     def test_confirm_ham(self):
         self.comment.confirm_ham(save=True)
-        assert_equal(self.comment.spam_status, self.comment.HAM)
+        assert_equal(self.comment.spam_status, SpamStatus.HAM)
 
     def test_confirm_spam(self):
         self.comment.confirm_spam(save=True)
-        assert_equal(self.comment.spam_status, self.comment.SPAM)
+        assert_equal(self.comment.spam_status, SpamStatus.SPAM)
 
     def test_validate_reports_bad_key(self):
         self.comment.reports[None] = {'category': 'spam', 'text': 'ads'}

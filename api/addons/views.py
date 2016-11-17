@@ -1,3 +1,4 @@
+import importlib
 
 from rest_framework.exceptions import NotFound
 from rest_framework import generics, permissions as drf_permissions
@@ -5,6 +6,8 @@ from rest_framework import generics, permissions as drf_permissions
 from framework.auth.oauth_scopes import CoreScopes
 
 from api.addons.serializers import AddonSerializer
+from api.base.filters import ListFilterMixin
+from api.base.pagination import MaxSizePagination
 from api.base.permissions import TokenHasScope
 from api.base.settings import ADDONS_OAUTH
 from api.base.views import JSONAPIBaseView
@@ -19,13 +22,21 @@ class AddonSettingsMixin(object):
 
     def get_addon_settings(self, provider=None, fail_if_absent=True):
         owner = None
+        provider = provider or self.kwargs['provider']
+
         if hasattr(self, 'get_user'):
             owner = self.get_user()
+            owner_type = 'user'
         elif hasattr(self, 'get_node'):
             owner = self.get_node()
+            owner_type = 'node'
 
-        provider = provider or self.kwargs['provider']
-        if not owner or provider not in ADDONS_OAUTH:
+        try:
+            addon_module = importlib.import_module('website.addons.{}'.format(provider))
+        except ImportError:
+            raise NotFound('Requested addon unrecognized')
+
+        if not owner or provider not in ADDONS_OAUTH or owner_type not in addon_module.OWNERS:
             raise NotFound('Requested addon unavailable')
 
         addon_settings = owner.get_addon(provider)
@@ -37,7 +48,7 @@ class AddonSettingsMixin(object):
 
         return addon_settings
 
-class AddonList(JSONAPIBaseView, generics.ListAPIView):
+class AddonList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
     """List of addons configurable with the OSF *Read-only*.
 
     Paginated list of addons associated with third-party services
@@ -68,9 +79,13 @@ class AddonList(JSONAPIBaseView, generics.ListAPIView):
     required_read_scopes = [CoreScopes.ALWAYS_PUBLIC]
     required_write_scopes = [CoreScopes.NULL]
 
+    pagination_class = MaxSizePagination
     serializer_class = AddonSerializer
     view_category = 'addons'
     view_name = 'addon-list'
 
-    def get_queryset(self):
+    def get_default_queryset(self):
         return [conf for conf in osf_settings.ADDONS_AVAILABLE_DICT.itervalues() if 'accounts' in conf.configs]
+
+    def get_queryset(self):
+        return self.get_queryset_from_request()

@@ -128,16 +128,26 @@ def send_mail(to_addr, mail, mimetype='plain', from_addr=None, mailer=None,
 
 TEST = Mail('test', subject='A test email to ${name}', categories=['test'])
 
+EXTERNAL_LOGIN_CONFIRM_EMAIL_CREATE = Mail('external_confirm_create', subject='Open Science Framework Account Verification')
+EXTERNAL_LOGIN_CONFIRM_EMAIL_LINK = Mail('external_confirm_link', subject='Open Science Framework Account Verification')
+EXTERNAL_LOGIN_LINK_SUCCESS = Mail('external_confirm_success', subject='Open Science Framework Account Verification Success')
+
 INITIAL_CONFIRM_EMAIL = Mail('initial_confirm', subject='Open Science Framework Account Verification')
 CONFIRM_EMAIL = Mail('confirm', subject='Add a new email to your OSF account')
 CONFIRM_EMAIL_PREREG = Mail('confirm_prereg', subject='Open Science Framework Account Verification, Preregistration Challenge')
+CONFIRM_EMAIL_ERPC = Mail('confirm_erpc', subject='Open Science Framework Account Verification, Election Research Preacceptance Competition')
+CONFIRM_EMAIL_PREPRINTS_OSF = Mail('confirm_preprints_osf', subject='Open Science Framework Account Verification, Preprints Service')
 
 CONFIRM_MERGE = Mail('confirm_merge', subject='Confirm account merge')
 
 REMOVED_EMAIL = Mail('email_removed', subject='Email address removed from your OSF account')
 PRIMARY_EMAIL_CHANGED = Mail('primary_email_changed', subject='Primary email changed')
-INVITE = Mail('invite', subject='You have been added as a contributor to an OSF project.')
-CONTRIBUTOR_ADDED = Mail('contributor_added', subject='You have been added as a contributor to an OSF project.')
+
+INVITE_DEFAULT = Mail('invite_default', subject='You have been added as a contributor to an OSF project.')
+INVITE_PREPRINT = Mail('invite_preprint', subject='You have been added as a contributor to an OSF preprint.')
+
+CONTRIBUTOR_ADDED_DEFAULT = Mail('contributor_added_default', subject='You have been added as a contributor to an OSF project.')
+CONTRIBUTOR_ADDED_PREPRINT = Mail('contributor_added_preprint', subject='You have been added as a contributor to an OSF preprint.')
 
 FORWARD_INVITE = Mail('forward_invite', subject='Please forward to ${fullname}')
 FORWARD_INVITE_REGISTERED = Mail('forward_invite_registered', subject='Please forward to ${fullname}')
@@ -149,6 +159,8 @@ PENDING_VERIFICATION_REGISTERED = Mail('pending_registered', subject='Received r
 
 REQUEST_EXPORT = Mail('support_request', subject='[via OSF] Export Request')
 REQUEST_DEACTIVATION = Mail('support_request', subject='[via OSF] Deactivation Request')
+
+SPAM_USER_BANNED = Mail('spam_user_banned', subject='[OSF] Account flagged as spam')
 
 CONFERENCE_SUBMITTED = Mail(
     'conference_submitted',

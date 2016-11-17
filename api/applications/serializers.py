@@ -5,7 +5,7 @@ from modularodm import Q
 
 from website.models import ApiOAuth2Application
 
-from api.base.serializers import JSONAPISerializer, LinksField, IDField, TypeField
+from api.base.serializers import JSONAPISerializer, LinksField, IDField, TypeField, DateByVersion
 from api.base.utils import absolute_reverse
 
 
@@ -33,7 +33,10 @@ class ApiOAuthApplicationBaseSerializer(JSONAPISerializer):
         return obj.get_absolute_url()
 
     def reset_url(self, obj):
-        return absolute_reverse('applications:application-reset', kwargs={'client_id': obj.client_id})
+        return absolute_reverse('applications:application-reset', kwargs={
+            'client_id': obj.client_id,
+            'version': self.context['request'].parser_context['kwargs']['version']
+        })
 
     class Meta:
         type_ = 'applications'
@@ -66,7 +69,7 @@ class ApiOAuth2ApplicationSerializer(ApiOAuthApplicationBaseSerializer):
                           read_only=True,  # Don't let user register an application in someone else's name
                           source='owner._id')
 
-    date_created = ser.DateTimeField(help_text='The date this application was generated (automatically filled in)',
+    date_created = DateByVersion(help_text='The date this application was generated (automatically filled in)',
                                      read_only=True)
 
     def create(self, validated_data):
@@ -97,4 +100,7 @@ class ApiOAuth2ApplicationResetSerializer(ApiOAuth2ApplicationDetailSerializer):
         return obj.absolute_url
 
     def reset_url(self, obj):
-        return absolute_reverse('applications:application-reset', kwargs={'client_id': obj['client_id']})
+        return absolute_reverse('applications:application-reset', kwargs={
+            'client_id': obj['client_id'],
+            'version': self.context['request'].parser_context['kwargs']['version']
+        })

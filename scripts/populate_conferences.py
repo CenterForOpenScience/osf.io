@@ -50,7 +50,7 @@ MEETING_DATA = {
     },
     'aps2014': {
         'name': 'Association for Psychological Science 2014',
-        'info_url': 'http://centerforopenscience.org/aps/',
+        'info_url': 'https://cos.io/aps/',
         'logo_url': '/static/img/2014_Convention_banner-with-APS_700px.jpg',
         'location': 'San Franscisco, CA',
         'start_date': 'May 22 2014',

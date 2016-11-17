@@ -18,7 +18,7 @@ class TestS3Serializer(StorageAddonSerializerTestSuiteMixin, OsfTestCase):
     client = None
 
     def set_provider_id(self, pid):
-        self.node_settings.bucket = pid
+        self.node_settings.folder_id = pid
 
     def setUp(self):
         self.mock_can_list = mock.patch('website.addons.s3.serializer.utils.can_list')
@@ -29,34 +29,3 @@ class TestS3Serializer(StorageAddonSerializerTestSuiteMixin, OsfTestCase):
     def tearDown(self):
         self.mock_can_list.stop()
         super(TestS3Serializer, self).tearDown()
-
-    ## Overrides ##
-
-    def test_serialize_settings_authorized(self):
-        serialized = self.ser.serialize_settings(self.node_settings, self.user, self.client)
-        for key in self.required_settings:
-            assert_in(key, serialized)
-        assert_in('owner', serialized['urls'])
-        assert_equal(serialized['urls']['owner'], web_url_for(
-            'profile_view_id',
-            uid=self.user_settings.owner._id
-        ))
-        assert_in('ownerName', serialized)
-        assert_in('encryptUploads', serialized)
-        assert_equal(serialized['ownerName'], self.user_settings.owner.fullname)
-        assert_in('bucket', serialized)
-
-    def test_serialize_settings_authorized_no_folder(self):
-        serialized = self.ser.serialize_settings(self.node_settings, self.user, self.client)
-        assert_in('bucket', serialized)
-        assert_in('encryptUploads', serialized)
-        assert_equal(serialized['bucket'], '')
-        assert_false(serialized['hasBucket'])
-
-    def test_serialize_settings_authorized_folder_is_set(self):
-        self.set_provider_id('foo')
-        serialized = self.ser.serialize_settings(self.node_settings, self.user, self.client)
-        assert_in('bucket', serialized)
-        assert_equal(serialized['bucket'], 'foo')
-        assert_true(serialized['hasBucket'])
-        assert_in('encryptUploads', serialized)

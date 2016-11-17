@@ -5,6 +5,8 @@ import httplib as http
 from flask import request
 from flask import send_from_directory
 
+from geoip import geolite2
+
 from framework import status
 from framework import sentry
 from framework.auth import cas
@@ -13,7 +15,6 @@ from framework.flask import redirect
 from framework.routing import WebRenderer
 from framework.exceptions import HTTPError
 from framework.auth import get_display_name
-from framework.routing import xml_renderer
 from framework.routing import json_renderer
 from framework.routing import process_rules
 from framework.auth import views as auth_views
@@ -52,8 +53,9 @@ def get_globals():
     OSFWebRenderer.
     """
     user = _get_current_user()
-    user_institutions = [{'id': inst._id, 'name': inst.name, 'logo_path': inst.logo_path} for inst in user.affiliated_institutions] if user else []
-    all_institutions = [{'id': inst._id, 'name': inst.name, 'logo_path': inst.logo_path} for inst in Institution.find().sort('name')]
+
+    user_institutions = [{'id': inst._id, 'name': inst.name, 'logo_path': inst.logo_path_rounded_corners} for inst in user.affiliated_institutions] if user else []
+    location = geolite2.lookup(request.remote_addr) if request.remote_addr else None
     if request.host_url != settings.DOMAIN:
         try:
             inst_id = (Institution.find_one(Q('domains', 'eq', request.host.lower())))._id
@@ -75,11 +77,12 @@ def get_globals():
         'user_api_url': user.api_url if user else '',
         'user_entry_point': metrics.get_entry_point(user) if user else '',
         'user_institutions': user_institutions if user else None,
-        'all_institutions': all_institutions,
         'display_name': get_display_name(user.fullname) if user else '',
+        'anon': {
+            'continent': getattr(location, 'continent', None),
+            'country': getattr(location, 'country', None),
+        },
         'use_cdn': settings.USE_CDN_FOR_CLIENT_LIBS,
-        'piwik_host': settings.PIWIK_HOST,
-        'piwik_site_id': settings.PIWIK_SITE_ID,
         'sentry_dsn_js': settings.SENTRY_DSN_JS if sentry.enabled else None,
         'dev_mode': settings.DEV_MODE,
         'allow_login': settings.ALLOW_LOGIN,
@@ -104,9 +107,18 @@ def get_globals():
         'reauth_url': util.web_url_for('auth_logout', redirect_url=request.url, reauth=True),
         'profile_url': cas.get_profile_url(),
         'enable_institutions': settings.ENABLE_INSTITUTIONS,
-        'keen_project_id': settings.KEEN_PROJECT_ID,
-        'keen_write_key': settings.KEEN_WRITE_KEY,
+        'keen': {
+            'public': {
+                'project_id': settings.KEEN['public']['project_id'],
+                'write_key': settings.KEEN['public']['write_key'],
+            },
+            'private': {
+                'project_id': settings.KEEN['private']['project_id'],
+                'write_key': settings.KEEN['private']['write_key'],
+            },
+        },
         'maintenance': maintenance.get_maintenance(),
+        'recaptcha_site_key': settings.RECAPTCHA_SITE_KEY
     }
 
 
@@ -158,6 +170,26 @@ def robots():
         mimetype='text/plain'
     )
 
+def ember_app(path=None):
+    """Serve the contents of the ember application"""
+    ember_app_folder = None
+    fp = path or 'index.html'
+    for k in settings.EXTERNAL_EMBER_APPS.keys():
+        if request.path.strip('/').startswith(k):
+            ember_app_folder = os.path.abspath(os.path.join(os.getcwd(), settings.EXTERNAL_EMBER_APPS[k]['path']))
+            break
+
+    if not ember_app_folder:
+        raise HTTPError(http.NOT_FOUND)
+
+    if not os.path.abspath(os.path.join(ember_app_folder, fp)).startswith(ember_app_folder):
+        # Prevent accessing files outside of the ember build dir
+        raise HTTPError(http.NOT_FOUND)
+
+    if not os.path.isfile(os.path.join(ember_app_folder, fp)):
+        fp = 'index.html'
+
+    return send_from_directory(ember_app_folder, fp)
 
 def goodbye():
     # Redirect to dashboard if logged in
@@ -219,6 +251,18 @@ def make_url_map(app):
         Rule('/favicon.ico', 'get', favicon, json_renderer),
         Rule('/robots.txt', 'get', robots, json_renderer),
     ])
+
+    if settings.USE_EXTERNAL_EMBER:
+        # Routes that serve up the Ember application. Hide behind feature flag.
+        rules = []
+        for prefix in settings.EXTERNAL_EMBER_APPS.keys():
+            rules += [
+                '/{}/'.format(prefix),
+                '/{}/<path:path>'.format(prefix),
+            ]
+        process_rules(app, [
+            Rule(rules, 'get', ember_app, json_renderer),
+        ])
 
     ### Base ###
 
@@ -317,7 +361,10 @@ def make_url_map(app):
         ),
 
         Rule(
-            '/prereg/',
+            [
+                '/prereg/',
+                '/erpc/',
+            ],
             'get',
             prereg.prereg_landing_page,
             OsfWebRenderer('prereg_landing_page.mako', trust=False)
@@ -338,7 +385,7 @@ def make_url_map(app):
         ),
 
         Rule(
-            '/api/v1/prereg/draft_registrations/',
+            '/api/v1/<campaign>/draft_registrations/',
             'get',
             prereg.prereg_draft_registrations,
             json_renderer,
@@ -465,9 +512,17 @@ def make_url_map(app):
             notemplate
         ),
 
+        # confirm email for login through external identity provider
+        Rule(
+            '/confirm/external/<uid>/<token>/',
+            'get',
+            auth_views.external_login_confirm_email_get,
+            notemplate
+        ),
+
         # reset password get
         Rule(
-            '/resetpassword/<verification_key>/',
+            '/resetpassword/<uid>/<token>/',
             'get',
             auth_views.reset_password_get,
             OsfWebRenderer('public/resetpassword.mako', render_mako_string, trust=False)
@@ -475,7 +530,7 @@ def make_url_map(app):
 
         # reset password post
         Rule(
-            '/resetpassword/<verification_key>/',
+            '/resetpassword/<uid>/<token>/',
             'post',
             auth_views.reset_password_post,
             OsfWebRenderer('public/resetpassword.mako', render_mako_string, trust=False)
@@ -498,20 +553,28 @@ def make_url_map(app):
 
         ),
 
+        # oauth user email get
+        Rule(
+            '/external-login/email',
+            'get',
+            auth_views.external_login_email_get,
+            OsfWebRenderer('external_login_email.mako', render_mako_string, trust=False)
+        ),
+
+        # oauth user email post
+        Rule(
+            '/external-login/email',
+            'post',
+            auth_views.external_login_email_post,
+            OsfWebRenderer('external_login_email.mako', render_mako_string, trust=False)
+        ),
+
         # user sign up page
         Rule(
             '/register/',
             'get',
             auth_views.auth_register,
-            OsfWebRenderer('public/login.mako', trust=False)
-        ),
-
-        # create user account via api
-        Rule(
-            '/api/v1/register/',
-            'post',
-            auth_views.register_user,
-            json_renderer
+            OsfWebRenderer('public/register.mako', trust=False)
         ),
 
         # osf login and campaign login
@@ -522,7 +585,15 @@ def make_url_map(app):
             ],
             'get',
             auth_views.auth_login,
-            OsfWebRenderer('public/login.mako', trust=False)
+            notemplate
+        ),
+
+        # create user account via api
+        Rule(
+            '/api/v1/register/',
+            'post',
+            auth_views.register_user,
+            json_renderer
         ),
 
         # osf logout and cas logout
@@ -584,8 +655,9 @@ def make_url_map(app):
             OsfWebRenderer('profile.mako', trust=False)
         ),
 
-        # Route for claiming and setting email and password.
-        # Verification token must be querystring argument
+        # unregistered user claim account (contributor-ship of a project)
+        # user will be required to set email and password
+        # claim token must be present in query parameter
         Rule(
             ['/user/<uid>/<pid>/claim/'],
             ['get', 'post'],
@@ -593,6 +665,9 @@ def make_url_map(app):
             OsfWebRenderer('claim_account.mako', trust=False)
         ),
 
+        # registered user claim account (contributor-ship of a project)
+        # user will be required to verify password
+        # claim token must be present in query parameter
         Rule(
             ['/user/<uid>/<pid>/claim/verify/<token>/'],
             ['get', 'post'],
@@ -677,7 +752,6 @@ def make_url_map(app):
             OsfWebRenderer('profile/personal_tokens_detail.mako', trust=False)
         ),
 
-
         # TODO: Uncomment once outstanding issues with this feature are addressed
         # Rule(
         #     '/@<twitter_handle>/',
@@ -719,6 +793,13 @@ def make_url_map(app):
             '/profile/deactivate/',
             'post',
             profile_views.request_deactivation,
+            json_renderer,
+        ),
+
+        Rule(
+            '/profile/logins/',
+            'patch',
+            profile_views.delete_external_identity,
             json_renderer,
         ),
 
@@ -823,14 +904,8 @@ def make_url_map(app):
         Rule(
             '/search/',
             'get',
-            {},
+            {'shareUrl': settings.SHARE_URL},
             OsfWebRenderer('search.mako', trust=False)
-        ),
-        Rule(
-            '/share/',
-            'get',
-            {},
-            OsfWebRenderer('share_search.mako', trust=False)
         ),
         Rule(
             '/share/registration/',
@@ -839,25 +914,10 @@ def make_url_map(app):
             OsfWebRenderer('share_registration.mako', trust=False)
         ),
         Rule(
-            '/share/help/',
-            'get',
-            {'help': settings.SHARE_API_DOCS_URL},
-            OsfWebRenderer('share_api_docs.mako', trust=False)
+            '/api/v1/user/search/',
+            'get', search_views.search_contributor,
+            json_renderer
         ),
-        Rule(  # FIXME: Dead route; possible that template never existed; confirm deletion candidate with ErinB
-            '/share_dashboard/',
-            'get',
-            {},
-            OsfWebRenderer('share_dashboard.mako', trust=False)
-        ),
-        Rule(
-            '/share/atom/',
-            'get',
-            search_views.search_share_atom,
-            xml_renderer
-        ),
-        Rule('/api/v1/user/search/', 'get', search_views.search_contributor, json_renderer),
-
         Rule(
             '/api/v1/search/node/',
             'post',
@@ -873,9 +933,6 @@ def make_url_map(app):
 
         Rule(['/search/', '/search/<type>/'], ['get', 'post'], search_views.search_search, json_renderer),
         Rule('/search/projects/', 'get', search_views.search_projects_by_title, json_renderer),
-        Rule('/share/search/', ['get', 'post'], search_views.search_share, json_renderer),
-        Rule('/share/stats/', 'get', search_views.search_share_stats, json_renderer),
-        Rule('/share/providers/', 'get', search_views.search_share_providers, json_renderer),
 
     ], prefix='/api/v1')
 
@@ -1603,12 +1660,7 @@ def make_url_map(app):
             notification_views.configure_subscription,
             json_renderer,
         ),
-        Rule(
-            '/resetpassword/<verification_key>/',
-            'post',
-            auth_views.reset_password_post,
-            json_renderer,
-        ),
+
         Rule(
             [
                 '/project/<pid>/settings/addons/',

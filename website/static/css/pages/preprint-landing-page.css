@@ -601,7 +601,7 @@ footer {
 }
 
 .engrxiv {
-    background: grey;
+    background: #313E50;
     margin-top: -20px;
     color: #FFF;
     padding: 50px 0;
@@ -618,6 +618,23 @@ footer {
     margin-bottom: 40px;
 }
 
+.psyarxiv {
+    background: #465362;
+    margin-top: -20px;
+    color: #FFF;
+    padding: 50px 0;
+}
+
+.psyarxiv a {
+    color: #FFF;
+}
+.psyarxiv h2 {
+    margin-top: 20px;
+    font-size: 33px;
+}
+.psyarxiv h4 {
+    margin-bottom: 40px;
+}
 
 .network-bg {
     background: url("/static/img/front-page/bg-web.png") repeat;

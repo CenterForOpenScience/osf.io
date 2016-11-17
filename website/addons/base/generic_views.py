@@ -114,7 +114,7 @@ def set_config(addon_short_name, addon_full_name, Serializer, set_folder):
         folder = request.json.get('selected')
         set_folder(node_addon, folder, auth)
 
-        path = folder['path']
+        path = node_addon.folder_path
         return {
             'result': {
                 'folder': {

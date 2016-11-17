@@ -37,13 +37,18 @@ var CopyButton = {
     }
 };
 
+var formatUrl = function(urlParams, showParam) {
+    return 'view_only' in urlParams ? '?show=' + showParam + '&view_only=' + urlParams.view_only : '?show=' + showParam;
+};
+
 var SharePopover =  {
     view: function(ctrl, params) {
         var copyButtonHeight = '34px';
         var popoverWidth = '450px';
-        var link = params.link;
+        var renderLink = params.link;
+        var fileLink = window.location.href;
 
-        var url = link.substring(0, link.indexOf('render'));
+        var mfrHost = renderLink.substring(0, renderLink.indexOf('render'));
         return m('button#sharebutton.disabled.btn.btn-sm.btn-primary.file-share', {onclick: function popOverShow() {
                 var pop = document.getElementById('popOver');
                 //This is bad, should only happen for Firefox, thanks @chrisseto
@@ -58,25 +63,29 @@ var SharePopover =  {
                     m('.tab-content', [
                         m('.tab-pane.active#share', [
                             m('.input-group', [
-                                CopyButton.view(ctrl, {link: link, height: copyButtonHeight}), //workaround to allow button to show up on first click
-                                m('input.form-control[readonly][type="text"][value="'+ link +'"]')
+                                CopyButton.view(ctrl, {link: renderLink, height: copyButtonHeight}), //workaround to allow button to show up on first click
+                                m('input.form-control[readonly][type="text"][value="'+ renderLink +'"]')
                             ]),
-                            SocialShare.ShareButtons.view(ctrl, {title: window.contextVars.file.name, url: link})
+                            SocialShare.ShareButtons.view(ctrl, {title: window.contextVars.file.name, url: fileLink})
                         ]),
                         m('.tab-pane#embed', [
                             m('p', 'Dynamically render iframe with JavaScript'),
                             m('textarea.form-control[readonly][type="text"][value="' +
-                                '<script>window.jQuery || document.write(\'<script src="//code.jquery.com/jquery-1.11.2.min.js">\\x3C/script>\') </script>'+
-                                '<link href="' + url + 'static/css/mfr.css" media="all" rel="stylesheet">' +
+                                '<style>' +
+                                '.embed-responsive{position:relative;height:100%;}' +
+                                '.embed-responsive iframe{position:absolute;height:100%;}' +
+                                '</style>' +
+                                '<script>window.jQuery || document.write(\'<script src="//code.jquery.com/jquery-1.11.2.min.js">\\x3C/script>\') </script>' +
+                                '<link href="' + mfrHost + 'static/css/mfr.css" media="all" rel="stylesheet">' +
                                 '<div id="mfrIframe" class="mfr mfr-file"></div>' +
-                                '<script src="' + url + 'static/js/mfr.js">' +
+                                '<script src="' + mfrHost + 'static/js/mfr.js">' +
                                 '</script> <script>' +
-                                    'var mfrRender = new mfr.Render("mfrIframe", "' + link + '");' +
+                                    'var mfrRender = new mfr.Render("mfrIframe", "' + renderLink + '");' +
                                 '</script>' + '"]'
                             ), m('br'),
                             m('p', 'Direct iframe with fixed height and width'),
                             m('textarea.form-control[readonly][value="' +
-                                '<iframe src="' + link + '" width="100%" scrolling="yes" height="' + params.height + '" marginheight="0" frameborder="0" allowfullscreen webkitallowfullscreen>"]'
+                                '<iframe src="' + renderLink + '" width="100%" scrolling="yes" height="' + params.height + '" marginheight="0" frameborder="0" allowfullscreen webkitallowfullscreen>"]'
                             )
                         ])
                     ])
@@ -90,7 +99,11 @@ var SharePopover =  {
                         button.data()['bs.popover'].$tip.css('text-align', 'center').css('max-width', popoverWidth).css('width', popoverWidth);
                     });
                 }
-            }, 'data-toggle': 'popover', 'data-placement': 'bottom', 'data-content': '<div id="popOver"></div>', 'title': 'Share', 'data-container': 'body', 'data-html': 'true'}, 'Share');
+            },
+            'data-toggle': 'popover', 'data-placement': 'bottom',
+            'data-content': '<div id="popOver"></div>', 'title': 'Share',
+            'data-container': 'body', 'data-html': 'true'
+        }, 'Share');
     }
 };
 
@@ -103,8 +116,18 @@ var FileViewPage = {
         self.editorMeta = self.context.editor;
         self.file.checkoutUser = null;
         self.requestDone = false;
+        self.isLatestVersion = false;
+
+        self.selectLatest = function() {
+            self.isLatestVersion = true;
+        };
+
         self.isCheckoutUser = function() {
             $.ajax({
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/vnd.api+json'
+                },
                 method: 'get',
                 url: window.contextVars.apiV2Prefix + 'files' + self.file.path + '/',
                 beforeSend: $osf.setXHRAuthorization
@@ -137,7 +160,7 @@ var FileViewPage = {
             delete: waterbutler.buildDeleteUrl(self.file.path, self.file.provider, self.node.id),
             metadata: waterbutler.buildMetadataUrl(self.file.path, self.file.provider, self.node.id),
             revisions: waterbutler.buildRevisionsUrl(self.file.path, self.file.provider, self.node.id),
-            content: waterbutler.buildDownloadUrl(self.file.path, self.file.provider, self.node.id, {accept_url: false, mode: 'render'})
+            content: waterbutler.buildDownloadUrl(self.file.path, self.file.provider, self.node.id, {direct: true, mode: 'render'})
         });
 
         if ($osf.urlParams().branch) {
@@ -151,16 +174,19 @@ var FileViewPage = {
                 window.contextVars.file.urls.external = response.data.extra.webView;
             });
             self.file.urls.revisions = waterbutler.buildRevisionsUrl(self.file.path, self.file.provider, self.node.id, {sha: $osf.urlParams().branch});
-            self.file.urls.content = waterbutler.buildDownloadUrl(self.file.path, self.file.provider, self.node.id, {accept_url: false, mode: 'render', branch: $osf.urlParams().branch});
+            self.file.urls.content = waterbutler.buildDownloadUrl(self.file.path, self.file.provider, self.node.id, {direct: true, mode: 'render', branch: $osf.urlParams().branch});
         }
 
         $(document).on('fileviewpage:delete', function() {
+            var title = 'Delete file?';
+            var message = '<p class="overflow">' +
+                    'Are you sure you want to delete <strong>' +
+                    self.file.safeName + '</strong>?' + '</p>';
+
+
             bootbox.confirm({
-                title: 'Delete file?',
-                message: '<p class="overflow">' +
-                        'Are you sure you want to delete <strong>' +
-                        self.file.safeName + '</strong>?' +
-                    '</p>',
+                title: title,
+                message: message,
                 callback: function(confirm) {
                     if (!confirm) {
                         return;
@@ -346,8 +372,8 @@ var FileViewPage = {
                 return;
             }
             var fileType = mime.lookup(self.file.name.toLowerCase());
-            // Only allow files < 1MB to be editable
-            if (self.file.size < 1048576 && fileType) { //May return false
+            // Only allow files < 64k to be editable
+            if (self.file.size < 65536 && fileType) { //May return false
                 var editor = EDITORS[fileType.split('/')[0]];
                 if (editor) {
                     self.editor = new Panel('Edit', self.editHeader, editor, [self.file.urls.content, self.file.urls.sharejs, self.editorMeta, self.shareJSObservables], false);
@@ -358,7 +384,7 @@ var FileViewPage = {
 
         //Hack to polyfill the Panel interface
         //Ran into problems with mithrils caching messing up with multiple "Panels"
-        self.revisions = m.component(FileRevisionsTable, self.file, self.node, self.enableEditing, self.canEdit);
+        self.revisions = m.component(FileRevisionsTable, self.file, self.node, self.enableEditing, self.canEdit, self.selectLatest);
         self.revisions.selected = false;
         self.revisions.title = 'Revisions';
 
@@ -378,11 +404,11 @@ var FileViewPage = {
             if (viewable){
                 self.mfrIframeParent.toggle();
                 self.revisions.selected = true;
-                url = '?show=revision';
+                url = formatUrl(self.urlParams, 'revision');
             } else {
                 self.mfrIframeParent.toggle();
                 self.revisions.selected = false;
-                url = '?show=view';
+                url = formatUrl(self.urlParams, 'view');
             }
             var state = {
                 scrollTop: $(window).scrollTop(),
@@ -391,21 +417,24 @@ var FileViewPage = {
         }
 
         function changeVersionHeader(){
+            document.getElementById('versionLink').style.display = 'inline';
             m.render(document.getElementById('versionLink'), m('a', {onclick: toggleRevisions}, document.getElementById('versionLink').innerHTML));
         }
 
-        var urlParams = $osf.urlParams();
+        self.urlParams = $osf.urlParams();
         // The parser found a query so lets check what we need to do
-        if ('show' in urlParams){
-            if(urlParams.show === 'revision'){
+        if ('show' in self.urlParams){
+            if(self.urlParams.show === 'revision'){
                 self.mfrIframeParent.toggle();
                 self.revisions.selected = true;
-            } else if (urlParams.show === 'view' || urlParams.show === 'edit'){
+            } else if (self.urlParams.show === 'view' || self.urlParams.show === 'edit'){
                self.revisions.selected = false;
            }
         }
 
-        changeVersionHeader();
+        if(self.file.provider === 'osfstorage'){
+            changeVersionHeader();
+        }
 
     },
     view: function(ctrl) {
@@ -459,7 +488,7 @@ var FileViewPage = {
                         if ((!ctrl.editor.selected || panelsShown > 1)) {
                             ctrl.editor.selected = !ctrl.editor.selected;
                             ctrl.revisions.selected = false;
-                            var url = '?show=view';
+                            var url = formatUrl(ctrl.urlParams, 'view');
                             state = {
                                 scrollTop: $(window).scrollTop(),
                             };
@@ -476,23 +505,24 @@ var FileViewPage = {
 
         m.render(document.getElementById('toggleBar'), m('.btn-toolbar.m-t-md', [
             // Special case whether or not to show the delete button for published Dataverse files
-            (ctrl.canEdit() && (ctrl.file.provider !== 'osfstorage' || !ctrl.file.checkoutUser) && ctrl.requestDone && $(document).context.URL.indexOf('version=latest-published') < 0 ) ? m('.btn-group.m-l-xs.m-t-xs', [
-                m('button.btn.btn-sm.btn-danger.file-delete', {onclick: $(document).trigger.bind($(document), 'fileviewpage:delete')}, 'Delete')
+            // Special case to not show delete if file is preprint primary file
+            (ctrl.canEdit() && !(ctrl.node.isPreprint && ctrl.node.preprintFileId === ctrl.file.id) && (ctrl.file.provider !== 'osfstorage' || !ctrl.file.checkoutUser) && ctrl.requestDone && $(document).context.URL.indexOf('version=latest-published') < 0 ) ? m('.btn-group.m-l-xs.m-t-xs', [
+                ctrl.isLatestVersion ? m('button.btn.btn-sm.btn-danger.file-delete', {onclick: $(document).trigger.bind($(document), 'fileviewpage:delete') }, 'Delete') : null
             ]) : '',
             ctrl.context.currentUser.canEdit && (!ctrl.canEdit()) && ctrl.requestDone && (ctrl.context.currentUser.isAdmin) ? m('.btn-group.m-l-xs.m-t-xs', [
-                m('.btn.btn-sm.btn-danger', {onclick: $(document).trigger.bind($(document), 'fileviewpage:force_checkin')}, 'Force check in')
+                ctrl.isLatestVersion ? m('.btn.btn-sm.btn-danger', {onclick: $(document).trigger.bind($(document), 'fileviewpage:force_checkin')}, 'Force check in') : null
             ]) : '',
             ctrl.canEdit() && (!ctrl.file.checkoutUser) && ctrl.requestDone && (ctrl.file.provider === 'osfstorage') ? m('.btn-group.m-l-xs.m-t-xs', [
-                m('.btn.btn-sm.btn-warning', {onclick: $(document).trigger.bind($(document), 'fileviewpage:checkout')}, 'Check out')
+                ctrl.isLatestVersion ? m('.btn.btn-sm.btn-warning', {onclick: $(document).trigger.bind($(document), 'fileviewpage:checkout')}, 'Check out') : null
             ]) : '',
             (ctrl.canEdit() && (ctrl.file.checkoutUser === ctrl.context.currentUser.id) && ctrl.requestDone) ? m('.btn-group.m-l-xs.m-t-xs', [
-                m('.btn.btn-sm.btn-warning', {onclick: $(document).trigger.bind($(document), 'fileviewpage:checkin')}, 'Check in')
+                ctrl.isLatestVersion ? m('.btn.btn-sm.btn-warning', {onclick: $(document).trigger.bind($(document), 'fileviewpage:checkin')}, 'Check in') : null
             ]) : '',
             window.contextVars.node.isPublic? m('.btn-group.m-t-xs', [
                 m.component(SharePopover, {link: link, height: height})
             ]) : '',
             m('.btn-group.m-t-xs', [
-                m('button.btn.btn-sm.btn-primary.file-download', {onclick: $(document).trigger.bind($(document), 'fileviewpage:download')}, 'Download')
+                ctrl.isLatestVersion ? m('button.btn.btn-sm.btn-primary.file-download', {onclick: $(document).trigger.bind($(document), 'fileviewpage:download')}, 'Download') : null
             ]),
             m('.btn-group.btn-group-sm.m-t-xs', [
                ctrl.editor ? m( '.btn.btn-default.disabled', 'Toggle view: ') : null
@@ -504,11 +534,11 @@ var FileViewPage = {
                         if (!ctrl.mfrIframeParent.is(':visible') || panelsShown > 1) {
                             ctrl.mfrIframeParent.toggle();
                             ctrl.revisions.selected = false;
-                            History.pushState(state, 'OSF | ' + window.contextVars.file.name, '?show=view');
+                            History.pushState(state, 'OSF | ' + window.contextVars.file.name, formatUrl(ctrl.urlParams, 'view'));
                         } else if (ctrl.mfrIframeParent.is(':visible') && !ctrl.editor){
                             ctrl.mfrIframeParent.toggle();
                             ctrl.revisions.selected = true;
-                            History.pushState(state, 'OSF | ' + window.contextVars.file.name, '?show=revision');
+                            History.pushState(state, 'OSF | ' + window.contextVars.file.name, formatUrl(ctrl.urlParams, 'revision'));
                         }
                     }
                 }, 'View'), editButton())
@@ -525,14 +555,14 @@ var FileViewPage = {
                             ctrl.editor.selected = false;
                         }
                         ctrl.revisions.selected = true;
-                        History.pushState(state, 'OSF | ' + window.contextVars.file.name, '?show=revision');
+                        History.pushState(state, 'OSF | ' + window.contextVars.file.name, formatUrl(ctrl.urlParams, 'revision'));
                     } else {
                         ctrl.mfrIframeParent.toggle();
                         if (ctrl.editor) {
                             ctrl.editor.selected = false;
                         }
                         ctrl.revisions.selected = false;
-                        History.pushState(state, 'OSF | ' + window.contextVars.file.name, '?show=view');
+                        History.pushState(state, 'OSF | ' + window.contextVars.file.name, formatUrl(ctrl.urlParams, 'view'));
                     }
                 }}, 'Revisions')
             ])

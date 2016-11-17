@@ -14,7 +14,8 @@ class InstitutionSerializer(JSONAPISerializer):
 
     filterable_fields = frozenset([
         'id',
-        'name'
+        'name',
+        'auth_url',
     ])
 
     name = ser.CharField(read_only=True)
@@ -78,8 +79,8 @@ class InstitutionNodesRelationshipSerializer(ser.Serializer):
             node = Node.load(node_dict['_id'])
             if not node:
                 raise exceptions.NotFound(detail='Node with id "{}" was not found'.format(node_dict['_id']))
-            if not node.has_permission(user, osf_permissions.ADMIN):
-                raise exceptions.PermissionDenied(detail='Admin permission on node {} required'.format(node_dict['_id']))
+            if not node.has_permission(user, osf_permissions.WRITE):
+                raise exceptions.PermissionDenied(detail='Write permission on node {} required'.format(node_dict['_id']))
             if inst not in node.affiliated_institutions:
                 node.add_affiliated_institution(inst, user, save=True)
                 changes_flag = True

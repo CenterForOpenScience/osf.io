@@ -65,6 +65,7 @@ class MeetingFormView(OSFAdmin, FormView):
         self.conf.name = data.get('name')
         self.conf.info_url = data.get('info_url')
         self.conf.logo_url = data.get('logo_url')
+        self.conf.is_meeting = data.get('is_meeting')
         self.conf.active = data.get('active')
         self.conf.public_projects = data.get('public_projects')
         self.conf.poster = data.get('poster')

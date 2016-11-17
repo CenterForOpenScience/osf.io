@@ -107,9 +107,7 @@ def get_or_http_error(Model, pk_or_query, allow_deleted=False, display_name=None
             message_long='This content has been removed'
         ))
     if not allow_deleted and getattr(instance, 'is_deleted', False):
-        raise HTTPError(http.GONE, data=dict(
-            message_long='This {name} record has been deleted'.format(name=safe_name)
-        ))
+        raise HTTPError(http.GONE)
     return instance
 
 
@@ -162,7 +160,7 @@ def paginated(model, query=None, increment=200, each=True):
         q = Q('_id', 'gt', last_id)
         if query:
             q &= query
-        page = list(model.find(q).limit(increment))
+        page = list(model.find(q).sort('_id').limit(increment))
         if each:
             for item in page:
                 yield item

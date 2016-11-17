@@ -35,7 +35,7 @@
     % endif
 
     <!-- Facebook display -->
-    <meta name="og:image" content="http://centerforopenscience.org/static/img/cos_center_logo_small.png"/>
+    <meta name="og:image" content="https://cos.io/static/img/cos_center_logo_small.png"/>
     <meta name="og:title" content="${self.title()}"/>
     <meta name="og:ttl" content="3"/>
     <meta name="og:description" content="${self.og_description()}"/>
@@ -170,10 +170,6 @@
           </script>
         % endif
 
-        % if piwik_host:
-            <script src="${ piwik_host }piwik.js" type="text/javascript"></script>
-        % endif
-
         <script>
             // Mako variables accessible globally
             window.contextVars = $.extend(true, {}, window.contextVars, {
@@ -189,47 +185,32 @@
                     timezone: ${ user_timezone | sjson, n },
                     entryPoint: ${ user_entry_point | sjson, n },
                     institutions: ${ user_institutions | sjson, n},
-                    emailsToAdd: ${ user_email_verifications | sjson, n }
+                    emailsToAdd: ${ user_email_verifications | sjson, n },
+                    anon: ${ anon | sjson, n },
                 },
-                allInstitutions: ${ all_institutions | sjson, n},
                 popular: ${ popular_links_node | sjson, n },
                 newAndNoteworthy: ${ noteworthy_links_node | sjson, n },
-                maintenance: ${ maintenance | sjson, n}
+                maintenance: ${ maintenance | sjson, n},
+                analyticsMeta: {},
             });
         </script>
 
-        % if piwik_host:
-            <% is_public = node.get('is_public', 'ERROR') if node else True %>
-            <script type="text/javascript">
-
-                $(function() {
-                    var cvars = [];
-                    % if user_id:
-                        cvars.push([1, "User ID", ${ user_id | sjson, n }, "visit"]);
-                        cvars.push([2, "User Name", ${ user_full_name | sjson, n }, "visit"]);
-                    % endif
-                    % if node:
-                        <% parent_project = parent_node.get('id') or node.get('id') %>
-                        cvars.push([2, "Project ID", ${ parent_project | sjson, n }, "page"]);
-                        cvars.push([3, "Node ID", ${ node.get('id') | sjson, n }, "page"]);
-                        cvars.push([4, "Tags", ${ ','.join(node.get('tags', [])) | sjson , n }, "page"]);
-                    % endif
-                    // Note: Use cookies for global site ID; only one cookie
-                    // will be used, so this won't overflow uwsgi header
-                    // buffer.
-                    $.osf.trackPiwik(${ piwik_host | sjson, n}, ${ piwik_site_id | sjson, n }, cvars, true);
+        % if keen['public']['project_id']:
+            <script>
+                window.contextVars = $.extend(true, {}, window.contextVars, {
+                    keen: {
+                        public: {
+                            projectId: ${ keen['public']['project_id'] | sjson, n },
+                            writeKey: ${ keen['public']['write_key'] | sjson, n },
+                        },
+                        private: {
+                            projectId: ${ keen['private']['project_id'] | sjson, n },
+                            writeKey: ${ keen['private']['write_key'] | sjson, n },
+                        },
+                    },
                 });
             </script>
         % endif
-
-        %if keen_project_id:
-            <script>
-                window.contextVars = $.extend(true, {}, window.contextVars, {
-                    keenProjectId: ${keen_project_id | sjson, n},
-                    keenWriteKey: ${keen_write_key | sjson, n}
-                })
-            </script>
-        %endif
 
 
         ${self.javascript_bottom()}

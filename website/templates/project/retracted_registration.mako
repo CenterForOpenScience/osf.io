@@ -26,7 +26,7 @@
                     <span data-bind="text: dateForked.local, tooltip: {title: dateForked.utc}"></span>
                 % endif
                 <p>
-                  Registration Supplement:
+                  Registration Form:
                   % for meta_schema in node.get('registered_schemas', []):
                   <span> ${meta_schema['schema_name']}</span>
                   % if len(node['registered_schemas']) > 1:

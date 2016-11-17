@@ -100,10 +100,10 @@ confirm_email_field = TextField(
 password_field = PasswordField('Password',
     [
         validators.Required(message=u'Password is required'),
-        validators.Length(min=6, message=u'Password is too short. '
-            'Password should be at least 6 characters.'),
-        validators.Length(max=256, message=u'Password is too long. '
-            'Password should be at most 256 characters.'),
+        validators.Length(min=8, message=u'Password is too short. '
+            'Password should be at least 8 characters.'),
+        validators.Length(max=255, message=u'Password is too long. '
+            'Password should be at most 255 characters.'),
     ],
     filters=[stripped],
     widget=BootstrapPasswordInput()
@@ -123,10 +123,10 @@ class ResetPasswordForm(Form):
     password = PasswordField('New Password',
         [
             validators.Required(message=u'Password is required'),
-            validators.Length(min=6, message=u'Password is too short. '
-                'Password should be at least 6 characters.'),
-            validators.Length(max=256, message=u'Password is too long. '
-                'Password should be at most 256 characters.'),
+            validators.Length(min=8, message=u'Password is too short. '
+                'Password should be at least 8 characters.'),
+            validators.Length(max=255, message=u'Password is too long. '
+                'Password should be at most 255 characters.'),
         ],
         filters=[stripped],
         widget=BootstrapPasswordInput()
@@ -144,6 +144,7 @@ class ResetPasswordForm(Form):
 
 class SetEmailAndPasswordForm(ResetPasswordForm):
     token = HiddenField()
+
 
 class SignInForm(Form):
     username = email_field

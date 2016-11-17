@@ -33,6 +33,7 @@
               <li><a href="${domain}explore/activity/">New Projects</a></li>
               <li><a href="${domain}search/?q=*&amp;filter=registration">Registry</a></li>
               <li><a href="${web_url_for('conference_view', _absolute=True)}">Meetings</a></li>
+              <li><a href="${domain}preprints/">Preprints</a></li>
           </ul>
         </li>
         % if not user_name:

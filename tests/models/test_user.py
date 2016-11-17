@@ -110,7 +110,7 @@ class TestUser(base.OsfTestCase):
         assert_equal(e.exception.message, "Can't remove primary email")
 
     def test_add_same_unconfirmed_email_twice(self):
-        email = "test@example.com"
+        email = "test@mail.com"
         token1 = self.user.add_unconfirmed_email(email)
         self.user.save()
         self.user.reload()
@@ -322,9 +322,6 @@ class TestUserMerging(base.OsfTestCase):
             'shared_lt': True,
         }
 
-        self.user.piwik_token = 'abc'
-        other_user.piwik_token = 'def'
-
         self.user.security_messages = {
             'user': today,
             'shared': today,
@@ -351,6 +348,7 @@ class TestUserMerging(base.OsfTestCase):
             'date_last_login',
             'date_registered',
             'email_last_sent',
+            'external_identity',
             'family_name',
             'fullname',
             'given_name',
@@ -362,7 +360,6 @@ class TestUserMerging(base.OsfTestCase):
             'merged_by',
             'middle_names',
             'password',
-            'piwik_token',
             'recently_added',
             'schools',
             'social',
@@ -371,6 +368,7 @@ class TestUserMerging(base.OsfTestCase):
             'username',
             'mailing_lists',
             'verification_key',
+            'verification_key_v2',
             '_affiliated_institutions',
             'contributor_added_email_records',
             'requested_deactivation',
@@ -489,6 +487,46 @@ class TestUserMerging(base.OsfTestCase):
         # The mergee's email no longer needs to be confirmed by merger
         unconfirmed_emails = [record['email'] for record in self.user.email_verifications.values()]
         assert_not_in(unconfirmed_username, unconfirmed_emails)
+
+    def test_merge_preserves_external_identity(self):
+        verified_user = factories.UserFactory(external_identity={'ORCID': {'1234-1234-1234-1234': 'VERIFIED'}})
+        linking_user = factories.UserFactory(external_identity={'ORCID': {'1234-1234-1234-1234': 'LINK'}})
+        creating_user = factories.UserFactory(external_identity={'ORCID': {'1234-1234-1234-1234': 'CREATE'}})
+        different_id_user = factories.UserFactory(external_identity={'ORCID': {'4321-4321-4321-4321': 'VERIFIED'}})
+        no_id_user = factories.UserFactory(external_identity={'ORCID': {}})
+        no_provider_user = factories.UserFactory(external_identity={})
+
+        linking_user.merge_user(creating_user)
+        assert_equal(linking_user.external_identity, {'ORCID': {'1234-1234-1234-1234': 'LINK'}})
+        linking_user.merge_user(verified_user)
+        assert_equal(linking_user.external_identity, {'ORCID': {'1234-1234-1234-1234': 'VERIFIED'}})
+        linking_user.merge_user(no_id_user)
+        assert_equal(linking_user.external_identity, {'ORCID': {'1234-1234-1234-1234': 'VERIFIED'}})
+        linking_user.merge_user(no_provider_user)
+        assert_equal(linking_user.external_identity, {'ORCID': {'1234-1234-1234-1234': 'VERIFIED'}})
+        linking_user.merge_user(different_id_user)
+        assert_equal(linking_user.external_identity,
+            {'ORCID': 
+                {
+                    '1234-1234-1234-1234': 'VERIFIED',
+                    '4321-4321-4321-4321': 'VERIFIED'
+                }
+            })
+
+        assert_equal(creating_user.external_identity, {})
+        assert_equal(verified_user.external_identity, {})
+        assert_equal(no_id_user.external_identity, {})
+        assert_equal(no_provider_user.external_identity, {})
+
+        no_provider_user.merge_user(linking_user)
+        assert_equal(linking_user.external_identity, {})
+        assert_equal(no_provider_user.external_identity,
+            {'ORCID': 
+                {
+                    '1234-1234-1234-1234': 'VERIFIED',
+                    '4321-4321-4321-4321': 'VERIFIED'
+                }
+            })
 
     def test_merge_unregistered(self):
         # test only those behaviors that are not tested with unconfirmed users

@@ -8,7 +8,9 @@ from api.base import generic_bulk_views as bulk_views
 from api.base import permissions as base_permissions
 from api.base.filters import ODMFilterMixin
 from api.base.views import JSONAPIBaseView
+from api.base.views import BaseLinkedList
 from api.base.views import LinkedNodesRelationship
+from api.base.views import LinkedRegistrationsRelationship
 
 from api.base.utils import get_object_or_error, is_bulk_request, get_user_auth
 from api.collections.serializers import (
@@ -17,6 +19,7 @@ from api.collections.serializers import (
     CollectionNodeLinkSerializer,
 )
 from api.nodes.serializers import NodeSerializer
+from api.registrations.serializers import RegistrationSerializer
 
 from api.nodes.permissions import (
     ContributorOrPublic,
@@ -295,10 +298,10 @@ class CollectionDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, C
         node.save()
 
 
-class LinkedNodesList(JSONAPIBaseView, generics.ListAPIView, CollectionMixin):
+class LinkedNodesList(BaseLinkedList, CollectionMixin):
     """List of nodes linked to this node. *Read-only*.
 
-    Linked nodes are the nodes pointed to by node links. This view will probably replace node_links in the near future.
+    Linked nodes are the project/component nodes pointed to by node links. This view will probably replace node_links in the near future.
 
     <!--- Copied Spiel from NodeDetail -->
 
@@ -343,30 +346,14 @@ class LinkedNodesList(JSONAPIBaseView, generics.ListAPIView, CollectionMixin):
 
     #This Request/Response
     """
-    permission_classes = (
-        drf_permissions.IsAuthenticatedOrReadOnly,
-        ContributorOrPublic,
-        ReadOnlyIfRegistration,
-        base_permissions.TokenHasScope,
-    )
-
-    required_read_scopes = [CoreScopes.NODE_LINKS_READ]
-    required_write_scopes = [CoreScopes.NODE_LINKS_WRITE]
-
     serializer_class = NodeSerializer
     view_category = 'collections'
     view_name = 'linked-nodes'
 
-    model_class = Pointer
-
     def get_queryset(self):
-        auth = get_user_auth(self.request)
-        return sorted([
-            pointer.node for pointer in
-            self.get_node().nodes_pointer
-            if not pointer.node.is_deleted and not pointer.node.is_collection and
-            pointer.node.can_view(auth)
-        ], key=lambda n: n.date_modified, reverse=True)
+        return [node for node in
+            super(LinkedNodesList, self).get_queryset()
+            if not node.is_registration]
 
     # overrides APIView
     def get_parser_context(self, http_request):
@@ -378,8 +365,100 @@ class LinkedNodesList(JSONAPIBaseView, generics.ListAPIView, CollectionMixin):
         return res
 
 
+class LinkedRegistrationsList(BaseLinkedList, CollectionMixin):
+    """List of registrations linked to this node. *Read-only*.
+
+    Linked registrations are the registration nodes pointed to by node links.
+
+    <!--- Copied Spiel from RegistrationDetail -->
+    Registrations are read-only snapshots of a project. This view shows details about the given registration.
+
+    Each resource contains the full representation of the registration, meaning additional requests to an individual
+    registration's detail view are not necessary. A withdrawn registration will display a limited subset of information,
+    namely, title, description, date_created, registration, withdrawn, date_registered, withdrawal_justification, and
+    registration supplement. All other fields will be displayed as null. Additionally, the only relationships permitted
+    to be accessed for a withdrawn registration are the contributors - other relationships will return a 403.
+
+    ##Linked Registration Attributes
+
+    <!--- Copied Attributes from RegistrationDetail -->
+
+    Registrations have the "registrations" `type`.
+
+        name                            type               description
+        =======================================================================================================
+        title                           string             title of the registered project or component
+        description                     string             description of the registered node
+        category                        string             bode category, must be one of the allowed values
+        date_created                    iso8601 timestamp  timestamp that the node was created
+        date_modified                   iso8601 timestamp  timestamp when the node was last updated
+        tags                            array of strings   list of tags that describe the registered node
+        current_user_can_comment        boolean            Whether the current user is allowed to post comments
+        current_user_permissions        array of strings   list of strings representing the permissions for the current user on this node
+        fork                            boolean            is this project a fork?
+        registration                    boolean            has this project been registered? (always true - may be deprecated in future versions)
+        collection                      boolean            is this registered node a collection? (always false - may be deprecated in future versions)
+        node_license                    object             details of the license applied to the node
+        year                            string             date range of the license
+        copyright_holders               array of strings   holders of the applied license
+        public                          boolean            has this registration been made publicly-visible?
+        withdrawn                       boolean            has this registration been withdrawn?
+        date_registered                 iso8601 timestamp  timestamp that the registration was created
+        embargo_end_date                iso8601 timestamp  when the embargo on this registration will be lifted (if applicable)
+        withdrawal_justification        string             reasons for withdrawing the registration
+        pending_withdrawal              boolean            is this registration pending withdrawal?
+        pending_withdrawal_approval     boolean            is this registration pending approval?
+        pending_embargo_approval        boolean            is the associated Embargo awaiting approval by project admins?
+        registered_meta                 dictionary         registration supplementary information
+        registration_supplement         string             registration template
+
+    ##Links
+
+    See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
+
+    ##Query Params
+
+    + `page=<Int>` -- page number of results to view, default 1
+
+    + `filter[<fieldname>]=<Str>` -- fields and values to filter the search results on.
+
+    Nodes may be filtered by their `title`, `category`, `description`, `public`, `registration`, or `tags`.  `title`,
+    `description`, and `category` are string fields and will be filtered using simple substring matching.  `public` and
+    `registration` are booleans, and can be filtered using truthy values, such as `true`, `false`, `0`, or `1`.  Note
+    that quoting `true` or `false` in the query will cause the match to fail regardless.  `tags` is an array of simple strings.
+
+    #This Request/Response
+    """
+    serializer_class = RegistrationSerializer
+    view_category = 'collections'
+    view_name = 'linked-registrations'
+
+    def get_queryset(self):
+        return [node for node in
+            super(LinkedRegistrationsList, self).get_queryset()
+            if node.is_registration]
+
+    # overrides APIView
+    def get_parser_context(self, http_request):
+        """
+        Tells parser that we are creating a relationship
+        """
+        res = super(LinkedRegistrationsList, self).get_parser_context(http_request)
+        res['is_relationship'] = True
+        return res
+
+
 class NodeLinksList(JSONAPIBaseView, bulk_views.BulkDestroyJSONAPIView, bulk_views.ListBulkCreateJSONAPIView, CollectionMixin):
     """Node Links to other nodes. *Writeable*.
+
+    # Deprecated
+
+    The use of /collections/ID/node_links/ is deprecated in favor of linked_nodes, linked_registrations or a combination of both.
+
+    ## Known Issue
+
+    Linked nodes of type 'registrations' will be returned with an error 'Not found.' in the {embeds: target_node: {}} object.
+
 
     Node Links act as pointers to other nodes. Unlike Forks, they are not copies of nodes;
     Node Links are a direct reference to the node that they point to.
@@ -601,3 +680,70 @@ class CollectionLinkedNodesRelationship(LinkedNodesRelationship, CollectionMixin
 
     view_category = 'collections'
     view_name = 'collection-node-pointer-relationship'
+
+class CollectionLinkedRegistrationsRelationship(LinkedRegistrationsRelationship, CollectionMixin):
+    """ Relationship Endpoint for Collection -> Linked Registration relationships
+
+    Used to set, remove, update and retrieve the ids of the linked registrations attached to this collection. For each id, there
+    exists a node link that contains that node.
+
+    ##Actions
+
+    ###Create
+
+        Method:        POST
+        URL:           /links/self
+        Query Params:  <none>
+        Body (JSON):   {
+                         "data": [{
+                           "type": "linked_registrations",   # required
+                           "id": <node_id>   # required
+                         }]
+                       }
+        Success:       201
+
+    This requires both edit permission on the collection, and for the user that is
+    making the request to be able to read the registrations requested. Data can contain any number of
+    node identifiers. This will create a node_link for all node_ids in the request that
+    do not currently have a corresponding node_link in this collection.
+
+    ###Update
+
+        Method:        PUT || PATCH
+        URL:           /links/self
+        Query Params:  <none>
+        Body (JSON):   {
+                         "data": [{
+                           "type": "linked_regisrations",   # required
+                           "id": <node_id>   # required
+                         }]
+                       }
+        Success:       200
+
+    This requires both edit permission on the collection, and for the user that is
+    making the request to be able to read the registrations requested. Data can contain any number of
+    node identifiers. This will replace the contents of the node_links for this collection with
+    the contents of the request. It will delete all node links that don't have a node_id in the data
+    array, create node links for the node_ids that don't currently have a node id, and do nothing
+    for node_ids that already have a corresponding node_link. This means a update request with
+    {"data": []} will remove all node_links in this collection
+
+    ###Destroy
+
+        Method:        DELETE
+        URL:           /links/self
+        Query Params:  <none>
+        Body (JSON):   {
+                         "data": [{
+                           "type": "linked_registrations",   # required
+                           "id": <node_id>   # required
+                         }]
+                       }
+        Success:       204
+
+    This requires edit permission on the node. This will delete any node_links that have a
+    corresponding node_id in the request.
+    """
+
+    view_category = 'collections'
+    view_name = 'collection-registration-pointer-relationship'

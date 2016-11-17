@@ -25,6 +25,7 @@ from website import (
 from website.exceptions import (
     InvalidSanctionApprovalToken,
     InvalidSanctionRejectionToken,
+    NodeStateError,
 )
 from website.prereg import utils as prereg_utils
 
@@ -523,8 +524,11 @@ class Embargo(PreregCallbackMixin, EmailApprovableSanction):
     def _on_complete(self, user):
         from website.project.model import NodeLog
 
-        super(Embargo, self)._on_complete(user)
         parent_registration = self._get_registration()
+        if parent_registration.is_spammy:
+            raise NodeStateError('Cannot complete a spammy registration.')
+
+        super(Embargo, self)._on_complete(user)
         parent_registration.registered_from.add_log(
             action=NodeLog.EMBARGO_APPROVED,
             params={
@@ -661,6 +665,7 @@ class Retraction(EmailApprovableSanction):
         from website.project.model import Node, NodeLog
 
         parent_registration = Node.find_one(Q('retraction', 'eq', self))
+
         parent_registration.registered_from.add_log(
             action=NodeLog.RETRACTION_APPROVED,
             params={
@@ -690,6 +695,9 @@ class Retraction(EmailApprovableSanction):
         for node in parent_registration.node_and_primary_descendants():
             node.set_privacy('public', auth=None, save=True, log=False)
             node.update_search()
+
+        parent_registration.date_modified = datetime.datetime.utcnow()
+        parent_registration.save()
 
     def approve_retraction(self, user, token):
         self.approve(user, token)
@@ -795,10 +803,11 @@ class RegistrationApproval(PreregCallbackMixin, EmailApprovableSanction):
 
     def _on_complete(self, user):
         from website.project.model import NodeLog
-
+        register = self._get_registration()
+        if register.is_spammy:
+            raise NodeStateError('Cannot approve a a spammy registration')
         super(RegistrationApproval, self)._on_complete(user)
         self.state = Sanction.APPROVED
-        register = self._get_registration()
         registered_from = register.registered_from
         # Pass auth=None because the registration initiator may not be
         # an admin on components (component admins had the opportunity

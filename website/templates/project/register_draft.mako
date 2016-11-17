@@ -44,7 +44,7 @@
 
         <button id="register-submit" type="button" class="btn btn-success pull-right"
                 style="margin-left: 5px;"
-                data-bind="visible: !draft.requiresApproval(), click: draft.beforeRegister.bind(draft, null)">
+                data-bind="visible: !draft.requiresApproval(), disable: !draft.isComplete(), click: draft.beforeRegister.bind(draft, null)">
           Register
         </button>
     </div>

@@ -6,7 +6,7 @@ from website.exceptions import NodeStateError
 
 from website.models import Node
 from api.base.serializers import LinksField, RelationshipField
-from api.base.serializers import JSONAPISerializer, IDField, TypeField
+from api.base.serializers import JSONAPISerializer, IDField, TypeField, DateByVersion
 from api.base.exceptions import InvalidModelValueError
 from api.base.utils import absolute_reverse, get_user_auth
 from api.nodes.serializers import NodeLinksSerializer
@@ -23,8 +23,8 @@ class CollectionSerializer(JSONAPISerializer):
     type = TypeField()
 
     title = ser.CharField(required=True)
-    date_created = ser.DateTimeField(read_only=True)
-    date_modified = ser.DateTimeField(read_only=True)
+    date_created = DateByVersion(read_only=True)
+    date_modified = DateByVersion(read_only=True)
     bookmarks = ser.BooleanField(read_only=False, default=False, source='is_bookmark_collection')
 
     links = LinksField({})
@@ -44,17 +44,36 @@ class CollectionSerializer(JSONAPISerializer):
         self_view_kwargs={'collection_id': '<pk>'}
     )
 
+    linked_registrations = RelationshipField(
+        related_view='collections:linked-registrations',
+        related_view_kwargs={'collection_id': '<pk>'},
+        related_meta={'count': 'get_registration_links_count'},
+        self_view='collections:collection-registration-pointer-relationship',
+        self_view_kwargs={'collection_id': '<pk>'}
+    )
+
     class Meta:
         type_ = 'collections'
 
     def get_absolute_url(self, obj):
-        return absolute_reverse('collections:collection-detail', kwargs={'collection_id': obj._id})
+        return absolute_reverse('collections:collection-detail', kwargs={
+            'collection_id': obj._id,
+            'version': self.context['request'].parser_context['kwargs']['version']
+        })
 
     def get_node_links_count(self, obj):
         count = 0
         auth = get_user_auth(self.context['request'])
         for pointer in obj.nodes_pointer:
-            if not pointer.node.is_deleted and not pointer.node.is_collection and pointer.node.can_view(auth):
+            if not pointer.node.is_deleted and not pointer.node.is_registration and not pointer.node.is_collection and pointer.node.can_view(auth):
+                count += 1
+        return count
+
+    def get_registration_links_count(self, obj):
+        count = 0
+        auth = get_user_auth(self.context['request'])
+        for pointer in obj.nodes_pointer:
+            if not pointer.node.is_deleted and pointer.node.is_registration and not pointer.node.is_collection and pointer.node.can_view(auth):
                 count += 1
         return count
 
@@ -97,11 +116,11 @@ class CollectionDetailSerializer(CollectionSerializer):
 
 class CollectionNodeLinkSerializer(NodeLinksSerializer):
     def get_absolute_url(self, obj):
-        node_id = self.context['request'].parser_context['kwargs']['collection_id']
         return absolute_reverse(
             'collections:node-pointer-detail',
             kwargs={
-                'collection_id': node_id,
-                'node_link_id': obj._id
+                'collection_id': self.context['request'].parser_context['kwargs']['collection_id'],
+                'node_link_id': obj._id,
+                'version': self.context['request'].parser_context['kwargs']['version']
             }
         )

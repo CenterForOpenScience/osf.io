@@ -1,6 +1,13 @@
+import httplib
 import re
+
 from nameparser.parser import HumanName
+import requests
+
 from modularodm.exceptions import ValidationError
+from modularodm import Q
+
+from website import settings
 
 # email verification adopted from django. For licence information, see NOTICE
 USER_REGEX = re.compile(
@@ -23,6 +30,9 @@ def validate_email(email):
         raise ValidationError('Invalid Email')
 
     if not email or '@' not in email:
+        raise ValidationError('Invalid Email')
+
+    if email.split('@')[1].lower() in settings.BLACKLISTED_DOMAINS:
         raise ValidationError('Invalid Email')
 
     user_part, domain_part = email.rsplit('@', 1)
@@ -75,3 +85,44 @@ def privacy_info_handle(info, anonymous, name=False):
     if anonymous:
         return 'A user' if name else ''
     return info
+
+
+def ensure_external_identity_uniqueness(provider, identity, user=None):
+    from framework.auth.core import User  # avoid circular import
+
+    users_with_identity = User.find(Q('external_identity.{}.{}'.format(provider, identity), 'ne', None))
+    for existing_user in users_with_identity:
+        if user and user._id == existing_user._id:
+            continue
+        if existing_user.external_identity[provider][identity] == 'VERIFIED':
+            if user and user.external_identity.get(provider, {}).get(identity, {}):
+                user.external_identity[provider].pop(identity)
+                if user.external_identity[provider] == {}:
+                    user.external_identity.pop(provider)
+                user.save()  # Note: This won't work in v2 because it rolls back transactions when status >= 400
+            raise ValidationError('Another user has already claimed this external identity')
+        existing_user.external_identity[provider].pop(identity)
+        if existing_user.external_identity[provider] == {}:
+            existing_user.external_identity.pop(provider)
+        existing_user.save()
+    return
+
+
+def validate_recaptcha(response, remote_ip=None):
+    """
+    Validate if the recaptcha response is valid.
+
+    :param response: the recaptcha response form submission
+    :param remote_ip: the remote ip address
+    :return: True if valid, False otherwise
+    """
+    if not response:
+        return False
+    payload = {
+        'secret': settings.RECAPTCHA_SECRET_KEY,
+        'response': response,
+    }
+    if remote_ip:
+        payload.update({'remoteip': remote_ip})
+    resp = requests.post(settings.RECAPTCHA_VERIFY_URL, data=payload)
+    return resp.status_code == httplib.OK and resp.json().get('success')

@@ -1,11 +1,14 @@
 from __future__ import unicode_literals
 
-import pytz
+import itsdangerous
+import mock
 from nose.tools import *  # flake8: noqa
+import pytz
 
 from api.base.settings.defaults import API_BASE
 from api_tests import utils as api_utils
 from framework.auth.core import Auth
+from framework.sessions.model import Session
 
 from tests.base import ApiTestCase, capture_signals
 from tests.factories import (
@@ -14,6 +17,7 @@ from tests.factories import (
     AuthUserFactory,
     CommentFactory
 )
+from website import settings as website_settings
 from website.addons.osfstorage import settings as osfstorage_settings
 from website.project.signals import contributor_removed
 from website.project.model import NodeLog
@@ -57,6 +61,33 @@ class TestFileView(ApiTestCase):
         assert_is_not_none(guid)
         assert_equal(res.json['data']['attributes']['guid'], guid._id)
 
+    @mock.patch('api.base.throttling.CreateGuidThrottle.allow_request')
+    def test_file_guid_not_created_with_basic_auth(self, mock_allow):
+        res = self.app.get(self.file_url + '?create_guid=1', auth=self.user.auth)
+        guid = res.json['data']['attributes'].get('guid', None)
+        assert_equal(res.status_code, 200)
+        assert_equal(mock_allow.call_count, 1)
+        assert guid is None
+
+    @mock.patch('api.base.throttling.CreateGuidThrottle.allow_request')
+    def test_file_guid_created_with_cookie(self, mock_allow):
+        session = Session(data={'auth_user_id': self.user._id})
+        session.save()
+        cookie = itsdangerous.Signer(website_settings.SECRET_KEY).sign(session._id)
+        self.app.set_cookie(website_settings.COOKIE_NAME, str(cookie))
+
+        res = self.app.get(self.file_url + '?create_guid=1', auth=self.user.auth)
+
+        self.app.reset()  # clear cookie
+
+        assert_equal(res.status_code, 200)
+
+        guid = res.json['data']['attributes'].get('guid', None)
+        assert_is_not_none(guid)
+
+        assert_equal(guid, self.file.get_guid()._id)
+        assert_equal(mock_allow.call_count, 1)
+
     def test_get_file(self):
         res = self.app.get(self.file_url, auth=self.user.auth)
         self.file.versions[-1]._clear_caches()
@@ -71,6 +102,7 @@ class TestFileView(ApiTestCase):
         assert_equal(attributes['last_touched'], None)
         assert_equal(attributes['provider'], self.file.provider)
         assert_equal(attributes['size'], self.file.versions[-1].size)
+        assert_equal(attributes['current_version'], len(self.file.history))
         assert_equal(attributes['date_modified'], _dt_to_iso8601(self.file.versions[-1].date_created.replace(tzinfo=pytz.utc)))
         assert_equal(attributes['date_created'], _dt_to_iso8601(self.file.versions[0].date_created.replace(tzinfo=pytz.utc)))
         assert_equal(attributes['extra']['hashes']['md5'], None)
@@ -86,13 +118,13 @@ class TestFileView(ApiTestCase):
         assert_in(expected_url, actual_url)
 
     def test_file_has_comments_link(self):
-        guid = self.file.get_guid(create=True)
+        self.file.get_guid(create=True)
         res = self.app.get(self.file_url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         assert_in('comments', res.json['data']['relationships'].keys())
-        expected_url = '/{}nodes/{}/comments/?filter[target]={}'.format(API_BASE, self.node._id, guid._id)
         url = res.json['data']['relationships']['comments']['links']['related']['href']
-        assert_in(expected_url, url)
+        assert_equal(self.app.get(url, auth=self.user.auth).status_code, 200)
+        assert_equal(res.json['data']['type'], 'files')
 
     def test_file_has_correct_unread_comments_count(self):
         contributor = AuthUserFactory()
@@ -396,6 +428,20 @@ class TestFileView(ApiTestCase):
         url = '/{}files/{}/'.format(API_BASE, self.node._id)
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 404)
+
+    def test_current_version_is_equal_to_length_of_history(self):
+        res = self.app.get(self.file_url, auth=self.user.auth)
+        assert_equal(res.json['data']['attributes']['current_version'], 1)
+        for version in range(2, 4):
+            self.file.create_version(self.user, {
+                'object': '06d80e' + str(version),
+                'service': 'cloud',
+                osfstorage_settings.WATERBUTLER_RESOURCE: 'osf',
+            }, {'size': 1337,
+                'contentType': 'img/png'
+            }).save()
+            res = self.app.get(self.file_url, auth=self.user.auth)
+            assert_equal(res.json['data']['attributes']['current_version'], version)
 
 
 class TestFileVersionView(ApiTestCase):

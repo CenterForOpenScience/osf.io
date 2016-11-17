@@ -366,7 +366,7 @@ ${parent.javascript_bottom()}
     window.contextVars.wiki = {
         canEdit: canEditBody,
         canEditPageName: canEditPageName,
-        usePythonRender: ${ use_python_render | sjson, n },
+        renderedBeforeUpdate: ${ rendered_before_update | sjson, n },
         versionSettings: ${ version_settings | sjson, n },
         panelsUsed: ${ panels_used | sjson, n },
         wikiID: ${ wiki_id | sjson, n },
@@ -389,6 +389,12 @@ ${parent.javascript_bottom()}
             userGravatar: ${ urls['gravatar'] | sjson, n }.replace('&amp;', '&')
         }
     };
+    window.contextVars.analyticsMeta = $.extend(true, {}, window.contextVars.analyticsMeta, {
+        pageMeta: {
+            title: 'Wiki: ' + ${wiki_name | sjson, n },
+            public: true,
+        },
+    });
 
 </script>
 <script src="//${sharejs_url}/text.js"></script>

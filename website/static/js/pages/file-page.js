@@ -2,7 +2,6 @@ var $ = require('jquery');
 var m = require('mithril');
 var $osf = require('js/osfHelpers');
 var FileViewPage = require('js/filepage');
-var waterbutler = require('js/waterbutler');
 var Raven = require('raven-js');
 
 require('jquery-tagsinput');

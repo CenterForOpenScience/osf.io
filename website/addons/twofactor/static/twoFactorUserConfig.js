@@ -58,9 +58,11 @@ ViewModel.prototype.fetchFromServer = function() {
         })
         .fail(function(xhr, status, error) {
             Raven.captureMessage('Failed to fetch two-factor settings.', {
-                xhr: xhr,
-                status: status,
-                error: error
+                extra: {
+                    xhr: xhr,
+                    status: status,
+                    error: error
+                }
             });
             self.changeMessage('Could not retrieve two-factor settings at ' +
                 'this time. Please refresh the page. ' +
@@ -80,9 +82,11 @@ ViewModel.prototype.submitSettings = function() {
         $('#TfaVerify').slideUp();
     }).fail(function(xhr, status, error) {
         Raven.captureMessage('Failed to update two-factor settings.', {
-            xhr: xhr,
-            status: status,
-            error: error
+            extra: {
+                xhr: xhr,
+                status: status,
+                error: error
+            }
         });
         if (xhr.status === 403) {
             self.changeMessage('Verification failed. Please enter your verification code again.',
@@ -111,9 +115,11 @@ ViewModel.prototype.disableTwofactorConfirm = function() {
         })
         .fail(function(xhr, status, error) {
             Raven.captureMessage('Failed to disable two-factor.', {
-                xhr: xhr,
-                status: status,
-                error: error
+                extra: {
+                    xhr: xhr,
+                    status: status,
+                    error: error
+                }
             });
             self.changeMessage(
                 'Could not disable two-factor authentication at this time. Please refresh ' +
@@ -150,9 +156,11 @@ ViewModel.prototype.enableTwofactorConfirm = function() {
         })
         .fail(function(xhr, status, error) {
             Raven.captureMessage('Failed to enable two-factor.', {
-                xhr: xhr,
-                status: status,
-                error: error
+                extra: {
+                    xhr: xhr,
+                    status: status,
+                    error: error
+                }
             });
             self.changeMessage(
                 'Could not enable two-factor authentication at this time. Please refresh ' +

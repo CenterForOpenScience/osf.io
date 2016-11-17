@@ -1,3 +1,4 @@
+from urlparse import urlparse
 from website.addons.osfstorage import settings as osfstorage_settings
 
 
@@ -18,3 +19,9 @@ def create_test_file(node, user, filename='test_file', create_guid=True):
         'contentType': 'img/png'
     }).save()
     return test_file
+
+def urlparse_drop_netloc(url):
+    url = urlparse(url)
+    if url[4]:
+        return url[2] + '?' + url[4]
+    return url[2]

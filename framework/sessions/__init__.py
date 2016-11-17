@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 from datetime import datetime
-
 import httplib as http
 import urllib
 import urlparse

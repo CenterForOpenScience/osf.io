@@ -138,6 +138,30 @@
         </div>
       </div>
     </div>
+
+    <div id="psyarxiv" class="space-top psyarxiv">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-2">
+                    <a href="https://osf.io/view/PsyArXiv/"><img src="/static/img/PsyArxiv-banner.png" alt="PsyArXiv" width="100%" style="margin-top: 20px;"></a>
+                </div>
+                <div class="col-md-10 text-center">
+                    <h2>A free preprint service for the psychological sciences</h2>
+                    <h4>Under development. Get updates on <a href="https://twitter.com/psyarxiv">@psyarxiv</a>
+                      <a href="https://www.facebook.com/psyarxiv" aria-label="Facebook"><i class="fa fa-facebook fa-lg fa-2x"></i></a>
+                      <a href="https://twitter.com/psyarxiv" aria-label="Twitter"><i class="fa fa-twitter fa-lg fa-2x"></i></a>
+                      <a href="https://www.instagram.com/psyarxiv" aria-label="Instagram"><i class="fa fa-instagram fa-lg fa-2x"></i></a>
+                      <a href="mailto:psyarxiv@gmail.com" aria-label="Email"><i class="fa fa-envelope fa-lg fa-2x"></i></a>
+                      <a href="https://osf.io/58w9b/" aria-label="OSF"><img src="/static/img/cos-gray.png" style="padding-bottom: 5px;"></a>
+                    </h4>
+                    <div style="vertical-align: bottom;">
+                      arXiv is a trademark of Cornell University, used under license.
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
 </%def>
 
 

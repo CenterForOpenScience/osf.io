@@ -143,7 +143,7 @@ def wiki_widget(**kwargs):
     # Show "Read more" link if there are multiple pages or has > 400 characters
     more = len(node.wiki_pages_current.keys()) >= 2
     MAX_DISPLAY_LENGTH = 400
-    use_python_render = False
+    rendered_before_update = False
     if wiki_page and wiki_page.html(node):
         wiki_html = wiki_page.html(node)
         if len(wiki_html) > MAX_DISPLAY_LENGTH:
@@ -151,7 +151,7 @@ def wiki_widget(**kwargs):
             more = True
         else:
             wiki_html = BeautifulSoup(wiki_html)
-        use_python_render = wiki_page.rendered_before_update
+        rendered_before_update = wiki_page.rendered_before_update
     else:
         wiki_html = None
 
@@ -159,7 +159,7 @@ def wiki_widget(**kwargs):
         'complete': True,
         'wiki_content': unicode(wiki_html) if wiki_html else None,
         'wiki_content_url': node.api_url_for('wiki_page_content', wname='home'),
-        'use_python_render': use_python_render,
+        'rendered_before_update': rendered_before_update,
         'more': more,
         'include': False,
     }
@@ -187,12 +187,11 @@ def wiki_page_draft(wname, **kwargs):
 def wiki_page_content(wname, wver=None, **kwargs):
     node = kwargs['node'] or kwargs['project']
     wiki_page = node.get_wiki_page(wname, version=wver)
-    use_python_render = wiki_page.rendered_before_update if wiki_page else False
+    rendered_before_update = wiki_page.rendered_before_update if wiki_page else False
 
     return {
         'wiki_content': wiki_page.content if wiki_page else '',
-        # Only return rendered version if page was saved before wiki change
-        'wiki_rendered': wiki_page.html(node) if use_python_render else '',
+        'rendered_before_update': rendered_before_update
     }
 
 
@@ -267,12 +266,12 @@ def project_wiki_view(auth, wname, path=None, **kwargs):
         version = wiki_page.version
         is_current = wiki_page.is_current
         content = wiki_page.html(node)
-        use_python_render = wiki_page.rendered_before_update
+        rendered_before_update = wiki_page.rendered_before_update
     else:
         version = 'NA'
         is_current = False
         content = ''
-        use_python_render = False
+        rendered_before_update = False
 
     if can_edit:
         if wiki_key not in node.wiki_private_uuids:
@@ -301,7 +300,7 @@ def project_wiki_view(auth, wname, path=None, **kwargs):
         'wiki_id': wiki_page._primary_key if wiki_page else None,
         'wiki_name': wiki_page.page_name if wiki_page else wiki_name,
         'wiki_content': content,
-        'use_python_render': use_python_render,
+        'rendered_before_update': rendered_before_update,
         'page': wiki_page,
         'version': version,
         'versions': versions,

@@ -51,9 +51,11 @@ var getContributorList = function(url, contributors, ret) {
         });
         request.fail(function(xhr, status, error) {
             Raven.captureMessage('Error getting contributors', {
-                url: url,
-                status: status,
-                error: error
+                extra: {
+                    url: url,
+                    status: status,
+                    error: error
+                }
             });
             ret.reject(xhr, status, error);
         });

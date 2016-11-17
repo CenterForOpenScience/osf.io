@@ -7,6 +7,8 @@ from tests.factories import InstitutionFactory, AuthUserFactory, NodeFactory
 
 from api.base.settings.defaults import API_BASE
 
+from website.util import permissions
+
 class TestInstitutionRelationshipNodes(ApiTestCase):
     def setUp(self):
         super(TestInstitutionRelationshipNodes, self).setUp()
@@ -98,15 +100,45 @@ class TestInstitutionRelationshipNodes(ApiTestCase):
         node.reload()
         assert_not_in(self.institution, node.affiliated_institutions)
 
-    def test_user_is_not_admin(self):
-        user = AuthUserFactory()
-        node = NodeFactory(creator=user)
-        node.add_contributor(self.user, auth=Auth(user))
+    def test_user_is_admin(self):
+        node = NodeFactory(creator=self.user)
         res = self.app.post_json_api(
             self.institution_nodes_url,
             self.create_payload(node._id),
-            expect_errors=True,
             auth=self.user.auth
+        )
+        assert_equal(res.status_code, 201)
+        node.reload()
+        assert_in(self.institution, node.affiliated_institutions)
+
+    def test_user_is_read_write(self):
+        user = AuthUserFactory()
+        user.affiliated_institutions.append(self.institution)
+        node = NodeFactory()
+        node.add_contributor(user)
+        node.save()
+        res = self.app.post_json_api(
+            self.institution_nodes_url,
+            self.create_payload(node._id),
+            auth=user.auth
+        )
+
+        assert_equal(res.status_code, 201)
+        node.reload()
+        assert_in(self.institution, node.affiliated_institutions)
+
+    def test_user_is_read_only(self):
+        user = AuthUserFactory()
+        user.affiliated_institutions.append(self.institution)
+        node = NodeFactory()
+        node.add_contributor(user, permissions=[permissions.READ])
+        node.save()
+
+        res = self.app.post_json_api(
+            self.institution_nodes_url,
+            self.create_payload(node._id),
+            auth=user.auth,
+            expect_errors=True
         )
 
         assert_equal(res.status_code, 403)
@@ -191,15 +223,44 @@ class TestInstitutionRelationshipNodes(ApiTestCase):
 
         assert_equal(res.status_code, 204)
 
-    def test_delete_user_is_not_admin(self):
+    def test_delete_user_is_admin(self):
         res = self.app.delete_json_api(
             self.institution_nodes_url,
-            self.create_payload(self.node2._id),
-            expect_errors=True,
+            self.create_payload(self.node1._id),
             auth=self.user.auth
         )
+        self.node1.reload()
+        assert_equal(res.status_code, 204)
+        assert_not_in(self.institution, self.node1.affiliated_institutions)
+
+    def test_delete_user_is_read_write(self):
+        self.node3.add_contributor(self.user)
+        self.node3.save()
+
+        res = self.app.delete_json_api(
+            self.institution_nodes_url,
+            self.create_payload(self.node3._id),
+            auth=self.user.auth
+        )
+        self.node3.reload()
+
+        assert_equal(res.status_code, 204)
+        assert_not_in(self.institution, self.node3.affiliated_institutions)
+
+    def test_delete_user_is_read_only(self):
+        self.node3.add_contributor(self.user, permissions='read')
+        self.node3.save()
+
+        res = self.app.delete_json_api(
+            self.institution_nodes_url,
+            self.create_payload(self.node3._id),
+            auth=self.user.auth,
+            expect_errors=True
+        )
+        self.node3.reload()
 
         assert_equal(res.status_code, 403)
+        assert_in(self.institution, self.node3.affiliated_institutions)
 
     def test_delete_user_is_admin_and_affiliated_with_inst(self):
         assert_in(self.institution, self.node1.affiliated_institutions)

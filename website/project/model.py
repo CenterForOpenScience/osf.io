@@ -17,19 +17,18 @@ from django.core.validators import URLValidator
 from modularodm import Q
 from modularodm import fields
 from modularodm.validators import MaxLengthValidator
-from modularodm.exceptions import NoResultsFound
-from modularodm.exceptions import ValidationValueError
+from modularodm.exceptions import KeyExistsException, NoResultsFound, ValidationValueError
 
 from framework import status
-from framework.mongo import ObjectId
+from framework.mongo import ObjectId, DummyRequest
 from framework.mongo import StoredObject
 from framework.mongo import validators
+from framework.mongo import get_request_and_user_id
 from framework.addons import AddonModelMixin
 from framework.auth import get_user, User, Auth
 from framework.exceptions import PermissionsError
 from framework.guid.model import GuidStoredObject, Guid
 from framework.auth.utils import privacy_info_handle
-from framework.analytics import tasks as piwik_tasks
 from framework.mongo.utils import to_mongo_key, unique_on
 from framework.analytics import (
     get_basic_counters, increment_user_activity_counters
@@ -37,12 +36,15 @@ from framework.analytics import (
 from framework.sentry import log_exception
 from framework.transactions.context import TokuTransaction
 from framework.utils import iso8601format
+from framework.celery_tasks.handlers import enqueue_task
 
 from website import language, settings
+from website.mails import mails
 from website.util import web_url_for
 from website.util import api_url_for
 from website.util import api_v2_url
 from website.util import sanitize
+from website.util import get_headers_from_request
 from website.exceptions import (
     NodeStateError,
     InvalidTagError, TagNotFoundError,
@@ -56,11 +58,9 @@ from website.util.permissions import CREATOR_PERMISSIONS, DEFAULT_CONTRIBUTOR_PE
 from website.project.commentable import Commentable
 from website.project.metadata.schemas import OSF_META_SCHEMAS
 from website.project.metadata.utils import create_jsonschema_from_metaschema
-from website.project.licenses import (
-    NodeLicense,
-    NodeLicenseRecord,
-)
+from website.project.licenses import (NodeLicense, NodeLicenseRecord)
 from website.project import signals as project_signals
+from website.project import tasks as node_tasks
 from website.project.spam.model import SpamMixin
 from website.project.sanctions import (
     DraftRegistrationApproval,
@@ -69,6 +69,7 @@ from website.project.sanctions import (
     RegistrationApproval,
     Retraction,
 )
+from keen import scoped_keys
 
 logger = logging.getLogger(__name__)
 
@@ -84,7 +85,7 @@ def has_anonymous_link(node, auth):
         return auth.private_link.anonymous
     return False
 
-@unique_on(['name', 'schema_version', '_id'])
+@unique_on(['name', 'schema_version'])
 class MetaSchema(StoredObject):
 
     _id = fields.StringField(default=lambda: str(ObjectId()))
@@ -141,24 +142,21 @@ class MetaSchema(StoredObject):
             raise ValidationValueError(e.message)
         return
 
+
 def ensure_schema(schema, name, version=1):
-    schema_obj = None
     try:
+        MetaSchema(
+            name=name,
+            schema_version=version,
+            schema=schema
+        ).save()
+    except KeyExistsException:
         schema_obj = MetaSchema.find_one(
             Q('name', 'eq', name) &
             Q('schema_version', 'eq', version)
         )
-    except NoResultsFound:
-        meta_schema = {
-            'name': name,
-            'schema_version': version,
-            'schema': schema,
-        }
-        schema_obj = MetaSchema(**meta_schema)
-    else:
         schema_obj.schema = schema
-    schema_obj.save()
-    return schema_obj
+        schema_obj.save()
 
 
 def ensure_schemas():
@@ -555,7 +553,10 @@ class NodeLog(StoredObject):
     AFFILIATED_INSTITUTION_ADDED = 'affiliated_institution_added'
     AFFILIATED_INSTITUTION_REMOVED = 'affiliated_institution_removed'
 
-    actions = [CHECKED_IN, CHECKED_OUT, FILE_TAG_REMOVED, FILE_TAG_ADDED, CREATED_FROM, PROJECT_CREATED, PROJECT_REGISTERED, PROJECT_DELETED, NODE_CREATED, NODE_FORKED, NODE_REMOVED, POINTER_CREATED, POINTER_FORKED, POINTER_REMOVED, WIKI_UPDATED, WIKI_DELETED, WIKI_RENAMED, MADE_WIKI_PUBLIC, MADE_WIKI_PRIVATE, CONTRIB_ADDED, CONTRIB_REMOVED, CONTRIB_REORDERED, PERMISSIONS_UPDATED, MADE_PRIVATE, MADE_PUBLIC, TAG_ADDED, TAG_REMOVED, EDITED_TITLE, EDITED_DESCRIPTION, UPDATED_FIELDS, FILE_MOVED, FILE_COPIED, FOLDER_CREATED, FILE_ADDED, FILE_UPDATED, FILE_REMOVED, FILE_RESTORED, ADDON_ADDED, ADDON_REMOVED, COMMENT_ADDED, COMMENT_REMOVED, COMMENT_UPDATED, MADE_CONTRIBUTOR_VISIBLE, MADE_CONTRIBUTOR_INVISIBLE, EXTERNAL_IDS_ADDED, EMBARGO_APPROVED, EMBARGO_CANCELLED, EMBARGO_COMPLETED, EMBARGO_INITIATED, RETRACTION_APPROVED, RETRACTION_CANCELLED, RETRACTION_INITIATED, REGISTRATION_APPROVAL_CANCELLED, REGISTRATION_APPROVAL_INITIATED, REGISTRATION_APPROVAL_APPROVED, PREREG_REGISTRATION_INITIATED, CITATION_ADDED, CITATION_EDITED, CITATION_REMOVED, AFFILIATED_INSTITUTION_ADDED, AFFILIATED_INSTITUTION_REMOVED]
+    PREPRINT_INITIATED = 'preprint_initiated'
+    PREPRINT_FILE_UPDATED = 'preprint_file_updated'
+
+    actions = [CHECKED_IN, CHECKED_OUT, FILE_TAG_REMOVED, FILE_TAG_ADDED, CREATED_FROM, PROJECT_CREATED, PROJECT_REGISTERED, PROJECT_DELETED, NODE_CREATED, NODE_FORKED, NODE_REMOVED, POINTER_CREATED, POINTER_FORKED, POINTER_REMOVED, WIKI_UPDATED, WIKI_DELETED, WIKI_RENAMED, MADE_WIKI_PUBLIC, MADE_WIKI_PRIVATE, CONTRIB_ADDED, CONTRIB_REMOVED, CONTRIB_REORDERED, PERMISSIONS_UPDATED, MADE_PRIVATE, MADE_PUBLIC, TAG_ADDED, TAG_REMOVED, EDITED_TITLE, EDITED_DESCRIPTION, UPDATED_FIELDS, FILE_MOVED, FILE_COPIED, FOLDER_CREATED, FILE_ADDED, FILE_UPDATED, FILE_REMOVED, FILE_RESTORED, ADDON_ADDED, ADDON_REMOVED, COMMENT_ADDED, COMMENT_REMOVED, COMMENT_UPDATED, MADE_CONTRIBUTOR_VISIBLE, MADE_CONTRIBUTOR_INVISIBLE, EXTERNAL_IDS_ADDED, EMBARGO_APPROVED, EMBARGO_CANCELLED, EMBARGO_COMPLETED, EMBARGO_INITIATED, RETRACTION_APPROVED, RETRACTION_CANCELLED, RETRACTION_INITIATED, REGISTRATION_APPROVAL_CANCELLED, REGISTRATION_APPROVAL_INITIATED, REGISTRATION_APPROVAL_APPROVED, PREREG_REGISTRATION_INITIATED, CITATION_ADDED, CITATION_EDITED, CITATION_REMOVED, AFFILIATED_INSTITUTION_ADDED, AFFILIATED_INSTITUTION_REMOVED, PREPRINT_INITIATED, PREPRINT_FILE_UPDATED]
 
     def __repr__(self):
         return ('<NodeLog({self.action!r}, params={self.params!r}) '
@@ -754,7 +755,13 @@ class NodeUpdateError(Exception):
         self.reason = reason
 
 
-class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
+def validate_doi(value):
+    if value and not re.match(r'\b(10\.\d{4,}(?:\.\d+)*/\S+(?:(?!["&\'<>])\S))\b', value):
+        raise ValidationValueError('"{}" is not a valid DOI'.format(value))
+    return True
+
+
+class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, SpamMixin):
 
     #: Whether this is a pointer or not
     primary = True
@@ -812,7 +819,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
     ]
 
     # Node fields that trigger an update to Solr on save
-    SOLR_UPDATE_FIELDS = {
+    SEARCH_UPDATE_FIELDS = {
         'title',
         'category',
         'description',
@@ -828,6 +835,14 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         'is_retracted',
         'node_license',
         '_affiliated_institutions',
+        'preprint_file',
+    }
+
+    # Node fields that trigger a check to the spam filter on save
+    SPAM_CHECK_FIELDS = {
+        'title',
+        'description',
+        'wiki_pages_current',
     }
 
     # Fields that are writable by Node.update
@@ -866,6 +881,12 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
     is_registration = fields.BooleanField(default=False, index=True)
     registered_date = fields.DateTimeField(index=True)
     registered_user = fields.ForeignField('user')
+
+    # Preprint fields
+    preprint_file = fields.ForeignField('StoredFileNode')
+    preprint_article_doi = fields.StringField(validate=validate_doi)
+    _is_preprint_orphan = fields.BooleanField(default=False)
+    _has_abandoned_preprint = fields.BooleanField(default=False)
 
     # A list of all MetaSchemas for which this Node has registered_meta
     registered_schema = fields.ForeignField('metaschema', list=True, default=list)
@@ -923,7 +944,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
     # The node (if any) used as a template for this node's creation
     template_node = fields.ForeignField('node', index=True)
 
-    piwik_site_id = fields.StringField()
+    keenio_read_key = fields.StringField()
 
     # Dictionary field mapping user id to a list of nodes in node.nodes which the user has subscriptions for
     # {<User.id>: [<Node._id>, <Node2._id>, ...] }
@@ -1147,6 +1168,38 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
             return False
         else:
             return True
+
+    @property
+    def is_preprint(self):
+        if not self.preprint_file or not self.is_public:
+            return False
+        if self.preprint_file.node == self:
+            self._is_preprint_orphan = False
+            return True
+        else:
+            self._is_preprint_orphan = True
+            return False
+
+    @property
+    def is_preprint_orphan(self):
+        if (not self.is_preprint) and self._is_preprint_orphan:
+            return True
+        return False
+
+    @property
+    def preprints(self):
+        from website.preprints.model import PreprintService
+        if not self.is_preprint:
+            return []
+        return PreprintService.find(Q('node', 'eq', self))
+
+    @property
+    def preprint_url(self):
+        if self.is_preprint:
+            try:
+                return self.preprints[0].url
+            except IndexError:
+                pass
 
     def can_edit(self, auth=None, user=None):
         """Return if a user is authorized to edit this node.
@@ -1492,6 +1545,16 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         if save:
             self.save()
 
+    def generate_keenio_read_key(self):
+        return scoped_keys.encrypt(settings.KEEN['public']['master_key'], options={
+            'filters': [{
+                'property_name': 'node.id',
+                'operator': 'eq',
+                'property_value': str(self._id)
+            }],
+            'allowed_operations': ['read']
+        })
+
     def subscribe_user_to_notifications(self, user):
         """ Update the notification settings for the creator or contributors
 
@@ -1604,7 +1667,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         return updated
 
     def save(self, *args, **kwargs):
-        update_piwik = kwargs.pop('update_piwik', True)
         self.adjust_permissions()
 
         first_save = not self._is_loaded
@@ -1662,28 +1724,18 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
 
             project_signals.project_created.send(self)
 
-        # Only update Solr if at least one stored field has changed, and if
-        # public or privacy setting has changed
-        need_update = bool(self.SOLR_UPDATE_FIELDS.intersection(saved_fields))
-        if not self.is_public:
-            if first_save or 'is_public' not in saved_fields:
-                need_update = False
-        if self.is_collection or self.archiving:
-            need_update = False
-        if need_update:
-            self.update_search()
+        if saved_fields:
+            self.on_update(first_save, saved_fields)
 
         if 'node_license' in saved_fields:
             children = [c for c in self.get_descendants_recursive(
                 include=lambda n: n.node_license is None
-            )]
+            ) if c.is_public and not c.is_deleted]
             # this returns generator, that would get unspooled anyways
-            if children:
-                Node.bulk_update_search(children)
-
-        # This method checks what has changed.
-        if settings.PIWIK_HOST and update_piwik:
-            piwik_tasks.update_node(self._id, saved_fields)
+            while len(children):
+                batch = children[:99]
+                Node.bulk_update_search(batch)
+                children = children[99:]
 
         # Return expected value for StoredObject::save
         return saved_fields
@@ -1736,7 +1788,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         new.add_contributor(contributor=auth.user, permissions=CREATOR_PERMISSIONS, log=False, save=False)
         new.is_fork = False
         new.is_registration = False
-        new.piwik_site_id = None
         new.node_license = self.license.copy() if self.license else None
 
         # If that title hasn't been changed, apply the default prefix (once)
@@ -2113,6 +2164,30 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
             self.save()
         return None
 
+    def on_update(self, first_save, saved_fields):
+        request, user_id = get_request_and_user_id()
+        request_headers = {}
+        if not isinstance(request, DummyRequest):
+            request_headers = {
+                k: v
+                for k, v in get_headers_from_request(request).items()
+                if isinstance(v, basestring)
+            }
+        enqueue_task(node_tasks.on_node_updated.s(self._id, user_id, first_save, saved_fields, request_headers))
+
+        if self.preprint_file and bool(self.SEARCH_UPDATE_FIELDS.intersection(saved_fields)):
+            # avoid circular imports
+            from website.preprints.tasks import on_preprint_updated
+            from website.preprints.model import PreprintService
+            # .preprints wouldn't return a single deleted preprint
+            for preprint in PreprintService.find(Q('node', 'eq', self)):
+                enqueue_task(on_preprint_updated.s(preprint._id))
+
+        user = User.load(user_id)
+        if user and self.check_spam(user, saved_fields, request_headers):
+            # Specifically call the super class save method to avoid recursion into model save method.
+            super(Node, self).save()
+
     def update_search(self):
         from website import search
         try:
@@ -2264,7 +2339,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         forked.forked_date = when
         forked.forked_from = original
         forked.creator = user
-        forked.piwik_site_id = None
         forked.node_license = original.license.copy() if original.license else None
         forked.wiki_private_uuids = {}
 
@@ -2367,7 +2441,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         registered.forked_from = self.forked_from
         registered.creator = self.creator
         registered.tags = self.tags
-        registered.piwik_site_id = None
         registered._affiliated_institutions = self._affiliated_institutions
         registered.alternative_citations = self.alternative_citations
         registered.node_license = original.license.copy() if original.license else None
@@ -2581,7 +2654,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
 
     @property
     def api_v2_url(self):
-        return reverse('nodes:node-detail', kwargs={'node_id': self._id})
+        return reverse('nodes:node-detail', kwargs={'node_id': self._id, 'version': 'v2'})
 
     @property
     def absolute_api_v2_url(self):
@@ -2614,8 +2687,16 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         return self.absolute_api_v2_url + 'relationships/linked_nodes/'
 
     @property
+    def linked_registrations_self_url(self):
+        return self.absolute_api_v2_url + 'relationships/linked_registrations/'
+
+    @property
     def linked_nodes_related_url(self):
         return self.absolute_api_v2_url + 'linked_nodes/'
+
+    @property
+    def linked_registrations_related_url(self):
+        return self.absolute_api_v2_url + 'linked_registrations/'
 
     @property
     def csl(self):  # formats node information into CSL format for citation parsing
@@ -2922,6 +3003,26 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
 
         return all(results)
 
+    def move_contributor(self, user, auth, index, save=False):
+        if not self.has_permission(auth.user, ADMIN):
+            raise PermissionsError('Only admins can modify contributor order')
+        old_index = self.contributors.index(user)
+        self.contributors.insert(index, self.contributors.pop(old_index))
+        self.add_log(
+            action=NodeLog.CONTRIB_REORDERED,
+            params={
+                'project': self.parent_id,
+                'node': self._id,
+                'contributors': [
+                    user._id
+                ],
+            },
+            auth=auth,
+            save=False,
+        )
+        if save:
+            self.save()
+
     def update_contributor(self, user, permission, visible, auth, save=False):
         """ TODO: this method should be updated as a replacement for the main loop of
         Node#manage_contributors. Right now there are redundancies, but to avoid major
@@ -2931,19 +3032,20 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         """
         if not self.has_permission(auth.user, ADMIN):
             raise PermissionsError('Only admins can modify contributor permissions')
-        permissions = expand_permissions(permission) or DEFAULT_CONTRIBUTOR_PERMISSIONS
-        admins = [contrib for contrib in self.contributors if self.has_permission(contrib, 'admin') and contrib.is_active]
-        if not len(admins) > 1:
-            # has only one admin
-            admin = admins[0]
-            if admin == user and ADMIN not in permissions:
-                raise NodeStateError('{} is the only admin.'.format(user.fullname))
-        if user not in self.contributors:
-            raise ValueError(
-                'User {0} not in contributors'.format(user.fullname)
-            )
+
         if permission:
             permissions = expand_permissions(permission)
+            admins = [contrib for contrib in self.contributors if
+                      self.has_permission(contrib, 'admin') and contrib.is_active]
+            if not len(admins) > 1:
+                # has only one admin
+                admin = admins[0]
+                if admin == user and ADMIN not in permissions:
+                    raise NodeStateError('{} is the only admin.'.format(user.fullname))
+            if user not in self.contributors:
+                raise ValueError(
+                    'User {0} not in contributors'.format(user.fullname)
+                )
             if set(permissions) != set(self.get_permissions(user)):
                 self.set_permissions(user, permissions, save=save)
                 permissions_changed = {
@@ -2963,8 +3065,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
                     if ['read'] in permissions_changed.values():
                         project_signals.write_permissions_revoked.send(self)
         if visible is not None:
-            self.set_visible(user, visible, auth=auth, save=save)
-            self.update_visible_ids()
+            self.set_visible(user, visible, auth=auth)
+            self.update_visible_ids(save=save)
 
     def manage_contributors(self, user_dicts, auth, save=False):
         """Reorder and remove contributors.
@@ -3065,12 +3167,13 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
                 project_signals.write_permissions_revoked.send(self)
 
     def add_contributor(self, contributor, permissions=None, visible=True,
-                        auth=None, log=True, save=False):
+                        send_email='default', auth=None, log=True, save=False):
         """Add a contributor to the project.
 
         :param User contributor: The contributor to be added
         :param list permissions: Permissions to grant to the contributor
         :param bool visible: Contributor is visible in project dashboard
+        :param str send_email: Email preference for notifying added contributor
         :param Auth auth: All the auth information including user, API key
         :param bool log: Add log to self
         :param bool save: Save after adding contributor
@@ -3094,6 +3197,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
             # Add contributor to recently added list for user
             if auth is not None:
                 user = auth.user
+                if not self.has_permission(user, ADMIN):
+                    raise PermissionsError('Must be an admin to change add contributors.')
                 if contrib_to_add in user.recently_added:
                     user.recently_added.remove(contrib_to_add)
                 user.recently_added.insert(0, contrib_to_add)
@@ -3114,8 +3219,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
             if save:
                 self.save()
 
-            if self._id:
-                project_signals.contributor_added.send(self, contributor=contributor, auth=auth)
+            if self._id and send_email != 'false':
+                project_signals.contributor_added.send(self, contributor=contributor, auth=auth, email_template=send_email)
 
             return True
 
@@ -3164,18 +3269,18 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         if save:
             self.save()
 
-    def add_unregistered_contributor(self, fullname, email, auth,
-                                     permissions=None, save=False):
+    def add_unregistered_contributor(self, fullname, email, auth, send_email='default', visible=True, permissions=None, save=False, existing_user=None):
         """Add a non-registered contributor to the project.
 
         :param str fullname: The full name of the person.
         :param str email: The email address of the person.
         :param Auth auth: Auth object for the user adding the contributor.
+        :param User existing_user: the unregister_contributor if it is already created, otherwise None
         :returns: The added contributor
         :raises: DuplicateEmailError if user with given email is already in the database.
         """
-        # Create a new user record
-        contributor = User.create_unregistered(fullname=fullname, email=email)
+        # Create a new user record if you weren't passed an existing_user
+        contributor = existing_user if existing_user else User.create_unregistered(fullname=fullname, email=email)
 
         contributor.add_unclaimed_record(node=self, referrer=auth.user,
             given_name=fullname, email=email)
@@ -3193,12 +3298,153 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
 
         self.add_contributor(
             contributor, permissions=permissions, auth=auth,
-            log=True, save=False,
+            visible=visible, send_email=send_email, log=True, save=False
         )
         self.save()
         return contributor
 
-    def set_privacy(self, permissions, auth=None, log=True, save=True, meeting_creation=False):
+    def add_contributor_registered_or_not(self, auth, user_id=None, full_name=None, email=None, send_email='false',
+                                          permissions=None, bibliographic=True, index=None, save=False):
+
+        if user_id:
+            contributor = User.load(user_id)
+            if not contributor:
+                raise ValueError('User with id {} was not found.'.format(user_id))
+            if contributor in self.contributors:
+                raise ValidationValueError('{} is already a contributor.'.format(contributor.fullname))
+            self.add_contributor(contributor=contributor, auth=auth, visible=bibliographic,
+                                 permissions=permissions, send_email=send_email, save=True)
+        else:
+
+            try:
+                contributor = self.add_unregistered_contributor(fullname=full_name, email=email, auth=auth,
+                                                                send_email=send_email, permissions=permissions,
+                                                                visible=bibliographic, save=True)
+            except ValidationValueError:
+                contributor = get_user(email=email)
+                if contributor in self.contributors:
+                    raise ValidationValueError('{} is already a contributor.'.format(contributor.fullname))
+                self.add_contributor(contributor=contributor, auth=auth, visible=bibliographic,
+                                     send_email=send_email, permissions=permissions, save=True)
+
+        auth.user.email_last_sent = datetime.datetime.utcnow()
+        auth.user.save()
+
+        if index is not None:
+            self.move_contributor(user=contributor, index=index, auth=auth, save=True)
+
+        contributor.permission = reduce_permissions(self.get_permissions(contributor))
+        contributor.bibliographic = self.get_visible(contributor)
+        contributor.node_id = self._id
+        contributor.index = self.contributors.index(contributor)
+
+        if save:
+            contributor.save()
+
+        return contributor
+
+    def _get_spam_content(self, saved_fields):
+        from website.addons.wiki.model import NodeWikiPage
+        spam_fields = self.SPAM_CHECK_FIELDS if self.is_public and 'is_public' in saved_fields else self.SPAM_CHECK_FIELDS.intersection(saved_fields)
+        content = []
+        for field in spam_fields:
+            if field == 'wiki_pages_current':
+                newest_wiki_page = None
+                for wiki_page_id in self.wiki_pages_current.values():
+                    wiki_page = NodeWikiPage.load(wiki_page_id)
+                    if not newest_wiki_page:
+                        newest_wiki_page = wiki_page
+                    elif wiki_page.date > newest_wiki_page.date:
+                        newest_wiki_page = wiki_page
+                if newest_wiki_page:
+                    content.append(newest_wiki_page.raw_text(self).encode('utf-8'))
+            else:
+                content.append((getattr(self, field, None) or '').encode('utf-8'))
+        if not content:
+            return None
+        return ' '.join(content)
+
+    def check_spam(self, user, saved_fields, request_headers):
+        if not settings.SPAM_CHECK_ENABLED:
+            return False
+        if settings.SPAM_CHECK_PUBLIC_ONLY and not self.is_public:
+            return False
+        if 'ham_confirmed' in user.system_tags:
+            return False
+
+        content = self._get_spam_content(saved_fields)
+        if not content:
+            return
+        is_spam = self.do_check_spam(
+            user.fullname,
+            user.username,
+            content,
+            request_headers
+        )
+        logger.info("Node ({}) '{}' smells like {} (tip: {})".format(
+            self._id, self.title.encode('utf-8'), 'SPAM' if is_spam else 'HAM', self.spam_pro_tip
+        ))
+        if is_spam:
+            self._check_spam_user(user)
+        return is_spam
+
+    def _check_spam_user(self, user):
+        if (
+            settings.SPAM_ACCOUNT_SUSPENSION_ENABLED
+            and (datetime.datetime.utcnow() - user.date_confirmed) <= settings.SPAM_ACCOUNT_SUSPENSION_THRESHOLD
+        ):
+            self.set_privacy('private', log=False, save=False)
+
+            # Suspend the flagged user for spam.
+            if 'spam_flagged' not in user.system_tags:
+                user.system_tags.append('spam_flagged')
+            if not user.is_disabled:
+                user.disable_account()
+                user.is_registered = False
+                mails.send_mail(to_addr=user.username, mail=mails.SPAM_USER_BANNED, user=user)
+            user.save()
+
+            # Make public nodes private from this contributor
+            for node in user.contributed:
+                if self._id != node._id and len(node.contributors) == 1 and node.is_public:
+                    node.set_privacy('private', log=False, save=True)
+
+    def flag_spam(self):
+        """ Overrides SpamMixin#flag_spam.
+        """
+        super(Node, self).flag_spam()
+        if settings.SPAM_FLAGGED_MAKE_NODE_PRIVATE:
+            self.set_privacy(Node.PRIVATE, auth=None, log=False, save=False, check_addons=False)
+            log = self.add_log(
+                action=NodeLog.MADE_PRIVATE,
+                params={
+                    'project': self.parent_id,
+                    'node': self._primary_key,
+                },
+                auth=None,
+                save=False
+            )
+            log.should_hide = True
+            log.save()
+
+    def confirm_spam(self, save=False):
+        super(Node, self).confirm_spam(save=False)
+        self.set_privacy(Node.PRIVATE, auth=None, log=False, save=False, check_addons=False)
+        log = self.add_log(
+            action=NodeLog.MADE_PRIVATE,
+            params={
+                'project': self.parent_id,
+                'node': self._primary_key,
+            },
+            auth=None,
+            save=False
+        )
+        log.should_hide = True
+        log.save()
+        if save:
+            self.save()
+
+    def set_privacy(self, permissions, auth=None, log=True, save=True, meeting_creation=False, check_addons=True):
         """Set the permissions for this node. Also, based on meeting_creation, queues an email to user about abilities of
             public projects.
 
@@ -3206,10 +3452,14 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         :param auth: All the auth information including user, API key.
         :param bool log: Whether to add a NodeLog for the privacy change.
         :param bool meeting_creation: Whether this was created due to a meetings email.
+        :param bool check_addons: Check and collect messages for addons?
         """
         if auth and not self.has_permission(auth.user, ADMIN):
             raise PermissionsError('Must be an admin to change privacy settings.')
         if permissions == 'public' and not self.is_public:
+            if self.is_spam or (settings.SPAM_FLAGGED_MAKE_NODE_PRIVATE and self.is_spammy):
+                # TODO: Should say will review within a certain agreed upon time period.
+                raise NodeStateError('This project has been marked as spam. Please contact the help desk if you think this is in error.')
             if self.is_registration:
                 if self.is_pending_embargo:
                     raise NodeStateError('A registration with an unapproved embargo cannot be made public.')
@@ -3222,19 +3472,22 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
                     self.request_embargo_termination(auth=auth)
                     return False
             self.is_public = True
+            self.keenio_read_key = self.generate_keenio_read_key()
         elif permissions == 'private' and self.is_public:
             if self.is_registration and not self.is_pending_embargo:
                 raise NodeStateError('Public registrations must be withdrawn, not made private.')
             else:
                 self.is_public = False
+                self.keenio_read_key = ''
         else:
             return False
 
         # After set permissions callback
-        for addon in self.get_addons():
-            message = addon.after_set_privacy(self, permissions)
-            if message:
-                status.push_status_message(message, kind='info', trust=False)
+        if check_addons:
+            for addon in self.get_addons():
+                message = addon.after_set_privacy(self, permissions)
+                if message:
+                    status.push_status_message(message, kind='info', trust=False)
 
         if log:
             action = NodeLog.MADE_PUBLIC if permissions == 'public' else NodeLog.MADE_PRIVATE

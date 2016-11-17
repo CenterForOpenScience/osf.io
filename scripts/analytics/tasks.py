@@ -21,11 +21,11 @@ def analytics():
     script_utils.add_file_logger(logger, __file__)
     from scripts.analytics import (
         logs, addons, comments, folders, links, watch, email_invites,
-        permissions, profile, benchmarks
+        permissions, profile, benchmarks, institutions
     )
     modules = (
         logs, addons, comments, folders, links, watch, email_invites,
-        permissions, profile, benchmarks
+        permissions, profile, benchmarks, institutions
     )
     for module in modules:
         logger.info('Starting: {}'.format(module.__name__))

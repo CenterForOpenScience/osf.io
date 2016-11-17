@@ -42,6 +42,32 @@
                     </span>
                 {% endif %}
             {% endif %}
+            <span class="col-md-2">
+                <a href="{% url 'nodes:confirm-spam' guid=node.id %}"
+                   data-toggle="modal" data-target="#confirmSpamModal"
+                   class="btn btn-warning">
+                    Confirm Spam
+                </a>
+            </span>
+            <div class="modal" id="confirmSpamModal">
+                <div class="modal-dialog">
+                    <div class="modal-content"></div>
+                    {# Data from above link #}
+                </div>
+            </div>
+            <span class="col-md-2">
+                <a href="{% url 'nodes:confirm-ham' guid=node.id %}"
+                   data-toggle="modal" data-target="#confirmHamModal"
+                   class="btn btn-default">
+                    Confirm <strong>Not</strong> Spam
+                </a>
+            </span>
+            <div class="modal" id="confirmHamModal">
+                <div class="modal-dialog">
+                    <div class="modal-content"></div>
+                    {# Data from above link #}
+                </div>
+            </div>                
         </div>
         <div class="row">
             {% if node.is_registration %}
@@ -81,6 +107,15 @@
                         {{ node.parent }}
                     </a>
                     {% endif %}
+                </td>
+
+            </tr>
+            <tr>
+                <td>Creator</td>
+                <td>
+                    <a href="{{ node.creator | reverse_user }}">
+                        {{ node.creator }}
+                    </a>
                 </td>
 
             </tr>
@@ -218,6 +253,31 @@
                         </tbody>
                         </table>
                     {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <td>SPAM Pro Tip</td>
+                    <td>{{ node.spam_pro_tip }}</td>
+                <td>
+            </tr>
+            <tr>
+                <td>SPAM Status</td>
+                <td>
+                    {% if node.spam_status == SPAM_STATUS.UNKNOWN %}
+                        <span class="label label-default">Unknown</span>
+                    {% elif node.spam_status == SPAM_STATUS.FLAGGED %}
+                        <span class="label label-warning">Flagged</span>
+                    {% elif node.spam_status == SPAM_STATUS.SPAM %}
+                        <span class="label label-danger">Spam</span>
+                    {% elif node.spam_status == SPAM_STATUS.HAM %}
+                        <span class="label label-success">Ham</span>
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <td>SPAM Data</td>
+                <td>
+                    <pre>{{ node.spam_data }}</pre>
                 </td>
             </tr>
         </tbody>

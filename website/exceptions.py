@@ -47,3 +47,8 @@ class UserNotAffiliatedError(OSFError):
     """
     message_short = 'User not affiliated'
     message_long = 'This user is not affiliated with this institution.'
+
+
+class TooManyRequests(Exception):
+    """Raised when throttle limit is reached, so view can return 429. e.g. Too many email producing requests, like contributor add."""
+    pass

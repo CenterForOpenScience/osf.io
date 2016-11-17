@@ -7,7 +7,7 @@ require('bootstrap-editable');
 require('js/osfToggleHeight');
 
 var m = require('mithril');
-var Fangorn = require('js/fangorn');
+var Fangorn = require('js/fangorn').Fangorn;
 var Raven = require('raven-js');
 var lodashGet  = require('lodash.get');
 require('truncate');
@@ -21,6 +21,7 @@ var CitationList = require('js/citationList');
 var CitationWidget = require('js/citationWidget');
 var mathrender = require('js/mathrender');
 var md = require('js/markdown').full;
+var oldMd = require('js/markdown').old;
 var AddProject = require('js/addProjectPlugin');
 var mHelpers = require('js/mithrilHelpers');
 var SocialShare = require('js/components/socialshare');
@@ -74,7 +75,7 @@ var institutionLogos = {
         self.width = self.nLogos > 1 ? (self.nLogos === 2 ? '115px' : '86px') : '75px';
         self.makeLogo = function(institution){
             return m('a', {href: '/institutions/' + institution.id},
-                m('img.img-circle', {
+                m('img', {
                     height: self.side, width: self.side,
                     style: {margin: '3px'},
                     title: institution.name,
@@ -260,21 +261,17 @@ $(document).ready(function () {
         mathrender.mathjaxify(markdownElement);
 
         // Render the raw markdown of the wiki
-        if (!ctx.usePythonRender) {
-            var request = $.ajax({
-                url: ctx.urls.wikiContent
-            });
-            request.done(function(resp) {
-                var rawText = resp.wiki_content || '*No wiki content*';
-                var renderedText = md.render(rawText);
-                var truncatedText = $.truncate(renderedText, {length: 400});
-                markdownElement.html(truncatedText);
-                mathrender.mathjaxify(markdownElement);
-                markdownElement.show();
-            });
-        } else {
-            markdownElement.css('display', 'inherit');
-        }
+        var request = $.ajax({
+            url: ctx.urls.wikiContent
+        });
+        request.done(function(resp) {
+            var rawText = resp.wiki_content || '*No wiki content*';
+            var renderedText = ctx.renderedBeforeUpdate ? oldMd.render(rawText) : md.render(rawText);
+            var truncatedText = $.truncate(renderedText, {length: 400});
+            markdownElement.html(truncatedText);
+            mathrender.mathjaxify(markdownElement);
+            markdownElement.show();
+        });
     }
 
     // Remove delete UI if not contributor

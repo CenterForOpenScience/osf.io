@@ -20,11 +20,11 @@ from admin.pre_reg import serializers
 from admin.pre_reg.forms import DraftRegistrationForm
 from admin.pre_reg.utils import sort_drafts, SORT_BY
 from framework.exceptions import PermissionsError
+from framework.guid.model import Guid
 from website.exceptions import NodeStateError
 from website.files.models import FileNode
-from website.project.model import DraftRegistration
+from website.project.model import DraftRegistration, Node
 from website.prereg.utils import get_prereg_schema
-from website.files.models import OsfStorageFileNode
 from website.project.metadata.schemas import from_json
 
 from admin.base.utils import PreregAdmin
@@ -229,20 +229,65 @@ def view_file(request, node_id, provider, file_id):
 
 
 def get_metadata_files(draft):
-    for q in get_file_questions('prereg-prize.json'):
-        for file_info in draft.registration_metadata[q]['value']['uploader']['extra']:
-            if file_info['data']['provider'] != 'osfstorage':
-                raise Http404('File does not exist in OSFStorage: {} {}'.format(
-                    q, file_info
-                ))
-            file_guid = file_info['data'].get('fileId')
-            if file_guid is None:
-                raise Http404('File in {} does not have a guid.'.format(q))
-            item = OsfStorageFileNode.load(file_guid)
+    data = draft.registration_metadata
+    for q, question in get_file_questions('prereg-prize.json'):
+        if not isinstance(data[q]['value'], dict):
+            for i, file_info in enumerate(data[q]['extra']):
+                provider = file_info['data']['provider']
+                if provider != 'osfstorage':
+                    raise Http404(
+                        'File does not exist in OSFStorage ({}: {})'.format(
+                            q, question
+                        ))
+                file_guid = file_info.get('fileId')
+                if not file_guid:
+                    node = Node.load(file_info.get('nodeId'))
+                    path = file_info['data'].get('path')
+                    item = FileNode.resolve_class(
+                        provider,
+                        FileNode.FILE
+                    ).get_or_create(node, path)
+                    file_guid = item.get_guid(create=True)._id
+                    data[q]['extra'][i]['fileId'] = file_guid
+                    draft.update_metadata(data)
+                    draft.save()
+                else:
+                    guid = Guid.load(file_guid)
+                    item = guid.referent
+                if item is None:
+                    raise Http404(
+                        'File with guid "{}" in "{}" does not exist'.format(
+                            file_guid, question
+                        ))
+                yield item
+            continue
+        for i, file_info in enumerate(data[q]['value']['uploader']['extra']):
+            provider = file_info['data']['provider']
+            if provider != 'osfstorage':
+                raise Http404(
+                    'File does not exist in OSFStorage ({}: {})'.format(
+                        q, question
+                    ))
+            file_guid = file_info.get('fileId')
+            if not file_guid:
+                node = Node.load(file_info.get('nodeId'))
+                path = file_info['data'].get('path')
+                item = FileNode.resolve_class(
+                    provider,
+                    FileNode.FILE
+                ).get_or_create(node, path)
+                file_guid = item.get_guid(create=True)._id
+                data[q]['value']['uploader']['extra'][i]['fileId'] = file_guid
+                draft.update_metadata(data)
+                draft.save()
+            else:
+                guid = Guid.load(file_guid)
+                item = guid.referent
             if item is None:
-                raise Http404('File with guid "{}" in {} does not exist'.format(
-                    file_guid, q
-                ))
+                raise Http404(
+                    'File with guid "{}" in "{}" does not exist'.format(
+                        file_guid, question
+                    ))
             yield item
 
 
@@ -257,11 +302,11 @@ def get_file_questions(json_file):
     for item in schema['pages']:
         for question in item['questions']:
             if question['type'] == 'osf-upload':
-                questions.append(question['qid'])
+                questions.append((question['qid'], question['title']))
                 continue
             properties = question.get('properties')
             if properties is None:
                 continue
             if uploader in properties:
-                questions.append(question['qid'])
+                questions.append((question['qid'], question['title']))
     return questions

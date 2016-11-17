@@ -116,7 +116,7 @@ class Gone(JSONAPIException):
     default_detail = ('The requested resource is no longer available.')
 
 
-class Conflict(APIException):
+class Conflict(JSONAPIException):
     status_code = status.HTTP_409_CONFLICT
     default_detail = ('Resource identifier does not match server endpoint.')
 
@@ -231,3 +231,14 @@ class TargetNotSupportedError(Exception):
 class RelationshipPostMakesNoChanges(Exception):
     """Raised when a post is on a relationship that already exists, so view can return a 204"""
     pass
+
+
+class NonDescendantNodeError(APIException):
+    """Raised when a client attempts to associate a non-descendant node with a view only link"""
+    status_code = 400
+    default_detail = _('The node {0} cannot be affiliated with this View Only Link because the node you\'re trying to affiliate is not descended from the node that the View Only Link is attached to.')
+
+    def __init__(self, node_id, detail=None):
+        if not detail:
+            detail = self.default_detail.format(node_id)
+        super(NonDescendantNodeError, self).__init__(detail=detail)

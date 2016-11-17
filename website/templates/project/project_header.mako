@@ -107,7 +107,7 @@
                         <div class="alert alert-info">This file is part of a registration and is being shown in its archived version (and cannot be altered).
                             The <a class="link-solid" href="${urls['archived_from']}">active file</a> is viewable from within the <a class="link-solid" href="${node['registered_from_url']}">live ${node['node_type']}</a>.</div>
                 % else:
-                    <div class="alert alert-info">This ${node['node_type']} is a registration of <a class="link-solid" href="${node['registered_from_url']}">this ${node['node_type']}</a>; the content of the ${node['node_type']} has been frozen and cannot be edited.</div>
+                    <div class="alert alert-info">This registration is a frozen, non-editable version of <a class="link-solid" href="${node['registered_from_url']}">this ${node['node_type']}</a></div>
                 % endif
             % else:
                 <div class="alert alert-info">

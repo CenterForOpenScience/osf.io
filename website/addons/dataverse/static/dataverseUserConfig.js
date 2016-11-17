@@ -80,9 +80,11 @@ function ViewModel(url) {
         });
         request.fail(function(xhr, status, error) {
             Raven.captureMessage('Error while updating addon account', {
-                url: url,
-                status: status,
-                error: error
+                extra: {
+                    url: url,
+                    status: status,
+                    error: error
+                }
             });
         });
         return request;
@@ -124,9 +126,11 @@ function ViewModel(url) {
             var errorMessage = (xhr.status === 401) ? language.authInvalid : language.authError;
             self.changeMessage(errorMessage, 'text-danger');
             Raven.captureMessage('Could not authenticate with Dataverse', {
-                url: url,
-                textStatus: textStatus,
-                error: error
+                extra: {
+                    url: url,
+                    textStatus: textStatus,
+                    error: error
+                }
             });
         });
     };
@@ -165,9 +169,11 @@ function ViewModel(url) {
         });
         request.fail(function(xhr, status, error) {
             Raven.captureMessage('Error while removing addon authorization for ' + account.id, {
-                url: url,
-                status: status,
-                error: error
+                extra: {
+                    url: url,
+                    status: status,
+                    error: error
+                }
             });
         });
         return request;
@@ -202,9 +208,11 @@ function ViewModel(url) {
         }).fail(function (xhr, textStatus, error) {
             self.changeMessage(language.userSettingsError, 'text-danger');
             Raven.captureMessage('Could not GET Dataverse settings', {
-                url: url,
-                textStatus: textStatus,
-                error: error
+                extra: {
+                    url: url,
+                    textStatus: textStatus,
+                    error: error
+                }
             });
         });
     };

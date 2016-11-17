@@ -58,7 +58,10 @@ class GuidSerializer(JSONAPISerializer):
         return get_type(guid.referent)
 
     def get_absolute_url(self, obj):
-        return absolute_reverse('guids:guid-detail', kwargs={'guids': obj._id})
+        return absolute_reverse('guids:guid-detail', kwargs={
+            'guids': obj._id,
+            'version': self.context['request'].parser_context['kwargs']['version']
+        })
 
     def get_absolute_html_url(self, obj):
         if not isinstance(obj.referent, StoredFileNode):

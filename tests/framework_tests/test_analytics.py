@@ -60,6 +60,10 @@ class TestUpdateCounters(UpdateCountersTestCase):
         self.node = ProjectFactory()
         self.fid = 'foo'
         self.vid = 1
+        self.userid = 'test123'
+        self.node_info = {
+            'contributors': ['test123', 'test234']
+        }
 
     def test_update_counters_file(self):
 
@@ -78,6 +82,50 @@ class TestUpdateCounters(UpdateCountersTestCase):
         page = 'download:{0}:{1}'.format(self.node, self.fid)
 
         session.data['visited'].append(page)
+        download_file_(node=self.node, fid=self.fid)
+
+        count = analytics.get_basic_counters('download:{0}:{1}'.format(self.node, self.fid), db=self.db)
+        assert_equal(count, (1, 2))
+
+    def test_update_counters_file_user_is_contributor(self):
+        @analytics.update_counters('download:{target_id}:{fid}', db=self.db, node_info=self.node_info)
+        def download_file_(**kwargs):
+            return kwargs.get('node') or kwargs.get('project')
+
+        count = analytics.get_basic_counters('download:{0}:{1}'.format(self.node, self.fid), db=self.db)
+        assert_equal(count, (None, None))
+
+        download_file_(node=self.node, fid=self.fid)
+
+        count = analytics.get_basic_counters('download:{0}:{1}'.format(self.node, self.fid), db=self.db)
+        assert_equal(count, (1, 1))
+
+        page = 'download:{0}:{1}'.format(self.node, self.fid)
+
+        session.data['visited'].append(page)
+        session.data['auth_user_id'] = self.userid
+        download_file_(node=self.node, fid=self.fid)
+
+        count = analytics.get_basic_counters('download:{0}:{1}'.format(self.node, self.fid), db=self.db)
+        assert_equal(count, (1, 1))
+
+    def test_update_counters_file_user_is_not_contributor(self):
+        @analytics.update_counters('download:{target_id}:{fid}', db=self.db, node_info=self.node_info)
+        def download_file_(**kwargs):
+            return kwargs.get('node') or kwargs.get('project')
+
+        count = analytics.get_basic_counters('download:{0}:{1}'.format(self.node, self.fid), db=self.db)
+        assert_equal(count, (None, None))
+
+        download_file_(node=self.node, fid=self.fid)
+
+        count = analytics.get_basic_counters('download:{0}:{1}'.format(self.node, self.fid), db=self.db)
+        assert_equal(count, (1, 1))
+
+        page = 'download:{0}:{1}'.format(self.node, self.fid)
+
+        session.data['visited'].append(page)
+        session.data['auth_user_id'] = "asv12uey821vavshl"
         download_file_(node=self.node, fid=self.fid)
 
         count = analytics.get_basic_counters('download:{0}:{1}'.format(self.node, self.fid), db=self.db)

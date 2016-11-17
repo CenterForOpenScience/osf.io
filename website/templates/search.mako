@@ -110,37 +110,8 @@
         </div><!--row-->
     </div>
 
-    <script type="text/html" id="SHARE">
-        <!-- ko if: $data.links -->
-            <h4><a data-bind="attr: {href: links[0].url}, text: title"></a></h4>
-        <!-- /ko -->
-
-        <!-- ko ifnot: $data.links -->
-            <h4><a data-bind="attr: {href: id.url}, text: title"></a></h4>
-        <!-- /ko -->
-
-        <h5>Description: <small data-bind="fitText: {text: description || 'No Description', length: 500}"></small></h5>
-
-        <!-- ko if: contributors.length > 0 -->
-        <h5>
-            Contributors: <small data-bind="foreach: contributors">
-                <span data-bind="text: $data.given + ' ' + $data.family"></span>
-            <!-- ko if: ($index()+1) < ($parent.contributors.length) -->&nbsp;- <!-- /ko -->
-            </small>
-        </h5>
-        <!-- /ko -->
-
-        <!-- ko if: $data.source -->
-        <h5>Source: <small data-bind="text: source"></small></h5>
-        <!-- /ko -->
-
-        <!-- ko if: $data.isResource -->
-        <button class="btn btn-primary pull-right" data-bind="click: $parents[1].claim.bind($data, _id)">Curate This</button>
-        <br>
-        <!-- /ko -->
-    </script>
     <script type="text/html" id="file">
-        <h4><a data-bind="attr: {href: deep_url}, text: name"></a> (<span class="text-danger" data-bind="if: is_retracted">Withdrawn </span><span data-bind="if: is_registration">Registration </span>File)</h4>
+        <h4><a data-bind="attr: {href: guid_url || deep_url}, text: name"></a> (<span class="text-danger" data-bind="if: is_retracted">Withdrawn </span><span data-bind="if: is_registration">Registration </span>File)</h4>
         <h5>
             <!-- ko if: parent_url --> From: <a data-bind="attr: {href: parent_url}, text: parent_title || '' + ' /'"></a> <!-- /ko -->
             <!-- ko if: !parent_url --> From: <span data-bind="if: parent_title"><span data-bind="text: parent_title"></span> /</span> <!-- /ko -->
@@ -220,6 +191,11 @@
                             <img class="social-icons" src="/static/img/baiduscholar.png"data-toggle="tooltip" style="PADDING-BOTTOM: 5px" title="Baidu Scholar">
                         </a>
                     </li>
+                    <li data-bind="visible: social.ssrn">
+                        <a data-bind="attr: {href: social.ssrn}">
+                            <img class="social-icons" src="/static/img/SSRN.jpg"data-toggle="tooltip" style="PADDING-BOTTOM: 5px" title="SSRN">
+                        </a>
+                    </li>
                 </ul>
                 <!-- /ko -->
             </div>
@@ -229,7 +205,7 @@
     <script type="text/html" id="institution">
         <div class="row">
             <div class="col-md-2">
-                <img class="img-circle" height="75px" width="75px" data-bind="attr: {src: logo_path}">
+                <img height="75px" width="75px" data-bind="attr: {src: logo_path}">
             </div>
             <div class="col-md-10">
                 <h4><a data-bind="attr: {href: url}, text: name"></a></h4>
@@ -340,7 +316,8 @@
 <%def name="javascript_bottom()">
     <script type="text/javascript">
         window.contextVars = $.extend(true, {}, window.contextVars, {
-            search:true
+            search:true,
+            shareUrl: ${ shareUrl | sjson, n }
         });
     </script>
 

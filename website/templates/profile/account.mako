@@ -88,6 +88,42 @@
                         </table>
                     </div>
                 </div>
+                <div id="externalIdentity" class="panel panel-default">
+                    <div class="panel-heading clearfix"><h3 class="panel-title">Connected Identities</h3></div>
+                    <div class="panel-body">
+                        <p> Connected identities allow you to log in to the OSF via a third-party service. <br/>
+                        You can revoke these authorizations here.</p>
+                        <hr />
+                        % if not external_identity:
+                        <p >You have not authorized any external services to log in to the OSF.</p>
+                        % endif
+                        <tbody>
+                        % for identity in external_identity:
+                        <div id="externalLogin-${identity}">
+                            % for id in external_identity[identity]:
+                            <div><tr>
+                                <td>
+                                    ${identity}: ${id} (
+                                    % if external_identity[identity][id] == "VERIFIED":
+                                        Verified
+                                    % else:
+                                        Pending
+                                    % endif
+                                    )
+                                </td>
+                                <td>
+                                    <a data-bind="click: $root.removeIdentity.bind($root, '${id}')"><i class="fa fa-times text-danger pull-right"></i></a>
+                                </td>
+                            </tr></div>                    
+                            % if not loop.last:
+                            <hr />
+                            % endif
+                            % endfor
+                        </div>
+                        % endfor
+                        </tbody>
+                    </div>
+                </div>
                 <div id="changePassword" class="panel panel-default">
                     <div class="panel-heading clearfix"><h3 class="panel-title">Change Password</h3></div>
                     <div class="panel-body">

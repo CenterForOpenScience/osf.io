@@ -6,6 +6,7 @@ from boto.s3.connection import S3Connection
 from boto.s3.connection import OrdinaryCallingFormat
 
 from framework.exceptions import HTTPError
+from website.addons.base.exceptions import InvalidAuthError, InvalidFolderError
 from website.addons.s3.settings import BUCKET_LOCATIONS
 
 
@@ -102,3 +103,22 @@ def get_user_info(access_key, secret_key):
     except exception.S3ResponseError:
         return None
     return None
+
+def get_bucket_location_or_error(access_key, secret_key, bucket_name):
+    """Returns the location of a bucket or raises AddonError
+    """
+    try:
+        connection = connect_s3(access_key, secret_key)
+    except:
+        raise InvalidAuthError()
+
+    if bucket_name != bucket_name.lower() or '.' in bucket_name:
+        # Must use ordinary calling format for mIxEdCaSe bucket names
+        # otherwise use the default as it handles bucket outside of the US
+        connection.calling_format = OrdinaryCallingFormat()
+
+    try:
+        # Will raise an exception if bucket_name doesn't exist
+        return connect_s3(access_key, secret_key).get_bucket(bucket_name, validate=False).get_location()
+    except exception.S3ResponseError:
+        raise InvalidFolderError()

@@ -18,6 +18,7 @@ from tests.factories import (
     RegistrationFactory,
     AuthUserFactory,
     UserFactory,
+    PreprintFactory,
 )
 
 
@@ -142,6 +143,8 @@ class TestNodeFiltering(ApiTestCase):
 
         self.project_two.add_tag(self.tag1, Auth(self.project_two.creator), save=True)
 
+        self.preprint = PreprintFactory(creator=self.user_one)
+
     def tearDown(self):
         super(TestNodeFiltering, self).tearDown()
         Node.remove()
@@ -248,6 +251,19 @@ class TestNodeFiltering(ApiTestCase):
         ids = [each['id'] for each in node_json]
         assert_in(self.project_one._id, ids)
         assert_not_in(self.project_two._id, ids)
+
+    def test_filter_no_tags(self):
+        project_no_tag = ProjectFactory(title="Project One", is_public=True)
+
+        url = '/{}nodes/?filter[tags]=null'.format(API_BASE)
+
+        res = self.app.get(url, auth=project_no_tag.creator.auth)
+        node_json = res.json['data']
+
+        ids = [each['id'] for each in node_json]
+        assert_not_in(self.project_one._id, ids)
+        assert_not_in(self.project_two._id, ids)
+        assert_in(project_no_tag._id, ids)
 
     def test_get_all_projects_with_no_filter_logged_in(self):
         res = self.app.get(self.url, auth=self.user_one.auth)
@@ -443,7 +459,7 @@ class TestNodeFiltering(ApiTestCase):
         res = self.app.get(url, auth=self.user_one.auth)
         assert_equal(res.status_code, 200)
         data = res.json['data']
-        assert_equal(len(data), 3)
+        assert_equal(len(data), 4)
 
         titles = [each['attributes']['title'] for each in data]
 
@@ -457,7 +473,7 @@ class TestNodeFiltering(ApiTestCase):
         res = self.app.get(url, auth=self.user_one.auth)
         assert_equal(res.status_code, 200)
         data = res.json['data']
-        assert_equal(len(data), 3)
+        assert_equal(len(data), 4)
 
         descriptions = [each['attributes']['description'] for each in data]
 
@@ -465,6 +481,51 @@ class TestNodeFiltering(ApiTestCase):
         assert_in(self.project_one.description, descriptions)
         assert_in(self.project_three.description, descriptions)
         assert_in(self.private_project_user_one.description, descriptions)
+
+    def test_filtering_on_preprint(self):
+        url = '/{}nodes/?filter[preprint]=true'.format(API_BASE)
+        res = self.app.get(url, auth=self.user_one.auth)
+        assert_equal(res.status_code, 200)
+        data = res.json['data']
+        ids = [each['id'] for each in data]
+
+        preprints = Node.find(Q('preprint_file', 'ne', None) & Q('preprint_orphan', 'ne', True))
+        assert_equal(len(data), len(preprints))
+        assert_in(self.preprint.node._id, ids)
+        assert_not_in(self.project_one._id, ids)
+        assert_not_in(self.project_two._id, ids)
+        assert_not_in(self.project_three._id, ids)
+
+    def test_filtering_out_preprint(self):
+        url = '/{}nodes/?filter[preprint]=false'.format(API_BASE)
+        res = self.app.get(url, auth=self.user_one.auth)
+        assert_equal(res.status_code, 200)
+        data = res.json['data']
+
+        ids = [each['id'] for each in data]
+
+        assert_not_in(self.preprint.node._id, ids)
+        assert_in(self.project_one._id, ids)
+        assert_in(self.project_two._id, ids)
+        assert_in(self.project_three._id, ids)
+
+    def test_preprint_filter_excludes_orphans(self):
+        orphan = PreprintFactory(creator=self.preprint.node.creator)
+        orphan._is_preprint_orphan = True
+        orphan.save()
+
+        url = '/{}nodes/?filter[preprint]=true'.format(API_BASE)
+        res = self.app.get(url, auth=self.user_one.auth)
+        assert_equal(res.status_code, 200)
+        data = res.json['data']
+
+        ids = [each['id'] for each in data]
+
+        assert_in(self.preprint.node._id, ids)
+        assert_not_in(orphan._id, ids)
+        assert_not_in(self.project_one._id, ids)
+        assert_not_in(self.project_two._id, ids)
+        assert_not_in(self.project_three._id, ids)
 
 
 class TestNodeCreate(ApiTestCase):
@@ -635,6 +696,31 @@ class TestNodeCreate(ApiTestCase):
     def test_create_component_inherit_contributors(self):
         parent_project = ProjectFactory(creator=self.user_one)
         parent_project.add_contributor(self.user_two, permissions=[permissions.READ], save=True)
+        url = '/{}nodes/{}/children/?inherit_contributors=true'.format(API_BASE, parent_project._id)
+        component_data = {
+            'data': {
+                'type': 'nodes',
+                'attributes': {
+                    'title': self.title,
+                    'category': self.category,
+                }
+            }
+        }
+        res = self.app.post_json_api(url, component_data, auth=self.user_one.auth)
+        assert_equal(res.status_code, 201)
+        json_data = res.json['data']
+
+        new_component_id = json_data['id']
+        new_component = Node.load(new_component_id)
+        assert_equal(len(new_component.contributors), 2)
+        assert_equal(len(new_component.contributors), len(parent_project.contributors))
+
+    def test_create_component_inherit_contributors_with_unregistered_contributor(self):
+        parent_project = ProjectFactory(creator=self.user_one)
+        parent_project.add_unregistered_contributor(
+            fullname='far', email='bar', permissions=[permissions.READ],
+            auth= Auth(user=self.user_one), save=True
+        )
         url = '/{}nodes/{}/children/?inherit_contributors=true'.format(API_BASE, parent_project._id)
         component_data = {
             'data': {
@@ -1569,7 +1655,42 @@ class TestNodeBulkDelete(ApiTestCase):
         self.private_project_url = "/{}nodes/{}/".format(API_BASE, self.private_project_user_one._id)
 
         self.public_payload = {'data': [{'id': self.project_one._id, 'type': 'nodes'}, {'id': self.project_two._id, 'type': 'nodes'}]}
+        self.public_query_params = 'id={},{}'.format(self.project_one._id, self.project_two._id)
+        self.type_query_param = 'type=nodes'
         self.private_payload = {'data': [{'id': self.private_project_user_one._id, 'type': 'nodes'}]}
+        self.private_query_params = 'id={}'.format(self.private_project_user_one._id)
+
+    def test_bulk_delete_with_query_params(self):
+        url = '{}?{}&{}'.format(self.url, self.type_query_param, self.public_query_params)
+        res = self.app.delete_json_api(url, auth=self.user_one.auth, bulk=True)
+        assert_equal(res.status_code, 204)
+
+    def test_bulk_delete_with_query_params_and_payload(self):
+        url = '{}?{}&{}'.format(self.url, self.type_query_param, self.public_query_params)
+        res = self.app.delete_json_api(url, self.public_payload, auth=self.user_one.auth, expect_errors=True, bulk=True)
+        assert_equal(res.status_code, 409)
+        assert_equal(
+            res.json['errors'][0]['detail'],
+            u'A bulk DELETE can only have a body or query parameters, not both.'
+        )
+
+    def test_bulk_delete_with_query_params_no_type(self):
+        url = '{}?{}'.format(self.url, self.public_query_params)
+        res = self.app.delete_json_api(url, auth=self.user_one.auth, expect_errors=True, bulk=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(
+            res.json['errors'][0]['detail'],
+            u'Type query parameter is also required for a bulk DELETE using query parameters.'
+        )
+
+    def test_bulk_delete_with_query_params_wrong_type(self):
+        url = '{}?{}&{}'.format(self.url, self.public_query_params, "type=node_not_nodes")
+        res = self.app.delete_json_api(url, auth=self.user_one.auth, expect_errors=True, bulk=True)
+        assert_equal(res.status_code, 409)
+        assert_equal(
+            res.json['errors'][0]['detail'],
+            u'Type needs to match type expected at this endpoint.'
+        )
 
     def test_bulk_delete_nodes_blank_request(self):
         res = self.app.delete_json_api(self.url, auth=self.user_one.auth, expect_errors=True, bulk=True)

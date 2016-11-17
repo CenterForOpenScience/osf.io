@@ -6,6 +6,7 @@ from tests.factories import CommentFactory, AuthUserFactory
 from website.project.model import Comment
 
 from scripts import migrate_spam
+from website.project.spam.model import SpamStatus
 
 
 class TestMigrateSpam(OsfTestCase):
@@ -32,16 +33,16 @@ class TestMigrateSpam(OsfTestCase):
         self.comment_3.save()
         self.comment_4 = CommentFactory()
         self.comment_4.date_last_reported = None
-        self.comment_4.spam_status = Comment.FLAGGED
+        self.comment_4.spam_status = SpamStatus.FLAGGED
         self.comment_4.reports[self.user._id] = self.generic_report
         self.comment_4.save()
         self.comment_5 = CommentFactory()
         self.comment_5.date_last_reported = None
-        self.comment_5.spam_status = Comment.UNKNOWN
+        self.comment_5.spam_status = SpamStatus.UNKNOWN
         self.comment_5.save()
         self.comment_6 = CommentFactory()
         self.comment_6.date_last_reported = None
-        self.comment_6.spam_status = Comment.SPAM
+        self.comment_6.spam_status = SpamStatus.SPAM
         self.comment_6.reports[self.user._id] = self.generic_report
         self.comment_6.save()
 
@@ -59,9 +60,9 @@ class TestMigrateSpam(OsfTestCase):
         self.comment_2.reload()
         self.comment_1.reload()
         self.comment_3.reload()
-        nt.assert_equal(self.comment_1.spam_status, Comment.FLAGGED)
-        nt.assert_equal(self.comment_2.spam_status, Comment.FLAGGED)
-        nt.assert_equal(self.comment_3.spam_status, Comment.UNKNOWN)
+        nt.assert_equal(self.comment_1.spam_status, SpamStatus.FLAGGED)
+        nt.assert_equal(self.comment_2.spam_status, SpamStatus.FLAGGED)
+        nt.assert_equal(self.comment_3.spam_status, SpamStatus.UNKNOWN)
 
     def test_migrate_latest(self):
         migrate_spam.migrate_status(migrate_spam.get_no_status_targets())

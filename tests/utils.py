@@ -8,6 +8,8 @@ from nose import SkipTest
 from nose.tools import assert_equal, assert_not_equal, assert_in
 
 from framework.auth import Auth
+from framework.celery_tasks.handlers import celery_teardown_request
+
 from website.archiver import ARCHIVER_SUCCESS
 from website.archiver import listeners as archiver_listeners
 from website.project.sanctions import Sanction
@@ -163,6 +165,12 @@ def make_drf_request(*args, **kwargs):
     # A DRF Request wraps a Django HttpRequest
     return Request(http_request, *args, **kwargs)
 
+def make_drf_request_with_version(version='2.0', *args, **kwargs):
+    req = make_drf_request()
+    req.parser_context['kwargs'] = {'version': 'v2'}
+    req.version = version
+    return req
+
 class MockAuth(object):
 
     def __init__(self, user):
@@ -196,3 +204,8 @@ def unique(factory):
         used.append(item)
         return item
     return wrapper
+
+@contextlib.contextmanager
+def run_celery_tasks():
+    yield
+    celery_teardown_request()

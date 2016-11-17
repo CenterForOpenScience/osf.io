@@ -30,7 +30,7 @@ from website.project import new_private_link
 from website.project.views.node import _view_project as serialize_node
 from website.addons.base import AddonConfig, AddonNodeSettingsBase, views
 from tests.base import OsfTestCase, get_default_metaschema
-from tests.factories import AuthUserFactory, ProjectFactory
+from tests.factories import AuthUserFactory, ProjectFactory, RegistrationFactory
 from website.addons.github.exceptions import ApiError
 from website.addons.github.tests.factories import GitHubAccountFactory
 
@@ -358,6 +358,16 @@ class TestCheckAuth(OsfTestCase):
 
         assert_false(component.has_permission(self.user, 'write'))
         res = views.check_access(component, Auth(user=self.user), 'copyto', None)
+        assert_true(res)
+
+    def test_has_permission_on_parent_node_metadata_pass_if_registration(self):
+        component_admin = AuthUserFactory()
+        component = ProjectFactory(creator=component_admin, parent=self.node, is_public=False)
+
+        component_registration = RegistrationFactory(project=component, creator=component_admin)
+
+        assert_false(component_registration.has_permission(self.user, 'read'))
+        res = views.check_access(component_registration, Auth(user=self.user), 'metadata', None)
         assert_true(res)
 
     def test_has_permission_on_parent_node_copyto_fail_if_not_registration(self):

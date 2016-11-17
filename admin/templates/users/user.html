@@ -19,12 +19,28 @@
                 Associated spam
             </a>
             </span>
-            <span class="col-md-2">
-            <a href=""
-               class="btn btn-primary disabled">
-                User notes
-            </a>
-            </span>
+            <div class="btn-group" role="group">
+                <a href="{% url 'desk:customer' user.id %}"
+                   data-toggle="modal" data-target="#deskModal"
+                   class="btn btn-primary">
+                    Desk Profile
+                </a>
+                <a href="{% url 'desk:user_cases' user.id %}"
+                   data-toggle="modal" data-target="#caseModal"
+                   class="btn btn-primary">
+                    Desk Cases
+                </a>
+            </div>
+            <div class="modal" id="deskModal">
+                <div class="modal-dialog">
+                    <div class="modal-content"></div>
+                </div>
+            </div>
+            <div class="modal" id="caseModal">
+                <div class="modal-dialog">
+                    <div class="modal-content"></div>
+                </div>
+            </div>
             <span class="col-md-2">
             <a href="{% url 'users:reset_password' user.id %}"
                data-toggle="modal" data-target="#resetModal"
@@ -59,6 +75,31 @@
                 </form>
             {% endif %}
             </span>
+            <span class="col-md-2">
+                {% if not user.disabled or 'spam_flagged' in user.system_tags %}
+                    <a href="{% url 'users:spam_disable' user.id %}"
+                       data-toggle="modal" data-target="#disableSpamModal"
+                       class="btn btn-danger">
+                        Disable Spam account
+                    </a>
+                <div class="modal" id="disableSpamModal">
+                    <div class="modal-dialog">
+                        <div class="modal-content"></div>
+                    </div>
+                </div>
+                {% else %}
+                    <a href="{% url 'users:ham_enable' user.id %}"
+                       data-toggle="modal" data-target="#enableHamModal"
+                       class="btn btn-danger">
+                        Re-enable Ham account
+                    </a>
+                <div class="modal" id="enableHamModal">
+                    <div class="modal-dialog">
+                        <div class="modal-content"></div>
+                    </div>
+                </div>
+                {% endif %}
+            </span>
         </div>
         <div class="row">
             <h3>User details</h3>
@@ -79,7 +120,7 @@
                 <tr>
                     <td>OSF account</td>
                     <td>
-                        <a href="">{{ user.id }}</a>
+                        <a href="{{ user.osf_link }}">{{ user.id }}</a>
                     </td>
                 </tr>
                 <tr>
@@ -100,12 +141,20 @@
                     </td>
                 </tr>
                 <tr>
-                    <td>Account disabled</td>
-                    <td>{{ user.disabled }}</td>
+                    <td>Registered</td>
+                    <td>{{ user.registered }}</td>
+                </tr>
+                <tr>
+                    <td>Confirmed</td>
+                    <td>{{ user.confirmed }}</td>
                 </tr>
                 <tr>
                     <td>Last login</td>
                     <td>{{ user.last_login }}</td>
+                </tr>
+                <tr>
+                    <td>Disabled</td>
+                    <td>{{ user.disabled }}</td>
                 </tr>
                 <tr>
                     <td>Two factor</td>
@@ -127,6 +176,14 @@
                     </td>
                 </tr>
                 <tr>
+                    <td>System tags</td>
+                    <td>
+                        {% for system_tag in user.system_tags %}
+                            {{ system_tag }}{% if not forloop.last %}, {% endif %}
+                        {% endfor %}
+                    </td>
+                </tr>
+                <tr>
                     <td>Nodes</td>
                     <td>
                         <table class="table table-hover table-bordered">
@@ -137,6 +194,7 @@
                                 <th>Public</th>
                                 <th>Registration</th>
                                 <th># of Contributors</th>
+                                <th>SPAM Status</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
@@ -152,6 +210,17 @@
                                 <td>{{ node.public }}</td>
                                 <td>{{ node.is_registration }}</td>
                                 <td>{{ node.number_contributors }}</td>
+                                <td>
+                                    {% if node.spam_status == SPAM_STATUS.UNKNOWN %}
+                                        <span class="label label-default">Unknown</span>
+                                    {% elif node.spam_status == SPAM_STATUS.FLAGGED %}
+                                        <span class="label label-warning">Flagged</span>
+                                    {% elif node.spam_status == SPAM_STATUS.SPAM %}
+                                        <span class="label label-danger">Spam</span>
+                                    {% elif node.spam_status == SPAM_STATUS.HAM %}
+                                        <span class="label label-success">Ham</span>
+                                    {% endif %}
+                                </td>
                                 <td>
                                 {% if node.number_contributors < 2 and not node.is_registration %}
                                     {% if node.deleted %}

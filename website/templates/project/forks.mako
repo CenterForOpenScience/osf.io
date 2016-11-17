@@ -28,3 +28,16 @@
                 </div>
         </div>
 </div>
+
+<%def name="javascript_bottom()">
+  ${parent.javascript_bottom()}
+  <script type="text/javascript">
+   window.contextVars = window.contextVars || {};
+   window.contextVars.analyticsMeta = $.extend(true, {}, window.contextVars.analyticsMeta, {
+       pageMeta: {
+           title: 'Forks',
+           public: true,
+       },
+   });
+  </script>
+</%def>

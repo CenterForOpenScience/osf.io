@@ -3,9 +3,10 @@ import datetime
 import mock
 from nose.tools import *  # noqa
 from tests.base import fake, OsfTestCase
+from website.project.spam.model import SpamStatus
 from tests.factories import (
     EmbargoFactory, NodeFactory, ProjectFactory,
-    RegistrationFactory, UserFactory, UnconfirmedUserFactory, DraftRegistrationFactory
+    RegistrationFactory, UserFactory, UnconfirmedUserFactory
 )
 
 from framework.exceptions import PermissionsError
@@ -65,7 +66,7 @@ class RegistrationApprovalModelTestCase(OsfTestCase):
         project.add_contributor(project_non_admin, auth=Auth(project.creator), save=True)
 
         child = NodeFactory(creator=child_admin, parent=project)
-        child.add_contributor(child_non_admin, auth=Auth(project.creator), save=True)
+        child.add_contributor(child_non_admin, auth=Auth(child.creator), save=True)
 
         grandchild = NodeFactory(creator=grandchild_admin, parent=child)  # noqa
 
@@ -270,3 +271,15 @@ class RegistrationApprovalModelTestCase(OsfTestCase):
         registration = RegistrationFactory(project=project)
         with mock.patch.object(PreregCallbackMixin, '_notify_initiator'):
             registration.registration_approval._on_complete(self.user)
+
+    def test__on_complete_raises_error_if_project_is_spam(self):
+        self.registration.require_approval(
+            self.user,
+            notify_initiator_on_complete=True
+        )
+        self.registration.spam_status = SpamStatus.FLAGGED
+        self.registration.save()
+        with mock.patch.object(PreregCallbackMixin, '_notify_initiator') as mock_notify:
+            with assert_raises(NodeStateError):
+                self.registration.registration_approval._on_complete(self.user)
+        assert_equal(mock_notify.call_count, 0)

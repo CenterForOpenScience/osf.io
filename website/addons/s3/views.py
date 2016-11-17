@@ -14,7 +14,7 @@ from website.addons.s3.serializer import S3Serializer
 from website.oauth.models import ExternalAccount
 from website.project.decorators import (
     must_have_addon, must_have_permission,
-    must_not_be_registration, must_be_addon_authorizer,
+    must_be_addon_authorizer,
 )
 
 SHORT_NAME = 's3'
@@ -39,18 +39,24 @@ s3_get_config = generic_views.get_config(
     S3Serializer
 )
 
-def _get_buckets(node_addon, folder_id=None):
-    """Used by generic_view `folder_list` to fetch a list of buckets.
-    `folder_id` required by generic, but not actually used"""
-    return {
-        'buckets': utils.get_bucket_names(node_addon)
-    }
+def _set_folder(node_addon, folder, auth):
+    folder_id = folder['id']
+    node_addon.set_folder(folder_id, auth=auth)
+    node_addon.save()
 
-s3_folder_list = generic_views.folder_list(
+s3_set_config = generic_views.set_config(
     SHORT_NAME,
     FULL_NAME,
-    _get_buckets
+    S3Serializer,
+    _set_folder
 )
+
+@must_have_addon(SHORT_NAME, 'node')
+@must_be_addon_authorizer(SHORT_NAME)
+def s3_folder_list(node_addon, **kwargs):
+    """ Returns all the subsequent folders under the folder id passed.
+    """
+    return node_addon.get_folders()
 
 s3_root_folder = generic_views.root_folder(
     SHORT_NAME
@@ -98,8 +104,8 @@ def s3_add_user_account(auth, **kwargs):
     except KeyExistsException:
         # ... or get the old one
         account = ExternalAccount.find_one(
-            Q('oauth_key', 'eq', access_key) &
-            Q('oauth_secret', 'eq', secret_key)
+            Q('provider', 'eq', SHORT_NAME) &
+            Q('provider_id', 'eq', user_info.id)
         )
     assert account is not None
 
@@ -112,39 +118,6 @@ def s3_add_user_account(auth, **kwargs):
 
     return {}
 
-
-@must_have_permission('write')
-@must_have_addon(SHORT_NAME, 'user')
-@must_have_addon(SHORT_NAME, 'node')
-@must_be_addon_authorizer(SHORT_NAME)
-@must_not_be_registration
-def s3_set_config(node, auth, user_addon, node_addon, **kwargs):
-    """Saves selected bucket to node settings."""
-    # Fail if user settings not authorized
-    if not user_addon.has_auth:
-        raise HTTPError(httplib.UNAUTHORIZED)
-
-    # If authorized, only owner can change settings
-    if node_addon.has_auth and node_addon.user_settings.owner != auth.user:
-        raise HTTPError(httplib.FORBIDDEN)
-
-    # Claiming the node settings
-    if not node_addon.user_settings:
-        node_addon.user_settings = user_addon
-
-    bucket = request.json.get('s3_bucket', '')
-
-    if not utils.bucket_exists(node_addon.external_account.oauth_key, node_addon.external_account.oauth_secret, bucket):
-        error_message = ('We are having trouble connecting to that bucket. '
-                         'Try a different one.')
-        return {'message': error_message}, httplib.BAD_REQUEST
-
-    if bucket != node_addon.bucket:
-
-        # Update node settings and log
-        node_addon.set_folder(bucket, auth)
-
-    return S3Serializer().serialize_settings(node_addon, auth.user)
 
 @must_be_addon_authorizer(SHORT_NAME)
 @must_have_addon('s3', 'node')
@@ -184,6 +157,4 @@ def create_bucket(auth, node_addon, **kwargs):
             'title': 'Error connecting to S3',
         }, httplib.BAD_REQUEST
 
-    return {
-        'buckets': utils.get_bucket_names(node_addon)
-    }
+    return {}

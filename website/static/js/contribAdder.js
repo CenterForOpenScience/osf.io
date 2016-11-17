@@ -98,6 +98,15 @@ AddContributorViewModel = oop.extend(Paginator, {
         self.totalPages = ko.observable(0);
         self.childrenToChange = ko.observableArray();
 
+        self.emailSearch = ko.pureComputed(function () {
+            var emailRegex = new RegExp('[^\\s]+@[^\\s]+\\.[^\\s]');
+            if (emailRegex.test(String(self.query()))) {
+                return true;
+            } else {
+                return false;
+            }
+        });
+
         self.foundResults = ko.pureComputed(function () {
             return self.query() && self.results().length && !self.parentImport();
         });
@@ -504,7 +513,9 @@ AddContributorViewModel = oop.extend(Paginator, {
         }).fail(function (xhr, status, error) {
             $osf.growl('Error', 'Unable to retrieve project settings');
             Raven.captureMessage('Could not GET project settings.', {
-                url: treebeardUrl, status: status, error: error
+                extra: {
+                    url: treebeardUrl, status: status, error: error
+                }
             });
         });
     }

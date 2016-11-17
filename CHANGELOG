@@ -2,7 +2,283 @@
 Changelog
 *********
 
-0.83.0 (unreleased)
+0.100.0 (2016-11-09)
+====================
+- Support for editing preprints
+
+0.99.0 (2016-11-01)
+===================
+- Preprint service and migration
+
+0.98.0 (2016-10-31)
+===================
+- Keep the file editor widget on file view page from sometimes being created twice
+- Make public activity page load much more quickly
+- Update Wiki preview Length
+- Hide OSF for Institutions Logos from Dashboard Until 5 Projects Affiliated
+- On the files widget, handle renaming a file when sort-by-date is selected
+- Don't break addons when adding addons to ADDONS_REQUESTED in local.py
+- Remove reliance on Object.remove to increase IE support
+- Fix broken retraction due to incompatible text entry
+- Capitalize home wiki in wiki commenting logs
+- Ensure files in search could be visited even if they didn't have GUIDs
+- Fix Node relationship on NodeWiki for Registrations
+- Keep signing Up w/ an existing non-registered User from issuing password reset email
+- Allow deleting of replies to comments on files
+- Allow restoring deleted replies to a comment
+- Prevent renaming of files with ']' from causing problems
+- Allow IE to update project category from the settings page
+- Allow admin app to pull statistics for users from workshops and webinars
+- Allow admin app to link users to desk.com tickets
+- Allow IE to update project title and description from settings page
+- Fix shortened iframe for PDF files in MFR
+
+0.97.0 (2016-10-20)
+===================
+- API v2 Versioning
+- API v2 Redirect swagger docs to Browseable API
+- Fix wiki formatting for legacy wiki pages
+- Ensure bad file moves don't delete files
+- API v2 Make private nodes private in inter-node file moves
+- Don't create user twice in claim edge case
+- Retain formatting in preregistration
+- Render wiki on project summary widget properly in all cases
+- Fixes for throttling
+- Allow search to find words separated by things that aren't spaces
+- API v2.1 Make pagination meta match JSON API Spec
+- Move institution login to CAS
+- API v2 Create file GUIDs
+- Standardize terminology: registration form
+- Clarify that prereg comments are not registered
+- Decouple identifiers from registrations
+- API Expose latest file version
+- Update Fangorn to use WB V1 API
+- Add My Preprints to My Projects
+- Update "this project" box at the top of registration overview page
+- Add change folder toggle button
+- Improvements to invoke tasks for dockerization
+- Support test-level database isolation
+
+Migrations
+-----------
+
+- python -m scripts.encrypt_external_accounts_unicode
+
+0.96.0 (2016-10-12)
+===================
+- Add ownCloud addon
+- Encrypt addon credentials
+
+Migrations
+-----------
+
+- python -m scripts.encrypt_external_accounts
+
+0.95.0 (2016-10-05)
+===================
+- Replace GPL-only django-queryset-csv library (the last of the GPL)
+- Allow domain with umlaut to be added to OSF social profile
+- API v2 search
+- Fix bottom margin of Dashboard quick project search
+- Normalize OSF verification key
+- Add prereg banner to OSF dashboard
+- Pin MODM dependency
+- Surface analytics initialization script
+- Add error messaging on project page, files page, and prereg form "cannot upload folders"
+- Change preprint logs to say 'made' instead of 'initiated'
+- Fix raven-js calls on the OSF
+- Capitalize wiki's Home page on many of the logs
+- Remove legacy SHARE code
+
+0.94.4 (2016-10-05)
+===================
+- Allow components of projects with unconfirmed contributors to inherit contributors properly
+
+0.94.0 (2016-09-22)
+===================
+- Remove GPLv3-only python-crontab library
+- API Put index on on contributor detail
+- Make analytics for OSF4I differentiate properly between nodes and projects
+- Fix My Projects registrations that aren't yours have blank contributor names and throw 404 error when expanded
+- Fix filtering by Name and Modified Date on Files page
+- Improve look of Institution logos on project pages
+- API Add citations for projects
+- Add unit tests for ORCiD login
+- Auto-link bare URLs in node descriptions
+- Alert when you cannot delete a project when they click the delete button
+- Add social icons to user profile
+- Change download count to not include contributors' downloads
+
+0.93.0 (2016-09-14)
+===================
+
+- Update/replace GPLv3-licensed pyzotero
+- Remove spurious \.png with problematic file name
+- Allow ability to add DOIs/ARKs to Public Projects
+- Add API rate limiting mechanism that works for all authorizations
+- Reference institutions with institution viewer text for empty collections
+- Put rabbitmq into the setup task
+- Replace "newest Public Projects" with "Noteworthy Public Projects
+- Tell Read-only contributors why they can't affiliate a project with their institution
+- Add date_modified lt/gt/lte/gte filter to registrations
+- Refactor the registration modal
+- Fix Varnish tests
+
+Migrations
+----------
+
+- python -m scripts.migration.migrate_retraction_dates
+
+0.92.0 (2016-09-06)
+===================
+
+- Ensure Mendeley 500 does not prevent file tree from loading
+- API Remove unused routes for registrations
+- Allow access to meetings in Admin App when unconfirmed users are contributors to meeting
+- Allow homepage link text to be not-required in Admin app
+- API Allow filtering on providers by type
+- Create analytics script for institutions data
+- API Make VOLs append view_only query parameter to generated links
+- Raise minimum password length to 8 characters
+- Add SSRN ID to social links
+- Warn users they cannot search by email address
+- Improve look of Institution Logos on dashboard
+- Display component descriptions in search results
+- Make log urls relative
+- Update At.js dependency
+- Refactor search tests
+
+0.91.0 (2016-08-28)
+===================
+
+- API Endpoints for Preprints (also includs providers and taxonomies)
+- API Download Counts for OSF Storage Files
+
+Migrations
+----------
+
+- python -m scripts.update_taxonomies
+- python -m scripts.populate_preprint_providers
+
+0.90.0 (2016-08-26)
+===================
+
+- Add login with ORCID.
+
+0.89.0 (2016-08-25)
+===================
+
+- API Fail gracefully on unexpected filter modifier
+- API Make adding unregistered contributors work properly
+- API Show in-common users with correct query parameter
+- API Return contributor index when creating contributor
+- Admin easy removal of spam users and projects
+
+0.88.2 (2016-08-25)
+===================
+
+- Remove Keen migration banner
+
+0.88.1 (2016-08-25)
+===================
+
+- Make Github addon logging more tolerant to problems
+
+0.88.0 (2016-08-22)
+===================
+
+- Dropzone now correctly identifying and rejecting folders
+- Admin for Prereg should no longer accept two clicks for one registration
+- Add ability for cookie auth API contributors to create users
+- Allow read+write Contributors to affiliate projects with institutions
+- API endpoints for managing External Links
+- API endpoints for managing View Only Links
+- API methods for re-ordering contributors
+- API multi-field filtering
+- API contributors serializer has relationship to node
+
+0.87.8 (2016-08-17)
+===================
+
+- Fix case-sensitive url on preprints page
+
+0.87.7 (2016-08-17)
+===================
+
+- Add PsyArχiv to the preprints page
+
+0.87.6 (2016-08-17)
+===================
+
+- Fix paginated() to fix migrations (esp migrate_search())
+
+0.87.5 (2016-08-16)
+===================
+
+- Modify wording on ERPC langing page
+
+0.87.4 (2016-08-15)
+===================
+
+- Fix generation of prereg file guids
+
+0.87.3 (2106-08-15)
+===================
+
+- Pin Dropzone to a commit
+
+0.87.2 (2106-08-14)
+===================
+
+- Fix buttons not showing on file detail page in some circumstances
+
+0.87.1 (2016-08-11)
+===================
+
+- Add ERPC registration schema and landing page.
+
+0.87.0 (2016-08-11)
+===================
+
+- Keep anonymous View Only Links from showing name in prereg schemas.
+- APIv2: Make comments link properly to/from registrations as well as nodes.
+- Fix randomly-failing Karma test.
+- Keep private-projects analytics page from giving Forbidden Error.
+- Make tooltips work on Personal Access Token page.
+- APIv2: Make a version of Bulk DELETE that does not rely on JSON body.
+- Make icons more consistent across the site.
+- Update treebeard version so we can finally select across more than one page.
+- Remove inappropriate buttons from file version detail view.
+- Don't show a profile page for unconfirmed users.
+- Modify language for some dialog boxes.
+- Add spell checking to wiki.
+- APIv2: link to templated_from node.
+- Display all of the password warning on mobile devices and small windows.
+- Border changes on file widget.
+- Side navbar looks better when scrolling.
+- Show draft registrations in reverse chronological order.
+
+0.86.0 (2016-08-04)
+===================
+
+- APIv2: Add bulk support for contributor endpoints.
+- APIv2: Add endpoint to create unregistered users.
+- Dev: Remove dependencies on personal GitHub forks.
+- Social media sharing bar on project overview and file detail pages.
+- Add version toggle link on file detail pages.
+- Various UI fixes.
+
+0.85.0 (2016-08-01)
+===================
+
+- APIv2: Add S3 addon management.
+
+0.84.0 (2016-07-28)
+===================
+
+- Migrate Piwik to Keen.
+
+0.83.0 (2016-07-25)
 ===================
 
 - Add @mentions to comments.

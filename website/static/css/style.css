@@ -265,7 +265,7 @@ a {
 
 }
 
-@media (max-width: 768px) {
+@media (max-width: 991px) {
     .affix {
         position: relative; /*For project setting side-bar*/
     }
@@ -278,7 +278,7 @@ a {
 .osf-affix {
     display: none;
 }
-@media (min-width: 769px) {
+@media (min-width: 990px) {
     .osf-affix.profile-affix {
         top: 80px;
     }

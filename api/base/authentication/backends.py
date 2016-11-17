@@ -4,7 +4,7 @@ from framework.auth.core import get_user, User
 class ODMBackend(object):
 
     def authenticate(self, username=None, password=None):
-        return get_user(username=username, password=password) or None
+        return get_user(email=username, password=password) or None
 
     def get_user(self, user_id):
         return User.load(user_id)

@@ -51,7 +51,6 @@ var entry = {
     'meetings-page': staticPath('js/pages/meetings-page.js'),
     'view-file-tree-page': staticPath('js/pages/view-file-tree-page.js'),
     'search-page': staticPath('js/pages/search-page.js'),
-    'share-search-page': staticPath('js/pages/share-search-page.js'),
     'profile-settings-addons-page': staticPath('js/pages/profile-settings-addons-page.js'),
     'twofactor-page': staticPath('js/pages/twofactor-page.js'),
     'forgotpassword-page': staticPath('js/pages/forgotpassword-page.js'),
@@ -153,6 +152,7 @@ var resolve = {
         'pagedown-ace-sanitizer': addonsPath('wiki/static/pagedown-ace/Markdown.Sanitizer.js'),
         'pagedown-ace-editor': addonsPath('wiki/static/pagedown-ace/Markdown.Editor.js'),
         'wikiPage': addonsPath('wiki/static/wikiPage.js'),
+        'typo': staticPath('vendor/ace-plugins/typo.js'),
         'highlight-css': nodePath('highlight.js/styles/default.css'),
         'pikaday-css': nodePath('pikaday/css/pikaday.css'),
         // Also alias some internal libraries for easy access
@@ -161,6 +161,7 @@ var resolve = {
         // GASP Items not defined as main in its package.json
         'TweenLite' : nodePath('gsap/src/minified/TweenLite.min.js'),
         'EasePack' : nodePath('gsap/src/minified/easing/EasePack.min.js'),
+        'keen-dataset' : nodePath('keen-dataviz/lib/dataset/'),
     }
 };
 

@@ -1,6 +1,6 @@
 <%inherit file="project/addon/widget.mako"/>
 
-<div id="markdownRender" class="break-word scripted">
+<div id="markdownRender" class="break-word scripted preview">
     % if wiki_content:
         ${wiki_content}
     % else:
@@ -17,9 +17,17 @@
 <script>
     window.contextVars = $.extend(true, {}, window.contextVars, {
         wikiWidget: true,
-        usePythonRender: ${ use_python_render | sjson, n },
+        renderedBeforeUpdate: ${ rendered_before_update | sjson, n },
         urls: {
             wikiContent: ${wiki_content_url | sjson, n }
         }
     })
 </script>
+
+<style>
+.preview {
+    max-height: 300px;
+    overflow-y: auto;
+    padding-right: 10px;
+}
+</style>

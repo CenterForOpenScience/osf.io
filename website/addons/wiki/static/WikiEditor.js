@@ -149,9 +149,11 @@ function ViewModel(url, viewText) {
         request.fail(function (xhr, textStatus, error) {
             $osf.growl('Error','The wiki content could not be loaded.');
             Raven.captureMessage('Could not GET wiki contents.', {
-                url: url,
-                textStatus: textStatus,
-                error: error
+                extra: {
+                    url: url,
+                    textStatus: textStatus,
+                    error: error
+                }
             });
         });
         return request;

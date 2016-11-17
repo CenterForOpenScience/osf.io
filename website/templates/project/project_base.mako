@@ -57,6 +57,7 @@
        parent_exists = parent_node['exists']
        parent_title = ''
        parent_registration_url = ''
+       root_id = node['root_id']
        if parent_exists:
            parent_title = "Private {0}".format(parent_node['category'])
            parent_registration_url = ''
@@ -94,13 +95,15 @@
             isPublic: ${ node.get('is_public', False) | sjson, n },
             isRegistration: ${ node.get('is_registration', False) | sjson, n },
             isRetracted: ${ node.get('is_retracted', False) | sjson, n },
-            piwikSiteID: ${ node.get('piwik_site_id', None) | sjson, n },
-            piwikHost: ${ piwik_host | sjson, n },
+            isPreprint: ${ node.get('is_preprint', False) | sjson, n },
+            preprintFileId: ${ node.get('preprint_file_id', None) | sjson, n },
             anonymous: ${ node['anonymous'] | sjson, n },
             category: ${node['category_short'] | sjson, n },
+            rootId: ${ root_id | sjson, n },
             parentTitle: ${ parent_title | sjson, n },
             parentRegisterUrl: ${parent_registration_url | sjson, n },
             parentExists: ${ parent_exists | sjson, n},
+            childExists: ${ node['children'] | sjson, n},
             registrationMetaSchemas: ${ node['registered_schemas'] | sjson, n },
             registrationMetaData: ${ node['registered_meta'] | sjson, n },
             contributors: ${ node['contributors'] | sjson, n }

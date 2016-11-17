@@ -152,3 +152,12 @@ span#nodeDescriptionEditable{
     white-space: -pre-wrap;      /* Opera 4-6 */
     white-space: -o-pre-wrap;    /* Opera 7 */
 }
+
+.pp-notice {
+    background: #f5f5f5;
+    line-height: 30px;
+}
+
+.pp-notice.pp-warning {
+    background: #FFF2DD;
+}

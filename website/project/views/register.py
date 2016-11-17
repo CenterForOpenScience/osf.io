@@ -31,6 +31,7 @@ from website.project import signals as project_signals
 from website.project.metadata.schemas import _id_to_name
 from website import util
 from website.project.metadata.utils import serialize_meta_schema
+from website.project.model import has_anonymous_link
 from website.archiver.decorators import fail_archive_on_error
 
 from website.identifiers.client import EzidClient
@@ -141,6 +142,12 @@ def node_register_template_page(auth, node, metaschema_id, **kwargs):
             })
 
         ret = _view_project(node, auth, primary=True)
+        my_meta = serialize_meta_schema(meta_schema)
+        if has_anonymous_link(node, auth):
+            for indx, schema_page in enumerate(my_meta['schema']['pages']):
+                for idx, schema_question in enumerate(schema_page['questions']):
+                    if schema_question['title'] in settings.ANONYMIZED_TITLES:
+                        del my_meta['schema']['pages'][indx]['questions'][idx]
         ret['node']['registered_schema'] = serialize_meta_schema(meta_schema)
         return ret
     else:
@@ -250,7 +257,7 @@ def _get_or_create_identifiers(node):
 def node_identifiers_get(node, **kwargs):
     """Retrieve identifiers for a node. Node must be a public registration.
     """
-    if not node.is_registration or not node.is_public:
+    if not node.is_public:
         raise HTTPError(http.BAD_REQUEST)
     return {
         'doi': node.get_identifier_value('doi'),
@@ -263,8 +270,7 @@ def node_identifiers_get(node, **kwargs):
 def node_identifiers_post(auth, node, **kwargs):
     """Create identifier pair for a node. Node must be a public registration.
     """
-    # TODO: Fail if `node` is retracted
-    if not node.is_registration or not node.is_public:  # or node.is_retracted:
+    if not node.is_public or node.is_retracted:
         raise HTTPError(http.BAD_REQUEST)
     if node.get_identifier('doi') or node.get_identifier('ark'):
         raise HTTPError(http.BAD_REQUEST)

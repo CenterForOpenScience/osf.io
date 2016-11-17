@@ -5,7 +5,7 @@ var URI = require('URIjs');
 var $ = require('jquery');
 var Raven = require('raven-js');
 
-var Fangorn = require('js/fangorn');
+var Fangorn = require('js/fangorn').Fangorn;
 var waterbutler = require('js/waterbutler');
 var $osf = require('js/osfHelpers');
 
@@ -16,7 +16,7 @@ function changeState(grid, item, version) {
 
 function _downloadEvent(event, item, col) {
     event.stopPropagation();
-    window.location = waterbutler.buildTreeBeardDownload(item, {path: item.data.extra.fileId});
+    window.location = waterbutler.buildTreeBeardDownload(item);
 }
 
 // Define Fangorn Button Actions
@@ -96,9 +96,11 @@ var _dataverseItemButtons = {
                     default:
                         message = 'Error: Something went wrong when attempting to publish your dataset.';
                         Raven.captureMessage('Could not publish dataset', {
-                            url: url,
-                            textStatus: status,
-                            error: error
+                            extra: {
+                                url: url,
+                                textStatus: status,
+                                error: error
+                            }
                         });
                     }
 
@@ -277,6 +279,12 @@ function _fangornColumns(item) {
             filter : false,
             custom : function() {return m('');}
         });
+        columns.push({
+            data: 'version',
+            filter: false,
+            sortInclude : false,
+            custom: function() {return m('');}
+        });
     }
     if(tb.options.placement !== 'fileview') {
         columns.push({
@@ -302,10 +310,6 @@ function _fangornFolderIcons(item) {
     return undefined;
 }
 
-function _fangornDeleteUrl(item) {
-    return waterbutler.buildTreeBeardDelete(item, {full_path: item.data.path + '?' + $.param({name: item.data.name})});
-}
-
 function _fangornLazyLoad(item) {
     return waterbutler.buildTreeBeardMetadata(item, {version: item.data.version});
 }
@@ -319,7 +323,6 @@ function _canDrop(item) {
 
 Fangorn.config.dataverse = {
     folderIcon: _fangornFolderIcons,
-    resolveDeleteUrl: _fangornDeleteUrl,
     resolveRows: _fangornColumns,
     lazyload:_fangornLazyLoad,
     canDrop: _canDrop,
