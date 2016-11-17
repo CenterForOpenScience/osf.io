@@ -82,9 +82,8 @@ class AddonSnapshot(SnapshotAnalytics):
 
             connected_count = 0
             for node_settings in node_settings_list:
-                connected_count += 1
-                if not node_settings.owner or node_settings.owner.is_bookmark_collection:
-                    connected_count -= 1
+                if node_settings.owner and not node_settings.owner.is_bookmark_collection:
+                    connected_count += 1
             deleted_count = addon.settings_models['node'].find(Q('deleted', 'eq', True)).count() if addon.settings_models.get('node') else 0
 
             if has_external_account:
