@@ -2112,6 +2112,9 @@ var FGToolbar = {
  * @returns {Array} newRows Returns the revised list of rows
  */
 function filterRows(rows) {
+    if(rows.length === 0){
+        return;
+    }
     var tb = this;
     var i, newRows = [],
         originalRow = tb.find(tb.multiselected()[0].id),
@@ -2449,8 +2452,8 @@ function isInvalidDropItem(folder, item, cannotBeFolder, mustBeIntra) {
         item.inProgress ||
         (cannotBeFolder && item.data.kind === 'folder') ||
         (mustBeIntra && item.data.provider !== folder.data.provider) ||
-        //Disallow moving OUT of a public figshare folder
-        isInvalidFigshareDrop(item)
+        //Disallow moving OUT of figshare
+        item.data.provider === 'figshare'
     ) {
         return true;
     }
@@ -2460,8 +2463,6 @@ function isInvalidDropItem(folder, item, cannotBeFolder, mustBeIntra) {
 function allowedToMove(folder, item, mustBeIntra) {
     return (
         item.data.permissions.edit &&
-        //Can only COPY OUT of figshare
-        item.data.provider !== 'figshare' &&
         (!mustBeIntra || (item.data.provider === folder.data.provider && item.data.nodeId === folder.data.nodeId))
     );
 }

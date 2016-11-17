@@ -35,33 +35,33 @@ describe('fangorn', () => {
             };
         };
         describe('getCopyMode integration', () => {
-            it('valid move drop', () => {
+            it('can be dropped and returns move if valid', () => {
                 folder = getItem('folder', 2);
                 item = getItem('file', 3);
                 assert.equal(Fangorn.getCopyMode(folder, [item]), 'move');
             });
 
-            it('valid copy drop', () => {
+            it('can be dropped and returns copy if github provider', () => {
                 folder = getItem('folder', 2);
                 item = getItem('file', 3);
                 item.data.provider = 'github';
                 assert.equal(Fangorn.getCopyMode(folder, [item]), 'copy');
             });
 
-            it('invalid drop if folder.data undefined', () => {
+            it('cannot be dropped if folder.data is undefined', () => {
                 folder = getItem('file', 2);
                 delete folder.data;
                 item = getItem('file', 3);
                 assert.equal(Fangorn.getCopyMode(folder, [item]), 'forbidden');
             });                        
 
-            it('invalid drop in isInvalidDropFolder', () => {
+            it('cannot be dropped if isInvalidDropFolder returns true', () => {
                 folder = getItem('file', 2);
                 item = getItem('file', 3);
                 assert.equal(Fangorn.getCopyMode(folder, [item]), 'forbidden');
             });
 
-            it('invalid drop in isInvalidFigshareDrop', () => {
+            it('cannot be dropped if isInvalidFigshareDrop returns true', () => {
                 folder = getItem('folder', 2);
                 folder.data.provider = 'figshare';
                 folder.data.extra = {'status': 'public'};
@@ -69,21 +69,21 @@ describe('fangorn', () => {
                 assert.equal(Fangorn.getCopyMode(folder, [item]), 'forbidden');
             });
 
-            it('invalid drop in isInvalidDropItem', () => {
+            it('cannot be dropped if isInvalidDropItem returns true', () => {
                 folder = getItem('folder', 2);
                 item = getItem('file', 3);
                 item.data.nodeType = 'project';
                 assert.equal(Fangorn.getCopyMode(folder, [item]), 'forbidden');
             });
 
-            it('invalid parent drop into child', () => {
+            it('cannot be dropped if dragging parent into child', () => {
                 folder = getItem('folder', 2);
                 item = getItem('folder', 3);
                 item.children = [folder];
                 assert.equal(Fangorn.getCopyMode(folder, [item]), 'forbidden');
             });
 
-            it('invalid drop if child in progress', () => {
+            it('cannot be dropped if item inProgress is true', () => {
                 folder = getItem('folder', 2);
                 item = getItem('folder', 3);
                 item.inProgress = true;
@@ -94,49 +94,49 @@ describe('fangorn', () => {
         });
 
         describe('isInvalidDropFolder', () => {
-            it('valid drop', () => {
+            it('can be dropped if valid', () => {
                 assert.equal(Fangorn.isInvalidDropFolder(getItem('folder')), false);
             });      
 
-            it('invalid drop if no parent id', () => {
+            it('cannot be dropped if target parentID is root', () => {
                 folder = getItem('folder');
                 folder.parentID = 0;
                 assert.equal(Fangorn.isInvalidDropFolder(folder), true);
             });
 
-            it('invalid drop if inProgress', () => {
+            it('cannot be dropped into if target inProgress is true', () => {
                 folder = getItem('folder');
                 folder.inProgress = true;
                 assert.equal(Fangorn.isInvalidDropFolder(folder), true);
             });            
 
-            it('invalid drop if not folder', () => {
+            it('cannot be dropped if target kind is undefined', () => {
                 assert.equal(Fangorn.isInvalidDropFolder(getItem()), true);
             });      
 
-            it('invalid drop if file', () => {
+            it('cannot be dropped if target kind is file', () => {
                 assert.equal(Fangorn.isInvalidDropFolder(getItem('file')), true);
             });                
 
-            it('invalid drop if no edit permimssion', () => {
+            it('cannot be dropped if no edit permission for target', () => {
                 folder = getItem('folder');
                 folder.data.permissions.edit = false;
                 assert.equal(Fangorn.isInvalidDropFolder(folder), true);
             });
 
-            it('invalid drop if no provider', () => {
+            it('cannot be dropped if target has no provider', () => {
                 folder = getItem('folder');
                 folder.data.provider = null;
                 assert.equal(Fangorn.isInvalidDropFolder(folder), true);
             });          
 
-            it('invalid drop if status', () => {
+            it('cannot be dropped if target has an associated status', () => {
                 folder = getItem('folder');
                 folder.data.status = true;
                 assert.equal(Fangorn.isInvalidDropFolder(folder), true);
             });
 
-            it('invalid drop if provider dataverse', () => {
+            it('cannot be dropped if target provider is dataverse', () => {
                 folder = getItem('folder');
                 folder.data.provider = 'dataverse';
                 assert.equal(Fangorn.isInvalidDropFolder(folder), true);
@@ -144,18 +144,18 @@ describe('fangorn', () => {
         });
 
         describe('isInvalidFigshareDrop', () => {
-            it('valid drop', () => {
+            it('can be dropped if item provider not figshare', () => {
                 assert.equal(Fangorn.isInvalidFigshareDrop(getItem('folder')), false);
             });
 
-            it('valid drop if figshare private', () => {
+            it('can be dropped if target status is private', () => {
                 folder = getItem('folder');
                 folder.data.provider = 'figshare';
                 folder.data.extra = {'status' : 'private'};
                 assert.equal(Fangorn.isInvalidFigshareDrop(folder), false);
             });
 
-            it('invalid drop if figshare public', () => {
+            it('cannot be dropped if target status is figshare public', () => {
                 folder = getItem('folder');
                 folder.data.provider = 'figshare';
                 folder.data.extra = {'status' : 'public'};
@@ -164,66 +164,66 @@ describe('fangorn', () => {
         });
 
         describe('isInvalidDropItem', () => {
-            it('valid drop', () => {
+            it('can be dropped if valid', () => {
                 folder = getItem('folder', 2);
                 item = getItem('file', 3);
                 assert.equal(Fangorn.isInvalidDropItem(folder, item, false, false), false);
             });
 
-            it('invalid drop if nodeType', () => {
+            it('cannot be dropped if item has a nodeType', () => {
                 folder = getItem('folder', 2);
                 item = getItem('folder', 3);
                 item.data.nodeType = 'project';
                 assert.equal(Fangorn.isInvalidDropItem(folder, item, false, false), true);
             });
 
-            it('invalid drop if isAddonRoot', () => {
+            it('cannot be dropped if item is an addonRoot', () => {
                 folder = getItem('folder', 2);
                 item = getItem('file', 3);
                 item.data.isAddonRoot = true;
                 assert.equal(Fangorn.isInvalidDropItem(folder, item, false, false), true);
             });
 
-            it('invalid drop if item.id same as folder.id', () => {
+            it('cannot be dropped if item and target are the same', () => {
                 folder = getItem('folder', 2);
                 item = getItem('file', 2);
                 assert.equal(Fangorn.isInvalidDropItem(folder, item, false, false), true);
             });
 
-            it('invalid drop if item.parentId same as folder.id', () => {
+            it('cannot be dropped if the target is the current parent', () => {
                 folder = getItem('folder', 2);
                 item = getItem('file', 3);
                 item.parentID = 2;
                 assert.equal(Fangorn.isInvalidDropItem(folder, item, false, false), true);
             });
 
-            it('invalid drop if provider dataverse', () => {
+            it('cannot be dropped if item provider is dataverse', () => {
                 folder = getItem('folder', 2);
                 item = getItem('file', 3);
                 item.data.provider = 'dataverse';
                 assert.equal(Fangorn.isInvalidDropItem(folder, item, false, false), true);
             });
 
-            it('invalid drop if inProgress', () => {
+            it('cannot be dropped if item inProgress is true', () => {
                 folder = getItem('folder', 2);
                 item = getItem('file', 3);
                 item.inProgress = true;
                 assert.equal(Fangorn.isInvalidDropItem(folder, item, false, false), true);
             });            
 
-            it('valid drop if can be folder and is folder', () => {
+            it('can be dropped if folder and allowed to be folder', () => {
                 folder = getItem('folder', 2);
                 item = getItem('folder', 3);
                 assert.equal(Fangorn.isInvalidDropItem(folder, item, false, false), false);
             });            
 
-            it('invalid drop if cannot be folder and is folder', () => {
+            it('cannot be dropped if folder and not allowed to be folder', () => {
                 folder = getItem('folder', 2);
                 item = getItem('folder', 3);
                 assert.equal(Fangorn.isInvalidDropItem(folder, item, true, false), true);
             });
 
-            it('valid drop if mustBeIntra and same provider', () => {
+            it('can be dropped if mustBeIntra is true and same provider', () => {
                 folder = getItem('folder', 2);
                 folder.data.provider = 'github';
                 item = getItem('file', 3);
@@ -231,22 +231,22 @@ describe('fangorn', () => {
                 assert.equal(Fangorn.isInvalidDropItem(folder, item, false, true), false);
             });            
 
-            it('invalid drop if mustBeIntra and not same provider', () => {
+            it('cannot be dropped if mustBeIntra is true and not same provider', () => {
                 folder = getItem('folder', 2);
                 item = getItem('file', 3);
                 item.data.provider = 'github';
                 assert.equal(Fangorn.isInvalidDropItem(folder, item, false, true), true);
             });
 
-            it('valid drop if figshare and private', () => {
+            it('cannot be dropped if item provider is figshare and private', () => {
                 folder = getItem('folder', 2);
                 item = getItem('folder', 3);
                 item.data.provider = 'figshare';
                 item.data.extra = {'status' : 'private'};
-                assert.equal(Fangorn.isInvalidDropItem(folder, item, false, false), false);
+                assert.equal(Fangorn.isInvalidDropItem(folder, item, false, false), true);
             });
 
-            it('invalid drop if figshare and public', () => {
+            it('cannot be dropped if item provider is figshare and public', () => {
                 folder = getItem('folder', 2);
                 item = getItem('folder', 3);
                 item.data.provider = 'figshare';
@@ -257,34 +257,27 @@ describe('fangorn', () => {
         });
 
         describe('allowedToMove', () => {
-            it('can move', () => {
+            it('can move if valid', () => {
                 folder = getItem('folder', 2);
                 item = getItem('file', 3);
                 assert.equal(Fangorn.allowedToMove(folder, item, false), true);
             });
 
-            it('cannot move if figshare', () => {
-                folder = getItem('folder', 2);
-                item = getItem('file', 3);
-                item.data.provider = 'figshare';
-                assert.equal(Fangorn.allowedToMove(folder, item, false), false);
-            });
-
-            it('cannot move if edit false', () => {
+            it('cannot move if edit permisisons false', () => {
                 folder = getItem('folder', 2);
                 item = getItem('file', 3);
                 item.data.permissions.edit = false;
                 assert.equal(Fangorn.allowedToMove(folder, item, false), false);
             });
 
-            it('cannot move if mustBeIntra and not same provider', () => {
+            it('cannot move if mustBeIntra is true and not same provider', () => {
                 folder = getItem('folder', 2);
                 item = getItem('file', 3);
                 item.data.provider = 'google';
                 assert.equal(Fangorn.allowedToMove(folder, item, true), false);
             });
 
-            it('cannot move if mustBeIntra and not same node', () => {
+            it('cannot move if mustBeIntra is true and not same node', () => {
                 folder = getItem('folder', 2);
                 item = getItem('file', 3);
                 folder.data.nodeId = 'abcde';
@@ -292,7 +285,7 @@ describe('fangorn', () => {
                 assert.equal(Fangorn.allowedToMove(folder, item, true), false);
             });
 
-            it('can move if mustBeIntra and same provider, same node', () => {
+            it('can move if mustBeIntra is true and same provider and same node', () => {
                 folder = getItem('folder', 2);
                 item = getItem('file', 3);
                 folder.data.nodeId = 'abcde';
@@ -302,19 +295,19 @@ describe('fangorn', () => {
         });
 
         describe('getAllChildren', () => {
-            it('gets no children', () => {
+            it('returns no children when there are no children', () => {
                 folder = getItem('folder', 2);
                 assert.equal(Fangorn.getAllChildren(item).length, 0);
             });
 
-            it('gets 1 child', () => {
+            it('returns one child when there is only one child', () => {
                 folder = getItem('folder', 2);
                 item = getItem('file', 3);
                 item.children = [folder];
                 assert.equal(Fangorn.getAllChildren(item).length, 1);
             });
 
-            it('gets nested children', () => {
+            it('returns two children when child has a child', () => {
                 folder = getItem('folder', 2);
                 var folder2 = getItem('folder', 3);
                 item = getItem('file', 4);
@@ -325,12 +318,12 @@ describe('fangorn', () => {
         });
 
         describe('folderContainsPreprint', () => {
-            it('no children returns false', () => {
+            it('does not contain a preprint if no children', () => {
                 folder = getItem('folder', 2);
                 assert.equal(Fangorn.folderContainsPreprint(folder, 'abcdefg'), false);
             });
 
-            it('no preprint children returns false', () => {
+            it('does not contain a preprint if child is not a preprint', () => {
                 folder = getItem('folder', 2);
                 item = getItem('file', 3);
                 item.data.path = 'gfedcba';
@@ -338,7 +331,7 @@ describe('fangorn', () => {
                 assert.equal(Fangorn.folderContainsPreprint(folder, 'abcdefg'), false);
             });
 
-            it('preprint child returns true', () => {
+            it('does contain a preprint if child is a preprint', () => {
                 folder = getItem('folder', 2);
                 item = getItem('file', 3);
                 item.data.path = 'abcdefg';
@@ -346,7 +339,7 @@ describe('fangorn', () => {
                 assert.equal(Fangorn.folderContainsPreprint(folder, 'abcdefg'), true);
             });
 
-            it('nested preprint child returns true', () => {
+            it('does contain a preprint if nested child is a preprint', () => {
                 folder = getItem('folder', 2);
                 var folder2 = getItem('folder', 3);
                 item = getItem('file', 4);
@@ -358,7 +351,7 @@ describe('fangorn', () => {
         });
 
         describe('multiselectContainsPreprint', () => {
-            it('contains preprint', () => {
+            it('does contain a preprint if one item is a preprint', () => {
                 folder = getItem('folder', 2);
                 folder.data.path = 'aaaaaaa';
                 item = getItem('file', 3);
@@ -366,7 +359,7 @@ describe('fangorn', () => {
                 assert.equal(Fangorn.multiselectContainsPreprint([folder, item], 'abcdefg'), true);
             });
 
-            it('contains no preprint', () => {
+            it('does not contain a preprint if no items are preprints', () => {
                 folder = getItem('folder', 2);
                 folder.data.path = 'aaaaaaa';
                 item = getItem('file', 3);
@@ -376,7 +369,7 @@ describe('fangorn', () => {
         });
 
         describe('showDeleteMultiple', () => {
-            it('no edit permissions returns false', () => {
+            it('does not show multi delete if no edit permissions', () => {
                 folder = getItem('folder', 2);
                 folder.data.permissions.edit = false;
                 item = getItem('file', 3);
@@ -384,7 +377,7 @@ describe('fangorn', () => {
                 assert.equal(Fangorn.showDeleteMultiple([folder, item]), false);
             });
 
-            it('one edit permissions returns true', () => {
+            it('does show multi delete if edit permissions for at least one selected', () => {
                 folder = getItem('folder', 2);
                 folder.data.permissions.edit = false;
                 item = getItem('file', 3);
@@ -392,7 +385,7 @@ describe('fangorn', () => {
                 assert.equal(Fangorn.showDeleteMultiple([folder, item]), true);
             });
 
-            it('two edit permissions returns true', () => {
+            it('does show multi delete if edit permissions for all selected', () => {
                 folder = getItem('folder', 2);
                 folder.data.permissions.edit = true;
                 item = getItem('file', 3);
