@@ -619,6 +619,9 @@ function doItemOp(operation, to, from, rename, conflict) {
         orderFolder.call(tb, from.parent());
     }).always(function(){
         from.inProgress = false;
+        if (SYNC_UPLOAD_ADDONS.indexOf(to.data.provider) !== -1){
+            doSyncMove(tb, to.data.provider);
+        }        
     });
 }
 
@@ -2346,9 +2349,26 @@ function _dropLogic(event, items, folder) {
         return tb.updateFolder(null, folder, _dropLogic.bind(tb, event, items, folder));
     }
 
-    $.each(items, function(index, item) {
-        checkConflicts(tb, item, folder, doItemOp.bind(tb, copyMode === 'move' ? OPERATIONS.MOVE : OPERATIONS.COPY, folder, item, undefined));
-    });
+    if (SYNC_UPLOAD_ADDONS.indexOf(folder.data.provider) !== -1) {
+        tb.syncFileMoveCache = tb.syncFileMoveCache || {};
+        tb.syncFileMoveCache[folder.data.provider] = tb.syncFileMoveCache[folder.data.provider] || [];
+        $.each(items, function(index, item) {
+            tb.syncFileMoveCache[folder.data.provider].push({'item' : item, 'folder' : folder});
+        });
+        doSyncMove(tb, folder.data.provider);
+    }else{
+        $.each(items, function(index, item) {
+            checkConflicts(tb, item, folder, doItemOp.bind(tb, copyMode === 'move' ? OPERATIONS.MOVE : OPERATIONS.COPY, folder, item, undefined));
+        });    
+    }
+}
+
+function doSyncMove(tb, provider){
+    var cache = tb.syncFileMoveCache[provider];
+    if (cache.length > 0){
+        var itemData = cache.pop();
+        checkConflicts(tb, itemData.item, itemData.folder, doItemOp.bind(tb, copyMode === 'move' ? OPERATIONS.MOVE : OPERATIONS.COPY, itemData.folder, itemData.item, undefined));
+    }
 }
 
 /**
@@ -2512,7 +2532,7 @@ function getPreprintPath(preprintFileId) {
 function getCopyMode(folder, items) {
     var tb = this;
     // Prevents side effects from rare instance where folders not fully populated
-    if (typeof folder.data === 'undefined') {
+    if (typeof folder === 'undefined' || typeof folder.data === 'undefined') {
         return 'forbidden';
     }
 
