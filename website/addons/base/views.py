@@ -201,7 +201,7 @@ def check_access(node, auth, action, cas_resp):
         )
         allowed_nodes = [node] + node.parents
         prereg_draft_registration = DraftRegistration.find(
-            Q('branched_from', 'in', [n._id for n in allowed_nodes]) &
+            Q('branched_from', 'in', [n for n in allowed_nodes]) &
             Q('registration_schema', 'eq', prereg_schema)
         )
         if action == 'download' and \
@@ -450,7 +450,7 @@ def addon_delete_file_node(self, node, user, event_type, payload):
             folder_children = FileNode.resolve_class(provider, FileNode.ANY).find(
                 Q('provider', 'eq', provider) &
                 Q('node', 'eq', node) &
-                Q('materialized_path', 'startswith', materialized_path)
+                Q('_materialized_path', 'startswith', materialized_path)
             )
             for item in folder_children:
                 if item.kind == 'file' and not TrashedFileNode.load(item._id):
@@ -461,7 +461,7 @@ def addon_delete_file_node(self, node, user, event_type, payload):
             try:
                 file_node = FileNode.resolve_class(provider, FileNode.FILE).find_one(
                     Q('node', 'eq', node) &
-                    Q('materialized_path', 'eq', materialized_path)
+                    Q('_materialized_path', 'eq', materialized_path)
                 )
             except NoResultsFound:
                 file_node = None

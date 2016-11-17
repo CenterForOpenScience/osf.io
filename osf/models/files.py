@@ -380,7 +380,7 @@ class FileNode(object):
         if materialized_path.endswith('/'):
             folder_children = cls.find(Q('provider', 'eq', provider) &
                                        Q('node', 'eq', node) &
-                                       Q('materialized_path', 'startswith', materialized_path))
+                                       Q('_materialized_path', 'startswith', materialized_path))
             for item in folder_children:
                 if item.kind == 'file':
                     guid = item.get_guid()
@@ -389,7 +389,7 @@ class FileNode(object):
         else:
             try:
                 file_obj = cls.find_one(
-                    Q('node', 'eq', node) & Q('materialized_path', 'eq', materialized_path))
+                    Q('node', 'eq', node) & Q('_materialized_path', 'eq', materialized_path))
             except NoResultsFound:
                 return guids
             guid = file_obj.get_guid()
@@ -870,7 +870,7 @@ class FileVersion(ObjectIDMixin, BaseModel):
     # exists on the backend
     date_modified = models.DateTimeField(null=True, blank=True)
 
-    location = DateTimeAwareJSONField(default=dict, db_index=True, null=True, validators=[validate_location])
+    location = DateTimeAwareJSONField(default=dict, db_index=True, blank=True, null=True, validators=[validate_location])
     metadata = DateTimeAwareJSONField(blank=True, default=dict, db_index=True)
 
     @property
