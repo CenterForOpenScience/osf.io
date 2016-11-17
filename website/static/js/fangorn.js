@@ -1311,7 +1311,7 @@ function gotoFileEvent (item, toUrl) {
     if ($osf.isIE()) {
         var viewOnly = $osf.urlParams().view_only;
         if (viewOnly) {
-            if (fileurl.indexof('?') !== -1) {
+            if (fileurl.indexOf('?') !== -1) {
                 fileurl += '&view_only=' + viewOnly;
             }else {
                 fileurl += '?view_only=' + viewOnly;
