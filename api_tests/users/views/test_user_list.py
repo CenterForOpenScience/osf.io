@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+from uuid import UUID
+
 import itsdangerous
 import mock
 from nose.tools import *  # flake8: noqa
@@ -398,7 +400,11 @@ class TestUsersCreate(ApiTestCase):
         )
 
         assert_equal(res.status_code, 201)
-        assert_equal(res.json['data']['attributes']['username'], None)
+        username = res.json['data']['attributes']['username']
+        try:
+            no_failure = UUID(username)
+        except ValueError:
+            raise AssertionError('Username is not a valid UUID')
         assert_equal(User.find(Q('fullname', 'eq', 'No Email')).count(), 1)
         assert_equal(mock_mail.call_count, 0)
 
