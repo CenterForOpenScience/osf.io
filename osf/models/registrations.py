@@ -143,8 +143,6 @@ class Registration(AbstractNode):
 
     @property
     def is_pending_registration(self):
-        if not self.is_registration:
-            return False
         if self.registration_approval is None:
             if self.parent_node:
                 return self.parent_node.is_pending_registration
