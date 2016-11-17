@@ -776,7 +776,7 @@ def packages(ctx):
         'install elasticsearch',
         'install rabbitmq',
         'install node',
-        'tap tokutek/tokumx',
+        'tap chrisseto/homebrew-tokumx',
         'install tokumx-bin',
     ]
     if platform.system() == 'Darwin':
