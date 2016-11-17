@@ -44,7 +44,7 @@ class TokenHasScope(permissions.BasePermission):
 
         # Scopes are returned as a space-delimited list in the token
         allowed_scopes = token.attributes['accessTokenScope']
-
+        import ipdb;ipdb.set_trace()
         try:
             normalized_scopes = oauth_scopes.normalize_scopes(allowed_scopes)
         except KeyError:
