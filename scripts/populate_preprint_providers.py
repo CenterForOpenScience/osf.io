@@ -16,7 +16,7 @@ SUBJECTS_CACHE = {}
 
 def get_subject_id(name):
     if not name in SUBJECTS_CACHE:
-        SUBJECTS_CACHE[name] = Subject.find(Q('text', 'eq', name))[0]._id
+        SUBJECTS_CACHE[name] = Subject.find_one(Q('text', 'eq', name))._id
 
     return SUBJECTS_CACHE[name]
 
