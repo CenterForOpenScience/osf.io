@@ -148,7 +148,9 @@ class NodeLog(ObjectIDMixin, BaseModel):
     original_node = models.ForeignKey('AbstractNode', db_index=True, null=True, blank=True)
 
     def __unicode__(self):
-        return u'{} on {} by {} at {}'.format(self.action, self.node._id, self.user._id, self.date)
+        user_id = getattr(self.user, '_id', None)
+        node_id = getattr(self.node, '_id', None)
+        return u'{} on {} by {} at {}'.format(self.action, node_id, user_id, self.date)
 
     class Meta:
         ordering = ['-date']

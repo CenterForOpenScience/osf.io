@@ -14,6 +14,7 @@ from time import sleep
 
 import invoke
 from invoke import Collection
+import django
 
 from website import settings
 from .utils import pip_install, bin_prefix
@@ -463,6 +464,7 @@ def migrate_search(ctx, delete=False, index=settings.ELASTIC_INDEX):
 @task
 def rebuild_search(ctx):
     """Delete and recreate the index for elasticsearch"""
+    django.setup()
     ctx.run('curl -s -XDELETE {uri}/{index}*'.format(uri=settings.ELASTIC_URI,
                                              index=settings.ELASTIC_INDEX))
     ctx.run('curl -s -XPUT {uri}/{index}'.format(uri=settings.ELASTIC_URI,
