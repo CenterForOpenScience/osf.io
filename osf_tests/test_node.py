@@ -661,6 +661,21 @@ class TestPermissionMethods:
         node.save()
         assert node.has_permission(user, permissions.WRITE) is True
 
+    def test_remove_permission(self, node):
+        assert node.has_permission(node.creator, permissions.ADMIN) is True
+        assert node.has_permission(node.creator, permissions.WRITE) is True
+        assert node.has_permission(node.creator, permissions.WRITE) is True
+        node.remove_permission(node.creator, permissions.ADMIN)
+        assert node.has_permission(node.creator, permissions.ADMIN) is False
+        assert node.has_permission(node.creator, permissions.WRITE) is False
+        assert node.has_permission(node.creator, permissions.WRITE) is False
+
+    def test_remove_permission_not_granted(self, node, auth):
+        contrib = UserFactory()
+        node.add_contributor(contrib, permissions=[permissions.READ, permissions.WRITE], auth=auth)
+        with pytest.raises(ValueError):
+            node.remove_permission(contrib, permissions.ADMIN)
+
     def test_set_permissions(self, node):
         low, high = UserFactory(), UserFactory()
         Contributor.objects.create(
