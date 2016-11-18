@@ -741,6 +741,7 @@ class TestUnregisteredUser:
         with pytest.raises(PermissionsError):
             unreg_user.add_unclaimed_record(node=project,
                 given_name='fred m', referrer=referrer)
+            unreg_user.save()
 
     @mock.patch('osf.models.OSFUser.update_search_nodes')
     @mock.patch('osf.models.OSFUser.update_search')

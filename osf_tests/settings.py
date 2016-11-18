@@ -18,3 +18,12 @@ SECRET_KEY = 'not very secret in tests'
 PASSWORD_HASHERS = (
     'django.contrib.auth.hashers.MD5PasswordHasher',
 )
+
+REST_FRAMEWORK['ALLOWED_VERSIONS'] = (
+        '2.0',
+        '2.0.1',
+        '2.1',
+        '2.2',
+        '3.0',
+        '3.0.1',
+    )

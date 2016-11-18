@@ -105,11 +105,12 @@ class FilterMixin(object):
 
         :raises InvalidFilterError: If the filter field is not valid
         """
-        if field_name not in self.serializer_class._declared_fields:
+        serializer_class = self.serializer_class
+        if field_name not in serializer_class._declared_fields:
             raise InvalidFilterError(detail="'{0}' is not a valid field for this endpoint.".format(field_name))
-        if field_name not in getattr(self.serializer_class, 'filterable_fields', set()):
+        if field_name not in getattr(serializer_class, 'filterable_fields', set()):
             raise InvalidFilterFieldError(parameter='filter', value=field_name)
-        return self.serializer_class._declared_fields[field_name]
+        return serializer_class._declared_fields[field_name]
 
     def _validate_operator(self, field, field_name, op):
         """
@@ -435,11 +436,19 @@ class ListFilterMixin(FilterMixin):
         """filters default queryset based on query parameters"""
         filters = self.parse_query_params(query_params)
         queryset = default_queryset
+
         if filters:
             for key, field_names in filters.iteritems():
                 for field_name, data in field_names.iteritems():
                     query_field_name = data['source_field_name']
-                    queryset = queryset.filter(**{query_field_name: data['value']})
+                    if query_field_name == 'kind':
+                        query_field_name = 'is_file'
+                        data['value'] = data['value'] == 'file'
+                    if isinstance(queryset, list):
+                        queryset = self.get_filtered_queryset(field_name, data, queryset)
+                    else:
+                        query_field_name = '{}__{}'.format(query_field_name, data['op'])
+                        queryset = queryset.filter(**{query_field_name: data['value']})
         return queryset
 
     def postprocess_query_param(self, key, field_name, operation):
@@ -448,9 +457,14 @@ class ListFilterMixin(FilterMixin):
         # But queries on lists should be tags, e.g.
         # ?filter[tags]=foo,bar should be translated to Q('tags', 'isnull', True)
         # ?filter[tags]=[] should be translated to Q('tags', 'isnull', True)
+        if operation['source_field_name'] == 'kind':
+            operation['source_field_name'] = 'is_file'
+            # The value should be boolean
+            operation['value'] = operation['value'] == 'file'
         if field_name == 'tags':
             if operation['value'] not in (list(), tuple()):
-                operation['source_field_name'] = 'tags__name__iexact'
+                operation['source_field_name'] = 'tags__name'
+                operation['op'] = 'iexact'
 
     def get_filtered_queryset(self, field_name, params, default_queryset):
         """filters default queryset based on the serializer field type"""
@@ -474,20 +488,20 @@ class ListFilterMixin(FilterMixin):
             else:
                 # TODO: What is {}.lower()? Possible bug
                 return_val = [
-                    item for item in default_queryset.all()
+                    item for item in default_queryset
                     if params['value'].lower() in getattr(item, source_field_name, {}).lower()
                 ]
         elif isinstance(field, ser.ListField):
             return_val = [
                 item for item in default_queryset
                 if params['value'].lower() in [
-                    lowercase(i.lower) for i in getattr(item, source_field_name, []).all()
+                    lowercase(i.lower) for i in getattr(item, source_field_name, [])
                 ]
             ]
         else:
             try:
                 return_val = [
-                    item for item in default_queryset.all()
+                    item for item in default_queryset
                     if self.FILTERS[params['op']](getattr(item, source_field_name, None), params['value'])
                 ]
             except TypeError:

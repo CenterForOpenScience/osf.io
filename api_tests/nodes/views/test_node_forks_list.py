@@ -112,14 +112,14 @@ class TestNodeForksList(ApiTestCase):
         assert_equal(forked_node_links['id'], self.pointer._id)
         assert_equal(forked_node_links['attributes']['title'], self.pointer.title)
 
-        expected_logs = list(self.private_project.logs.values_list('action', flat=True))
-        expected_logs.append(self.component.logs.latest().action)
-        expected_logs.append('node_forked')
+        auth = Auth(self.user)
+        expected_logs = list(self.private_project.get_aggregate_logs_queryset(auth).values_list('action', flat=True))
         expected_logs.append('node_forked')
 
         forked_logs = data['embeds']['logs']['data']
-        assert_equal(set(expected_logs), set(log['attributes']['action'] for log in forked_logs))
-        assert_equal(len(forked_logs), 6)
+        forked_log_actions = [log['attributes']['action'] for log in forked_logs]
+        assert_equal(set(expected_logs), set(forked_log_actions))
+        assert_equal(len(set(forked_log_actions)), len(set(expected_logs)))
 
         forked_from = data['embeds']['forked_from']['data']
         assert_equal(forked_from['id'], self.private_project._id)

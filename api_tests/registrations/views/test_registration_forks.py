@@ -1,4 +1,5 @@
 import mock
+import pytest
 from nose.tools import *  # flake8: noqa
 
 from framework.auth.core import Auth
@@ -23,8 +24,7 @@ class TestRegistrationForksList(ApiTestCase):
     def setUp(self):
         super(TestRegistrationForksList, self).setUp()
         self.user = AuthUserFactory()
-        self.private_project = ProjectFactory()
-        self.private_project.add_contributor(self.user, permissions=[permissions.READ, permissions.WRITE])
+        self.private_project = ProjectFactory(creator=self.user)
         self.private_project.save()
         self.component = NodeFactory(parent=self.private_project, creator=self.user)
         self.pointer = ProjectFactory(creator=self.user)
@@ -111,7 +111,7 @@ class TestRegistrationForksList(ApiTestCase):
         assert_equal(fork_contributors['id'], self.user._id)
 
         forked_children = data['embeds']['children']['data'][0]
-        assert_equal(forked_children['id'], self.private_registration.nodes.first().forks.first()._id)
+        assert_equal(forked_children['id'], self.private_registration.forks.first().nodes.first()._id)
         assert_equal(forked_children['attributes']['title'], self.component.title)
 
         forked_node_links = data['embeds']['node_links']['data'][0]['embeds']['target_node']['data']

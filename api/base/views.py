@@ -853,10 +853,12 @@ class BaseLinkedList(JSONAPIBaseView, generics.ListAPIView):
 
     def get_queryset(self):
         auth = get_user_auth(self.request)
-        return [
-            each for each in self.get_node().linked_nodes
+
+        linked_node_ids = [
+            each.id for each in self.get_node().linked_nodes
             .filter(is_deleted=False)
             .exclude(type='osf.collection')
             .order_by('-date_modified')
             if each.can_view(auth)
         ]
+        return self.get_node().linked_nodes.filter(id__in=linked_node_ids)

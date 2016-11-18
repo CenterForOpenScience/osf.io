@@ -47,7 +47,6 @@ class TestGuidDetail(ApiTestCase):
         assert_equal(res.status_code, 302)
         assert_equal(res.location, redirect_url)
 
-    @pytest.mark.skip('StorageFileNode not yet implemented')
     def test_redirect_to_file_view(self):
         test_file = OsfStorageFile.create(
             is_file=True,
@@ -86,7 +85,6 @@ class TestGuidDetail(ApiTestCase):
         assert_equal(res.status_code, 302)
         assert_equal(res.location, redirect_url)
 
-    @pytest.mark.skip('StorageFileNode not yet implemented')
     def test_redirect_when_viewing_private_project_file_through_view_only_link(self):
         project = ProjectFactory()
         test_file = OsfStorageFile.create(

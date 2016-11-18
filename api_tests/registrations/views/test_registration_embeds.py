@@ -37,7 +37,6 @@ class TestRegistrationEmbeds(ApiTestCase):
 
     def test_embed_children(self):
         url = '/{0}registrations/{1}/?embed=children'.format(API_BASE, self.registration._id)
-
         res = self.app.get(url, auth=self.user.auth)
         json = res.json
         embeds = json['data']['embeds']

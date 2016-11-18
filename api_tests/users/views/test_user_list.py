@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
+from uuid import UUID
+
 import itsdangerous
 import mock
+import pytest
 from nose.tools import *  # flake8: noqa
 import unittest
 import urlparse
@@ -239,7 +242,6 @@ class TestUsers(ApiTestCase):
         assert_equal(res.status_code, 400)
 
 
-@unittest.skip('Disabling user creation for now')
 class TestUsersCreate(ApiTestCase):
 
     def setUp(self):
@@ -289,6 +291,7 @@ class TestUsersCreate(ApiTestCase):
         assert_equal(User.find(Q('username', 'eq', self.unconfirmed_email)).count(), 0)
         assert_equal(mock_mail.call_count, 0)
 
+    @pytest.mark.skip
     @mock.patch('framework.auth.views.mails.send_mail')
     def test_cookied_requests_can_create_and_email(self, mock_mail):
         session = Session(data={'auth_user_id': self.user._id})
@@ -305,6 +308,7 @@ class TestUsersCreate(ApiTestCase):
         assert_equal(User.find(Q('username', 'eq', self.unconfirmed_email)).count(), 1)
         assert_equal(mock_mail.call_count, 1)
 
+    @pytest.mark.skip
     @mock.patch('framework.auth.views.mails.send_mail')
     @mock.patch('api.base.authentication.drf.OSFCASAuthentication.authenticate')
     @unittest.skipIf(not settings.DEV_MODE, 'DEV_MODE disabled, osf.users.create unavailable')  # TODO: Remove when available outside of DEV_MODE
@@ -337,6 +341,7 @@ class TestUsersCreate(ApiTestCase):
         assert_equal(User.find(Q('username', 'eq', self.unconfirmed_email)).count(), 1)
         assert_equal(mock_mail.call_count, 1)
 
+    @pytest.mark.skip
     @mock.patch('framework.auth.views.mails.send_mail')
     @mock.patch('api.base.authentication.drf.OSFCASAuthentication.authenticate')
     @unittest.skipIf(not settings.DEV_MODE, 'DEV_MODE disabled, osf.users.create unavailable')  # TODO: Remove when available outside of DEV_MODE
@@ -369,6 +374,7 @@ class TestUsersCreate(ApiTestCase):
         assert_equal(User.find(Q('username', 'eq', self.unconfirmed_email)).count(), 1)
         assert_equal(mock_mail.call_count, 0)
 
+    @pytest.mark.skip
     @mock.patch('framework.auth.views.mails.send_mail')
     @mock.patch('api.base.authentication.drf.OSFCASAuthentication.authenticate')
     @unittest.skipIf(not settings.DEV_MODE, 'DEV_MODE disabled, osf.users.create unavailable')  # TODO: Remove when available outside of DEV_MODE
@@ -399,7 +405,11 @@ class TestUsersCreate(ApiTestCase):
         )
 
         assert_equal(res.status_code, 201)
-        assert_equal(res.json['data']['attributes']['username'], None)
+        username = res.json['data']['attributes']['username']
+        try:
+            no_failure = UUID(username)
+        except ValueError:
+            raise AssertionError('Username is not a valid UUID')
         assert_equal(User.find(Q('fullname', 'eq', 'No Email')).count(), 1)
         assert_equal(mock_mail.call_count, 0)
 
@@ -434,6 +444,7 @@ class TestUsersCreate(ApiTestCase):
         assert_equal(User.find(Q('username', 'eq', self.unconfirmed_email)).count(), 0)
         assert_equal(mock_mail.call_count, 0)
 
+    @pytest.mark.skip
     @mock.patch('framework.auth.views.mails.send_mail')
     @mock.patch('api.base.authentication.drf.OSFCASAuthentication.authenticate')
     @unittest.skipIf(not settings.DEV_MODE, 'DEV_MODE disabled, osf.admin unavailable')  # TODO: Remove when available outside of DEV_MODE

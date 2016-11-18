@@ -66,11 +66,12 @@ from .base import BaseModel, Guid, GuidMixin, MODMCompatibilityQuerySet
 
 logger = logging.getLogger(__name__)
 
-class AbstractNodeQueryset(MODMCompatibilityQuerySet):
 
+class AbstractNodeQueryset(MODMCompatibilityQuerySet):
     def get_roots(self):
-        return self.extra(where=['"osf_abstractnode".id in (SELECT id FROM osf_abstractnode WHERE id NOT IN (SELECT child_id FROM '
-                          'osf_noderelation WHERE is_node_link IS false))'])
+        return self.extra(
+            where=['"osf_abstractnode".id in (SELECT id FROM osf_abstractnode WHERE id NOT IN (SELECT child_id FROM '
+                   'osf_noderelation WHERE is_node_link IS false))'])
 
     def get_children(self, root, primary_keys=False):
         sql = """
@@ -109,7 +110,6 @@ class AbstractNodeQueryset(MODMCompatibilityQuerySet):
 class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixin,
                    NodeLinkMixin, CommentableMixin, SpamMixin,
                    Taggable, Loggable, GuidMixin, BaseModel):
-
     """
     All things that inherit from AbstractNode will appear in
     the same table and will be differentiated by the `type` column.
@@ -226,9 +226,9 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                                      on_delete=models.SET_NULL, null=True, blank=True)
 
     _nodes = models.ManyToManyField('AbstractNode',
-                                   through=NodeRelation,
-                                   through_fields=('parent', 'child'),
-                                   related_name='parent_nodes')
+                                    through=NodeRelation,
+                                    through_fields=('parent', 'child'),
+                                    related_name='parent_nodes')
 
     objects = AbstractNodeQueryset.as_manager()
 
@@ -263,9 +263,9 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 UNION ALL
                 SELECT
                   top_parent,
-                  c.child_id
+                  C.child_id
                 FROM parents_cte AS t
-                  JOIN %s AS c ON t.child_id = c.parent_id)
+                  JOIN %s AS C ON t.child_id = C.parent_id)
             SELECT top_parent
             FROM parents_cte AS h
             WHERE h.child_id = %s;
@@ -285,7 +285,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     @property
     def nodes(self):
-        """Return ordered generator of nodes."""
+        """Return queryset of nodes."""
         return self.get_nodes()
 
     @property
@@ -303,20 +303,21 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         return self.linked_from.filter(type='osf.collection')
 
     def get_nodes(self, **kwargs):
-        """Return ordered generator of nodes. ``kwargs`` are used to filter against
+        """Return queryset of nodes. ``kwargs`` are used to filter against
         children.
         """
         # Prepend 'child__' to kwargs for filtering
         filter_kwargs = {'child__{}'.format(key): val for key, val in kwargs.items()}
-        return (nr.child for nr in NodeRelation.objects.filter(parent=self,
-                                                               **filter_kwargs).select_related('child'))
+        return AbstractNode.objects.filter(id__in=NodeRelation.objects.filter(parent=self,
+                                                                      **filter_kwargs).select_related(
+            'child').values_list('child', flat=True)).order_by('noderelation___order').distinct()
 
     @property
     def linked_nodes(self):
         child_pks = NodeRelation.objects.filter(
             parent=self,
             is_node_link=True
-        ).values_list('child', flat=True)
+        ).select_related('child').values_list('child', flat=True)
         return self._nodes.filter(pk__in=child_pks)
 
     # permissions = Permissions are now on contributors
@@ -815,6 +816,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 user__is_active=True,
                 admin=True
             ).values_list('user__guids___id', flat=True)
+
         contributor_ids = set(self.contributors.values_list('guids___id', flat=True))
         admin_ids = set()
         for parent in self.parents:
@@ -887,8 +889,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     # visible_contributor_ids was moved to this property
     @property
     def visible_contributor_ids(self):
-        return self.contributor_set.filter(visible=True)\
-            .order_by('_order')\
+        return self.contributor_set.filter(visible=True) \
+            .order_by('_order') \
             .values_list('user__guids___id', flat=True)
 
     @property
@@ -1242,7 +1244,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
         self.save()
 
-        #send signal to remove this user from project subscriptions
+        # send signal to remove this user from project subscriptions
         project_signals.contributor_removed.send(self, user=contributor)
 
         return True
@@ -1510,7 +1512,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             node.save()
 
         if parent:
-            NodeRelation.objects.get_or_create(parent=parent, child=registered)
+            node_relation = NodeRelation.objects.get(parent=parent.registered_from, child=original)
+            NodeRelation.objects.get_or_create(_order=node_relation._order, parent=parent, child=registered)
 
         # After register callback
         for addon in original.get_addons():
@@ -1745,7 +1748,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         forked.save()
 
         forked.tags.add(*self.tags.all())
-
         for node_relation in original.node_relations.filter(child__is_deleted=False):
             node_contained = node_relation.child
             # Fork child nodes
@@ -1754,6 +1756,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                     forked_node = node_contained.fork_node(auth=auth, title='')
                 except PermissionsError:
                     pass  # If this exception is thrown omit the node from the result set
+                    forked_node = None
                 if forked_node is not None:
                     NodeRelation.objects.get_or_create(
                         is_node_link=False,
@@ -1873,7 +1876,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             new.title == self.title and top_level and
             language.TEMPLATED_FROM_PREFIX not in new.title
         ):
-            new.title = ''.join((language.TEMPLATED_FROM_PREFIX, new.title, ))
+            new.title = ''.join((language.TEMPLATED_FROM_PREFIX, new.title,))
 
         # Slight hack - date_created is a read-only field.
         new.date_created = timezone.now()
@@ -1908,10 +1911,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             child = node_relation.child
             if child.can_view(auth):
                 templated_child = child.use_as_template(auth, changes, top_level=False)
-                NodeRelation.objects.get_or_create(
-                    parent=new, child=templated_child,
-                    is_node_link=node_relation.is_node_link
-                )
+                NodeRelation.objects.get_or_create(parent=new, child=templated_child,
+                                                   is_node_link=node_relation.is_node_link)
 
         return new
 
@@ -2163,7 +2164,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     def _get_spam_content(self, saved_fields):
         NodeWikiPage = apps.get_model('addons_wiki.NodeWikiPage')
-        spam_fields = self.SPAM_CHECK_FIELDS if self.is_public and 'is_public' in saved_fields else self.SPAM_CHECK_FIELDS.intersection(saved_fields)
+        spam_fields = self.SPAM_CHECK_FIELDS if self.is_public and 'is_public' in saved_fields else self.SPAM_CHECK_FIELDS.intersection(
+            saved_fields)
         content = []
         for field in spam_fields:
             if field == 'wiki_pages_current':
@@ -2209,7 +2211,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     def _check_spam_user(self, user):
         if (
             settings.SPAM_ACCOUNT_SUSPENSION_ENABLED
-            and (datetime.datetime.utcnow() - user.date_confirmed) <= settings.SPAM_ACCOUNT_SUSPENSION_THRESHOLD
+            and (timezone.now() - user.date_confirmed) <= settings.SPAM_ACCOUNT_SUSPENSION_THRESHOLD
         ):
             self.set_privacy('private', log=False, save=False)
 
@@ -2279,7 +2281,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         :param str title: The new title.
         :param auth: All the auth information including user, API key.
         """
-        #Called so validation does not have to wait until save.
+        # Called so validation does not have to wait until save.
         validate_title(title)
 
         original_title = self.title
@@ -2712,7 +2714,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             return True
 
         # TODO: Optimize me into one query
-        for node_relation in self.node_relations.filter(is_node_link=False, child__is_deleted=False).select_related('child'):
+        for node_relation in self.node_relations.filter(is_node_link=False, child__is_deleted=False).select_related(
+                'child'):
             node = node_relation.child
             if node.has_addon_on_children(addon):
                 return True
@@ -2839,7 +2842,6 @@ class Collection(AbstractNode):
 
 
 ##### Signal listeners #####
-
 @receiver(post_save, sender=Collection)
 @receiver(post_save, sender=Node)
 def add_creator_as_contributor(sender, instance, created, **kwargs):
@@ -2852,6 +2854,7 @@ def add_creator_as_contributor(sender, instance, created, **kwargs):
             write=True,
             admin=True
         )
+
 
 @receiver(post_save, sender=Collection)
 @receiver(post_save, sender=Node)

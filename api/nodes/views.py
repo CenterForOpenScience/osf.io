@@ -4,39 +4,55 @@ from django.apps import apps
 from modularodm import Q
 from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import PermissionDenied, ValidationError, NotFound, MethodNotAllowed
-from rest_framework.status import HTTP_204_NO_CONTENT
 from rest_framework.response import Response
+from rest_framework.status import HTTP_204_NO_CONTENT
 
-from framework.auth.oauth_scopes import CoreScopes
-from framework.postcommit_tasks.handlers import enqueue_postcommit_task
-
+from api.addons.serializers import NodeAddonFolderSerializer
+from api.addons.views import AddonSettingsMixin
 from api.base import generic_bulk_views as bulk_views
 from api.base import permissions as base_permissions
 from api.base.exceptions import InvalidModelValueError, JSONAPIException, Gone
+from api.base.exceptions import RelationshipPostMakesNoChanges, EndpointNotImplementedError
 from api.base.filters import ODMFilterMixin, ListFilterMixin
-from api.base.views import JSONAPIBaseView
+from api.base.pagination import CommentPagination, NodeContributorPagination, MaxSizePagination
 from api.base.parsers import (
     JSONAPIRelationshipParser,
     JSONAPIRelationshipParserForRegularJSON,
 )
-from api.base.exceptions import RelationshipPostMakesNoChanges, EndpointNotImplementedError
-from api.base.pagination import CommentPagination, NodeContributorPagination, MaxSizePagination
-from api.base.utils import get_object_or_error, is_bulk_request, get_user_auth, is_truthy
 from api.base.settings import ADDONS_OAUTH, API_BASE
-from api.caching.tasks import ban_url
-from api.addons.views import AddonSettingsMixin
-from api.files.serializers import FileSerializer
-from api.comments.serializers import NodeCommentSerializer, CommentCreateSerializer
-from api.comments.permissions import CanCommentOrPublic
-from api.users.views import UserMixin
-from api.wikis.serializers import NodeWikiSerializer
-from api.base.views import LinkedNodesRelationship, BaseContributorDetail, BaseContributorList, BaseNodeLinksDetail, BaseNodeLinksList, BaseLinkedList
 from api.base.throttling import (
     UserRateThrottle,
     NonCookieAuthThrottle,
     AddContributorThrottle,
 )
+from api.base.utils import default_node_list_query, default_node_permission_query
+from api.base.utils import get_object_or_error, is_bulk_request, get_user_auth, is_truthy
+from api.base.views import JSONAPIBaseView
+from api.base.views import LinkedNodesRelationship, BaseContributorDetail, BaseContributorList, BaseNodeLinksDetail, BaseNodeLinksList, BaseLinkedList
+from api.caching.tasks import ban_url
+from api.citations.utils import render_citation
+from api.comments.permissions import CanCommentOrPublic
+from api.comments.serializers import (CommentCreateSerializer,
+                                      NodeCommentSerializer)
+from api.files.serializers import FileSerializer, OsfStorageFileSerializer
+from api.identifiers.serializers import NodeIdentifierSerializer
+from api.identifiers.views import IdentifierList
+from api.institutions.serializers import InstitutionSerializer
+from api.logs.serializers import NodeLogSerializer
 from api.nodes.filters import NodePreprintsFilterMixin
+from api.nodes.permissions import (
+    IsAdmin,
+    IsPublic,
+    AdminOrPublic,
+    ContributorOrPublic,
+    RegistrationAndPermissionCheckForPointers,
+    ContributorDetailPermissions,
+    ReadOnlyIfRegistration,
+    IsAdminOrReviewer,
+    WriteOrPublicForRelationshipInstitutions,
+    ExcludeWithdrawals,
+    NodeLinksShowIfVersion,
+)
 from api.nodes.serializers import (
     NodeSerializer,
     ForwardNodeAddonSettingsSerializer,
@@ -58,38 +74,21 @@ from api.nodes.serializers import (
     NodeCitationStyleSerializer
 )
 from api.nodes.utils import get_file_object
-from api.citations.utils import render_citation
-
-from api.addons.serializers import NodeAddonFolderSerializer
-from api.registrations.serializers import RegistrationSerializer
-from api.institutions.serializers import InstitutionSerializer
-from api.identifiers.serializers import NodeIdentifierSerializer
-from api.identifiers.views import IdentifierList
-from api.nodes.permissions import (
-    IsAdmin,
-    IsPublic,
-    AdminOrPublic,
-    ContributorOrPublic,
-    RegistrationAndPermissionCheckForPointers,
-    ContributorDetailPermissions,
-    ReadOnlyIfRegistration,
-    IsAdminOrReviewer,
-    WriteOrPublicForRelationshipInstitutions,
-    ExcludeWithdrawals,
-    NodeLinksShowIfVersion,
-)
-from api.logs.serializers import NodeLogSerializer
 from api.preprints.parsers import PreprintsJSONAPIParser, PreprintsJSONAPIParserForRegularJSON
 from api.preprints.serializers import PreprintSerializer
-
+from api.registrations.serializers import RegistrationSerializer
+from api.users.views import UserMixin
+from api.wikis.serializers import NodeWikiSerializer
+from framework.auth.oauth_scopes import CoreScopes
+from framework.postcommit_tasks.handlers import enqueue_postcommit_task
+from osf.models import AbstractNode
+from osf.models import (Node, PrivateLink, NodeLog, Institution, Comment, DraftRegistration, PreprintService, FileNode)
+from osf.models import OSFUser as User
+from osf.models import NodeRelation, AlternativeCitation, Guid
+from osf.models import StoredFileNode
 from website.addons.wiki.model import NodeWikiPage
 from website.exceptions import NodeStateError
 from website.util.permissions import ADMIN
-from website.models import Node, Comment, NodeLog, Institution, DraftRegistration, PrivateLink, PreprintService
-from osf.models import NodeRelation, AlternativeCitation, Guid
-from website.files.models import FileNode
-from framework.auth.core import User
-from api.base.utils import default_node_list_query, default_node_permission_query
 
 
 class NodeMixin(object):
@@ -312,7 +311,8 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
         # ?filter[tags]=[] should be translated to Q('tags', 'isnull', True)
         if field_name == 'tags':
             if operation['value'] not in (list(), tuple()):
-                operation['source_field_name'] = 'tags__name__iexact'
+                operation['source_field_name'] = 'tags__name'
+                operation['op'] = 'iexact'
 
     # overrides ODMFilterMixin
     def get_default_odm_query(self):
@@ -1264,7 +1264,7 @@ class NodeChildrenList(JSONAPIBaseView, bulk_views.ListBulkCreateJSONAPIView, No
         node = self.get_node()
         req_query = self.get_query_from_request()
 
-        node_pks = node.node_relations.select_related('child')\
+        node_pks = node.node_relations.filter(is_node_link=False).select_related('child')\
                 .values_list('child__pk', flat=True)
         query = (
             Q('pk', 'in', node_pks) &
@@ -1426,7 +1426,7 @@ class NodeLinksList(BaseNodeLinksList, bulk_views.BulkDestroyJSONAPIView, bulk_v
     view_name = 'node-pointers'
 
     def get_queryset(self):
-        return self.get_node().node_relations.select_related('child').filter(child__is_deleted=False)
+        return self.get_node().node_relations.select_related('child').filter(is_node_link=True, child__is_deleted=False)
 
     # Overrides BulkDestroyJSONAPIView
     def perform_destroy(self, instance):
@@ -1620,7 +1620,9 @@ class NodeForksList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin, Node
     def get_queryset(self):
         all_forks = self.get_node().forks.sort('-forked_date')
         auth = get_user_auth(self.request)
-        return [node for node in all_forks if node.can_view(auth)]
+
+        node_pks = [node.pk for node in all_forks if node.can_view(auth)]
+        return AbstractNode.objects.filter(pk__in=node_pks)
 
     # overrides ListCreateAPIView
     def perform_create(self, serializer):
@@ -1886,20 +1888,24 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
 
     ordering = ('_materialized_path',)  # default ordering
 
-    serializer_class = FileSerializer
-
     required_read_scopes = [CoreScopes.NODE_FILE_READ]
     required_write_scopes = [CoreScopes.NODE_FILE_WRITE]
 
     view_category = 'nodes'
     view_name = 'node-files'
 
+    @property
+    def serializer_class(self):
+        if self.kwargs[self.provider_lookup_url_kwarg] == 'osfstorage':
+            return OsfStorageFileSerializer
+        return FileSerializer
+
     def get_default_queryset(self):
         # Don't bother going to waterbutler for osfstorage
         files_list = self.fetch_from_waterbutler()
 
         if isinstance(files_list, list):
-            return [self.get_file_item(file) for file in files_list]
+            return StoredFileNode.objects.filter(id__in=[self.get_file_item(file).id for file in files_list])
 
         if isinstance(files_list, dict) or getattr(files_list, 'is_file', False):
             # We should not have gotten a file here

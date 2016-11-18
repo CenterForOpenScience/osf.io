@@ -1,5 +1,6 @@
 import urlparse
 
+import pytz
 from nose.tools import *  # flake8: noqa
 from dateutil.parser import parse as parse_date
 import pytest
@@ -33,10 +34,10 @@ class TestNodeLogList(ApiTestCase):
         self.pointer = ProjectFactory()
 
         self.private_project = ProjectFactory(is_public=False, creator=self.user)
-        self.private_url = '/{}nodes/{}/logs/'.format(API_BASE, self.private_project._id)
+        self.private_url = '/{}nodes/{}/logs/?version=2.2'.format(API_BASE, self.private_project._id)
 
         self.public_project = ProjectFactory(is_public=True, creator=self.user)
-        self.public_url = '/{}nodes/{}/logs/'.format(API_BASE, self.public_project._id)
+        self.public_url = '/{}nodes/{}/logs/?version=2.2'.format(API_BASE, self.public_project._id)
 
     def test_add_tag(self):
         user_auth = Auth(self.user)
@@ -83,7 +84,6 @@ class TestNodeLogList(ApiTestCase):
                               self.private_project.logs.first().date)
         assert_equal(res.json['data'][API_FIRST]['attributes']['action'], self.private_project.logs.first().action)
 
-    @pytest.mark.skip('Addons not yet implemented')
     def test_add_addon(self):
         self.public_project.add_addon('github', auth=self.user_auth)
         assert_equal('addon_added', self.public_project.logs.latest().action)
@@ -106,11 +106,10 @@ class TestNodeLogList(ApiTestCase):
         assert_equal(res.json['data'][API_LATEST]['attributes']['action'], 'contributor_removed')
         assert_equal(res.json['data'][1]['attributes']['action'], 'contributor_added')
 
-    @pytest.mark.skip('Addons not yet implemented')
     def test_remove_addon(self):
         self.public_project.add_addon('github', auth=self.user_auth)
         assert_equal('addon_added', self.public_project.logs.latest().action)
-        old_log_length = len(list(self.public_project.logs))
+        old_log_length = len(list(self.public_project.logs.all()))
         self.public_project.delete_addon('github', auth=self.user_auth)
         assert_equal('addon_removed', self.public_project.logs.latest().action)
         assert_equal((self.public_project.logs.count() - 1), old_log_length)
