@@ -9,7 +9,7 @@ from website.addons.osfstorage import views
 class OSFStorageAddonConfig(BaseAddonConfig):
     name = 'addons.osfstorage'
     label = 'addons_osfstorage'
-    full_name = 'OSFStorage'
+    full_name = 'OSF Storage'
     short_name = 'osfstorage'
     added_default = ['node']
     added_mandatory = ['node']
