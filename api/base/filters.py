@@ -457,6 +457,10 @@ class ListFilterMixin(FilterMixin):
         # But queries on lists should be tags, e.g.
         # ?filter[tags]=foo,bar should be translated to Q('tags', 'isnull', True)
         # ?filter[tags]=[] should be translated to Q('tags', 'isnull', True)
+        if operation['source_field_name'] == 'kind':
+            operation['source_field_name'] = 'is_file'
+            # The value should be boolean
+            operation['value'] = operation['value'] == 'file'
         if field_name == 'tags':
             if operation['value'] not in (list(), tuple()):
                 operation['source_field_name'] = 'tags__name'

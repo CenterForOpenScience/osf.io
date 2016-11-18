@@ -737,7 +737,7 @@ class TestNodeCreate(ApiTestCase):
     def test_create_component_inherit_contributors_with_unregistered_contributor(self):
         parent_project = ProjectFactory(creator=self.user_one)
         parent_project.add_unregistered_contributor(
-            fullname='far', email='foo@bar', permissions=[permissions.READ],
+            fullname='far', email='foo@bar.baz', permissions=[permissions.READ],
             auth= Auth(user=self.user_one), save=True
         )
         url = '/{}nodes/{}/children/?inherit_contributors=true'.format(API_BASE, parent_project._id)

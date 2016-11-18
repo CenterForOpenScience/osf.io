@@ -17,7 +17,7 @@ class ContributorOrPublic(permissions.BasePermission):
             obj = obj.owner
         if isinstance(obj, PreprintService):
             obj = obj.node
-        assert isinstance(obj, (AbstractNode, NodeRelation)), 'obj must be an AbstractNode, NodeRelation, PreprintService, or AddonSettings; got {}'.format(obj)
+        assert isinstance(obj, (AbstractNode, NodeRelation)), 'obj must be an Node, NodeRelation, PreprintService, or AddonSettings; got {}'.format(obj)
         auth = get_user_auth(request)
         if request.method in permissions.SAFE_METHODS:
             return obj.is_public or obj.can_view(auth)
@@ -28,14 +28,14 @@ class ContributorOrPublic(permissions.BasePermission):
 class IsPublic(permissions.BasePermission):
 
     def has_object_permission(self, request, view, obj):
-        assert isinstance(obj, (AbstractNode)), 'obj must be an AbstractNode got {}'.format(obj)
+        assert isinstance(obj, (AbstractNode)), 'obj must be an Node got {}'.format(obj)
         auth = get_user_auth(request)
         return obj.is_public or obj.can_view(auth)
 
 
 class IsAdmin(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
-        assert isinstance(obj, (AbstractNode, DraftRegistration, PrivateLink)), 'obj must be an AbstractNode, Draft Registration, or PrivateLink, got {}'.format(obj)
+        assert isinstance(obj, (AbstractNode, DraftRegistration, PrivateLink)), 'obj must be an Node, Draft Registration, or PrivateLink, got {}'.format(obj)
         auth = get_user_auth(request)
         node = AbstractNode.load(request.parser_context['kwargs']['node_id'])
         return node.has_permission(auth.user, osf_permissions.ADMIN)
@@ -46,7 +46,7 @@ class IsAdminOrReviewer(permissions.BasePermission):
     Prereg admins can update draft registrations.
     """
     def has_object_permission(self, request, view, obj):
-        assert isinstance(obj, (AbstractNode, DraftRegistration, PrivateLink)), 'obj must be an AbstractNode, Draft Registration, or PrivateLink, got {}'.format(obj)
+        assert isinstance(obj, (AbstractNode, DraftRegistration, PrivateLink)), 'obj must be an Node, Draft Registration, or PrivateLink, got {}'.format(obj)
         auth = get_user_auth(request)
         node = AbstractNode.load(request.parser_context['kwargs']['node_id'])
         if request.method != 'DELETE' and is_prereg_admin(auth.user):
@@ -57,7 +57,7 @@ class IsAdminOrReviewer(permissions.BasePermission):
 class AdminOrPublic(permissions.BasePermission):
 
     def has_object_permission(self, request, view, obj):
-        assert isinstance(obj, (AbstractNode, User, Institution, BaseAddonSettings, DraftRegistration, PrivateLink)), 'obj must be an AbstractNode, User, Institution, Draft Registration, PrivateLink, or AddonSettings; got {}'.format(obj)
+        assert isinstance(obj, (AbstractNode, User, Institution, BaseAddonSettings, DraftRegistration, PrivateLink)), 'obj must be an Node, User, Institution, Draft Registration, PrivateLink, or AddonSettings; got {}'.format(obj)
         auth = get_user_auth(request)
         node = AbstractNode.load(request.parser_context['kwargs'][view.node_lookup_url_kwarg])
         if request.method in permissions.SAFE_METHODS:
@@ -80,7 +80,7 @@ class ContributorDetailPermissions(permissions.BasePermission):
     """Permissions for contributor detail page."""
 
     def has_object_permission(self, request, view, obj):
-        assert isinstance(obj, (AbstractNode, User)), 'obj must be User or AbstractNode, got {}'.format(obj)
+        assert isinstance(obj, (AbstractNode, User)), 'obj must be User or Node, got {}'.format(obj)
         auth = get_user_auth(request)
         context = request.parser_context['kwargs']
         node = AbstractNode.load(context[view.node_lookup_url_kwarg])
@@ -96,7 +96,7 @@ class ContributorDetailPermissions(permissions.BasePermission):
 class ContributorOrPublicForPointers(permissions.BasePermission):
 
     def has_object_permission(self, request, view, obj):
-        assert isinstance(obj, (AbstractNode, NodeRelation)), 'obj must be an AbstractNode or NodeRelation, got {}'.format(obj)
+        assert isinstance(obj, (AbstractNode, NodeRelation)), 'obj must be an Node or NodeRelation, got {}'.format(obj)
         auth = get_user_auth(request)
         parent_node = AbstractNode.load(request.parser_context['kwargs']['node_id'])
         pointer_node = NodeRelation.load(request.parser_context['kwargs']['node_link_id']).child
@@ -130,7 +130,7 @@ class ContributorOrPublicForRelationshipPointers(permissions.BasePermission):
             for pointer in request.data.get('data', []):
                 node = AbstractNode.load(pointer['id'])
                 if not node or node.is_collection:
-                    raise exceptions.NotFound(detail='AbstractNode with id "{}" was not found'.format(pointer['id']))
+                    raise exceptions.NotFound(detail='Node with id "{}" was not found'.format(pointer['id']))
                 pointer_nodes.append(node)
             has_pointer_auth = True
             for pointer in pointer_nodes:
@@ -178,7 +178,7 @@ class ReadOnlyIfRegistration(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
         if not isinstance(obj, AbstractNode):
             obj = AbstractNode.load(request.parser_context['kwargs'][view.node_lookup_url_kwarg])
-        assert isinstance(obj, AbstractNode), 'obj must be an AbstractNode'
+        assert isinstance(obj, AbstractNode), 'obj must be an Node'
         if obj.is_registration:
             return request.method in permissions.SAFE_METHODS
         return True
