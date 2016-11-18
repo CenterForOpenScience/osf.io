@@ -148,9 +148,15 @@ PRIMARY_EMAIL_CHANGED = Mail('primary_email_changed', subject='Primary email cha
 
 INVITE_DEFAULT = Mail('invite_default', subject='You have been added as a contributor to an OSF project.')
 INVITE_PREPRINT = Mail('invite_preprint', subject='You have been added as a contributor to an OSF preprint.')
+INVITE_PREPRINT_SOCARXIV = Mail('invite_preprint_branded', subject='You have been added as a contributor to an SocArXiv preprint.')
+INVITE_PREPRINT_ENGRXIV = Mail('invite_preprint_branded', subject='You have been added as a contributor to an engrXiv preprint.')
+INVITE_PREPRINT_PSYARXIV = Mail('invite_preprint_branded', subject='You have been added as a contributor to an PsyArxiv preprint.')
 
 CONTRIBUTOR_ADDED_DEFAULT = Mail('contributor_added_default', subject='You have been added as a contributor to an OSF project.')
 CONTRIBUTOR_ADDED_PREPRINT = Mail('contributor_added_preprint', subject='You have been added as a contributor to an OSF preprint.')
+CONTRIBUTOR_ADDED_PREPRINT_SOCARXIV = Mail('contributor_added_preprint_branded', subject='You have been added as a contributor to a SocArXiv preprint.')
+CONTRIBUTOR_ADDED_PREPRINT_ENGRXIV = Mail('contributor_added_preprint_branded', subject='You have been added as a contributor to a engrXiv preprint.')
+CONTRIBUTOR_ADDED_PREPRINT_PSYARXIV = Mail('contributor_added_preprint_branded', subject='You have been added as a contributor to a psyArXiv preprint.')
 
 FORWARD_INVITE = Mail('forward_invite', subject='Please forward to ${fullname}')
 FORWARD_INVITE_REGISTERED = Mail('forward_invite_registered', subject='Please forward to ${fullname}')
