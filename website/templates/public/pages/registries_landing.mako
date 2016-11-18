@@ -138,7 +138,7 @@
 <%def name="mailchimp_form()">
 <!-- Begin MailChimp Signup Form -->
 <div id="mc_embed_signup">
-<form action="//centerforopenscience.us9.list-manage.com/subscribe/post?u=4ea2d63bcf7c2776e53a62167&amp;id=9acfb7c169" method="post" id="mc-embedded-subscribe-form" name="mc-embedded-subscribe-form" class="validate" target="_blank" novalidate>
+<form action="//centerforopenscience.us9.list-manage.com/subscribe/post?u=4ea2d63bcf7c2776e53a62167&amp;id=f8f5e09bf7" method="post" id="mc-embedded-subscribe-form" name="mc-embedded-subscribe-form" class="validate" target="_blank" novalidate>
     <div id="mc_embed_signup_scroll">
 <div class="form-group mc-field-group">
   <label for="mce-EMAIL">Email Address  <span class="asterisk">*</span></label>
