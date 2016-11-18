@@ -89,7 +89,7 @@
       <div class="container">
         <div class="row">
           <div class="col-md-3">
-            <a href="http://ridie.3ieimpact.org/"><img src="/static/img/registries/RIDIE.png" alt="RIDIE" width="95%" style="margin-top: 20px;"></a>
+            <a href="http://ridie.3ieimpact.org/"><img src="/static/img/registries/RIDIE.png" alt="RIDIE" width="95%" style="margin-top: 17px; max-width: 400px;"></a>
           </div>
           <div class="col-md-9 text-center">
             <h2>A registry from the International Initiative for Impact Evaluation</h2>
@@ -111,7 +111,7 @@
             </h4>
           </div>
           <div class="col-md-5">
-            <a href="http://egap.org/content/registration"><img src="/static/img/registries/EGAP_evidence_logo_white_0.jpg" alt="egap" width="95%" style="margin-top: 38px;"></a>
+            <a href="http://egap.org/content/registration"><img src="/static/img/registries/EGAP_evidence_logo_white_0.jpg" alt="egap" width="95%" style="margin-top: 17px; max-width: 400px;"></a>
           </div>
         </div>
       </div>
@@ -120,7 +120,7 @@
         <div class="container">
             <div class="row">
                 <div class="col-md-2">
-                    <a href="https://cos.io/prereg/"><img src="/static/img/circle_logo.png" alt="prereg" width="100%" style="margin-top: 20px;"></a>
+                    <a href="https://cos.io/prereg/"><img src="/static/img/circle_logo.png" alt="prereg" width="95%" style="margin-top: 10px; max-width: 200px;"></a>
                 </div>
                 <div class="col-md-10 text-center">
                     <h2>The preregistration challenge for all sciences</h2>
