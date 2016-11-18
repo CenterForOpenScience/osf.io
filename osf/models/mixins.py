@@ -326,14 +326,23 @@ class NodeLinkMixin(models.Model):
         :param Pointer pointer: Pointer to remove
         :param Auth auth: Consolidated authorization
         """
-        try:
-            node_rel = self.node_relations.get(is_node_link=True, id=node_relation.id)
-        except NodeRelation.DoesNotExist:
-            raise ValueError('Node link does not belong to the requested node.')
-        else:
+        AbstractNode = apps.get_model('osf.AbstractNode')
+
+        node_rel = None
+        if isinstance(node_relation, NodeRelation):
+            try:
+                node_rel = self.node_relations.get(is_node_link=True, id=node_relation.id)
+            except NodeRelation.DoesNotExist:
+                raise ValueError('Node link does not belong to the requested node.')
+        elif isinstance(node_relation, AbstractNode):
+            try:
+                node_rel = self.node_relations.get(is_node_link=True, child__id=node_relation.id)
+            except NodeRelation.DoesNotExist:
+                raise ValueError('Node link does not belong to the requested node.')
+        if node_rel is not None:
             node_rel.delete()
 
-        node = node_relation.child
+        node = node_rel.child
         # Add log
         if hasattr(self, 'add_log'):
             self.add_log(

@@ -26,7 +26,7 @@ class TestWithdrawnRegistrations(NodeCRUDTestCase):
         self.public_pointer = self.public_project.add_pointer(self.public_pointer_project,
                                                               auth=Auth(self.user),
                                                               save=True)
-        self.withdrawn_url = '/{}registrations/{}/'.format(API_BASE, self.registration._id)
+        self.withdrawn_url = '/{}registrations/{}/?version=2.2'.format(API_BASE, self.registration._id)
         self.withdrawn_registration.justification = 'We made a major error.'
         self.withdrawn_registration.save()
 

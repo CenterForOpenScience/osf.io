@@ -849,6 +849,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
             user.set_unusable_username()
         user.set_unusable_password()
         user.update_guessed_names()
+
         return user
 
     def update_guessed_names(self):

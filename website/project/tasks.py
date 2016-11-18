@@ -12,8 +12,8 @@ from website import settings
 def on_node_updated(node_id, user_id, first_save, saved_fields, request_headers=None):
     # WARNING: Only perform Read-Only operations in an asynchronous task, until Repeatable Read/Serializable
     # transactions are implemented in View and Task application layers.
-    Node = apps.get_model('osf.AbstractNode')
-    node = Node.load(node_id)
+    AbstractNode = apps.get_model('osf.AbstractNode')
+    node = AbstractNode.load(node_id)
 
     if node.is_collection or node.archiving:
         return

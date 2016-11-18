@@ -105,7 +105,6 @@ class TestNodeChildrenList(ApiTestCase):
         ids = [node['id'] for node in res.json['data']]
         assert_in(self.public_component._id, ids)  # sanity check
 
-        assert_equal(len(ids), self.public_project.nodes.count())
         assert_not_in(pointed_to._id, ids)
 
 

@@ -181,14 +181,14 @@ class FileSerializer(JSONAPISerializer):
         return 1
 
     def get_size(self, obj):
-        if obj.versions:
+        if obj.versions.exists():
             self.size = obj.versions.last().size
             return self.size
         return None
 
     def get_date_modified(self, obj):
         mod_dt = None
-        if obj.provider == 'osfstorage' and obj.versions:
+        if obj.provider == 'osfstorage' and obj.versions.exists():
             # Each time an osfstorage file is added or uploaded, a new version object is created with its
             # date_created equal to the time of the update.  The date_modified is the modified date
             # from the backend the file is stored on.  This field refers to the modified date on osfstorage,
@@ -204,7 +204,7 @@ class FileSerializer(JSONAPISerializer):
 
     def get_date_created(self, obj):
         creat_dt = None
-        if obj.provider == 'osfstorage' and obj.versions:
+        if obj.provider == 'osfstorage' and obj.versions.exists():
             creat_dt = obj.versions.first().date_created
         elif obj.provider != 'osfstorage' and obj.history:
             # Non-osfstorage files don't store a created date, so instead get the modified date of the
@@ -218,7 +218,7 @@ class FileSerializer(JSONAPISerializer):
 
     def get_extra(self, obj):
         metadata = {}
-        if obj.provider == 'osfstorage' and obj.versions:
+        if obj.provider == 'osfstorage' and obj.versions.exists():
             metadata = obj.versions.last().metadata
         elif obj.provider != 'osfstorage' and obj.history:
             metadata = obj.history[-1].get('extra', {})
@@ -287,6 +287,24 @@ class FileSerializer(JSONAPISerializer):
 
     def get_absolute_url(self, obj):
         return api_v2_url('files/{}/'.format(obj._id))
+
+
+class OsfStorageFileSerializer(FileSerializer):
+    """ Overrides `filterable_fields` to make `last_touched` non-filterable
+    """
+    filterable_fields = frozenset([
+        'id',
+        'name',
+        'node',
+        'kind',
+        'path',
+        'size',
+        'provider',
+        'tags',
+    ])
+
+    def create(self, validated_data):
+        return super(OsfStorageFileSerializer, self).create(validated_data)
 
 
 class FileDetailSerializer(FileSerializer):

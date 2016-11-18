@@ -667,6 +667,7 @@ class User(GuidStoredObject, AddonModelMixin):
             'email': clean_email,
         }
         self.unclaimed_records[project_id] = record
+        self.save()
         return record
 
     def display_full_name(self, node=None):

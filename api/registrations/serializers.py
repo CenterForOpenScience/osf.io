@@ -11,7 +11,7 @@ from website.project.metadata.utils import is_prereg_admin_not_project_admin
 from website.exceptions import NodeStateError
 from website.project.model import NodeUpdateError
 
-from api.files.serializers import FileSerializer
+from api.files.serializers import OsfStorageFileSerializer
 from api.nodes.serializers import NodeSerializer, NodeProviderSerializer
 from api.nodes.serializers import NodeLinksSerializer, NodeLicenseSerializer
 from api.nodes.serializers import NodeContributorsSerializer, NodeTagField
@@ -67,7 +67,7 @@ class BaseRegistrationSerializer(NodeSerializer):
 
     registered_by = HideIfWithdrawal(RelationshipField(
         related_view='users:user-detail',
-        related_view_kwargs={'user_id': '<registered_user_id>'}
+        related_view_kwargs={'user_id': '<registered_user._id>'}
     ))
 
     registered_from = HideIfWithdrawal(RelationshipField(
@@ -329,7 +329,7 @@ class RegistrationContributorsSerializer(NodeContributorsSerializer):
         )
 
 
-class RegistrationFileSerializer(FileSerializer):
+class RegistrationFileSerializer(OsfStorageFileSerializer):
 
     files = NodeFileHyperLinkField(
         related_view='registrations:registration-files',

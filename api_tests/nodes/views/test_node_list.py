@@ -501,7 +501,6 @@ class TestNodeFiltering(ApiTestCase):
         assert_in(self.project_three.description, descriptions)
         assert_in(self.private_project_user_one.description, descriptions)
 
-    @pytest.mark.skip('Preprint undergoing implementation changes')
     def test_filtering_on_preprint(self):
         url = '/{}nodes/?filter[preprint]=true'.format(API_BASE)
         res = self.app.get(url, auth=self.user_one.auth)
@@ -509,14 +508,13 @@ class TestNodeFiltering(ApiTestCase):
         data = res.json['data']
         ids = [each['id'] for each in data]
 
-        preprints = Node.find(Q('preprint_file', 'ne', None) & Q('preprint_orphan', 'ne', True))
+        preprints = Node.find(Q('preprint_file', 'ne', None) & Q('_is_preprint_orphan', 'ne', True))
         assert_equal(len(data), len(preprints))
         assert_in(self.preprint.node._id, ids)
         assert_not_in(self.project_one._id, ids)
         assert_not_in(self.project_two._id, ids)
         assert_not_in(self.project_three._id, ids)
 
-    @pytest.mark.skip('Preprint undergoing implementation changes')
     def test_filtering_out_preprint(self):
         url = '/{}nodes/?filter[preprint]=false'.format(API_BASE)
         res = self.app.get(url, auth=self.user_one.auth)
@@ -530,7 +528,6 @@ class TestNodeFiltering(ApiTestCase):
         assert_in(self.project_two._id, ids)
         assert_in(self.project_three._id, ids)
 
-    @pytest.mark.skip('Preprint undergoing implementation changes')
     def test_preprint_filter_excludes_orphans(self):
         orphan = PreprintFactory(creator=self.preprint.node.creator)
         orphan._is_preprint_orphan = True
@@ -740,7 +737,7 @@ class TestNodeCreate(ApiTestCase):
     def test_create_component_inherit_contributors_with_unregistered_contributor(self):
         parent_project = ProjectFactory(creator=self.user_one)
         parent_project.add_unregistered_contributor(
-            fullname='far', email='bar', permissions=[permissions.READ],
+            fullname='far', email='foo@bar', permissions=[permissions.READ],
             auth= Auth(user=self.user_one), save=True
         )
         url = '/{}nodes/{}/children/?inherit_contributors=true'.format(API_BASE, parent_project._id)
@@ -1105,7 +1102,7 @@ class TestNodeBulkUpdate(ApiTestCase):
     def test_bulk_update_public_projects_one_not_found(self):
         empty_payload = {'data': [
             {
-                'id': 12345,
+                'id': '12345',
                 'type': 'nodes',
                 'attributes': {
                     'title': self.new_title,
@@ -1358,7 +1355,7 @@ class TestNodeBulkPartialUpdate(ApiTestCase):
     def test_bulk_partial_update_public_projects_one_not_found(self):
         empty_payload = {'data': [
             {
-                'id': 12345,
+                'id': '12345',
                 'type': 'nodes',
                 'attributes': {
                     'title': self.new_title

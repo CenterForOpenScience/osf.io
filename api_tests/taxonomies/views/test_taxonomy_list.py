@@ -61,7 +61,7 @@ class TestTaxonomy(ApiTestCase):
 
     def test_taxonomy_filter_by_parent(self):
         children_subjects = Subject.find(
-            Q('parents', 'eq', self.subject1._id)
+            Q('parents___id', 'eq', self.subject1._id)
         )
         children_url = self.url + '?filter[parents]={}'.format(self.subject1._id)
 
