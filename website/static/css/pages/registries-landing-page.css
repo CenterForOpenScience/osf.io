@@ -590,7 +590,11 @@ footer {
     padding: 50px 0;
 }
 .ridie a {
+    text-decoration: underline;
     color: #2e3547;
+}
+.ridie a:hover {
+    color: #2cb9f1;
 }
 .ridie h2 {
     margin-top: 20px;
@@ -607,7 +611,11 @@ footer {
     padding: 50px 0;
 } 
 .egap a {
+    text-decoration: underline;
     color: #2f3952;
+}
+.egap a:hover {
+    color: #2cb9f1;
 }
 .egap h2 {
     margin-top: 20px;
@@ -625,7 +633,11 @@ footer {
 }
 
 .prereg a {
+    text-decoration: underline;
     color: #393536;
+}
+.prereg a:hover {
+    color: #2cb9f1;
 }
 .prereg h2 {
     margin-top: 20px;

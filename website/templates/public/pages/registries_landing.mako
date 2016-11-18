@@ -22,6 +22,7 @@
             <div class="container ">
                 <div class="text-center m-b-lg">
                 <img src="/static/img/registries/osfregistries_white.png" alt="osfregistries" width="95%" style="margin-top: 38px;">
+                <h2 class="osf-preprint-subheading">Coming Soon</h2>
                 </div>
                 <div class="network-img" style="height: 700px; margin-bottom: -700px;"> </div>
                 <div class="row">
