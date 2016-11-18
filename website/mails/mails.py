@@ -136,10 +136,8 @@ INITIAL_CONFIRM_EMAIL = Mail('initial_confirm', subject='Open Science Framework 
 CONFIRM_EMAIL = Mail('confirm', subject='Add a new email to your OSF account')
 CONFIRM_EMAIL_PREREG = Mail('confirm_prereg', subject='Open Science Framework Account Verification, Preregistration Challenge')
 CONFIRM_EMAIL_ERPC = Mail('confirm_erpc', subject='Open Science Framework Account Verification, Election Research Preacceptance Competition')
-CONFIRM_EMAIL_PREPRINTS_OSF = Mail('confirm_preprints_osf', subject='Open Science Framework Account Verification, Preprints Service')
-CONFIRM_EMAIL_PREPRINTS_SOCARXIV = Mail('confirm_preprints_socarxiv', subject='Open Science Framework Account Verification, SocArXiv Preprints Service')
-CONFIRM_EMAIL_PREPRINTS_ENGRXIV = Mail('confirm_preprints_engrxiv', subject='Open Science Framework Account Verification, engrXiv Preprints Service')
-CONFIRM_EMAIL_PREPRINTS_PSYARXIV = Mail('confirm_preprints_psyarxiv', subject='Open Science Framework Account Verification, PsyArXiv Preprints Service')
+
+CONFIRM_EMAIL_PREPRINTS = lambda id, name: Mail('confirm_preprints_{}'.format(id), subject='Open Science Framework Account Verification, {} Preprints Service'.format(name))
 
 CONFIRM_MERGE = Mail('confirm_merge', subject='Confirm account merge')
 
@@ -147,16 +145,11 @@ REMOVED_EMAIL = Mail('email_removed', subject='Email address removed from your O
 PRIMARY_EMAIL_CHANGED = Mail('primary_email_changed', subject='Primary email changed')
 
 INVITE_DEFAULT = Mail('invite_default', subject='You have been added as a contributor to an OSF project.')
-INVITE_PREPRINT = Mail('invite_preprint', subject='You have been added as a contributor to an OSF preprint.')
-INVITE_PREPRINT_SOCARXIV = Mail('invite_preprint_branded', subject='You have been added as a contributor to an SocArXiv preprint.')
-INVITE_PREPRINT_ENGRXIV = Mail('invite_preprint_branded', subject='You have been added as a contributor to an engrXiv preprint.')
-INVITE_PREPRINT_PSYARXIV = Mail('invite_preprint_branded', subject='You have been added as a contributor to an PsyArxiv preprint.')
+INVITE_PREPRINT = lambda name: Mail('invite_preprint_branded', subject='You have been added as a contributor to a {} preprint.'.format(name))
+
 
 CONTRIBUTOR_ADDED_DEFAULT = Mail('contributor_added_default', subject='You have been added as a contributor to an OSF project.')
-CONTRIBUTOR_ADDED_PREPRINT = Mail('contributor_added_preprint', subject='You have been added as a contributor to an OSF preprint.')
-CONTRIBUTOR_ADDED_PREPRINT_SOCARXIV = Mail('contributor_added_preprint_branded', subject='You have been added as a contributor to a SocArXiv preprint.')
-CONTRIBUTOR_ADDED_PREPRINT_ENGRXIV = Mail('contributor_added_preprint_branded', subject='You have been added as a contributor to a engrXiv preprint.')
-CONTRIBUTOR_ADDED_PREPRINT_PSYARXIV = Mail('contributor_added_preprint_branded', subject='You have been added as a contributor to a psyArXiv preprint.')
+CONTRIBUTOR_ADDED_PREPRINT = lambda name: Mail('contributor_added_preprint', subject='You have been added as a contributor to a {} preprint.'.format(name))
 
 FORWARD_INVITE = Mail('forward_invite', subject='Please forward to ${fullname}')
 FORWARD_INVITE_REGISTERED = Mail('forward_invite_registered', subject='Please forward to ${fullname}')

@@ -7,7 +7,7 @@ from framework.exceptions import HTTPError
 from website import mails
 from website.settings import DOMAIN
 
-CAMPAIGNS = ImmutableDict({
+CAMPAIGNS = {
     'prereg': {
         'system_tag': 'prereg_challenge_campaign',
         'redirect_url': lambda: furl.furl(DOMAIN).add(path='prereg/').url,
@@ -27,28 +27,28 @@ CAMPAIGNS = ImmutableDict({
     'osf-preprints': {
         'system_tag': 'osf_preprints',
         'redirect_url': lambda: furl.furl(DOMAIN).add(path='preprints/').url,
-        'confirmation_email_template': mails.CONFIRM_EMAIL_PREPRINTS_OSF,
+        'confirmation_email_template': mails.CONFIRM_EMAIL_PREPRINTS('osf', 'OSF'),
         'proxy_login': True,
     },
-    'socarxiv-preprints': {
-        'system_tag': 'socarxiv-preprints',
-        'redirect_url': lambda: furl.furl(DOMAIN).add(path='preprints/socarxiv').url,
-        'confirmation_email_template': mails.CONFIRM_EMAIL_PREPRINTS_SOCARXIV,
-        'proxy_login': True,
-    },
-    'engrxiv-preprints': {
-        'system_tag': 'engrxiv-preprints',
-        'redirect_url': lambda: furl.furl(DOMAIN).add(path='preprints/engrxiv').url,
-        'confirmation_email_template': mails.CONFIRM_EMAIL_PREPRINTS_ENGRXIV,
-        'proxy_login': True,
-    },
-    'psyarxiv-preprints': {
-        'system_tag': 'psyarxiv-preprints',
-        'redirect_url': lambda: furl.furl(DOMAIN).add(path='preprints/psyarxiv').url,
-        'confirmation_email_template': mails.CONFIRM_EMAIL_PREPRINTS_PSYARXIV,
+}
+
+providers = [
+    'SocArXiv',
+    'engrXiv',
+    'PsyArXiv'
+]
+
+for provider in providers:
+    provider_id = provider.lower()
+    key = '{}-preprints'.format(provider_id)
+    CAMPAIGNS[key] = {
+        'system_tag': key,
+        'redirect_url': lambda: furl.furl(DOMAIN).add(path='preprints/{}'.format(provider_id)).url,
+        'confirmation_email_template': mails.CONFIRM_EMAIL_PREPRINTS(provider_id, provider),
         'proxy_login': True,
     }
-})
+
+CAMPAIGNS = ImmutableDict(CAMPAIGNS)
 
 
 def system_tag_for_campaign(campaign):
