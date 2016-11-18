@@ -452,7 +452,11 @@ def send_claim_email(email, unclaimed_user, node, notify=True, throttle=24 * 360
         # check email template for branded preprints
         if email_template == 'preprint':
             email_template, preprint_provider = find_preprint_provider(node)
-        mail_tpl = getattr(mails, 'INVITE_{}'.format(email_template.upper()))(preprint_provider)
+            if not email_template or not preprint_provider:
+                return
+            mail_tpl = getattr(mails, 'INVITE_PREPRINT')(email_template, preprint_provider)
+        else:
+            mail_tpl = getattr(mails, 'INVITE_DEFAULT'.format(email_template.upper()))
 
         to_addr = claimer_email
         unclaimed_record['claimer_email'] = claimer_email
@@ -522,7 +526,11 @@ def notify_added_contributor(node, contributor, auth=None, throttle=None, email_
         preprint_provider = None
         if email_template == 'preprint':
             email_template, preprint_provider = find_preprint_provider(node)
-        email_template = getattr(mails, 'CONTRIBUTOR_ADDED_{}'.format(email_template.upper()))(preprint_provider)
+            if not email_template or not preprint_provider:
+                return
+            email_template = getattr(mails, 'CONTRIBUTOR_ADDED_PREPRINT')(email_template, preprint_provider)
+        else:
+            email_template = getattr(mails, 'CONTRIBUTOR_ADDED_DEFAULT'.format(email_template.upper()))
 
         contributor_record = contributor.contributor_added_email_records.get(node._id, {})
         if contributor_record:
@@ -562,12 +570,12 @@ def find_preprint_provider(node):
         preprint = PreprintService.find_one(Q('node', 'eq', node._id))
         provider = preprint.provider
         if provider._id == 'osf':
-            return 'preprint', provider.name
+            return 'osf', provider.name
         else:
-            return 'preprint_branded', provider.name
+            return 'branded', provider.name
     # TODO: fine-grained exception handling
     except Exception:
-        return 'default', None
+        return None, None
 
 
 def verify_claim_token(user, token, pid):

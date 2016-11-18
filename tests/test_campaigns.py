@@ -10,7 +10,7 @@ from tests.base import OsfTestCase
 from tests.utils import mock_auth
 
 
-# test for prereg, erpc and preprints, which follow similar auth login/register logic
+# test for prereg, erpc, which follow similar auth login/register logic
 class TestCampaignsAuthViews(OsfTestCase):
 
     def setUp(self):
@@ -24,10 +24,6 @@ class TestCampaignsAuthViews(OsfTestCase):
                 'title_register': 'Election Research Preacceptance Competition',
                 'title_landing': 'Welcome to the Election Research Preacceptance Competition!'
             },
-            'osf-preprints': {
-                'title_register': 'OSF Preprints',
-                'title_landing': 'OSF Preprints'
-            }
         }
         for key, value in self.campaigns.items():
             value.update({'url_login': web_url_for('auth_login', campaign=key)})
@@ -69,12 +65,8 @@ class TestCampaignsAuthViews(OsfTestCase):
     def test_auth_prereg_landing_page_logged_out(self):
         for key, value in self.campaigns.items():
             resp = self.app.get(value['url_landing'])
-            if key == 'osf-preprints':
-                assert_equal(resp.status_code, http.OK)
-                assert_in(value['title_landing'], resp)
-            else:
-                assert_equal(resp.status_code, http.FOUND)
-                assert_in(cas.get_login_url(value['url_landing']), resp.headers['Location'])
+            assert_equal(resp.status_code, http.FOUND)
+            assert_in(cas.get_login_url(value['url_landing']), resp.headers['Location'])
 
 
 # test for registration through campaigns

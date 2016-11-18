@@ -186,24 +186,16 @@ INVITE_DEFAULT = Mail(
     'invite_default',
     subject='You have been added as a contributor to an OSF project.'
 )
-INVITE_PREPRINT = lambda provider: Mail(
-    'invite_preprint_osf',
-    subject='You have been added as a contributor to {} {} preprint.'.format(get_english_article(provider), provider)
-)
-INVITE_PREPRINT_BRANDED = lambda provider: Mail(
-    'invite_preprint_branded',
+INVITE_PREPRINT = lambda template, provider: Mail(
+    'invite_preprint_{}'.format(template),
     subject='You have been added as a contributor to {} {} preprint.'.format(get_english_article(provider), provider)
 )
 CONTRIBUTOR_ADDED_DEFAULT = Mail(
     'contributor_added_default',
     subject='You have been added as a contributor to an OSF project.'
 )
-CONTRIBUTOR_ADDED_PREPRINT = lambda provider: Mail(
-    'contributor_added_preprint_osf',
-    subject='You have been added as a contributor to {} {} preprint.'.format(get_english_article(provider), provider)
-)
-CONTRIBUTOR_ADDED_PREPRINT_BRANDED = lambda provider: Mail(
-    'contributor_added_preprint_branded',
+CONTRIBUTOR_ADDED_PREPRINT = lambda template, provider: Mail(
+    'contributor_added_preprint_{}'.format(template),
     subject='You have been added as a contributor to {} {} preprint.'.format(get_english_article(provider), provider)
 )
 FORWARD_INVITE = Mail('forward_invite', subject='Please forward to ${fullname}')
