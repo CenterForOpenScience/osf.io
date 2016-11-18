@@ -358,6 +358,8 @@ class LinkedRegistrationsRelationship(JSONAPIBaseView, generics.RetrieveUpdateDe
         for val in data:
             if val['id'] in current_pointers:
                 collection.rm_pointer(current_pointers[val['id']], auth)
+            else:
+                raise NotFound(detail='Pointer with id "{}" not found in pointers list'.format(val['id'], collection))
 
     def create(self, *args, **kwargs):
         try:
@@ -855,6 +857,5 @@ class BaseLinkedList(JSONAPIBaseView, generics.ListAPIView):
             self.get_node().nodes_pointer
             if not pointer.node.is_deleted
             and not pointer.node.is_collection
-            # and pointer.node.is_registration
             and pointer.node.can_view(auth)
         ], key=lambda n: n.date_modified, reverse=True)

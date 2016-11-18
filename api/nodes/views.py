@@ -28,7 +28,15 @@ from api.comments.serializers import NodeCommentSerializer, CommentCreateSeriali
 from api.comments.permissions import CanCommentOrPublic
 from api.users.views import UserMixin
 from api.wikis.serializers import NodeWikiSerializer
-from api.base.views import LinkedNodesRelationship, BaseContributorDetail, BaseContributorList, BaseNodeLinksDetail, BaseNodeLinksList, BaseLinkedList
+from api.base.views import (
+    LinkedNodesRelationship,
+    LinkedRegistrationsRelationship,
+    BaseContributorDetail,
+    BaseContributorList,
+    BaseNodeLinksDetail,
+    BaseNodeLinksList,
+    BaseLinkedList,
+)
 from api.base.throttling import (
     UserRateThrottle,
     NonCookieAuthThrottle,
@@ -460,6 +468,14 @@ class NodeDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, NodeMix
 
     Returns the top-level node associated with the current node.  If the current node is the top-level node, the root is
     the current node.
+
+    ### Linked Nodes
+
+    List of nodes linked to the current node.
+
+    ### Linked Registrations
+
+    List of registrations linked to the current node.
 
     ##Links
 
@@ -3024,6 +3040,158 @@ class LinkedNodesList(BaseLinkedList, NodeMixin):
         Tells parser that we are creating a relationship
         """
         res = super(LinkedNodesList, self).get_parser_context(http_request)
+        res['is_relationship'] = True
+        return res
+
+
+class NodeLinkedRegistrationsRelationship(LinkedRegistrationsRelationship, NodeMixin):
+    """ Relationship Endpoint for Node -> Linked Registration relationships
+
+    Used to set, remove, update and retrieve the ids of the linked registrations attached to this node. For each id, there
+    exists a node link that contains that node.
+
+    ##Actions
+
+    ###Create
+
+        Method:        POST
+        URL:           /links/self
+        Query Params:  <none>
+        Body (JSON):   {
+                         "data": [{
+                           "type": "linked_registrations",   # required
+                           "id": <node_id>   # required
+                         }]
+                       }
+        Success:       201
+
+    This requires both edit permission on the node, and for the user that is
+    making the request to be able to read the registrations requested. Data can contain any number of
+    node identifiers. This will create a node_link for all node_ids in the request that
+    do not currently have a corresponding node_link in this node.
+
+    ###Update
+
+        Method:        PUT || PATCH
+        URL:           /links/self
+        Query Params:  <none>
+        Body (JSON):   {
+                         "data": [{
+                           "type": "linked_registrations",   # required
+                           "id": <node_id>   # required
+                         }]
+                       }
+        Success:       200
+
+    This requires both edit permission on the node, and for the user that is
+    making the request to be able to read the registrations requested. Data can contain any number of
+    node identifiers. This will replace the contents of the node_links for this node with
+    the contents of the request. It will delete all node links that don't have a node_id in the data
+    array, create node links for the node_ids that don't currently have a node id, and do nothing
+    for node_ids that already have a corresponding node_link. This means a update request with
+    {"data": []} will remove all node_links in this node.
+
+    ###Destroy
+
+        Method:        DELETE
+        URL:           /links/self
+        Query Params:  <none>
+        Body (JSON):   {
+                         "data": [{
+                           "type": "linked_registrations",   # required
+                           "id": <node_id>   # required
+                         }]
+                       }
+        Success:       204
+
+    This requires edit permission on the node. This will delete any node_links that have a
+    corresponding node_id in the request.
+    """
+
+    view_category = 'nodes'
+    view_name = 'node-registration-pointer-relationship'
+
+
+class NodeLinkedRegistrationsList(BaseLinkedList, NodeMixin):
+    """List of registrations linked to this node. *Read-only*.
+
+    Linked registrations are the registration nodes pointed to by node links.
+
+    <!--- Copied Spiel from RegistrationDetail -->
+    Registrations are read-only snapshots of a project. This view shows details about the given registration.
+
+    Each resource contains the full representation of the registration, meaning additional requests to an individual
+    registration's detail view are not necessary. A withdrawn registration will display a limited subset of information,
+    namely, title, description, date_created, registration, withdrawn, date_registered, withdrawal_justification, and
+    registration supplement. All other fields will be displayed as null. Additionally, the only relationships permitted
+    to be accessed for a withdrawn registration are the contributors - other relationships will return a 403.
+
+    ##Linked Registration Attributes
+
+    <!--- Copied Attributes from RegistrationDetail -->
+
+    Registrations have the "registrations" `type`.
+
+        name                            type               description
+        =======================================================================================================
+        title                           string             title of the registered project or component
+        description                     string             description of the registered node
+        category                        string             bode category, must be one of the allowed values
+        date_created                    iso8601 timestamp  timestamp that the node was created
+        date_modified                   iso8601 timestamp  timestamp when the node was last updated
+        tags                            array of strings   list of tags that describe the registered node
+        current_user_can_comment        boolean            Whether the current user is allowed to post comments
+        current_user_permissions        array of strings   list of strings representing the permissions for the current user on this node
+        fork                            boolean            is this project a fork?
+        registration                    boolean            has this project been registered? (always true - may be deprecated in future versions)
+        collection                      boolean            is this registered node a collection? (always false - may be deprecated in future versions)
+        node_license                    object             details of the license applied to the node
+        year                            string             date range of the license
+        copyright_holders               array of strings   holders of the applied license
+        public                          boolean            has this registration been made publicly-visible?
+        withdrawn                       boolean            has this registration been withdrawn?
+        date_registered                 iso8601 timestamp  timestamp that the registration was created
+        embargo_end_date                iso8601 timestamp  when the embargo on this registration will be lifted (if applicable)
+        withdrawal_justification        string             reasons for withdrawing the registration
+        pending_withdrawal              boolean            is this registration pending withdrawal?
+        pending_withdrawal_approval     boolean            is this registration pending approval?
+        pending_embargo_approval        boolean            is the associated Embargo awaiting approval by project admins?
+        registered_meta                 dictionary         registration supplementary information
+        registration_supplement         string             registration template
+
+    ##Links
+
+    See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
+
+    ##Query Params
+
+    + `page=<Int>` -- page number of results to view, default 1
+
+    + `filter[<fieldname>]=<Str>` -- fields and values to filter the search results on.
+
+    Nodes may be filtered by their `title`, `category`, `description`, `public`, `registration`, or `tags`.  `title`,
+    `description`, and `category` are string fields and will be filtered using simple substring matching.  `public` and
+    `registration` are booleans, and can be filtered using truthy values, such as `true`, `false`, `0`, or `1`.  Note
+    that quoting `true` or `false` in the query will cause the match to fail regardless.  `tags` is an array of simple strings.
+
+    #This Request/Response
+    """
+    serializer_class = RegistrationSerializer
+    view_category = 'nodes'
+    view_name = 'linked-registrations'
+
+    def get_queryset(self):
+        ret = [node for node in
+            super(NodeLinkedRegistrationsList, self).get_queryset()
+            if node.is_registration]
+        return ret
+
+    # overrides APIView
+    def get_parser_context(self, http_request):
+        """
+        Tells parser that we are creating a relationship
+        """
+        res = super(NodeLinkedRegistrationsList, self).get_parser_context(http_request)
         res['is_relationship'] = True
         return res
 
