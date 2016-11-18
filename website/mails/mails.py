@@ -124,6 +124,7 @@ def send_mail(to_addr, mail, mimetype='plain', from_addr=None, mailer=None,
 
             return ret
 
+
 def get_english_article(word):
     return 'a' + ('n' if word[0].lower() in 'aeiou' else '')
 
@@ -131,16 +132,41 @@ def get_english_article(word):
 
 TEST = Mail('test', subject='A test email to ${name}', categories=['test'])
 
-EXTERNAL_LOGIN_CONFIRM_EMAIL_CREATE = Mail('external_confirm_create', subject='Open Science Framework Account Verification')
-EXTERNAL_LOGIN_CONFIRM_EMAIL_LINK = Mail('external_confirm_link', subject='Open Science Framework Account Verification')
-EXTERNAL_LOGIN_LINK_SUCCESS = Mail('external_confirm_success', subject='Open Science Framework Account Verification Success')
+# Emails for first-time login through external identity providers.
+EXTERNAL_LOGIN_CONFIRM_EMAIL_CREATE= Mail(
+    'external_confirm_create',
+    subject='Open Science Framework Account Verification'
+)
+EXTERNAL_LOGIN_CONFIRM_EMAIL_LINK = Mail(
+    'external_confirm_link',
+    subject='Open Science Framework Account Verification'
+)
+EXTERNAL_LOGIN_LINK_SUCCESS = Mail(
+    'external_confirm_success',
+    subject='Open Science Framework Account Verification Success'
+)
 
-INITIAL_CONFIRM_EMAIL = Mail('initial_confirm', subject='Open Science Framework Account Verification')
-CONFIRM_EMAIL = Mail('confirm', subject='Add a new email to your OSF account')
-CONFIRM_EMAIL_PREREG = Mail('confirm_prereg', subject='Open Science Framework Account Verification, Preregistration Challenge')
-CONFIRM_EMAIL_ERPC = Mail('confirm_erpc', subject='Open Science Framework Account Verification, Election Research Preacceptance Competition')
-
-CONFIRM_EMAIL_PREPRINTS = lambda id, name: Mail('confirm_preprints_{}'.format(id), subject='Open Science Framework Account Verification, {} Preprints Service'.format(name))
+# Sign up confirmation emails for OSF, native campaigns and branded campaigns
+INITIAL_CONFIRM_EMAIL = Mail(
+    'initial_confirm',
+    subject='Open Science Framework Account Verification'
+)
+CONFIRM_EMAIL = Mail(
+    'confirm',
+    subject='Add a new email to your OSF account'
+)
+CONFIRM_EMAIL_PREREG = Mail(
+    'confirm_prereg',
+    subject='Open Science Framework Account Verification, Preregistration Challenge'
+)
+CONFIRM_EMAIL_ERPC = Mail(
+    'confirm_erpc',
+    subject='Open Science Framework Account Verification, Election Research Preacceptance Competition'
+)
+CONFIRM_EMAIL_PREPRINTS = lambda name, provider: Mail(
+    'confirm_preprints_{}'.format(name),
+    subject='Open Science Framework Account Verification, {} Preprints Service'.format(provider)
+)
 
 CONFIRM_MERGE = Mail('confirm_merge', subject='Confirm account merge')
 

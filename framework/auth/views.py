@@ -682,25 +682,32 @@ def send_confirm_email(user, email, renew=False, external_id_provider=None, exte
         merge_target = User.find_one(Q('emails', 'eq', email))
     except NoResultsFound:
         merge_target = None
+
     campaign = campaigns.campaign_for_user(user)
+    branded_preprints_provider = None
 
     # Choose the appropriate email template to use and add existing_user flag if a merge or adding an email.
-    if external_id_provider and external_id:  # first time login through external identity provider
+    if external_id_provider and external_id:
+        # First time login through external identity provider, link or create an OSF account confirmation
         if user.external_identity[external_id_provider][external_id] == 'CREATE':
             mail_template = mails.EXTERNAL_LOGIN_CONFIRM_EMAIL_CREATE
         elif user.external_identity[external_id_provider][external_id] == 'LINK':
             mail_template = mails.EXTERNAL_LOGIN_CONFIRM_EMAIL_LINK
-    elif merge_target:  # merge account
+    elif merge_target:
+        # Merge account confirmation
         mail_template = mails.CONFIRM_MERGE
         confirmation_url = '{}?logout=1'.format(confirmation_url)
-    elif user.is_active:  # add email
+    elif user.is_active:
+        # Add email confirmation
         mail_template = mails.CONFIRM_EMAIL
         confirmation_url = '{}?logout=1'.format(confirmation_url)
-    elif campaign:  # campaign
-        # TODO: In the future, we may want to make confirmation email configurable as well (send new user to
-        #   appropriate landing page or with redirect after)
+    elif campaign:
+        # Account creation confirmation: from campaign
         mail_template = campaigns.email_template_for_campaign(campaign)
-    else:  # account creation
+        if campaigns.is_proxy_login(campaign) and campaigns.is_branded_service(campaign):
+            branded_preprints_provider = campaigns.get_service_provider(campaign)
+    else:
+        # Account creation confirmation: from OSF
         mail_template = mails.INITIAL_CONFIRM_EMAIL
 
     mails.send_mail(
@@ -712,6 +719,7 @@ def send_confirm_email(user, email, renew=False, external_id_provider=None, exte
         email=email,
         merge_target=merge_target,
         external_id_provider=external_id_provider,
+        branded_preprints_provider=branded_preprints_provider
     )
 
 

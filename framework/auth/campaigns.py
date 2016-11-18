@@ -1,8 +1,6 @@
-import httplib as http
-
 import furl
+
 from werkzeug.datastructures import ImmutableDict
-from framework.exceptions import HTTPError
 
 from website import mails
 from website.settings import DOMAIN
@@ -29,6 +27,8 @@ CAMPAIGNS = {
         'redirect_url': lambda: furl.furl(DOMAIN).add(path='preprints/').url,
         'confirmation_email_template': mails.CONFIRM_EMAIL_PREPRINTS('osf', 'OSF'),
         'proxy_login': True,
+        'branded': False,
+        'provider': 'OSF'
     },
 }
 
@@ -41,11 +41,14 @@ providers = [
 for provider in providers:
     provider_id = provider.lower()
     key = '{}-preprints'.format(provider_id)
+    tag = '{}_preprints'.format(provider_id)
     CAMPAIGNS[key] = {
-        'system_tag': key,
+        'system_tag': tag,
         'redirect_url': lambda: furl.furl(DOMAIN).add(path='preprints/{}'.format(provider_id)).url,
-        'confirmation_email_template': mails.CONFIRM_EMAIL_PREPRINTS(provider_id, provider),
+        'confirmation_email_template': mails.CONFIRM_EMAIL_PREPRINTS('branded', provider),
         'proxy_login': True,
+        'branded': True,
+        'provider': provider,
     }
 
 CAMPAIGNS = ImmutableDict(CAMPAIGNS)
@@ -53,34 +56,42 @@ CAMPAIGNS = ImmutableDict(CAMPAIGNS)
 
 def system_tag_for_campaign(campaign):
     if campaign in CAMPAIGNS:
-        return CAMPAIGNS[campaign]['system_tag']
+        return CAMPAIGNS[campaign].get('system_tag')
     return None
 
 
 def email_template_for_campaign(campaign):
     if campaign in CAMPAIGNS:
-        return CAMPAIGNS[campaign]['confirmation_email_template']
+        return CAMPAIGNS[campaign].get('confirmation_email_template')
+    return None
 
 
 def campaign_for_user(user):
     for campaign, config in CAMPAIGNS.items():
-        # TODO: This is a bit of a one-off to support the Prereg Challenge.
-        # We should think more about the campaigns architecture and in
-        # particular define the behavior if the user has more than one
-        # campagin tag in their system_tags.
         if config['system_tag'] in user.system_tags:
             return campaign
+    return None
 
 
 def is_proxy_login(campaign):
-    if campaign not in CAMPAIGNS:
-        raise HTTPError(http.BAD_REQUEST)
-    else:
+    if campaign in CAMPAIGNS:
         return CAMPAIGNS[campaign].get('proxy_login')
+    return None
+
+
+def is_branded_service(campaign):
+    if campaign in CAMPAIGNS:
+        return CAMPAIGNS[campaign].get('branded')
+    return None
+
+
+def get_service_provider(campaign):
+    if campaign in CAMPAIGNS:
+        return CAMPAIGNS[campaign].get('provider')
+    return None
 
 
 def campaign_url_for(campaign):
-    if campaign not in CAMPAIGNS:
-        raise HTTPError(http.BAD_REQUEST)
-    else:
+    if campaign in CAMPAIGNS:
         return CAMPAIGNS[campaign]['redirect_url']()
+    return None
