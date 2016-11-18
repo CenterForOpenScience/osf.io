@@ -565,7 +565,7 @@ def find_preprint_provider(node):
         else:
             return 'preprint_' + provider._id, provider.name
     # TODO: fine-grained exception handling
-    except Exception as e:
+    except Exception:
         return 'default', None
 
 
