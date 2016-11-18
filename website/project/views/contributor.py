@@ -452,7 +452,8 @@ def send_claim_email(email, unclaimed_user, node, notify=True, throttle=24 * 360
         # check email template for branded preprints
         if email_template == 'preprint':
             email_template, preprint_provider = find_preprint_provider(node)
-        mail_tpl = getattr(mails, 'INVITE_{}'.format(email_template.upper()))
+        mail_tpl = getattr(mails, 'INVITE_{}'.format(email_template.upper()))(preprint_provider)
+
         to_addr = claimer_email
         unclaimed_record['claimer_email'] = claimer_email
         unclaimed_user.save()
@@ -521,8 +522,8 @@ def notify_added_contributor(node, contributor, auth=None, throttle=None, email_
         preprint_provider = None
         if email_template == 'preprint':
             email_template, preprint_provider = find_preprint_provider(node)
+        email_template = getattr(mails, 'CONTRIBUTOR_ADDED_{}'.format(email_template.upper()))(preprint_provider)
 
-        email_template = getattr(mails, 'CONTRIBUTOR_ADDED_{}'.format(email_template.upper()))
         contributor_record = contributor.contributor_added_email_records.get(node._id, {})
         if contributor_record:
             timestamp = contributor_record.get('last_sent', None)
@@ -563,7 +564,7 @@ def find_preprint_provider(node):
         if provider._id == 'osf':
             return 'preprint', provider.name
         else:
-            return 'preprint_' + provider._id, provider.name
+            return 'preprint_branded', provider.name
     # TODO: fine-grained exception handling
     except Exception:
         return 'default', None

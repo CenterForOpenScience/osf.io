@@ -14,7 +14,7 @@ To preview "${node.title}" click the following link: ${node.absolute_url}
 
 (NOTE: if this project is private, you will not be able to view it until you have confirmed your account)
 
-If you are not ${fullname} or you have been erroneously associated with "${node.title}", then email contact+${branded_service_name}@osf.io with the subject line "Claiming Error" to report the problem.
+If you are not ${fullname} or you have been erroneously associated with "${node.title}", then email contact+${branded_service_name.lower()}@osf.io with the subject line "Claiming Error" to report the problem.
 
 
 Sincerely,

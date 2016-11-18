@@ -126,14 +126,21 @@ def send_mail(to_addr, mail, mimetype='plain', from_addr=None, mailer=None,
 
 
 def get_english_article(word):
+    """
+    Decide whether to use 'a' or 'an' for a given English word.
+
+    :param word: the word immediately after the article
+    :return: 'a' or 'an'
+    """
     return 'a' + ('n' if word[0].lower() in 'aeiou' else '')
+
 
 # Predefined Emails
 
 TEST = Mail('test', subject='A test email to ${name}', categories=['test'])
 
 # Emails for first-time login through external identity providers.
-EXTERNAL_LOGIN_CONFIRM_EMAIL_CREATE= Mail(
+EXTERNAL_LOGIN_CONFIRM_EMAIL_CREATE = Mail(
     'external_confirm_create',
     subject='Open Science Framework Account Verification'
 )
@@ -168,18 +175,37 @@ CONFIRM_EMAIL_PREPRINTS = lambda name, provider: Mail(
     subject='Open Science Framework Account Verification, {} Preprints Service'.format(provider)
 )
 
+# Merge account, add or remove email confirmation emails.
 CONFIRM_MERGE = Mail('confirm_merge', subject='Confirm account merge')
-
 REMOVED_EMAIL = Mail('email_removed', subject='Email address removed from your OSF account')
 PRIMARY_EMAIL_CHANGED = Mail('primary_email_changed', subject='Primary email changed')
 
-INVITE_DEFAULT = Mail('invite_default', subject='You have been added as a contributor to an OSF project.')
-INVITE_PREPRINT = lambda name: Mail('invite_preprint_branded', subject='You have been added as a contributor to {} {} preprint.'.format(get_english_article(name), name))
 
-
-CONTRIBUTOR_ADDED_DEFAULT = Mail('contributor_added_default', subject='You have been added as a contributor to an OSF project.')
-CONTRIBUTOR_ADDED_PREPRINT = lambda name: Mail('contributor_added_preprint', subject='You have been added as a contributor to {} {} preprint.'.format(get_english_article(name), name))
-
+# Contributor added confirmation emails
+INVITE_DEFAULT = Mail(
+    'invite_default',
+    subject='You have been added as a contributor to an OSF project.'
+)
+INVITE_PREPRINT = lambda provider: Mail(
+    'invite_preprint_osf',
+    subject='You have been added as a contributor to {} {} preprint.'.format(get_english_article(provider), provider)
+)
+INVITE_PREPRINT_BRANDED = lambda provider: Mail(
+    'invite_preprint_branded',
+    subject='You have been added as a contributor to {} {} preprint.'.format(get_english_article(provider), provider)
+)
+CONTRIBUTOR_ADDED_DEFAULT = Mail(
+    'contributor_added_default',
+    subject='You have been added as a contributor to an OSF project.'
+)
+CONTRIBUTOR_ADDED_PREPRINT = lambda provider: Mail(
+    'contributor_added_preprint_osf',
+    subject='You have been added as a contributor to {} {} preprint.'.format(get_english_article(provider), provider)
+)
+CONTRIBUTOR_ADDED_PREPRINT_BRANDED = lambda provider: Mail(
+    'contributor_added_preprint_branded',
+    subject='You have been added as a contributor to {} {} preprint.'.format(get_english_article(provider), provider)
+)
 FORWARD_INVITE = Mail('forward_invite', subject='Please forward to ${fullname}')
 FORWARD_INVITE_REGISTERED = Mail('forward_invite_registered', subject='Please forward to ${fullname}')
 
