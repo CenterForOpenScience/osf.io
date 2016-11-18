@@ -7,25 +7,21 @@
     %if campaign == "prereg":
         <div class="text-center m-t-lg">
             <h3>Preregistration Challenge</h3><hr>
-            <p>
-                Please login to the Open Science Framework or create a free account to continue.
-            </p>
+            <p>Please login to the Open Science Framework or create a free account to continue.</p>
         </div>
     %endif
 
     %if campaign == "erpc":
         <div class="text-center m-t-lg">
-            <h3>Election Research Preacceptance Competition</h3>
-            <hr>
-            <p>
-                Please login to the Open Science Framework or create a free account to continue.
-            </p>
+            <h3>Election Research Preacceptance Competition</h3><hr>
+            <p>Please login to the Open Science Framework or create a free account to continue.</p>
         </div>
     %endif
 
     %if campaign == "osf-preprints":
         <div class="text-center m-t-lg">
             <h3>OSF Preprints</h3><hr>
+            <p>Please login to the Open Science Framework or create a free account to contribute to OSF Preprints.</p>
         </div>
     %endif
 
@@ -49,14 +45,14 @@
 
     <div class="row m-t-xl">
     %if campaign != "institution" or not enable_institutions:
-        <div id="signUpScope" class="col-sm-10 col-sm-offset-1 col-md-9 col-md-offset-2 col-lg-8 col-lg-offset-3 signup-form p-b-md m-b-m bg-color-light">
+        <div id="signUpScope" class="col-sm-10 col-sm-offset-1 col-md-9 col-md-offset-2 col-lg-8 signup-form p-b-md m-b-m bg-color-light">
             <form data-bind="submit: submit" class="form-horizontal">
 
                 %if campaign == "osf-preprints":
                      <table style="border-collapse: separate; border-spacing: 30px 0; margin-top: 20px;  margin-bottom: 10px;">
                         <tr>
                             <td><img src="/static/img/preprint_providers/osf-preprints-login.png" style="width: 200px; margin-top: 15px" /></td>
-                            <td><h3>Create a free OSF account to contribute</h3></td>
+                            <td><h3>Create a free OSF account</h3></td>
                         </tr>
                     </table>
                 %elif campaign == "socarxiv-preprints":
