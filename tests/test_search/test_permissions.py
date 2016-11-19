@@ -181,7 +181,16 @@ def create_regfuncs():
                         autocomplete=autocomplete,
                         autoapprove=autoapprove,
                     )
-                    should_be_public = (not embargo) and autoapprove and autocomplete
+
+                    if retraction and embargo:
+                        # Approving a retraction removes embargoes and makes the reg public,
+                        # but only for *completed* registrations.
+                        should_be_public = autoapprove_retraction and autocomplete
+                    elif embargo:
+                        should_be_public = False
+                    else:
+                        should_be_public = autoapprove and autocomplete
+
                     (public if should_be_public else private).add(regfunc)
     return public, private
 
@@ -383,7 +392,9 @@ def generate_cases():
                 for varyfunc in VARYFUNCS:
                     if status is PRIVATE and varyfunc in REGFUNCS: continue
                     should_see = seefunc(status, varyfunc, permfunc)  # namefunc wants this
-                    yield namefunc(**locals()), varyfunc, nodefunc, status, permfunc, should_see
+                    name = namefunc(**locals())
+                    if want(name):
+                        yield name, varyfunc, nodefunc, status, permfunc, should_see
 
 
 class TestGenerateCases(unittest.TestCase):
@@ -420,6 +431,12 @@ def possiblyExpectFailure(case):
             case(*a, **kw)
     return test
 
+def want(name):  # This is a helper to filter down to one of the generated tests
+    return True
+    n = ( 'embargoed unapproved complete registration of public component hidden from anon'
+        , 'approved retraction of an embargoed unapproved complete registration of public component hidden from anon'
+         )
+    return name == n[1]
 
 class TestSearchSearchAPI(SearchTestCase):
     """Exercises the website.search.views.search_search view.
