@@ -116,7 +116,9 @@ class PreprintService(GuidStoredObject):
             self.node.preprint_file = preprint_file
             self.node.add_log(
                 action=NodeLog.PREPRINT_FILE_UPDATED,
-                params={},
+                params={
+                    'preprint': self._id
+                },
                 auth=auth,
                 save=False,
             )

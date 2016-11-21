@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 def migrate(dry_run=True):
     node_logs = list(NodeLog.find(
-        Q('action', 'eq', 'preprint_initiated') &
+        Q('action', 'in', [NodeLog.PREPRINT_FILE_UPDATED, NodeLog.PREPRINT_INITIATED]) &
         Q('params.preprint', 'exists', False)
     ))
 
