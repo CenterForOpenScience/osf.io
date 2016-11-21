@@ -248,7 +248,10 @@ def import_old_events_from_spreadsheet():
         'number_projects': 'nodes.total',
         'number_projects_public': 'nodes.public',
         'number_projects_registered': 'registrations.total',
-        'Date': 'timestamp'
+        'Date': 'timestamp',
+        'dropbox-users-enabled': 'enabled',
+        'dropbox-users-authorized': 'authorized',
+        'dropbox-users-linked': 'linked'
     }
 
     with open(spreadsheet_path) as csvfile:
@@ -268,28 +271,43 @@ def import_old_events_from_spreadsheet():
 
     user_summary_cols = ['active', 'depth', 'unconfirmed', 'timestamp']
     node_summary_cols = ['registrations.total', 'nodes.total', 'nodes.public', 'timestamp']
+    addon_summary_cols = ['enabled', 'authorized', 'linked', 'timestamp']
 
     user_events = []
     node_events = []
+    addon_events = []
     for event in events[3:]:  # The first few rows have blank and/or bad data because they're extra headers
         node_event = {}
         user_event = {}
+        addon_event = {}
         for key, value in event.iteritems():
             if key in node_summary_cols:
                 node_event[key] = value
             if key in user_summary_cols:
                 user_event[key] = value
+            if key in addon_summary_cols:
+                addon_event[key] = value
 
         formatted_user_event = format_event(user_event, type='user')
         formatted_node_event = format_event(node_event, type='node')
+        formatted_addon_event = format_event(addon_event, type='addon')
 
         if formatted_node_event:
             node_events.append(formatted_node_event)
         if formatted_user_event:
             user_events.append(formatted_user_event)
+        if formatted_addon_event:
+            addon_events.append(formatted_addon_event)
 
-    logger.info('Sending {} old user events and {} old node events to keen'.format(len(user_events), len(node_events)))
-    return {'user_events': user_events, 'node_events': node_events}
+    logger.info(
+        'Gathered {} old user events, {} old node events and {} old dropbox addon events for keen'.format(
+            len(user_events),
+            len(node_events),
+            len(addon_events)
+        )
+    )
+
+    return {'user_summary': user_events, 'node_summary': node_events, 'addon_snapshot': addon_events}
 
 
 def comma_int(value):
@@ -308,15 +326,24 @@ def format_event(event, type):
         "keen": {}
     }
 
-    template_to_use = node_event_template
+    addon_event_template = {
+        "keen": {},
+        "users": {},
+        "provider": {
+            "name": "dropbox"
+        }
+    }
+
+    template_to_use = None
     if type == 'user':
         template_to_use = user_event_template
 
         template_to_use['status']['active'] = comma_int(event['active'])
         if event['unconfirmed'] and event['active']:
             template_to_use['status']['unconfirmed'] = comma_int(event['active']) - comma_int(event['unconfirmed'])
+    elif type == 'node':
+        template_to_use = node_event_template
 
-    else:
         if event['nodes.total']:
             template_to_use['nodes']['total'] = comma_int(event['nodes.total'])
         if event['nodes.public']:
@@ -325,11 +352,20 @@ def format_event(event, type):
             template_to_use['registered_nodes']['total'] = comma_int(event['registrations.total'])
         if event['nodes.total'] and event['nodes.public']:
             template_to_use['nodes']['private'] = template_to_use['nodes']['total'] - template_to_use['nodes']['public']
+    elif type == 'addon':
+        template_to_use = addon_event_template
+
+        if event['enabled']:
+            template_to_use['users']['enabled'] = comma_int(event['enabled'])
+        if event['authorized']:
+            template_to_use['users']['authorized'] = comma_int(event['authorized'])
+        if event['linked']:
+            template_to_use['users']['linked'] = comma_int(event['linked'])
 
     template_to_use['keen']['timestamp'] = parse(event['timestamp']).replace(tzinfo=pytz.UTC).isoformat()
 
     formatted_event = {key: value for key, value in template_to_use.items() if value}
-    if len(formatted_event.items()) > 1:
+    if len(formatted_event.items()) > 1:  # if there's more than just the auto-added timestamp for keen
         return template_to_use
 
 
