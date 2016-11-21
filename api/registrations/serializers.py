@@ -184,6 +184,15 @@ class BaseRegistrationSerializer(NodeSerializer):
         self_view_kwargs={'node_id': '<pk>'}
     ))
 
+    linked_registrations = RelationshipField(
+        related_view='registrations:linked-registrations',
+        related_view_kwargs={'node_id': '<pk>'},
+        related_meta={'count': 'get_registration_links_count'},
+        self_view='registrations:node-registration-pointer-relationship',
+        self_view_kwargs={'node_id': '<pk>'}
+    )
+
+
     view_only_links = HideIfWithdrawal(RelationshipField(
         related_view='registrations:registration-view-only-links',
         related_view_kwargs={'node_id': '<pk>'},
