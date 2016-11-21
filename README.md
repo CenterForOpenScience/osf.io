@@ -189,6 +189,13 @@ $ pip install invoke==0.13.0
 $ invoke setup
 ```
 
+- Temporarily, tokumx needs to be installed separately from the invoke setup script:
+
+```bash
+$ tap chrisseto/homebrew-tokumx
+$ install tokumx-bin
+```
+
 To verify that your installation works, follow the instructions to [start the OSF](#running-the-osf) and
 [run unit tests](#running-tests).
 
