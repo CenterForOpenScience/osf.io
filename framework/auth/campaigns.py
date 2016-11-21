@@ -8,23 +8,23 @@ from website.settings import DOMAIN
 CAMPAIGNS = {
     'prereg': {
         'system_tag': 'prereg_challenge_campaign',
-        'redirect_url': lambda: furl.furl(DOMAIN).add(path='prereg/').url,
+        'redirect_url': furl.furl(DOMAIN).add(path='prereg/').url,
         'confirmation_email_template': mails.CONFIRM_EMAIL_PREREG,
     },
     'institution': {
         'system_tag': 'institution_campaign',
-        'redirect_url': lambda: ''
+        'redirect_url': ''
     },
     'erpc': {
         'system_tag': 'erp_challenge_campaign',
-        'redirect_url': lambda: furl.furl(DOMAIN).add(path='erpc/').url,
+        'redirect_url': furl.furl(DOMAIN).add(path='erpc/').url,
         'confirmation_email_template': mails.CONFIRM_EMAIL_ERPC,
     },
     # Various preprint services
     # Each preprint service will offer their own campaign with appropriate distinct branding
     'osf-preprints': {
         'system_tag': 'osf_preprints',
-        'redirect_url': lambda: furl.furl(DOMAIN).add(path='preprints/').url,
+        'redirect_url': furl.furl(DOMAIN).add(path='preprints/').url,
         'confirmation_email_template': mails.CONFIRM_EMAIL_PREPRINTS('osf', 'OSF'),
         'proxy_login': True,
         'branded': False,
@@ -42,9 +42,10 @@ for provider in providers:
     provider_id = provider.lower()
     key = '{}-preprints'.format(provider_id)
     tag = '{}_preprints'.format(provider_id)
+    path = 'preprints/{}'.format(provider_id)
     CAMPAIGNS[key] = {
         'system_tag': tag,
-        'redirect_url': lambda: furl.furl(DOMAIN).add(path='preprints/{}'.format(provider_id)).url,
+        'redirect_url': furl.furl(DOMAIN).add(path=path).url,
         'confirmation_email_template': mails.CONFIRM_EMAIL_PREPRINTS('branded', provider),
         'proxy_login': True,
         'branded': True,
@@ -93,5 +94,5 @@ def get_service_provider(campaign):
 
 def campaign_url_for(campaign):
     if campaign in CAMPAIGNS:
-        return CAMPAIGNS[campaign]['redirect_url']()
+        return CAMPAIGNS[campaign].get('redirect_url')
     return None
