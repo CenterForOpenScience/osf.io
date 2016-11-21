@@ -21,7 +21,6 @@ from website.util import api_url_for, permissions
 
 
 PRIVATE, PUBLIC = range(2)
-PROJECT, COMPONENT = 'project component'.split()
 
 
 # nodefuncs
