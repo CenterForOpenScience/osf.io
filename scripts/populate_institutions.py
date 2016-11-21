@@ -6,8 +6,9 @@ import logging
 import sys
 import urllib
 
+import django
 from modularodm import Q
-
+django.setup()
 
 from framework.transactions.context import TokuTransaction
 from website import settings
