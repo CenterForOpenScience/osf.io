@@ -89,6 +89,6 @@ class Institution(Loggable, base.ObjectIDMixin, base.BaseModel):
     @property
     def banner_path(self):
         if self.banner_name:
-            return '/static/img/institutions/{}'.format(self.banner_name)
+            return '/static/img/institutions/banners/{}'.format(self.banner_name)
         else:
             return None
