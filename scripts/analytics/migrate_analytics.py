@@ -5,6 +5,7 @@ import os
 import csv
 import copy
 import time
+import pytz
 import logging
 import argparse
 import datetime
@@ -30,11 +31,13 @@ def parse_args():
     parser.add_argument('-t', '--transfer', dest='transfer_collection', action='store_true')
     parser.add_argument('-sc', '--source', dest='source_collection')
     parser.add_argument('-dc', '--destination', dest='destination_collection')
-    parser.add_argument('-d', '--delete', dest='delete', action='store_true')
+    parser.add_argument('-del', '--delete', dest='delete', action='store_true')
 
     parser.add_argument('-sm', '--smooth', dest='smooth_events', action='store_true')
 
-    parser.add_argument('-sm', '--import', dest='import_events', action='store_true')
+    parser.add_argument('-o', '--old', dest='old_analytics', action='store_true')
+
+    parser.add_argument('-d', '--dry', dest='dry', action='store_true')
 
     parsed = parser.parse_args()
 
@@ -49,16 +52,27 @@ def validate_args(args):
     :param args: argparse args object, to sift through and figure out if you need more info
     :return: None, just raise errors if it finds something wrong
     """
-    if args.smooth and not (args.start_date and args.end_date):
+
+    if args.dry:
+        logger.info('Running analytics on DRY RUN mode! No data will actually be sent to Keen.')
+
+    potential_operations = [args.smooth_events, args.transfer_collection, args.old_analytics]
+    if len([arg for arg in potential_operations if arg]) > 1:
+        raise ValueError('You may only choose one analytic type to run: transfer, smooth, or import old analytics.')
+
+    if args.smooth_events and not (args.start_date and args.end_date):
         raise ValueError('To smooth data, please enter both a start date and end date.')
 
-    if args.smooth and not args.source_colletion:
+    if parse(args.start_date) > parse(args.end_date):
+        raise ValueError('Please enter an end date that is after the start date.')
+
+    if args.smooth_events and not args.source_collection:
         raise ValueError('Please specify a source collection to smooth data from.')
 
-    if args.transfer and not (args.source_colletion and args.destination_collection):
+    if args.transfer_collection and not (args.source_collection and args.destination_collection):
         raise ValueError('To transfer between keen collections, enter both a source and a destination collection.')
 
-    if args.delete and not args.transfer:
+    if args.delete and not args.transfer_collection:
         raise ValueError('To delete anything you will need to transfer analytics from one collection to another.')
 
     if any([args.start_date, args.end_date]) and not all([args.start_date, args.end_date]):
@@ -171,7 +185,7 @@ def make_sure_keen_schemas_match(source_collection, destination_collection, keen
     return source_schema == destination_schema
 
 
-def transfer_events_to_another_collection(client, source_collection, destination_collection, delete=False):
+def transfer_events_to_another_collection(client, source_collection, destination_collection, dry, delete=False):
     """ Transfer analytics from source collection to the destination collection.
     Will only work if the source and destination have the same schemas attached, will error if they don't
 
@@ -179,6 +193,7 @@ def transfer_events_to_another_collection(client, source_collection, destination
     :param source_collection: str, keen collection to transfer from
     :param destination_collection: str, keen collection to transfer to
     :param delete: bool, whether or not delete items from the old collection after transferred
+    :param dry: bool, whether or not to make a dry run, aka actually send events to keen
     :return: None
     """
     schemas_match = make_sure_keen_schemas_match(source_collection, destination_collection, client)
@@ -191,14 +206,15 @@ def transfer_events_to_another_collection(client, source_collection, destination
         event['keen'].pop('created_at')
         event['keen'].pop('id')
 
-    add_events_to_keen(client, destination_collection, events_from_source)
+    add_events_to_keen(client, destination_collection, events_from_source, dry)
 
     if delete:
         logger.warning('Will delete all events from the {} collection in {} seconds'.format(source_collection, DELETE_WAIT_TIME))
         for i in range(DELETE_WAIT_TIME):
             logger.info(i)
             time.sleep(1)
-        client.delete_events(source_collection)
+        if not dry:
+            client.delete_events(source_collection)
 
     logger.info(
         'Transferred {} events from the {} collection to the {} collection'.format(
@@ -209,15 +225,119 @@ def transfer_events_to_another_collection(client, source_collection, destination
     )
 
 
-def add_events_to_keen(client, collection, events):
+def add_events_to_keen(client, collection, events, dry):
     logger.info('Adding {} events to the {} collection...'.format(len(events), collection))
-    client.add_events({collection: events})
+    if not dry:
+        client.add_events({collection: events})
 
 
-def smooth_events_in_keen(client, source_collection, start_date, end_date):
+def smooth_events_in_keen(client, source_collection, start_date, end_date, dry):
     base_events = extract_events_from_keen(client, source_collection, start_date, end_date)
     events_to_fill_in = fill_in_event_gaps(source_collection, base_events)
-    add_events_to_keen(client, source_collection, events_to_fill_in)
+    add_events_to_keen(client, source_collection, events_to_fill_in, dry)
+
+
+def import_old_events_from_spreadsheet():
+    home = os.path.expanduser("~")
+    spreadsheet_path = home + '/daily_user_counts.csv'
+
+    key_map = {
+        'active-users': 'active',
+        'logs-gte-11-total': 'depth',
+        'number_users': 'unconfirmed',  # really is active - number_users
+        'number_projects': 'nodes.total',
+        'number_projects_public': 'nodes.public',
+        'number_projects_registered': 'registrations.total',
+        'Date': 'timestamp'
+    }
+
+    with open(spreadsheet_path) as csvfile:
+        reader = csv.reader(csvfile, delimiter=',')
+        col_names = reader.next()
+
+    dictReader = csv.DictReader(open(spreadsheet_path, 'rb'), fieldnames=col_names, delimiter=',')
+
+    events = []
+    for row in dictReader:
+        event = {}
+        for key in row:
+            equiv_key = key_map.get(key, None)
+            if equiv_key:
+                event[equiv_key] = row[key]
+        events.append(event)
+
+    user_summary_cols = ['active', 'depth', 'unconfirmed', 'timestamp']
+    node_summary_cols = ['registrations.total', 'nodes.total', 'nodes.public', 'timestamp']
+
+    user_events = []
+    node_events = []
+    for event in events[3:]:  # The first few rows have blank and/or bad data because they're extra headers
+        node_event = {}
+        user_event = {}
+        for key, value in event.iteritems():
+            if key in node_summary_cols:
+                node_event[key] = value
+            if key in user_summary_cols:
+                user_event[key] = value
+
+        formatted_user_event = format_event(user_event, type='user')
+        formatted_node_event = format_event(node_event, type='node')
+
+        if formatted_node_event:
+            node_events.append(formatted_node_event)
+        if formatted_user_event:
+            user_events.append(formatted_user_event)
+
+    logger.info('Sending {} old user events and {} old node events to keen'.format(len(user_events), len(node_events)))
+    return {'user_events': user_events, 'node_events': node_events}
+
+
+def comma_int(value):
+    if value and value != 'MISSING':
+        return int(value.replace(',', ''))
+
+def format_event(event, type):
+    user_event_template = {
+        "status": {},
+        "keen": {}
+    }
+
+    node_event_template = {
+        "nodes": {},
+        "registered_nodes": {},
+        "keen": {}
+    }
+
+    template_to_use = node_event_template
+    if type == 'user':
+        template_to_use = user_event_template
+
+        template_to_use['status']['active'] = comma_int(event['active'])
+        if event['unconfirmed'] and event['active']:
+            template_to_use['status']['unconfirmed'] = comma_int(event['active']) - comma_int(event['unconfirmed'])
+
+    else:
+        if event['nodes.total']:
+            template_to_use['nodes']['total'] = comma_int(event['nodes.total'])
+        if event['nodes.public']:
+            template_to_use['nodes']['public'] = comma_int(event['nodes.public'])
+        if event['registrations.total']:
+            template_to_use['registered_nodes']['total'] = comma_int(event['registrations.total'])
+        if event['nodes.total'] and event['nodes.public']:
+            template_to_use['nodes']['private'] = template_to_use['nodes']['total'] - template_to_use['nodes']['public']
+
+    template_to_use['keen']['timestamp'] = parse(event['timestamp']).replace(tzinfo=pytz.UTC).isoformat()
+
+    formatted_event = {key: value for key, value in template_to_use.items() if value}
+    if len(formatted_event.items()) > 1:
+        return template_to_use
+
+
+def parse_and_send_old_events_to_keen(client, dry):
+    old_events = import_old_events_from_spreadsheet()
+
+    for key, value in old_events.iteritems():
+        add_events_to_keen(client, key, value, dry)
 
 
 def main():
@@ -225,20 +345,24 @@ def main():
 
     Usage:
         * Transfer all events from the 'institution_analytics' to the 'institution_summary' collection:
-            `python -m scripts.analytics.migrate_analytics.py -t -sc institution_analytics -dc institution_summary
+            `python -m scripts.analytics.migrate_analytics.py -d -t -sc institution_analytics -dc institution_summary`
         * Fill in the gaps in analytics for the 'addon_snapshot' collection between 2016-11-01 and 2016-11-15:
-            `python -m scripts.analytics.migrate_analytics.py -sm -s 2016-11-01 -e 2016-11-15
+            `python -m scripts.analytics.migrate_analytics.py -d -sm -s 2016-11-01 -e 2016-11-15`
+        * Parse old analytics from the old analytics CSV stored on your filesystem:
+            `python -m scripts.analytics.migrate_analytics.py -o -d`
     """
     args = parse_args()
     client = get_keen_client()
 
-    if args.smooth:
-        smooth_events_in_keen(client, args.source_colletion, parse(args.start_date), parse(args.end_date))
-    if args.transfer:
-        transfer_events_to_another_collection(client, args.source_collection, args.destination_collection, args.delete)
+    dry = args.dry
+
+    if args.smooth_events:
+        smooth_events_in_keen(client, args.source_colletion, parse(args.start_date), parse(args.end_date), dry)
+    elif args.transfer_collection:
+        transfer_events_to_another_collection(client, args.source_collection, args.destination_collection, dry, args.delete)
+    elif args.old_analytics:
+        parse_and_send_old_events_to_keen(client, dry)
 
 
 if __name__ == '__main__':
-    # main()
-
-    import_events_from_spreadsheet()
+    main()
