@@ -11,7 +11,7 @@ from api.base.serializers import (
 from website.project.model import Node
 from website.util import permissions as osf_permissions
 from framework.auth.core import User
-from website.preprints.model import PreprintProvider, PreprintService
+from website.preprints.model import PreprintService
 
 
 class NodeLogIdentifiersSerializer(RestrictedDictSerializer):
