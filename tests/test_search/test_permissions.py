@@ -368,6 +368,7 @@ class TestVaryFuncs(DbIsolationMixin, OsfTestCase):
         assert_equal(reg.embargo.state, 'rejected')
         ok_(not reg.archive_job.done)
 
+
 # gettin' it together
 
 def namefunc(varyfunc, status, nodefunc, should_see, permfunc, **_):
@@ -392,8 +393,7 @@ def generate_cases():
                     if status is PRIVATE and varyfunc in REGFUNCS: continue
                     should_see = seefunc(status, varyfunc, permfunc)  # namefunc wants this
                     name = namefunc(**locals())
-                    if want(name):
-                        yield name, varyfunc, nodefunc, status, permfunc, should_see
+                    yield name, varyfunc, nodefunc, status, permfunc, should_see
 
 
 class TestGenerateCases(unittest.TestCase):
@@ -429,13 +429,6 @@ def possiblyExpectFailure(case):
         else:
             case(*a, **kw)
     return test
-
-def want(name):  # This is a helper to filter down to one of the generated tests
-    return True
-    n = ( 'embargoed unapproved complete registration of public component hidden from anon'
-        , 'approved retraction of an embargoed unapproved complete registration of public component hidden from anon'
-         )
-    return name == n[1]
 
 class TestSearchSearchAPI(SearchTestCase):
     """Exercises the website.search.views.search_search view.
