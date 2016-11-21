@@ -144,7 +144,14 @@ class PreprintService(GuidStoredObject):
             self.date_published = datetime.datetime.utcnow()
             self.node._has_abandoned_preprint = False
 
-            self.node.add_log(action=NodeLog.PREPRINT_INITIATED, params={}, auth=auth, save=False)
+            self.node.add_log(
+                action=NodeLog.PREPRINT_INITIATED,
+                params={
+                    'preprint_provider': self.provider._id
+                },
+                auth=auth,
+                save=False,
+            )
 
             if not self.node.is_public:
                 self.node.set_privacy(
