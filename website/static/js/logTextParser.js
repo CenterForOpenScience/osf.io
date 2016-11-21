@@ -648,6 +648,13 @@ var LogPieces = {
         }
     },
 
+    preprint: {
+        view: function(ctrl, logObject){
+            var preprint = logObject.attributes.params.preprint;
+            return m('a', {href: '/' + preprint}, 'preprint');
+        }
+    },
+
     preprint_provider: {
         view: function(ctrl, logObject){
             var preprint_provider = logObject.attributes.params.preprint_provider;

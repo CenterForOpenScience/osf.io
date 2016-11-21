@@ -147,7 +147,7 @@ class PreprintService(GuidStoredObject):
             self.node.add_log(
                 action=NodeLog.PREPRINT_INITIATED,
                 params={
-                    'preprint_provider': self.provider._id
+                    'preprint': self._id
                 },
                 auth=auth,
                 save=False,
