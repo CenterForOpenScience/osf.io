@@ -1,0 +1,108 @@
+# -*- coding: utf-8 -*-
+"""This is a test suite for permissions on the search_search endpoint. It has four parts:
+
+    - nodefuncs - functions for different Node types
+    - permfuncs - functions for different permissions
+    - varyfuncs - functions for different Node state variants
+    - TestSearchSearchAPI - the actual tests against the search_search API,
+      which are generated from a combination of the above three function types
+
+"""
+from __future__ import absolute_import, division, print_function, unicode_literals
+
+import sys
+import unittest
+import unittest.case
+
+from nose.tools import assert_equal
+
+from nose_parameterized import parameterized
+from tests.test_search import SearchTestCase
+from tests.test_search.test_permissions.test_varyfuncs import VARYFUNCS, REGFUNCS, REGFUNCS_PRIVATE
+from tests.test_search.test_permissions.test_varyfuncs import base
+from tests.test_search.test_permissions.test_permfuncs import anon, auth, read
+from tests.test_search.test_permissions.test_nodefuncs import proj, comp, PUBLIC, PRIVATE
+from website.project.model import Node
+from website.util import api_url_for
+
+
+def namefunc(varyfunc, status, nodefunc, should_see, permfunc, **_):
+    return "{}{} {} {} {}".format(
+        '' if varyfunc is base else varyfunc.__name__.replace('_', ' ') + ' ',
+        'private' if status is PRIVATE else 'public',
+        'project' if nodefunc is proj else 'component',
+        'shown to' if should_see else 'hidden from',
+        permfunc.__name__
+    )
+
+
+def seefunc(status, varyfunc, permfunc, default__TODO_remove_this_argument=True):
+    if status is PRIVATE or varyfunc in REGFUNCS_PRIVATE:
+        return permfunc is read
+    return default__TODO_remove_this_argument
+
+
+def generate_cases():
+    for status in (PRIVATE, PUBLIC):
+        for nodefunc in (proj, comp):
+            for permfunc in (anon, auth, read):
+                for varyfunc in VARYFUNCS:
+                    if status is PRIVATE and varyfunc in REGFUNCS: continue
+                    should_see = seefunc(status, varyfunc, permfunc)  # namefunc wants this
+                    name = namefunc(**locals())
+                    yield name, varyfunc, nodefunc, status, permfunc, should_see
+
+
+class TestGenerateCases(unittest.TestCase):
+
+    # gc - generate_cases
+
+    def test_gc_generates_cases(self):
+        assert_equal(len(list(generate_cases())), 144)
+
+    def test_gc_doesnt_create_any_nodes(self):
+        list(generate_cases())
+        assert_equal(len(Node.find()), 0)
+
+
+def possiblyExpectFailure(case):
+
+    # This is a hack to conditionally wrap a failure expectation around *some*
+    # of the cases we're feeding to node-parameterized. TODO It can be removed
+    # when we write the code to unfail the tests.
+
+    def test(*a, **kw):  # name must start with test or it's ignored
+        _, _, varyfunc, _, status, permfunc, _ = a
+        if seefunc(status, varyfunc, permfunc, False):
+
+            # This bit is copied from the unittest/case.py:expectedFailure
+            # decorator.
+
+            try:
+                case(*a, **kw)
+            except Exception:
+                raise unittest.case._ExpectedFailure(sys.exc_info())
+            raise unittest.case._UnexpectedSuccess
+        else:
+            case(*a, **kw)
+    return test
+
+
+class TestSearchSearchAPI(SearchTestCase):
+    """Exercises the website.search.views.search_search view.
+    """
+
+    def search(self, query, category, auth):
+        url = api_url_for('search_search')
+        data = {'q': 'category:{} AND {}'.format(category, query)}
+        return self.app.get(url, data, auth=auth).json['results']
+
+    @parameterized.expand(generate_cases)
+    @possiblyExpectFailure
+    def test(self, ignored, varyfunc, nodefunc, status, permfunc, should_see):
+        node = nodefunc(status)
+        auth = permfunc(node)
+        query, type_, key, expected_name = varyfunc(node)
+        expected = [(expected_name, type_)] if should_see else []
+        results = self.search(query, type_, auth)
+        assert_equal([(x[key], x['category']) for x in results], expected)

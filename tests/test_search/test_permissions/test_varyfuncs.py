@@ -2,146 +2,33 @@
 from __future__ import absolute_import, division, print_function, unicode_literals
 
 import re
-import sys
-import unittest
-import unittest.case
 
-from nose.tools import *  # noqa PEP8 asserts
+from nose.tools import assert_equal, ok_
 
-from framework.auth.core import User
 from modularodm import Q
-from nose_parameterized import parameterized
 from tests import factories
 from tests.base import DbIsolationMixin
-from tests.test_search import OsfTestCase, SearchTestCase
+from tests.test_search import OsfTestCase
+from tests.test_search.test_permissions.test_nodefuncs import proj, comp
 from tests.utils import mock_archive
 from website.files.models.base import File
 from website.project.model import Node
-from website.util import api_url_for, permissions
 
-
-PRIVATE, PUBLIC = range(2)
-
-
-# nodefuncs
-
-def proj(status=PUBLIC):
-    project = factories.ProjectFactory(title='Flim Flammity', is_public=status is PUBLIC)
-    project.update_search()
-    return project
-
-def comp(status=PUBLIC):
-    project = factories.ProjectFactory(title='Slim Slammity', is_public=status is PUBLIC)
-    project.update_search()
-    component = factories.NodeFactory(
-        title='Flim Flammity',
-        parent=project,
-        is_public=status is PUBLIC,
-    )
-    component.update_search()
-    return component
-
-
-class TestNodeFuncs(DbIsolationMixin, OsfTestCase):
-
-    def test_there_are_no_nodes_to_start_with(self):
-        assert Node.find().count() == 0
-
-
-    # proj
-
-    def test_proj_makes_private_project_private(self):
-        proj(PRIVATE)
-        assert not Node.find_one().is_public
-
-    def test_proj_makes_public_project_public(self):
-        proj(PUBLIC)
-        assert Node.find_one().is_public
-
-
-    # comp
-
-    def test_comp_makes_private_component_private(self):
-        comp(PRIVATE)
-        assert not Node.find_one(Q('parent_node', 'ne', None)).is_public
-
-    def test_comp_makes_public_component_public(self):
-        comp(PUBLIC)
-        assert Node.find_one(Q('parent_node', 'ne', None)).is_public
-
-
-# permfuncs
-
-def anon(node):
-    return None
-
-def auth(node):
-    return factories.AuthUserFactory().auth
-
-def read(node):
-    user = factories.AuthUserFactory()
-    node.add_contributor(user, permissions.READ)
-    return user.auth
-
-
-class TestPermFuncs(DbIsolationMixin, OsfTestCase):
-
-    @staticmethod
-    def get_user_id_from_authtuple(authtuple):
-        return User.find_one(Q('emails', 'eq', authtuple[0]))._id
-
-
-    # anon
-
-    def test_anon_returns_none(self):
-        assert_equal(anon(proj(PUBLIC)), None)
-
-    def test_anon_makes_no_user(self):
-        anon(proj(PUBLIC))
-        assert_equal(len(User.find()), 1)  # only the project creator
-
-
-    # auth
-
-    def test_auth_returns_authtuple(self):
-        assert_equal(auth(proj(PUBLIC))[1], 'password')
-
-    def test_auth_creates_a_user(self):
-        auth(proj(PUBLIC))
-        assert_equal(len(User.find()), 2)  # project creator + 1
-
-    def test_auth_user_is_not_a_contributor_on_the_node(self):
-        user_id = self.get_user_id_from_authtuple(auth(proj(PUBLIC)))
-        assert_not_in(user_id, Node.find_one().permissions.keys())
-
-
-    # read
-
-    def test_read_returns_authtuple(self):
-        assert_equal(read(proj(PUBLIC))[1], 'password')
-
-    def test_read_creates_a_user(self):
-        read(proj(PUBLIC))
-        assert_equal(len(User.find()), 2)  # project creator + 1
-
-    def test_read_user_is_a_contributor_on_the_node(self):
-        user_id = self.get_user_id_from_authtuple(read(proj(PUBLIC)))
-        assert_in(user_id, Node.find_one().permissions.keys())
-
-
-# varyfuncs
 
 def base(node):
     type_ = 'project' if node.parent_node is None else 'component'
     return 'flim', type_, 'title', 'Flim Flammity'
 
+
 def file_on(node):
     node.get_addon('osfstorage').get_root().append_file('Blim Blammity')
     return 'blim', 'file', 'name', 'Blim Blammity'
 
+
 def _register(*a, **kw):
     mock_archive(*a, **kw).__enter__()  # gooooooofffyyyyyy
     return 'flim', 'registration', 'title', 'Flim Flammity'
+
 
 def name_regfunc(embargo, autoapprove, autocomplete, retraction, autoapprove_retraction, **_):
     retraction_part = '' if not retraction else \
@@ -154,11 +41,13 @@ def name_regfunc(embargo, autoapprove, autocomplete, retraction, autoapprove_ret
         'complete' if autocomplete else 'incomplete',
     ).encode('ascii')
 
+
 def create_regfunc(**kw):
     def regfunc(node):
         return _register(node, **kw)
     regfunc.__name__ = name_regfunc(**kw)
     return regfunc
+
 
 def create_regfuncs():
     public = set()
@@ -204,6 +93,7 @@ VARYFUNCS = (
     base,
     file_on,
 ) + tuple(REGFUNCS)
+
 
 class TestVaryFuncs(DbIsolationMixin, OsfTestCase):
 
@@ -367,84 +257,3 @@ class TestVaryFuncs(DbIsolationMixin, OsfTestCase):
         assert_equal(reg.retraction.state, 'approved')
         assert_equal(reg.embargo.state, 'rejected')
         ok_(not reg.archive_job.done)
-
-
-# gettin' it together
-
-def namefunc(varyfunc, status, nodefunc, should_see, permfunc, **_):
-    return "{}{} {} {} {}".format(
-        '' if varyfunc is base else varyfunc.__name__.replace('_', ' ') + ' ',
-        'private' if status is PRIVATE else 'public',
-        'project' if nodefunc is proj else 'component',
-        'shown to' if should_see else 'hidden from',
-        permfunc.__name__
-    )
-
-def seefunc(status, varyfunc, permfunc, default__TODO_remove_this_argument=True):
-    if status is PRIVATE or varyfunc in REGFUNCS_PRIVATE:
-        return permfunc is read
-    return default__TODO_remove_this_argument
-
-def generate_cases():
-    for status in (PRIVATE, PUBLIC):
-        for nodefunc in (proj, comp):
-            for permfunc in (anon, auth, read):
-                for varyfunc in VARYFUNCS:
-                    if status is PRIVATE and varyfunc in REGFUNCS: continue
-                    should_see = seefunc(status, varyfunc, permfunc)  # namefunc wants this
-                    name = namefunc(**locals())
-                    yield name, varyfunc, nodefunc, status, permfunc, should_see
-
-
-class TestGenerateCases(unittest.TestCase):
-
-    # gc - generate_cases
-
-    def test_gc_generates_cases(self):
-        assert_equal(len(list(generate_cases())), 144)
-
-    def test_gc_doesnt_create_any_nodes(self):
-        list(generate_cases())
-        assert_equal(len(Node.find()), 0)
-
-
-def possiblyExpectFailure(case):
-
-    # This is a hack to conditionally wrap a failure expectation around *some*
-    # of the cases we're feeding to node-parameterized. TODO It can be removed
-    # when we write the code to unfail the tests.
-
-    def test(*a, **kw):  # name must start with test or it's ignored
-        _, _, varyfunc, _, status, permfunc, _ = a
-        if seefunc(status, varyfunc, permfunc, False):
-
-            # This bit is copied from the unittest/case.py:expectedFailure
-            # decorator.
-
-            try:
-                case(*a, **kw)
-            except Exception:
-                raise unittest.case._ExpectedFailure(sys.exc_info())
-            raise unittest.case._UnexpectedSuccess
-        else:
-            case(*a, **kw)
-    return test
-
-class TestSearchSearchAPI(SearchTestCase):
-    """Exercises the website.search.views.search_search view.
-    """
-
-    def search(self, query, category, auth):
-        url = api_url_for('search_search')
-        data = {'q': 'category:{} AND {}'.format(category, query)}
-        return self.app.get(url, data, auth=auth).json['results']
-
-    @parameterized.expand(generate_cases)
-    @possiblyExpectFailure
-    def test(self, ignored, varyfunc, nodefunc, status, permfunc, should_see):
-        node = nodefunc(status)
-        auth = permfunc(node)
-        query, type_, key, expected_name = varyfunc(node)
-        expected = [(expected_name, type_)] if should_see else []
-        results = self.search(query, type_, auth)
-        assert_equal([(x[key], x['category']) for x in results], expected)
