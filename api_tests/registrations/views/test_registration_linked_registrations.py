@@ -1,21 +1,22 @@
+import mock
+
 from nose.tools import *  # flake8: noqa
 
 from api.base.settings.defaults import API_BASE
-from tests.base import ApiTestCase
+from framework.auth.core import Auth
+from tests.base import ApiTestCase, get_default_metaschema
 from tests.factories import (
     AuthUserFactory,
     NodeFactory,
     RegistrationFactory,
 )
-from framework.auth.core import Auth
-
-from tests.base import get_default_metaschema
 
 
 class LinkedRegistrationsTestCase(ApiTestCase):
 
     def setUp(self):
         super(LinkedRegistrationsTestCase, self).setUp()
+        self.mock_archive = mock.patch('website.archiver.tasks.archive')
 
         self.non_contributor = AuthUserFactory()
         self.read_contributor = AuthUserFactory()
@@ -24,6 +25,8 @@ class LinkedRegistrationsTestCase(ApiTestCase):
 
         self.public_linked_registration = RegistrationFactory(is_public=True, creator=self.rw_contributor)
         self.private_linked_registration = RegistrationFactory(is_public=False, creator=self.rw_contributor)
+
+        self.mock_archive.start()
 
         public_node = NodeFactory(creator=self.admin_contributor, is_public=True)
         public_node.add_contributor(self.rw_contributor, auth=Auth(self.admin_contributor))
@@ -42,6 +45,10 @@ class LinkedRegistrationsTestCase(ApiTestCase):
         private_node.add_pointer(self.private_linked_registration, auth=Auth(self.rw_contributor))
         private_node.save()
         self.private_registration = private_node.register_node(get_default_metaschema(), Auth(self.admin_contributor), '', None)
+
+    def tearDown(self):
+        super(LinkedRegistrationsTestCase, self).tearDown()
+        self.mock_archive.stop()
 
 
 class TestRegistrationLinkedRegistrationsList(LinkedRegistrationsTestCase):

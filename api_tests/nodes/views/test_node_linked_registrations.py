@@ -1,13 +1,13 @@
 from nose.tools import *  # flake8: noqa
 
 from api.base.settings.defaults import API_BASE
+from framework.auth.core import Auth
 from tests.base import ApiTestCase
 from tests.factories import (
     AuthUserFactory,
     NodeFactory,
     RegistrationFactory,
 )
-from framework.auth.core import Auth
 
 
 class LinkedRegistrationsTestCase(ApiTestCase):
