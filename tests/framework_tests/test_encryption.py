@@ -48,7 +48,7 @@ class EncryptionTestCase(unittest.TestCase):
         my_value_encrypted = encrypt(my_value)
         my_value_decrypted = decrypt(my_value_encrypted)
         assert_true(isinstance(my_value_decrypted, str))
-        assert_equal(my_value_decrypted, ensure_str(my_value))
+        assert_equal(my_value_decrypted, my_value)
 
     def test_encrypt_and_decrypt_no_unicode_in_string_type_unicode(self):
         my_value = u'hello'
