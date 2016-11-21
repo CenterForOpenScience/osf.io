@@ -267,7 +267,8 @@ class NodeSerializer(JSONAPISerializer):
         related_view_kwargs={'node_id': '<pk>'},
         related_meta={'count': 'get_registration_links_count'},
         self_view='nodes:node-registration-pointer-relationship',
-        self_view_kwargs={'node_id': '<pk>'}
+        self_view_kwargs={'node_id': '<pk>'},
+        self_meta={'count': 'get_node_links_count'}
     )
 
     view_only_links = RelationshipField(
