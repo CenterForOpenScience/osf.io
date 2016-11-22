@@ -1,10 +1,15 @@
-from copy import deepcopy
-import urlparse
 import datetime as dt
-import uuid
 import logging
 import re
+import urlparse
+import uuid
+from copy import deepcopy
+from framework import analytics
 
+# OSF imports
+import framework.mongo
+import itsdangerous
+import pytz
 from dirtyfields import DirtyFieldsMixin
 from django.conf import settings
 from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
@@ -12,41 +17,30 @@ from django.contrib.auth.models import PermissionsMixin
 from django.contrib.postgres import fields
 from django.db import models
 from django.utils import timezone
-from modularodm.exceptions import NoResultsFound
-import itsdangerous
-import pytz
-
-# OSF imports
-import framework.mongo
-from framework import analytics
-from framework.auth import signals, Auth
-from framework.auth.exceptions import (
-    ChangePasswordError,
-    ExpiredTokenError,
-    InvalidTokenError,
-    MergeConflictError,
-    MergeConfirmedRequiredError
-)
+from framework.auth import Auth, signals
 from framework.auth.core import generate_verification_key
-from framework.sessions.utils import remove_sessions_for_user
+from framework.auth.exceptions import (ChangePasswordError, ExpiredTokenError,
+                                       InvalidTokenError,
+                                       MergeConfirmedRequiredError,
+                                       MergeConflictError)
 from framework.exceptions import PermissionsError
 from framework.sentry import log_exception
-from osf.utils.fields import NonNaiveDatetimeField
-from website import filters
-from website import mails
-from website import settings as website_settings
-
+from framework.sessions.utils import remove_sessions_for_user
+from modularodm.exceptions import NoResultsFound
 from osf.exceptions import reraise_django_validation_errors
-from osf.models.validators import validate_email, validate_social
 from osf.models.base import BaseModel, GuidMixin
-from osf.models.tag import Tag
-from osf.models.institution import Institution
-from osf.models.session import Session
-from osf.models.mixins import AddonModelMixin
 from osf.models.contributor import RecentlyAddedContributor
-from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
-from osf.utils.names import impute_names
+from osf.models.institution import Institution
+from osf.models.mixins import AddonModelMixin
+from osf.models.session import Session
+from osf.models.tag import Tag
+from osf.models.validators import validate_email, validate_social
 from osf.modm_compat import Q
+from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
+from osf.utils.fields import NonNaiveDatetimeField
+from osf.utils.names import impute_names
+from website import settings as website_settings
+from website import filters, mails
 
 logger = logging.getLogger(__name__)
 

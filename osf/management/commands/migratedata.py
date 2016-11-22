@@ -7,29 +7,24 @@ import sys
 import ipdb
 from django.contrib.contenttypes.models import ContentType
 from django.core.management import BaseCommand
-from django.db import IntegrityError
-from django.db import connection
-from django.db import transaction
+from django.db import IntegrityError, connection, transaction
 from django.utils import timezone
 from framework.auth.core import User as MODMUser
 from framework.transactions.context import transaction as modm_transaction
 from modularodm import Q as MQ
-from osf.models import NodeLog
-from osf.models import Tag
-from osf.models.base import GuidMixin, Guid, OptionalGuidMixin, BlackListGuid
+from osf.models import NodeLog, Tag
+from osf.models.base import BlackListGuid, Guid, GuidMixin, OptionalGuidMixin
 from osf.models.node import AbstractNode
 from osf.utils.order_apps import get_ordered_models
 from psycopg2._psycopg import AsIs
+from scripts.register_oauth_scopes import set_backend
 from typedmodels.models import TypedModel
 from website.files.models import StoredFileNode as MODMStoredFileNode
-from website.models import Node as MODMNode
 from website.models import Guid as MODMGuid
-
-from scripts.register_oauth_scopes import set_backend
+from website.models import Node as MODMNode
 
 
 def make_guids():
-    import ipdb
     print('Starting {}...'.format(sys._getframe().f_code.co_name))
 
     guid_models = [model for model in get_ordered_models() if (issubclass(model, GuidMixin) or issubclass(model, OptionalGuidMixin)) and (not issubclass(model, AbstractNode) or model is AbstractNode)]

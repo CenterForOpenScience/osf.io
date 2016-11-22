@@ -1,15 +1,40 @@
+from __future__ import unicode_literals
+
 import datetime as dt
 import json
+import logging
 from decimal import Decimal
 from functools import partial
 
+import pytz
 from dateutil import parser
 from django.contrib.postgres import lookups
 from django.contrib.postgres.fields.jsonb import JSONField
 from django.core.serializers.json import DjangoJSONEncoder
+from osf.exceptions import NaiveDatetimeException, ValidationError
 from psycopg2.extras import Json
 
-from osf.exceptions import ValidationError, NaiveDatetimeException
+logger = logging.getLogger(__name__)
+
+def coerce_nonnaive_datetimes(json_data):
+    if isinstance(json_data, list):
+        coerced_data = [coerce_nonnaive_datetimes(data) for data in json_data]
+    elif isinstance(json_data, dict):
+        coerced_data = dict()
+        for key, value in json_data.iteritems():
+            coerced_data[key] = coerce_nonnaive_datetimes(value)
+    elif isinstance(json_data, dt.datetime):
+        try:
+            wut = json_data.astimezone(pytz.utc)  # aware object can be in any timezone
+        except ValueError:  # naive
+            coerced_data = json_data.replace(tzinfo=pytz.utc)  # json_data must be in UTC
+            logger.warn('Coerced naive datetime to aware for {}'.format(json_data))
+        else:
+            coerced_data = json_data  # it's already aware
+    else:
+        coerced_data = json_data
+
+    return coerced_data
 
 
 class DateTimeAwareJSONEncoder(DjangoJSONEncoder):

@@ -5,10 +5,12 @@ from datetime import datetime
 import bson
 import modularodm.exceptions
 import pytz
-from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
+from django.contrib.contenttypes.fields import (GenericForeignKey,
+                                                GenericRelation)
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.postgres.fields import ArrayField
-from django.core.exceptions import ValidationError as DjangoValidationError, MultipleObjectsReturned
+from django.core.exceptions import ValidationError as DjangoValidationError
+from django.core.exceptions import MultipleObjectsReturned
 from django.db import models
 from django.db.models import ForeignKey
 from django.db.models.signals import post_save
@@ -16,6 +18,8 @@ from django.dispatch import receiver
 from django.utils import timezone
 from osf.exceptions import ValidationError
 from osf.modm_compat import to_django_query
+from osf.utils.datetime_aware_jsonfield import (DateTimeAwareJSONField,
+                                                coerce_nonnaive_datetimes)
 from osf.utils.fields import LowercaseCharField
 
 ALPHABET = '23456789abcdefghjkmnpqrstuvwxyz'
@@ -154,6 +158,9 @@ class BaseModel(models.Model):
                 continue
             if isinstance(modm_value, datetime):
                 modm_value = pytz.utc.localize(modm_value)
+            # TODO Remove this after migration
+            if isinstance(django_obj._meta.get_field(field), DateTimeAwareJSONField):
+                modm_value = coerce_nonnaive_datetimes(modm_value)
             setattr(django_obj, field, modm_value)
 
         return django_obj
@@ -323,6 +330,9 @@ class BaseIDMixin(models.Model):
                 continue
             if isinstance(modm_value, datetime):
                 modm_value = pytz.utc.localize(modm_value)
+            # TODO Remove this after migration
+            if isinstance(django_obj._meta.get_field(field), DateTimeAwareJSONField):
+                modm_value = coerce_nonnaive_datetimes(modm_value)
             setattr(django_obj, field, modm_value)
 
         return django_obj
@@ -478,6 +488,9 @@ class GuidMixin(BaseIDMixin):
                 continue
             if isinstance(modm_value, datetime):
                 modm_value = pytz.utc.localize(modm_value)
+            # TODO Remove this after migration
+            if isinstance(django_obj._meta.get_field(field), DateTimeAwareJSONField):
+                modm_value = coerce_nonnaive_datetimes(modm_value)
             setattr(django_obj, field, modm_value)
 
         from website.models import Guid as MODMGuid
