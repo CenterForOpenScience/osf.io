@@ -3,11 +3,12 @@ from nose.tools import *  # noqa
 from framework.auth.core import Auth
 
 from tests.base import OsfTestCase
-from tests.factories import AuthUserFactory, ProjectFactory
+from tests.factories import AuthUserFactory, ProjectFactory, BookmarkCollectionFactory
 
 from scripts.analytics.addon_snapshot import AddonSnapshot
 
-from website.models import User
+from website.models import Node
+from framework.auth.core import User
 from website.settings import ADDONS_AVAILABLE
 from website.addons.github.tests.factories import GitHubAccountFactory
 from website.addons.github.model import GitHubNodeSettings, GitHubUserSettings
@@ -217,3 +218,19 @@ class TestAddonCount(OsfTestCase):
         wiki_res = [res for res in results if res['provider']['name'] == 'wiki'][0]
 
         assert_equal(wiki_res['nodes']['deleted'], 1)
+
+    def test_node_settings_has_no_owner_not_connected(self):
+        self.node_addon.owner = None
+        self.node_addon.save()
+
+        results = AddonSnapshot().get_events()
+        storage_res = [res for res in results if res['provider']['name'] == 'github'][0]
+        assert_equal(storage_res['nodes']['connected'], 0)
+
+    def test_bookmark_collection_not_counted(self):
+        BookmarkCollectionFactory(creator=self.user)
+        all_node_count = Node.find().count()
+
+        results = AddonSnapshot().get_events()
+        storage_res = [res for res in results if res['provider']['name'] == 'osfstorage'][0]
+        assert_equal(storage_res['nodes']['connected'], all_node_count - 1)
