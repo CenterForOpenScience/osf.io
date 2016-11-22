@@ -35,15 +35,20 @@ class TestMigrateAnalytics(OsfTestCase):
             },
             "nodes": {
                 "deleted": 0,
-                "total": 1,
-                "connected": 1,
-                "disconnected": 0
+                "total": 5,
+                "connected": 4,
+                "disconnected": 1
             }
         }
 
     def test_generate_events_between_events(self):
-        generated_events = generate_events_between_events([self.day_one, self.day_two], self.keen_event_2)
+        generated_events = generate_events_between_events([self.day_one, self.day_two], self.keen_event)
         assert_equal(len(generated_events), 3)
         returned_dates = [event['keen']['timestamp'] for event in generated_events]
         expected_dates = ['2016-03-{}T00:00:00'.format(i) for i in range(13, 16)]
         assert_items_equal(returned_dates, expected_dates)
+
+        # check the totals are the same as the first event
+        returned_totals = [event['nodes']['total'] for event in generated_events]
+        expected_totals = [self.keen_event["nodes"]["total"] for i in range(len(generated_events))]
+        assert_items_equal(returned_totals, expected_totals)
