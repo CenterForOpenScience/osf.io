@@ -10,6 +10,7 @@ CAMPAIGNS = {
         'system_tag': 'prereg_challenge_campaign',
         'redirect_url': furl.furl(DOMAIN).add(path='prereg/').url,
         'confirmation_email_template': mails.CONFIRM_EMAIL_PREREG,
+        'native_login': True,
     },
     'institution': {
         'system_tag': 'institution_campaign',
@@ -19,6 +20,7 @@ CAMPAIGNS = {
         'system_tag': 'erp_challenge_campaign',
         'redirect_url': furl.furl(DOMAIN).add(path='erpc/').url,
         'confirmation_email_template': mails.CONFIRM_EMAIL_ERPC,
+        'native_login': True,
     },
     # Various preprint services
     # Each preprint service will offer their own campaign with appropriate distinct branding
@@ -71,6 +73,18 @@ def campaign_for_user(user):
     for campaign, config in CAMPAIGNS.items():
         if config['system_tag'] in user.system_tags:
             return campaign
+    return None
+
+
+def is_institution_login(campaign):
+    if campaign in CAMPAIGNS:
+        return campaign == 'institution'
+    return None
+
+
+def is_native_login(campaign):
+    if campaign in CAMPAIGNS:
+        return CAMPAIGNS[campaign].get('native_login')
     return None
 
 
