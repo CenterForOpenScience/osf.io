@@ -170,15 +170,12 @@ class PreprintService(GuidStoredObject):
             self.save()
 
     def set_preprint_license(self, license_detail, auth, save=False):
-        year = license_detail['license_year']
-        license_id = license_detail['license_id']
-        copyright_holders = license_detail['copyright_holders']
-
         if not self.has_permission(auth.user, ADMIN):
             raise PermissionsError('Only admins can change a preprint\'s license.')
+
         try:
             node_license = NodeLicense.find_one(
-                Q('id', 'eq', license_id)
+                Q('id', 'eq', license_detail['id'])
             )
         except exceptions.NoResultsFound:
             raise NodeStateError('Preprint does not have a license.')
@@ -186,21 +183,27 @@ class PreprintService(GuidStoredObject):
         if node_license not in self.provider.licenses_acceptable and len(self.provider.licenses_acceptable) != 0:
             raise PermissionsError
 
-        record = self.license
-        if record is None:
-            record = NodeLicenseRecord(
-                node_license=node_license
-            )
-        record.node_license = node_license
-        record.year = year
-        record.copyright_holders = copyright_holders or []
-        record.save()
-        self.license = record
-        # self.add_log(
-        #     Add log information
-        #     auth=auth,
-        #     save=False,
-        # )
+        if self.license is None:
+            self.license = NodeLicenseRecord(node_license=node_license)
+        self.license.node_license = node_license
+        self.license.year = license_detail['year']
+        self.license.copyright_holders = license_detail['copyright_holders']
+        self.license.save()
+
+        self.node.add_log(
+            action=NodeLog.PREPRINT_LICENSE_UPDATED,
+            params={
+                'preprint': {
+                    'id': self._id,
+                    'title': self.node.title
+                },
+                'service': {
+                    'title': self.provider.name
+                }
+            },
+            auth=auth,
+            save=False
+        )
 
         if save:
             self.save()

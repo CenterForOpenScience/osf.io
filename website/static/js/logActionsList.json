@@ -75,5 +75,6 @@
     "affiliated_institution_added": "${user} added ${institution} affiliation to ${node}",
     "affiliated_institution_removed": "${user} removed ${institution} affiliation from ${node}",
     "preprint_initiated": "${user} made ${node} a ${preprint} with ${service} service",
-    "preprint_file_updated": "${user} updated the primary file of this ${preprint}"
+    "preprint_file_updated": "${user} updated the primary file of this ${preprint}",
+    "preprint_license_updated": "${user} updated the license of the primary file for ${service} preprint ${preprint}"
 }
