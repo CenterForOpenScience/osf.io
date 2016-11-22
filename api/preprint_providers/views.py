@@ -20,10 +20,7 @@ from api.preprints.serializers import PreprintSerializer
 
 class PreprintProviderList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
     """
-    Paginated list of verified PreprintProviders available
-
-    ##Note
-    **This API endpoint is under active development, and is subject to change in the future.**
+    Paginated list of verified PreprintProviders available. *Read-only*
 
     ##PreprintProvider Attributes
 
@@ -36,10 +33,16 @@ class PreprintProviderList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin
         banner_path    string             a path to the preprint provider's banner
         description    string             description of the preprint provider
 
+    ##Relationships
+
+    ###Preprints
+    Link to the list of preprints from this given preprint provider.
+
     ##Links
 
         self: the canonical api endpoint of this preprint provider
         preprints: link to the provider's preprints
+        external_url: link to the preprint provider's external URL (e.g. https://socarxiv.org)
 
     #This Request/Response
     """
@@ -68,12 +71,9 @@ class PreprintProviderList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin
 
 
 class PreprintProviderDetail(JSONAPIBaseView, generics.RetrieveAPIView):
-    """ Details about a given preprint provider.
+    """ Details about a given preprint provider. *Read-only*
 
-    ##Note
-    **This API endpoint is under active development, and is subject to change in the future.**
-
-    ##Attributes
+    ##PreprintProvider Attributes
 
     OSF Preprint Providers have the "preprint_providers" `type`.
 
@@ -84,10 +84,16 @@ class PreprintProviderDetail(JSONAPIBaseView, generics.RetrieveAPIView):
         banner_path    string             a path to the preprint provider's banner
         description    string             description of the preprint provider
 
+    ##Relationships
+
+    ###Preprints
+    Link to the list of preprints from this given preprint provider.
+
     ##Links
 
         self: the canonical api endpoint of this preprint provider
         preprints: link to the provider's preprints
+        external_url: link to the preprint provider's external URL (e.g. https://socarxiv.org)
 
     #This Request/Response
 
@@ -112,48 +118,40 @@ class PreprintProviderDetail(JSONAPIBaseView, generics.RetrieveAPIView):
 class PreprintProviderPreprintList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
     """Preprints from a given preprint_provider. *Read Only*
 
-    ##Note
-    **This API endpoint is under active development, and is subject to change in the future.**
-
     To update preprints with a given preprint_provider, see the `<node_id>/relationships/preprint_provider` endpoint
 
     ##Preprint Attributes
 
-    Many of these preprint attributes are the same as node, with a few special fields added in.
+    OSF Preprint entities have the "preprints" `type`.
 
-    OSF Preprint entities have the "preprint" `type`.
-
-        name                            type                  description
+        name                            type                                description
         ====================================================================================
-        title                           string                title of preprint, same as its project or component
-        abstract                        string                description of the preprint
-        date_created                    iso8601 timestamp     timestamp that the preprint was created
-        date_modified                   iso8601 timestamp     timestamp when the preprint was last updated
-        tags                            array of strings      list of tags that describe the node
-        subjects                        array of dictionaries list ids of Subject in the PLOS taxonomy. Dictrionary, containing the subject text and subject ID
-        doi                             string                bare DOI for the manuscript, as entered by the user
+        date_created                    iso8601 timestamp                   timestamp that the preprint was created
+        date_modified                   iso8601 timestamp                   timestamp that the preprint was last modified
+        date_published                  iso8601 timestamp                   timestamp when the preprint was published
+        is_published                    boolean                             whether or not this preprint is published
+        is_preprint_orphan              boolean                             whether or not this preprint is orphaned
+        subjects                        array of tuples of dictionaries     ids of Subject in the PLOS taxonomy. Dictionary, containing the subject text and subject ID
+        doi                             string                              bare DOI for the manuscript, as entered by the user
 
     ##Relationships
 
+    ###Node
+    The node that this preprint was created for
+
     ###Primary File
     The file that is designated as the preprint's primary file, or the manuscript of the preprint.
-
-    ###Files
-    Link to list of files associated with this node/preprint
-
-    ###Contributors
-    Link to list of contributors that are affiliated with this preprint.
 
     ###Provider
     Link to preprint_provider detail for this preprint
 
     ##Links
-
     - `self` -- Preprint detail page for the current preprint
     - `html` -- Project on the OSF corresponding to the current preprint
     - `doi` -- URL representation of the DOI entered by the user for the preprint manuscript
 
     See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
+
     #This Request/Response
 
     """
