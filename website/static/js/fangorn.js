@@ -374,6 +374,10 @@ function inheritFromParent(item, parent, fields) {
     inheritedFields.concat(fields || []).forEach(function(field) {
         item.data[field] = item.data[field] || parent.data[field];
     });
+
+    if(item.data.provider === 'github'){
+        item.data.branch = parent.data.branch;
+    }
 }
 
 /**
@@ -520,13 +524,19 @@ function doItemOp(operation, to, from, rename, conflict) {
         };
     }
 
+    var options = {};
+    if(from.data.provider === 'github'){
+        options.branch = from.data.branch;
+        moveSpec.branch = from.data.branch;
+    }
+
     from.inProgress = true;
     tb.clearMultiselect();
 
     $.ajax({
         type: 'POST',
         beforeSend: $osf.setXHRAuthorization,
-        url: waterbutler.buildTreeBeardFileOp(from),
+        url: waterbutler.buildTreeBeardFileOp(from, options),
         headers: {
             'Content-Type': 'Application/json'
         },
@@ -990,9 +1000,10 @@ function _createFolder(event, dismissCallback, helpText) {
     var extra = {};
     var path = parent.data.path || '/';
     var options = {name: val, kind: 'folder'};
-
+    
     if (parent.data.provider === 'github') {
         extra.branch = parent.data.branch;
+        options.branch = parent.data.branch;
     }
 
     m.request({
@@ -1295,7 +1306,20 @@ function gotoFileEvent (item, toUrl) {
     var redir = new URI(item.data.nodeUrl);
     redir.segment('files').segment(item.data.provider).segmentCoded(item.data.path.substring(1));
     var fileurl  = redir.toString() + toUrl;
-    if(COMMAND_KEYS.indexOf(tb.pressedKey) !== -1) {
+
+    // construct view only link into file url as it gets removed from url params in IE
+    if ($osf.isIE()) {
+        var viewOnly = $osf.urlParams().view_only;
+        if (viewOnly) {
+            if (fileurl.indexOf('?') !== -1) {
+                fileurl += '&view_only=' + viewOnly;
+            }else {
+                fileurl += '?view_only=' + viewOnly;
+            }
+        }
+    }
+
+    if (COMMAND_KEYS.indexOf(tb.pressedKey) !== -1) {
         window.open(fileurl, '_blank');
     } else {
         window.open(fileurl, '_self');
@@ -1726,7 +1750,7 @@ var FGItemButtons = {
         var item = args.item;
         var rowButtons = [];
         var mode = args.mode;
-        var preprintPath = getPreprintPath(window.contextVars.node.isPreprint, window.contextVars.node.preprintFileId);
+        var preprintPath = getPreprintPath(window.contextVars.node.preprintFileId);
         if (tb.options.placement !== 'fileview') {
             if (window.File && window.FileReader && item.kind === 'folder' && item.data.provider && item.data.permissions && item.data.permissions.edit) {
                 rowButtons.push(
@@ -2001,7 +2025,7 @@ var FGToolbar = {
         // Special cased to not show 'delete multiple' for github or published dataverses
         if(items.length > 1 && ctrl.tb.multiselected()[0].data.provider !== 'github' && ctrl.tb.options.placement !== 'fileview' && !(ctrl.tb.multiselected()[0].data.provider === 'dataverse' && ctrl.tb.multiselected()[0].parent().data.version === 'latest-published') ) {
             if (showDeleteMultiple(items)) {
-                var preprintPath = getPreprintPath(window.contextVars.node.isPreprint, window.contextVars.node.preprintFileId);
+                var preprintPath = getPreprintPath(window.contextVars.node.preprintFileId);
                 if (preprintPath && multiselectContainsPreprint(items, preprintPath)) {
                     generalButtons.push(
                         m.component(FGButton, {
@@ -2088,6 +2112,9 @@ var FGToolbar = {
  * @returns {Array} newRows Returns the revised list of rows
  */
 function filterRows(rows) {
+    if(rows.length === 0){
+        return;
+    }
     var tb = this;
     var i, newRows = [],
         originalRow = tb.find(tb.multiselected()[0].id),
@@ -2192,6 +2219,8 @@ var copyMode = null;
  * @private
  */
 function _fangornDragStart(event, ui) {
+    // Sync up the toolbar in case item was drag-clicked and not released
+    m.redraw(); 
     var itemID = $(event.target).attr('data-id'),
         item = this.find(itemID);
     if (this.multiselected().length < 2) {
@@ -2423,8 +2452,8 @@ function isInvalidDropItem(folder, item, cannotBeFolder, mustBeIntra) {
         item.inProgress ||
         (cannotBeFolder && item.data.kind === 'folder') ||
         (mustBeIntra && item.data.provider !== folder.data.provider) ||
-        //Disallow moving OUT of a public figshare folder
-        isInvalidFigshareDrop(item)
+        //Disallow moving OUT of figshare
+        item.data.provider === 'figshare'
     ) {
         return true;
     }
@@ -2434,8 +2463,6 @@ function isInvalidDropItem(folder, item, cannotBeFolder, mustBeIntra) {
 function allowedToMove(folder, item, mustBeIntra) {
     return (
         item.data.permissions.edit &&
-        //Can only COPY OUT of figshare
-        item.data.provider !== 'figshare' &&
         (!mustBeIntra || (item.data.provider === folder.data.provider && item.data.nodeId === folder.data.nodeId))
     );
 }
@@ -2476,8 +2503,8 @@ function multiselectContainsPreprint(items, preprintPath) {
     return false;
 }
 
-function getPreprintPath(isPreprint, preprintFileId) {
-    if (isPreprint) {
+function getPreprintPath(preprintFileId) {
+    if (preprintFileId) {
         return '/' + preprintFileId;
     }
     return null;
@@ -2490,7 +2517,7 @@ function getCopyMode(folder, items) {
         return 'forbidden';
     }
 
-    var preprintPath = getPreprintPath(window.contextVars.node.isPreprint, window.contextVars.node.preprintFileId);
+    var preprintPath = getPreprintPath(window.contextVars.node.preprintFileId);
     var canMove = true;
     var mustBeIntra = (folder.data.provider === 'github');
     var cannotBeFolder = (folder.data.provider === 'figshare' || folder.data.provider === 'dataverse');

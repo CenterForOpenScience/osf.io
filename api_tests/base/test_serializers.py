@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 import httplib as http
-import contextlib
-import mock
+from pytz import utc
+from datetime import datetime
+import urllib
 
 from nose.tools import *  # flake8: noqa
 import re
@@ -269,6 +270,12 @@ class TestRelationshipField(DbTestCase):
             }
         )
 
+        field_with_filters = base_serializers.RelationshipField(
+            related_view='nodes:node-detail',
+            related_view_kwargs={'node_id': '<pk>'},
+            filter={'target': 'hello', 'woop': 'yea'}
+        )
+
         class Meta:
             type_ = 'nodes'
 
@@ -309,6 +316,15 @@ class TestRelationshipField(DbTestCase):
         data = self.BasicNodeSerializer(node, context={'request': req}).data['data']
         field = data['relationships']['two_url_kwargs']['links']
         assert_in('/v2/nodes/{}/node_links/{}/'.format(node._id, node._id), field['related']['href'])
+
+    def test_field_with_two_filters(self):
+        req = make_drf_request_with_version(version='2.0')
+        project = factories.ProjectFactory()
+        node = factories.NodeFactory(parent=project)
+        data = self.BasicNodeSerializer(node, context={'request': req}).data['data']
+        field = data['relationships']['field_with_filters']['links']
+        assert_in(urllib.quote('filter[target]=hello', safe='?='), field['related']['href'])
+        assert_in(urllib.quote('filter[woop]=yea', safe='?='), field['related']['href'])
 
     def test_field_with_non_attribute(self):
         req = make_drf_request_with_version(version='2.0')
@@ -362,3 +378,77 @@ class TestShowIfVersion(DbTestCase):
         req = make_drf_request_with_version(version='2.1')
         data = RegistrationSerializer(self.registration, context={'request': req}).data['data']
         assert_not_in('node_links', data['attributes'])
+
+
+class TestDateByVersion(DbTestCase):
+
+    def setUp(self):
+        super(TestDateByVersion, self).setUp()
+        self.node = factories.NodeFactory()
+        self.old_date = datetime.utcnow()   # naive dates before django-osf
+        self.old_date_without_microseconds = self.old_date.replace(microsecond=0)
+        self.new_date = datetime.utcnow().replace(tzinfo=utc)  # non-naive after django-osf
+        self.new_date_without_microseconds = self.new_date.replace(microsecond=0)
+        self.old_format = '%Y-%m-%dT%H:%M:%S.%f'
+        self.old_format_without_microseconds = '%Y-%m-%dT%H:%M:%S'
+        self.new_format = '%Y-%m-%dT%H:%M:%S.%fZ'
+
+    def test_old_date_formats_to_old_format(self):
+        req = make_drf_request_with_version(version='2.0')
+        setattr(self.node, 'date_modified', self.old_date)
+        data = NodeSerializer(self.node, context={'request': req}).data['data']
+        assert_equal(datetime.strftime(self.old_date, self.old_format), data['attributes']['date_modified'])
+
+    def test_old_date_without_microseconds_formats_to_old_format(self):
+        req = make_drf_request_with_version(version='2.0')
+        setattr(self.node, 'date_modified', self.old_date_without_microseconds)
+        data = NodeSerializer(self.node, context={'request': req}).data['data']
+        assert_equal(
+            datetime.strftime(self.old_date_without_microseconds, self.old_format_without_microseconds),
+            data['attributes']['date_modified']
+        )
+
+    def test_old_date_formats_to_new_format(self):
+        req = make_drf_request_with_version(version='2.2')
+        setattr(self.node, 'date_modified', self.old_date)
+        data = NodeSerializer(self.node, context={'request': req}).data['data']
+        assert_equal(datetime.strftime(self.old_date, self.new_format), data['attributes']['date_modified'])
+
+    def test_old_date_without_microseconds_formats_to_new_format(self):
+        req = make_drf_request_with_version(version='2.2')
+        setattr(self.node, 'date_modified', self.old_date_without_microseconds)
+        data = NodeSerializer(self.node, context={'request': req}).data['data']
+        assert_equal(
+            datetime.strftime(self.old_date_without_microseconds, self.new_format),
+            data['attributes']['date_modified']
+        )
+
+    def test_new_date_formats_to_old_format(self):
+        req = make_drf_request_with_version(version='2.0')
+        setattr(self.node, 'date_modified', self.new_date)
+        data = NodeSerializer(self.node, context={'request': req}).data['data']
+        assert_equal(datetime.strftime(self.new_date, self.old_format), data['attributes']['date_modified'])
+
+    def test_new_date_without_microseconds_formats_to_old_format(self):
+        req = make_drf_request_with_version(version='2.0')
+        setattr(self.node, 'date_modified', self.new_date_without_microseconds)
+        data = NodeSerializer(self.node, context={'request': req}).data['data']
+        assert_equal(
+            datetime.strftime(self.new_date_without_microseconds, self.old_format_without_microseconds),
+            data['attributes']['date_modified']
+        )
+
+    def test_new_date_formats_to_new_format(self):
+        req = make_drf_request_with_version(version='2.2')
+        setattr(self.node, 'date_modified', self.new_date)
+        data = NodeSerializer(self.node, context={'request': req}).data['data']
+        assert_equal(datetime.strftime(self.new_date, self.new_format), data['attributes']['date_modified'])
+
+    def test_new_date_without_microseconds_formats_to_new_format(self):
+        req = make_drf_request_with_version(version='2.2')
+        setattr(self.node, 'date_modified', self.new_date_without_microseconds)
+        data = NodeSerializer(self.node, context={'request': req}).data['data']
+        assert_equal(
+            datetime.strftime(self.new_date_without_microseconds, self.new_format),
+            data['attributes']['date_modified']
+        )

@@ -4,7 +4,6 @@ import re
 import furl
 from django.core.urlresolvers import resolve, reverse, NoReverseMatch
 from django.core.exceptions import ImproperlyConfigured
-from django.http.request import QueryDict
 from rest_framework import exceptions
 from rest_framework import serializers as ser
 from rest_framework.fields import SkipField
@@ -243,6 +242,20 @@ def _url_val(val, obj, serializer, request, **kwargs):
         raise SkipField
     else:
         return url
+
+
+class DateByVersion(ser.DateTimeField):
+    """
+    Custom DateTimeField that forces dates into the ISO-8601 format with timezone information in version 2.2.
+    """
+    def to_representation(self, value):
+        request = self.context.get('request')
+        if request:
+            if request.version >= '2.2':
+                self.format = '%Y-%m-%dT%H:%M:%S.%fZ'
+            else:
+                self.format = '%Y-%m-%dT%H:%M:%S.%f' if value.microsecond else '%Y-%m-%dT%H:%M:%S'
+        return super(DateByVersion, self).to_representation(value)
 
 
 class IDField(ser.CharField):
@@ -566,9 +579,13 @@ class RelationshipField(ser.HyperlinkedIdentityField):
                     kwargs.update({'version': request.parser_context['kwargs']['version']})
                     url = self.reverse(view, kwargs=kwargs, request=request, format=format)
                     if self.filter:
-                        formatted_filter = self.format_filter(obj)
-                        if formatted_filter:
-                            url = extend_querystring_params(url, {'filter': formatted_filter})
+                        formatted_filters = self.format_filter(obj)
+                        if formatted_filters:
+                            for filter in formatted_filters:
+                                url = extend_querystring_params(
+                                    url,
+                                    {'filter[{}]'.format(filter['field_name']): filter['value']}
+                                )
                         else:
                             url = None
 
@@ -596,8 +613,13 @@ class RelationshipField(ser.HyperlinkedIdentityField):
                 return '<esi:include src="{}"/>'.format(esi_url)
 
     def format_filter(self, obj):
-        qd = QueryDict(mutable=True)
+        """ Take filters specified in self.filter and format them in a way that can be easily parametrized
+
+        :param obj: RelationshipField object
+        :return: list of dictionaries with 'field_name' and 'value' for each filter
+        """
         filter_fields = self.filter.keys()
+        filters = []
         for field_name in filter_fields:
             try:
                 # check if serializer method passed in
@@ -608,10 +630,8 @@ class RelationshipField(ser.HyperlinkedIdentityField):
                 value = serializer_method(obj)
             if not value:
                 continue
-            qd.update({'[{}]'.format(field_name): value})
-        if not qd.keys():
-            return None
-        return qd.urlencode(safe=['[', ']'])
+            filters.append({'field_name': field_name, 'value': value})
+        return filters if filters else None
 
     # Overrides HyperlinkedIdentityField
     def to_representation(self, value):

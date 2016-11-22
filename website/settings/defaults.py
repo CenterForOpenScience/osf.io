@@ -412,6 +412,9 @@ CELERY_IMPORTS = (
     'scripts.approve_embargo_terminations',
     'scripts.triggered_mails',
     'scripts.send_queued_mails',
+    'scripts.analytics.run_keen_summaries',
+    'scripts.analytics.run_keen_snapshots',
+    'scripts.analytics.run_keen_events',
 )
 
 # Modules that need metrics and release requirements
@@ -494,7 +497,7 @@ else:
         'run_keen_summaries': {
             'task': 'scripts.analytics.run_keen_summaries',
             'schedule': crontab(minute=00, hour=2),  # Daily 2:00 a.m.
-            'kwargs': {'date': (datetime.datetime.utcnow() - datetime.timedelta(1)).date()}
+            'kwargs': {'yesterday': True}
         },
         'run_keen_snapshots': {
             'task': 'scripts.analytics.run_keen_snapshots',
@@ -502,8 +505,8 @@ else:
         },
         'run_keen_events': {
             'task': 'scripts.analytics.run_keen_events',
-            'schedule': crontab(minute=0, hour=4),
-            'kwargs': {'date': (datetime.datetime.utcnow() - datetime.timedelta(1)).date()}
+            'schedule': crontab(minute=0, hour=4),  # Daily 4:00 a.m.
+            'kwargs': {'yesterday': True}
         }
     }
 

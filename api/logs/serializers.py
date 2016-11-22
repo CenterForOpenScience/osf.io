@@ -5,7 +5,8 @@ from api.base.serializers import (
     RelationshipField,
     RestrictedDictSerializer,
     LinksField,
-    is_anonymized
+    is_anonymized,
+    DateByVersion,
 )
 from website.project.model import Node
 from website.util import permissions as osf_permissions
@@ -141,7 +142,7 @@ class NodeLogSerializer(JSONAPISerializer):
     ]
 
     id = ser.CharField(read_only=True, source='_id')
-    date = ser.DateTimeField(read_only=True)
+    date = DateByVersion(read_only=True)
     action = ser.CharField(read_only=True)
     params = NodeLogParamsSerializer(read_only=True)
     links = LinksField({'self': 'get_absolute_url'})
