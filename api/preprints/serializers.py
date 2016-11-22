@@ -114,9 +114,27 @@ class PreprintSerializer(JSONAPISerializer):
     def get_doi_url(self, obj):
         return 'https://dx.doi.org/{}'.format(obj.article_doi) if obj.article_doi else None
 
+    def get_license_details(self, preprint, validated_data):
+        license_id = preprint.license.node_license.id if preprint.license else None
+        license_year = preprint.license.year if preprint.license else None
+        license_holders = preprint.license.copyright_holders if preprint.license else []
+
+        if 'license' in validated_data:
+            license_year = validated_data['license'].get('year', license_year)
+            license_holders = validated_data['license'].get('copyright_holders', license_holders)
+        if 'license_type' in validated_data:
+            license_id = validated_data['license_type'].id
+
+        return {
+            'id': license_id,
+            'year': license_year,
+            'copyright_holders': license_holders
+        }
+
     def update(self, preprint, validated_data):
         assert isinstance(preprint, PreprintService), 'You must specify a valid preprint to be updated'
         assert isinstance(preprint.node, Node), 'You must specify a preprint with a valid node to be updated.'
+
         auth = get_user_auth(self.context['request'])
         if not preprint.node.has_permission(auth.user, 'admin'):
             raise exceptions.PermissionDenied(detail='User must be an admin to update a preprint.')
@@ -146,20 +164,8 @@ class PreprintSerializer(JSONAPISerializer):
             recently_published = published
 
         if 'license' in validated_data or 'license_type' in validated_data:
-            license_id = preprint.license.node_license.id if preprint.license else None
-            license_year = preprint.license.year if preprint.license else None
-            license_holders = preprint.license.copyright_holders if preprint.license else []
-            if 'license' in validated_data:
-                license_year = validated_data['license'].get('year', license_year)
-                license_holders = validated_data['license'].get('copyright_holders', license_holders)
-            if 'license_type' in validated_data:
-                license_id = validated_data['license_type'].id
-            try:
-                preprint.set_preprint_license(license_id, license_year, license_holders, auth)
-            except NodeStateError:
-                raise exceptions.ValidationError()
-            except PermissionsError:
-                raise exceptions.PermissionDenied()
+            license_details = self.get_license_details(preprint, validated_data)
+            self.set_field(preprint.set_preprint_license, license_details, auth)
             save_preprint = True
 
         if save_node:
@@ -189,6 +195,8 @@ class PreprintSerializer(JSONAPISerializer):
             raise exceptions.PermissionDenied('Not authorized to update this node.')
         except ValueError as e:
             raise exceptions.ValidationError(detail=e.message)
+        except NodeStateError:
+            raise exceptions.ValidationError(detail='message here pls maybe')
 
 
 class PreprintCreateSerializer(PreprintSerializer):

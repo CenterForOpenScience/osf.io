@@ -169,7 +169,11 @@ class PreprintService(GuidStoredObject):
             self.node.save()
             self.save()
 
-    def set_preprint_license(self, license_id, year, copyright_holders, auth, save=False):
+    def set_preprint_license(self, license_detail, auth, save=False):
+        year = license_detail['license_year']
+        license_id = license_detail['license_id']
+        copyright_holders = license_detail['copyright_holders']
+
         if not self.has_permission(auth.user, ADMIN):
             raise PermissionsError('Only admins can change a preprint\'s license.')
         try:
@@ -177,7 +181,7 @@ class PreprintService(GuidStoredObject):
                 Q('id', 'eq', license_id)
             )
         except exceptions.NoResultsFound:
-            raise PreprintStateError
+            raise NodeStateError('Preprint does not have a license.')
 
         if node_license not in self.provider.licenses_acceptable and len(self.provider.licenses_acceptable) != 0:
             raise PermissionsError
