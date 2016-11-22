@@ -17,7 +17,6 @@ from website.settings import KEEN as keen_settings
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
-DELETE_WAIT_TIME = 10
 VERY_LONG_TIMEFRAME = 'this_20_years'
 
 
@@ -73,9 +72,6 @@ def validate_args(args):
 
     if args.transfer_collection and not (args.source_collection and args.destination_collection):
         raise ValueError('To transfer between keen collections, enter both a source and a destination collection.')
-
-    if args.delete and not args.transfer_collection:
-        raise ValueError('To delete anything you will need to transfer analytics from one collection to another.')
 
     if any([args.start_date, args.end_date]) and not all([args.start_date, args.end_date]):
         raise ValueError('You must provide both a start and an end date if you provide either.')
@@ -187,14 +183,13 @@ def make_sure_keen_schemas_match(source_collection, destination_collection, keen
     return source_schema == destination_schema
 
 
-def transfer_events_to_another_collection(client, source_collection, destination_collection, dry, delete=False, reverse=False):
+def transfer_events_to_another_collection(client, source_collection, destination_collection, dry, reverse=False):
     """ Transfer analytics from source collection to the destination collection.
     Will only work if the source and destination have the same schemas attached, will error if they don't
 
     :param client: KeenClient, client to use to make connection to keen
     :param source_collection: str, keen collection to transfer from
     :param destination_collection: str, keen collection to transfer to
-    :param delete: bool, whether or not delete items from the old collection after transferred
     :param dry: bool, whether or not to make a dry run, aka actually send events to keen
     :return: None
     """
@@ -212,14 +207,6 @@ def transfer_events_to_another_collection(client, source_collection, destination
         remove_events_from_keen(client, destination_collection, events_from_source, dry)
     else:
         add_events_to_keen(client, destination_collection, events_from_source, dry)
-
-    if delete:
-        logger.warning('Will delete all events from the {} collection in {} seconds'.format(source_collection, DELETE_WAIT_TIME))
-        for i in range(DELETE_WAIT_TIME):
-            logger.info(i)
-            time.sleep(1)
-        if not dry:
-            client.delete_events(source_collection)
 
     logger.info(
         'Transferred {} events from the {} collection to the {} collection'.format(
@@ -427,7 +414,7 @@ def main():
     if args.smooth_events:
         smooth_events_in_keen(client, args.source_colletion, parse(args.start_date), parse(args.end_date), dry, reverse)
     elif args.transfer_collection:
-        transfer_events_to_another_collection(client, args.source_collection, args.destination_collection, dry, args.delete, reverse)
+        transfer_events_to_another_collection(client, args.source_collection, args.destination_collection, dry, reverse)
     elif args.old_analytics:
         parse_and_send_old_events_to_keen(client, dry, reverse)
 
