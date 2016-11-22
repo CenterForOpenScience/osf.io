@@ -31,13 +31,14 @@ def parse_args():
     parser.add_argument('-t', '--transfer', dest='transfer_collection', action='store_true')
     parser.add_argument('-sc', '--source', dest='source_collection')
     parser.add_argument('-dc', '--destination', dest='destination_collection')
-    parser.add_argument('-del', '--delete', dest='delete', action='store_true')
 
     parser.add_argument('-sm', '--smooth', dest='smooth_events', action='store_true')
 
     parser.add_argument('-o', '--old', dest='old_analytics', action='store_true')
 
     parser.add_argument('-d', '--dry', dest='dry', action='store_true')
+
+    parser.add_argument('-r', '--reverse', dest='reverse', action='store_true')
 
     parsed = parser.parse_args()
 
@@ -63,8 +64,9 @@ def validate_args(args):
     if args.smooth_events and not (args.start_date and args.end_date):
         raise ValueError('To smooth data, please enter both a start date and end date.')
 
-    if parse(args.start_date) > parse(args.end_date):
-        raise ValueError('Please enter an end date that is after the start date.')
+    if args.start_date and args.end_date:
+        if parse(args.start_date) > parse(args.end_date):
+            raise ValueError('Please enter an end date that is after the start date.')
 
     if args.smooth_events and not args.source_collection:
         raise ValueError('Please specify a source collection to smooth data from.')
@@ -185,7 +187,7 @@ def make_sure_keen_schemas_match(source_collection, destination_collection, keen
     return source_schema == destination_schema
 
 
-def transfer_events_to_another_collection(client, source_collection, destination_collection, dry, delete=False):
+def transfer_events_to_another_collection(client, source_collection, destination_collection, dry, delete=False, reverse=False):
     """ Transfer analytics from source collection to the destination collection.
     Will only work if the source and destination have the same schemas attached, will error if they don't
 
@@ -206,7 +208,10 @@ def transfer_events_to_another_collection(client, source_collection, destination
         event['keen'].pop('created_at')
         event['keen'].pop('id')
 
-    add_events_to_keen(client, destination_collection, events_from_source, dry)
+    if reverse:
+        remove_events_from_keen(client, destination_collection, events_from_source, dry)
+    else:
+        add_events_to_keen(client, destination_collection, events_from_source, dry)
 
     if delete:
         logger.warning('Will delete all events from the {} collection in {} seconds'.format(source_collection, DELETE_WAIT_TIME))
@@ -231,10 +236,32 @@ def add_events_to_keen(client, collection, events, dry):
         client.add_events({collection: events})
 
 
-def smooth_events_in_keen(client, source_collection, start_date, end_date, dry):
+def smooth_events_in_keen(client, source_collection, start_date, end_date, dry, reverse):
     base_events = extract_events_from_keen(client, source_collection, start_date, end_date)
     events_to_fill_in = fill_in_event_gaps(source_collection, base_events)
-    add_events_to_keen(client, source_collection, events_to_fill_in, dry)
+    if reverse:
+        remove_events_from_keen(client, source_collection, events_to_fill_in, dry)
+    else:
+        add_events_to_keen(client, source_collection, events_to_fill_in, dry)
+
+
+def remove_events_from_keen(client, source_collection, events, dry):
+    filters = []
+
+    for event in events:
+        filters.append(
+            {'property_name': 'keen.timestamp', 'operator': 'eq', 'property_value': event['keen']['timestamp']}
+        )
+
+    # test to see if you get back the correct events
+    filtered_events = client.extraction(source_collection, filters=filters)
+
+    if events != filtered_events:
+        raise AttributeError('Filtered events not equal to the events you have gathered.')
+
+    logger.info('About to delete {} events from the {} collection'.format(len(events), source_collection))
+    if not dry:
+        client.delete_events(source_collection, filter=filter)
 
 
 def import_old_events_from_spreadsheet():
@@ -314,6 +341,7 @@ def comma_int(value):
     if value and value != 'MISSING':
         return int(value.replace(',', ''))
 
+
 def format_event(event, type):
     user_event_template = {
         "status": {},
@@ -369,11 +397,14 @@ def format_event(event, type):
         return template_to_use
 
 
-def parse_and_send_old_events_to_keen(client, dry):
+def parse_and_send_old_events_to_keen(client, dry, reverse):
     old_events = import_old_events_from_spreadsheet()
 
     for key, value in old_events.iteritems():
-        add_events_to_keen(client, key, value, dry)
+        if reverse:
+            remove_events_from_keen(client, key, value, dry)
+        else:
+            add_events_to_keen(client, key, value, dry)
 
 
 def main():
@@ -381,23 +412,24 @@ def main():
 
     Usage:
         * Transfer all events from the 'institution_analytics' to the 'institution_summary' collection:
-            `python -m scripts.analytics.migrate_analytics.py -d -t -sc institution_analytics -dc institution_summary`
+            `python -m scripts.analytics.migrate_analytics -d -t -sc institution_analytics -dc institution_summary`
         * Fill in the gaps in analytics for the 'addon_snapshot' collection between 2016-11-01 and 2016-11-15:
-            `python -m scripts.analytics.migrate_analytics.py -d -sm -s 2016-11-01 -e 2016-11-15`
+            `python -m scripts.analytics.migrate_analytics -d -sm -s 2016-11-01 -e 2016-11-15`
         * Parse old analytics from the old analytics CSV stored on your filesystem:
-            `python -m scripts.analytics.migrate_analytics.py -o -d`
+            `python -m scripts.analytics.migrate_analytics -o -d`
     """
     args = parse_args()
     client = get_keen_client()
 
     dry = args.dry
+    reverse = args.reverse
 
     if args.smooth_events:
-        smooth_events_in_keen(client, args.source_colletion, parse(args.start_date), parse(args.end_date), dry)
+        smooth_events_in_keen(client, args.source_colletion, parse(args.start_date), parse(args.end_date), dry, reverse)
     elif args.transfer_collection:
-        transfer_events_to_another_collection(client, args.source_collection, args.destination_collection, dry, args.delete)
+        transfer_events_to_another_collection(client, args.source_collection, args.destination_collection, dry, args.delete, reverse)
     elif args.old_analytics:
-        parse_and_send_old_events_to_keen(client, dry)
+        parse_and_send_old_events_to_keen(client, dry, reverse)
 
 
 if __name__ == '__main__':
