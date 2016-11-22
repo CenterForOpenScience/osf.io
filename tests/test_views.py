@@ -10,6 +10,7 @@ import json
 import time
 import unittest
 
+from flask import request
 import mock
 from nose.tools import *  # noqa PEP8 asserts
 
@@ -17,11 +18,15 @@ from modularodm import Q
 from modularodm.exceptions import ValidationError
 
 from framework import auth
+from framework.auth.campaigns import CAMPAIGNS, is_institution_login, is_native_login, is_proxy_login, campaign_url_for
 from framework.auth import User, Auth
+from framework.auth.cas import get_login_url
 from framework.auth.exceptions import InvalidTokenError
 from framework.auth.utils import impute_names_model, ensure_external_identity_uniqueness
+from framework.auth.views import login_and_register_handler
 from framework.celery_tasks import handlers
 from framework.exceptions import HTTPError
+
 from tests.base import (
     assert_is_redirect,
     capture_signals,
@@ -31,11 +36,12 @@ from tests.base import (
 )
 from tests.factories import (
     ApiOAuth2ApplicationFactory, ApiOAuth2PersonalTokenFactory, AuthUserFactory,
-    BookmarkCollectionFactory, CollectionFactory, MockAddonNodeSettings, NodeFactory,
-    NodeLogFactory, PrivateLinkFactory, ProjectWithAddonFactory, ProjectFactory,
+    CollectionFactory, MockAddonNodeSettings, NodeFactory,
+    PrivateLinkFactory, ProjectWithAddonFactory, ProjectFactory,
     RegistrationFactory, UnconfirmedUserFactory, UnregUserFactory, UserFactory, WatchConfigFactory,
     InstitutionFactory,
 )
+
 from website import mailchimp_utils
 from website import mails, settings
 from website.addons.github.tests.factories import GitHubAccountFactory
@@ -3608,10 +3614,193 @@ class TestAuthViews(OsfTestCase):
         assert_true(user.is_registered)
 
 
-class TextExternalAuthViews(OsfTestCase):
+class TestAuthLoginAndRegisterLogic(OsfTestCase):
 
     def setUp(self):
-        super(TextExternalAuthViews, self).setUp()
+        super(TestAuthLoginAndRegisterLogic, self).setUp()
+        self.no_auth = Auth()
+        self.user_auth = AuthUserFactory()
+        self.auth = Auth(user=self.user_auth)
+
+    def test_osf_login_and_register(self):
+
+        # login: user with auth
+        data = login_and_register_handler(self.auth, login=True, campaign=None, next_url=None, logout=False)
+        assert_equal(data.get('status_code'), http.FOUND)
+        assert_equal(data.get('next_url'), web_url_for('dashboard', _absolute=True))
+
+        # login: user without auth
+        data = login_and_register_handler(self.no_auth, login=True, campaign=None, next_url=None, logout=False)
+        assert_equal(data.get('status_code'), http.FOUND)
+        assert_equal(data.get('next_url'), web_url_for('dashboard', _absolute=True))
+
+        # register: user with auth
+        data = login_and_register_handler(self.auth, login=False, campaign=None, next_url=None, logout=False)
+        assert_equal(data.get('status_code'), http.FOUND)
+        assert_equal(data.get('next_url'), web_url_for('dashboard', _absolute=True))
+
+        # register: user without auth
+        data = login_and_register_handler(self.no_auth, login=False, campaign=None, next_url=None, logout=False)
+        assert_equal(data.get('status_code'), http.OK)
+        assert_equal(data.get('next_url'), web_url_for('dashboard', _absolute=True))
+
+    def test_next_url_login_and_register(self):
+
+        next_url = web_url_for('my_projects', _absolute=True)
+        request.url = web_url_for('auth_login', next=next_url, _absolute=True)
+
+        # next_url login: user with auth
+        data = login_and_register_handler(self.auth, login=True, campaign=None, next_url=next_url, logout=False)
+        assert_equal(data.get('status_code'), http.FOUND)
+        assert_equal(data.get('next_url'), next_url)
+
+        # login: user without auth
+        data = login_and_register_handler(self.no_auth, login=True, campaign=None, next_url=next_url, logout=False)
+        assert_equal(data.get('status_code'), http.FOUND)
+        assert_equal(data.get('next_url'), get_login_url(request.url))
+
+        # register: user with auth
+        data = login_and_register_handler(self.auth, login=False, campaign=None, next_url=next_url, logout=False)
+        assert_equal(data.get('status_code'), http.FOUND)
+        assert_equal(data.get('next_url'), next_url)
+
+        # register: user without auth
+        data = login_and_register_handler(self.no_auth, login=False, campaign=None, next_url=next_url, logout=False)
+        assert_equal(data.get('status_code'), http.OK)
+        assert_equal(data.get('next_url'), request.url)
+
+    def test_institution_login_and_register(self):
+
+        # institution login: user with auth
+        data = login_and_register_handler(self.auth, login=True, campaign='institution', next_url=None, logout=False)
+        assert_equal(data.get('status_code'), http.FOUND)
+        assert_equal(data.get('next_url'), web_url_for('dashboard', _absolute=True))
+
+        # institution login: user without auth
+        data = login_and_register_handler(self.no_auth, login=True, campaign='institution', next_url=None, logout=False)
+        assert_equal(data.get('status_code'), http.FOUND)
+        assert_equal(
+            data.get('next_url'),
+            get_login_url(web_url_for('dashboard', _absolute=True), campaign='institution'))
+
+        # institution register: user with auth
+        data = login_and_register_handler(self.auth, login=False, campaign='institution', next_url=None, logout=False)
+        assert_equal(data.get('status_code'), http.FOUND)
+        assert_equal(data.get('next_url'), web_url_for('dashboard', _absolute=True))
+
+        # institution register: user without auth
+        data = login_and_register_handler(self.no_auth, login=False, campaign='institution', next_url=None, logout=False)
+        assert_equal(data.get('status_code'), http.FOUND)
+        assert_equal(
+            data.get('next_url'),
+            get_login_url(web_url_for('dashboard', _absolute=True), campaign='institution')
+        )
+
+    def test_campaign_login_and_register(self):
+
+        for campaign in CAMPAIGNS:
+
+            if is_institution_login(campaign):
+                continue
+
+            # campaign login: user with auth
+            data = login_and_register_handler(self.auth, login=True, campaign=campaign, next_url=None, logout=False)
+            assert_equal(data.get('status_code'), http.FOUND)
+            assert_equal(data.get('next_url'), campaign_url_for(campaign))
+
+            # campaign login: user without auth
+            data = login_and_register_handler(self.no_auth, login=True, campaign=campaign, next_url=None, logout=False)
+            assert_equal(data.get('status_code'), http.FOUND)
+            assert_equal(
+                data.get('next_url'),
+                web_url_for('auth_register', campaign=campaign, next=campaign_url_for(campaign))
+            )
+
+            # campaign register: user with auth
+            data = login_and_register_handler(self.auth, login=False, campaign=campaign, next_url=None, logout=False)
+            assert_equal(data.get('status_code'), http.FOUND)
+            assert_equal(data.get('next_url'), campaign_url_for(campaign))
+
+            # campaign register: user without auth
+            data = login_and_register_handler(self.no_auth, login=False, campaign=campaign, next_url=None, logout=False)
+            assert_equal(data.get('status_code'), http.OK)
+            if is_native_login(campaign):
+                # native campaign: prereg and erpc
+                assert_equal(data.get('next_url'), campaign_url_for(campaign))
+            elif is_proxy_login(campaign):
+                # proxy campaign: preprints and branded ones
+                assert_equal(
+                    data.get('next_url'),
+                    web_url_for('auth_login', next=campaign_url_for(campaign), _absolute=True)
+                )
+
+    def test_campaign_login_and_register_with_next_url(self):
+
+        for campaign in CAMPAIGNS:
+
+            if is_institution_login(campaign):
+                continue
+
+            next_url = campaign_url_for(campaign)
+
+            # campaign login: user with auth
+            data = login_and_register_handler(self.auth, login=True, campaign=campaign, next_url=next_url, logout=False)
+            assert_equal(data.get('status_code'), http.FOUND)
+            assert_equal(data.get('next_url'), next_url)
+
+            # campaign login: user without auth
+            data = login_and_register_handler(self.no_auth, login=True, campaign=campaign, next_url=next_url, logout=False)
+            assert_equal(data.get('status_code'), http.FOUND)
+            assert_equal(
+                data.get('next_url'),
+                web_url_for('auth_register', campaign=campaign, next=next_url)
+            )
+
+            # campaign register: user with auth
+            data = login_and_register_handler(self.auth, login=False, campaign=campaign, next_url=next_url, logout=False)
+            assert_equal(data.get('status_code'), http.FOUND)
+            assert_equal(data.get('next_url'), next_url)
+
+            # campaign register: user without auth
+            data = login_and_register_handler(self.no_auth, login=False, campaign=campaign, next_url=next_url, logout=False)
+            assert_equal(data.get('status_code'), http.OK)
+            if is_native_login(campaign):
+                # native campaign: prereg and erpc
+                assert_equal(data.get('next_url'), next_url)
+            elif is_proxy_login(campaign):
+                # proxy campaign: preprints and branded ones
+                assert_equal(
+                    data.get('next_url'),
+                    web_url_for('auth_login', next= next_url, _absolute=True)
+                )
+
+    def test_login_and_register_with_logout_flag(self):
+
+        # special test for `claim_user_registered`, when an authenticated user clicks the claim confirmation clink,
+        # there are two ways to trigger this flow:
+        #   1. if the authenticated user is already a contributor to the project, OSF will ask the user to sign out
+        #      by providing a "logout" link and then claim as another user
+        #   2. if the authenticated user is not a contributor but decides not to claim contributor under this account,
+        #      OSF provides a link "Not <username>?" for user to logout and claim as another user
+
+        next_url = web_url_for('my_projects', _absolute=True)
+
+        # logout first
+        data = login_and_register_handler(self.auth, login=False, campaign=None, next_url=next_url, logout=True)
+        assert_equal(data.get('status_code'), 'auth_logout')
+        assert_equal(data.get('next_url'), next_url)
+
+        # land on register page with "must_login" warning
+        data = login_and_register_handler(self.no_auth, login=False, campaign=None, next_url=next_url, logout=True)
+        assert_equal(data.get('status_code'), http.OK)
+        assert_equal(data.get('next_url'), next_url)
+        assert_true(data.get('must_login_warning'))
+
+
+class TestExternalAuthViews(OsfTestCase):
+
+    def setUp(self):
+        super(TestExternalAuthViews, self).setUp()
         name, email = fake.name(), fake.email()
         self.provider_id = fake.ean()
         external_identity = {
