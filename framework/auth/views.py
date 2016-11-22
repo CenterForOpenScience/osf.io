@@ -265,11 +265,14 @@ def login_and_register_handler(auth, login=True, campaign=None, next_url=None, l
             raise HTTPError(http.BAD_REQUEST)
     # login or register with next parameter
     elif next_url:
-        if logout and auth.logged_in:
+        if logout:
             # handle `claim_user_registered`, TODO [#OSF-6998]: talk to product about the `must_login_warning`
-            data['status_code'] = 'auth_logout'
-            data['next_url'] = request.url
-            data['must_login_warning'] = True
+            data['next_url'] = next_url
+            if auth.logged_in:
+                data['status_code'] = 'auth_logout'
+            else:
+                data['status_code'] = http.OK
+                data['must_login_warning'] = True
         elif auth.logged_in:
             # if user is already logged in, redirect to `next_url`
             data['status_code'] = http.FOUND

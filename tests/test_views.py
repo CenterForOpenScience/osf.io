@@ -3774,6 +3774,28 @@ class TestAuthLoginAndRegisterLogic(OsfTestCase):
                     web_url_for('auth_login', next= next_url, _absolute=True)
                 )
 
+    def test_login_and_register_with_logout_flag(self):
+
+        # special test for `claim_user_registered`, when an authenticated user clicks the claim confirmation clink,
+        # there are two ways to trigger this flow:
+        #   1. if the authenticated user is already a contributor to the project, OSF will ask the user to sign out
+        #      by providing a "logout" link and then claim as another user
+        #   2. if the authenticated user is not a contributor but decides not to claim contributor under this account,
+        #      OSF provides a link "Not <username>?" for user to logout and claim as another user
+
+        next_url = web_url_for('my_projects', _absolute=True)
+
+        # logout first
+        data = login_and_register_handler(self.auth, login=False, campaign=None, next_url=next_url, logout=True)
+        assert_equal(data.get('status_code'), 'auth_logout')
+        assert_equal(data.get('next_url'), next_url)
+
+        # land on register page with "must_login" warning
+        data = login_and_register_handler(self.no_auth, login=False, campaign=None, next_url=next_url, logout=True)
+        assert_equal(data.get('status_code'), http.OK)
+        assert_equal(data.get('next_url'), next_url)
+        assert_true(data.get('must_login_warning'))
+
 
 class TestExternalAuthViews(OsfTestCase):
 
