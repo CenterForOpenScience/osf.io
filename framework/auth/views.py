@@ -469,7 +469,7 @@ def external_login_confirm_email_get(auth, uid, token):
             return auth_logout(redirect_url=request.url)
         # if it is the expected user
         new = request.args.get('new', None)
-        if destination in campaigns.CAMPAIGNS:
+        if destination in campaigns.get_campaigns():
             return redirect(campaigns.campaign_url_for(destination))
         if new:
             status.push_status_message(language.WELCOME_MESSAGE, kind='default', jumbotron=True, trust=True)
@@ -709,7 +709,7 @@ def send_confirm_email(user, email, renew=False, external_id_provider=None, exte
     elif campaign:
         # Account creation confirmation: from campaign
         mail_template = campaigns.email_template_for_campaign(campaign)
-        if campaigns.is_proxy_login(campaign) and campaigns.is_branded_service(campaign):
+        if campaigns.is_proxy_login(campaign) and campaigns.get_service_provider(campaign) != 'OSF':
             branded_preprints_provider = campaigns.get_service_provider(campaign)
     else:
         # Account creation confirmation: from OSF
@@ -764,7 +764,7 @@ def register_user(**kwargs):
         full_name = strip_html(full_name)
 
         campaign = json_data.get('campaign')
-        if campaign and campaign not in campaigns.CAMPAIGNS:
+        if campaign and campaign not in campaigns.get_campaigns():
             campaign = None
 
         user = framework_auth.register_unconfirmed(
@@ -892,7 +892,7 @@ def external_login_email_post():
     service_url = session.data['service_url']
 
     destination = 'dashboard'
-    for campaign in campaigns.CAMPAIGNS:
+    for campaign in campaigns.get_campaigns():
         if campaign != 'institution':
             # Handle different url encoding schemes between `furl` and `urlparse/urllib`.
             # OSF use `furl` to parse service url during service validation with CAS. However, `web_url_for()` uses
@@ -995,7 +995,7 @@ def validate_campaign(campaign):
     :return: True if valid, False otherwise
     """
 
-    return campaign and campaign in campaigns.CAMPAIGNS
+    return campaign and campaign in campaigns.get_campaigns()
 
 
 def validate_next_url(next_url):

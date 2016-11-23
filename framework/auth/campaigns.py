@@ -1,112 +1,126 @@
 import furl
 
-from werkzeug.datastructures import ImmutableDict
+from modularodm import Q
+from modularodm.exceptions import NoResultsFound, QueryException, ImproperConfigurationError
 
 from website import mails
+from website.models import PreprintProvider
 from website.settings import DOMAIN
 
-CAMPAIGNS = {
-    'prereg': {
-        'system_tag': 'prereg_challenge_campaign',
-        'redirect_url': furl.furl(DOMAIN).add(path='prereg/').url,
-        'confirmation_email_template': mails.CONFIRM_EMAIL_PREREG,
-        'native_login': True,
-    },
-    'institution': {
-        'system_tag': 'institution_campaign',
-        'redirect_url': ''
-    },
-    'erpc': {
-        'system_tag': 'erp_challenge_campaign',
-        'redirect_url': furl.furl(DOMAIN).add(path='erpc/').url,
-        'confirmation_email_template': mails.CONFIRM_EMAIL_ERPC,
-        'native_login': True,
-    },
-    # Various preprint services
-    # Each preprint service will offer their own campaign with appropriate distinct branding
-    'osf-preprints': {
-        'system_tag': 'osf_preprints',
-        'redirect_url': furl.furl(DOMAIN).add(path='preprints/').url,
-        'confirmation_email_template': mails.CONFIRM_EMAIL_PREPRINTS('osf', 'OSF'),
-        'proxy_login': True,
-        'branded': False,
-        'provider': 'OSF'
-    },
-}
 
-providers = [
-    'SocArXiv',
-    'engrXiv',
-    'PsyArXiv'
-]
+CAMPAIGNS = None
 
-for provider in providers:
-    provider_id = provider.lower()
-    key = '{}-preprints'.format(provider_id)
-    tag = '{}_preprints'.format(provider_id)
-    path = 'preprints/{}'.format(provider_id)
-    CAMPAIGNS[key] = {
-        'system_tag': tag,
-        'redirect_url': furl.furl(DOMAIN).add(path=path).url,
-        'confirmation_email_template': mails.CONFIRM_EMAIL_PREPRINTS('branded', provider),
-        'proxy_login': True,
-        'branded': True,
-        'provider': provider,
-    }
 
-CAMPAIGNS = ImmutableDict(CAMPAIGNS)
+def get_campaigns():
+
+    global CAMPAIGNS
+
+    if not CAMPAIGNS:
+
+        # Native campaigns: PREREG and ERPC
+        CAMPAIGNS = {
+            'prereg': {
+                'system_tag': 'prereg_challenge_campaign',
+                'redirect_url': furl.furl(DOMAIN).add(path='prereg/').url,
+                'confirmation_email_template': mails.CONFIRM_EMAIL_PREREG,
+                'login_type': 'native',
+            },
+            'erpc': {
+                'system_tag': 'erp_challenge_campaign',
+                'redirect_url': furl.furl(DOMAIN).add(path='erpc/').url,
+                'confirmation_email_template': mails.CONFIRM_EMAIL_ERPC,
+                'login_type': 'native',
+            },
+        }
+
+        # Institution Login
+        CAMPAIGNS.update({
+            'institution': {
+                'system_tag': 'institution_campaign',
+                'login_type': 'institution',
+            },
+        })
+
+        # Proxy campaigns: Preprints, both OSF and branded ones
+        try:
+            preprint_providers = PreprintProvider.find(Q('_id', 'ne', None))
+            for provider in preprint_providers:
+                if provider._id == 'osf':
+                    template = 'osf'
+                    name = 'OSF'
+                else:
+                    template = 'branded'
+                    name = provider.name
+                campaign = '{}-preprints'.format(provider._id)
+                system_tag = '{}_preprints'.format(provider._id)
+                url_path = 'preprints/{}'.format(provider._id)
+                CAMPAIGNS.update({
+                    campaign: {
+                        'system_tag': system_tag,
+                        'redirect_url': furl.furl(DOMAIN).add(path=url_path).url,
+                        'confirmation_email_template': mails.CONFIRM_EMAIL_PREPRINTS(template, name),
+                        'login_type': 'proxy',
+                        'provider': name,
+                    }
+                })
+        except NoResultsFound or QueryException or ImproperConfigurationError:
+            pass
+
+    return CAMPAIGNS
 
 
 def system_tag_for_campaign(campaign):
-    if campaign in CAMPAIGNS:
-        return CAMPAIGNS[campaign].get('system_tag')
+    campaigns = get_campaigns()
+    if campaign in campaigns:
+        return campaigns.get(campaign).get('system_tag')
     return None
 
 
 def email_template_for_campaign(campaign):
-    if campaign in CAMPAIGNS:
-        return CAMPAIGNS[campaign].get('confirmation_email_template')
+    campaigns = get_campaigns()
+    if campaign in campaigns:
+        return campaigns.get(campaign).get('confirmation_email_template')
     return None
 
 
 def campaign_for_user(user):
-    for campaign, config in CAMPAIGNS.items():
-        if config['system_tag'] in user.system_tags:
+    campaigns = get_campaigns()
+    for campaign, config in campaigns.items():
+        if config.get('system_tag') in user.system_tags:
             return campaign
     return None
 
 
 def is_institution_login(campaign):
-    if campaign in CAMPAIGNS:
-        return campaign == 'institution'
+    campaigns = get_campaigns()
+    if campaign in campaigns:
+        return campaigns.get(campaign).get('login_type') == 'institution'
     return None
 
 
 def is_native_login(campaign):
-    if campaign in CAMPAIGNS:
-        return CAMPAIGNS[campaign].get('native_login')
+    campaigns = get_campaigns()
+    if campaign in campaigns:
+        return campaigns.get(campaign).get('login_type') == 'native'
     return None
 
 
 def is_proxy_login(campaign):
-    if campaign in CAMPAIGNS:
-        return CAMPAIGNS[campaign].get('proxy_login')
-    return None
-
-
-def is_branded_service(campaign):
-    if campaign in CAMPAIGNS:
-        return CAMPAIGNS[campaign].get('branded')
+    campaigns = get_campaigns()
+    if campaign in campaigns:
+        return campaigns.get(campaign).get('login_type') == 'proxy'
     return None
 
 
 def get_service_provider(campaign):
-    if campaign in CAMPAIGNS:
-        return CAMPAIGNS[campaign].get('provider')
+    campaigns = get_campaigns()
+    if campaign in campaigns:
+        return campaigns.get(campaign).get('provider')
     return None
 
 
 def campaign_url_for(campaign):
-    if campaign in CAMPAIGNS:
-        return CAMPAIGNS[campaign].get('redirect_url')
+    campaigns = get_campaigns()
+    if campaign in campaigns:
+        return campaigns.get(campaign).get('redirect_url')
     return None
