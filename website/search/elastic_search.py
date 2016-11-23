@@ -399,7 +399,7 @@ def bulk_update_nodes(serialize, nodes, index=None):
                 'doc_as_upsert': True,
             })
     if actions:
-        return helpers.bulk(es, actions)
+        return helpers.bulk(client(), actions)
 
 def serialize_contributors(node):
     return {
