@@ -1,5 +1,4 @@
-from framework.routing import Rule, json_renderer
-from website.routes import OsfWebRenderer
+from framework.routing import OsfWebRenderer, Rule, json_renderer
 
 from . import views
 
