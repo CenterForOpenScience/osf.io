@@ -18,7 +18,7 @@ from modularodm import Q
 from modularodm.exceptions import ValidationError
 
 from framework import auth
-from framework.auth.campaigns import CAMPAIGNS, is_institution_login, is_native_login, is_proxy_login, campaign_url_for
+from framework.auth.campaigns import get_campaigns, is_institution_login, is_native_login, is_proxy_login, campaign_url_for
 from framework.auth import User, Auth
 from framework.auth.cas import get_login_url
 from framework.auth.exceptions import InvalidTokenError
@@ -3705,7 +3705,7 @@ class TestAuthLoginAndRegisterLogic(OsfTestCase):
         )
 
     def test_campaign_login_with_auth(self):
-        for campaign in CAMPAIGNS:
+        for campaign in get_campaigns():
             if is_institution_login(campaign):
                 continue
             # campaign login: user with auth
@@ -3714,7 +3714,7 @@ class TestAuthLoginAndRegisterLogic(OsfTestCase):
             assert_equal(data.get('next_url'), campaign_url_for(campaign))
 
     def test_campaign_login_without_auth(self):
-        for campaign in CAMPAIGNS:
+        for campaign in get_campaigns():
             if is_institution_login(campaign):
                 continue
             # campaign login: user without auth
@@ -3726,7 +3726,7 @@ class TestAuthLoginAndRegisterLogic(OsfTestCase):
             )
 
     def test_campaign_register_with_auth(self):
-        for campaign in CAMPAIGNS:
+        for campaign in get_campaigns():
             if is_institution_login(campaign):
                 continue
             # campaign register: user with auth
@@ -3735,7 +3735,7 @@ class TestAuthLoginAndRegisterLogic(OsfTestCase):
             assert_equal(data.get('next_url'), campaign_url_for(campaign))
 
     def test_campaign_register_without_campaign(self):
-        for campaign in CAMPAIGNS:
+        for campaign in get_campaigns():
             if is_institution_login(campaign):
                 continue
             # campaign register: user without auth
@@ -3752,7 +3752,7 @@ class TestAuthLoginAndRegisterLogic(OsfTestCase):
                 )
 
     def test_campaign_next_url_login_with_auth(self):
-        for campaign in CAMPAIGNS:
+        for campaign in get_campaigns():
             if is_institution_login(campaign):
                 continue
             # campaign login: user with auth
@@ -3762,7 +3762,7 @@ class TestAuthLoginAndRegisterLogic(OsfTestCase):
             assert_equal(data.get('next_url'), next_url)
 
     def test_campaign_next_url_login_without_auth(self):
-        for campaign in CAMPAIGNS:
+        for campaign in get_campaigns():
             if is_institution_login(campaign):
                 continue
             # campaign login: user without auth
@@ -3775,7 +3775,7 @@ class TestAuthLoginAndRegisterLogic(OsfTestCase):
             )
 
     def test_campaign_next_url_register_with_auth(self):
-        for campaign in CAMPAIGNS:
+        for campaign in get_campaigns():
             if is_institution_login(campaign):
                 continue
             # campaign register: user with auth
@@ -3785,7 +3785,7 @@ class TestAuthLoginAndRegisterLogic(OsfTestCase):
             assert_equal(data.get('next_url'), next_url)
 
     def test_campaign_next_url_register_without_auth(self):
-        for campaign in CAMPAIGNS:
+        for campaign in get_campaigns():
             if is_institution_login(campaign):
                 continue
             # campaign register: user without auth

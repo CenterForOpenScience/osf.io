@@ -37,6 +37,7 @@ def get_campaigns():
         CAMPAIGNS.update({
             'institution': {
                 'system_tag': 'institution_campaign',
+                'redirect_url': '',
                 'login_type': 'institution',
             },
         })
