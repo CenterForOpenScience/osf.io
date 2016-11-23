@@ -240,3 +240,74 @@ class TestPreprintUpdate(ApiTestCase):
         assert_equal(res.status_code, 403)
 
         assert_not_equal(self.preprint.subjects[0], self.subject._id)
+
+
+class TestPreprintUpdateLicense(ApiTestCase):
+
+    def setUp(self):
+        super(TestPreprintUpdateLicense, self).setUp()
+
+    def test_admin_can_update_license(self):
+        pass
+
+    def test_rw_contributor_cannot_update_license(self):
+        # raise framework_exceptions.PermissionsError('Only admins can change a {}\'s license'.format(node_type))
+        pass
+
+    def test_read_contributor_cannot_update_license(self):
+        # raise framework_exceptions.PermissionsError('Only admins can change a {}\'s license'.format(node_type))
+        pass
+
+    def test_non_contributor_cannot_update_license(self):
+        # raise framework_exceptions.PermissionsError('Only admins can change a {}\'s license'.format(node_type))
+        pass
+
+    def test_unauthenticated_user_cannot_update_license(self):
+        # raise framework_exceptions.PermissionsError('Only admins can change a {}\'s license'.format(node_type))
+        pass
+
+    def test_update_preprint_with_invalid_license_for_provider(self):
+        # raise framework_exceptions.PermissionsError('Invalid license chosen for {}'.format(node.provider.name))
+        pass
+
+    def test_update_preprint_with_invalid_license_id_fails(self):
+        # raise web_exceptions.NodeStateError('Trying to update a {} with an invalid license'.format(node_type))
+        pass
+
+    def test_update_preprint_without_existing_license_and_without_license_in_payload_fails(self):
+        # raise web_exceptions.NodeStateError('Trying to update a {} with an invalid license'.format(node_type))
+        pass
+
+    def test_update_preprint_with_existing_license_year_attribute_only(self):
+        # make sure copyright_holders and license relationship aren't overwritten
+        pass
+
+    def test_update_preprint_with_existing_license_copyright_holders_attribute_only(self):
+        # make sure year and license relationship aren't overwritten
+        pass
+
+    def test_update_preprint_with_existing_license_relationship_only(self):
+        # make sure year and copyright_holders aren't overwritten
+        pass
+
+    def test_update_preprint_with_existing_license_relationship_and_attributes(self):
+        # make sure everything is overwritten
+        pass
+
+    def test_update_preprint_license_without_required_properties_in_payload(self):
+        # raise modm_exceptions.ValidationValueError('{} must be specified for this license'.format(required_property))
+        pass
+
+    def test_update_preprint_license_with_future_year(self):
+        # raise modm_exceptions.ValidationValueError('Future license years are not allowed')
+        pass
+
+    def test_update_preprint_license_with_invalid_year(self):
+        # raise modm_exceptions.ValidationValueError('{} is not a valid year'.format(license_year))
+        pass
+
+    def test_update_preprint_license_adds_log(self):
+        pass
+
+    def test_update_preprint_license_does_not_change_project_license(self):
+        pass
