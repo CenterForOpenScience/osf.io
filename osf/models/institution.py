@@ -74,7 +74,7 @@ class Institution(Loggable, base.ObjectIDMixin, base.BaseModel):
     @property
     def logo_path(self):
         if self.logo_name:
-            return '/static/img/institutions/{}'.format(self.logo_name)
+            return '/static/img/institutions/shields/{}'.format(self.logo_name)
         else:
             return None
 
