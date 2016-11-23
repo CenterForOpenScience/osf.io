@@ -11,6 +11,7 @@ from api.base.serializers import (
 from website.project.model import Node
 from website.util import permissions as osf_permissions
 from framework.auth.core import User
+from website.preprints.model import PreprintService
 
 
 class NodeLogIdentifiersSerializer(RestrictedDictSerializer):
@@ -65,6 +66,8 @@ class NodeLogParamsSerializer(RestrictedDictSerializer):
     params_project = ser.SerializerMethodField(read_only=True)
     path = ser.CharField(read_only=True)
     pointer = ser.DictField(read_only=True)
+    preprint = ser.CharField(read_only=True)
+    preprint_provider = ser.SerializerMethodField(read_only=True)
     previous_institution = NodeLogInstitutionSerializer(read_only=True)
     source = NodeLogFileParamsSerializer(read_only=True)
     study = ser.CharField(read_only=True)
@@ -131,6 +134,14 @@ class NodeLogParamsSerializer(RestrictedDictSerializer):
                 })
         return contributor_info
 
+    def get_preprint_provider(self, obj):
+        preprint_id = obj.get('preprint', None)
+        if preprint_id:
+            preprint = PreprintService.load(preprint_id)
+            if preprint:
+                provider = preprint.provider
+                return {'url': provider.external_url, 'name': provider.name}
+        return None
 
 class NodeLogSerializer(JSONAPISerializer):
 

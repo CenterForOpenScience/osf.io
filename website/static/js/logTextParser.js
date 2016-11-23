@@ -649,24 +649,18 @@ var LogPieces = {
     },
 
     preprint: {
-        view: function(ctrl, logObject) {
-            var preprint = logObject.attributes.preprint;
-            if (paramIsReturned(preprint, logObject)) {
-                return m('a', {href: '/' + preprint.id + '/'}, 'preprint');
-            }
-            return m('span', 'preprint');
+        view: function(ctrl, logObject){
+            var preprint = logObject.attributes.params.preprint;
+            return m('a', {href: '/' + preprint}, 'preprint');
         }
     },
 
-    service: {
-        view: function(ctrl, logObject) {
-            var service = logObject.attributes.service;
-            if (paramIsReturned(service, logObject)) {
-                return m('span', 'the ' + service.name);
-            }
-            return m('span', 'a preprint');
+    preprint_provider: {
+        view: function(ctrl, logObject){
+            var preprint_provider = logObject.attributes.params.preprint_provider;
+            return m('a', {href: preprint_provider.url}, preprint_provider.name);
         }
-    }
+    },
 };
 
 module.exports = LogText;
