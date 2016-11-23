@@ -1,7 +1,7 @@
 import datetime
 import urlparse
 
-from modularodm import fields, Q, exceptions
+from modularodm import fields, Q
 
 from framework.celery_tasks.handlers import enqueue_task
 from framework.exceptions import PermissionsError
@@ -11,8 +11,7 @@ from framework.mongo.utils import unique_on
 from website.files.models import StoredFileNode
 from website.preprints.tasks import on_preprint_updated
 from website.project.model import NodeLog
-from website.exceptions import NodeStateError
-from website.project.licenses import NodeLicense, NodeLicenseRecord, set_license
+from website.project.licenses import set_license
 from website.project.taxonomies import Subject, validate_subject_hierarchy
 from website.util import api_v2_url
 from website.util.permissions import ADMIN
@@ -168,7 +167,6 @@ class PreprintService(GuidStoredObject):
         if save:
             self.node.save()
             self.save()
-
 
     def set_preprint_license(self, license_detail, auth, save=False):
 

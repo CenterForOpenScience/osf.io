@@ -17,7 +17,7 @@ from django.core.validators import URLValidator
 from modularodm import Q
 from modularodm import fields
 from modularodm.validators import MaxLengthValidator
-from modularodm.exceptions import KeyExistsException, NoResultsFound, ValidationValueError
+from modularodm.exceptions import KeyExistsException, ValidationValueError
 
 from framework import status
 from framework.mongo import ObjectId, DummyRequest
@@ -58,7 +58,7 @@ from website.util.permissions import CREATOR_PERMISSIONS, DEFAULT_CONTRIBUTOR_PE
 from website.project.commentable import Commentable
 from website.project.metadata.schemas import OSF_META_SCHEMAS
 from website.project.metadata.utils import create_jsonschema_from_metaschema
-from website.project.licenses import (NodeLicense, NodeLicenseRecord, set_license)
+from website.project.licenses import set_license
 from website.project import signals as project_signals
 from website.project import tasks as node_tasks
 from website.project.spam.model import SpamMixin
