@@ -41,7 +41,7 @@
                             </a>
                         </li>
                         % if not node['anonymous']:
-                            <li><a href="${discourse_url}forum/${node['id']}/${'?view_only=' + node['link'] if node['link'] else ''}">Forum</a></li>
+                            <li><a href="${discourse_url}forum/${node['id']}${'?view_only=' + node['link'] if node['link'] else ''}">Forum</a></li>
                         % endif
 
                         <!-- Add-on tabs -->

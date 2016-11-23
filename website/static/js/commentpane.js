@@ -61,42 +61,47 @@
                     width = options.toggleWidth * bodyWidth;
                 }
                 options.onOpen.call(self);
-
-                var discourseEmbedFrame = document.getElementById('discourse-embed-frame');
-                if (discourseEmbedFrame) {
-                    // force reload.
-                    discourseEmbedFrame.src += '';
-                } else {
-                    var discourseComments = document.getElementById('discourse-comments');
-                    var discourseUrl = discourseComments.getAttribute('data-discourse-url');
-                    if (discourseUrl.endsWith('//')) {
-                        discourseUrl = discourseUrl.slice(0, -1);
-                    }
-
-                    var topicId = discourseComments.getAttribute('data-discourse-topic-id');
-                    // initial load.
-                    if (topicId !== 'None') {
-                        window.DiscourseEmbed = { discourseUrl: discourseUrl, topicId: topicId };
-                        (function() {
-                            var d = document.createElement('script'); d.type = 'text/javascript'; d.async = true;
-                            d.src = DiscourseEmbed.discourseUrl + 'javascripts/embed.js';
-                            d.onload = function() {
-                                var viewOnly = $osf.urlParams().view_only;
-                                if (viewOnly) {
-                                    discourseEmbedFrame = document.getElementById('discourse-embed-frame');
-                                    discourseEmbedFrame.src += '&view_only=' + viewOnly;
-                                }
-                            };
-                            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(d);
-                        })();
-                    }
-                }
-
             }
             $handle.tooltip('hide');
             $toggleElm.animate(
                 {width: width},
-                options.animateTime
+                options.animateTime,
+                function() {
+                    if (width) {
+                        // Animation complete, so load the comments from Discourse
+                        var discourseEmbedFrame = document.getElementById('discourse-embed-frame');
+                        var discourseComments = document.getElementById('discourse-comments');
+                        if (discourseEmbedFrame) {
+                            // force reload.
+                            discourseEmbedFrame.src += '';
+                        } else if (!discourseComments.discourseBegunLoading) {
+                            discourseComments.discourseBegunLoading = true;
+
+                            var discourseUrl = discourseComments.getAttribute('data-discourse-url');
+                            if (discourseUrl.endsWith('//')) {
+                                discourseUrl = discourseUrl.slice(0, -1);
+                            }
+
+                            var topicId = discourseComments.getAttribute('data-discourse-topic-id');
+                            // initial load.
+                            if (topicId !== 'None') {
+                                window.DiscourseEmbed = { discourseUrl: discourseUrl, topicId: topicId };
+                                (function() {
+                                    var d = document.createElement('script'); d.type = 'text/javascript'; d.async = true;
+                                    d.src = DiscourseEmbed.discourseUrl + 'javascripts/embed.js';
+                                    d.onload = function() {
+                                        var viewOnly = $osf.urlParams().view_only;
+                                        if (viewOnly) {
+                                            discourseEmbedFrame = document.getElementById('discourse-embed-frame');
+                                            discourseEmbedFrame.src += '&view_only=' + viewOnly;
+                                        }
+                                    };
+                                    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(d);
+                                })();
+                            }
+                        }
+                    }
+                }
             );
         };
 

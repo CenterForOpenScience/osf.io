@@ -38,8 +38,22 @@ def configure_intro_topic():
     data['post[raw]'] = settings.DISCOURSE_WELCOME_TOPIC
     request('put', '/posts/' + str(post_id), data)
 
+def configure_terms_of_service():
+    """Perform search and replace on the TOS with the company_domain, company_short_name, company_full_name"""
+    post_id = request('get', '/t/terms-of-service.json')['post_stream']['posts'][0]['id']
+    post_content = request('get', '/posts/' + str(post_id) + '.json')['raw']
+
+    post_content = post_content.replace('company_domain', settings.DISCOURSE_SERVER_SETTINGS['company_domain'])
+    post_content = post_content.replace('company_short_name', settings.DISCOURSE_SERVER_SETTINGS['company_short_name'])
+    post_content = post_content.replace('company_full_name', settings.DISCOURSE_SERVER_SETTINGS['company_full_name'])
+
+    data = {}
+    data['post[raw]'] = post_content
+    request('put', '/posts/' + str(post_id), data)
+
 if __name__ == '__main__':
     configure_server_settings()
     configure_embeddable_host()
     configure_intro_topic()
+    configure_terms_of_service()
     print("Configuration complete!")
