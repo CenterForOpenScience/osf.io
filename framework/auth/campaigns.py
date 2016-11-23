@@ -1,21 +1,27 @@
+from datetime import datetime, timedelta
 import furl
+import logging
 
 from modularodm import Q
 from modularodm.exceptions import NoResultsFound, QueryException, ImproperConfigurationError
 
 from website import mails
 from website.models import PreprintProvider
-from website.settings import DOMAIN
+from website.settings import DOMAIN, CAMPAIGN_REFRESH_THRESHOLD
 
 
 CAMPAIGNS = None
+CAMPAIGNS_LAST_REFRESHED = datetime.utcnow()
 
 
 def get_campaigns():
 
     global CAMPAIGNS
+    global CAMPAIGNS_LAST_REFRESHED
 
-    if not CAMPAIGNS:
+    logger = logging.getLogger(__name__)
+
+    if not CAMPAIGNS or CAMPAIGNS_LAST_REFRESHED + timedelta(seconds=CAMPAIGN_REFRESH_THRESHOLD) < datetime.utcnow():
 
         # Native campaigns: PREREG and ERPC
         CAMPAIGNS = {
@@ -64,9 +70,10 @@ def get_campaigns():
                         'provider': name,
                     }
                 })
-        except NoResultsFound or QueryException or ImproperConfigurationError:
-            pass
+        except (NoResultsFound or QueryException or ImproperConfigurationError) as e:
+            logger.warn('An error has occurred during campaign initialization: {}', e)
 
+    CAMPAIGNS_LAST_REFRESHED = datetime.utcnow()
     return CAMPAIGNS
 
 

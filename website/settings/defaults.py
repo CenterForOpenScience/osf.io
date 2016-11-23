@@ -1777,3 +1777,6 @@ SHARE_API_TOKEN = None
 
 # number of nodes that need to be affiliated with an institution before the institution logo is shown on the dashboard
 INSTITUTION_DISPLAY_NODE_THRESHOLD = 5
+
+# refresh campaign every 5 minutes
+CAMPAIGN_REFRESH_THRESHOLD = 5 * 60  # 5 minutes in seconds
