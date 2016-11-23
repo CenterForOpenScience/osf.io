@@ -74,8 +74,6 @@ pyjwt==1.4.0
 pycparser==2.13
 pyjwe==1.0.0
 jsonschema==2.5.1
-django-sslserver==0.19
-django-debug-toolbar==1.5
 
 # Admin requirements
 django-webpack-loader==0.2.3

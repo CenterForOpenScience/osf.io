@@ -23,6 +23,9 @@ watchdog==0.8.3
 # Django SSL for local https development
 django-sslserver==0.19
 
+# Django Debug Toolbar for local development
+django-debug-toolbar==1.5
+
 # Ipdb
 ipdb==0.10.1
 
