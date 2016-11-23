@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 """Forward addon routes."""
-from framework.routing import OsfWebRenderer, Rule, json_renderer
+from framework.routing import Rule, json_renderer
+from website.routes import OsfWebRenderer
+
 from website.addons.forward import views
 
 api_routes = {

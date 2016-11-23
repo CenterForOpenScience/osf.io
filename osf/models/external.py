@@ -9,15 +9,16 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
 from flask import request
-from framework.exceptions import HTTPError, PermissionsError
-from framework.sessions import session
 from oauthlib.oauth2 import MissingTokenError
 from osf.models import base
 from osf.modm_compat import Q
-from osf.utils.fields import EncryptedTextField
 from requests.exceptions import HTTPError as RequestsHTTPError
-from requests_oauthlib import OAuth1Session, OAuth2Session
-from website import settings
+from requests_oauthlib import OAuth1Session
+from requests_oauthlib import OAuth2Session
+
+from framework.exceptions import HTTPError, PermissionsError
+from framework.sessions import session
+from osf.utils.fields import EncryptedTextField
 from website.oauth.utils import PROVIDER_LOOKUP
 from website.security import random_string
 from website.util import web_url_for
@@ -84,17 +85,6 @@ class ExternalAccount(base.ObjectIDMixin, base.BaseModel):
         if self.pk:
             return self.pk
         return hash(str(self.provider_id) + str(self.provider))
-
-    @classmethod
-    def migrate_from_modm(cls, modm_obj):
-        django_obj = super(ExternalAccount, cls).migrate_from_modm(modm_obj)
-        django_obj.display_name = '{}{}'.format(EncryptedTextField.prefix, django_obj.display_name)
-        django_obj.profile_url = '{}{}'.format(EncryptedTextField.prefix, django_obj.profile_url)
-        django_obj.refresh_token = '{}{}'.format(EncryptedTextField.prefix, django_obj.refresh_token)
-        django_obj.oauth_secret = '{}{}'.format(EncryptedTextField.prefix, django_obj.oauth_secret)
-        django_obj.oauth_key = '{}{}'.format(EncryptedTextField.prefix, django_obj.oauth_key)
-        return django_obj
-
 
     class Meta:
         unique_together = [
@@ -413,9 +403,6 @@ class ExternalProvider(object):
         if not (force or self._needs_refresh()):
             return False
 
-        if settings.RUNNING_MIGRATION:
-            return False
-
         if self.has_expired_credentials and not force:
             return False
 
@@ -454,8 +441,6 @@ class ExternalProvider(object):
 
         return bool: True if needs_refresh
         """
-        if settings.RUNNING_MIGRATION:
-            return False
         if self.refresh_time and self.account.expires_at:
             return (self.account.expires_at - timezone.now()).total_seconds() < self.refresh_time
         return False

@@ -4,17 +4,23 @@
 These require a test db because they use Session objects.
 '''
 import json
-import os
 import unittest
+import os
 
 import flask
-import werkzeug.wrappers
-from framework.exceptions import HTTPError, http
-# Need to use OsfWebRenderer to get global variables
-from framework.routing import (JSONRenderer, OsfWebRenderer, Renderer,
-                               WebRenderer, render_mako_string)
 from lxml.html import fragment_fromstring
+import werkzeug.wrappers
+
+from framework.exceptions import HTTPError, http
+from framework.routing import (
+    Renderer, JSONRenderer, WebRenderer,
+    render_mako_string,
+)
+
 from tests.base import AppTestCase, OsfTestCase
+
+# Need to use OsfWebRenderer to get global variables
+from website.routes import OsfWebRenderer
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 TEMPLATES_PATH = os.path.join(HERE, 'templates')
