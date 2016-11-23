@@ -1,7 +1,7 @@
 import datetime
 import urlparse
 
-from modularodm import fields
+from modularodm import fields, Q
 
 from framework.celery_tasks.handlers import enqueue_task
 from framework.exceptions import PermissionsError
@@ -111,12 +111,18 @@ class PreprintService(GuidStoredObject):
         # there is no preprint file yet! This is the first time!
         if not self.node.preprint_file:
             self.node.preprint_file = preprint_file
+            self.node.add_log(action=NodeLog.PREPRINT_INITIATED, params={
+                'preprint': {'id': self._id, 'title': self.node.title},
+                'service': {'title': self.provider.name}
+            }, auth=auth, save=False)
         elif preprint_file != self.node.preprint_file:
             # if there was one, check if it's a new file
             self.node.preprint_file = preprint_file
             self.node.add_log(
                 action=NodeLog.PREPRINT_FILE_UPDATED,
-                params={},
+                params={
+                    'preprint': {'id': self._id, 'title': self.node.title}
+                },
                 auth=auth,
                 save=False,
             )
@@ -167,9 +173,39 @@ class PreprintProvider(StoredObject):
     _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
     name = fields.StringField(required=True)
     logo_name = fields.StringField()
+    header_text = fields.StringField()
     description = fields.StringField()
     banner_name = fields.StringField()
     external_url = fields.StringField()
+    email_contact = fields.StringField()
+    email_support = fields.StringField()
+    advisory_board = fields.StringField()
+    social_twitter = fields.StringField()
+    social_facebook = fields.StringField()
+    social_instagram = fields.StringField()
+    subjects_acceptable = fields.DictionaryField(list=True, default=lambda: [])
+    licenses_acceptable = fields.ForeignField('NodeLicense', list=True, default=lambda: [])
+
+    @property
+    def top_level_subjects(self):
+        if len(self.subjects_acceptable) == 0:
+            return Subject.find(Q('parents', 'eq', []))
+        tops = set([sub[0][0] for sub in self.subjects_acceptable])
+        return [Subject.load(sub) for sub in tops]
+
+    @property
+    def all_subjects(self):
+        q = []
+        for rule in self.subjects_acceptable:
+            if rule[1]:
+                q.append(Q('parents', 'eq', Subject.load(rule[0][-1])))
+                if len(rule[0]) == 1:
+                    potential_parents = Subject.find(Q('parents', 'eq', Subject.load(rule[0][-1])))
+                    for parent in potential_parents:
+                        q.append(Q('parents', 'eq', parent))
+            for sub in rule[0]:
+                q.append(Q('_id', 'eq', sub))
+        return Subject.find(reduce(lambda x, y: x | y, q)) if len(q) > 1 else (Subject.find(q[0]) if len(q) else Subject.find())
 
     def get_absolute_url(self):
         return '{}preprint_providers/{}'.format(self.absolute_api_v2_url, self._id)
