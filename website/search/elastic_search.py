@@ -64,6 +64,8 @@ ENGLISH_ANALYZER_PROPERTY = {'type': 'string', 'analyzer': 'english'}
 
 INDEX = settings.ELASTIC_INDEX
 
+CLIENT = None
+
 
 def client():
     global CLIENT
