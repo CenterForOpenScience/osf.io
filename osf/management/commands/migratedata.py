@@ -3,6 +3,7 @@ from __future__ import unicode_literals
 import gc
 import importlib
 import sys
+from framework import encryption
 
 import ipdb
 from django.contrib.contenttypes.models import ContentType
@@ -10,6 +11,7 @@ from django.core.management import BaseCommand
 from django.db import IntegrityError, connection, transaction
 from django.utils import timezone
 from framework.auth.core import User as MODMUser
+from framework.mongo import database
 from framework.transactions.context import transaction as modm_transaction
 from modularodm import Q as MQ
 from osf.models import NodeLog, Tag
@@ -22,6 +24,42 @@ from typedmodels.models import TypedModel
 from website.files.models import StoredFileNode as MODMStoredFileNode
 from website.models import Guid as MODMGuid
 from website.models import Node as MODMNode
+
+encryption.encrypt = lambda x: x
+encryption.decrypt = lambda x: x
+
+
+def migrate_user_activity_counters(page_size=20000):
+    print('Starting {}...'.format(sys._getframe().f_code.co_name))
+    collection = database['pagecounters']
+
+    total = collection.count()
+    count = 0
+
+    while count < total:
+        with transaction.atomic():
+            django_objects = []
+            offset = count
+            limit = (count + page_size) if (count + page_size) < total else total
+
+            page_of_modm_objects = collection.find().sort('_id', 1)[offset:limit]
+            for mongo_obj in page_of_modm_objects:
+                django_objects.append(PageCounter(_id=mongo_obj['_id'], date=mongo_obj['date'], total=mongo_obj['total'], unique=mongo_obj['unique']))
+                count += 1
+
+                if count % page_size == 0 or count == total:
+                    page_finish_time = timezone.now()
+                    print('Saving {} {} through {}...'.format(PageCounter._meta.model.__name__, count - page_size, count))
+
+                    saved_django_objects = PageCounter.objects.bulk_create(django_objects)
+
+                    print('Done with {} {} in {} seconds...'.format(len(saved_django_objects), django_model._meta.model.__name__, (timezone.now()-page_finish_time).total_seconds()))
+                    saved_django_objects = []
+                    print('Took out {} trashes'.format(gc.collect()))
+    total = None
+    count = None
+    print('Took out {} trashes'.format(gc.collect()))
+
 
 
 def make_guids():
@@ -82,7 +120,6 @@ def make_guids():
                     try:
                         cursor.execute(sql)
                     except IntegrityError as ex:
-                        import ipdb
                         ipdb.set_trace()
 
 
