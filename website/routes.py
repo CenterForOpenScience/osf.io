@@ -1,124 +1,36 @@
 # -*- coding: utf-8 -*-
-import os
 import httplib as http
+import os
+from framework import sentry, status
 
-from flask import request
-from flask import send_from_directory
-
-from geoip import geolite2
-
-from framework import status
-from framework import sentry
-from framework.auth import cas
-from framework.routing import Rule
-from framework.flask import redirect
-from framework.routing import WebRenderer
-from framework.exceptions import HTTPError
-from framework.auth import get_display_name
-from framework.routing import json_renderer
-from framework.routing import process_rules
+from flask import request, send_from_directory
 from framework.auth import views as auth_views
-from framework.routing import render_mako_string
+from framework.auth import cas, get_display_name
 from framework.auth.core import _get_current_user
-
+from framework.exceptions import HTTPError
+from framework.flask import redirect
+from framework.routing import (OsfWebRenderer, Rule, WebRenderer,
+                               json_renderer, process_rules,
+                               render_mako_string)
+from geoip import geolite2
 from modularodm import Q
-from modularodm.exceptions import QueryException, NoResultsFound
-
-from website import util
-from website import prereg
-from website import settings
-from website import language
-from website.util import metrics
-from website.util import paths
-from website.util import sanitize
-from website import maintenance
-from website.models import Institution
+from modularodm.exceptions import NoResultsFound, QueryException
 from website import landing_pages as landing_page_views
 from website import views as website_views
+from website import language, maintenance, prereg, settings, util
+from website.addons.base import views as addon_views
 from website.citations import views as citation_views
-from website.search import views as search_views
+from website.conferences import views as conference_views
+from website.discovery import views as discovery_views
+from website.institutions import views as institution_views
+from website.models import Institution
+from website.notifications import views as notification_views
 from website.oauth import views as oauth_views
+from website.preprints import views as preprint_views
 from website.profile import views as profile_views
 from website.project import views as project_views
-from website.addons.base import views as addon_views
-from website.discovery import views as discovery_views
-from website.conferences import views as conference_views
-from website.preprints import views as preprint_views
-from website.institutions import views as institution_views
-from website.notifications import views as notification_views
-
-
-def get_globals():
-    """Context variables that are available for every template rendered by
-    OSFWebRenderer.
-    """
-    user = _get_current_user()
-    user_institutions = [{'id': inst._id, 'name': inst.name, 'logo_path': inst.logo_path_rounded_corners} for inst in user.affiliated_institutions.all()] if user else []
-    location = geolite2.lookup(request.remote_addr) if request.remote_addr else None
-    if request.host_url != settings.DOMAIN:
-        try:
-            inst_id = (Institution.find_one(Q('domains', 'eq', request.host.lower())))._id
-            request_login_url = '{}institutions/{}'.format(settings.DOMAIN, inst_id)
-        except NoResultsFound:
-            request_login_url = request.url.replace(request.host_url, settings.DOMAIN)
-    else:
-        request_login_url = request.url
-    return {
-        'private_link_anonymous': is_private_link_anonymous_view(),
-        'user_name': user.username if user else '',
-        'user_full_name': user.fullname if user else '',
-        'user_id': user._id if user else '',
-        'user_locale': user.locale if user and user.locale else '',
-        'user_timezone': user.timezone if user and user.timezone else '',
-        'user_url': user.url if user else '',
-        'user_gravatar': profile_views.current_user_gravatar(size=25)['gravatar_url'] if user else '',
-        'user_email_verifications': user.unconfirmed_email_info if user else [],
-        'user_api_url': user.api_url if user else '',
-        'user_entry_point': metrics.get_entry_point(user) if user else '',
-        'user_institutions': user_institutions if user else None,
-        'display_name': get_display_name(user.fullname) if user else '',
-        'anon': {
-            'continent': getattr(location, 'continent', None),
-            'country': getattr(location, 'country', None),
-        },
-        'use_cdn': settings.USE_CDN_FOR_CLIENT_LIBS,
-        'sentry_dsn_js': settings.SENTRY_DSN_JS if sentry.enabled else None,
-        'dev_mode': settings.DEV_MODE,
-        'allow_login': settings.ALLOW_LOGIN,
-        'cookie_name': settings.COOKIE_NAME,
-        'status': status.pop_status_messages(),
-        'prev_status': status.pop_previous_status_messages(),
-        'domain': settings.DOMAIN,
-        'api_domain': settings.API_DOMAIN,
-        'disk_saving_mode': settings.DISK_SAVING_MODE,
-        'language': language,
-        'noteworthy_links_node': settings.NEW_AND_NOTEWORTHY_LINKS_NODE,
-        'popular_links_node': settings.POPULAR_LINKS_NODE,
-        'web_url_for': util.web_url_for,
-        'api_url_for': util.api_url_for,
-        'api_v2_url': util.api_v2_url,  # URL function for templates
-        'api_v2_base': util.api_v2_url(''),  # Base url used by JS api helper
-        'sanitize': sanitize,
-        'sjson': lambda s: sanitize.safe_json(s),
-        'webpack_asset': paths.webpack_asset,
-        'waterbutler_url': settings.WATERBUTLER_URL,
-        'login_url': cas.get_login_url(request_login_url),
-        'reauth_url': util.web_url_for('auth_logout', redirect_url=request.url, reauth=True),
-        'profile_url': cas.get_profile_url(),
-        'enable_institutions': settings.ENABLE_INSTITUTIONS,
-        'keen': {
-            'public': {
-                'project_id': settings.KEEN['public']['project_id'],
-                'write_key': settings.KEEN['public']['write_key'],
-            },
-            'private': {
-                'project_id': settings.KEEN['private']['project_id'],
-                'write_key': settings.KEEN['private']['write_key'],
-            },
-        },
-        'maintenance': maintenance.get_maintenance(),
-        'recaptcha_site_key': settings.RECAPTCHA_SITE_KEY
-    }
+from website.search import views as search_views
+from website.util import metrics, paths, sanitize
 
 
 def is_private_link_anonymous_view():
@@ -132,14 +44,7 @@ def is_private_link_anonymous_view():
         return False
 
 
-class OsfWebRenderer(WebRenderer):
-    """Render a Mako template with OSF context vars.
 
-    :param trust: Optional. If ``False``, markup-safe escaping will be enabled
-    """
-    def __init__(self, *args, **kwargs):
-        kwargs['data'] = get_globals
-        super(OsfWebRenderer, self).__init__(*args, **kwargs)
 
 #: Use if a view only redirects or raises error
 notemplate = OsfWebRenderer('', renderer=render_mako_string, trust=False)

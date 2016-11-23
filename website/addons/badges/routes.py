@@ -1,8 +1,6 @@
-from website.routes import OsfWebRenderer
-from framework.routing import Rule, json_renderer
+from framework.routing import OsfWebRenderer, Rule, json_renderer
 
 from . import views
-
 
 render_routes = {
     'rules': [

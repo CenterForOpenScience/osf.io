@@ -1,10 +1,8 @@
 # -*- coding: utf-8 -*-
 
 from flask import make_response
-
 from framework.exceptions import HTTPError
 from framework.routing import JSONRenderer, render_mako_string
-
 from website.util import is_json_request
 
 
@@ -26,7 +24,7 @@ def handle_error(code):
 
     """
     # TODO: Remove circular import
-    from website.routes import OsfWebRenderer
+    from framework.routing import OsfWebRenderer
     json_renderer = JSONRenderer()
     web_renderer = OsfWebRenderer('', render_mako_string)
 
