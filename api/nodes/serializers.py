@@ -21,8 +21,8 @@ from website.project.model import NodeUpdateError
 from api.base.utils import get_user_auth, get_object_or_error, absolute_reverse, is_truthy
 from api.base.serializers import (JSONAPISerializer, WaterbutlerLink, NodeFileHyperLinkField, IDField, TypeField,
                                   TargetTypeField, JSONAPIListField, LinksField, RelationshipField,
-                                  HideIfRegistration, RestrictedDictSerializer,
-                                  JSONAPIRelationshipSerializer, relationship_diff, ShowIfVersion, DateByVersion,)
+                                  HideIfRegistration, JSONAPIRelationshipSerializer, relationship_diff,
+                                  ShowIfVersion, DateByVersion,)
 from api.base.exceptions import (InvalidModelValueError,
                                  RelationshipPostMakesNoChanges, Conflict,
                                  EndpointNotImplementedError)

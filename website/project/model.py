@@ -58,7 +58,7 @@ from website.util.permissions import CREATOR_PERMISSIONS, DEFAULT_CONTRIBUTOR_PE
 from website.project.commentable import Commentable
 from website.project.metadata.schemas import OSF_META_SCHEMAS
 from website.project.metadata.utils import create_jsonschema_from_metaschema
-from website.project.licenses import (NodeLicense, NodeLicenseRecord)
+from website.project.licenses import (NodeLicense, NodeLicenseRecord, set_license)
 from website.project import signals as project_signals
 from website.project import tasks as node_tasks
 from website.project.spam.model import SpamMixin
@@ -1513,31 +1513,16 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
             )
         return self.is_contributor(auth.user)
 
-    def set_node_license(self, license_id, year, copyright_holders, auth, save=False):
-        if not self.has_permission(auth.user, ADMIN):
-            raise PermissionsError('Only admins can change a project\'s license.')
-        try:
-            node_license = NodeLicense.find_one(
-                Q('id', 'eq', license_id)
-            )
-        except NoResultsFound:
-            raise NodeStateError('Trying to update a Node with an invalid license.')
-        record = self.node_license
-        if record is None:
-            record = NodeLicenseRecord(
-                node_license=node_license
-            )
-        record.node_license = node_license
-        record.year = year
-        record.copyright_holders = copyright_holders or []
-        record.save()
-        self.node_license = record
+    def set_node_license(self, license_detail, auth, save=False):
+
+        license_record = set_license(self, license_detail, auth)
+
         self.add_log(
             action=NodeLog.CHANGED_LICENSE,
             params={
                 'parent_node': self.parent_id,
                 'node': self._primary_key,
-                'new_license': node_license.name
+                'new_license': license_record.node_license.name
             },
             auth=auth,
             save=False,
@@ -1616,9 +1601,11 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
                 )
             elif key == 'node_license':
                 self.set_node_license(
-                    value.get('id'),
-                    value.get('year'),
-                    value.get('copyright_holders'),
+                    {
+                        'id': value.get('id'),
+                        'year': value.get('year'),
+                        'copyright_holders': value.get('copyright_holders')
+                    },
                     auth,
                     save=save
                 )

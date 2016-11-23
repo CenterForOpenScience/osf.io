@@ -12,7 +12,7 @@ from website.files.models import StoredFileNode
 from website.preprints.tasks import on_preprint_updated
 from website.project.model import NodeLog
 from website.exceptions import NodeStateError
-from website.project.licenses import NodeLicense, NodeLicenseRecord
+from website.project.licenses import NodeLicense, NodeLicenseRecord, set_license
 from website.project.taxonomies import Subject, validate_subject_hierarchy
 from website.util import api_v2_url
 from website.util.permissions import ADMIN
@@ -169,26 +169,10 @@ class PreprintService(GuidStoredObject):
             self.node.save()
             self.save()
 
+
     def set_preprint_license(self, license_detail, auth, save=False):
-        if not self.has_permission(auth.user, ADMIN):
-            raise PermissionsError('Only admins can change a preprint\'s license.')
 
-        try:
-            node_license = NodeLicense.find_one(
-                Q('id', 'eq', license_detail['id'])
-            )
-        except exceptions.NoResultsFound:
-            raise NodeStateError('Preprint does not have a license.')
-
-        if node_license not in self.provider.licenses_acceptable and len(self.provider.licenses_acceptable) != 0:
-            raise PermissionsError
-
-        if self.license is None:
-            self.license = NodeLicenseRecord(node_license=node_license)
-        self.license.node_license = node_license
-        self.license.year = license_detail['year']
-        self.license.copyright_holders = license_detail['copyright_holders']
-        self.license.save()
+        set_license(self, license_detail, auth, node_type='preprint')
 
         self.node.add_log(
             action=NodeLog.PREPRINT_LICENSE_UPDATED,
