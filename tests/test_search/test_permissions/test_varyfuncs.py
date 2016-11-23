@@ -25,6 +25,10 @@ def file_on(node):
     return 'blim', 'file', 'name', 'Blim Blammity'
 
 
+# Registrations are more complicated, because they have multiple possible
+# states. We therefore have a second-level generator to programmatically create
+# the functions to vary a node according to the different registration states.
+
 def _register(*a, **kw):
     mock_archive(*a, **kw).__enter__()  # gooooooofffyyyyyy
     return 'flim', 'registration', 'title', 'Flim Flammity'

@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 """This is a test suite for permissions on the search_search endpoint. It has four parts:
 
-    - nodefuncs - functions for different Node types
-    - permfuncs - functions for different permissions
-    - varyfuncs - functions for different Node state variants
+    - nodefuncs - functions that return Nodes
+    - permfuncs - functions that set permissions on a Node
+    - varyfuncs - functions that vary the (non-permission) state of a Node
     - TestSearchSearchAPI - the actual tests against the search_search API,
-      which are generated from a combination of the above three function types
+      which are generated from the combinations of the above three function types
 
 """
 from __future__ import absolute_import, division, print_function, unicode_literals
@@ -26,7 +26,7 @@ from website.project.model import Node
 from website.util import api_url_for
 
 
-def namefunc(varyfunc, status, nodefunc, should_see, permfunc, **_):
+def determine_test_name(varyfunc, status, nodefunc, should_see, permfunc, **_):
     return "{}{} {} {} {}".format(
         '' if varyfunc is base else varyfunc.__name__.replace('_', ' ') + ' ',
         'private' if status is PRIVATE else 'public',
@@ -36,7 +36,7 @@ def namefunc(varyfunc, status, nodefunc, should_see, permfunc, **_):
     )
 
 
-def seefunc(status, varyfunc, permfunc, default__TODO_remove_this_argument=True):
+def determine_should_see(status, varyfunc, permfunc, default__TODO_remove_this_argument=True):
     if status is PRIVATE or varyfunc in REGFUNCS_PRIVATE:
         return permfunc is read
     return default__TODO_remove_this_argument
@@ -47,9 +47,11 @@ def generate_cases():
         for nodefunc in (proj, comp):
             for permfunc in (anon, auth, read):
                 for varyfunc in VARYFUNCS:
-                    if status is PRIVATE and varyfunc in REGFUNCS: continue
-                    should_see = seefunc(status, varyfunc, permfunc)  # namefunc wants this
-                    name = namefunc(**locals())
+                    if status is PRIVATE and varyfunc in REGFUNCS:
+                        # Registration makes a node public, so skip it.
+                        continue
+                    should_see = determine_should_see(status, varyfunc, permfunc)
+                    name = determine_test_name(**locals())
                     yield name, varyfunc, nodefunc, status, permfunc, should_see
 
 
@@ -73,7 +75,7 @@ def possiblyExpectFailure(case):
 
     def test(*a, **kw):  # name must start with test or it's ignored
         _, _, varyfunc, _, status, permfunc, _ = a
-        if seefunc(status, varyfunc, permfunc, False):
+        if determine_should_see(status, varyfunc, permfunc, False):
 
             # This bit is copied from the unittest/case.py:expectedFailure
             # decorator.
