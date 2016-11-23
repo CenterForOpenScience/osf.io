@@ -14,7 +14,7 @@ from framework.auth.core import User as MODMUser
 from framework.mongo import database
 from framework.transactions.context import transaction as modm_transaction
 from modularodm import Q as MQ
-from osf.models import NodeLog, Tag
+from osf.models import NodeLog, PageCounter, Tag, UserActivityCounter
 from osf.models.base import BlackListGuid, Guid, GuidMixin, OptionalGuidMixin
 from osf.models.node import AbstractNode
 from osf.utils.order_apps import get_ordered_models
@@ -29,13 +29,13 @@ encryption.encrypt = lambda x: x
 encryption.decrypt = lambda x: x
 
 
-def migrate_user_activity_counters(page_size=20000):
+def migrate_page_counters(page_size=20000):
     print('Starting {}...'.format(sys._getframe().f_code.co_name))
     collection = database['pagecounters']
 
     total = collection.count()
     count = 0
-
+    start_time = timezone.now()
     while count < total:
         with transaction.atomic():
             django_objects = []
@@ -53,13 +53,46 @@ def migrate_user_activity_counters(page_size=20000):
 
                     saved_django_objects = PageCounter.objects.bulk_create(django_objects)
 
-                    print('Done with {} {} in {} seconds...'.format(len(saved_django_objects), django_model._meta.model.__name__, (timezone.now()-page_finish_time).total_seconds()))
+                    print('Done with {} {} in {} seconds...'.format(len(saved_django_objects), PageCounter._meta.model.__name__, (timezone.now()-page_finish_time).total_seconds()))
                     saved_django_objects = []
                     print('Took out {} trashes'.format(gc.collect()))
     total = None
     count = None
     print('Took out {} trashes'.format(gc.collect()))
+    print('Finished {} in {}'.format(sys._getframe().f_code.co_name, (timezone.now()-start_time).total_seconds()))
 
+
+def migrate_user_activity_counters(page_size=20000):
+    print('Starting {}...'.format(sys._getframe().f_code.co_name))
+    collection = database['useractivitycounters']
+
+    total = collection.count()
+    count = 0
+    start_time = timezone.now()
+    while count < total:
+        with transaction.atomic():
+            django_objects = []
+            offset = count
+            limit = (count + page_size) if (count + page_size) < total else total
+
+            page_of_modm_objects = collection.find().sort('_id', 1)[offset:limit]
+            for mongo_obj in page_of_modm_objects:
+                django_objects.append(UserActivityCounter(_id=mongo_obj['_id'], date=mongo_obj['date'], total=mongo_obj['total'], action=mongo_obj['action']))
+                count += 1
+
+                if count % page_size == 0 or count == total:
+                    page_finish_time = timezone.now()
+                    print('Saving {} {} through {}...'.format(UserActivityCounter._meta.model.__name__, count - page_size, count))
+
+                    saved_django_objects = UserActivityCounter.objects.bulk_create(django_objects)
+
+                    print('Done with {} {} in {} seconds...'.format(len(saved_django_objects), UserActivityCounter._meta.model.__name__, (timezone.now()-page_finish_time).total_seconds()))
+                    saved_django_objects = []
+                    print('Took out {} trashes'.format(gc.collect()))
+    total = None
+    count = None
+    print('Took out {} trashes'.format(gc.collect()))
+    print('Finished {} in {}'.format(sys._getframe().f_code.co_name, (timezone.now()-start_time).total_seconds()))
 
 
 def make_guids():
