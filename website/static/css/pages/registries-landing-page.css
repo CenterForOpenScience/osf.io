@@ -580,7 +580,7 @@ h6 {
     padding: 10px 50px;
 }
 footer {
-    margin-top: -20px;
+    margin-top: 0px !important;
 }
 
 .ridie {
