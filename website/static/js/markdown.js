@@ -33,7 +33,8 @@ var oldMarkdownList = function(md) {
 
 // Full markdown renderer for views / wiki pages / pauses between typing
 var markdown = new MarkdownIt('commonmark', {
-    highlight: highlighter
+    highlight: highlighter,
+    linkify: true
 })
     .use(require('markdown-it-video'))
     .use(require('markdown-it-toc'))
@@ -45,7 +46,9 @@ var markdown = new MarkdownIt('commonmark', {
 
 
 // Fast markdown renderer for active editing to prevent slow loading/rendering tasks
-var markdownQuick = new MarkdownIt(('commonmark'), { })
+var markdownQuick = new MarkdownIt(('commonmark'), {
+    linkify: true
+})
     .use(require('markdown-it-sanitizer'))
     .disable('link')
     .disable('image')
