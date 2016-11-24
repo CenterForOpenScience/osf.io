@@ -15,9 +15,12 @@ from website.files.models.base import File
 from website.project.model import Node
 
 
+# The return value is: (search query, category, key to test, expected value).
+# Check TestSearchSearchAPI for usage.
+
 def base(node):
-    type_ = 'project' if node.parent_node is None else 'component'
-    return 'flim', type_, 'title', 'Flim Flammity'
+    category = 'project' if node.parent_node is None else 'component'
+    return 'flim', category, 'title', 'Flim Flammity'
 
 
 def file_on(node):

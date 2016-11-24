@@ -26,7 +26,7 @@ from website.project.model import Node
 from website.util import api_url_for
 
 
-def determine_test_name(varyfunc, status, nodefunc, should_see, permfunc, **_):
+def determine_case_name(varyfunc, status, nodefunc, should_see, permfunc, **_):
     return "{}{} {} {} {}".format(
         '' if varyfunc is base else varyfunc.__name__.replace('_', ' ') + ' ',
         'private' if status is PRIVATE else 'public',
@@ -42,6 +42,11 @@ def determine_should_see(status, varyfunc, permfunc, default__TODO_remove_this_a
     return default__TODO_remove_this_argument
 
 
+def want(name):
+    # filter cases since we can't use nose's usual mechanisms with parameterization
+    return True
+
+
 def generate_cases():
     for status in (PRIVATE, PUBLIC):
         for nodefunc in (proj, comp):
@@ -51,8 +56,9 @@ def generate_cases():
                         # Registration makes a node public, so skip it.
                         continue
                     should_see = determine_should_see(status, varyfunc, permfunc)
-                    name = determine_test_name(**locals())
-                    yield name, varyfunc, nodefunc, status, permfunc, should_see
+                    name = determine_case_name(**locals())
+                    if want(name):
+                        yield name, varyfunc, nodefunc, status, permfunc, should_see
 
 
 class TestGenerateCases(unittest.TestCase):
