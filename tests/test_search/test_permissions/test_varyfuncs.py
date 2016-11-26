@@ -10,7 +10,9 @@ from framework.auth import Auth
 from tests import factories
 from tests.base import DbIsolationMixin
 from tests.test_search import OsfTestCase
-from tests.test_search.test_permissions.test_nodefuncs import public_project, public_component
+from tests.test_search.test_permissions.test_nodefuncs import (
+    public_project, public_component_of_public_project
+)
 from tests.utils import mock_archive, run_celery_tasks
 from website.addons.wiki.model import NodeWikiPage
 from website.files.models.base import File
@@ -120,7 +122,7 @@ class TestVaryFuncs(DbIsolationMixin, OsfTestCase):
         assert_equal(base(public_project())[1], 'project')
 
     def test_base_specifies_component_for_component(self):
-        assert_equal(base(public_component())[1], 'component')
+        assert_equal(base(public_component_of_public_project())[1], 'component')
 
 
     # fo - file_on

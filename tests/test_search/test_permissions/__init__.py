@@ -64,7 +64,7 @@ class TestGenerateCases(unittest.TestCase):
     # gc - generate_cases
 
     def test_gc_generates_cases(self):
-        assert_equal(len(list(generate_cases())), 156)
+        assert_equal(len(list(generate_cases())), 234)
 
     def test_gc_doesnt_create_any_nodes(self):
         list(generate_cases())
