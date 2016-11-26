@@ -6,11 +6,13 @@ import re
 from nose.tools import assert_equal, ok_
 
 from modularodm import Q
+from framework.auth import Auth
 from tests import factories
 from tests.base import DbIsolationMixin
 from tests.test_search import OsfTestCase
 from tests.test_search.test_permissions.test_nodefuncs import proj, comp
-from tests.utils import mock_archive
+from tests.utils import mock_archive, run_celery_tasks
+from website.addons.wiki.model import NodeWikiPage
 from website.files.models.base import File
 from website.project.model import Node
 
@@ -26,6 +28,13 @@ def base(node):
 def file_on(node):
     node.get_addon('osfstorage').get_root().append_file('Blim Blammity')
     return 'blim', 'file', 'name', 'Blim Blammity'
+
+
+def wiki_on(node):
+    category = 'project' if node.parent_node is None else 'component'
+    with run_celery_tasks():
+        node.update_node_wiki('Blim Blammity', 'Blim, blammity.', Auth(node.creator))
+    return 'blim', category, 'title', 'Flim Flammity'
 
 
 # Registrations are more complicated, because they have multiple possible
@@ -99,6 +108,7 @@ for regfunc in REGFUNCS:
 VARYFUNCS = (
     base,
     file_on,
+    wiki_on,
 ) + tuple(REGFUNCS)
 
 
@@ -118,6 +128,16 @@ class TestVaryFuncs(DbIsolationMixin, OsfTestCase):
     def test_fo_makes_a_file_on_a_node(self):
         file_on(factories.ProjectFactory())
         assert_equal(File.find_one(Q('is_file', 'eq', True)).name, 'Blim Blammity')
+
+
+    # wo - wiki_on
+
+    def test_wo_makes_a_wiki_on_a_node(self):
+        project = factories.ProjectFactory()
+        wiki_on(project)
+        page = NodeWikiPage.load(project.wiki_pages_current['blim blammity'])
+        assert_equal(page.page_name, 'Blim Blammity')
+        assert_equal(page.content, 'Blim, blammity.')
 
 
     # regfuncs
