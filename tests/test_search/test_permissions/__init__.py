@@ -21,23 +21,22 @@ from tests.test_search import SearchTestCase
 from tests.test_search.test_permissions.test_varyfuncs import VARYFUNCS, REGFUNCS, REGFUNCS_PRIVATE
 from tests.test_search.test_permissions.test_varyfuncs import base
 from tests.test_search.test_permissions.test_permfuncs import anon, auth, read
-from tests.test_search.test_permissions.test_nodefuncs import proj, comp, PUBLIC, PRIVATE
+from tests.test_search.test_permissions.test_nodefuncs import NODEFUNCS, NODEFUNCS_PRIVATE
 from website.project.model import Node
 from website.util import api_url_for
 
 
-def determine_case_name(varyfunc, status, nodefunc, should_see, permfunc, **_):
-    return "{}{} {} {} {}".format(
+def determine_case_name(nodefunc, permfunc, varyfunc, should_see, **_):
+    return "{}{} {} {}".format(
         '' if varyfunc is base else varyfunc.__name__.replace('_', ' ') + ' ',
-        'private' if status is PRIVATE else 'public',
-        'project' if nodefunc is proj else 'component',
+        ' '.join(nodefunc.__name__.split('_')),
         'shown to' if should_see else 'hidden from',
         permfunc.__name__
     )
 
 
-def determine_should_see(status, varyfunc, permfunc, default__TODO_remove_this_argument=True):
-    if status is PRIVATE or varyfunc in REGFUNCS_PRIVATE:
+def determine_should_see(nodefunc, permfunc, varyfunc, default__TODO_remove_this_argument=True):
+    if nodefunc in NODEFUNCS_PRIVATE or varyfunc in REGFUNCS_PRIVATE:
         return permfunc is read
     return default__TODO_remove_this_argument
 
@@ -48,17 +47,16 @@ def want(name):
 
 
 def generate_cases():
-    for status in (PRIVATE, PUBLIC):
-        for nodefunc in (proj, comp):
-            for permfunc in (anon, auth, read):
-                for varyfunc in VARYFUNCS:
-                    if status is PRIVATE and varyfunc in REGFUNCS:
-                        # Registration makes a node public, so skip it.
-                        continue
-                    should_see = determine_should_see(status, varyfunc, permfunc)
-                    name = determine_case_name(**locals())
-                    if want(name):
-                        yield name, varyfunc, nodefunc, status, permfunc, should_see
+    for nodefunc in NODEFUNCS:
+        for permfunc in (anon, auth, read):
+            for varyfunc in VARYFUNCS:
+                if nodefunc in NODEFUNCS_PRIVATE and varyfunc in REGFUNCS:
+                    # Registration makes a node public, so skip it.
+                    continue
+                should_see = determine_should_see(nodefunc, permfunc, varyfunc)
+                name = determine_case_name(**locals())
+                if want(name):
+                    yield name, nodefunc, permfunc, varyfunc, should_see
 
 
 class TestGenerateCases(unittest.TestCase):
@@ -80,8 +78,8 @@ def possiblyExpectFailure(case):
     # when we write the code to unfail the tests.
 
     def test(*a, **kw):  # name must start with test or it's ignored
-        _, _, varyfunc, _, status, permfunc, _ = a
-        if determine_should_see(status, varyfunc, permfunc, False):
+        _, _, nodefunc, permfunc, varyfunc, _ = a
+        if determine_should_see(nodefunc, permfunc, varyfunc, False):
 
             # This bit is copied from the unittest/case.py:expectedFailure
             # decorator.
@@ -107,8 +105,8 @@ class TestSearchSearchAPI(SearchTestCase):
 
     @parameterized.expand(generate_cases)
     @possiblyExpectFailure
-    def test(self, ignored, varyfunc, nodefunc, status, permfunc, should_see):
-        node = nodefunc(status)
+    def test(self, ignored, nodefunc, permfunc, varyfunc, should_see):
+        node = nodefunc()
         auth = permfunc(node)
         query, type_, key, expected_name = varyfunc(node)
         expected = [(expected_name, type_)] if should_see else []

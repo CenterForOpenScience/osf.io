@@ -11,25 +11,38 @@ from tests.test_search import OsfTestCase
 from website.project.model import Node
 
 
-PRIVATE, PUBLIC = range(2)
-
-
-def proj(status=PUBLIC):
-    project = factories.ProjectFactory(title='Flim Flammity', is_public=status is PUBLIC)
+def _project(is_public):
+    project = factories.ProjectFactory(title='Flim Flammity', is_public=is_public)
     project.update_search()
     return project
 
+def public_project(): return _project(True)
+def private_project(): return _project(False)
 
-def comp(status=PUBLIC):
-    project = factories.ProjectFactory(title='Slim Slammity', is_public=status is PUBLIC)
+
+def _component(is_public):
+    project = factories.ProjectFactory(title='Slim Slammity', is_public=is_public)
     project.update_search()
     component = factories.NodeFactory(
         title='Flim Flammity',
         parent=project,
-        is_public=status is PUBLIC,
+        is_public=is_public,
     )
     component.update_search()
     return component
+
+def public_component(): return _component(True)
+def private_component(): return _component(False)
+
+
+NODEFUNCS_PRIVATE = [
+    private_project,
+    private_component
+]
+NODEFUNCS = [
+    public_project,
+    public_component,
+] + NODEFUNCS_PRIVATE
 
 
 class TestNodeFuncs(DbIsolationMixin, OsfTestCase):
@@ -38,23 +51,23 @@ class TestNodeFuncs(DbIsolationMixin, OsfTestCase):
         assert_equal(Node.find().count(), 0)
 
 
-    # proj
+    # pp - {public,private}_project
 
-    def test_proj_makes_private_project_private(self):
-        proj(PRIVATE)
-        ok_(not Node.find_one().is_public)
-
-    def test_proj_makes_public_project_public(self):
-        proj(PUBLIC)
+    def test_pp_makes_public_project_public(self):
+        public_project()
         ok_(Node.find_one().is_public)
 
+    def test_pp_makes_private_project_private(self):
+        private_project()
+        ok_(not Node.find_one().is_public)
 
-    # comp
 
-    def test_comp_makes_private_component_private(self):
-        comp(PRIVATE)
-        ok_(not Node.find_one(Q('parent_node', 'ne', None)).is_public)
+    # pc - {public,private}_component
 
-    def test_comp_makes_public_component_public(self):
-        comp(PUBLIC)
+    def test_pc_makes_public_component_public(self):
+        public_component()
         ok_(Node.find_one(Q('parent_node', 'ne', None)).is_public)
+
+    def test_pc_makes_private_component_private(self):
+        private_component()
+        ok_(not Node.find_one(Q('parent_node', 'ne', None)).is_public)
