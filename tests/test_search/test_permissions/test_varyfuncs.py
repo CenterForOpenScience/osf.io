@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, division, print_function, unicode_literals
 
+import datetime
 import re
 
 from nose.tools import assert_equal, ok_
@@ -43,18 +44,36 @@ def wiki_on(node):
 # states. We therefore have a second-level generator to programmatically create
 # the functions to vary a node according to the different registration states.
 
+def _adapt_embargo(embargo):
+    """Take embargo as (None, True, False) and return {embargo, embargo_end_date}
+    """
+    if embargo is None:             # never embargoed
+        embargo = False
+        embargo_end_date = None
+    elif embargo is False:          # previously embargoed
+        embargo = True
+        embargo_end_date = datetime.datetime.now() - datetime.timedelta(days=7)
+    else:                           # presently embargoed
+        assert embargo is True
+        embargo = True
+        embargo_end_date = None
+    return {'embargo': embargo, 'embargo_end_date': embargo_end_date}
+
+
 def _register(*a, **kw):
+    kw.update(_adapt_embargo(kw.get('embargo')))
     mock_archive(*a, **kw).__enter__()  # gooooooofffyyyyyy
     return 'flim', 'registration', 'title', 'Flim Flammity'
 
 
 def name_regfunc(embargo, autoapprove, autocomplete, retraction, autoapprove_retraction, **_):
     retraction_part = '' if not retraction else \
-                      '{}_retraction_of_an_'.format('approved' if autoapprove_retraction else
+                      '{}_retraction_of_'.format('approved' if autoapprove_retraction else
                                                     'unapproved')
-    return '{}{}_{}_{}_registration_of'.format(
+    return '{}{}{}_{}_{}_registration_of'.format(
         retraction_part,
-        'embargoed' if embargo else 'unembargoed',
+        '' if not retraction else 'an_' if embargo in (None, True) else 'a_',
+        'embargoed' if embargo else 'unembargoed' if embargo is None else 'previously_embargoed',
         'approved' if autoapprove else 'unapproved',
         'complete' if autocomplete else 'incomplete',
     ).encode('ascii')
@@ -71,13 +90,13 @@ def create_regfuncs():
     public = set()
     private = set()
     # Default values are listed first for all of these ...
-    for embargo in (False, True):
+    for embargo in (None, True):   # never embargoed, presently embargoed, XXX previously embargoed
         for autoapprove in (False, True):
             for autocomplete in (True, False):
                 for autoapprove_retraction in (None, False, True):
                     retraction = autoapprove_retraction is not None
 
-                    if retraction and not (autoapprove or embargo):
+                    if retraction and not (autoapprove or embargo is not None):
                         continue  # 'Only public or embargoed registrations may be withdrawn.'
 
                     regfunc = create_regfunc(
