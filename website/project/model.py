@@ -3186,7 +3186,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
             if auth is not None:
                 user = auth.user
                 if not self.has_permission(user, ADMIN):
-                    raise PermissionsError('Must be an admin to change add contributors.')
+                    raise PermissionsError('Must be an admin to add contributors.')
                 if contrib_to_add in user.recently_added:
                     user.recently_added.remove(contrib_to_add)
                 user.recently_added.insert(0, contrib_to_add)
@@ -3214,6 +3214,9 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
 
         # Permissions must be overridden if changed when contributor is added to parent he/she is already on a child of.
         elif contrib_to_add in self.contributors and permissions is not None:
+            if auth is not None:
+                if not self.has_permission(auth.user, ADMIN):
+                    raise PermissionsError('Must be an admin to edit contributor permissions.')
             self.set_permissions(contrib_to_add, permissions)
             if save:
                 self.save()

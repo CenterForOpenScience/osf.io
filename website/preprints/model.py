@@ -126,7 +126,7 @@ class PreprintService(GuidStoredObject):
             self.node.add_log(
                 action=NodeLog.PREPRINT_FILE_UPDATED,
                 params={
-                    'preprint': {'id': self._id, 'title': self.node.title}
+                    'preprint': self._id
                 },
                 auth=auth,
                 save=False,
@@ -155,7 +155,14 @@ class PreprintService(GuidStoredObject):
             self.date_published = datetime.datetime.utcnow()
             self.node._has_abandoned_preprint = False
 
-            self.node.add_log(action=NodeLog.PREPRINT_INITIATED, params={}, auth=auth, save=False)
+            self.node.add_log(
+                action=NodeLog.PREPRINT_INITIATED,
+                params={
+                    'preprint': self._id
+                },
+                auth=auth,
+                save=False,
+            )
 
             if not self.node.is_public:
                 self.node.set_privacy(
