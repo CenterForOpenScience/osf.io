@@ -1,28 +1,24 @@
 # -*- coding: utf-8 -*-
-import logging
-import urllib
 import datetime
 import functools
+import logging
+import urllib
 
 import markdown
 import pytz
+from addons.base.models import BaseNodeSettings
 from bleach.callbacks import nofollow
-from markdown.extensions import codehilite, fenced_code, wikilinks
 from django.db import models
 from django.utils import timezone
-
-from website.exceptions import NodeStateError
-from website.addons.wiki import utils as wiki_utils
-from website import settings
-
-from osf.models.base import GuidMixin, BaseModel
-from website.addons.wiki.model import validate_page_name
-from website.util import api_v2_url
-from osf.models import AbstractNode, NodeLog
-
-from addons.base.models import BaseNodeSettings
-
 from framework.forms.utils import sanitize
+from markdown.extensions import codehilite, fenced_code, wikilinks
+from osf.models import AbstractNode, NodeLog
+from osf.models.base import BaseModel, GuidMixin
+from website import settings
+from website.addons.wiki import utils as wiki_utils
+from website.addons.wiki.model import validate_page_name
+from website.exceptions import NodeStateError
+from website.util import api_v2_url
 
 logger = logging.getLogger(__name__)
 
@@ -259,6 +255,10 @@ class NodeWikiPage(GuidMixin, BaseModel):
 
 
 class NodeSettings(BaseNodeSettings):
+    # TODO DELETE ME POST MIGRATION
+    modm_model_path = 'website.addons.wiki.model.AddonWikiNodeSettings'
+    modm_query = None
+    # /TODO DELETE ME POST MIGRATION
     complete = True
     has_auth = True
     is_publicly_editable = models.BooleanField(default=False, db_index=True)

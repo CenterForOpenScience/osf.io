@@ -6,6 +6,7 @@ import sys
 from framework import encryption
 
 import ipdb
+from addons.wiki.models import NodeWikiPage
 from django.contrib.contenttypes.models import ContentType
 from django.core.management import BaseCommand
 from django.db import IntegrityError, connection, transaction
@@ -59,7 +60,7 @@ def migrate_page_counters(page_size=20000):
     total = None
     count = None
     print('Took out {} trashes'.format(gc.collect()))
-    print('Finished {} in {}'.format(sys._getframe().f_code.co_name, (timezone.now()-start_time).total_seconds()))
+    print('Finished {} in {} seconds...'.format(sys._getframe().f_code.co_name, (timezone.now()-start_time).total_seconds()))
 
 
 def migrate_user_activity_counters(page_size=20000):
@@ -92,7 +93,7 @@ def migrate_user_activity_counters(page_size=20000):
     total = None
     count = None
     print('Took out {} trashes'.format(gc.collect()))
-    print('Finished {} in {}'.format(sys._getframe().f_code.co_name, (timezone.now()-start_time).total_seconds()))
+    print('Finished {} in {} seconds...'.format(sys._getframe().f_code.co_name, (timezone.now()-start_time).total_seconds()))
 
 
 def make_guids():
@@ -465,6 +466,7 @@ class Command(BaseCommand):
         models = get_ordered_models()
         # guids never, pls
         models.pop(models.index(Guid))
+        models.append(NodeWikiPage)
 
         if not options['nodelogs'] and not options['nodelogsguids']:
             merge_duplicate_users()
@@ -505,3 +507,5 @@ class Command(BaseCommand):
         if not options['nodelogs'] and not options['nodelogsguids']:
             save_bare_system_tags()
             make_guids()
+            migrate_page_counters()
+            migrate_user_activity_counters()

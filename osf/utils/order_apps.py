@@ -1,6 +1,8 @@
+import itertools
 from collections import OrderedDict
 
 from django.apps import apps
+
 
 def sort_dependencies(app_list):
     """Sort a list of (app_label, models) pairs into a single list of models.
@@ -89,7 +91,7 @@ def get_ordered_models():
 
     for app_label, model_tuples in all_models.iteritems():
         # short circuit, we only get osf apps for now
-        if app_label != 'osf':
+        if not ('osf' in app_label or 'addons' in app_label):
             continue
         for model_name, model_class in model_tuples.iteritems():
             if app_label not in model_mapping.keys():
@@ -97,6 +99,6 @@ def get_ordered_models():
             model_mapping[app_label].append(model_class)
 
     ordered_list_of_models = sort_dependencies(model_mapping)
-    osf_models = list(apps.get_app_config('osf').get_models(include_auto_created=False))
+    allowed_models = list(itertools.chain(*[application.get_models(include_auto_created=False) for application in apps.get_app_configs() if 'addons' in application.label or 'osf' in application.label]))
 
-    return [model for model in ordered_list_of_models if model in osf_models]
+    return [model for model in ordered_list_of_models if model in allowed_models]

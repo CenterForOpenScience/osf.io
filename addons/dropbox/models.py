@@ -2,8 +2,8 @@ import httplib as http
 import logging
 import os
 
-from addons.base.models import (BaseOAuthNodeSettings,
-                                BaseOAuthUserSettings, BaseStorageAddon)
+from addons.base.models import (BaseOAuthNodeSettings, BaseOAuthUserSettings,
+                                BaseStorageAddon)
 from django.db import models
 from dropbox.client import DropboxClient, DropboxOAuth2Flow
 from dropbox.rest import ErrorResponse
@@ -12,7 +12,7 @@ from framework.auth import Auth
 from framework.exceptions import HTTPError
 from framework.sessions import session
 from osf.models.external import ExternalProvider
-from osf.models.files import FileNode, Folder, File
+from osf.models.files import File, FileNode, Folder
 from urllib3.exceptions import MaxRetryError
 from website.addons.base import exceptions
 from website.addons.dropbox import settings
@@ -23,16 +23,31 @@ logger = logging.getLogger(__name__)
 
 
 class DropboxFileNode(FileNode):
+    # TODO DELETE ME POST MIGRATION
+    modm_model_path = 'website.files.models.dropbox.DropboxFileNode'
+    modm_query = None
+    # /TODO DELETE ME POST MIGRATION
     provider = 'dropbox'
 
 class DropboxFolder(DropboxFileNode, Folder):
+    # TODO DELETE ME POST MIGRATION
+    modm_model_path = 'website.files.models.dropbox.DropboxFolder'
+    modm_query = None
+    # /TODO DELETE ME POST MIGRATION
     pass
 
 class DropboxFile(DropboxFileNode, File):
+    # TODO DELETE ME POST MIGRATION
+    modm_model_path = 'website.files.models.dropbox.DropboxFile'
+    modm_query = None
+    # /TODO DELETE ME POST MIGRATION
     pass
 
 class Provider(ExternalProvider):
-
+    # TODO DELETE ME POST MIGRATION
+    modm_model_path = 'website.addons.dropbox.model.DropboxProvider'
+    modm_query = None
+    # /TODO DELETE ME POST MIGRATION
     name = 'Dropbox'
     short_name = 'dropbox'
 
@@ -99,7 +114,10 @@ class UserSettings(BaseOAuthUserSettings):
     """Stores user-specific dropbox information.
     token.
     """
-
+    # TODO DELETE ME POST MIGRATION
+    modm_model_path = 'website.addons.dropbox.model.DropboxUserSettings'
+    modm_query = None
+    # /TODO DELETE ME POST MIGRATION
     oauth_provider = Provider
     serializer = DropboxSerializer
 
@@ -115,7 +133,10 @@ class UserSettings(BaseOAuthUserSettings):
             pass
 
 class NodeSettings(BaseStorageAddon, BaseOAuthNodeSettings):
-
+    # TODO DELETE ME POST MIGRATION
+    modm_model_path = 'website.addons.dropbox.model.DropboxNodeSettings'
+    modm_query = None
+    # /TODO DELETE ME POST MIGRATION
     oauth_provider = Provider
     serializer = DropboxSerializer
 

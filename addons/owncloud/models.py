@@ -1,35 +1,47 @@
 # -*- coding: utf-8 -*-
 import logging
 
-from owncloud import Client as OwnCloudClient
-
+from addons.base.models import (BaseOAuthNodeSettings, BaseOAuthUserSettings,
+                                BaseStorageAddon)
 from django.db import models
 from framework.auth import Auth
-
-from addons.base.models import (
-    BaseOAuthNodeSettings, BaseOAuthUserSettings, BaseStorageAddon)
-from osf.models.files import FileNode, Folder, File
-
+from osf.models.files import File, FileNode, Folder
+from owncloud import Client as OwnCloudClient
 from website.addons.base import exceptions
+from website.addons.owncloud import settings
 from website.addons.owncloud.serializer import OwnCloudSerializer
 from website.addons.owncloud.settings import DEFAULT_HOSTS, USE_SSL
-from website.addons.owncloud import settings
-
 from website.oauth.models import BasicAuthProviderMixin
 from website.util import api_v2_url
 
 logger = logging.getLogger(__name__)
 
 class OwncloudFileNode(FileNode):
+    # TODO DELETE ME POST MIGRATION
+    modm_model_path = 'website.files.models.owncloud.OwncloudFileNode'
+    modm_query = None
+    # /TODO DELETE ME POST MIGRATION
     provider = 'owncloud'
 
 class OwncloudFolder(OwncloudFileNode, Folder):
+    # TODO DELETE ME POST MIGRATION
+    modm_model_path = 'website.files.models.owncloud.OwncloudFolder'
+    modm_query = None
+    # /TODO DELETE ME POST MIGRATION
     pass
 
 class OwncloudFile(OwncloudFileNode, File):
+    # TODO DELETE ME POST MIGRATION
+    modm_model_path = 'website.files.models.owncloud.OwncloudFile'
+    modm_query = None
+    # /TODO DELETE ME POST MIGRATION
     pass
 
 class OwnCloudProvider(BasicAuthProviderMixin):
+    # TODO DELETE ME POST MIGRATION
+    modm_model_path = 'website.addons.owncloud.model.OwnCloudProvider'
+    modm_query = None
+    # /TODO DELETE ME POST MIGRATION
     """An alternative to `ExternalProvider` not tied to OAuth"""
 
     name = 'ownCloud'
@@ -47,6 +59,10 @@ class OwnCloudProvider(BasicAuthProviderMixin):
         )
 
 class UserSettings(BaseOAuthUserSettings):
+    # TODO DELETE ME POST MIGRATION
+    modm_model_path = 'website.addons.owncloud.model.AddonOwnCloudUserSettings'
+    modm_query = None
+    # /TODO DELETE ME POST MIGRATION
     oauth_provider = OwnCloudProvider
     serializer = OwnCloudSerializer
 
@@ -56,6 +72,10 @@ class UserSettings(BaseOAuthUserSettings):
         return ret
 
 class NodeSettings(BaseStorageAddon, BaseOAuthNodeSettings):
+    # TODO DELETE ME POST MIGRATION
+    modm_model_path = 'website.addons.owncloud.model.AddonOwnCloudNodeSettings'
+    modm_query = None
+    # /TODO DELETE ME POST MIGRATION
     oauth_provider = OwnCloudProvider
     serializer = OwnCloudSerializer
 
