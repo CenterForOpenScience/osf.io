@@ -40,16 +40,12 @@ class DataverseFile(DataverseFileNode, File):
 
 class DataverseProvider(object):
     """An alternative to `ExternalProvider` not tied to OAuth"""
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.addons.dataverse.model.Provider'
-    modm_query = None
-    # /TODO DELETE ME POST MIGRATION
     name = 'Dataverse'
     short_name = 'dataverse'
     serializer = DataverseSerializer
 
     def __init__(self, account=None):
-        super(DataverseProvider, self).__init__()
+        super(DataverseProvider, self).__init__()  # this does exactly nothing...
         # provide an unauthenticated session by default
         self.account = account
 

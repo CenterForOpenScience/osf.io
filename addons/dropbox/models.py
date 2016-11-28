@@ -44,10 +44,6 @@ class DropboxFile(DropboxFileNode, File):
     pass
 
 class Provider(ExternalProvider):
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.addons.dropbox.model.DropboxProvider'
-    modm_query = None
-    # /TODO DELETE ME POST MIGRATION
     name = 'Dropbox'
     short_name = 'dropbox'
 

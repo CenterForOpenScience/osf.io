@@ -51,10 +51,6 @@ class GoogleDriveFile(GoogleDriveFileNode, File):
 
 
 class GoogleDriveProvider(ExternalProvider):
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.addons.googledrive.model.GoogleDriveProvider'
-    modm_query = None
-    # /TODO DELETE ME POST MIGRATION
     name = 'Google Drive'
     short_name = 'googledrive'
 

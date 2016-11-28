@@ -15,10 +15,6 @@ from website.citations.providers import CitationsOauthProvider
 MAX_CITATION_LOAD = 200
 
 class Zotero(CitationsOauthProvider):
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.addons.zotero.model.Zotero'
-    modm_query = None
-    # /TODO DELETE ME POST MIGRATION
     name = 'Zotero'
     short_name = 'zotero'
     _oauth_version = 1

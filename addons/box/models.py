@@ -44,10 +44,6 @@ class BoxFile(BoxFileNode, File):
     pass
 
 class Provider(ExternalProvider):
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.addons.box.model.Box'
-    modm_query = None
-    # /TODO DELETE ME POST MIGRATION
     name = 'Box'
     short_name = 'box'
 

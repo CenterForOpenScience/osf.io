@@ -53,10 +53,6 @@ class GithubFile(GithubFileNode, File):
 
 
 class GitHubProvider(ExternalProvider):
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.addons.github.model.GitHubProvider'
-    modm_query = None
-    # /TODO DELETE ME POST MIGRATION
     name = 'GitHub'
     short_name = 'github'
 

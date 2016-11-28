@@ -38,10 +38,6 @@ class OwncloudFile(OwncloudFileNode, File):
     pass
 
 class OwnCloudProvider(BasicAuthProviderMixin):
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.addons.owncloud.model.OwnCloudProvider'
-    modm_query = None
-    # /TODO DELETE ME POST MIGRATION
     """An alternative to `ExternalProvider` not tied to OAuth"""
 
     name = 'ownCloud'

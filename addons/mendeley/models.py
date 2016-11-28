@@ -17,10 +17,6 @@ from website.util import web_url_for
 
 
 class Mendeley(CitationsOauthProvider):
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.addons.mendeley.model.Mendeley'
-    modm_query = None
-    # /TODO DELETE ME POST MIGRATION
     name = 'Mendeley'
     short_name = 'mendeley'
 
