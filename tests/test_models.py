@@ -501,8 +501,8 @@ class TestUser(OsfTestCase):
     def test_get_confirmation_url_for_external_service(self, random_string):
         random_string.return_value = 'abcde'
         u = UnconfirmedUserFactory()
-        assert_equal(u.get_confirmation_url(u.username, external_id_provider='service'),
-                '{0}confirm/external/{1}/{2}/'.format(settings.DOMAIN, u._id, 'abcde'))
+        assert_equal(u.get_confirmation_url(u.username, external_id_provider='service', destination='dashboard'),
+                '{0}confirm/external/{1}/{2}/?destination={3}'.format(settings.DOMAIN, u._id, 'abcde', 'dashboard'))
 
 
     def test_get_confirmation_url_when_token_is_expired_raises_error(self):

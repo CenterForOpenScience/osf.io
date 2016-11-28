@@ -4,6 +4,8 @@ import httplib as http
 import pytest
 from pytz import utc
 from datetime import datetime
+import urllib
+
 from nose.tools import *  # flake8: noqa
 import re
 
@@ -272,6 +274,12 @@ class TestRelationshipField:
             }
         )
 
+        field_with_filters = base_serializers.RelationshipField(
+            related_view='nodes:node-detail',
+            related_view_kwargs={'node_id': '<pk>'},
+            filter={'target': 'hello', 'woop': 'yea'}
+        )
+
         class Meta:
             type_ = 'nodes'
 
@@ -312,6 +320,15 @@ class TestRelationshipField:
         data = self.BasicNodeSerializer(node, context={'request': req}).data['data']
         field = data['relationships']['two_url_kwargs']['links']
         assert_in('/v2/nodes/{}/node_links/{}/'.format(node._id, node._id), field['related']['href'])
+
+    def test_field_with_two_filters(self):
+        req = make_drf_request_with_version(version='2.0')
+        project = factories.ProjectFactory()
+        node = factories.NodeFactory(parent=project)
+        data = self.BasicNodeSerializer(node, context={'request': req}).data['data']
+        field = data['relationships']['field_with_filters']['links']
+        assert_in(urllib.quote('filter[target]=hello', safe='?='), field['related']['href'])
+        assert_in(urllib.quote('filter[woop]=yea', safe='?='), field['related']['href'])
 
     def test_field_with_non_attribute(self):
         req = make_drf_request_with_version(version='2.0')

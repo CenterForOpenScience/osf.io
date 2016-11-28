@@ -2,6 +2,7 @@
 # encoding: utf-8
 
 import logging
+import math
 import time
 from django.utils import timezone
 
@@ -36,6 +37,7 @@ def get_targets(delta, addon_short_name):
     # NOT the refresh token's
     return ExternalAccount.find(
         Q('expires_at', 'lt', timezone.now() - delta) &
+        Q('date_last_refreshed', 'lt', timezone.now() - delta) &
         Q('provider', 'eq', addon_short_name)
     )
 
@@ -88,13 +90,10 @@ def run_main(addons=None, rate_limit=(5, 1), dry_run=True):
     if not dry_run:
         scripts_utils.add_file_logger(logger, __file__)
     for addon in addons:
-        try:
-            days = int(addons[addon]) - 3 # refresh tokens that expire this in the next three days
-        except (ValueError, TypeError):
-            days = 11  # OAuth2 spec's default refresh token expiry time is 14 days
+        days = math.ceil(int(addons[addon])*0.75)
         delta = relativedelta(days=days)
         Provider = look_up_provider(addon)
         if not Provider:
-            logger.error('Unable to find Provider class for addon {}'.format(addon_short_name))
+            logger.error('Unable to find Provider class for addon {}'.format(addon))
         else:
             main(delta, Provider, rate_limit, dry_run=dry_run)

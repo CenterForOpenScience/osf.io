@@ -646,7 +646,21 @@ var LogPieces = {
             // Comment left on project
             return m('span', '');
         }
-    }
+    },
+
+    preprint: {
+        view: function(ctrl, logObject){
+            var preprint = logObject.attributes.params.preprint;
+            return m('a', {href: '/' + preprint}, 'preprint');
+        }
+    },
+
+    preprint_provider: {
+        view: function(ctrl, logObject){
+            var preprint_provider = logObject.attributes.params.preprint_provider;
+            return m('a', {href: preprint_provider.url}, preprint_provider.name);
+        }
+    },
 };
 
 module.exports = LogText;

@@ -28,6 +28,11 @@ class Subject(StoredObject):
     def get_absolute_url(self):
         return self.absolute_api_v2_url
 
+    @property
+    def hierarchy(self):
+        if self.parents:
+            return self.parents[0].hierarchy + [self._id]
+        return [self._id]
 
 def validate_subject_hierarchy(subject_hierarchy):
     validated_hierarchy, raw_hierarchy = [], set(subject_hierarchy)

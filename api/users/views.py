@@ -529,6 +529,18 @@ class UserPreprints(UserNodes):
         return query
 
     def get_queryset(self):
+        # Overriding the default query parameters if the provider filter is present, because the provider is stored on
+        # the PreprintService object, not the node itself
+        filter_key = 'filter[provider]'
+        provider_filter = None
+
+        if filter_key in self.request.query_params:
+            # Have to have this mutable so that the filter can be removed in the ODM query, otherwise it will return an
+            # empty set
+            self.request.GET._mutable = True
+            provider_filter = self.request.query_params[filter_key]
+            self.request.query_params.pop(filter_key)
+
         nodes = Node.find(self.get_query_from_request())
         preprints = []
         # TODO [OSF-7090]: Rearchitect how `.is_preprint` is determined,
@@ -536,7 +548,8 @@ class UserPreprints(UserNodes):
         # preprints can be constructed.
         for node in nodes:
             for preprint in node.preprints.all():
-                preprints.append(preprint)
+                if provider_filter is None or preprint.provider._id == provider_filter:
+                    preprints.append(preprint)
         return preprints
 
 class UserInstitutions(JSONAPIBaseView, generics.ListAPIView, UserMixin):

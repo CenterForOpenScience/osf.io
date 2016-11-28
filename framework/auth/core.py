@@ -6,6 +6,7 @@ import itertools
 import logging
 import re
 import urlparse
+import urllib
 
 import bson
 import pytz
@@ -937,7 +938,7 @@ class User(GuidStoredObject, AddonModelMixin):
                 return token
         raise KeyError('No confirmation token for email "{0}"'.format(email))
 
-    def get_confirmation_url(self, email, external=True, force=False, renew=False, external_id_provider=None):
+    def get_confirmation_url(self, email, external=True, force=False, renew=False, external_id_provider=None, destination=None):
         """
         Return the confirmation url for a given email.
 
@@ -946,6 +947,7 @@ class User(GuidStoredObject, AddonModelMixin):
         :param force: If an expired token exists for the given email, generate a new one and return it.
         :param renew: Generate a new token and return it.
         :param external_id_provider: The external identity provider that authenticates the user.
+        :param destination: The destination page to redirect after confirmation
         :return: Return the confirmation url.
         :raises: ExpiredTokenError if trying to access a token that is expired.
         :raises: KeyError if there is no token for the email.
@@ -953,11 +955,9 @@ class User(GuidStoredObject, AddonModelMixin):
 
         base = settings.DOMAIN if external else '/'
         token = self.get_confirmation_token(email, force=force, renew=renew)
-
-        if external_id_provider:
-            return '{0}confirm/external/{1}/{2}/'.format(base, self._primary_key, token)
-        else:
-            return '{0}confirm/{1}/{2}/'.format(base, self._primary_key, token)
+        external = 'external/' if external_id_provider else ''
+        destination = '?{}'.format(urllib.urlencode({'destination': destination})) if destination else ''
+        return '{0}confirm/{1}{2}/{3}/{4}'.format(base, external, self._primary_key, token, destination)
 
     def get_unconfirmed_email_for_token(self, token):
         """Return email if valid.

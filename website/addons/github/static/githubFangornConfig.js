@@ -166,7 +166,7 @@ var _githubItemButtons = {
         var buttons = [];
         function _downloadEvent(event, item, col) {
             event.stopPropagation();
-            window.location = waterbutler.buildTreeBeardDownload(item, {fileSha: item.data.extra.fileSha});
+            window.location = waterbutler.buildTreeBeardDownload(item, {fileSha: item.data.extra.fileSha, branch: item.data.branch});
         }
         // Download Zip File
         if (item.kind === 'folder') {
@@ -226,7 +226,7 @@ var _githubItemButtons = {
                     buttons.push(
                         m.component(Fangorn.Components.button, {
                             onclick: function (event) {
-                                window.location = item.data.urls.zip;
+                                window.location = waterbutler.buildTreeBeardDownloadZip(item, {'branch': item.data.branch});
                             },
                             icon: 'fa fa-download',
                             className: 'text-primary'

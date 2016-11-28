@@ -6,6 +6,7 @@ from modularodm.exceptions import NoResultsFound, ValidationValueError
 
 from website.addons.osfstorage import settings as osfstorage_settings
 from website.files.models.osfstorage import OsfStorageFile
+from website.preprints.tasks import format_preprint
 from website.util import permissions
 
 from framework.auth import Auth
@@ -248,3 +249,58 @@ class TestPreprintProviders(OsfTestCase):
         self.preprint.reload()
 
         assert_equal(self.preprint.provider, None)
+
+class TestOnPreprintUpdatedTask(OsfTestCase):
+    def setUp(self):
+        super(TestOnPreprintUpdatedTask, self).setUp()
+        self.preprint = PreprintFactory()
+
+    def test_format_preprint(self):
+        res = format_preprint(self.preprint)
+        types = [gn['@type'] for gn in res]
+        subject_names = [x['text'] for hier in self.preprint.get_subjects() for x in hier]
+        contribs = {}
+        for i, user in enumerate(self.preprint.node.contributors):
+            contribs.update({i: user})
+
+        for type_ in ['throughlinks', 'throughsubjects', 'throughidentifiers', 'preprint', 'subject', 'person', 'link', 'contributor', 'identifier', 'person']:
+            assert type_ in types
+
+        for graph_node in res:
+            if graph_node['@type'] == 'throughlinks':
+                assert_equal(set(graph_node.keys()), set(['@id', '@type', 'creative_work', 'link']))
+            if graph_node['@type'] == 'throughsubjects':
+                assert_equal(set(graph_node.keys()), set(['@id', '@type', 'creative_work', 'subject']))
+            if graph_node['@type'] == 'throughidentifiers':
+                assert_equal(set(graph_node.keys()), set(['@id', '@type', 'identifier', 'person']))
+            if graph_node['@type'] == 'preprint':
+                assert_equal(set(graph_node.keys()), set([
+                    '@id', '@type', 'contributors', 'title', 'tags',
+                    'date_published', 'date_updated', 'description',
+                    'institutions', 'is_deleted', 'links', 'subjects',
+                ]))
+                assert_equal(graph_node['date_published'], self.preprint.date_published.isoformat())
+                assert_equal(graph_node['date_updated'], self.preprint.date_modified.isoformat())
+                assert_equal(graph_node['description'], self.preprint.node.description)
+                assert_equal(graph_node['is_deleted'], self.preprint.node.is_deleted)
+                assert_equal(graph_node['title'], self.preprint.node.title)
+            if graph_node['@type'] == 'subject':
+                assert_equal(set(graph_node.keys()), set(['@id', '@type', 'name']))
+                assert_in(graph_node['name'], subject_names)
+            if graph_node['@type'] == 'person':
+                assert_equal(set(graph_node.keys()), set([
+                    '@id', '@type', 'additional_name', 'affiliations',
+                    'family_name', 'given_name', 'identifiers', 'suffix'
+                ]))
+            if graph_node['@type'] == 'link':
+                assert_equal(set(graph_node.keys()), set(['@id', '@type', 'type', 'url']))
+            if graph_node['@type'] == 'contributor':
+                assert_equal(set(graph_node.keys()), set([
+                    '@id', '@type',  'bibliographic', 'cited_name',
+                    'creative_work', 'order_cited', 'person'
+                ]))
+                user = contribs[graph_node['order_cited']]
+                assert_equal(graph_node['cited_name'], user.fullname)
+                assert_equal(graph_node['bibliographic'], bool(user._id in self.preprint.node.visible_contributor_ids))
+            if graph_node['@type'] == 'identifier':
+                assert_equal(set(graph_node.keys()), set(['@id', '@type', 'base_url', 'url']))

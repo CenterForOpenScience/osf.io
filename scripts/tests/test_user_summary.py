@@ -5,8 +5,8 @@ from framework.transactions.context import TokuTransaction
 
 from website.models import User
 from tests.base import OsfTestCase
-from tests.factories import AuthUserFactory
-from scripts.analytics.user_summary import UserSummary
+from tests.factories import AuthUserFactory, NodeLogFactory
+from scripts.analytics.user_summary import UserSummary, LOG_THRESHOLD
 
 
 def modify_user_dates_in_mongo(new_date):
@@ -30,11 +30,16 @@ class TestUserCount(OsfTestCase):
             u.password = 'wow' + str(i)
             u.date_confirmed = self.yesterday
             u.save()
+        # Make one of those 3 a depth user
+        for i in range(LOG_THRESHOLD + 1):
+            NodeLogFactory(action='file_added', user=u)
         u = AuthUserFactory()
         u.is_registered = True
         u.password = 'wow'
         u.date_confirmed = self.a_while_ago
         u.save()
+        for i in range(LOG_THRESHOLD + 1):
+            NodeLogFactory(action='file_added', user=u)
         for i in range(0, 2):
             u = AuthUserFactory()
             u.date_confirmed = None
@@ -56,9 +61,29 @@ class TestUserCount(OsfTestCase):
         assert_equal(data['status']['active'], 4)
         assert_equal(data['status']['unconfirmed'], 2)
         assert_equal(data['status']['deactivated'], 2)
+        assert_equal(data['status']['depth'], 2)
+        assert_equal(data['status']['merged'], 0)
 
     def test_gets_only_users_from_given_date(self):
         data = UserSummary().get_events(self.a_while_ago.date())[0]
         assert_equal(data['status']['active'], 1)
         assert_equal(data['status']['unconfirmed'], 0)
         assert_equal(data['status']['deactivated'], 1)
+        assert_equal(data['status']['depth'], 1)
+        assert_equal(data['status']['merged'], 0)
+
+    def test_merged_user(self):
+        user = AuthUserFactory(fullname='Annie Lennox')
+        merged_user = AuthUserFactory(fullname='Lisa Stansfield')
+        user.save()
+        merged_user.save()
+
+        user.merge_user(merged_user)
+        user.save()
+        merged_user.save()
+        user.reload()
+        merged_user.reload()
+        modify_user_dates_in_mongo(self.yesterday)
+
+        data = UserSummary().get_events(self.yesterday.date())[0]
+        assert_equal(data['status']['merged'], 1)
