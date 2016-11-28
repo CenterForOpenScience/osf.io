@@ -25,7 +25,7 @@ def coerce_nonnaive_datetimes(json_data):
             coerced_data[key] = coerce_nonnaive_datetimes(value)
     elif isinstance(json_data, dt.datetime):
         try:
-            wut = json_data.astimezone(pytz.utc)  # aware object can be in any timezone
+            worked = json_data.astimezone(pytz.utc)  # aware object can be in any timezone # noqa
         except ValueError:  # naive
             coerced_data = json_data.replace(tzinfo=pytz.utc)  # json_data must be in UTC
             logger.warn('Coerced naive datetime to aware for {}'.format(json_data))
