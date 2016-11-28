@@ -6,7 +6,6 @@ import sys
 from framework import encryption
 
 import ipdb
-from addons.wiki.models import NodeWikiPage
 from django.contrib.contenttypes.models import ContentType
 from django.core.management import BaseCommand
 from django.db import IntegrityError, connection, transaction
@@ -50,7 +49,11 @@ def migrate_page_counters(page_size=20000):
 
                 if count % page_size == 0 or count == total:
                     page_finish_time = timezone.now()
-                    print('Saving {} {} through {}...'.format(PageCounter._meta.model.__name__, count - page_size, count))
+                    if (count - page_size) < 0:
+                        start = 0
+                    else:
+                        start = count - page_size
+                    print('Saving {} {} through {}...'.format(PageCounter._meta.model.__name__, start, count))
 
                     saved_django_objects = PageCounter.objects.bulk_create(django_objects)
 
@@ -83,7 +86,11 @@ def migrate_user_activity_counters(page_size=20000):
 
                 if count % page_size == 0 or count == total:
                     page_finish_time = timezone.now()
-                    print('Saving {} {} through {}...'.format(UserActivityCounter._meta.model.__name__, count - page_size, count))
+                    if (count - page_size) < 0:
+                        start = 0
+                    else:
+                        start = count - page_size
+                    print('Saving {} {} through {}...'.format(UserActivityCounter._meta.model.__name__, start, count))
 
                     saved_django_objects = UserActivityCounter.objects.bulk_create(django_objects)
 
@@ -287,9 +294,13 @@ def save_bare_models(modm_queryset, django_model, page_size=20000):
                 count += 1
                 if count % page_size == 0 or count == total:
                     page_finish_time = timezone.now()
+                    if (count - page_size) < 0:
+                        start = 0
+                    else:
+                        start = count - page_size
                     print(
                         'Saving {} {} through {}...'.format(django_model._meta.model.__name__,
-                                                            count - page_size,
+                                                            start,
                                                             count))
                     saved_django_objects = django_model.objects.bulk_create(django_objects)
 
@@ -466,7 +477,6 @@ class Command(BaseCommand):
         models = get_ordered_models()
         # guids never, pls
         models.pop(models.index(Guid))
-        models.append(NodeWikiPage)
 
         if not options['nodelogs'] and not options['nodelogsguids']:
             merge_duplicate_users()
