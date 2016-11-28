@@ -25,3 +25,9 @@ class Subject(ObjectIDMixin, BaseModel):
 
     def get_absolute_url(self):
         return self.absolute_api_v2_url
+
+    @property
+    def hierarchy(self):
+        if self.parents.exists():
+            return self.parents.first().hierarchy + [self._id]
+        return [self._id]
