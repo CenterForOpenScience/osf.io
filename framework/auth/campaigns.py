@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime
 import furl
 import logging
 
@@ -8,6 +8,7 @@ from modularodm.exceptions import NoResultsFound, QueryException, ImproperConfig
 from website import mails
 from website.models import PreprintProvider
 from website.settings import DOMAIN, CAMPAIGN_REFRESH_THRESHOLD
+from website.util.time import throttle_period_expired
 
 
 CAMPAIGNS = None
@@ -21,7 +22,7 @@ def get_campaigns():
 
     logger = logging.getLogger(__name__)
 
-    if not CAMPAIGNS or CAMPAIGNS_LAST_REFRESHED + timedelta(seconds=CAMPAIGN_REFRESH_THRESHOLD) < datetime.utcnow():
+    if not CAMPAIGNS or throttle_period_expired(CAMPAIGNS_LAST_REFRESHED, CAMPAIGN_REFRESH_THRESHOLD):
 
         # Native campaigns: PREREG and ERPC
         CAMPAIGNS = {
