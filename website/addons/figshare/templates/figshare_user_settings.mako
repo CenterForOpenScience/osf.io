@@ -8,7 +8,7 @@
                 <a id="figshareDelKey" class="text-danger pull-right addon-auth">Disconnect Account</a>
             % else:
                 <a id="figshareAddKey" class="text-primary pull-right addon-auth">
-                Connect Account
+                Connect or Reauthorize Account
                 </a>
             % endif
         </small>
