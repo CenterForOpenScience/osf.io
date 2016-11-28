@@ -27,6 +27,9 @@ env:
   matrix:
     - TEST_BUILD="osf"
     - TEST_BUILD="else"
+    - TEST_BUILD="api1"
+    - TEST_BUILD="api2"
+    - TEST_BUILD="api3"
     # - TEST_BUILD="varnish"
 
 before_install:

@@ -596,12 +596,53 @@ def test_osf(ctx):
 
 
 API_TESTS = [
-    'api_tests',
+    'api_tests/addons',
+    'api_tests/applications',
+    'api_tests/base',
+    'api_tests/collections',
+    'api_tests/comments',
+    'api_tests/files',
+    'api_tests/guids',
 ]
+API_TESTS1 = [
+    'api_tests/identifiers',
+    'api_tests/institutions',
+    'api_tests/licenses',
+    'api_tests/logs',
+    'api_tests/metaschemas',
+]
+API_TESTS2 = [
+    'api_tests/nodes',
+    'api_tests/preprint_providers',
+    'api_tests/preprints',
+    'api_tests/registrations',
+    'api_tests/search',
+]
+API_TESTS3 = [
+    'api_tests/taxonomies',
+    'api_tests/test',
+    'api_tests/tokens',
+    'api_tests/users',
+    'api_tests/view_only_links',
+    'api_tests/wikis',
+]
+
 @task
 def test_api(ctx):
     """Run the API test suite."""
     test_module(ctx, module=API_TESTS)
+@task
+def test_api1(ctx):
+    """Run the API test suite."""
+    test_module(ctx, module=API_TESTS1)
+@task
+def test_api2(ctx):
+    """Run the API test suite."""
+    test_module(ctx, module=API_TESTS2)
+@task
+def test_api3(ctx):
+    """Run the API test suite."""
+    test_module(ctx, module=API_TESTS3)
 
 
 @task
@@ -688,6 +729,17 @@ def test_travis_else(ctx):
     # TODO: Enable admin tests
     # test_admin(ctx)
 
+@task
+def test_travis_api1(ctx):
+    test_api1(ctx)
+
+@task
+def test_travis_api2(ctx):
+    test_api2(ctx)
+
+@task
+def test_travis_api3(ctx):
+    test_api3(ctx)
 
 @task
 def test_travis_varnish(ctx):
