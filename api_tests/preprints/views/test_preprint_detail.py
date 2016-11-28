@@ -1,15 +1,17 @@
+import functools
+from modularodm import Q
 from nose.tools import *  # flake8: noqa
 
 from framework.auth.core import Auth
 from framework.mongo import database as db
 from tests.base import ApiTestCase
 from api.base.settings.defaults import API_BASE
-from api.base.exceptions import Conflict
 
-from website.files.models.osfstorage import OsfStorageFile
-from website.preprints.model import PreprintService
-from tests.factories import PreprintFactory, AuthUserFactory, ProjectFactory, SubjectFactory
+from website.project.licenses import NodeLicense, ensure_licenses
+from tests.factories import PreprintFactory, AuthUserFactory, ProjectFactory, SubjectFactory, PreprintProviderFactory
 from api_tests import utils as test_utils
+
+ensure_licenses = functools.partial(ensure_licenses, warn=False)
 
 def build_preprint_update_payload(node_id, attributes=None, relationships=None):
     payload = {
@@ -240,3 +242,363 @@ class TestPreprintUpdate(ApiTestCase):
         assert_equal(res.status_code, 403)
 
         assert_not_equal(self.preprint.subjects[0], self.subject._id)
+
+
+class TestPreprintUpdateLicense(ApiTestCase):
+
+    def setUp(self):
+        super(TestPreprintUpdateLicense, self).setUp()
+
+        ensure_licenses()
+
+        self.admin_contributor = AuthUserFactory()
+        self.rw_contributor = AuthUserFactory()
+        self.read_contributor = AuthUserFactory()
+        self.non_contributor = AuthUserFactory()
+
+        self.preprint_provider = PreprintProviderFactory()
+        self.preprint = PreprintFactory(creator=self.admin_contributor, provider=self.preprint_provider)
+
+        self.preprint.node.add_contributor(self.rw_contributor, auth=Auth(self.admin_contributor))
+        self.preprint.node.add_contributor(self.read_contributor, auth=Auth(self.admin_contributor), permissions=['read'])
+        self.preprint.node.save()
+
+        self.cc0_license = NodeLicense.find_one(Q('name', 'eq', 'CC0 1.0 Universal'))
+        self.mit_license = NodeLicense.find_one(Q('name', 'eq', 'MIT License'))
+        self.no_license = NodeLicense.find_one(Q('name', 'eq', 'No license'))
+
+        self.preprint_provider.licenses_acceptable = [self.cc0_license, self.no_license]
+        self.preprint_provider.save()
+
+        self.url = '/{}preprints/{}/'.format(API_BASE, self.preprint._id)
+
+    def make_payload(self, node_id, license_id=None, license_year=None, copyright_holders=None):
+        attributes = {}
+
+        if license_year and copyright_holders:
+            attributes = {
+                'license_record': {
+                    'year': license_year,
+                    'copyright_holders': copyright_holders
+                }
+            }
+        elif license_year:
+            attributes = {
+                'license_record': {
+                    'year': license_year
+                }
+            }
+        elif copyright_holders:
+            attributes = {
+                'license_record': {
+                    'copyright_holders': copyright_holders
+                }
+            }
+
+        return {
+            'data': {
+                'id': node_id,
+                'attributes': attributes,
+                'relationships': {
+                    'license': {
+                        'data': {
+                            'type': 'licenses',
+                            'id': license_id
+                        }
+                    }
+                }
+            }
+        } if license_id else {
+            'data': {
+                'id': node_id,
+                'attributes': attributes
+            }
+        }
+
+    def make_request(self, url, data, auth=None, expect_errors=False):
+        return self.app.patch_json_api(url, data, auth=auth, expect_errors=expect_errors)
+
+    def test_admin_can_update_license(self):
+        data = self.make_payload(
+            node_id=self.preprint._id,
+            license_id=self.cc0_license._id
+        )
+
+        assert_equal(self.preprint.license, None)
+
+        res = self.make_request(self.url, data, auth=self.admin_contributor.auth)
+        assert_equal(res.status_code, 200)
+        self.preprint.reload()
+
+        assert_equal(self.preprint.license.node_license, self.cc0_license)
+        assert_equal(self.preprint.license.year, None)
+        assert_equal(self.preprint.license.copyright_holders, [])
+
+    def test_admin_can_update_license_record(self):
+        data = self.make_payload(
+            node_id=self.preprint._id,
+            license_id=self.no_license._id,
+            license_year='2015',
+            copyright_holders=['Bojack Horseman, Princess Carolyn']
+        )
+
+        assert_equal(self.preprint.license, None)
+
+        res = self.make_request(self.url, data, auth=self.admin_contributor.auth)
+        assert_equal(res.status_code, 200)
+        self.preprint.reload()
+
+        assert_equal(self.preprint.license.node_license, self.no_license)
+        assert_equal(self.preprint.license.year, '2015')
+        assert_equal(self.preprint.license.copyright_holders, ['Bojack Horseman, Princess Carolyn'])
+
+    def test_rw_contributor_cannot_update_license(self):
+        data = self.make_payload(
+            node_id=self.preprint._id,
+            license_id=self.cc0_license._id
+        )
+
+        res = self.make_request(self.url, data, auth=self.rw_contributor.auth, expect_errors=True)
+        assert_equal(res.status_code, 403)
+        assert_equal(res.json['errors'][0]['detail'], 'User must be an admin to update a preprint.')
+
+    def test_read_contributor_cannot_update_license(self):
+        data = self.make_payload(
+            node_id=self.preprint._id,
+            license_id=self.cc0_license._id
+        )
+
+        res = self.make_request(self.url, data, auth=self.read_contributor.auth, expect_errors=True)
+        assert_equal(res.status_code, 403)
+        assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
+
+    def test_non_contributor_cannot_update_license(self):
+        data = self.make_payload(
+            node_id=self.preprint._id,
+            license_id=self.cc0_license._id
+        )
+
+        res = self.make_request(self.url, data, auth=self.non_contributor.auth, expect_errors=True)
+        assert_equal(res.status_code, 403)
+        assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
+
+    def test_unauthenticated_user_cannot_update_license(self):
+        data = self.make_payload(
+            node_id=self.preprint._id,
+            license_id=self.cc0_license._id
+        )
+
+        res = self.make_request(self.url, data, expect_errors=True)
+        assert_equal(res.status_code, 401)
+        assert_equal(res.json['errors'][0]['detail'], 'Authentication credentials were not provided.')
+
+    def test_update_preprint_with_invalid_license_for_provider(self):
+        data = self.make_payload(
+            node_id=self.preprint._id,
+            license_id=self.mit_license._id
+        )
+
+        assert_equal(self.preprint.license, None)
+
+        res = self.make_request(self.url, data, auth=self.admin_contributor.auth, expect_errors=True)
+        assert_equal(res.status_code, 403)
+        assert_equal(res.json['errors'][0]['detail'], 'Invalid license chosen for {}'.format(self.preprint_provider.name))
+
+    def test_update_preprint_with_existing_license_year_attribute_only(self):
+        self.preprint.set_preprint_license(
+            {
+                'id': self.no_license.id,
+                'year': '2014',
+                'copyrightHolders': ['Diane', 'Mr. Peanut Butter']
+            },
+            Auth(self.admin_contributor),
+        )
+        self.preprint.save()
+
+        assert_equal(self.preprint.license.node_license, self.no_license)
+        assert_equal(self.preprint.license.year, '2014')
+        assert_equal(self.preprint.license.copyright_holders, ['Diane', 'Mr. Peanut Butter'])
+
+        data = self.make_payload(
+            node_id=self.preprint._id,
+            license_year='2015'
+        )
+
+        res = self.make_request(self.url, data, auth=self.admin_contributor.auth)
+        assert_equal(res.status_code, 200)
+        self.preprint.license.reload()
+
+        assert_equal(self.preprint.license.node_license, self.no_license)
+        assert_equal(self.preprint.license.year, '2015')
+        assert_equal(self.preprint.license.copyright_holders, ['Diane', 'Mr. Peanut Butter'])
+
+    def test_update_preprint_with_existing_license_copyright_holders_attribute_only(self):
+        self.preprint.set_preprint_license(
+            {
+                'id': self.no_license.id,
+                'year': '2014',
+                'copyrightHolders': ['Diane', 'Mr. Peanut Butter']
+            },
+            Auth(self.admin_contributor),
+        )
+        self.preprint.save()
+
+        assert_equal(self.preprint.license.node_license, self.no_license)
+        assert_equal(self.preprint.license.year, '2014')
+        assert_equal(self.preprint.license.copyright_holders, ['Diane', 'Mr. Peanut Butter'])
+
+        data = self.make_payload(
+            node_id=self.preprint._id,
+            copyright_holders=['Bojack Horseman', 'Princess Carolyn']
+        )
+
+        res = self.make_request(self.url, data, auth=self.admin_contributor.auth)
+        assert_equal(res.status_code, 200)
+        self.preprint.license.reload()
+
+        assert_equal(self.preprint.license.node_license, self.no_license)
+        assert_equal(self.preprint.license.year, '2014')
+        assert_equal(self.preprint.license.copyright_holders, ['Bojack Horseman', 'Princess Carolyn'])
+
+    def test_update_preprint_with_existing_license_relationship_only(self):
+        self.preprint.set_preprint_license(
+            {
+                'id': self.no_license.id,
+                'year': '2014',
+                'copyrightHolders': ['Diane', 'Mr. Peanut Butter']
+            },
+            Auth(self.admin_contributor),
+        )
+        self.preprint.save()
+
+        assert_equal(self.preprint.license.node_license, self.no_license)
+        assert_equal(self.preprint.license.year, '2014')
+        assert_equal(self.preprint.license.copyright_holders, ['Diane', 'Mr. Peanut Butter'])
+
+        data = self.make_payload(
+            node_id=self.preprint._id,
+            license_id=self.cc0_license._id
+        )
+
+        res = self.make_request(self.url, data, auth=self.admin_contributor.auth)
+        assert_equal(res.status_code, 200)
+        self.preprint.license.reload()
+
+        assert_equal(self.preprint.license.node_license, self.cc0_license)
+        assert_equal(self.preprint.license.year, '2014')
+        assert_equal(self.preprint.license.copyright_holders, ['Diane', 'Mr. Peanut Butter'])
+
+    def test_update_preprint_with_existing_license_relationship_and_attributes(self):
+        self.preprint.set_preprint_license(
+            {
+                'id': self.no_license.id,
+                'year': '2014',
+                'copyrightHolders': ['Diane', 'Mr. Peanut Butter']
+            },
+            Auth(self.admin_contributor),
+            save=True
+        )
+
+        assert_equal(self.preprint.license.node_license, self.no_license)
+        assert_equal(self.preprint.license.year, '2014')
+        assert_equal(self.preprint.license.copyright_holders, ['Diane', 'Mr. Peanut Butter'])
+
+        data = self.make_payload(
+            node_id=self.preprint._id,
+            license_id=self.cc0_license._id,
+            license_year='2015',
+            copyright_holders=['Bojack Horseman', 'Princess Carolyn']
+        )
+
+        res = self.make_request(self.url, data, auth=self.admin_contributor.auth)
+        assert_equal(res.status_code, 200)
+        self.preprint.license.reload()
+
+        assert_equal(self.preprint.license.node_license, self.cc0_license)
+        assert_equal(self.preprint.license.year, '2015')
+        assert_equal(self.preprint.license.copyright_holders, ['Bojack Horseman', 'Princess Carolyn'])
+
+    def test_update_preprint_license_without_required_year_in_payload(self):
+        data = self.make_payload(
+            node_id=self.preprint._id,
+            license_id=self.no_license._id,
+            copyright_holders=['Rick', 'Morty']
+        )
+
+        res = self.make_request(self.url, data, auth=self.admin_contributor.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], 'year must be specified for this license')
+
+    def test_update_preprint_license_without_required_copyright_holders_in_payload_(self):
+        data = self.make_payload(
+            node_id=self.preprint._id,
+            license_id=self.no_license._id,
+            license_year='1994'
+        )
+
+        res = self.make_request(self.url, data, auth=self.admin_contributor.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], 'copyrightHolders must be specified for this license')
+
+    def test_update_preprint_license_with_future_year(self):
+        data = self.make_payload(
+            node_id=self.preprint._id,
+            license_id=self.no_license._id,
+            license_year='2225',
+            copyright_holders=['Rick', 'Morty']
+        )
+
+        res = self.make_request(self.url, data, auth=self.admin_contributor.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], 'Future license years are not allowed')
+
+    def test_update_preprint_license_with_invalid_year(self):
+        data = self.make_payload(
+            node_id=self.preprint._id,
+            license_id=self.no_license._id,
+            license_year='476',
+            copyright_holders=['Brutus', 'Julius']
+        )
+
+        res = self.make_request(self.url, data, auth=self.admin_contributor.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], '476 is not a valid year')
+
+    def test_update_preprint_license_adds_log(self):
+        data = self.make_payload(
+            node_id=self.preprint._id,
+            license_id=self.cc0_license._id
+        )
+        logs_before_update = len(self.preprint.node.logs)
+
+        res = self.make_request(self.url, data, auth=self.admin_contributor.auth)
+        assert_equal(res.status_code, 200)
+        self.preprint.reload()
+        logs_after_update = len(self.preprint.node.logs)
+
+        assert_not_equal(logs_before_update, logs_after_update)
+        assert_equal(self.preprint.node.logs[-1].action, 'preprint_license_updated')
+
+    def test_update_preprint_license_does_not_change_project_license(self):
+        self.preprint.node.set_node_license(
+            {
+                'id': self.no_license.id,
+                'year': '2015',
+                'copyrightHolders': ['Simba', 'Mufasa']
+            },
+            auth=Auth(self.admin_contributor)
+        )
+        self.preprint.node.save()
+        assert_equal(self.preprint.node.node_license.node_license, self.no_license)
+
+        data = self.make_payload(
+            node_id=self.preprint._id,
+            license_id=self.cc0_license._id
+        )
+
+        res = self.make_request(self.url, data, auth=self.admin_contributor.auth)
+        assert_equal(res.status_code, 200)
+        self.preprint.reload()
+
+        assert_equal(self.preprint.license.node_license, self.cc0_license)
+        assert_equal(self.preprint.node.node_license.node_license, self.no_license)

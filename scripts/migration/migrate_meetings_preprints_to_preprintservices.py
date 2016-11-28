@@ -6,6 +6,7 @@ import sys
 
 from modularodm import Q
 from modularodm.storage.base import KeyExistsException
+from modularodm.exceptions import NoResultsFound
 
 from framework.mongo import database
 from framework.transactions.context import TokuTransaction
@@ -21,6 +22,33 @@ logger = logging.getLogger(__name__)
 target_data = []
 
 POSSIBLE_PREPRINT_PROVIDER_KEYS = set(['psyarxiv','engrxiv','socarxiv'])
+
+SOC_SUBJ_ID = None
+ENG_SUBJ_ID = None
+PSY_SUBJ_ID = None
+
+def set_default_subjects():
+    # Must be run after backends are set with init_app
+    global SOC_SUBJ_ID
+    global ENG_SUBJ_ID
+    global PSY_SUBJ_ID
+    try:
+        # PLOS
+        SOC_SUBJ_ID = models.Subject.find_one(Q('text', 'eq', 'Social and behavioral sciences'))._id
+        ENG_SUBJ_ID = models.Subject.find_one(Q('text', 'eq', 'Engineering and technology'))._id
+        PSY_SUBJ_ID = models.Subject.find_one(Q('text', 'eq', 'Social psychology'))._id
+    except NoResultsFound:
+        try:
+            # BePress
+            SOC_SUBJ_ID = models.Subject.find_one(Q('text', 'eq', 'Social and Behavioral Sciences'))._id  
+            ENG_SUBJ_ID = models.Subject.find_one(Q('text', 'eq', 'Engineering'))._id
+            PSY_SUBJ_ID = models.Subject.find_one(Q('text', 'eq', 'Social Psychology'))._id
+        except:
+            raise RuntimeError('Unable to find default subjects. Please ensure the existence of:\n\t' + \
+                '\'Engineering and technology\' (BePress: \'Engineering\'),\n\t' + \
+                '\'Social and behavioral sciences\' (BePress: \'Social and Behavioral Sciences\'),\n\t' + \
+                '\'Social psychology\' (BePress: \'Social Psychology\')'
+            )
 
 # Multiple updates to any <node>.child_node_subscriptions causes only the last one to succeed.
 # Cache the intended value instead, updating it here before writing.
@@ -90,7 +118,8 @@ def validate_target(target):
     assert set(node.get('tags', [])) & POSSIBLE_PREPRINT_PROVIDER_KEYS, 'Unable to infer PreprintProvider for node {} with tags {}'.format(node['_id'], node['tags'])
     assert file['node'] == node['_id'], 'File {} with `node` {} not attached to Node {}'.format(file_id, file['node'], node['_id'])
 
-    validate_subjects(target['subjects'])
+    if target.get('subjects'):
+        validate_subjects(target['subjects'])
 
     if not node.get('preprint_file', None):
         updates.update({'preprint_file': file['_id']})
@@ -152,6 +181,8 @@ def create_preprint_service_from_target(target, swap_cutoff):
         if not node:
             raise Exception('Unable to find node {}, erroring.'.format(node_doc['_id'])) 
 
+        subjects = target.get('subjects', {'socarxiv': [[SOC_SUBJ_ID]], 'engrxiv': [[ENG_SUBJ_ID]], 'psyarxiv': [[SOC_SUBJ_ID, PSY_SUBJ_ID]]}[provider_id])
+
         try:
             logger.info('* Creating preprint for node {}'.format(node._id))
             preprint = models.PreprintService(node=node, provider=provider)
@@ -161,7 +192,7 @@ def create_preprint_service_from_target(target, swap_cutoff):
                 {'$set': {
                     'date_created': node_doc['preprint_created'],
                     'date_published': node_doc['preprint_created'],
-                    'subjects': target['subjects'],
+                    'subjects': subjects,
                     'is_published': True
                 }}
             )
@@ -1262,7 +1293,6 @@ def migrate(swap_cutoff):
     
     log_results()
 
-
 def parse_input():
     logger.info('Acquiring targets...')
     if '--targets' not in sys.argv and '--auto' not in sys.argv:
@@ -1280,7 +1310,6 @@ def parse_input():
             {
                 'file_id': database['storedfilenode'].find({'node': n._id, 'is_file': True, 'provider': 'osfstorage'}, {'_id': 1})[0]['_id'],
                 'node_id': n._id,
-                'subjects': {'socarxiv': [['57c36d0e54be8101f5eec4af']], 'engrxiv': [['57c36d0654be8101f5eebf76']], 'psyarxiv': [['57c36d0e54be8101f5eec4af', '57c36d0454be8101f5eebe02']]}[list(set([t.lower for t in n.tags]) & set(['socarxiv', 'engrxiv', 'psyarxiv']))[0]]
             } for n in models.Node.find(Q('tags', 'in', ['socarxiv', 'engrxiv', 'psyarxiv']) & Q('system_tags', 'ne', 'migrated_from_osf4m'))
             if database['storedfilenode'].find({'node': n._id, 'is_file': True, 'provider': 'osfstorage'}).count() == 1
         ]
@@ -1303,6 +1332,8 @@ def main():
         script_utils.add_file_logger(logger, __file__)
     init_app(set_backends=True, routes=False)
     settings.SHARE_API_TOKEN = None
+    set_default_subjects()
+    assert all([ENG_SUBJ_ID, SOC_SUBJ_ID, PSY_SUBJ_ID]), 'Default subjects not set.'
     if '--no-addindex' not in sys.argv:
         create_indices()
     if dry_run:

@@ -11,6 +11,7 @@ from framework.mongo.utils import unique_on
 from website.files.models import StoredFileNode
 from website.preprints.tasks import on_preprint_updated
 from website.project.model import NodeLog
+from website.project.licenses import set_license
 from website.project.taxonomies import Subject, validate_subject_hierarchy
 from website.util import api_v2_url
 from website.util.permissions import ADMIN
@@ -26,6 +27,7 @@ class PreprintService(GuidStoredObject):
     node = fields.ForeignField('Node', index=True)
     is_published = fields.BooleanField(default=False, index=True)
     date_published = fields.DateTimeField()
+    license = fields.ForeignField('NodeLicenseRecord')
 
     # This is a list of tuples of Subject id's. MODM doesn't do schema
     # validation for DictionaryFields, but would unsuccessfully attempt
@@ -69,6 +71,9 @@ class PreprintService(GuidStoredObject):
     def absolute_api_v2_url(self):
         path = '/preprints/{}/'.format(self._id)
         return api_v2_url(path)
+
+    def has_permission(self, *args, **kwargs):
+        return self.node.has_permission(*args, **kwargs)
 
     def get_subjects(self):
         ret = []
@@ -168,6 +173,28 @@ class PreprintService(GuidStoredObject):
 
         if save:
             self.node.save()
+            self.save()
+
+    def set_preprint_license(self, license_detail, auth, save=False):
+
+        set_license(self, license_detail, auth, node_type='preprint')
+
+        self.node.add_log(
+            action=NodeLog.PREPRINT_LICENSE_UPDATED,
+            params={
+                'preprint': {
+                    'id': self._id,
+                    'title': self.node.title
+                },
+                'service': {
+                    'title': self.provider.name
+                }
+            },
+            auth=auth,
+            save=False
+        )
+
+        if save:
             self.save()
 
     def save(self, *args, **kwargs):

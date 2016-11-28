@@ -10,10 +10,12 @@ from api.base.serializers import (
 )
 from api.base.utils import absolute_reverse, get_user_auth
 from api.taxonomies.serializers import TaxonomyField
+from api.nodes.serializers import NodeLicenseSerializer
 from framework.exceptions import PermissionsError
 from website.util import permissions
+from website.exceptions import NodeStateError
 from website.project import signals as project_signals
-from website.models import StoredFileNode, PreprintService, PreprintProvider, Node
+from website.models import StoredFileNode, PreprintService, PreprintProvider, Node, NodeLicense
 
 
 class PrimaryFileRelationshipField(RelationshipField):
@@ -40,6 +42,13 @@ class PreprintProviderRelationshipField(RelationshipField):
         provider = self.get_object(data)
         return {'provider': provider}
 
+
+class PreprintLicenseRelationshipField(RelationshipField):
+    def to_internal_value(self, license_id):
+        license = NodeLicense.load(license_id)
+        return {'license_type': license}
+
+
 class PreprintSerializer(JSONAPISerializer):
     filterable_fields = frozenset([
         'id',
@@ -58,10 +67,17 @@ class PreprintSerializer(JSONAPISerializer):
     doi = ser.CharField(source='article_doi', required=False, allow_null=True)
     is_published = ser.BooleanField(required=False)
     is_preprint_orphan = ser.BooleanField(read_only=True)
+    license_record = NodeLicenseSerializer(required=False, source='license')
 
     node = NodeRelationshipField(
         related_view='nodes:node-detail',
         related_view_kwargs={'node_id': '<node._id>'},
+        read_only=False
+    )
+
+    license = PreprintLicenseRelationshipField(
+        related_view='licenses:license-detail',
+        related_view_kwargs={'license_id': '<license.node_license._id>'},
         read_only=False
     )
 
@@ -98,6 +114,23 @@ class PreprintSerializer(JSONAPISerializer):
     def get_doi_url(self, obj):
         return 'https://dx.doi.org/{}'.format(obj.article_doi) if obj.article_doi else None
 
+    def get_license_details(self, preprint, validated_data):
+        license_id = preprint.license.node_license.id if preprint.license else None
+        license_year = preprint.license.year if preprint.license else None
+        license_holders = preprint.license.copyright_holders if preprint.license else []
+
+        if 'license' in validated_data:
+            license_year = validated_data['license'].get('year', license_year)
+            license_holders = validated_data['license'].get('copyright_holders', license_holders)
+        if 'license_type' in validated_data:
+            license_id = validated_data['license_type'].id
+
+        return {
+            'id': license_id,
+            'year': license_year,
+            'copyrightHolders': license_holders
+        }
+
     def update(self, preprint, validated_data):
         assert isinstance(preprint, PreprintService), 'You must specify a valid preprint to be updated'
         assert isinstance(preprint.node, Node), 'You must specify a preprint with a valid node to be updated.'
@@ -130,6 +163,11 @@ class PreprintSerializer(JSONAPISerializer):
             save_preprint = True
             recently_published = published
 
+        if 'license_type' in validated_data or 'license' in validated_data:
+            license_details = self.get_license_details(preprint, validated_data)
+            self.set_field(preprint.set_preprint_license, license_details, auth)
+            save_preprint = True
+
         if save_node:
             try:
                 preprint.node.save()
@@ -153,9 +191,11 @@ class PreprintSerializer(JSONAPISerializer):
     def set_field(self, func, val, auth, save=False):
         try:
             func(val, auth, save=save)
-        except PermissionsError:
-            raise exceptions.PermissionDenied('Not authorized to update this node.')
+        except PermissionsError as e:
+            raise exceptions.PermissionDenied(detail=e.message)
         except ValueError as e:
+            raise exceptions.ValidationError(detail=e.message)
+        except NodeStateError as e:
             raise exceptions.ValidationError(detail=e.message)
 
 

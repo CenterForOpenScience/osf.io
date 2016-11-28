@@ -255,7 +255,8 @@ def make_response_from_ticket(ticket, service_url):
     """
 
     service_furl = furl.furl(service_url)
-    # `ticket` has already been pulled off in `framework.sessions.before_request()` which calls this method
+    # `service_url` is guaranteed to be removed of `ticket` parameter, which has been pulled off in
+    # `framework.sessions.before_request()`.
     if 'ticket' in service_furl.args:
         service_furl.args.pop('ticket')
     client = get_client()
