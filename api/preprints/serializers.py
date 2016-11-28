@@ -128,7 +128,7 @@ class PreprintSerializer(JSONAPISerializer):
         return {
             'id': license_id,
             'year': license_year,
-            'copyright_holders': license_holders
+            'copyrightHolders': license_holders
         }
 
     def update(self, preprint, validated_data):
@@ -163,7 +163,7 @@ class PreprintSerializer(JSONAPISerializer):
             save_preprint = True
             recently_published = published
 
-        if 'license' in validated_data or 'license_type' in validated_data:
+        if 'license_type' in validated_data or 'license' in validated_data:
             license_details = self.get_license_details(preprint, validated_data)
             self.set_field(preprint.set_preprint_license, license_details, auth)
             save_preprint = True
@@ -191,12 +191,12 @@ class PreprintSerializer(JSONAPISerializer):
     def set_field(self, func, val, auth, save=False):
         try:
             func(val, auth, save=save)
-        except PermissionsError:
-            raise exceptions.PermissionDenied('Not authorized to update this node.')
+        except PermissionsError as e:
+            raise exceptions.PermissionDenied(detail=e.message)
         except ValueError as e:
             raise exceptions.ValidationError(detail=e.message)
-        except NodeStateError:
-            raise exceptions.ValidationError(detail='message here pls maybe')
+        except NodeStateError as e:
+            raise exceptions.ValidationError(detail=e.message)
 
 
 class PreprintCreateSerializer(PreprintSerializer):

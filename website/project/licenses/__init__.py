@@ -147,7 +147,7 @@ def set_license(node, license_detail, auth, node_type='node'):
 
     license_id = license_detail.get('id')
     license_year = license_detail.get('year')
-    copyright_holders = license_detail.get('copyright_holders', [])
+    copyright_holders = license_detail.get('copyrightHolders', [])
 
     if not node.has_permission(auth.user, permissions.ADMIN):
         raise framework_exceptions.PermissionsError('Only admins can change a {}\'s license'.format(node_type))
@@ -172,7 +172,8 @@ def set_license(node, license_detail, auth, node_type='node'):
         current_year = datetime.now().year
         if not valid_year.match(license_year):
             raise modm_exceptions.ValidationValueError('{} is not a valid year'.format(license_year))
-        if license_year > current_year:
+
+        if int(license_year) > int(current_year):
             raise modm_exceptions.ValidationValueError('Future license years are not allowed')
 
     license_record = node.node_license if node_type == 'node' else node.license
