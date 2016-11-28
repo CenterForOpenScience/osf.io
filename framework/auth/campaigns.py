@@ -73,7 +73,8 @@ def get_campaigns():
         except (NoResultsFound or QueryException or ImproperConfigurationError) as e:
             logger.warn('An error has occurred during campaign initialization: {}', e)
 
-    CAMPAIGNS_LAST_REFRESHED = datetime.utcnow()
+        CAMPAIGNS_LAST_REFRESHED = datetime.utcnow()
+
     return CAMPAIGNS
 
 
