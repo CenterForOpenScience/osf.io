@@ -1,10 +1,7 @@
 import functools
 import json
 import os
-import re
 import warnings
-
-from datetime import datetime
 
 from modularodm import fields, Q
 from modularodm import exceptions as modm_exceptions
@@ -166,15 +163,6 @@ def set_license(node, license_detail, auth, node_type='node'):
     for required_property in node_license.properties:
         if not license_detail.get(required_property):
             raise modm_exceptions.ValidationValueError('{} must be specified for this license'.format(required_property))
-
-    if license_year:
-        valid_year = re.compile(r'^\d{4}')
-        current_year = datetime.now().year
-        if not valid_year.match(license_year):
-            raise modm_exceptions.ValidationValueError('{} is not a valid year'.format(license_year))
-
-        if int(license_year) > int(current_year):
-            raise modm_exceptions.ValidationValueError('Future license years are not allowed')
 
     license_record = node.node_license if node_type == 'node' else node.license
     if license_record is None:
