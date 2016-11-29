@@ -86,20 +86,27 @@ def fill_in_event_gaps(collection_name, events):
     :return: list of "generated and estimated" events to send that will fill in gaps.
     """
 
-    given_days = [parse(event['keen']['timestamp']).date() for event in events]
+    given_days = [parse(event['keen']['timestamp']).date() for event in events if not event.get('generated')]
     given_days.sort()
+    date_chunks = [given_days[x-1:x+1] for x in range(1, len(given_days))]
     events_to_add = []
     if given_days:
         if collection_name != 'addon_snapshot':
-            first_event = [event for event in events if date_from_event_ts(event) == given_days[0]][0]
-            events_to_add = generate_events_between_events(given_days, first_event)
+            for date_pair in date_chunks:
+                if date_pair[1] - date_pair[0] > datetime.timedelta(1):
+                    first_event = [event for event in events if date_from_event_ts(event) == date_pair[0] and not event.get('generated')]
+                    if first_event:
+                        events_to_add += generate_events_between_events(date_pair, first_event[0])
         else:
             all_providers = list(set([event['provider']['name'] for event in events]))
             for provider in all_providers:
-                first_event = [
-                    event for event in events if date_from_event_ts(event) == given_days[0] and event['provider']['name'] == provider
-                ][0]
-                events_to_add += generate_events_between_events(given_days, first_event)
+                for date_pair in date_chunks:
+                    if date_pair[1] - date_pair[0] > datetime.timedelta(1):
+                        first_event = [
+                            event for event in events if date_from_event_ts(event) == date_pair[0] and event['provider']['name'] == provider and not event.get('generated')
+                            ]
+                        if first_event:
+                            events_to_add += generate_events_between_events(date_pair, first_event[0])
         logger.info('Generated {} events to add to the {} collection.'.format(len(events_to_add), collection_name))
     else:
         logger.info('Could not retrieve events for the date range you provided.')
@@ -123,11 +130,18 @@ def generate_events_between_events(given_days, first_event):
     generated_events = []
     while next_day < last_day:
         new_event = copy.deepcopy(first_event)
-        new_event['keen']['timestamp'] = next_day.isoformat()
+        new_event['keen']['timestamp'] = datetime.datetime(next_day.year, next_day.month, next_day.day).replace(tzinfo=pytz.UTC).isoformat()
         if next_day not in given_days:
             generated_events.append(new_event)
         next_day += datetime.timedelta(1)
 
+    if generated_events:
+        logger.info('Generated {} events for the interval {} to {}'.format(
+            len(generated_events),
+            given_days[0].isoformat(),
+            given_days[1].isoformat()
+        )
+    )
     return generated_events
 
 
@@ -208,13 +222,13 @@ def transfer_events_to_another_collection(client, source_collection, destination
     else:
         add_events_to_keen(client, destination_collection, events_from_source, dry)
 
-    logger.info(
-        'Transferred {} events from the {} collection to the {} collection'.format(
-            len(events_from_source),
-            source_collection,
-            destination_collection
+        logger.info(
+            'Transferred {} events from the {} collection to the {} collection'.format(
+                len(events_from_source),
+                source_collection,
+                destination_collection
+            )
         )
-    )
 
 
 def add_events_to_keen(client, collection, events, dry):
@@ -233,22 +247,28 @@ def smooth_events_in_keen(client, source_collection, start_date, end_date, dry, 
 
 
 def remove_events_from_keen(client, source_collection, events, dry):
-    filters = []
-
     for event in events:
-        filters.append(
-            {'property_name': 'keen.timestamp', 'operator': 'eq', 'property_value': event['keen']['timestamp']}
-        )
+        filters = [{'property_name': 'keen.timestamp', 'operator': 'eq', 'property_value': event['keen']['timestamp']}]
 
-    # test to see if you get back the correct events
-    filtered_events = client.extraction(source_collection, filters=filters)
+        # test to see if you get back the correct events from keen
+        filtered_event = client.extraction(source_collection, filters=filters)
+        if filtered_event:
+            filtered_event = filtered_event[0]
+            filtered_event['keen'].pop('id')
+            filtered_event['keen'].pop('created_at')
+            filtered_event['keen']['timestamp'] = filtered_event['keen']['timestamp'][:10]
+            event['keen']['timestamp'] = event['keen']['timestamp'][:10]
+            if event != filtered_event:
+                logger.error('Filtered event not equal to the event you have gathered, not removing...')
+            else:
+                logger.info('About to delete a generated event from the {} collection from the date {}'.format(
+                    source_collection, event['keen']['timestamp']
+                ))
 
-    if events != filtered_events:
-        raise AttributeError('Filtered events not equal to the events you have gathered.')
-
-    logger.info('About to delete {} events from the {} collection'.format(len(events), source_collection))
-    if not dry:
-        client.delete_events(source_collection, filter=filter)
+                if not dry:
+                    client.delete_events(source_collection, filters=filters)
+        else:
+            logger.info('No filtered event found.')
 
 
 def import_old_events_from_spreadsheet():
@@ -302,9 +322,9 @@ def import_old_events_from_spreadsheet():
             if key in addon_summary_cols:
                 addon_event[key] = value
 
-        formatted_user_event = format_event(user_event, type='user')
-        formatted_node_event = format_event(node_event, type='node')
-        formatted_addon_event = format_event(addon_event, type='addon')
+        formatted_user_event = format_event(user_event, analytics_type='user')
+        formatted_node_event = format_event(node_event, analytics_type='node')
+        formatted_addon_event = format_event(addon_event, analytics_type='addon')
 
         if formatted_node_event:
             node_events.append(formatted_node_event)
@@ -329,7 +349,7 @@ def comma_int(value):
         return int(value.replace(',', ''))
 
 
-def format_event(event, type):
+def format_event(event, analytics_type):
     user_event_template = {
         "status": {},
         "keen": {}
@@ -343,20 +363,18 @@ def format_event(event, type):
 
     addon_event_template = {
         "keen": {},
-        "users": {},
-        "provider": {
-            "name": "dropbox"
-        }
+        "users": {}
     }
 
     template_to_use = None
-    if type == 'user':
+    if analytics_type == 'user':
         template_to_use = user_event_template
 
-        template_to_use['status']['active'] = comma_int(event['active'])
+        if event['active'] and event['active'] != 'MISSING':
+            template_to_use['status']['active'] = comma_int(event['active'])
         if event['unconfirmed'] and event['active']:
             template_to_use['status']['unconfirmed'] = comma_int(event['active']) - comma_int(event['unconfirmed'])
-    elif type == 'node':
+    elif analytics_type == 'node':
         template_to_use = node_event_template
 
         if event['nodes.total']:
@@ -367,7 +385,7 @@ def format_event(event, type):
             template_to_use['registered_nodes']['total'] = comma_int(event['registrations.total'])
         if event['nodes.total'] and event['nodes.public']:
             template_to_use['nodes']['private'] = template_to_use['nodes']['total'] - template_to_use['nodes']['public']
-    elif type == 'addon':
+    elif analytics_type == 'addon':
         template_to_use = addon_event_template
 
         if event['enabled']:
@@ -377,10 +395,14 @@ def format_event(event, type):
         if event['linked']:
             template_to_use['users']['linked'] = comma_int(event['linked'])
 
-    template_to_use['keen']['timestamp'] = parse(event['timestamp']).replace(tzinfo=pytz.UTC).isoformat()
+        if event['authorized'] or event['enabled'] or event['linked']:
+            template_to_use["provider"] = {"name": "dropbox"}
+
+    template_to_use['keen']['timestamp'] = parse(event['timestamp']).replace(hour=12, tzinfo=pytz.UTC).isoformat()
+    template_to_use['imported'] = True
 
     formatted_event = {key: value for key, value in template_to_use.items() if value}
-    if len(formatted_event.items()) > 1:  # if there's more than just the auto-added timestamp for keen
+    if len(formatted_event.items()) > 2:  # if there's more than just the auto-added timestamp for keen
         return template_to_use
 
 
@@ -401,7 +423,9 @@ def main():
         * Transfer all events from the 'institution_analytics' to the 'institution_summary' collection:
             `python -m scripts.analytics.migrate_analytics -d -t -sc institution_analytics -dc institution_summary`
         * Fill in the gaps in analytics for the 'addon_snapshot' collection between 2016-11-01 and 2016-11-15:
-            `python -m scripts.analytics.migrate_analytics -d -sm -s 2016-11-01 -e 2016-11-15`
+            `python -m scripts.analytics.migrate_analytics -d -sm -sc addon_snapshot -s 2016-11-01 -e 2016-11-15`
+        * Reverse the above action by adding -r:
+            `python -m scripts.analytics.migrate_analytics -d -sm -sc addon_snapshot -s 2016-11-01 -e 2016-11-15 -r`
         * Parse old analytics from the old analytics CSV stored on your filesystem:
             `python -m scripts.analytics.migrate_analytics -o -d`
     """
@@ -412,7 +436,7 @@ def main():
     reverse = args.reverse
 
     if args.smooth_events:
-        smooth_events_in_keen(client, args.source_colletion, parse(args.start_date), parse(args.end_date), dry, reverse)
+        smooth_events_in_keen(client, args.source_collection, parse(args.start_date), parse(args.end_date), dry, reverse)
     elif args.transfer_collection:
         transfer_events_to_another_collection(client, args.source_collection, args.destination_collection, dry, reverse)
     elif args.old_analytics:
