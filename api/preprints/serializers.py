@@ -207,6 +207,8 @@ class PreprintCreateSerializer(PreprintSerializer):
         node = Node.load(validated_data.pop('node', None))
         if not node:
             raise exceptions.NotFound('Unable to find Node with specified id.')
+        elif node.is_deleted:
+            raise exceptions.ValidationError('Cannot create a preprint from a deleted node.')
 
         auth = get_user_auth(self.context['request'])
         if not node.has_permission(auth.user, permissions.ADMIN):
