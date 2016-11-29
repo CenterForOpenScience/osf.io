@@ -198,7 +198,7 @@ class FileSerializer(JSONAPISerializer):
         elif obj.provider != 'osfstorage' and obj.history:
             mod_dt = obj.history[-1].get('modified', None)
 
-        if self.context['request'].version >= '2.2':
+        if self.context['request'].version >= '2.2' and obj.is_file:
             return datetime.strftime(mod_dt, '%Y-%m-%dT%H:%M:%S.%fZ')
 
         return mod_dt and mod_dt.replace(tzinfo=pytz.utc)
@@ -212,7 +212,7 @@ class FileSerializer(JSONAPISerializer):
             # earliest entry in the file history.
             creat_dt = obj.history[0].get('modified', None)
 
-        if self.context['request'].version >= '2.2':
+        if self.context['request'].version >= '2.2' and obj.is_file:
             return datetime.strftime(creat_dt, '%Y-%m-%dT%H:%M:%S.%fZ')
 
         return creat_dt and creat_dt.replace(tzinfo=pytz.utc)
