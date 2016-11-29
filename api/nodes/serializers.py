@@ -41,10 +41,10 @@ class NodeTagField(ser.Field):
         return data
 
 
-class NodeLicenseSerializer(RestrictedDictSerializer):
+class NodeLicenseSerializer(ser.Serializer):
 
-    copyright_holders = ser.ListField(allow_empty=True, read_only=True)
-    year = ser.CharField(allow_blank=True, read_only=True)
+    copyright_holders = ser.ListField(allow_empty=True)
+    year = ser.CharField(allow_blank=True)
 
 
 class NodeCitationSerializer(JSONAPISerializer):
