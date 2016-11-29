@@ -124,7 +124,7 @@ def gitlab_add_user_account(auth, **kwargs):
         # ... or get the old one
         account = ExternalAccount.find_one(
             Q('provider', 'eq', 'gitlab') &
-            Q('provider_id', 'eq', clientId)
+            Q('provider_id', 'eq', host)
         )
 
     if account not in user.external_accounts:
@@ -275,21 +275,16 @@ def gitlab_hgrid_data(node_settings, auth, **kwargs):
 
     # Quit if privacy mismatch and not contributor
     node = node_settings.owner
-    if node.is_public and not node.is_contributor(auth.user):
+    if node.is_public or node.is_contributor(auth.user):
         try:
             repo = connection.repo(node_settings.repo_id)
         except NotFoundError:
-            # TODO: Test me @jmcarp
-            # TODO: Add warning message
             logger.error('Could not access GitLab repo')
-            return None
-        if not repo['public']:
             return None
 
     try:
         branch, sha, branches = get_refs(node_settings,branch=kwargs.get('branch'),sha=kwargs.get('sha'),connection=connection)
     except (NotFoundError, GitLabError):
-        # TODO: Show an alert or change GitLab configuration?
         logger.error('GitLab repo not found')
         return
 
@@ -323,8 +318,8 @@ def gitlab_hgrid_data(node_settings, auth, **kwargs):
         urls=urls,
         permissions=permissions,
         branches=branch_names,
-        defaultBranch=repo['default_branch'],
         private_key=kwargs.get('view_only', None),
+        defaultBranch=repo['default_branch'],
     )]
 
 #########

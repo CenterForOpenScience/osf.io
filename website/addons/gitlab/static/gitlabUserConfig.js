@@ -127,7 +127,7 @@ function ViewModel(url) {
             window.open('/oauth/connect/gitlab');
 
         }).fail(function(xhr, textStatus, error) {
-            var errorMessage = (xhr.status === 401) ? language.authInvalid : language.authError;
+            var errorMessage = (xhr.status === 401) ? 'Auth Error' : 'Other error';
             self.changeMessage(errorMessage, 'text-danger');
             Raven.captureMessage('Could not authenticate with GitLab', {
                 url: url,
