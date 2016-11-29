@@ -540,30 +540,6 @@ class TestPreprintUpdateLicense(ApiTestCase):
         assert_equal(res.status_code, 400)
         assert_equal(res.json['errors'][0]['detail'], 'copyrightHolders must be specified for this license')
 
-    def test_update_preprint_license_with_future_year(self):
-        data = self.make_payload(
-            node_id=self.preprint._id,
-            license_id=self.no_license._id,
-            license_year='2225',
-            copyright_holders=['Rick', 'Morty']
-        )
-
-        res = self.make_request(self.url, data, auth=self.admin_contributor.auth, expect_errors=True)
-        assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['detail'], 'Future license years are not allowed')
-
-    def test_update_preprint_license_with_invalid_year(self):
-        data = self.make_payload(
-            node_id=self.preprint._id,
-            license_id=self.no_license._id,
-            license_year='476',
-            copyright_holders=['Brutus', 'Julius']
-        )
-
-        res = self.make_request(self.url, data, auth=self.admin_contributor.auth, expect_errors=True)
-        assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['detail'], '476 is not a valid year')
-
     def test_update_preprint_license_adds_log(self):
         data = self.make_payload(
             node_id=self.preprint._id,
