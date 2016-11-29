@@ -256,7 +256,7 @@ def remove_events_from_keen(client, source_collection, events, dry):
             filtered_event = filtered_event[0]
             filtered_event['keen'].pop('id')
             filtered_event['keen'].pop('created_at')
-            filtered_event['keen']['timestamp'] = filtered_event['keen']['timestamp'][:10]
+            filtered_event['keen']['timestamp'] = filtered_event['keen']['timestamp'][:10]  # ends of timestamps differ
             event['keen']['timestamp'] = event['keen']['timestamp'][:10]
             if event != filtered_event:
                 logger.error('Filtered event not equal to the event you have gathered, not removing...')
