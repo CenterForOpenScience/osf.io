@@ -27,6 +27,7 @@ class AddonTestCase(object):
         - self.node_settings: AddonNodeSettings object for the addon
 
     """
+    DISABLE_OUTGOING_CONNECTIONS = True
     DB_NAME = getattr(settings, 'TEST_DB_ADDON_NAME', 'osf_addon')
     ADDON_SHORT_NAME = None
     OWNERS = ['user', 'node']

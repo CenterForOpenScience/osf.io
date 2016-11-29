@@ -263,17 +263,20 @@ def kill(*args, **kwargs):
 
 class MockRequestTestCase(unittest.TestCase):
 
+    DISABLE_OUTGOING_CONNECTIONS = False
+
     @classmethod
     def setUpClass(cls):
         super(MockRequestTestCase, cls).setUpClass()
-        httpretty.enable()
-        for method in methods:
-            httpretty.register_uri(
-                method,
-                re.compile(r'.*'),
-                body=kill,
-                priority=-1,
-            )
+        if cls.DISABLE_OUTGOING_CONNECTIONS:
+            httpretty.enable()
+            for method in methods:
+                httpretty.register_uri(
+                    method,
+                    re.compile(r'.*'),
+                    body=kill,
+                    priority=-1,
+                )
 
     def tearDown(self):
         super(MockRequestTestCase, self).tearDown()
@@ -307,6 +310,7 @@ class ApiAddonTestCase(ApiTestCase):
     """Base `TestCase` for tests that require interaction with addons.
 
     """
+    DISABLE_OUTGOING_CONNECTIONS = True
 
     @abc.abstractproperty
     def short_name(self):
