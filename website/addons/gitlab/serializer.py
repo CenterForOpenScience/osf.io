@@ -7,8 +7,6 @@ from website.addons.gitlab.exceptions import GitLabError
 
 from framework.sessions import session
 
-import pdb
-
 class GitLabSerializer(StorageAddonSerializer):
 
     addon_short_name = 'gitlab'
