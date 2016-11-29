@@ -64,7 +64,7 @@ class CasAuthentication(BaseAuthentication):
                     raise AuthenticationFailed(detail=error_message)
                 # valid user status
                 return user, None
-            # first step fails
+            # initial verification fails
             raise AuthenticationFailed(detail=error_message)
         # The `data` payload structure for type "REGISTER"
         # {
@@ -173,14 +173,14 @@ def verify_two_factor(user, one_time_password):
 
 
 def verify_user_status(user):
-    if not user.is_registered:
-        return 'USER_NOT_REGISTERED'
     if not user.is_claimed:
         return 'USER_NOT_CLAIMED'
     if user.is_merged:
         return 'USER_MERGED'
     if user.is_disabled:
         return 'USER_DISABLED'
+    if not user.is_registered:
+        return 'USER_NOT_REGISTERED'
     if not user.is_active:
         return 'USER_NOT_ACTIVE'
     return None
