@@ -279,8 +279,8 @@ def import_old_events_from_spreadsheet():
         'active-users': 'active',
         'logs-gte-11-total': 'depth',
         'number_users': 'unconfirmed',  # really is active - number_users
-        'number_projects': 'nodes.total',
-        'number_projects_public': 'nodes.public',
+        'number_projects': 'projects.total',
+        'number_projects_public': 'projects.public',
         'number_projects_registered': 'registrations.total',
         'Date': 'timestamp',
         'dropbox-users-enabled': 'enabled',
@@ -304,7 +304,7 @@ def import_old_events_from_spreadsheet():
         events.append(event)
 
     user_summary_cols = ['active', 'depth', 'unconfirmed', 'timestamp']
-    node_summary_cols = ['registrations.total', 'nodes.total', 'nodes.public', 'timestamp']
+    node_summary_cols = ['registrations.total', 'projects.total', 'projects.public', 'timestamp']
     addon_summary_cols = ['enabled', 'authorized', 'linked', 'timestamp']
 
     user_events = []
@@ -356,8 +356,8 @@ def format_event(event, analytics_type):
     }
 
     node_event_template = {
-        "nodes": {},
-        "registered_nodes": {},
+        "projects": {},
+        "registered_projects": {},
         "keen": {}
     }
 
@@ -377,14 +377,14 @@ def format_event(event, analytics_type):
     elif analytics_type == 'node':
         template_to_use = node_event_template
 
-        if event['nodes.total']:
-            template_to_use['nodes']['total'] = comma_int(event['nodes.total'])
-        if event['nodes.public']:
-            template_to_use['nodes']['public'] = comma_int(event['nodes.public'])
+        if event['projects.total']:
+            template_to_use['projects']['total'] = comma_int(event['projects.total'])
+        if event['projects.public']:
+            template_to_use['projects']['public'] = comma_int(event['projects.public'])
         if event['registrations.total']:
-            template_to_use['registered_nodes']['total'] = comma_int(event['registrations.total'])
-        if event['nodes.total'] and event['nodes.public']:
-            template_to_use['nodes']['private'] = template_to_use['nodes']['total'] - template_to_use['nodes']['public']
+            template_to_use['registered_projects']['total'] = comma_int(event['registrations.total'])
+        if event['projects.total'] and event['projects.public']:
+            template_to_use['projects']['private'] = template_to_use['projects']['total'] - template_to_use['projects']['public']
     elif analytics_type == 'addon':
         template_to_use = addon_event_template
 
@@ -445,3 +445,10 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+    # client = get_keen_client()
+    # filters = [{'property_name': 'imported', 'operator': 'eq', 'property_value': True}]
+    #
+    # client.delete_events('node_summary', filters=filters)
+    # client.delete_events('user_summary', filters=filters)
+    # client.delete_events('addon_snapshot', filters=filters)
