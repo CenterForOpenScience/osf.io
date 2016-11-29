@@ -3,6 +3,7 @@ import urlparse
 
 from modularodm import fields, Q
 
+from framework.encryption import EncryptedStringField
 from framework.celery_tasks.handlers import enqueue_task
 from framework.exceptions import PermissionsError
 from framework.guid.model import GuidStoredObject
@@ -16,6 +17,7 @@ from website.project.taxonomies import Subject, validate_subject_hierarchy
 from website.util import api_v2_url
 from website.util.permissions import ADMIN
 from website import settings
+
 
 @unique_on(['node', 'provider'])
 class PreprintService(GuidStoredObject):
@@ -213,6 +215,7 @@ class PreprintProvider(StoredObject):
     external_url = fields.StringField()
     email_contact = fields.StringField()
     email_support = fields.StringField()
+    access_token = EncryptedStringField()
     advisory_board = fields.StringField()
     social_twitter = fields.StringField()
     social_facebook = fields.StringField()
