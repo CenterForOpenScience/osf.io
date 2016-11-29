@@ -58,6 +58,8 @@ class TestMigrateAnalytics(OsfTestCase):
 
     def test_generate_events_between_events(self):
         generated_events = generate_events_between_events([self.day_one, self.day_two], self.keen_event)
+
+        # Only for the first gap, so 3/13, 3/14, 3/15
         assert_equal(len(generated_events), 3)
         returned_dates = [event['keen']['timestamp'] for event in generated_events]
         expected_dates = ['2016-03-{}T00:00:00+00:00'.format(i) for i in range(13, 16)]
