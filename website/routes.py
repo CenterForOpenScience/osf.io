@@ -2,12 +2,10 @@
 import os
 import httplib as http
 
-from flask import request, Response
+from flask import request
 from flask import send_from_directory
 
-import requests
 from geoip import geolite2
-from furl import furl
 
 from framework import status
 from framework import sentry
@@ -46,6 +44,7 @@ from website.addons.base import views as addon_views
 from website.discovery import views as discovery_views
 from website.conferences import views as conference_views
 from website.preprints import views as preprint_views
+from website.registries import views as registries_views
 from website.institutions import views as institution_views
 from website.notifications import views as notification_views
 
@@ -172,25 +171,26 @@ def robots():
         mimetype='text/plain'
     )
 
-
-def external_ember_app(_=None):
+def ember_app(path=None):
     """Serve the contents of the ember application"""
-    external_app_url = None
-
+    ember_app_folder = None
+    fp = path or 'index.html'
     for k in settings.EXTERNAL_EMBER_APPS.keys():
-        if request.path.startswith(k):
-            external_app_url = settings.EXTERNAL_EMBER_APPS[k]
+        if request.path.strip('/').startswith(k):
+            ember_app_folder = os.path.abspath(os.path.join(os.getcwd(), settings.EXTERNAL_EMBER_APPS[k]['path']))
             break
 
-    if not external_app_url:
+    if not ember_app_folder:
         raise HTTPError(http.NOT_FOUND)
 
-    url = furl(external_app_url).add(path=request.path)
-    resp = requests.get(url, headers={'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8'})
-    excluded_headers = ['content-encoding', 'content-length', 'transfer-encoding', 'connection']
-    headers = [(name, value) for (name, value) in resp.raw.headers.items() if name.lower() not in excluded_headers]
-    return Response(resp.content, resp.status_code, headers)
+    if not os.path.abspath(os.path.join(ember_app_folder, fp)).startswith(ember_app_folder):
+        # Prevent accessing files outside of the ember build dir
+        raise HTTPError(http.NOT_FOUND)
 
+    if not os.path.isfile(os.path.join(ember_app_folder, fp)):
+        fp = 'index.html'
+
+    return send_from_directory(ember_app_folder, fp)
 
 def goodbye():
     # Redirect to dashboard if logged in
@@ -258,11 +258,11 @@ def make_url_map(app):
         rules = []
         for prefix in settings.EXTERNAL_EMBER_APPS.keys():
             rules += [
-                prefix,
-                '{}<path:_>'.format(prefix),
+                '/{}/'.format(prefix),
+                '/{}/<path:path>'.format(prefix),
             ]
         process_rules(app, [
-            Rule(rules, 'get', external_ember_app, json_renderer),
+            Rule(rules, 'get', ember_app, json_renderer),
         ])
 
     ### Base ###
@@ -376,6 +376,13 @@ def make_url_map(app):
             'get',
             preprint_views.preprint_landing_page,
             OsfWebRenderer('public/pages/preprint_landing.mako', trust=False),
+        ),
+
+        Rule(
+            '/registries/',
+            'get',
+            registries_views.registries_landing_page,
+            OsfWebRenderer('public/pages/registries_landing.mako', trust=False),
         ),
 
         Rule(
