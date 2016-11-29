@@ -1,19 +1,15 @@
 import urllib
 import requests
-import itertools
 
 import gitlab
 import cachecontrol
 from requests.adapters import HTTPAdapter
 
-from website.addons.gitlab import settings as gitlab_settings
 from website.addons.gitlab.exceptions import NotFoundError
 
 # Initialize caches
 https_cache = cachecontrol.CacheControlAdapter()
 default_adapter = HTTPAdapter()
-
-import pdb
 
 from framework.sessions import session
 
@@ -102,7 +98,6 @@ class GitLabClient(object):
         return request.headers, request.content
 
     def hooks(self, user, repo):
-#TODO
         """List webhooks
 
         :param str user: GitLab user name
@@ -113,7 +108,6 @@ class GitLabClient(object):
        # return self.repo(user, repo).iter_hooks()
         return False
 
-#TODO
     def add_hook(self, user, repo, name, config, events=None, active=True):
         """Create a webhook.
 
@@ -122,16 +116,8 @@ class GitLabClient(object):
         :return dict: Hook info from GitLab: see see
             http://developer.github.com/v3/repos/hooks/#json-http
         """
-#        try:
-#            hook = self.repo(user, repo).create_hook(name, config, events, active)
-#        except github3.GitLabError:
-#            # TODO Handle this case - if '20 hooks' in e.errors[0].get('message'):
-#            return None
-#        else:
-#            return hook
         return False
 
-#TODO
     def delete_hook(self, user, repo, _id):
         """Delete a webhook.
 
@@ -140,21 +126,9 @@ class GitLabClient(object):
         :return bool: True if successful, False otherwise
         :raises: NotFoundError if repo or hook cannot be located
         """
-#        repo = self.repo(user, repo)
-#        hook = repo.hook(_id)
-#        if hook is None:
-#            raise NotFoundError
-#        return repo.hook(_id).delete()
         return False
 
-    ########
-    # Auth #
-    ########
-
-#TODO
     def revoke_token(self):
-#        if self.access_token:
-#            return self.gh3.revoke_authorization(self.access_token)
         return False
 
 

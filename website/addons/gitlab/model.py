@@ -1,10 +1,7 @@
 # -*- coding: utf-8 -*-
 
-import itertools
 import os
 import urlparse
-
-import pdb
 
 import markupsafe
 from modularodm import fields
@@ -41,19 +38,19 @@ class GitLabProvider(ExternalProvider):
 
     @property
     def auth_url_base(self):
-        return 'https://{0}{1}'.format(session.data['oauth_host'], '/oauth/authorize')#'https://{0}{1}'.format(self.external_account.provider_id, '/oauth/authorize')
+        return 'https://{0}{1}'.format(session.data['oauth_host'], '/oauth/authorize')
 
     @property
     def callback_url(self):
-        return 'https://{0}{1}'.format(session.data['oauth_host'], '/oauth/token') #'https://{0}{1}'.format(self.external_account.provider_id, '/oauth/token')
+        return 'https://{0}{1}'.format(session.data['oauth_host'], '/oauth/token')
 
     @property
     def client_secret(self):
-        return session.data['oauth_client_secret']#self.external_account.oauth_secret
+        return session.data['oauth_client_secret']
 
     @property
     def client_id(self):
-        return session.data['oauth_client_id']#self.external_account.oauth_key
+        return session.data['oauth_client_id']
 
     def handle_callback(self, response):
         """View called when the OAuth flow is completed. Adds a new GitLabUserSettings
@@ -179,7 +176,7 @@ class GitLabNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
     @property
     def repo_url(self):
         if self.repo:
-            return  'https://{0}/{1}'.format(self.external_account.display_name, self.repo)
+            return 'https://{0}/{1}'.format(self.external_account.display_name, self.repo)
 
     @property
     def short_url(self):
@@ -191,7 +188,6 @@ class GitLabNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         connection = GitLabClient(external_account=self.external_account)
         return not connection.repo(repo_id=self.repo_id)['public']
 
-    # TODO: Delete me and replace with serialize_settings / Knockout
     def to_json(self, user):
 
         ret = super(GitLabNodeSettings, self).to_json(user)
@@ -212,15 +208,16 @@ class GitLabNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
                 repos = connection.repos()
 
             except GitLabError:
-                repo_names = []
                 valid_credentials = False
+
             if owner == user:
                 ret.update({'repos': repos})
+
             ret.update({
                 'node_has_auth': True,
                 'gitlab_user': self.user or '',
                 'gitlab_repo': self.repo or '',
-                'gitlab_repo_id': self.repo_id if self.repo_id != None else '0',
+                'gitlab_repo_id': self.repo_id if self.repo_id is not None else '0',
                 'gitlab_repo_full_name': '{0} / {1}'.format(self.user, self.repo) if (self.user and self.repo) else '',
                 'auth_osf_name': owner.fullname,
                 'auth_osf_url': owner.url,
@@ -244,7 +241,7 @@ class GitLabNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         if not self.complete:
             raise exceptions.AddonError('Repo is not configured')
         return {
-            'host': "https://{0}".format(self.external_account.display_name),
+            'host': 'https://{0}'.format(self.external_account.display_name),
             'owner': self.user,
             'repo': self.repo,
             'repo_id': self.repo_id

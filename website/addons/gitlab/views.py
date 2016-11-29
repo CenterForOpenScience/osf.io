@@ -3,7 +3,6 @@
 from dateutil.parser import parse as dateparse
 import httplib as http
 import logging
-import pdb
 
 from flask import request, make_response
 
@@ -23,8 +22,6 @@ from website.addons.gitlab.utils import (
     get_refs, check_permissions,
     verify_hook_signature, MESSAGES
 )
-
-from website.addons.gitlab import settings as gitlab_settings
 
 from website.models import NodeLog
 from website.project.decorators import (
@@ -283,7 +280,7 @@ def gitlab_hgrid_data(node_settings, auth, **kwargs):
             return None
 
     try:
-        branch, sha, branches = get_refs(node_settings,branch=kwargs.get('branch'),sha=kwargs.get('sha'),connection=connection)
+        branch, sha, branches = get_refs(node_settings, branch=kwargs.get('branch'), sha=kwargs.get('sha'), connection=connection)
     except (NotFoundError, GitLabError):
         logger.error('GitLab repo not found')
         return
@@ -351,11 +348,6 @@ def gitlab_create_repo(**kwargs):
         'repo': repo_name,
     }
 
-#########
-# Hooks #
-#########
-
-# TODO: Refactor using NodeLogger
 def add_hook_log(node, gitlab, action, path, date, committer, include_urls=False,
                  sha=None, save=False):
     """Add log event for commit from webhook payload.
