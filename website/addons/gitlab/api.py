@@ -82,7 +82,6 @@ class GitLabClient(object):
 
         return self.gitlab.getbranches(repo_id)
 
-    # TODO: reimplement and test
     def starball(self, user, repo, repo_id, ref='master'):
         """Get link for archive download.
 
@@ -91,7 +90,7 @@ class GitLabClient(object):
         :param str ref: Git reference
         :returns: tuple: Tuple of headers and file location
         """
-        uri = "projects/{0}/repository/archive?sha={1}".format(repo_id, ref)
+        uri = 'projects/{0}/repository/archive?sha={1}'.format(repo_id, ref)
 
         request = self._get_api_request(uri)
 
@@ -105,7 +104,6 @@ class GitLabClient(object):
         :return list: List of commit dicts from GitLab; see
             http://developer.github.com/v3/repos/hooks/#json-http
         """
-       # return self.repo(user, repo).iter_hooks()
         return False
 
     def add_hook(self, user, repo, name, config, events=None, active=True):
@@ -131,11 +129,10 @@ class GitLabClient(object):
     def revoke_token(self):
         return False
 
-
     def _get_api_request(self, uri):
-        headers = {"Authorization": 'Bearer {}'.format(self.access_token)}
+        headers = {'Authorization': 'Bearer {}'.format(self.access_token)}
 
-        return requests.get("https://{0}/{1}/{2}".format(self.host, 'api/v3', uri),
+        return requests.get('https://{0}/{1}/{2}'.format(self.host, 'api/v3', uri),
                             verify=True, headers=headers)
 
 

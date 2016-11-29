@@ -271,7 +271,7 @@ class GitLabNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
                 'path': path,
                 'urls': urls,
                 'gitlab': {
-                    'host': "https://{0}".format(self.external_account.display_name),
+                    'host': 'https://{0}'.format(self.external_account.display_name),
                     'user': self.user,
                     'repo': self.repo,
                     'sha': sha,
@@ -334,7 +334,7 @@ class GitLabNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
                     ' The files in this GitLab repo can be viewed on GitLab '
                     '<u><a href="{base_url}/{repo}/">here</a></u>.'
                 ).format(
-                    base_url="https://{0}".format(self.external_account.display_name),
+                    base_url='https://{0}'.format(self.external_account.display_name),
                     repo=self.repo,
                 )
             messages.append(message)

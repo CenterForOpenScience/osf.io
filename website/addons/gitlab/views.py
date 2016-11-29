@@ -14,7 +14,6 @@ from website.oauth.models import ExternalAccount
 
 from website.addons.base import generic_views
 from website.addons.gitlab.api import GitLabClient, ref_to_params
-from website.addons.gitlab.model import GitLabProvider
 from website.addons.gitlab.exceptions import NotFoundError, GitLabError
 from website.addons.gitlab.settings import DEFAULT_HOSTS
 from website.addons.gitlab.serializer import GitLabSerializer
@@ -116,7 +115,6 @@ def gitlab_add_user_account(auth, **kwargs):
             provider_id=host,
         )
         account.save()
-        provider = GitLabProvider(account)
     except KeyExistsException:
         # ... or get the old one
         account = ExternalAccount.find_one(
@@ -340,12 +338,11 @@ def gitlab_create_repo(**kwargs):
     try:
         repo = connection.create_repo(repo_name, auto_init=True)
     except GitLabError:
-        # TODO: Check status code
         raise HTTPError(http.BAD_REQUEST)
 
     return {
         'user': user,
-        'repo': repo_name,
+        'repo': repo['path_with_namespace'],
     }
 
 def add_hook_log(node, gitlab, action, path, date, committer, include_urls=False,

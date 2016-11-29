@@ -115,4 +115,3 @@ def check_permissions(node_settings, auth, connection, branch, sha=None, repo=No
     )
 
     return can_edit
-
