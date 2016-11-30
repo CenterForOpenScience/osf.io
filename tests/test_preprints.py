@@ -1,9 +1,11 @@
-    # -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 from nose.tools import *  # flake8: noqa (PEP8 asserts)
 import mock
+import urlparse
 from modularodm import Q
 from modularodm.exceptions import NoResultsFound, ValidationValueError
 
+from framework.celery_tasks import handlers
 from website.addons.osfstorage import settings as osfstorage_settings
 from website.files.models.osfstorage import OsfStorageFile
 from website.preprints.tasks import format_preprint
@@ -255,54 +257,104 @@ class TestPreprintProviders(OsfTestCase):
 class TestOnPreprintUpdatedTask(OsfTestCase):
     def setUp(self):
         super(TestOnPreprintUpdatedTask, self).setUp()
+        self.user = AuthUserFactory()
+        self.auth = Auth(user=self.user)
         self.preprint = PreprintFactory()
+
+        self.preprint.node.add_tag('preprint', self.auth, save=False)
+        self.preprint.node.add_tag('spoderman', self.auth, save=False)
+        self.preprint.node.add_unregistered_contributor('BoJack Horseman', 'horse@man.org', Auth(self.preprint.node.creator))
+        self.preprint.node.add_contributor(self.user, visible=False)
+        self.preprint.node.save()
+
+        self.preprint.node.creator.given_name = 'ZZYZ'
+        self.preprint.node.creator.save()
+
+        self.preprint.set_subjects([[SubjectFactory()._id]], auth=Auth(self.preprint.node.creator), save=False)
+
+    def tearDown(self):
+        handlers.celery_before_request()
+        super(TestOnPreprintUpdatedTask, self).tearDown()
 
     def test_format_preprint(self):
         res = format_preprint(self.preprint)
-        types = [gn['@type'] for gn in res]
-        subject_names = [x['text'] for hier in self.preprint.get_subjects() for x in hier]
-        contribs = {}
-        for i, user in enumerate(self.preprint.node.contributors):
-            contribs.update({i: user})
 
-        for type_ in ['throughlinks', 'throughsubjects', 'throughidentifiers', 'preprint', 'subject', 'person', 'link', 'contributor', 'identifier', 'person']:
-            assert type_ in types
+        assert set(gn['@type'] for gn in res) == {'creator', 'contributor', 'throughsubjects', 'subject', 'throughtags', 'tag', 'workidentifier', 'agentidentifier', 'person', 'preprint'}
 
-        for graph_node in res:
-            if graph_node['@type'] == 'throughlinks':
-                assert_equal(set(graph_node.keys()), set(['@id', '@type', 'creative_work', 'link']))
-            if graph_node['@type'] == 'throughsubjects':
-                assert_equal(set(graph_node.keys()), set(['@id', '@type', 'creative_work', 'subject']))
-            if graph_node['@type'] == 'throughidentifiers':
-                assert_equal(set(graph_node.keys()), set(['@id', '@type', 'identifier', 'person']))
-            if graph_node['@type'] == 'preprint':
-                assert_equal(set(graph_node.keys()), set([
-                    '@id', '@type', 'contributors', 'title', 'tags',
-                    'date_published', 'date_updated', 'description',
-                    'institutions', 'is_deleted', 'links', 'subjects',
-                ]))
-                assert_equal(graph_node['date_published'], self.preprint.date_published.isoformat())
-                assert_equal(graph_node['date_updated'], self.preprint.date_modified.isoformat())
-                assert_equal(graph_node['description'], self.preprint.node.description)
-                assert_equal(graph_node['is_deleted'], self.preprint.node.is_deleted)
-                assert_equal(graph_node['title'], self.preprint.node.title)
-            if graph_node['@type'] == 'subject':
-                assert_equal(set(graph_node.keys()), set(['@id', '@type', 'name']))
-                assert_in(graph_node['name'], subject_names)
-            if graph_node['@type'] == 'person':
-                assert_equal(set(graph_node.keys()), set([
-                    '@id', '@type', 'additional_name', 'affiliations',
-                    'family_name', 'given_name', 'identifiers', 'suffix'
-                ]))
-            if graph_node['@type'] == 'link':
-                assert_equal(set(graph_node.keys()), set(['@id', '@type', 'type', 'url']))
-            if graph_node['@type'] == 'contributor':
-                assert_equal(set(graph_node.keys()), set([
-                    '@id', '@type',  'bibliographic', 'cited_name',
-                    'creative_work', 'order_cited', 'person'
-                ]))
-                user = contribs[graph_node['order_cited']]
-                assert_equal(graph_node['cited_name'], user.fullname)
-                assert_equal(graph_node['bibliographic'], bool(user._id in self.preprint.node.visible_contributor_ids))
-            if graph_node['@type'] == 'identifier':
-                assert_equal(set(graph_node.keys()), set(['@id', '@type', 'base_url', 'url']))
+        nodes = dict(enumerate(res))
+        preprint = nodes.pop(next(k for k, v in nodes.items() if v['@type'] == 'preprint'))
+        assert preprint['title'] == self.preprint.node.title
+        assert preprint['description'] == self.preprint.node.description
+        assert preprint['is_deleted'] == (not self.preprint.is_published or not self.preprint.node.is_public or self.preprint.node.is_preprint_orphan)
+        assert preprint['date_updated'] == self.preprint.date_modified.isoformat()
+        assert preprint['date_published'] == self.preprint.date_published.isoformat()
+
+        tags = [nodes.pop(k) for k, v in nodes.items() if v['@type'] == 'tag']
+        through_tags = [nodes.pop(k) for k, v in nodes.items() if v['@type'] == 'throughtags']
+        assert sorted(tag['@id'] for tag in tags) == sorted(tt['tag']['@id'] for tt in through_tags)
+        assert sorted(tag['name'] for tag in tags) == ['preprint', 'spoderman']
+
+        subjects = [nodes.pop(k) for k, v in nodes.items() if v['@type'] == 'subject']
+        through_subjects = [nodes.pop(k) for k, v in nodes.items() if v['@type'] == 'throughsubjects']
+        assert sorted(subject['@id'] for subject in subjects) == sorted(tt['subject']['@id'] for tt in through_subjects)
+        assert sorted(subject['name'] for subject in subjects) == ['Example Subject #1']
+
+        people = sorted([nodes.pop(k) for k, v in nodes.items() if v['@type'] == 'person'], key=lambda x: x['given_name'])
+        assert people == [{
+            '@id': people[0]['@id'],
+            '@type': 'person',
+            'given_name': u'BoJack',
+            'family_name': u'Horseman',
+        }, {
+            '@id': people[1]['@id'],
+            '@type': 'person',
+            'given_name': self.user.given_name,
+            'family_name': self.user.family_name,
+        }, {
+            '@id': people[2]['@id'],
+            '@type': 'person',
+            'given_name': self.preprint.node.creator.given_name,
+            'family_name': self.preprint.node.creator.family_name,
+        }]
+
+        creators = sorted([nodes.pop(k) for k, v in nodes.items() if v['@type'] == 'creator'], key=lambda x: x['order_cited'])
+        assert creators == [{
+            '@id': creators[0]['@id'],
+            '@type': 'creator',
+            'order_cited': 0,
+            'cited_as': self.preprint.node.creator.fullname,
+            'agent': {'@id': people[2]['@id'], '@type': 'person'},
+            'creative_work': {'@id': preprint['@id'], '@type': preprint['@type']},
+        }, {
+            '@id': creators[1]['@id'],
+            '@type': 'creator',
+            'order_cited': 1,
+            'cited_as': 'BoJack Horseman',
+            'agent': {'@id': people[0]['@id'], '@type': 'person'},
+            'creative_work': {'@id': preprint['@id'], '@type': preprint['@type']},
+        }]
+
+        contributors = [nodes.pop(k) for k, v in nodes.items() if v['@type'] == 'contributor']
+        assert contributors == [{
+            '@id': contributors[0]['@id'],
+            '@type': 'contributor',
+            'cited_as': self.user.fullname,
+            'agent': {'@id': people[1]['@id'], '@type': 'person'},
+            'creative_work': {'@id': preprint['@id'], '@type': preprint['@type']},
+        }]
+
+        agentidentifiers = {nodes.pop(k)['uri'] for k, v in nodes.items() if v['@type'] == 'agentidentifier'}
+        assert agentidentifiers == set([
+            'mailto:' + self.user.username,
+            'mailto:' + self.preprint.node.creator.username,
+            self.user.profile_image_url(),
+            self.preprint.node.creator.profile_image_url(),
+        ]) | set(urlparse.urljoin(settings.DOMAIN, user.profile_url) for user in self.preprint.node.contributors if user.is_registered)
+
+        workidentifiers = {nodes.pop(k)['uri'] for k, v in nodes.items() if v['@type'] == 'workidentifier'}
+        assert workidentifiers == set([
+            'http://dx.doi.org/{}'.format(self.preprint.article_doi),
+            urlparse.urljoin(settings.DOMAIN, self.preprint.url)
+        ])
+
+        assert nodes == {}
