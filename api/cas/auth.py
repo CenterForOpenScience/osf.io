@@ -39,7 +39,7 @@ class CasAuthentication(BaseAuthentication):
         #         "remoteAuthenticated": False,
         #     },
         # }
-        if data.get('type') == "LOGIN":
+        if data.get('type') == 'LOGIN':
             # initial verification:
             user, error_message = handle_login(data.get('user'))
             if user and not error_message:
@@ -76,7 +76,7 @@ class CasAuthentication(BaseAuthentication):
         #         "campaign": None,
         #     },
         # },
-        elif data.get('type') == "REGISTER":
+        elif data.get('type') == 'REGISTER':
             user, error_message = handle_register(data.get('user'))
             if user and not error_message:
                 return user, None
@@ -121,7 +121,7 @@ def handle_register(user):
         return None, 'MISSING_CREDENTIALS'
 
     campaign = user.get('campaign')
-    if campaign and campaign not in campaigns.CAMPAIGNS:
+    if campaign and campaign not in campaigns.get_campaigns():
         campaign = None
     try:
         user = register_unconfirmed(
@@ -172,15 +172,37 @@ def verify_two_factor(user, one_time_password):
     return 'INVALID_ONE_TIME_PASSWORD'
 
 
+# TODO: OSF user status is quite complicated, which sometimes requires more than one status below to decide.
+# TODO: Revisit this part when switching to Django-OSF
 def verify_user_status(user):
-    if not user.is_claimed:
-        return 'USER_NOT_CLAIMED'
-    if user.is_merged:
+    # An active user must be registered, claimed, not disabled, not merged and has a not null/None password.
+    # Only active user can passes the verification.
+    if user.is_active:
+        return None
+
+    # If the user instance is not claimed, it is also not registered. It can be either a contributor or a new user
+    # pending confirmation.
+    if not user.is_claimed and not user.is_registered:
+        # If the user instance has a null/None password, it must be an unclaimed contributor.
+        # TODO: For now, this case cannot be reached by normal authentication flow given no password.
+        # TODO: For now, it is possible for the user to register before claim the account.
+        if not user.password:
+            return 'USER_NOT_CLAIMED'
+        # If the user instance has a password, it must be a unconfirmed user who registered for a new account.
+        # When the user tries to login, a message for he/she to check the confirmation email with the option of
+        # resending confirmation is displayed.
+        return 'USER_NOT_CONFIRMED'
+
+    # If the user instance is merged by another user, it is registered and claimed. However, its username and
+    # password fields are both null/None.
+    # TODO: For now, this case cannot be reached by normal authentication flow given no username and password.
+    if user.is_merged and user.is_registered and user.is_claimed:
         return 'USER_MERGED'
-    if user.is_disabled:
+
+    # If the user instance is disabled, it is also not registered. However, it still has the username and password.
+    # When the user tries to login, an account disabled message will be displayed.
+    if user.is_disabled and not user.is_registered and user.is_claimed:
         return 'USER_DISABLED'
-    if not user.is_registered:
-        return 'USER_NOT_REGISTERED'
-    if not user.is_active:
-        return 'USER_NOT_ACTIVE'
-    return None
+
+    # If the status does not meet any of the above criteria, return `USER_NOT_ACTIVE` and ask the user to contact OSF.
+    return 'USER_NOT_ACTIVE'

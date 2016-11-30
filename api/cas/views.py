@@ -26,21 +26,21 @@ class CasLogin(JSONAPIBaseView, generics.CreateAPIView):
 
         # The response `data` payload is expected in the following structures
         # {
-        #     "status": "AUTHENTICATION SUCCESS",
-        #     "userId": "a6cde",
-        #     "attributes": {
-        #         "username": "testuser@fakecos.io",
-        #         "givenName": "User",
-        #         "familyName": "Test",
+        #     'status': 'AUTHENTICATION SUCCESS',
+        #     'userId': 'a6cde',
+        #     'attributes': {
+        #         'username': 'testuser@fakecos.io',
+        #         'givenName': 'User',
+        #         'familyName': 'Test',
         #     },
         # }
         content = {
-            "status": "AUTHENTICATION_SUCCESS",
-            "userId": user._id,
-            "attributes": {
-                "username": user.username,
-                "givenName": user.given_name,
-                "familyName": user.family_name,
+            'status': 'AUTHENTICATION_SUCCESS',
+            'userId': user._id,
+            'attributes': {
+                'username': user.username,
+                'givenName': user.given_name,
+                'familyName': user.family_name,
             }
         }
 
@@ -63,12 +63,12 @@ class CasTwoFactor(JSONAPIBaseView, generics.CreateAPIView):
             raise AuthenticationFailed
         else:
             content = {
-                "status": "AUTHENTICATION_SUCCESS",
-                "userId": user._id,
-                "attributes": {
-                    "username": user.username,
-                    "givenName": user.given_name,
-                    "familyName": user.family_name,
+                'status': 'AUTHENTICATION_SUCCESS',
+                'userId': user._id,
+                'attributes': {
+                    'username': user.username,
+                    'givenName': user.given_name,
+                    'familyName': user.family_name,
                 }
             }
 
@@ -91,10 +91,10 @@ class CasRegister(JSONAPIBaseView, generics.CreateAPIView):
         else:
             # The response `data` payload is expected in the following structures
             # {
-            #     "status": "REGISTRATION_SUCCESS"
+            #     'status': 'REGISTRATION_SUCCESS'
             # }
             content = {
-                "status": "REGISTRATION_SUCCESS",
+                'status': 'REGISTRATION_SUCCESS',
             }
 
         return Response(content)
