@@ -91,22 +91,34 @@ def fill_in_event_gaps(collection_name, events):
     date_chunks = [given_days[x-1:x+1] for x in range(1, len(given_days))]
     events_to_add = []
     if given_days:
-        if collection_name != 'addon_snapshot':
-            for date_pair in date_chunks:
-                if date_pair[1] - date_pair[0] > datetime.timedelta(1):
-                    first_event = [event for event in events if date_from_event_ts(event) == date_pair[0] and not event.get('generated')]
-                    if first_event:
-                        events_to_add += generate_events_between_events(date_pair, first_event[0])
-        else:
+        if collection_name == 'addon_snapshot':
             all_providers = list(set([event['provider']['name'] for event in events]))
             for provider in all_providers:
                 for date_pair in date_chunks:
-                    if date_pair[1] - date_pair[0] > datetime.timedelta(1):
+                    if date_pair[1] - date_pair[0] > datetime.timedelta(1) and date_pair[0] != date_pair[1]:
                         first_event = [
                             event for event in events if date_from_event_ts(event) == date_pair[0] and event['provider']['name'] == provider and not event.get('generated')
                             ]
                         if first_event:
                             events_to_add += generate_events_between_events(date_pair, first_event[0])
+        elif collection_name == 'institution_summary':
+            all_instutitions = list(set([event['institution']['name'] for event in events]))
+            for institution in all_instutitions:
+                for date_pair in date_chunks:
+                    if date_pair[1] - date_pair[0] > datetime.timedelta(1) and date_pair[0] != date_pair[1]:
+                        first_event = [
+                            event for event in events if date_from_event_ts(event) == date_pair[0] and event['institution']['name'] == institution and not event.get('generated')
+                            ]
+                        if first_event:
+                            events_to_add += generate_events_between_events(date_pair, first_event[0])
+
+        else:
+            for date_pair in date_chunks:
+                if date_pair[1] - date_pair[0] > datetime.timedelta(1):
+                    first_event = [event for event in events if date_from_event_ts(event) == date_pair[0] and not event.get('generated')]
+                    if first_event:
+                        events_to_add += generate_events_between_events(date_pair, first_event[0])
+
         logger.info('Generated {} events to add to the {} collection.'.format(len(events_to_add), collection_name))
     else:
         logger.info('Could not retrieve events for the date range you provided.')
@@ -445,3 +457,11 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+    # client = get_keen_client()
+    # ids = ['583c3a9c0727190d899757d7', '583c3a9c0727190d899757d3', '583c3a9c0727190d899757d2', '583c3a9c0727190d899757d6', '58359dbd709a3972e0156dde', '58359dbd709a3972e0156ddb', '58359dbd709a3972e0156dd6', '583c3a9c0727190d899757cf', '583c3a9c0727190d899757cd', '58359dbd709a3972e0156ddf', '583c3a9c0727190d899757d0']
+    #
+    # for ident in ids:
+    #     filters = [{'property_name': 'keen.id', 'operator': 'eq', 'property_value': ident}]
+    #     client.delete_events('institution_summary', filters=filters)
+    #     time.sleep(2)
