@@ -63,6 +63,10 @@ class PreprintService(GuidStoredObject):
 
     @property
     def url(self):
+        if self.provider._id != 'osf':
+            # Note that this will change with Phase 2 of branded preprints.
+            return '/preprints/{}/{}/'.format(self.provider._id, self._id)
+
         return '/{}/'.format(self._id)
 
     @property
