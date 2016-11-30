@@ -7,6 +7,7 @@ from modularodm import Q
 
 from website.app import init_app
 from website.models import User, NodeLog
+from framework.mongo.utils import paginated
 from scripts.analytics.base import SummaryAnalytics
 
 logger = logging.getLogger(__name__)
@@ -26,17 +27,6 @@ def count_user_logs(user):
     return length
 
 
-# Modified from scripts/analytics/depth_users.py
-def get_number_of_depth_users(active_users):
-    depth_users = 0
-    for user in active_users:
-        log_count = count_user_logs(user)
-        if log_count >= LOG_THRESHOLD:
-            depth_users += 1
-
-    return depth_users
-
-
 class UserSummary(SummaryAnalytics):
 
     @property
@@ -50,23 +40,30 @@ class UserSummary(SummaryAnalytics):
         timestamp_datetime = datetime(date.year, date.month, date.day).replace(tzinfo=pytz.UTC)
         query_datetime = timestamp_datetime + timedelta(1)
 
-        active_users = User.find(
-                    Q('is_registered', 'eq', True) &
-                    Q('password', 'ne', None) &
-                    Q('merged_by', 'eq', None) &
-                    Q('date_disabled', 'eq', None) &
-                    Q('date_confirmed', 'ne', None) &
-                    Q('date_confirmed', 'lt', query_datetime)
-                )
+        active_user_query = (
+            Q('is_registered', 'eq', True) &
+            Q('password', 'ne', None) &
+            Q('merged_by', 'eq', None) &
+            Q('date_disabled', 'eq', None) &
+            Q('date_confirmed', 'ne', None) &
+            Q('date_confirmed', 'lt', query_datetime)
+        )
 
-        depth_users = get_number_of_depth_users(active_users)
+        active_users = 0
+        depth_users = 0
+        user_pages = paginated(User, query=active_user_query, increment=200, each=True)
+        for user in user_pages:
+            active_users += 1
+            log_count = count_user_logs(user)
+            if log_count >= LOG_THRESHOLD:
+                depth_users += 1
 
         counts = {
             'keen': {
                 'timestamp': timestamp_datetime.isoformat()
             },
             'status': {
-                'active': active_users.count(),
+                'active': active_users,
                 'depth': depth_users,
                 'unconfirmed': User.find(
                     Q('date_registered', 'lt', query_datetime) &
