@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 import datetime
 import httplib as http
+from dataverse import exceptions
 from requests.exceptions import SSLError
 
 from flask import request
@@ -267,6 +268,11 @@ def _dataverse_root_folder(node_addon, auth, **kwargs):
     # (stored in oauth_key because dataverse doesn't use that)
     dataverse_host = node_addon.external_account.oauth_key
 
+    try:
+        host_custom_publish_text = connection.get_custom_publish_text()
+    except exceptions.OperationFailedError:
+        host_custom_publish_text = ''
+
     return [rubeus.build_addon_root(
         node_addon,
         node_addon.dataset,
@@ -281,6 +287,7 @@ def _dataverse_root_folder(node_addon, auth, **kwargs):
         datasetDraftModified=dataset_draft_modified,
         version=version,
         host=dataverse_host,
+        hostCustomPublishText=host_custom_publish_text,
         private_key=kwargs.get('view_only', None),
     )]
 
