@@ -10,14 +10,13 @@ from django.db import models
 from django.utils import timezone
 from flask import request
 from oauthlib.oauth2 import MissingTokenError
-from osf.models import base
-from osf.modm_compat import Q
 from requests.exceptions import HTTPError as RequestsHTTPError
-from requests_oauthlib import OAuth1Session
-from requests_oauthlib import OAuth2Session
+from requests_oauthlib import OAuth1Session, OAuth2Session
 
 from framework.exceptions import HTTPError, PermissionsError
 from framework.sessions import session
+from osf.models import base
+from osf.modm_compat import Q
 from osf.utils.fields import EncryptedTextField
 from website.oauth.utils import PROVIDER_LOOKUP
 from website.security import random_string

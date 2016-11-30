@@ -3,7 +3,22 @@ from __future__ import unicode_literals
 import gc
 import importlib
 import sys
+
+import itertools
+from box import BoxClient
+from box import BoxClientException
+from bson import ObjectId
+from dropbox.client import DropboxClient
+from dropbox.rest import ErrorResponse
+from github3 import GitHubError
+from oauthlib.oauth2 import InvalidGrantError
+
+from addons.base.models import BaseOAuthNodeSettings
 from framework import encryption
+from osf.models import ExternalAccount
+from osf.models import OSFUser
+from website.addons.s3 import utils
+
 
 import ipdb
 from django.contrib.contenttypes.models import ContentType
@@ -15,18 +30,28 @@ from framework.mongo import database
 from framework.transactions.context import transaction as modm_transaction
 from modularodm import Q as MQ
 from osf.models import NodeLog, PageCounter, Tag, UserActivityCounter
-from osf.models.base import BlackListGuid, Guid, GuidMixin, OptionalGuidMixin
+from osf.models.base import Guid, GuidMixin, OptionalGuidMixin
 from osf.models.node import AbstractNode
 from osf.utils.order_apps import get_ordered_models
 from psycopg2._psycopg import AsIs
 from scripts.register_oauth_scopes import set_backend
 from typedmodels.models import TypedModel
+
+from website.addons.github.api import GitHubClient
 from website.files.models import StoredFileNode as MODMStoredFileNode
 from website.models import Guid as MODMGuid
 from website.models import Node as MODMNode
+import logging
+
+logger = logging.getLogger(__name__)
 
 encryption.encrypt = lambda x: x
 encryption.decrypt = lambda x: x
+
+def get_modm_model(django_model):
+    module_path, model_name = django_model.modm_model_path.rsplit('.', 1)
+    modm_module = importlib.import_module(module_path)
+    return getattr(modm_module, model_name)
 
 
 def migrate_page_counters(page_size=20000):
@@ -319,6 +344,120 @@ def save_bare_models(modm_queryset, django_model, page_size=20000):
     print('Took out {} trashes'.format(gc.collect()))
 
 
+class DuplicateExternalAccounts(Exception):
+    pass
+
+
+def save_bare_external_accounts(page_size=100000):
+    from website.models import ExternalAccount as MODMExternalAccount
+
+    def validate_box(external_account):
+        client = BoxClient(external_account.oauth_key)
+        try:
+            client.get_user_info()
+        except (BoxClientException, IndexError):
+            return False
+        return True
+
+    def validate_dropbox(external_account):
+        client = DropboxClient(external_account.oauth_key)
+        try:
+            client.account_info()
+        except (ValueError, IndexError, ErrorResponse):
+            return False
+        return True
+
+    def validate_github(external_account):
+        client = GitHubClient(external_account=external_account)
+        try:
+            client.user()
+        except (GitHubError, IndexError):
+            return False
+        return True
+
+    def validate_googledrive(external_account):
+        try:
+            external_account.node_settings.fetch_access_token()
+        except (InvalidGrantError, AttributeError):
+            return False
+        return True
+
+    def validate_s3(external_account):
+        if utils.can_list(external_account.oauth_key, external_account.oauth_secret):
+            return True
+        return False
+
+    account_validators = dict(
+        box=validate_box,
+        dropbox=validate_dropbox,
+        github=validate_github,
+        googledrive=validate_googledrive,
+        s3=validate_s3
+    )
+
+    django_model_classes_with_fk_to_external_account = BaseOAuthNodeSettings.__subclasses__()
+    django_model_classes_with_m2m_to_external_account = [OSFUser]
+
+
+    print('Starting save_bare_external_accounts...')
+    start = timezone.now()
+
+    external_accounts = MODMExternalAccount.find()
+    accounts_by_provider = dict()
+
+    for ea in external_accounts:
+        provider_tuple = (ea.provider, str(ea.provider_id))
+        if provider_tuple in accounts_by_provider.keys():
+            accounts_by_provider[provider_tuple].append(ea)
+        else:
+            accounts_by_provider[provider_tuple] = [ea, ]
+
+    bad_accounts = {k:v for k, v in accounts_by_provider.iteritems() if len(v) > 1}
+    good_accounts = [v[0] for k, v in accounts_by_provider.iteritems() if len(v) == 1]
+
+    for (provider, provider_id), providers_accounts in bad_accounts.iteritems():
+        good_provider_accounts = []
+        for modm_external_acct in providers_accounts:
+            if account_validators[provider](modm_external_acct):
+                logger.info('Account {} checks out as valid.'.format(modm_external_acct))
+                good_provider_accounts.append(modm_external_acct)
+        if len(good_provider_accounts) > 1:
+            raise DuplicateExternalAccounts('{} {} had {} good accounts.'.format(provider, provider_id, len(good_provider_accounts)))
+        else:
+            itertools.chain(good_accounts, good_provider_accounts)
+
+    with transaction.atomic():
+        good_django_accounts = ExternalAccount.objects.bulk_create([ExternalAccount.migrate_from_modm(x) for x in good_accounts])
+
+        external_account_mapping = dict(ExternalAccount.objects.all().values_list('_id', 'id'))
+
+        for (provider, provider_id), providers_accounts in bad_accounts.iteritems():
+            newest_modm_external_account_id = str(ObjectId.from_datetime(timezone.datetime(1970, 1, 1, tzinfo=timezone.UTC())))
+            modm_external_account_ids_to_replace = []
+            for modm_external_acct in providers_accounts:
+                if ObjectId(modm_external_acct._id).generation_time > ObjectId(newest_modm_external_account_id).generation_time:
+                    modm_external_account_ids_to_replace.append(newest_modm_external_account_id)
+                    newest_modm_external_account_id = modm_external_acct._id
+
+            ext = ExternalAccount.migrate_from_modm(MODMExternalAccount.load(newest_modm_external_account_id))
+            ext.save()
+            external_account_mapping[newest_modm_external_account_id] = ext.id
+
+            for modm_external_account_to_replace in modm_external_account_ids_to_replace:
+                for django_model_class in django_model_classes_with_fk_to_external_account:
+                    if hasattr(django_model_class, 'modm_model_path'):
+                        modm_model_class = get_modm_model(django_model_class)
+                        matching_models = modm_model_class.find(MQ('external_account', 'eq', modm_external_account_to_replace))
+                        django_model_class.objects.filter(_id__in=matching_models.get_keys()).update(external_account_id=external_account_mapping[newest_modm_external_account_id])
+
+                for django_model_class in django_model_classes_with_m2m_to_external_account:
+                    if hasattr(django_model_class, 'modm_model_path'):
+                        modm_model_class = get_modm_model(django_model_class)
+                        for model_guid in modm_model_class.find(MQ('external_accounts', 'eq', modm_external_account_to_replace)).get_keys():
+                            django_model = django_model_class.objects.get(guids___id=model_guid)
+                            django_model.external_accounts.add(external_account_mapping[newest_modm_external_account_id])
+
+
 def save_bare_system_tags(page_size=10000):
     print('Starting save_bare_system_tags...')
     start = timezone.now()
@@ -464,6 +603,7 @@ def merge_duplicate_users():
 
 class Command(BaseCommand):
     help = 'Migrates data from tokumx to postgres'
+    threads = 5
 
     def add_arguments(self, parser):
         parser.add_argument('--nodelogs', action='store_true', help='Run nodelog migrations')
@@ -497,9 +637,7 @@ class Command(BaseCommand):
                       '################################################'.format(
                     django_model._meta.model.__name__))
                 continue
-            module_path, model_name = django_model.modm_model_path.rsplit('.', 1)
-            modm_module = importlib.import_module(module_path)
-            modm_model = getattr(modm_module, model_name)
+            modm_model = get_modm_model(django_model)
             if isinstance(django_model.modm_query, dict):
                 modm_queryset = modm_model.find(**django_model.modm_query)
             else:
