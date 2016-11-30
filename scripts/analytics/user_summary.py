@@ -51,7 +51,7 @@ class UserSummary(SummaryAnalytics):
 
         active_users = 0
         depth_users = 0
-        user_pages = paginated(User, query=active_user_query, increment=200, each=True)
+        user_pages = paginated(User, query=active_user_query)
         for user in user_pages:
             active_users += 1
             log_count = count_user_logs(user)

@@ -74,9 +74,9 @@ class AddonSnapshot(SnapshotAnalytics):
             user_settings_list = []
             node_settings_list = []
             if addon.settings_models.get('user'):
-                user_settings_list = [setting for setting in paginated(addon.settings_models['user'], increment=200, each=True)]
+                user_settings_list = [setting for setting in paginated(addon.settings_models['user'])]
             if addon.settings_models.get('node'):
-                node_settings_list = [setting for setting in paginated(addon.settings_models['node'], increment=200, each=True)]
+                node_settings_list = [setting for setting in paginated(addon.settings_models['node'])]
 
             has_external_account = True
             # Check out the first element in node_settings_list to see if it has an external account to check for
