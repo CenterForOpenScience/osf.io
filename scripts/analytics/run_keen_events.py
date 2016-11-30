@@ -12,8 +12,8 @@ class EventAnalyticsHarness(DateAnalyticsHarness):
 
 
 @celery_app.task(name='scripts.run_keen_events')
-def run_main(date):
-    EventAnalyticsHarness().main(date)
+def run_main(date=None, yesterday=False):
+    EventAnalyticsHarness().main(date, yesterday)
 
 
 if __name__ == '__main__':

@@ -13,8 +13,8 @@ class SummaryHarness(DateAnalyticsHarness):
 
 
 @celery_app.task(name='scripts.run_keen_summaries')
-def run_main(date):
-    SummaryHarness().main(date)
+def run_main(date=None, yesterday=False):
+    SummaryHarness().main(date, yesterday)
 
 
 if __name__ == '__main__':
