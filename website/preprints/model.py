@@ -113,23 +113,18 @@ class PreprintService(GuidStoredObject):
         if preprint_file.node != self.node or preprint_file.provider != 'osfstorage':
             raise ValueError('This file is not a valid primary file for this preprint.')
 
-        # there is no preprint file yet! This is the first time!
-        if not self.node.preprint_file:
-            self.node.preprint_file = preprint_file
-            self.node.add_log(action=NodeLog.PREPRINT_INITIATED, params={
-                'preprint': {'id': self._id, 'title': self.node.title},
-                'service': {'title': self.provider.name}
-            }, auth=auth, save=False)
-        elif preprint_file != self.node.preprint_file:
-            # if there was one, check if it's a new file
-            self.node.preprint_file = preprint_file
+        existing_file = self.node.preprint_file
+        self.node.preprint_file = preprint_file
+
+        # only log if updating the preprint file, not adding for the first time
+        if existing_file:
             self.node.add_log(
                 action=NodeLog.PREPRINT_FILE_UPDATED,
                 params={
                     'preprint': self._id
                 },
                 auth=auth,
-                save=False,
+                save=False
             )
 
         if save:
@@ -182,13 +177,7 @@ class PreprintService(GuidStoredObject):
         self.node.add_log(
             action=NodeLog.PREPRINT_LICENSE_UPDATED,
             params={
-                'preprint': {
-                    'id': self._id,
-                    'title': self.node.title
-                },
-                'service': {
-                    'title': self.provider.name
-                }
+                'preprint': self._id
             },
             auth=auth,
             save=False
