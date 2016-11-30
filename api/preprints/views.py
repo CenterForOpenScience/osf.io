@@ -9,9 +9,12 @@ from framework.auth.oauth_scopes import CoreScopes
 from api.base.exceptions import Conflict
 from api.base.views import JSONAPIBaseView
 from api.base.filters import ODMFilterMixin
+from api.base.parsers import (
+    JSONAPIMultipleRelationshipsParser,
+    JSONAPIMultipleRelationshipsParserForRegularJSON,
+)
 from api.base.utils import get_object_or_error
 from api.base import permissions as base_permissions
-from api.preprints.parsers import PreprintsJSONAPIParser, PreprintsJSONAPIParserForRegularJSON
 from api.preprints.serializers import PreprintSerializer, PreprintCreateSerializer
 from api.nodes.views import NodeMixin, WaterButlerMixin
 from api.nodes.permissions import ContributorOrPublic
@@ -131,7 +134,7 @@ class PreprintList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMixin):
         ContributorOrPublic,
     )
 
-    parser_classes = (PreprintsJSONAPIParser, PreprintsJSONAPIParserForRegularJSON,)
+    parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON,)
 
     required_read_scopes = [CoreScopes.NODE_PREPRINTS_READ]
     required_write_scopes = [CoreScopes.NODE_PREPRINTS_WRITE]
@@ -225,7 +228,7 @@ class PreprintDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, Pre
         base_permissions.TokenHasScope,
         ContributorOrPublic,
     )
-    parser_classes = (PreprintsJSONAPIParser, PreprintsJSONAPIParserForRegularJSON,)
+    parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON,)
 
     required_read_scopes = [CoreScopes.NODE_PREPRINTS_READ]
     required_write_scopes = [CoreScopes.NODE_PREPRINTS_WRITE]

@@ -1604,7 +1604,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
                     {
                         'id': value.get('id'),
                         'year': value.get('year'),
-                        'copyrightHolders': value.get('copyright_holders')
+                        'copyrightHolders': value.get('copyrightHolders')
                     },
                     auth,
                     save=save
