@@ -278,7 +278,7 @@ def import_old_events_from_spreadsheet():
     key_map = {
         'active-users': 'active',
         'logs-gte-11-total': 'depth',
-        'number_users': 'unconfirmed',  # really is active - number_users
+        'number_users': 'total_users',  # really is active - number_users
         'number_projects': 'projects.total',
         'number_projects_public': 'projects.public',
         'number_projects_registered': 'registrations.total',
@@ -303,7 +303,7 @@ def import_old_events_from_spreadsheet():
                 event[equiv_key] = row[key]
         events.append(event)
 
-    user_summary_cols = ['active', 'depth', 'unconfirmed', 'timestamp']
+    user_summary_cols = ['active', 'depth', 'total_users', 'timestamp']
     node_summary_cols = ['registrations.total', 'projects.total', 'projects.public', 'timestamp']
     addon_summary_cols = ['enabled', 'authorized', 'linked', 'timestamp']
 
@@ -372,8 +372,8 @@ def format_event(event, analytics_type):
 
         if event['active'] and event['active'] != 'MISSING':
             template_to_use['status']['active'] = comma_int(event['active'])
-        if event['unconfirmed'] and event['active']:
-            template_to_use['status']['unconfirmed'] = comma_int(event['active']) - comma_int(event['unconfirmed'])
+        if event['total_users'] and event['active']:
+            template_to_use['status']['unconfirmed'] = comma_int(event['total_users']) - comma_int(event['active'])
     elif analytics_type == 'node':
         template_to_use = node_event_template
 
@@ -445,10 +445,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
-    # client = get_keen_client()
-    # filters = [{'property_name': 'imported', 'operator': 'eq', 'property_value': True}]
-    #
-    # client.delete_events('node_summary', filters=filters)
-    # client.delete_events('user_summary', filters=filters)
-    # client.delete_events('addon_snapshot', filters=filters)
