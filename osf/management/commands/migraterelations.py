@@ -185,7 +185,7 @@ class Command(BaseCommand):
         fk_count = 0
         model_count = 0
         model_total = modm_queryset.count()
-        bad_fields = []
+        bad_fields = ['external_account_id',]  # external accounts are handled in their own migration
 
         def format_lookup_string(modm_obj):
             if isinstance(modm_obj, MODMGuid):

@@ -617,6 +617,7 @@ class Command(BaseCommand):
         models = get_ordered_models()
         # guids never, pls
         models.pop(models.index(Guid))
+        models.pop(models.index(ExternalAccount))
 
         if not options['nodelogs'] and not options['nodelogsguids']:
             merge_duplicate_users()
@@ -653,7 +654,9 @@ class Command(BaseCommand):
 
         # Handle system tags, they're on nodes, they need a special migration
         if not options['nodelogs'] and not options['nodelogsguids']:
-            save_bare_system_tags()
-            make_guids()
-            migrate_page_counters()
-            migrate_user_activity_counters()
+            with ipdb.launch_ipdb_on_exception():
+                save_bare_system_tags()
+                make_guids()
+                save_bare_external_accounts()
+                migrate_page_counters()
+                migrate_user_activity_counters()
