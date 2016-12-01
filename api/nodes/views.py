@@ -2888,11 +2888,13 @@ class NodeWikiList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, ODMFilterMi
 
     # overrides ODMFilterMixin
     def get_default_odm_query(self):
+        print(2)
         node = self.get_node()
         node_wiki_pages = node.wiki_pages_current.values() if node.wiki_pages_current else []
         return Q('_id', 'in', node_wiki_pages)
 
     def get_queryset(self):
+        print(1)
         return NodeWikiPage.find(self.get_query_from_request())
 
 
