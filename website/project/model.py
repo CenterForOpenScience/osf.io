@@ -2457,7 +2457,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
 
         children_nodes = original.nodes
         while(children_nodes):
-            batch = children_nodes[:49]
+            batch = children_nodes[:30]
             for node_contained in batch:
                 if not node_contained.is_deleted:
                     child_registration = node_contained.register_node(
@@ -2471,7 +2471,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
                         registered.nodes.append(child_registration)
 
             registered.save()
-            children_nodes = children_nodes[49:]
+            children_nodes = children_nodes[30:]
 
         if settings.ENABLE_ARCHIVER:
             registered.reload()
