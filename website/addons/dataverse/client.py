@@ -112,3 +112,9 @@ def get_dataverse(connection, alias):
     if connection is None:
         return
     return connection.get_dataverse(alias)
+
+
+def get_custom_publish_text(connection):
+    if connection is None:
+        return ''
+    return connection.get_custom_publish_text()

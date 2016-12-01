@@ -269,7 +269,7 @@ def _dataverse_root_folder(node_addon, auth, **kwargs):
     dataverse_host = node_addon.external_account.oauth_key
 
     try:
-        host_custom_publish_text = connection.get_custom_publish_text()
+        host_custom_publish_text = client.get_custom_publish_text(connection)
     except exceptions.OperationFailedError:
         host_custom_publish_text = ''
 
