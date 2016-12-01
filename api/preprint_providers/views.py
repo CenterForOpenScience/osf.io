@@ -226,6 +226,7 @@ class PreprintProviderSubjectList(JSONAPIBaseView, generics.ListAPIView):
 
 
 class PreprintProviderLicenseList(LicenseList):
+    ordering = ()
     view_category = 'preprint_providers'
 
     def get_queryset(self):
