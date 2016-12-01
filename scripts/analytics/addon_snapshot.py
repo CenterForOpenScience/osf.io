@@ -3,6 +3,7 @@ from modularodm import Q
 
 from website.app import init_app
 from website.models import Node, User
+from framework.mongo.utils import paginated
 from website.addons.base import AddonNodeSettingsBase
 from scripts.analytics.base import SnapshotAnalytics
 
@@ -70,9 +71,12 @@ class AddonSnapshot(SnapshotAnalytics):
         addons_available = {k: v for k, v in [(addon.short_name, addon) for addon in ADDONS_AVAILABLE]}
 
         for short_name, addon in addons_available.iteritems():
-
-            user_settings_list = addon.settings_models['user'].find() if addon.settings_models.get('user') else []
-            node_settings_list = addon.settings_models['node'].find() if addon.settings_models.get('node') else []
+            user_settings_list = []
+            node_settings_list = []
+            if addon.settings_models.get('user'):
+                user_settings_list = [setting for setting in paginated(addon.settings_models['user'])]
+            if addon.settings_models.get('node'):
+                node_settings_list = [setting for setting in paginated(addon.settings_models['node'])]
 
             has_external_account = True
             # Check out the first element in node_settings_list to see if it has an external account to check for

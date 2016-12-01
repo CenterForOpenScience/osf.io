@@ -3,6 +3,7 @@ import urlparse
 
 from modularodm import fields, Q
 
+from framework.encryption import EncryptedStringField
 from framework.celery_tasks.handlers import enqueue_task
 from framework.exceptions import PermissionsError
 from framework.guid.model import GuidStoredObject
@@ -16,6 +17,7 @@ from website.project.taxonomies import Subject, validate_subject_hierarchy
 from website.util import api_v2_url
 from website.util.permissions import ADMIN
 from website import settings
+
 
 @unique_on(['node', 'provider'])
 class PreprintService(GuidStoredObject):
@@ -61,6 +63,10 @@ class PreprintService(GuidStoredObject):
 
     @property
     def url(self):
+        if self.provider._id != 'osf':
+            # Note that this will change with Phase 2 of branded preprints.
+            return '/preprints/{}/{}/'.format(self.provider._id, self._id)
+
         return '/{}/'.format(self._id)
 
     @property
@@ -113,23 +119,18 @@ class PreprintService(GuidStoredObject):
         if preprint_file.node != self.node or preprint_file.provider != 'osfstorage':
             raise ValueError('This file is not a valid primary file for this preprint.')
 
-        # there is no preprint file yet! This is the first time!
-        if not self.node.preprint_file:
-            self.node.preprint_file = preprint_file
-            self.node.add_log(action=NodeLog.PREPRINT_INITIATED, params={
-                'preprint': {'id': self._id, 'title': self.node.title},
-                'service': {'title': self.provider.name}
-            }, auth=auth, save=False)
-        elif preprint_file != self.node.preprint_file:
-            # if there was one, check if it's a new file
-            self.node.preprint_file = preprint_file
+        existing_file = self.node.preprint_file
+        self.node.preprint_file = preprint_file
+
+        # only log if updating the preprint file, not adding for the first time
+        if existing_file:
             self.node.add_log(
                 action=NodeLog.PREPRINT_FILE_UPDATED,
                 params={
                     'preprint': self._id
                 },
                 auth=auth,
-                save=False,
+                save=False
             )
 
         if save:
@@ -182,13 +183,7 @@ class PreprintService(GuidStoredObject):
         self.node.add_log(
             action=NodeLog.PREPRINT_LICENSE_UPDATED,
             params={
-                'preprint': {
-                    'id': self._id,
-                    'title': self.node.title
-                },
-                'service': {
-                    'title': self.provider.name
-                }
+                'preprint': self._id
             },
             auth=auth,
             save=False
@@ -213,6 +208,7 @@ class PreprintProvider(StoredObject):
     external_url = fields.StringField()
     email_contact = fields.StringField()
     email_support = fields.StringField()
+    access_token = EncryptedStringField()
     advisory_board = fields.StringField()
     social_twitter = fields.StringField()
     social_facebook = fields.StringField()
