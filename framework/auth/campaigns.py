@@ -56,12 +56,13 @@ def get_campaigns():
                 if provider._id == 'osf':
                     template = 'osf'
                     name = 'OSF'
+                    url_path = 'preprints/'
                 else:
                     template = 'branded'
                     name = provider.name
+                    url_path = 'preprints/{}'.format(provider._id)
                 campaign = '{}-preprints'.format(provider._id)
                 system_tag = '{}_preprints'.format(provider._id)
-                url_path = 'preprints/{}'.format(provider._id)
                 CAMPAIGNS.update({
                     campaign: {
                         'system_tag': system_tag,
