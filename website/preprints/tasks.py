@@ -103,7 +103,7 @@ def format_preprint(preprint):
         'description': preprint.node.description or '',
         'is_deleted': not preprint.is_published or not preprint.node.is_public or preprint.node.is_preprint_orphan,
         'date_updated': preprint.date_modified.isoformat(),
-        'date_published': preprint.date_published.isoformat()
+        'date_published': preprint.date_published.isoformat() if preprint.date_published else None
     })
 
     to_visit = [
@@ -116,12 +116,12 @@ def format_preprint(preprint):
 
     preprint_graph.attrs['tags'] = [
         GraphNode('throughtags', creative_work=preprint_graph, tag=GraphNode('tag', name=tag._id))
-        for tag in preprint.node.tags
+        for tag in preprint.node.tags or []
     ]
 
     preprint_graph.attrs['subjects'] = [
         GraphNode('throughsubjects', creative_work=preprint_graph, subject=GraphNode('subject', name=subject))
-        for subject in set(x['text'] for hier in preprint.get_subjects() for x in hier)
+        for subject in set(x['text'] for hier in preprint.get_subjects() or [] for x in hier)
     ]
 
     to_visit.extend(format_contributor(preprint_graph, user, bool(user._id in preprint.node.visible_contributor_ids), i) for i, user in enumerate(preprint.node.contributors))

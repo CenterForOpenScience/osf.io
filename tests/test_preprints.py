@@ -358,3 +358,80 @@ class TestOnPreprintUpdatedTask(OsfTestCase):
         ])
 
         assert nodes == {}
+
+    def test_format_preprint_nones(self):
+        self.preprint.node.tags = None
+        self.preprint.date_published = None
+        self.preprint.set_subjects([], auth=Auth(self.preprint.node.creator), save=False)
+
+        res = format_preprint(self.preprint)
+
+        assert set(gn['@type'] for gn in res) == {'creator', 'contributor', 'workidentifier', 'agentidentifier', 'person', 'preprint'}
+
+        nodes = dict(enumerate(res))
+        preprint = nodes.pop(next(k for k, v in nodes.items() if v['@type'] == 'preprint'))
+        assert preprint['title'] == self.preprint.node.title
+        assert preprint['description'] == self.preprint.node.description
+        assert preprint['is_deleted'] == (not self.preprint.is_published or not self.preprint.node.is_public or self.preprint.node.is_preprint_orphan)
+        assert preprint['date_updated'] == self.preprint.date_modified.isoformat()
+        assert preprint.get('date_published') is None
+
+        people = sorted([nodes.pop(k) for k, v in nodes.items() if v['@type'] == 'person'], key=lambda x: x['given_name'])
+        assert people == [{
+            '@id': people[0]['@id'],
+            '@type': 'person',
+            'given_name': u'BoJack',
+            'family_name': u'Horseman',
+        }, {
+            '@id': people[1]['@id'],
+            '@type': 'person',
+            'given_name': self.user.given_name,
+            'family_name': self.user.family_name,
+        }, {
+            '@id': people[2]['@id'],
+            '@type': 'person',
+            'given_name': self.preprint.node.creator.given_name,
+            'family_name': self.preprint.node.creator.family_name,
+        }]
+
+        creators = sorted([nodes.pop(k) for k, v in nodes.items() if v['@type'] == 'creator'], key=lambda x: x['order_cited'])
+        assert creators == [{
+            '@id': creators[0]['@id'],
+            '@type': 'creator',
+            'order_cited': 0,
+            'cited_as': self.preprint.node.creator.fullname,
+            'agent': {'@id': people[2]['@id'], '@type': 'person'},
+            'creative_work': {'@id': preprint['@id'], '@type': preprint['@type']},
+        }, {
+            '@id': creators[1]['@id'],
+            '@type': 'creator',
+            'order_cited': 1,
+            'cited_as': 'BoJack Horseman',
+            'agent': {'@id': people[0]['@id'], '@type': 'person'},
+            'creative_work': {'@id': preprint['@id'], '@type': preprint['@type']},
+        }]
+
+        contributors = [nodes.pop(k) for k, v in nodes.items() if v['@type'] == 'contributor']
+        assert contributors == [{
+            '@id': contributors[0]['@id'],
+            '@type': 'contributor',
+            'cited_as': self.user.fullname,
+            'agent': {'@id': people[1]['@id'], '@type': 'person'},
+            'creative_work': {'@id': preprint['@id'], '@type': preprint['@type']},
+        }]
+
+        agentidentifiers = {nodes.pop(k)['uri'] for k, v in nodes.items() if v['@type'] == 'agentidentifier'}
+        assert agentidentifiers == set([
+            'mailto:' + self.user.username,
+            'mailto:' + self.preprint.node.creator.username,
+            self.user.profile_image_url(),
+            self.preprint.node.creator.profile_image_url(),
+        ]) | set(urlparse.urljoin(settings.DOMAIN, user.profile_url) for user in self.preprint.node.contributors if user.is_registered)
+
+        workidentifiers = {nodes.pop(k)['uri'] for k, v in nodes.items() if v['@type'] == 'workidentifier'}
+        assert workidentifiers == set([
+            'http://dx.doi.org/{}'.format(self.preprint.article_doi),
+            urlparse.urljoin(settings.DOMAIN, self.preprint.url)
+        ])
+
+        assert nodes == {}
