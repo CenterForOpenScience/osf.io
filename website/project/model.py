@@ -2386,7 +2386,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
 
         return forked
 
-    def register_node(self, schema, auth, data, parent=None):
+    def register_node(self, schema, auth, data, parent=None, recur=False):
         """Make a frozen copy of a node.
 
         :param schema: Schema object
@@ -2452,21 +2452,26 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
         # After register callback
         for addon in original.get_addons():
             _, message = addon.after_register(original, registered, auth.user)
-            if message:
+            if message and not recur:
                 status.push_status_message(message, kind='info', trust=False)
 
-        for node_contained in original.nodes:
-            if not node_contained.is_deleted:
-                child_registration = node_contained.register_node(
-                    schema=schema,
-                    auth=auth,
-                    data=data,
-                    parent=registered,
-                )
-                if child_registration and not child_registration.primary:
-                    registered.nodes.append(child_registration)
+        children_nodes = original.nodes
+        while(children_nodes):
+            batch = children_nodes[:49]
+            for node_contained in batch:
+                if not node_contained.is_deleted:
+                    child_registration = node_contained.register_node(
+                        schema=schema,
+                        auth=auth,
+                        data=data,
+                        parent=registered,
+                        recur=True,
+                    )
+                    if child_registration and not child_registration.primary:
+                        registered.nodes.append(child_registration)
 
-        registered.save()
+            registered.save()
+            children_nodes = children_nodes[49:]
 
         if settings.ENABLE_ARCHIVER:
             registered.reload()

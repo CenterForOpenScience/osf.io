@@ -40,6 +40,16 @@ class TestRegistrationViews(RegistrationsTestBase):
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.status_code, http.OK)
 
+    @mock.patch('website.archiver.tasks.archive')
+    def test_node_register_over_100_nodes(self, mock_archive):
+        for i in xrange(110):
+            node = NodeFactory(parent=self.node)
+            node.save()
+        reg = self.node.register_node(get_default_metaschema(), self.auth, '', None)
+        url = reg.web_url_for('node_register_page')
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.status_code, http.OK)
+
     def test_non_admin_can_view_node_register_page(self):
         non_admin = AuthUserFactory()
         self.node.add_contributor(
