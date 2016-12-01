@@ -33,13 +33,13 @@ def main():
             logger.info('({}/{}) Checking {}'.format(count, target_count, node['_id']))
         for key in node['wiki_pages_versions']:
             for wiki_id in node['wiki_pages_versions'][key]:
-                    wiki = database.nodewikipage.find_one({'_id': wiki_id}, {'node': True})
-                    if wiki['node'] != node['_id']:
-                        incorrect_refs.append({'wiki': wiki_id, 'actual': wiki['node'], 'correct': node['_id']})
+                wiki = database.nodewikipage.find_one({'_id': wiki_id}, {'node': True})
+                if wiki['node'] != node['_id']:
+                    incorrect_refs.append({'wiki': wiki_id, 'actual': wiki['node'], 'correct': node['_id']})
+
     if len(incorrect_refs):
         for ref in incorrect_refs:
             log_ref(ref)
-
     else:
         logger.info('All wiki of fork nodes point to the correct node.')
 
