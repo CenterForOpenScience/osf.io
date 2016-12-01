@@ -3,8 +3,8 @@ import logging
 import os
 
 import requests
-from addons.base.models import (BaseOAuthNodeSettings,
-                                BaseOAuthUserSettings, BaseStorageAddon)
+from addons.base.models import (BaseOAuthNodeSettings, BaseOAuthUserSettings,
+                                BaseStorageAddon)
 from box import BoxClient, CredentialsV2
 from box.client import BoxClientException
 from django.db import models
@@ -12,7 +12,7 @@ from framework.auth import Auth
 from framework.exceptions import HTTPError
 from oauthlib.oauth2 import InvalidGrantError
 from osf.models.external import ExternalProvider
-from osf.models.files import FileNode, Folder, File
+from osf.models.files import File, FileNode, Folder
 from urllib3.exceptions import MaxRetryError
 from website.addons.base import exceptions
 from website.addons.box import settings
@@ -23,12 +23,24 @@ logger = logging.getLogger(__name__)
 
 
 class BoxFileNode(FileNode):
+    # TODO DELETE ME POST MIGRATION
+    modm_model_path = 'website.files.models.box.BoxFileNode'
+    modm_query = None
+    # /TODO DELETE ME POST MIGRATION
     provider = 'box'
 
 class BoxFolder(BoxFileNode, Folder):
+    # TODO DELETE ME POST MIGRATION
+    modm_model_path = 'website.files.models.box.BoxFolder'
+    modm_query = None
+    # /TODO DELETE ME POST MIGRATION
     pass
 
 class BoxFile(BoxFileNode, File):
+    # TODO DELETE ME POST MIGRATION
+    modm_model_path = 'website.files.models.box.BoxFile'
+    modm_query = None
+    # /TODO DELETE ME POST MIGRATION
     pass
 
 class Provider(ExternalProvider):
@@ -69,6 +81,11 @@ class Provider(ExternalProvider):
 class UserSettings(BaseOAuthUserSettings):
     """Stores user-specific box information
     """
+    # TODO DELETE ME POST MIGRATION
+    modm_model_path = 'website.addons.box.model.BoxUserSettings'
+    modm_query = None
+    # /TODO DELETE ME POST MIGRATION
+
     oauth_provider = Provider
     serializer = BoxSerializer
 
@@ -89,6 +106,10 @@ class UserSettings(BaseOAuthUserSettings):
 
 
 class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
+    # TODO DELETE ME POST MIGRATION
+    modm_model_path = 'website.addons.box.model.BoxNodeSettings'
+    modm_query = None
+    # /TODO DELETE ME POST MIGRATION
     oauth_provider = Provider
     serializer = BoxSerializer
 

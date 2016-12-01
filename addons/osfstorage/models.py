@@ -19,6 +19,10 @@ logger = logging.getLogger(__name__)
 
 
 class OsfStorageFileNode(FileNode):
+    # TODO DELETE ME POST MIGRATION
+    modm_model_path = 'website.files.models.osfstorage.OsfStorageFileNode'
+    modm_query = None
+    # /TODO DELETE ME POST MIGRATION
     provider = 'osfstorage'
 
     @classmethod
@@ -197,6 +201,10 @@ class OsfStorageFileNode(FileNode):
 
 
 class OsfStorageFile(OsfStorageFileNode, File):
+    # TODO DELETE ME POST MIGRATION
+    modm_model_path = 'website.files.models.osfstorage.OsfStorageFile'
+    modm_query = None
+    # /TODO DELETE ME POST MIGRATION
     def touch(self, bearer, version=None, revision=None, **kwargs):
         try:
             return self.get_version(revision or version)
@@ -320,6 +328,10 @@ class OsfStorageFile(OsfStorageFileNode, File):
 
 
 class OsfStorageFolder(OsfStorageFileNode, Folder):
+    # TODO DELETE ME POST MIGRATION
+    modm_model_path = 'website.files.models.osfstorage.OsfStorageFolder'
+    modm_query = None
+    # /TODO DELETE ME POST MIGRATION
     @property
     def is_checked_out(self):
         try:
@@ -345,6 +357,10 @@ class OsfStorageFolder(OsfStorageFileNode, Folder):
 
 
 class NodeSettings(BaseStorageAddon, BaseNodeSettings):
+    # TODO DELETE ME POST MIGRATION
+    modm_model_path = 'website.addons.osfstorage.model.OsfStorageNodeSettings'
+    modm_query = None
+    # /TODO DELETE ME POST MIGRATION
     # Required overrides
     complete = True
     has_auth = True

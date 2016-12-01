@@ -1,39 +1,56 @@
 # -*- coding: utf-8 -*-
 
+from addons.base.models import (BaseOAuthNodeSettings, BaseOAuthUserSettings,
+                                BaseStorageAddon)
 from django.db import models
-
 from framework.auth.core import Auth
-
-from addons.base.models import (
-    BaseOAuthNodeSettings, BaseOAuthUserSettings, BaseStorageAddon)
-
-from osf.models.files import FileNode, Folder, File
-
+from osf.models.files import File, FileNode, Folder
 from website.addons.base import exceptions
 from website.addons.s3.provider import S3Provider
 from website.addons.s3.serializer import S3Serializer
-from website.addons.s3.settings import ENCRYPT_UPLOADS_DEFAULT, BUCKET_LOCATIONS
-from website.addons.s3.utils import bucket_exists, get_bucket_names, get_bucket_location_or_error
+from website.addons.s3.settings import (BUCKET_LOCATIONS,
+                                        ENCRYPT_UPLOADS_DEFAULT)
+from website.addons.s3.utils import (bucket_exists,
+                                     get_bucket_location_or_error,
+                                     get_bucket_names)
 
 
 class S3FileNode(FileNode):
+    # TODO DELETE ME POST MIGRATION
+    modm_model_path = 'website.files.models.s3.S3FileNode'
+    modm_query = None
+    # /TODO DELETE ME POST MIGRATION
     provider = 's3'
 
 class S3Folder(S3FileNode, Folder):
+    # TODO DELETE ME POST MIGRATION
+    modm_model_path = 'website.files.models.s3.S3Folder'
+    modm_query = None
+    # /TODO DELETE ME POST MIGRATION
     pass
 
 class S3File(S3FileNode, File):
+    # TODO DELETE ME POST MIGRATION
+    modm_model_path = 'website.files.models.s3.S3File'
+    modm_query = None
+    # /TODO DELETE ME POST MIGRATION
     version_identifier = 'version'
 
 
 class UserSettings(BaseOAuthUserSettings):
-
+    # TODO DELETE ME POST MIGRATION
+    modm_model_path = 'website.addons.s3.model.S3UserSettings'
+    modm_query = None
+    # /TODO DELETE ME POST MIGRATION
     oauth_provider = S3Provider
     serializer = S3Serializer
 
 
 class NodeSettings(BaseStorageAddon, BaseOAuthNodeSettings):
-
+    # TODO DELETE ME POST MIGRATION
+    modm_model_path = 'website.addons.s3.model.S3NodeSettings'
+    modm_query = None
+    # /TODO DELETE ME POST MIGRATION
     oauth_provider = S3Provider
     serializer = S3Serializer
 

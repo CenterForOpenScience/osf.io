@@ -1,78 +1,63 @@
 # -*- coding: utf-8 -*-
-import itertools
+import datetime
 import functools
+import itertools
+import logging
 import os
 import re
-import logging
-import pymongo
-import datetime
 import urlparse
 import warnings
-import jsonschema
+from framework import status
 
+import jsonschema
+import pymongo
 import pytz
 from django.apps import apps
-from django.core.urlresolvers import reverse
 from django.core.exceptions import ValidationError
+from django.core.urlresolvers import reverse
 from django.core.validators import URLValidator
 from django.utils import timezone
-
-from modularodm import Q
-from modularodm import fields
-from modularodm.validators import MaxLengthValidator
-from modularodm.exceptions import KeyExistsException, NoResultsFound, ValidationValueError
-
-from framework import status
-from framework.mongo import ObjectId, DummyRequest
-from framework.mongo import StoredObject
-from framework.mongo import validators
-from framework.mongo import get_request_and_user_id
 from framework.addons import AddonModelMixin
-from framework.auth import get_user, User, Auth
-from framework.exceptions import PermissionsError
-from framework.guid.model import GuidStoredObject, Guid
+from framework.analytics import (get_basic_counters,
+                                 increment_user_activity_counters)
+from framework.auth import Auth, User, get_user
 from framework.auth.utils import privacy_info_handle
+from framework.celery_tasks.handlers import enqueue_task
+from framework.exceptions import PermissionsError
+from framework.guid.model import Guid, GuidStoredObject
+from framework.mongo import (DummyRequest, ObjectId, StoredObject,
+                             get_request_and_user_id, validators)
 from framework.mongo.utils import to_mongo_key, unique_on
-from framework.analytics import (
-    get_basic_counters, increment_user_activity_counters
-)
 from framework.sentry import log_exception
 from framework.transactions.context import TokuTransaction
 from framework.utils import iso8601format
-from framework.celery_tasks.handlers import enqueue_task
-
+from keen import scoped_keys
+from modularodm import Q, fields
+from modularodm.exceptions import (KeyExistsException, NoResultsFound,
+                                   ValidationValueError)
+from modularodm.validators import MaxLengthValidator
 from website import language, settings
-from website.mails import mails
-from website.util import web_url_for
-from website.util import api_url_for
-from website.util import api_v2_url
-from website.util import sanitize
-from website.util import get_headers_from_request
-from website.exceptions import (
-    NodeStateError,
-    InvalidTagError, TagNotFoundError,
-    UserNotAffiliatedError,
-)
-from website.institutions.model import Institution, AffiliatedInstitutionsList
 from website.citations.utils import datetime_to_csl
+from website.exceptions import (InvalidTagError, NodeStateError,
+                                TagNotFoundError, UserNotAffiliatedError)
 from website.identifiers.model import IdentifierMixin
-from website.util.permissions import expand_permissions, reduce_permissions
-from website.util.permissions import CREATOR_PERMISSIONS, DEFAULT_CONTRIBUTOR_PERMISSIONS, ADMIN
-from website.project.commentable import Commentable
-from website.project.metadata.schemas import OSF_META_SCHEMAS
-from website.project.metadata.utils import create_jsonschema_from_metaschema
-from website.project.licenses import (NodeLicense, NodeLicenseRecord)
+from website.institutions.model import AffiliatedInstitutionsList, Institution
+from website.mails import mails
 from website.project import signals as project_signals
 from website.project import tasks as node_tasks
+from website.project.commentable import Commentable
+from website.project.licenses import NodeLicense, NodeLicenseRecord
+from website.project.metadata.schemas import OSF_META_SCHEMAS
+from website.project.metadata.utils import create_jsonschema_from_metaschema
+from website.project.sanctions import (DraftRegistrationApproval, Embargo,
+                                       EmbargoTerminationApproval,
+                                       RegistrationApproval, Retraction)
 from website.project.spam.model import SpamMixin
-from website.project.sanctions import (
-    DraftRegistrationApproval,
-    EmbargoTerminationApproval,
-    Embargo,
-    RegistrationApproval,
-    Retraction,
-)
-from keen import scoped_keys
+from website.util import (api_url_for, api_v2_url, get_headers_from_request,
+                          sanitize, web_url_for)
+from website.util.permissions import (ADMIN, CREATOR_PERMISSIONS,
+                                      DEFAULT_CONTRIBUTOR_PERMISSIONS,
+                                      expand_permissions, reduce_permissions)
 
 logger = logging.getLogger(__name__)
 
@@ -2165,6 +2150,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
         return None
 
     def on_update(self, first_save, saved_fields):
+        if settings.RUNNING_MIGRATION:  # no-no during migration
+            return
         request, user_id = get_request_and_user_id()
         request_headers = {}
         if not isinstance(request, DummyRequest):

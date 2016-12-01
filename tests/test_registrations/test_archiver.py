@@ -1,56 +1,41 @@
 #-*- coding: utf-8 -*-
+import copy
 import datetime
 import functools
+import itertools
 import json
 import logging
-import itertools
 import random
-import copy
 import re
-
-import celery
-import mock  # noqa
 from contextlib import nested
 
-from django.utils import timezone
-from mock import call
-from nose.tools import *  # noqa PEP8 asserts
+import celery
 import httpretty
-from modularodm import Q
-from modularodm.exceptions import KeyExistsException
-
-from scripts import cleanup_failed_registrations as scripts
-
+import mock  # noqa
+from django.utils import timezone
 from framework.auth import Auth
 from framework.celery_tasks import handlers
-
-from website.archiver import (
-    ARCHIVER_INITIATED,
-    ARCHIVER_SUCCESS,
-    ARCHIVER_FAILURE,
-    ARCHIVER_NETWORK_ERROR,
-    ARCHIVER_SIZE_EXCEEDED,
-    NO_ARCHIVE_LIMIT,
-)
-from website.archiver import utils as archiver_utils
-from website.app import *  # noqa
-from website.archiver import listeners
-from website.archiver.tasks import *   # noqa
-from website.archiver.model import ArchiveTarget, ArchiveJob
-from website.archiver.decorators import fail_archive_on_error
-
-from website import mails
-from website import settings
-from website.util import waterbutler_url_for
-from website.project.model import Node, NodeLog, ensure_schemas, MetaSchema
-from website.addons.base import StorageAddonBase
-
+from mock import call
+from modularodm import Q
+from modularodm.exceptions import KeyExistsException
+from nose.tools import *  # noqa PEP8 asserts
+from scripts import cleanup_failed_registrations as scripts
+from tests import utils as test_utils
 from tests import factories
 from tests.base import OsfTestCase, fake
-from tests import utils as test_utils
-
 from tests.utils import unique as _unique
-
+from website import mails, settings
+from website.addons.base import StorageAddonBase
+from website.app import *  # noqa
+from website.archiver import utils as archiver_utils
+from website.archiver import (ARCHIVER_FAILURE, ARCHIVER_INITIATED,
+                              ARCHIVER_NETWORK_ERROR, ARCHIVER_SIZE_EXCEEDED,
+                              ARCHIVER_SUCCESS, NO_ARCHIVE_LIMIT, listeners)
+from website.archiver.decorators import fail_archive_on_error
+from website.archiver.model import ArchiveJob, ArchiveTarget
+from website.archiver.tasks import *  # noqa
+from website.project.model import MetaSchema, Node, NodeLog, ensure_schemas
+from website.util import waterbutler_url_for
 
 SILENT_LOGGERS = (
     'framework.celery_tasks.utils',

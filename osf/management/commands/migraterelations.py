@@ -1,37 +1,33 @@
 from __future__ import unicode_literals
+
 import gc
 import importlib
 import sys
 
 import ipdb
+from addons.wiki.models import NodeWikiPage
 from django.apps import apps
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.core.management import BaseCommand
 from django.db import transaction
 from osf import models
-from osf.models import ApiOAuth2Scope
-from osf.models import BlackListGuid
-from osf.models import CitationStyle
-from osf.models import Guid
-from osf.models import Institution
-from osf.models import NodeRelation
-from osf.models import NotificationSubscription
-from osf.models import RecentlyAddedContributor
-from osf.models import StoredFileNode
-from osf.models import Tag
+from osf.models import (ApiOAuth2Scope, BlackListGuid, CitationStyle, Guid,
+                        Institution, NodeRelation, NotificationSubscription,
+                        RecentlyAddedContributor, StoredFileNode, Tag)
 from osf.models.base import OptionalGuidMixin
-from osf.models.contributor import InstitutionalContributor, Contributor, AbstractBaseContributor
+from osf.models.contributor import (AbstractBaseContributor, Contributor,
+                                    InstitutionalContributor)
 from osf.models.node import AbstractNode, Node
 from osf.utils.order_apps import get_ordered_models
+from scripts.register_oauth_scopes import set_backend
 from website.models import Guid as MODMGuid
 from website.models import Institution as MODMInstitution
 from website.models import Node as MODMNode
-from website.models import Pointer as MODMPointer
 from website.models import NodeLog as MODMNodeLog
-from website.models import NotificationSubscription as MODMNotificationSubscription
+from website.models import \
+    NotificationSubscription as MODMNotificationSubscription
+from website.models import Pointer as MODMPointer
 from website.models import User as MODMUser
-
-from scripts.register_oauth_scopes import set_backend
 
 
 def build_toku_django_lookup_table_cache(with_guids=False):
@@ -48,6 +44,7 @@ def build_toku_django_lookup_table_cache(with_guids=False):
     models.pop(models.index(NotificationSubscription))
 
     models.pop(models.index(Guid))
+    models.append(NodeWikiPage)
 
     lookups = {}
 
@@ -188,7 +185,7 @@ class Command(BaseCommand):
         fk_count = 0
         model_count = 0
         model_total = modm_queryset.count()
-        bad_fields = []
+        bad_fields = ['external_account_id',]  # external accounts are handled in their own migration
 
         def format_lookup_string(modm_obj):
             if isinstance(modm_obj, MODMGuid):
@@ -200,7 +197,7 @@ class Command(BaseCommand):
                     # well ... I guess?
                     return unicode(modm_obj).lower()
                 else:
-                    return u'guid:{}'.format(modm_obj).lower()
+                    return u'guid:{}'.format(unicode(modm_obj)).lower()
             return unicode(modm_obj._id).lower()
 
         while model_count < model_total:

@@ -1,15 +1,12 @@
 # -*- coding: utf-8 -*-
 import httplib as http
 
+from addons.base.models import (BaseOAuthNodeSettings, BaseOAuthUserSettings,
+                                BaseStorageAddon)
 from django.db import models
-
 from framework.auth.decorators import Auth
 from framework.exceptions import HTTPError
-
-from addons.base.models import (
-    BaseOAuthNodeSettings, BaseOAuthUserSettings, BaseStorageAddon)
-from osf.models.files import FileNode, Folder, File
-
+from osf.models.files import File, FileNode, Folder
 from website.addons.base import exceptions
 from website.addons.dataverse.client import connect_from_settings_or_401
 from website.addons.dataverse.serializer import DataverseSerializer
@@ -17,12 +14,24 @@ from website.addons.dataverse.utils import DataverseNodeLogger
 
 
 class DataverseFileNode(FileNode):
+    # TODO DELETE ME POST MIGRATION
+    modm_model_path = 'website.files.models.dataverse.DataverseFileNode'
+    modm_query = None
+    # /TODO DELETE ME POST MIGRATION
     provider = 'dataverse'
 
 class DataverseFolder(DataverseFileNode, Folder):
+    # TODO DELETE ME POST MIGRATION
+    modm_model_path = 'website.files.models.dataverse.DataverseFolder'
+    modm_query = None
+    # /TODO DELETE ME POST MIGRATION
     pass
 
 class DataverseFile(DataverseFileNode, File):
+    # TODO DELETE ME POST MIGRATION
+    modm_model_path = 'website.files.models.dataverse.DataverseFile'
+    modm_query = None
+    # /TODO DELETE ME POST MIGRATION
     version_identifier = 'ref'
 
     def touch(self, auth_header, revision=None, ref=None, branch=None, **kwargs):
@@ -31,13 +40,12 @@ class DataverseFile(DataverseFileNode, File):
 
 class DataverseProvider(object):
     """An alternative to `ExternalProvider` not tied to OAuth"""
-
     name = 'Dataverse'
     short_name = 'dataverse'
     serializer = DataverseSerializer
 
     def __init__(self, account=None):
-        super(DataverseProvider, self).__init__()
+        super(DataverseProvider, self).__init__()  # this does exactly nothing...
         # provide an unauthenticated session by default
         self.account = account
 
@@ -48,10 +56,18 @@ class DataverseProvider(object):
         )
 
 class UserSettings(BaseOAuthUserSettings):
+    # TODO DELETE ME POST MIGRATION
+    modm_model_path = 'website.addons.dataverse.model.AddonDataverseUserSettings'
+    modm_query = None
+    # /TODO DELETE ME POST MIGRATION
     oauth_provider = DataverseProvider
     serializer = DataverseSerializer
 
 class NodeSettings(BaseStorageAddon, BaseOAuthNodeSettings):
+    # TODO DELETE ME POST MIGRATION
+    modm_model_path = 'website.addons.dataverse.model.AddonDataverseNodeSettings'
+    modm_query = None
+    # /TODO DELETE ME POST MIGRATION
     oauth_provider = DataverseProvider
     serializer = DataverseSerializer
 

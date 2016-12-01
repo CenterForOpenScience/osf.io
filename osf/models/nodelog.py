@@ -144,7 +144,8 @@ class NodeLog(ObjectIDMixin, BaseModel):
     should_hide = models.BooleanField(default=False)
     user = models.ForeignKey('OSFUser', related_name='logs', db_index=True, null=True, blank=True)
     foreign_user = models.CharField(max_length=255, null=True, blank=True)
-    node = models.ForeignKey('AbstractNode', related_name='logs', db_index=True, null=True, blank=True)
+    node = models.ForeignKey('AbstractNode', related_name='logs',
+                             db_index=True, null=True, blank=True)
     original_node = models.ForeignKey('AbstractNode', db_index=True, null=True, blank=True)
 
     def __unicode__(self):

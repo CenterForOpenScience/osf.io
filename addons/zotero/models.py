@@ -1,13 +1,12 @@
 # -*- coding: utf-8 -*-
 
+from addons.base.models import BaseCitationsNodeSettings, BaseOAuthUserSettings
 from django.db import models
-from pyzotero import zotero, zotero_errors
-
 from framework.exceptions import HTTPError
-
-from addons.base.models import BaseOAuthUserSettings, BaseCitationsNodeSettings
+from pyzotero import zotero, zotero_errors
+from website.addons.zotero import \
+    settings  # TODO: Move `settings` to `apps.py` when deleting
 from website.addons.zotero.serializer import ZoteroSerializer
-from website.addons.zotero import settings  # TODO: Move `settings` to `apps.py` when deleting
 from website.citations.providers import CitationsOauthProvider
 
 # TODO: Don't cap at 200 responses. We can only fetch 100 citations at a time. With lots
@@ -101,11 +100,19 @@ class Zotero(CitationsOauthProvider):
 
 
 class UserSettings(BaseOAuthUserSettings):
+    # TODO DELETE ME POST MIGRATION
+    modm_model_path = 'website.addons.zotero.model.ZoteroUserSettings'
+    modm_query = None
+    # /TODO DELETE ME POST MIGRATION
     oauth_provider = Zotero
     serializer = ZoteroSerializer
 
 
 class NodeSettings(BaseCitationsNodeSettings):
+    # TODO DELETE ME POST MIGRATION
+    modm_model_path = 'website.addons.zotero.model.ZoteroNodeSettings'
+    modm_query = None
+    # /TODO DELETE ME POST MIGRATION
     provider_name = 'zotero'
     oauth_provider = Zotero
     serializer = ZoteroSerializer

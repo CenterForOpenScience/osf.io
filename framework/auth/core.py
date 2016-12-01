@@ -1,31 +1,27 @@
 # -*- coding: utf-8 -*-
 
-from copy import deepcopy
 import datetime as dt
+import framework
 import itertools
 import logging
 import re
-import urlparse
 import urllib
+import urlparse
+from copy import deepcopy
+from framework import analytics
 
 import bson
-import pytz
 import itsdangerous
-
-from flask import Request as FlaskRequest
-
+import pytz
 from django.utils import timezone
-from modularodm import fields, Q
-from modularodm.exceptions import NoResultsFound, ValidationError, ValidationValueError, QueryException
-from modularodm.validators import URLValidator
-
-import framework
-from framework import analytics
+from flask import Request as FlaskRequest
 from framework.addons import AddonModelMixin
 from framework.auth import signals, utils
-from framework.auth.exceptions import (ChangePasswordError, ExpiredTokenError, InvalidTokenError,
-                                       MergeConfirmedRequiredError, MergeConflictError)
-from framework.bcrypt import generate_password_hash, check_password_hash
+from framework.auth.exceptions import (ChangePasswordError, ExpiredTokenError,
+                                       InvalidTokenError,
+                                       MergeConfirmedRequiredError,
+                                       MergeConflictError)
+from framework.bcrypt import check_password_hash, generate_password_hash
 from framework.exceptions import PermissionsError
 from framework.guid.model import GuidStoredObject
 from framework.mongo import get_cache_key
@@ -34,7 +30,11 @@ from framework.sentry import log_exception
 from framework.sessions import session
 from framework.sessions.model import Session
 from framework.sessions.utils import remove_sessions_for_user
-from website import mails, settings, filters, security
+from modularodm import Q, fields
+from modularodm.exceptions import (NoResultsFound, QueryException,
+                                   ValidationError, ValidationValueError)
+from modularodm.validators import URLValidator
+from website import filters, mails, security, settings
 
 name_formatters = {
     'long': lambda user: user.fullname,
@@ -1413,7 +1413,6 @@ class User(GuidStoredObject, AddonModelMixin):
         registered user and set this account to the highest permission of the two
         and set this account to be visible if either of the two are visible on
         the project.
-
         :param user: A User object to be merged.
         """
         # Fail if the other user has conflicts.
@@ -1421,12 +1420,9 @@ class User(GuidStoredObject, AddonModelMixin):
             raise MergeConflictError('Users cannot be merged')
         # Move over the other user's attributes
         # TODO: confirm
-        if isinstance(user.system_tags, list):
-            system_tags = user.system_tags
-        else:
-            system_tags = user.system_tag.all()
-        for system_tag in system_tags:
-            self.add_system_tag(system_tag)
+        for system_tag in user.system_tags:
+            if system_tag not in self.system_tags:
+                self.system_tags.append(system_tag)
 
         self.is_claimed = self.is_claimed or user.is_claimed
         self.is_invited = self.is_invited or user.is_invited
@@ -1454,6 +1450,7 @@ class User(GuidStoredObject, AddonModelMixin):
         notifications_configured = user.notifications_configured.copy()
         notifications_configured.update(self.notifications_configured)
         self.notifications_configured = notifications_configured
+
         if not settings.RUNNING_MIGRATION:
             for key, value in user.mailchimp_mailing_lists.iteritems():
                 # subscribe to each list if either user was subscribed
@@ -1503,10 +1500,10 @@ class User(GuidStoredObject, AddonModelMixin):
                 self.watched.append(watched)
         user.watched = []
 
-        for account in user.external_accounts.all():
-            if not self.external_accounts.filter(id=account.id).exists():
-                self.external_accounts.add(account)
-        user.external_accounts.clear()
+        for account in user.external_accounts:
+            if account not in self.external_accounts:
+                self.external_accounts.append(account)
+        user.external_accounts = []
 
         # - addons
         # Note: This must occur before the merged user is removed as a
@@ -1549,6 +1546,7 @@ class User(GuidStoredObject, AddonModelMixin):
                         permissions=node.get_permissions(user),
                         visible=node.get_visible(user),
                         log=False,
+                        send_email='false'
                     )
 
                 with disconnected_from(signal=contributor_removed, listener=checkin_files_by_user):
