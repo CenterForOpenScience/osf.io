@@ -28,7 +28,7 @@ def main():
                         ))
                     counts += 1
     if counts != 0:
-        logger.info('There are {} wikis points to the wrong node.'.format(counts))
+        logger.info('There are {} wikis point to the wrong node.'.format(counts))
     else:
         logger.info('All wiki of fork nodes point to the correct node.')
 
