@@ -455,11 +455,4 @@ def main():
 
 
 if __name__ == '__main__':
-    # main()
-
-    client = get_keen_client()
-    ids = ['583f27d3709a3972feb78569' '583f27d3709a3972feb7856a', '583f27d3709a3972feb7856b', '583f27d3709a3972feb7856c']
-    for ident in ids:
-        filters = [{'property_name': 'keen.id', 'operator': 'eq', 'property_value': ident}]
-        client.delete_events('user_summary', filters=filters)
-        time.sleep(2)
+    main()
