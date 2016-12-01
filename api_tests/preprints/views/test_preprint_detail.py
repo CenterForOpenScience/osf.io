@@ -137,6 +137,11 @@ class TestPreprintUpdate(ApiTestCase):
         self.preprint.node.reload()
         assert_equal(self.preprint.primary_file, new_file)
 
+        # check logs
+        log = self.preprint.node.logs[-1]
+        assert_equal(log.action, 'preprint_file_updated')
+        assert_equal(log.params.get('preprint'), self.preprint._id)
+
     def test_new_primary_not_in_node(self):
         project = ProjectFactory()
         file_for_project = test_utils.create_test_file(project, 'letoutthatantidote.pdf')
@@ -333,6 +338,11 @@ class TestPreprintUpdateLicense(ApiTestCase):
         assert_equal(self.preprint.license.node_license, self.cc0_license)
         assert_equal(self.preprint.license.year, None)
         assert_equal(self.preprint.license.copyright_holders, [])
+
+        # check logs
+        log = self.preprint.node.logs[-1]
+        assert_equal(log.action, 'preprint_license_updated')
+        assert_equal(log.params.get('preprint'), self.preprint._id)
 
     def test_admin_can_update_license_record(self):
         data = self.make_payload(
@@ -539,21 +549,6 @@ class TestPreprintUpdateLicense(ApiTestCase):
         res = self.make_request(self.url, data, auth=self.admin_contributor.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
         assert_equal(res.json['errors'][0]['detail'], 'copyrightHolders must be specified for this license')
-
-    def test_update_preprint_license_adds_log(self):
-        data = self.make_payload(
-            node_id=self.preprint._id,
-            license_id=self.cc0_license._id
-        )
-        logs_before_update = len(self.preprint.node.logs)
-
-        res = self.make_request(self.url, data, auth=self.admin_contributor.auth)
-        assert_equal(res.status_code, 200)
-        self.preprint.reload()
-        logs_after_update = len(self.preprint.node.logs)
-
-        assert_not_equal(logs_before_update, logs_after_update)
-        assert_equal(self.preprint.node.logs[-1].action, 'preprint_license_updated')
 
     def test_update_preprint_license_does_not_change_project_license(self):
         self.preprint.node.set_node_license(

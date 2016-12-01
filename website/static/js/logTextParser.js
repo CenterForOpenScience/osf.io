@@ -651,14 +651,20 @@ var LogPieces = {
     preprint: {
         view: function(ctrl, logObject){
             var preprint = logObject.attributes.params.preprint;
-            return m('a', {href: '/' + preprint}, 'preprint');
+            if (paramIsReturned(preprint, logObject)) {
+                return m('a', {href: '/' + preprint}, 'preprint');
+            }
+            return m('span', 'preprint');
         }
     },
 
     preprint_provider: {
         view: function(ctrl, logObject){
             var preprint_provider = logObject.attributes.params.preprint_provider;
-            return m('a', {href: preprint_provider.url}, preprint_provider.name);
+            if (paramIsReturned((preprint_provider, logObject))) {
+                return m('a', {href: preprint_provider.url}, preprint_provider.name);
+            }
+            return m('span', '');
         }
     },
 };
