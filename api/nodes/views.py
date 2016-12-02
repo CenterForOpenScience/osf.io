@@ -1,7 +1,7 @@
 import re
 from modularodm import Q
 from rest_framework import generics, permissions as drf_permissions
-from rest_framework.exceptions import PermissionDenied, ValidationError, NotFound, MethodNotAllowed
+from rest_framework.exceptions import PermissionDenied, ValidationError, NotFound, MethodNotAllowed, NotAuthenticated
 from rest_framework.status import HTTP_204_NO_CONTENT
 from rest_framework.response import Response
 
@@ -1279,11 +1279,14 @@ class NodeCitationDetail(JSONAPIBaseView, generics.RetrieveAPIView, NodeMixin):
 
     def get_object(self):
         node = self.get_node()
+        auth = get_user_auth(self.request)
+        if not node.is_public and not node.can_view(auth):
+            raise PermissionDenied if auth.user else NotAuthenticated
         return node.csl
 
 
 class NodeCitationStyleDetail(JSONAPIBaseView, generics.RetrieveAPIView, NodeMixin):
-    """ The node citation for a node in a specific style's format t *read only*
+    """ The node citation for a node in a specific style's format *read only*
 
         ##Note
         **This API endpoint is under active development, and is subject to change in the future**
@@ -1309,6 +1312,10 @@ class NodeCitationStyleDetail(JSONAPIBaseView, generics.RetrieveAPIView, NodeMix
 
     def get_object(self):
         node = self.get_node()
+        auth = get_user_auth(self.request)
+        if not node.is_public and not node.can_view(auth):
+            raise PermissionDenied if auth.user else NotAuthenticated
+
         style = self.kwargs.get('style_id')
         try:
             citation = render_citation(node=node, style=style)
