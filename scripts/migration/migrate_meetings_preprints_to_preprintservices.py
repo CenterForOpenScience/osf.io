@@ -21,17 +21,20 @@ logger = logging.getLogger(__name__)
 # Target set. Loaded from --targets flag
 target_data = []
 
-POSSIBLE_PREPRINT_PROVIDER_KEYS = set(['psyarxiv','engrxiv','socarxiv'])
-
+POSSIBLE_PREPRINT_PROVIDER_KEYS = None 
 SOC_SUBJ_ID = None
 ENG_SUBJ_ID = None
 PSY_SUBJ_ID = None
 
-def set_default_subjects():
+def set_globals():
     # Must be run after backends are set with init_app
+    global POSSIBLE_PREPRINT_PROVIDER_KEYS
     global SOC_SUBJ_ID
     global ENG_SUBJ_ID
     global PSY_SUBJ_ID
+
+    POSSIBLE_PREPRINT_PROVIDER_KEYS = set([t._id for t in models.Tag.find(Q('lower', 'in', ['psyarxiv','engrxiv','socarxiv']))])
+
     try:
         # PLOS
         SOC_SUBJ_ID = models.Subject.find_one(Q('text', 'eq', 'Social and behavioral sciences'))._id
@@ -115,7 +118,7 @@ def validate_target(target):
 
     assert node, 'Unable to find Node with _id {}'.format(target['node_id'])
     assert file, 'Unable to find File with _id {}'.format(target['file_id'])
-    assert set(node.get('tags', [])) & POSSIBLE_PREPRINT_PROVIDER_KEYS, 'Unable to infer PreprintProvider for node {} with tags {}'.format(node['_id'], node['tags'])
+    assert set([tag.lower() for tag in node.get('tags', [])]) & POSSIBLE_PREPRINT_PROVIDER_KEYS, 'Unable to infer PreprintProvider for node {} with tags {}'.format(node['_id'], node['tags'])
     assert file['node'] == node['_id'], 'File {} with `node` {} not attached to Node {}'.format(file_id, file['node'], node['_id'])
 
     if target.get('subjects'):
@@ -145,7 +148,7 @@ def validate_subjects(subj_hierarchy):
                 raise Exception('Found subject {} without parents.'.format(subject_id))
 
 def infer_preprint_created(node_id):
-    logs = models.NodeLog.find(Q('node', 'eq', node_id) & Q('action', 'eq', 'tag_added') & Q('params.tag', 'in', ['socarxiv', 'engrxiv', 'psyarxiv']))
+    logs = models.NodeLog.find(Q('node', 'eq', node_id) & Q('action', 'eq', 'tag_added') & Q('params.tag', 'in', list(POSSIBLE_PREPRINT_PROVIDER_KEYS)))
     return min([l.date for l in logs])
 
 def add_preprint_log(preprint):
@@ -169,7 +172,7 @@ def create_preprint_service_from_target(target, swap_cutoff):
     created = {}
     node_doc = database['node'].find_one(target['node_id'])
     dirty = False
-    for provider_id in set(node_doc['tags']) & POSSIBLE_PREPRINT_PROVIDER_KEYS:
+    for provider_id in set([tag.lower() for tag in node_doc['tags']]) & POSSIBLE_PREPRINT_PROVIDER_KEYS:
         non_osf_provider = provider_id != 'osf'
         node = models.Node.load(node_doc['_id'])
         if not node and dirty:
@@ -221,7 +224,7 @@ def create_preprint_service_from_target(target, swap_cutoff):
             node.reload()
             preprint.reload()
             preprint.node.reload()
-            add_preprint_log(preprint)
+            # add_preprint_log(preprint)  # Don't log this action
             database['preprintservice'].find_and_modify(
                 {'_id': preprint._id},
                 {'$set': {
@@ -1310,8 +1313,9 @@ def parse_input():
             {
                 'file_id': database['storedfilenode'].find({'node': n._id, 'is_file': True, 'provider': 'osfstorage'}, {'_id': 1})[0]['_id'],
                 'node_id': n._id,
-            } for n in models.Node.find(Q('tags', 'in', ['socarxiv', 'engrxiv', 'psyarxiv']) & Q('system_tags', 'ne', 'migrated_from_osf4m'))
+            } for n in models.Node.find(Q('tags', 'in', list(POSSIBLE_PREPRINT_PROVIDER_KEYS)) & Q('system_tags', 'ne', 'migrated_from_osf4m') & Q('is_deleted', 'ne', True))
             if database['storedfilenode'].find({'node': n._id, 'is_file': True, 'provider': 'osfstorage'}).count() == 1
+            and len(list(set([t.lower for t in n.tags]) & set(['socarxiv', 'engrxiv', 'psyarxiv']))) == 1
         ]
         if count and count < len(targets):
             return targets[:count]
@@ -1331,8 +1335,8 @@ def main():
     if not dry_run:
         script_utils.add_file_logger(logger, __file__)
     init_app(set_backends=True, routes=False)
-    settings.SHARE_API_TOKEN = None
-    set_default_subjects()
+    settings.SHARE_URL = None
+    set_globals()
     assert all([ENG_SUBJ_ID, SOC_SUBJ_ID, PSY_SUBJ_ID]), 'Default subjects not set.'
     if '--no-addindex' not in sys.argv:
         create_indices()
