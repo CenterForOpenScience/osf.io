@@ -46,6 +46,11 @@ GDOC_MIME_TYPES = list(EXTENSION_FOR.keys())
 
 HAS_NAME_EXTENSION = ['gdoc', 'gsheet', 'gslides', 'gdraw']
 
+MODELS = [
+    ('stored', models.StoredFileNode),
+    ('trashed', models.TrashedFileNode),
+]
+
 
 def migrate(reverse=False):
     """For each Googledrive file in StoredFileNode and TrashedFileNode, add an extension to the
@@ -53,7 +58,8 @@ def migrate(reverse=False):
     contentType in the metadata history.  If ``reverse`` is true, strips the extension from the
     path instead.
     """
-    for model in (models.StoredFileNode, models.TrashedFileNode):
+    for model_tuple in MODELS:
+        (model_type, model) = model_tuple
         google_files = model.find(
             Q('provider', 'eq', 'googledrive') & Q('is_file', 'eq', True),
         )
@@ -86,55 +92,93 @@ def audit():
     tally = {
         'total_files': 0,
         'gdoc_count': 0,
-        'mime': {},
-        'gdoc': {},
-        'path_ext': {},
-        'name_ext': {},
+        'gdoc_types': {},
+        'mime_types': {},
+        'extensions': {},
         'error': {
             'no_history': [],
             'name_mime_mismatch': [],
             'mime_history_change': [],
+            'path_history_change': [],
+            'path_mime_collision': [],
             'unsupported_mime_type': [],
+            'recent_history_mismatch': [],
         }
     }
-    for model in (models.StoredFileNode, models.TrashedFileNode):
+    for model_tuple in MODELS:
+        (model_type, model) = model_tuple
         google_files = model.find(
             Q('provider', 'eq', 'googledrive') & Q('is_file', 'eq', True),
         )
         for google_file in google_files:
             tally['total_files'] += 1
+
+            current_path = google_file.path
+            path_ext = _get_extension_from(current_path)
+            _tally_extension(tally, 'path', path_ext)
+
+            current_name = google_file.name
+            name_ext = _get_extension_from(current_name)
+            _tally_extension(tally, 'name', name_ext)
+
+            file_id = '{}|{}'.format(model_type, google_file._id)
             if not len(google_file.history):
-                tally['error']['no_history'].append('{}: has no history'.format(google_file._id))
+                tally['error']['no_history'].append(
+                    '{}: has no history. Extensions: path({}), name({})'.format(
+                        file_id, path_ext, name_ext,
+                    )
+                )
                 continue
 
             mime_type = google_file.history[-1]['contentType'] or ''
-            tally['mime'][mime_type] = tally['mime'].get(mime_type, 0) + 1
+            tally['mime_types'][mime_type] = tally['mime_types'].get(mime_type, 0) + 1
 
-            path_ext = _get_extension_from(google_file.path)
-            tally['path_ext'][path_ext] = tally['path_ext'].get(path_ext, 0) + 1
-
-            name_ext = _get_extension_from(google_file.name)
-            tally['name_ext'][name_ext] = tally['name_ext'].get(name_ext, 0) + 1
-
+            # seems to be a gdoc
             if mime_type.startswith(GDOC_MIME_PREFIX):
                 tally['gdoc_count'] += 1
                 gdoc_type = mime_type.replace(GDOC_MIME_PREFIX + '.', '')
-                tally['gdoc'][gdoc_type] = tally['gdoc'].get(gdoc_type, 0) + 1
+                tally['gdoc_types'][gdoc_type] = tally['gdoc_types'].get(gdoc_type, 0) + 1
                 gdoc_ext = EXTENSION_FOR.get(mime_type, None)
                 if gdoc_ext is None:
                     tally['error']['unsupported_mime_type'].append(
-                        '{}: Unsupported mime_type: {}'.format(google_file._id, mime_type))
+                        '{}: Unsupported mime_type: {}'.format(file_id, mime_type))
                 elif gdoc_ext in HAS_NAME_EXTENSION and gdoc_ext != name_ext:
                     tally['error']['name_mime_mismatch'].append(
                         "{}: mime type ({}) and name type ({}) don't match".format(
-                            google_file._id, mime_type, name_ext))
+                            file_id, mime_type, name_ext))
+                    if path_ext is not '':
+                        tally['error']['path_mime_collision'].append(
+                            "{}: mime extension is ({}) and path extension is ({})".format(
+                                file_id, gdoc_ext, path_ext))
 
+            # audit history metadata for changes
+            file_history = []
             for history in google_file.history:
+                file_history.append([history[x] for x in ('contentType', 'name', 'path')])
+
                 if history['contentType'] != mime_type:
                     tally['error']['mime_history_change'].append(
                         "{}: mime type changed from {} to {}".format(
-                            google_file._id, mime_type, history['contentType']))
+                            file_id, mime_type, history['contentType']))
 
+                if history['path'] != current_path:
+                    tally['error']['path_history_change'].append(
+                        "{}: path changed from {} to {}".format(
+                            file_id, current_path, history['path']))
+
+            # look for mismatches between recent history and current metadata
+            # compare names fully, but only compare path to avoid moves
+            if (
+                (path_ext != _get_extension_from(google_file.history[-1]['path']))
+                or
+                (current_name != google_file.history[-1]['name'])
+            ):
+                tally['error']['recent_history_mismatch'].append({
+                    'file_id': file_id,
+                    'path': current_path,
+                    'name': current_name,
+                    'history': file_history,
+                })
 
 
     print("Tally:\n---")
@@ -144,6 +188,11 @@ def audit():
 def _get_extension_from(filename):
     match = re.search('\.([^.]+)$', filename)
     return match.group(1) if match else ''
+
+def _tally_extension(tally, ext_type, ext):
+    if tally['extensions'].get(ext, None) is None:
+        tally['extensions'][ext] = {'path': 0, 'name': 0}
+    tally['extensions'][ext][ext_type] += 1
 
 
 def main():
