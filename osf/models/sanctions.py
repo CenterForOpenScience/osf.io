@@ -3,6 +3,7 @@ import functools
 
 from dateutil.parser import parse as parse_date
 from django.apps import apps
+from django.utils import timezone
 from django.conf import settings
 from django.db import models
 
@@ -13,7 +14,11 @@ from framework.auth import Auth
 from framework.exceptions import PermissionsError
 from website import settings as osf_settings
 from website import tokens, mails
-from website.exceptions import InvalidSanctionRejectionToken, InvalidSanctionApprovalToken
+from website.exceptions import (
+    InvalidSanctionRejectionToken,
+    InvalidSanctionApprovalToken,
+    NodeStateError,
+)
 
 from osf.models import MetaSchema
 from osf.models.base import BaseModel, ObjectIDMixin
@@ -74,7 +79,7 @@ class Sanction(ObjectIDMixin, BaseModel):
     # are automatically made ACTIVE by a daily cron job
     # Use end_date=None for a non-expiring Sanction
     end_date = NonNaiveDatetimeField(null=True, blank=True, default=None)
-    initiation_date = NonNaiveDatetimeField(null=True, blank=True)  # auto_now=True)
+    initiation_date = NonNaiveDatetimeField(default=timezone.now, null=True, blank=True)
 
     state = models.CharField(choices=STATE_CHOICES,
                              default=UNAPPROVED,
@@ -217,6 +222,7 @@ class TokenApprovableSanction(Sanction):
                 DISPLAY_NAME=self.DISPLAY_NAME))
         self.approval_state[user._id]['has_approved'] = True
         self._on_approve(user, token)
+        self.save()
 
     def reject(self, user, token):
         """Cancels sanction if user is admin and token verifies."""
@@ -231,6 +237,7 @@ class TokenApprovableSanction(Sanction):
                     DISPLAY_NAME=self.DISPLAY_NAME))
         self.state = Sanction.REJECTED
         self._on_reject(user)
+        self.save()
 
     def _notify_authorizer(self, user, node):
         pass
@@ -373,7 +380,7 @@ class PreregCallbackMixin(object):
                                 urls=None):
         registration = self._get_registration()
         prereg_schema = MetaSchema.get_prereg_schema()
-        if prereg_schema in registration.registered_schema:
+        if registration.registered_schema.filter(pk=prereg_schema.pk).exists():
             return {
                 'custom_message':
                     ' as part of the Preregistration Challenge (https://cos.io/prereg)'
@@ -526,10 +533,13 @@ class Embargo(PreregCallbackMixin, EmailApprovableSanction):
         self.reject(user, token)
 
     def _on_complete(self, user):
-        from website.project.model import NodeLog
+        NodeLog = apps.get_model('osf.NodeLog')
+
+        parent_registration = self._get_registration()
+        if parent_registration.is_spammy:
+            raise NodeStateError('Cannot complete a spammy registration.')
 
         super(Embargo, self)._on_complete(user)
-        parent_registration = self._get_registration()
         parent_registration.registered_from.add_log(
             action=NodeLog.EMBARGO_APPROVED,
             params={
@@ -786,9 +796,12 @@ class RegistrationApproval(PreregCallbackMixin, EmailApprovableSanction):
     def _on_complete(self, user):
         NodeLog = apps.get_model('osf.NodeLog')
 
+        register = self._get_registration()
+        if register.is_spammy:
+            raise NodeStateError('Cannot approve a spammy registration')
+
         super(RegistrationApproval, self)._on_complete(user)
         self.state = Sanction.APPROVED
-        register = self._get_registration()
         registered_from = register.registered_from
         # Pass auth=None because the registration initiator may not be
         # an admin on components (component admins had the opportunity
@@ -926,6 +939,7 @@ class EmbargoTerminationApproval(EmailApprovableSanction):
     REJECT_URL_TEMPLATE = osf_settings.DOMAIN + 'project/{node_id}/?token={token}'
 
     embargoed_registration = models.ForeignKey('Registration', null=True, blank=True)
+    initiated_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True)
 
     def _get_registration(self):
         return self.embargoed_registration

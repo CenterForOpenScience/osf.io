@@ -119,7 +119,6 @@ class Taggable(models.Model):
         abstract = True
 
 
-# TODO: Implement me
 class AddonModelMixin(models.Model):
 
     # from addons.base.apps import BaseAddonConfig

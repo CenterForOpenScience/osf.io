@@ -159,7 +159,7 @@ def aggregate_file_tree_metadata(addon_short_name, fileobj_metadata, user):
 
 def before_archive(node, user):
     link_archive_provider(node, user)
-    job = ArchiveJob(
+    job = ArchiveJob.objects.create(
         src_node=node.registered_from,
         dst_node=node,
         initiator=user
@@ -204,7 +204,7 @@ def get_file_map(node, file_map):
             yield (key, value, node_id)
 
 def find_registration_file(value, node):
-    from website.models import Node
+    from osf.models import AbstractNode as Node
 
     orig_sha256 = value['sha256']
     orig_name = value['selectedFileName']
@@ -290,6 +290,7 @@ def migrate_file_metadata(dst, schema):
             target['extra'][index]['viewUrl'] = VIEW_FILE_URL_TEMPLATE.format(node_id=node_id, path=registration_file['path'].lstrip('/'))
     if missing_files:
         from website.archiver.tasks import ArchivedFileNotFound
+        import ipdb; ipdb.set_trace()
         raise ArchivedFileNotFound(
             registration=dst,
             missing_files=missing_files

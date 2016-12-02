@@ -175,19 +175,12 @@ class Registration(AbstractNode):
             if self.parent_node:
                 return self.parent_node.embargo_end_date
             return False
-        return self.embargo.end_date
+        return self.embargo.embargo_end_date
 
     @property
     def archiving(self):
         job = self.archive_job
         return job and not job.done and not job.archive_tree_finished()
-
-    def _is_embargo_date_valid(self, end_date):
-        now = timezone.now()
-        if (end_date - now) >= settings.EMBARGO_END_DATE_MIN:
-            if (end_date - now) <= settings.EMBARGO_END_DATE_MAX:
-                return True
-        return False
 
     def _initiate_embargo(self, user, end_date, for_existing_registration=False,
                           notify_initiator_on_complete=False):
@@ -255,6 +248,7 @@ class Registration(AbstractNode):
             raise NodeStateError('Only the root of an embargoed registration can request termination')
 
         approval = EmbargoTerminationApproval(
+            initiated_by=auth.user,
             embargoed_registration=self,
         )
         admins = [admin for admin in self.root.get_admin_contributors_recursive(unique_users=True)]
@@ -537,7 +531,6 @@ class DraftRegistration(ObjectIDMixin, BaseModel):
 
     def submit_for_review(self, initiated_by, meta, save=False):
         approval = DraftRegistrationApproval(
-            initiated_by=initiated_by,
             meta=meta
         )
         approval.save()

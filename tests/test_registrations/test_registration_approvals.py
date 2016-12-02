@@ -5,7 +5,7 @@ from django.utils import timezone
 from nose.tools import *  # noqa
 from tests.base import fake, OsfTestCase
 from website.project.spam.model import SpamStatus
-from tests.factories import (
+from osf_tests.factories import (
     EmbargoFactory, NodeFactory, ProjectFactory,
     RegistrationFactory, UserFactory, UnconfirmedUserFactory
 )
@@ -15,12 +15,13 @@ from website.exceptions import (
     InvalidSanctionRejectionToken, InvalidSanctionApprovalToken, NodeStateError,
 )
 from website import tokens
-from website.project.sanctions import (
+from osf.models.sanctions import (
     Sanction,
     PreregCallbackMixin,
     RegistrationApproval,
 )
 from framework.auth import Auth
+from osf.models import Contributor
 
 
 DUMMY_TOKEN = tokens.encode({
@@ -46,7 +47,7 @@ class RegistrationApprovalModelTestCase(OsfTestCase):
 
     def test__initiate_approval_does_not_create_tokens_for_unregistered_admin(self):
         unconfirmed_user = UnconfirmedUserFactory()
-        self.registration.contributors.append(unconfirmed_user)
+        Contributor.objects.create(node=self.registration, user=unconfirmed_user)
         self.registration.add_permission(unconfirmed_user, 'admin', save=True)
         assert_true(self.registration.has_permission(unconfirmed_user, 'admin'))
 
@@ -88,15 +89,6 @@ class RegistrationApprovalModelTestCase(OsfTestCase):
         with assert_raises(PermissionsError):
             self.registration.require_approval(self.user)
 
-    def test_require_approval_non_registration_raises_NodeStateError(self):
-        self.registration.is_registration = False
-        self.registration.save()
-        with assert_raises(NodeStateError):
-            self.registration.require_approval(
-                self.user,
-            )
-        assert_false(self.registration.is_pending_registration)
-
     def test_invalid_approval_token_raises_InvalidSanctionApprovalToken(self):
         self.registration.require_approval(
             self.user
@@ -123,7 +115,7 @@ class RegistrationApprovalModelTestCase(OsfTestCase):
         assert_true(self.registration.is_pending_registration)
 
     def test_approval_adds_to_parent_projects_log(self):
-        initial_project_logs = len(self.registration.registered_from.logs)
+        initial_project_logs = self.registration.registered_from.logs.count()
         self.registration.require_approval(
             self.user
         )
@@ -132,11 +124,11 @@ class RegistrationApprovalModelTestCase(OsfTestCase):
         approval_token = self.registration.registration_approval.approval_state[self.user._id]['approval_token']
         self.registration.registration_approval.approve(self.user, approval_token)
         # adds initiated, approved, and registered logs
-        assert_equal(len(self.registration.registered_from.logs), initial_project_logs + 3)
+        assert_equal(self.registration.registered_from.logs.count(), initial_project_logs + 3)
 
     def test_one_approval_with_two_admins_stays_pending(self):
         admin2 = UserFactory()
-        self.registration.contributors.append(admin2)
+        Contributor.objects.create(node=self.registration, user=admin2)
         self.registration.add_permission(admin2, 'admin', save=True)
         self.registration.require_approval(
             self.user
@@ -193,18 +185,15 @@ class RegistrationApprovalModelTestCase(OsfTestCase):
         assert_false(self.registration.is_pending_registration)
 
     def test_disapproval_adds_to_parent_projects_log(self):
-        initial_project_logs = len(self.registration.registered_from.logs)
-        self.registration.require_approval(
-            self.user,
-            timezone.now() + datetime.timedelta(days=10)
-        )
+        initial_project_logs = self.registration.registered_from.logs.count()
+        self.registration.require_approval(self.user)
         self.registration.save()
 
         rejection_token = self.registration.registration_approval.approval_state[self.user._id]['rejection_token']
         registered_from = self.registration.registered_from
         self.registration.registration_approval.reject(self.user, rejection_token)
         # Logs: Created, registered, embargo initiated, embargo cancelled
-        assert_equal(len(registered_from.logs), initial_project_logs + 2)
+        assert_equal(registered_from.logs.count(), initial_project_logs + 2)
 
     def test_cancelling_registration_approval_deletes_parent_registration(self):
         self.registration.require_approval(
@@ -214,6 +203,7 @@ class RegistrationApprovalModelTestCase(OsfTestCase):
 
         rejection_token = self.registration.registration_approval.approval_state[self.user._id]['rejection_token']
         self.registration.registration_approval.reject(self.user, rejection_token)
+        self.registration.reload()
         assert_equal(self.registration.registration_approval.state, Sanction.REJECTED)
         assert_true(self.registration.is_deleted)
 
@@ -229,8 +219,8 @@ class RegistrationApprovalModelTestCase(OsfTestCase):
             title='Subcomponent'
         )
         project_registration = RegistrationFactory(project=self.project)
-        component_registration = project_registration.nodes[0]
-        subcomponent_registration = component_registration.nodes[0]
+        component_registration = project_registration._nodes.first()
+        subcomponent_registration = component_registration._nodes.first()
         project_registration.require_approval(
             self.user
         )
@@ -238,6 +228,9 @@ class RegistrationApprovalModelTestCase(OsfTestCase):
 
         rejection_token = project_registration.registration_approval.approval_state[self.user._id]['rejection_token']
         project_registration.registration_approval.reject(self.user, rejection_token)
+        project_registration.reload()
+        component_registration.reload()
+        subcomponent_registration.reload()
         assert_equal(project_registration.registration_approval.state, Sanction.REJECTED)
         assert_true(project_registration.is_deleted)
         assert_true(component_registration.is_deleted)

@@ -303,11 +303,11 @@ class RegistrationFactory(BaseNodeFactory):
                 reg.archive_job.save()
                 reg.sanction.state = Sanction.APPROVED
                 reg.sanction.save()
-        models.ArchiveJob(
-            src_node=project,
-            dst_node=reg,
-            initiator=user,
-        )
+        # models.ArchiveJob(
+        #     src_node=project,
+        #     dst_node=reg,
+        #     initiator=user,
+        # )
         if is_public:
             reg.is_public = True
         reg.save()
@@ -705,3 +705,7 @@ class SessionFactory(DjangoModelFactory):
         instance.save()
         return instance
 
+
+class ArchiveJobFactory(DjangoModelFactory):
+    class Meta:
+        model = models.ArchiveJob

@@ -1007,4 +1007,3 @@ class EmbargoTerminationApproval(EmailApprovableSanction):
     def _on_reject(self, user=None):
         # Just forget this ever happened.
         self.embargoed_registration.embargo_termination_approval = None
-        self.embargoed_registration.save()

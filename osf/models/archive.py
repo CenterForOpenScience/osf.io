@@ -5,7 +5,7 @@ from website import settings
 from osf.models.base import BaseModel, ObjectIDMixin
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 
-from website.addons.base import StorageAddonBase
+from addons.base.models import BaseStorageAddon
 from website.archiver import (
     ARCHIVER_INITIATED,
     ARCHIVER_SUCCESS,
@@ -35,7 +35,7 @@ class ArchiveTarget(ObjectIDMixin, BaseModel):
     #     'num_files': <int>,
     #     'disk_usage': <float>,
     # }
-    stat_result = DateTimeAwareJSONField(blank=True)
+    stat_result = DateTimeAwareJSONField(default=dict, blank=True)
     errors = ArrayField(models.TextField(), default=list, blank=True)
 
     def __repr__(self):
@@ -105,7 +105,7 @@ class ArchiveJob(ObjectIDMixin, BaseModel):
                 'stat_result': target.stat_result,
                 'errors': target.errors
             }
-            for target in self.target_addons
+            for target in self.target_addons.all()
         ]
 
     def archive_tree_finished(self):
@@ -135,8 +135,7 @@ class ArchiveJob(ObjectIDMixin, BaseModel):
             return
         if not self.pending:
             self.done = True
-            if any([target.status for target in self.target_addons
-                    if target.status in ARCHIVER_FAILURE_STATUSES]):
+            if self.target_addons.filter(status__in=ARCHIVER_FAILURE_STATUSES).exists():
                 self.status = ARCHIVER_FAILURE
                 self._fail_above()
             else:
@@ -144,24 +143,21 @@ class ArchiveJob(ObjectIDMixin, BaseModel):
             self.save()
 
     def get_target(self, addon_short_name):
-        try:
-            return [addon for addon in self.target_addons if addon.name == addon_short_name][0]
-        except IndexError:
-            return None
+        return self.target_addons.filter(name=addon_short_name).first()
 
     def _set_target(self, addon_short_name):
         if self.get_target(addon_short_name):
             return
         target = ArchiveTarget(name=addon_short_name)
         target.save()
-        self.target_addons.append(target)
+        self.target_addons.add(target)
 
     def set_targets(self):
         addons = []
         for addon in [self.src_node.get_addon(name)
                       for name in settings.ADDONS_ARCHIVABLE
                       if settings.ADDONS_ARCHIVABLE[name] != 'none']:
-            if not addon or not isinstance(addon, StorageAddonBase) or not addon.complete:
+            if not addon or not isinstance(addon, BaseStorageAddon) or not addon.complete:
                 continue
             archive_errors = getattr(addon, 'archive_errors', None)
             if not archive_errors or (archive_errors and not archive_errors()):
