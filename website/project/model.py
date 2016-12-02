@@ -17,7 +17,7 @@ from django.core.validators import URLValidator
 from modularodm import Q
 from modularodm import fields
 from modularodm.validators import MaxLengthValidator
-from modularodm.exceptions import KeyExistsException, NoResultsFound, ValidationValueError
+from modularodm.exceptions import KeyExistsException, ValidationValueError
 
 from framework import status
 from framework.mongo import ObjectId, DummyRequest
@@ -58,8 +58,7 @@ from website.util.permissions import CREATOR_PERMISSIONS, DEFAULT_CONTRIBUTOR_PE
 from website.project.commentable import Commentable
 from website.project.metadata.schemas import OSF_META_SCHEMAS
 from website.project.metadata.utils import create_jsonschema_from_metaschema
-from website.project.licenses import (NodeLicense, NodeLicenseRecord)
-from website.project.taxonomies import Subject
+from website.project.licenses import set_license
 from website.project import signals as project_signals
 from website.project import tasks as node_tasks
 from website.project.spam.model import SpamMixin
@@ -70,8 +69,6 @@ from website.project.sanctions import (
     RegistrationApproval,
     Retraction,
 )
-from website.files.models import StoredFileNode
-
 from keen import scoped_keys
 
 logger = logging.getLogger(__name__)
@@ -558,6 +555,7 @@ class NodeLog(StoredObject):
 
     PREPRINT_INITIATED = 'preprint_initiated'
     PREPRINT_FILE_UPDATED = 'preprint_file_updated'
+    PREPRINT_LICENSE_UPDATED = 'preprint_license_updated'
 
     actions = [CHECKED_IN, CHECKED_OUT, FILE_TAG_REMOVED, FILE_TAG_ADDED, CREATED_FROM, PROJECT_CREATED, PROJECT_REGISTERED, PROJECT_DELETED, NODE_CREATED, NODE_FORKED, NODE_REMOVED, POINTER_CREATED, POINTER_FORKED, POINTER_REMOVED, WIKI_UPDATED, WIKI_DELETED, WIKI_RENAMED, MADE_WIKI_PUBLIC, MADE_WIKI_PRIVATE, CONTRIB_ADDED, CONTRIB_REMOVED, CONTRIB_REORDERED, PERMISSIONS_UPDATED, MADE_PRIVATE, MADE_PUBLIC, TAG_ADDED, TAG_REMOVED, EDITED_TITLE, EDITED_DESCRIPTION, UPDATED_FIELDS, FILE_MOVED, FILE_COPIED, FOLDER_CREATED, FILE_ADDED, FILE_UPDATED, FILE_REMOVED, FILE_RESTORED, ADDON_ADDED, ADDON_REMOVED, COMMENT_ADDED, COMMENT_REMOVED, COMMENT_UPDATED, MADE_CONTRIBUTOR_VISIBLE, MADE_CONTRIBUTOR_INVISIBLE, EXTERNAL_IDS_ADDED, EMBARGO_APPROVED, EMBARGO_CANCELLED, EMBARGO_COMPLETED, EMBARGO_INITIATED, RETRACTION_APPROVED, RETRACTION_CANCELLED, RETRACTION_INITIATED, REGISTRATION_APPROVAL_CANCELLED, REGISTRATION_APPROVAL_INITIATED, REGISTRATION_APPROVAL_APPROVED, PREREG_REGISTRATION_INITIATED, CITATION_ADDED, CITATION_EDITED, CITATION_REMOVED, AFFILIATED_INSTITUTION_ADDED, AFFILIATED_INSTITUTION_REMOVED, PREPRINT_INITIATED, PREPRINT_FILE_UPDATED]
 
@@ -759,8 +757,7 @@ class NodeUpdateError(Exception):
 
 
 def validate_doi(value):
-    # DOI must start with 10 and have a slash in it - avoided getting too complicated
-    if not re.match('10\\.\\S*\\/', value):
+    if value and not re.match(r'\b(10\.\d{4,}(?:\.\d+)*/\S+(?:(?!["&\'<>])\S))\b', value):
         raise ValidationValueError('"{}" is not a valid DOI'.format(value))
     return True
 
@@ -888,11 +885,9 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
 
     # Preprint fields
     preprint_file = fields.ForeignField('StoredFileNode')
-    preprint_created = fields.DateTimeField()
-    preprint_subjects = fields.ForeignField('Subject', list=True)
-    preprint_providers = fields.ForeignField('PreprintProvider', list=True)
-    preprint_doi = fields.StringField(validate=validate_doi)
+    preprint_article_doi = fields.StringField(validate=validate_doi)
     _is_preprint_orphan = fields.BooleanField(default=False)
+    _has_abandoned_preprint = fields.BooleanField(default=False)
 
     # A list of all MetaSchemas for which this Node has registered_meta
     registered_schema = fields.ForeignField('metaschema', list=True, default=list)
@@ -1180,6 +1175,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
         if not self.preprint_file or not self.is_public:
             return False
         if self.preprint_file.node == self:
+            self._is_preprint_orphan = False
             return True
         else:
             self._is_preprint_orphan = True
@@ -1191,13 +1187,20 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
             return True
         return False
 
-    def get_preprint_subjects(self):
-        ret = []
-        for subj_id in set(self.preprint_subjects):
-            subj = Subject.load(subj_id)
-            if subj:
-                ret.append({'id': subj_id, 'text': subj.text})
-        return ret
+    @property
+    def preprints(self):
+        from website.preprints.model import PreprintService
+        if not self.is_preprint:
+            return []
+        return PreprintService.find(Q('node', 'eq', self))
+
+    @property
+    def preprint_url(self):
+        if self.is_preprint:
+            try:
+                return self.preprints[0].url
+            except IndexError:
+                pass
 
     def can_edit(self, auth=None, user=None):
         """Return if a user is authorized to edit this node.
@@ -1510,31 +1513,16 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
             )
         return self.is_contributor(auth.user)
 
-    def set_node_license(self, license_id, year, copyright_holders, auth, save=False):
-        if not self.has_permission(auth.user, ADMIN):
-            raise PermissionsError('Only admins can change a project\'s license.')
-        try:
-            node_license = NodeLicense.find_one(
-                Q('id', 'eq', license_id)
-            )
-        except NoResultsFound:
-            raise NodeStateError('Trying to update a Node with an invalid license.')
-        record = self.node_license
-        if record is None:
-            record = NodeLicenseRecord(
-                node_license=node_license
-            )
-        record.node_license = node_license
-        record.year = year
-        record.copyright_holders = copyright_holders or []
-        record.save()
-        self.node_license = record
+    def set_node_license(self, license_detail, auth, save=False):
+
+        license_record = set_license(self, license_detail, auth)
+
         self.add_log(
             action=NodeLog.CHANGED_LICENSE,
             params={
                 'parent_node': self.parent_id,
                 'node': self._primary_key,
-                'new_license': node_license.name
+                'new_license': license_record.node_license.name
             },
             auth=auth,
             save=False,
@@ -1542,74 +1530,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
 
         if save:
             self.save()
-
-    def set_preprint_subjects(self, preprint_subjects, auth, save=False):
-        if not self.has_permission(auth.user, ADMIN):
-            raise PermissionsError('Only admins can change a preprint\'s subjects.')
-
-        self.preprint_subjects = []
-        for s in preprint_subjects:
-            subject = Subject.load(s)
-            if not subject:
-                raise ValidationValueError('Subject with id <{}> could not be found.'.format(s))
-            self.preprint_subjects.append(s)
-
-        if save:
-            self.save()
-
-    def set_preprint_file(self, preprint_file, auth, save=False):
-        if not self.has_permission(auth.user, ADMIN):
-            raise PermissionsError('Only admins can change a preprint\'s primary file.')
-
-        if not isinstance(preprint_file, StoredFileNode):
-            preprint_file = preprint_file.stored_object
-
-        if preprint_file.node != self or preprint_file.provider != 'osfstorage':
-            raise ValueError('This file is not a valid primary file for this preprint.')
-
-        # there is no preprint file yet! This is the first time!
-        if not self.preprint_file:
-            self.preprint_file = preprint_file
-            self.preprint_created = datetime.datetime.utcnow()
-            self.add_log(action=NodeLog.PREPRINT_INITIATED, params={}, auth=auth, save=False)
-        elif preprint_file != self.preprint_file:
-            # if there was one, check if it's a new file
-            self.preprint_file = preprint_file
-            self.add_log(
-                action=NodeLog.PREPRINT_FILE_UPDATED,
-                params={},
-                auth=auth,
-                save=False,
-            )
-        if not self.is_public:
-            self.set_privacy(
-                Node.PUBLIC,
-                auth=None,
-                log=True
-            )
-        if save:
-            self.save()
-
-    def add_preprint_provider(self, preprint_provider, user, save=False):
-        if not self.has_permission(user, ADMIN):
-            raise PermissionsError('Only admins can update a preprint provider.')
-        if not preprint_provider:
-            raise ValueError('Must specify a provider to set as the preprint_provider')
-        self.preprint_providers.append(preprint_provider)
-        if save:
-            self.save()
-
-    def remove_preprint_provider(self, preprint_provider, user, save=False):
-        if not self.has_permission(user, ADMIN):
-            raise PermissionsError('Only admins can remove a preprint provider.')
-        if not preprint_provider:
-            raise ValueError('Must specify a provider to remove from this preprint.')
-        if preprint_provider in self.preprint_providers:
-            self.preprint_providers.remove(preprint_provider)
-            if save:
-                self.save()
-            return True
-        return False
 
     def generate_keenio_read_key(self):
         return scoped_keys.encrypt(settings.KEEN['public']['master_key'], options={
@@ -1681,9 +1601,11 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
                 )
             elif key == 'node_license':
                 self.set_node_license(
-                    value.get('id'),
-                    value.get('year'),
-                    value.get('copyright_holders'),
+                    {
+                        'id': value.get('id'),
+                        'year': value.get('year'),
+                        'copyrightHolders': value.get('copyrightHolders') or value.get('copyright_holders', [])
+                    },
                     auth,
                     save=save
                 )
@@ -2240,6 +2162,15 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
                 if isinstance(v, basestring)
             }
         enqueue_task(node_tasks.on_node_updated.s(self._id, user_id, first_save, saved_fields, request_headers))
+
+        if self.preprint_file and bool(self.SEARCH_UPDATE_FIELDS.intersection(saved_fields)):
+            # avoid circular imports
+            from website.preprints.tasks import on_preprint_updated
+            from website.preprints.model import PreprintService
+            # .preprints wouldn't return a single deleted preprint
+            for preprint in PreprintService.find(Q('node', 'eq', self)):
+                enqueue_task(on_preprint_updated.s(preprint._id))
+
         user = User.load(user_id)
         if user and self.check_spam(user, saved_fields, request_headers):
             # Specifically call the super class save method to avoid recursion into model save method.
@@ -3255,7 +3186,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
             if auth is not None:
                 user = auth.user
                 if not self.has_permission(user, ADMIN):
-                    raise PermissionsError('Must be an admin to change add contributors.')
+                    raise PermissionsError('Must be an admin to add contributors.')
                 if contrib_to_add in user.recently_added:
                     user.recently_added.remove(contrib_to_add)
                 user.recently_added.insert(0, contrib_to_add)
@@ -3283,6 +3214,9 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
 
         # Permissions must be overridden if changed when contributor is added to parent he/she is already on a child of.
         elif contrib_to_add in self.contributors and permissions is not None:
+            if auth is not None:
+                if not self.has_permission(auth.user, ADMIN):
+                    raise PermissionsError('Must be an admin to edit contributor permissions.')
             self.set_permissions(contrib_to_add, permissions)
             if save:
                 self.save()
@@ -4436,34 +4370,3 @@ class DraftRegistration(StoredObject):
         Validates draft's metadata
         """
         return self.registration_schema.validate_metadata(*args, **kwargs)
-
-
-class PreprintProvider(StoredObject):
-    _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
-    name = fields.StringField(required=True)
-    logo_name = fields.StringField()
-    description = fields.StringField()
-    banner_name = fields.StringField()
-    external_url = fields.StringField()
-
-    def get_absolute_url(self):
-        return '{}preprint_providers/{}'.format(self.absolute_api_v2_url, self._id)
-
-    @property
-    def absolute_api_v2_url(self):
-        path = '/preprint_providers/{}/'.format(self._id)
-        return api_v2_url(path)
-
-    @property
-    def logo_path(self):
-        if self.logo_name:
-            return '/static/img/preprint_providers/{}'.format(self.logo_name)
-        else:
-            return None
-
-    @property
-    def banner_path(self):
-        if self.logo_name:
-            return '/static/img/preprint_providers/{}'.format(self.logo_name)
-        else:
-            return None

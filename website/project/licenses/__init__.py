@@ -4,15 +4,18 @@ import os
 import warnings
 
 from modularodm import fields, Q
-from modularodm.exceptions import KeyExistsException
+from modularodm import exceptions as modm_exceptions
 
+from framework import exceptions as framework_exceptions
 from framework.mongo import (
     ObjectId,
     StoredObject,
     utils as mongo_utils
 )
 
+from website import exceptions as web_exceptions
 from website import settings
+from website.util import permissions
 
 
 def _serialize(fields, instance):
@@ -113,7 +116,7 @@ def ensure_licenses(warn=True):
                     text=text,
                     properties=properties
                 ).save()
-            except KeyExistsException:
+            except modm_exceptions.KeyExistsException:
                 node_license = NodeLicense.find_one(
                     Q('id', 'eq', id)
                 )
@@ -132,3 +135,45 @@ def ensure_licenses(warn=True):
                     )
                 ninserted += 1
     return ninserted, nupdated
+
+
+def set_license(node, license_detail, auth, node_type='node'):
+
+    if node_type not in ['node', 'preprint']:
+        raise ValueError('{} is not a valid node_type argument'.format(node_type))
+
+    license_id = license_detail.get('id')
+    license_year = license_detail.get('year')
+    copyright_holders = license_detail.get('copyrightHolders', [])
+
+    if not node.has_permission(auth.user, permissions.ADMIN):
+        raise framework_exceptions.PermissionsError('Only admins can change a {}\'s license'.format(node_type))
+
+    try:
+        node_license = NodeLicense.find_one(
+            Q('id', 'eq', license_id)
+        )
+    except modm_exceptions.NoResultsFound:
+        raise web_exceptions.NodeStateError('Trying to update a {} with an invalid license'.format(node_type))
+
+    if node_type == 'preprint':
+        if node_license not in node.provider.licenses_acceptable and len(node.provider.licenses_acceptable) != 0:
+            raise framework_exceptions.PermissionsError('Invalid license chosen for {}'.format(node.provider.name))
+
+    for required_property in node_license.properties:
+        if not license_detail.get(required_property):
+            raise modm_exceptions.ValidationValueError('{} must be specified for this license'.format(required_property))
+
+    license_record = node.node_license if node_type == 'node' else node.license
+    if license_record is None:
+        license_record = NodeLicenseRecord(node_license=node_license)
+    license_record.node_license = node_license
+    license_record.year = license_year
+    license_record.copyright_holders = copyright_holders
+    license_record.save()
+    if node_type == 'node':
+        node.node_license = license_record
+    elif node_type == 'preprint':
+        node.license = license_record
+
+    return license_record

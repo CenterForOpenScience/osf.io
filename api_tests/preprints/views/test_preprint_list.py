@@ -4,6 +4,7 @@ from framework.auth.core import Auth, Q
 from api.base.settings.defaults import API_BASE
 from website.util import permissions
 from website.models import Node
+from website.preprints.model import PreprintService
 from website.project import signals as project_signals
 
 
@@ -18,24 +19,33 @@ from tests.factories import (
 
 from api_tests import utils as test_utils
 
-def build_preprint_create_payload(node_id, subject_id, file_id=None):
+def build_preprint_create_payload(node_id=None, provider_id=None, file_id=None, attrs={}):
     payload = {
         "data": {
-            "id": node_id,
-            "attributes": {
-                "subjects": [subject_id],
-                "abstract": "Much preprint. Very open. Wow"
-            },
+            "attributes": attrs,
+            "relationships": {},            
             "type": "preprints"
         }
     }
+    if node_id:
+        payload['data']['relationships']["node"] = {
+            "data": {
+                "type": "node",
+                "id": node_id
+            }
+        }
+    if provider_id:
+        payload['data']['relationships']["provider"] = {
+            "data": {
+                "type": "provider",
+                "id": provider_id
+            }
+        }
     if file_id:
-        payload['data']['relationships'] = {
-            "primary_file": {
-                "data": {
-                    "type": "file",
-                    "id": file_id
-                }
+        payload['data']['relationships']["primary_file"] = {
+            "data": {
+                "type": "primary_file",
+                "id": file_id
             }
         }
     return payload
@@ -54,6 +64,7 @@ class TestPreprintList(ApiTestCase):
     def tearDown(self):
         super(TestPreprintList, self).tearDown()
         Node.remove()
+        PreprintService.remove()
 
     def test_return_preprints_logged_out(self):
         res = self.app.get(self.url)
@@ -75,61 +86,27 @@ class TestPreprintFiltering(ApiTestCase):
         super(TestPreprintFiltering, self).setUp()
         self.user = AuthUserFactory()
         self.provider = PreprintProviderFactory(name='wwe')
-        self.preprint = PreprintFactory(creator=self.user, providers=[self.provider])
-
-        self.preprint.add_tag('nature boy', Auth(self.user), save=False)
-        self.preprint.add_tag('ric flair', Auth(self.user), save=False)
-        self.preprint.save()
-
         self.provider_two = PreprintProviderFactory(name='wcw')
-        self.preprint_two = PreprintFactory(creator=self.user, filename='woo.txt', providers=[self.provider_two])
-        self.preprint_two.add_tag('nature boy', Auth(self.user), save=False)
-        self.preprint_two.add_tag('woo', Auth(self.user), save=False)
-        self.preprint_two.save()
 
-        self.preprint_three = PreprintFactory(creator=self.user, filename='stonecold.txt', providers=[self.provider])
-        self.preprint_three.add_tag('stone', Auth(self.user), save=False)
-        self.preprint_two.add_tag('cold', Auth(self.user), save=False)
-        self.preprint_three.save()
+        self.subject = SubjectFactory()
+        self.subject_two = SubjectFactory()
+
+        self.preprint = PreprintFactory(creator=self.user, provider=self.provider, subjects=[[self.subject._id]])
+        self.preprint_two = PreprintFactory(creator=self.user, filename='woo.txt', provider=self.provider_two, subjects=[[self.subject_two._id]])
+        self.preprint_three = PreprintFactory(creator=self.user, filename='stonecold.txt', provider=self.provider, subjects=[[self.subject._id], [self.subject_two._id]])
 
     def tearDown(self):
         super(TestPreprintFiltering, self).tearDown()
         Node.remove()
 
-    def test_filtering_tags(self):
-        # both preprint and preprint_two have nature boy
-        url = '/{}preprints/?filter[tags]={}'.format(API_BASE, 'nature boy')
-
+    def test_filter_by_provider(self):
+        url = '/{}preprints/?filter[provider]={}'.format(API_BASE, self.provider._id)
         res = self.app.get(url, auth=self.user.auth)
-        reg_json = res.json['data']
+        ids = [datum['id'] for datum in res.json['data']]
 
-        ids = [each['id'] for each in reg_json]
-        assert_in(self.preprint._id, ids)
-        assert_in(self.preprint_two._id, ids)
-        assert_not_in(self.preprint_three._id, ids)
-
-        # filtering two tags
-        # preprint has both tags; preprint_two only has one
-        url = '/{}preprints/?filter[tags]={}&filter[tags]={}'.format(API_BASE, 'nature boy', 'ric flair')
-
-        res = self.app.get(url, auth=self.user.auth)
-        reg_json = res.json['data']
-
-        ids = [each['id'] for each in reg_json]
         assert_in(self.preprint._id, ids)
         assert_not_in(self.preprint_two._id, ids)
-        assert_not_in(self.preprint_three._id, ids)
-
-    def test_filter_by_doi(self):
-        url = '/{}preprints/?filter[doi]={}'.format(API_BASE, self.preprint.preprint_doi)
-
-        res = self.app.get(url, auth=self.user.auth)
-        data = res.json['data']
-
-        assert_equal(len(data), 1)
-        for result in data:
-            assert_equal(self.preprint._id, result['id'])
-
+        assert_in(self.preprint_three._id, ids)
 
 class TestPreprintCreate(ApiTestCase):
     def setUp(self):
@@ -141,6 +118,7 @@ class TestPreprintCreate(ApiTestCase):
         self.public_project = ProjectFactory(creator=self.user, public=True)
         self.public_project.add_contributor(self.other_user, permissions=[permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS], save=True)
         self.subject = SubjectFactory()
+        self.provider = PreprintProviderFactory()
 
         self.user_two = AuthUserFactory()
 
@@ -150,25 +128,16 @@ class TestPreprintCreate(ApiTestCase):
         self.url = '/{}preprints/'.format(API_BASE)
 
     def test_create_preprint_from_public_project(self):
-        public_project_payload = build_preprint_create_payload(self.public_project._id, self.subject._id, self.file_one_public_project._id)
+        public_project_payload = build_preprint_create_payload(self.public_project._id, self.provider._id, self.file_one_public_project._id)
         res = self.app.post_json_api(self.url, public_project_payload, auth=self.user.auth)
 
         assert_equal(res.status_code, 201)
-
-    def test_create_preprint_with_tags(self):
-        public_project_payload = build_preprint_create_payload(self.public_project._id, self.subject._id, self.file_one_public_project._id)
-        public_project_payload['data']['attributes']['tags'] = ['newtag', 'bluetag']
-        res = self.app.post_json_api(self.url, public_project_payload, auth=self.user.auth)
-
-        assert_equal(res.status_code, 201)
-
-        self.public_project.reload()
-        assert_in('newtag', self.public_project.tags)
-        assert_in('bluetag', self.public_project.tags)
-        assert_not_in('tag_added', [l.action for l in self.public_project.logs])
 
     def test_create_preprint_from_private_project(self):
-        private_project_payload = build_preprint_create_payload(self.private_project._id, self.subject._id, self.file_one_private_project._id)
+        private_project_payload = build_preprint_create_payload(self.private_project._id, self.provider._id, self.file_one_private_project._id, attrs={
+                'subjects': [[SubjectFactory()._id]],
+                'is_published': True
+            })
         res = self.app.post_json_api(self.url, private_project_payload, auth=self.user.auth)
 
         self.private_project.reload()
@@ -176,81 +145,80 @@ class TestPreprintCreate(ApiTestCase):
         assert_true(self.private_project.is_public)
 
     def test_non_authorized_user(self):
-        public_project_payload = build_preprint_create_payload(self.public_project._id, self.subject._id, self.file_one_public_project._id)
+        public_project_payload = build_preprint_create_payload(self.public_project._id, self.provider._id, self.file_one_public_project._id)
         res = self.app.post_json_api(self.url, public_project_payload, auth=self.user_two.auth, expect_errors=True)
 
         assert_equal(res.status_code, 403)
 
     def test_read_write_user_not_admin(self):
         assert_in(self.other_user, self.public_project.contributors)
-        public_project_payload = build_preprint_create_payload(self.public_project._id, self.subject._id, self.file_one_public_project._id)
+        public_project_payload = build_preprint_create_payload(self.public_project._id, self.provider._id, self.file_one_public_project._id)
         res = self.app.post_json_api(self.url, public_project_payload, auth=self.other_user.auth, expect_errors=True)
 
         assert_equal(res.status_code, 403)
 
     def test_file_is_not_in_node(self):
-        wrong_project_payload = build_preprint_create_payload(self.public_project._id, self.subject._id, self.file_one_private_project._id)
+        wrong_project_payload = build_preprint_create_payload(self.public_project._id, self.provider._id, self.file_one_private_project._id)
         res = self.app.post_json_api(self.url, wrong_project_payload, auth=self.user.auth, expect_errors=True)
 
         assert_equal(res.status_code, 400)
         assert_equal(res.json['errors'][0]['detail'], 'This file is not a valid primary file for this preprint.')
 
-    def test_already_a_preprint(self):
+    def test_already_a_preprint_with_conflicting_provider(self):
         preprint = PreprintFactory(creator=self.user)
-        file_one_preprint = test_utils.create_test_file(preprint, self.user, 'openupthatwindow.pdf')
+        file_one_preprint = test_utils.create_test_file(preprint.node, self.user, 'openupthatwindow.pdf')
 
-        already_preprint_payload = build_preprint_create_payload(preprint._id, self.subject._id, file_one_preprint._id)
+        already_preprint_payload = build_preprint_create_payload(preprint.node._id, preprint.provider._id, file_one_preprint._id)
         res = self.app.post_json_api(self.url, already_preprint_payload, auth=self.user.auth, expect_errors=True)
 
         assert_equal(res.status_code, 409)
-        assert_equal(res.json['errors'][0]['detail'], 'This node already stored as a preprint, use the update method instead.')
+        assert_in('Only one preprint per provider can be submitted for a node.', res.json['errors'][0]['detail'])
 
-    def test_read_write_user_already_a_preprint(self):
+    def test_read_write_user_already_a_preprint_with_conflicting_provider(self):
         assert_in(self.other_user, self.public_project.contributors)
 
         preprint = PreprintFactory(creator=self.user)
-        preprint.add_contributor(self.other_user, permissions=[permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS], save=True)
-        file_one_preprint = test_utils.create_test_file(preprint, self.user, 'openupthatwindow.pdf')
+        preprint.node.add_contributor(self.other_user, permissions=[permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS], save=True)
+        file_one_preprint = test_utils.create_test_file(preprint.node, self.user, 'openupthatwindow.pdf')
 
-        already_preprint_payload = build_preprint_create_payload(preprint._id, self.subject._id, file_one_preprint._id)
+        already_preprint_payload = build_preprint_create_payload(preprint.node._id, self.provider._id, file_one_preprint._id)
         res = self.app.post_json_api(self.url, already_preprint_payload, auth=self.other_user.auth, expect_errors=True)
 
         assert_equal(res.status_code, 403)
 
     def test_no_primary_file_passed(self):
-        no_file_payload = build_preprint_create_payload(self.public_project._id, self.subject._id)
+        no_file_payload = build_preprint_create_payload(self.public_project._id, self.provider._id)
 
         res = self.app.post_json_api(self.url, no_file_payload, auth=self.user.auth, expect_errors=True)
 
         assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['detail'], 'You must specify a primary_file to create a preprint.')
+        assert_equal(res.json['errors'][0]['detail'], 'You must specify a valid primary_file to create a preprint.')
 
     def test_invalid_primary_file(self):
-        invalid_file_payload = build_preprint_create_payload(self.public_project._id, self.subject._id, 'totallynotanid')
+        invalid_file_payload = build_preprint_create_payload(self.public_project._id, self.provider._id, 'totallynotanid')
         res = self.app.post_json_api(self.url, invalid_file_payload, auth=self.user.auth, expect_errors=True)
 
         assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['detail'], 'You must specify a primary_file to create a preprint.')
+        assert_equal(res.json['errors'][0]['detail'], 'You must specify a valid primary_file to create a preprint.')
 
-    def test_no_subjects_given(self):
-        no_subjects_payload = build_preprint_create_payload(self.public_project._id, self.subject._id, self.file_one_public_project._id)
-        del no_subjects_payload['data']['attributes']['subjects']
-        res = self.app.post_json_api(self.url, no_subjects_payload, auth=self.user.auth, expect_errors=True)
-
-        assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['detail'], 'You must specify at least one subject to create a preprint.')
-
-    def test_invalid_subjects_given(self):
-        wrong_subjects_payload = build_preprint_create_payload(self.public_project._id, self.subject._id, self.file_one_public_project._id)
-        wrong_subjects_payload['data']['attributes']['subjects'] = ['jobbers']
-
-        res = self.app.post_json_api(self.url, wrong_subjects_payload, auth=self.user.auth, expect_errors=True)
+    def test_no_provider_given(self):
+        no_providers_payload = build_preprint_create_payload(self.public_project._id, self.provider._id, self.file_one_public_project._id)
+        del no_providers_payload['data']['relationships']['provider']
+        res = self.app.post_json_api(self.url, no_providers_payload, auth=self.user.auth, expect_errors=True)
 
         assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['detail'], 'Subject with id <jobbers> could not be found.')
+        assert_equal(res.json['errors'][0]['detail'], 'You must specify a valid provider to create a preprint.')
+
+    def test_invalid_provider_given(self):
+        wrong_provider_payload = build_preprint_create_payload(self.public_project._id, 'jobbers', self.file_one_public_project._id)
+
+        res = self.app.post_json_api(self.url, wrong_provider_payload, auth=self.user.auth, expect_errors=True)
+
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], 'You must specify a valid provider to create a preprint.')
 
     def test_request_id_does_not_match_request_url_id(self):
-        public_project_payload = build_preprint_create_payload(self.private_project._id, self.subject._id, self.file_one_public_project._id)
+        public_project_payload = build_preprint_create_payload(self.private_project._id, self.provider._id, self.file_one_public_project._id)
         res = self.app.post_json_api(self.url, public_project_payload, auth=self.user.auth, expect_errors=True)
 
         assert_equal(res.status_code, 400)
@@ -260,25 +228,43 @@ class TestPreprintCreate(ApiTestCase):
         github_file = self.file_one_public_project
         github_file.provider = 'github'
         github_file.save()
-        public_project_payload = build_preprint_create_payload(self.public_project._id, self.subject._id, github_file._id)
+        public_project_payload = build_preprint_create_payload(self.public_project._id, self.provider._id, github_file._id)
         res = self.app.post_json_api(self.url, public_project_payload, auth=self.user.auth, expect_errors=True)
 
         assert_equal(res.status_code, 400)
         assert_equal(res.json['errors'][0]['detail'], 'This file is not a valid primary file for this preprint.')
 
-    def test_preprint_contributor_signal_sent_on_creation(self):
+    def test_preprint_contributor_signal_not_sent_on_creation(self):
         with capture_signals() as mock_signals:
-            public_project_payload = build_preprint_create_payload(self.public_project._id, self.subject._id,
+            public_project_payload = build_preprint_create_payload(self.public_project._id, self.provider._id,
                                                                    self.file_one_public_project._id)
             res = self.app.post_json_api(self.url, public_project_payload, auth=self.user.auth)
 
             assert_equal(res.status_code, 201)
-            assert_equal(mock_signals.signals_sent(), set([project_signals.contributor_added]))
+            assert_not_in(project_signals.contributor_added, mock_signals.signals_sent())
 
-    def test_preprint_contributor_signal_not_sent_one_contributor(self):
-        with capture_signals() as mock_signals:
-            private_project_payload = build_preprint_create_payload(self.private_project._id, self.subject._id,
-                                                                   self.file_one_private_project._id)
-            res = self.app.post_json_api(self.url, private_project_payload, auth=self.user.auth)
-            assert_equal(res.status_code, 201)
-            assert_not_equal(mock_signals.signals_sent(), set([project_signals.contributor_added]))
+    def test_create_preprint_with_deleted_node_should_fail(self):
+        self.public_project.is_deleted = True
+        self.public_project.save()
+        public_project_payload = build_preprint_create_payload(self.public_project._id, self.provider._id, self.file_one_public_project._id)
+        res = self.app.post_json_api(self.url, public_project_payload, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], 'Cannot create a preprint from a deleted node.')
+
+    def test_create_preprint_adds_log_if_published(self):
+        public_project_payload = build_preprint_create_payload(
+            self.public_project._id,
+            self.provider._id,
+            self.file_one_public_project._id,
+            {
+                'is_published': True,
+                'subjects': [[SubjectFactory()._id]],
+            }
+        )
+        res = self.app.post_json_api(self.url, public_project_payload, auth=self.user.auth)
+        assert_equal(res.status_code, 201)
+        preprint_id = res.json['data']['id']
+        preprint = PreprintService.load(preprint_id)
+        log = preprint.node.logs[-2]
+        assert_equal(log.action, 'preprint_initiated')
+        assert_equal(log.params.get('preprint'), preprint_id)
