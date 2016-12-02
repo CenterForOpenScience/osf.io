@@ -39,6 +39,8 @@ def parse_args():
 
     parser.add_argument('-r', '--reverse', dest='reverse', action='store_true')
 
+    parser.add_argument('-re', '--removeevent', dest="remove_event")
+
     parsed = parser.parse_args()
 
     validate_args(parsed)
@@ -75,6 +77,9 @@ def validate_args(args):
 
     if any([args.start_date, args.end_date]) and not all([args.start_date, args.end_date]):
         raise ValueError('You must provide both a start and an end date if you provide either.')
+
+    if args.remove_event and not args.source_collection:
+        raise ValueError('You must provide both a source collection to remove an event from.')
 
 
 def fill_in_event_gaps(collection_name, events):
@@ -417,6 +422,11 @@ def format_event(event, analytics_type):
         return template_to_use
 
 
+def remove_event_from_keen(client, source_collection, event_id):
+    filters = [{'property_name': 'keen.id', 'operator': 'eq', 'property_value': event_id}]
+    client.delete_events(source_collection, filters=filters)
+
+
 def parse_and_send_old_events_to_keen(client, dry, reverse):
     old_events = import_old_events_from_spreadsheet()
 
@@ -446,6 +456,8 @@ def main():
     dry = args.dry
     reverse = args.reverse
 
+    if args.remove_event:
+        remove_event_from_keen(client, args.source_collection, args.remove_event)
     if args.smooth_events:
         smooth_events_in_keen(client, args.source_collection, parse(args.start_date), parse(args.end_date), dry, reverse)
     elif args.transfer_collection:
