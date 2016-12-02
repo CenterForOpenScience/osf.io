@@ -64,21 +64,6 @@ Keen.ready(function () {
         title: ' '
     });
 
-    // Yesterday's Node Logs!
-    var logs_by_user = new Keen.Query("count", {
-        eventCollection: "node_log_events",
-        interval: "hourly",
-        groupBy: "user_id",
-        timeframe: "previous_1_days",
-        timezone: "UTC"
-    });
-    client.draw(logs_by_user, document.getElementById("yesterdays-node-logs-by-user"), {
-        chartType: "linechart",
-        title: '',
-        height: "auto",
-        width: "auto"
-    });
-
     // Registrations by Email Domain
     var email_domains = new Keen.Query("count", {
         eventCollection: "user_domain_events",
