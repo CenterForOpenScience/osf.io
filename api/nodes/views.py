@@ -1283,7 +1283,7 @@ class NodeCitationDetail(JSONAPIBaseView, generics.RetrieveAPIView, NodeMixin):
 
 
 class NodeCitationStyleDetail(JSONAPIBaseView, generics.RetrieveAPIView, NodeMixin):
-    """ The node citation for a node in a specific style's format t *read only*
+    """ The node citation for a node in a specific style's format *read only*
 
         ##Note
         **This API endpoint is under active development, and is subject to change in the future**
