@@ -7,6 +7,7 @@ from operator import itemgetter
 from dateutil.parser import parse as parse_date
 from django.utils import timezone
 from flask import request, redirect
+import pytz
 
 from modularodm import Q
 from modularodm.exceptions import ValidationValueError
@@ -27,7 +28,7 @@ from website import language, settings
 from website.models import NodeLog
 from website.prereg import utils as prereg_utils
 from website.project import utils as project_utils
-from website.project.model import MetaSchema, DraftRegistration
+from osf.models import MetaSchema, DraftRegistration
 from website.project.metadata.schemas import ACTIVE_META_SCHEMAS
 from website.project.metadata.utils import serialize_meta_schema, serialize_draft_registration
 from website.project.utils import serialize_node
@@ -67,7 +68,7 @@ def validate_embargo_end_date(end_date_string, node):
     :raises: HTTPError if end_date is less than the approval window or greater than the
     max embargo end date
     """
-    end_date = parse_date(end_date_string, ignoretz=True)
+    end_date = parse_date(end_date_string, ignoretz=True).replace(tzinfo=pytz.utc)
     today = timezone.now()
     if (end_date - today) <= settings.DRAFT_REGISTRATION_APPROVAL_PERIOD:
         raise HTTPError(http.BAD_REQUEST, data={
@@ -186,7 +187,7 @@ def register_draft_registration(auth, node, draft, *args, **kwargs):
 
     if registration_choice == 'embargo':
         # Initiate embargo
-        embargo_end_date = parse_date(data['embargoEndDate'], ignoretz=True)
+        embargo_end_date = parse_date(data['embargoEndDate'], ignoretz=True).replace(tzinfo=pytz.utc)
         try:
             register.embargo_registration(auth.user, embargo_end_date)
         except ValidationValueError as err:
@@ -348,11 +349,10 @@ def get_metaschemas(*args, **kwargs):
     count = request.args.get('count', 100)
     include = request.args.get('include', 'latest')
 
-    meta_schema_collection = database['metaschema']
 
     meta_schemas = []
     if include == 'latest':
-        schema_names = meta_schema_collection.distinct('name')
+        schema_names = list(MetaSchema.objects.all().values_list('name', flat=True).distinct())
         for name in schema_names:
             meta_schema_set = MetaSchema.find(
                 Q('name', 'eq', name) &

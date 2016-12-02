@@ -10,7 +10,7 @@ from website.models import MetaSchema
 from website.project.model import ensure_schemas
 
 from tests.base import OsfTestCase
-from tests.factories import AuthUserFactory, ProjectFactory, DraftRegistrationFactory
+from osf_tests.factories import AuthUserFactory, ProjectFactory, DraftRegistrationFactory
 
 class RegistrationsTestBase(OsfTestCase):
     def setUp(self):

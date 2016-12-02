@@ -630,13 +630,20 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             final_query = base_query
         return cls.find(final_query)
 
+    def _is_embargo_date_valid(self, end_date):
+        now = timezone.now()
+        if (end_date - now) >= settings.EMBARGO_END_DATE_MIN:
+            if (end_date - now) <= settings.EMBARGO_END_DATE_MAX:
+                return True
+        return False
+
     def add_affiliated_institution(self, inst, user, save=False, log=True):
         if not user.is_affiliated_with_institution(inst):
             raise UserNotAffiliatedError('User is not affiliated with {}'.format(inst.name))
         if not self.is_affiliated_with_institution(inst):
             self.affiliated_institutions.add(inst)
         if log:
-            from website.project.model import NodeLog
+            NodeLog = apps.get_model('osf.NodeLog')
 
             self.add_log(
                 action=NodeLog.AFFILIATED_INSTITUTION_ADDED,

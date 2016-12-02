@@ -58,7 +58,7 @@ class MetaSchema(ObjectIDMixin, BaseModel):
 
     @classmethod
     def get_prereg_schema(cls):
-        return cls.get(
+        return cls.objects.get(
             name='Prereg Challenge',
             schema_version=2
         )
