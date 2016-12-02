@@ -59,6 +59,22 @@ Keen.ready(function () {
         title: ' '
     });
 
+    // Affiliated Private Projects!
+    var affiliated_private_chart = new Keen.Query("sum", {
+        eventCollection: "institution_summary",
+        targetProperty: "nodes.private",
+        timeframe: "previous_1_days",
+        groupBy: "institution.name",
+        timezone: "UTC"
+    });
+
+    client.draw(affiliated_private_chart, document.getElementById("affiliated-private-projects"), {
+        chartType: "table",
+        height: "auto",
+        width: "auto",
+        title: ' '
+    });
+
     // Registrations by Email Domain
     var email_domains = new Keen.Query("count", {
         eventCollection: "user_domain_events",
