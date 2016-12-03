@@ -48,10 +48,10 @@ var markdown = new MarkdownIt({
 
 // Fast markdown renderer for active editing to prevent slow loading/rendering tasks
 var markdownQuick = new MarkdownIt({
-    html: true,
-    linkify: true
+    html: true
 })
     .use(require('markdown-it-sanitizer'))
+    .disable('link')
     .disable('image')
     .use(insDel)
     .enable('table')
