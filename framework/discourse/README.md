@@ -69,7 +69,7 @@ cd /var/www/discourse
 RAILS_ENV=production bundle exec ruby script/import_scripts/osf.rb export_file return_file
 </pre>
 
-This import may take an hour or longer depending on the size of the export file. If it gets cancelled part way, subsequent runs will be able to skip over portions that have been already imported in.
+This import may take an hour or longer depending on the size of the export file. If it gets cancelled part way, subsequent runs will be able to skip over portions that have been already imported in. You may get "convert: delegate library support not built-in" errors when importing user avatar images, but the import will still proceed fine.
 
 The return_file contains various IDs and meta data about the entities imported into Discourse. In order for the OSF to be aware that Discourse has successfully imported these data, this file needs to be imported back into the OSF. Leaving the docker container, copy the file back out with `docker cp 43e42ddbd963:/var/www/discourse/return_file /home/docker`, and then exiting the virtual machine, copy the file back again with `docker-machine scp default:/home/docker/return_file ./`.
 
