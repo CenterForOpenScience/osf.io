@@ -12,9 +12,9 @@ class SummaryHarness(DateAnalyticsHarness):
         return [NodeSummary, UserSummary, InstitutionSummary]
 
 
-@celery_app.task(name='scripts.run_keen_summaries')
-def run_main(date):
-    SummaryHarness().main(date)
+@celery_app.task(name='scripts.analytics.run_keen_summaries')
+def run_main(date=None, yesterday=False):
+    SummaryHarness().main(date, yesterday, False)
 
 
 if __name__ == '__main__':

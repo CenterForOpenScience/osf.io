@@ -4913,11 +4913,11 @@ class TestOnNodeUpdate(OsfTestCase):
         on_node_updated(self.node._id, self.user._id, False, {'is_public'})
 
         kwargs = requests.post.call_args[1]
-        graph = kwargs['json']['normalized_data']['@graph']
+        graph = kwargs['json']['data']['attributes']['data']['@graph']
 
         assert_true(requests.post.called)
         assert_equals(kwargs['headers']['Authorization'], 'Bearer Token')
-        assert_equals(graph[0]['url'], '{}{}/'.format(settings.DOMAIN, self.node._id))
+        assert_equals(graph[0]['uri'], '{}{}/'.format(settings.DOMAIN, self.node._id))
 
     @mock.patch('website.project.tasks.requests')
     def test_update_share_correctly(self, requests):
@@ -4947,8 +4947,8 @@ class TestOnNodeUpdate(OsfTestCase):
             on_node_updated(self.node._id, self.user._id, False, {'is_public'})
 
             kwargs = requests.post.call_args[1]
-            graph = kwargs['json']['normalized_data']['@graph']
-            assert_equals(graph[2]['is_deleted'], case['is_deleted'])
+            graph = kwargs['json']['data']['attributes']['data']['@graph']
+            assert_equals(graph[1]['is_deleted'], case['is_deleted'])
 
 
 
