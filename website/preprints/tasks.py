@@ -31,7 +31,7 @@ def on_preprint_updated(preprint_id):
                     'data': {'@graph': format_preprint(preprint)}
                 }
             }
-        }, headers={'Authorization': 'Bearer {}'.format(preprint.provider.access_token), 'Content-Type': 'application/vnd.api+json'})
+        }, headers={'Authorization': 'Bearer {}'.format(preprint.provider.access_token), 'Content-Type': 'application/vnd.api+json'}, verify=False)
         logger.debug(resp.content)
         resp.raise_for_status()
 
@@ -121,7 +121,7 @@ def format_preprint(preprint):
 
     preprint_graph.attrs['subjects'] = [
         GraphNode('throughsubjects', creative_work=preprint_graph, subject=GraphNode('subject', name=subject))
-        for subject in set(x['text'] for hier in preprint.get_subjects() or [] for x in hier)
+        for subject in set(x['text'] for hier in preprint.get_subjects() or [] for x in hier) if subject
     ]
 
     to_visit.extend(format_contributor(preprint_graph, user, bool(user._id in preprint.node.visible_contributor_ids), i) for i, user in enumerate(preprint.node.contributors))
