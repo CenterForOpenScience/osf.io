@@ -33,6 +33,8 @@ In app.yml use nano (or your favorite command line editor) to set `DISCOURSE_HOS
 
 The app.yml SMTP settings are intended for debugging with `sudo python -m smtpd -n -c DebuggingServer localhost:387` running on the host machine. They should be changed in production to point to a real SMTP server. They assume the virtual machine sees the host machine at 10.0.2.2. This can be checked by running `route` in the virtual machine and checking the default gateway.
 
+The app.yml file also has a version setting which is used to specify the version of Discourse to be installed. This can be specified with anything that can be given to git checkout, including branch names, tag names, and commit hashes. Most likely, you will want to leave this as the last stable release the plugins were made to work with.
+
 From /var/discourse run `./launcher rebuild app` to bootstrap and start the Discourse instance. This can also be used to update Discourse after changes are made in app.yml or the github repositories mentioned in it are changed.
 
 If you get a complaint that port 80 is already in use, determine the PID of the offending process with `netstat -nlp` and kill it. I had this problem with a docker-proxy process. However, there only seemed to be interference on the initial bootstrap and not once actually running Discourse.
