@@ -1,0 +1,90 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}
+    <title>OSF Metrics</title>
+{% endblock title %}
+
+{% block top_includes %}
+    <link rel="stylesheet" type="text/css" href="/static/css/keen-dashboards.css" />
+    <script>
+        if ('{{ keen_ready }}' == 'True') {
+            var keenProjectId = '{{ keen_project_id }}';
+            var keenReadKey = '{{ keen_read_key }}';
+        }
+    </script>
+
+{% endblock top_includes %}
+
+{% block content %}
+
+    <h2>OSF Metrics</h2>
+
+    <div class="dropdown">
+        <button class="btn btn-default btn-large dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown">
+            Jump to...
+            <span class="caret"></span>
+        </button>
+        <ul class="dropdown-menu">
+            <li><a href="#active_users">Yesterday's Active Users</a></li>
+            <li><a href="#active_users_over_time">Active Users Over Time</a></li>
+            <li><a href="#affiliated_projects">Affiliated Public and Private projects by Institution</a></li>
+            <li><a href="#email_domain">Previous 7 days of user registrations by email domain</a></li>
+            <li><a href="#node_logs_by_user">Yesterday's Node logs by user</a></li>
+            <li><a href="#users_by_status">Previous 7 days of users by status</a></li>
+            <li><a href="#linked_addon_by_name">Previous 7 days of linked addon by addon name</a></li>
+        </ul>
+    </div>
+
+    <div class="row">
+        <div class="col-md-12" id="active_users">
+            <h3>Yesterday's Active Users</h3>
+            <div id="active-user-count">Loading...</div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-12" id="active_users_over_time">
+            <h3>Active Users Over Time</h3>
+            <div id="active-user-chart">Loading...</div>
+        </div>
+    </div>
+
+    <div class="row" id="affiliated_projects">
+        <div class="col-md-6">
+            <h3>Affiliated Public projects by Institution</h3>
+            <div id="affiliated-public-projects">Loading...</div>
+        </div>
+
+        <div class="col-md-6">
+            <h3>Affiliated Private projects by Institution</h3>
+            <div id="affiliated-private-projects">Loading...</div>
+        </div>
+    </div>
+
+    <div id="email_domain">
+        <h3>Previous 7 days of user registrations by email domain</h3>
+        <div id="user-registration-by-email-domain">Loading...</div>
+    </div>
+
+    <div id="node_logs_by_user">
+        <h3>Yesterday's Node logs by user</h3>
+        <div id="yesterdays-node-logs-by-user">Loading...</div>
+    </div>
+
+    <div id="users_by_status">
+        <h3>Previous 7 days of users by status</h3>
+        <div id="previous-7-days-of-users-by-status">Loading...</div>
+    </div>
+
+    <div id="linked_addon_by_name">
+        <h3>Previous 7 days of linked addon by addon name</h3>
+        <div id="previous-7-days-of-linked-addon-by-addon-name">Loading...</div>
+    </div>
+
+{% endblock content %}
+
+
+{% block bottom_js %}
+    <script src="{% static 'public/js/metrics.js' %}"></script>
+{% endblock %}
