@@ -67,22 +67,37 @@ def migrate(reverse=False):
             logger.debug("Looking at: {} ({})".format(google_file.path, google_file._id))
             if len(google_file.history) == 0:
                 continue
-            mime_type = google_file.history[-1]['contentType']
-            if mime_type.startswith(GDOC_MIME_PREFIX):
-                mime_type = mime_type.rstrip('0123456789.')  # shortcuts have a /.\d+/ suffix
+
+            # update the paths for all entries in history
+            for history in google_file.history:
+                mime_type = history['contentType'].rstrip('0123456789.')  # shortcuts have a /.\d+/ suffix
+                if not mime_type.startswith(GDOC_MIME_PREFIX):
+                    continue
+
                 if mime_type in GDOC_MIME_TYPES:
                     extension = EXTENSION_FOR[mime_type]
+                    orig_history = history['path']
                     if reverse:
-                        if google_file.path.endswith('.' + extension):
-                            google_file.path = google_file.path.rsplit('.', 1)[0]
+                        if history['path'].endswith('.' + extension):
+                            history['path'] = history['path'].rsplit('.', 1)[0]
                     else:
-                        google_file.path = '{}.{}'.format(google_file.path, extension)
-                    google_file.save()
-                    logger.debug("  Repathed to: {}".format(google_file.path))
+                        history['path'] = '{}.{}'.format(history['path'], extension)
+                    logger.debug("  History repathed from {} to {}".format(orig_history, history['path']))
                 else:
-                    logger.debug("  file with type but not a gdoc?: t{}, i{}, n{}".format(
-                        mime_type, google_file._id, google_file.path
-                    ))
+                    logger.debug(
+                        "  File history has googleish mime-type but isn't a gdoc?: "
+                        "t{}, i{}, n{}".format(mime_type, google_file._id, history['path'])
+                    )
+
+            # update path of the Stored or Trashed FileNode to match the last entry in history,
+            # IFF the last entry in history is a gdoc.
+            mime_type = google_file.history[-1]['contentType'].rstrip('0123456789.')  # shortcuts have a /.\d+/ suffix
+            if mime_type.startswith(GDOC_MIME_PREFIX) and mime_type in GDOC_MIME_TYPES:
+                orig_path = google_file.path
+                google_file.path = google_file.history[-1]['path']
+                logger.debug("  SFN Repathed from {} to {}".format(orig_path, google_file.path))
+
+            google_file.save()
 
 def audit():
     """Collects and reports statistics about the mime-types and extensions of Googledrive files in
