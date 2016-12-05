@@ -162,9 +162,8 @@ class BaseAnalyticsHarness(object):
         analytics_classes = self.analytics_classes
         if command_line:
             args = self.parse_args()
-            entered_scripts = args.analytics_scripts
-            if args.entered_scripts:
-                analytics_classes = self.try_to_import_from_args(entered_scripts)
+            if args.analytics_scripts:
+                analytics_classes = self.try_to_import_from_args(args.analytics_scripts)
 
         for analytics_class in analytics_classes:
             class_instance = analytics_class()
