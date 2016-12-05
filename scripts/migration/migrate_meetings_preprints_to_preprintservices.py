@@ -118,8 +118,9 @@ def validate_target(target):
 
     assert node, 'Unable to find Node with _id {}'.format(target['node_id'])
     assert file, 'Unable to find File with _id {}'.format(target['file_id'])
-    assert set([tag.lower() for tag in node.get('tags', [])]) & POSSIBLE_PREPRINT_PROVIDER_KEYS, 'Unable to infer PreprintProvider for node {} with tags {}'.format(node['_id'], node['tags'])
+    assert target['provider_id'] in set([tag.lower() for tag in node.get('tags', [])]) & POSSIBLE_PREPRINT_PROVIDER_KEYS, 'Unable to infer PreprintProvider for node {} with tags {}'.format(node['_id'], node['tags'])
     assert file['node'] == node['_id'], 'File {} with `node` {} not attached to Node {}'.format(file_id, file['node'], node['_id'])
+    assert not database['preprintservice'].find({'node': target['node_id']}, {'_id': 1}).count(), 'Cannot migrate a node that already has a preprint'
 
     if target.get('subjects'):
         validate_subjects(target['subjects'])
@@ -127,7 +128,7 @@ def validate_target(target):
     if not node.get('preprint_file', None):
         updates.update({'preprint_file': file['_id']})
     if not node.get('preprint_created', None):
-        updates.update({'preprint_created': infer_preprint_created(target['node_id'])})
+        updates.update({'preprint_created': infer_preprint_created(target['node_id'], target['provider_id'])})
 
     if updates:
         logger.debug('{} has no preprint_file, setting'.format(node['_id']))
@@ -147,9 +148,9 @@ def validate_subjects(subj_hierarchy):
                 logger.error('Found subject {} without parents.'.format(subject_id))
                 raise Exception('Found subject {} without parents.'.format(subject_id))
 
-def infer_preprint_created(node_id):
+def infer_preprint_created(node_id, provider_id):
     logs = models.NodeLog.find(Q('node', 'eq', node_id) & Q('action', 'eq', 'tag_added') & Q('params.tag', 'in', list(POSSIBLE_PREPRINT_PROVIDER_KEYS)))
-    return min([l.date for l in logs])
+    return min([l.date for l in logs if re.match(provider_id, l.params['tag'], re.I)])
 
 def add_preprint_log(preprint):
     logs = models.NodeLog.find(Q('node', 'eq', preprint.node._id) & Q('action', 'eq', 'tag_added') & Q('params.tag', 'in', [preprint.provider._id]))
@@ -171,68 +172,63 @@ def add_preprint_log(preprint):
 def create_preprint_service_from_target(target, swap_cutoff):
     created = {}
     node_doc = database['node'].find_one(target['node_id'])
-    dirty = False
-    for provider_id in set([tag.lower() for tag in node_doc['tags']]) & POSSIBLE_PREPRINT_PROVIDER_KEYS:
-        non_osf_provider = provider_id != 'osf'
-        node = models.Node.load(node_doc['_id'])
-        if not node and dirty:
-            node = models.PreprintService.load(node_doc['_id']).node
-        provider = models.PreprintProvider.load(provider_id)
-        # primary_file already set correctly* on node
-        if not provider:
-            raise Exception('Unable to find provider {} for node {}, erroring'.format(provider_id, node_doc['_id']))
-        if not node:
-            raise Exception('Unable to find node {}, erroring.'.format(node_doc['_id'])) 
+    provider_id = target['provider_id']
+    non_osf_provider = provider_id != 'osf'
+    node = models.Node.load(node_doc['_id'])
+    provider = models.PreprintProvider.load(provider_id)
+    # primary_file already set correctly* on node
+    if not provider:
+        raise Exception('Unable to find provider {} for node {}, erroring'.format(provider_id, node_doc['_id']))
+    if not node:
+        raise Exception('Unable to find node {}, erroring.'.format(node_doc['_id'])) 
 
-        subjects = target.get('subjects', {'socarxiv': [[SOC_SUBJ_ID]], 'engrxiv': [[ENG_SUBJ_ID]], 'psyarxiv': [[SOC_SUBJ_ID, PSY_SUBJ_ID]]}[provider_id])
+    subjects = target.get('subjects', {'socarxiv': [[SOC_SUBJ_ID]], 'engrxiv': [[ENG_SUBJ_ID]], 'psyarxiv': [[SOC_SUBJ_ID, PSY_SUBJ_ID]]}[provider_id])
 
-        try:
-            logger.info('* Creating preprint for node {}'.format(node._id))
-            preprint = models.PreprintService(node=node, provider=provider)
-            preprint.save()
-            database['preprintservice'].find_and_modify(
-                {'_id': preprint._id},
-                {'$set': {
-                    'date_created': node_doc['preprint_created'],
-                    'date_published': node_doc['preprint_created'],
-                    'subjects': subjects,
-                    'is_published': True
-                }}
-            )
-        except KeyExistsException:
-            logger.warn('Duplicate PreprintService found for provider {} on node {}, skipping'.format(provider._id, node._id))
-            continue
-        else:
-            if node_doc.get('preprint_doi'):
-                database['node'].find_and_modify(
-                    {'_id': node._id},
-                    {'$set': {
-                        'preprint_article_doi': node_doc['preprint_doi']
-                    }}
-                )
+    try:
+        logger.info('* Creating preprint for node {}'.format(node._id))
+        preprint = models.PreprintService(node=node, provider=provider)
+        preprint.save()
+        database['preprintservice'].find_and_modify(
+            {'_id': preprint._id},
+            {'$set': {
+                'date_created': node_doc['preprint_created'],
+                'date_published': node_doc['preprint_created'],
+                'subjects': subjects,
+                'is_published': True
+            }}
+        )
+    except KeyExistsException:
+        logger.warn('Duplicate PreprintService found for provider {} on node {}, skipping'.format(provider._id, node._id))
+    else:
+        if node_doc.get('preprint_doi'):
             database['node'].find_and_modify(
                 {'_id': node._id},
-                {'$unset': {
-                    'preprint_doi': '',
-                    'preprint_created': ''
-                }}
-            )
-            node.reload()
-            preprint.reload()
-            if should_swap_guids(node, preprint, swap_cutoff):
-                swap_guids(node, preprint)
-            node.reload()
-            preprint.reload()
-            preprint.node.reload()
-            # add_preprint_log(preprint)  # Don't log this action
-            database['preprintservice'].find_and_modify(
-                {'_id': preprint._id},
                 {'$set': {
-                    'date_modified': node_doc['preprint_created'],
+                    'preprint_article_doi': node_doc['preprint_doi']
                 }}
             )
-            created.update({preprint._id: (node._id, non_osf_provider)})
-        dirty = True
+        database['node'].find_and_modify(
+            {'_id': node._id},
+            {'$unset': {
+                'preprint_doi': '',
+                'preprint_created': ''
+            }}
+        )
+        node.reload()
+        preprint.reload()
+        if should_swap_guids(node, preprint, swap_cutoff):
+            swap_guids(node, preprint)
+        node.reload()
+        preprint.reload()
+        preprint.node.reload()
+        # add_preprint_log(preprint)  # Don't log this action
+        database['preprintservice'].find_and_modify(
+            {'_id': preprint._id},
+            {'$set': {
+                'date_modified': node_doc['preprint_created'],
+            }}
+        )
+        created.update({preprint._id: (node._id, non_osf_provider)})
     node.system_tags.append('migrated_from_osf4m')
 
     if not node.description:
@@ -1299,8 +1295,8 @@ def migrate(swap_cutoff):
 def parse_input():
     logger.info('Acquiring targets...')
     if '--targets' not in sys.argv and '--auto' not in sys.argv:
-        raise RuntimeError('Must either request `--auto` for target selection or manually specify input set with `--targets`.\n\nThis is expected to be a JSON-formatted list of sets of `node_id`, `file_id` and `subjects`, e.g.\
-            \'{"data": [{"node_id": "asdfg", "file_id": "notarealfileid", "subjects":[["notarealsubjectid"]]}]}\'')
+        raise RuntimeError('Must either request `--auto` for target selection or manually specify input set with `--targets`.\n\nThis is expected to be a JSON-formatted list of sets of `node_id`, `file_id` and `provider_id`, e.g.\
+            \'{"data": [{"node_id": "asdfg", "file_id": "notarealfileid", "provider_id": "notarealproviderid"}]}\'')
     if '--targets' in sys.argv and '--auto' in sys.argv:
         raise RuntimeError('May not automatically get targets and receive specified targets.')
     if '--auto' in sys.argv:
@@ -1313,9 +1309,11 @@ def parse_input():
             {
                 'file_id': database['storedfilenode'].find({'node': n._id, 'is_file': True, 'provider': 'osfstorage'}, {'_id': 1})[0]['_id'],
                 'node_id': n._id,
+                'provider_id': list(set([t.lower for t in n.tags]) & set(['socarxiv', 'engrxiv', 'psyarxiv']))[0]
             } for n in models.Node.find(Q('tags', 'in', list(POSSIBLE_PREPRINT_PROVIDER_KEYS)) & Q('system_tags', 'ne', 'migrated_from_osf4m') & Q('is_deleted', 'ne', True))
             if database['storedfilenode'].find({'node': n._id, 'is_file': True, 'provider': 'osfstorage'}).count() == 1
             and len(list(set([t.lower for t in n.tags]) & set(['socarxiv', 'engrxiv', 'psyarxiv']))) == 1
+            and not database['preprintservice'].find({'node': n._id}, {'_id': 1}).count()
         ]
         if count and count < len(targets):
             return targets[:count]
