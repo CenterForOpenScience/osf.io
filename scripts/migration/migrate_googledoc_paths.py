@@ -80,8 +80,10 @@ def migrate(reverse=False):
                     if reverse:
                         if history['path'].endswith('.' + extension):
                             history['path'] = history['path'].rsplit('.', 1)[0]
+                            history['materialized'] = history['materialized'].rsplit('.', 1)[0]
                     else:
                         history['path'] = '{}.{}'.format(history['path'], extension)
+                        history['materialized'] = u'{}.{}'.format(history['materialized'], extension)
                     logger.debug("  History repathed from {} to {}".format(orig_history, history['path']))
                 else:
                     logger.debug(
@@ -95,6 +97,7 @@ def migrate(reverse=False):
             if mime_type.startswith(GDOC_MIME_PREFIX) and mime_type in GDOC_MIME_TYPES:
                 orig_path = google_file.path
                 google_file.path = google_file.history[-1]['path']
+                google_file.materialized_path = google_file.history[-1]['materialized']
                 logger.debug("  SFN Repathed from {} to {}".format(orig_path, google_file.path))
 
             google_file.save()
