@@ -17,7 +17,7 @@ var nodeData = {
     user: {permissions: ['read', 'write', 'admin']}
 };
 
-describe('nodeControl', () => {
+describe.skip('nodeControl', () => {
     describe('ViewModels', () => {
         describe('ProjectViewModel', () => {
             var server;

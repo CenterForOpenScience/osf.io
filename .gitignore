@@ -127,3 +127,9 @@ website/analytics/
 
 piwik-migration
 scripts/image_maniplation/test_rounded_corners.html
+
+.env
+.autoenv
+.docker-compose.env
+.docker-compose.*.env
+docker-compose.override.yml

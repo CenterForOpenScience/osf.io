@@ -1,10 +1,13 @@
-import datetime
+import logging
 
 import requests
 
 from framework.celery_tasks import app as celery_app
 
 from website import settings
+
+
+logger = logging.getLogger(__name__)
 
 
 @celery_app.task(ignore_results=True)
@@ -27,25 +30,28 @@ def on_node_updated(node_id, user_id, first_save, saved_fields, request_headers=
     if need_update:
         node.update_search()
 
-        if settings.SHARE_URL and settings.SHARE_API_TOKEN:
-            requests.post('{}api/normalizeddata/'.format(settings.SHARE_URL), json={
-                'created_at': datetime.datetime.utcnow().isoformat(),
-                'normalized_data': {
-                    '@graph': [{
-                        '@id': '_:123',
-                        '@type': 'link',
-                        'type': 'provider',
-                        'url': '{}{}/'.format(settings.DOMAIN, node._id),
-                    }, {
-                        '@id': '_:456',
-                        '@type': 'throughlinks',
-                        'link': {'@type': 'link', '@id': '_:123'},
-                        'creative_work': {'@type': 'project', '@id': '_:789'},
-                    }, {
-                        '@id': '_:789',
-                        '@type': 'project',
-                        'is_deleted': not node.is_public or node.is_deleted or node.is_spammy,
-                        'links': [{'@id': '_:456', '@type': 'throughlinks'}],
-                    }]
-                },
-            }, headers={'Authorization': 'Bearer {}'.format(settings.SHARE_API_TOKEN)}).raise_for_status()
+        if settings.SHARE_URL:
+            if not settings.SHARE_API_TOKEN:
+                return logger.warning('SHARE_API_TOKEN not set. Could not send %s to SHARE.'.format(node))
+
+            resp = requests.post('{}api/normalizeddata/'.format(settings.SHARE_URL), json={
+                'data': {
+                    'type': 'NormalizedData',
+                    'attributes': {
+                        'tasks': [],
+                        'raw': None,
+                        'data': {'@graph': [{
+                            '@id': '_:123',
+                            '@type': 'workidentifier',
+                            'creative_work': {'@id': '_:789', '@type': 'project'},
+                            'uri': '{}{}/'.format(settings.DOMAIN, node._id),
+                        }, {
+                            '@id': '_:789',
+                            '@type': 'project',
+                            'is_deleted': not node.is_public or node.is_deleted or node.is_spammy,
+                        }]}
+                    }
+                }
+            }, headers={'Authorization': 'Bearer {}'.format(settings.SHARE_API_TOKEN), 'Content-Type': 'application/vnd.api+json'}, verify=False)
+            logger.debug(resp.content)
+            resp.raise_for_status()

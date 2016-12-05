@@ -3,6 +3,7 @@
 import httplib as http
 
 from flask import request
+from modularodm import Q
 from modularodm.exceptions import ValidationError, ValidationValueError
 
 from framework import forms, status
@@ -18,7 +19,7 @@ from framework.flask import redirect  # VOL-aware redirect
 from framework.sessions import session
 from framework.transactions.handlers import no_auto_transaction
 from website import mails, language, settings
-from website.models import Node
+from website.models import Node, PreprintService
 from website.notifications.utils import check_if_all_global_subscriptions_are_none
 from website.profile import utils as profile_utils
 from website.project.decorators import (must_have_permission, must_be_valid_project, must_not_be_registration,
@@ -439,21 +440,32 @@ def send_claim_email(email, unclaimed_user, node, notify=True, throttle=24 * 360
     """
 
     claimer_email = email.lower().strip()
-
     unclaimed_record = unclaimed_user.get_unclaimed_record(node._primary_key)
     referrer = User.load(unclaimed_record['referrer_id'])
     claim_url = unclaimed_user.get_claim_url(node._primary_key, external=True)
 
-    # When adding the contributor, the referrer provides both name and email.
-    # The given email is the same provided by user, just send to that email.
+    # Option 1:
+    #   When adding the contributor, the referrer provides both name and email.
+    #   The given email is the same provided by user, just send to that email.
+    preprint_provider = None
     if unclaimed_record.get('email') == claimer_email:
-        mail_tpl = getattr(mails, 'INVITE_{}'.format(email_template.upper()))
+        # check email template for branded preprints
+        if email_template == 'preprint':
+            email_template, preprint_provider = find_preprint_provider(node)
+            if not email_template or not preprint_provider:
+                return
+            mail_tpl = getattr(mails, 'INVITE_PREPRINT')(email_template, preprint_provider)
+        else:
+            mail_tpl = getattr(mails, 'INVITE_DEFAULT'.format(email_template.upper()))
+
         to_addr = claimer_email
         unclaimed_record['claimer_email'] = claimer_email
         unclaimed_user.save()
-    # When adding the contributor, the referred only provides the name.
-    # The account is later claimed by some one who provides the email.
-    # Send email to the referrer and ask her/him to forward the email to the user.
+    # Option 2:
+    # TODO: [new improvement ticket] this option is disabled from preprint but still available on the project page
+    #   When adding the contributor, the referred only provides the name.
+    #   The account is later claimed by some one who provides the email.
+    #   Send email to the referrer and ask her/him to forward the email to the user.
     else:
         # check throttle
         timestamp = unclaimed_record.get('last_sent')
@@ -484,7 +496,7 @@ def send_claim_email(email, unclaimed_user, node, notify=True, throttle=24 * 360
         mail_tpl = mails.FORWARD_INVITE
         to_addr = referrer.username
 
-    # send an email to the referrer with `claim_url`
+    # Send an email to the claimer (Option 1) or to the referrer (Option 2) with `claim_url`
     mails.send_mail(
         to_addr,
         mail_tpl,
@@ -493,7 +505,8 @@ def send_claim_email(email, unclaimed_user, node, notify=True, throttle=24 * 360
         node=node,
         claim_url=claim_url,
         email=claimer_email,
-        fullname=unclaimed_record['name']
+        fullname=unclaimed_record['name'],
+        branded_service_name=preprint_provider
     )
 
     return to_addr
@@ -509,7 +522,16 @@ def notify_added_contributor(node, contributor, auth=None, throttle=None, email_
     if (contributor.is_registered and not node.template_node and not node.is_fork and
             (not node.parent_node or
                 (node.parent_node and not node.parent_node.is_contributor(contributor)))):
-        email_template = getattr(mails, 'CONTRIBUTOR_ADDED_{}'.format(email_template.upper()))
+
+        preprint_provider = None
+        if email_template == 'preprint':
+            email_template, preprint_provider = find_preprint_provider(node)
+            if not email_template or not preprint_provider:
+                return
+            email_template = getattr(mails, 'CONTRIBUTOR_ADDED_PREPRINT')(email_template, preprint_provider)
+        else:
+            email_template = getattr(mails, 'CONTRIBUTOR_ADDED_DEFAULT'.format(email_template.upper()))
+
         contributor_record = contributor.contributor_added_email_records.get(node._id, {})
         if contributor_record:
             timestamp = contributor_record.get('last_sent', None)
@@ -525,7 +547,8 @@ def notify_added_contributor(node, contributor, auth=None, throttle=None, email_
             user=contributor,
             node=node,
             referrer_name=auth.user.fullname if auth else '',
-            all_global_subscriptions_none=check_if_all_global_subscriptions_are_none(contributor)
+            all_global_subscriptions_none=check_if_all_global_subscriptions_are_none(contributor),
+            branded_service_name=preprint_provider
         )
 
         contributor.contributor_added_email_records[node._id]['last_sent'] = get_timestamp()
@@ -533,6 +556,26 @@ def notify_added_contributor(node, contributor, auth=None, throttle=None, email_
 
     elif not contributor.is_registered:
         unreg_contributor_added.send(node, contributor=contributor, auth=auth, email_template=email_template)
+
+
+def find_preprint_provider(node):
+    """
+    Given a node, find the preprint and the service provider.
+
+    :param node: the node to which a contributer or preprint author is added
+    :return: the email template
+    """
+
+    try:
+        preprint = PreprintService.find_one(Q('node', 'eq', node._id))
+        provider = preprint.provider
+        if provider._id == 'osf':
+            return 'osf', provider.name
+        else:
+            return 'branded', provider.name
+    # TODO: fine-grained exception handling
+    except Exception:
+        return None, None
 
 
 def verify_claim_token(user, token, pid):

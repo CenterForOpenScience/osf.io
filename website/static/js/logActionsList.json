@@ -74,6 +74,7 @@
     "osf_storage_file_removed" : "${user} removed ${path_type} ${path} from OSF Storage in ${node}",
     "affiliated_institution_added": "${user} added ${institution} affiliation to ${node}",
     "affiliated_institution_removed": "${user} removed ${institution} affiliation from ${node}",
-    "preprint_initiated": "${user} made ${node} a preprint",
-    "preprint_file_updated": "${user} updated the primary file of this preprint"
+    "preprint_initiated": "${user} made ${node} a ${preprint} on ${preprint_provider} Preprints",
+    "preprint_file_updated": "${user} updated the primary file of this ${preprint} on {preprint_provider} Preprints",
+    "preprint_license_updated": "${user} updated the license of the primary file of this {preprint} on {preprint_provider} Preprints"
 }
