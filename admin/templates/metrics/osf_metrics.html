@@ -6,6 +6,7 @@
 {% endblock title %}
 
 {% block top_includes %}
+    <link rel="stylesheet" type="text/css" href="/static/css/keen-dashboards.css" />
     <script>
         if ('{{ keen_ready }}' == 'True') {
             var keenProjectId = '{{ keen_project_id }}';
@@ -19,24 +20,30 @@
 
     <h2>OSF Metrics</h2>
 
-    <div>
-        <h3>Yesterday's Active Users</h3>
-        <div id="active-user-count">Loading...</div>
+    <div class="row">
+        <div class="col-md-12">
+            <h3>Yesterday's Active Users</h3>
+            <div id="active-user-count">Loading...</div>
+        </div>
     </div>
 
-    <div>
-        <h3>Active Users Over Time</h3>
-        <div id="active-user-chart">Loading...</div>
+    <div class="row">
+        <div class="col-md-12">
+            <h3>Active Users Over Time</h3>
+            <div id="active-user-chart">Loading...</div>
+        </div>
     </div>
 
-    <div>
-        <h3>Affiliated Public projects by Institution</h3>
-        <div id="affiliated-public-projects">Loading...</div>
-    </div>
+    <div class="row">
+        <div class="col-md-6">
+            <h3>Affiliated Public projects by Institution</h3>
+            <div id="affiliated-public-projects">Loading...</div>
+        </div>
 
-    <div>
-        <h3>Affiliated Private projects by Institution</h3>
-        <div id="affiliated-private-projects">Loading...</div>
+        <div class="col-md-6">
+            <h3>Affiliated Private projects by Institution</h3>
+            <div id="affiliated-private-projects">Loading...</div>
+        </div>
     </div>
 
     <div>

@@ -24,6 +24,9 @@ Keen.ready(function () {
         chartType: "metric",
         height: "auto",
         width: "auto",
+        chartOptions: {
+            legend: {position: "top"}
+        },
         title: ' '
     });
 
@@ -39,6 +42,9 @@ Keen.ready(function () {
     client.draw(active_user_chart, document.getElementById("active-user-chart"), {
         chartType: "linechart",
         height: "auto",
+        chartOptions: {
+            legend: {position: "top"}
+        },
         width: "auto",
         title: ' '
     });
@@ -90,6 +96,9 @@ Keen.ready(function () {
         chartType: "linechart",
         height: "auto",
         width: "auto",
+        chartOptions: {
+            legend: {position: "top"}
+        },
         title: ' '
     });
 
@@ -104,6 +113,9 @@ Keen.ready(function () {
     client.draw(logs_by_user, document.getElementById("yesterdays-node-logs-by-user"), {
         chartType: "linechart",
         height: "auto",
+        chartOptions: {
+            legend: {position: "top"}
+        },
         width: "auto",
         title: " "
     });
