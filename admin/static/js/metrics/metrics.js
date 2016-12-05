@@ -82,7 +82,7 @@ Keen.ready(function () {
             "domain"
         ],
         interval: "daily",
-        timeframe: "previous_1_week",
+        timeframe: "previous_7_days",
         timezone: "UTC"
     });
 
@@ -94,6 +94,19 @@ Keen.ready(function () {
     });
 
     // Yesterday's Node Logs by User
+    var logs_by_user = new Keen.Query("count", {
+        eventCollection: "node_log_events",
+        interval: "hourly",
+        groupBy: "user_id",
+        timeframe: "previous_1_days",
+        timezone: "UTC"
+    });
+    client.draw(logs_by_user, document.getElementById("yesterdays-node-logs-by-user"), {
+        chartType: "linechart",
+        height: "auto",
+        width: "auto",
+        title: " "
+    });
 
     // Previous 7 Days of Users by Status
     var previous_week_active_users = new Keen.Query("sum",  {
