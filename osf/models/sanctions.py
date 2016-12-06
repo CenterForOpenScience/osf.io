@@ -467,7 +467,7 @@ class Embargo(PreregCallbackMixin, EmailApprovableSanction):
             node_id = user_approval_state.get('node_id', root_registration._id)
             registration = Registration.load(node_id)
             return {
-                'node_id': registration.registered_from,
+                'node_id': registration.registered_from._id,
                 'token': rejection_token,
             }
 
