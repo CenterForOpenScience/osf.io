@@ -301,7 +301,8 @@ def import_old_events_from_spreadsheet():
         'Date': 'timestamp',
         'dropbox-users-enabled': 'enabled',
         'dropbox-users-authorized': 'authorized',
-        'dropbox-users-linked': 'linked'
+        'dropbox-users-linked': 'linked',
+        'profile-edits': 'profile_edited'
     }
 
     with open(spreadsheet_path) as csvfile:
@@ -319,7 +320,7 @@ def import_old_events_from_spreadsheet():
                 event[equiv_key] = row[key]
         events.append(event)
 
-    user_summary_cols = ['active', 'depth', 'total_users', 'timestamp']
+    user_summary_cols = ['active', 'depth', 'total_users', 'timestamp', 'profile_edited']
     node_summary_cols = ['registrations.total', 'projects.total', 'projects.public', 'timestamp']
     addon_summary_cols = ['enabled', 'authorized', 'linked', 'timestamp']
 
@@ -390,6 +391,8 @@ def format_event(event, analytics_type):
             template_to_use['status']['active'] = comma_int(event['active'])
         if event['total_users'] and event['active']:
             template_to_use['status']['unconfirmed'] = comma_int(event['total_users']) - comma_int(event['active'])
+        if event['profile_edited']:
+            template_to_use['status']['profile_edited'] = comma_int(event['profile_edited'])
     elif analytics_type == 'node':
         template_to_use = node_event_template
 
