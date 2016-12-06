@@ -7,6 +7,8 @@ from website.util.permissions import (
 
 
 class AbstractBaseContributor(models.Model):
+    primary_identifier_name = 'user__guids___id'
+
     read = models.BooleanField(default=False)
     write = models.BooleanField(default=False)
     admin = models.BooleanField(default=False)
