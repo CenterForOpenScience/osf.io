@@ -573,3 +573,33 @@ class TestPreprintUpdateLicense(ApiTestCase):
 
         assert_equal(self.preprint.license.node_license, self.cc0_license)
         assert_equal(self.preprint.node.node_license.node_license, self.no_license)
+
+    def test_update_preprint_license_without_change_does_not_add_log(self):
+        self.preprint.set_preprint_license(
+            {
+                'id': self.no_license.id,
+                'year': '2015',
+                'copyrightHolders': ['Kim', 'Kanye']
+            },
+            auth=Auth(self.admin_contributor),
+            save=True
+        )
+
+        before_num_logs = len(self.preprint.node.logs)
+        before_update_log = self.preprint.node.logs[-1]
+
+        data = self.make_payload(
+            node_id=self.preprint._id,
+            license_id=self.no_license._id,
+            license_year='2015',
+            copyright_holders=['Kanye', 'Kim']
+        )
+        res = self.make_request(self.url, data, auth=self.admin_contributor.auth)
+        self.preprint.node.reload()
+
+        after_num_logs = len(self.preprint.node.logs)
+        after_update_log = self.preprint.node.logs[-1]
+
+        assert_equal(res.status_code, 200)
+        assert_equal(before_num_logs, after_num_logs)
+        assert_equal(before_update_log._id, after_update_log._id)
