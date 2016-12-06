@@ -139,33 +139,34 @@ class Command(BaseCommand):
         with ipdb.launch_ipdb_on_exception():
             self.modm_to_django = build_toku_django_lookup_table_cache(with_guids=True)
 
-        for migration_type in ['fk', 'm2m']:
-            with transaction.atomic():
-                for django_model in models:
-                    if issubclass(django_model, AbstractBaseContributor) \
-                            or django_model is ApiOAuth2Scope or \
-                            (issubclass(django_model, AbstractNode) and django_model is not AbstractNode) or \
-                            not hasattr(django_model, 'modm_model_path'):
-                        # if django_model is not NotificationSubscription:
-                        continue
+            for migration_type in ['fk', 'm2m']:
+                with transaction.atomic():
+                    for django_model in models:
+                        if issubclass(django_model, AbstractBaseContributor) \
+                                or django_model is ApiOAuth2Scope or \
+                                (issubclass(django_model, AbstractNode) and django_model is not AbstractNode) or \
+                                not hasattr(django_model, 'modm_model_path'):
+                            # if django_model is not NotificationSubscription:
+                            continue
 
-                    module_path, model_name = django_model.modm_model_path.rsplit('.', 1)
-                    modm_module = importlib.import_module(module_path)
-                    modm_model = getattr(modm_module, model_name)
-                    if isinstance(django_model.modm_query, dict):
-                        modm_queryset = modm_model.find(**django_model.modm_query)
-                    else:
-                        modm_queryset = modm_model.find(django_model.modm_query)
+                        module_path, model_name = django_model.modm_model_path.rsplit('.', 1)
+                        modm_module = importlib.import_module(module_path)
+                        modm_model = getattr(modm_module, model_name)
+                        if isinstance(django_model.modm_query, dict):
+                            modm_queryset = modm_model.find(**django_model.modm_query)
+                        else:
+                            modm_queryset = modm_model.find(django_model.modm_query)
 
-                    page_size = django_model.migration_page_size
+                        page_size = django_model.migration_page_size
 
-                    with ipdb.launch_ipdb_on_exception():
-                        with transaction.atomic():
-                            if migration_type == 'fk':
-                                self.save_fk_relationships(modm_queryset, django_model, page_size)
-                            elif migration_type == 'm2m':
-                                self.save_m2m_relationships(modm_queryset, django_model, page_size)
-                self.migrate_contributors()
+                        with ipdb.launch_ipdb_on_exception():
+                            with transaction.atomic():
+                                if migration_type == 'fk':
+                                    self.save_fk_relationships(modm_queryset, django_model, page_size)
+                                elif migration_type == 'm2m':
+                                    self.save_m2m_relationships(modm_queryset, django_model, page_size)
+
+            self.migrate_node_through_models()
 
 
     def save_fk_relationships(self, modm_queryset, django_model, page_size):
@@ -437,79 +438,87 @@ class Command(BaseCommand):
         node_relation_count = 0
         page_size = Node.migration_page_size
         contributors = []
-
-        with transaction.atomic():
-            while count < total:
-                with transaction.atomic():
-                    for modm_obj in MODMNode.find().sort('-_id')[count:page_size + count]:
-                        order = 0
-                        hashes = set()
-                        for modm_contributor in modm_obj.contributors:
-                            read = 'read' in modm_obj.permissions[unicode(modm_contributor._id)]
-                            write = 'write' in modm_obj.permissions[unicode(modm_contributor._id)]
-                            admin = 'admin' in modm_obj.permissions[unicode(modm_contributor._id)]
-                            visible = unicode(modm_contributor._id) in modm_obj.visible_contributor_ids
-                            if (self.modm_to_django[unicode(modm_contributor._id)],
-                                self.modm_to_django[unicode(modm_obj._id)]) not in hashes:
-                                contributors.append(
-                                    Contributor(
-                                        read=read,
-                                        write=write,
-                                        admin=admin,
-                                        user_id=self.modm_to_django[unicode(modm_contributor._id)],
-                                        node_id=self.modm_to_django[unicode(modm_obj._id)],
-                                        _order=order,
-                                        visible=visible
+        node_rel_hashes = set()
+        contributor_hashes = set()
+        with ipdb.launch_ipdb_on_exception():
+            with transaction.atomic():
+                while count < total:
+                    with transaction.atomic():
+                        for modm_obj in MODMNode.find().sort('-_id')[count:page_size + count]:
+                            order = 0
+                            clean_node_guid = unicode(modm_obj._id)
+                            for modm_contributor in modm_obj.contributors:
+                                clean_user_guid = unicode(modm_contributor._id)
+                                read = 'read' in modm_obj.permissions[clean_user_guid]
+                                write = 'write' in modm_obj.permissions[clean_user_guid]
+                                admin = 'admin' in modm_obj.permissions[clean_user_guid]
+                                visible = clean_user_guid in modm_obj.visible_contributor_ids
+                                if (self.modm_to_django[clean_user_guid], self.modm_to_django[clean_node_guid]) not in contributor_hashes:
+                                    contributors.append(
+                                        Contributor(
+                                            read=read,
+                                            write=write,
+                                            admin=admin,
+                                            user_id=self.modm_to_django[clean_user_guid],
+                                            node_id=self.modm_to_django[clean_node_guid],
+                                            _order=order,
+                                            visible=visible
+                                        )
                                     )
-                                )
-                                hashes.add((self.modm_to_django[unicode(modm_contributor._id)],
-                                            self.modm_to_django[unicode(modm_obj._id)]))
-                                order += 1
-                                contributor_count += 1
-                            else:
-                                print('({},{}) already in hashes.'.format(
-                                    self.modm_to_django[unicode(modm_contributor._id)],
-                                    self.modm_to_django[unicode(modm_obj._id)]))
-                        count += 1
+                                    contributor_hashes.add((self.modm_to_django[clean_user_guid],
+                                                self.modm_to_django[clean_node_guid]))
+                                    order += 1
+                                    contributor_count += 1
+                                else:
+                                    print('({},{}) already in contributor_hashes.'.format(
+                                        self.modm_to_django[clean_user_guid],
+                                        self.modm_to_django[clean_node_guid]))
+                            count += 1
 
-                        if count % page_size == 0 or count == total:
-                            Contributor.objects.bulk_create(contributors)
-                            print('Through {} nodes and {} contributors, '
-                                  'saved {} contributors'.format(count, contributor_count, len(contributors)))
-                            contributors = []
-                            modm_obj._cache.clear()
-                            modm_obj._object_cache.clear()
-                            print('Took out {} trashes'.format(gc.collect()))
+                            if count % page_size == 0 or count == total:
+                                Contributor.objects.bulk_create(contributors)
+                                print('Through {} nodes and {} contributors, '
+                                      'saved {} contributors'.format(count, contributor_count, len(contributors)))
+                                contributors = []
+                                modm_obj._cache.clear()
+                                modm_obj._object_cache.clear()
+                                print('Took out {} trashes'.format(gc.collect()))
 
-                        node_relations = []
-                        for modm_node in modm_obj.nodes:
-                            parent_id = self.modm_to_django[unicode(modm_obj._id)]
-                            child_id = self.modm_to_django[unicode(modm_obj._id)]
-                            if isinstance(modm_node, MODMPointer):
-                                node_relations.append(
-                                    NodeRelation(
-                                        _id=modm_node._id,  # preserve GUID on pointers
-                                        is_node_link=True,
-                                        parent_id=parent_id,
-                                        child_id=child_id
-                                    )
-                                )
-                            else:
-                                node_relations.append(
-                                    NodeRelation(
-                                        is_node_link=False,
-                                        parent_id=parent_id,
-                                        child_id=child_id
-                                    )
-                                )
-                            node_relation_count += 1
+                            node_relations = []
+                            noderel_order = 0
+                            for modm_node in modm_obj.nodes:
+                                parent_id = self.modm_to_django[clean_node_guid]
+                                child_id = self.modm_to_django[clean_node_guid]
+                                if not (parent_id, child_id) in node_rel_hashes:
+                                    if isinstance(modm_node, MODMPointer):
+                                        node_relations.append(
+                                            NodeRelation(
+                                                _id=modm_node._id,  # preserve GUID on pointers
+                                                is_node_link=True,
+                                                parent_id=parent_id,
+                                                child_id=child_id,
+                                                _order=noderel_order
+                                            )
+                                        )
+                                    else:
+                                        node_relations.append(
+                                            NodeRelation(
+                                                is_node_link=False,
+                                                parent_id=parent_id,
+                                                child_id=child_id,
+                                                _order=noderel_order
+                                            )
+                                        )
+                                    node_rel_hashes.add((parent_id, child_id))
+                                    node_relation_count += 1
+                                    noderel_order += 1
 
-                        if count % page_size == 0 or count == total:
-                            NodeRelation.objects.bulk_create(node_relations)
-                            print('Through {} nodes and {} node relations, '
-                                  'saved {} NodeRelations'
-                                  .format(count, node_relation_count, len(node_relations)))
-                            contributors = []
-                            modm_obj._cache.clear()
-                            modm_obj._object_cache.clear()
-                            print('Took out {} trashes'.format(gc.collect()))
+                            if count % page_size == 0 or count == total:
+                                NodeRelation.objects.bulk_create(node_relations)
+                                print('Through {} nodes and {} node relations, '
+                                      'saved {} NodeRelations'
+                                      .format(count, node_relation_count, len(node_relations)))
+                                node_relations = []
+                                modm_obj._cache.clear()
+                                modm_obj._object_cache.clear()
+                                print('Took out {} trashes'.format(gc.collect()))
