@@ -282,6 +282,7 @@ class Guid(BaseModel):
 class BlackListGuid(BaseModel):
     # TODO DELETE ME POST MIGRATION
     modm_model_path = 'framework.guid.model.BlacklistGuid'
+    primary_identifier_name = 'guid'
     modm_query = None
     migration_page_size = 500000
     # /TODO DELETE ME POST MIGRATION
