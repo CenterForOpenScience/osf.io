@@ -208,6 +208,7 @@ class PreprintProvider(StoredObject):
     external_url = fields.StringField()
     email_contact = fields.StringField()
     email_support = fields.StringField()
+    example = fields.StringField()
     access_token = EncryptedStringField()
     advisory_board = fields.StringField()
     social_twitter = fields.StringField()
