@@ -39,7 +39,8 @@ class UserMixin(object):
     user_lookup_url_kwarg = 'user_id'
 
     def get_user(self, check_permissions=True):
-        key = self.kwargs[self.user_lookup_url_kwarg]
+        # Default to `me` so Swagger doesn't throw a KeyError
+        key = self.kwargs.get(self.user_lookup_url_kwarg, 'me')
         current_user = self.request.user
 
         if key == 'me':

@@ -65,9 +65,9 @@ webcolors==1.4
 
 # API requirements
 Django==1.9
-djangorestframework==3.3.3
+djangorestframework==3.5.1
 django-cors-headers==1.1.0
-django-rest-swagger==0.3.6
+django-rest-swagger==2.0.7
 djangorestframework-bulk==0.2.1
 pyjwt==1.4.0
 # Issue: sorry, but this version only supports 100 named groups (https://github.com/eliben/pycparser/issues/147)
