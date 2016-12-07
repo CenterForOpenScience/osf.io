@@ -27,22 +27,20 @@ from website.util import api_url_for
 
 
 def determine_case_name(nodefunc, permfunc, varyfunc, should_see, **_):
-    return "{}{} {} {}".format(
-        '' if varyfunc is base else varyfunc.__name__.replace('_', ' ') + ' ',
-        ' '.join(nodefunc.__name__.split('_')),
-        'shown to' if should_see else 'hidden from',
+    return "{}{}_{}_{}".format(
+        '' if varyfunc is base else varyfunc.__name__ + '_',
+        nodefunc.__name__,
+        'is_shown_to' if should_see else 'is_hidden_from',
         permfunc.__name__
     )
 
 
-def determine_should_see(nodefunc, permfunc, varyfunc, default__TODO_remove_this_argument=True):
-    if nodefunc in NODEFUNCS_PRIVATE or varyfunc in REGFUNCS_PRIVATE:
-        return permfunc is read
-    return default__TODO_remove_this_argument
+def is_private(nodefunc, varyfunc):
+    return nodefunc in NODEFUNCS_PRIVATE or varyfunc in REGFUNCS_PRIVATE
 
 
 def want(name):
-    # filter cases since we can't use nose's usual mechanisms with parameterization
+    # filter cases here since we can't use nose's usual mechanisms with parameterization
     return True
 
 
@@ -53,7 +51,7 @@ def generate_cases():
                 if nodefunc in NODEFUNCS_PRIVATE and varyfunc in REGFUNCS:
                     # Registration makes a node public, so skip it.
                     continue
-                should_see = determine_should_see(nodefunc, permfunc, varyfunc)
+                should_see = permfunc is read if is_private(nodefunc, varyfunc) else True
                 name = determine_case_name(**locals())
                 if want(name):
                     yield name, nodefunc, permfunc, varyfunc, should_see
@@ -79,7 +77,12 @@ def possiblyExpectFailure(case):
 
     def test(*a, **kw):  # name must start with test or it's ignored
         _, _, nodefunc, permfunc, varyfunc, _ = a
-        if determine_should_see(nodefunc, permfunc, varyfunc, False):
+
+        # The tests we expect to fail are those where a node is in a private
+        # state, and a user does have read permission: a private search, in
+        # other words.
+
+        if is_private(nodefunc, varyfunc) and permfunc is read:
 
             # This bit is copied from the unittest/case.py:expectedFailure
             # decorator.
