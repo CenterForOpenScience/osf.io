@@ -1515,18 +1515,19 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
 
     def set_node_license(self, license_detail, auth, save=False):
 
-        license_record = set_license(self, license_detail, auth)
+        license_record, license_changed = set_license(self, license_detail, auth)
 
-        self.add_log(
-            action=NodeLog.CHANGED_LICENSE,
-            params={
-                'parent_node': self.parent_id,
-                'node': self._primary_key,
-                'new_license': license_record.node_license.name
-            },
-            auth=auth,
-            save=False,
-        )
+        if license_changed:
+            self.add_log(
+                action=NodeLog.CHANGED_LICENSE,
+                params={
+                    'parent_node': self.parent_id,
+                    'node': self._primary_key,
+                    'new_license': license_record.node_license.name
+                },
+                auth=auth,
+                save=False,
+            )
 
         if save:
             self.save()
