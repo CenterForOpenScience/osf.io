@@ -18,6 +18,7 @@ class PreprintProviderSerializer(JSONAPISerializer):
     advisory_board = ser.CharField(required=False, allow_null=True)
     email_contact = ser.CharField(required=False, allow_null=True)
     email_support = ser.CharField(required=False, allow_null=True)
+    example = ser.CharField(required=False, allow_null=True)
     social_twitter = ser.CharField(required=False, allow_null=True)
     social_facebook = ser.CharField(required=False, allow_null=True)
     social_instagram = ser.CharField(required=False, allow_null=True)
