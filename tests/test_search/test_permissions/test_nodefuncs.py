@@ -31,21 +31,21 @@ def _component(is_public, parent_is_public):
     component.update_search()
     return component
 
-def public_component_of_public_project(): return _component(True, True)
-def public_component_of_private_project(): return _component(True, False)
-def private_component_of_public_project(): return _component(False, True)
-def private_component_of_private_project(): return _component(False, False)
+def public_component_of_a_public_project(): return _component(True, True)
+def public_component_of_a_private_project(): return _component(True, False)
+def private_component_of_a_public_project(): return _component(False, True)
+def private_component_of_a_private_project(): return _component(False, False)
 
 
 NODEFUNCS_PRIVATE = [
     private_project,
-    private_component_of_public_project,
-    private_component_of_private_project
+    private_component_of_a_public_project,
+    private_component_of_a_private_project
 ]
 NODEFUNCS = [
     public_project,
-    public_component_of_public_project,
-    public_component_of_private_project
+    public_component_of_a_public_project,
+    public_component_of_a_private_project
 ] + NODEFUNCS_PRIVATE
 
 
@@ -66,28 +66,28 @@ class TestNodeFuncs(DbIsolationMixin, OsfTestCase):
         ok_(not Node.find_one().is_public)
 
 
-    # pcopp - {public,private}_component_of_{public,private}_project
+    # pcoapp - {public,private}_component_of_a_{public,private}_project
 
-    def test_pcopp_makes_public_component_of_public_project(self):
-        public_component_of_public_project()
+    def test_pcoapp_makes_public_component_of_a_public_project(self):
+        public_component_of_a_public_project()
         component = Node.find_one(Q('parent_node', 'ne', None))
         ok_(component.is_public)
         ok_(component.parent_node.is_public)
 
-    def test_pcopp_makes_public_component_of_private_project(self):
-        public_component_of_private_project()
+    def test_pcoapp_makes_public_component_of_a_private_project(self):
+        public_component_of_a_private_project()
         component = Node.find_one(Q('parent_node', 'ne', None))
         ok_(component.is_public)
         ok_(not component.parent_node.is_public)
 
-    def test_pcopp_makes_private_component_of_public_project(self):
-        private_component_of_public_project()
+    def test_pcoapp_makes_private_component_of_a_public_project(self):
+        private_component_of_a_public_project()
         component = Node.find_one(Q('parent_node', 'ne', None))
         ok_(not component.is_public)
         ok_(component.parent_node.is_public)
 
-    def test_pcopp_makes_private_component_of_private_project(self):
-        private_component_of_private_project()
+    def test_pcoapp_makes_private_component_of_a_private_project(self):
+        private_component_of_a_private_project()
         component = Node.find_one(Q('parent_node', 'ne', None))
         ok_(not component.is_public)
         ok_(not component.parent_node.is_public)
