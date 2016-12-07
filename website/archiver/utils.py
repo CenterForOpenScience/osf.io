@@ -290,7 +290,6 @@ def migrate_file_metadata(dst, schema):
             target['extra'][index]['viewUrl'] = VIEW_FILE_URL_TEMPLATE.format(node_id=node_id, path=registration_file['path'].lstrip('/'))
     if missing_files:
         from website.archiver.tasks import ArchivedFileNotFound
-        import ipdb; ipdb.set_trace()
         raise ArchivedFileNotFound(
             registration=dst,
             missing_files=missing_files

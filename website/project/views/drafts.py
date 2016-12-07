@@ -12,7 +12,6 @@ import pytz
 from modularodm import Q
 from modularodm.exceptions import ValidationValueError
 
-from framework.mongo import database
 from framework.mongo.utils import get_or_http_error, autoload
 from framework.exceptions import HTTPError
 from framework.status import push_status_message
@@ -348,7 +347,6 @@ def get_metaschemas(*args, **kwargs):
     """
     count = request.args.get('count', 100)
     include = request.args.get('include', 'latest')
-
 
     meta_schemas = []
     if include == 'latest':
