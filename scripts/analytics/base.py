@@ -128,7 +128,7 @@ class EventAnalytics(SummaryAnalytics):
 class BaseAnalyticsHarness(object):
 
     def __init__(self):
-        init_app()
+        init_app(routes=False)
 
     @property
     def analytics_classes(self):
