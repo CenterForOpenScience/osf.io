@@ -44,25 +44,15 @@ def wiki_on(node):
 # states. We therefore have a second-level generator to programmatically create
 # the functions to vary a node according to the different registration states.
 
-def _adapt_embargo(embargo):
-    """Take embargo as (None, True, False) and return {embargo, embargo_end_date}
-    """
-    if embargo is None:             # never embargoed
-        embargo = False
-        embargo_end_date = None
-    elif embargo is False:          # previously embargoed
-        embargo = True
-        embargo_end_date = datetime.datetime.now() - datetime.timedelta(days=7)
-    else:                           # presently embargoed
-        assert embargo is True
-        embargo = True
-        embargo_end_date = None
-    return {'embargo': embargo, 'embargo_end_date': embargo_end_date}
-
-
 def _register(*a, **kw):
-    kw.update(_adapt_embargo(kw.get('embargo')))
-    mock_archive(*a, **kw).__enter__()  # gooooooofffyyyyyy
+    embargo = kw.get('embargo')                         # (None, True, False)
+    kw['embargo'] = False if embargo is None else True  # (True, False)
+    for unwanted in ('regfunc', 'should_be_public', 'private', 'public'):
+        kw.pop(unwanted, '')
+    registration = mock_archive(*a, **kw).__enter__()  # gooooooofffyyyyyy
+    if embargo is False and registration.is_embargoed:
+        registration.terminate_embargo(Auth(registration.creator))
+        registration.update_search()
     return 'flim', 'registration', 'title', 'Flim Flammity'
 
 
@@ -77,6 +67,23 @@ def name_regfunc(embargo, autoapprove, autocomplete, retraction, autoapprove_ret
         'approved' if autoapprove else 'unapproved',
         'complete' if autocomplete else 'incomplete',
     ).encode('ascii')
+
+
+def want_regfunc(name):  # helpful to filter regfuncs during development
+    return True
+
+
+def determine_whether_it_should_be_public(retraction, embargo, autoapprove_retraction, \
+                                                                  autocomplete, autoapprove, **kw):
+    if retraction and embargo:
+        # Approving a retraction removes embargoes and makes the reg public,
+        # but only for *completed* registrations.
+        should_be_public = autoapprove_retraction and autocomplete
+    elif embargo:
+        should_be_public = False
+    else:
+        should_be_public = (autoapprove or autoapprove_retraction) and autocomplete
+    return should_be_public
 
 
 def create_regfunc(**kw):
@@ -95,27 +102,12 @@ def create_regfuncs():
             for autocomplete in (True, False):
                 for autoapprove_retraction in (None, False, True):
                     retraction = autoapprove_retraction is not None
-
                     if retraction and not (autoapprove or embargo is not None):
                         continue  # 'Only public or embargoed registrations may be withdrawn.'
-
-                    regfunc = create_regfunc(
-                        embargo=embargo,
-                        retraction=retraction,
-                        autoapprove_retraction=autoapprove_retraction,
-                        autocomplete=autocomplete,
-                        autoapprove=autoapprove,
-                    )
-
-                    if retraction and embargo:
-                        # Approving a retraction removes embargoes and makes the reg public,
-                        # but only for *completed* registrations.
-                        should_be_public = autoapprove_retraction and autocomplete
-                    elif embargo:
-                        should_be_public = False
-                    else:
-                        should_be_public = autoapprove and autocomplete
-
+                    regfunc = create_regfunc(**locals())
+                    if not want_regfunc(regfunc.__name__):
+                        continue
+                    should_be_public = determine_whether_it_should_be_public(**locals())
                     (public if should_be_public else private).add(regfunc)
     return public, private
 
