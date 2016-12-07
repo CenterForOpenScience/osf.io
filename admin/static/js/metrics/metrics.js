@@ -10,7 +10,87 @@ var client = new Keen({
 });
 
 
+var getOneDayTimeframe = function(daysBack, monthsBack) {
+    var start = null;
+    var end = null;
+    var today = new Date();
+
+    today.setMonth(today.getMonth() - monthsBack);
+    if (daysBack) {
+        today.setUTCDate(today.getDate() - daysBack);
+    } else {
+        today.setUTCDate(1);
+    }
+    today.setUTCHours(0, 0, 0, 0, 0);
+    start = today.toISOString();
+    today.setDate(today.getDate() + 1);
+    end = today.toISOString();
+    return {
+        "start": start,
+        "end": end
+    };
+};
+
+
+
+/**
+ * Configure a Title for a chart dealing with the past month or day
+ *
+ * @method getMonthTitle
+ * @param {Object} metric - metric result object to get the date from
+ * @return {String} the title for the monthly metric chart
+ */
+var getMetricTitle = function(metric, type) {
+    var monthNames = ["January", "February", "March", "April", "May", "June",
+        "July", "August", "September", "October", "November", "December"
+    ];
+    var date = null;
+    var end = null;
+    var title = null;
+
+    if (type === "month") {
+        date = new Date(metric.params.timeframe.start);
+        title =  monthNames[date.getUTCMonth()] + " to " + monthNames[date.getUTCMonth() + 1];
+    } else if (type === "day") {
+        date = metric.params.timeframe.start.replace('T00:00:00.000Z', '');
+        end = metric.params.timeframe.end.replace('T00:00:00.000Z', '');
+        title =  date + " until " + end;
+    }
+
+    return title;
+};
+
+
+var renderDifferneceBetweenTwoMetrics = function(metric1, metric2, element, differenceType) {
+
+    var diffrenceMetric = new Keen.Dataviz()
+        .el(document.getElementById(element))
+        .chartType("metric")
+        .title(' ')
+        .prepare();
+
+    diffrenceMetric.title(getMetricTitle(metric1, differenceType));
+
+    client.run([
+        metric1,
+        metric2
+    ], function(err, res) {
+        var metricOneResult = res[0].result;
+        var metricTwoResult = res[1].result;
+        var data = {
+            "result": metricOneResult - metricTwoResult
+        };
+
+        diffrenceMetric.parseRawData(data).render();
+    });
+};
+
+
 Keen.ready(function () {
+
+    //  _  _ ___ ___ _ _ ___
+    // | || (_-</ -_) '_(_-<
+    //  \___/__/\___|_| /__/
 
     // Active user count!
     var active_user_count = new Keen.Query("sum", {
@@ -30,6 +110,36 @@ Keen.ready(function () {
         title: ' '
     });
 
+    // Daily Gain
+    var yesterday_user_count = new Keen.Query("sum", {
+        eventCollection: "user_summary",
+        targetProperty: "status.active",
+        timeframe: getOneDayTimeframe(1, null)
+    });
+
+    var two_days_ago_user_count = new Keen.Query("sum", {
+        eventCollection: "user_summary",
+        targetProperty: "status.active",
+        timeframe: getOneDayTimeframe(2, null)
+    });
+
+    renderDifferneceBetweenTwoMetrics(yesterday_user_count, two_days_ago_user_count, "daily-user-increase", 'day');
+
+    // Monthly Gain
+    var last_month_user_count = new Keen.Query("sum", {
+        eventCollection: "user_summary",
+        targetProperty: "status.active",
+        timeframe: getOneDayTimeframe(null, 1)
+    });
+
+    var two_months_ago_user_count = new Keen.Query("sum", {
+        eventCollection: "user_summary",
+       targetProperty: "status.active",
+        timeframe: getOneDayTimeframe(null, 2)
+    });
+
+    renderDifferneceBetweenTwoMetrics(last_month_user_count, two_months_ago_user_count, "monthly-user-increase", 'month');
+
     // Active user chart!
     var active_user_chart = new Keen.Query("sum", {
         eventCollection: "user_summary",
@@ -48,6 +158,12 @@ Keen.ready(function () {
         width: "auto",
         title: ' '
     });
+
+    //                _        _
+    //  _ __ _ _ ___ (_)___ __| |_ ___
+    // | '_ \ '_/ _ \| / -_) _|  _(_-<
+    // | .__/_| \___// \___\__|\__/__/
+    // |_|         |__/
 
     // Affiliated Public Projects!
     var affiliated_public_chart = new Keen.Query("sum", {
