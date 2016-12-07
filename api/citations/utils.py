@@ -27,4 +27,14 @@ def render_citation(node, style='apa'):
 
     bibliography.cite(citation, warn)
     bib = bibliography.bibliography()
-    return unicode(bib[0] if len(bib) else '')
+    cit = unicode(bib[0] if len(bib) else '')
+
+    if '..' not in node.csl['title']:
+        cit = cit.replace('..', '.')
+        cit = cit.replace('..', '.')
+
+    if '  ' != node.csl['title']:
+        cit = cit.replace('  ', ' ')
+        cit = cit.replace('  ', ' ')
+
+    return cit
