@@ -24,7 +24,7 @@ def do_migration():
         while(preprint_license_updated_logs):
             next_log = preprint_license_updated_logs.pop()
             timedelta = log.date - next_log.date
-            if timedelta.seconds < 1:
+            if timedelta.seconds < 60:
                 logger.info(
                     'Hiding duplicate preprint_license_updated log with ID {} from node {}, timedelta was {}'.format(
                         log._id, node._id, timedelta
