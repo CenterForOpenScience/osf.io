@@ -184,7 +184,8 @@ class PreprintService(GuidStoredObject):
             self.node.add_log(
                 action=NodeLog.PREPRINT_LICENSE_UPDATED,
                 params={
-                    'preprint': self._id
+                    'preprint': self._id,
+                    'new_license': license_record.node_license.name
                 },
                 auth=auth,
                 save=False
