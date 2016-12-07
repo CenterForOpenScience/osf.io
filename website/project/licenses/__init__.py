@@ -142,9 +142,18 @@ def set_license(node, license_detail, auth, node_type='node'):
     if node_type not in ['node', 'preprint']:
         raise ValueError('{} is not a valid node_type argument'.format(node_type))
 
+    license_record = node.node_license if node_type == 'node' else node.license
+
     license_id = license_detail.get('id')
     license_year = license_detail.get('year')
     copyright_holders = license_detail.get('copyrightHolders', [])
+
+    if license_record and (
+        license_id == license_record.id and
+        license_year == license_record.year and
+        sorted(copyright_holders) == sorted(license_record.copyright_holders)
+    ):
+        return {}, False
 
     if not node.has_permission(auth.user, permissions.ADMIN):
         raise framework_exceptions.PermissionsError('Only admins can change a {}\'s license'.format(node_type))
@@ -164,7 +173,6 @@ def set_license(node, license_detail, auth, node_type='node'):
         if not license_detail.get(required_property):
             raise modm_exceptions.ValidationValueError('{} must be specified for this license'.format(required_property))
 
-    license_record = node.node_license if node_type == 'node' else node.license
     if license_record is None:
         license_record = NodeLicenseRecord(node_license=node_license)
     license_record.node_license = node_license
@@ -176,4 +184,4 @@ def set_license(node, license_detail, auth, node_type='node'):
     elif node_type == 'preprint':
         node.license = license_record
 
-    return license_record
+    return license_record, True
