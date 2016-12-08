@@ -11,27 +11,10 @@ from website.project.model import Node
 from website.settings import CITATION_STYLES_PATH
 
 
-def display_absolute_url(node):
-    url = node.absolute_url
-    if url is not None:
-        return re.sub(r'https?:', '', url).strip('/')
-
-
-def preprint_csl(preprint, node):
-    csl = node.csl
-
-    csl['id'] = preprint._id
-    csl['publisher'] = preprint.provider.name
-    csl['URL'] = display_absolute_url(preprint)
-
-    if csl.get('DOI'):
-        csl.pop('DOI')
-
-    doi = preprint.article_doi
-    if doi:
-        csl['DOI'] = doi
-
-    return csl
+def clean_up_common_errors(cit):
+    cit = re.sub(r"\.+", '.', cit)
+    cit = re.sub(r" +", ' ', cit)
+    return cit
 
 
 def render_citation(node, style='apa'):
@@ -62,12 +45,13 @@ def render_citation(node, style='apa'):
 
     cit = unicode(bib[0] if len(bib) else '')
 
-    if '..' not in node.csl['title']:
-        cit = cit.replace('..', '.')
-        cit = cit.replace('..', '.')
-
-    if '  ' != node.csl['title']:
-        cit = cit.replace('  ', ' ')
-        cit = cit.replace('  ', ' ')
+    title = node.csl['title']
+    if cit.count(title) == 1:
+        i = cit.index(title)
+        prefix = clean_up_common_errors(cit[0:i])
+        suffix = clean_up_common_errors(cit[i + len(title):])
+        cit = prefix + title + suffix
+    elif cit.count(title) == 0:
+        cit = clean_up_common_errors(cit)
 
     return cit
