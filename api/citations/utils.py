@@ -16,7 +16,6 @@ def display_absolute_url(node):
     if url is not None:
         return re.sub(r'https?:', '', url).strip('/')
 
-
 def preprint_csl(preprint, node):
     csl = node.csl
 
@@ -33,6 +32,10 @@ def preprint_csl(preprint, node):
 
     return csl
 
+def clean_up_common_errors(cit):
+    cit = re.sub(r"\.+", '.', cit)
+    cit = re.sub(r" +", ' ', cit)
+    return cit
 
 def render_citation(node, style='apa'):
     """Given a node, return a citation"""
@@ -59,17 +62,15 @@ def render_citation(node, style='apa'):
 
     bibliography.cite(citation, warn)
     bib = bibliography.bibliography()
+    cit = unicode(bib[0] if len(bib) else '')
 
-    if len(bib):
-        doi = data[0].get('DOI')
-        if style == 'apa':
-            first_segment = [list(bib[0])[0][:-2]]
-            return ''.join(first_segment + list(bib[0])[1:13]) if doi else ''.join(first_segment + list(bib[0])[1:12] + list(bib[0])[13:])
-        elif style == 'modern-language-association':
-            return ''.join(list(bib[0])[:4] + ['.'] + list(bib[0])[4:5] + list(bib[0])[6:-2])
-        elif style == 'chicago-author-date':
-            return ''.join(list(bib[0])[0:3] + ['.'] + list(bib[0])[3:4] + [' '] + list(bib[0])[5:])
-        else:
-            return unicode(bib[0])
-    else:
-        return ''
+    title = csl['title'] if csl else node.csl['title']
+    if cit.count(title) == 1:
+        i = cit.index(title)
+        prefix = clean_up_common_errors(cit[0:i])
+        suffix = clean_up_common_errors(cit[i + len(title):])
+        cit = prefix + title + suffix
+    elif cit.count(title) == 0:
+        cit = clean_up_common_errors(cit)
+
+    return cit
