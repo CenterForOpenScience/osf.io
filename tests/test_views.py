@@ -3705,7 +3705,6 @@ class TextExternalAuthViews(OsfTestCase):
     def test_external_login_confirm_email_get_create(self, mock_welcome):
         assert_false(self.user.is_registered)
         url = self.user.get_confirmation_url(self.user.username, external_id_provider='service', destination='dashboard')
-        import ipdb; ipdb.set_trace()
         res = self.app.get(url, auth=self.auth)
         assert_equal(res.status_code, 302, 'redirects to cas login')
         assert_in('/login?service=', res.location)
