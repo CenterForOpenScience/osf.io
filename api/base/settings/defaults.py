@@ -137,6 +137,7 @@ CORS_ALLOW_CREDENTIALS = True
 INSTITUTION_ORIGINS_WHITELIST = ()
 
 MIDDLEWARE_CLASSES = (
+    'api.base.middleware.CorsMiddleware',
     # TokuMX transaction support
     # Needs to go before CommonMiddleware, so that transactions are always started,
     # even in the event of a redirect. CommonMiddleware may cause other middlewares'
@@ -152,7 +153,6 @@ MIDDLEWARE_CLASSES = (
     # 'api.base.middleware.ProfileMiddleware',
 
     # 'django.contrib.sessions.middleware.SessionMiddleware',
-    'api.base.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     # 'django.contrib.auth.middleware.AuthenticationMiddleware',
