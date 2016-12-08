@@ -61,14 +61,6 @@ describe('fangorn', () => {
                 assert.equal(Fangorn.getCopyMode(folder, [item]), 'forbidden');
             });
 
-            it('cannot be dropped if isInvalidFigshareDrop returns true', () => {
-                folder = getItem('folder', 2);
-                folder.data.provider = 'figshare';
-                folder.data.extra = {'status': 'public'};
-                item = getItem('file', 3);
-                assert.equal(Fangorn.getCopyMode(folder, [item]), 'forbidden');
-            });
-
             it('cannot be dropped if isInvalidDropItem returns true', () => {
                 folder = getItem('folder', 2);
                 item = getItem('file', 3);
@@ -140,26 +132,6 @@ describe('fangorn', () => {
                 folder = getItem('folder');
                 folder.data.provider = 'dataverse';
                 assert.equal(Fangorn.isInvalidDropFolder(folder), true);
-            });
-        });
-
-        describe('isInvalidFigshareDrop', () => {
-            it('can be dropped if item provider not figshare', () => {
-                assert.equal(Fangorn.isInvalidFigshareDrop(getItem('folder')), false);
-            });
-
-            it('can be dropped if target status is private', () => {
-                folder = getItem('folder');
-                folder.data.provider = 'figshare';
-                folder.data.extra = {'status' : 'private'};
-                assert.equal(Fangorn.isInvalidFigshareDrop(folder), false);
-            });
-
-            it('cannot be dropped if target status is figshare public', () => {
-                folder = getItem('folder');
-                folder.data.provider = 'figshare';
-                folder.data.extra = {'status' : 'public'};
-                assert.equal(Fangorn.isInvalidFigshareDrop(folder), true);
             });
         });
 
@@ -242,7 +214,6 @@ describe('fangorn', () => {
                 folder = getItem('folder', 2);
                 item = getItem('folder', 3);
                 item.data.provider = 'figshare';
-                item.data.extra = {'status' : 'private'};
                 assert.equal(Fangorn.isInvalidDropItem(folder, item, false, false), true);
             });
 
@@ -250,7 +221,6 @@ describe('fangorn', () => {
                 folder = getItem('folder', 2);
                 item = getItem('folder', 3);
                 item.data.provider = 'figshare';
-                item.data.extra = {'status' : 'public'};
                 assert.equal(Fangorn.isInvalidDropItem(folder, item, false, false), true);
             });            
 
