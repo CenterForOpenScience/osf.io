@@ -2426,16 +2426,6 @@ function isInvalidDropFolder(folder) {
     return false;
 }
 
-// Disallow moving INTO a public figshare folder
-function isInvalidFigshareDrop(item) {
-    return (
-        item.data.provider === 'figshare' &&
-        typeof item.data.extra !== 'undefined' &&
-        typeof item.data.extra.status !== 'undefined' &&
-        item.data.extra.status === 'public'
-    );
-}
-
 function isInvalidDropItem(folder, item, cannotBeFolder, mustBeIntra) {
     if (
         // not a valid drop if is a node
@@ -2521,7 +2511,7 @@ function getCopyMode(folder, items) {
     var canMove = true;
     var mustBeIntra = (folder.data.provider === 'github');
     var cannotBeFolder = (folder.data.provider === 'figshare' || folder.data.provider === 'dataverse');
-    if (isInvalidDropFolder(folder) || isInvalidFigshareDrop(folder)) {
+    if (isInvalidDropFolder(folder)) {
         return 'forbidden';
     }
 
@@ -2818,7 +2808,6 @@ module.exports = {
     getAllChildren : getAllChildren,
     isInvalidDropFolder : isInvalidDropFolder,
     isInvalidDropItem : isInvalidDropItem,
-    isInvalidFigshareDrop : isInvalidFigshareDrop,
     getCopyMode : getCopyMode,
     multiselectContainsPreprint : multiselectContainsPreprint,
     showDeleteMultiple : showDeleteMultiple
