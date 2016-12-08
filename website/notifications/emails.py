@@ -90,7 +90,7 @@ def store_emails(recipient_ids, notification_type, event, user, node, timestamp,
             timestamp=timestamp,
             send_type=notification_type,
             event=event,
-            user_id=recipient.id,
+            user=recipient,
             message=message,
             node_lineage=node_lineage_ids
         )

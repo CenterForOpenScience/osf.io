@@ -1570,7 +1570,7 @@ class TestSendDigest(OsfTestCase):
     def test_group_notifications_by_user_transactional(self):
         send_type = 'email_transactional'
         d = factories.NotificationDigestFactory(
-            user_id=self.user_1._id,
+            user=self.user_1,
             send_type=send_type,
             timestamp=self.timestamp,
             message='Hello',
@@ -1578,7 +1578,7 @@ class TestSendDigest(OsfTestCase):
         )
         d.save()
         d2 = factories.NotificationDigestFactory(
-            user_id=self.user_2._id,
+            user=self.user_2,
             send_type=send_type,
             timestamp=self.timestamp,
             message='Hello',
@@ -1586,7 +1586,7 @@ class TestSendDigest(OsfTestCase):
         )
         d2.save()
         d3 = factories.NotificationDigestFactory(
-            user_id=self.user_2._id,
+            user=self.user_2,
             send_type='email_digest',
             timestamp=self.timestamp,
             message='Hello, but this should not appear (this is a digest)',
@@ -1621,6 +1621,7 @@ class TestSendDigest(OsfTestCase):
     def test_group_notifications_by_user_digest(self):
         send_type = 'email_digest'
         d = factories.NotificationDigestFactory(
+            user=self.user_1,
             send_type=send_type,
             event='comment_replies',
             timestamp=self.timestamp,
@@ -1629,7 +1630,7 @@ class TestSendDigest(OsfTestCase):
         )
         d.save()
         d2 = factories.NotificationDigestFactory(
-            user_id=self.user_2._id,
+            user=self.user_2,
             send_type=send_type,
             timestamp=self.timestamp,
             message='Hello',
@@ -1637,7 +1638,7 @@ class TestSendDigest(OsfTestCase):
         )
         d2.save()
         d3 = factories.NotificationDigestFactory(
-            user_id=self.user_2._id,
+            user=self.user_2,
             send_type='email_transactional',
             timestamp=self.timestamp,
             message='Hello, but this should not appear (this is transactional)',
@@ -1647,19 +1648,19 @@ class TestSendDigest(OsfTestCase):
         user_groups = get_users_emails(send_type)
         expected = [
             {
-                u'user_id': self.user_1._id,
+                u'user_id': unicode(self.user_1._id),
                 u'info': [{
                     u'message': u'Hello',
                     u'node_lineage': [unicode(self.project._id)],
-                    u'_id': d._id
+                    u'_id': unicode(d._id)
                 }]
             },
             {
-                u'user_id': self.user_2._id,
+                u'user_id': unicode(self.user_2._id),
                 u'info': [{
                     u'message': u'Hello',
                     u'node_lineage': [unicode(self.project._id)],
-                    u'_id': d2._id
+                    u'_id': unicode(d2._id)
                 }]
             }
         ]
