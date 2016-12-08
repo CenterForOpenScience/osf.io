@@ -1,4 +1,5 @@
 import os
+import re
 
 from citeproc import CitationStylesStyle, CitationStylesBibliography
 from citeproc import Citation, CitationItem
@@ -6,6 +7,12 @@ from citeproc import formatter
 from citeproc.source.json import CiteProcJSON
 
 from website.settings import CITATION_STYLES_PATH
+
+
+def clean_up_common_errors(cit):
+    cit = re.sub(r"\.+", '.', cit)
+    cit = re.sub(r" +", ' ', cit)
+    return cit
 
 
 def render_citation(node, style='apa'):
@@ -29,12 +36,13 @@ def render_citation(node, style='apa'):
     bib = bibliography.bibliography()
     cit = unicode(bib[0] if len(bib) else '')
 
-    if '..' not in node.csl['title']:
-        cit = cit.replace('..', '.')
-        cit = cit.replace('..', '.')
-
-    if '  ' != node.csl['title']:
-        cit = cit.replace('  ', ' ')
-        cit = cit.replace('  ', ' ')
+    title = node.csl['title']
+    if cit.count(title) == 1:
+        i = cit.index(title)
+        prefix = clean_up_common_errors(cit[0:i])
+        suffix = clean_up_common_errors(cit[i + len(title):])
+        cit = prefix + title + suffix
+    elif cit.count(title) == 0:
+        cit = clean_up_common_errors(cit)
 
     return cit
