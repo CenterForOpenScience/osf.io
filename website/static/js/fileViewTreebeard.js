@@ -1,4 +1,4 @@
-var Fangorn = require('js/fangorn');
+var Fangorn = require('js/fangorn').Fangorn;
 var m = require('mithril');
 var $osf = require('js/osfHelpers');
 

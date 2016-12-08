@@ -33,7 +33,7 @@ with open(os.path.join(APP_PATH, 'package.json'), 'r') as fobj:
 
 # Expiration time for verification key
 EXPIRATION_TIME_DICT = {
-    'password': 30,         # 30 minutes for forgot and reset password
+    'password': 24 * 60,    # 24 hours in minutes for forgot and reset password
     'confirm': 24 * 60,     # 24 hours in minutes for confirm account and email
     'claim': 30 * 24 * 60   # 30 days in minutes for claim contributor-ship
 }
@@ -311,7 +311,8 @@ EZID_PASSWORD = 'changeme'
 EZID_FORMAT = '{namespace}osf.io/{guid}'
 
 SHARE_REGISTRATION_URL = ''
-SHARE_URL = 'https://share.osf.io/'
+SHARE_URL = None
+SHARE_API_TOKEN = None  # Required to send project updates to SHARE
 
 CAS_SERVER_URL = 'http://localhost:8080'
 MFR_SERVER_URL = 'http://localhost:7778'
@@ -412,6 +413,9 @@ CELERY_IMPORTS = (
     'scripts.approve_embargo_terminations',
     'scripts.triggered_mails',
     'scripts.send_queued_mails',
+    'scripts.analytics.run_keen_summaries',
+    'scripts.analytics.run_keen_snapshots',
+    'scripts.analytics.run_keen_events',
 )
 
 # Modules that need metrics and release requirements
@@ -445,7 +449,11 @@ else:
         'refresh_addons': {
             'task': 'scripts.refresh_addon_tokens',
             'schedule': crontab(minute=0, hour= 2),  # Daily 2:00 a.m
-            'kwargs': {'dry_run': False, 'addons': {'box': 60, 'googledrive': 14, 'mendeley': 14}},
+            'kwargs': {'dry_run': False, 'addons': {
+                'box': 60,          # https://docs.box.com/docs/oauth-20#section-6-using-the-access-and-refresh-tokens
+                'googledrive': 14,  # https://developers.google.com/identity/protocols/OAuth2#expiration
+                'mendeley': 14      # http://dev.mendeley.com/reference/topics/authorization_overview.html
+            }},
         },
         'retract_registrations': {
             'task': 'scripts.retract_registrations',
@@ -487,6 +495,20 @@ else:
             'schedule': crontab(minute=0, hour=2),  # Daily 2:00 a.m.
             'kwargs': {'dry_run': False}
         },
+        'run_keen_summaries': {
+            'task': 'scripts.analytics.run_keen_summaries',
+            'schedule': crontab(minute=00, hour=2),  # Daily 2:00 a.m.
+            'kwargs': {'yesterday': True}
+        },
+        'run_keen_snapshots': {
+            'task': 'scripts.analytics.run_keen_snapshots',
+            'schedule': crontab(minute=0, hour=3),  # Daily 3:00 a.m.
+        },
+        'run_keen_events': {
+            'task': 'scripts.analytics.run_keen_events',
+            'schedule': crontab(minute=0, hour=4),  # Daily 4:00 a.m.
+            'kwargs': {'yesterday': True}
+        }
     }
 
     # Tasks that need metrics and release requirements
@@ -1759,3 +1781,6 @@ SHARE_API_TOKEN = None
 
 # number of nodes that need to be affiliated with an institution before the institution logo is shown on the dashboard
 INSTITUTION_DISPLAY_NODE_THRESHOLD = 5
+
+# refresh campaign every 5 minutes
+CAMPAIGN_REFRESH_THRESHOLD = 5 * 60  # 5 minutes in seconds

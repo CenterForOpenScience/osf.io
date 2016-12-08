@@ -1,81 +1,71 @@
 from modularodm import Q
 from rest_framework import generics
-from rest_framework import exceptions
-from rest_framework.response import Response
 from rest_framework.exceptions import NotFound
-from rest_framework.status import HTTP_204_NO_CONTENT
 from rest_framework import permissions as drf_permissions
 
-from website.models import Node
+from website.models import PreprintService
 from framework.auth.oauth_scopes import CoreScopes
 
+from api.base.exceptions import Conflict
 from api.base.views import JSONAPIBaseView
 from api.base.filters import ODMFilterMixin
+from api.base.parsers import (
+    JSONAPIMultipleRelationshipsParser,
+    JSONAPIMultipleRelationshipsParserForRegularJSON,
+)
 from api.base.utils import get_object_or_error
 from api.base import permissions as base_permissions
-from api.base.exceptions import RelationshipPostMakesNoChanges
-from api.base.parsers import JSONAPIRelationshipParser, JSONAPIRelationshipParserForRegularJSON
-from api.preprint_providers.serializers import PreprintProviderSerializer
-from api.preprints.parsers import PreprintsJSONAPIParser, PreprintsJSONAPIParserForRegularJSON
-from api.preprints.serializers import PreprintSerializer, PreprintPreprintProvidersRelationshipSerializer
+from api.preprints.serializers import PreprintSerializer, PreprintCreateSerializer
 from api.nodes.views import NodeMixin, WaterButlerMixin
 from api.nodes.permissions import ContributorOrPublic
 
 
 class PreprintMixin(NodeMixin):
     serializer_class = PreprintSerializer
-    node_lookup_url_kwarg = 'node_id'
+    preprint_lookup_url_kwarg = 'preprint_id'
 
-    def get_node(self, check_object_permissions=True):
-        node = get_object_or_error(
-            Node,
-            self.kwargs[self.node_lookup_url_kwarg],
+    def get_preprint(self, check_object_permissions=True):
+        preprint = get_object_or_error(
+            PreprintService,
+            self.kwargs[self.preprint_lookup_url_kwarg],
             display_name='preprint'
         )
-        if not node.is_preprint and self.request.method != 'POST':
+        if not preprint:
             raise NotFound
         # May raise a permission denied
         if check_object_permissions:
-            self.check_object_permissions(self.request, node)
+            self.check_object_permissions(self.request, preprint)
 
-        return node
+        return preprint
 
 
 class PreprintList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMixin):
     """Preprints that represent a special kind of preprint node. *Writeable*.
-
-    ##Note
-    **This API endpoint is under active development, and is subject to change in the future.**
 
     Paginated list of preprints ordered by their `date_created`.  Each resource contains a representation of the
     preprint.
 
     ##Preprint Attributes
 
-    Many of these preprint attributes are the same as node, with a few special fields added in.
+    OSF Preprint entities have the "preprints" `type`.
 
-    OSF Preprint entities have the "preprint" `type`.
-
-        name                            type                  description
+        name                            type                                description
         ====================================================================================
-        title                           string                title of preprint, same as its project or component
-        abstract                        string                description of the preprint
-        date_created                    iso8601 timestamp     timestamp that the preprint was created
-        date_modified                   iso8601 timestamp     timestamp when the preprint was last updated
-        tags                            array of strings      list of tags that describe the node
-        subjects                        array of dictionaries list ids of Subject in the PLOS taxonomy. Dictrionary, containing the subject text and subject ID
-        doi                             string                bare DOI for the manuscript, as entered by the user
+        date_created                    iso8601 timestamp                   timestamp that the preprint was created
+        date_modified                   iso8601 timestamp                   timestamp that the preprint was last modified
+        date_published                  iso8601 timestamp                   timestamp when the preprint was published
+        is_published                    boolean                             whether or not this preprint is published
+        is_preprint_orphan              boolean                             whether or not this preprint is orphaned
+        subjects                        list of lists of dictionaries       ids of Subject in the PLOS taxonomy. Dictionary, containing the subject text and subject ID
+        doi                             string                              bare DOI for the manuscript, as entered by the user
 
     ##Relationships
 
+    ###Node
+    The node that this preprint was created for
+
     ###Primary File
     The file that is designated as the preprint's primary file, or the manuscript of the preprint.
-
-    ###Files
-    Link to list of files associated with this node/preprint
-
-    ###Contributors
-    Link to list of contributors that are affiliated with this preprint.
 
     ###Provider
     Link to preprint_provider detail for this preprint
@@ -94,7 +84,7 @@ class PreprintList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMixin):
 
     + `filter[<fieldname>]=<Str>` -- fields and values to filter the search results on.
 
-    Preprints may be filtered by their `id`, `title`, `public`, `tags`, `date_created`, `date_modified`, and `subjects`
+    Preprints may be filtered by their `id`, `is_published`, `date_created`, `date_modified`, `provider`
     Most are string fields and will be filtered using simple substring matching.
 
     ###Creating New Preprints
@@ -108,20 +98,26 @@ class PreprintList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMixin):
         Query Params:  <none>
         Body (JSON):   {
                         "data": {
-                            "id": node_id,
-                            "attributes": {
-                                "subjects":      [{subject_id}, ...]  # required
-                                "description":   {description},       # optional
-                                "tags":          [{tag1}, ...],       # optional
-                                "provider":      {provider}           # optional
-                            },
+                            "attributes": {},
                             "relationships": {
-                                "primary_file": {                     # required
+                                "node": {                           # required
                                     "data": {
-                                        "type": "primary",
+                                        "type": "nodes",
+                                        "id": {node_id}
+                                    }
+                                },
+                                "primary_file": {                   # required
+                                    "data": {
+                                        "type": "primary_files",
                                         "id": {file_id}
                                     }
-                                }
+                                },
+                                "provider": {                       # required
+                                    "data": {
+                                        "type": "providers",
+                                        "id": {provider_id}
+                                    }
+                                },
                             }
                         }
                     }
@@ -138,7 +134,7 @@ class PreprintList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMixin):
         ContributorOrPublic,
     )
 
-    parser_classes = (PreprintsJSONAPIParser, PreprintsJSONAPIParserForRegularJSON,)
+    parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON,)
 
     required_read_scopes = [CoreScopes.NODE_PREPRINTS_READ]
     required_write_scopes = [CoreScopes.NODE_PREPRINTS_WRITE]
@@ -149,43 +145,56 @@ class PreprintList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMixin):
     view_category = 'preprints'
     view_name = 'preprint-list'
 
+    def get_serializer_class(self):
+        if self.request.method == 'POST':
+            return PreprintCreateSerializer
+        else:
+            return PreprintSerializer
+
     # overrides ODMFilterMixin
     def get_default_odm_query(self):
         return (
-            Q('preprint_file', 'ne', None) &
-            Q('is_deleted', 'ne', True) &
-            Q('is_public', 'eq', True)
+            Q('node', 'ne', None)
         )
 
     # overrides ListAPIView
     def get_queryset(self):
-        nodes = Node.find(self.get_query_from_request())
-        return (node for node in nodes if node.is_preprint)
+        return PreprintService.find(self.get_query_from_request())
 
-class PreprintDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, PreprintMixin, WaterButlerMixin):
+class PreprintDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, PreprintMixin, WaterButlerMixin):
     """Preprint Detail  *Writeable*.
-
-    ##Note
-    **This API endpoint is under active development, and is subject to change in the future.**
 
     ##Preprint Attributes
 
-    Many of these preprint attributes are the same as node, with a few special fields added in.
+    OSF Preprint entities have the "preprints" `type`.
 
-    OSF Preprint entities have the "preprint" `type`.
-
-        name                            type                  description
+        name                            type                                description
         ====================================================================================
-        title                           string                title of preprint, same as its project or component
-        abstract                        string                description of the preprint
-        date_created                    iso8601 timestamp     timestamp that the preprint was created
-        date_modified                   iso8601 timestamp     timestamp when the preprint was last updated
-        tags                            array of strings      list of tags that describe the node
-        subjects                        array of dictionaries list ids of Subject in the PLOS taxonomy. Dictrionary, containing the subject text and subject ID
-        provider                        string                original source of the preprint
-        doi                             string                bare DOI for the manuscript, as entered by the user
+        date_created                    iso8601 timestamp                   timestamp that the preprint was created
+        date_modified                   iso8601 timestamp                   timestamp that the preprint was last modified
+        date_published                  iso8601 timestamp                   timestamp when the preprint was published
+        is_published                    boolean                             whether or not this preprint is published
+        is_preprint_orphan              boolean                             whether or not this preprint is orphaned
+        subjects                        array of tuples of dictionaries     ids of Subject in the PLOS taxonomy. Dictionary, containing the subject text and subject ID
+        doi                             string                              bare DOI for the manuscript, as entered by the user
 
-    ###Updating Preprints
+    ##Relationships
+
+    ###Node
+    The node that this preprint was created for
+
+    ###Primary File
+    The file that is designated as the preprint's primary file, or the manuscript of the preprint.
+
+    ###Provider
+    Link to preprint_provider detail for this preprint
+
+    ##Links
+    - `self` -- Preprint detail page for the current preprint
+    - `html` -- Project on the OSF corresponding to the current preprint
+    - `doi` -- URL representation of the DOI entered by the user for the preprint manuscript
+
+    ##Updating Preprints
 
     Update a preprint by sending a patch request to the guid of the existing preprint node that you'd like to update.
 
@@ -196,15 +205,14 @@ class PreprintDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, PreprintMi
                         "data": {
                             "id": node_id,
                             "attributes": {
-                                "subjects":      [{subject_id}, ...]  # optional
-                                "description":   {description},       # optional
-                                "tags":          [{tag}, ...],        # optional
-                                "provider":      {provider}           # optional
+                                "subjects":     [({root_subject_id}, {child_subject_id}), ...]  # optional
+                                "is_published": true,                                           # optional
+                                "doi":          {valid_doi}                                     # optional
                             },
                             "relationships": {
-                                "primary_file": {                     # optional
+                                "primary_file": {                                               # optional
                                     "data": {
-                                        "type": "primary",
+                                        "type": "primary_files",
                                         "id": {file_id}
                                     }
                                 }
@@ -220,7 +228,7 @@ class PreprintDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, PreprintMi
         base_permissions.TokenHasScope,
         ContributorOrPublic,
     )
-    parser_classes = (PreprintsJSONAPIParser, PreprintsJSONAPIParserForRegularJSON,)
+    parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON,)
 
     required_read_scopes = [CoreScopes.NODE_PREPRINTS_READ]
     required_write_scopes = [CoreScopes.NODE_PREPRINTS_WRITE]
@@ -231,154 +239,9 @@ class PreprintDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, PreprintMi
     view_name = 'preprint-detail'
 
     def get_object(self):
-        return self.get_node()
-
-
-class PreprintPreprintProvidersList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin, NodeMixin):
-    """ Detail of the preprint providers a preprint has, if any. Returns [] if the preprint has no
-    preprnt providers.
-
-    ##Note
-    **This API endpoint is under active development, and is subject to change in the future**
-
-    ##Attributes
-
-    OSF Preprint Providers have the "preprint_providers" `type`.
-
-        name           type               description
-        =========================================================================
-        name           string             name of the preprint provider
-        logo_path      string             a path to the preprint provider's static logo
-        banner_path    string             a path to the preprint provider's banner
-        description    string             description of the preprint provider
-
-    ##Links
-
-        self: the canonical api endpoint of this preprint provider
-        preprints: link to the provider's preprints
-
-    #This Request/Response
-    """
-    permission_classes = (
-        drf_permissions.IsAuthenticatedOrReadOnly,
-        base_permissions.TokenHasScope,
-    )
-
-    required_read_scopes = [CoreScopes.NODE_PREPRINTS_READ]
-    required_write_scopes = [CoreScopes.NULL]
-    serializer_class = PreprintProviderSerializer
-
-    view_category = 'preprints'
-    view_name = 'preprint-preprint_providers'
-
-    def get_queryset(self):
-        node = self.get_node()
-        return node.preprint_providers
-
-
-class PreprintToPreprintProviderRelationship(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, generics.CreateAPIView, PreprintMixin):
-    """ Relationship Endpoint for Preprint -> PreprintProvider
-
-    Used to set preprint_provider of a preprint to a PreprintProvider
-
-    ##Note
-    **This API endpoint is under active development, and is subject to change in the future.**
-
-    ##Actions
-
-    ###Get
-
-        Method:        GET
-        URL:           /links/self
-        Query Params:  <none>
-        Success:       200
-
-    ###Create
-
-        Method:        POST
-        URL:           /links/self
-        Query Params:  <none>
-        Body (JSON):   {
-                         "data": [
-                             {
-                               "type": "preprint_providers",   # required
-                               "id": <provider_id>   # required
-                             }
-                         ]
-                       }
-        Success:       201
-
-    ###Update
-
-        Method:        PUT || PATCH
-        URL:           /links/self
-        Query Params:  <none>
-        Body (JSON):   {
-                         "data": [{
-                           "type": "preprint_providers",   # required
-                           "id": <provider_id>   # required
-                         }]
-                       }
-        Success:       200
-
-        This will delete all preprint_providers not listed, meaning a data: [] payload
-        does the same as a DELETE with all the preprint_providers.
-
-    ###Destroy
-
-        Method:        DELETE
-        URL:           /links/self
-        Query Params:  <none>
-        Body (JSON):   {
-                         "data": [{
-                           "type": "preprint_providers",   # required
-                           "id": <provider_id>   # required
-                         }]
-                       }
-        Success:       204
-
-    All of these methods require admin permissions in the preprint.
-    """
-    permission_classes = (
-        drf_permissions.IsAuthenticatedOrReadOnly,
-        base_permissions.TokenHasScope,
-    )
-    required_read_scopes = [CoreScopes.NODE_PREPRINTS_READ]
-    required_write_scopes = [CoreScopes.NODE_PREPRINTS_WRITE]
-
-    serializer_class = PreprintPreprintProvidersRelationshipSerializer
-    parser_classes = (JSONAPIRelationshipParser, JSONAPIRelationshipParserForRegularJSON, )
-
-    view_category = 'preprints'
-    view_name = 'preprint-relationships-preprint_providers'
-
-    def get_object(self):
-        preprint = self.get_node()
-        obj = {
-            'data': preprint.preprint_providers,
-            'self': preprint
-        }
-        return obj
+        return self.get_preprint()
 
     def perform_destroy(self, instance):
-        data = self.request.data['data']
-        user = self.request.user
-        current_providers = {provider._id: provider for provider in instance['data']}
-        node = instance['self']
-
-        if not node.has_permission(user, 'admin'):
-            raise exceptions.PermissionDenied(
-                detail='User must be an admin to delete the PreprintProvider relationship.'
-            )
-
-        for val in data:
-            if val['id'] in current_providers:
-                node.remove_preprint_provider(preprint_provider=current_providers[val['id']], user=user)
-        node.save()
-
-    def create(self, *args, **kwargs):
-        try:
-            ret = super(PreprintToPreprintProviderRelationship, self).create(*args, **kwargs)
-        except RelationshipPostMakesNoChanges:
-            return Response(status=HTTP_204_NO_CONTENT)
-        return ret
+        if instance.is_published:
+            raise Conflict('Published preprints cannot be deleted.')
+        PreprintService.remove_one(instance)

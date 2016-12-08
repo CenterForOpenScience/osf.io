@@ -17,12 +17,14 @@ from website.exceptions import NodeStateError
 from website.util import permissions as osf_permissions
 from website.project import new_private_link
 from website.project.model import NodeUpdateError
+from website.project.licenses import NodeLicense
+from website.preprints.model import PreprintService
 
 from api.base.utils import get_user_auth, get_object_or_error, absolute_reverse, is_truthy
 from api.base.serializers import (JSONAPISerializer, WaterbutlerLink, NodeFileHyperLinkField, IDField, TypeField,
                                   TargetTypeField, JSONAPIListField, LinksField, RelationshipField,
-                                  HideIfRegistration, RestrictedDictSerializer,
-                                  JSONAPIRelationshipSerializer, relationship_diff, ShowIfVersion,)
+                                  HideIfRegistration, JSONAPIRelationshipSerializer, relationship_diff,
+                                  ShowIfVersion, DateByVersion,)
 from api.base.exceptions import (InvalidModelValueError,
                                  RelationshipPostMakesNoChanges, Conflict,
                                  EndpointNotImplementedError)
@@ -41,10 +43,17 @@ class NodeTagField(ser.Field):
         return data
 
 
-class NodeLicenseSerializer(RestrictedDictSerializer):
+class NodeLicenseSerializer(ser.Serializer):
 
-    copyright_holders = ser.ListField(allow_empty=True, read_only=True)
-    year = ser.CharField(allow_blank=True, read_only=True)
+    copyright_holders = ser.ListField(allow_empty=True)
+    year = ser.CharField(allow_blank=True)
+
+
+class NodeLicenseRelationshipField(RelationshipField):
+
+    def to_internal_value(self, license_id):
+        node_license = NodeLicense.load(license_id)
+        return {'license_type': node_license}
 
 
 class NodeCitationSerializer(JSONAPISerializer):
@@ -74,6 +83,25 @@ class NodeCitationStyleSerializer(JSONAPISerializer):
     class Meta:
         type_ = 'styled-citations'
 
+
+def get_license_details(node, validated_data):
+    license = node.license if isinstance(node, PreprintService) else node.node_license
+
+    license_id = license.node_license.id if license else None
+    license_year = license.year if license else None
+    license_holders = license.copyright_holders if license else []
+
+    if 'license' in validated_data:
+        license_year = validated_data['license'].get('year', license_year)
+        license_holders = validated_data['license'].get('copyright_holders', license_holders)
+    if 'license_type' in validated_data:
+        license_id = validated_data['license_type'].id
+
+    return {
+        'id': license_id,
+        'year': license_year,
+        'copyrightHolders': license_holders
+    }
 
 class NodeSerializer(JSONAPISerializer):
     # TODO: If we have to redo this implementation in any of the other serializers, subclass ChoiceField and make it
@@ -126,14 +154,14 @@ class NodeSerializer(JSONAPISerializer):
     title = ser.CharField(required=True)
     description = ser.CharField(required=False, allow_blank=True, allow_null=True)
     category = ser.ChoiceField(choices=category_choices, help_text='Choices: ' + category_choices_string)
-    date_created = ser.DateTimeField(read_only=True)
-    date_modified = ser.DateTimeField(read_only=True)
+    date_created = DateByVersion(read_only=True)
+    date_modified = DateByVersion(read_only=True)
     registration = ser.BooleanField(read_only=True, source='is_registration')
     preprint = ser.BooleanField(read_only=True, source='is_preprint')
     fork = ser.BooleanField(read_only=True, source='is_fork')
     collection = ser.BooleanField(read_only=True, source='is_collection')
     tags = JSONAPIListField(child=NodeTagField(), required=False)
-    node_license = NodeLicenseSerializer(read_only=True, required=False)
+    node_license = NodeLicenseSerializer(required=False, source='license')
     template_from = ser.CharField(required=False, allow_blank=False, allow_null=False,
                                   help_text='Specify a node id for a node you would like to use as a template for the '
                                             'new node. Templating is like forking, except that you do not copy the '
@@ -157,9 +185,10 @@ class NodeSerializer(JSONAPISerializer):
     links = LinksField({'html': 'get_absolute_html_url'})
     # TODO: When we have osf_permissions.ADMIN permissions, make this writable for admins
 
-    license = RelationshipField(
+    license = NodeLicenseRelationshipField(
         related_view='licenses:license-detail',
-        related_view_kwargs={'license_id': '<node_license.node_license._id>'},
+        related_view_kwargs={'license_id': '<license.node_license._id>'},
+        read_only=False
     )
 
     children = RelationshipField(
@@ -271,6 +300,11 @@ class NodeSerializer(JSONAPISerializer):
         related_view='nodes:node-citation',
         related_view_kwargs={'node_id': '<pk>'}
     )
+
+    preprints = HideIfRegistration(RelationshipField(
+        related_view='nodes:node-preprints',
+        related_view_kwargs={'node_id': '<pk>'}
+    ))
 
     def get_current_user_permissions(self, obj):
         user = self.context['request'].user
@@ -390,6 +424,11 @@ class NodeSerializer(JSONAPISerializer):
             node.remove_tag(deleted_tag, auth=auth)
 
         if validated_data:
+
+            if 'license_type' in validated_data or 'license' in validated_data:
+                license_details = get_license_details(node, validated_data)
+                validated_data['node_license'] = license_details
+
             try:
                 node.update(validated_data, auth=auth)
             except ValidationValueError as e:
@@ -608,7 +647,7 @@ class NodeForksSerializer(NodeSerializer):
 
     title = ser.CharField(required=False)
     category = ser.ChoiceField(read_only=True, choices=category_choices, help_text='Choices: ' + category_choices_string)
-    forked_date = ser.DateTimeField(read_only=True)
+    forked_date = DateByVersion(read_only=True)
 
     def create(self, validated_data):
         node = validated_data.pop('node')
@@ -1042,8 +1081,8 @@ class DraftRegistrationSerializer(JSONAPISerializer):
     type = TypeField()
     registration_supplement = ser.CharField(source='registration_schema._id', required=True)
     registration_metadata = ser.DictField(required=False)
-    datetime_initiated = ser.DateTimeField(read_only=True)
-    datetime_updated = ser.DateTimeField(read_only=True)
+    datetime_initiated = DateByVersion(read_only=True)
+    datetime_updated = DateByVersion(read_only=True)
 
     branched_from = RelationshipField(
         related_view='nodes:node-detail',
@@ -1141,7 +1180,7 @@ class NodeViewOnlyLinkSerializer(JSONAPISerializer):
 
     key = ser.CharField(read_only=True)
     id = IDField(source='_id', read_only=True)
-    date_created = ser.DateTimeField(read_only=True)
+    date_created = DateByVersion(read_only=True)
     anonymous = ser.BooleanField(required=False, default=False)
     name = ser.CharField(required=False, default='Shared project link')
 

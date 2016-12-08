@@ -1,19 +1,21 @@
+from modularodm import Q
 from modularodm.exceptions import ValidationValueError
 from rest_framework import exceptions
 from rest_framework import serializers as ser
 
+from api.base.exceptions import Conflict
 from api.base.serializers import (
-    JSONAPISerializer, IDField, JSONAPIListField, LinksField,
-    RelationshipField, JSONAPIRelationshipSerializer, relationship_diff
+    JSONAPISerializer, IDField, JSONAPIListField,
+    LinksField, RelationshipField, DateByVersion,
 )
-from api.base.exceptions import Conflict, RelationshipPostMakesNoChanges
 from api.base.utils import absolute_reverse, get_user_auth
-from api.nodes.serializers import NodeTagField
 from api.taxonomies.serializers import TaxonomyField
+from api.nodes.serializers import NodeLicenseSerializer, get_license_details
 from framework.exceptions import PermissionsError
 from website.util import permissions
+from website.exceptions import NodeStateError
 from website.project import signals as project_signals
-from website.models import StoredFileNode, PreprintProvider, Node
+from website.models import StoredFileNode, PreprintService, PreprintProvider, Node, NodeLicense
 
 
 class PrimaryFileRelationshipField(RelationshipField):
@@ -24,47 +26,72 @@ class PrimaryFileRelationshipField(RelationshipField):
         file = self.get_object(data)
         return {'primary_file': file}
 
+class NodeRelationshipField(RelationshipField):
+    def get_object(self, node_id):
+        return Node.load(node_id)
+
+    def to_internal_value(self, data):
+        node = self.get_object(data)
+        return {'node': node}
+
+class PreprintProviderRelationshipField(RelationshipField):
+    def get_object(self, node_id):
+        return PreprintProvider.load(node_id)
+
+    def to_internal_value(self, data):
+        provider = self.get_object(data)
+        return {'provider': provider}
+
+
+class PreprintLicenseRelationshipField(RelationshipField):
+    def to_internal_value(self, license_id):
+        license = NodeLicense.load(license_id)
+        return {'license_type': license}
+
 
 class PreprintSerializer(JSONAPISerializer):
     filterable_fields = frozenset([
         'id',
-        'title',
-        'tags',
         'date_created',
         'date_modified',
-        'contributors',
-        'subjects',
-        'doi'
+        'date_published',
+        'provider',
+        'is_published',
     ])
 
-    title = ser.CharField(required=False)
-    subjects = JSONAPIListField(child=TaxonomyField(), required=False, source='preprint_subjects')
-    provider = ser.CharField(source='preprint_provider', required=False)
-    date_created = ser.DateTimeField(read_only=True, source='preprint_created')
-    date_modified = ser.DateTimeField(read_only=True)
-    id = IDField(source='_id', required=False)
-    abstract = ser.CharField(source='description', required=False)
-    tags = JSONAPIListField(child=NodeTagField(), required=False)
-    doi = ser.CharField(source='preprint_doi', required=False)
-    csl = ser.DictField(read_only=True)
+    id = IDField(source='_id', read_only=True)
+    subjects = JSONAPIListField(child=JSONAPIListField(child=TaxonomyField()), allow_null=True, required=False)
+    date_created = DateByVersion(read_only=True)
+    date_modified = DateByVersion(read_only=True)
+    date_published = DateByVersion(read_only=True)
+    doi = ser.CharField(source='article_doi', required=False, allow_null=True)
+    is_published = ser.BooleanField(required=False)
+    is_preprint_orphan = ser.BooleanField(read_only=True)
+    license_record = NodeLicenseSerializer(required=False, source='license')
 
-    primary_file = PrimaryFileRelationshipField(
-        related_view='files:file-detail',
-        related_view_kwargs={'file_id': '<preprint_file._id>'},
-        lookup_url_kwarg='file_id',
+    node = NodeRelationshipField(
+        related_view='nodes:node-detail',
+        related_view_kwargs={'node_id': '<node._id>'},
         read_only=False
     )
 
-    files = RelationshipField(
-        related_view='nodes:node-providers',
-        related_view_kwargs={'node_id': '<pk>'}
+    license = PreprintLicenseRelationshipField(
+        related_view='licenses:license-detail',
+        related_view_kwargs={'license_id': '<license.node_license._id>'},
+        read_only=False
     )
 
-    providers = RelationshipField(
-        related_view='preprints:preprint-preprint_providers',
-        related_view_kwargs={'node_id': '<pk>'},
-        self_view='preprints:preprint-relationships-preprint_providers',
-        self_view_kwargs={'node_id': '<pk>'}
+    provider = PreprintProviderRelationshipField(
+        related_view='preprint_providers:preprint_provider-detail',
+        related_view_kwargs={'provider_id': '<provider._id>'},
+        read_only=False
+    )
+
+    primary_file = PrimaryFileRelationshipField(
+        related_view='files:file-detail',
+        related_view_kwargs={'file_id': '<primary_file._id>'},
+        lookup_url_kwarg='file_id',
+        read_only=False
     )
 
     links = LinksField(
@@ -75,184 +102,116 @@ class PreprintSerializer(JSONAPISerializer):
         }
     )
 
-    contributors = RelationshipField(
-        related_view='nodes:node-contributors',
-        related_view_kwargs={'node_id': '<pk>'},
-        related_meta={'count': 'get_contrib_count'},
-    )
-
     class Meta:
         type_ = 'preprints'
 
     def get_preprint_url(self, obj):
-        kwargs = {
-            'node_id': obj._id,
-            'version': self.context['request'].parser_context['kwargs']['version']
-        }
-        return absolute_reverse('preprints:preprint-detail', kwargs=kwargs)
+        return absolute_reverse('preprints:preprint-detail', kwargs={'preprint_id': obj._id, 'version': self.context['request'].parser_context['kwargs']['version']})
 
     def get_absolute_url(self, obj):
         return self.get_preprint_url(obj)
 
     def get_doi_url(self, obj):
-        return 'https://dx.doi.org/{}'.format(obj.preprint_doi) if obj.preprint_doi else None
+        return 'https://dx.doi.org/{}'.format(obj.article_doi) if obj.article_doi else None
+
+    def update(self, preprint, validated_data):
+        assert isinstance(preprint, PreprintService), 'You must specify a valid preprint to be updated'
+        assert isinstance(preprint.node, Node), 'You must specify a preprint with a valid node to be updated.'
+
+        auth = get_user_auth(self.context['request'])
+        if not preprint.node.has_permission(auth.user, 'admin'):
+            raise exceptions.PermissionDenied(detail='User must be an admin to update a preprint.')
+
+        save_node = False
+        save_preprint = False
+        recently_published = False
+
+        primary_file = validated_data.pop('primary_file', None)
+        if primary_file:
+            self.set_field(preprint.set_primary_file, primary_file, auth)
+            save_node = True
+
+        if 'subjects' in validated_data:
+            subjects = validated_data.pop('subjects', None)
+            self.set_field(preprint.set_subjects, subjects, auth)
+            save_preprint = True
+
+        if 'article_doi' in validated_data:
+            preprint.node.preprint_article_doi = validated_data['article_doi']
+            save_node = True
+
+        published = validated_data.pop('is_published', None)
+        if published is not None:
+            self.set_field(preprint.set_published, published, auth)
+            save_preprint = True
+            recently_published = published
+
+        if 'license_type' in validated_data or 'license' in validated_data:
+            license_details = get_license_details(preprint, validated_data)
+            self.set_field(preprint.set_preprint_license, license_details, auth)
+            save_preprint = True
+
+        if save_node:
+            try:
+                preprint.node.save()
+            except ValidationValueError as e:
+                # Raised from invalid DOI
+                raise exceptions.ValidationError(detail=e.message)
+
+        if save_preprint:
+            preprint.save()
+
+        # Send preprint confirmation email signal to new authors on preprint! -- only when published
+        # TODO: Some more thought might be required on this; preprints made from existing
+        # nodes will send emails making it seem like a new node.
+        if recently_published:
+            for author in preprint.node.contributors:
+                if author != auth.user:
+                    project_signals.contributor_added.send(preprint.node, contributor=author, auth=auth, email_template='preprint')
+
+        return preprint
+
+    def set_field(self, func, val, auth, save=False):
+        try:
+            func(val, auth, save=save)
+        except PermissionsError as e:
+            raise exceptions.PermissionDenied(detail=e.message)
+        except ValueError as e:
+            raise exceptions.ValidationError(detail=e.message)
+        except NodeStateError as e:
+            raise exceptions.ValidationError(detail=e.message)
+
+
+class PreprintCreateSerializer(PreprintSerializer):
+    # Overrides PreprintSerializer to make id nullable, adds `create`
+    id = IDField(source='_id', required=False, allow_null=True)
 
     def create(self, validated_data):
-        node = Node.load(validated_data.pop('_id', None))
+        node = Node.load(validated_data.pop('node', None))
         if not node:
             raise exceptions.NotFound('Unable to find Node with specified id.')
+        elif node.is_deleted:
+            raise exceptions.ValidationError('Cannot create a preprint from a deleted node.')
 
         auth = get_user_auth(self.context['request'])
         if not node.has_permission(auth.user, permissions.ADMIN):
             raise exceptions.PermissionDenied
 
-        if node.is_preprint:
-            raise Conflict('This node already stored as a preprint, use the update method instead.')
-
         primary_file = validated_data.pop('primary_file', None)
         if not primary_file:
-            raise exceptions.ValidationError(detail='You must specify a primary_file to create a preprint.')
+            raise exceptions.ValidationError(detail='You must specify a valid primary_file to create a preprint.')
 
-        self.set_node_field(node.set_preprint_file, primary_file, auth)
+        provider = validated_data.pop('provider', None)
+        if not provider:
+            raise exceptions.ValidationError(detail='You must specify a valid provider to create a preprint.')
 
-        subjects = validated_data.pop('preprint_subjects', None)
-        if not subjects:
-            raise exceptions.ValidationError(detail='You must specify at least one subject to create a preprint.')
+        if PreprintService.find(Q('node', 'eq', node) & Q('provider', 'eq', provider)).count():
+            conflict = PreprintService.find_one(Q('node', 'eq', node) & Q('provider', 'eq', provider))
+            raise Conflict('Only one preprint per provider can be submitted for a node. Check `meta[existing_resource_id]`.', meta={'existing_resource_id': conflict._id})
 
-        self.set_node_field(node.set_preprint_subjects, subjects, auth)
+        preprint = PreprintService(node=node, provider=provider)
+        self.set_field(preprint.set_primary_file, primary_file, auth, save=True)
+        preprint.node._has_abandoned_preprint = True
+        preprint.node.save()
 
-        tags = validated_data.pop('tags', None)
-        if tags:
-            for tag in tags:
-                node.add_tag(tag, auth, save=False, log=False)
-
-        for key, value in validated_data.iteritems():
-            setattr(node, key, value)
-        try:
-            node.save()
-        except ValidationValueError as e:
-            raise exceptions.ValidationError(detail=e.message)
-
-        # Send preprint confirmation email signal to new authors on preprint!
-        for author in node.contributors:
-            if author != auth.user:
-                project_signals.contributor_added.send(node, contributor=author, auth=auth, email_template='preprint')
-
-        return node
-
-    def update(self, node, validated_data):
-        from website.models import Node
-        assert isinstance(node, Node), 'You must specify a valid node to be updated.'
-        auth = get_user_auth(self.context['request'])
-        primary_file = validated_data.pop('primary_file', None)
-        if primary_file:
-            self.set_node_field(node.set_preprint_file, primary_file, auth)
-        subjects = validated_data.pop('preprint_subjects', None)
-        if subjects:
-            self.set_node_field(node.set_preprint_subjects, subjects, auth)
-
-        old_tags = set([tag._id for tag in node.tags])
-        if 'tags' in validated_data:
-            current_tags = set(validated_data.pop('tags', []))
-        elif self.partial:
-            current_tags = set(old_tags)
-        else:
-            current_tags = set()
-
-        for new_tag in (current_tags - old_tags):
-            node.add_tag(new_tag, auth=auth)
-        for deleted_tag in (old_tags - current_tags):
-            node.remove_tag(deleted_tag, auth=auth)
-
-        for key, value in validated_data.iteritems():
-            setattr(node, key, value)
-        try:
-            node.save()
-        except ValidationValueError as e:
-            raise exceptions.ValidationError(detail=e.message)
-        return node
-
-    def set_node_field(self, func, val, auth):
-        try:
-            func(val, auth, save=False)
-        except PermissionsError:
-            raise exceptions.PermissionDenied('Not authorized to update this node.')
-        except ValueError as e:
-            raise exceptions.ValidationError(detail=e.message)
-
-
-class PreprintProviderRelated(JSONAPIRelationshipSerializer):
-    id = ser.CharField(source='_id', required=True, allow_null=False)
-    class Meta:
-        type_ = 'preprint_providers'
-
-
-class PreprintPreprintProvidersRelationshipSerializer(ser.Serializer):
-    data = ser.ListField(child=PreprintProviderRelated())
-
-    class Meta:
-        type_ = 'preprint_providers'
-
-    def get_providers_to_add_remove(self, providers, new_providers):
-        diff = relationship_diff(
-            current_items={provider._id: provider for provider in providers},
-            new_items={provider['_id']: provider for provider in new_providers}
-        )
-
-        providers_to_add = []
-        for provider_id in diff['add']:
-            provider = PreprintProvider.load(provider_id)
-            if not provider:
-                raise exceptions.NotFound(detail='PreprintProvider with id "{}" was not found'.format(provider_id))
-            providers_to_add.append(provider)
-
-        return providers_to_add, diff['remove'].values()
-
-    def make_instance_obj(self, obj):
-        return {
-            'data': obj.preprint_providers,
-            'self': obj
-        }
-
-    def update(self, instance, validated_data):
-        node = instance['self']
-        user = self.context['request'].user
-
-        add, remove = self.get_providers_to_add_remove(
-            providers=instance['data'],
-            new_providers=validated_data['data']
-        )
-
-        if not node.has_permission(user, 'admin'):
-            raise exceptions.PermissionDenied(detail='User must be an admin to update the PreprintProvider relationship.')
-
-        for provider in remove:
-            node.remove_preprint_provider(provider, user)
-        for provider in add:
-            node.add_preprint_provider(provider, user)
-
-        node.save()
-
-        return self.make_instance_obj(node)
-
-    def create(self, validated_data):
-        instance = self.context['view'].get_object()
-        user = self.context['request'].user
-        node = instance['self']
-
-        if not node.has_permission(user, 'admin'):
-            raise exceptions.PermissionDenied(detail='User must be an admin to create a PreprintProvider relationship.')
-
-        add, remove = self.get_providers_to_add_remove(
-            providers=instance['data'],
-            new_providers=validated_data['data']
-        )
-        if not len(add):
-            raise RelationshipPostMakesNoChanges
-
-        for provider in add:
-            node.add_preprint_provider(provider, user)
-
-        node.save()
-
-        return self.make_instance_obj(node)
+        return self.update(preprint, validated_data)
