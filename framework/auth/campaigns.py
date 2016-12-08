@@ -2,7 +2,6 @@ from datetime import datetime
 import furl
 import logging
 
-from modularodm import Q
 from modularodm.exceptions import NoResultsFound, QueryException, ImproperConfigurationError
 
 from website import mails
