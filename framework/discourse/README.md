@@ -145,7 +145,7 @@ Apparently there is a better way to hook onto project changes that would be more
 
 If the OSF rollsback a project creation, then Discourse should too... As long as I make sure that Discourse doesn't accidentally cause the project creation to fail, this really shouldn't be an issue.
 
-Since we seem to be using docstrings with Sphinx conventions, these could also be added to OSF code.
+When the comments pane is resized, the discourse embed needs to communicate its new size to the iframe so it can update.
 
 ##Other Issues
 Apparently the first page loads of Discourse in Development mode are only supposed to take 5-10 seconds (http://blog.discourse.org/2013/04/discourse-as-your-first-rails-app/), so I wonder why I have gotten so used to minute-long page loads. Funnily enough, it seems that during the majority of this time the rails server is idle. Doesn't seem like a real issue.

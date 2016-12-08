@@ -81,6 +81,9 @@
                             if (discourseUrl.endsWith('//')) {
                                 discourseUrl = discourseUrl.slice(0, -1);
                             }
+                            if (!discourseUrl.endsWith('/')) {
+                                discourseUrl += '/';
+                            }
 
                             var topicId = discourseComments.getAttribute('data-discourse-topic-id');
                             // initial load.
@@ -88,7 +91,7 @@
                                 window.DiscourseEmbed = { discourseUrl: discourseUrl, topicId: topicId };
                                 (function() {
                                     var d = document.createElement('script'); d.type = 'text/javascript'; d.async = true;
-                                    d.src = DiscourseEmbed.discourseUrl + 'javascripts/embed.js';
+                                    d.src = discourseUrl + 'javascripts/embed.js';
                                     d.onload = function() {
                                         var viewOnly = $osf.urlParams().view_only;
                                         if (viewOnly) {

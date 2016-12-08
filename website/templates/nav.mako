@@ -107,7 +107,7 @@ function performDiscourseLogin() {
         this.parentNode.removeChild(this);
         // Verify log-in
         $.ajax({
-            url: "http://localhost:4000/session/current.json",
+            url: "${settings.DISCOURSE_SERVER_URL}/session/current.json",
             xhrFields: { withCredentials: true }}
         ).then(function(json) {
             if (json.current_user && json.current_user.username == contextVars.currentUser.id) {
