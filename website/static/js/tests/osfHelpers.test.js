@@ -13,6 +13,53 @@ sinon.assert.expose(assert, {prefix: ''});
 
 describe('osfHelpers', () => {
 
+    describe('getAllNodeChildrenFromNodeList', () => {
+        var getItem = function(parent, id){
+            if (parent) {
+                return {
+                    'relationships': {
+                        'parent': {
+                            'links': {
+                                'related': {
+                                    'href': '/v2/nodes/' + parent + '/',
+                                }
+                            }
+                        }
+                    },
+                    'id': id,
+                };
+            }
+            else {
+                return {
+                    'id': id,
+                };
+            }
+        };
+        var a0 = getItem(null, 'a0');
+        var a1 = getItem('a0', 'a1');
+        var a2 = getItem('a1', 'a2');
+        var a3 = getItem('a2', 'a3');
+        var b = getItem('a0', 'b');
+        var nodeList = {a0, a1, a2, a3, b};
+
+        it('returns no children when there are no children', () => {
+            assert.equal($osf.getAllNodeChildrenFromNodeList(a3, nodeList).length, 0);
+            assert.equal($osf.getAllNodeChildrenFromNodeList(b, nodeList).length, 0);
+        });
+
+        it('returns one child when there is only one child', () => {
+            assert.equal($osf.getAllNodeChildrenFromNodeList(a2, nodeList).length, 1);
+        });
+
+        it('returns two children when child has a child', () => {
+            assert.equal($osf.getAllNodeChildrenFromNodeList(a1, nodeList).length, 2);
+        });
+
+        it('returns all children except the root', () => {
+            assert.equal($osf.getAllNodeChildrenFromNodeList(a0, nodeList).length, 4);
+        });
+    });
+
     describe('growl', () => {
         it('calls $.growl with correct arguments', () => {
             var stub = new sinon.stub($, 'growl');
