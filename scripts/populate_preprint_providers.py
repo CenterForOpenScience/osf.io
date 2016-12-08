@@ -85,7 +85,7 @@ def main():
             'description': 'The open archive of engineering.',
             'banner_name': 'engrxiv-banner.png',
             'external_url': 'http://engrxiv.org',
-            'example': 's58q7',
+            'example': 'k7fgk',
             'advisory_board': '''
                 <div class="col-xs-12">
                     <h2>Steering Committee</h2>
