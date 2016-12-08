@@ -115,13 +115,13 @@ REST_FRAMEWORK = {
         'api.base.throttling.NonCookieAuthThrottle',
     ),
     'DEFAULT_THROTTLE_RATES': {
-        'user': '10000000/day',
-        'non-cookie-auth': '10000000/hour',
-        'add-contributor': '1000000/second',
-        'create-guid': '1000000000/hour',
-        'root-anon-throttle': '10000000/hour',
-        'test-user': '200000000/hour',
-        'test-anon': '10000000/hour',
+        'user': '10000/day',
+        'non-cookie-auth': '100/hour',
+        'add-contributor': '10/second',
+        'create-guid': '1000/hour',
+        'root-anon-throttle': '1000/hour',
+        'test-user': '2/hour',
+        'test-anon': '1/hour',
     }
 }
 
