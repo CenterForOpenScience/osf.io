@@ -138,12 +138,28 @@ class TestNodeLicenses(OsfTestCase):
         )
         NEW_YEAR = '2014'
         COPYLEFT_HOLDERS = ['Richard Stallman']
-        self.node.set_node_license('GPL3', NEW_YEAR, COPYLEFT_HOLDERS, auth=Auth(self.user), save=True)
-        assert_equal(self.node.node_license.license_id, GPL3.license_id)
+        self.node.set_node_license(
+            {
+                'id': GPL3.id,
+                'year': NEW_YEAR,
+                'copyrightHolders': COPYLEFT_HOLDERS
+            },
+            auth=Auth(self.user),
+            save=True
+        )
+
+        assert_equal(self.node.node_license.id, GPL3.license_id)
         assert_equal(self.node.node_license.name, GPL3.name)
         assert_equal(self.node.node_license.copyright_holders, COPYLEFT_HOLDERS)
 
     @assert_not_logs(NodeLog.CHANGED_LICENSE, 'node')
     def test_Node_set_node_license_invalid(self):
         with assert_raises(NodeStateError):
-            self.node.set_node_license('SOME ID', 'foo', [], auth=Auth(self.user))
+            self.node.set_node_license(
+                {
+                    'id': 'SOME ID',
+                    'year': 'foo',
+                    'copyrightHolders': []
+                },
+                auth=Auth(self.user)
+            )

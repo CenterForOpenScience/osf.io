@@ -233,3 +233,29 @@ class TestPreprintCreate(ApiTestCase):
 
             assert_equal(res.status_code, 201)
             assert_not_in(project_signals.contributor_added, mock_signals.signals_sent())
+
+    def test_create_preprint_with_deleted_node_should_fail(self):
+        self.public_project.is_deleted = True
+        self.public_project.save()
+        public_project_payload = build_preprint_create_payload(self.public_project._id, self.provider._id, self.file_one_public_project._id)
+        res = self.app.post_json_api(self.url, public_project_payload, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], 'Cannot create a preprint from a deleted node.')
+
+    def test_create_preprint_adds_log_if_published(self):
+        public_project_payload = build_preprint_create_payload(
+            self.public_project._id,
+            self.provider._id,
+            self.file_one_public_project._id,
+            {
+                'is_published': True,
+                'subjects': [[SubjectFactory()._id]],
+            }
+        )
+        res = self.app.post_json_api(self.url, public_project_payload, auth=self.user.auth)
+        assert_equal(res.status_code, 201)
+        preprint_id = res.json['data']['id']
+        preprint = PreprintService.load(preprint_id)
+        log = preprint.node.logs[-2]
+        assert_equal(log.action, 'preprint_initiated')
+        assert_equal(log.params.get('preprint'), preprint_id)

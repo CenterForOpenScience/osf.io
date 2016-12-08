@@ -2,6 +2,24 @@
 Changelog
 *********
 
+0.102.0 (2016-11-30)
+====================
+- Add support for branded preprint providers
+- API v2 Add license write capability for nodes
+- API v2 Add licenses to preprints
+- Warn users on attempt to delete a node that is attached to a preprint
+- Add branded login for preprint-based logins
+- Add branded emails if registering through a branded preprint service
+- API v2 Remove ability for users to create a preprint with a deleted node
+
+Migrations
+----------
+python -m scripts.migration.migrate_subjects_from_plos_to_bepress --file /code/BePress.json
+python -m scripts.migrate_logs_branded_preprints.py
+python -m scripts.populate_preprint_providers
+
+Post-release: python -m scripts.migration.migrate_meetings_preprints_to_preprintservices --auto 9000
+
 0.101.0 (2016-11-23)
 ====================
 - Fix renaming, download button, zip is broken on GitHub non-default branch

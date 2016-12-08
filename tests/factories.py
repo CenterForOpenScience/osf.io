@@ -104,6 +104,18 @@ class ModularOdmFactory(base.Factory):
         return instance
 
 
+class PreprintProviderFactory(ModularOdmFactory):
+    class Meta:
+        model = PreprintProvider
+        abstract = False
+
+    def __init__(self, provider_id, provider_name):
+        super(PreprintProviderFactory, self).__init()
+        self._id = provider_id
+        self.name = provider_name
+        self.save()
+
+
 class UserFactory(ModularOdmFactory):
     class Meta:
         model = User

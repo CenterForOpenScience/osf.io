@@ -17,6 +17,7 @@ from addons.zotero.tests.factories import ZoteroAccountFactory, ZoteroNodeSettin
 from api.base.settings.defaults import API_BASE
 from osf_tests.factories import AuthUserFactory
 from tests.base import ApiAddonTestCase
+
 from website.addons.mendeley.tests.factories import (MendeleyAccountFactory,
                                                      MendeleyNodeSettingsFactory)
 from website.addons.zotero.tests.factories import (ZoteroAccountFactory,
@@ -24,7 +25,6 @@ from website.addons.zotero.tests.factories import (ZoteroAccountFactory,
 from website.util.permissions import WRITE, READ, ADMIN
 
 pytestmark = pytest.mark.django_db
-
 # Varies between addons. Some need to make a call to get the root,
 # 'FAKEROOTID' should be the result of a mocked call in that case.
 VALID_ROOT_FOLDER_IDS = (
@@ -622,10 +622,6 @@ class TestNodeWikiAddon(NodeUnmanageableAddonTestSuiteMixin, ApiAddonTestCase):
     short_name = 'wiki'
 
 
-class TestNodeFigshareAddon(NodeUnmanageableAddonTestSuiteMixin, ApiAddonTestCase):
-    short_name = 'figshare'
-
-
 # OAUTH
 
 
@@ -667,6 +663,40 @@ class TestNodeZoteroAddon(NodeOAuthCitationAddonTestSuiteMixin, ApiAddonTestCase
     NodeSettingsFactory = ZoteroNodeSettingsFactory
 
 # CONFIGURABLE
+
+
+class TestNodeFigshareAddon(NodeConfigurableAddonTestSuiteMixin, ApiAddonTestCase):
+    short_name = 'figshare'
+    AccountFactory = FigshareAccountFactory
+    NodeSettingsFactory = FigshareNodeSettingsFactory
+
+    def _settings_kwargs(self, node, user_settings):
+        return {
+            'user_settings': self.user_settings,
+            'folder': '1234567890',
+            'owner': self.node
+        }
+
+    @property
+    def _mock_folder_result(self):
+        return {
+            'name': 'A Fileset',
+            'path': 'fileset',
+            'id': '1234567890',
+            'kind': 'folder',
+            'addon': 'figshare',
+        }
+
+
+    @mock.patch('website.addons.figshare.client.FigshareClient.get_folders')
+    def test_folder_list_GET_expected_behavior(self, mock_folders):
+        mock_folders.return_value = [self._mock_folder_result]
+        super(TestNodeFigshareAddon, self).test_folder_list_GET_expected_behavior()
+
+    @mock.patch('website.addons.figshare.client.FigshareClient.get_linked_folder_info')
+    def test_settings_detail_PUT_all_sets_settings(self, mock_info):
+        mock_info.return_value = self._mock_folder_result
+        super(TestNodeFigshareAddon, self).test_settings_detail_PUT_all_sets_settings
 
 
 class TestNodeBoxAddon(NodeConfigurableAddonTestSuiteMixin, ApiAddonTestCase):

@@ -158,13 +158,12 @@ class BaseAnalyticsHarness(object):
 
             return imported_script_classes
 
-    def main(self):
-        args = self.parse_args()
-        entered_scripts = args.analytics_scripts
-        if entered_scripts:
-            analytics_classes = self.try_to_import_from_args(entered_scripts)
-        else:
-            analytics_classes = self.analytics_classes
+    def main(self, command_line=True):
+        analytics_classes = self.analytics_classes
+        if command_line:
+            args = self.parse_args()
+            if args.analytics_scripts:
+                analytics_classes = self.try_to_import_from_args(args.analytics_scripts)
 
         for analytics_class in analytics_classes:
             class_instance = analytics_class()
@@ -184,21 +183,22 @@ class DateAnalyticsHarness(BaseAnalyticsHarness):
         parser.add_argument('-y', '--yesterday', dest='yesterday', action='store_true')
         return parser.parse_args()
 
-    def main(self, date=None, yesterday=False):
-        args = self.parse_args()
-        entered_scripts = args.analytics_scripts
-        yesterday = yesterday or args.yesterday
+    def main(self, date=None, yesterday=False, command_line=True):
+        analytics_classes = self.analytics_classes
         if yesterday:
             date = (datetime.today() - timedelta(1)).date()
-        if not date:
-            try:
-                date = parse(args.date).date()
-            except AttributeError:
-                raise AttributeError('You must either specify a date or use the yesterday argument to gather analytics for yesterday.')
-        if entered_scripts:
-            analytics_classes = self.try_to_import_from_args(entered_scripts)
-        else:
-            analytics_classes = self.analytics_classes
+
+        if command_line:
+            args = self.parse_args()
+            if args.yesterday:
+                date = (datetime.today() - timedelta(1)).date()
+            if not date:
+                try:
+                    date = parse(args.date).date()
+                except AttributeError:
+                    raise AttributeError('You must either specify a date or use the yesterday argument to gather analytics for yesterday.')
+            if args.analytics_scripts:
+                analytics_classes = self.try_to_import_from_args(entered_scripts)
 
         for analytics_class in analytics_classes:
             class_instance = analytics_class()

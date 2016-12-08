@@ -731,6 +731,7 @@ class File(FileNode):
                 size=None,
                 version=None,
                 modified=None,
+                created=None,
                 contentType=None,
                 downloads=self.get_download_count(),
                 checkout=self.checkout._id if self.checkout else None,
@@ -745,6 +746,7 @@ class File(FileNode):
             version=version.identifier if self.versions else None,
             contentType=version.content_type if self.versions else None,
             modified=version.date_modified.isoformat() if version.date_modified else None,
+            created=self.versions[0].date_modified.isoformat() if self.versions[0].date_modified else None,
         )
 
 
