@@ -140,8 +140,8 @@ class Command(BaseCommand):
             self.modm_to_django = build_toku_django_lookup_table_cache(with_guids=True)
 
             for migration_type in ['fk', 'm2m']:
-                with transaction.atomic():
-                    for django_model in models:
+                for django_model in models:
+                    with transaction.atomic():
                         if issubclass(django_model, AbstractBaseContributor) \
                                 or django_model is ApiOAuth2Scope or \
                                 (issubclass(django_model, AbstractNode) and django_model is not AbstractNode) or \
@@ -254,6 +254,8 @@ class Command(BaseCommand):
                                     pk=self.modm_to_django[format_lookup_string(value)])
                                 setattr(django_obj, field_name, gfk_instance)
                                 dirty = True
+                                fk_count += 1
+
                             else:
                                 field_name = field.attname
                                 if field_name in bad_fields:
@@ -280,18 +282,21 @@ class Command(BaseCommand):
                                     setattr(django_obj, django_field_name,
                                             self.modm_to_django[format_lookup_string(value)])
                                     dirty = True
+                                    fk_count += 1
+
                                 elif hasattr(value, '_id'):
                                     # let's just assume it's a modm model instance
                                     setattr(django_obj, django_field_name,
                                             self.modm_to_django[format_lookup_string(value)])
                                     dirty = True
+                                    fk_count += 1
+
                                 else:
                                     print('Value is a {}'.format(type(value)))
                                     ipdb.set_trace()
 
                     django_obj, dirty = fix_bad_data(django_obj, dirty)
                     if dirty:
-                        fk_count += 1
                         django_obj.save()
                     model_count += 1
                     if model_count % page_size == 0 or model_count == model_total:
@@ -303,9 +308,6 @@ class Command(BaseCommand):
                         modm_queryset[0]._object_cache.clear()
                         print('Took out {} trashes'.format(gc.collect()))
 
-                modm_queryset[0]._cache.clear()
-                modm_queryset[0]._object_cache.clear()
-                print('Took out {} trashes'.format(gc.collect()))
 
     def save_m2m_relationships(self, modm_queryset, django_model, page_size):
         print(
@@ -325,7 +327,7 @@ class Command(BaseCommand):
         model_count = 0
         model_total = modm_queryset.count()
         field_aliases = getattr(django_model, 'FIELD_ALIASES', {})
-        bad_fields = []
+        bad_fields = ['_nodes', ]  # we'll handle noderelations by hand
 
         while model_count < model_total:
             with transaction.atomic():
