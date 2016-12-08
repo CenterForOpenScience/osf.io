@@ -1,6 +1,10 @@
 # -*- coding: utf-8 -*-
 import functools
+
+import datetime
 import mock
+from factory import SubFactory
+from factory.fuzzy import FuzzyDateTime, FuzzyAttribute, FuzzyChoice
 from mock import patch, Mock
 
 import factory
@@ -10,6 +14,8 @@ from django.utils import timezone
 from faker import Factory
 from modularodm.exceptions import NoResultsFound
 
+from osf.models import OSFUser
+from website.notifications.constants import NOTIFICATION_TYPES
 from website.util import permissions
 from website.project.licenses import ensure_licenses
 from website.project.model import ensure_schemas
@@ -664,7 +670,22 @@ class NotificationSubscriptionFactory(DjangoModelFactory):
         model = models.NotificationSubscription
 
 
+def make_node_lineage():
+    node1 = NodeFactory()
+    node2 = NodeFactory(parent=node1)
+    node3 = NodeFactory(parent=node2)
+    node4 = NodeFactory(parent=node3)
+
+    return [node1._id, node2._id, node3._id, node4._id]
+
+
 class NotificationDigestFactory(DjangoModelFactory):
+    timestamp = FuzzyDateTime(datetime.datetime(1970, 1, 1, tzinfo=pytz.UTC))
+    node_lineage = FuzzyAttribute(fuzzer=make_node_lineage)
+    user = factory.SubFactory(UserFactory)
+    send_type = FuzzyChoice(choices=NOTIFICATION_TYPES.keys())
+    message = fake.text(max_nb_chars=2048)
+    event = fake.text(max_nb_chars=50)
     class Meta:
         model = models.NotificationDigest
 
