@@ -51,7 +51,7 @@ def get_campaigns():
 
         # Proxy campaigns: Preprints, both OSF and branded ones
         try:
-            preprint_providers = PreprintProvider.find(Q('_id', 'ne', None))
+            preprint_providers = PreprintProvider.find()
             for provider in preprint_providers:
                 if provider._id == 'osf':
                     template = 'osf'
