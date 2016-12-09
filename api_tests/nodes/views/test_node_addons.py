@@ -14,6 +14,7 @@ from addons.mendeley.tests.factories import MendeleyAccountFactory, MendeleyNode
 from addons.owncloud.tests.factories import OwnCloudAccountFactory, OwnCloudNodeSettingsFactory
 from addons.s3.tests.factories import S3AccountFactory, S3NodeSettingsFactory
 from addons.zotero.tests.factories import ZoteroAccountFactory, ZoteroNodeSettingsFactory
+# from addons.figshare.tests.factories import FigshareAccountFactory, FigshareNodeSettingsFactory
 from api.base.settings.defaults import API_BASE
 from osf_tests.factories import AuthUserFactory
 from tests.base import ApiAddonTestCase
@@ -665,10 +666,11 @@ class TestNodeZoteroAddon(NodeOAuthCitationAddonTestSuiteMixin, ApiAddonTestCase
 # CONFIGURABLE
 
 
+@pytest.mark.skip('Unskip when the figshare addon is ported')
 class TestNodeFigshareAddon(NodeConfigurableAddonTestSuiteMixin, ApiAddonTestCase):
     short_name = 'figshare'
-    AccountFactory = FigshareAccountFactory
-    NodeSettingsFactory = FigshareNodeSettingsFactory
+    # AccountFactory = FigshareAccountFactory
+    # NodeSettingsFactory = FigshareNodeSettingsFactory
 
     def _settings_kwargs(self, node, user_settings):
         return {

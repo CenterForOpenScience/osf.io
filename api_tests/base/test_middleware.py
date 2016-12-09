@@ -9,6 +9,7 @@ from nose.tools import *  # flake8: noqa
 from rest_framework.test import APIRequestFactory
 
 from website.util import api_v2_url
+from api.base.middleware import TokuTransactionMiddleware
 from api.base import settings
 from api.base.middleware import CorsMiddleware
 from tests.base import ApiTestCase
