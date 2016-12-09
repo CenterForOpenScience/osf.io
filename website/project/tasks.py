@@ -52,6 +52,6 @@ def on_node_updated(node_id, user_id, first_save, saved_fields, request_headers=
                         }]}
                     }
                 }
-            }, headers={'Authorization': 'Bearer {}'.format(settings.SHARE_API_TOKEN), 'Content-Type': 'application/vnd.api+json'}, verify=False)
+            }, headers={'Authorization': 'Bearer {}'.format(settings.SHARE_API_TOKEN), 'Content-Type': 'application/vnd.api+json'})
             logger.debug(resp.content)
             resp.raise_for_status()
