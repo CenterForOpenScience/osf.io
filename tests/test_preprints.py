@@ -15,7 +15,7 @@ from framework.auth import Auth
 from framework.exceptions import PermissionsError
 
 from website import settings
-from osf.models import NodeLog
+from osf.models import NodeLog, Subject
 from osf.exceptions import NodeStateError
 
 from tests.base import OsfTestCase
@@ -295,7 +295,7 @@ class TestOnPreprintUpdatedTask(OsfTestCase):
         subjects = [nodes.pop(k) for k, v in nodes.items() if v['@type'] == 'subject']
         through_subjects = [nodes.pop(k) for k, v in nodes.items() if v['@type'] == 'throughsubjects']
         assert sorted(subject['@id'] for subject in subjects) == sorted(tt['subject']['@id'] for tt in through_subjects)
-        assert sorted(subject['name'] for subject in subjects) == ['Example Subject #1']
+        assert sorted(subject['name'] for subject in subjects) == [Subject.load(s).text for h in self.preprint.subjects for s in h]
 
         people = sorted([nodes.pop(k) for k, v in nodes.items() if v['@type'] == 'person'], key=lambda x: x['given_name'])
         assert people == [{
@@ -358,7 +358,7 @@ class TestOnPreprintUpdatedTask(OsfTestCase):
         assert nodes == {}
 
     def test_format_preprint_nones(self):
-        self.preprint.node.tags = None
+        self.preprint.node.tags = []
         self.preprint.date_published = None
         self.preprint.set_subjects([], auth=Auth(self.preprint.node.creator), save=False)
 
