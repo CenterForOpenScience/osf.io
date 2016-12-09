@@ -127,6 +127,7 @@ class CorsMiddleware(corsheaders.middleware.CorsMiddleware):
                     ):
                         return
             return not_found
+
         # Re-bind origin_not_found_in_white_lists to the instance with
         # the request as the first arguments
         self.origin_not_found_in_white_lists = functools.partial(
@@ -134,6 +135,36 @@ class CorsMiddleware(corsheaders.middleware.CorsMiddleware):
             request
         )
         return super(CorsMiddleware, self).process_request(request)
+
+    def process_response(self, request, response):
+        def origin_not_found_in_white_lists(self, request, origin, url):
+            not_found = super(CorsMiddleware, self).origin_not_found_in_white_lists(origin, url)
+            if not_found:
+                # Check if origin is in the dynamic Institutions whitelist
+                if url.netloc.lower() in api_settings.INSTITUTION_ORIGINS_WHITELIST:
+                    return
+                # Check if a cross-origin request using the Authorization header
+                elif not request.COOKIES:
+                    if request.META.get('HTTP_AUTHORIZATION'):
+                        return
+                    elif (
+                        request.method == 'OPTIONS' and
+                        'HTTP_ACCESS_CONTROL_REQUEST_METHOD' in request.META and
+                        'authorization' in map(
+                            lambda h: h.strip(),
+                            request.META.get('HTTP_ACCESS_CONTROL_REQUEST_HEADERS', '').split(',')
+                        )
+                    ):
+                        return
+            return not_found
+
+        # Re-bind origin_not_found_in_white_lists to the instance with
+        # the request as the first arguments
+        self.origin_not_found_in_white_lists = functools.partial(
+            types.MethodType(origin_not_found_in_white_lists, self),
+            request
+        )
+        return super(CorsMiddleware, self).process_response(request, response)
 
 
 class PostcommitTaskMiddleware(object):
