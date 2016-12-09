@@ -57,10 +57,10 @@ def name_regfunc(embargo, autoapprove, autocomplete, retraction, autoapprove_ret
     retraction_part = '' if not retraction else \
                       '{}_retraction_of_'.format('approved' if autoapprove_retraction else
                                                     'unapproved')
-    return '{}{}{}_{}_{}_registration_of_a'.format(
+    return '{}{}{}{}_{}_registration_of_a'.format(
         retraction_part,
         '' if not retraction else 'an_' if embargo in (None, True) else 'a_',
-        'embargoed' if embargo else 'unembargoed' if embargo is None else 'formerly_embargoed',
+        'embargoed_' if embargo else '' if embargo is None else 'formerly_embargoed_',
         'approved' if autoapprove else 'unapproved',
         'complete' if autocomplete else 'incomplete',
     ).encode('ascii')
@@ -189,20 +189,20 @@ class TestVaryFuncs(DbIsolationMixin, OsfTestCase):
         assert_equal(len(regfunc_tests), len(REGFUNCS))
 
     # no retraction
-    def test_regfunc_uac(self):
-        check = self.Check('unembargoed_approved_complete')
+    def test_regfunc_ac(self):
+        check = self.Check('approved_complete')
         check(None, None, 'approved', True)
 
-    def test_regfunc_uai(self):
-        check = self.Check('unembargoed_approved_incomplete')
+    def test_regfunc_ai(self):
+        check = self.Check('approved_incomplete')
         check(None, None, 'approved', False)
 
-    def test_regfunc_uuc(self):
-        check = self.Check('unembargoed_unapproved_complete')
+    def test_regfunc_uc(self):
+        check = self.Check('unapproved_complete')
         check(None, None, 'unapproved', True)
 
-    def test_regfunc_uui(self):
-        check = self.Check('unembargoed_unapproved_incomplete')
+    def test_regfunc_ui(self):
+        check = self.Check('unapproved_incomplete')
         check(None, None, 'unapproved', False)
 
     def test_regfunc_eac(self):
@@ -238,12 +238,12 @@ class TestVaryFuncs(DbIsolationMixin, OsfTestCase):
         check(None, 'unapproved', None, False)
 
     # unapproved retraction
-    def test_regfunc_uroauac(self):
-        check = self.Check('unapproved_retraction_of_an_unembargoed_approved_complete')
+    def test_regfunc_uroaac(self):
+        check = self.Check('unapproved_retraction_of_an_approved_complete')
         check('unapproved', None, 'approved', True)
 
-    def test_regfunc_uroauai(self):
-        check = self.Check('unapproved_retraction_of_an_unembargoed_approved_incomplete')
+    def test_regfunc_uroaai(self):
+        check = self.Check('unapproved_retraction_of_an_approved_incomplete')
         check('unapproved', None, 'approved', False)
 
     def test_regfunc_uroaeac(self):
@@ -279,12 +279,12 @@ class TestVaryFuncs(DbIsolationMixin, OsfTestCase):
         check('unapproved', 'unapproved', None, False)
 
     # approved retraction
-    def test_regfunc_aroauac(self):
-        check = self.Check('approved_retraction_of_an_unembargoed_approved_complete')
+    def test_regfunc_aroaac(self):
+        check = self.Check('approved_retraction_of_an_approved_complete')
         check('approved', None, 'approved', True)
 
-    def test_regfunc_aroauai(self):
-        check = self.Check('approved_retraction_of_an_unembargoed_approved_incomplete')
+    def test_regfunc_aroaai(self):
+        check = self.Check('approved_retraction_of_an_approved_incomplete')
         check('approved', None, 'approved', False)
 
     def test_regfunc_aroaeac(self):
