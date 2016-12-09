@@ -24,7 +24,9 @@ var _figshareItemButtons = {
                     }, 'Upload')
                 );
             }
-            if (item.kind === 'file' && item.data.extra && item.data.extra.status === 'public') {
+
+            // Download file or Download-as-zip
+            if (item.kind === 'file') {
                 buttons.push(
                     m.component(Fangorn.Components.button, {
                         onclick: function (event) {
@@ -35,6 +37,16 @@ var _figshareItemButtons = {
                     }, 'Download')
                 );
             }
+            else {
+                buttons.push(
+                    m.component(Fangorn.Components.button, {
+                        onclick: function (event) { Fangorn.ButtonEvents._downloadZipEvent.call(tb, event, item); },
+                        icon: 'fa fa-download',
+                        className: 'text-primary'
+                    }, 'Download as zip')
+                );
+            }
+
             // All files are viewable on the OSF.
             if (item.kind === 'file' && item.data.permissions && item.data.permissions.view) {
                 buttons.push(
