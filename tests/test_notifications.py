@@ -1394,7 +1394,7 @@ class TestSendEmails(NotificationTestCase):
         user = factories.UserFactory()
         factories.NotificationSubscriptionFactory(
             _id=user._id + '_global_mentions',
-            node=user,
+            node=self.node,
             event_name='global_mentions'
         ).add_user_to_subscription(user, 'none')
         time_now = timezone.now()
@@ -1407,7 +1407,7 @@ class TestSendEmails(NotificationTestCase):
         user = factories.UserFactory()
         factories.NotificationSubscriptionFactory(
             _id=user._id + '_global_mentions',
-            node=user,
+            node=self.node,
             event_name='global_mentions'
         ).add_user_to_subscription(user, 'email_transactional')
         node = factories.ProjectFactory(creator=user)

@@ -1920,6 +1920,7 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
         if field_name == 'tags':
             if operation['value'] not in (list(), tuple()):
                 operation['source_field_name'] = 'tags__name'
+                operation['op'] = 'iexact'
 
     def get_default_queryset(self):
         # Don't bother going to waterbutler for osfstorage

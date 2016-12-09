@@ -440,8 +440,6 @@ class TestOnPreprintUpdatedTask(OsfTestCase):
             'is_published': (False, True),
             'node.is_public': (True, False),
             'node.is_public': (False, True),
-            'node.tags': (['qatest'], True),
-            'node.tags': ([], False),
             'node._is_preprint_orphan': (True, True),
             'node._is_preprint_orphan': (False, False),
             'node.is_deleted': (True, True),
@@ -461,3 +459,14 @@ class TestOnPreprintUpdatedTask(OsfTestCase):
             assert preprint['is_deleted'] is is_deleted
 
             setattr(target, key.split('.')[-1], orig_val)
+
+    def test_format_preprint_is_deleted_true_if_qatest_tag_is_added(self):
+        res = format_preprint(self.preprint)
+        preprint = next(v for v in res if v['@type'] == 'preprint')
+        assert preprint['is_deleted'] is False
+
+        self.preprint.node.add_tag('qatest', auth=self.auth, save=True)
+
+        res = format_preprint(self.preprint)
+        preprint = next(v for v in res if v['@type'] == 'preprint')
+        assert preprint['is_deleted'] is True

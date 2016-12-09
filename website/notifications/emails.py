@@ -52,7 +52,11 @@ def notify_mentions(event, user, node, timestamp, **context):
         mentioned_user = website_models.User.load(m)
         subscriptions = get_user_subscriptions(mentioned_user, event_type)
         for notification_type in subscriptions:
-            if notification_type != 'none' and subscriptions[notification_type] and m in subscriptions[notification_type]:
+            if (
+                notification_type != 'none' and
+                subscriptions[notification_type] and
+                subscriptions[notification_type].filter(guids___id=m).exists()
+            ):
                 store_emails([m], notification_type, 'mentions', user, node,
                                  timestamp, **context)
                 sent_users.extend([m])
