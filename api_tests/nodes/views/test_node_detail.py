@@ -1274,7 +1274,7 @@ class TestNodeUpdateLicense(ApiTestCase):
     def test_update_node_with_existing_license_year_attribute_only(self):
         self.node.set_node_license(
             {
-                'id': self.no_license.id,
+                'id': self.no_license.license_id,
                 'year': '2014',
                 'copyrightHolders': ['Diane', 'Mr. Peanut Butter']
             },
@@ -1302,7 +1302,7 @@ class TestNodeUpdateLicense(ApiTestCase):
     def test_update_node_with_existing_license_copyright_holders_attribute_only(self):
         self.node.set_node_license(
             {
-                'id': self.no_license.id,
+                'id': self.no_license.license_id,
                 'year': '2014',
                 'copyrightHolders': ['Diane', 'Mr. Peanut Butter']
             },
@@ -1330,7 +1330,7 @@ class TestNodeUpdateLicense(ApiTestCase):
     def test_update_node_with_existing_license_relationship_only(self):
         self.node.set_node_license(
             {
-                'id': self.no_license.id,
+                'id': self.no_license.license_id,
                 'year': '2014',
                 'copyrightHolders': ['Diane', 'Mr. Peanut Butter']
             },
@@ -1358,7 +1358,7 @@ class TestNodeUpdateLicense(ApiTestCase):
     def test_update_node_with_existing_license_relationship_and_attributes(self):
         self.node.set_node_license(
             {
-                'id': self.no_license.id,
+                'id': self.no_license.license_id,
                 'year': '2014',
                 'copyrightHolders': ['Diane', 'Mr. Peanut Butter']
             },
@@ -1412,20 +1412,20 @@ class TestNodeUpdateLicense(ApiTestCase):
             node_id=self.node._id,
             license_id=self.cc0_license._id
         )
-        logs_before_update = len(self.node.logs)
+        logs_before_update = self.node.logs.count()
 
         res = self.make_request(self.url, data, auth=self.admin_contributor.auth)
         assert_equal(res.status_code, 200)
         self.node.reload()
-        logs_after_update = len(self.node.logs)
+        logs_after_update = self.node.logs.count()
 
         assert_not_equal(logs_before_update, logs_after_update)
-        assert_equal(self.node.logs[-1].action, 'license_changed')
+        assert_equal(self.node.logs.latest().action, 'license_changed')
 
     def test_update_node_license_without_change_does_not_add_log(self):
         self.node.set_node_license(
             {
-                'id': self.no_license.id,
+                'id': self.no_license.license_id,
                 'year': '2015',
                 'copyrightHolders': ['Kim', 'Kanye']
             },
@@ -1433,8 +1433,8 @@ class TestNodeUpdateLicense(ApiTestCase):
             save=True
         )
 
-        before_num_logs = len(self.node.logs)
-        before_update_log = self.node.logs[-1]
+        before_num_logs = self.node.logs.count()
+        before_update_log = self.node.logs.latest()
 
         data = self.make_payload(
             node_id=self.node._id,
@@ -1445,8 +1445,8 @@ class TestNodeUpdateLicense(ApiTestCase):
         res = self.make_request(self.url, data, auth=self.admin_contributor.auth)
         self.node.reload()
 
-        after_num_logs = len(self.node.logs)
-        after_update_log = self.node.logs[-1]
+        after_num_logs = self.node.logs.count()
+        after_update_log = self.node.logs.latest()
 
         assert_equal(res.status_code, 200)
         assert_equal(before_num_logs, after_num_logs)

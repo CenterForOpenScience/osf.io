@@ -87,7 +87,7 @@ class NodeCitationStyleSerializer(JSONAPISerializer):
 def get_license_details(node, validated_data):
     license = node.license if isinstance(node, PreprintService) else node.node_license
 
-    license_id = license.node_license.id if license else None
+    license_id = license.node_license.license_id if license else None
     license_year = license.year if license else None
     license_holders = license.copyright_holders if license else []
 
@@ -95,7 +95,7 @@ def get_license_details(node, validated_data):
         license_year = validated_data['license'].get('year', license_year)
         license_holders = validated_data['license'].get('copyright_holders', license_holders)
     if 'license_type' in validated_data:
-        license_id = validated_data['license_type'].id
+        license_id = validated_data['license_type'].license_id
 
     return {
         'id': license_id,
