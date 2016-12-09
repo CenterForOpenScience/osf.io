@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 import unittest
 from nose.tools import *  # noqa; PEP8 asserts
-from webtest_plus import TestApp
+from webtest_plus import TestApp as WebtestApp  # py.test tries to collect `TestApp`
 import mock
 import urlparse
 import httplib as http
@@ -203,8 +203,9 @@ class TestAuthUtils(OsfTestCase):
         req_post.return_value = resp
         assert_false(validate_recaptcha(None))
 
-    @mock.patch('framework.auth.utils.requests.post', side_effect=AssertionError())
+    @mock.patch('framework.auth.utils.requests.post')
     def test_validate_recaptcha_empty_response(self, req_post):
+        req_post.side_effect=AssertionError()
         # ensure None short circuits execution (no call to google)
         assert_false(validate_recaptcha(None))
 
@@ -276,7 +277,7 @@ class TestPrivateLink(OsfTestCase):
         def project_get(**kwargs):
             return 'success', 200
 
-        self.app = TestApp(self.flaskapp)
+        self.app = WebtestApp(self.flaskapp)
 
         self.user = AuthUserFactory()
         self.project = ProjectFactory(is_public=False)
@@ -573,7 +574,7 @@ class TestMustBeContributorOrPublicButNotAnonymizedDecorator(AuthAppTestCase):
         @must_be_contributor_or_public_but_not_anonymized
         def project_get(**kwargs):
             return 'success', 200
-        self.app = TestApp(self.flaskapp)
+        self.app = WebtestApp(self.flaskapp)
 
     def test_must_be_contributor_when_user_is_contributor_and_public_project(self):
         result = view_that_needs_contributor_or_public_but_not_anonymized(
@@ -721,7 +722,8 @@ class TestPermissionDecorators(AuthAppTestCase):
     @mock.patch('framework.auth.decorators.Auth.from_kwargs')
     def test_must_have_permission_false(self, mock_from_kwargs, mock_to_nodes):
         project = ProjectFactory()
-        mock_from_kwargs.return_value = Auth(user=project.creator)
+        user = UserFactory()
+        mock_from_kwargs.return_value = Auth(user=user)
         mock_to_nodes.return_value = (None, project)
         with assert_raises(HTTPError) as ctx:
             thriller(node=project)
