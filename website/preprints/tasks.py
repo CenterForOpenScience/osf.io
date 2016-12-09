@@ -31,7 +31,7 @@ def on_preprint_updated(preprint_id):
                     'data': {'@graph': format_preprint(preprint)}
                 }
             }
-        }, headers={'Authorization': 'Bearer {}'.format(preprint.provider.access_token), 'Content-Type': 'application/vnd.api+json'}, verify=False)
+        }, headers={'Authorization': 'Bearer {}'.format(preprint.provider.access_token), 'Content-Type': 'application/vnd.api+json'})
         logger.debug(resp.content)
         resp.raise_for_status()
 
