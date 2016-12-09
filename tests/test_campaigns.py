@@ -1,6 +1,7 @@
-from datetime import datetime, timedelta
+from datetime import timedelta
 import httplib as http
 
+from django.utils import timezone
 from nose.tools import *  # noqa (PEP8 asserts)
 
 from modularodm.exceptions import KeyExistsException
@@ -48,7 +49,7 @@ class TestCampaignInitialization(OsfTestCase):
             'engrxiv-preprints',
             'psyarxiv-preprints',
         ]
-        self.refresh = datetime.utcnow()
+        self.refresh = timezone.now()
         campaigns.CAMPAIGNS = None
         campaigns.CAMPAIGNS_LAST_REFRESHED = self.refresh
 
@@ -67,7 +68,7 @@ class TestCampaignInitialization(OsfTestCase):
 
     def test_get_campaigns_update_expired(self):
         campaigns.get_campaigns()
-        self.refresh = datetime.utcnow() - timedelta(minutes=5)
+        self.refresh = timezone.now() - timedelta(minutes=5)
         campaigns.CAMPAIGNS_LAST_REFRESHED = self.refresh
         campaigns.get_campaigns()
         assert_not_equal(self.refresh, campaigns.CAMPAIGNS_LAST_REFRESHED)
@@ -156,7 +157,7 @@ class TestCampaignMethods(OsfTestCase):
 
     def test_campaign_for_user(self):
         user = factories.UserFactory()
-        user.system_tags.append('osf_preprints')
+        user.tags.add(factories.TagFactory(name='osf_preprints', system=True))
         user.save()
         campaign = campaigns.campaign_for_user(user)
         assert_equal(campaign, 'osf-preprints')
