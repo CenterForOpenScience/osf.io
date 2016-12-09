@@ -3,7 +3,6 @@ import uuid
 import urllib
 import hashlib
 import httplib as http
-# TODO: change to https://github.com/gpocentek/python-gitlab
 
 from framework.exceptions import HTTPError
 from website.addons.base.exceptions import HookError

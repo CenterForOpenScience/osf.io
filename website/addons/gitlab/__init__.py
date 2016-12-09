@@ -31,10 +31,6 @@ INCLUDE_CSS = {}
 HAS_HGRID_FILES = True
 GET_HGRID_DATA = views.gitlab_hgrid_data
 
-# Note: Even though GitLab supports file sizes over 1 MB, uploads and
-# downloads through their API are capped at 1 MB.
-MAX_FILE_SIZE = 100
-
 HERE = os.path.dirname(os.path.abspath(__file__))
 NODE_SETTINGS_TEMPLATE = os.path.join(HERE, 'templates', 'gitlab_node_settings.mako')
 USER_SETTINGS_TEMPLATE = os.path.join(HERE, 'templates', 'gitlab_user_settings.mako')
