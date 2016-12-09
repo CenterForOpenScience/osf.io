@@ -85,7 +85,7 @@ def main():
             'description': 'The open archive of engineering.',
             'banner_name': 'engrxiv-banner.png',
             'external_url': 'http://engrxiv.org',
-            'example': '',
+            'example': 'k7fgk',
             'advisory_board': '''
                 <div class="col-xs-12">
                     <h2>Steering Committee</h2>
@@ -227,7 +227,7 @@ def main():
             'description': 'A free preprint service for the psychological sciences.',
             'banner_name': 'psyarxiv-banner.png',
             'external_url': 'http://psyarxiv.com',
-            'example': '',
+            'example': 'k9mn3',
             'advisory_board': '''
                 <div class="col-xs-12">
                     <h2>Steering Committee</h2>
@@ -315,7 +315,7 @@ def main():
             'description': 'Open archive of the social sciences',
             'banner_name': 'socarxiv-banner.png',
             'external_url': 'http://socarxiv.org',
-            'example': '',
+            'example': 'qmdc4',
             'advisory_board': '''
                 <div class="col-xs-12">
                     <h2>Steering Committee</h2>

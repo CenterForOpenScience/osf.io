@@ -57,6 +57,7 @@ class NodeLogParamsSerializer(RestrictedDictSerializer):
     kind = ser.CharField(read_only=True)
     folder = ser.CharField(read_only=True)
     folder_name = ser.CharField(read_only=True)
+    license = ser.CharField(read_only=True, source='new_license')
     identifiers = NodeLogIdentifiersSerializer(read_only=True)
     institution = NodeLogInstitutionSerializer(read_only=True)
     old_page = ser.CharField(read_only=True)

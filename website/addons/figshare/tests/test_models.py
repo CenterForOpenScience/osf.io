@@ -55,7 +55,7 @@ class TestNodeSettings(models.OAuthAddonNodeSettingsTestSuiteMixin, OsfTestCase)
         self.node_settings.save()
         assert_equal(self.node_settings.folder_id, folder_id)
         last_log = self.node.logs[-1]
-        assert_equal(last_log.action, '{0}_content_linked'.format(self.short_name))
+        assert_equal(last_log.action, '{0}_folder_selected'.format(self.short_name))
 
     def test_serialize_settings(self):
         # Custom `expected`
