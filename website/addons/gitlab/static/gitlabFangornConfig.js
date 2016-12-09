@@ -14,7 +14,8 @@ var $osf = require('js/osfHelpers');
 var commandKeys = [224, 17, 91, 93];
 
 function _uploadUrl(item, file) {
-    return waterbutler.buildTreeBeardUpload(item, file, {branch: item.data.branch});
+    var branch = item.data.extra.ref || item.data.extra.fileSha;
+    return waterbutler.buildTreeBeardUpload(item, file, {branch: branch });
 }
 
 function _removeEvent (event, items) {
@@ -26,7 +27,7 @@ function _removeEvent (event, items) {
     function runDelete (item) {
         // delete from server, if successful delete from view
         tb.select('.modal-footer .btn-danger').html('<i> Deleting...</i>').removeClass('btn-danger').addClass('btn-default disabled');
-        var branch = item.data.branch || $osf.urlParams().branch;
+        var branch = tem.data.extra.ref || item.data.extra.fileSha || $osf.urlParams().branch;
 
         $.ajax({
             url: waterbutler.buildTreeBeardDelete(item, {branch: branch}),
@@ -125,14 +126,14 @@ var _gitlabItemButtons = {
         var buttons = [];
         function _downloadEvent(event, item, col) {
             event.stopPropagation();
-            var branch = item.data.branch || item.data.defaultBranch;
+            var branch = tem.data.extra.ref || item.data.extra.fileSha;
             window.location = waterbutler.buildTreeBeardDownload(item, {branch: branch});
         }
         // Download Zip File
         if (item.kind === 'folder') {
             var branchArray = [];
             if (item.data.branches) {
-                item.data.branch = item.data.branch || item.data.defaultBranch;
+                item.data.branch = item.data.extra.ref || item.data.extra.fileSha;
                 for (var i = 0; i < item.data.branches.length; i++) {
                     var selected = item.data.branches[i] === item.data.branch ? 'selected' : '';
                     branchArray.push(m('option', {
@@ -183,7 +184,7 @@ var _gitlabItemButtons = {
                     }
                 }
                 if (item.data.addonFullname) {
-                    var branchParamUrl = '?ref=' + (item.data.branch || item.data.defaultBranch);
+                    var branchParamUrl = '?ref=' + (item.data.extra.ref || item.data.extra.fileSha);
 
                     buttons.push(
                         m.component(Fangorn.Components.button, {
@@ -267,7 +268,8 @@ function changeBranch(item, ref){
 }
 
 function _resolveLazyLoad(item) {
-    return waterbutler.buildTreeBeardMetadata(item, {ref: item.data.branch});
+    var branch = item.data.extra.ref || item.data.extra.fileSha;
+    return waterbutler.buildTreeBeardMetadata(item, {ref: branch});
 }
 
 function _fangornLazyLoadOnLoad (tree, event) {
@@ -283,11 +285,12 @@ function _fangornLazyLoadOnLoad (tree, event) {
 
 function gotoFile (item) {
     var tb = this;
+    var branch = item.data.extra.ref || item.data.extra.fileSha;
     var fileurl = new URI(item.data.nodeUrl)
         .segment('files')
         .segment(item.data.provider)
         .segment(item.data.path.substring(1))
-        .search({branch: item.data.branch})
+        .search({branch: branch})
         .toString();
     if(commandKeys.indexOf(tb.pressedKey) !== -1) {
         window.open(fileurl, '_blank');
@@ -310,7 +313,7 @@ function _fangornGitLabTitle(item, col)  {
                 item.data.branch = urlParams.branch;
             }
         }
-        var branch = item.data.branch || item.data.defaultBranch;
+        var branch = item.data.branch || item.data.extra.ref || item.data.extra.fileSha;
         
         return m('span',[
             m('gitlab-name', item.data.name + ' (' + branch + ')')
