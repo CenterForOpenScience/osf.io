@@ -149,9 +149,9 @@ class FigshareNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         self.folder_id = info['id']
         self.folder_name = info['name']
         self.folder_path = info['path']
-
-        self.nodelogger.log(action='folder_selected')
         self.save()
+
+        self.nodelogger.log(action='folder_selected', save=True)
 
     #############
     # Callbacks #
