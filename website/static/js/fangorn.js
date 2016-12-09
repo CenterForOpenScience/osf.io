@@ -2343,8 +2343,6 @@ function _dropLogic(event, items, folder) {
         folder = folder.parent();
     }
 
-    // if (items[0].data.kind === 'folder' && ['github', 'figshare', 'dataverse'].indexOf(folder.data.provider) !== -1) { return; }
-
     if (!folder.open) {
         return tb.updateFolder(null, folder, _dropLogic.bind(tb, event, items, folder));
     }
@@ -2441,9 +2439,7 @@ function isInvalidDropItem(folder, item, cannotBeFolder, mustBeIntra) {
         // no dropping if waiting on waterbutler ajax
         item.inProgress ||
         (cannotBeFolder && item.data.kind === 'folder') ||
-        (mustBeIntra && item.data.provider !== folder.data.provider) ||
-        //Disallow moving OUT of figshare
-        item.data.provider === 'figshare'
+        (mustBeIntra && item.data.provider !== folder.data.provider)
     ) {
         return true;
     }
