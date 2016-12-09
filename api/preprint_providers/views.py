@@ -208,10 +208,10 @@ class PreprintProviderSubjectList(JSONAPIBaseView, generics.ListAPIView):
     def is_valid_subject(self, allows_children, allowed_parents, sub):
         if sub._id in allowed_parents:
             return True
-        for parent in sub.parents:
+        for parent in sub.parents.all():
             if parent._id in allows_children:
                 return True
-            for grandpa in parent.parents:
+            for grandpa in parent.parents.all():
                 if grandpa._id in allows_children:
                     return True
         return False

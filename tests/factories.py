@@ -320,7 +320,8 @@ class SubjectFactory(ModularOdmFactory):
         except NoResultsFound:
             subject = target_class(*args, **kwargs)
             subject.text = text
-            subject.parents = parents
+            subject.save()
+            subject.parents.add(*parents)
             subject.save()
         return subject
 
