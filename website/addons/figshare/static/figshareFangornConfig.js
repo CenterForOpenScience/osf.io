@@ -59,10 +59,9 @@ var _figshareItemButtons = {
                     }, 'View'));
             }
 
-            // Files can be deleted if private or if it is in a dataset that contains more than one file
-            var privateOrSiblings = (item.data.extra && item.data.extra.status !== 'public') ||
-                (!item.parent().data.isAddonRoot && item.parent().children.length > 1);
-            if (item.kind === 'file' && privateOrSiblings && item.data.permissions && item.data.permissions.edit) {
+            // Files and folders can be deleted if private.
+            var isPrivate = (item.data.extra && item.data.extra.status !== 'public');
+            if (isPrivate && item.data.permissions && item.data.permissions.edit) {
                 buttons.push(
                     m.component(Fangorn.Components.button, {
                         onclick: function (event) {
