@@ -50,7 +50,7 @@ class NodeLicenseRecord(ObjectIDMixin, BaseModel):
     # /TODO DELETE ME POST MIGRATION
     node_license = models.ForeignKey('NodeLicense', null=True, blank=True, on_delete=models.SET_NULL)
     # Deliberately left as a CharField to support year ranges (e.g. 2012-2015)
-    year = models.CharField(max_length=128)
+    year = models.CharField(max_length=128, null=True, blank=True)
     copyright_holders = ArrayField(
         models.CharField(max_length=256, blank=True, null=True),
         default=list, blank=True)

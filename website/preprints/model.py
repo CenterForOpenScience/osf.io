@@ -3,6 +3,7 @@ import urlparse
 
 from modularodm import fields, Q
 
+from framework.encryption import EncryptedStringField
 from framework.celery_tasks.handlers import enqueue_task
 from framework.exceptions import PermissionsError
 from framework.guid.model import GuidStoredObject
@@ -11,10 +12,12 @@ from framework.mongo.utils import unique_on
 from website.files.models import StoredFileNode
 from website.preprints.tasks import on_preprint_updated
 from website.project.model import NodeLog
+from website.project.licenses import set_license
 from website.project.taxonomies import Subject, validate_subject_hierarchy
 from website.util import api_v2_url
 from website.util.permissions import ADMIN
 from website import settings
+
 
 @unique_on(['node', 'provider'])
 class PreprintService(GuidStoredObject):
@@ -26,6 +29,7 @@ class PreprintService(GuidStoredObject):
     node = fields.ForeignField('Node', index=True)
     is_published = fields.BooleanField(default=False, index=True)
     date_published = fields.DateTimeField()
+    license = fields.ForeignField('NodeLicenseRecord')
 
     # This is a list of tuples of Subject id's. MODM doesn't do schema
     # validation for DictionaryFields, but would unsuccessfully attempt
@@ -59,6 +63,10 @@ class PreprintService(GuidStoredObject):
 
     @property
     def url(self):
+        if self.provider._id != 'osf':
+            # Note that this will change with Phase 2 of branded preprints.
+            return '/preprints/{}/{}/'.format(self.provider._id, self._id)
+
         return '/{}/'.format(self._id)
 
     @property
@@ -69,6 +77,9 @@ class PreprintService(GuidStoredObject):
     def absolute_api_v2_url(self):
         path = '/preprints/{}/'.format(self._id)
         return api_v2_url(path)
+
+    def has_permission(self, *args, **kwargs):
+        return self.node.has_permission(*args, **kwargs)
 
     def get_subjects(self):
         ret = []
@@ -108,23 +119,18 @@ class PreprintService(GuidStoredObject):
         if preprint_file.node != self.node or preprint_file.provider != 'osfstorage':
             raise ValueError('This file is not a valid primary file for this preprint.')
 
-        # there is no preprint file yet! This is the first time!
-        if not self.node.preprint_file:
-            self.node.preprint_file = preprint_file
-            self.node.add_log(action=NodeLog.PREPRINT_INITIATED, params={
-                'preprint': {'id': self._id, 'title': self.node.title},
-                'service': {'title': self.provider.name}
-            }, auth=auth, save=False)
-        elif preprint_file != self.node.preprint_file:
-            # if there was one, check if it's a new file
-            self.node.preprint_file = preprint_file
+        existing_file = self.node.preprint_file
+        self.node.preprint_file = preprint_file
+
+        # only log if updating the preprint file, not adding for the first time
+        if existing_file:
             self.node.add_log(
                 action=NodeLog.PREPRINT_FILE_UPDATED,
                 params={
                     'preprint': self._id
                 },
                 auth=auth,
-                save=False,
+                save=False
             )
 
         if save:
@@ -170,6 +176,24 @@ class PreprintService(GuidStoredObject):
             self.node.save()
             self.save()
 
+    def set_preprint_license(self, license_detail, auth, save=False):
+
+        license_record, license_changed = set_license(self, license_detail, auth, node_type='preprint')
+
+        if license_changed:
+            self.node.add_log(
+                action=NodeLog.PREPRINT_LICENSE_UPDATED,
+                params={
+                    'preprint': self._id,
+                    'new_license': license_record.node_license.name
+                },
+                auth=auth,
+                save=False
+            )
+
+        if save:
+            self.save()
+
     def save(self, *args, **kwargs):
         saved_fields = super(PreprintService, self).save(*args, **kwargs)
         if saved_fields:
@@ -186,6 +210,8 @@ class PreprintProvider(StoredObject):
     external_url = fields.StringField()
     email_contact = fields.StringField()
     email_support = fields.StringField()
+    example = fields.StringField()
+    access_token = EncryptedStringField()
     advisory_board = fields.StringField()
     social_twitter = fields.StringField()
     social_facebook = fields.StringField()

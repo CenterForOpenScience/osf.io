@@ -20,7 +20,6 @@ from django.dispatch import receiver
 from django.utils import timezone
 from keen import scoped_keys
 from modularodm import Q as MQ
-from modularodm.exceptions import NoResultsFound
 from psycopg2._psycopg import AsIs
 from typedmodels.models import TypedModel
 
@@ -43,7 +42,6 @@ from osf.models.sanctions import RegistrationApproval
 from osf.models.spam import SpamMixin
 from osf.models.tag import Tag
 from osf.models.user import OSFUser
-from osf.models.licenses import NodeLicense, NodeLicenseRecord
 from osf.models.validators import validate_doi, validate_title
 from osf.modm_compat import Q
 from osf.utils.auth import Auth, get_user
@@ -52,6 +50,7 @@ from website import language, settings
 from website.citations.utils import datetime_to_csl
 from website.exceptions import (InvalidTagError, NodeStateError,
                                 TagNotFoundError, UserNotAffiliatedError)
+from website.project.licenses import set_license
 from website.mails import mails
 from website.project import signals as project_signals
 from website.project import tasks as node_tasks
@@ -1349,35 +1348,21 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             )
         return self.is_contributor(auth.user)
 
-    def set_node_license(self, license_id, year, copyright_holders, auth, save=False):
-        if not self.has_permission(auth.user, ADMIN):
-            raise PermissionsError('Only admins can change a project\'s license.')
-        try:
-            node_license = NodeLicense.find_one(
-                Q('license_id', 'eq', license_id)
+    def set_node_license(self, license_detail, auth, save=False):
+
+        license_record, license_changed = set_license(self, license_detail, auth)
+
+        if license_changed:
+            self.add_log(
+                action=NodeLog.CHANGED_LICENSE,
+                params={
+                    'parent_node': self.parent_id,
+                    'node': self._primary_key,
+                    'new_license': license_record.node_license.name
+                },
+                auth=auth,
+                save=False,
             )
-        except NoResultsFound:
-            raise NodeStateError('Trying to update a Node with an invalid license.')
-        record = self.node_license
-        if record is None:
-            record = NodeLicenseRecord(
-                node_license=node_license
-            )
-        record.node_license = node_license
-        record.year = year
-        record.copyright_holders = copyright_holders or []
-        record.save()
-        self.node_license = record
-        self.add_log(
-            action=NodeLog.CHANGED_LICENSE,
-            params={
-                'parent_node': self.parent_id,
-                'node': self._primary_key,
-                'new_license': node_license.name
-            },
-            auth=auth,
-            save=False,
-        )
 
         if save:
             self.save()
@@ -2398,9 +2383,11 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 )
             elif key == 'node_license':
                 self.set_node_license(
-                    value.get('id'),
-                    value.get('year'),
-                    value.get('copyright_holders'),
+                    {
+                        'id': value.get('id'),
+                        'year': value.get('year'),
+                        'copyrightHolders': value.get('copyrightHolders') or value.get('copyright_holders', [])
+                    },
                     auth,
                     save=save
                 )
@@ -2426,9 +2413,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                     except AttributeError:
                         raise NodeUpdateError(reason="Invalid value for attribute '{0}'".format(key), key=key)
                     except warnings.Warning:
-                        raise NodeUpdateError(
-                            reason="Attribute '{0}' doesn't exist on the Node class".format(key), key=key
-                        )
+                        raise NodeUpdateError(reason="Attribute '{0}' doesn't exist on the Node class".format(key), key=key)
         if save:
             updated = self.get_dirty_fields()
             self.save()

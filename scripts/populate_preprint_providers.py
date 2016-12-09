@@ -9,7 +9,7 @@ from modularodm import Q
 from modularodm.exceptions import NoResultsFound
 from framework.transactions.context import TokuTransaction
 from website.app import init_app
-from website.models import Subject, PreprintProvider
+from website.models import Subject, PreprintProvider, NodeLicense
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -28,6 +28,13 @@ def get_subject_id(name):
 
     return SUBJECTS_CACHE[name]
 
+def get_license(name):
+    try:
+        license = NodeLicense.find_one(Q('name', 'eq', name))
+    except NoResultsFound:
+        raise Exception('License: "{}" not found'.format(name))
+    return license
+
 def update_or_create(provider_data):
     provider = PreprintProvider.load(provider_data['_id'])
     if provider:
@@ -35,6 +42,7 @@ def update_or_create(provider_data):
             lambda rule: (map(get_subject_id, rule[0]), rule[1]),
             provider_data['subjects_acceptable']
         )
+        provider_data['licenses_acceptable'] = [get_license(name) for name in provider_data['licenses_acceptable']]
         for key, val in provider_data.iteritems():
             setattr(provider, key, val)
         changed_fields = provider.save()
@@ -66,7 +74,7 @@ def main():
             'social_twitter': '',
             'social_facebook': '',
             'social_instagram': '',
-            'licenses_acceptable': [],
+            'licenses_acceptable': ['CC0 1.0 Universal', 'CC-By Attribution 4.0 International', 'No license'],
             'header_text': '',
             'subjects_acceptable': [],
         },
@@ -77,7 +85,7 @@ def main():
             'description': 'The open archive of engineering.',
             'banner_name': 'engrxiv-banner.png',
             'external_url': 'http://engrxiv.org',
-            'example': '',
+            'example': 's58q7',
             'advisory_board': '''
                 <div class="col-xs-12">
                     <h2>Steering Committee</h2>
@@ -105,7 +113,7 @@ def main():
             'social_twitter': 'engrxiv',
             'social_facebook': 'engrXiv',
             'social_instagram': 'engrxiv',
-            'licenses_acceptable': [],
+            'licenses_acceptable': ['CC0 1.0 Universal', 'CC-By Attribution 4.0 International', 'No license'],
             'header_text': '',
             'subjects_acceptable': [
                 (['Computer and information sciences', 'Software engineering'], True),
@@ -219,7 +227,7 @@ def main():
             'description': 'A free preprint service for the psychological sciences.',
             'banner_name': 'psyarxiv-banner.png',
             'external_url': 'http://psyarxiv.com',
-            'example': '',
+            'example': 'k9mn3',
             'advisory_board': '''
                 <div class="col-xs-12">
                     <h2>Steering Committee</h2>
@@ -250,7 +258,7 @@ def main():
             'social_twitter': 'psyarxiv',
             'social_facebook': 'PsyArXiv',
             'social_instagram': 'psyarxiv',
-            'licenses_acceptable': [],
+            'licenses_acceptable': ['CC0 1.0 Universal', 'CC-By Attribution 4.0 International', 'No license'],
             'header_text': '',
             'subjects_acceptable': [
                 (['Social and behavioral sciences'], True),
@@ -307,7 +315,7 @@ def main():
             'description': 'Open archive of the social sciences',
             'banner_name': 'socarxiv-banner.png',
             'external_url': 'http://socarxiv.org',
-            'example': '',
+            'example': 'qmdc4',
             'advisory_board': '''
                 <div class="col-xs-12">
                     <h2>Steering Committee</h2>
@@ -336,7 +344,7 @@ def main():
             'social_twitter': 'socarxiv',
             'social_facebook': 'socarxiv',
             'social_instagram': 'socarxiv',
-            'licenses_acceptable': [],
+            'licenses_acceptable': ['CC0 1.0 Universal', 'CC-By Attribution 4.0 International', 'No license'],
             'header_text': '',
             'subjects_acceptable': [
                 (['Arts and Humanities'], True),

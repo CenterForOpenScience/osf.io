@@ -19,7 +19,6 @@ from addons.owncloud.tests.factories import OwnCloudAccountFactory
 from addons.s3.tests.factories import S3AccountFactory
 from addons.zotero.tests.factories import ZoteroAccountFactory
 
-
 class UserAddonListMixin(object):
     def set_setting_list_url(self):
         self.setting_list_url = '/{}users/{}/addons/'.format(
@@ -373,10 +372,6 @@ class TestUserWikiAddon(UserUnmanageableAddonTestSuiteMixin, ApiAddonTestCase):
     short_name = 'wiki'
 
 
-class TestUserFigshareAddon(UserUnmanageableAddonTestSuiteMixin, ApiAddonTestCase):
-    short_name = 'figshare'
-
-
 # OAUTH
 
 
@@ -420,6 +415,10 @@ class TestUserOwnCloudAddon(UserOAuthAddonTestSuiteMixin, ApiAddonTestCase):
     short_name = 'owncloud'
     AccountFactory = OwnCloudAccountFactory
 
+
+class TestUserFigshareAddon(UserOAuthAddonTestSuiteMixin, ApiAddonTestCase):
+    short_name = 'figshare'
+    AccountFactory = FigshareAccountFactory
 
 class TestUserInvalidAddon(UserAddonTestSuiteMixin, ApiAddonTestCase):
     addon_type = 'INVALID'

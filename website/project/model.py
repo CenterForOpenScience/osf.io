@@ -7,7 +7,6 @@ import os
 import re
 import urlparse
 import warnings
-from framework import status
 
 import jsonschema
 import pymongo
@@ -17,6 +16,17 @@ from django.core.exceptions import ValidationError
 from django.core.urlresolvers import reverse
 from django.core.validators import URLValidator
 from django.utils import timezone
+
+from modularodm import Q
+from modularodm import fields
+from modularodm.validators import MaxLengthValidator
+from modularodm.exceptions import KeyExistsException, ValidationValueError
+
+from framework import status
+from framework.mongo import ObjectId, DummyRequest
+from framework.mongo import StoredObject
+from framework.mongo import validators
+from framework.mongo import get_request_and_user_id
 from framework.addons import AddonModelMixin
 from framework.analytics import (get_basic_counters,
                                  increment_user_activity_counters)
@@ -25,17 +35,11 @@ from framework.auth.utils import privacy_info_handle
 from framework.celery_tasks.handlers import enqueue_task
 from framework.exceptions import PermissionsError
 from framework.guid.model import Guid, GuidStoredObject
-from framework.mongo import (DummyRequest, ObjectId, StoredObject,
-                             get_request_and_user_id, validators)
 from framework.mongo.utils import to_mongo_key, unique_on
 from framework.sentry import log_exception
 from framework.transactions.context import TokuTransaction
 from framework.utils import iso8601format
 from keen import scoped_keys
-from modularodm import Q, fields
-from modularodm.exceptions import (KeyExistsException, NoResultsFound,
-                                   ValidationValueError)
-from modularodm.validators import MaxLengthValidator
 from website import language, settings
 from website.citations.utils import datetime_to_csl
 from website.exceptions import (InvalidTagError, NodeStateError,
@@ -46,12 +50,12 @@ from website.mails import mails
 from website.project import signals as project_signals
 from website.project import tasks as node_tasks
 from website.project.commentable import Commentable
-from website.project.licenses import NodeLicense, NodeLicenseRecord
 from website.project.metadata.schemas import OSF_META_SCHEMAS
 from website.project.metadata.utils import create_jsonschema_from_metaschema
 from website.project.sanctions import (DraftRegistrationApproval, Embargo,
                                        EmbargoTerminationApproval,
                                        RegistrationApproval, Retraction)
+from website.project.licenses import set_license
 from website.project.spam.model import SpamMixin
 from website.util import (api_url_for, api_v2_url, get_headers_from_request,
                           sanitize, web_url_for)
@@ -541,6 +545,7 @@ class NodeLog(StoredObject):
 
     PREPRINT_INITIATED = 'preprint_initiated'
     PREPRINT_FILE_UPDATED = 'preprint_file_updated'
+    PREPRINT_LICENSE_UPDATED = 'preprint_license_updated'
 
     actions = [CHECKED_IN, CHECKED_OUT, FILE_TAG_REMOVED, FILE_TAG_ADDED, CREATED_FROM, PROJECT_CREATED, PROJECT_REGISTERED, PROJECT_DELETED, NODE_CREATED, NODE_FORKED, NODE_REMOVED, POINTER_CREATED, POINTER_FORKED, POINTER_REMOVED, WIKI_UPDATED, WIKI_DELETED, WIKI_RENAMED, MADE_WIKI_PUBLIC, MADE_WIKI_PRIVATE, CONTRIB_ADDED, CONTRIB_REMOVED, CONTRIB_REORDERED, PERMISSIONS_UPDATED, MADE_PRIVATE, MADE_PUBLIC, TAG_ADDED, TAG_REMOVED, EDITED_TITLE, EDITED_DESCRIPTION, UPDATED_FIELDS, FILE_MOVED, FILE_COPIED, FOLDER_CREATED, FILE_ADDED, FILE_UPDATED, FILE_REMOVED, FILE_RESTORED, ADDON_ADDED, ADDON_REMOVED, COMMENT_ADDED, COMMENT_REMOVED, COMMENT_UPDATED, MADE_CONTRIBUTOR_VISIBLE, MADE_CONTRIBUTOR_INVISIBLE, EXTERNAL_IDS_ADDED, EMBARGO_APPROVED, EMBARGO_CANCELLED, EMBARGO_COMPLETED, EMBARGO_INITIATED, RETRACTION_APPROVED, RETRACTION_CANCELLED, RETRACTION_INITIATED, REGISTRATION_APPROVAL_CANCELLED, REGISTRATION_APPROVAL_INITIATED, REGISTRATION_APPROVAL_APPROVED, PREREG_REGISTRATION_INITIATED, CITATION_ADDED, CITATION_EDITED, CITATION_REMOVED, AFFILIATED_INSTITUTION_ADDED, AFFILIATED_INSTITUTION_REMOVED, PREPRINT_INITIATED, PREPRINT_FILE_UPDATED]
 
@@ -1497,35 +1502,21 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
             )
         return self.is_contributor(auth.user)
 
-    def set_node_license(self, license_id, year, copyright_holders, auth, save=False):
-        if not self.has_permission(auth.user, ADMIN):
-            raise PermissionsError('Only admins can change a project\'s license.')
-        try:
-            node_license = NodeLicense.find_one(
-                Q('id', 'eq', license_id)
+    def set_node_license(self, license_detail, auth, save=False):
+
+        license_record, license_changed = set_license(self, license_detail, auth)
+
+        if license_changed:
+            self.add_log(
+                action=NodeLog.CHANGED_LICENSE,
+                params={
+                    'parent_node': self.parent_id,
+                    'node': self._primary_key,
+                    'new_license': license_record.node_license.name
+                },
+                auth=auth,
+                save=False,
             )
-        except NoResultsFound:
-            raise NodeStateError('Trying to update a Node with an invalid license.')
-        record = self.node_license
-        if record is None:
-            record = NodeLicenseRecord(
-                node_license=node_license
-            )
-        record.node_license = node_license
-        record.year = year
-        record.copyright_holders = copyright_holders or []
-        record.save()
-        self.node_license = record
-        self.add_log(
-            action=NodeLog.CHANGED_LICENSE,
-            params={
-                'parent_node': self.parent_id,
-                'node': self._primary_key,
-                'new_license': node_license.name
-            },
-            auth=auth,
-            save=False,
-        )
 
         if save:
             self.save()
@@ -1600,9 +1591,11 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
                 )
             elif key == 'node_license':
                 self.set_node_license(
-                    value.get('id'),
-                    value.get('year'),
-                    value.get('copyright_holders'),
+                    {
+                        'id': value.get('id'),
+                        'year': value.get('year'),
+                        'copyrightHolders': value.get('copyrightHolders') or value.get('copyright_holders', [])
+                    },
                     auth,
                     save=save
                 )
