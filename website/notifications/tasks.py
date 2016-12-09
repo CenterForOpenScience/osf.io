@@ -1,13 +1,10 @@
 """
 Tasks for making even transactional emails consolidated.
 """
-from bson.code import Code
-from django.db import connection, models
+from django.db import connection
 from framework.auth.core import User
 from framework.celery_tasks import app as celery_app
-from framework.mongo import database as db
 from framework.sentry import log_exception
-from framework.transactions.context import TokuTransaction
 from modularodm import Q
 from website import mails
 from website.notifications.model import NotificationDigest

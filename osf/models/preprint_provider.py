@@ -2,6 +2,7 @@
 from django.db import models
 
 from website.util import api_v2_url
+from modularodm import Q
 
 from osf.models.base import BaseModel, ObjectIDMixin
 from osf.utils.fields import EncryptedTextField
