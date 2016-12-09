@@ -35,9 +35,7 @@ var _figshareItemButtons = {
                     }, 'Download')
                 );
             }
-            // Files can be deleted if private or if it is in a dataset that contains more than one file
-            var privateOrSiblings = (item.data.extra && item.data.extra.status !== 'public') ||
-                (!item.parent().data.isAddonRoot && item.parent().children.length > 1);
+            // All files are viewable on the OSF.
             if (item.kind === 'file' && item.data.permissions && item.data.permissions.view) {
                 buttons.push(
                     m.component(Fangorn.Components.button, {
@@ -48,6 +46,10 @@ var _figshareItemButtons = {
                         className: 'text-info'
                     }, 'View'));
             }
+
+            // Files can be deleted if private or if it is in a dataset that contains more than one file
+            var privateOrSiblings = (item.data.extra && item.data.extra.status !== 'public') ||
+                (!item.parent().data.isAddonRoot && item.parent().children.length > 1);
             if (item.kind === 'file' && privateOrSiblings && item.data.permissions && item.data.permissions.edit) {
                 buttons.push(
                     m.component(Fangorn.Components.button, {
@@ -59,6 +61,8 @@ var _figshareItemButtons = {
                     }, 'Delete')
                 );
             }
+
+            // Files are only viewable on figshare if they are public
             if (item.kind === 'file' && item.data.permissions && item.data.permissions.view && item.data.extra.status === 'public') {
                 buttons.push(
                     m('a.text-info.fangorn-toolbar-icon', {href: item.data.extra.webView}, [
