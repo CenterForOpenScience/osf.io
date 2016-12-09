@@ -416,9 +416,10 @@ class TestUserOwnCloudAddon(UserOAuthAddonTestSuiteMixin, ApiAddonTestCase):
     AccountFactory = OwnCloudAccountFactory
 
 
+@pytest.mark.skip('Unskip when figshare v2 addon is ported')
 class TestUserFigshareAddon(UserOAuthAddonTestSuiteMixin, ApiAddonTestCase):
     short_name = 'figshare'
-    AccountFactory = FigshareAccountFactory
+    # AccountFactory = FigshareAccountFactory
 
 class TestUserInvalidAddon(UserAddonTestSuiteMixin, ApiAddonTestCase):
     addon_type = 'INVALID'
