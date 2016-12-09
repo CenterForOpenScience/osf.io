@@ -15,24 +15,23 @@ class GitLabAddonTestCase(OAuthAddonTestCaseMixin, AddonTestCase):
 
     def set_node_settings(self, settings):
         super(GitLabAddonTestCase, self).set_node_settings(settings)
-        settings.repo = 'abc'
-        settings.user = 'octo-cat'
+        settings.repo = 'osfgitlabtest'
+        settings.user = 'osfio'
 
-# TODO: allow changing the repo name
-def create_mock_gitlab(user='octo-cat', private=False):
+def create_mock_gitlab(user='osfio', private=False):
     """Factory for mock GitLab objects.
     Example: ::
 
-        >>> gitlab = create_mock_gitlab(user='octocat')
-        >>> gitlab.branches(user='octocat', repo='hello-world')
+        >>> gitlab = create_mock_gitlab(user='osfio')
+        >>> gitlab.branches(user='osfio', repo='hello-world')
         >>> [{u'commit': {u'sha': u'e22d92d5d90bb8f9695e9a5e2e2311a5c1997230',
-        ...   u'url': u'https://api.gitlab.com/repos/octocat/mock-repo/commits/e22d92d5d90bb8f9695e9a5e2e2311a5c1997230'},
+        ...   u'url': u'https://api.gitlab.com/repos/osfio/mock-repo/commits/e22d92d5d90bb8f9695e9a5e2e2311a5c1997230'},
         ...  u'name': u'dev'},
         ... {u'commit': {u'sha': u'444a74d0d90a4aea744dacb31a14f87b5c30759c',
-        ...   u'url': u'https://api.gitlab.com/repos/octocat/mock-repo/commits/444a74d0d90a4aea744dacb31a14f87b5c30759c'},
+        ...   u'url': u'https://api.gitlab.com/repos/osfio/mock-repo/commits/444a74d0d90a4aea744dacb31a14f87b5c30759c'},
         ...  u'name': u'master'},
         ... {u'commit': {u'sha': u'c6eaaf6708561c3d4439c0c8dd99c2e33525b1e6',
-        ...   u'url': u'https://api.gitlab.com/repos/octocat/mock-repo/commits/c6eaaf6708561c3d4439c0c8dd99c2e33525b1e6'},
+        ...   u'url': u'https://api.gitlab.com/repos/osfio/mock-repo/commits/c6eaaf6708561c3d4439c0c8dd99c2e33525b1e6'},
         ...  u'name': u'no-bundle'}]
 
     :param str user: GitLab username.

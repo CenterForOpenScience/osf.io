@@ -36,11 +36,12 @@ class GitLabClient(object):
         return self.gitlab.currentuser()
 
     def repo(self, repo_id):
-        """Get a single Github repo's info.
+        """Get a single GitLab repo's info.
+
+        https://docs.gitlab.com/ce/api/projects.html#get-single-project
 
         :param str repo_id: GitLab repository id
         :return: Dict of repo information
-            See #TODO: link gitlab docs
         """
         rv = self.gitlab.getproject(repo_id)
 
@@ -54,29 +55,19 @@ class GitLabClient(object):
     def user_repos(self, user):
         return self.gitlab.getprojectsowned()
 
-    def my_org_repos(self, permissions=None):
-        return []
-        # TODO
-        #permissions = permissions or ['push']
-        #return itertools.chain.from_iterable(
-        #    team.iter_repos()
-        #    for team in self.gh3.iter_user_teams()
-        #    if team.permission in permissions
-        #)
-
     def create_repo(self, repo, **kwargs):
         return self.gitlab.createproject(repo)
 
     def branches(self, repo_id, branch=None):
         """List a repo's branches or get a single branch (in a list).
 
+        https://docs.gitlab.com/ce/api/branches.html#list-repository-branches
+
         :param str user: GitLab user name
         :param str repo: GitLab repo name
         :param str branch: Branch name if getting a single branch
         :return: List of branch dicts
-            http://developer.github.com/v3/repos/#list-branches
         """
-        # TODO
         if branch:
             return self.gitlab.getbranch(repo_id, branch)
 
@@ -99,34 +90,35 @@ class GitLabClient(object):
     def hooks(self, user, repo):
         """List webhooks
 
+        https://docs.gitlab.com/ce/api/projects.html#list-project-hooks
+
         :param str user: GitLab user name
         :param str repo: GitLab repo name
         :return list: List of commit dicts from GitLab; see
-            http://developer.github.com/v3/repos/hooks/#json-http
         """
         return False
 
     def add_hook(self, user, repo, name, config, events=None, active=True):
         """Create a webhook.
 
+        https://docs.gitlab.com/ce/api/projects.html#add-project-hook
+
         :param str user: GitLab user name
         :param str repo: GitLab repo name
         :return dict: Hook info from GitLab: see see
-            http://developer.github.com/v3/repos/hooks/#json-http
         """
         return False
 
     def delete_hook(self, user, repo, _id):
         """Delete a webhook.
 
+        https://docs.gitlab.com/ce/api/projects.html#delete-project-hook
+
         :param str user: GitLab user name
         :param str repo: GitLab repo name
         :return bool: True if successful, False otherwise
         :raises: NotFoundError if repo or hook cannot be located
         """
-        return False
-
-    def revoke_token(self):
         return False
 
     def _get_api_request(self, uri):

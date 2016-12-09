@@ -7,9 +7,9 @@
 
     <h4 class="addon-title">
         <img class="addon-icon" src=${addon_icon_url}>
-        <span data-bind="text: properName"></span> <!-- TODO: Can we use mako addon_full_name as some other addons do? -->
+        <span data-bind="text: properName"></span>
         <small>
-            <a href="#gitlabInputCredentials" data-toggle="modal" class="pull-right text-primary">Connect Account</a>
+            <a href="#gitlabInputCredentials" data-toggle="modal" class="pull-right text-primary">Connect or Reauthorize Account</a>
         </small>
     </h4>
 

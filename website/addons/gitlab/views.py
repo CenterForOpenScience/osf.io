@@ -125,11 +125,6 @@ def gitlab_add_user_account(auth, **kwargs):
     if account not in user.external_accounts:
         user.external_accounts.append(account)
 
-    user_addon = auth.user.get_addon('gitlab')
-    if not user_addon:
-        user.add_addon('gitlab')
-    user.save()
-
     # Need to ensure that the user has gitlab enabled at this point
     user.get_or_add_addon('gitlab', auth=auth)
     user.save()
@@ -314,7 +309,7 @@ def gitlab_hgrid_data(node_settings, auth, **kwargs):
         permissions=permissions,
         branches=branch_names,
         private_key=kwargs.get('view_only', None),
-        defaultBranch=repo['default_branch'],
+        default_branch=repo['default_branch'],
     )]
 
 #########
@@ -367,7 +362,6 @@ def add_hook_log(node, gitlab, action, path, date, committer, include_urls=False
     urls = {}
 
     if include_urls:
-        # TODO: Move to helper function
         url = node.web_url_for('addon_view_or_download_file', path=path, provider=SHORT_NAME)
 
         urls = {
