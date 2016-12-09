@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, division, print_function, unicode_literals
 
-import re
-
 from nose.tools import assert_equal, ok_
 
 from modularodm import Q
@@ -112,10 +110,7 @@ def create_regfuncs():
 
 REGFUNCS_PUBLIC, REGFUNCS_PRIVATE = create_regfuncs()
 REGFUNCS = REGFUNCS_PUBLIC | REGFUNCS_PRIVATE
-
-locals_dict = locals()
-for regfunc in REGFUNCS:
-    locals_dict[regfunc.__name__] = regfunc
+_REGFUNCS_BY_NAME = {regfunc.__name__: regfunc for regfunc in REGFUNCS}
 
 VARYFUNCS = (
     base,
@@ -154,8 +149,9 @@ class TestVaryFuncs(DbIsolationMixin, OsfTestCase):
 
     # regfuncs
 
-    def Check(self, func):
-        func(factories.ProjectFactory(title='Flim Flammity'))
+    def Check(self, name):
+        regfunc = _REGFUNCS_BY_NAME[name + '_registration_of_a']
+        regfunc(factories.ProjectFactory(title='Flim Flammity'))
         reg = Node.find_one(Q('is_registration', 'eq', True))
 
         def check(retraction_state, embargo_state, approval_state, job_done):
@@ -188,137 +184,137 @@ class TestVaryFuncs(DbIsolationMixin, OsfTestCase):
         assert_equal(len(REGFUNCS), 32)
 
     def test_number_of_regfunc_tests(self):
-        is_regfunc_test = lambda n: re.match('test_.*makes_a.*_registration_of_a_node', n)
+        is_regfunc_test = lambda n: n.startswith('test_regfunc_')
         regfunc_tests = filter(is_regfunc_test, self.__class__.__dict__.keys())
         assert_equal(len(regfunc_tests), len(REGFUNCS))
 
     # no retraction
-    def test_uacro_makes_an_unembargoed_approved_complete_registration_of_a_node(self):
-        check = self.Check(unembargoed_approved_complete_registration_of_a)
+    def test_regfunc_uac(self):
+        check = self.Check('unembargoed_approved_complete')
         check(None, None, 'approved', True)
 
-    def test_uairo_makes_an_unembargoed_approved_incomplete_registration_of_a_node(self):
-        check = self.Check(unembargoed_approved_incomplete_registration_of_a)
+    def test_regfunc_uai(self):
+        check = self.Check('unembargoed_approved_incomplete')
         check(None, None, 'approved', False)
 
-    def test_uucro_makes_an_unembargoed_unapproved_complete_registration_of_a_node(self):
-        check = self.Check(unembargoed_unapproved_complete_registration_of_a)
+    def test_regfunc_uuc(self):
+        check = self.Check('unembargoed_unapproved_complete')
         check(None, None, 'unapproved', True)
 
-    def test_uuiro_makes_an_unembargoed_unapproved_incomplete_registration_of_a_node(self):
-        check = self.Check(unembargoed_unapproved_incomplete_registration_of_a)
+    def test_regfunc_uui(self):
+        check = self.Check('unembargoed_unapproved_incomplete')
         check(None, None, 'unapproved', False)
 
-    def test_eacro_makes_an_embargoed_approved_complete_registration_of_a_node(self):
-        check = self.Check(embargoed_approved_complete_registration_of_a)
+    def test_regfunc_eac(self):
+        check = self.Check('embargoed_approved_complete')
         check(None, 'approved', None, True)
 
-    def test_eairo_makes_an_embargoed_approved_incomplete_registration_of_a_node(self):
-        check = self.Check(embargoed_approved_incomplete_registration_of_a)
+    def test_regfunc_eai(self):
+        check = self.Check('embargoed_approved_incomplete')
         check(None, 'approved', None, False)
 
-    def test_eucro_makes_an_embargoed_unapproved_complete_registration_of_a_node(self):
-        check = self.Check(embargoed_unapproved_complete_registration_of_a)
+    def test_regfunc_euc(self):
+        check = self.Check('embargoed_unapproved_complete')
         check(None, 'unapproved', None, True)
 
-    def test_euiro_makes_an_embargoed_unapproved_incomplete_registration_of_a_node(self):
-        check = self.Check(embargoed_unapproved_incomplete_registration_of_a)
+    def test_regfunc_eui(self):
+        check = self.Check('embargoed_unapproved_incomplete')
         check(None, 'unapproved', None, False)
 
-    def test_feacro_makes_a_formerly_embargoed_approved_complete_registration_of_a_node(self):
-        check = self.Check(formerly_embargoed_approved_complete_registration_of_a)
+    def test_regfunc_feac(self):
+        check = self.Check('formerly_embargoed_approved_complete')
         check(None, 'completed', None, True)
 
-    def test_feairo_makes_a_formerly_embargoed_approved_incomplete_registration_of_a_node(self):
-        check = self.Check(formerly_embargoed_approved_incomplete_registration_of_a)
+    def test_regfunc_feai(self):
+        check = self.Check('formerly_embargoed_approved_incomplete')
         check(None, 'completed', None, False)
 
-    def test_feucro_makes_a_formerly_embargoed_unapproved_complete_registration_of_a_node(self):
-        check = self.Check(formerly_embargoed_unapproved_complete_registration_of_a)
+    def test_regfunc_feuc(self):
+        check = self.Check('formerly_embargoed_unapproved_complete')
         check(None, 'unapproved', None, True)
 
-    def test_feuiro_makes_a_formerly_embargoed_unapproved_incomplete_registration_of_a_node(self):
-        check = self.Check(formerly_embargoed_unapproved_incomplete_registration_of_a)
+    def test_regfunc_feui(self):
+        check = self.Check('formerly_embargoed_unapproved_incomplete')
         check(None, 'unapproved', None, False)
 
     # unapproved retraction
-    def test_urouacro_makes_an_unapproved_retraction_of_an_unembargoed_approved_complete_registration_of_a_node(self):
-        check = self.Check(unapproved_retraction_of_an_unembargoed_approved_complete_registration_of_a)
+    def test_regfunc_uroauac(self):
+        check = self.Check('unapproved_retraction_of_an_unembargoed_approved_complete')
         check('unapproved', None, 'approved', True)
 
-    def test_urouairo_makes_an_unapproved_retraction_of_an_unembargoed_approved_incomplete_registration_of_a_node(self):
-        check = self.Check(unapproved_retraction_of_an_unembargoed_approved_incomplete_registration_of_a)
+    def test_regfunc_uroauai(self):
+        check = self.Check('unapproved_retraction_of_an_unembargoed_approved_incomplete')
         check('unapproved', None, 'approved', False)
 
-    def test_uroeacro_makes_an_unapproved_retraction_of_an_embargoed_approved_complete_registration_of_a_node(self):
-        check = self.Check(unapproved_retraction_of_an_embargoed_approved_complete_registration_of_a)
+    def test_regfunc_uroaeac(self):
+        check = self.Check('unapproved_retraction_of_an_embargoed_approved_complete')
         check('unapproved', 'approved', None, True)
 
-    def test_uroeairo_makes_an_unapproved_retraction_of_an_embargoed_approved_incomplete_registration_of_a_node(self):
-        check = self.Check(unapproved_retraction_of_an_embargoed_approved_incomplete_registration_of_a)
+    def test_regfunc_uroaeai(self):
+        check = self.Check('unapproved_retraction_of_an_embargoed_approved_incomplete')
         check('unapproved', 'approved', None, False)
 
-    def test_uroeucro_makes_an_unapproved_retraction_of_an_embargoed_unapproved_complete_registration_of_a_node(self):
-        check = self.Check(unapproved_retraction_of_an_embargoed_unapproved_complete_registration_of_a)
+    def test_regfunc_uroaeuc(self):
+        check = self.Check('unapproved_retraction_of_an_embargoed_unapproved_complete')
         check('unapproved', 'unapproved', None, True)
 
-    def test_uroeuiro_makes_an_unapproved_retraction_of_an_embargoed_unapproved_incomplete_registration_of_a_node(self):
-        check = self.Check(unapproved_retraction_of_an_embargoed_unapproved_incomplete_registration_of_a)
+    def test_regfunc_uroaeui(self):
+        check = self.Check('unapproved_retraction_of_an_embargoed_unapproved_incomplete')
         check('unapproved', 'unapproved', None, False)
 
-    def test_urofeacro_makes_an_unapproved_retraction_of_a_formerly_embargoed_approved_complete_registration_of_a_node(self):
-        check = self.Check(unapproved_retraction_of_a_formerly_embargoed_approved_complete_registration_of_a)
+    def test_regfunc_uroafeac(self):
+        check = self.Check('unapproved_retraction_of_a_formerly_embargoed_approved_complete')
         check('unapproved', 'completed', None, True)
 
-    def test_urofeairo_makes_an_unapproved_retraction_of_a_formerly_embargoed_approved_incomplete_registration_of_a_node(self):
-        check = self.Check(unapproved_retraction_of_a_formerly_embargoed_approved_incomplete_registration_of_a)
+    def test_regfunc_uroafeai(self):
+        check = self.Check('unapproved_retraction_of_a_formerly_embargoed_approved_incomplete')
         check('unapproved', 'completed', None, False)
 
-    def test_urofeucro_makes_an_unapproved_retraction_of_a_formerly_embargoed_unapproved_complete_registration_of_a_node(self):
-        check = self.Check(unapproved_retraction_of_a_formerly_embargoed_unapproved_complete_registration_of_a)
+    def test_regfunc_uroafeuc(self):
+        check = self.Check('unapproved_retraction_of_a_formerly_embargoed_unapproved_complete')
         check('unapproved', 'unapproved', None, True)
 
-    def test_urofeuiro_makes_an_unapproved_retraction_of_a_formerly_embargoed_unapproved_incomplete_registration_of_a_node(self):
-        check = self.Check(unapproved_retraction_of_a_formerly_embargoed_unapproved_incomplete_registration_of_a)
+    def test_regfunc_uroafeui(self):
+        check = self.Check('unapproved_retraction_of_a_formerly_embargoed_unapproved_incomplete')
         check('unapproved', 'unapproved', None, False)
 
     # approved retraction
-    def test_arouacro_makes_an_approved_retraction_of_an_unembargoed_approved_complete_registration_of_a_node(self):
-        check = self.Check(approved_retraction_of_an_unembargoed_approved_complete_registration_of_a)
+    def test_regfunc_aroauac(self):
+        check = self.Check('approved_retraction_of_an_unembargoed_approved_complete')
         check('approved', None, 'approved', True)
 
-    def test_arouairo_makes_an_approved_retraction_of_an_unembargoed_approved_incomplete_registration_of_a_node(self):
-        check = self.Check(approved_retraction_of_an_unembargoed_approved_incomplete_registration_of_a)
+    def test_regfunc_aroauai(self):
+        check = self.Check('approved_retraction_of_an_unembargoed_approved_incomplete')
         check('approved', None, 'approved', False)
 
-    def test_aroeacro_makes_an_approved_retraction_of_an_embargoed_approved_complete_registration_of_a_node(self):
-        check = self.Check(approved_retraction_of_an_embargoed_approved_complete_registration_of_a)
+    def test_regfunc_aroaeac(self):
+        check = self.Check('approved_retraction_of_an_embargoed_approved_complete')
         check('approved', 'rejected', None, True)
 
-    def test_aroeairo_makes_an_approved_retraction_of_an_embargoed_approved_incomplete_registration_of_a_node(self):
-        check = self.Check(approved_retraction_of_an_embargoed_approved_incomplete_registration_of_a)
+    def test_regfunc_aroaeai(self):
+        check = self.Check('approved_retraction_of_an_embargoed_approved_incomplete')
         check('approved', 'rejected', None, False)
 
-    def test_aroeucro_makes_an_approved_retraction_of_an_embargoed_unapproved_complete_registration_of_a_node(self):
-        check = self.Check(approved_retraction_of_an_embargoed_unapproved_complete_registration_of_a)
+    def test_regfunc_aroaeuc(self):
+        check = self.Check('approved_retraction_of_an_embargoed_unapproved_complete')
         check('approved', 'rejected', None, True)
 
-    def test_aroeuiro_makes_an_approved_retraction_of_an_embargoed_unapproved_incomplete_registration_of_a_node(self):
-        check = self.Check(approved_retraction_of_an_embargoed_unapproved_incomplete_registration_of_a)
+    def test_regfunc_aroaeui(self):
+        check = self.Check('approved_retraction_of_an_embargoed_unapproved_incomplete')
         check('approved', 'rejected', None, False)
 
-    def test_arofeacro_makes_an_approved_retraction_of_a_formerly_embargoed_approved_complete_registration_of_a_node(self):
-        check = self.Check(approved_retraction_of_a_formerly_embargoed_approved_complete_registration_of_a)
+    def test_regfunc_aroafeac(self):
+        check = self.Check('approved_retraction_of_a_formerly_embargoed_approved_complete')
         check('approved', 'rejected', None, True)
 
-    def test_arofeairo_makes_an_approved_retraction_of_a_formerly_embargoed_approved_incomplete_registration_of_a_node(self):
-        check = self.Check(approved_retraction_of_a_formerly_embargoed_approved_incomplete_registration_of_a)
+    def test_regfunc_aroafeai(self):
+        check = self.Check('approved_retraction_of_a_formerly_embargoed_approved_incomplete')
         check('approved', 'rejected', None, False)
 
-    def test_arofeucro_makes_an_approved_retraction_of_a_formerly_embargoed_unapproved_complete_registration_of_a_node(self):
-        check = self.Check(approved_retraction_of_a_formerly_embargoed_unapproved_complete_registration_of_a)
+    def test_regfunc_aroafeuc(self):
+        check = self.Check('approved_retraction_of_a_formerly_embargoed_unapproved_complete')
         check('approved', 'rejected', None, True)
 
-    def test_arofeuiro_makes_an_approved_retraction_of_a_formerly_embargoed_unapproved_incomplete_registration_of_a_node(self):
-        check = self.Check(approved_retraction_of_a_formerly_embargoed_unapproved_incomplete_registration_of_a)
+    def test_regfunc_aroafeui(self):
+        check = self.Check('approved_retraction_of_a_formerly_embargoed_unapproved_incomplete')
         check('approved', 'rejected', None, False)
