@@ -657,7 +657,6 @@ def test_travis_varnish(ctx):
     Run the fast and quirky JS tests and varnish tests in isolation
     """
     test_js(ctx)
-    test_varnish(ctx)
 
 
 @task
