@@ -23,6 +23,16 @@ var _figshareItemButtons = {
                         className: 'text-success'
                     }, 'Upload')
                 );
+                if (item.data.root_folder_type === 'project') {
+                    buttons.push(
+                        m.component(Fangorn.Components.button, {
+                            onclick: function () {
+                                tb.toolbarMode(Fangorn.Components.toolbarModes.ADDFOLDER);
+                            },
+                            icon: 'fa fa-plus',
+                            className: 'text-success'
+                        }, 'Create Folder'));
+                }
             }
 
             // Download file or Download-as-zip
