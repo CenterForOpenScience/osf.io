@@ -2506,7 +2506,13 @@ function getCopyMode(folder, items) {
     var preprintPath = getPreprintPath(window.contextVars.node.preprintFileId);
     var canMove = true;
     var mustBeIntra = (folder.data.provider === 'github');
-    var cannotBeFolder = (folder.data.provider === 'figshare' || folder.data.provider === 'dataverse');
+    // Folders cannot be copied to dataverse at all.  Folders may only be copied to figshare
+    // if the target is the addon root and the root is a project (not a fileset)
+    var cannotBeFolder = (
+        folder.data.provider === 'dataverse' ||
+            (folder.data.provider === 'figshare' &&
+             !(folder.data.isAddonRoot && folder.data.rootFolderType === 'project'))
+    );
     if (isInvalidDropFolder(folder)) {
         return 'forbidden';
     }

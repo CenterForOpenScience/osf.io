@@ -83,6 +83,31 @@ describe('fangorn', () => {
                 assert.equal(Fangorn.getCopyMode(folder, [item]), 'forbidden');
             });
 
+            it('folder can be dropped if target is figshare addon root with type project', () => {
+                folder = getItem('folder', 0);
+                folder.data.provider = 'figshare';
+                folder.data.isAddonRoot = true;
+                folder.data.rootFolderType = 'project';
+                item = getItem('folder', 3);
+                assert.equal(Fangorn.getCopyMode(folder, [item]), 'move');
+            });
+
+            it('folder cannot be dropped if target is figshare addon root with type fileset', () => {
+                folder = getItem('folder', 2);
+                folder.data.provider = 'figshare';
+                folder.data.isAddonRoot = false;
+                item = getItem('folder', 3);
+                assert.equal(Fangorn.getCopyMode(folder, [item]), 'forbidden');
+            });
+
+            it('folder cannot be dropped if target is figshare non-root fileset', () => {
+                folder = getItem('folder', 0);
+                folder.data.provider = 'figshare';
+                folder.data.isAddonRoot = true;
+                folder.data.rootFolderType = 'fileset';
+                item = getItem('folder', 3);
+                assert.equal(Fangorn.getCopyMode(folder, [item]), 'forbidden');
+            });
         });
 
         describe('isInvalidDropFolder', () => {
