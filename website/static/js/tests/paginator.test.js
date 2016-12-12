@@ -19,7 +19,7 @@ var TestPaginator = oop.extend(Paginator, {
 });
 
 
-describe.skip('Paginator', () => {
+describe('Paginator', () => {
     var paginator;
     var numberOfPages;
     var currentPage;
