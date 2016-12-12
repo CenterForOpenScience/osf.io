@@ -91,7 +91,12 @@ class Command(BaseCommand):
         if field_name in ['content_type', 'content_type_id']:
             # modm doesn't have gfk
             return
-        assert getattr(django_obj, field_name)._id == getattr(modm_obj, field_name)._id
+        django_thing = getattr(django_obj, field_name)
+        modm_thing = getattr(modm_obj, field_name)
+        if modm_thing:
+            assert getattr(django_obj, field_name)._id == getattr(modm_obj, field_name)._id
+        else:
+            print('{} of {} were None'.format(field_name, modm_obj))
 
     def validate_basic_field(self, field_name, django_obj, modm_obj):
         if field_name in ['id', 'pk', 'object_id']:
@@ -150,6 +155,8 @@ class Command(BaseCommand):
             django_ids = [self.get_pk(modm_obj) for modm_obj in page_of_modm_objects]
             django_objects = django_model.objects.filter(id__in=django_ids)
 
+            # TODO users aren't going to match
+            
             assert len(django_ids) == len(django_objects) == len(page_of_modm_objects), 'Lost some keys along the way for {}'.format(django_model._meta.model.__name__)
 
             for modm_obj in page_of_modm_objects:
