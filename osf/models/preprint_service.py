@@ -9,6 +9,7 @@ from framework.exceptions import PermissionsError
 from website.files.models import StoredFileNode
 from website.preprints.tasks import on_preprint_updated
 from website.project.model import NodeLog
+from website.project.licenses import set_license
 from website.project.taxonomies import validate_subject_hierarchy
 from website.util import api_v2_url
 from website.util.permissions import ADMIN
@@ -35,6 +36,8 @@ class PreprintService(GuidMixin, BaseModel):
                              null=True, blank=True, db_index=True)
     is_published = models.BooleanField(default=False, db_index=True)
     date_published = models.DateTimeField(null=True, blank=True)
+    license = models.ForeignKey('osf.NodeLicenseRecord',
+                                on_delete=models.SET_NULL, null=True, blank=True)
 
     # This is a list of tuples of Subject id's. MODM doesn't do schema
     # validation for DictionaryFields, but would unsuccessfully attempt
@@ -167,6 +170,23 @@ class PreprintService(GuidMixin, BaseModel):
 
         if save:
             self.node.save()
+            self.save()
+
+    def set_preprint_license(self, license_detail, auth, save=False):
+        license_record, license_changed = set_license(self, license_detail, auth, node_type='preprint')
+
+        if license_changed:
+            self.node.add_log(
+                action=NodeLog.PREPRINT_LICENSE_UPDATED,
+                params={
+                    'preprint': self._id,
+                    'new_license': license_record.node_license.name
+                },
+                auth=auth,
+                save=False
+            )
+
+        if save:
             self.save()
 
     def save(self, *args, **kwargs):

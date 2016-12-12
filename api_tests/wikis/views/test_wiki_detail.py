@@ -170,7 +170,7 @@ class TestWikiDetailView(ApiWikiTestCase):
         res = self.app.get(self.public_url)
         assert_equal(res.status_code, 200)
         url = res.json['data']['relationships']['comments']['links']['related']['href']
-        CommentFactory(node=self.public_project, target=Guid.load(self.public_wiki._id), user=self.user)
+        comment = CommentFactory(node=self.public_project, target=Guid.load(self.public_wiki._id), user=self.user)
         res = self.app.get(url)
         assert_equal(res.status_code, 200)
         assert_equal(res.json['data'][0]['type'], 'comments')
