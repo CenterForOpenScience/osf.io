@@ -65,15 +65,13 @@ class TestNodeSettings(models.OAuthAddonNodeSettingsTestSuiteMixin, OsfTestCase)
         super(TestNodeSettings, self).test_complete_has_auth_not_verified()
 
     @mock.patch('website.addons.gitlab.api.GitLabClient.repos')
-    def test_to_json(self, mock_org, mock_repos):
+    def test_to_json(self, mock_repos):
         mock_repos.return_value = {}
-        mock_org.return_value = {}
         super(TestNodeSettings, self).test_to_json()
 
     @mock.patch('website.addons.gitlab.api.GitLabClient.repos')
-    def test_to_json_user_is_owner(self, mock_org, mock_repos):
+    def test_to_json_user_is_owner(self, mock_repos):
         mock_repos.return_value = {}
-        mock_org.return_value = {}
         result = self.node_settings.to_json(self.user)
         assert_true(result['user_has_auth'])
         assert_equal(result['gitlab_user'], 'abc')
@@ -82,9 +80,8 @@ class TestNodeSettings(models.OAuthAddonNodeSettingsTestSuiteMixin, OsfTestCase)
         assert_equal(result.get('gitlab_repo', None), 'mock')
 
     @mock.patch('website.addons.gitlab.api.GitLabClient.repos')
-    def test_to_json_user_is_not_owner(self, mock_org, mock_repos):
+    def test_to_json_user_is_not_owner(self, mock_repos):
         mock_repos.return_value = {}
-        mock_org.return_value = {}
         not_owner = UserFactory()
         result = self.node_settings.to_json(not_owner)
         assert_false(result['user_has_auth'])
