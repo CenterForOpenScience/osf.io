@@ -136,7 +136,7 @@ class TestPreprintUpdate(ApiTestCase):
         assert_equal(self.preprint.primary_file.wrapped(), new_file)
 
         # check logs
-        log = self.preprint.node.logs[-1]
+        log = self.preprint.node.logs.latest()
         assert_equal(log.action, 'preprint_file_updated')
         assert_equal(log.params.get('preprint'), self.preprint._id)
 
