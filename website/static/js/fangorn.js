@@ -2449,7 +2449,8 @@ function isInvalidDropItem(folder, item, cannotBeFolder, mustBeIntra) {
 function allowedToMove(folder, item, mustBeIntra) {
     return (
         item.data.permissions.edit &&
-        (!mustBeIntra || (item.data.provider === folder.data.provider && item.data.nodeId === folder.data.nodeId))
+        (!mustBeIntra || (item.data.provider === folder.data.provider && item.data.nodeId === folder.data.nodeId)) &&
+            !(item.data.provider === 'figshare' && item.data.extra && item.data.extra.status === 'public')
     );
 }
 

@@ -271,7 +271,23 @@ describe('fangorn', () => {
                 folder.data.nodeId = 'abcde';
                 item.data.nodeId = 'abcde';
                 assert.equal(Fangorn.allowedToMove(folder, item, true), true);
-            });            
+            });
+
+            it('cannot move item from figshare if it is public', () => {
+                folder = getItem('folder', 2);
+                item = getItem('file', 3);
+                item.data.provider = 'figshare';
+                item.data.extra = {'status': 'public'};
+                assert.equal(Fangorn.allowedToMove(folder, item, false), false);
+            });
+
+            it('can move item from figshare if it is private', () => {
+                folder = getItem('folder', 2);
+                item = getItem('file', 3);
+                item.data.provider = 'figshare';
+                item.data.extra = {'status': 'draft'};
+                assert.equal(Fangorn.allowedToMove(folder, item, false), true);
+            });
         });
 
         describe('getAllChildren', () => {
