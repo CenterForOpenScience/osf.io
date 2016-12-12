@@ -18,6 +18,7 @@ class PreprintProvider(ObjectIDMixin, BaseModel):
 
     name = models.CharField(null=False, max_length=128)  # max length on prod: 22
     logo_name = models.CharField(null=True, blank=True, max_length=128)  # max length on prod: 17
+    header_text = models.TextField(default='', blank=True)
     description = models.CharField(null=True, blank=True, max_length=256)  # max length on prod: 56
     banner_name = models.CharField(null=True, blank=True, max_length=128)  # max length on prod: 19
     external_url = models.URLField(null=True, blank=True, max_length=200)  # max length on prod: 25
