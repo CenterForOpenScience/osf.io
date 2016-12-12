@@ -209,21 +209,6 @@ describe('fangorn', () => {
                 item.data.provider = 'github';
                 assert.equal(Fangorn.isInvalidDropItem(folder, item, false, true), true);
             });
-
-            it('cannot be dropped if item provider is figshare and private', () => {
-                folder = getItem('folder', 2);
-                item = getItem('folder', 3);
-                item.data.provider = 'figshare';
-                assert.equal(Fangorn.isInvalidDropItem(folder, item, false, false), true);
-            });
-
-            it('cannot be dropped if item provider is figshare and public', () => {
-                folder = getItem('folder', 2);
-                item = getItem('folder', 3);
-                item.data.provider = 'figshare';
-                assert.equal(Fangorn.isInvalidDropItem(folder, item, false, false), true);
-            });            
-
         });
 
         describe('allowedToMove', () => {
