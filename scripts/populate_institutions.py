@@ -144,7 +144,7 @@ def main(env):
             {
                 '_id': 'okstate',
                 'name': 'Oklahoma State University',
-                'description': None,
+                'description': '<a href="http://www.library.okstate.edu/research-support/research-data-services/">OSU Library Research Data Services</a>',
                 'banner_name': 'okstate-banner.png',
                 'logo_name': 'okstate-shield.png',
                 'auth_url': None,  # https://stwcas.okstate.edu/cas/login?service=...
@@ -210,7 +210,7 @@ def main(env):
             {
                 '_id': 'vcu',
                 'name': 'Virginia Commonwealth University',
-                'description': None,
+                'description': 'This service is supported by the VCU Libraries and the VCU Office of Research and Innovation for our research community. Do not use this service to store or transfer personally identifiable information (PII), personal health information (PHI), or any other controlled unclassified information (CUI). VCU\'s policy entitled "<a href="http://www.policy.vcu.edu/sites/default/files/Research%20Data%20Ownership,%20Retention,%20Access%20and%20Securty.pdf">Research Data Ownership, Retention, Access and Security</a>" applies. For assistance please contact the <a href="https://www.library.vcu.edu/services/data/">VCU Libraries Research Data Management Program</a>.',
                 'banner_name': 'vcu-banner.png',
                 'logo_name': 'vcu-shield.png',
                 'auth_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://shibboleth.vcu.edu/idp/shibboleth')),
@@ -383,7 +383,7 @@ def main(env):
             {
                 '_id': 'okstate',
                 'name': 'Oklahoma State University [Test]',
-                'description': None,
+                'description': '<a href="http://www.library.okstate.edu/research-support/research-data-services/">OSU Library Research Data Services</a>',
                 'banner_name': 'okstate-banner.png',
                 'logo_name': 'okstate-shield.png',
                 'auth_url': None,  # https://stwcas.okstate.edu/cas/login?service=...
@@ -449,7 +449,7 @@ def main(env):
             {
                 '_id': 'vcu',
                 'name': 'Virginia Commonwealth University [Test]',
-                'description': None,
+                'description': 'This service is supported by the VCU Libraries and the VCU Office of Research and Innovation for our research community. Do not use this service to store or transfer personally identifiable information (PII), personal health information (PHI), or any other controlled unclassified information (CUI). VCU\'s policy entitled "<a href="http://www.policy.vcu.edu/sites/default/files/Research%20Data%20Ownership,%20Retention,%20Access%20and%20Securty.pdf">Research Data Ownership, Retention, Access and Security</a>" applies. For assistance please contact the <a href="https://www.library.vcu.edu/services/data/">VCU Libraries Research Data Management Program</a>.',
                 'banner_name': 'vcu-banner.png',
                 'logo_name': 'vcu-shield.png',
                 'auth_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://shibboleth.vcu.edu/idp/shibboleth')),
