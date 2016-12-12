@@ -330,10 +330,10 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
     # }
 
     # timezone for user's locale (e.g. 'America/New_York')
-    timezone = models.CharField(default='Etc/UTC', max_length=255)
+    timezone = models.CharField(blank=True, default='Etc/UTC', max_length=255)
 
     # user language and locale data (e.g. 'en_US')
-    locale = models.CharField(max_length=255, default='en_US')
+    locale = models.CharField(blank=True, max_length=255, default='en_US')
 
     # whether the user has requested to deactivate their account
     requested_deactivation = models.BooleanField(default=False)
