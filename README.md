@@ -192,8 +192,7 @@ $ invoke setup
 - Temporarily, tokumx needs to be installed separately from the invoke setup script:
 
 ```bash
-$ brew tap chrisseto/homebrew-tokumx
-$ brew install tokumx-bin
+$ brew install chrisseto/homebrew-tokumx/tokumx-bin
 ```
 
 To verify that your installation works, follow the instructions to [start the OSF](#running-the-osf) and
