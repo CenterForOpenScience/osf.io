@@ -60,7 +60,7 @@ def figshare_root_folder(node_settings, auth, **kwargs):
         permissions=auth,
         nodeUrl=node.url,
         nodeApiUrl=node.api_url,
-        root_folder_type=node_settings.folder_path,
+        rootFolderType=node_settings.folder_path,
         private_key=kwargs.get('view_only', None),
     )]
 

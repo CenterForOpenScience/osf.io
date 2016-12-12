@@ -23,7 +23,7 @@ var _figshareItemButtons = {
                         className: 'text-success'
                     }, 'Upload')
                 );
-                if (item.data.root_folder_type === 'project') {
+                if (item.data.rootFolderType === 'project') {
                     buttons.push(
                         m.component(Fangorn.Components.button, {
                             onclick: function () {
