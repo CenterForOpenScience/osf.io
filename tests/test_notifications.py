@@ -6,21 +6,17 @@ from babel import dates, Locale
 from schema import Schema, And, Use, Or
 from django.utils import timezone
 
-from modularodm import Q
+from osf.modm_compat import Q
 from modularodm.exceptions import NoResultsFound
 from nose.tools import *  # noqa PEP8 asserts
 
 from framework.auth import Auth
-from framework.auth.core import User
-from framework.guid.model import Guid
+from osf.models import Node, Comment, NotificationDigest, NotificationSubscription, Guid, OSFUser
 
 from website.notifications.tasks import get_users_emails, send_users_email, group_by_node, remove_notifications
 from website.notifications import constants
-from website.notifications.model import NotificationDigest
-from website.notifications.model import NotificationSubscription
 from website.notifications import emails
 from website.notifications import utils
-from website.project.model import Node, Comment
 from website import mails, settings
 from website.project.signals import contributor_removed, node_deleted
 from website.util import api_url_for
@@ -1234,7 +1230,7 @@ class TestMoveSubscription(NotificationTestCase):
         assert_equal([self.user_4._id], removed)
 
     def test_event_subs_same(self):
-        self.file_sub.email_transactional.extend([self.user_2, self.user_3, self.user_4])
+        self.file_sub.email_transactional.add(self.user_2, self.user_3, self.user_4)
         self.file_sub.save()
         self.private_node.add_contributor(self.user_2, permissions=['admin', 'write', 'read'], auth=self.auth)
         self.private_node.add_contributor(self.user_3, permissions=['write', 'read'], auth=self.auth)
@@ -1243,7 +1239,7 @@ class TestMoveSubscription(NotificationTestCase):
         assert_equal({'email_transactional': [self.user_4._id], 'email_digest': [], 'none': []}, results)
 
     def test_event_nodes_same(self):
-        self.file_sub.email_transactional.extend([self.user_2, self.user_3, self.user_4])
+        self.file_sub.email_transactional.add(self.user_2, self.user_3, self.user_4)
         self.file_sub.save()
         self.private_node.add_contributor(self.user_2, permissions=['admin', 'write', 'read'], auth=self.auth)
         self.private_node.add_contributor(self.user_3, permissions=['write', 'read'], auth=self.auth)
@@ -1254,6 +1250,7 @@ class TestMoveSubscription(NotificationTestCase):
     def test_move_sub(self):
         # Tests old sub is replaced with new sub.
         utils.move_subscription(self.blank, 'xyz42_file_updated', self.project, 'abc42_file_updated', self.private_node)
+        self.file_sub.reload()
         assert_equal('abc42_file_updated', self.file_sub.event_name)
         assert_equal(self.private_node, self.file_sub.owner)
         assert_equal(self.private_node._id + '_abc42_file_updated', self.file_sub._id)
@@ -1269,7 +1266,7 @@ class TestMoveSubscription(NotificationTestCase):
 
     def test_remove_one_user(self):
         # One user doesn't have permissions on the node the sub is moved to. Should be listed.
-        self.file_sub.email_transactional.extend([self.user_2, self.user_3, self.user_4])
+        self.file_sub.email_transactional.add(self.user_2, self.user_3, self.user_4)
         self.file_sub.save()
         self.private_node.add_contributor(self.user_2, permissions=['admin', 'write', 'read'], auth=self.auth)
         self.private_node.add_contributor(self.user_3, permissions=['write', 'read'], auth=self.auth)
@@ -1285,11 +1282,12 @@ class TestMoveSubscription(NotificationTestCase):
         self.project.save()
         self.sub.email_digest.add(self.user_3)
         self.sub.save()
-        self.file_sub.email_transactional.extend([self.user_2, self.user_4])
+        self.file_sub.email_transactional.add(self.user_2, self.user_4)
+
         results = utils.users_to_remove('xyz42_file_updated', self.project, self.private_node)
         utils.move_subscription(results, 'xyz42_file_updated', self.project, 'abc42_file_updated', self.private_node)
         assert_equal({'email_transactional': [self.user_4._id], 'email_digest': [self.user_3._id], 'none': []}, results)
-        assert_in(self.user_3, self.sub.email_digest)  # Is not removed from the project subscription.
+        assert_true(self.sub.email_digest.filter(id=self.user_3.id).exists())  # Is not removed from the project subscription.
 
     def test_warn_user(self):
         # One user with a project sub does not have permission on new node. User should be listed.
@@ -1313,7 +1311,7 @@ class TestMoveSubscription(NotificationTestCase):
         self.sub.email_digest.add(self.user_3)
         self.sub.save()
         utils.move_subscription(self.blank, 'xyz42_file_updated', self.project, 'abc42_file_updated', self.private_node)
-        assert_equal([], self.file_sub.email_digest)
+        assert_false(self.file_sub.email_digest.filter().exists())
 
 
 class TestSendEmails(NotificationTestCase):
@@ -1493,7 +1491,6 @@ class TestSendEmails(NotificationTestCase):
             content=content,
             target=Guid.load(target._id),
             root_target=Guid.load(project._id),
-            is_public=True,
         )
         assert_true(mock_notify.called)
         assert_equal(mock_notify.call_count, 2)
@@ -1687,7 +1684,7 @@ class TestSendDigest(OsfTestCase):
         assert_equals(mock_send_mail.call_count, len(user_groups))
 
         last_user_index = len(user_groups) - 1
-        user = User.load(user_groups[last_user_index]['user_id'])
+        user = OSFUser.load(user_groups[last_user_index]['user_id'])
         email_notification_ids = [message['_id'] for message in user_groups[last_user_index]['info']]
 
         args, kwargs = mock_send_mail.call_args
