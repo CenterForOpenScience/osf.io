@@ -629,7 +629,7 @@ def test_js(ctx):
 
 
 @task
-def test_travis_osf(ctx):
+def test_travis_osf_and_addons(ctx):
     """
     Run half of the tests to help travis go faster. Lints and Flakes happen everywhere to keep from wasting test time.
     """
@@ -640,7 +640,7 @@ def test_travis_osf(ctx):
 
 
 @task
-def test_travis_else(ctx):
+def test_travis_api_and_admin(ctx):
     """
     Run other half of the tests to help travis go faster. Lints and Flakes happen everywhere to keep from
     wasting test time.
@@ -652,7 +652,7 @@ def test_travis_else(ctx):
 
 
 @task
-def test_travis_varnish(ctx):
+def test_travis_js_and_varnish(ctx):
     """
     Run the fast and quirky JS tests and varnish tests in isolation
     """
