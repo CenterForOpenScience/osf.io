@@ -1304,9 +1304,9 @@ class TestUserProfile(OsfTestCase):
 
     def test_serialize_social_addons_editable(self):
         self.user.add_addon('github')
-        oauth_settings = GitHubAccountFactory()
-        oauth_settings.save()
-        self.user.external_accounts.append(oauth_settings)
+        github_account = GitHubAccountFactory()
+        github_account.save()
+        self.user.external_accounts.add(github_account)
         self.user.save()
         url = api_url_for('serialize_social')
         res = self.app.get(
@@ -1323,7 +1323,7 @@ class TestUserProfile(OsfTestCase):
         self.user.add_addon('github')
         github_account = GitHubAccountFactory()
         github_account.save()
-        self.user.external_accounts.append(github_account)
+        self.user.external_accounts.add(github_account)
         self.user.save()
         url = api_url_for('serialize_social', uid=self.user._id)
         res = self.app.get(
