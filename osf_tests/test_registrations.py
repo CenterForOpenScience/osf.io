@@ -232,7 +232,6 @@ class TestRegisterNode:
     def test_registered_date(self, registration):
         assert_datetime_equal(registration.registered_date, timezone.now(), allowance=3000)
 
-    @pytest.mark.skip('addons not yet implemented')
     def test_registered_addons(self, registration):
         assert (
             [addon.config.short_name for addon in registration.get_addons()] ==
