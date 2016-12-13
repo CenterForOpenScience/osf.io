@@ -385,7 +385,7 @@ class FileNode(object):
                 if item.kind == 'file':
                     guid = item.get_guid()
                     if guid:
-                        guids.append(guid.guid)
+                        guids.append(guid._id)
         else:
             try:
                 file_obj = cls.find_one(
@@ -394,7 +394,7 @@ class FileNode(object):
                 return guids
             guid = file_obj.get_guid()
             if guid:
-                guids.append(guid.guid)
+                guids.append(guid._id)
 
         return guids
 

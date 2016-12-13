@@ -14,7 +14,7 @@ DEBUG_PROPAGATE_EXCEPTIONS = True
 #    }
 #}
 SITE_ID = 1
-SECRET_KEY = 'not very secret in tests'
+# SECRET_KEY = 'not very secret in tests'
 PASSWORD_HASHERS = (
     'django.contrib.auth.hashers.MD5PasswordHasher',
 )

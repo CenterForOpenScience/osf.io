@@ -858,12 +858,12 @@ class TestCitationProperties:
 
     def test_user_csl(self, user):
         # Convert a User instance to csl's name-variable schema
-        assert (
+        assert bool(
             user.csl_name ==
             {
                 'given': user.given_name,
                 'family': user.family_name,
-            },
+            }
         )
 
 
