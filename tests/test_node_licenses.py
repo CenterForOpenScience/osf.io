@@ -140,7 +140,7 @@ class TestNodeLicenses(OsfTestCase):
         COPYLEFT_HOLDERS = ['Richard Stallman']
         self.node.set_node_license(
             {
-                'id': GPL3.id,
+                'id': GPL3.license_id,
                 'year': NEW_YEAR,
                 'copyrightHolders': COPYLEFT_HOLDERS
             },
@@ -148,7 +148,7 @@ class TestNodeLicenses(OsfTestCase):
             save=True
         )
 
-        assert_equal(self.node.node_license.id, GPL3.license_id)
+        assert_equal(self.node.node_license.license_id, GPL3.license_id)
         assert_equal(self.node.node_license.name, GPL3.name)
         assert_equal(self.node.node_license.copyright_holders, COPYLEFT_HOLDERS)
 
