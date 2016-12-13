@@ -17,6 +17,11 @@ Changelog
 - Add Ohio region for S3 bucket locations
 - Update Google Analytics Linker on osf.io
 
+Migrations
+----------
+python -m scripts.migration.migrate_googledoc_paths
+python -m scripts.migration.migrate_googledoc_paths --no-i-mean-it
+
 0.102.0 (2016-11-30)
 ====================
 - Add support for branded preprint providers
