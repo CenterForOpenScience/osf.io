@@ -1,8 +1,7 @@
-"use_strict";
+require('c3/c3.css');
 
-
+var c3 = require('c3/c3.js');
 var keen = require('keen-js');
-
 
 var client = new Keen({
     projectId: keenProjectId,
@@ -85,6 +84,24 @@ var renderDifferneceBetweenTwoMetrics = function(metric1, metric2, element, diff
     });
 };
 
+var getWeeklyUserGain = function() {
+    var queries = [];
+    var timeframes = [];
+
+    for (i = 3; i < 12; i++) {
+        var timeframe = getOneDayTimeframe(i, null);
+        var query = new Keen.Query("sum", {
+            eventCollection: "user_summary",
+            targetProperty: "status.active",
+            timeframe: timeframe
+        });
+        queries.push(query);
+        timeframes.push(timeframe);
+    }
+
+    return {"queries": queries, "timeframes": timeframes}
+
+};
 
 Keen.ready(function () {
 
@@ -114,13 +131,13 @@ Keen.ready(function () {
     var yesterday_user_count = new Keen.Query("sum", {
         eventCollection: "user_summary",
         targetProperty: "status.active",
-        timeframe: getOneDayTimeframe(1, null)
+        timeframe: getOneDayTimeframe(4, null)
     });
 
     var two_days_ago_user_count = new Keen.Query("sum", {
         eventCollection: "user_summary",
         targetProperty: "status.active",
-        timeframe: getOneDayTimeframe(2, null)
+        timeframe: getOneDayTimeframe(5, null)
     });
 
     renderDifferneceBetweenTwoMetrics(yesterday_user_count, two_days_ago_user_count, "daily-user-increase", 'day');
@@ -140,6 +157,53 @@ Keen.ready(function () {
 
     renderDifferneceBetweenTwoMetrics(last_month_user_count, two_months_ago_user_count, "monthly-user-increase", 'month');
 
+    var weeklyUserGain = getWeeklyUserGain();
+
+    // New User Daily Average - past 7 days
+    var renderAverageUserGainMetric = function(results) {
+
+        var userGainChart = new Keen.Dataviz()
+            .el(document.getElementById("average-gain-metric"))
+            .chartType("metric")
+            .title(' ')
+            .prepare();
+
+        client.run(results.queries, function(err, res) {
+            var sum = 0;
+            for (j = 0; j<res.length - 1; j++) {
+                sum += (res[j].result - res[j + 1].result);
+            }
+            userGainChart.parseRawData({result: sum/(res.length - 1)}).render();
+        });
+
+    };
+    renderAverageUserGainMetric(weeklyUserGain);
+
+    // User Gain Chart over past 7 days
+    var renderWeeklyUserGainChart = function(results) {
+
+        var userGainChart = new Keen.Dataviz()
+            .library('c3')
+            .el(document.getElementById("user-gain-chart"))
+            .chartType("line")
+            .title(' ')
+            .prepare();
+
+        client.run(results.queries, function(err, res) {
+            var data = [];
+            for (j = 0; j<res.length - 1; j++) {
+                data.push({
+                    "value": res[j].result - res[j + 1].result,
+                    "timeframe": results.timeframes[j]
+                })
+
+            }
+            userGainChart.parseRawData({result: data}).render();
+        });
+
+    };
+    renderWeeklyUserGainChart(weeklyUserGain);
+
     // Active user chart!
     var active_user_chart = new Keen.Query("sum", {
         eventCollection: "user_summary",
@@ -150,7 +214,8 @@ Keen.ready(function () {
     });
 
     client.draw(active_user_chart, document.getElementById("active-user-chart"), {
-        chartType: "linechart",
+        chartType: "line",
+        library: "c3",
         height: "auto",
         chartOptions: {
             legend: {position: "top"}
@@ -209,7 +274,8 @@ Keen.ready(function () {
     });
 
     client.draw(email_domains, document.getElementById("user-registration-by-email-domain"), {
-        chartType: "linechart",
+        chartType: "line",
+        library: "c3",
         height: "auto",
         width: "auto",
         chartOptions: {
@@ -227,7 +293,8 @@ Keen.ready(function () {
         timezone: "UTC"
     });
     client.draw(logs_by_user, document.getElementById("yesterdays-node-logs-by-user"), {
-        chartType: "linechart",
+        chartType: "line",
+        library: "c3",
         height: "auto",
         chartOptions: {
             legend: {position: "top"}

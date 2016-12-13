@@ -13,7 +13,8 @@
             var keenReadKey = '{{ keen_read_key }}';
         }
     </script>
-
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.6/d3.min.js" charset="utf-8"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/c3/0.4.10/c3.min.js"></script>
 {% endblock top_includes %}
 
 {% block content %}
@@ -39,17 +40,28 @@
     <div><h2>User Data</h2></div>
 
     <div class="row">
-        <div class="col-md-4" id="active_users">
+        <div class="col-md-3" id="active_users">
             <h3>Yesterday's Active Users</h3>
             <div id="active-user-count">Loading...</div>
         </div>
-        <div class="col-md-4" id="active_users">
+        <div class="col-md-3" id="active_users">
             <h3>Daily Increase of Users</h3>
             <div id="daily-user-increase">Loading...</div>
         </div>
-        <div class="col-md-4" id="active_users">
+        <div class="col-md-3" id="active_users">
             <h3>Monthly Increase of Users</h3>
             <div id="monthly-user-increase">Loading...</div>
+        </div>
+        <div class="col-md-3" id="active_users">
+            <h3>Average Daily Gain Over past 7 Days</h3>
+            <div id="average-gain-metric">Loading...</div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-12">
+            <h3>User Gain Per Day</h3>
+            <div id="user-gain-chart">Loading...</div>
         </div>
     </div>
 
