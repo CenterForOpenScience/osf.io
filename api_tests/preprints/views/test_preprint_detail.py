@@ -340,7 +340,7 @@ class TestPreprintUpdateLicense(ApiTestCase):
         assert_equal(self.preprint.license.copyright_holders, [])
 
         # check logs
-        log = self.preprint.node.logs[-1]
+        log = self.preprint.node.logs.latest()
         assert_equal(log.action, 'preprint_license_updated')
         assert_equal(log.params.get('preprint'), self.preprint._id)
 
