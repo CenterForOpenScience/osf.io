@@ -167,7 +167,7 @@ def set_license(node, license_detail, auth, node_type='node'):
         raise web_exceptions.NodeStateError('Trying to update a {} with an invalid license'.format(node_type))
 
     if node_type == 'preprint':
-        if node_license not in node.provider.licenses_acceptable and len(node.provider.licenses_acceptable) != 0:
+        if node.provider.licenses_acceptable.exists() and not node.provider.licenses_acceptable.filter(id=node_license.id):
             raise framework_exceptions.PermissionsError('Invalid license chosen for {}'.format(node.provider.name))
 
     for required_property in node_license.properties:

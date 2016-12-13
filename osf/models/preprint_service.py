@@ -85,6 +85,9 @@ class PreprintService(GuidMixin, BaseModel):
         path = '/preprints/{}/'.format(self._id)
         return api_v2_url(path)
 
+    def has_permission(self, *args, **kwargs):
+        return self.node.has_permission(*args, **kwargs)
+
     def get_subjects(self):
         ret = []
         for subj_list in self.subjects:
