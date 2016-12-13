@@ -39,7 +39,7 @@ def update_file_guid_referent(self, node, event_type, payload, user=None):
 
         for guid in file_guids:
             obj = Guid.load(guid)
-            if source_node != destination_node and Comment.find(Q('root_target', 'eq', guid)).count() != 0:
+            if source_node != destination_node and Comment.find(Q('root_target._id', 'eq', guid)).count() != 0:
                 update_comment_node(guid, source_node, destination_node)
 
             if source['provider'] != destination['provider'] or source['provider'] != 'osfstorage':
@@ -97,7 +97,7 @@ def find_and_create_file_from_metadata(children, source, destination, destinatio
 
 
 def update_comment_node(root_target_id, source_node, destination_node):
-    Comment.update(Q('root_target', 'eq', root_target_id), data={'node': destination_node})
+    Comment.objects.filter(root_target___id=root_target_id).update(node=destination_node)
     source_node.save()
     destination_node.save()
 
