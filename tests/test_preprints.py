@@ -256,6 +256,13 @@ class TestOnPreprintUpdatedTask(OsfTestCase):
     def setUp(self):
         super(TestOnPreprintUpdatedTask, self).setUp()
         self.user = AuthUserFactory()
+        if len(self.user.fullname.split(' ')) > 2:
+            # Prevent unexpected keys ('suffix', 'additional_name')
+            self.user.fullname = 'David Davidson'
+            self.user.middle_names = ''
+            self.user.suffix = ''
+            self.user.save()
+
         self.auth = Auth(user=self.user)
         self.preprint = PreprintFactory()
 
@@ -265,7 +272,12 @@ class TestOnPreprintUpdatedTask(OsfTestCase):
         self.preprint.node.add_contributor(self.user, visible=False)
         self.preprint.node.save()
 
-        self.preprint.node.creator.given_name = 'ZZYZ'
+        self.preprint.node.creator.given_name = u'ZZYZ'
+        if len(self.preprint.node.creator.fullname.split(' ')) > 2:
+            # Prevent unexpected keys ('suffix', 'additional_name')
+            self.preprint.node.creator.fullname = 'David Davidson'
+            self.preprint.node.creator.middle_names = ''
+            self.preprint.node.creator.suffix = ''
         self.preprint.node.creator.save()
 
         self.preprint.set_subjects([[SubjectFactory()._id]], auth=Auth(self.preprint.node.creator), save=False)
@@ -298,37 +310,38 @@ class TestOnPreprintUpdatedTask(OsfTestCase):
         assert sorted(subject['name'] for subject in subjects) == [Subject.load(s).text for h in self.preprint.subjects for s in h]
 
         people = sorted([nodes.pop(k) for k, v in nodes.items() if v['@type'] == 'person'], key=lambda x: x['given_name'])
-        assert people == [{
-            '@id': people[0]['@id'],
+        expected_people = sorted([{
             '@type': 'person',
             'given_name': u'BoJack',
             'family_name': u'Horseman',
         }, {
-            '@id': people[1]['@id'],
             '@type': 'person',
             'given_name': self.user.given_name,
             'family_name': self.user.family_name,
         }, {
-            '@id': people[2]['@id'],
             '@type': 'person',
             'given_name': self.preprint.node.creator.given_name,
             'family_name': self.preprint.node.creator.family_name,
-        }]
+        }], key=lambda x: x['given_name'])
+        for i, p in enumerate(expected_people):
+            expected_people[i]['@id'] = people[i]['@id']
+
+        assert people == expected_people
 
         creators = sorted([nodes.pop(k) for k, v in nodes.items() if v['@type'] == 'creator'], key=lambda x: x['order_cited'])
         assert creators == [{
             '@id': creators[0]['@id'],
             '@type': 'creator',
             'order_cited': 0,
-            'cited_as': self.preprint.node.creator.fullname,
-            'agent': {'@id': people[2]['@id'], '@type': 'person'},
+            'cited_as': u'{}'.format(self.preprint.node.creator.fullname),
+            'agent': {'@id': [p['@id'] for p in people if p['given_name'] == self.preprint.node.creator.given_name][0], '@type': 'person'},
             'creative_work': {'@id': preprint['@id'], '@type': preprint['@type']},
         }, {
             '@id': creators[1]['@id'],
             '@type': 'creator',
             'order_cited': 1,
-            'cited_as': 'BoJack Horseman',
-            'agent': {'@id': people[0]['@id'], '@type': 'person'},
+            'cited_as': u'BoJack Horseman',
+            'agent': {'@id': [p['@id'] for p in people if p['given_name'] == u'BoJack'][0], '@type': 'person'},
             'creative_work': {'@id': preprint['@id'], '@type': preprint['@type']},
         }]
 
@@ -336,8 +349,8 @@ class TestOnPreprintUpdatedTask(OsfTestCase):
         assert contributors == [{
             '@id': contributors[0]['@id'],
             '@type': 'contributor',
-            'cited_as': self.user.fullname,
-            'agent': {'@id': people[1]['@id'], '@type': 'person'},
+            'cited_as': u'{}'.format(self.user.fullname),
+            'agent': {'@id': [p['@id'] for p in people if p['given_name'] == self.user.given_name][0], '@type': 'person'},
             'creative_work': {'@id': preprint['@id'], '@type': preprint['@type']},
         }]
 
@@ -375,22 +388,23 @@ class TestOnPreprintUpdatedTask(OsfTestCase):
         assert preprint.get('date_published') is None
 
         people = sorted([nodes.pop(k) for k, v in nodes.items() if v['@type'] == 'person'], key=lambda x: x['given_name'])
-        assert people == [{
-            '@id': people[0]['@id'],
+        expected_people = sorted([{
             '@type': 'person',
             'given_name': u'BoJack',
             'family_name': u'Horseman',
         }, {
-            '@id': people[1]['@id'],
             '@type': 'person',
             'given_name': self.user.given_name,
             'family_name': self.user.family_name,
         }, {
-            '@id': people[2]['@id'],
             '@type': 'person',
             'given_name': self.preprint.node.creator.given_name,
             'family_name': self.preprint.node.creator.family_name,
-        }]
+        }], key=lambda x: x['given_name'])
+        for i, p in enumerate(expected_people):
+            expected_people[i]['@id'] = people[i]['@id']
+
+        assert people == expected_people
 
         creators = sorted([nodes.pop(k) for k, v in nodes.items() if v['@type'] == 'creator'], key=lambda x: x['order_cited'])
         assert creators == [{
@@ -398,14 +412,14 @@ class TestOnPreprintUpdatedTask(OsfTestCase):
             '@type': 'creator',
             'order_cited': 0,
             'cited_as': self.preprint.node.creator.fullname,
-            'agent': {'@id': people[2]['@id'], '@type': 'person'},
+            'agent': {'@id': [p['@id'] for p in people if p['given_name'] == self.preprint.node.creator.given_name][0], '@type': 'person'},
             'creative_work': {'@id': preprint['@id'], '@type': preprint['@type']},
         }, {
             '@id': creators[1]['@id'],
             '@type': 'creator',
             'order_cited': 1,
-            'cited_as': 'BoJack Horseman',
-            'agent': {'@id': people[0]['@id'], '@type': 'person'},
+            'cited_as': u'BoJack Horseman',
+            'agent': {'@id': [p['@id'] for p in people if p['given_name'] == u'BoJack'][0], '@type': 'person'},
             'creative_work': {'@id': preprint['@id'], '@type': preprint['@type']},
         }]
 
@@ -414,7 +428,7 @@ class TestOnPreprintUpdatedTask(OsfTestCase):
             '@id': contributors[0]['@id'],
             '@type': 'contributor',
             'cited_as': self.user.fullname,
-            'agent': {'@id': people[1]['@id'], '@type': 'person'},
+            'agent': {'@id': [p['@id'] for p in people if p['given_name'] == self.user.given_name][0], '@type': 'person'},
             'creative_work': {'@id': preprint['@id'], '@type': preprint['@type']},
         }]
 

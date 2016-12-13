@@ -22,6 +22,7 @@ from django.apps import apps
 from modularodm import Q
 from modularodm.exceptions import ValidationError
 
+from addons.github.tests.factories import GitHubAccountFactory
 from framework.auth import cas
 from framework.auth.core import generate_verification_key
 from framework import auth
@@ -38,7 +39,6 @@ from tests.factories import MockAddonNodeSettings
 from website import mailchimp_utils
 from website import mails, settings
 from website.addons.osfstorage import settings as osfstorage_settings
-from website.addons.github.tests.factories import GitHubAccountFactory
 from website.models import Node, NodeLog, Pointer
 from website.profile.utils import add_contributor_json, serialize_unregistered
 from website.profile.views import fmt_date_or_none, update_osf_help_mails_subscription
@@ -1303,7 +1303,6 @@ class TestUserProfile(OsfTestCase):
         assert_true(res.json.get('github') is None)
         assert_false(res.json['editable'])
 
-    @pytest.mark.skip('Addons not yet implemented')
     def test_serialize_social_addons_editable(self):
         self.user.add_addon('github')
         oauth_settings = GitHubAccountFactory()
@@ -1320,13 +1319,12 @@ class TestUserProfile(OsfTestCase):
             'abc'
         )
 
-    @pytest.mark.skip('ExternalAccount not yet implemented')
     def test_serialize_social_addons_not_editable(self):
         user2 = AuthUserFactory()
         self.user.add_addon('github')
-        oauth_settings = GitHubAccountFactory()
-        oauth_settings.save()
-        self.user.external_accounts.append(oauth_settings)
+        github_account = GitHubAccountFactory()
+        github_account.save()
+        self.user.external_accounts.append(github_account)
         self.user.save()
         url = api_url_for('serialize_social', uid=self.user._id)
         res = self.app.get(
@@ -4019,7 +4017,6 @@ class TestExternalAuthViews(OsfTestCase):
         assert_equal(self.user.external_identity, {})
 
 # TODO: Use mock add-on
-@pytest.mark.skip('Addons not yet implemented')
 class TestAddonUserViews(OsfTestCase):
 
     def setUp(self):
@@ -4733,7 +4730,6 @@ class TestCommentViews(OsfTestCase):
         non_contributor.reload()
         assert_not_in(self.project._id, non_contributor.comments_viewed_timestamp)
 
-    @pytest.mark.skip('Unskip when get_addon is implemented for nodes')
     def test_view_comments_updates_user_comments_view_timestamp_files(self):
         osfstorage = self.project.get_addon('osfstorage')
         root_node = osfstorage.get_root()

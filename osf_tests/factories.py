@@ -44,7 +44,9 @@ def FakeList(provider, n, *args, **kwargs):
     return [func(*args, **kwargs) for _ in range(n)]
 
 class UserFactory(DjangoModelFactory):
-    fullname = factory.Faker('name')
+    # TODO: Change this to only generate long names and see what breaks
+    fullname = factory.Sequence(lambda n: 'Freddie Mercury{0}'.format(n))
+    
     username = factory.Faker('email')
     password = factory.PostGenerationMethodCall('set_password',
                                                 'queenfan86')
@@ -89,7 +91,7 @@ class AuthFactory(factory.base.Factory):
 
 class UnregUserFactory(DjangoModelFactory):
     email = factory.Faker('email')
-    fullname = factory.Faker('name')
+    fullname = factory.Sequence(lambda n: 'Freddie Mercury{0}'.format(n))
     date_registered = factory.Faker('date_time', tzinfo=pytz.utc)
 
     class Meta:
@@ -119,7 +121,7 @@ class UnconfirmedUserFactory(DjangoModelFactory):
     class Meta:
         model = models.OSFUser
     username = factory.Faker('email')
-    fullname = factory.Faker('name')
+    fullname = factory.Sequence(lambda n: 'Freddie Mercury{0}'.format(n))
     password = 'lolomglgt'
 
     @classmethod

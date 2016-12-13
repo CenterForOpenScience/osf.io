@@ -4,19 +4,20 @@ from collections import OrderedDict
 from modularodm.exceptions import ValidationError
 
 
+from addons.box.models import BoxFile
+from addons.dropbox.models import DropboxFile
+from addons.github.models import GithubFile
+from addons.googledrive.models import GoogleDriveFile
+from addons.osfstorage.models import OsfStorageFile
+from addons.s3.models import S3File
 from website import settings
 from website.util import permissions
+from website.addons.osfstorage import settings as osfstorage_settings
 from website.project.views.comment import update_file_guid_referent
 from website.project.signals import comment_added, mention_added, contributor_added
-from website.files.models.box import BoxFile
-from website.files.models.dropbox import DropboxFile
-from website.files.models.github import GithubFile
-from website.files.models.googledrive import GoogleDriveFile
-from website.files.models.osfstorage import OsfStorageFile
-from website.files.models.s3 import S3File
 from framework.exceptions import PermissionsError
 from tests.base import capture_signals
-from osf.models import Comment, NodeLog, Guid
+from osf.models import Comment, NodeLog, Guid, FileNode
 from osf.modm_compat import Q
 from osf.utils.auth import Auth
 from .factories import (
@@ -388,8 +389,7 @@ class TestCommentModel:
 
 
 # copied from tests/test_comments.py
-@pytest.mark.skip('Unskip when Files are implemented')
-class FileCommentMoveRenameTestMixin:
+class FileCommentMoveRenameTestMixin(object):
     # TODO: Remove skip decorators when files are implemented
     # and when waterbutler payloads are consistently formatted
     # for intra-provider folder moves and renames.
@@ -454,7 +454,7 @@ class FileCommentMoveRenameTestMixin:
             ('project', None)
         ])
 
-    def _create_file_with_comment(self, node, path):
+    def _create_file_with_comment(self, node, path, user):
         self.file = self.ProviderFile.create(
             is_file=True,
             node=node,
@@ -463,9 +463,9 @@ class FileCommentMoveRenameTestMixin:
             materialized_path=path)
         self.guid = self.file.get_guid(create=True)
         self.file.save()
-        self.comment = CommentFactory(user=self.user, node=node, target=self.guid)
+        self.comment = CommentFactory(user=user, node=node, target=self.guid)
 
-    def test_comments_move_on_file_rename(self, project):
+    def test_comments_move_on_file_rename(self, project, user):
         source = {
             'path': '/file.txt',
             'node': project,
@@ -476,17 +476,17 @@ class FileCommentMoveRenameTestMixin:
             'node': project,
             'provider': self.provider
         }
-        self._create_file_with_comment(node=source['node'], path=source['path'])
-        payload = self._create_payload('move', self.user, source, destination, self.file._id)
+        self._create_file_with_comment(node=source['node'], path=source['path'], user=user)
+        payload = self._create_payload('move', user, source, destination, self.file._id)
         update_file_guid_referent(self=None, node=destination['node'], event_type='addon_file_renamed', payload=payload)
         self.guid.reload()
 
         file_node = FileNode.resolve_class(self.provider, FileNode.FILE).get_or_create(destination['node'], self._format_path(destination['path'], file_id=self.file._id))
         assert self.guid._id == file_node.get_guid()._id
-        file_comments = Comment.find(Q('root_target', 'eq', self.guid._id))
+        file_comments = Comment.find(Q('root_target', 'eq', self.guid.pk))
         assert file_comments.count() == 1
 
-    def test_comments_move_on_folder_rename(self, project):
+    def test_comments_move_on_folder_rename(self, project, user):
         source = {
             'path': '/subfolder1/',
             'node': project,
@@ -498,17 +498,17 @@ class FileCommentMoveRenameTestMixin:
             'provider': self.provider
         }
         file_name = 'file.txt'
-        self._create_file_with_comment(node=source['node'], path='{}{}'.format(source['path'], file_name))
-        payload = self._create_payload('move', self.user, source, destination, self.file._id)
+        self._create_file_with_comment(node=source['node'], path='{}{}'.format(source['path'], file_name), user=user)
+        payload = self._create_payload('move', user, source, destination, self.file._id)
         update_file_guid_referent(self=None, node=destination['node'], event_type='addon_file_renamed', payload=payload)
         self.guid.reload()
 
         file_node = FileNode.resolve_class(self.provider, FileNode.FILE).get_or_create(destination['node'], self._format_path('{}{}'.format(destination['path'], file_name), file_id=self.file._id))
         assert self.guid._id == file_node.get_guid()._id
-        file_comments = Comment.find(Q('root_target', 'eq', self.guid._id))
+        file_comments = Comment.find(Q('root_target', 'eq', self.guid.pk))
         assert file_comments.count() == 1
 
-    def test_comments_move_on_subfolder_file_when_parent_folder_is_renamed(self, project):
+    def test_comments_move_on_subfolder_file_when_parent_folder_is_renamed(self, project, user):
         source = {
             'path': '/subfolder1/',
             'node': project,
@@ -520,17 +520,17 @@ class FileCommentMoveRenameTestMixin:
             'provider': self.provider
         }
         file_path = 'sub-subfolder/file.txt'
-        self._create_file_with_comment(node=source['node'], path='{}{}'.format(source['path'], file_path))
-        payload = self._create_payload('move', self.user, source, destination, self.file._id)
+        self._create_file_with_comment(node=source['node'], path='{}{}'.format(source['path'], file_path), user=user)
+        payload = self._create_payload('move', user, source, destination, self.file._id)
         update_file_guid_referent(self=None, node=destination['node'], event_type='addon_file_renamed', payload=payload)
         self.guid.reload()
 
         file_node = FileNode.resolve_class(self.provider, FileNode.FILE).get_or_create(destination['node'], self._format_path('{}{}'.format(destination['path'], file_path), file_id=self.file._id))
         assert self.guid._id == file_node.get_guid()._id
-        file_comments = Comment.find(Q('root_target', 'eq', self.guid._id))
+        file_comments = Comment.find(Q('root_target', 'eq', self.guid.pk))
         assert file_comments.count() == 1
 
-    def test_comments_move_when_file_moved_to_subfolder(self, project):
+    def test_comments_move_when_file_moved_to_subfolder(self, project, user):
         source = {
             'path': '/file.txt',
             'node': project,
@@ -541,17 +541,17 @@ class FileCommentMoveRenameTestMixin:
             'node': project,
             'provider': self.provider
         }
-        self._create_file_with_comment(node=source['node'], path=source['path'])
-        payload = self._create_payload('move', self.user, source, destination, self.file._id)
+        self._create_file_with_comment(node=source['node'], path=source['path'], user=user)
+        payload = self._create_payload('move', user, source, destination, self.file._id)
         update_file_guid_referent(self=None, node=destination['node'], event_type='addon_file_moved', payload=payload)
         self.guid.reload()
 
         file_node = FileNode.resolve_class(self.provider, FileNode.FILE).get_or_create(destination['node'], self._format_path(destination['path'], file_id=self.file._id))
         assert self.guid._id == file_node.get_guid()._id
-        file_comments = Comment.find(Q('root_target', 'eq', self.guid._id))
+        file_comments = Comment.find(Q('root_target', 'eq', self.guid.pk))
         assert file_comments.count() == 1
 
-    def test_comments_move_when_file_moved_from_subfolder_to_root(self, project):
+    def test_comments_move_when_file_moved_from_subfolder_to_root(self, project, user):
         source = {
             'path': '/subfolder/file.txt',
             'node': project,
@@ -562,18 +562,18 @@ class FileCommentMoveRenameTestMixin:
             'node': project,
             'provider': self.provider
         }
-        self._create_file_with_comment(node=source['node'], path=source['path'])
-        payload = self._create_payload('move', self.user, source, destination, self.file._id)
+        self._create_file_with_comment(node=source['node'], path=source['path'], user=user)
+        payload = self._create_payload('move', user, source, destination, self.file._id)
         update_file_guid_referent(self=None, node=destination['node'], event_type='addon_file_moved', payload=payload)
         self.guid.reload()
 
         file_node = FileNode.resolve_class(self.provider, FileNode.FILE).get_or_create(destination['node'], self._format_path(destination['path'], file_id=self.file._id))
         assert self.guid._id == file_node.get_guid()._id
-        file_comments = Comment.find(Q('root_target', 'eq', self.guid._id))
+        file_comments = Comment.find(Q('root_target', 'eq', self.guid.pk))
         assert file_comments.count() == 1
 
 
-    def test_comments_move_when_file_moved_from_project_to_component(self, project, component):
+    def test_comments_move_when_file_moved_from_project_to_component(self, project, component, user):
         source = {
             'path': '/file.txt',
             'node': project,
@@ -584,19 +584,19 @@ class FileCommentMoveRenameTestMixin:
             'node': component,
             'provider': self.provider
         }
-        self._create_file_with_comment(node=source['node'], path=source['path'])
-        payload = self._create_payload('move', self.user, source, destination, self.file._id)
+        self._create_file_with_comment(node=source['node'], path=source['path'], user=user)
+        payload = self._create_payload('move', user, source, destination, self.file._id)
         update_file_guid_referent(self=None, node=destination['node'], event_type='addon_file_moved', payload=payload)
         self.guid.reload()
 
         file_node = FileNode.resolve_class(self.provider, FileNode.FILE).get_or_create(destination['node'], self._format_path(destination['path'], file_id=self.file._id))
         assert self.guid._id == file_node.get_guid()._id
         assert self.guid.referent.node._id == destination['node']._id
-        file_comments = Comment.find(Q('root_target', 'eq', self.guid._id))
+        file_comments = Comment.find(Q('root_target', 'eq', self.guid.pk))
         assert file_comments.count() == 1
 
 
-    def test_comments_move_when_file_moved_from_component_to_project(self, project, component):
+    def test_comments_move_when_file_moved_from_component_to_project(self, project, component, user):
         source = {
             'path': '/file.txt',
             'node': component,
@@ -607,18 +607,18 @@ class FileCommentMoveRenameTestMixin:
             'node': project,
             'provider': self.provider
         }
-        self._create_file_with_comment(node=source['node'], path=source['path'])
-        payload = self._create_payload('move', self.user, source, destination, self.file._id)
+        self._create_file_with_comment(node=source['node'], path=source['path'], user=user)
+        payload = self._create_payload('move', user, source, destination, self.file._id)
         update_file_guid_referent(self=None, node=destination['node'], event_type='addon_file_moved', payload=payload)
         self.guid.reload()
 
         file_node = FileNode.resolve_class(self.provider, FileNode.FILE).get_or_create(destination['node'], self._format_path(destination['path'], file_id=self.file._id))
         assert self.guid._id == file_node.get_guid()._id
         assert self.guid.referent.node._id == destination['node']._id
-        file_comments = Comment.find(Q('root_target', 'eq', self.guid._id))
+        file_comments = Comment.find(Q('root_target', 'eq', self.guid.pk))
         assert file_comments.count() == 1
 
-    def test_comments_move_when_folder_moved_to_subfolder(self, project):
+    def test_comments_move_when_folder_moved_to_subfolder(self, user, project):
         source = {
             'path': '/subfolder/',
             'node': project,
@@ -630,17 +630,17 @@ class FileCommentMoveRenameTestMixin:
             'provider': self.provider
         }
         file_name = 'file.txt'
-        self._create_file_with_comment(node=source['node'], path='{}{}'.format(source['path'], file_name))
-        payload = self._create_payload('move', self.user, source, destination, self.file._id)
+        self._create_file_with_comment(node=source['node'], path='{}{}'.format(source['path'], file_name), user=user)
+        payload = self._create_payload('move', user, source, destination, self.file._id)
         update_file_guid_referent(self=None, node=destination['node'], event_type='addon_file_moved', payload=payload)
         self.guid.reload()
 
         file_node = FileNode.resolve_class(self.provider, FileNode.FILE).get_or_create(destination['node'], self._format_path('{}{}'.format(destination['path'], file_name), file_id=self.file._id))
         assert self.guid._id == file_node.get_guid()._id
-        file_comments = Comment.find(Q('root_target', 'eq', self.guid._id))
+        file_comments = Comment.find(Q('root_target', 'eq', self.guid.pk))
         assert file_comments.count() == 1
 
-    def test_comments_move_when_folder_moved_from_subfolder_to_root(self, project):
+    def test_comments_move_when_folder_moved_from_subfolder_to_root(self, project, user):
         source = {
             'path': '/subfolder2/subfolder/',
             'node': project,
@@ -652,17 +652,17 @@ class FileCommentMoveRenameTestMixin:
             'provider': self.provider
         }
         file_name = 'file.txt'
-        self._create_file_with_comment(node=source['node'], path='{}{}'.format(source['path'], file_name))
-        payload = self._create_payload('move', self.user, source, destination, self.file._id)
+        self._create_file_with_comment(node=source['node'], path='{}{}'.format(source['path'], file_name), user=user)
+        payload = self._create_payload('move', user, source, destination, self.file._id)
         update_file_guid_referent(self=None, node=destination['node'], event_type='addon_file_moved', payload=payload)
         self.guid.reload()
 
         file_node = FileNode.resolve_class(self.provider, FileNode.FILE).get_or_create(destination['node'], self._format_path('{}{}'.format(destination['path'], file_name), file_id=self.file._id))
         assert self.guid._id == file_node.get_guid()._id
-        file_comments = Comment.find(Q('root_target', 'eq', self.guid._id))
+        file_comments = Comment.find(Q('root_target', 'eq', self.guid.pk))
         assert file_comments.count() == 1
 
-    def test_comments_move_when_folder_moved_from_project_to_component(self, project, component):
+    def test_comments_move_when_folder_moved_from_project_to_component(self, project, component, user):
         source = {
             'path': '/subfolder/',
             'node': project,
@@ -674,17 +674,17 @@ class FileCommentMoveRenameTestMixin:
             'provider': self.provider
         }
         file_name = 'file.txt'
-        self._create_file_with_comment(node=source['node'], path='{}{}'.format(source['path'], file_name))
-        payload = self._create_payload('move', self.user, source, destination, self.file._id)
+        self._create_file_with_comment(node=source['node'], path='{}{}'.format(source['path'], file_name), user=user)
+        payload = self._create_payload('move', user, source, destination, self.file._id)
         update_file_guid_referent(self=None, node=destination['node'], event_type='addon_file_moved', payload=payload)
         self.guid.reload()
 
         file_node = FileNode.resolve_class(self.provider, FileNode.FILE).get_or_create(destination['node'], self._format_path('{}{}'.format(destination['path'], file_name), file_id=self.file._id))
         assert self.guid._id == file_node.get_guid()._id
-        file_comments = Comment.find(Q('root_target', 'eq', self.guid._id))
+        file_comments = Comment.find(Q('root_target', 'eq', self.guid.pk))
         assert file_comments.count() == 1
 
-    def test_comments_move_when_folder_moved_from_component_to_project(self, project, component):
+    def test_comments_move_when_folder_moved_from_component_to_project(self, project, component, user):
         source = {
             'path': '/subfolder/',
             'node': component,
@@ -696,21 +696,21 @@ class FileCommentMoveRenameTestMixin:
             'provider': self.provider
         }
         file_name = 'file.txt'
-        self._create_file_with_comment(node=source['node'], path='{}{}'.format(source['path'], file_name))
-        payload = self._create_payload('move', self.user, source, destination, self.file._id)
+        self._create_file_with_comment(node=source['node'], path='{}{}'.format(source['path'], file_name), user=user)
+        payload = self._create_payload('move', user, source, destination, self.file._id)
         update_file_guid_referent(self=None, node=destination['node'], event_type='addon_file_moved', payload=payload)
         self.guid.reload()
 
         file_node = FileNode.resolve_class(self.provider, FileNode.FILE).get_or_create(destination['node'], self._format_path('{}{}'.format(destination['path'], file_name), file_id=self.file._id))
         assert self.guid._id == file_node.get_guid()._id
-        file_comments = Comment.find(Q('root_target', 'eq', self.guid._id))
+        file_comments = Comment.find(Q('root_target', 'eq', self.guid.pk))
         assert file_comments.count() == 1
 
-    def test_comments_move_when_file_moved_to_osfstorage(self, project):
+    def test_comments_move_when_file_moved_to_osfstorage(self, project, user):
         osfstorage = project.get_addon('osfstorage')
         root_node = osfstorage.get_root()
         osf_file = root_node.append_file('file.txt')
-        osf_file.create_version(self.user, {
+        osf_file.create_version(user, {
             'object': '06d80e',
             'service': 'cloud',
             osfstorage_settings.WATERBUTLER_RESOURCE: 'osf',
@@ -730,22 +730,22 @@ class FileCommentMoveRenameTestMixin:
             'node': project,
             'provider': 'osfstorage'
         }
-        self._create_file_with_comment(node=source['node'], path=source['path'])
-        payload = self._create_payload('move', self.user, source, destination, self.file._id, destination_file_id=destination['path'].strip('/'))
+        self._create_file_with_comment(node=source['node'], path=source['path'], user=user)
+        payload = self._create_payload('move', user, source, destination, self.file._id, destination_file_id=destination['path'].strip('/'))
         update_file_guid_referent(self=None, node=destination['node'], event_type='addon_file_moved', payload=payload)
         self.guid.reload()
 
         file_node = FileNode.resolve_class('osfstorage', FileNode.FILE).get_or_create(destination['node'], destination['path'])
         assert self.guid._id == file_node.get_guid()._id
-        file_comments = Comment.find(Q('root_target', 'eq', self.guid._id))
+        file_comments = Comment.find(Q('root_target', 'eq', self.guid.pk))
         assert file_comments.count() == 1
 
-    def test_comments_move_when_folder_moved_to_osfstorage(self, project):
+    def test_comments_move_when_folder_moved_to_osfstorage(self, project, user):
         osfstorage = project.get_addon('osfstorage')
         root_node = osfstorage.get_root()
         osf_folder = root_node.append_folder('subfolder')
         osf_file = osf_folder.append_file('file.txt')
-        osf_file.create_version(self.user, {
+        osf_file.create_version(user, {
             'object': '06d80e',
             'service': 'cloud',
             osfstorage_settings.WATERBUTLER_RESOURCE: 'osf',
@@ -771,24 +771,27 @@ class FileCommentMoveRenameTestMixin:
             }]
         }
         file_name = 'file.txt'
-        self._create_file_with_comment(node=source['node'], path='{}{}'.format(source['path'], file_name))
-        payload = self._create_payload('move', self.user, source, destination, self.file._id, destination_file_id=osf_file._id)
+        self._create_file_with_comment(node=source['node'], path='{}{}'.format(source['path'], file_name), user=user)
+        payload = self._create_payload('move', user, source, destination, self.file._id, destination_file_id=osf_file._id)
         update_file_guid_referent(self=None, node=destination['node'], event_type='addon_file_moved', payload=payload)
         self.guid.reload()
 
         file_node = FileNode.resolve_class('osfstorage', FileNode.FILE).get_or_create(destination['node'], osf_file._id)
         assert self.guid._id == file_node.get_guid()._id
-        file_comments = Comment.find(Q('root_target', 'eq', self.guid._id))
+        file_comments = Comment.find(Q('root_target', 'eq', self.guid.pk))
         assert file_comments.count() == 1
 
-    # @parameterized.expand([('box', '/1234567890', project), ('dropbox', '/file.txt', project), ('github', '/file.txt', project), ('googledrive', '/file.txt', project), ('s3', '/file.txt', project),])
-    def test_comments_move_when_file_moved_to_different_provider(self, destination_provider, destination_path, project):
+    @pytest.mark.parametrize(
+        ['destination_provider', 'destination_path'],
+        [('box', '/1234567890'), ('dropbox', '/file.txt'), ('github', '/file.txt'), ('googledrive', '/file.txt'), ('s3', '/file.txt')]
+    )
+    def test_comments_move_when_file_moved_to_different_provider(self, destination_provider, destination_path, project, user):
         if self.provider == destination_provider:
             return True
 
-        project.add_addon(destination_provider, auth=Auth(self.user))
+        project.add_addon(destination_provider, auth=Auth(user))
         project.save()
-        self.addon_settings = self.project.get_addon(destination_provider)
+        self.addon_settings = project.get_addon(destination_provider)
         self.addon_settings.folder = '/AddonFolder'
         self.addon_settings.save()
 
@@ -802,24 +805,27 @@ class FileCommentMoveRenameTestMixin:
             'node': project,
             'provider': destination_provider
         }
-        self._create_file_with_comment(node=source['node'], path=source['path'])
-        payload = self._create_payload('move', self.user, source, destination, self.file._id)
+        self._create_file_with_comment(node=source['node'], path=source['path'], user=user)
+        payload = self._create_payload('move', user, source, destination, self.file._id)
         update_file_guid_referent(self=None, node=destination['node'], event_type='addon_file_moved', payload=payload)
         self.guid.reload()
 
         file_node = FileNode.resolve_class(destination_provider, FileNode.FILE).get_or_create(destination['node'], destination['path'])
         assert self.guid._id == file_node.get_guid()._id
-        file_comments = Comment.find(Q('root_target', 'eq', self.guid._id))
+        file_comments = Comment.find(Q('root_target', 'eq', self.guid.pk))
         assert file_comments.count() == 1
 
-    # @parameterized.expand([('box', '/1234567890'), ('dropbox', '/subfolder/file.txt'), ('github', '/subfolder/file.txt'), ('googledrive', '/subfolder/file.txt'), ('s3', '/subfolder/file.txt'),])
-    def test_comments_move_when_folder_moved_to_different_provider(self, destination_provider, destination_path, project):
+    @pytest.mark.parametrize(
+        ['destination_provider', 'destination_path'],
+        [('box', '/1234567890'), ('dropbox', '/subfolder/file.txt'), ('github', '/subfolder/file.txt'), ('googledrive', '/subfolder/file.txt'), ('s3', '/subfolder/file.txt'),]
+    )
+    def test_comments_move_when_folder_moved_to_different_provider(self, destination_provider, destination_path, project, user):
         if self.provider == destination_provider:
             return True
 
-        project.add_addon(destination_provider, auth=Auth(self.user))
+        project.add_addon(destination_provider, auth=Auth(user))
         project.save()
-        self.addon_settings = self.project.get_addon(destination_provider)
+        self.addon_settings = project.get_addon(destination_provider)
         self.addon_settings.folder = '/AddonFolder'
         self.addon_settings.save()
 
@@ -839,19 +845,18 @@ class FileCommentMoveRenameTestMixin:
             }]
         }
         file_name = 'file.txt'
-        self._create_file_with_comment(node=source['node'], path='{}{}'.format(source['path'], file_name))
-        payload = self._create_payload('move', self.user, source, destination, self.file._id)
+        self._create_file_with_comment(node=source['node'], path='{}{}'.format(source['path'], file_name), user=user)
+        payload = self._create_payload('move', user, source, destination, self.file._id)
         update_file_guid_referent(self=None, node=destination['node'], event_type='addon_file_moved', payload=payload)
         self.guid.reload()
 
         file_node = FileNode.resolve_class(destination_provider, FileNode.FILE).get_or_create(destination['node'], destination_path)
         assert self.guid._id == file_node.get_guid()._id
-        file_comments = Comment.find(Q('root_target', 'eq', self.guid._id))
+        file_comments = Comment.find(Q('root_target', 'eq', self.guid.pk))
         assert file_comments.count() == 1
 
 
 # copied from tests/test_comments.py
-@pytest.mark.skip('Unskip when Files are implemented')
 class TestOsfstorageFileCommentMoveRename(FileCommentMoveRenameTestMixin):
 
     provider = 'osfstorage'
@@ -862,12 +867,11 @@ class TestOsfstorageFileCommentMoveRename(FileCommentMoveRenameTestMixin):
         super(TestOsfstorageFileCommentMoveRename, cls)._format_path(path)
         return '/{}{}'.format(file_id, ('/' if path.endswith('/') else ''))
 
-    @pytest.mark.skip('Unskip when Files are implemented')
-    def _create_file_with_comment(self, node, path):
+    def _create_file_with_comment(self, node, path, user):
         osfstorage = node.get_addon(self.provider)
         root_node = osfstorage.get_root()
         self.file = root_node.append_file('file.txt')
-        self.file.create_version(self.user, {
+        self.file.create_version(user, {
             'object': '06d80e',
             'service': 'cloud',
             osfstorage_settings.WATERBUTLER_RESOURCE: 'osf',
@@ -878,9 +882,9 @@ class TestOsfstorageFileCommentMoveRename(FileCommentMoveRenameTestMixin):
         }).save()
         self.file.materialized_path = path
         self.guid = self.file.get_guid(create=True)
-        self.comment = CommentFactory(user=self.user, node=node, target=self.guid)
+        self.comment = CommentFactory(user=user, node=node, target=self.guid)
 
-    def test_comments_move_when_file_moved_from_project_to_component(self, project, component):
+    def test_comments_move_when_file_moved_from_project_to_component(self, project, component, user):
         source = {
             'path': '/file.txt',
             'node': project,
@@ -891,19 +895,19 @@ class TestOsfstorageFileCommentMoveRename(FileCommentMoveRenameTestMixin):
             'node': component,
             'provider': self.provider
         }
-        self._create_file_with_comment(node=source['node'], path=source['path'])
+        self._create_file_with_comment(node=source['node'], path=source['path'], user=user)
         self.file.move_under(destination['node'].get_addon(self.provider).get_root())
-        payload = self._create_payload('move', self.user, source, destination, self.file._id)
+        payload = self._create_payload('move', user, source, destination, self.file._id)
         update_file_guid_referent(self=None, node=destination['node'], event_type='addon_file_moved', payload=payload)
         self.guid.reload()
 
         file_node = FileNode.resolve_class(self.provider, FileNode.FILE).get_or_create(destination['node'], self._format_path(destination['path'], file_id=self.file._id))
         assert self.guid._id == file_node.get_guid()._id
         assert self.guid.referent.node._id == destination['node']._id
-        file_comments = Comment.find(Q('root_target', 'eq', self.guid._id))
+        file_comments = Comment.find(Q('root_target', 'eq', self.guid.pk))
         assert file_comments.count() == 1
 
-    def test_comments_move_when_file_moved_from_component_to_project(self, project, component):
+    def test_comments_move_when_file_moved_from_component_to_project(self, project, component, user):
         source = {
             'path': '/file.txt',
             'node': component,
@@ -914,19 +918,19 @@ class TestOsfstorageFileCommentMoveRename(FileCommentMoveRenameTestMixin):
             'node': project,
             'provider': self.provider
         }
-        self._create_file_with_comment(node=source['node'], path=source['path'])
+        self._create_file_with_comment(node=source['node'], path=source['path'], user=user)
         self.file.move_under(destination['node'].get_addon(self.provider).get_root())
-        payload = self._create_payload('move', self.user, source, destination, self.file._id)
+        payload = self._create_payload('move', user, source, destination, self.file._id)
         update_file_guid_referent(self=None, node=destination['node'], event_type='addon_file_moved', payload=payload)
         self.guid.reload()
 
         file_node = FileNode.resolve_class(self.provider, FileNode.FILE).get_or_create(destination['node'], self._format_path(destination['path'], file_id=self.file._id))
         assert self.guid._id == file_node.get_guid()._id
         assert self.guid.referent.node._id == destination['node']._id
-        file_comments = Comment.find(Q('root_target', 'eq', self.guid._id))
+        file_comments = Comment.find(Q('root_target', 'eq', self.guid.pk))
         assert file_comments.count() == 1
 
-    def test_comments_move_when_folder_moved_from_project_to_component(self, project, component):
+    def test_comments_move_when_folder_moved_from_project_to_component(self, project, component, user):
         source = {
             'path': '/subfolder/',
             'node': project,
@@ -938,18 +942,18 @@ class TestOsfstorageFileCommentMoveRename(FileCommentMoveRenameTestMixin):
             'provider': self.provider
         }
         file_name = 'file.txt'
-        self._create_file_with_comment(node=source['node'], path='{}{}'.format(source['path'], file_name))
+        self._create_file_with_comment(node=source['node'], path='{}{}'.format(source['path'], file_name), user=user)
         self.file.move_under(destination['node'].get_addon(self.provider).get_root())
-        payload = self._create_payload('move', self.user, source, destination, self.file._id)
+        payload = self._create_payload('move', user, source, destination, self.file._id)
         update_file_guid_referent(self=None, node=destination['node'], event_type='addon_file_moved', payload=payload)
         self.guid.reload()
 
         file_node = FileNode.resolve_class(self.provider, FileNode.FILE).get_or_create(destination['node'], self._format_path('{}{}'.format(destination['path'], file_name), file_id=self.file._id))
         assert self.guid._id == file_node.get_guid()._id
-        file_comments = Comment.find(Q('root_target', 'eq', self.guid._id))
+        file_comments = Comment.find(Q('root_target', 'eq', self.guid.pk))
         assert file_comments.count() == 1
 
-    def test_comments_move_when_folder_moved_from_component_to_project(self, project, component):
+    def test_comments_move_when_folder_moved_from_component_to_project(self, project, component, user):
         source = {
             'path': '/subfolder/',
             'node': component,
@@ -961,32 +965,32 @@ class TestOsfstorageFileCommentMoveRename(FileCommentMoveRenameTestMixin):
             'provider': self.provider
         }
         file_name = 'file.txt'
-        self._create_file_with_comment(node=source['node'], path='{}{}'.format(source['path'], file_name))
+        self._create_file_with_comment(node=source['node'], path='{}{}'.format(source['path'], file_name), user=user)
         self.file.move_under(destination['node'].get_addon(self.provider).get_root())
-        payload = self._create_payload('move', self.user, source, destination, self.file._id)
+        payload = self._create_payload('move', user, source, destination, self.file._id)
         update_file_guid_referent(self=None, node=destination['node'], event_type='addon_file_moved', payload=payload)
         self.guid.reload()
 
         file_node = FileNode.resolve_class(self.provider, FileNode.FILE).get_or_create(destination['node'], self._format_path('{}{}'.format(destination['path'], file_name), file_id=self.file._id))
         assert self.guid._id == file_node.get_guid()._id
-        file_comments = Comment.find(Q('root_target', 'eq', self.guid._id))
+        file_comments = Comment.find(Q('root_target', 'eq', self.guid.pk))
         assert file_comments.count() == 1
 
     def test_comments_move_when_file_moved_to_osfstorage(self):
-        super(TestOsfstorageFileCommentMoveRename, self).test_comments_move_when_file_moved_to_osfstorage()
+        # Already in OSFStorage
+        pass
 
     def test_comments_move_when_folder_moved_to_osfstorage(self):
-        super(TestOsfstorageFileCommentMoveRename, self).test_comments_move_when_folder_moved_to_osfstorage()
-
+        # Already in OSFStorage
+        pass
 
 # copied from tests/test_comments.py
-@pytest.mark.skip('Unskip when Files are implemented')
 class TestBoxFileCommentMoveRename(FileCommentMoveRenameTestMixin):
 
     provider = 'box'
     ProviderFile = BoxFile
 
-    def _create_file_with_comment(self, node, path):
+    def _create_file_with_comment(self, node, path, user):
         self.file = self.ProviderFile.create(
             is_file=True,
             node=node,
@@ -995,7 +999,7 @@ class TestBoxFileCommentMoveRename(FileCommentMoveRenameTestMixin):
             materialized_path=path)
         self.guid = self.file.get_guid(create=True)
         self.file.save()
-        self.comment = CommentFactory(user=self.user, node=node, target=self.guid)
+        self.comment = CommentFactory(user=user, node=node, target=self.guid)
 
     @classmethod
     def _format_path(cls, path, file_id=None):
@@ -1003,13 +1007,12 @@ class TestBoxFileCommentMoveRename(FileCommentMoveRenameTestMixin):
         return '/9876543210/' if path.endswith('/') else '/1234567890'
 
 
-@pytest.mark.skip('Unskip when Files are implemented')
 class TestDropboxFileCommentMoveRename(FileCommentMoveRenameTestMixin):
 
     provider = 'dropbox'
     ProviderFile = DropboxFile
 
-    def _create_file_with_comment(self, node, path):
+    def _create_file_with_comment(self, node, path, user):
         self.file = self.ProviderFile.create(
             is_file=True,
             node=node,
@@ -1018,24 +1021,21 @@ class TestDropboxFileCommentMoveRename(FileCommentMoveRenameTestMixin):
             materialized_path=path)
         self.guid = self.file.get_guid(create=True)
         self.file.save()
-        self.comment = CommentFactory(user=self.user, node=node, target=self.guid)
+        self.comment = CommentFactory(user=user, node=node, target=self.guid)
 
 
-@pytest.mark.skip('Unskip when Files are implemented')
 class TestGoogleDriveFileCommentMoveRename(FileCommentMoveRenameTestMixin):
 
     provider = 'googledrive'
     ProviderFile = GoogleDriveFile
 
 
-@pytest.mark.skip('Unskip when Files are implemented')
 class TestGithubFileCommentMoveRename(FileCommentMoveRenameTestMixin):
 
     provider = 'github'
     ProviderFile = GithubFile
 
 
-@pytest.mark.skip('Unskip when Files are implemented')
 class TestS3FileCommentMoveRename(FileCommentMoveRenameTestMixin):
 
     provider = 's3'
