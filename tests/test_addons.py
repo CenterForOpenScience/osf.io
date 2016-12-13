@@ -541,7 +541,7 @@ def assert_urls_equal(url1, url2):
     assert_equal(furl1, furl2)
 
 
-class TestFileNode(file_models.FileNode):
+class MockFileNode(file_models.FileNode):
     provider = 'test_addons'
 
     def touch(self, bearer, version=None, revision=None, **kwargs):
@@ -556,11 +556,11 @@ class TestFileNode(file_models.FileNode):
         return file_models.FileVersion()
 
 
-class TestFile(TestFileNode, file_models.File):
+class MockFile(MockFileNode, file_models.File):
     pass
 
 
-class TestFolder(TestFileNode, file_models.Folder):
+class MockFolder(MockFileNode, file_models.Folder):
     pass
 
 
@@ -570,8 +570,8 @@ class TestAddonFileViews(OsfTestCase):
     @classmethod
     def setUpClass(cls):
         super(TestAddonFileViews, cls).setUpClass()
-        PROVIDER_MAP['github'] = [TestFolder, TestFile, TestFileNode]
-        TestFileNode.provider = 'github'
+        PROVIDER_MAP['github'] = [MockFolder, MockFile, MockFileNode]
+        MockFileNode.provider = 'github'
 
     def setUp(self):
         super(TestAddonFileViews, self).setUp()
@@ -604,7 +604,7 @@ class TestAddonFileViews(OsfTestCase):
     def get_test_file(self):
         version = file_models.FileVersion(identifier='1')
         version.save()
-        ret = TestFile(
+        ret = MockFile(
             name='Test',
             node=self.project,
             path='/test/Test',
@@ -617,7 +617,7 @@ class TestAddonFileViews(OsfTestCase):
     def get_second_test_file(self):
         version = file_models.FileVersion(identifier='1')
         version.save()
-        ret = TestFile(
+        ret = MockFile(
             name='Test2',
             node=self.project,
             path='/test/Test2',
@@ -864,7 +864,7 @@ class TestAddonFileViews(OsfTestCase):
 
     def test_delete_action_for_folder_deletes_subfolders_and_creates_trashed_file_nodes(self):
         file_node = self.get_test_file()
-        subfolder = TestFolder(
+        subfolder = MockFolder(
             name='folder',
             node=self.project,
             path='/test/folder/',

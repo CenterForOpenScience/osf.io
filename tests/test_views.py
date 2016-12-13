@@ -64,9 +64,8 @@ from tests.base import (
     get_default_metaschema,
     OsfTestCase,
     assert_datetime_equal,
-    test_app,
 )
-
+from tests.base import test_app as mock_app
 
 pytestmark = pytest.mark.django_db
 
@@ -108,17 +107,17 @@ class Addon2(MockAddonNodeSettings):
 class TestViewsAreAtomic(OsfTestCase):
 
     def test_error_response_rolls_back_transaction(self):
-        @test_app.route('/errorexc')
+        @mock_app.route('/errorexc')
         def error_exc():
             u = UserFactory()
             raise RuntimeError
 
-        @test_app.route('/error500')
+        @mock_app.route('/error500')
         def error500():
             u = UserFactory()
             return 'error', 500
 
-        @test_app.route('/noautotransact')
+        @mock_app.route('/noautotransact')
         @no_auto_transaction
         def no_auto_transact():
             u = UserFactory()
@@ -129,12 +128,12 @@ class TestViewsAreAtomic(OsfTestCase):
         assert_equal(User.objects.count(), 0)
 
         # Need to set debug = False in order to rollback transactions in transaction_teardown_request
-        test_app.debug = False
+        mock_app.debug = False
         try:
             self.app.get('/errorexc', expect_errors=True)
         except RuntimeError:
             pass
-        test_app.debug = True
+        mock_app.debug = True
 
         assert_equal(User.objects.count(), 0)
 
