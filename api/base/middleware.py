@@ -4,9 +4,8 @@ import re
 import hotshot
 import hotshot.stats
 import tempfile
+import threading
 import StringIO
-import types
-import functools
 
 from django.conf import settings
 from raven.contrib.django.raven_compat.models import sentry_exception_handler
@@ -106,34 +105,37 @@ class CorsMiddleware(corsheaders.middleware.CorsMiddleware):
     """
     Augment CORS origin white list with the Institution model's domains.
     """
-    def process_request(self, request):
-        def origin_not_found_in_white_lists(self, request, origin, url):
-            not_found = super(CorsMiddleware, self).origin_not_found_in_white_lists(origin, url)
-            if not_found:
-                # Check if origin is in the dynamic Institutions whitelist
-                if url.netloc.lower() in api_settings.INSTITUTION_ORIGINS_WHITELIST:
+
+    _context = threading.local()
+
+    def origin_not_found_in_white_lists(self, origin, url):
+        not_found = super(CorsMiddleware, self).origin_not_found_in_white_lists(origin, url)
+        if not_found:
+            # Check if origin is in the dynamic Institutions whitelist
+            if url.netloc.lower() in api_settings.INSTITUTION_ORIGINS_WHITELIST:
+                return
+            # Check if a cross-origin request using the Authorization header
+            elif not self._context.request.COOKIES:
+                if self._context.request.META.get('HTTP_AUTHORIZATION'):
                     return
-                # Check if a cross-origin request using the Authorization header
-                elif not request.COOKIES:
-                    if request.META.get('HTTP_AUTHORIZATION'):
-                        return
-                    elif (
-                        request.method == 'OPTIONS' and
-                        'HTTP_ACCESS_CONTROL_REQUEST_METHOD' in request.META and
-                        'authorization' in map(
-                            lambda h: h.strip(),
-                            request.META.get('HTTP_ACCESS_CONTROL_REQUEST_HEADERS', '').split(',')
-                        )
-                    ):
-                        return
-            return not_found
-        # Re-bind origin_not_found_in_white_lists to the instance with
-        # the request as the first arguments
-        self.origin_not_found_in_white_lists = functools.partial(
-            types.MethodType(origin_not_found_in_white_lists, self),
-            request
-        )
-        return super(CorsMiddleware, self).process_request(request)
+                elif (
+                    self._context.request.method == 'OPTIONS' and
+                    'HTTP_ACCESS_CONTROL_REQUEST_METHOD' in self._context.request.META and
+                    'authorization' in map(
+                        lambda h: h.strip(),
+                        self._context.request.META.get('HTTP_ACCESS_CONTROL_REQUEST_HEADERS', '').split(',')
+                    )
+                ):
+                    return None
+
+        return not_found
+
+    def process_response(self, request, response):
+        self._context.request = request
+        try:
+            return super(CorsMiddleware, self).process_response(request, response)
+        finally:
+            self._context.request = None
 
 
 class PostcommitTaskMiddleware(object):

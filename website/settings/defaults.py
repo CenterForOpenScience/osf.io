@@ -263,8 +263,6 @@ KEEN = {
 SENTRY_DSN = None
 SENTRY_DSN_JS = None
 
-
-# TODO: Delete me after merging GitLab
 MISSING_FILE_NAME = 'untitled'
 
 # Project Organizer
