@@ -130,9 +130,12 @@ class CorsMiddleware(corsheaders.middleware.CorsMiddleware):
 
         return not_found
 
-    def process_request(self, request):
+    def process_response(self, request, response):
         self._context.request = request
-        return super(CorsMiddleware, self).process_request(request)
+        try:
+            return super(CorsMiddleware, self).process_response(request, response)
+        finally:
+            self._context.request = None
 
 
 class PostcommitTaskMiddleware(object):
