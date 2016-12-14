@@ -275,6 +275,7 @@ class PreprintCitationDetail(JSONAPIBaseView, generics.RetrieveAPIView, Preprint
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
+        ContributorOrPublic,
     )
 
     required_read_scopes = [CoreScopes.NODE_CITATIONS_READ]
@@ -302,6 +303,7 @@ class PreprintCitationStyleDetail(JSONAPIBaseView, generics.RetrieveAPIView, Pre
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
+        ContributorOrPublic,
     )
 
     required_read_scopes = [CoreScopes.NODE_CITATIONS_READ]

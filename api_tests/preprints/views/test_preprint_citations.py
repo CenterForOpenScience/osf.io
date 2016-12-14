@@ -17,10 +17,15 @@ class PreprintCitationsMixin(object):
 		super(PreprintCitationsMixin, self).setUp()
 		self.admin_contributor = AuthUserFactory()
 		self.published_preprint = PreprintFactory(creator=self.admin_contributor)
+		self.unpublished_preprint = PreprintFactory(creator=self.admin_contributor, is_published=False)
 
 	def test_unauthenticated_can_view_published_preprint_citations(self):
 		res = self.app.get(self.published_preprint_url)
 		assert_equal(res.status_code, 200)
+
+	def test_unauthenticated_cannot_view_unpublished_preprint_citations(self):
+		res = self.app.get(self.unpublished_preprint_url, expect_errors=True)
+		assert_equal(res.status_code, 401)
 
 	def test_preprint_citations_are_read_only(self):
 		post_res = self.app.post_json_api(self.published_preprint_url, {}, auth=self.admin_contributor.auth, expect_errors=True)
@@ -36,6 +41,7 @@ class TestPreprintCitations(PreprintCitationsMixin, ApiTestCase):
 	def setUp(self):
 		super(TestPreprintCitations, self).setUp()
 		self.published_preprint_url = '/{}preprints/{}/citation/'.format(API_BASE, self.published_preprint._id)
+		self.unpublished_preprint_url = '/{}preprints/{}/citation/'.format(API_BASE, self.unpublished_preprint._id)
 
 	def test_citation_publisher_is_preprint_provider(self):
 		res = self.app.get(self.published_preprint_url)
@@ -53,3 +59,4 @@ class TestPreprintCitationsStyle(PreprintCitationsMixin, ApiTestCase):
 	def setUp(self):
 		super(TestPreprintCitationsStyle, self).setUp()
 		self.published_preprint_url = '/{}preprints/{}/citation/apa/'.format(API_BASE, self.published_preprint._id)
+		self.unpublished_preprint_url = '/{}preprints/{}/citation/apa/'.format(API_BASE, self.unpublished_preprint._id)
