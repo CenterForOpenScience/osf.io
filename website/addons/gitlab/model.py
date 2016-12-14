@@ -3,6 +3,8 @@
 import os
 import urlparse
 
+import pdb
+
 import markupsafe
 from modularodm import fields
 
@@ -20,6 +22,7 @@ from website.addons.gitlab.serializer import GitLabSerializer
 from website.addons.gitlab import settings as gitlab_settings
 from website.addons.gitlab.exceptions import ApiError, NotFoundError, GitLabError
 from website.oauth.models import ExternalProvider
+from website.oauth.models import ExternalAccount
 
 from framework.sessions import session
 
@@ -30,27 +33,22 @@ hook_domain = gitlab_settings.HOOK_DOMAIN or settings.DOMAIN
 class GitLabProvider(ExternalProvider):
     name = 'GitLab'
     short_name = 'gitlab'
-    serializer = GitLabSerializer
-
-    def __init__(self, account=None):
-        super(GitLabProvider, self).__init__()
-        self.account = account
 
     @property
     def auth_url_base(self):
-        return 'https://{0}{1}'.format(session.data['oauth_host'], '/oauth/authorize')
+        return 'https://{0}{1}'.format('gitlab.com', '/oauth/authorize')
 
     @property
     def callback_url(self):
-        return 'https://{0}{1}'.format(session.data['oauth_host'], '/oauth/token')
+        return 'https://{0}{1}'.format('gitlab.com', '/oauth/token')
 
     @property
     def client_secret(self):
-        return session.data['oauth_client_secret']
+        return 'a89f6d159da4ac8a105952f1b27370fc977e548b20100f267f22d22b92773d52'
 
     @property
     def client_id(self):
-        return session.data['oauth_client_id']
+        return '48dc7b0e3938b64e1feb1452602edcd69d444415c1aa996f042e13d9e04624e0'
 
     def handle_callback(self, response):
         """View called when the OAuth flow is completed. Adds a new GitLabUserSettings
@@ -84,18 +82,6 @@ class GitLabUserSettings(AddonOAuthUserSettingsBase):
             connection.revoke_token()
         except GitLabError:
             pass
-
-    # Required for importing username from social profile configuration page
-    # Assumes oldest connected account is primary.
-    @property
-    def public_id(self):
-        gh_accounts = [
-            a for a in self.owner.external_accounts
-            if a.provider == self.oauth_provider.short_name
-        ]
-        if gh_accounts:
-            return gh_accounts[0].display_name
-        return None
 
 
 class GitLabNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
