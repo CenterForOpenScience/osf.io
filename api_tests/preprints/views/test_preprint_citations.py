@@ -2,6 +2,7 @@
 from nose.tools import *  # flake8: noqa
 
 from api.base.settings.defaults import API_BASE
+from api.citations.utils import display_absolute_url
 
 from tests.base import ApiTestCase
 from tests.factories import (
@@ -44,7 +45,7 @@ class TestPreprintCitations(PreprintCitationsMixin, ApiTestCase):
 	def test_citation_url_is_preprint_url_not_project(self):
 		res = self.app.get(self.published_preprint_url)
 		assert_equal(res.status_code, 200)
-		assert_equal(res.json['data']['links']['self'], self.published_preprint.display_absolute_url)
+		assert_equal(res.json['data']['links']['self'], display_absolute_url(self.published_preprint))
 
 
 class TestPreprintCitationsStyle(PreprintCitationsMixin, ApiTestCase):
