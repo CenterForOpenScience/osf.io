@@ -19,7 +19,7 @@ class GitLabClient(object):
 
         self.access_token = getattr(external_account, 'oauth_key', None) or access_token
 
-        self.host = getattr(external_account, 'display_name', None) or session.data['oauth_host']
+        self.host = getattr(external_account, 'display_name', None) or 'gitlab.com'
 
         if self.access_token:
             self.gitlab = gitlab.Gitlab('https://' + self.host, oauth_token=self.access_token)
@@ -126,6 +126,10 @@ class GitLabClient(object):
 
         return requests.get('https://{0}/{1}/{2}'.format(self.host, 'api/v3', uri),
                             verify=True, headers=headers)
+
+    def revoke_token(self):
+        return False
+
 
 
 def ref_to_params(branch=None, sha=None):

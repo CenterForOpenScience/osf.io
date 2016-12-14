@@ -4,6 +4,9 @@ from dateutil.parser import parse as dateparse
 import httplib as http
 import logging
 
+import pdb
+
+from furl import furl
 from flask import request, make_response
 
 from framework.exceptions import HTTPError
@@ -14,6 +17,7 @@ from website.oauth.models import ExternalAccount
 
 from website.addons.base import generic_views
 from website.addons.gitlab.api import GitLabClient, ref_to_params
+from website.addons.gitlab.model import GitLabProvider
 from website.addons.gitlab.exceptions import NotFoundError, GitLabError
 from website.addons.gitlab.settings import DEFAULT_HOSTS
 from website.addons.gitlab.serializer import GitLabSerializer
@@ -99,9 +103,10 @@ def gitlab_user_config_get(auth, **kwargs):
 @must_be_logged_in
 def gitlab_add_user_account(auth, **kwargs):
     """Verifies new external account credentials and adds to user's list"""
-    user = auth.user
 
-    host = request.json.get('host').rstrip('/')
+    host = furl()
+    host.host = request.json.get('host').rstrip('/')
+    host.scheme = 'https'
     clientId = request.json.get('clientId')
     clientSecret = request.json.get('clientSecret')
 
@@ -109,23 +114,25 @@ def gitlab_add_user_account(auth, **kwargs):
         account = ExternalAccount(
             provider='gitlab',
             provider_name='GitLab',
-            display_name=host,
-            oauth_key=clientId,
-            oauth_secret=clientSecret,
-            provider_id=host,
+            display_name=host,       # no username; show host
+            oauth_key=host,          # hijacked; now host
+            oauth_secret=clientSecret,   # hijacked; now clientSecret
+            provider_id=clientId,   # hijacked; now clientId
         )
         account.save()
     except KeyExistsException:
         # ... or get the old one
         account = ExternalAccount.find_one(
             Q('provider', 'eq', 'gitlab') &
-            Q('provider_id', 'eq', host)
+            Q('provider_id', 'eq', clientId)
         )
 
+    provider = GitLabProvider(account)
+
+    user = auth.user
     if account not in user.external_accounts:
         user.external_accounts.append(account)
 
-    # Need to ensure that the user has gitlab enabled at this point
     user.get_or_add_addon('gitlab', auth=auth)
     user.save()
 

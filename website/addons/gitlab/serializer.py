@@ -14,17 +14,9 @@ class GitLabSerializer(StorageAddonSerializer):
     # Include host information with more informative labels / formatting
     def serialize_account(self, external_account):
         ret = super(GitLabSerializer, self).serialize_account(external_account)
-        key = external_account.oauth_key
-        secret = external_account.oauth_secret
-        host = external_account.display_name
-        session.data['oauth_client_id'] = key
-        session.data['oauth_client_secret'] = secret
-        session.data['oauth_host'] = host
+        host = external_account.oauth_key
         ret.update({
             'host': host,
-            'oauth_host': host,
-            'oauth_client_id': key,
-            'oauth_client_secret': secret,
             'host_url': 'https://{0}'.format(host),
         })
 
@@ -41,9 +33,10 @@ class GitLabSerializer(StorageAddonSerializer):
 
     def serialized_folder(self, node_settings):
         return {
-            'path': node_settings.repo,
-            'name': '{0} / {1}'.format(node_settings.user, node_settings.repo),
-        }
+                'path': node_settings.repo,
+                'name': '{0} / {1}'.format(node_settings.user, node_settings.repo),
+            }
+
 
     @property
     def addon_serialized_urls(self):
