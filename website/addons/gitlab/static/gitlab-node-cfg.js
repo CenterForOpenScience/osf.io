@@ -61,9 +61,8 @@ var GitLabConfigHelper = (function() {
                     nodeApiUrl + 'gitlab/repo/create/',
                     {name: repoName, user: $("#gitlabUser").val()}
                 ).done(function (response) {
-                        var repoName = response.user + ' / ' + response.repo;
-                        $select.append('<option value="' + repoName + '">' + $osf.htmlEscape(repoName) + '</option>');
-                        $select.val(repoName);
+                        $select.append('<option value="' + response.repo['id'] + '">' + $osf.htmlEscape(response.repo['path_with_namespace']) + '</option>');
+                        $select.val(response.repo['id']);
                         updateHidden($select);
                     }).fail(function () {
                         displayError('Could not create repository');

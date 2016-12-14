@@ -5,8 +5,6 @@ from website.util import api_url_for
 from website.addons.gitlab.api import GitLabClient
 from website.addons.gitlab.exceptions import GitLabError
 
-from framework.sessions import session
-
 class GitLabSerializer(StorageAddonSerializer):
 
     addon_short_name = 'gitlab'

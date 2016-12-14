@@ -344,7 +344,7 @@ def gitlab_create_repo(**kwargs):
 
     return {
         'user': user,
-        'repo': repo['path_with_namespace'],
+        'repo': repo,
     }
 
 def add_hook_log(node, gitlab, action, path, date, committer, include_urls=False,
