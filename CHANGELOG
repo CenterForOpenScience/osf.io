@@ -21,6 +21,7 @@ Migrations
 ----------
 python -m scripts.migration.migrate_googledoc_paths
 python -m scripts.migration.migrate_googledoc_paths --no-i-mean-it
+python -m scripts.figshare.migrate_folder_logs
 
 0.102.0 (2016-11-30)
 ====================
