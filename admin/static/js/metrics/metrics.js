@@ -60,6 +60,40 @@ var getMetricTitle = function(metric, type) {
 };
 
 
+var differenceGrowthBetweenMetrics = function(metric1, metric2, totalMetric, element) {
+    var percentOne;
+    var percentTwo;
+    var differenceMetric = new Keen.Dataviz()
+        .el(document.getElementById(element))
+        .chartType("metric")
+        .chartOptions({
+            suffix: '%'
+        })
+        .title(' ')
+        .prepare();
+
+    client.run([
+        metric1,
+        metric2,
+        totalMetric
+    ], function(err, res) {
+        var metricOneResult = res[0].result;
+        var metricTwoResult = res[1].result;
+        var totalResult = res[2].result;
+
+        percentOne = (metricOneResult/totalResult)*100;
+        percentTwo = (metricTwoResult/totalResult)*100;
+
+        var data = {
+            "result": percentOne - percentTwo
+        };
+
+        differenceMetric.parseRawData(data).render();
+    });
+}
+
+
+
 var renderCalculationBetweenTwoMetrics = function(metric1, metric2, element, differenceType, calculationType) {
     var result;
     var differenceMetric;
@@ -119,7 +153,7 @@ var getWeeklyUserGain = function() {
         timeframes.push(timeframe);
     }
 
-    return {"queries": queries, "timeframes": timeframes}
+    return {"queries": queries, "timeframes": timeframes};
 
 };
 
@@ -133,7 +167,7 @@ Keen.ready(function () {
     var active_user_count = new Keen.Query("sum", {
         eventCollection: "user_summary",
         targetProperty: "status.active",
-        timeframe: "previous_2_days",
+        timeframe: "previous_1_days",
         timezone: "UTC"
     });
 
@@ -161,19 +195,61 @@ Keen.ready(function () {
     });
 
     // Daily Active Users / Total Users
-    renderCalculationBetweenTwoMetrics(daily_active_users, active_user_count, "daily-active--over-total-users", null, 'percentage');
+    renderCalculationBetweenTwoMetrics(daily_active_users, active_user_count, "daily-active-over-total-users", null, 'percentage');
+
+    // Monthly Active Users
+    var monthly_active_users = new Keen.Query("count_unique", {
+        eventCollection: "pageviews",
+        targetProperty: "user.id",
+        timeframe: "previous_1_months",
+        timezone: "UTC"
+    });
+
+    client.draw(monthly_active_users, document.getElementById("monthly-active-users"), {
+        chartType: "metric",
+        title: ' '
+    });
+
+    // Monthly Active Users / Total Users
+    renderCalculationBetweenTwoMetrics(monthly_active_users, active_user_count, "monthly-active-over-total-users", null, 'percentage');
+
+    // Monthly Growth of MAU% -- Two months ago vs 1 month ago
+    var two_months_ago_active_users = new Keen.Query("count_unique", {
+        eventCollection: "pageviews",
+        targetProperty: "user.id",
+        timeframe: "previous_2_months",
+        timezone: "UTC"
+    });
+
+    differenceGrowthBetweenMetrics(two_months_ago_active_users, monthly_active_users, active_user_count, "monthly-active-user-increase", 'day', 'subtraction');
+
+    // Yearly Active Users
+    var yearly_active_users = new Keen.Query("count_unique", {
+        eventCollection: "pageviews",
+        targetProperty: "user.id",
+        timeframe: "previous_1_years",
+        timezone: "UTC"
+    });
+
+    client.draw(yearly_active_users, document.getElementById("yearly-active-users"), {
+        chartType: "metric",
+        title: ' '
+    });
+
+    // Yearly Active Users / Total Users
+    renderCalculationBetweenTwoMetrics(yearly_active_users, active_user_count, "yearly-active-over-total-users", null, 'percentage');
 
     // Daily Gain
     var yesterday_user_count = new Keen.Query("sum", {
         eventCollection: "user_summary",
         targetProperty: "status.active",
-        timeframe: getOneDayTimeframe(3, null)
+        timeframe: getOneDayTimeframe(1, null)
     });
 
     var two_days_ago_user_count = new Keen.Query("sum", {
         eventCollection: "user_summary",
         targetProperty: "status.active",
-        timeframe: getOneDayTimeframe(4, null)
+        timeframe: getOneDayTimeframe(2, null)
     });
 
     renderCalculationBetweenTwoMetrics(yesterday_user_count, two_days_ago_user_count, "daily-user-increase", 'day', 'subtraction');
