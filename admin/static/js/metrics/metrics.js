@@ -60,15 +60,28 @@ var getMetricTitle = function(metric, type) {
 };
 
 
-var renderDifferneceBetweenTwoMetrics = function(metric1, metric2, element, differenceType) {
+var renderCalculationBetweenTwoMetrics = function(metric1, metric2, element, differenceType, calculationType) {
+    var result;
+    var differenceMetric;
 
-    var diffrenceMetric = new Keen.Dataviz()
-        .el(document.getElementById(element))
-        .chartType("metric")
-        .title(' ')
-        .prepare();
+    if (calculationType === "percentage") {
+        differenceMetric = new Keen.Dataviz()
+            .el(document.getElementById(element))
+            .chartType("metric")
+            .title(' ')
+            .chartOptions({
+                suffix: '%'
+            })
+            .prepare();
+    } else {
+        differenceMetric = new Keen.Dataviz()
+            .el(document.getElementById(element))
+            .chartType("metric")
+            .title(' ')
+            .prepare();
+    }
 
-    diffrenceMetric.title(getMetricTitle(metric1, differenceType));
+    differenceMetric.title(getMetricTitle(metric1, differenceType));
 
     client.run([
         metric1,
@@ -76,11 +89,18 @@ var renderDifferneceBetweenTwoMetrics = function(metric1, metric2, element, diff
     ], function(err, res) {
         var metricOneResult = res[0].result;
         var metricTwoResult = res[1].result;
+
+        if (calculationType === "subtraction") {
+            result = metricOneResult - metricTwoResult;
+        } else if (calculationType === "percentage") {
+            result = (metricOneResult/metricTwoResult) * 100;
+        }
+
         var data = {
-            "result": metricOneResult - metricTwoResult
+            "result": result
         };
 
-        diffrenceMetric.parseRawData(data).render();
+        differenceMetric.parseRawData(data).render();
     });
 };
 
@@ -113,7 +133,7 @@ Keen.ready(function () {
     var active_user_count = new Keen.Query("sum", {
         eventCollection: "user_summary",
         targetProperty: "status.active",
-        timeframe: "previous_1_days",
+        timeframe: "previous_2_days",
         timezone: "UTC"
     });
 
@@ -127,20 +147,36 @@ Keen.ready(function () {
         title: ' '
     });
 
+    // Daily Active Users
+    var daily_active_users = new Keen.Query("count_unique", {
+        eventCollection: "pageviews",
+        targetProperty: "user.id",
+        timeframe: "previous_1_days",
+        timezone: "UTC"
+    });
+
+    client.draw(daily_active_users, document.getElementById("daily-active-users"), {
+        chartType: "metric",
+        title: ' '
+    });
+
+    // Daily Active Users / Total Users
+    renderCalculationBetweenTwoMetrics(daily_active_users, active_user_count, "daily-active--over-total-users", null, 'percentage');
+
     // Daily Gain
     var yesterday_user_count = new Keen.Query("sum", {
         eventCollection: "user_summary",
         targetProperty: "status.active",
-        timeframe: getOneDayTimeframe(4, null)
+        timeframe: getOneDayTimeframe(3, null)
     });
 
     var two_days_ago_user_count = new Keen.Query("sum", {
         eventCollection: "user_summary",
         targetProperty: "status.active",
-        timeframe: getOneDayTimeframe(5, null)
+        timeframe: getOneDayTimeframe(4, null)
     });
 
-    renderDifferneceBetweenTwoMetrics(yesterday_user_count, two_days_ago_user_count, "daily-user-increase", 'day');
+    renderCalculationBetweenTwoMetrics(yesterday_user_count, two_days_ago_user_count, "daily-user-increase", 'day', 'subtraction');
 
     // Monthly Gain
     var last_month_user_count = new Keen.Query("sum", {
@@ -155,11 +191,11 @@ Keen.ready(function () {
         timeframe: getOneDayTimeframe(null, 2)
     });
 
-    renderDifferneceBetweenTwoMetrics(last_month_user_count, two_months_ago_user_count, "monthly-user-increase", 'month');
+    renderCalculationBetweenTwoMetrics(last_month_user_count, two_months_ago_user_count, "monthly-user-increase", 'month', 'subtraction');
 
     var weeklyUserGain = getWeeklyUserGain();
 
-    // New User Daily Average - past 7 days
+    //  Weekly User Gain metric
     var renderAverageUserGainMetric = function(results) {
 
         var userGainChart = new Keen.Dataviz()
@@ -216,11 +252,6 @@ Keen.ready(function () {
     client.draw(active_user_chart, document.getElementById("active-user-chart"), {
         chartType: "line",
         library: "c3",
-        height: "auto",
-        chartOptions: {
-            legend: {position: "top"}
-        },
-        width: "auto",
         title: ' '
     });
 
@@ -276,10 +307,13 @@ Keen.ready(function () {
     client.draw(email_domains, document.getElementById("user-registration-by-email-domain"), {
         chartType: "line",
         library: "c3",
-        height: "auto",
-        width: "auto",
         chartOptions: {
-            legend: {position: "top"}
+            legend: {
+                show: false
+            },
+            tooltip: {
+                grouped: false
+            }
         },
         title: ' '
     });
@@ -295,11 +329,14 @@ Keen.ready(function () {
     client.draw(logs_by_user, document.getElementById("yesterdays-node-logs-by-user"), {
         chartType: "line",
         library: "c3",
-        height: "auto",
         chartOptions: {
-            legend: {position: "top"}
+            legend: {
+                show: false
+            },
+            tooltip: {
+                grouped: false
+            }
         },
-        width: "auto",
         title: " "
     });
 
@@ -346,10 +383,9 @@ Keen.ready(function () {
 
     var chart = new Keen.Dataviz()
         .el(document.getElementById("previous-7-days-of-users-by-status"))
-        .chartType("linechart")
-        .chartOptions({
-            legend: {position: "top"}
-        }).prepare();
+        .chartType("line")
+        .library("c3")
+        .prepare();
 
     client.run([
         previous_week_active_users,
@@ -392,7 +428,7 @@ Keen.ready(function () {
             "provider.name"
         ],
         interval: "daily",
-        timeframe: "previous_1_week",
+        timeframe: "previous_8_days",
         timezone: "UTC"
     });
 
@@ -401,8 +437,6 @@ Keen.ready(function () {
         chartOptions: {
             legend: {position: "top"}
         },
-        height: "auto",
-        width: "auto",
         title: ' '
     });
 
