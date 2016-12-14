@@ -227,7 +227,7 @@ class GitLabNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         if not self.complete:
             raise exceptions.AddonError('Repo is not configured')
         return {
-            'host': 'https://{0}'.format(self.external_account.display_name),
+            'host': 'https://{}'.format(self.external_account.provider_id),
             'owner': self.user,
             'repo': self.repo,
             'repo_id': self.repo_id
