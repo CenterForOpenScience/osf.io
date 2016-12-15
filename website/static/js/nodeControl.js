@@ -253,6 +253,7 @@ var ProjectViewModel = function(data, options) {
 
     self.createIdentifiers = function() {
         // Only show loading indicator for slow responses
+        console.log('creating identifiers');
         var timeout = setTimeout(function() {
             self.idCreationInProgress(true); // show loading indicator
         }, 500);
