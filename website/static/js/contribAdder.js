@@ -19,6 +19,7 @@ var NodeSelectTreebeard = require('js/nodeSelectTreebeard');
 var m = require('mithril');
 var projectSettingsTreebeardBase = require('js/projectSettingsTreebeardBase');
 
+var StackTrace = require('stacktrace-js'); // XXX Debugging!
 
 function Contributor(data) {
     $.extend(this, data);
@@ -255,6 +256,18 @@ AddContributorViewModel = oop.extend(Paginator, {
             xhrFields: {withCredentials: true},
             processData: false
         }).done(function (response) {
+
+            // XXX Debugging!
+            StackTrace.get().then(function(frames) {
+                for (var f, i=0; f=frames[i]; i++) {
+                    console.log( f.fileName.replace(/http:\/\/localhost:9876\/base/, '')
+                                           .replace(/\.js\?[0-9a-f]+/, '.js')
+                               , f.lineNumber
+                               , f.functionName
+                                );
+                }
+            });
+
             var contributors = response.data.map(function (contributor) {
                 // contrib ID has the form <nodeid>-<userid>
                 return contributor.id.split('-')[1];
