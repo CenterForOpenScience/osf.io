@@ -90,6 +90,7 @@ INSTALLED_APPS = (
     'addons.box',
     'addons.dataverse',
     'addons.dropbox',
+    'addons.figshare',
     'addons.forward',
     'addons.github',
     'addons.googledrive',
