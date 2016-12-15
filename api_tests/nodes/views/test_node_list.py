@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import functools
 from nose.tools import *  # flake8: noqa
 
 from modularodm import Q
@@ -20,6 +21,11 @@ from tests.factories import (
     UserFactory,
     PreprintFactory,
 )
+
+from website.project.licenses import ensure_licenses
+from website.project.licenses import NodeLicense
+
+ensure_licenses = functools.partial(ensure_licenses, warn=False)
 
 
 class TestNodeList(ApiTestCase):
@@ -532,12 +538,18 @@ class TestNodeCreate(ApiTestCase):
 
     def setUp(self):
         super(TestNodeCreate, self).setUp()
+
+        ensure_licenses()
+
         self.user_one = AuthUserFactory()
         self.url = '/{}nodes/'.format(API_BASE)
 
         self.title = 'Cool Project'
         self.description = 'A Properly Cool Project'
         self.category = 'data'
+
+        self.mit_license = NodeLicense.find_one(Q('name', 'eq', 'MIT License'))
+        self.cc0_license = NodeLicense.find_one(Q('name', 'eq', 'CC0 1.0 Universal'))
 
         self.user_two = AuthUserFactory()
 
@@ -564,6 +576,57 @@ class TestNodeCreate(ApiTestCase):
                 }
             }
         }
+
+    def make_payload_with_license(self, license_id=None, license_year=None, copyright_holders=None):
+        attributes = {
+            'title': self.title,
+            'description': self.description,
+            'category': self.category
+        }
+
+        if license_year and copyright_holders:
+            attributes.update({
+                'node_license': {
+                    'year': license_year,
+                    'copyright_holders': copyright_holders
+                }
+            })
+        elif license_year:
+            attributes.update({
+                'node_license': {
+                    'year': license_year
+                }
+            })
+        elif copyright_holders:
+            attributes.update({
+                'node_license': {
+                    'copyright_holders': copyright_holders
+                }
+            })
+
+        return {
+            'data': {
+                'type': 'nodes',
+                'attributes': attributes,
+                'relationships': {
+                    'license': {
+                        'data': {
+                            'type': 'licenses',
+                            'id': license_id
+                        }
+                    }
+                }
+            }
+        } if license_id else {
+            'data': {
+                'type': 'nodes',
+                'attributes': attributes
+            }
+        }
+
+    def make_request(self, url, data, auth=None, expect_errors=False):
+        return self.app.post_json_api(url, data, auth=auth, expect_errors=expect_errors)
+
     def test_node_create_invalid_data(self):
         res = self.app.post_json_api(self.url, "Incorrect data", auth=self.user_one.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
@@ -802,6 +865,50 @@ class TestNodeCreate(ApiTestCase):
         res = self.app.post_json_api(self.url, project, auth=self.user_one.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
         assert_equal(res.json['errors'][0]['detail'], 'Title cannot exceed 200 characters.')
+
+    def test_create_node_with_license_no_required_fields(self):
+        data = self.make_payload_with_license(license_id=self.cc0_license._id)
+        res = self.make_request(self.url, data, self.user_one.auth)
+
+        assert_equal(res.status_code, 201)
+        assert_in('license', res.json['data']['relationships'])
+
+        created_node = Node.load(res.json['data']['id'])
+        assert_equal(created_node.node_license.node_license, self.cc0_license)
+
+    def test_create_node_with_license_with_required_fields(self):
+        data = self.make_payload_with_license(license_id=self.mit_license._id, license_year='2012', copyright_holders=['foo', 'bar'])
+        res = self.make_request(self.url, data, self.user_one.auth)
+
+        assert_equal(res.status_code, 201)
+        assert_in('license', res.json['data']['relationships'])
+
+        created_node = Node.load(res.json['data']['id'])
+        assert_equal(created_node.node_license.node_license, self.mit_license)
+
+    def test_add_license_without_required_year(self):
+        data = self.make_payload_with_license(license_id=self.mit_license._id, copyright_holders=['foo', 'bar'])
+        res = self.make_request(self.url, data, self.user_one.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        print(res.json['errors'])
+        assert_equal(res.json['errors'][0]['detail'], 'year must be specified for this license')
+
+    def test_add_license_without_required_copyright_holders(self):
+        data = self.make_payload_with_license(license_id=self.mit_license._id, license_year='2012')
+        res = self.make_request(self.url, data, self.user_one.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], 'copyrightHolders must be specified for this license')
+
+    def test_add_license_on_creation_adds_log(self):
+        data = self.make_payload_with_license(license_id=self.cc0_license._id)
+        res = self.make_request(self.url, data, self.user_one.auth)
+
+        assert_equal(res.status_code, 201)
+        assert_in('license', res.json['data']['relationships'])
+
+        created_node = Node.load(res.json['data']['id'])
+        assert_equal(created_node.node_license.node_license, self.cc0_license)
+        assert_in('license_changed', [log.action for log in created_node.logs])
 
 
 class TestNodeBulkCreate(ApiTestCase):
