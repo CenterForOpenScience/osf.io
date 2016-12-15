@@ -38,6 +38,10 @@ class TestConfigViews(FigshareAddonTestCase, testing.views.OAuthAddonConfigViews
             self.project.logs[-1].action,
             '{0}_folder_selected'.format(self.ADDON_SHORT_NAME)
         )
+        assert_equal(
+            self.project.logs[-1].params['folder'],
+            self.folder['path']
+        )
         assert_equal(res.json['result']['folder']['path'], self.folder['path'])
 
     @mock.patch.object(FigshareClient, 'userinfo')

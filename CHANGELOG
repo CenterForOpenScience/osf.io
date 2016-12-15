@@ -2,6 +2,27 @@
 Changelog
 *********
 
+0.103.0 (2016-12-14)
+====================
+- Update WaterButler Dropbox Provider to use Dropbox v2 API
+- Update figshare for ExternalAccount
+- Update Figshare provider to use v2 API
+- Figshare interface improvements to go with API v2 update.
+- Update analytics display on admin dashboard
+- Add log entry for authorizing figshare through project settings for the first time
+- Keep modal from freezing when Creating a second component
+- Fix attribute error splitting username in None for analytics task
+- Ensure registration doesn't fail if two files in Google Drive have the same name
+- Fix ModularODM KeyError with osfguidstoragefile
+- Add Ohio region for S3 bucket locations
+- Update Google Analytics Linker on osf.io
+
+Migrations
+----------
+python -m scripts.migration.migrate_googledoc_paths
+python -m scripts.migration.migrate_googledoc_paths --no-i-mean-it
+python -m scripts.figshare.migrate_folder_logs
+
 0.102.0 (2016-11-30)
 ====================
 - Add support for branded preprint providers

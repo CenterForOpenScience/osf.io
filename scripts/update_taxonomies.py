@@ -43,6 +43,11 @@ def update_taxonomies(filename):
             parents = [parent] if parent else []
             try:
                 subject = Subject.find_one(Q('text', 'eq', text))
+                logger.info('Found existing Subject "{}":{}{}'.format(
+                    subject.text,
+                    subject._id,
+                    u' with parent {}:{}'.format(parent.text, parent._id) if parent else ''
+                ))
             except (NoResultsFound):
                 # If subject does not yet exist, create it
                 subject = Subject(text=text)
@@ -67,8 +72,13 @@ def main():
     if not dry_run:
         script_utils.add_file_logger(logger, __file__)
     with transaction.atomic():
-        update_taxonomies('plos_taxonomy.json')
-        update_taxonomies('other_taxonomy.json')
+        update_taxonomies('bepress_taxonomy.json')
+        # Now that all subjects have been added to the db, compute and set
+        # the 'children' field for every subject
+        logger.info('Setting "children" field for each Subject')
+        for subject in Subject.find():
+            subject.children = Subject.find(Q('parents', 'eq', subject))
+            subject.save()
         if dry_run:
             raise RuntimeError('Dry run, transaction rolled back')
 

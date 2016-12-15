@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import pytest
 
+from django.http import HttpResponse
 from tests.base import ApiTestCase, fake
 
 from urlparse import urlparse
@@ -58,7 +59,7 @@ class TestCorsMiddleware(MiddlewareTestCase):
         )
         settings.load_institutions()
         request = self.request_factory.get(url, HTTP_ORIGIN=domain.geturl())
-        response = {}
+        response = HttpResponse()
         self.middleware.process_request(request)
         processed = self.middleware.process_response(request, response)
         assert_equal(response['Access-Control-Allow-Origin'], domain.geturl())
@@ -81,7 +82,7 @@ class TestCorsMiddleware(MiddlewareTestCase):
             HTTP_ORIGIN=domain.geturl(),
             HTTP_AUTHORIZATION="Bearer aqweqweohuweglbiuwefq"
         )
-        response = {}
+        response = HttpResponse()
         self.middleware.process_request(request)
         processed = self.middleware.process_response(request, response)
         assert_equal(response['Access-Control-Allow-Origin'], domain.geturl())
@@ -109,7 +110,7 @@ class TestCorsMiddleware(MiddlewareTestCase):
             HTTP_ACCESS_CONTROL_REQUEST_METHOD='GET',
             HTTP_ACCESS_CONTROL_REQUEST_HEADERS='authorization'
         )
-        response = {}
+        response = HttpResponse()
         self.middleware.process_request(request)
         processed = self.middleware.process_response(request, response)
         assert_equal(response['Access-Control-Allow-Origin'], domain.geturl())
