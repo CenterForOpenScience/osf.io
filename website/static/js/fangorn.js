@@ -895,7 +895,7 @@ function _fangornDropzoneError(treebeard, file, message, xhr) {
         msgText = 'Cannot upload file due to insufficient storage.';
     } else if (xhr && xhr.status === 0) {
         // There is no way for Safari to know if it was a folder at present
-        if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('Chrome') == -1) {
+        if (navigator.userAgent.indexOf('Safari') !== -1 && navigator.userAgent.indexOf('Chrome') === -1) {
             msgText = 'Could not upload file. Possilbe reasons: <br>' + 
                 '1. Cannot upload folders. <br>' +
                 '2. Unable to reach the provider, please try again later. <br>' +
