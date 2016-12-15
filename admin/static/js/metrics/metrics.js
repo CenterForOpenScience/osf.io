@@ -2,12 +2,59 @@ require('c3/c3.css');
 
 var c3 = require('c3/c3.js');
 var keen = require('keen-js');
+var ss = require('simple-statistics');
+
 
 var client = new Keen({
     projectId: keenProjectId,
     readKey : keenReadKey
 });
 
+var keenFilters = {
+        nullUserFilter: {
+            property_name: 'user.id',
+            operator: 'ne',
+            property_value: null
+        },
+        inactiveUserFilter: {
+            property_name: 'user.id',
+            operator: 'ne',
+            property_value: ''
+        }
+    };
+
+
+var drawChart = function(chart, type, title, result, color) {
+    chart.attributes({title: title, width: '100%'});
+    chart.adapter({chartType: type});
+    chart.parseRawData({result: result});
+    chart.render();
+};
+
+
+var extractDataSet = function(keenResult) {
+    if (!keenResult) {
+        return 0;
+    }
+
+    var beginTime;
+    var endTime;
+    var deltaSet = [];
+
+    for (var i in keenResult.result) {
+        var session = keenResult.result[i];
+        if (session.hasOwnProperty('result')) {
+            if (session.result.length === 1) {
+                // TODO: take care of the situation where there is only one 'keen.timestamp'
+                continue;
+            }
+            beginTime = Date.parse(session.result[0]);
+            endTime = Date.parse(session.result[session.result.length-1]);
+            deltaSet.push(endTime - beginTime);
+        }
+    }
+    return deltaSet;
+};
 
 var getOneDayTimeframe = function(daysBack, monthsBack) {
     var start = null;
@@ -334,6 +381,23 @@ Keen.ready(function () {
         library: "c3",
         title: ' '
     });
+
+    // New Unconfirmed Users - # of unconfirmed users in the past 7 days
+
+    var yesterday_unconfirmed_user_count = new Keen.Query("sum", {
+        eventCollection: "user_summary",
+        targetProperty: "status.unconfirmed",
+        timeframe: getOneDayTimeframe(1, null)
+    });
+
+    var week_ago_user_count = new Keen.Query("sum", {
+        eventCollection: "user_summary",
+        targetProperty: "status.unconfirmed",
+        timeframe: getOneDayTimeframe(7, null)
+    });
+
+    renderCalculationBetweenTwoMetrics(yesterday_unconfirmed_user_count, week_ago_user_count, "unverified-new-users", 'day', 'subtraction');
+
 
     //                _        _
     //  _ __ _ _ ___ (_)___ __| |_ ___

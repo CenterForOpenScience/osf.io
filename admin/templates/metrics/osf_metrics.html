@@ -35,112 +35,108 @@
         <div class="tab-content">
             <div role="tabpanel" class="tab-pane active" id="user-data">
                 <h3>User Data</h3>
-                <div class="row">
-                    <div class="col-sm-8">
-                        <div class="chart-wrapper">
-                            <div class="chart-title">
-                                User Growth
+
+                <div class="container-fluid">
+
+                    <div class="row">
+                        <div class="col-sm-8">
+                            <div class="chart-wrapper">
+                                <div class="chart-title">
+                                    User Growth
+                                </div>
+                                <div class="chart-stage">
+                                    <div id="active-user-chart"></div>
+                                </div>
+                                <div class="chart-notes">
+                                    The growth of OSF Confirmed Users over the past 800 days.
+                                </div>
                             </div>
-                            <div class="chart-stage">
-                                <div id="active-user-chart"></div>
-                            </div>
-                            <div class="chart-notes">
-                                The growth of OSF Confirmed Users over the past 800 days.
+                        </div>
+                        <div class="col-sm-4">
+                            <div class="chart-wrapper">
+                                <div class="chart-title">
+                                    Total Users
+                                </div>
+                                <div class="chart-stage">
+                                    <div id="active-user-count"></div>
+                                </div>
+                                <div class="chart-notes">
+                                    This is the total number of OSF Users with confirmed accounts.
+                                </div>
                             </div>
                         </div>
                     </div>
-                    <div class="col-sm-4">
-                        <div class="chart-wrapper">
-                            <div class="chart-title">
-                                Total Users
+
+                    <div class="row">
+                        <div class="col-sm-6 col-md-4">
+                            <div class="chart-wrapper">
+                                <div class="chart-title">
+                                    Monthly User Increase
+                                </div>
+                                <div class="chart-stage">
+                                    <div id="monthly-user-increase"></div>
+                                </div>
+                                <div class="chart-notes">
+                                    The number of users gained in the past month.
+                                </div>
                             </div>
-                            <div class="chart-stage">
-                                <div id="active-user-count"></div>
+                        </div>
+                        <div class="col-sm-6 col-md-4">
+                            <div class="chart-wrapper">
+                                <div class="chart-title">
+                                    Daily User Increase
+                                </div>
+                                <div class="chart-stage">
+                                    <div id="daily-user-increase"></div>
+                                </div>
+                                <div class="chart-notes">
+                                    The number of users gained from two days ago until yesterday.
+                                </div>
                             </div>
-                            <div class="chart-notes">
-                                This is the total number of OSF Users with confirmed accounts.
+                        </div>
+                        <div class="col-sm-6 col-md-4">
+                            <div class="chart-wrapper">
+                                <div class="chart-title">
+                                    Average Daily User Gain
+                                </div>
+                                <div class="chart-stage">
+                                    <div id="average-gain-metric"></div>
+                                </div>
+                                <div class="chart-notes">
+                                    The average daily user gain over the past 7 days.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-sm-6 col-md-4">
+                            <div class="chart-wrapper">
+                                <div class="chart-title">
+                                    Unverified New Users
+                                </div>
+                                <div class="chart-stage">
+                                    <div id="unverified-new-users"></div>
+                                </div>
+                                <div class="chart-notes">
+                                    Users created within the last 7 days that have not been confirmed.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-sm-8">
+                            <div class="chart-wrapper">
+                                <div class="chart-title">
+                                    User Growth
+                                </div>
+                                <div class="chart-stage">
+                                    <div id="previous-7-days-of-users-by-status"></div>
+                                </div>
+                                <div class="chart-notes">
+                                    The last 7 days of users, organized by status.
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
-
-                <div class="row">
-                    <div class="col-sm-6 col-md-4">
-                        <div class="chart-wrapper">
-                            <div class="chart-title">
-                                Monthly User Increase
-                            </div>
-                            <div class="chart-stage">
-                                <div id="monthly-user-increase"></div>
-                            </div>
-                            <div class="chart-notes">
-                                The number of users gained in the past month.
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-sm-6 col-md-4">
-                        <div class="chart-wrapper">
-                            <div class="chart-title">
-                                Cell Title
-                            </div>
-                            <div class="chart-stage">
-                            </div>
-                            <div class="chart-notes">
-                                Notes about this chart
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-sm-6 col-md-4">
-                        <div class="chart-wrapper">
-                            <div class="chart-title">
-                                Cell Title
-                            </div>
-                            <div class="chart-stage">
-                            </div>
-                            <div class="chart-notes">
-                                Notes about this chart
-                            </div>
-                        </div>
-                    </div>
-                    <!-- end of three -->
-                    <div class="col-sm-6 col-md-4">
-                        <div class="chart-wrapper">
-                            <div class="chart-title">
-                                Cell Title
-                            </div>
-                            <div class="chart-stage">
-                            </div>
-                            <div class="chart-notes">
-                                Notes about this chart
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-sm-6 col-md-4">
-                        <div class="chart-wrapper">
-                            <div class="chart-title">
-                                Cell Title
-                            </div>
-                            <div class="chart-stage">
-                            </div>
-                            <div class="chart-notes">
-                                Notes about this chart
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-sm-6 col-md-4">
-                        <div class="chart-wrapper">
-                            <div class="chart-title">
-                                Cell Title
-                            </div>
-                            <div class="chart-stage">
-                            </div>
-                            <div class="chart-notes">
-                                Notes about this chart
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
             </div>
 
 
@@ -176,12 +172,54 @@
                     <div class="col-sm-6 col-md-4">
                         <div class="chart-wrapper">
                             <div class="chart-title">
-                                Cell Title
+                                Monthly Active Users (MAU)
                             </div>
                             <div class="chart-stage">
+                                <div id="monthly-active-users"></div>
                             </div>
                             <div class="chart-notes">
-                                Notes about this chart
+                                Users who visited at least one page on the OSF from last month.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-sm-6 col-md-4">
+                        <div class="chart-wrapper">
+                            <div class="chart-title">
+                                 Last Month's Active Users / Total Users
+                            </div>
+                            <div class="chart-stage">
+                                <div id="monthly-active-over-total-users"></div>
+                            </div>
+                            <div class="chart-notes">
+                                Last month's active users / total confirmed users
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-sm-6 col-md-4">
+                        <div class="chart-wrapper">
+                            <div class="chart-title">
+                                Monthly Growth of MAU%
+                            </div>
+                            <div class="chart-stage">
+                                <div id="monthly-active-user-increase"></div>
+                            </div>
+                            <div class="chart-notes">
+                                The percent increase from two months ago to one month ago of what percentage of users with an account were active on the OSF.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-sm-6 col-md-4">
+                        <div class="chart-wrapper">
+                            <div class="chart-title">
+                                Yearly Active Users
+                            </div>
+                            <div class="chart-stage">
+                                <div id="yearly-active-users"></div>
+                            </div>
+                            <div class="chart-notes">
+                                Users who were active on the OSF over the past year.
                             </div>
                         </div>
                     </div>
@@ -197,7 +235,134 @@
                 Cohorts
             </div>
             <div role="tabpanel" class="tab-pane" id="raw-numbers">
-                Raw Numbers
+                <h3>Raw Numbers</h3>
+
+                <div class="container-fluid">
+
+                    <div class="row">
+                        <div class="col-sm-6 col-md-4">
+                            <div class="chart-wrapper">
+                                <div class="chart-title">
+                                    Cell Title
+                                </div>
+                                <div class="chart-stage">
+                                    <div id="grid-1-1">
+                                        <img data-src="holder.js/100%x180/white/text:#grid-1-1">
+                                    </div>
+                                </div>
+                                <div class="chart-notes">
+                                    Notes about this chart
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-sm-6 col-md-4">
+                            <div class="chart-wrapper">
+                                <div class="chart-title">
+                                    Cell Title
+                                </div>
+                                <div class="chart-stage">
+                                    <img data-src="holder.js/100%x180/white">
+                                </div>
+                                <div class="chart-notes">
+                                    Notes about this chart
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-sm-6 col-md-4">
+                            <div class="chart-wrapper">
+                                <div class="chart-title">
+                                    Cell Title
+                                </div>
+                                <div class="chart-stage">
+                                    <img data-src="holder.js/100%x180/white">
+                                </div>
+                                <div class="chart-notes">
+                                    Notes about this chart
+                                </div>
+                            </div>
+                        </div>
+                        <!-- end of three -->
+                        <div class="col-sm-6 col-md-4">
+                            <div class="chart-wrapper">
+                                <div class="chart-title">
+                                    Cell Title
+                                </div>
+                                <div class="chart-stage">
+                                    <img data-src="holder.js/100%x180/white">
+                                </div>
+                                <div class="chart-notes">
+                                    Notes about this chart
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-sm-6 col-md-4">
+                            <div class="chart-wrapper">
+                                <div class="chart-title">
+                                    Cell Title
+                                </div>
+                                <div class="chart-stage">
+                                    <img data-src="holder.js/100%x180/white">
+                                </div>
+                                <div class="chart-notes">
+                                    Notes about this chart
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-sm-6 col-md-4">
+                            <div class="chart-wrapper">
+                                <div class="chart-title">
+                                    Cell Title
+                                </div>
+                                <div class="chart-stage">
+                                    <img data-src="holder.js/100%x180/white">
+                                </div>
+                                <div class="chart-notes">
+                                    Notes about this chart
+                                </div>
+                            </div>
+                        </div>
+                        <!-- end of three -->
+                        <div class="col-sm-6 col-md-4">
+                            <div class="chart-wrapper">
+                                <div class="chart-title">
+                                    Cell Title
+                                </div>
+                                <div class="chart-stage">
+                                    <img data-src="holder.js/100%x180/white">
+                                </div>
+                                <div class="chart-notes">
+                                    Notes about this chart
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-sm-6 col-md-4">
+                            <div class="chart-wrapper">
+                                <div class="chart-title">
+                                    Cell Title
+                                </div>
+                                <div class="chart-stage">
+                                    <img data-src="holder.js/100%x180/white">
+                                </div>
+                                <div class="chart-notes">
+                                    Notes about this chart
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-sm-6 col-md-4">
+                            <div class="chart-wrapper">
+                                <div class="chart-title">
+                                    Cell Title
+                                </div>
+                                <div class="chart-stage">
+                                    <img data-src="holder.js/100%x180/white">
+                                </div>
+                                <div class="chart-notes">
+                                    Notes about this chart
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -221,51 +386,6 @@
     </div>
 
     <div><h2>User Data</h2></div>
-
-    <div id="active_users">
-        <h3>Yesterday's Total Users with Active Accounts</h3>
-        <div id="active-user-count">Loading...</div>
-    </div>
-    <div id="active_users">
-        <h3>Daily Increase of Users</h3>
-        <div id="daily-user-increase">Loading...</div>
-    </div>
-    <div id="active_users">
-        <h3>Monthly Increase of Users</h3>
-        <div id="monthly-user-increase">Loading...</div>
-    </div>
-    <div id="active_users">
-        <h3>Average Daily Gain Over past 7 Days</h3>
-        <div id="average-gain-metric">Loading...</div>
-    </div>
-
-    <div>
-        <h3>Yesterday's Active Logged In Users</h3>
-        <div id="daily-active-users">Loading...</div>
-    </div>
-
-    <div>
-        <h3>Active Users / Total Users</h3>
-        <div id="daily-active-over-total-users">Loading...</div>
-    </div>
-
-    <div>
-        <h3>Last Month's Active Logged In Users</h3>
-        <div id="monthly-active-users">Loading...</div>
-    </div>
-
-    <div>
-        <h3>Last Month's Active Users / Total Users</h3>
-        <div id="monthly-active-over-total-users">Loading...</div>
-    </div>
-    <div>
-        <h3>Monthly growth of MAU%</h3>
-        <div id="monthly-active-user-increase">Loading...</div>
-    </div>
-    <div>
-        <h3>Yearly Active Logged In Users</h3>
-        <div id="yearly-active-users">Loading...</div>
-    </div>
     <div>
         <h3>Yearly Active Users / Total Users</h3>
         <div id="yearly-active-over-total-users">Loading...</div>
