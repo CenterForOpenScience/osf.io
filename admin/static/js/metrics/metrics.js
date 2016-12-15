@@ -316,6 +316,10 @@ Keen.ready(function () {
     };
     renderWeeklyUserGainChart(weeklyUserGain);
 
+    // stickiness ratio - DAU/MAU
+    renderCalculationBetweenTwoMetrics(daily_active_users, monthly_active_users, "stickiness-ratio", null, 'percentage');
+
+
     // Active user chart!
     var active_user_chart = new Keen.Query("sum", {
         eventCollection: "user_summary",
@@ -395,25 +399,40 @@ Keen.ready(function () {
     });
 
     // Yesterday's Node Logs by User
-    var logs_by_user = new Keen.Query("count", {
+    var logsByUser = new Keen.Query("count", {
         eventCollection: "node_log_events",
         interval: "hourly",
         groupBy: "user_id",
         timeframe: "previous_1_days",
         timezone: "UTC"
     });
-    client.draw(logs_by_user, document.getElementById("yesterdays-node-logs-by-user"), {
-        chartType: "line",
-        library: "c3",
-        chartOptions: {
+
+    var LogsByUserGraph = new Keen.Dataviz()
+        .chartType("line")
+        .el(document.getElementById('yesterdays-node-logs-by-user'))
+        .library("c3")
+        .chartOptions({
             legend: {
                 show: false
             },
             tooltip: {
                 grouped: false
             }
-        },
-        title: " "
+        })
+        .prepare();
+
+    client.run(logsByUser, function(err,or, result) {
+        LogsByUserGraph
+            .parseRequest(this)
+            .call(function() {
+                this.dataset.sortRows("desc", function(row) {
+                    return row[1];
+                });
+                this.dataset.filterRows(function(row, index) {
+                    return index < 11;
+                });
+            })
+            .render();
     });
 
     // Previous 7 Days of Users by Status
@@ -495,6 +514,12 @@ Keen.ready(function () {
             i++;
         }
     });
+
+ //          _    _
+ //  __ _ __| |__| |___ _ _  ___
+ // / _` / _` / _` / _ \ ' \(_-<
+ // \__,_\__,_\__,_\___/_||_/__/
+ //
 
     // Previous 7 days of linked addon by addon name
     var linked_addon = new Keen.Query("sum", {

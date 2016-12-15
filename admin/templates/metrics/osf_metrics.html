@@ -19,7 +19,190 @@
 
 {% block content %}
 
-    <h2>OSF Metrics</h2>
+    <h1>OSF Metrics</h1>
+    <div>
+        <!-- Nav tabs -->
+        <ul class="nav nav-tabs" role="tablist">
+            <li role="presentation" class="active"><a href="#user-data" role="tab" data-toggle="tab">User Data</a></li>
+            <li role="presentation"><a href="#active-user-metrics" role="tab" data-toggle="tab">Active User Metrics</a></li>
+            <li role="presentation"><a href="#healthy-user-metrics" role="tab" data-toggle="tab">Healthy User Metrics</a></li>
+            <li role="presentation"><a href="#expansion-metrics" role="tab" data-toggle="tab">Expansion Metrics</a></li>
+            <li role="presentation"><a href="#cohorts" role="tab" data-toggle="tab">Cohorts</a></li>
+            <li role="presentation"><a href="#raw-numbers" role="tab" data-toggle="tab">Raw Numbers</a></li>
+        </ul>
+
+        <!-- Tab panes -->
+        <div class="tab-content">
+            <div role="tabpanel" class="tab-pane active" id="user-data">
+                <h3>User Data</h3>
+                <div class="row">
+                    <div class="col-sm-8">
+                        <div class="chart-wrapper">
+                            <div class="chart-title">
+                                User Growth
+                            </div>
+                            <div class="chart-stage">
+                                <div id="active-user-chart"></div>
+                            </div>
+                            <div class="chart-notes">
+                                The growth of OSF Confirmed Users over the past 800 days.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-sm-4">
+                        <div class="chart-wrapper">
+                            <div class="chart-title">
+                                Total Users
+                            </div>
+                            <div class="chart-stage">
+                                <div id="active-user-count"></div>
+                            </div>
+                            <div class="chart-notes">
+                                This is the total number of OSF Users with confirmed accounts.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-sm-6 col-md-4">
+                        <div class="chart-wrapper">
+                            <div class="chart-title">
+                                Monthly User Increase
+                            </div>
+                            <div class="chart-stage">
+                                <div id="monthly-user-increase"></div>
+                            </div>
+                            <div class="chart-notes">
+                                The number of users gained in the past month.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-sm-6 col-md-4">
+                        <div class="chart-wrapper">
+                            <div class="chart-title">
+                                Cell Title
+                            </div>
+                            <div class="chart-stage">
+                            </div>
+                            <div class="chart-notes">
+                                Notes about this chart
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-sm-6 col-md-4">
+                        <div class="chart-wrapper">
+                            <div class="chart-title">
+                                Cell Title
+                            </div>
+                            <div class="chart-stage">
+                            </div>
+                            <div class="chart-notes">
+                                Notes about this chart
+                            </div>
+                        </div>
+                    </div>
+                    <!-- end of three -->
+                    <div class="col-sm-6 col-md-4">
+                        <div class="chart-wrapper">
+                            <div class="chart-title">
+                                Cell Title
+                            </div>
+                            <div class="chart-stage">
+                            </div>
+                            <div class="chart-notes">
+                                Notes about this chart
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-sm-6 col-md-4">
+                        <div class="chart-wrapper">
+                            <div class="chart-title">
+                                Cell Title
+                            </div>
+                            <div class="chart-stage">
+                            </div>
+                            <div class="chart-notes">
+                                Notes about this chart
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-sm-6 col-md-4">
+                        <div class="chart-wrapper">
+                            <div class="chart-title">
+                                Cell Title
+                            </div>
+                            <div class="chart-stage">
+                            </div>
+                            <div class="chart-notes">
+                                Notes about this chart
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+
+            <div role="tabpanel" class="tab-pane" id="active-user-metrics">
+                <h3>Active User Metrics!</h3>
+                <div class="row">
+                    <div class="col-sm-6 col-md-4">
+                        <div class="chart-wrapper">
+                            <div class="chart-title">
+                                Daily Active Users
+                            </div>
+                            <div class="chart-stage">
+                                <div id="daily-active-users"></div>
+                            </div>
+                            <div class="chart-notes">
+                                This is the number of users who had at least one pageview on the OSF yesterday.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-sm-6 col-md-4">
+                        <div class="chart-wrapper">
+                            <div class="chart-title">
+                                Daily Active Users / Total Users
+                            </div>
+                            <div class="chart-stage">
+                                <div id="daily-active-over-total-users"></div>
+                            </div>
+                            <div class="chart-notes">
+                                Notes about this chart
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-sm-6 col-md-4">
+                        <div class="chart-wrapper">
+                            <div class="chart-title">
+                                Cell Title
+                            </div>
+                            <div class="chart-stage">
+                            </div>
+                            <div class="chart-notes">
+                                Notes about this chart
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div role="tabpanel" class="tab-pane" id="healthy-user-metrics">
+                Healthy User Metrics
+            </div>
+            <div role="tabpanel" class="tab-pane" id="expansion-metrics">
+                Expansion Metrics
+            </div>
+            <div role="tabpanel" class="tab-pane" id="cohorts">
+                Cohorts
+            </div>
+            <div role="tabpanel" class="tab-pane" id="raw-numbers">
+                Raw Numbers
+            </div>
+        </div>
+    </div>
+
+
 
     <div class="dropdown">
         <button class="btn btn-default btn-large dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown">
@@ -133,6 +316,33 @@
         <h3>Previous 7 days of linked addon by addon name</h3>
         <div id="previous-7-days-of-linked-addon-by-addon-name">Loading...</div>
     </div>
+
+    <div><h2>Healthy User Metrics</h2></div>
+
+    <div>
+        <h3>Stickiness Ratio</h3>
+        <div id="stickiness-ratio">Loading...</div>
+    </div>
+
+    <div><h2>Raw Numbers</h2></div>
+
+    <div>
+        <h3>Downloads</h3>
+        <div id="downloads">Loading...</div>
+    </div>
+    <div>
+        <h3>Unique Downloads</h3>
+        <div id="unique-downloads">Loading...</div>
+    </div>
+    <div>
+        <h3>Number of Projects</h3>
+        <div id="total-projects">Loading...</div>
+    </div>
+    <div>
+        <h3>Number of Registrations</h3>
+        <div id="total-registrations">Loading...</div>
+    </div>
+
 
 {% endblock content %}
 
