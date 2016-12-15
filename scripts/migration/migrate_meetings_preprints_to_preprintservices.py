@@ -118,7 +118,8 @@ def validate_target(target):
 
     assert node, 'Unable to find Node with _id {}'.format(target['node_id'])
     assert file, 'Unable to find File with _id {}'.format(target['file_id'])
-    assert target['provider_id'] in set([tag.lower() for tag in node.get('tags', [])]) & POSSIBLE_PREPRINT_PROVIDER_KEYS, 'Unable to infer PreprintProvider for node {} with tags {}'.format(node['_id'], node['tags'])
+    # 1 node to be migrated has the socarxiv tag on the parent_node
+    # assert target['provider_id'] in set([tag.lower() for tag in node.get('tags', [])]) & POSSIBLE_PREPRINT_PROVIDER_KEYS, 'Unable to infer PreprintProvider for node {} with tags {}'.format(node['_id'], node['tags'])
     assert file['node'] == node['_id'], 'File {} with `node` {} not attached to Node {}'.format(file_id, file['node'], node['_id'])
     assert not database['preprintservice'].find({'node': target['node_id']}, {'_id': 1}).count(), 'Cannot migrate a node that already has a preprint'
 
@@ -150,6 +151,12 @@ def validate_subjects(subj_hierarchy):
 
 def infer_preprint_created(node_id, provider_id):
     logs = models.NodeLog.find(Q('node', 'eq', node_id) & Q('action', 'eq', 'tag_added') & Q('params.tag', 'in', list(POSSIBLE_PREPRINT_PROVIDER_KEYS)))
+    if not logs:
+        parent_node_id = database['node'].find_one({'_id': node_id})['parent_node']
+        if parent_node_id:
+            return infer_preprint_created(parent_node_id, provider_id)
+        else:
+            raise AssertionError('Cannot infer created from tag_added log')
     return min([l.date for l in logs if re.match(provider_id, l.params['tag'], re.I)])
 
 def add_preprint_log(preprint):

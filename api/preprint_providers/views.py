@@ -22,6 +22,8 @@ class PreprintProviderList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin
     """
     Paginated list of verified PreprintProviders available. *Read-only*
 
+    Assume undocumented fields are unstable.
+
     ##PreprintProvider Attributes
 
     OSF Preprint Providers have the "preprint_providers" `type`.
@@ -72,6 +74,8 @@ class PreprintProviderList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin
 
 class PreprintProviderDetail(JSONAPIBaseView, generics.RetrieveAPIView):
     """ Details about a given preprint provider. *Read-only*
+
+    Assume undocumented fields are unstable.
 
     ##PreprintProvider Attributes
 

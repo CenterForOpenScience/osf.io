@@ -391,6 +391,8 @@ def root(request, format=None, **kwargs):
     The OSF API generally conforms to the [JSON-API v1.0 spec](http://jsonapi.org/format/1.0/).  Where exceptions
     exist, they will be noted.  Each endpoint will have its own documentation, but there are some general principles.
 
+    Assume undocumented routes/features/fields are unstable.
+
     ##Requests
 
     ###Canonical URLs
