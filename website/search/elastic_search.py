@@ -453,6 +453,7 @@ def update_user(user, index=None):
         'social': user.social_links,
         'boost': 2,  # TODO(fabianvf): Probably should make this a constant or something
     }
+    user_doc = sanitize.safe_unescape_html(user_doc)
 
     es.index(index=index, doc_type='user', body=user_doc, id=user._id, refresh=True)
 

@@ -35,6 +35,7 @@ from website.util.time import throttle_period_expired
 from website.util import api_v2_url, web_url_for, paths
 from website.util.sanitize import escape_html
 from website.util.sanitize import strip_html
+from website.util.sanitize import safe_unescape_html
 from website.views import _render_nodes
 from website.addons.base import utils as addon_utils
 
@@ -659,7 +660,7 @@ def serialize_social(auth, uid=None, **kwargs):
 
 
 def serialize_job(job):
-    return {
+    job_serialized = {
         'institution': job.get('institution'),
         'department': job.get('department'),
         'title': job.get('title'),
@@ -669,10 +670,11 @@ def serialize_job(job):
         'endYear': job.get('endYear'),
         'ongoing': job.get('ongoing', False),
     }
+    return safe_unescape_html(job_serialized)
 
 
 def serialize_school(school):
-    return {
+    school_serialized = {
         'institution': school.get('institution'),
         'department': school.get('department'),
         'degree': school.get('degree'),
@@ -682,6 +684,7 @@ def serialize_school(school):
         'endYear': school.get('endYear'),
         'ongoing': school.get('ongoing', False),
     }
+    return safe_unescape_html(school_serialized)
 
 
 def serialize_contents(field, func, auth, uid=None):
