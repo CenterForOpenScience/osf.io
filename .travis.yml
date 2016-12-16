@@ -27,6 +27,7 @@ env:
     - TEST_BUILD="varnish"
 
 before_install:
+    - npm ls sinon || echo ''
     # cache directories
     - |
       mkdir -p $HOME/.cache/downloads
