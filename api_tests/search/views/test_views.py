@@ -418,6 +418,8 @@ class TestSearchRegistrations(ApiSearchTestCase):
 
         self.private_registration.is_public = False
         self.private_registration.save()
+        # TODO: This shouldn't be necessary, but tests fail if we don't do this. Investigate further.
+        self.private_registration.update_search()
 
     def test_search_public_registration_no_auth(self):
         res = self.app.get(self.url)
