@@ -154,20 +154,19 @@ def paginated(model, query=None, increment=200, each=True):
     :param bool each: If True, each record is yielded. If False, pages
         are yielded.
     """
-    if model:
-        last_id = ''
-        pages = (model.find(query).count() / increment) + 1
-        for i in xrange(pages):
-            q = Q('_id', 'gt', last_id)
-            if query:
-                q &= query
-            page = list(model.find(q).sort('_id').limit(increment))
-            if each:
-                for item in page:
-                    yield item
-                if page:
-                    last_id = item._id
-            else:
-                if page:
-                    yield page
-                    last_id = page[-1]._id
+    last_id = ''
+    pages = (model.find(query).count() / increment) + 1
+    for i in xrange(pages):
+        q = Q('_id', 'gt', last_id)
+        if query:
+            q &= query
+        page = list(model.find(q).sort('_id').limit(increment))
+        if each:
+            for item in page:
+                yield item
+            if page:
+                last_id = item._id
+        else:
+            if page:
+                yield page
+                last_id = page[-1]._id
