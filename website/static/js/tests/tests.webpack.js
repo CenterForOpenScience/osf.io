@@ -3,7 +3,7 @@
 
 // Configure raven with a fake DSN to avoid errors in test output
 var Raven = require('raven-js');
-Raven.config('http://abc@example.com:80/2');
+Raven.config('https://1332f6ba2dd04bca94b139bebbab7644@sentry.io/122808');
 
 // Include all files that end with .test.js (core tests)
 var context = require.context('.', true, /.*test\.js$/); //make sure you have your directory and regex test set correctly!
