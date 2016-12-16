@@ -595,14 +595,8 @@ def test_osf(ctx):
     test_module(ctx, module=CORE_TESTS)
 
 
-API_TESTS = [
-    'api_tests/addons',
-    'api_tests/applications',
-    'api_tests/base',
-    'api_tests/collections',
-    'api_tests/comments',
-    'api_tests/files',
-    'api_tests/guids',
+ELSE_TESTS = [
+    'addons',
 ]
 API_TESTS1 = [
     'api_tests/identifiers',
@@ -610,27 +604,34 @@ API_TESTS1 = [
     'api_tests/licenses',
     'api_tests/logs',
     'api_tests/metaschemas',
-]
-API_TESTS2 = [
-    'api_tests/nodes',
     'api_tests/preprint_providers',
     'api_tests/preprints',
     'api_tests/registrations',
-    'api_tests/search',
+]
+API_TESTS2 = [
+    'api_tests/nodes',
+    'api_tests/users',
 ]
 API_TESTS3 = [
+    'api_tests/addons',
+    'api_tests/applications',
+    'api_tests/base',
+    'api_tests/collections',
+    'api_tests/comments',
+    'api_tests/files',
+    'api_tests/guids',
+    'api_tests/search',
     'api_tests/taxonomies',
     'api_tests/test',
     'api_tests/tokens',
-    'api_tests/users',
     'api_tests/view_only_links',
     'api_tests/wikis',
 ]
 
 @task
-def test_api(ctx):
+def test_else(ctx):
     """Run the API test suite."""
-    test_module(ctx, module=API_TESTS)
+    test_module(ctx, module=ELSE_TESTS)
 @task
 def test_api1(ctx):
     """Run the API test suite."""
@@ -685,7 +686,7 @@ def test(ctx, all=False, syntax=False):
         jshint(ctx)
 
     test_osf(ctx)
-    test_api(ctx)
+    test_else(ctx)
     # TODO: Enable admin tests
     # test_admin(ctx)
 
@@ -725,7 +726,7 @@ def test_travis_else(ctx):
     """
     flake(ctx)
     jshint(ctx)
-    test_api(ctx)
+    test_else(ctx)
     # TODO: Enable admin tests
     # test_admin(ctx)
 
