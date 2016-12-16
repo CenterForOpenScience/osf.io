@@ -2,46 +2,46 @@ from __future__ import unicode_literals
 
 import gc
 import importlib
-import sys
-
 import itertools
-from box import BoxClient
-from box import BoxClientException
-from bson import ObjectId
-from dropbox.client import DropboxClient
-from dropbox.rest import ErrorResponse
-from github3 import GitHubError
-from oauthlib.oauth2 import InvalidGrantError
-
-from addons.base.models import BaseOAuthNodeSettings
+import logging
+import sys
 from framework import encryption
 from osf.models import ExternalAccount
 from osf.models import OSFUser
 from addons.s3 import utils
-
-
 import ipdb
+from addons.base.models import BaseOAuthNodeSettings
+from box import BoxClient, BoxClientException
+from bson import ObjectId
 from django.contrib.contenttypes.models import ContentType
 from django.core.management import BaseCommand
 from django.db import IntegrityError, connection, transaction
 from django.utils import timezone
+from dropbox.client import DropboxClient
+from dropbox.rest import ErrorResponse
 from framework.auth.core import User as MODMUser
 from framework.mongo import database
 from framework.transactions.context import transaction as modm_transaction
+from github3 import GitHubError
 from modularodm import Q as MQ
-from osf.models import NodeLog, PageCounter, Tag, UserActivityCounter
+from oauthlib.oauth2 import InvalidGrantError
+from osf.models import (BlackListGuid, ExternalAccount, NodeLog, OSFUser,
+                        PageCounter, Tag, UserActivityCounter)
 from osf.models.base import Guid, GuidMixin, OptionalGuidMixin
 from osf.models.node import AbstractNode
 from osf.utils.order_apps import get_ordered_models
 from psycopg2._psycopg import AsIs
 from scripts.register_oauth_scopes import set_backend
 from typedmodels.models import TypedModel
-
 from addons.github.api import GitHubClient
+from website.addons.github.api import GitHubClient
+from website.addons.s3 import utils
 from website.files.models import StoredFileNode as MODMStoredFileNode
-from website.models import Guid as MODMGuid
-from website.models import Node as MODMNode
-import logging
+from website.model import Guid as MGuid
+from website.models import Guid as MGuid
+from website.models import Node as MNode
+from website.models import NodeLog as MNodeLog
+from website.models import User as MUser
 
 logger = logging.getLogger(__name__)
 
@@ -264,6 +264,93 @@ def make_guids():
                 """
                 params = ''.join(['(\'{}\'), '.format(og) for og in orphaned_guids])[0:-2]
                 cursor.execute(sql, {'guids': AsIs(params)})
+
+
+def fix_guids():
+    modm_guids = MGuid.find().get_keys()
+    dj_guids = Guid.objects.all().values_list('_id', flat=True)
+    set_of_modm_guids = set(modm_guids)
+    set_of_django_guids = set(dj_guids)
+    blacklist_guids = BlackListGuid.objects.all().values_list('guid', flat=True)
+    set_of_blacklist_guids = set(blacklist_guids)
+    missing = set_of_modm_guids - set_of_django_guids
+    still_missing = missing - set_of_blacklist_guids
+    short_missing = [x for x in still_missing if len(x) < 6]
+    long_missing = [x for x in still_missing if len(x) > 5]
+    assert len(short_missing) + len(long_missing) == len(still_missing), 'It broke'
+    short_missing_guids = MGuid.find(MQ('_id', 'in', short_missing))
+    long_missing_guids = MGuid.find(MQ('_id', 'in', long_missing))
+
+    short_missing_guids_with_referents = [x._id for x in short_missing_guids if x.referent is not None]
+    short_missing_guids_without_referents = [x._id for x in short_missing_guids if x.referent is None]
+
+    nodes = 0
+    users = 0
+    files = 0
+    missing = 0
+    for guid in short_missing_guids.get_keys():
+        user = MUser.load(guid)
+        guid_instance = MGuid.load(guid)
+        if user is not None:
+            print('Guid {} is a user.'.format(guid))
+            guid_instance.referent = user
+            guid_instance.save()
+            users += 1
+        else:
+            node = MNode.load(guid)
+            if node is not None:
+                print('Guid {} is a node.'.format(guid))
+                guid_instance.referent = node
+                guid_instance.save()
+                nodes += 1
+            else:
+                sfn = MODMStoredFileNode.load(guid)
+                if sfn is not None:
+                    print('Guid {} is a file.'.format(guid))
+                    guid_instance.referent = sfn
+                    guid_instance.save()
+                    files += 1
+                else:
+                    print('Guid {} does not match.'.format(guid))
+                    missing += 1
+                    continue
+        try:
+            existing_django_obj = Guid.objects.get(_id=unicode(guid).lower())
+            if existing_django_obj.referent and existing_django_obj.referent._id.lower() != guid.lower():
+                import ipdb; ipdb.set_trace()
+        except Guid.DoesNotExist:
+            g = Guid.migrate_from_modm(guid_instance)
+            g.save()
+    print('Users: {}'.format(users))
+    print('Nodes: {}'.format(nodes))
+    print('Files: {}'.format(files))
+    print('Missing: {}'.format(missing))
+    print('Total: {}'.format(len(short_missing_guids)))
+
+    guids_by_type = {}
+    missing_referents = 0
+    updated_referents = 0
+    for guid in long_missing:
+        guid_instance = MGuid.load(guid)
+        if guid_instance is None:
+            print('Guid {} does not exist'.format(guid))
+        elif guid_instance.referent is None:
+            print('Couldn\'t find referent for {}'.format(guid_instance._id))
+            missing_referents += 1
+        else:
+            to_delete = ['nodelog', ]
+            referent_type = guid_instance.to_storage()['referent'][1]
+            if referent_type in to_delete:
+                deleted = MGuid.remove(MQ('_id', 'eq', guid_instance._id))
+                print('Deleted guid {} of type {}'.format(guid, referent_type))
+            if referent_type in guids_by_type:
+                guids_by_type[guid_instance.to_storage()['referent'][1]] += 1
+            else:
+                guids_by_type[guid_instance.to_storage()['referent'][1]] = 1
+    pprint.pprint(guids_by_type)
+    print('Missing referents: {}'.format(missing_referents))
+    print('Updated referents: {}'.format(updated_referents))
+
 
 
 def save_bare_models(modm_queryset, django_model, page_size=20000):
@@ -657,6 +744,7 @@ class Command(BaseCommand):
             with ipdb.launch_ipdb_on_exception():
                 save_bare_system_tags()
                 make_guids()
+                fix_guids()
                 save_bare_external_accounts()
                 migrate_page_counters()
                 migrate_user_activity_counters()

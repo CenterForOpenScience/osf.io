@@ -875,8 +875,8 @@ class FileVersion(ObjectIDMixin, BaseModel):
     # exists on the backend
     date_modified = models.DateTimeField(null=True, blank=True)
 
+    metadata = DateTimeAwareJSONField(blank=True, default=dict)
     location = DateTimeAwareJSONField(default=dict, blank=True, null=True, validators=[validate_location])
-    metadata = DateTimeAwareJSONField(blank=True, default=dict, db_index=True)
 
     @property
     def location_hash(self):
@@ -933,5 +933,4 @@ class FileVersion(ObjectIDMixin, BaseModel):
         return True
 
     class Meta:
-        index_together = [('_id', 'metadata')]
         ordering = ('date_created',)
