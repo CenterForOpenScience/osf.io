@@ -163,7 +163,14 @@ class PreprintService(GuidMixin, BaseModel):
             self.date_published = timezone.now()
             self.node._has_abandoned_preprint = False
 
-            self.node.add_log(action=NodeLog.PREPRINT_INITIATED, params={}, auth=auth, save=False)
+            self.node.add_log(
+                action=NodeLog.PREPRINT_INITIATED,
+                params={
+                    'preprint': self._id
+                },
+                auth=auth,
+                save=False,
+            )
 
             if not self.node.is_public:
                 self.node.set_privacy(
