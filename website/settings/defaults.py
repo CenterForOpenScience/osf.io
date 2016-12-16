@@ -495,7 +495,7 @@ else:
         },
         'run_keen_summaries': {
             'task': 'scripts.analytics.run_keen_summaries',
-            'schedule': crontab(minute=00, hour=2),  # Daily 2:00 a.m.
+            'schedule': crontab(minute=00, hour=1),  # Daily 1:00 a.m.
             'kwargs': {'yesterday': True}
         },
         'run_keen_snapshots': {
