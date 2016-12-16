@@ -256,6 +256,6 @@ class TestPreprintCreate(ApiTestCase):
         assert_equal(res.status_code, 201)
         preprint_id = res.json['data']['id']
         preprint = PreprintService.load(preprint_id)
-        log = preprint.node.logs[-2]
+        log = preprint.node.logs.latest()
         assert_equal(log.action, 'preprint_initiated')
         assert_equal(log.params.get('preprint'), preprint_id)

@@ -417,7 +417,7 @@ class TestPreprintUpdateLicense(ApiTestCase):
     def test_update_preprint_with_existing_license_year_attribute_only(self):
         self.preprint.set_preprint_license(
             {
-                'id': self.no_license.id,
+                'id': self.no_license.license_id,
                 'year': '2014',
                 'copyrightHolders': ['Diane', 'Mr. Peanut Butter']
             },
@@ -445,7 +445,7 @@ class TestPreprintUpdateLicense(ApiTestCase):
     def test_update_preprint_with_existing_license_copyright_holders_attribute_only(self):
         self.preprint.set_preprint_license(
             {
-                'id': self.no_license.id,
+                'id': self.no_license.license_id,
                 'year': '2014',
                 'copyrightHolders': ['Diane', 'Mr. Peanut Butter']
             },
@@ -473,7 +473,7 @@ class TestPreprintUpdateLicense(ApiTestCase):
     def test_update_preprint_with_existing_license_relationship_only(self):
         self.preprint.set_preprint_license(
             {
-                'id': self.no_license.id,
+                'id': self.no_license.license_id,
                 'year': '2014',
                 'copyrightHolders': ['Diane', 'Mr. Peanut Butter']
             },
@@ -501,7 +501,7 @@ class TestPreprintUpdateLicense(ApiTestCase):
     def test_update_preprint_with_existing_license_relationship_and_attributes(self):
         self.preprint.set_preprint_license(
             {
-                'id': self.no_license.id,
+                'id': self.no_license.license_id,
                 'year': '2014',
                 'copyrightHolders': ['Diane', 'Mr. Peanut Butter']
             },
@@ -553,7 +553,7 @@ class TestPreprintUpdateLicense(ApiTestCase):
     def test_update_preprint_license_does_not_change_project_license(self):
         self.preprint.node.set_node_license(
             {
-                'id': self.no_license.id,
+                'id': self.no_license.license_id,
                 'year': '2015',
                 'copyrightHolders': ['Simba', 'Mufasa']
             },
@@ -577,7 +577,7 @@ class TestPreprintUpdateLicense(ApiTestCase):
     def test_update_preprint_license_without_change_does_not_add_log(self):
         self.preprint.set_preprint_license(
             {
-                'id': self.no_license.id,
+                'id': self.no_license.license_id,
                 'year': '2015',
                 'copyrightHolders': ['Kim', 'Kanye']
             },
@@ -585,8 +585,8 @@ class TestPreprintUpdateLicense(ApiTestCase):
             save=True
         )
 
-        before_num_logs = len(self.preprint.node.logs)
-        before_update_log = self.preprint.node.logs[-1]
+        before_num_logs = self.preprint.node.logs.count()
+        before_update_log = self.preprint.node.logs.latest()
 
         data = self.make_payload(
             node_id=self.preprint._id,
@@ -597,8 +597,8 @@ class TestPreprintUpdateLicense(ApiTestCase):
         res = self.make_request(self.url, data, auth=self.admin_contributor.auth)
         self.preprint.node.reload()
 
-        after_num_logs = len(self.preprint.node.logs)
-        after_update_log = self.preprint.node.logs[-1]
+        after_num_logs = self.preprint.node.logs.count()
+        after_update_log = self.preprint.node.logs.latest()
 
         assert_equal(res.status_code, 200)
         assert_equal(before_num_logs, after_num_logs)
