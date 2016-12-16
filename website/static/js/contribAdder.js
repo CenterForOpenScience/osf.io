@@ -260,11 +260,12 @@ AddContributorViewModel = oop.extend(Paginator, {
             // XXX Debugging!
             StackTrace.get().then(function(frames) {
                 for (var f, i=0; f=frames[i]; i++) {
-                    console.log( f.fileName.replace(/http:\/\/localhost:9876\/base/, '')
-                                           .replace(/\.js\?[0-9a-f]+/, '.js')
-                               , f.lineNumber
-                               , f.functionName
-                                );
+                    console.log(
+                        f.fileName.replace(/http:\/\/localhost:9876\/base/, '')
+                                  .replace(/\.js\?[0-9a-f]+/, '.js'),
+                        f.lineNumber,
+                        f.functionName
+                    );
                 }
             });
 
