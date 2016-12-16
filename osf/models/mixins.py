@@ -107,6 +107,7 @@ class Taggable(models.Model):
                 self.add_tag_log(tag_instance, auth)
             if save:
                 self.save()
+            self.on_tag_added(tag_instance)
         return tag_instance
 
     def add_system_tag(self, tag, save=True):
@@ -114,6 +115,9 @@ class Taggable(models.Model):
 
     def add_tag_log(self, *args, **kwargs):
         raise NotImplementedError('Logging requires that add_tag_log method is implemented')
+
+    def on_tag_added(self, tag):
+        pass
 
     class Meta:
         abstract = True

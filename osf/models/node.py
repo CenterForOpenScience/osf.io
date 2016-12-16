@@ -947,6 +947,10 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             save=False
         )
 
+    # Override Taggable
+    def on_tag_added(self, tag):
+        self.update_search()
+
     def remove_tag(self, tag, auth, save=True):
         if not tag:
             raise InvalidTagError
@@ -967,6 +971,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             )
             if save:
                 self.save()
+            self.update_search()
             return True
 
     def is_contributor(self, user):
