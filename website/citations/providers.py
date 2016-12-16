@@ -138,7 +138,7 @@ class CitationsProvider(object):
     def add_user_auth(self, node_addon, user, external_account_id):
         """Adds authorization to a node
         if the user has authorization to grant"""
-        external_account = ExternalAccount.load(_id=external_account_id)
+        external_account = ExternalAccount.load(external_account_id)
 
         if not user.external_accounts.filter(id=external_account.id).all():
             raise HTTPError(http.FORBIDDEN)
