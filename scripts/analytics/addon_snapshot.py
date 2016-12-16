@@ -37,19 +37,19 @@ def get_enabled_authorized_linked(user_settings_list, has_external_account, shor
             num_enabled += 1
             num_authorized += 1
             num_linked += 1
-
-    for user_settings in user_settings_list:
-        if has_external_account:
-            if user_settings.has_auth:
+    else:
+        for user_settings in paginated(user_settings_list):
+            if has_external_account:
+                if user_settings.has_auth:
+                    num_enabled += 1
+                    node_settings_list = [Node.load(guid).get_addon(short_name) for guid in user_settings.oauth_grants.keys()]
+            else:
                 num_enabled += 1
-                node_settings_list = [Node.load(guid).get_addon(short_name) for guid in user_settings.oauth_grants.keys()]
-        else:
-            num_enabled += 1
-            node_settings_list = [Node.load(guid).get_addon(short_name) for guid in user_settings.nodes_authorized]
-        if any([ns.has_auth for ns in node_settings_list if ns]):
-            num_authorized += 1
-            if any([(ns.complete and ns.configured) for ns in node_settings_list if ns]):
-                num_linked += 1
+                node_settings_list = [Node.load(guid).get_addon(short_name) for guid in user_settings.nodes_authorized]
+            if any([ns.has_auth for ns in node_settings_list if ns]):
+                num_authorized += 1
+                if any([(ns.complete and ns.configured) for ns in node_settings_list if ns]):
+                    num_linked += 1
     return {
         'enabled': num_enabled,
         'authorized': num_authorized,
@@ -71,31 +71,26 @@ class AddonSnapshot(SnapshotAnalytics):
         addons_available = {k: v for k, v in [(addon.short_name, addon) for addon in ADDONS_AVAILABLE]}
 
         for short_name, addon in addons_available.iteritems():
-            user_settings_list = []
-            node_settings_list = []
-            if addon.settings_models.get('user'):
-                user_settings_list = [setting for setting in paginated(addon.settings_models['user'])]
-            if addon.settings_models.get('node'):
-                node_settings_list = [setting for setting in paginated(addon.settings_models['node'])]
 
             has_external_account = True
-            # Check out the first element in node_settings_list to see if it has an external account to check for
-            if node_settings_list:
-                if AddonNodeSettingsBase in node_settings_list[0].__class__.__bases__:
+
+            if addon.settings_models.get('user'):
+                if AddonNodeSettingsBase in addon.settings_models['user'].__class__.__bases__:
                     has_external_account = False
 
             connected_count = 0
-            for node_settings in node_settings_list:
+            for node_settings in paginated(addon.settings_models.get('node')):
+                if AddonNodeSettingsBase in node_settings.__class__.__bases__:
+                    has_external_account = False
                 if node_settings.owner and not node_settings.owner.is_bookmark_collection:
                     connected_count += 1
             deleted_count = addon.settings_models['node'].find(Q('deleted', 'eq', True)).count() if addon.settings_models.get('node') else 0
-
             if has_external_account:
                 disconnected_count = addon.settings_models['node'].find(Q('external_account', 'eq', None) & Q('deleted', 'ne', True)).count() if addon.settings_models.get('node') else 0
             else:
                 disconnected_count = addon.settings_models['node'].find(Q('configured', 'eq', True) & Q('complete', 'eq', False) & Q('deleted', 'ne', True)).count() if addon.settings_models.get('node') else 0
             total = connected_count + deleted_count + disconnected_count
-            usage_counts = get_enabled_authorized_linked(user_settings_list, has_external_account, addon.short_name)
+            usage_counts = get_enabled_authorized_linked(addon.settings_models.get('user'), has_external_account, addon.short_name)
 
             counts.append({
                 'provider': {
