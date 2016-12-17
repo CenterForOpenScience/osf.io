@@ -256,6 +256,15 @@ AddContributorViewModel = oop.extend(Paginator, {
             xhrFields: {withCredentials: true},
             processData: false
         }).done(function (response) {
+            Raven.captureBreadcrumb({
+              message: 'done adding contrib',
+              category: 'debugging',
+              level: 'info',
+              data: {
+                 response: response,
+                 'response.data': response ? response.data : 'n/a'
+              }
+            });
             try {
                 var contributors = response.data.map(function (contributor) {
                     // contrib ID has the form <nodeid>-<userid>
@@ -263,6 +272,7 @@ AddContributorViewModel = oop.extend(Paginator, {
                 });
             } catch(e) {
                 Raven.captureException(e);
+                throw e;
             }
             self.contributors(contributors);
         });
