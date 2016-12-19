@@ -137,8 +137,34 @@ var differenceGrowthBetweenMetrics = function(metric1, metric2, totalMetric, ele
 
         differenceMetric.parseRawData(data).render();
     });
-}
+};
 
+
+var renderPublicPrivatePercent = function(publicMetric, privateMetric, element) {
+    var result;
+    var differenceMetric = new Keen.Dataviz()
+        .library('c3')
+        .el(document.getElementById(element))
+        .chartType("pie")
+        .title(' ')
+        .prepare();
+
+    client.run([
+        publicMetric,
+        privateMetric,
+    ], function(err, res) {
+
+        result = [
+            {'result': res[0].result, 'label': 'public'}, {'result': res[1].result, 'label': 'private'}
+        ];
+
+        var data = {
+            "result": result
+        };
+
+        differenceMetric.parseRawData(data).render();
+    });
+};
 
 
 var renderCalculationBetweenTwoMetrics = function(metric1, metric2, element, differenceType, calculationType) {
@@ -398,45 +424,6 @@ Keen.ready(function () {
 
     renderCalculationBetweenTwoMetrics(yesterday_unconfirmed_user_count, week_ago_user_count, "unverified-new-users", 'day', 'subtraction');
 
-
-    //                _        _
-    //  _ __ _ _ ___ (_)___ __| |_ ___
-    // | '_ \ '_/ _ \| / -_) _|  _(_-<
-    // | .__/_| \___// \___\__|\__/__/
-    // |_|         |__/
-
-    // Affiliated Public Projects!
-    var affiliated_public_chart = new Keen.Query("sum", {
-        eventCollection: "institution_summary",
-        targetProperty: "nodes.public",
-        timeframe: "previous_1_days",
-        groupBy: "institution.name",
-        timezone: "UTC"
-    });
-
-    client.draw(affiliated_public_chart, document.getElementById("affiliated-public-projects"), {
-        chartType: "table",
-        height: "auto",
-        width: "auto",
-        title: ' '
-    });
-
-    // Affiliated Private Projects!
-    var affiliated_private_chart = new Keen.Query("sum", {
-        eventCollection: "institution_summary",
-        targetProperty: "nodes.private",
-        timeframe: "previous_1_days",
-        groupBy: "institution.name",
-        timezone: "UTC"
-    });
-
-    client.draw(affiliated_private_chart, document.getElementById("affiliated-private-projects"), {
-        chartType: "table",
-        height: "auto",
-        width: "auto",
-        title: ' '
-    });
-
     // Registrations by Email Domain
     var email_domains = new Keen.Query("count", {
         eventCollection: "user_domain_events",
@@ -578,6 +565,127 @@ Keen.ready(function () {
             i++;
         }
     });
+
+
+//                _        _
+//  _ __ _ _ ___ (_)___ __| |_ ___
+// | '_ \ '_/ _ \| / -_) _|  _(_-<
+// | .__/_| \___// \___\__|\__/__/
+// |_|         |__/
+
+    // Affiliated Public Projects!
+    var affiliated_public_chart = new Keen.Query("sum", {
+        eventCollection: "institution_summary",
+        targetProperty: "nodes.public",
+        timeframe: "previous_1_days",
+        groupBy: "institution.name",
+        timezone: "UTC"
+    });
+
+    client.draw(affiliated_public_chart, document.getElementById("affiliated-public-projects"), {
+        chartType: "table",
+        height: "auto",
+        width: "auto",
+        title: ' '
+    });
+
+    // Affiliated Private Projects!
+    var affiliated_private_chart = new Keen.Query("sum", {
+        eventCollection: "institution_summary",
+        targetProperty: "nodes.private",
+        timeframe: "previous_1_days",
+        groupBy: "institution.name",
+        timezone: "UTC"
+    });
+
+    client.draw(affiliated_private_chart, document.getElementById("affiliated-private-projects"), {
+        chartType: "table",
+        height: "auto",
+        width: "auto",
+        title: ' '
+    });
+
+    // Total Projects
+    var total_projects = new Keen.Query("sum", {
+        eventCollection: "node_summary",
+        targetProperty: "projects.total",
+        timeframe: "previous_1_days",
+        timezone: "UTC"
+    });
+
+    client.draw(total_projects, document.getElementById("total-projects"), {
+        chartType: "metric",
+        title: ' '
+    });
+
+    // Total Public Projects
+    var public_projects = new Keen.Query("sum", {
+        eventCollection: "node_summary",
+        targetProperty: "projects.public",
+        timeframe: "previous_1_days",
+        timezone: "UTC"
+    });
+
+    client.draw(public_projects, document.getElementById("public-projects"), {
+        chartType: "metric",
+        title: ' '
+    });
+
+    // Total Private Projects
+    var private_projects = new Keen.Query("sum", {
+        eventCollection: "node_summary",
+        targetProperty: "projects.private",
+        timeframe: "previous_1_days",
+        timezone: "UTC"
+    });
+
+    client.draw(private_projects, document.getElementById("private-projects"), {
+        chartType: "metric",
+        title: ' '
+    });
+
+    renderPublicPrivatePercent(public_projects, private_projects, "total-projects-pie");
+
+    // Total Nodes
+    var total_nodes = new Keen.Query("sum", {
+        eventCollection: "node_summary",
+        targetProperty: "nodes.total",
+        timeframe: "previous_1_days",
+        timezone: "UTC"
+    });
+
+    client.draw(total_nodes, document.getElementById("total-nodes"), {
+        chartType: "metric",
+        title: ' '
+    });
+
+    // Total Public Nodes
+    var public_nodes = new Keen.Query("sum", {
+        eventCollection: "node_summary",
+        targetProperty: "nodes.public",
+        timeframe: "previous_1_days",
+        timezone: "UTC"
+    });
+
+    client.draw(public_nodes, document.getElementById("public-nodes"), {
+        chartType: "metric",
+        title: ' '
+    });
+
+    // Total Private Nodes
+    var private_nodes = new Keen.Query("sum", {
+        eventCollection: "node_summary",
+        targetProperty: "nodes.private",
+        timeframe: "previous_1_days",
+        timezone: "UTC"
+    });
+
+    client.draw(private_nodes, document.getElementById("private-nodes"), {
+        chartType: "metric",
+        title: ' '
+    });
+
+    renderPublicPrivatePercent(public_nodes, private_nodes, "total-nodes-pie");
 
  //          _    _
  //  __ _ __| |__| |___ _ _  ___

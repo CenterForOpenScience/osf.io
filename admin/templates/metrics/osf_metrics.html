@@ -226,135 +226,124 @@
                 </div>
             </div>
             <div role="tabpanel" class="tab-pane" id="healthy-user-metrics">
-                Healthy User Metrics
+                <div><h2>Healthy User Metrics</h2></div>
+                <div>
+                    <h3>Stickiness Ratio</h3>
+                    <div id="stickiness-ratio">Loading...</div>
+                </div>
             </div>
             <div role="tabpanel" class="tab-pane" id="expansion-metrics">
-                Expansion Metrics
+                <h3>Expansion Metrics</h3>
+                <h2>Coming Soon!</h2>
             </div>
             <div role="tabpanel" class="tab-pane" id="cohorts">
-                Cohorts
+                <h3>Cohorts</h3>
+                <h2>Coming soon!</h2>
             </div>
             <div role="tabpanel" class="tab-pane" id="raw-numbers">
                 <h3>Raw Numbers</h3>
 
-                <div class="container-fluid">
+                <div class="dropdown">
+                    <button class="btn btn-default btn-large dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown">
+                        Jump to...
+                        <span class="caret"></span>
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li><a href="#downloads">Downloads</a></li>
+                        <li><a href="#projects">Projects - Top Level</a></li>
+                        <li><a href="#nodes">Nodes - Projects & Components</a></li>
+                        <li><a href="#registered-projects">Registered Projects</a></li>
+                        <li><a href="#registered-nodes">Registered Nodes</a></li>
+                    </ul>
+                </div>
 
+
+                <div class="container-fluid">
                     <div class="row">
-                        <div class="col-sm-6 col-md-4">
+                        <h3 id="downloads">Downloads</h3>
+                        <div class="col-sm-6">
                             <div class="chart-wrapper">
                                 <div class="chart-title">
-                                    Cell Title
+                                    Downloads
                                 </div>
                                 <div class="chart-stage">
-                                    <div id="grid-1-1">
-                                        <img data-src="holder.js/100%x180/white/text:#grid-1-1">
+                                    <div id="number-of-downloads"></div>
+                                </div>
+                                <div class="chart-notes">
+                                    The total number of files downloaded from the OSF
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="chart-wrapper">
+                                <div class="chart-title">
+                                    Unique Downloads
+                                </div>
+                                <div class="chart-stage">
+                                    <div id="number-of-unique-downloads"></div>
+                                </div>
+                                <div class="chart-notes">
+                                    The number of unique downloads of files on the OSF.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <h3 id="projects">Projects</h3>
+                        <div class="col-sm-12">
+                            <div class="chart-wrapper">
+                                <div class="chart-title">
+                                    Total Projects
+                                </div>
+                                <div class="chart-stage">
+                                    <div id="total-projects"></div>
+                                </div>
+                                <div class="chart-notes">
+                                    The total number of all top level projects on the OSF
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-sm-6">
+                            <div class="row">
+                                <div class="col-sm-12">
+                                    <div class="chart-wrapper">
+                                        <div class="chart-title">
+                                            Public Projects
+                                        </div>
+                                        <div class="chart-stage">
+                                            <div id="public-projects"></div>
+                                        </div>
+                                        <div class="chart-notes">
+                                            Notes about this chart
+                                        </div>
                                     </div>
                                 </div>
-                                <div class="chart-notes">
-                                    Notes about this chart
+                            </div>
+                            <div class="row">
+                                <div class="col-sm-12">
+                                    <div class="chart-wrapper">
+                                        <div class="chart-title">
+                                            Private Projects
+                                        </div>
+                                        <div class="chart-stage">
+                                            <div id="private-projects"></div>
+                                        </div>
+                                        <div class="chart-notes">
+                                            Notes about this chart
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                        <div class="col-sm-6 col-md-4">
+                        <div class="col-sm-6">
                             <div class="chart-wrapper">
                                 <div class="chart-title">
-                                    Cell Title
+                                    Public vs Private Projects
                                 </div>
                                 <div class="chart-stage">
-                                    <img data-src="holder.js/100%x180/white">
-                                </div>
-                                <div class="chart-notes">
-                                    Notes about this chart
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-sm-6 col-md-4">
-                            <div class="chart-wrapper">
-                                <div class="chart-title">
-                                    Cell Title
-                                </div>
-                                <div class="chart-stage">
-                                    <img data-src="holder.js/100%x180/white">
-                                </div>
-                                <div class="chart-notes">
-                                    Notes about this chart
-                                </div>
-                            </div>
-                        </div>
-                        <!-- end of three -->
-                        <div class="col-sm-6 col-md-4">
-                            <div class="chart-wrapper">
-                                <div class="chart-title">
-                                    Cell Title
-                                </div>
-                                <div class="chart-stage">
-                                    <img data-src="holder.js/100%x180/white">
-                                </div>
-                                <div class="chart-notes">
-                                    Notes about this chart
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-sm-6 col-md-4">
-                            <div class="chart-wrapper">
-                                <div class="chart-title">
-                                    Cell Title
-                                </div>
-                                <div class="chart-stage">
-                                    <img data-src="holder.js/100%x180/white">
-                                </div>
-                                <div class="chart-notes">
-                                    Notes about this chart
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-sm-6 col-md-4">
-                            <div class="chart-wrapper">
-                                <div class="chart-title">
-                                    Cell Title
-                                </div>
-                                <div class="chart-stage">
-                                    <img data-src="holder.js/100%x180/white">
-                                </div>
-                                <div class="chart-notes">
-                                    Notes about this chart
-                                </div>
-                            </div>
-                        </div>
-                        <!-- end of three -->
-                        <div class="col-sm-6 col-md-4">
-                            <div class="chart-wrapper">
-                                <div class="chart-title">
-                                    Cell Title
-                                </div>
-                                <div class="chart-stage">
-                                    <img data-src="holder.js/100%x180/white">
-                                </div>
-                                <div class="chart-notes">
-                                    Notes about this chart
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-sm-6 col-md-4">
-                            <div class="chart-wrapper">
-                                <div class="chart-title">
-                                    Cell Title
-                                </div>
-                                <div class="chart-stage">
-                                    <img data-src="holder.js/100%x180/white">
-                                </div>
-                                <div class="chart-notes">
-                                    Notes about this chart
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-sm-6 col-md-4">
-                            <div class="chart-wrapper">
-                                <div class="chart-title">
-                                    Cell Title
-                                </div>
-                                <div class="chart-stage">
-                                    <img data-src="holder.js/100%x180/white">
+                                    <div id="total-projects-pie"></div>
                                 </div>
                                 <div class="chart-notes">
                                     Notes about this chart
@@ -362,6 +351,152 @@
                             </div>
                         </div>
                     </div>
+                    <div class="row">
+                        <h3 id="nodes">Nodes</h3>
+                        <div class="col-sm-12">
+                            <div class="chart-wrapper">
+                                <div class="chart-title">
+                                    Total Nodes - Projects and Components
+                                </div>
+                                <div class="chart-stage">
+                                    <div id="total-nodes"></div>
+                                </div>
+                                <div class="chart-notes">
+                                    The total number of all projects and components on the OSF.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-sm-6">
+                            <div class="row">
+                                <div class="col-sm-12">
+                                    <div class="chart-wrapper">
+                                        <div class="chart-title">
+                                            Public Nodes
+                                        </div>
+                                        <div class="chart-stage">
+                                            <div id="public-nodes"></div>
+                                        </div>
+                                        <div class="chart-notes">
+                                            The total number of private nodes - inccluding projects and components
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-sm-12">
+                                    <div class="chart-wrapper">
+                                        <div class="chart-title">
+                                            Private Nodes
+                                        </div>
+                                        <div class="chart-stage">
+                                            <div id="private-nodes"></div>
+                                        </div>
+                                        <div class="chart-notes">
+                                            Notes about this chart
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="chart-wrapper">
+                                <div class="chart-title">
+                                    Public vs Private Nodes - Components & Projects
+                                </div>
+                                <div class="chart-stage">
+                                    <div id="total-nodes-pie"></div>
+                                </div>
+                                <div class="chart-notes">
+                                    The percentages of public vs private combined projects and components on the OSF.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-sm-6 col-md-4">
+                            <div class="chart-wrapper">
+                                <div class="chart-title">
+                                    Total Registered Projects
+                                </div>
+                                <div class="chart-stage">
+                                    <div id="total-registered-projects"></div>
+                                </div>
+                                <div class="chart-notes">
+                                    The total number of all registered top level projects on the OSF.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-sm-6 col-md-4">
+                            <div class="chart-wrapper">
+                                <div class="chart-title">
+                                    Total Public Registered Projects
+                                </div>
+                                <div class="chart-stage">
+                                    <div id="total-registered-public-projects"></div>
+                                </div>
+                                <div class="chart-notes">
+                                    The number of all public registered top level projects on the OSF.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-sm-6 col-md-4">
+                            <div class="chart-wrapper">
+                                <div class="chart-title">
+                                    Total Private Nodes
+                                </div>
+                                <div class="chart-stage">
+                                    <div id="total-registered-private-projects"></div>
+                                </div>
+                                <div class="chart-notes">
+                                    The number of all private projects and components of all levels on the OSF
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-sm-6 col-md-4">
+                            <div class="chart-wrapper">
+                                <div class="chart-title">
+                                    Total Registered Nodes
+                                </div>
+                                <div class="chart-stage">
+                                    <div id="number-of-registered-nodes"></div>
+                                </div>
+                                <div class="chart-notes">
+                                    The total number of all registered projects and components on the OSF.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-sm-6 col-md-4">
+                            <div class="chart-wrapper">
+                                <div class="chart-title">
+                                    Total Public Registered Nodes
+                                </div>
+                                <div class="chart-stage">
+                                    <div id="total-registered-public-nodes"></div>
+                                </div>
+                                <div class="chart-notes">
+                                    The number of all registered public projects and components of all levels on the OSF
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-sm-6 col-md-4">
+                            <div class="chart-wrapper">
+                                <div class="chart-title">
+                                    Total Private Registered Nodes
+                                </div>
+                                <div class="chart-stage">
+                                    <div id="total-registered-private-nodes"></div>
+                                </div>
+                                <div class="chart-notes">
+                                    The number of all registered private projects and components of all levels on the OSF
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
             </div>
         </div>
@@ -369,21 +504,7 @@
 
 
 
-    <div class="dropdown">
-        <button class="btn btn-default btn-large dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown">
-            Jump to...
-            <span class="caret"></span>
-        </button>
-        <ul class="dropdown-menu">
-            <li><a href="#active_users">Yesterday's Active Users</a></li>
-            <li><a href="#active_users_over_time">Active Users Over Time</a></li>
-            <li><a href="#affiliated_projects">Affiliated Public and Private projects by Institution</a></li>
-            <li><a href="#email_domain">Previous 7 days of user registrations by email domain</a></li>
-            <li><a href="#node_logs_by_user">Yesterday's Node logs by user</a></li>
-            <li><a href="#users_by_status">Previous 7 days of users by status</a></li>
-            <li><a href="#linked_addon_by_name">Previous 7 days of linked addon by addon name</a></li>
-        </ul>
-    </div>
+
 
     <div><h2>User Data</h2></div>
     <div>
@@ -437,31 +558,8 @@
         <div id="previous-7-days-of-linked-addon-by-addon-name">Loading...</div>
     </div>
 
-    <div><h2>Healthy User Metrics</h2></div>
 
-    <div>
-        <h3>Stickiness Ratio</h3>
-        <div id="stickiness-ratio">Loading...</div>
-    </div>
 
-    <div><h2>Raw Numbers</h2></div>
-
-    <div>
-        <h3>Downloads</h3>
-        <div id="downloads">Loading...</div>
-    </div>
-    <div>
-        <h3>Unique Downloads</h3>
-        <div id="unique-downloads">Loading...</div>
-    </div>
-    <div>
-        <h3>Number of Projects</h3>
-        <div id="total-projects">Loading...</div>
-    </div>
-    <div>
-        <h3>Number of Registrations</h3>
-        <div id="total-registrations">Loading...</div>
-    </div>
 
 
 {% endblock content %}
