@@ -2,12 +2,14 @@
 Tasks for making even transactional emails consolidated.
 """
 from django.db import connection
-from framework.auth.core import User
+from osf.models import (
+    OSFUser as User,
+    NotificationDigest,
+)
 from framework.celery_tasks import app as celery_app
 from framework.sentry import log_exception
 from modularodm import Q
 from website import mails
-from website.notifications.model import NotificationDigest
 from website.notifications.utils import NotificationsDict
 
 
