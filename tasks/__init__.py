@@ -773,11 +773,11 @@ def packages(ctx):
         'upgrade',
         'install libxml2',
         'install libxslt',
-        'install elasticsearch',
+        'install elasticsearch@1.7',
         'install rabbitmq',
         'install node',
         'tap tokutek/tokumx',
-        'install tokumx-bin',
+        'install chrisseto/homebrew-tokumx/tokumx-bin',
     ]
     if platform.system() == 'Darwin':
         print('Running brew commands')

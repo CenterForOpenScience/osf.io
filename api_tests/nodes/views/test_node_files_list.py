@@ -141,6 +141,18 @@ class TestNodeFilesList(ApiTestCase):
         assert_equal(res.json['data']['attributes']['kind'], 'file')
         assert_equal(res.json['data']['attributes']['name'], 'NewFile')
 
+    def test_returns_osfstorage_folder_version_two(self):
+        fobj = self.project.get_addon('osfstorage').get_root().append_folder('NewFolder')
+        fobj.save()
+        res = self.app.get('{}osfstorage/'.format(self.private_url), auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+
+    def test_returns_osf_storage_folder_version_two_point_two(self):
+        fobj = self.project.get_addon('osfstorage').get_root().append_folder('NewFolder')
+        fobj.save()
+        res = self.app.get('{}osfstorage/?version=2.2'.format(self.private_url), auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+
     def test_list_returns_folder_data(self):
         fobj = self.project.get_addon('osfstorage').get_root().append_folder('NewFolder')
         fobj.save()

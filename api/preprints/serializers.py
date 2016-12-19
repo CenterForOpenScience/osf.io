@@ -10,7 +10,11 @@ from api.base.serializers import (
 )
 from api.base.utils import absolute_reverse, get_user_auth
 from api.taxonomies.serializers import TaxonomyField
-from api.nodes.serializers import NodeLicenseSerializer, get_license_details
+from api.nodes.serializers import (
+    NodeCitationSerializer,
+    NodeLicenseSerializer,
+    get_license_details
+)
 from framework.exceptions import PermissionsError
 from website.util import permissions
 from website.exceptions import NodeStateError
@@ -68,6 +72,11 @@ class PreprintSerializer(JSONAPISerializer):
     is_published = ser.BooleanField(required=False)
     is_preprint_orphan = ser.BooleanField(read_only=True)
     license_record = NodeLicenseSerializer(required=False, source='license')
+
+    citation = RelationshipField(
+        related_view='preprints:preprint-citation',
+        related_view_kwargs={'preprint_id': '<_id>'}
+    )
 
     node = NodeRelationshipField(
         related_view='nodes:node-detail',
@@ -215,3 +224,9 @@ class PreprintCreateSerializer(PreprintSerializer):
         preprint.node.save()
 
         return self.update(preprint, validated_data)
+
+
+class PreprintCitationSerializer(NodeCitationSerializer):
+
+    class Meta:
+        type_ = 'preprint-citation'
