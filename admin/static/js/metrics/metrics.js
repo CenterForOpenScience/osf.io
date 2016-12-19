@@ -782,6 +782,90 @@ Keen.ready(function () {
 
     renderPublicPrivatePercent(public_nodes, private_nodes, "total-nodes-pie");
 
+
+    // Total Project Registrations
+    var total_registered_projects = new Keen.Query("sum", {
+        eventCollection: "node_summary",
+        targetProperty: "registered_projects.total",
+        timeframe: "previous_1_days",
+        timezone: "UTC"
+    });
+
+    client.draw(total_registered_projects, document.getElementById("total-registered-projects"), {
+        chartType: "metric",
+        title: ' '
+    });
+
+    // Total Public Registered Projects
+    var public_registered_projects = new Keen.Query("sum", {
+        eventCollection: "node_summary",
+        targetProperty: "registered_projects.public",
+        timeframe: "previous_1_days",
+        timezone: "UTC"
+    });
+
+    client.draw(public_registered_projects, document.getElementById("public-registered-projects"), {
+        chartType: "metric",
+        title: ' '
+    });
+
+    // Total Embargoed Registered Projects
+    var embargoed_registered_projects = new Keen.Query("sum", {
+        eventCollection: "node_summary",
+        targetProperty: "registered_projects.embargoed",
+        timeframe: "previous_1_days",
+        timezone: "UTC"
+    });
+
+    client.draw(embargoed_registered_projects, document.getElementById("embargoed-registered-projects"), {
+        chartType: "metric",
+        title: ' '
+    });
+
+    renderPublicPrivatePercent(public_registered_projects, embargoed_registered_projects, "total-registered-projects-pie");
+
+    // Total Nodes
+    var total_registered_nodes = new Keen.Query("sum", {
+        eventCollection: "node_summary",
+        targetProperty: "registered_nodes.total",
+        timeframe: "previous_1_days",
+        timezone: "UTC"
+    });
+
+    client.draw(total_registered_nodes, document.getElementById("total-registered-nodes"), {
+        chartType: "metric",
+        title: ' '
+    });
+
+    // Total Public Nodes
+    var public_registered_nodes = new Keen.Query("sum", {
+        eventCollection: "node_summary",
+        targetProperty: "registered_nodes.public",
+        timeframe: "previous_1_days",
+        timezone: "UTC"
+    });
+
+    client.draw(public_registered_nodes, document.getElementById("public-registered-nodes"), {
+        chartType: "metric",
+        title: ' '
+    });
+
+    // Total Embargoed Nodes
+    var embargoed_registered_nodes = new Keen.Query("sum", {
+        eventCollection: "node_summary",
+        targetProperty: "registered_nodes.embargoed",
+        timeframe: "previous_1_days",
+        timezone: "UTC"
+    });
+
+    client.draw(embargoed_registered_nodes, document.getElementById("embargoed-registered-nodes"), {
+        chartType: "metric",
+        title: ' '
+    });
+
+    renderPublicPrivatePercent(public_registered_nodes, embargoed_registered_nodes, "total-registered-nodes-pie");
+
+
  //          _    _
  //  __ _ __| |__| |___ _ _  ___
  // / _` / _` / _` / _ \ ' \(_-<

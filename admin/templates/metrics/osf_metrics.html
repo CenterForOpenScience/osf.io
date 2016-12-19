@@ -408,26 +408,33 @@
                 <h2>Coming soon!</h2>
             </div>
             <div role="tabpanel" class="tab-pane" id="raw-numbers">
-                <h3>Raw Numbers</h3>
-
-                <div class="dropdown">
-                    <button class="btn btn-default btn-large dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown">
-                        Jump to...
-                        <span class="caret"></span>
-                    </button>
-                    <ul class="dropdown-menu">
-                        <li><a href="#downloads">Downloads</a></li>
-                        <li><a href="#projects">Projects - Top Level</a></li>
-                        <li><a href="#nodes">Nodes - Projects & Components</a></li>
-                        <li><a href="#registered-projects">Registered Projects</a></li>
-                        <li><a href="#registered-nodes">Registered Nodes</a></li>
-                    </ul>
-                </div>
-
-
                 <div class="container-fluid">
+
                     <div class="row">
-                        <h3 id="downloads">Downloads</h3>
+                        <div class="col-sm-3">
+                            <h3>Raw Numbers</h3>
+                        </div>
+                        <div class="col-sm-9">
+                            <div class="dropdown">
+                                <button class="btn btn-default btn-large dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown">
+                                    Jump to...
+                                    <span class="caret"></span>
+                                </button>
+                                <ul class="dropdown-menu">
+                                    <li><a href="#downloads">Downloads</a></li>
+                                    <li><a href="#projects">Projects - Top Level</a></li>
+                                    <li><a href="#nodes">Nodes - Projects & Components</a></li>
+                                    <li><a href="#registered-projects">Registered Projects</a></li>
+                                    <li><a href="#registered-nodes">Registered Nodes</a></li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row" id="downloads">
+                        <h3>Downloads</h3>
+                    </div>
+                    <div class="row">
                         <div class="col-sm-6">
                             <div class="chart-wrapper">
                                 <div class="chart-title">
@@ -455,8 +462,10 @@
                             </div>
                         </div>
                     </div>
+                    <div class="row" id="projects">
+                        <h3>Projects</h3>
+                    </div>
                     <div class="row">
-                        <h3 id="projects">Projects</h3>
                         <div class="col-sm-12">
                             <div class="chart-wrapper">
                                 <div class="chart-title">
@@ -518,8 +527,10 @@
                             </div>
                         </div>
                     </div>
+                    <div class="row" id="nodes">
+                        <h3>Nodes</h3>
+                    </div>
                     <div class="row">
-                        <h3 id="nodes">Nodes</h3>
                         <div class="col-sm-12">
                             <div class="chart-wrapper">
                                 <div class="chart-title">
@@ -581,8 +592,11 @@
                             </div>
                         </div>
                     </div>
+                    <div class="row" id="registered-projects">
+                        <h3>Registered Projects</h3>
+                    </div>
                     <div class="row">
-                        <div class="col-sm-6 col-md-4">
+                        <div class="col-sm-12">
                             <div class="chart-wrapper">
                                 <div class="chart-title">
                                     Total Registered Projects
@@ -595,131 +609,123 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="col-sm-6 col-md-4">
-                            <div class="chart-wrapper">
-                                <div class="chart-title">
-                                    Total Public Registered Projects
+                    </div>
+                    <div class="row">
+                        <div class="col-sm-6">
+                            <div class="row">
+                                <div class="col-sm-12">
+                                    <div class="chart-wrapper">
+                                        <div class="chart-title">
+                                            Public Registered Projects
+                                        </div>
+                                        <div class="chart-stage">
+                                            <div id="public-registered-projects"></div>
+                                        </div>
+                                        <div class="chart-notes">
+                                            The total number of public registered top level projects
+                                        </div>
+                                    </div>
                                 </div>
-                                <div class="chart-stage">
-                                    <div id="total-registered-public-projects"></div>
-                                </div>
-                                <div class="chart-notes">
-                                    The number of all public registered top level projects on the OSF.
+                            </div>
+                            <div class="row">
+                                <div class="col-sm-12">
+                                    <div class="chart-wrapper">
+                                        <div class="chart-title">
+                                            Embargoed Registered Projects
+                                        </div>
+                                        <div class="chart-stage">
+                                            <div id="embargoed-registered-projects"></div>
+                                        </div>
+                                        <div class="chart-notes">
+                                            The number of private registered top level projects
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                        <div class="col-sm-6 col-md-4">
+                        <div class="col-sm-6">
                             <div class="chart-wrapper">
                                 <div class="chart-title">
-                                    Total Private Nodes
+                                    Public vs Embargoed Registered Top-Level Projects
                                 </div>
                                 <div class="chart-stage">
-                                    <div id="total-registered-private-projects"></div>
+                                    <div id="total-registered-projects-pie"></div>
                                 </div>
                                 <div class="chart-notes">
-                                    The number of all private projects and components of all levels on the OSF
+                                    The percentages of public vs embargoed top-level project registrations on the OSF.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row" id="registered-nodes">
+                        <h3>Registered Nodes</h3>
+                    </div>
+                    <div class="row">
+                        <div class="col-sm-12">
+                            <div class="chart-wrapper">
+                                <div class="chart-title">
+                                    Total Registered Nodes - Projects & Components
+                                </div>
+                                <div class="chart-stage">
+                                    <div id="total-registered-nodes"></div>
+                                </div>
+                                <div class="chart-notes">
+                                    The total number of all registered nodes - projects & components on the OSF.
                                 </div>
                             </div>
                         </div>
                     </div>
                     <div class="row">
-                        <div class="col-sm-6 col-md-4">
-                            <div class="chart-wrapper">
-                                <div class="chart-title">
-                                    Total Registered Nodes
+                        <div class="col-sm-6">
+                            <div class="row">
+                                <div class="col-sm-12">
+                                    <div class="chart-wrapper">
+                                        <div class="chart-title">
+                                            Public Registered Nodes
+                                        </div>
+                                        <div class="chart-stage">
+                                            <div id="public-registered-nodes"></div>
+                                        </div>
+                                        <div class="chart-notes">
+                                            The total number of public registered nodes - projects & components
+                                        </div>
+                                    </div>
                                 </div>
-                                <div class="chart-stage">
-                                    <div id="number-of-registered-nodes"></div>
-                                </div>
-                                <div class="chart-notes">
-                                    The total number of all registered projects and components on the OSF.
+                            </div>
+                            <div class="row">
+                                <div class="col-sm-12">
+                                    <div class="chart-wrapper">
+                                        <div class="chart-title">
+                                            Embargoed Registered Nodes
+                                        </div>
+                                        <div class="chart-stage">
+                                            <div id="embargoed-registered-nodes"></div>
+                                        </div>
+                                        <div class="chart-notes">
+                                            The number of embargoed registered projects and components
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                        <div class="col-sm-6 col-md-4">
+                        <div class="col-sm-6">
                             <div class="chart-wrapper">
                                 <div class="chart-title">
-                                    Total Public Registered Nodes
+                                    Public vs Embargoed Registered Nodes
                                 </div>
                                 <div class="chart-stage">
-                                    <div id="total-registered-public-nodes"></div>
+                                    <div id="total-registered-nodes-pie"></div>
                                 </div>
                                 <div class="chart-notes">
-                                    The number of all registered public projects and components of all levels on the OSF
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-sm-6 col-md-4">
-                            <div class="chart-wrapper">
-                                <div class="chart-title">
-                                    Total Private Registered Nodes
-                                </div>
-                                <div class="chart-stage">
-                                    <div id="total-registered-private-nodes"></div>
-                                </div>
-                                <div class="chart-notes">
-                                    The number of all registered private projects and components of all levels on the OSF
+                                    The percentages of public vs embargoed top-level project registrations on the OSF.
                                 </div>
                             </div>
                         </div>
                     </div>
-
                 </div>
             </div>
         </div>
     </div>
-
-
-
-
-
-    <div><h2>User Data</h2></div>
-    <div>
-        <h3>Yearly Active Users / Total Users</h3>
-        <div id="yearly-active-over-total-users">Loading...</div>
-    </div>
-
-    <div class="row">
-        <div class="col-md-12">
-            <h3>User Gain Per Day</h3>
-            <div id="user-gain-chart">Loading...</div>
-        </div>
-    </div>
-
-    <div class="row">
-        <div class="col-md-12" id="active_users_over_time">
-            <h3>Active Users Over Time</h3>
-            <div id="active-user-chart">Loading...</div>
-        </div>
-    </div>
-
-    <div class="row" id="affiliated_projects">
-        <div class="col-md-6">
-            <h3>Affiliated Public projects by Institution</h3>
-            <div id="affiliated-public-projects">Loading...</div>
-        </div>
-
-        <div class="col-md-6">
-            <h3>Affiliated Private projects by Institution</h3>
-            <div id="affiliated-private-projects">Loading...</div>
-        </div>
-    </div>
-
-
-
-    <div id="users_by_status">
-        <h3>Previous 7 days of users by status</h3>
-        <div id="previous-7-days-of-users-by-status">Loading...</div>
-    </div>
-
-    <div id="linked_addon_by_name">
-        <h3>Previous 7 days of linked addon by addon name</h3>
-        <div id="previous-7-days-of-linked-addon-by-addon-name">Loading...</div>
-    </div>
-
-
-
-
 
 {% endblock content %}
 
