@@ -7,6 +7,7 @@ import logging
 import datetime
 
 from django.utils import timezone
+from django.db import transaction
 from modularodm import Q
 
 from framework.celery_tasks import app as celery_app
@@ -77,9 +78,12 @@ def main(dry_run=True):
                     embargo.save()
                     continue
 
-                with TokuTransaction():
+                with transaction.atomic():
                     try:
                         embargo.state = models.Embargo.COMPLETED
+                        # Need to save here for node.is_embargoed to return the correct
+                        # value in Node#set_privacy
+                        embargo.save()
                         for node in parent_registration.node_and_primary_descendants():
                             node.set_privacy('public', auth=None, save=True)
                         parent_registration.registered_from.add_log(
