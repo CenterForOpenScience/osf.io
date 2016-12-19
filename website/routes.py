@@ -919,7 +919,7 @@ def make_url_map(app):
             '/share/registration/',
             'get',
             {'register': settings.SHARE_REGISTRATION_URL},
-            OsfWebRenderer('share_registration.mako', trust=False)
+            json_renderer
         ),
         Rule(
             '/api/v1/user/search/',
