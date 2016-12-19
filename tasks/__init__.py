@@ -777,7 +777,7 @@ def packages(ctx):
         'install rabbitmq',
         'install node',
         'tap tokutek/tokumx',
-        'install tokumx-bin',
+        'install chrisseto/homebrew-tokumx/tokumx-bin',
     ]
     if platform.system() == 'Darwin':
         print('Running brew commands')
