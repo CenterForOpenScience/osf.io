@@ -424,6 +424,101 @@ Keen.ready(function () {
 
     renderCalculationBetweenTwoMetrics(yesterday_unconfirmed_user_count, week_ago_user_count, "unverified-new-users", 'day', 'subtraction');
 
+    // Institutional Users over past 100 Days
+    var institutional_user_chart = new Keen.Query("sum", {
+        eventCollection: "institution_summary",
+        interval: "daily",
+        targetProperty: "users.total",
+        groupBy: "institution.name",
+        timeframe: "previous_100_days",
+        timezone: "UTC"
+    });
+
+    client.draw(institutional_user_chart, document.getElementById("institution-growth"), {
+        chartType: "line",
+        library: "c3",
+        title: ' '
+    });
+
+    // Total Institutional Users
+    var institutional_user_count = new Keen.Query("sum", {
+        eventCollection: "institution_summary",
+        targetProperty: "users.total",
+        timeframe: "previous_1_day",
+        timezone: "UTC"
+    });
+
+    client.draw(institutional_user_count, document.getElementById("total-institutional-users"), {
+        chartType: "metric",
+        title: " "
+    });
+
+    // Total Instutional Users / Total OSF Users
+    renderCalculationBetweenTwoMetrics(institutional_user_count, active_user_count, "percentage-institutional-users", null, 'percentage');
+
+
+    //                _        _
+    //  _ __ _ _ ___ (_)___ __| |_ ___
+    // | '_ \ '_/ _ \| / -_) _|  _(_-<
+    // | .__/_| \___// \___\__|\__/__/
+    // |_|         |__/
+
+    // Affiliated Public Nodes
+    var affiliated_public_chart = new Keen.Query("sum", {
+        eventCollection: "institution_summary",
+        targetProperty: "nodes.public",
+        timeframe: "previous_1_days",
+        groupBy: "institution.name",
+        timezone: "UTC"
+    });
+
+    client.draw(affiliated_public_chart, document.getElementById("affiliated-public-nodes"), {
+        chartType: "table",
+        title: ' '
+    });
+
+    // Affiliated Private Nodes
+    var affiliated_private_node_chart = new Keen.Query("sum", {
+        eventCollection: "institution_summary",
+        targetProperty: "nodes.private",
+        timeframe: "previous_1_days",
+        groupBy: "institution.name",
+        timezone: "UTC"
+    });
+
+    client.draw(affiliated_private_node_chart, document.getElementById("affiliated-private-nodes"), {
+        chartType: "table",
+        title: ' '
+    });
+
+    // Affiliated Public Registrations
+    var affiliated_public_registered_nodes_chart = new Keen.Query("sum", {
+        eventCollection: "institution_summary",
+        targetProperty: "registered_nodes.public",
+        timeframe: "previous_1_days",
+        groupBy: "institution.name",
+        timezone: "UTC"
+    });
+
+    client.draw(affiliated_public_registered_nodes_chart, document.getElementById("affiliated-public-registered-nodes"), {
+        chartType: "table",
+        title: ' '
+    });
+
+    // Affiliated Private Registrations
+    var affiliated_private_registered_node_chart = new Keen.Query("sum", {
+        eventCollection: "institution_summary",
+        targetProperty: "registered_nodes.private",
+        timeframe: "previous_1_days",
+        groupBy: "institution.name",
+        timezone: "UTC"
+    });
+
+    client.draw(affiliated_private_node_chart, document.getElementById("affiliated-private-registered-nodes"), {
+        chartType: "table",
+        title: ' '
+    });
+
     // Registrations by Email Domain
     var email_domains = new Keen.Query("count", {
         eventCollection: "user_domain_events",

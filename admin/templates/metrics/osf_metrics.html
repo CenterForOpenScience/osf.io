@@ -24,6 +24,7 @@
         <!-- Nav tabs -->
         <ul class="nav nav-tabs" role="tablist">
             <li role="presentation" class="active"><a href="#user-data" role="tab" data-toggle="tab">User Data</a></li>
+            <li role="presentation"><a href="#institution-metrics" role="tab" data-toggle="tab">Institution Metrics</a></li>
             <li role="presentation"><a href="#active-user-metrics" role="tab" data-toggle="tab">Active User Metrics</a></li>
             <li role="presentation"><a href="#healthy-user-metrics" role="tab" data-toggle="tab">Healthy User Metrics</a></li>
             <li role="presentation"><a href="#expansion-metrics" role="tab" data-toggle="tab">Expansion Metrics</a></li>
@@ -109,6 +110,21 @@
                         </div>
                     </div>
                     <div class="row">
+                        <div class="col-sm-12">
+                            <div class="chart-wrapper">
+                                <div class="chart-title">
+                                    User Gain per Day
+                                </div>
+                                <div class="chart-stage">
+                                    <div id="user-gain-chart"></div>
+                                </div>
+                                <div class="chart-notes">
+                                    The number of users gained in the past month.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
                         <div class="col-sm-6 col-md-4">
                             <div class="chart-wrapper">
                                 <div class="chart-title">
@@ -136,14 +152,150 @@
                             </div>
                         </div>
                     </div>
+                    <div class="row">
+                        <div class="col-sm-12">
+                            <div class="chart-wrapper">
+                                <div class="chart-title">
+                                    Previous 7 days of user registrations by email domain
+                                </div>
+                                <div class="chart-stage">
+                                    <div id="user-registration-by-email-domain"></div>
+                                </div>
+                                <div class="chart-notes">
+                                    The last 7 days of users, organized by status.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-sm-12">
+                            <div class="chart-wrapper">
+                                <div class="chart-title">
+                                    Yesterday's Node logs by user<
+                                </div>
+                                <div class="chart-stage">
+                                    <div id="yesterdays-node-logs-by-user"></div>
+                                </div>
+                                <div class="chart-notes">
+                                    The last 7 days of users, organized by status.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
             </div>
 
+            <div role="tabpanel" class="tab-pane" id="institution-metrics">
+                <h3>Institution Metrics</h3>
+                <div class="row">
+                    <div class="col-sm-6">
+                        <div class="chart-wrapper">
+                            <div class="chart-title">
+                                Total institutional Users
+                            </div>
+                            <div class="chart-stage">
+                                <div id="total-institutional-users"></div>
+                            </div>
+                            <div class="chart-notes">
+                                Total number of users who have accounts associated with their institutions.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-sm-6">
+                        <div class="chart-wrapper">
+                            <div class="chart-title">
+                                Institutional Users / Total OSF Users
+                            </div>
+                            <div class="chart-stage">
+                                <div id="percentage-institutional-users"></div>
+                            </div>
+                            <div class="chart-notes">
+                                The percentage of users who created an account through their institution.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-sm-12">
+                        <div class="chart-wrapper">
+                            <div class="chart-title">
+                                Institutional Users over the past 100 Days
+                            </div>
+                            <div class="chart-stage">
+                                <div id="institution-growth"></div>
+                            </div>
+                            <div class="chart-notes">
+                                The growth of users who have accounts associated with their institutions.
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+                <div class="row">
+                    <div class="col-sm-6">
+                        <div class="chart-wrapper">
+                            <div class="chart-title">
+                                Affiliated Public Nodes
+                            </div>
+                            <div class="chart-stage">
+                                <div id="affiliated-public-nodes"></div>
+                            </div>
+                            <div class="chart-notes">
+                                Total number of public nodes (at all levels, projects and components) created by each institution as of yesterday.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-sm-6">
+                        <div class="chart-wrapper">
+                            <div class="chart-title">
+                                Affiliated Private Nodes
+                            </div>
+                            <div class="chart-stage">
+                                <div id="affiliated-private-nodes"></div>
+                            </div>
+                            <div class="chart-notes">
+                                Total number of private nodes (at all levels, projects and components) created by each institution as of yesterday.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-sm-6">
+                        <div class="chart-wrapper">
+                            <div class="chart-title">
+                                Affiliated Public Registrations
+                            </div>
+                            <div class="chart-stage">
+                                <div id="affiliated-public-registered-nodes"></div>
+                            </div>
+                            <div class="chart-notes">
+                                Total number of public registered nodes (at all levels, projects and components) created by each institution as of yesterday.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-sm-6">
+                        <div class="chart-wrapper">
+                            <div class="chart-title">
+                                Affiliated Private Registrations
+                            </div>
+                            <div class="chart-stage">
+                                <div id="affiliated-public-registered-nodes"></div>
+                            </div>
+                            <div class="chart-notes">
+                                Total number of private registered nodes (at all levels, projects and components) created by each institution as of yesterday.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
 
             <div role="tabpanel" class="tab-pane" id="active-user-metrics">
                 <h3>Active User Metrics!</h3>
                 <div class="row">
-                    <div class="col-sm-6 col-md-4">
+                    <div class="col-sm-6">
                         <div class="chart-wrapper">
                             <div class="chart-title">
                                 Daily Active Users
@@ -156,7 +308,7 @@
                             </div>
                         </div>
                     </div>
-                    <div class="col-sm-6 col-md-4">
+                    <div class="col-sm-6">
                         <div class="chart-wrapper">
                             <div class="chart-title">
                                 Daily Active Users / Total Users
@@ -169,6 +321,8 @@
                             </div>
                         </div>
                     </div>
+                </div>
+                <div class="row">
                     <div class="col-sm-6 col-md-4">
                         <div class="chart-wrapper">
                             <div class="chart-title">
@@ -182,12 +336,10 @@
                             </div>
                         </div>
                     </div>
-                </div>
-                <div class="row">
                     <div class="col-sm-6 col-md-4">
                         <div class="chart-wrapper">
                             <div class="chart-title">
-                                 Last Month's Active Users / Total Users
+                                Last Month's Active Users / Total Users
                             </div>
                             <div class="chart-stage">
                                 <div id="monthly-active-over-total-users"></div>
@@ -210,7 +362,9 @@
                             </div>
                         </div>
                     </div>
-                    <div class="col-sm-6 col-md-4">
+                </div>
+                <div class="row">
+                    <div class="col-sm-6">
                         <div class="chart-wrapper">
                             <div class="chart-title">
                                 Yearly Active Users
@@ -220,6 +374,19 @@
                             </div>
                             <div class="chart-notes">
                                 Users who were active on the OSF over the past year.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-sm-6">
+                        <div class="chart-wrapper">
+                            <div class="chart-title">
+                                Yearly Active Users / Total Users
+                            </div>
+                            <div class="chart-stage">
+                                <div id="yearly-active-over-total-users"></div>
+                            </div>
+                            <div class="chart-notes">
+                                The percentage of our yearly active users compared to our total users with confirmed accounts.
                             </div>
                         </div>
                     </div>
@@ -538,15 +705,7 @@
         </div>
     </div>
 
-    <div id="email_domain">
-        <h3>Previous 7 days of user registrations by email domain</h3>
-        <div id="user-registration-by-email-domain">Loading...</div>
-    </div>
 
-    <div id="node_logs_by_user">
-        <h3>Yesterday's Node logs by user</h3>
-        <div id="yesterdays-node-logs-by-user">Loading...</div>
-    </div>
 
     <div id="users_by_status">
         <h3>Previous 7 days of users by status</h3>
