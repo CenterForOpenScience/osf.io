@@ -2,6 +2,10 @@
 Changelog
 *********
 
+0.104.0 (2016-12-19)
+====================
+- Various APIv2 fixes and improvements to support Preprints.
+
 0.103.0 (2016-12-14)
 ====================
 - Update WaterButler Dropbox Provider to use Dropbox v2 API
