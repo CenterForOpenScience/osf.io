@@ -4,7 +4,8 @@ var WikiEditor = require('./WikiEditor.js');
 var LanguageTools = ace.require('ace/ext/language_tools');
 
 var activeUsers = [];
-var collaborative = (typeof WebSocket !== 'undefined' && typeof sharejs !== 'undefined');
+// var collaborative = (typeof WebSocket !== 'undefined' && typeof sharejs !== 'undefined');
+var collaborative =  typeof sharejs !== 'undefined';
 
 var ShareJSDoc = function(url, metadata, viewText, editor) {
     var self = this;
@@ -44,22 +45,23 @@ var ShareJSDoc = function(url, metadata, viewText, editor) {
         viewModel.fetchData().done(function(response) {
             self.editor.setValue(response.wiki_draft, -1);
             self.editor.setReadOnly(false);
-            if (typeof WebSocket === 'undefined') {
-                viewModel.status('unsupported');
-            } else {
+            // if (typeof WebSocket === 'undefined') {
+            //     viewModel.status('unsupported');
+            // } else {
                 viewModel.status('disconnected');
-            }
+            // }
         });
         return;
     }
     // Requirements load order is specific in this case to compensate
     // for older browsers.
-    var ReconnectingWebSocket = require('reconnectingWebsocket');
+    // var ReconnectingWebSocket = require('reconnectingWebsocket');
+    var BCSocket = require('browserchannel/dist/bcsocket-uncompressed').BCSocket;
     require('addons/wiki/static/ace.js');
     // Configure connection
-    var wsPrefix = (window.location.protocol === 'https:') ? 'wss://' : 'ws://';
-    var wsUrl = wsPrefix + ctx.urls.sharejs;
-    var socket = new ReconnectingWebSocket(wsUrl);
+    // var wsPrefix = (window.location.protocol === 'https:') ? 'wss://' : 'ws://';
+    var wsPrefix = 'http://';
+    var socket = new BCSocket('http://localhost:7007/channel', {crossDomainXhr:true});
     var sjs = new sharejs.Connection(socket);
     var doc = sjs.get('docs', metadata.docId);
     var madeConnection = false;
@@ -94,7 +96,7 @@ var ShareJSDoc = function(url, metadata, viewText, editor) {
     }
     // Send user metadata
     function register() {
-        socket.send(JSON.stringify(metadata));
+        socket.send(metadata);
     }
 
     function refreshMaybe() {
