@@ -340,7 +340,7 @@ Install Elasticsearch to use search features.
 ##### Mac OSX
 
 ```bash
-$ brew install elasticsearch
+$ brew install elasticsearch@1.7
 ```
 _note: Oracle JDK 7 must be installed for elasticsearch to run_
 
