@@ -723,7 +723,8 @@ Keen.ready(function () {
 
     client.draw(public_projects, document.getElementById("public-projects"), {
         chartType: "metric",
-        title: ' '
+        title: ' ',
+        colors: ["#00BBDE"]
     });
 
     // Total Private Projects
@@ -736,7 +737,8 @@ Keen.ready(function () {
 
     client.draw(private_projects, document.getElementById("private-projects"), {
         chartType: "metric",
-        title: ' '
+        title: ' ',
+        colors: ["#FE6672"]
     });
 
     renderPublicPrivatePercent(public_projects, private_projects, "total-projects-pie");
@@ -764,7 +766,8 @@ Keen.ready(function () {
 
     client.draw(public_nodes, document.getElementById("public-nodes"), {
         chartType: "metric",
-        title: ' '
+        title: ' ',
+        colors: ["#00BBDE"]
     });
 
     // Total Private Nodes
@@ -777,7 +780,8 @@ Keen.ready(function () {
 
     client.draw(private_nodes, document.getElementById("private-nodes"), {
         chartType: "metric",
-        title: ' '
+        title: ' ',
+        colors: ["#FE6672"]
     });
 
     renderPublicPrivatePercent(public_nodes, private_nodes, "total-nodes-pie");
@@ -806,7 +810,8 @@ Keen.ready(function () {
 
     client.draw(public_registered_projects, document.getElementById("public-registered-projects"), {
         chartType: "metric",
-        title: ' '
+        title: ' ',
+        colors: ["#00BBDE"]
     });
 
     // Total Embargoed Registered Projects
@@ -819,7 +824,8 @@ Keen.ready(function () {
 
     client.draw(embargoed_registered_projects, document.getElementById("embargoed-registered-projects"), {
         chartType: "metric",
-        title: ' '
+        title: ' ',
+        colors: ["#FE6672"]
     });
 
     renderPublicPrivatePercent(public_registered_projects, embargoed_registered_projects, "total-registered-projects-pie");
@@ -847,7 +853,8 @@ Keen.ready(function () {
 
     client.draw(public_registered_nodes, document.getElementById("public-registered-nodes"), {
         chartType: "metric",
-        title: ' '
+        title: ' ',
+        colors: ["#00BBDE"]
     });
 
     // Total Embargoed Nodes
@@ -860,7 +867,8 @@ Keen.ready(function () {
 
     client.draw(embargoed_registered_nodes, document.getElementById("embargoed-registered-nodes"), {
         chartType: "metric",
-        title: ' '
+        title: ' ',
+        colors: ["#FE6672"]
     });
 
     renderPublicPrivatePercent(public_registered_nodes, embargoed_registered_nodes, "total-registered-nodes-pie");
