@@ -61,8 +61,10 @@ def render_citation(node, style='apa'):
     bib = bibliography.bibliography()
 
     if len(bib):
+        doi = data[0].get('DOI')
         if style == 'apa':
-            return ''.join([list(bib[0])[0][:-2]] + list(bib[0])[1:12] + list(bib[0])[13:])
+            first_segment = [list(bib[0])[0][:-2]]
+            return ''.join(first_segment + list(bib[0])[1:13]) if doi else ''.join(first_segment + list(bib[0])[1:12] + list(bib[0])[13:])
         elif style == 'modern-language-association':
             return ''.join(list(bib[0])[:4] + ['.'] + list(bib[0])[4:5] + list(bib[0])[6:-2])
         elif style == 'chicago-author-date':
