@@ -48,6 +48,7 @@ var ShareJSDoc = function(url, metadata, viewText, editor) {
         });
         return;
     }
+
     var BCSocket = require('browserchannel/dist/bcsocket-uncompressed').BCSocket;
     require('addons/wiki/static/ace.js');
 
