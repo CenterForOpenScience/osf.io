@@ -549,37 +549,133 @@ Keen.ready(function () {
         eventCollection: "node_log_events",
         interval: "hourly",
         groupBy: "user_id",
+        filters: [keenFilters.nullUserFilter],
         timeframe: "previous_1_days",
         timezone: "UTC"
     });
 
     var LogsByUserGraph = new Keen.Dataviz()
-        .chartType("line")
         .el(document.getElementById('yesterdays-node-logs-by-user'))
+        .chartType("line")
         .library("c3")
         .chartOptions({
-            legend: {
-                show: false
-            },
             tooltip: {
                 grouped: false
-            }
+            },
         })
         .prepare();
 
-    client.run(logsByUser, function(err,or, result) {
+
+    var extractKeenDataToC3 = function(keenResults) {
+        var results = keenResults.result;
+        var columns = [];
+        var dataBank = {
+            x: []
+        };
+
+        for (i=0; i<results.length; i++) {
+            dataBank.x.push(results[0].timeframe.end);
+            for (j=0; j<results[i].value.length; j++) {
+
+                var user_id = results[i].value[j].user_id;
+
+                if (!dataBank[user_id]) {
+                    dataBank[user_id] = [results[i].value[j].result];
+                } else {
+                    dataBank[user_id].push(results[i].value[j].result);
+                }
+
+            }
+        }
+
+        for (var key in dataBank) {
+            if (dataBank.hasOwnProperty(key)) {
+                var inner_list = [];
+                inner_list.push(key);
+                inner_list = inner_list.concat(dataBank[key]);
+                columns.push(inner_list);
+            }
+        }
+
+        var indiciesToPop = [];
+        var logThreshhold = 50;
+        for (var k=0; k<columns.length; k++) {
+            var hasHighValues = false;
+            for (var l=1; l<columns[i].length; l++) {
+                if (columns[k][l] > logThreshhold) {
+                    hasHighValues = true;
+                    break;
+                }
+            }
+
+            if (!hasHighValues) {
+                if (k !== 0) {
+                    indiciesToPop.push(k);
+                }
+            }
+        }
+
+        for (var m=indiciesToPop.length - 1; m >= 0; m--) {
+            columns.splice(indiciesToPop[m], 1);
+        }
+
+        return columns;
+
+    };
+
+    client.run(logsByUser, function(error, result) {
+        var columns = [];
+        var results = result.result;
+
+        var what = extractKeenDataToC3(result);
+
+        c3.generate({
+                bindto: document.getElementById('yesterdays-node-logs-by-user-c3-experiment'),
+                data: {
+                    columns: what,
+                    onclick: function(d, element) {
+                        var logsByUser = new Keen.Query("count", {
+                            eventCollection: "node_log_events",
+                            interval: "hourly",
+                            groupBy: "action",
+                            filters: [{
+                                property_name: 'user_id',
+                                operator: 'eq',
+                                property_value: d.id
+                            }],
+                            timeframe: "previous_1_days",
+                            timezone: "UTC"
+                        });
+                        client.draw(logsByUser, document.getElementById("yesterdays-node-logs-by-user-c3-experiment"), {
+                            chartType: "line",
+                            library: "c3",
+                            title: ' '
+                        });
+                    }
+                },
+                tooltip: {
+                    grouped: false
+                }
+            });
+    });
+
+
+    client.run(logsByUser, function(error, result) {
         LogsByUserGraph
             .parseRequest(this)
             .call(function() {
-                this.dataset.sortRows("desc", function(row) {
-                    return row[1];
-                });
-                this.dataset.filterRows(function(row, index) {
-                    return index < 11;
+                this.dataset.filterColumns(function(column, index) {
+                    var logThreshhold = 50;
+                    for(var i = 0;  i < column.length ; i++){
+                        if (column[i] > logThreshhold) {
+                            return column;
+                        }
+                    }
                 });
             })
             .render();
     });
+
 
     // Previous 7 Days of Users by Status
     var previous_week_active_users = new Keen.Query("sum",  {
