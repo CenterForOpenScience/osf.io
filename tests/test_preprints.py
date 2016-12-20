@@ -435,3 +435,31 @@ class TestOnPreprintUpdatedTask(OsfTestCase):
         ])
 
         assert nodes == {}
+
+    def test_format_preprint_is_deleted(self):
+        CASES = {
+            'is_published': (True, False),
+            'is_published': (False, True),
+            'node.is_public': (True, False),
+            'node.is_public': (False, True),
+            'node.tags': (['qatest'], True),
+            'node.tags': ([], False),
+            'node._is_preprint_orphan': (True, True),
+            'node._is_preprint_orphan': (False, False),
+            'node.is_deleted': (True, True),
+            'node.is_deleted': (False, False),
+        }
+        for key, (value, is_deleted) in CASES.items():
+            target = self.preprint
+            for k in key.split('.')[:-1]:
+                if k:
+                    target = getattr(target, k)
+            orig_val = getattr(target, key.split('.')[-1])
+            setattr(target, key.split('.')[-1], value)
+
+            res = format_preprint(self.preprint)
+
+            preprint = next(v for v in res if v['@type'] == 'preprint')
+            assert preprint['is_deleted'] is is_deleted
+
+            setattr(target, key.split('.')[-1], orig_val)

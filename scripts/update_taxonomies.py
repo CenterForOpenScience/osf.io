@@ -41,6 +41,11 @@ def update_taxonomies(filename):
 
             try:
                 subject = Subject.find_one(Q('text', 'eq', text))
+                logger.info('Found existing Subject "{}":{}{}'.format(
+                    subject.text,
+                    subject._id,
+                    u' with parent {}:{}'.format(parent.text, parent._id) if parent else ''
+                ))
             except (NoResultsFound):
                 # If subject does not yet exist, create it
                 subject = Subject(
@@ -69,8 +74,7 @@ def main():
         script_utils.add_file_logger(logger, __file__)
     set_up_storage([Subject], storage.MongoStorage)
     with TokuTransaction():
-        update_taxonomies('plos_taxonomy.json')
-        update_taxonomies('other_taxonomy.json')
+        update_taxonomies('bepress_taxonomy.json')
         # Now that all subjects have been added to the db, compute and set
         # the 'children' field for every subject
         logger.info('Setting "children" field for each Subject')

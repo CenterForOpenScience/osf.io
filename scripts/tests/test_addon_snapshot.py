@@ -75,7 +75,6 @@ class TestAddonCount(OsfTestCase):
         results = AddonSnapshot().get_events()
         github_res = [res for res in results if res['provider']['name'] == 'github'][0]
         assert_equal(github_res['users']['enabled'], 1)
-        # import ipdb; ipdb.set_trace()
 
     def test_one_user_with_multiple_addons(self):
         results = AddonSnapshot().get_events()

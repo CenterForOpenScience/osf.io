@@ -12,6 +12,7 @@ from tests.utils import mock_auth
 from website.addons.box.tests.factories import BoxAccountFactory
 from website.addons.dataverse.tests.factories import DataverseAccountFactory
 from website.addons.dropbox.tests.factories import DropboxAccountFactory
+from website.addons.figshare.tests.factories import FigshareAccountFactory
 from website.addons.github.tests.factories import GitHubAccountFactory
 from website.addons.googledrive.tests.factories import GoogleDriveAccountFactory
 from website.addons.mendeley.tests.factories import MendeleyAccountFactory
@@ -372,10 +373,6 @@ class TestUserWikiAddon(UserUnmanageableAddonTestSuiteMixin, ApiAddonTestCase):
     short_name = 'wiki'
 
 
-class TestUserFigshareAddon(UserUnmanageableAddonTestSuiteMixin, ApiAddonTestCase):
-    short_name = 'figshare'
-
-
 # OAUTH
 
 
@@ -422,6 +419,10 @@ class TestUserOwnCloudAddon(UserOAuthAddonTestSuiteMixin, ApiAddonTestCase):
     short_name = 'owncloud'
     AccountFactory = OwnCloudAccountFactory
 
+
+class TestUserFigshareAddon(UserOAuthAddonTestSuiteMixin, ApiAddonTestCase):
+    short_name = 'figshare'
+    AccountFactory = FigshareAccountFactory
 
 class TestUserInvalidAddon(UserAddonTestSuiteMixin, ApiAddonTestCase):
     addon_type = 'INVALID'

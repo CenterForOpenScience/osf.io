@@ -51,12 +51,15 @@ class UserSummary(SummaryAnalytics):
 
         active_users = 0
         depth_users = 0
+        profile_edited = 0
         user_pages = paginated(User, query=active_user_query)
         for user in user_pages:
             active_users += 1
             log_count = count_user_logs(user)
             if log_count >= LOG_THRESHOLD:
                 depth_users += 1
+            if user.social or user.schools or user.jobs:
+                profile_edited += 1
 
         counts = {
             'keen': {
@@ -76,16 +79,18 @@ class UserSummary(SummaryAnalytics):
                 'merged': User.find(
                     Q('date_registered', 'lt', query_datetime) &
                     Q('merged_by', 'ne', None)
-                ).count()
+                ).count(),
+                'profile_edited': profile_edited
             }
         }
         logger.info(
-            'Users counted. Active: {}, Depth: {}, Unconfirmed: {}, Deactivated: {}, Merged: {}'.format(
+            'Users counted. Active: {}, Depth: {}, Unconfirmed: {}, Deactivated: {}, Merged: {}, Profile Edited: {}'.format(
                 counts['status']['active'],
                 counts['status']['depth'],
                 counts['status']['unconfirmed'],
                 counts['status']['deactivated'],
-                counts['status']['merged']
+                counts['status']['merged'],
+                counts['status']['profile_edited']
             )
         )
         return [counts]
