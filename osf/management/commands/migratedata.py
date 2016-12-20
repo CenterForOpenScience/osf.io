@@ -4,6 +4,7 @@ import gc
 import importlib
 import itertools
 import logging
+import pprint
 import sys
 from framework import encryption
 from osf.models import ExternalAccount
@@ -27,6 +28,7 @@ from modularodm import Q as MQ
 from oauthlib.oauth2 import InvalidGrantError
 from osf.models import (BlackListGuid, ExternalAccount, NodeLog, OSFUser,
                         PageCounter, Tag, UserActivityCounter)
+from osf.models import StoredFileNode
 from osf.models.base import Guid, GuidMixin, OptionalGuidMixin
 from osf.models.node import AbstractNode
 from osf.utils.order_apps import get_ordered_models
@@ -37,13 +39,12 @@ from addons.github.api import GitHubClient
 from website.addons.github.api import GitHubClient
 from website.addons.s3 import utils
 from website.files.models import StoredFileNode as MODMStoredFileNode
-from website.model import Guid as MGuid
 from website.models import Guid as MGuid
-from website.models import Node as MNode
+from website.models import Node as MODMNode
 from website.models import NodeLog as MNodeLog
 from website.models import User as MUser
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('migrations')
 
 encryption.encrypt = lambda x: x
 encryption.decrypt = lambda x: x
@@ -55,7 +56,7 @@ def get_modm_model(django_model):
 
 
 def migrate_page_counters(page_size=20000):
-    print('Starting {}...'.format(sys._getframe().f_code.co_name))
+    logger.info('Starting {}...'.format(sys._getframe().f_code.co_name))
     collection = database['pagecounters']
 
     total = collection.count()
@@ -78,21 +79,21 @@ def migrate_page_counters(page_size=20000):
                         start = 0
                     else:
                         start = count - page_size
-                    print('Saving {} {} through {}...'.format(PageCounter._meta.model.__name__, start, count))
+                    logger.info('Saving {} {} through {}...'.format(PageCounter._meta.model.__name__, start, count))
 
                     saved_django_objects = PageCounter.objects.bulk_create(django_objects)
 
-                    print('Done with {} {} in {} seconds...'.format(len(saved_django_objects), PageCounter._meta.model.__name__, (timezone.now()-page_finish_time).total_seconds()))
+                    logger.info('Done with {} {} in {} seconds...'.format(len(saved_django_objects), PageCounter._meta.model.__name__, (timezone.now()-page_finish_time).total_seconds()))
                     saved_django_objects = []
-                    print('Took out {} trashes'.format(gc.collect()))
+                    logger.info('Took out {} trashes'.format(gc.collect()))
     total = None
     count = None
-    print('Took out {} trashes'.format(gc.collect()))
-    print('Finished {} in {} seconds...'.format(sys._getframe().f_code.co_name, (timezone.now()-start_time).total_seconds()))
+    logger.info('Took out {} trashes'.format(gc.collect()))
+    logger.info('Finished {} in {} seconds...'.format(sys._getframe().f_code.co_name, (timezone.now()-start_time).total_seconds()))
 
 
 def migrate_user_activity_counters(page_size=20000):
-    print('Starting {}...'.format(sys._getframe().f_code.co_name))
+    logger.info('Starting {}...'.format(sys._getframe().f_code.co_name))
     collection = database['useractivitycounters']
 
     total = collection.count()
@@ -115,21 +116,21 @@ def migrate_user_activity_counters(page_size=20000):
                         start = 0
                     else:
                         start = count - page_size
-                    print('Saving {} {} through {}...'.format(UserActivityCounter._meta.model.__name__, start, count))
+                    logger.info('Saving {} {} through {}...'.format(UserActivityCounter._meta.model.__name__, start, count))
 
                     saved_django_objects = UserActivityCounter.objects.bulk_create(django_objects)
 
-                    print('Done with {} {} in {} seconds...'.format(len(saved_django_objects), UserActivityCounter._meta.model.__name__, (timezone.now()-page_finish_time).total_seconds()))
+                    logger.info('Done with {} {} in {} seconds...'.format(len(saved_django_objects), UserActivityCounter._meta.model.__name__, (timezone.now()-page_finish_time).total_seconds()))
                     saved_django_objects = []
-                    print('Took out {} trashes'.format(gc.collect()))
+                    logger.info('Took out {} trashes'.format(gc.collect()))
     total = None
     count = None
-    print('Took out {} trashes'.format(gc.collect()))
-    print('Finished {} in {} seconds...'.format(sys._getframe().f_code.co_name, (timezone.now()-start_time).total_seconds()))
+    logger.info('Took out {} trashes'.format(gc.collect()))
+    logger.info('Finished {} in {} seconds...'.format(sys._getframe().f_code.co_name, (timezone.now()-start_time).total_seconds()))
 
 
 def make_guids():
-    print('Starting {}...'.format(sys._getframe().f_code.co_name))
+    logger.info('Starting {}...'.format(sys._getframe().f_code.co_name))
 
     guid_models = [model for model in get_ordered_models() if (issubclass(model, GuidMixin) or issubclass(model, OptionalGuidMixin)) and (not issubclass(model, AbstractNode) or model is AbstractNode)]
 
@@ -182,7 +183,7 @@ def make_guids():
                                   t.guid_string IS NOT NULL AND
                                   t.content_type_pk IS NOT NULL;
                               """.format(content_type.app_label, content_type.model)
-                    print('Making guids for {}'.format(model._meta.model.__name__))
+                    logger.info('Making guids for {}'.format(model._meta.model.__name__))
                     try:
                         cursor.execute(sql)
                     except IntegrityError as ex:
@@ -190,7 +191,7 @@ def make_guids():
 
 
 
-            guids = MODMGuid.find()
+            guids = MGuid.find()
             guid_keys = guids.get_keys()
             orphaned_guids = []
             for g in guids:
@@ -208,7 +209,7 @@ def make_guids():
             # subtract the orphaned guids from the guids in modm and from that subtract existing guids
             # that should give us the guids that are missing
             guids_to_make = (set(guid_keys) - set(orphaned_guids)) - set(existing_guids)
-            print('{} MODM Guids, {} Orphaned Guids, {} Guids to Make, {} Existing guids'.format(len(guid_keys), len(orphaned_guids), len(guids_to_make), len(existing_guids)))
+            logger.info('{} MODM Guids, {} Orphaned Guids, {} Guids to Make, {} Existing guids'.format(len(guid_keys), len(orphaned_guids), len(guids_to_make), len(existing_guids)))
             from django.apps import apps
             model_names = {m._meta.model.__name__.lower(): m._meta.model for m in apps.get_models()}
 
@@ -216,10 +217,10 @@ def make_guids():
                 # loop through missing guids
                 for guid in guids_to_make:
                     # load them from modm
-                    guid_dict = MODMGuid.load(guid).to_storage()
+                    guid_dict = MGuid.load(guid).to_storage()
                     # if they don't have a referent toss them
                     if guid_dict['referent'] is None:
-                        print('{} has no referent.'.format(guid))
+                        logger.info('{} has no referent.'.format(guid))
                         continue
                     # get the model string from the referent
                     modm_model_string = guid_dict['referent'][1]
@@ -231,7 +232,7 @@ def make_guids():
                     else:
                         # this filters out bad models, like osfstorageguidfile
                         # but these should already be gone
-                        print('Couldn\'t find model for {}'.format(modm_model_string))
+                        logger.info('Couldn\'t find model for {}'.format(modm_model_string))
                         continue
                     # get the id from the to_storage dictionary
                     modm_model_id = guid_dict['_id']
@@ -241,20 +242,20 @@ def make_guids():
                             # find it's referent
                             referent_instance = referent_model.objects.get(guid_string__contains=[modm_model_id.lower()])
                         except referent_model.DoesNotExist:
-                            print('Couldn\'t find referent for {}:{}'.format(referent_model._meta.model.__name__, modm_model_id))
+                            logger.info('Couldn\'t find referent for {}:{}'.format(referent_model._meta.model.__name__, modm_model_id))
                             continue
                     else:
                         # we shouldn't ever get here, bad data
-                        print('Found guid pointing at {} type, dropping it on the floor.'.format(modm_model_string))
+                        logger.info('Found guid pointing at {} type, dropping it on the floor.'.format(modm_model_string))
                         continue
 
                     # if we got a referent instance create the guid
                     if referent_instance:
                         Guid.objects.create(referent=referent_instance)
                     else:
-                        print('{} {} didn\'t create a Guid'.format(referent_model._meta.model.__name__, modm_model_id))
+                        logger.info('{} {} didn\'t create a Guid'.format(referent_model._meta.model.__name__, modm_model_id))
 
-            print('Started creating blacklist orphaned guids.')
+            logger.info('Started creating blacklist orphaned guids.')
             with connection.cursor() as cursor:
                 sql = """
                     INSERT INTO
@@ -292,40 +293,71 @@ def fix_guids():
         user = MUser.load(guid)
         guid_instance = MGuid.load(guid)
         if user is not None:
-            print('Guid {} is a user.'.format(guid))
+            logger.info('Guid {} is a user.'.format(guid))
             guid_instance.referent = user
             guid_instance.save()
+
+            try:
+                # see if the existing guid exists
+                existing_django_guid = Guid.objects.get(_id=unicode(guid).lower())
+            except Guid.DoesNotExist:
+                # try and get a user that has n+1 guids pointing at them
+                try:
+                    existing_django_guid = OSFUser.objects.get(guids___id=unicode(guid).lower())
+                except OSFUser.DoesNotExist:
+                    # create a new guid
+                    existing_django_guid = Guid.migrate_from_modm(guid_instance)
+                    existing_django_guid.save()
+
             users += 1
         else:
-            node = MNode.load(guid)
+            node = MODMNode.load(guid)
             if node is not None:
-                print('Guid {} is a node.'.format(guid))
+                logger.info('Guid {} is a node.'.format(guid))
                 guid_instance.referent = node
                 guid_instance.save()
+                try:
+                    # see if the existing guid exists
+                    existing_django_guid = Guid.objects.get(_id=unicode(guid).lower())
+                except Guid.DoesNotExist:
+                    # try and get a user that has n+1 guids pointing at them
+                    try:
+                        existing_django_guid = AbstractNode.objects.get(guids___id=unicode(guid).lower())
+                    except AbstractNode.DoesNotExist:
+                        # create a new guid
+                        existing_django_guid = Guid.migrate_from_modm(guid_instance)
+                        existing_django_guid.save()
+
                 nodes += 1
             else:
                 sfn = MODMStoredFileNode.load(guid)
                 if sfn is not None:
-                    print('Guid {} is a file.'.format(guid))
+                    logger.info('Guid {} is a file.'.format(guid))
                     guid_instance.referent = sfn
                     guid_instance.save()
+                    try:
+                        # see if the existing guid exists
+                        existing_django_guid = Guid.objects.get(_id=unicode(guid).lower())
+                    except Guid.DoesNotExist:
+                        # try and get a user that has n+1 guids pointing at them
+                        try:
+                            existing_django_guid = StoredFileNode.objects.get(guids___id=unicode(guid).lower())
+                        except StoredFileNode.DoesNotExist:
+                            # create a new guid
+                            existing_django_guid = Guid.migrate_from_modm(guid_instance)
+                            existing_django_guid.save()
+
                     files += 1
                 else:
-                    print('Guid {} does not match.'.format(guid))
+                    logger.info('Guid {} does not match.'.format(guid))
                     missing += 1
                     continue
-        try:
-            existing_django_obj = Guid.objects.get(_id=unicode(guid).lower())
-            if existing_django_obj.referent and existing_django_obj.referent._id.lower() != guid.lower():
-                import ipdb; ipdb.set_trace()
-        except Guid.DoesNotExist:
-            g = Guid.migrate_from_modm(guid_instance)
-            g.save()
-    print('Users: {}'.format(users))
-    print('Nodes: {}'.format(nodes))
-    print('Files: {}'.format(files))
-    print('Missing: {}'.format(missing))
-    print('Total: {}'.format(len(short_missing_guids)))
+
+    logger.info('Users: {}'.format(users))
+    logger.info('Nodes: {}'.format(nodes))
+    logger.info('Files: {}'.format(files))
+    logger.info('Missing: {}'.format(missing))
+    logger.info('Total: {}'.format(len(short_missing_guids)))
 
     guids_by_type = {}
     missing_referents = 0
@@ -333,28 +365,28 @@ def fix_guids():
     for guid in long_missing:
         guid_instance = MGuid.load(guid)
         if guid_instance is None:
-            print('Guid {} does not exist'.format(guid))
+            logger.info('Guid {} does not exist'.format(guid))
         elif guid_instance.referent is None:
-            print('Couldn\'t find referent for {}'.format(guid_instance._id))
+            logger.info('Couldn\'t find referent for {}'.format(guid_instance._id))
             missing_referents += 1
         else:
             to_delete = ['nodelog', ]
             referent_type = guid_instance.to_storage()['referent'][1]
             if referent_type in to_delete:
                 deleted = MGuid.remove(MQ('_id', 'eq', guid_instance._id))
-                print('Deleted guid {} of type {}'.format(guid, referent_type))
+                logger.info('Deleted guid {} of type {}'.format(guid, referent_type))
             if referent_type in guids_by_type:
                 guids_by_type[guid_instance.to_storage()['referent'][1]] += 1
             else:
                 guids_by_type[guid_instance.to_storage()['referent'][1]] = 1
-    pprint.pprint(guids_by_type)
-    print('Missing referents: {}'.format(missing_referents))
-    print('Updated referents: {}'.format(updated_referents))
+    logger.info(guids_by_type)
+    logger.info('Missing referents: {}'.format(missing_referents))
+    logger.info('Updated referents: {}'.format(updated_referents))
 
 
 
 def save_bare_models(modm_queryset, django_model, page_size=20000):
-    print('Starting {} on {}...'.format(sys._getframe().f_code.co_name, django_model._meta.model.__name__))
+    logger.info('Starting {} on {}...'.format(sys._getframe().f_code.co_name, django_model._meta.model.__name__))
     count = 0
     total = modm_queryset.count()
     hashes = set()
@@ -369,7 +401,7 @@ def save_bare_models(modm_queryset, django_model, page_size=20000):
             page_of_modm_objects = modm_queryset.sort('-_id')[offset:limit]
 
             if not hasattr(django_model, '_natural_key'):
-                print('{} is missing a natural key!'.format(django_model._meta.model.__name__))
+                logger.info('{} is missing a natural key!'.format(django_model._meta.model.__name__))
 
             for modm_obj in page_of_modm_objects:
                 django_instance = django_model.migrate_from_modm(modm_obj)
@@ -389,7 +421,7 @@ def save_bare_models(modm_queryset, django_model, page_size=20000):
                             django_objects.append(django_instance)
                         else:
                             count += 1
-                            print('{} with guids {} was already in hashes'.format(django_instance._meta.model.__name__, found))
+                            logger.info('{} with guids {} was already in hashes'.format(django_instance._meta.model.__name__, found))
                             continue
                     else:
                         if django_instance._natural_key() not in hashes:
@@ -410,13 +442,13 @@ def save_bare_models(modm_queryset, django_model, page_size=20000):
                         start = 0
                     else:
                         start = count - page_size
-                    print(
+                    logger.info(
                         'Saving {} {} through {}...'.format(django_model._meta.model.__name__,
                                                             start,
                                                             count))
                     saved_django_objects = django_model.objects.bulk_create(django_objects)
 
-                    print('Done with {} {} in {} seconds...'.format(len(saved_django_objects),
+                    logger.info('Done with {} {} in {} seconds...'.format(len(saved_django_objects),
                                                                     django_model._meta.model.__name__, (
                                                                         timezone.now() -
                                                                         page_finish_time).total_seconds()))
@@ -424,11 +456,11 @@ def save_bare_models(modm_queryset, django_model, page_size=20000):
                     modm_obj._object_cache.clear()
                     saved_django_objects = []
                     page_of_modm_objects = []
-                    print('Took out {} trashes'.format(gc.collect()))
+                    logger.info('Took out {} trashes'.format(gc.collect()))
     total = None
     count = None
     hashes = None
-    print('Took out {} trashes'.format(gc.collect()))
+    logger.info('Took out {} trashes'.format(gc.collect()))
 
 
 class DuplicateExternalAccounts(Exception):
@@ -486,7 +518,7 @@ def save_bare_external_accounts(page_size=100000):
     django_model_classes_with_m2m_to_external_account = [OSFUser]
 
 
-    print('Starting save_bare_external_accounts...')
+    logger.info('Starting save_bare_external_accounts...')
     start = timezone.now()
 
     external_accounts = MODMExternalAccount.find()
@@ -546,7 +578,7 @@ def save_bare_external_accounts(page_size=100000):
 
 
 def save_bare_system_tags(page_size=10000):
-    print('Starting save_bare_system_tags...')
+    logger.info('Starting save_bare_system_tags...')
     start = timezone.now()
 
     things = list(MODMNode.find(MQ('system_tags', 'ne', [])).sort(
@@ -569,9 +601,9 @@ def save_bare_system_tags(page_size=10000):
 
     created_system_tags = Tag.objects.bulk_create(system_tags)
 
-    print('MODM System Tags: {}'.format(total))
-    print('django system tags: {}'.format(Tag.objects.filter(system=True).count()))
-    print('Done with {} in {} seconds...'.format(
+    logger.info('MODM System Tags: {}'.format(total))
+    logger.info('django system tags: {}'.format(Tag.objects.filter(system=True).count()))
+    logger.info('Done with {} in {} seconds...'.format(
         sys._getframe().f_code.co_name,
         (timezone.now() - start).total_seconds()))
 
@@ -633,7 +665,7 @@ def register_nonexistent_models_with_modm():
 
 @modm_transaction()
 def merge_duplicate_users():
-    print('Starting {}...'.format(sys._getframe().f_code.co_name))
+    logger.info('Starting {}...'.format(sys._getframe().f_code.co_name))
     start = timezone.now()
 
     from framework.mongo.handlers import database
@@ -666,24 +698,24 @@ def merge_duplicate_users():
     #       ]
     #   }
     # ]
-    print('Found {} duplicate usernames.'.format(len(duplicates)))
+    logger.info('Found {} duplicate usernames.'.format(len(duplicates)))
     for duplicate in duplicates:
-        print('Found {} copies of {}'.format(len(duplicate.get('ids')), duplicate.get('_id')))
+        logger.info('Found {} copies of {}'.format(len(duplicate.get('ids')), duplicate.get('_id')))
         if duplicate.get('_id'):
             # _id is an email address, merge users keeping the one that was logged into last
             users = list(MODMUser.find(MQ('_id', 'in', duplicate.get('ids'))).sort('-last_login'))
             best_match = users.pop()
             for user in users:
-                print('Merging user {} into user {}'.format(user._id, best_match._id))
+                logger.info('Merging user {} into user {}'.format(user._id, best_match._id))
                 best_match.merge_user(user)
         else:
             # _id is null, set all usernames to their guid
             users = MODMUser.find(MQ('_id', 'in', duplicate.get('ids')))
             for user in users:
-                print('Setting username for {}'.format(user._id))
+                logger.info('Setting username for {}'.format(user._id))
                 user.username = user._id
                 user.save()
-    print('Done with {} in {} seconds...'.format(
+    logger.info('Done with {} in {} seconds...'.format(
         sys._getframe().f_code.co_name,
         (timezone.now() - start).total_seconds()))
 
@@ -720,7 +752,7 @@ class Command(BaseCommand):
                 continue
 
             if not hasattr(django_model, 'modm_model_path'):
-                print('################################################\n'
+                logger.info('################################################\n'
                       '{} doesn\'t have a modm_model_path\n'
                       '################################################'.format(
                     django_model._meta.model.__name__))
@@ -737,7 +769,7 @@ class Command(BaseCommand):
                                      page_size=django_model.migration_page_size)
             modm_model._cache.clear()
             modm_model._object_cache.clear()
-            print('Took out {} trashes'.format(gc.collect()))
+            logger.info('Took out {} trashes'.format(gc.collect()))
 
         # Handle system tags, they're on nodes, they need a special migration
         if not options['nodelogs'] and not options['nodelogsguids']:
