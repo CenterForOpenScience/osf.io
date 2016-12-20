@@ -5,6 +5,8 @@ import importlib
 import sys
 
 import ipdb
+import logging
+
 from addons.wiki.models import NodeWikiPage
 from django.apps import apps
 from django.contrib.contenttypes.fields import GenericForeignKey
@@ -28,6 +30,9 @@ from website.models import \
     NotificationSubscription as MODMNotificationSubscription
 from website.models import Pointer as MODMPointer
 from website.models import User as MODMUser
+
+
+logger = logging.getLogger('migrations')
 
 
 def build_toku_django_lookup_table_cache(with_guids=False):
@@ -69,7 +74,7 @@ def build_toku_django_lookup_table_cache(with_guids=False):
                         lookup_dict[unicode(guid)] = mapping['guids__pk']
                 else:
                     lookup_dict[unicode(mapping['guid_string'])] = mapping['guids__pk']
-        print('Got {} guids for {}'.format(len(lookup_dict), model._meta.model.__name__))
+        logger.info('Got {} guids for {}'.format(len(lookup_dict), model._meta.model.__name__))
         lookups.update(lookup_dict)
 
     # add the "special" ones
@@ -170,7 +175,7 @@ class Command(BaseCommand):
 
 
     def save_fk_relationships(self, modm_queryset, django_model, page_size):
-        print(
+        logger.info(
             'Starting {} on {}...'.format(sys._getframe().f_code.co_name, django_model._meta.model.__name__))
 
         # TODO: Collections is getting user_id added to the bad fields. It shouldn't be.
@@ -179,10 +184,10 @@ class Command(BaseCommand):
                         field.is_relation and not field.auto_created and field.many_to_one]
 
         if len(fk_relations) == 0:
-            print('{} doesn\'t have foreign keys.'.format(django_model._meta.model.__name__))
+            logger.info('{} doesn\'t have foreign keys.'.format(django_model._meta.model.__name__))
             return
         else:
-            print('FKS: {}'.format(fk_relations))
+            logger.info('FKS: {}'.format(fk_relations))
         fk_count = 0
         model_count = 0
         model_total = modm_queryset.count()
@@ -233,7 +238,7 @@ class Command(BaseCommand):
                                 elif modm_obj.owner is None:
                                     django_obj.node_id = None
                                     django_obj.user_id = None
-                                    print(
+                                    logger.info(
                                         'NotificationSubscription {} is abandoned. It\'s owner is {}.'.format(
                                             unicode(modm_obj._id), modm_obj.owner))
 
@@ -263,7 +268,7 @@ class Command(BaseCommand):
                                 try:
                                     value = getattr(modm_obj, field_name.replace('_id', ''))
                                 except AttributeError:
-                                    print('|||||||||||||||||||||||||||||||||||||||||||||||||||||||\n'
+                                    logger.info('|||||||||||||||||||||||||||||||||||||||||||||||||||||||\n'
                                           '||| Couldn\'t find {} adding to bad_fields\n'
                                           '|||||||||||||||||||||||||||||||||||||||||||||||||||||||'
                                           .format(field_name.replace('_id', '')))
@@ -292,7 +297,7 @@ class Command(BaseCommand):
                                     fk_count += 1
 
                                 else:
-                                    print('Value is a {}'.format(type(value)))
+                                    logger.info('Value is a {}'.format(type(value)))
                                     ipdb.set_trace()
 
                     django_obj, dirty = fix_bad_data(django_obj, dirty)
@@ -300,17 +305,17 @@ class Command(BaseCommand):
                         django_obj.save()
                     model_count += 1
                     if model_count % page_size == 0 or model_count == model_total:
-                        print(
+                        logger.info(
                             'Through {} {}s and {} FKs...'.format(model_count,
                                                                   django_model._meta.model.__name__,
                                                                   fk_count))
                         modm_queryset[0]._cache.clear()
                         modm_queryset[0]._object_cache.clear()
-                        print('Took out {} trashes'.format(gc.collect()))
+                        logger.info('Took out {} trashes'.format(gc.collect()))
 
 
     def save_m2m_relationships(self, modm_queryset, django_model, page_size):
-        print(
+        logger.info(
             'Starting {} on {}...'.format(sys._getframe().f_code.co_name, django_model._meta.model.__name__))
 
         m2m_relations = [(field.attname or field.name, field.related_model) for field in
@@ -318,11 +323,11 @@ class Command(BaseCommand):
                          field.is_relation and field.many_to_many and not hasattr(field, 'field')]
 
         if len(m2m_relations) == 0:
-            print(
+            logger.info(
                 '{} doesn\'t have any many to many relationships.'.format(django_model._meta.model.__name__))
             return
         else:
-            print('{} M2M relations: {}'.format(django_model._meta.model.__name__, m2m_relations))
+            logger.info('{} M2M relations: {}'.format(django_model._meta.model.__name__, m2m_relations))
         m2m_count = 0
         model_count = 0
         model_total = modm_queryset.count()
@@ -363,7 +368,7 @@ class Command(BaseCommand):
                             else:
                                 value = getattr(modm_obj, django_field_name)
                         except AttributeError:
-                            print('|||||||||||||||||||||||||||||||||||||||||||||||||||||||\n'
+                            logger.info('|||||||||||||||||||||||||||||||||||||||||||||||||||||||\n'
                                   '||| Couldn\'t find {} adding to bad_fields\n'
                                   '|||||||||||||||||||||||||||||||||||||||||||||||||||||||'
                                   .format(field_name))
@@ -425,13 +430,13 @@ class Command(BaseCommand):
                     if model_count % page_size == 0 or model_count == model_total:
                         modm_queryset[0]._cache.clear()
                         modm_queryset[0]._object_cache.clear()
-                        print('Took out {} trashes'.format(gc.collect()))
-                        print(
+                        logger.info('Took out {} trashes'.format(gc.collect()))
+                        logger.info(
                             'Through {} {}s and {} m2m'.format(model_count, django_model._meta.model.__name__,
                                                                m2m_count))
 
     def migrate_node_through_models(self):
-        print('Starting {}...'.format(sys._getframe().f_code.co_name))
+        logger.info('Starting {}...'.format(sys._getframe().f_code.co_name))
         if not self.modm_to_django.keys():
             self.modm_to_django = build_toku_django_lookup_table_cache()
         total = MODMNode.find().count()
@@ -472,19 +477,19 @@ class Command(BaseCommand):
                                     order += 1
                                     contributor_count += 1
                                 else:
-                                    print('({},{}) already in contributor_hashes.'.format(
+                                    logger.info('({},{}) already in contributor_hashes.'.format(
                                         self.modm_to_django[clean_user_guid],
                                         self.modm_to_django[clean_node_guid]))
                             count += 1
 
                             if count % page_size == 0 or count == total:
                                 Contributor.objects.bulk_create(contributors)
-                                print('Through {} nodes and {} contributors, '
+                                logger.info('Through {} nodes and {} contributors, '
                                       'saved {} contributors'.format(count, contributor_count, len(contributors)))
                                 contributors = []
                                 modm_obj._cache.clear()
                                 modm_obj._object_cache.clear()
-                                print('Took out {} trashes'.format(gc.collect()))
+                                logger.info('Took out {} trashes'.format(gc.collect()))
 
                             node_relations = []
                             noderel_order = 0
@@ -517,10 +522,10 @@ class Command(BaseCommand):
 
                             if count % page_size == 0 or count == total:
                                 NodeRelation.objects.bulk_create(node_relations)
-                                print('Through {} nodes and {} node relations, '
+                                logger.info('Through {} nodes and {} node relations, '
                                       'saved {} NodeRelations'
                                       .format(count, node_relation_count, len(node_relations)))
                                 node_relations = []
                                 modm_obj._cache.clear()
                                 modm_obj._object_cache.clear()
-                                print('Took out {} trashes'.format(gc.collect()))
+                                logger.info('Took out {} trashes'.format(gc.collect()))
