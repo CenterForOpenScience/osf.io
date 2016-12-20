@@ -329,7 +329,7 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
             query = Q('_id', 'in', [node['id'] for node in self.request.data])
             auth = get_user_auth(self.request)
 
-            nodes = Node.find(query)
+            nodes = AbstractNode.find(query)
 
             # If skip_uneditable=True in query_params, skip nodes for which the user
             # does not have EDIT permissions.
@@ -340,7 +340,7 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
                         has_permission.append(node)
 
                 query = Q('_id', 'in', [node._id for node in has_permission])
-                return Node.find(query)
+                return AbstractNode.find(query)
 
             for node in nodes:
                 if not node.can_edit(auth):
@@ -348,7 +348,7 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
             return nodes
         else:
             query = self.get_query_from_request()
-            return Node.find(query)
+            return AbstractNode.find(query)
 
     # overrides ListBulkCreateJSONAPIView, BulkUpdateJSONAPIView, BulkDestroyJSONAPIView
     def get_serializer_class(self):
