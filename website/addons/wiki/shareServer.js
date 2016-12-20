@@ -5,7 +5,6 @@ var raven = require('raven');
 var sharejs = require('share');
 var livedb = require('livedb');
 var Duplex = require('stream').Duplex;
-var WebSocketServer = require('ws').Server;
 var express = require('express');
 var bodyParser = require('body-parser');
 var morgan = require('morgan');
@@ -70,25 +69,7 @@ app.use(function(req, res, next) {
 // Serve static sharejs files
 app.use(express.static(sharejs.scriptsDir));
 
-app.use(browserChannel({webserver: app, sessionTimeoutInterval:5000, corsAllowCredentials: true}, function(client) {
-
-// // Broadcasts message to all clients connected to that doc
-// // TODO: Can we access the relevant list without iterating over every client?
-// wss.broadcast = function(docId, message) {
-//     async.each(this.clients, function (client, cb) {
-//         if (client.userMeta && client.userMeta.docId === docId) {
-//             try {
-//                 client.send(message);
-//             } catch (e) {
-//                 // ignore errors - connection should be handled by share.js library
-//             }
-//         }
-//
-//         cb();
-//     });
-// };
-//
-// wss.on('connection', function(client) {
+app.use(browserChannel({webserver: app, sessionTimeoutInterval:50000, corsAllowCredentials: true}, function(client) {
     var stream = new Duplex({objectMode: true});
 
     stream._read = function() {};
@@ -109,13 +90,6 @@ app.use(browserChannel({webserver: app, sessionTimeoutInterval:5000, corsAllowCr
     client.on('message', function(data) {
         if (client.userMeta && locked[client.userMeta.docId]) {
             client.send(JSON.stringify({type: 'lock'}));
-            return;
-        }
-
-        try {
-            data = JSON.parse(data);
-        } catch (e) {
-            // client.captureMessage('Could not parse message data as json', {message: message});
             return;
         }
 
@@ -189,7 +163,6 @@ app.use(browserChannel({webserver: app, sessionTimeoutInterval:5000, corsAllowCr
     });
 
     stream.on('error', function(msg) {
-        // client.captureMessage('Could not parse message data as json', {msg: msg});
         client.close(msg);
     });
 
