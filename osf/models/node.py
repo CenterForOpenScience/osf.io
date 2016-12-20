@@ -276,7 +276,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             row = cursor.fetchone()
             if not row:
                 return self
-            return AbstractNode.objects.get(id=row[0])
+            parent = AbstractNode.objects.get(id=row[0])
+        return parent if not parent.is_collection else None
 
     @property
     def root_id(self):

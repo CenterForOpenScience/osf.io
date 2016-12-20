@@ -52,14 +52,15 @@ def get_public_components(uid=None, user=None):
     # TODO: This should use User.visible_contributor_to?
     # In future redesign, should be limited for users with many projects / components
     nodes = list(
-        Node.find_for_user(
+        node for node in Node.find_for_user(
             user,
             subquery=(
                 PROJECT_QUERY &
                 Q('parent_nodes', 'isnull', False) &
                 Q('is_public', 'eq', True)
             )
-        )
+        ) if not node.parent_nodes.filter(type='osf.collection').exists()
+        # Exclude top-level projects that are part of a collection
     )
     return _render_nodes(nodes, show_path=True)
 
