@@ -2277,7 +2277,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     def flag_spam(self):
         """ Overrides SpamMixin#flag_spam.
         """
-        super(Node, self).flag_spam()
+        super(AbstractNode, self).flag_spam()
         if settings.SPAM_FLAGGED_MAKE_NODE_PRIVATE:
             self.set_privacy(Node.PRIVATE, auth=None, log=False, save=False, check_addons=False)
             log = self.add_log(
@@ -2293,7 +2293,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             log.save()
 
     def confirm_spam(self, save=False):
-        super(Node, self).confirm_spam(save=False)
+        super(AbstractNode, self).confirm_spam(save=False)
         self.set_privacy(Node.PRIVATE, auth=None, log=False, save=False, check_addons=False)
         log = self.add_log(
             action=NodeLog.MADE_PRIVATE,
