@@ -468,19 +468,21 @@ def rebuild_search(ctx):
     from website import settings
 
     init_app(routes=False, set_backends=True)
-    protocol = 'http' if settings.DEBUG_MODE else 'https'
+    if not settings.ELASTIC_URI.startswith('http'):
+        protocol = 'http://' if settings.DEBUG_MODE else 'https://'
+    else:
+        protocol = ''
+    url = '{protocol}{uri}/{index}'.format(
+        protocol=protocol,
+        uri=settings.ELASTIC_URI.rstrip('/'),
+        index=settings.ELASTIC_INDEX,
+    )
     print('Deleting index {}'.format(settings.ELASTIC_INDEX))
-    requests.delete('{protocol}://{uri}/{index}*'.format(
-        uri=settings.ELASTIC_URI,
-        index=settings.ELASTIC_INDEX,
-        protocol=protocol
-    ))
+    print('----- DELETE {}*'.format(url))
+    requests.delete(url + '*')
     print('Creating index {}'.format(settings.ELASTIC_INDEX))
-    requests.put('{protocol}://{uri}/{index}'.format(
-        uri=settings.ELASTIC_URI,
-        index=settings.ELASTIC_INDEX,
-        protocol=protocol
-    ))
+    print('----- PUT {}'.format(url))
+    requests.put(url)
     migrate_search(ctx)
 
 
