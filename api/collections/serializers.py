@@ -74,7 +74,7 @@ class CollectionSerializer(JSONAPISerializer):
         count = 0
         auth = get_user_auth(self.context['request'])
         for pointer in obj.linked_nodes.filter(is_deleted=False, type='osf.registration'):
-            if pointer.node.can_view(auth):
+            if pointer.can_view(auth):
                 count += 1
         return count
 
