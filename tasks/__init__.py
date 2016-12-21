@@ -463,12 +463,24 @@ def migrate_search(ctx, delete=False, index=settings.ELASTIC_INDEX):
 @task
 def rebuild_search(ctx):
     """Delete and recreate the index for elasticsearch"""
-    import django  # local import so that installing requirements works
-    django.setup()
-    ctx.run('curl -s -XDELETE {uri}/{index}*'.format(uri=settings.ELASTIC_URI,
-                                             index=settings.ELASTIC_INDEX))
-    ctx.run('curl -s -XPUT {uri}/{index}'.format(uri=settings.ELASTIC_URI,
-                                          index=settings.ELASTIC_INDEX))
+    from website.app import init_app
+    import requests
+    from website import settings
+
+    init_app(routes=False, set_backends=True)
+    protocol = 'http' if settings.DEBUG_MODE else 'https'
+    print('Deleting index {}'.format(settings.ELASTIC_INDEX))
+    requests.delete('{protocol}://{uri}/{index}*'.format(
+        uri=settings.ELASTIC_URI,
+        index=settings.ELASTIC_INDEX,
+        protocol=protocol
+    ))
+    print('Creating index {}'.format(settings.ELASTIC_INDEX))
+    requests.put('{protocol}://{uri}/{index}'.format(
+        uri=settings.ELASTIC_URI,
+        index=settings.ELASTIC_INDEX,
+        protocol=protocol
+    ))
     migrate_search(ctx)
 
 
