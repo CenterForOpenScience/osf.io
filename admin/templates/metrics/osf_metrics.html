@@ -27,8 +27,6 @@
             <li role="presentation"><a href="#institution-metrics" role="tab" data-toggle="tab">Institution Metrics</a></li>
             <li role="presentation"><a href="#active-user-metrics" role="tab" data-toggle="tab">Active User Metrics</a></li>
             <li role="presentation"><a href="#healthy-user-metrics" role="tab" data-toggle="tab">Healthy User Metrics</a></li>
-            <li role="presentation"><a href="#expansion-metrics" role="tab" data-toggle="tab">Expansion Metrics</a></li>
-            <li role="presentation"><a href="#cohorts" role="tab" data-toggle="tab">Cohorts</a></li>
             <li role="presentation"><a href="#raw-numbers" role="tab" data-toggle="tab">Raw Numbers</a></li>
         </ul>
 
@@ -172,24 +170,10 @@
                             <div class="chart-wrapper">
                                 <div class="chart-title">
                                     Yesterday's Node logs by user
+                                    <button type="button" class="btn btn-default btn-xs" id="reload-node-logs">reload</button>
                                 </div>
                                 <div class="chart-stage">
                                     <div id="yesterdays-node-logs-by-user"></div>
-                                </div>
-                                <div class="chart-notes">
-                                    The last day of node logs by user, if a user had over 100 node logs.
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-sm-12">
-                            <div class="chart-wrapper">
-                                <div class="chart-title">
-                                    Yesterday's Node logs by user
-                                </div>
-                                <div class="chart-stage">
-                                    <div id="yesterdays-node-logs-by-user-c3-experiment"></div>
                                 </div>
                                 <div class="chart-notes">
                                     The last day of node logs by user, if a user had over 100 node logs.
@@ -246,6 +230,21 @@
                         </div>
                     </div>
 
+                </div>
+                <div class="row">
+                    <div class="col-sm-12">
+                        <div class="chart-wrapper">
+                            <div class="chart-title">
+                                Affiliated Nodes Test
+                            </div>
+                            <div class="chart-stage">
+                                <div id="affiliated-nodes-test"></div>
+                            </div>
+                            <div class="chart-notes">
+                                Total number of public nodes (at all levels, projects and components) created by each institution as of yesterday.
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 <div class="row">
                     <div class="col-sm-6">
@@ -412,14 +411,6 @@
                     <h3>Stickiness Ratio</h3>
                     <div id="stickiness-ratio">Loading...</div>
                 </div>
-            </div>
-            <div role="tabpanel" class="tab-pane" id="expansion-metrics">
-                <h3>Expansion Metrics</h3>
-                <h2>Coming Soon!</h2>
-            </div>
-            <div role="tabpanel" class="tab-pane" id="cohorts">
-                <h3>Cohorts</h3>
-                <h2>Coming soon!</h2>
             </div>
             <div role="tabpanel" class="tab-pane" id="raw-numbers">
                 <div class="container-fluid">
@@ -732,6 +723,21 @@
                                 </div>
                                 <div class="chart-notes">
                                     The percentages of public vs embargoed top-level project registrations on the OSF.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-sm-12">
+                            <div class="chart-wrapper">
+                                <div class="chart-title">
+                                    Pevious 7 days of addon by name
+                                </div>
+                                <div class="chart-stage">
+                                    <div id="previous-7-days-of-linked-addon-by-addon-name"></div>
+                                </div>
+                                <div class="chart-notes">
+                                    The total number of all registered nodes - projects & components on the OSF.
                                 </div>
                             </div>
                         </div>
