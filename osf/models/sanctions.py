@@ -802,6 +802,7 @@ class RegistrationApproval(PreregCallbackMixin, EmailApprovableSanction):
 
         super(RegistrationApproval, self)._on_complete(user)
         self.state = Sanction.APPROVED
+        self.save()
         registered_from = register.registered_from
         # Pass auth=None because the registration initiator may not be
         # an admin on components (component admins had the opportunity
