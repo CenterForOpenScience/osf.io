@@ -23,10 +23,10 @@
     <div>
         <!-- Nav tabs -->
         <ul class="nav nav-tabs" role="tablist">
-            <li role="presentation" class="active"><a href="#user-data" role="tab" data-toggle="tab">User Data</a></li>
-            <li role="presentation"><a href="#institution-metrics" role="tab" data-toggle="tab">Institution Metrics</a></li>
-            <li role="presentation"><a href="#active-user-metrics" role="tab" data-toggle="tab">Active User Metrics</a></li>
-            <li role="presentation"><a href="#healthy-user-metrics" role="tab" data-toggle="tab">Healthy User Metrics</a></li>
+            <li role="presentation" class="active" id="user-tab"><a href="#user-data" role="tab" data-toggle="tab">User Data</a></li>
+            <li role="presentation" id="institution-tab"><a href="#institution-metrics" role="tab" data-toggle="tab">Institution Metrics</a></li>
+            <li role="presentation" id="active-user-tab"><a href="#active-user-metrics" role="tab" data-toggle="tab">Active User Metrics</a></li>
+            <li role="presentation" id="healthy-user-tab"><a href="#healthy-user-metrics" role="tab" data-toggle="tab">Healthy User Metrics</a></li>
             <li role="presentation" id="raw-numbers-tab"><a href="#raw-numbers" role="tab" data-toggle="tab">Raw Numbers</a></li>
         </ul>
 
@@ -735,5 +735,5 @@
 
 
 {% block bottom_js %}
-    <script src="{% static 'public/js/metrics.js' %}"></script>
+    <script src="{% static 'public/js/metrics-page.js' %}"></script>
 {% endblock %}
