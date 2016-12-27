@@ -31,7 +31,7 @@ var config = assign({}, common, {
         'prereg-admin-page': staticAdminPath('js/pages/prereg-admin-page.js'),
         'admin-registration-edit-page': staticAdminPath('js/pages/admin-registration-edit-page.js'),
         'dashboard': staticAdminPath('js/sales_analytics/dashboard.js'),
-        'metrics': staticAdminPath('js/metrics/metrics.js'),
+        'metrics-page': staticAdminPath('js/pages/metrics-page.js'),
     },
     plugins: plugins,
     debug: true,
