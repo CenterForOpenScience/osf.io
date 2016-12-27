@@ -267,6 +267,45 @@ def make_guids():
                 cursor.execute(sql, {'guids': AsIs(params)})
 
 
+def validate_guid_referents_against_ids():
+    from django.apps import apps
+    register_nonexistent_models_with_modm()
+    with ipdb.launch_ipdb_on_exception():
+        for django_model in [model for model in get_ordered_models() if (issubclass(model, GuidMixin) or issubclass(model, OptionalGuidMixin)) and (not issubclass(model, AbstractNode) or model is AbstractNode)]:
+            if not hasattr(django_model, 'modm_model_path'):
+                logger.info('################################################\n'
+                            '{} doesn\'t have a modm_model_path\n'
+                            '################################################'.format(
+                    django_model._meta.model.__name__))
+                continue
+            modm_model = get_modm_model(django_model)
+            model_name = django_model._meta.model.__name__.lower()
+            if model_name == 'osfuser':
+                model_name = 'user'
+
+            logger.info('Starting {}...'.format(model_name))
+            guids = modm_model.find().get_keys()
+            for guid in guids:
+                guid_instance = MGuid.load(guid)
+                if not guid_instance:
+                    if len(guid) > 5:
+                        continue
+                    logger.info('{}:{}\'s guid doesn\'t exist.'.format(model_name, guid))
+                    continue
+                if not guid_instance.referent:
+                    logger.info('{}:{}\'s referent is None.'.format(model_name, guid_instance._id))
+                    continue
+                referent_model_name = guid_instance.to_storage()['referent'][1]
+                if referent_model_name != model_name:
+                    if referent_model_name == 'node' and model_name in ['node', 'abstractnode', 'registration', 'collection']:
+                        continue
+                    logger.info('{}:{}\'s referent doesn\'t match {}:{}'.format(referent_model_name, guid_instance.to_storage()['referent'][0], model_name, guid_instance._id))
+            logger.info('Finished {}...'.format(model_name))
+            modm_model._cache.clear()
+            modm_model._object_cache.clear()
+            gc.collect()
+
+
 def fix_guids():
     modm_guids = MGuid.find().get_keys()
     dj_guids = Guid.objects.all().values_list('_id', flat=True)
