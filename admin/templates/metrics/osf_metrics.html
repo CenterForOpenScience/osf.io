@@ -27,7 +27,7 @@
             <li role="presentation"><a href="#institution-metrics" role="tab" data-toggle="tab">Institution Metrics</a></li>
             <li role="presentation"><a href="#active-user-metrics" role="tab" data-toggle="tab">Active User Metrics</a></li>
             <li role="presentation"><a href="#healthy-user-metrics" role="tab" data-toggle="tab">Healthy User Metrics</a></li>
-            <li role="presentation"><a href="#raw-numbers" role="tab" data-toggle="tab">Raw Numbers</a></li>
+            <li role="presentation" id="raw-numbers-tab"><a href="#raw-numbers" role="tab" data-toggle="tab">Raw Numbers</a></li>
         </ul>
 
         <!-- Tab panes -->
@@ -229,22 +229,6 @@
                             </div>
                         </div>
                     </div>
-
-                </div>
-                <div class="row">
-                    <div class="col-sm-12">
-                        <div class="chart-wrapper">
-                            <div class="chart-title">
-                                Affiliated Nodes Test
-                            </div>
-                            <div class="chart-stage">
-                                <div id="affiliated-nodes-test"></div>
-                            </div>
-                            <div class="chart-notes">
-                                Total number of public nodes (at all levels, projects and components) created by each institution as of yesterday.
-                            </div>
-                        </div>
-                    </div>
                 </div>
                 <div class="row">
                     <div class="col-sm-6">
@@ -291,10 +275,10 @@
                     <div class="col-sm-6">
                         <div class="chart-wrapper">
                             <div class="chart-title">
-                                Affiliated Private Registrations
+                                Affiliated Embargoed Registrations
                             </div>
                             <div class="chart-stage">
-                                <div id="affiliated-public-registered-nodes"></div>
+                                <div id="affiliated-embargoed-registered-nodes"></div>
                             </div>
                             <div class="chart-notes">
                                 Total number of private registered nodes (at all levels, projects and components) created by each institution as of yesterday.

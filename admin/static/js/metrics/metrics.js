@@ -13,7 +13,7 @@ var client = new keenAnalysis({
     readKey: keenReadKey
 });
 
-
+var defaultHeight = 400;
 
 var getOneDayTimeframe = function(daysBack, monthsBack) {
     var start = null;
@@ -201,109 +201,69 @@ var getWeeklyUserGain = function() {
 
 };
 
+var renderKeenMetric = function(element, type, query, height) {
+    if (!height) {
+        height = defaultHeight;
+    }
+    var chart = new keenDataviz()
+        .el(element)
+        .height(height)
+        .title(' ')
+        .type(type)
+        .prepare();
+
+    client
+        .run(query)
+        .then(function(res){
+            var metricChart = chart.data(res);
+            metricChart.dataset.sortRows("desc", function(row) {
+                return row[1]
+            });
+            metricChart.render();
+        })
+        .catch(function(err){
+            chart.message(err.message);
+        });
+};
+
+var renderNodeLogsForOneUserChart = function(user_id) {
+    var chart = new keenDataviz()
+        .el('#yesterdays-node-logs-by-user')
+        .height(300)
+        .title('Individual Logs for ' + '<a href=../users/' + user_id + '>' + user_id + '/</a>')
+        .type('line')
+        .prepare();
+
+    client
+        .query('count', {
+            event_collection: "node_log_events",
+            interval: "hourly",
+            group_by: "action",
+            filters: [{
+                property_name: 'user_id',
+                operator: 'eq',
+                property_value: user_id
+            }],
+            timeframe: "previous_1_days",
+            timezone: "UTC"
+        })
+        .then(function(res){
+            chart
+                .data(res)
+                .render();
+        })
+        .catch(function(err){
+            chart.message(err.message);
+        });
+};
+
 keenAnalysis.ready(function(){
 
-    var renderNodeLogsForOneUserChart = function(user_id) {
-        var chart = new keenDataviz()
-            .el('#yesterdays-node-logs-by-user')
-            .height(300)
-            .title('Individual Logs for ' + '<a href=../users/' + user_id + '>' + user_id + '/</a>')
-            .type('line')
-            .prepare();
 
-        client
-            .query('count', {
-                event_collection: "node_log_events",
-                interval: "hourly",
-                group_by: "action",
-                filters: [{
-                    property_name: 'user_id',
-                    operator: 'eq',
-                    property_value: user_id
-                }],
-                timeframe: "previous_1_days",
-                timezone: "UTC"
-            })
-            .then(function(res){
-                chart
-                    .data(res)
-                    .render();
-            })
-            .catch(function(err){
-                chart.message(err.message);
-            });
-    };
+    // <+><+><+><+><+><+
+    //    user data    |
+    // ><+><+><+><+><+>+
 
-
-    var renderNodeLogsPerUserChart = function() {
-        var chart = new keenDataviz()
-            .el('#yesterdays-node-logs-by-user')
-            .title(' ')
-            .chartOptions({
-                data: {
-                    onclick: function (d, element) {
-                        renderNodeLogsForOneUserChart(d.name);
-                    }
-                }
-            })
-
-            .type('line')
-            .prepare();
-
-        client
-            .query('count', {
-                event_collection: 'node_log_events',
-                group_by: "user_id",
-                timeframe: 'previous_1_days',
-                interval: 'hourly'
-            })
-            .then(function (res) {
-                var chartWithData = chart.data(res);
-                chartWithData.dataset.filterColumns(function (column, index) {
-                    var logThreshhold = 25;
-                    for (var i = 0; i < column.length; i++) {
-                        if (column[i] > logThreshhold && column[0] != 'null') {
-                            return column;
-                        }
-                    }
-                });
-
-                chartWithData.render();
-            })
-            .catch(function (err) {
-                chart.message(err.message);
-            });
-    };
-    renderNodeLogsPerUserChart();
-
-    $('#reload-node-logs')[0].onclick = function() {
-        renderNodeLogsPerUserChart();
-    };
-
-    //                        _      _
-    //  _  _ ___ ___ _ _   __| |__ _| |_ __ _
-    // | || (_-</ -_) '_| / _` / _` |  _/ _` |
-    //  \_,_/__/\___|_|   \__,_\__,_|\__\__,_|
-
-    var renderKeenMetric = function(element, type, query) {
-        var chart = new keenDataviz()
-            .el(element)
-            .height(400)
-            .title(' ')
-            .type(type)
-            .prepare();
-
-        client
-            .run(query)
-            .then(function(res){
-                chart
-                    .data(res)
-                    .render();
-            })
-            .catch(function(err){
-                chart.message(err.message);
-            });
-    };
 
     // Active user count! - Total Confirmed Users of the OSF
     var activeUsersQuery = new keenAnalysis.Query("sum",  {
@@ -359,7 +319,7 @@ keenAnalysis.ready(function(){
         timeframe: "previous_1_years",
         timezone: "UTC"
     });
-    renderKeenMetric("#yearly-active-users", "metric", yearlyActiveUsersQuery);
+    renderKeenMetric("#yearly-active-users", "metric", yearlyActiveUsersQuery, defaultHeight);
 
 
     // Yearly Active Users / Total Users
@@ -441,108 +401,6 @@ keenAnalysis.ready(function(){
     };
     renderWeeklyUserGainChart(weeklyUserGain);
 
-    // stickiness ratio - DAU/MAU
-    renderCalculationBetweenTwoQueries(dailyActiveUsersQuery, monthlyActiveUsersQuery, "#stickiness-ratio", null, "percentage");
-
-
-    // Active user chart!
-    var activeUserChartQuery = new keenAnalysis.Query("sum", {
-        eventCollection: "user_summary",
-        interval: "daily",
-        targetProperty: "status.active",
-        timeframe: "previous_800_days",
-        timezone: "UTC"
-    });
-    renderKeenMetric("#active-user-chart", "line", activeUserChartQuery);
-
-
-    // New Unconfirmed Users - # of unconfirmed users in the past 7 days
-    var yesterday_unconfirmed_user_count = new keenAnalysis.Query("sum", {
-        eventCollection: "user_summary",
-        targetProperty: "status.unconfirmed",
-        timeframe: getOneDayTimeframe(1, null)
-    });
-
-    var week_ago_user_count = new Keen.Query("sum", {
-        eventCollection: "user_summary",
-        targetProperty: "status.unconfirmed",
-        timeframe: getOneDayTimeframe(7, null)
-    });
-    renderCalculationBetweenTwoQueries(yesterday_unconfirmed_user_count, week_ago_user_count, "#unverified-new-users", 'day', 'subtraction');
-
-    // Institutional Users over past 100 Days
-    var institutional_user_chart = new keenAnalysis.Query("sum", {
-        eventCollection: "institution_summary",
-        interval: "daily",
-        targetProperty: "users.total",
-        groupBy: ["institution.name"],
-        timeframe: "previous_100_days",
-        timezone: "UTC"
-    });
-    // renderKeenMetric("#institution-growth", "line", institutional_user_chart);
-
-
-    // Total Institutional Users
-    var institutional_user_count = new keenAnalysis.Query("sum", {
-        eventCollection: "institution_summary",
-        targetProperty: "users.total",
-        timeframe: "previous_1_day",
-        timezone: "UTC"
-    });
-    renderKeenMetric("#total-institutional-users", "metric", institutional_user_count);
-
-    // Total Instutional Users / Total OSF Users
-    renderCalculationBetweenTwoQueries(institutional_user_count, activeUsersQuery, "#percentage-institutional-users", null, 'percentage');
-
-
-    //                _        _
-    //  _ __ _ _ ___ (_)___ __| |_ ___
-    // | '_ \ '_/ _ \| / -_) _|  _(_-<
-    // | .__/_| \___// \___\__|\__/__/
-    // |_|         |__/
-
-    // Affiliated Public Nodes
-    var affiliated_public_chart = new keenAnalysis.Query("sum", {
-        eventCollection: "institution_summary",
-        targetProperty: "nodes.public",
-        timeframe: "previous_1_days",
-        groupBy: "institution.name",
-        timezone: "UTC"
-    });
-    // renderKeenMetric("#affiliated-public-nodes", "pie", affiliated_public_chart);
-
-
-    // Affiliated Private Nodes
-    var affiliated_private_node_chart = new keenAnalysis.Query("sum", {
-        eventCollection: "institution_summary",
-        targetProperty: "nodes.private",
-        timeframe: "previous_1_days",
-        groupBy: "institution.name",
-        timezone: "UTC"
-    });
-    // renderKeenMetric("#affiliated-private-nodes", "pie", affiliated_private_node_chart);
-
-
-    // Affiliated Public Registrations
-    var affiliated_public_registered_nodes_chart = new keenAnalysis.Query("sum", {
-        eventCollection: "institution_summary",
-        targetProperty: "registered_nodes.public",
-        timeframe: "previous_1_days",
-        groupBy: "institution.name",
-        timezone: "UTC"
-    });
-    // renderKeenMetric("#affiliated-public-registered-nodes", "pie", affiliated_public_registered_nodes_chart);
-
-    // Affiliated Private Registrations
-    var affiliated_private_registered_node_chart = new keenAnalysis.Query("sum", {
-        eventCollection: "institution_summary",
-        targetProperty: "registered_nodes.private",
-        timeframe: "previous_1_days",
-        groupBy: "institution.name",
-        timezone: "UTC"
-    });
-    // renderKeenMetric("#affiliated-private-registered-nodes", "pie", affiliated_private_registered_node_chart);
-
 
     // Registrations by Email Domain
     var email_domains = new keenAnalysis.Query("count", {
@@ -579,6 +437,167 @@ keenAnalysis.ready(function(){
             });
     };
     renderEmailDomainsChart();
+
+    var renderNodeLogsPerUserChart = function() {
+        var chart = new keenDataviz()
+            .el('#yesterdays-node-logs-by-user')
+            .title(' ')
+            .chartOptions({
+                data: {
+                    onclick: function (d, element) {
+                        renderNodeLogsForOneUserChart(d.name);
+                    }
+                }
+            })
+
+            .type('line')
+            .prepare();
+
+        client
+            .query('count', {
+                event_collection: 'node_log_events',
+                group_by: "user_id",
+                timeframe: 'previous_1_days',
+                interval: 'hourly'
+            })
+            .then(function (res) {
+                var chartWithData = chart.data(res);
+                chartWithData.dataset.filterColumns(function (column, index) {
+                    var logThreshhold = 25;
+                    for (var i = 0; i < column.length; i++) {
+                        if (column[i] > logThreshhold && column[0] != 'null') {
+                            return column;
+                        }
+                    }
+                });
+
+                chartWithData.render();
+            })
+            .catch(function (err) {
+                chart.message(err.message);
+            });
+    };
+    renderNodeLogsPerUserChart();
+
+    $('#reload-node-logs')[0].onclick = function() {
+        renderNodeLogsPerUserChart();
+    };
+
+
+    // <+><+><+><+><+><+><+<+>+
+    //   healthy user metrics |
+    // ><+><+><+><+><+><+><+><+
+
+
+    // stickiness ratio - DAU/MAU
+    renderCalculationBetweenTwoQueries(dailyActiveUsersQuery, monthlyActiveUsersQuery, "#stickiness-ratio", null, "percentage");
+
+
+    // <+><+><+><+><+><+><+<+>+
+    //   active user metrics |
+    // ><+><+><+><+><+><+><+><+
+
+    // Active user chart!
+    var activeUserChartQuery = new keenAnalysis.Query("sum", {
+        eventCollection: "user_summary",
+        interval: "daily",
+        targetProperty: "status.active",
+        timeframe: "previous_800_days",
+        timezone: "UTC"
+    });
+    renderKeenMetric("#active-user-chart", "line", activeUserChartQuery, defaultHeight);
+
+
+    // New Unconfirmed Users - # of unconfirmed users in the past 7 days
+    var yesterday_unconfirmed_user_count = new keenAnalysis.Query("sum", {
+        eventCollection: "user_summary",
+        targetProperty: "status.unconfirmed",
+        timeframe: getOneDayTimeframe(1, null)
+    });
+
+    var week_ago_user_count = new Keen.Query("sum", {
+        eventCollection: "user_summary",
+        targetProperty: "status.unconfirmed",
+        timeframe: getOneDayTimeframe(7, null)
+    });
+    renderCalculationBetweenTwoQueries(yesterday_unconfirmed_user_count, week_ago_user_count, "#unverified-new-users", 'day', 'subtraction');
+
+
+
+    // <+><+><+><+><+><+><+<+>+
+    //   institution metrics  |
+    // ><+><+><+><+><+><+><+><+
+
+
+    // Institutional Users over past 100 Days
+    var institutional_user_chart = new keenAnalysis.Query("sum", {
+        eventCollection: "institution_summary",
+        interval: "daily",
+        targetProperty: "users.total",
+        groupBy: "institution.name",
+        timeframe: "previous_100_days",
+        timezone: "UTC"
+    });
+    renderKeenMetric("#institution-growth", "line", institutional_user_chart, defaultHeight);
+
+
+    // Total Institutional Users
+    var institutional_user_count = new keenAnalysis.Query("sum", {
+        eventCollection: "institution_summary",
+        targetProperty: "users.total",
+        timeframe: "previous_1_day",
+        timezone: "UTC"
+    });
+    renderKeenMetric("#total-institutional-users", "metric", institutional_user_count, defaultHeight);
+
+    // Total Instutional Users / Total OSF Users
+    renderCalculationBetweenTwoQueries(institutional_user_count, activeUsersQuery, "#percentage-institutional-users", null, 'percentage');
+
+    var institutionTableHeight = "auto";
+
+    // Affiliated Public Nodes
+    var affiliated_public_chart = new keenAnalysis.Query("sum", {
+        eventCollection: "institution_summary",
+        targetProperty: "nodes.public",
+        timeframe: "previous_1_days",
+        groupBy: "institution.name",
+        timezone: "UTC"
+    });
+    renderKeenMetric("#affiliated-public-nodes", "table", affiliated_public_chart, institutionTableHeight);
+
+
+    // Affiliated Private Nodes
+    var affiliated_private_node_chart = new keenAnalysis.Query("sum", {
+        eventCollection: "institution_summary",
+        targetProperty: "nodes.private",
+        timeframe: "previous_1_days",
+        groupBy: "institution.name",
+        timezone: "UTC"
+    });
+    renderKeenMetric("#affiliated-private-nodes", "table", affiliated_private_node_chart, institutionTableHeight);
+
+
+    // Affiliated Public Registrations
+    var affiliated_public_registered_nodes_chart = new keenAnalysis.Query("sum", {
+        eventCollection: "institution_summary",
+        targetProperty: "registered_nodes.public",
+        timeframe: "previous_1_days",
+        groupBy: "institution.name",
+        timezone: "UTC"
+    });
+    renderKeenMetric("#affiliated-public-registered-nodes", "table", affiliated_public_registered_nodes_chart, institutionTableHeight);
+
+    // Affiliated Private Registrations
+    var affiliated_private_registered_node_chart = new keenAnalysis.Query("sum", {
+        eventCollection: "institution_summary",
+        targetProperty: "registered_nodes.private",
+        timeframe: "previous_1_days",
+        groupBy: "institution.name",
+        timezone: "UTC"
+    });
+    renderKeenMetric("#affiliated-embargoed-registered-nodes", "table", affiliated_private_registered_node_chart, institutionTableHeight);
+
+
 
 
     // Previous 7 Days of Users by Status
@@ -709,7 +728,9 @@ keenAnalysis.ready(function(){
         });
 
     };
-    renderProjectNodeMetrics();
+    $('#raw-numbers-tab')[0].onclick = function() {
+        renderProjectNodeMetrics();
+    };
 
 
  //          _    _
