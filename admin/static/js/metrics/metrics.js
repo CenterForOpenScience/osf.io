@@ -15,6 +15,17 @@ var client = new keenAnalysis({
 
 var defaultHeight = 400;
 
+
+/**
+ * Configure a timeframe for the past day for a keen query
+ * Can either be used to get a time frame for one day from today, or one day
+ * starting from one month ago.
+ *
+ * @method getOneDayTimeframe
+ * @param {Integer} daysBack - the number of days back to start the one day timeframe
+ * @param {Integer} monthsBack - the number of months back to start the one day timeframe
+ * @return {Object} the keen-formatted timeframe
+ */
 var getOneDayTimeframe = function(daysBack, monthsBack) {
     var start = null;
     var end = null;
@@ -164,7 +175,6 @@ var renderCalculationBetweenTwoQueries = function(query1, query2, element, diffe
     ]).then(function(res) {
         var metricOneResult = res[0].result;
         var metricTwoResult = res[1].result;
-        // debugger;
         if (calculationType === "subtraction") {
             result = metricOneResult - metricTwoResult;
         } else if (calculationType === "percentage") {
@@ -274,57 +284,6 @@ keenAnalysis.ready(function(){
     });
     renderKeenMetric("#active-user-count", "metric", activeUsersQuery);
 
-
-    // Daily Active Users
-    var dailyActiveUsersQuery = new keenAnalysis.Query("count_unique", {
-        event_collection: "pageviews",
-        target_property: "user.id",
-        timeframe: "previous_1_days",
-        timezone: "UTC"
-
-    });
-    renderKeenMetric("#daily-active-users", "metric", dailyActiveUsersQuery);
-
-    // Daily Active Users / Total Users
-    renderCalculationBetweenTwoQueries(dailyActiveUsersQuery, activeUsersQuery, "#daily-active-over-total-users", null, "percentage");
-
-
-    // Monthly Active Users
-    var monthlyActiveUsersQuery = new keenAnalysis.Query("count_unique" , {
-        eventCollection: "pageviews",
-        targetProperty: "user.id",
-        timeframe: "previous_1_months",
-        timezone: "UTC"
-    });
-    renderKeenMetric("#monthly-active-users", "metric", monthlyActiveUsersQuery);
-
-
-    // Monthly Active Users / Total Users
-    renderCalculationBetweenTwoQueries(monthlyActiveUsersQuery, activeUsersQuery, "#monthly-active-over-total-users", null, 'percentage');
-
-
-    // Monthly Growth of MAU% -- Two months ago vs 1 month ago
-    var twoMonthsAgoActiveUsersQuery = new keenAnalysis.Query("count_unique", {
-        eventCollection: "pageviews",
-        targetProperty: "user.id",
-        timeframe: "previous_2_months",
-        timezone: "UTC"
-    });
-    differenceGrowthBetweenMetrics(twoMonthsAgoActiveUsersQuery, monthlyActiveUsersQuery, activeUsersQuery, "#monthly-active-user-increase", 'day', 'subtraction');
-
-    // Yearly Active Users
-    var yearlyActiveUsersQuery = new keenAnalysis.Query("count_unique", {
-        eventCollection: "pageviews",
-        targetProperty: "user.id",
-        timeframe: "previous_1_years",
-        timezone: "UTC"
-    });
-    renderKeenMetric("#yearly-active-users", "metric", yearlyActiveUsersQuery, defaultHeight);
-
-
-    // Yearly Active Users / Total Users
-    renderCalculationBetweenTwoQueries(yearlyActiveUsersQuery, activeUsersQuery, "#yearly-active-over-total-users", null, 'percentage');
-
     // Daily Gain
     var yesterday_user_count = new keenAnalysis.Query("sum", {
         eventCollection: "user_summary",
@@ -401,6 +360,85 @@ keenAnalysis.ready(function(){
     };
     renderWeeklyUserGainChart(weeklyUserGain);
 
+
+    // Previous 7 Days of Users by Status
+    var previous_week_active_users = new keenAnalysis.Query("sum",  {
+        eventCollection: "user_summary",
+        interval: "daily",
+        targetProperty: "status.active",
+        timeframe: "previous_1_week",
+        timezone: "UTC"
+    });
+
+    var previous_week_unconfirmed_users = new keenAnalysis.Query("sum",  {
+        eventCollection: "user_summary",
+        interval: "daily",
+        targetProperty: "status.unconfirmed",
+        timeframe: "previous_1_week",
+        timezone: "UTC"
+    });
+
+    var previous_week_merged_users = new keenAnalysis.Query("sum",  {
+        eventCollection: "user_summary",
+        interval: "daily",
+        targetProperty: "status.merged",
+        timeframe: "previous_1_week",
+        timezone: "UTC"
+    });
+
+    var previous_week_depth_users = new keenAnalysis.Query("sum",  {
+        eventCollection: "user_summary",
+        interval: "daily",
+        targetProperty: "status.depth",
+        timeframe: "previous_1_week",
+        timezone: "UTC"
+    });
+
+    var previous_week_deactivated_users = new keenAnalysis.Query("sum",  {
+        eventCollection: "user_summary",
+        interval: "daily",
+        targetProperty: "status.deactivated",
+        timeframe: "previous_1_week",
+        timezone: "UTC"
+    });
+
+    var chart = new keenDataviz()
+        .el("#previous-7-days-of-users-by-status")
+        .type("line")
+        .prepare();
+
+    client.run([
+        previous_week_active_users,
+        previous_week_unconfirmed_users,
+        previous_week_merged_users,
+        previous_week_depth_users,
+        previous_week_deactivated_users
+    ], function(err, res) {
+        var active_result = res[0].result;
+        var unconfirmed_result = res[1].result;
+        var merged_result = res[2].result;
+        var depth_result = res[3].result;
+        var deactivated_result = res[4].result;
+        var data = [];
+        var i=0;
+
+        while (i < active_result.length) {
+            data[i] = {
+                timeframe: active_result[i]["timeframe"],
+                value: [
+                    {category: "Active", result: active_result[i].value},
+                    {category: "Unconfirmed", result: unconfirmed_result[i].value},
+                    {category: "Merged", result: merged_result[i].value},
+                    {category: "Depth", result: depth_result[i].value},
+                    {category: "Deactivated", result: deactivated_result[i].value}
+                ]
+            };
+            if (i === active_result.length - 1) {
+                chart.parseRawData({result: data}).render();
+            }
+            i++;
+        }
+    });
 
     // Registrations by Email Domain
     var email_domains = new keenAnalysis.Query("count", {
@@ -485,46 +523,6 @@ keenAnalysis.ready(function(){
 
 
     // <+><+><+><+><+><+><+<+>+
-    //   healthy user metrics |
-    // ><+><+><+><+><+><+><+><+
-
-
-    // stickiness ratio - DAU/MAU
-    renderCalculationBetweenTwoQueries(dailyActiveUsersQuery, monthlyActiveUsersQuery, "#stickiness-ratio", null, "percentage");
-
-
-    // <+><+><+><+><+><+><+<+>+
-    //   active user metrics |
-    // ><+><+><+><+><+><+><+><+
-
-    // Active user chart!
-    var activeUserChartQuery = new keenAnalysis.Query("sum", {
-        eventCollection: "user_summary",
-        interval: "daily",
-        targetProperty: "status.active",
-        timeframe: "previous_800_days",
-        timezone: "UTC"
-    });
-    renderKeenMetric("#active-user-chart", "line", activeUserChartQuery, defaultHeight);
-
-
-    // New Unconfirmed Users - # of unconfirmed users in the past 7 days
-    var yesterday_unconfirmed_user_count = new keenAnalysis.Query("sum", {
-        eventCollection: "user_summary",
-        targetProperty: "status.unconfirmed",
-        timeframe: getOneDayTimeframe(1, null)
-    });
-
-    var week_ago_user_count = new Keen.Query("sum", {
-        eventCollection: "user_summary",
-        targetProperty: "status.unconfirmed",
-        timeframe: getOneDayTimeframe(7, null)
-    });
-    renderCalculationBetweenTwoQueries(yesterday_unconfirmed_user_count, week_ago_user_count, "#unverified-new-users", 'day', 'subtraction');
-
-
-
-    // <+><+><+><+><+><+><+<+>+
     //   institution metrics  |
     // ><+><+><+><+><+><+><+><+
 
@@ -599,91 +597,100 @@ keenAnalysis.ready(function(){
 
 
 
+    // <+><+><+><+><+><+><+<+>+
+    //   active user metrics |
+    // ><+><+><+><+><+><+><+><+
 
-    // Previous 7 Days of Users by Status
-    var previous_week_active_users = new keenAnalysis.Query("sum",  {
+
+    // Daily Active Users
+    var dailyActiveUsersQuery = new keenAnalysis.Query("count_unique", {
+        event_collection: "pageviews",
+        target_property: "user.id",
+        timeframe: "previous_1_days",
+        timezone: "UTC"
+
+    });
+    renderKeenMetric("#daily-active-users", "metric", dailyActiveUsersQuery);
+
+    // Daily Active Users / Total Users
+    renderCalculationBetweenTwoQueries(dailyActiveUsersQuery, activeUsersQuery, "#daily-active-over-total-users", null, "percentage");
+
+
+    // Monthly Active Users
+    var monthlyActiveUsersQuery = new keenAnalysis.Query("count_unique" , {
+        eventCollection: "pageviews",
+        targetProperty: "user.id",
+        timeframe: "previous_1_months",
+        timezone: "UTC"
+    });
+    renderKeenMetric("#monthly-active-users", "metric", monthlyActiveUsersQuery);
+
+
+    // Monthly Active Users / Total Users
+    renderCalculationBetweenTwoQueries(monthlyActiveUsersQuery, activeUsersQuery, "#monthly-active-over-total-users", null, 'percentage');
+
+
+    // Monthly Growth of MAU% -- Two months ago vs 1 month ago
+    var twoMonthsAgoActiveUsersQuery = new keenAnalysis.Query("count_unique", {
+        eventCollection: "pageviews",
+        targetProperty: "user.id",
+        timeframe: "previous_2_months",
+        timezone: "UTC"
+    });
+    differenceGrowthBetweenMetrics(twoMonthsAgoActiveUsersQuery, monthlyActiveUsersQuery, activeUsersQuery, "#monthly-active-user-increase", 'day', 'subtraction');
+
+    // Yearly Active Users
+    var yearlyActiveUsersQuery = new keenAnalysis.Query("count_unique", {
+        eventCollection: "pageviews",
+        targetProperty: "user.id",
+        timeframe: "previous_1_years",
+        timezone: "UTC"
+    });
+    renderKeenMetric("#yearly-active-users", "metric", yearlyActiveUsersQuery, defaultHeight);
+
+
+    // Yearly Active Users / Total Users
+    renderCalculationBetweenTwoQueries(yearlyActiveUsersQuery, activeUsersQuery, "#yearly-active-over-total-users", null, 'percentage');
+
+
+    // Active user chart!
+    var activeUserChartQuery = new keenAnalysis.Query("sum", {
         eventCollection: "user_summary",
         interval: "daily",
         targetProperty: "status.active",
-        timeframe: "previous_1_week",
+        timeframe: "previous_800_days",
         timezone: "UTC"
     });
+    renderKeenMetric("#active-user-chart", "line", activeUserChartQuery, defaultHeight);
 
-    var previous_week_unconfirmed_users = new keenAnalysis.Query("sum",  {
+
+    // New Unconfirmed Users - # of unconfirmed users in the past 7 days
+    var yesterday_unconfirmed_user_count = new keenAnalysis.Query("sum", {
         eventCollection: "user_summary",
-        interval: "daily",
         targetProperty: "status.unconfirmed",
-        timeframe: "previous_1_week",
-        timezone: "UTC"
+        timeframe: getOneDayTimeframe(1, null)
     });
 
-    var previous_week_merged_users = new keenAnalysis.Query("sum",  {
+    var week_ago_user_count = new Keen.Query("sum", {
         eventCollection: "user_summary",
-        interval: "daily",
-        targetProperty: "status.merged",
-        timeframe: "previous_1_week",
-        timezone: "UTC"
+        targetProperty: "status.unconfirmed",
+        timeframe: getOneDayTimeframe(7, null)
     });
+    renderCalculationBetweenTwoQueries(yesterday_unconfirmed_user_count, week_ago_user_count, "#unverified-new-users", 'day', 'subtraction');
 
-    var previous_week_depth_users = new keenAnalysis.Query("sum",  {
-        eventCollection: "user_summary",
-        interval: "daily",
-        targetProperty: "status.depth",
-        timeframe: "previous_1_week",
-        timezone: "UTC"
-    });
 
-    var previous_week_deactivated_users = new keenAnalysis.Query("sum",  {
-        eventCollection: "user_summary",
-        interval: "daily",
-        targetProperty: "status.deactivated",
-        timeframe: "previous_1_week",
-        timezone: "UTC"
-    });
+    // <+><+><+><+><+><+><+<+>+
+    //   healthy user metrics |
+    // ><+><+><+><+><+><+><+><+
 
-    var chart = new keenDataviz()
-        .el("#previous-7-days-of-users-by-status")
-        .type("line")
-        .prepare();
+    // stickiness ratio - DAU/MAU
+    renderCalculationBetweenTwoQueries(dailyActiveUsersQuery, monthlyActiveUsersQuery, "#stickiness-ratio", null, "percentage");
 
-    client.run([
-        previous_week_active_users,
-        previous_week_unconfirmed_users,
-        previous_week_merged_users,
-        previous_week_depth_users,
-        previous_week_deactivated_users
-    ], function(err, res) {
-        var active_result = res[0].result;
-        var unconfirmed_result = res[1].result;
-        var merged_result = res[2].result;
-        var depth_result = res[3].result;
-        var deactivated_result = res[4].result;
-        var data = [];
-        var i=0;
 
-        while (i < active_result.length) {
-            data[i] = {
-                timeframe: active_result[i]["timeframe"],
-                value: [
-                    {category: "Active", result: active_result[i].value},
-                    {category: "Unconfirmed", result: unconfirmed_result[i].value},
-                    {category: "Merged", result: merged_result[i].value},
-                    {category: "Depth", result: depth_result[i].value},
-                    {category: "Deactivated", result: deactivated_result[i].value}
-                ]
-            };
-            if (i === active_result.length - 1) {
-                chart.parseRawData({result: data}).render();
-            }
-            i++;
-        }
-    });
+    // <+><+><+><+><+>>+
+    //   raw numbers   |
+    // ><+><+><+><><+><+
 
-    //                                   _
-    //  _ _ __ ___ __ __  _ _ _  _ _ __ | |__  ___ _ _ ___
-    // | '_/ _` \ V  V / | ' \ || | '  \| '_ \/ -_) '_(_-<
-    // |_| \__,_|\_/\_/  |_||_\_,_|_|_|_|_.__/\___|_| /__/
-    //
     var renderProjectNodeMetrics = function() {
         var propertiesAndElements = {
             'projects.total': '#total-projects',
@@ -731,13 +738,6 @@ keenAnalysis.ready(function(){
     $('#raw-numbers-tab')[0].onclick = function() {
         renderProjectNodeMetrics();
     };
-
-
- //          _    _
- //  __ _ __| |__| |___ _ _  ___
- // / _` / _` / _` / _ \ ' \(_-<
- // \__,_\__,_\__,_\___/_||_/__/
- //
 
     // Previous 7 days of linked addon by addon name
     var linked_addon = new keenAnalysis.Query("sum", {
