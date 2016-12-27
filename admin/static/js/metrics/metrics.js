@@ -15,7 +15,7 @@ var client = new keenAnalysis({
     readKey: keenReadKey
 });
 
-var defaultHeight = 400;
+var defaultHeight = 300;
 
 
 /**
@@ -156,6 +156,7 @@ var renderCalculationBetweenTwoQueries = function(query1, query2, element, diffe
             .el(element)
             .type("metric")
             .title(' ')
+            .height(defaultHeight)
             .chartOptions({
                 suffix: '%'
             })
@@ -163,6 +164,7 @@ var renderCalculationBetweenTwoQueries = function(query1, query2, element, diffe
     } else {
         differenceMetric = new keenDataviz()
             .el(element)
+            .height(defaultHeight)
             .chartType("metric")
             .title(' ')
             .prepare();
@@ -269,6 +271,8 @@ var renderNodeLogsForOneUserChart = function(user_id) {
 };
 
 
+// Common Queries
+
 // Active user count! - Total Confirmed Users of the OSF
 var activeUsersQuery = new keenAnalysis.Query("sum", {
     event_collection: "user_summary",
@@ -276,8 +280,6 @@ var activeUsersQuery = new keenAnalysis.Query("sum", {
     timeframe: "previous_1_days",
     timezone: "UTC"
 });
-
-
 
 // Monthly Active Users
 var monthlyActiveUsersQuery = new keenAnalysis.Query("count_unique", {
@@ -287,11 +289,28 @@ var monthlyActiveUsersQuery = new keenAnalysis.Query("count_unique", {
     timezone: "UTC"
 });
 
+var dailyActiveUsersQuery = new keenAnalysis.Query("count_unique", {
+    event_collection: "pageviews",
+    target_property: "user.id",
+    timeframe: "previous_1_days",
+    timezone: "UTC"
+});
+
 // <+><+><+><+><+><+
 //    user data    |
 // ><+><+><+><+><+>+
 
 var renderMainCounts = function() {
+
+    // Active user chart!
+    var activeUserChartQuery = new keenAnalysis.Query("sum", {
+        eventCollection: "user_summary",
+        interval: "daily",
+        targetProperty: "status.active",
+        timeframe: "previous_800_days",
+        timezone: "UTC"
+    });
+    renderKeenMetric("#active-user-chart", "line", activeUserChartQuery, defaultHeight);
 
     renderKeenMetric("#active-user-count", "metric", activeUsersQuery);
 
@@ -307,7 +326,6 @@ var renderMainCounts = function() {
         targetProperty: "status.active",
         timeframe: getOneDayTimeframe(2, null)
     });
-
     renderCalculationBetweenTwoQueries(yesterday_user_count, two_days_ago_user_count, "#daily-user-increase", 'day', 'subtraction');
 
     // Monthly Gain
@@ -322,9 +340,21 @@ var renderMainCounts = function() {
         targetProperty: "status.active",
         timeframe: getOneDayTimeframe(null, 2)
     });
-
     renderCalculationBetweenTwoQueries(last_month_user_count, two_months_ago_user_count, "#monthly-user-increase", 'month', 'subtraction');
 
+    var week_ago_user_count = new keenAnalysis.Query("sum", {
+        eventCollection: "user_summary",
+        targetProperty: "status.unconfirmed",
+        timeframe: getOneDayTimeframe(7, null)
+    });
+
+    // New Unconfirmed Users - # of unconfirmed users in the past 7 days
+    var yesterday_unconfirmed_user_count = new keenAnalysis.Query("sum", {
+        eventCollection: "user_summary",
+        targetProperty: "status.unconfirmed",
+        timeframe: getOneDayTimeframe(1, null)
+    });
+    renderCalculationBetweenTwoQueries(yesterday_unconfirmed_user_count, week_ago_user_count, "#unverified-new-users", 'week', 'subtraction');
 };
 
 //  Weekly User Gain metric
@@ -333,6 +363,7 @@ var renderAverageUserGainMetric = function (results) {
     var userGainChart = new keenDataviz()
         .el("#average-gain-metric")
         .type("metric")
+        .height(defaultHeight)
         .title(' ')
         .prepare();
 
@@ -361,8 +392,7 @@ var renderWeeklyUserGainChart = function (results) {
             data.push({
                 "value": res[j].result - res[j + 1].result,
                 "timeframe": results.timeframes[j]
-            })
-
+            });
         }
         userGainChart.parseRawData({result: data}).render();
     });
@@ -415,6 +445,7 @@ var renderPreviousWeekOfUsersByStatus = function() {
 
     var chart = new keenDataviz()
         .el("#previous-7-days-of-users-by-status")
+        .height(defaultHeight)
         .type("line")
         .prepare();
 
@@ -666,35 +697,9 @@ var ActiveUserMetrics = function() {
     });
     renderKeenMetric("#yearly-active-users", "metric", yearlyActiveUsersQuery, defaultHeight);
 
-
     // Yearly Active Users / Total Users
     renderCalculationBetweenTwoQueries(yearlyActiveUsersQuery, activeUsersQuery, "#yearly-active-over-total-users", null, 'percentage');
 
-
-    // Active user chart!
-    var activeUserChartQuery = new keenAnalysis.Query("sum", {
-        eventCollection: "user_summary",
-        interval: "daily",
-        targetProperty: "status.active",
-        timeframe: "previous_800_days",
-        timezone: "UTC"
-    });
-    renderKeenMetric("#active-user-chart", "line", activeUserChartQuery, defaultHeight);
-
-
-    // New Unconfirmed Users - # of unconfirmed users in the past 7 days
-    var yesterday_unconfirmed_user_count = new keenAnalysis.Query("sum", {
-        eventCollection: "user_summary",
-        targetProperty: "status.unconfirmed",
-        timeframe: getOneDayTimeframe(1, null)
-    });
-
-    var week_ago_user_count = new Keen.Query("sum", {
-        eventCollection: "user_summary",
-        targetProperty: "status.unconfirmed",
-        timeframe: getOneDayTimeframe(7, null)
-    });
-    renderCalculationBetweenTwoQueries(yesterday_unconfirmed_user_count, week_ago_user_count, "#unverified-new-users", 'day', 'subtraction');
 };
 
 // <+><+><+><+><+><+><+<+>+
@@ -702,13 +707,6 @@ var ActiveUserMetrics = function() {
 // ><+><+><+><+><+><+><+><+
 
 var HealthyUserMetrics = function() {
-    var dailyActiveUsersQuery = new keenAnalysis.Query("count_unique", {
-        event_collection: "pageviews",
-        target_property: "user.id",
-        timeframe: "previous_1_days",
-        timezone: "UTC"
-
-    });
 
     // stickiness ratio - DAU/MAU
     renderCalculationBetweenTwoQueries(dailyActiveUsersQuery, monthlyActiveUsersQuery, "#stickiness-ratio", null, "percentage");
