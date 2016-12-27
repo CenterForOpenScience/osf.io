@@ -1,3 +1,5 @@
+'use strict';
+
 require('c3/c3.css');
 require('keen-dataviz/dist/keen-dataviz.min.css');
 
@@ -79,7 +81,6 @@ var getMetricTitle = function(metric, type) {
     } else {
         title = metric.params.timeframe;
     }
-
 
     return title;
 };
@@ -196,7 +197,7 @@ var getWeeklyUserGain = function() {
     var queries = [];
     var timeframes = [];
 
-    for (i = 3; i < 12; i++) {
+    for (var i = 3; i < 12; i++) {
         var timeframe = getOneDayTimeframe(i, null);
         var query = new keenAnalysis.Query("sum", {
             eventCollection: "user_summary",
@@ -239,7 +240,7 @@ var renderKeenMetric = function(element, type, query, height) {
 var renderNodeLogsForOneUserChart = function(user_id) {
     var chart = new keenDataviz()
         .el('#yesterdays-node-logs-by-user')
-        .height(300)
+        .height(defaultHeight)
         .title('Individual Logs for ' + '<a href=../users/' + user_id + '>' + user_id + '/</a>')
         .type('line')
         .prepare();
@@ -267,21 +268,31 @@ var renderNodeLogsForOneUserChart = function(user_id) {
         });
 };
 
-keenAnalysis.ready(function(){
+
+// Active user count! - Total Confirmed Users of the OSF
+var activeUsersQuery = new keenAnalysis.Query("sum", {
+    event_collection: "user_summary",
+    target_property: "status.active",
+    timeframe: "previous_1_days",
+    timezone: "UTC"
+});
 
 
-    // <+><+><+><+><+><+
-    //    user data    |
-    // ><+><+><+><+><+>+
 
+// Monthly Active Users
+var monthlyActiveUsersQuery = new keenAnalysis.Query("count_unique", {
+    eventCollection: "pageviews",
+    targetProperty: "user.id",
+    timeframe: "previous_1_months",
+    timezone: "UTC"
+});
 
-    // Active user count! - Total Confirmed Users of the OSF
-    var activeUsersQuery = new keenAnalysis.Query("sum",  {
-        event_collection: "user_summary",
-        target_property: "status.active",
-        timeframe: "previous_1_days",
-        timezone: "UTC"
-    });
+// <+><+><+><+><+><+
+//    user data    |
+// ><+><+><+><+><+>+
+
+var renderMainCounts = function() {
+
     renderKeenMetric("#active-user-count", "metric", activeUsersQuery);
 
     // Daily Gain
@@ -308,61 +319,61 @@ keenAnalysis.ready(function(){
 
     var two_months_ago_user_count = new keenAnalysis.Query("sum", {
         eventCollection: "user_summary",
-       targetProperty: "status.active",
+        targetProperty: "status.active",
         timeframe: getOneDayTimeframe(null, 2)
     });
 
     renderCalculationBetweenTwoQueries(last_month_user_count, two_months_ago_user_count, "#monthly-user-increase", 'month', 'subtraction');
 
-    var weeklyUserGain = getWeeklyUserGain();
+};
 
-    //  Weekly User Gain metric
-    var renderAverageUserGainMetric = function(results) {
+//  Weekly User Gain metric
+var renderAverageUserGainMetric = function (results) {
 
-        var userGainChart = new keenDataviz()
-            .el("#average-gain-metric")
-            .type("metric")
-            .title(' ')
-            .prepare();
+    var userGainChart = new keenDataviz()
+        .el("#average-gain-metric")
+        .type("metric")
+        .title(' ')
+        .prepare();
 
-        client.run(results.queries, function(err, res) {
-            var sum = 0;
-            for (j = 0; j<res.length - 1; j++) {
-                sum += (res[j].result - res[j + 1].result);
-            }
-            userGainChart.parseRawData({result: sum/(res.length - 1)}).render();
-        });
+    client.run(results.queries, function (err, res) {
+        var sum = 0;
+        for (var j = 0; j < res.length - 1; j++) {
+            sum += (res[j].result - res[j + 1].result);
+        }
+        userGainChart.parseRawData({result: sum / (res.length - 1)}).render();
+    });
 
-    };
-    renderAverageUserGainMetric(weeklyUserGain);
+};
 
-    // User Gain Chart over past 7 days
-    var renderWeeklyUserGainChart = function(results) {
+// User Gain Chart over past 7 days
+var renderWeeklyUserGainChart = function (results) {
 
-        var userGainChart = new keenDataviz()
-            .el("#user-gain-chart")
-            .type("line")
-            .title(' ')
-            .prepare();
+    var userGainChart = new keenDataviz()
+        .el("#user-gain-chart")
+        .type("line")
+        .title(' ')
+        .prepare();
 
-        client.run(results.queries, function(err, res) {
-            var data = [];
-            for (j = 0; j<res.length - 1; j++) {
-                data.push({
-                    "value": res[j].result - res[j + 1].result,
-                    "timeframe": results.timeframes[j]
-                })
+    client.run(results.queries, function (err, res) {
+        var data = [];
+        for (var j = 0; j < res.length - 1; j++) {
+            data.push({
+                "value": res[j].result - res[j + 1].result,
+                "timeframe": results.timeframes[j]
+            })
 
-            }
-            userGainChart.parseRawData({result: data}).render();
-        });
+        }
+        userGainChart.parseRawData({result: data}).render();
+    });
 
-    };
-    renderWeeklyUserGainChart(weeklyUserGain);
+};
 
 
-    // Previous 7 Days of Users by Status
-    var previous_week_active_users = new keenAnalysis.Query("sum",  {
+// Previous 7 Days of Users by Status
+var renderPreviousWeekOfUsersByStatus = function() {
+
+    var previous_week_active_users = new keenAnalysis.Query("sum", {
         eventCollection: "user_summary",
         interval: "daily",
         targetProperty: "status.active",
@@ -370,7 +381,7 @@ keenAnalysis.ready(function(){
         timezone: "UTC"
     });
 
-    var previous_week_unconfirmed_users = new keenAnalysis.Query("sum",  {
+    var previous_week_unconfirmed_users = new keenAnalysis.Query("sum", {
         eventCollection: "user_summary",
         interval: "daily",
         targetProperty: "status.unconfirmed",
@@ -378,7 +389,7 @@ keenAnalysis.ready(function(){
         timezone: "UTC"
     });
 
-    var previous_week_merged_users = new keenAnalysis.Query("sum",  {
+    var previous_week_merged_users = new keenAnalysis.Query("sum", {
         eventCollection: "user_summary",
         interval: "daily",
         targetProperty: "status.merged",
@@ -386,7 +397,7 @@ keenAnalysis.ready(function(){
         timezone: "UTC"
     });
 
-    var previous_week_depth_users = new keenAnalysis.Query("sum",  {
+    var previous_week_depth_users = new keenAnalysis.Query("sum", {
         eventCollection: "user_summary",
         interval: "daily",
         targetProperty: "status.depth",
@@ -394,7 +405,7 @@ keenAnalysis.ready(function(){
         timezone: "UTC"
     });
 
-    var previous_week_deactivated_users = new keenAnalysis.Query("sum",  {
+    var previous_week_deactivated_users = new keenAnalysis.Query("sum", {
         eventCollection: "user_summary",
         interval: "daily",
         targetProperty: "status.deactivated",
@@ -413,14 +424,14 @@ keenAnalysis.ready(function(){
         previous_week_merged_users,
         previous_week_depth_users,
         previous_week_deactivated_users
-    ], function(err, res) {
+    ], function (err, res) {
         var active_result = res[0].result;
         var unconfirmed_result = res[1].result;
         var merged_result = res[2].result;
         var depth_result = res[3].result;
         var deactivated_result = res[4].result;
         var data = [];
-        var i=0;
+        var i = 0;
 
         while (i < active_result.length) {
             data[i] = {
@@ -439,93 +450,105 @@ keenAnalysis.ready(function(){
             i++;
         }
     });
+};
 
-    // Registrations by Email Domain
-    var email_domains = new keenAnalysis.Query("count", {
-        eventCollection: "user_domain_events",
-        groupBy: "domain",
-        interval: "daily",
-        timeframe: "previous_7_days",
-        timezone: "UTC"
-    });
+// Registrations by Email Domain
+var email_domains = new keenAnalysis.Query("count", {
+    eventCollection: "user_domain_events",
+    groupBy: "domain",
+    interval: "daily",
+    timeframe: "previous_7_days",
+    timezone: "UTC"
+});
 
-    var renderEmailDomainsChart = function() {
-        var chart = new keenDataviz()
-            .el('#user-registration-by-email-domain')
-            .title(' ')
-            .type('line')
-            .prepare();
+var renderEmailDomainsChart = function() {
+    var chart = new keenDataviz()
+        .el('#user-registration-by-email-domain')
+        .title(' ')
+        .type('line')
+        .prepare();
 
-        client.run(email_domains)
-            .then(function (res) {
-                var chartWithData = chart.data(res);
-                chartWithData.dataset.filterColumns(function (column, index) {
-                    var emailThreshhold = 1;
-                    for (var i = 0; i < column.length; i++) {
-                        if (column[i] > emailThreshhold) {
-                            return column;
-                        }
-                    }
-                });
-
-                chartWithData.render();
-            })
-            .catch(function (err) {
-                chart.message(err.message);
-            });
-    };
-    renderEmailDomainsChart();
-
-    var renderNodeLogsPerUserChart = function() {
-        var chart = new keenDataviz()
-            .el('#yesterdays-node-logs-by-user')
-            .title(' ')
-            .chartOptions({
-                data: {
-                    onclick: function (d, element) {
-                        renderNodeLogsForOneUserChart(d.name);
+    client.run(email_domains)
+        .then(function (res) {
+            var chartWithData = chart.data(res);
+            chartWithData.dataset.filterColumns(function (column, index) {
+                var emailThreshhold = 1;
+                for (var i = 0; i < column.length; i++) {
+                    if (column[i] > emailThreshhold) {
+                        return column;
                     }
                 }
-            })
-
-            .type('line')
-            .prepare();
-
-        client
-            .query('count', {
-                event_collection: 'node_log_events',
-                group_by: "user_id",
-                timeframe: 'previous_1_days',
-                interval: 'hourly'
-            })
-            .then(function (res) {
-                var chartWithData = chart.data(res);
-                chartWithData.dataset.filterColumns(function (column, index) {
-                    var logThreshhold = 25;
-                    for (var i = 0; i < column.length; i++) {
-                        if (column[i] > logThreshhold && column[0] != 'null') {
-                            return column;
-                        }
-                    }
-                });
-
-                chartWithData.render();
-            })
-            .catch(function (err) {
-                chart.message(err.message);
             });
-    };
-    renderNodeLogsPerUserChart();
 
-    $('#reload-node-logs')[0].onclick = function() {
-        renderNodeLogsPerUserChart();
-    };
+            chartWithData.render();
+        })
+        .catch(function (err) {
+            chart.message(err.message);
+        });
+};
+
+var NodeLogsPerUser = function() {
+    var chart = new keenDataviz()
+        .el('#yesterdays-node-logs-by-user')
+        .title(' ')
+        .chartOptions({
+            data: {
+                onclick: function (d, element) {
+                    renderNodeLogsForOneUserChart(d.name);
+                }
+            }
+        })
+
+        .type('line')
+        .prepare();
+
+    client
+        .query('count', {
+            event_collection: 'node_log_events',
+            group_by: "user_id",
+            timeframe: 'previous_1_days',
+            interval: 'hourly'
+        })
+        .then(function (res) {
+            var chartWithData = chart.data(res);
+            chartWithData.dataset.filterColumns(function (column, index) {
+                var logThreshhold = 25;
+                for (var i = 0; i < column.length; i++) {
+                    if (column[i] > logThreshhold && column[0] != 'null') {
+                        return column;
+                    }
+                }
+            });
+
+            chartWithData.render();
+        })
+        .catch(function (err) {
+            chart.message(err.message);
+        });
+};
 
 
-    // <+><+><+><+><+><+><+<+>+
-    //   institution metrics  |
-    // ><+><+><+><+><+><+><+><+
+var UserGainMetrics = function() {
+    renderMainCounts();
 
+    var weeklyUserGain = getWeeklyUserGain();
+
+    renderWeeklyUserGainChart(weeklyUserGain);
+    renderAverageUserGainMetric(weeklyUserGain);
+
+    renderEmailDomainsChart();
+    renderPreviousWeekOfUsersByStatus();
+
+    NodeLogsPerUser();
+
+};
+
+
+// <+><+><+><+><+><+><+<+>+
+//   institution metrics  |
+// ><+><+><+><+><+><+><+><+
+
+var InstitutionMetrics = function() {
 
     // Institutional Users over past 100 Days
     var institutional_user_chart = new keenAnalysis.Query("sum", {
@@ -595,12 +618,14 @@ keenAnalysis.ready(function(){
     });
     renderKeenMetric("#affiliated-embargoed-registered-nodes", "table", affiliated_private_registered_node_chart, institutionTableHeight);
 
+};
+
+// <+><+><+><+><+><+><+<+>+
+//   active user metrics |
+// ><+><+><+><+><+><+><+><+
 
 
-    // <+><+><+><+><+><+><+<+>+
-    //   active user metrics |
-    // ><+><+><+><+><+><+><+><+
-
+var ActiveUserMetrics = function() {
 
     // Daily Active Users
     var dailyActiveUsersQuery = new keenAnalysis.Query("count_unique", {
@@ -616,13 +641,6 @@ keenAnalysis.ready(function(){
     renderCalculationBetweenTwoQueries(dailyActiveUsersQuery, activeUsersQuery, "#daily-active-over-total-users", null, "percentage");
 
 
-    // Monthly Active Users
-    var monthlyActiveUsersQuery = new keenAnalysis.Query("count_unique" , {
-        eventCollection: "pageviews",
-        targetProperty: "user.id",
-        timeframe: "previous_1_months",
-        timezone: "UTC"
-    });
     renderKeenMetric("#monthly-active-users", "metric", monthlyActiveUsersQuery);
 
 
@@ -677,78 +695,93 @@ keenAnalysis.ready(function(){
         timeframe: getOneDayTimeframe(7, null)
     });
     renderCalculationBetweenTwoQueries(yesterday_unconfirmed_user_count, week_ago_user_count, "#unverified-new-users", 'day', 'subtraction');
+};
 
+// <+><+><+><+><+><+><+<+>+
+//   healthy user metrics |
+// ><+><+><+><+><+><+><+><+
 
-    // <+><+><+><+><+><+><+<+>+
-    //   healthy user metrics |
-    // ><+><+><+><+><+><+><+><+
+var HealthyUserMetrics = function() {
+    var dailyActiveUsersQuery = new keenAnalysis.Query("count_unique", {
+        event_collection: "pageviews",
+        target_property: "user.id",
+        timeframe: "previous_1_days",
+        timezone: "UTC"
+
+    });
 
     // stickiness ratio - DAU/MAU
     renderCalculationBetweenTwoQueries(dailyActiveUsersQuery, monthlyActiveUsersQuery, "#stickiness-ratio", null, "percentage");
+};
 
 
-    // <+><+><+><+><+>>+
-    //   raw numbers   |
-    // ><+><+><+><><+><+
+// <+><+><+><+><+>>+
+//   raw numbers   |
+// ><+><+><+><><+><+
 
-    var renderProjectNodeMetrics = function() {
-        var propertiesAndElements = {
-            'projects.total': '#total-projects',
-            'projects.public': '#public-projects',
-            'projects.private': '#private-projects',
-            'nodes.total': '#total-nodes',
-            'nodes.public': '#public-nodes',
-            'nodes.private': '#private-nodes',
-            'registered_projects.total': '#total-registered-projects',
-            'registered_projects.public': '#public-registered-projects',
-            'registered_projects.embargoed': '#embargoed-registered-projects',
-            'registered_nodes.total': '#total-registered-nodes',
-            'registered_nodes.public': '#public-registered-nodes',
-            'registered_nodes.embargoed': '#embargoed-registered-nodes'
-        };
+var RawNumberMetrics = function() {
+    var propertiesAndElements = {
+        'projects.total': '#total-projects',
+        'projects.public': '#public-projects',
+        'projects.private': '#private-projects',
+        'nodes.total': '#total-nodes',
+        'nodes.public': '#public-nodes',
+        'nodes.private': '#private-nodes',
+        'registered_projects.total': '#total-registered-projects',
+        'registered_projects.public': '#public-registered-projects',
+        'registered_projects.embargoed': '#embargoed-registered-projects',
+        'registered_nodes.total': '#total-registered-nodes',
+        'registered_nodes.public': '#public-registered-nodes',
+        'registered_nodes.embargoed': '#embargoed-registered-nodes'
+    };
 
-        var graphPromises = [];
-        for (var key in propertiesAndElements) {
-            if (propertiesAndElements.hasOwnProperty(key)) {
-                graphPromises.push(client.query('sum', {
-                    event_collection: "node_summary",
-                    target_property: key,
-                    timeframe: "previous_1_days",
-                    timezone: "UTC"
-                }))
-            }
+    var graphPromises = [];
+    for (var key in propertiesAndElements) {
+        if (propertiesAndElements.hasOwnProperty(key)) {
+            graphPromises.push(client.query('sum', {
+                event_collection: "node_summary",
+                target_property: key,
+                timeframe: "previous_1_days",
+                timezone: "UTC"
+            }))
+        }
+    }
+
+    var results = Promise.all(graphPromises).then(function(values) {
+        for (var i=0; i<values.length; i++) {
+            var chart = new keenDataviz()
+                .el(propertiesAndElements[values[i].query.target_property])
+                .height(300)
+                .title(' ')
+                .type('metric')
+                .prepare();
+
+            chart.data(values[i]).render();
+
         }
 
-        var results = Promise.all(graphPromises).then(function(values) {
-            for (var i=0; i<values.length; i++) {
-                var chart = new keenDataviz()
-                    .el(propertiesAndElements[values[i].query.target_property])
-                    .height(300)
-                    .title(' ')
-                    .type('metric')
-                    .prepare();
-
-                chart.data(values[i]).render();
-
-            }
-
-        });
-
-    };
-    $('#raw-numbers-tab')[0].onclick = function() {
-        renderProjectNodeMetrics();
-    };
-
-    // Previous 7 days of linked addon by addon name
-    var linked_addon = new keenAnalysis.Query("sum", {
-        eventCollection: "addon_snapshot",
-        targetProperty: "users.linked",
-        groupBy: ["provider.name"],
-        interval: "daily",
-        timeframe: "previous_8_days",
-        timezone: "UTC"
     });
-    renderKeenMetric('#previous-7-days-of-linked-addon-by-addon-name', "line", linked_addon);
 
+};
 
+// Previous 7 days of linked addon by addon name
+var linked_addon = new keenAnalysis.Query("sum", {
+    eventCollection: "addon_snapshot",
+    targetProperty: "users.linked",
+    groupBy: ["provider.name"],
+    interval: "daily",
+    timeframe: "previous_8_days",
+    timezone: "UTC"
 });
+renderKeenMetric('#previous-7-days-of-linked-addon-by-addon-name', "line", linked_addon);
+
+
+
+module.exports = {
+    UserGainMetrics: UserGainMetrics,
+    NodeLogsPerUser: NodeLogsPerUser,
+    InstitutionMetrics: InstitutionMetrics,
+    ActiveUserMetrics: ActiveUserMetrics,
+    HealthyUserMetrics:HealthyUserMetrics,
+    RawNumberMetrics: RawNumberMetrics,
+};
