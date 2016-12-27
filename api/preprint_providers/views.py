@@ -64,8 +64,9 @@ class PreprintProviderList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin
 
     ordering = ('name', )
 
+    # implement ODMFilterMixin
     def get_default_odm_query(self):
-        return Q('is_deleted', 'ne', True)
+        return None
 
     # overrides ListAPIView
     def get_queryset(self):
