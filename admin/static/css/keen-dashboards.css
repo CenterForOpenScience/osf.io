@@ -100,3 +100,11 @@ body.application .return-link:hover,
 .keen-dataviz-table-dataset td{
   min-width: 100px !important;
 }
+
+#dropdownMenuButton {
+  margin-top: 15px;
+}
+
+thead {
+  display: none;
+}
