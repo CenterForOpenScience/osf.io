@@ -15,7 +15,7 @@ var client = new keenAnalysis({
     readKey: keenReadKey
 });
 
-var defaultHeight = 300;
+var defaultHeight = 200;
 
 
 /**
@@ -733,6 +733,13 @@ var RawNumberMetrics = function() {
         'registered_nodes.embargoed': '#embargoed-registered-nodes'
     };
 
+    var piePropertiesAndElements = {
+        '#total-nodes-pie': ['nodes.public', 'nodes.private'],
+        '#total-projects-pie': ['projects.public', 'projects.private'],
+        '#total-registered-nodes-pie': ['registered_nodes.public', 'registered_nodes.embargoed'],
+        '#total-registered-projects-pie': ['registered_projects.public', 'registered_projects.embargoed']
+    };
+
     var graphPromises = [];
     for (var key in propertiesAndElements) {
         if (propertiesAndElements.hasOwnProperty(key)) {
@@ -745,34 +752,59 @@ var RawNumberMetrics = function() {
         }
     }
 
-    var results = Promise.all(graphPromises).then(function(values) {
+    var results = {};
+    Promise.all(graphPromises).then(values => {
         for (var i=0; i<values.length; i++) {
             var chart = new keenDataviz()
                 .el(propertiesAndElements[values[i].query.target_property])
-                .height(300)
+                .height(defaultHeight)
                 .title(' ')
                 .type('metric')
                 .prepare();
 
             chart.data(values[i]).render();
 
+            var targetProperty = values[i].query.target_property.toString();
+            results[targetProperty] = values[i].result;
         }
 
+        for (var element in piePropertiesAndElements) {
+            if (piePropertiesAndElements.hasOwnProperty(element)) {
+                var publicData = piePropertiesAndElements[element][0];
+                var privateData = piePropertiesAndElements[element][1];
+                c3.generate({
+                    bindto: element,
+                    size: {height: defaultHeight*2},
+                    data: {
+                        columns: [
+                            ['public', results[publicData]],
+                            ['private', results[privateData]],
+                        ],
+                        type : 'pie',
+                    }
+                });
+            }
+        }
     });
 
 };
 
-// Previous 7 days of linked addon by addon name
-var linked_addon = new keenAnalysis.Query("sum", {
-    eventCollection: "addon_snapshot",
-    targetProperty: "users.linked",
-    groupBy: ["provider.name"],
-    interval: "daily",
-    timeframe: "previous_8_days",
-    timezone: "UTC"
-});
-renderKeenMetric('#previous-7-days-of-linked-addon-by-addon-name', "line", linked_addon);
+// <+><+><+><><>+
+//     addons   |
+// ><+><+><+<+><+
 
+var AddonMetrics = function() {
+    // Previous 7 days of linked addon by addon name
+    var linked_addon = new keenAnalysis.Query("sum", {
+        eventCollection: "addon_snapshot",
+        targetProperty: "users.linked",
+        groupBy: ["provider.name"],
+        interval: "daily",
+        timeframe: "previous_8_days",
+        timezone: "UTC"
+    });
+    renderKeenMetric('#previous-7-days-of-linked-addon-by-addon-name', "line", linked_addon);
+};
 
 
 module.exports = {
@@ -782,4 +814,5 @@ module.exports = {
     ActiveUserMetrics: ActiveUserMetrics,
     HealthyUserMetrics:HealthyUserMetrics,
     RawNumberMetrics: RawNumberMetrics,
+    AddonMetrics: AddonMetrics
 };
