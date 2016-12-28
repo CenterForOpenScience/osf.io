@@ -96,3 +96,7 @@ body.application .return-link:hover,
   font-size: 12px;
   padding: 8px 10px 5px;
 }
+
+.keen-dataviz-table-dataset td{
+  min-width: 100px !important;
+}
