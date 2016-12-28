@@ -545,7 +545,7 @@ var NodeLogsPerUser = function() {
             chartWithData.dataset.filterColumns(function (column, index) {
                 var logThreshhold = 25;
                 for (var i = 0; i < column.length; i++) {
-                    if (column[i] > logThreshhold && column[0] != 'null') {
+                    if (column[i] > logThreshhold && column[0] != 'null' && column[0] != 'uj57r') {
                         return column;
                     }
                 }
