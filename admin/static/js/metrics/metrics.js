@@ -243,7 +243,7 @@ var renderNodeLogsForOneUserChart = function(user_id) {
     var chart = new keenDataviz()
         .el('#yesterdays-node-logs-by-user')
         .height(defaultHeight)
-        .title('Individual Logs for ' + '<a href=../users/' + user_id + '>' + user_id + '/</a>')
+        .title('Individual Logs for ' + '<a href=../users/' + user_id + '>' + user_id + '</a>')
         .type('line')
         .prepare();
 
@@ -590,7 +590,7 @@ var InstitutionMetrics = function() {
         timeframe: "previous_100_days",
         timezone: "UTC"
     });
-    renderKeenMetric("#institution-growth", "line", institutional_user_chart, defaultHeight);
+    renderKeenMetric("#institution-growth", "line", institutional_user_chart, 400);
 
 
     // Total Institutional Users
