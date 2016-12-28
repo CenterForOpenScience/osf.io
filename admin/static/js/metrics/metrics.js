@@ -355,6 +355,8 @@ var renderMainCounts = function() {
         timeframe: getOneDayTimeframe(1, null)
     });
     renderCalculationBetweenTwoQueries(yesterday_unconfirmed_user_count, week_ago_user_count, "#unverified-new-users", 'week', 'subtraction');
+
+
 };
 
 //  Weekly User Gain metric
@@ -657,6 +659,16 @@ var InstitutionMetrics = function() {
 
 
 var ActiveUserMetrics = function() {
+
+    // Recent Daily Unique Sessions
+    var recentDailyUniqueSessions = new keenAnalysis.Query("count_unique", {
+        eventCollection: "pageviews",
+        targetProperty: "visitor.session",
+        interval: "daily",
+        timeframe: "previous_14_days",
+        timezone: "UTC"
+    });
+    renderKeenMetric("#recent-daily-unique-sessions", "line", recentDailyUniqueSessions);
 
     // Daily Active Users
     var dailyActiveUsersQuery = new keenAnalysis.Query("count_unique", {

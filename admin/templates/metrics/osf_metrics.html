@@ -293,16 +293,31 @@
             <div role="tabpanel" class="tab-pane" id="active-user-metrics">
                 <h3>Active User Metrics!</h3>
                 <div class="row">
+                    <div class="col-sm-12">
+                        <div class="chart-wrapper">
+                            <div class="chart-title">
+                                Recent Daily Unique Sessions
+                            </div>
+                            <div class="chart-stage">
+                                <div id="recent-daily-unique-sessions"></div>
+                            </div>
+                            <div class="chart-notes">
+                                The previous 14 days of unique visitor sessions.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
                     <div class="col-sm-6">
                         <div class="chart-wrapper">
                             <div class="chart-title">
-                                Daily Active Users
+                                Daily Active Logged In Users
                             </div>
                             <div class="chart-stage">
                                 <div id="daily-active-users"></div>
                             </div>
                             <div class="chart-notes">
-                                This is the number of users who had at least one pageview on the OSF yesterday.
+                                This is the number of logged in users with user ids who had at least one pageview on the OSF yesterday.
                             </div>
                         </div>
                     </div>
