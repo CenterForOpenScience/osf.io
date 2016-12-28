@@ -29,5 +29,8 @@ keenAnalysis.ready(function() {
     $('#raw-numbers-tab')[0].onclick = function() {
         Metrics.RawNumberMetrics();
     };
+    $('#addons-tab')[0].onclick = function() {
+        Metrics.AddonMetrics();
+    };
 
 });
