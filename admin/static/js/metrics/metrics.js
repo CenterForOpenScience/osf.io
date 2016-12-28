@@ -182,6 +182,8 @@ var renderCalculationBetweenTwoQueries = function(query1, query2, element, diffe
             result = metricOneResult - metricTwoResult;
         } else if (calculationType === "percentage") {
             result = (metricOneResult/metricTwoResult) * 100;
+        } else if (calculationType === "division") {
+            result = metricOneResult/metricTwoResult;
         }
 
         var data = {
@@ -294,6 +296,13 @@ var dailyActiveUsersQuery = new keenAnalysis.Query("count_unique", {
     target_property: "user.id",
     timeframe: "previous_1_days",
     timezone: "UTC"
+});
+
+var totalProjectsQuery = new keenAnalysis.Query("sum", {
+    eventCollection: "node_summary",
+    targetProperty: "projects.total",
+    timezone: "UTC",
+    timeframe: "previous_1_days",
 });
 
 // <+><+><+><+><+><+
@@ -712,6 +721,12 @@ var ActiveUserMetrics = function() {
     // Yearly Active Users / Total Users
     renderCalculationBetweenTwoQueries(yearlyActiveUsersQuery, activeUsersQuery, "#yearly-active-over-total-users", null, 'percentage');
 
+    // Average Projects per User
+    renderCalculationBetweenTwoQueries(totalProjectsQuery, activeUsersQuery, "#projects-per-user", null, 'division');
+
+    // Average Projects per MAU
+    renderCalculationBetweenTwoQueries(totalProjectsQuery, monthlyActiveUsersQuery, "#projects-per-monthly-user", null, 'division');
+
 };
 
 // <+><+><+><+><+><+><+<+>+
@@ -730,8 +745,10 @@ var HealthyUserMetrics = function() {
 // ><+><+><+><><+><+
 
 var RawNumberMetrics = function() {
+
+    renderKeenMetric("#total-projects", "metric", totalProjectsQuery);
+
     var propertiesAndElements = {
-        'projects.total': '#total-projects',
         'projects.public': '#public-projects',
         'projects.private': '#private-projects',
         'nodes.total': '#total-nodes',
