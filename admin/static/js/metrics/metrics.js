@@ -782,6 +782,8 @@ var RawNumberMetrics = function() {
     }
 
     var results = {};
+    var privateColor = '#F20066';
+    var publicColor = '#FFD300';
     Promise.all(graphPromises).then(values => {
         for (var i=0; i<values.length; i++) {
             var chart = new keenDataviz()
@@ -791,6 +793,11 @@ var RawNumberMetrics = function() {
                 .type('metric')
                 .prepare();
 
+            if (values[i].query.target_property.includes('public')) {
+                chart.colors([publicColor]);
+            } else if (values[i].query.target_property.includes('private')) {
+                chart.colors([privateColor]);
+            }
             chart.data(values[i]).render();
 
             var targetProperty = values[i].query.target_property.toString();
@@ -809,6 +816,10 @@ var RawNumberMetrics = function() {
                             ['public', results[publicData]],
                             ['private', results[privateData]],
                         ],
+                        colors: {
+                            public: publicColor,
+                            private: privateColor
+                        },
                         type : 'pie',
                     }
                 });
