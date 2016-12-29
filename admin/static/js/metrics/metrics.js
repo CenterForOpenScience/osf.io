@@ -21,7 +21,7 @@ var publicClient = new keenAnalysis({
 });
 
 var defaultHeight = 200;
-var bigMetricHeight = 300;
+var bigMetricHeight = 350;
 var institutionTableHeight = "auto";
 
 var defaultColor = '#00BBDE';
@@ -266,7 +266,7 @@ var renderKeenMetric = function(element, type, query, height, colors=null, keenC
 var renderNodeLogsForOneUserChart = function(user_id) {
     var chart = new keenDataviz()
         .el('#yesterdays-node-logs-by-user')
-        .height(defaultHeight)
+        .height(bigMetricHeight)
         .title('Individual Logs for ' + '<a href=../users/' + user_id + '>' + user_id + '</a>')
         .type('line')
         .prepare();
@@ -554,6 +554,7 @@ var NodeLogsPerUser = function() {
     var chart = new keenDataviz()
         .el('#yesterdays-node-logs-by-user')
         .title(' ')
+        .height(bigMetricHeight)
         .chartOptions({
             data: {
                 onclick: function (d, element) {

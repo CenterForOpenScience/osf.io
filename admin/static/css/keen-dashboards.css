@@ -103,6 +103,7 @@ body.application .return-link:hover,
 
 #dropdownMenuButton {
   margin-top: 20px;
+  margin-right: 20px;
 }
 
 thead {
@@ -112,4 +113,8 @@ thead {
 .hr-menu {
   background-color: lightgray;
   height: 1px;
+}
+
+#reload-node-logs {
+  margin-left: 20px;
 }
