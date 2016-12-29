@@ -15,6 +15,11 @@ var client = new keenAnalysis({
     readKey: keenReadKey
 });
 
+var publicClient = new keenAnalysis({
+    projectId: keenPublicProjectId,
+    readKey: keenPublicReadKey
+});
+
 var defaultHeight = 200;
 
 
@@ -216,9 +221,10 @@ var getWeeklyUserGain = function() {
 
 };
 
-var renderKeenMetric = function(element, type, query, height) {
-    if (!height) {
-        height = defaultHeight;
+var renderKeenMetric = function(element, type, query, height, keenClient) {
+
+    if (!keenClient) {
+        keenClient = client;
     }
     var chart = new keenDataviz()
         .el(element)
@@ -227,7 +233,7 @@ var renderKeenMetric = function(element, type, query, height) {
         .type(type)
         .prepare();
 
-    client
+    keenClient
         .run(query)
         .then(function(res){
             var metricChart = chart.data(res);
@@ -321,7 +327,7 @@ var renderMainCounts = function() {
     });
     renderKeenMetric("#active-user-chart", "line", activeUserChartQuery, defaultHeight);
 
-    renderKeenMetric("#active-user-count", "metric", activeUsersQuery);
+    renderKeenMetric("#active-user-count", "metric", activeUsersQuery, defaultHeight);
 
     // Daily Gain
     var yesterday_user_count = new keenAnalysis.Query("sum", {
@@ -677,7 +683,7 @@ var ActiveUserMetrics = function() {
         timeframe: "previous_14_days",
         timezone: "UTC"
     });
-    renderKeenMetric("#recent-daily-unique-sessions", "line", recentDailyUniqueSessions);
+    renderKeenMetric("#recent-daily-unique-sessions", "line", recentDailyUniqueSessions, defaultHeight);
 
     // Daily Active Users
     var dailyActiveUsersQuery = new keenAnalysis.Query("count_unique", {
@@ -687,13 +693,13 @@ var ActiveUserMetrics = function() {
         timezone: "UTC"
 
     });
-    renderKeenMetric("#daily-active-users", "metric", dailyActiveUsersQuery);
+    renderKeenMetric("#daily-active-users", "metric", dailyActiveUsersQuery, defaultHeight);
 
     // Daily Active Users / Total Users
     renderCalculationBetweenTwoQueries(dailyActiveUsersQuery, activeUsersQuery, "#daily-active-over-total-users", null, "percentage");
 
 
-    renderKeenMetric("#monthly-active-users", "metric", monthlyActiveUsersQuery);
+    renderKeenMetric("#monthly-active-users", "metric", monthlyActiveUsersQuery, defaultHeight);
 
 
     // Monthly Active Users / Total Users
@@ -746,7 +752,32 @@ var HealthyUserMetrics = function() {
 
 var RawNumberMetrics = function() {
 
-    renderKeenMetric("#total-projects", "metric", totalProjectsQuery);
+    var totalDownloadsQuery = new keenAnalysis.Query("count", {
+        eventCollection: "file_stats",
+        timeframe: 'previous_1_days',
+        filters: [{
+            property_name: 'action.type',
+            operator: 'eq',
+            property_value: 'download_file',
+            timezone: "UTC"
+        }]
+    });
+    renderKeenMetric("#number-of-downloads", "metric", totalDownloadsQuery, defaultHeight, publicClient);
+
+    var uniqueDownloadsQuery = new keenAnalysis.Query("count_unique", {
+        eventCollection: "file_stats",
+        timeframe: 'previous_1_days',
+        target_property: 'file.resource',
+        filters: [{
+            property_name: 'action.type',
+            operator: 'eq',
+            property_value: 'download_file',
+            timezone: "UTC"
+        }]
+    });
+    renderKeenMetric("#number-of-unique-downloads", "metric", uniqueDownloadsQuery, defaultHeight, publicClient);
+
+    renderKeenMetric("#total-projects", "metric", totalProjectsQuery, defaultHeight);
 
     var propertiesAndElements = {
         'projects.public': '#public-projects',
@@ -843,7 +874,7 @@ var AddonMetrics = function() {
         timeframe: "previous_8_days",
         timezone: "UTC"
     });
-    renderKeenMetric('#previous-7-days-of-linked-addon-by-addon-name', "line", linked_addon);
+    renderKeenMetric('#previous-7-days-of-linked-addon-by-addon-name', "line", linked_addon, defaultHeight);
 };
 
 
