@@ -98,7 +98,7 @@ body.application .return-link:hover,
 }
 
 .keen-dataviz-table-dataset td{
-  min-width: 100px !important;
+  min-width: 60px !important;
 }
 
 #dropdownMenuButton {
