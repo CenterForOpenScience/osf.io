@@ -145,7 +145,6 @@ services:
       - .docker-compose.mfr.env
     volumes:
       - requirements_mfr_vol:/usr/local/lib/python3.5/site-packages
-      - ../modular-file-renderer/:/code
 
   ###############
   # WaterButler #
@@ -169,7 +168,6 @@ services:
       - .docker-compose.wb.env
     volumes:
       - requirements_wb_vol:/usr/local/lib/python3.5/site-packages
-      - ../waterbutler/:/code
 
 
   ##################################
