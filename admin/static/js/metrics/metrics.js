@@ -21,7 +21,12 @@ var publicClient = new keenAnalysis({
 });
 
 var defaultHeight = 200;
+var bigMetricHeight = 300;
+var defaultColor = '#00BBDE';
+var institutionTableHeight = "auto";
 
+var monthColor = '#0CF5DB';
+var yearColor = '#0CEB92';
 
 /**
  * Configure a timeframe for the past day for a keen query
@@ -91,7 +96,7 @@ var getMetricTitle = function(metric, type) {
 };
 
 
-var differenceGrowthBetweenMetrics = function(metric1, metric2, totalMetric, element) {
+var differenceGrowthBetweenMetrics = function(metric1, metric2, totalMetric, element, colors=null) {
     var percentOne;
     var percentTwo;
     var differenceMetric = new keenDataviz()
@@ -101,7 +106,12 @@ var differenceGrowthBetweenMetrics = function(metric1, metric2, totalMetric, ele
             suffix: '%'
         })
         .title(' ')
+        .height(defaultHeight)
         .prepare();
+
+    if (colors) {
+        differenceMetric.colors([colors]);
+    }
 
     client.run([
         metric1,
@@ -152,7 +162,7 @@ var renderPublicPrivatePercent = function(publicMetric, privateMetric, element) 
 };
 
 
-var renderCalculationBetweenTwoQueries = function(query1, query2, element, differenceType, calculationType) {
+var renderCalculationBetweenTwoQueries = function(query1, query2, element, differenceType, calculationType, colors=null) {
     var result;
     var differenceMetric;
 
@@ -173,6 +183,10 @@ var renderCalculationBetweenTwoQueries = function(query1, query2, element, diffe
             .chartType("metric")
             .title(' ')
             .prepare();
+    }
+
+    if (colors) {
+        differenceMetric.colors([colors]);
     }
 
     differenceMetric.title(getMetricTitle(query1, differenceType));
@@ -221,17 +235,18 @@ var getWeeklyUserGain = function() {
 
 };
 
-var renderKeenMetric = function(element, type, query, height, keenClient) {
+var renderKeenMetric = function(element, type, query, height, colors=null, keenClient=client) {
 
-    if (!keenClient) {
-        keenClient = client;
-    }
     var chart = new keenDataviz()
         .el(element)
         .height(height)
         .title(' ')
         .type(type)
         .prepare();
+
+    if (colors) {
+        chart.colors([colors]);
+    }
 
     keenClient
         .run(query)
@@ -325,9 +340,9 @@ var renderMainCounts = function() {
         timeframe: "previous_800_days",
         timezone: "UTC"
     });
-    renderKeenMetric("#active-user-chart", "line", activeUserChartQuery, defaultHeight);
+    renderKeenMetric("#active-user-chart", "line", activeUserChartQuery, bigMetricHeight);
 
-    renderKeenMetric("#active-user-count", "metric", activeUsersQuery, defaultHeight);
+    renderKeenMetric("#active-user-count", "metric", activeUsersQuery, bigMetricHeight);
 
     // Daily Gain
     var yesterday_user_count = new keenAnalysis.Query("sum", {
@@ -355,7 +370,7 @@ var renderMainCounts = function() {
         targetProperty: "status.active",
         timeframe: getOneDayTimeframe(null, 2)
     });
-    renderCalculationBetweenTwoQueries(last_month_user_count, two_months_ago_user_count, "#monthly-user-increase", 'month', 'subtraction');
+    renderCalculationBetweenTwoQueries(last_month_user_count, two_months_ago_user_count, "#monthly-user-increase", 'month', 'subtraction', monthColor);
 
     var week_ago_user_count = new keenAnalysis.Query("sum", {
         eventCollection: "user_summary",
@@ -370,7 +385,6 @@ var renderMainCounts = function() {
         timeframe: getOneDayTimeframe(1, null)
     });
     renderCalculationBetweenTwoQueries(yesterday_unconfirmed_user_count, week_ago_user_count, "#unverified-new-users", 'week', 'subtraction');
-
 
 };
 
@@ -622,8 +636,6 @@ var InstitutionMetrics = function() {
     // Total Instutional Users / Total OSF Users
     renderCalculationBetweenTwoQueries(institutional_user_count, activeUsersQuery, "#percentage-institutional-users", null, 'percentage');
 
-    var institutionTableHeight = "auto";
-
     // Affiliated Public Nodes
     var affiliated_public_chart = new keenAnalysis.Query("sum", {
         eventCollection: "institution_summary",
@@ -699,11 +711,11 @@ var ActiveUserMetrics = function() {
     renderCalculationBetweenTwoQueries(dailyActiveUsersQuery, activeUsersQuery, "#daily-active-over-total-users", null, "percentage");
 
 
-    renderKeenMetric("#monthly-active-users", "metric", monthlyActiveUsersQuery, defaultHeight);
+    renderKeenMetric("#monthly-active-users", "metric", monthlyActiveUsersQuery, defaultHeight, monthColor);
 
 
     // Monthly Active Users / Total Users
-    renderCalculationBetweenTwoQueries(monthlyActiveUsersQuery, activeUsersQuery, "#monthly-active-over-total-users", null, 'percentage');
+    renderCalculationBetweenTwoQueries(monthlyActiveUsersQuery, activeUsersQuery, "#monthly-active-over-total-users", null, 'percentage', monthColor);
 
 
     // Monthly Growth of MAU% -- Two months ago vs 1 month ago
@@ -713,7 +725,7 @@ var ActiveUserMetrics = function() {
         timeframe: "previous_2_months",
         timezone: "UTC"
     });
-    differenceGrowthBetweenMetrics(twoMonthsAgoActiveUsersQuery, monthlyActiveUsersQuery, activeUsersQuery, "#monthly-active-user-increase", 'day', 'subtraction');
+    differenceGrowthBetweenMetrics(twoMonthsAgoActiveUsersQuery, monthlyActiveUsersQuery, activeUsersQuery, "#monthly-active-user-increase", monthColor);
 
     // Yearly Active Users
     var yearlyActiveUsersQuery = new keenAnalysis.Query("count_unique", {
@@ -722,10 +734,10 @@ var ActiveUserMetrics = function() {
         timeframe: "previous_1_years",
         timezone: "UTC"
     });
-    renderKeenMetric("#yearly-active-users", "metric", yearlyActiveUsersQuery, defaultHeight);
+    renderKeenMetric("#yearly-active-users", "metric", yearlyActiveUsersQuery, defaultHeight, yearColor);
 
     // Yearly Active Users / Total Users
-    renderCalculationBetweenTwoQueries(yearlyActiveUsersQuery, activeUsersQuery, "#yearly-active-over-total-users", null, 'percentage');
+    renderCalculationBetweenTwoQueries(yearlyActiveUsersQuery, activeUsersQuery, "#yearly-active-over-total-users", null, 'percentage', yearColor);
 
     // Average Projects per User
     renderCalculationBetweenTwoQueries(totalProjectsQuery, activeUsersQuery, "#projects-per-user", null, 'division');
@@ -762,7 +774,7 @@ var RawNumberMetrics = function() {
             timezone: "UTC"
         }]
     });
-    renderKeenMetric("#number-of-downloads", "metric", totalDownloadsQuery, defaultHeight, publicClient);
+    renderKeenMetric("#number-of-downloads", "metric", totalDownloadsQuery, defaultHeight, defaultColor, publicClient);
 
     var uniqueDownloadsQuery = new keenAnalysis.Query("count_unique", {
         eventCollection: "file_stats",
@@ -775,7 +787,7 @@ var RawNumberMetrics = function() {
             timezone: "UTC"
         }]
     });
-    renderKeenMetric("#number-of-unique-downloads", "metric", uniqueDownloadsQuery, defaultHeight, publicClient);
+    renderKeenMetric("#number-of-unique-downloads", "metric", uniqueDownloadsQuery, defaultHeight, defaultColor, publicClient);
 
     renderKeenMetric("#total-projects", "metric", totalProjectsQuery, defaultHeight);
 
