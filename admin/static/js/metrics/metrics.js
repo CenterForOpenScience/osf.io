@@ -22,11 +22,12 @@ var publicClient = new keenAnalysis({
 
 var defaultHeight = 200;
 var bigMetricHeight = 300;
-var defaultColor = '#00BBDE';
 var institutionTableHeight = "auto";
 
+var defaultColor = '#00BBDE';
 var monthColor = '#0CF5DB';
 var yearColor = '#0CEB92';
+var dayColor = '#0C93F5';
 
 /**
  * Configure a timeframe for the past day for a keen query

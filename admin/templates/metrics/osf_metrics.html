@@ -36,11 +36,30 @@
         <!-- Tab panes -->
         <div class="tab-content">
             <div role="tabpanel" class="tab-pane active" id="user-data">
-                <h3>User Data</h3>
+                <div class="row">
+                    <div class="col-sm-3">
+                        <h3>User Data</h3>
+                    </div>
+                    <div class="col-sm-9">
+                        <div class="dropdown">
+                            <button class="btn btn-default btn-large dropdown-toggle pull-right" type="button" id="dropdownMenuButton" data-toggle="dropdown">
+                                Jump to...
+                                <span class="caret"></span>
+                            </button>
+                            <ul class="dropdown-menu pull-right">
+                                <li><a href="#user-growth-row">User Growth</a></li>
+                                <li><a href="#user-gain-per-day">User gain per day</a></li>
+                                <li><a href="#registration-by-email-domain">Registrations by Email Domain</a></li>
+                                <li><a href="#node-logs-by-user-row">Node Logs by User</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <hr class="hr-menu">
 
                 <div class="container-fluid">
 
-                    <div class="row">
+                    <div class="row" id="user-growth-row">
                         <div class="col-sm-8">
                             <div class="chart-wrapper">
                                 <div class="chart-title">
@@ -110,7 +129,7 @@
                             </div>
                         </div>
                     </div>
-                    <div class="row">
+                    <div class="row" id="user-gain-per-day">
                         <div class="col-sm-12">
                             <div class="chart-wrapper">
                                 <div class="chart-title">
@@ -153,7 +172,7 @@
                             </div>
                         </div>
                     </div>
-                    <div class="row">
+                    <div class="row" id="registration-by-email-domain">
                         <div class="col-sm-12">
                             <div class="chart-wrapper">
                                 <div class="chart-title">
@@ -168,7 +187,7 @@
                             </div>
                         </div>
                     </div>
-                    <div class="row">
+                    <div class="row" id="node-logs-by-user-row">
                         <div class="col-sm-12">
                             <div class="chart-wrapper">
                                 <div class="chart-title">
@@ -188,8 +207,26 @@
             </div>
 
             <div role="tabpanel" class="tab-pane" id="institution-metrics">
-                <h3>Institution Metrics</h3>
                 <div class="row">
+                    <div class="col-sm-3">
+                        <h3>Institution Metrics</h3>
+                    </div>
+                    <div class="col-sm-9">
+                        <div class="dropdown">
+                            <button class="btn btn-default btn-large dropdown-toggle pull-right" type="button" id="dropdownMenuButton" data-toggle="dropdown">
+                                Jump to...
+                                <span class="caret"></span>
+                            </button>
+                            <ul class="dropdown-menu pull-right">
+                                <li><a href="#institutional-users-row">Total Institutional Users</a></li>
+                                <li><a href="#institutional-users-growth-row">Institutional Users Growth</a></li>
+                                <li><a href="#affiliated-nodes-and-projects">Affiliated Nodes and Projects</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <hr class="hr-menu">
+                <div class="row" id="institutional-users-row">
                     <div class="col-sm-6">
                         <div class="chart-wrapper">
                             <div class="chart-title">
@@ -218,7 +255,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="row">
+                <div class="row" id="institutional-users-growth-row">
                     <div class="col-sm-12">
                         <div class="chart-wrapper">
                             <div class="chart-title">
@@ -231,6 +268,11 @@
                                 The growth of users who have accounts associated with their institutions. Click on an institution name in the key to remove its line and resize the chart axes.
                             </div>
                         </div>
+                    </div>
+                </div>
+                <div class="row" id="affiliated-nodes-and-projects">
+                    <div class="col-sm-12">
+                        <h4>Affiliated Nodes and Projects</h4>
                     </div>
                 </div>
                 <div class="row">
@@ -293,8 +335,27 @@
             </div>
 
             <div role="tabpanel" class="tab-pane" id="active-user-metrics">
-                <h3>Active User Metrics!</h3>
                 <div class="row">
+                    <div class="col-sm-3">
+                        <h3>Active User Metrics!</h3>
+                    </div>
+                    <div class="col-sm-9">
+                        <div class="dropdown">
+                            <button class="btn btn-default btn-large dropdown-toggle pull-right" type="button" id="dropdownMenuButton" data-toggle="dropdown">
+                                Jump to...
+                                <span class="caret"></span>
+                            </button>
+                            <ul class="dropdown-menu pull-right">
+                                <li><a href="#daily-active-users-row">Daily Active Users</a></li>
+                                <li><a href="#monthly-and-yearly-active-users">Monthly and Yearly Users</a></li>
+                                <li><a href="#project-to-user-ratio">Project to User Ratios</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <h3></h3>
+                <hr class="hr-menu">
+                <div class="row" id="daily-active-users-row">
                     <div class="col-sm-12">
                         <div class="chart-wrapper">
                             <div class="chart-title">
@@ -337,7 +398,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="row">
+                <div class="row" id="monthly-and-yearly-active-users">
                     <div class="col-sm-4">
                         <div class="chart-wrapper">
                             <div class="chart-title">
@@ -406,6 +467,11 @@
                         </div>
                     </div>
                 </div>
+                <div class="row" id="project-to-user-ratio">
+                    <div class="col-sm-12">
+                        <h4>Project to User Ratios</h4>
+                    </div>
+                </div>
                 <div class="row">
                     <div class="col-sm-6">
                         <div class="chart-wrapper">
@@ -437,6 +503,7 @@
             </div>
             <div role="tabpanel" class="tab-pane" id="healthy-user-metrics">
                 <div><h2>Healthy User Metrics</h2></div>
+                <hr class="hr-menu">
                 <div class="row">
                     <div class="col-sm-12">
                         <div class="chart-wrapper">
@@ -462,11 +529,11 @@
                         </div>
                         <div class="col-sm-9">
                             <div class="dropdown">
-                                <button class="btn btn-default btn-large dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown">
+                                <button class="btn btn-default btn-large dropdown-toggle pull-right" type="button" id="dropdownMenuButton" data-toggle="dropdown">
                                     Jump to...
                                     <span class="caret"></span>
                                 </button>
-                                <ul class="dropdown-menu">
+                                <ul class="dropdown-menu pull-right">
                                     <li><a href="#downloads">Downloads</a></li>
                                     <li><a href="#projects">Projects - Top Level</a></li>
                                     <li><a href="#nodes">Nodes - Projects & Components</a></li>
@@ -476,9 +543,11 @@
                             </div>
                         </div>
                     </div>
-
+                    <hr class="hr-menu">
                     <div class="row" id="downloads">
-                        <h3>Downloads</h3>
+                        <div class="col-sm-12">
+                            <h3>Downloads</h3>
+                        </div>
                     </div>
                     <div class="row">
                         <div class="col-sm-6">
@@ -509,7 +578,9 @@
                         </div>
                     </div>
                     <div class="row" id="projects">
-                        <h3>Projects</h3>
+                        <div class="col-sm-12">
+                            <h3>Projects</h3>
+                        </div>
                     </div>
                     <div class="row">
                         <div class="col-sm-12">
@@ -574,7 +645,9 @@
                         </div>
                     </div>
                     <div class="row" id="nodes">
-                        <h3>Nodes</h3>
+                        <div class="col-sm-12">
+                            <h3>Nodes</h3>
+                        </div>
                     </div>
                     <div class="row">
                         <div class="col-sm-12">
@@ -639,7 +712,9 @@
                         </div>
                     </div>
                     <div class="row" id="registered-projects">
-                        <h3>Registered Projects</h3>
+                        <div class="col-sm-12">
+                            <h3>Registered Projects</h3>
+                        </div>
                     </div>
                     <div class="row">
                         <div class="col-sm-12">
@@ -704,7 +779,9 @@
                         </div>
                     </div>
                     <div class="row" id="registered-nodes">
-                        <h3>Registered Nodes</h3>
+                        <div class="col-sm-12">
+                            <h3>Registered Nodes</h3>
+                        </div>
                     </div>
                     <div class="row">
                         <div class="col-sm-12">
@@ -772,6 +849,7 @@
             </div>
             <div role="tabpanel" class="tab-pane" id="addons">
                 <div><h2>Addons</h2></div>
+                <hr class="hr-menu">
                 <div class="row">
                     <div class="col-sm-12">
                         <div class="chart-wrapper">
