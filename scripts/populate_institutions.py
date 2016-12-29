@@ -142,6 +142,17 @@ def main(env):
                 'email_domains': [],
             },
             {
+                '_id': 'okstate',
+                'name': 'Oklahoma State University',
+                'description': '<a href="http://www.library.okstate.edu/research-support/research-data-services/">OSU Library Research Data Services</a>',
+                'banner_name': 'okstate-banner.png',
+                'logo_name': 'okstate-shield.png',
+                'auth_url': None,  # https://stwcas.okstate.edu/cas/login?service=...
+                'logout_url': None,
+                'domains': ['osf.library.okstate.edu'],
+                'email_domains': [],
+            },
+            {
                 '_id': 'ucsd',
                 'name': 'University of California San Diego',
                 'description': 'This service is supported on campus by the UC San Diego Library for our research community. Do not use this service to store or transfer personally identifiable information, personal health information, or any other controlled unclassified information. For assistance please contact the Library\'s Research Data Curation Program at <a href="mailto:research-data-curation@ucsd.edu">research-data-curation@ucsd.edu</a>.',
@@ -194,6 +205,17 @@ def main(env):
                 'auth_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('urn:mace:incommon:virginia.edu')),
                 'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://osf.io/goodbye')),
                 'domains': ['osf.virginia.edu'],
+                'email_domains': [],
+            },
+            {
+                '_id': 'vcu',
+                'name': 'Virginia Commonwealth University',
+                'description': 'This service is supported by the VCU Libraries and the VCU Office of Research and Innovation for our research community. Do not use this service to store or transfer personally identifiable information (PII), personal health information (PHI), or any other controlled unclassified information (CUI). VCU\'s policy entitled "<a href="http://www.policy.vcu.edu/sites/default/files/Research%20Data%20Ownership,%20Retention,%20Access%20and%20Securty.pdf">Research Data Ownership, Retention, Access and Security</a>" applies. For assistance please contact the <a href="https://www.library.vcu.edu/services/data/">VCU Libraries Research Data Management Program</a>.',
+                'banner_name': 'vcu-banner.png',
+                'logo_name': 'vcu-shield.png',
+                'auth_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://shibboleth.vcu.edu/idp/shibboleth')),
+                'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://osf.io/goodbye')),
+                'domains': ['osf.research.vcu.edu'],
                 'email_domains': [],
             },
             {
@@ -359,6 +381,17 @@ def main(env):
                 'email_domains': [],
             },
             {
+                '_id': 'okstate',
+                'name': 'Oklahoma State University [Test]',
+                'description': '<a href="http://www.library.okstate.edu/research-support/research-data-services/">OSU Library Research Data Services</a>',
+                'banner_name': 'okstate-banner.png',
+                'logo_name': 'okstate-shield.png',
+                'auth_url': None,  # https://stwcas.okstate.edu/cas/login?service=...
+                'logout_url': None,
+                'domains': ['test-osf-library-okstate.cos.io'],
+                'email_domains': [],
+            },
+            {
                 '_id': 'ucsd',
                 'name': 'University of California San Diego [Test]',
                 'description': 'This service is supported on campus by the UC San Diego Library for our research community. Do not use this service to store or transfer personally identifiable information, personal health information, or any other controlled unclassified information. For assistance please contact the Library\'s Research Data Curation Program at <a href="mailto:research-data-curation@ucsd.edu">research-data-curation@ucsd.edu</a>.',
@@ -411,6 +444,17 @@ def main(env):
                 'auth_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://shibidp-test.its.virginia.edu/idp/shibboleth')),
                 'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://test.osf.io/goodbye')),
                 'domains': ['test-osf-virginia.cos.io'],
+                'email_domains': [],
+            },
+            {
+                '_id': 'vcu',
+                'name': 'Virginia Commonwealth University [Test]',
+                'description': 'This service is supported by the VCU Libraries and the VCU Office of Research and Innovation for our research community. Do not use this service to store or transfer personally identifiable information (PII), personal health information (PHI), or any other controlled unclassified information (CUI). VCU\'s policy entitled "<a href="http://www.policy.vcu.edu/sites/default/files/Research%20Data%20Ownership,%20Retention,%20Access%20and%20Securty.pdf">Research Data Ownership, Retention, Access and Security</a>" applies. For assistance please contact the <a href="https://www.library.vcu.edu/services/data/">VCU Libraries Research Data Management Program</a>.',
+                'banner_name': 'vcu-banner.png',
+                'logo_name': 'vcu-shield.png',
+                'auth_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://shibboleth.vcu.edu/idp/shibboleth')),
+                'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://test.osf.io/goodbye')),
+                'domains': ['test-osf-research-vcu.cos.io'],
                 'email_domains': [],
             },
             {

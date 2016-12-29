@@ -1,6 +1,8 @@
+import re
+
 from modularodm import Q
 from rest_framework import generics
-from rest_framework.exceptions import NotFound
+from rest_framework.exceptions import NotFound, PermissionDenied, NotAuthenticated
 from rest_framework import permissions as drf_permissions
 
 from website.models import PreprintService
@@ -13,9 +15,17 @@ from api.base.parsers import (
     JSONAPIMultipleRelationshipsParser,
     JSONAPIMultipleRelationshipsParserForRegularJSON,
 )
-from api.base.utils import get_object_or_error
+from api.base.utils import get_object_or_error, get_user_auth
 from api.base import permissions as base_permissions
-from api.preprints.serializers import PreprintSerializer, PreprintCreateSerializer
+from api.citations.utils import render_citation, preprint_csl
+from api.preprints.serializers import (
+    PreprintSerializer,
+    PreprintCreateSerializer,
+    PreprintCitationSerializer,
+)
+from api.nodes.serializers import (
+    NodeCitationStyleSerializer,
+)
 from api.nodes.views import NodeMixin, WaterButlerMixin
 from api.nodes.permissions import ContributorOrPublic
 
@@ -245,3 +255,79 @@ class PreprintDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, Pre
         if instance.is_published:
             raise Conflict('Published preprints cannot be deleted.')
         PreprintService.remove_one(instance)
+
+
+class PreprintCitationDetail(JSONAPIBaseView, generics.RetrieveAPIView, PreprintMixin):
+    """ The citation details for a preprint, in CSL format *Read Only*
+
+    ##PreprintCitationDetail Attributes
+
+        name                     type                description
+        =================================================================================
+        id                       string               unique ID for the citation
+        title                    string               title of project or component
+        author                   list                 list of authors for the preprint
+        publisher                string               publisher - the preprint provider
+        type                     string               type of citation - web
+        doi                      string               doi of the resource
+
+    """
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+    )
+
+    required_read_scopes = [CoreScopes.NODE_CITATIONS_READ]
+    required_write_scopes = [CoreScopes.NULL]
+
+    serializer_class = PreprintCitationSerializer
+    view_category = 'preprints'
+    view_name = 'preprint-citation'
+
+    def get_object(self):
+        preprint = self.get_preprint()
+        auth = get_user_auth(self.request)
+
+        if preprint.node.is_public or preprint.node.can_view(auth) or preprint.is_published:
+            return preprint_csl(preprint, preprint.node)
+
+        raise PermissionDenied if auth.user else NotAuthenticated
+
+
+class PreprintCitationStyleDetail(JSONAPIBaseView, generics.RetrieveAPIView, PreprintMixin):
+    """ The citation for a preprint in a specific style's format. *Read Only*
+
+    ##NodeCitationDetail Attributes
+
+        name                     type                description
+        =================================================================================
+        citation                string               complete citation for a preprint in the given style
+
+    """
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+    )
+
+    required_read_scopes = [CoreScopes.NODE_CITATIONS_READ]
+    required_write_scopes = [CoreScopes.NULL]
+
+    serializer_class = NodeCitationStyleSerializer
+    view_category = 'preprint'
+    view_name = 'preprint-citation'
+
+    def get_object(self):
+        preprint = self.get_preprint()
+        auth = get_user_auth(self.request)
+        style = self.kwargs.get('style_id')
+
+        if preprint.node.is_public or preprint.node.can_view(auth) or preprint.is_published:
+            try:
+                citation = render_citation(node=preprint, style=style)
+            except ValueError as err:  # style requested could not be found
+                csl_name = re.findall('[a-zA-Z]+\.csl', err.message)[0]
+                raise NotFound('{} is not a known style.'.format(csl_name))
+
+            return {'citation': citation, 'id': style}
+
+        raise PermissionDenied if auth.user else NotAuthenticated
