@@ -137,8 +137,6 @@ services:
     image: quay.io/centerforopenscience/mfr:develop
     command: invoke server
     restart: unless-stopped
-    stdin_open: true
-    tty: true
     ports:
       - 7778:7778
     env_file:
@@ -160,8 +158,6 @@ services:
     image: quay.io/centerforopenscience/waterbutler:develop
     command: invoke server
     restart: unless-stopped
-    stdin_open: true
-    tty: true
     ports:
       - 7777:7777
     env_file:
