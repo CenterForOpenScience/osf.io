@@ -913,6 +913,40 @@ def setup(ctx):
     build_js_config_files(ctx)
     assets(ctx, dev=True, watch=False)
 
+@task
+def docker_init(ctx):
+    """Initial docker setup"""
+    import platform
+    print('You will be asked for your sudo password to continue...')
+    if platform.system() == 'Darwin':  # Mac OSX
+        ctx.run('sudo ifconfig lo0 alias 192.168.168.167')
+    else:
+        print('Your system is not recognized, you will have to setup docker manually')
+
+def ensure_docker_env_setup(ctx):
+    if hasattr(os.environ, 'DOCKER_ENV_SETUP') and os.environ['DOCKER_ENV_SETUP'] == '1':
+        pass
+    else:
+        os.environ['WEB_REMOTE_DEBUG'] = '192.168.168.167:11000'
+        os.environ['API_REMOTE_DEBUG'] = '192.168.168.167:12000'
+        os.environ['WORKER_REMOTE_DEBUG'] = '192.168.168.167:13000'
+        os.environ['DOCKER_ENV_SETUP'] = '1'
+        docker_init(ctx)
+
+@task
+def docker_requirements(ctx):
+    ensure_docker_env_setup(ctx)
+    ctx.run('docker-compose up requirements requirements_mfr requirements_wb')
+
+@task
+def docker_appservices(ctx):
+    ensure_docker_env_setup(ctx)
+    ctx.run('docker-compose up assets fakecas elasticsearch tokumx postgres')
+
+@task
+def docker_osf(ctx):
+    ensure_docker_env_setup(ctx)
+    ctx.run('docker-compose up mfr wb web api')
 
 @task
 def clear_sessions(ctx, months=1, dry_run=False):
