@@ -72,7 +72,7 @@
 
 # Start Core Component Services
 #
-# docker-compose up elasticsearch tokumx
+# docker-compose up elasticsearch postgres tokumx
 
 # Start the Assets Watcher
 #
@@ -127,19 +127,19 @@
 
 # Delete a persistent storage volume
 #
-# docker-compose stop -t 0 tokumx
-# docker-compose rm tokumx
-# docker volume rm [projectname]_tokumx_vol
+# docker-compose stop -t 0 postgres
+# docker-compose rm postgres
+# docker volume rm [projectname]_postgres_vol
 
 
 version: '2'
 
 volumes:
-  tokumx_vol:
+  elasticsearch_vol:
     external: false
   postgres_vol:
     external: false
-  elasticsearch_vol:
+  tokumx_vol:
     external: false
   requirements_osf_vol:
     external: false
@@ -162,7 +162,7 @@ services:
       - elasticsearch_vol:/usr/share/elasticsearch/data
 
   postgres:
-   image: postgres
+   image: postgres:9.6
    command: /bin/bash -c "sed -i -e 's/max_connections.*/max_connections = 5000/' /var/lib/postgresql/data/postgresql.conf || true && sed -i -e 's/#log_min_duration_statement = .*/log_min_duration_statement = 0/' /var/lib/postgresql/data/postgresql.conf || true && /docker-entrypoint.sh postgres"
    ports:
      - 5432:5432
@@ -236,7 +236,7 @@ services:
     ports:
       - 8080:8080
     depends_on:
-      - tokumx
+      - postgres
 
 
   #######
@@ -263,14 +263,14 @@ services:
 #    image: quay.io/centerforopenscience/osf:feature-django-osf
 #    command: invoke celery_beat
 #    depends_on:
-#      - tokumx
+#      - postgres
 #      - rabbitmq
 #      - elasticsearch
 #    volumes:
 #      - requirements_osf_vol:/usr/local/lib/python2.7/site-packages
 #      - ./:/code
 #    environment:
-#      DB_HOST: tokumx
+#      DB_HOST: postgres
 #      ELASTIC_URI: elasticsearch:9200
 #      BROKER_URL: amqp://guest:guest@rabbitmq:5672/
 
@@ -279,6 +279,7 @@ services:
 #    command: invoke celery_worker
 #    restart: unless-stopped
 #    depends_on:
+#      - postgres
 #      - tokumx
 #      - rabbitmq
 #      - elasticsearch
@@ -287,7 +288,7 @@ services:
 #      - ./:/code
 #    environment:
 #      C_FORCE_ROOT: 1
-#      DB_HOST: tokumx
+#      DB_HOST: postgres
 #      ELASTIC_URI: elasticsearch:9200
 #      BROKER_URL: amqp://guest:guest@rabbitmq:5672/
 
@@ -314,6 +315,7 @@ services:
     ports:
       - 5000:5000
     depends_on:
+      - postgres
       - tokumx
 #      - rabbitmq
       - elasticsearch
@@ -334,6 +336,7 @@ services:
     ports:
       - 8000:8000
     depends_on:
+      - postgres
       - tokumx
 #      - rabbitmq
       - elasticsearch
