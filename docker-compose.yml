@@ -1,7 +1,15 @@
+#######################
+# Docker and OS Setup #
+#######################
+
 # Install the Docker Client
 #
 # OSX: https://www.docker.com/products/docker#/mac
 # Windows: https://www.docker.com/products/docker#/windows
+#
+# - Grant the docker client additional memory and cpu (minimum of 4GB and 2 CPU)
+#   OSX: https://docs.docker.com/docker-for-mac/#/preferences
+#   Windows: https://docs.docker.com/docker-for-windows/#advanced
 
 # Setup the Operation System
 #
@@ -22,46 +30,79 @@
 # - Allow Docker to access to Drive your project is stored on
 #   Open the Docker Client -> Settings -> Shared Drives -> e.g. C -> Apply
 
+
+#############################
+# Application Configuration #
+#############################
+
 # Application Settings
 #
 # e.g. OSF default local.py
 # cp ./website/settings/local-dist.py ./website/settings/local.py
-#
+
 # Environment variables (incl. remote debugging)
+#
 # e.g. .docker-compose.env
 # WEB_REMOTE_DEBUG=192.168.168.167:11000
 # API_REMOTE_DEBUG=192.168.168.167:12000
 # WORKER_REMOTE_DEBUG=192.168.168.167:13000
-
-# Application Environment Setup
 #
-# docker-compose up requirements assets requirements_mfr requirements_wb
-# (requirements containers exit when complete)
+# NOTE: Similar docker-compose.<name>.env environment configuration files exist for services.
 
-# Run Application Services
+# Mounting Service Code
+#
+# By modifying the docker-compose.override.yml file you can specify the relative path to
+# your service code directory. e.g.
+#
+# services:
+#   wb:
+#     volumes:
+#       - ../waterbutler/:/code
+
+
+#######################
+# Application Runtime #
+#######################
+
+# Application Environment
+#
+# NOTE: When the various requirements installations are complete these containers will exit.
+#
+# docker-compose up requirements requirements_mfr requirements_wb
+
+# Start Core Component Services
 #
 # docker-compose up elasticsearch tokumx
 
-# Run the OSF
+# Start the Assets Watcher
 #
-# docker-compose up mfr wb fakecas web api
+# NOTE: The first time the assets container is run it will take Webpack/NPM up to 15 minutes to compile resources.
+#       When you see the BowerJS build occurring it is likely a safe time to move forward with starting the remaining
+#       containers.
+#
+# docker-compose up assets
 
-# Resetting the Environment
+# Start the Services
 #
-# ALL volumes and containers
-# docker-compose down -v
-#
-# Delete a persistent storage volume
-# docker-compose stop -t 0 tokumx
-# docker-compose rm tokumx
-# docker volume rm [projectname]_tokumx_vol
+# docker-compose up mfr wb fakecas
 
-# Using IPDB
+# Start the OSF Web and API Servers
+#
+# docker-compose up web api
+
+
+#########################
+# Application Debugging #
+#########################
+
+# Console Debugging with IPDB
+#
+# NOTE: You can detach from a container and leave it running using the CTRL-p CTRL-q key sequence.
 #
 # docker attach [projectname]_web_1
-# (you can detach from a container and leave it running using the CTRL-p CTRL-q key sequence.)
 
-# Using PyCharm
+
+# Remote Debugging with PyCharm
 #
 # Add a Python Remote Debugger per container
 # - Name: Remote Debug (web)
@@ -72,6 +113,24 @@
 #     - /Users/<whoami>/.virtualenvs/osf/lib/python2.7/site-packages : /usr/local/lib/python2.7/site-packages
 #   - Single Instance only
 # - Configure .docker-compose.env REMOTE_DEBUG environment variables to match settings.
+
+
+##########################
+# Cleanup & Docker Reset #
+##########################
+
+# Resetting the Environment
+#
+# WARNING: All volumes and containers are destroyed
+#
+# docker-compose down -v
+
+# Delete a persistent storage volume
+#
+# docker-compose stop -t 0 tokumx
+# docker-compose rm tokumx
+# docker volume rm [projectname]_tokumx_vol
+
 
 version: '2'
 
