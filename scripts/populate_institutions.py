@@ -386,7 +386,21 @@ def main(env):
                 'description': '<a href="http://www.library.okstate.edu/research-support/research-data-services/">OSU Library Research Data Services</a>',
                 'banner_name': 'okstate-banner.png',
                 'logo_name': 'okstate-shield.png',
-                'auth_url': None,  # https://stwcas.okstate.edu/cas/login?service=...
+                # TODO:
+                #
+                # for flask OSF:
+                # 1. non-shibboleth institutions' `auth_url` (the login url) and `id` (the client name) are configured
+                #    in CAS, which is similar to ORCiD login
+                # 2. in this script, `auth_url` and `logout_url` must be None for non-shibboleth institution login
+                #
+                # for django OSF:
+                # 1. a dedicated field `delegation_protocol` in the institution model is preferred, which indicates the
+                #    protocol for authentication. CAS will act differently.
+                # 2. in this script, shibboleth institutions will have full `login_url` and `logout_url` as usual
+                # 3. cas or oauth institutions will have base `login_url` and `logout_url` is set to None.
+                #    the actual login url is calculated dynamically in CAS pac4j `ClientAction`
+                #
+                'auth_url': None,
                 'logout_url': None,
                 'domains': ['test-osf-library-okstate.cos.io'],
                 'email_domains': [],
