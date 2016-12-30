@@ -233,7 +233,7 @@ services:
   ##################################
 
   fakecas:
-    image: quay.io/centerforopenscience/fakecas:latest
+    image: quay.io/centerforopenscience/fakecas:0.9.0
     command: fakecas -host=0.0.0.0:8080 -osfhost=192.168.168.167:5000 -dbaddress=192.168.168.167:27017
     restart: unless-stopped
     ports:
