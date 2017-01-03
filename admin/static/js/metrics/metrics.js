@@ -638,6 +638,8 @@ var InstitutionMetrics = function() {
     // Total Instutional Users / Total OSF Users
     renderCalculationBetweenTwoQueries(institutional_user_count, activeUsersQuery, "#percentage-institutional-users", null, 'percentage');
 
+    // Nodes!
+
     // Affiliated Public Nodes
     var affiliated_public_chart = new keenAnalysis.Query("sum", {
         eventCollection: "institution_summary",
@@ -679,6 +681,50 @@ var InstitutionMetrics = function() {
         timezone: "UTC"
     });
     renderKeenMetric("#affiliated-embargoed-registered-nodes", "table", affiliated_private_registered_node_chart, institutionTableHeight);
+
+    // Projcets!
+
+    // Affiliated Public Projects
+    var affiliated_public_projects_chart = new keenAnalysis.Query("sum", {
+        eventCollection: "institution_summary",
+        targetProperty: "projects.public",
+        timeframe: "previous_1_days",
+        groupBy: "institution.name",
+        timezone: "UTC"
+    });
+    renderKeenMetric("#affiliated-public-projects", "table", affiliated_public_projects_chart, institutionTableHeight);
+
+
+    // Affiliated Private Projects
+    var affiliated_private_project_chart = new keenAnalysis.Query("sum", {
+        eventCollection: "institution_summary",
+        targetProperty: "projects.private",
+        timeframe: "previous_1_days",
+        groupBy: "institution.name",
+        timezone: "UTC"
+    });
+    renderKeenMetric("#affiliated-private-projects", "table", affiliated_private_project_chart, institutionTableHeight);
+
+
+    // Affiliated Public Projects Registrations
+    var affiliated_public_registered_projects_chart = new keenAnalysis.Query("sum", {
+        eventCollection: "institution_summary",
+        targetProperty: "registered_projects.public",
+        timeframe: "previous_1_days",
+        groupBy: "institution.name",
+        timezone: "UTC"
+    });
+    renderKeenMetric("#affiliated-public-registered-projects", "table", affiliated_public_registered_projects_chart, institutionTableHeight);
+
+    // Affiliated Private Projects Registrations
+    var affiliated_private_registered_projects_chart = new keenAnalysis.Query("sum", {
+        eventCollection: "institution_summary",
+        targetProperty: "registered_projects.private",
+        timeframe: "previous_1_days",
+        groupBy: "institution.name",
+        timezone: "UTC"
+    });
+    renderKeenMetric("#affiliated-embargoed-registered-projects", "table", affiliated_private_registered_projects_chart, institutionTableHeight);
 
 };
 
