@@ -20,6 +20,8 @@ var publicClient = new keenAnalysis({
     readKey: keenPublicReadKey
 });
 
+// Heights and Colors for the below rendered
+// Keen and c3 Data visualizations
 var defaultHeight = 200;
 var bigMetricHeight = 350;
 var institutionTableHeight = "auto";
@@ -28,6 +30,8 @@ var defaultColor = '#00BBDE';
 var monthColor = '#0CF5DB';
 var yearColor = '#0CEB92';
 var dayColor = '#0C93F5';
+var privateColor = '#F20066';
+var publicColor = '#FFD300';
 
 /**
  * Configure a timeframe for the past day for a keen query
@@ -875,8 +879,6 @@ var RawNumberMetrics = function() {
     }
 
     var results = {};
-    var privateColor = '#F20066';
-    var publicColor = '#FFD300';
     Promise.all(graphPromises).then(values => {
         for (var i=0; i<values.length; i++) {
             var chart = new keenDataviz()

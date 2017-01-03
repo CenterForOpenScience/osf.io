@@ -106,7 +106,7 @@ body.application .return-link:hover,
   margin-right: 20px;
 }
 
-thead {
+.institution-tables thead {
   display: none;
 }
 
