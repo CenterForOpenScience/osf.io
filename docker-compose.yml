@@ -89,7 +89,7 @@
 
 # Start the OSF Web and API Servers
 #
-# docker-compose up web api
+# docker-compose up preprints web api
 
 
 #########################
