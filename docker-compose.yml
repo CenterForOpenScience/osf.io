@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 #######################
 # Docker and OS Setup #
 #######################
@@ -184,6 +185,8 @@
 # docker-compose rm postgres
 # docker volume rm [projectname]_postgres_data_vol
 
+# TODO: Move this ^^ to README-docker-compose.md
+# Reference README-docker-compose.md for instructions.
 
 version: '2'
 
