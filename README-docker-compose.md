@@ -92,8 +92,8 @@
     - Local host name: 192.168.168.167
     - Port: 11000
     - Path mappings:
-      - /Users/<whoami>/Projects/cos/osf : /code
-      - /Users/<whoami>/.virtualenvs/osf/lib/python2.7/site-packages : /usr/local/lib/python2.7/site-packages
+      - /Users/\<whoami\>/Projects/cos/osf : /code
+      - /Users/\<whoami\>/.virtualenvs/osf/lib/python2.7/site-packages : /usr/local/lib/python2.7/site-packages
     - Single Instance only
   - Configure .docker-compose.env REMOTE_DEBUG environment variables to match settings.
 
