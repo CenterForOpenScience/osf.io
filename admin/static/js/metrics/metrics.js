@@ -97,7 +97,7 @@ var getMetricTitle = function(metric, type) {
 };
 
 
-var differenceGrowthBetweenMetrics = function(metric1, metric2, totalMetric, element, colors=null) {
+var differenceGrowthBetweenMetrics = function(metric1, metric2, totalMetric, element, colors) {
     var percentOne;
     var percentTwo;
     var differenceMetric = new keenDataviz()
@@ -163,7 +163,7 @@ var renderPublicPrivatePercent = function(publicMetric, privateMetric, element) 
 };
 
 
-var renderCalculationBetweenTwoQueries = function(query1, query2, element, differenceType, calculationType, colors=null) {
+var renderCalculationBetweenTwoQueries = function(query1, query2, element, differenceType, calculationType, colors) {
     var result;
     var differenceMetric;
 
@@ -221,7 +221,8 @@ var getWeeklyUserGain = function() {
     var queries = [];
     var timeframes = [];
 
-    for (var i = 3; i < 12; i++) {
+    // get timeframes from 1 day back through 7 days back for the full week
+    for (var i = 1; i < 8; i++) {
         var timeframe = getOneDayTimeframe(i, null);
         var query = new keenAnalysis.Query("sum", {
             eventCollection: "user_summary",
@@ -236,7 +237,11 @@ var getWeeklyUserGain = function() {
 
 };
 
-var renderKeenMetric = function(element, type, query, height, colors=null, keenClient=client) {
+var renderKeenMetric = function(element, type, query, height, colors, keenClient) {
+
+    if (!keenClient) {
+        keenClient = client;
+    }
 
     var chart = new keenDataviz()
         .el(element)
