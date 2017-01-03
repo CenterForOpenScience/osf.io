@@ -12,6 +12,8 @@
     - Alias the loopback interface
 
       `$ sudo ifconfig lo0 alias 192.168.168.167`
+      
+        _**NOTICE**: This will need to be run **after every reboot**._
   - Windows
     - Install Microsoft Loopback Adapter (Windows 10 follow community comments as the driver was renamed)
    https://technet.microsoft.com/en-us/library/cc708322(v=ws.10).aspx
