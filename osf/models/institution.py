@@ -18,18 +18,37 @@ class Institution(Loggable, base.ObjectIDMixin, base.BaseModel):
     # /TODO DELETE ME POST MIGRATION
 
     # TODO Remove null=True for things that shouldn't be nullable
-    banner_name = models.CharField(max_length=255, null=True, blank=True)
+
+    name = models.CharField(max_length=255)
+    description = models.TextField(blank=True, default='', null=True)
+
+    # TODO Could `banner_name` and `logo_name` be a FilePathField?
+    # Both banner_name and logo_name are the name of the file under the `banners/` or `shields/` folder in
+    # `website/static/img/institutions/`. They cannot be null or blank, otherwise OSF dashboard page and institution
+    # project page won't finish loading
+    banner_name = models.CharField(max_length=255)
+    logo_name = models.CharField(max_length=255)
+
+    # the protocol used to delegate authentication: `CAS`, `SAML`, `OAuth`, e.t.c
+    # only institutions with a delegation protocol (not null and not blank) shows up on institution login page
+    delegation_protocol = models.CharField(max_length=255, null=True, blank=True)
+
+    # login_url and logout_url can be null or empty
     login_url = models.URLField(null=True, blank=True)
-    contributors = models.ManyToManyField(settings.AUTH_USER_MODEL,
-                                          through=InstitutionalContributor,
-                                          related_name='institutions')
+    logout_url = models.URLField(null=True, blank=True)
+
     domains = fields.ArrayField(models.CharField(max_length=255), db_index=True, null=True, blank=True)
     email_domains = fields.ArrayField(models.CharField(max_length=255), db_index=True, null=True, blank=True)
-    logo_name = models.CharField(max_length=255, null=True)  # TODO: Could this be a FilePathField?
-    logout_url = models.URLField(null=True, blank=True)
-    name = models.CharField(max_length=255)
 
-    description = models.TextField(blank=True, default='', null=True)
+    # TODO what is this field?
+    contributors = models.ManyToManyField(
+        settings.AUTH_USER_MODEL,
+        through=InstitutionalContributor,
+        related_name='institutions'
+    )
+
+    # TODO Should we remove this is_deleted field given Institution now has its own model
+    # several query both in CAS and OSF uses this field, need to be careful when renaming or removing this field
     is_deleted = models.BooleanField(default=False, db_index=True)
 
     def __init__(self, *args, **kwargs):
