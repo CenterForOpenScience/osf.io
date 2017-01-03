@@ -31,6 +31,8 @@ The OSF `invoke` script provides several useful commands. For more information, 
 
 ## Running the OSF
 
+**NOTICE**: The recommended way to run the OSF for development is now through [docker-compose](#docker-compose). Running locally is deprecated, unsupported, and these docs will be removed soon.
+
 If you have already installed all of the required services and Python packages, and activated your virtual environment,
 then you can start a working local test server with the following sequence:
 
