@@ -129,7 +129,6 @@ class GitLabClient(object):
         return False
 
 
-
 def ref_to_params(branch=None, sha=None):
 
     params = urllib.urlencode({

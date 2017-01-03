@@ -4,8 +4,6 @@ from dateutil.parser import parse as dateparse
 import httplib as http
 import logging
 
-import pdb
-
 from furl import furl
 from flask import request, make_response
 
@@ -17,7 +15,6 @@ from website.oauth.models import ExternalAccount
 
 from website.addons.base import generic_views
 from website.addons.gitlab.api import GitLabClient, ref_to_params
-from website.addons.gitlab.model import GitLabProvider
 from website.addons.gitlab.exceptions import NotFoundError, GitLabError
 from website.addons.gitlab.settings import DEFAULT_HOSTS
 from website.addons.gitlab.serializer import GitLabSerializer
@@ -126,8 +123,6 @@ def gitlab_add_user_account(auth, **kwargs):
             Q('provider', 'eq', 'gitlab') &
             Q('provider_id', 'eq', clientId)
         )
-
-    provider = GitLabProvider(account)
 
     user = auth.user
     if account not in user.external_accounts:

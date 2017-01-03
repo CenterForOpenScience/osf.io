@@ -3,8 +3,6 @@
 import os
 import urlparse
 
-import pdb
-
 import markupsafe
 from modularodm import fields
 
@@ -22,9 +20,6 @@ from website.addons.gitlab.serializer import GitLabSerializer
 from website.addons.gitlab import settings as gitlab_settings
 from website.addons.gitlab.exceptions import ApiError, NotFoundError, GitLabError
 from website.oauth.models import ExternalProvider
-from website.oauth.models import ExternalAccount
-
-from framework.sessions import session
 
 
 hook_domain = gitlab_settings.HOOK_DOMAIN or settings.DOMAIN
