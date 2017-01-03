@@ -46,7 +46,7 @@
     WORKER_REMOTE_DEBUG=192.168.168.167:13000
     ```
 
-  - NOTE: Similar docker-compose.<name>.env environment configuration files exist for services.
+      _NOTE: Similar docker-compose.<name>.env environment configuration files exist for services._
 
 3. Mounting Service Code
   - By modifying the docker-compose.override.yml file you can specify the relative path to your service code directory. e.g.
