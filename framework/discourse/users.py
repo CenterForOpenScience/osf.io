@@ -1,9 +1,17 @@
-from framework.discourse.common import request
+from datetime import datetime
+
+import logging
+
+import requests
 
 import api.sso
-from framework.sessions import session
 from framework.auth import User
-from datetime import datetime
+import framework.discourse
+from framework.discourse import common
+import framework.logging  # importing this configures the logger, which would not otherwise be configured yet
+from framework.sessions import session
+
+logger = logging.getLogger(__name__)
 
 # Safe to call if the user has already been created
 def create_user(user, should_save=True):
@@ -12,15 +20,16 @@ def create_user(user, should_save=True):
     :param bool should_save: Whether the function should call user.save()
     :return int: the user ID of the user created
     """
-    payload = {}
-    payload['external_id'] = user._id
-    payload['email'] = user.username
-    payload['username'] = user._id
-    payload['name'] = user.fullname
-    payload['avatar_url'] = user.profile_image_url()
+    payload = {
+        'external_id': user._id,
+        'email': user.username,
+        'username': user._id,
+        'name': user.fullname,
+        'avatar_url': user.profile_image_url()
+    }
 
     data = api.sso.sign_payload(payload)
-    user_id = request('post', '/admin/users/sync_sso', data)['id']
+    user_id = common.request('post', '/admin/users/sync_sso', data)['id']
 
     user.discourse_user_id = user_id
     user.discourse_user_created = True
@@ -38,17 +47,17 @@ def delete_user(user):
     if not user.discourse_user_created:
         return
 
-    request('put', '/admin/users/' + str(user.discourse_user_id) + '/delete_all_posts')
-    request('delete', '/admin/users/' + str(user.discourse_user_id) + '.json')
+    common.request('put', '/admin/users/' + str(user.discourse_user_id) + '/delete_all_posts')
+    common.request('delete', '/admin/users/' + str(user.discourse_user_id) + '.json')
 
     user.discourse_user_id = 0
     user.discourse_user_created = False
     user.save()
 
-def get_current_user():
-    """Return the User currently logged in or None
+def get_current_osf_user():
+    """Return the User currently logged in (to the OSF) or None
 
-    :return User: the currently logged in user
+    :return User: the currently logged in user to the OSF
     """
     if 'auth_user_id' in session.data:
         user_id = session.data['auth_user_id']
@@ -56,36 +65,20 @@ def get_current_user():
     else:
         return None
 
-def get_username(user=None):
+def get_discourse_username(user=None):
     """Return the Discourse username (OSF guid) of the user, making sure the user exists on Discourse
     Return None if a user is not provided and one is not logged in either
     :param User user: the target user or None to query the currently logged in user
     :return str: the valid Discourse username (the GUID once the user is created) of the user
     """
     if user is None:
-        user = get_current_user()
+        user = get_current_osf_user()
     if user is None:
         return None
 
     if not user.discourse_user_created:
         create_user(user)
     return user._id
-
-def get_user_id(user=None, should_save=True):
-    """Return the Discourse user ID of the user, making sure the user exists on Discourse
-    Return None if a user is not provided and one is not logged in either
-    :param User user: the target user or None to query the currently logged in user
-    :param bool should_save: Whether the function should call user.save() if the user is created
-    :return int: the Discourse user ID
-    """
-    if user is None:
-        user = get_current_user()
-    if user is None:
-        return None
-
-    if not user.discourse_user_created:
-        create_user(user, should_save)
-    return user.discourse_user_id
 
 def get_user_apikey(user=None):
     """Return the Discourse user API Key of the user, making sure the user exists on Discourse
@@ -94,27 +87,30 @@ def get_user_apikey(user=None):
     :return str: the User's API Key
     """
     if user is None:
-        user = get_current_user()
+        user = get_current_osf_user()
     if user is None:
         return None
 
     # Use an existing key for up to a day
-    if user.discourse_apikey_date_created:
-        key_lifetime = datetime.now() - user.discourse_apikey_date_created
-        if user.discourse_apikey and key_lifetime.days < 1:
+    if user.discourse_apikey and user.discourse_apikey_date_created:
+        key_lifetime = datetime.utcnow() - user.discourse_apikey_date_created
+        if key_lifetime.days < 1:
             return user.discourse_apikey
 
-    user_id = get_user_id(user, False)
-    result = request('post', 'admin/users/' + str(user_id) + '/generate_api_key')
+    result = common.request('post', 'admin/users/' + str(user.discourse_user_id) + '/generate_api_key')
     user.discourse_apikey = result['api_key']['key']
-    user.discourse_apikey_date_created = datetime.now()
+    user.discourse_apikey_date_created = datetime.utcnow()
     user.save()
 
     return user.discourse_apikey
 
 def logout():
     """Logs out the currently logged in user from Discourse, if any"""
-    username = get_username()
-    if username is None:
-        return
-    request('delete', '/session/' + username, username=username)
+    try:
+        username = get_discourse_username()
+        if username is None:
+            return
+        common.request('delete', '/session/' + username, username=username)
+    except (framework.discourse.DiscourseException, requests.exceptions.ConnectionError):
+        # The most expected error would be that the Discourse server might not be running
+        logger.exception('Error logging user out of Discourse')

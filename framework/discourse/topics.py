@@ -1,231 +1,222 @@
-import framework.discourse.common
-from framework.discourse.common import DiscourseException, request
-from framework.discourse.categories import file_category, wiki_category, project_category
-import framework.discourse.projects
-
-from website import settings
-
-import re
+import markupsafe
 import requests.compat
 
-def _get_project_node(node):
-    """Return the project Node of this project, file, or wiki.
+import framework.discourse.common
+from framework.discourse import categories, common
+from website import settings
+
+def _get_parent_node(obj):
+    """Return the parent Node of this project, file, or wiki.
     In the case of a project or component, that would be itself.
 
-    :param Node/StoredFileNode/NodeWikiPage node: the project/file/wiki to retrieve the parent node for
-    :return Node: the project Node
+    :param Node/StoredFileNode/NodeWikiPage obj: the project/file/wiki to retrieve the parent node for
+    :return Node: the parent Node
     """
     try:
-        return node.node
+        return obj.node
     except AttributeError:
-        return node
+        return obj
 
-def _escape_markdown(text):
-    """Escapes markdown by adding backslashes in front of special markdown symbols.
-    :param str text: the string to escape
-    :return str: the escaped text
-    """
-    r = re.compile(r'([\\`*_{}[\]()#+.!-])')
-    return r.sub(r'\\\1', text)
-
-def _make_topic_content(node):
+def _make_topic_content(obj):
     """"Returns a string suitable for describing the object in its topic's first post.
 
-    :param Node/StoredFileNode/NodeWikiPage node: the project/file/wiki to be described
+    :param Node/StoredFileNode/NodeWikiPage obj: the project/file/wiki to be described
     :return str: the topic content
     """
-    node_title = {'wiki': 'Wiki page:', 'files': 'File: ', 'nodes': ''}[node.target_type]
-    node_title += node.label
-    node_description = {'wiki': 'the wiki page ', 'files': 'the file ', 'nodes': ''}[node.target_type]
-    node_description += _escape_markdown(node.label)
+    obj_title = {'wiki': 'Wiki page:', 'files': 'File: ', 'nodes': ''}[obj.target_type]
+    obj_title += obj.label
+    obj_description = {'wiki': 'the wiki page ', 'files': 'the file ', 'nodes': ''}[obj.target_type]
+    obj_description += markupsafe.escape(obj.label)
 
-    project_node = _get_project_node(node)
-    topic_content = 'This is the discussion topic for ' + node_description + '.'
-    topic_content += '\nRelevant contributors: ' + ', '.join([c.display_full_name() for c in project_node.contributors[:6]])
-    if len(project_node.contributors) > 6:
+    parent_node = _get_parent_node(obj)
+    topic_content = 'This is the discussion topic for ' + obj_description + '.'
+    topic_content += '\nRelevant contributors: ' + ', '.join([c.display_full_name() for c in parent_node.contributors[:6]])
+    if len(parent_node.contributors) > 6:
         topic_content += '...'
 
-    if node.target_type == 'files':
-        file_url = requests.compat.urljoin(settings.DOMAIN, node.guid_id)
+    if obj.target_type == 'files':
+        file_url = requests.compat.urljoin(settings.DOMAIN, obj.guid_id)
         topic_content += '\nFile url: ' + file_url
 
     return topic_content
 
-def _get_parent_guids(node):
-    """Return a list of all parent guids, starting with the guid of the containing project Node
+def get_parent_guids(obj):
+    """Return a list of all parent guids, starting with the guid of the containing parent Node
     So if node is a (project) Node, its own guid will be the first element of the list
     but not so if it is a file or wiki.
 
-    :param Node/StoredFileNode/NodeWikiPage node: the project/file/wiki whose parent guids will be returned
+    :param Node/StoredFileNode/NodeWikiPage obj: the project/file/wiki whose parent guids will be returned
     :return list: list of the parent Node GUIDs
     """
     parent_guids = []
-    parent_node = _get_project_node(node)
+    parent_node = _get_parent_node(obj)
     while parent_node:
         parent_guids.append(parent_node._id)
         parent_node = parent_node.parent_node
 
     return parent_guids
 
-def _create_topic(node, should_save=True):
+def _create_topic(obj, should_save=True):
     """Create a topic in Discourse for the given project/file/wiki
     This will create a new topic each time, even if one has already been created
 
-    :param Node/StoredFileNode/NodeWikiPage node: the project/file/wiki to create a topic for
-    :param bool should_save: Whether the function should call node.save()
+    :param Node/StoredFileNode/NodeWikiPage obj: the project/file/wiki to create a topic for
+    :param bool should_save: Whether the function should call obj.save()
     :return int: the topic ID of the created topic
     """
-    data = {}
 
-    if wiki_category is None:
+    if categories.wiki_category is None:
         categories.load_basic_categories()
-        if wiki_category is None:
-            raise DiscourseException('Cannot create topic. Discourse did not properly load when the OSF was started. Please ensure Discourse is running.')
+        if categories.wiki_category is None:
+            raise common.DiscourseException('Cannot create topic. Discourse did not properly load when the OSF was started. Please ensure Discourse is running.')
 
-    # privacy is completely relegated to the group with the corresponding project_guid
-    data['archetype'] = 'regular'
+    parent_guids = get_parent_guids(obj)
 
-    data['title'] = node.label
-    data['raw'] = _make_topic_content(node)
-    data['parent_guids[]'] = _get_parent_guids(node)
-    data['topic_guid'] = node.guid_id
-    data['category'] = {'wiki': wiki_category, 'files': file_category, 'nodes': project_category}[node.target_type]
+    data = {
+        # privacy is completely relegated to the group with the corresponding project_guid
+        'archetype': 'regular',
+        'title': obj.label,
+        'raw': _make_topic_content(obj),
+        'parent_guids[]': parent_guids,
+        'topic_guid': obj.guid_id,
+        'category': {'wiki': categories.wiki_category, 'files': categories.file_category, 'nodes': categories.project_category}[obj.target_type]
+    }
 
-    result = request('post', '/posts', data)
+    result = common.request('post', '/posts', data)
     topic_id = result['topic_id']
 
-    node.discourse_topic_id = topic_id
-    node.discourse_topic_title = data['title']
-    node.discourse_topic_parent_guids = data['parent_guids[]']
-    node.discourse_post_id = result['id']
+    obj.discourse_topic_id = topic_id
+    obj.discourse_topic_title = obj.label
+    obj.discourse_topic_parent_guids = parent_guids
+    obj.discourse_post_id = result['id']
     if should_save:
-        node.save()
+        obj.save()
 
     return topic_id
 
-def _update_topic_content(node):
+def _update_topic_content(obj):
     """Updates the content of the first post of the project/file/wiki topic
 
-    :param Node/StoredFileNode/NodeWikiPage node: the project/file/wiki to update the topic content of
+    :param Node/StoredFileNode/NodeWikiPage obj: the project/file/wiki to update the topic content of
     """
-    if node.discourse_post_id is None:
+    if obj.discourse_post_id is None:
         return
 
-    data = {}
-    data['post[raw]'] = _make_topic_content(node)
-    request('put', '/posts/' + str(node.discourse_post_id), data)
+    data = {
+        'post[raw]': _make_topic_content(obj)
+    }
+    common.request('put', '/posts/' + str(obj.discourse_post_id), data)
 
-def _update_topic_metadata(node):
+def _update_topic_metadata(obj):
     """Updates the title and parent_guids list of the project/file/wiki topic
 
-    :param Node/StoredFileNode/NodeWikiPage node: the project/file/wiki to update the topic metadata of
+    :param Node/StoredFileNode/NodeWikiPage obj: the project/file/wiki to update the topic metadata of
     """
-    if node.discourse_topic_id is None:
+    if obj.discourse_topic_id is None:
         return
 
-    data = {}
-    data['title'] = node.label
-    data['parent_guids[]'] = _get_parent_guids(node)
-    # this shouldn't ever need to be changed once created...
-    #data['category_id'] = {'wiki': wiki_category, 'files': file_category, 'nodes': project_category}[node.target_type]
-    request('put', '/t/' + node.guid_id + '/' + str(node.discourse_topic_id), data)
+    data = {
+        'title': obj.label,
+        'parent_guids[]': get_parent_guids(obj)
+    }
+    common.request('put', '/t/' + obj.guid_id + '/' + str(obj.discourse_topic_id), data)
 
-def sync_topic(node, should_save=True):
+def sync_topic(obj, should_save=True):
     """Sync (and create if necessary) a topic in Discourse for the given project/file/wiki
 
-    :param Node/StoredFileNode/NodeWikiPage node: the project/file/wiki whose topic should be synchronized
-    :param bool should_save: Whether the function should call node.save()
+    :param Node/StoredFileNode/NodeWikiPage obj: the project/file/wiki whose topic should be synchronized
+    :param bool should_save: Whether the function should call obj.save()
     """
     if framework.discourse.common.in_migration:
         return
 
-    project_node = _get_project_node(node)
-    if not project_node.discourse_project_created:
-        framework.discourse.projects._sync_project(project_node)
+    parent_node = _get_parent_node(obj)
+    if not parent_node.discourse_project_created:
+        framework.discourse.projects.sync_project_details(parent_node)
 
-    if node.discourse_topic_id is None:
-        _create_topic(node, should_save)
+    if obj.discourse_topic_id is None:
+        _create_topic(obj, should_save)
         return
 
-    parent_guids = _get_parent_guids(node)
-    guids_changed = parent_guids != node.discourse_topic_parent_guids
+    parent_guids = get_parent_guids(obj)
+    guids_changed = parent_guids != obj.discourse_topic_parent_guids
     # We don't want problems with case, since discourse change case sometimes.
-    title_changed = node.label.lower() != node.discourse_topic_title.lower()
+    title_changed = obj.label.lower() != obj.discourse_topic_title.lower()
 
-    deletion_changed = node.is_deleted != node.discourse_topic_deleted
+    deletion_changed = obj.is_deleted != obj.discourse_topic_deleted
 
     if guids_changed or title_changed or deletion_changed:
         if title_changed:
-            _update_topic_content(node)
+            _update_topic_content(obj)
         if guids_changed or title_changed:
-            _update_topic_metadata(node)
+            _update_topic_metadata(obj)
 
         if deletion_changed:
-            if node.is_deleted:
-                delete_topic(node, False)
+            if obj.is_deleted:
+                delete_topic(obj, False)
             else:
-                undelete_topic(node, False)
+                undelete_topic(obj, False)
 
-        node.discourse_topic_title = node.label
-        node.discourse_topic_parent_guids = parent_guids
+        obj.discourse_topic_title = obj.label
+        obj.discourse_topic_parent_guids = parent_guids
         if should_save:
-            node.save()
+            obj.save()
 
-def get_or_create_topic_id(node, should_save=True):
+def get_or_create_topic_id(obj, should_save=True):
     """Return the Discourse topic ID of the project/file/wiki, creating it if necessary
 
-    :param Node/StoredFileNode/NodeWikiPage node: the project/file/wiki whose topic ID should be returned
-    :param bool should_save: Whether the function should call node.save() if the topic is created
+    :param Node/StoredFileNode/NodeWikiPage obj: the project/file/wiki whose topic ID should be returned
+    :param bool should_save: Whether the function should call obj.save() if the topic is created
     :return int: the topic ID
     """
-    if node is None:
+    if obj is None:
         return None
-    if node.discourse_topic_id is None:
-        _create_topic(node, should_save)
-    return node.discourse_topic_id
+    if obj.discourse_topic_id is None:
+        _create_topic(obj, should_save)
+    return obj.discourse_topic_id
 
-def get_topic(node):
+def get_topic(obj):
     """Return the topic (as a dict) of the project/file/wiki
 
-    :param Node/StoredFileNode/NodeWikiPage node: the project/file/wiki whose topic should be returned
+    :param Node/StoredFileNode/NodeWikiPage obj: the project/file/wiki whose topic should be returned
     :return dict: Dictionary with information about the Discourse topic
     """
-    return request('get', '/t/' + str(node.discourse_topic_id) + '.json')
+    return common.request('get', '/t/' + str(obj.discourse_topic_id) + '.json')
 
-def _parent_is_deleted(node):
-    parent_node = _get_project_node(node)
+def _some_parent_is_deleted(obj):
+    parent_node = _get_parent_node(obj)
     while parent_node:
         if parent_node.discourse_project_deleted:
             return True
         parent_node = parent_node.parent_node
     return False
 
-def delete_topic(node, should_save=True):
+def delete_topic(obj, should_save=True):
     """Delete the topic of the project/file/wiki
 
-    :param Node/StoredFileNode/NodeWikiPage node: the project/file/wiki whose topic should be deleted
-    :param bool should_save: Whether the function should call node.save()
+    :param Node/StoredFileNode/NodeWikiPage obj: the project/file/wiki whose topic should be deleted
+    :param bool should_save: Whether the function should call obj.save()
     """
-    if node.discourse_topic_id is None or node.discourse_topic_deleted or _parent_is_deleted(node):
+    if obj.discourse_topic_id is None or obj.discourse_topic_deleted or _some_parent_is_deleted(obj):
         return
 
-    request('delete', '/t/' + str(node.discourse_topic_id) + '.json')
+    common.request('delete', '/t/' + str(obj.discourse_topic_id) + '.json')
 
-    node.discourse_topic_deleted = True
+    obj.discourse_topic_deleted = True
     if should_save:
-        node.save()
+        obj.save()
 
-def undelete_topic(node, should_save=True):
+def undelete_topic(obj, should_save=True):
     """Undelete the topic of the project/file/wiki
 
-    :param Node/StoredFileNode/NodeWikiPage node: the project/file/wiki whose topic should be undeleted
-    :param bool should_save: Whether the function should call node.save()
+    :param Node/StoredFileNode/NodeWikiPage obj: the project/file/wiki whose topic should be undeleted
+    :param bool should_save: Whether the function should call obj.save()
     """
-    if node.discourse_topic_id is None or not node.discourse_topic_deleted or _parent_is_deleted(node):
+    if obj.discourse_topic_id is None or not obj.discourse_topic_deleted or _some_parent_is_deleted(obj):
         return
 
-    request('put', '/t/' + str(node.discourse_topic_id) + '/recover')
+    common.request('put', '/t/' + str(obj.discourse_topic_id) + '/recover')
 
-    node.discourse_topic_deleted = False
+    obj.discourse_topic_deleted = False
     if should_save:
-        node.save()
+        obj.save()

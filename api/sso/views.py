@@ -1,21 +1,17 @@
-from . import sign_payload
+import base64
+import hashlib
+import hmac
+import urllib
 
 from django.http import HttpResponseRedirect
-
+from furl import furl
 from rest_framework.exceptions import AuthenticationFailed
-
-from framework.auth import cas
 
 from api.base.utils import get_user_auth
 from api.base.views import JSONAPIBaseView
-
+from framework.auth import cas
 from website import settings
-
-from furl import furl
-import base64
-import urllib
-import hashlib
-import hmac
+from . import sign_payload
 
 class SSOView(JSONAPIBaseView):
     view_name = 'sso-view'

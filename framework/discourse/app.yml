@@ -11,7 +11,8 @@ templates:
   - "templates/postgres.template.yml"
   - "templates/redis.template.yml"
   - "templates/web.template.yml"
-  - "templates/web.ratelimited.template.yml"
+## We inline this template so that we can modify it
+  #- "templates/web.ratelimited.template.yml"
 ## Uncomment these two lines if you wish to add Lets Encrypt (https)
   #- "templates/web.ssl.template.yml"
   #- "templates/web.letsencrypt.ssl.template.yml"
@@ -24,6 +25,14 @@ expose:
   - "443:443" # https
 
 params:
+  ## Inline inclusion of templates/web.ratelimited.template.yml
+  reqs_per_second: 12
+  burst_per_second: 12
+  reqs_per_minute: 200
+  burst_per_minute: 100
+
+  osf_server_address: CHANGEME
+
   db_default_text_search_config: "pg_catalog.english"
 
   ## Set db_shared_buffers to a max of 25% of the total memory.
@@ -109,3 +118,28 @@ run:
   ## After getting the first signup email, re-comment the line. It only needs to run once.
   #- exec: rails r "SiteSetting.notification_email='info@unconfigured.discourse.org'"
   - exec: echo "End of custom commands"
+  ## Inline inclusion of templates/web.ratelimited.template.yml
+  ## We modify it so that the osf_server_address ip address is not rate-limited
+  - replace:
+     filename: "/etc/nginx/conf.d/discourse.conf"
+     from: /server.+{/
+     to: |
+       geo $whitelist {
+         default 0;
+         $osf_server_address 1;
+       }
+       map $whitelist $rate_limit_addr {
+         default $binary_remote_addr;
+         1 "";
+       }
+       limit_req_zone $rate_limit_addr zone=flood:10m rate=$reqs_per_secondr/s;
+       limit_req_zone $rate_limit_addr zone=bot:10m rate=$reqs_per_minuter/m;
+       limit_req_status 429;
+       server {
+  - replace:
+     filename: "/etc/nginx/conf.d/discourse.conf"
+     from: "/location @discourse {/"
+     to: |
+       location @discourse {
+         limit_req zone=flood burst=$burst_per_second nodelay;
+         limit_req zone=bot burst=$burst_per_minute nodelay;

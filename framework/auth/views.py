@@ -394,10 +394,7 @@ def auth_logout(redirect_url=None):
     :param redirect_url: url to redirect user after CAS logout, default is 'goodbye'
     :return:
     """
-    try:
-        discourse.logout()
-    except (discourse.DiscourseException, requests.exceptions.ConnectionError):
-        logger.exception('Error logging user out of Discourse')
+    discourse.logout()
 
     # OSF tells CAS where it wants to be redirected back after successful logout.
     # However, CAS logout flow may not respect this url if user is authenticated through remote identity provider.
