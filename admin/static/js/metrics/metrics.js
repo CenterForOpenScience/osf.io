@@ -428,7 +428,6 @@ var renderWeeklyUserGainChart = function (results) {
         }
         userGainChart.parseRawData({result: data}).render();
     });
-
 };
 
 
@@ -604,7 +603,6 @@ var UserGainMetrics = function() {
     renderPreviousWeekOfUsersByStatus();
 
     NodeLogsPerUser();
-
 };
 
 
@@ -792,7 +790,6 @@ var ActiveUserMetrics = function() {
 
     // Average Projects per MAU
     renderCalculationBetweenTwoQueries(totalProjectsQuery, monthlyActiveUsersQuery, "#projects-per-monthly-user", null, 'division');
-
 };
 
 // <+><+><+><+><+><+><+<+>+
@@ -917,7 +914,6 @@ var RawNumberMetrics = function() {
             }
         }
     });
-
 };
 
 // <+><+><+><><>+
