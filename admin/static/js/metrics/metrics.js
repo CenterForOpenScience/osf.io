@@ -82,7 +82,7 @@ var getMetricTitle = function(metric, type) {
 
         if (type === "month") {
             date = new Date(metric.params.timeframe.start);
-            title =  monthNames[date.getUTCMonth()] + " to " + monthNames[date.getUTCMonth() + 1];
+            title =  monthNames[date.getUTCMonth()] + " to " + monthNames[(date.getUTCMonth() + 1)%12];
         } else if (type === "day") {
             date = metric.params.timeframe.start.replace('T00:00:00.000Z', '');
             end = metric.params.timeframe.end.replace('T00:00:00.000Z', '');
