@@ -39,6 +39,7 @@
 #
 # e.g. OSF default local.py
 # cp ./website/settings/local-dist.py ./website/settings/local.py
+# cp ./api/base/settings/local-dist.py ./api/base/settings/local.py
 
 # Environment variables (incl. remote debugging)
 #
@@ -145,6 +146,8 @@ volumes:
     external: false
   requirements_wb_vol:
     external: false
+  preprints_vol:
+    external: false
 
 services:
 
@@ -242,6 +245,17 @@ services:
       - tokumx
 
 
+  #############
+  # Preprints #
+  #############
+
+  preprints:
+    image: quay.io/centerforopenscience/ember-preprints:develop
+    command: /bin/bash -c "npm install && ./node_modules/bower/bin/bower install --allow-root --config.interactive=false && ./node_modules/ember-cli/bin/ember serve --host 0.0.0.0 --port 4200"
+    restart: unless-stopped
+    volumes:
+      - preprints_vol:/code/dist
+
   #######
   # OSF #
   #######
@@ -320,16 +334,17 @@ services:
       - tokumx
 #      - rabbitmq
       - elasticsearch
-      - fakecas
+#      - fakecas
 #      - cas
-      - mfr
-      - wb
+#      - mfr
+#      - wb
     env_file:
       - .docker-compose.env
     stdin_open: true
     tty: true
     volumes:
       - requirements_osf_vol:/usr/local/lib/python2.7/site-packages
+      - preprints_vol:/preprints
       - ./:/code
 
   api:
@@ -342,10 +357,10 @@ services:
       - tokumx
 #      - rabbitmq
       - elasticsearch
-      - fakecas
+#      - fakecas
 #      - cas
-      - mfr
-      - wb
+#      - mfr
+#      - wb
     env_file:
       - .docker-compose.env
     stdin_open: true
