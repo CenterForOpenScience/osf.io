@@ -886,7 +886,7 @@ var RawNumberMetrics = function() {
 
             if (values[i].query.target_property.includes('public')) {
                 chart.colors([publicColor]);
-            } else if (values[i].query.target_property.includes('private')) {
+            } else if (values[i].query.target_property.includes('private') || values[i].query.target_property.includes('embargoed')) {
                 chart.colors([privateColor]);
             }
             chart.data(values[i]).render();
