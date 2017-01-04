@@ -55,6 +55,7 @@
 
 3. Mounting Service Code
   - By modifying the docker-compose.override.yml file you can specify the relative path to your service code directory. e.g.
+    - This makes it so your local changes will be reflected in the docker container. Until you do this none of your changes will have any effect.
 
     ```yml
     services:
@@ -68,7 +69,7 @@
 
   - `$ docker-compose up requirements requirements_mfr requirements_wb`
 
-    _NOTE: When the various requirements installations are complete these containers will exit. You should only need to run these containers after pulling code or if you update the python requirements._
+    _NOTE: When the various requirements installations are complete these containers will exit. You should only need to run these containers after pulling code that changes python requirements or if you update the python requirements._
 
 2. Start Core Component Services
   - `$ docker-compose up elasticsearch postgres tokumx`
