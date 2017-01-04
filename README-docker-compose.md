@@ -12,8 +12,11 @@
     - Alias the loopback interface
 
       `$ sudo cp com.runlevel1.lo0.192.168.168.167.plist /Library/LaunchDaemons`
+
       `$ sudo chmod 0644 /Library/LaunchDaemons/com.runlevel1.lo0.192.168.168.167.plist`
+
       `$ sudo chown root:wheel /Library/LaunchDaemons/com.runlevel1.lo0.192.168.168.167.plist`
+
       `$ sudo launchctl load /Library/LaunchDaemons/com.runlevel1.lo0.192.168.168.167.plist`
 
   - Windows
