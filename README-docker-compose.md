@@ -10,12 +10,15 @@
 3. Setup the Operating System
   - OSX
     - Alias the loopback interface
-      ```
-      $ sudo cp com.runlevel1.lo0.192.168.168.167.plist /Library/LaunchDaemons
-      $ sudo chmod 0644 /Library/LaunchDaemons/com.runlevel1.lo0.192.168.168.167.plist
-      $ sudo chown root:wheel /Library/LaunchDaemons/com.runlevel1.lo0.192.168.168.167.plist
-      $ sudo launchctl load /Library/LaunchDaemons/com.runlevel1.lo0.192.168.168.167.plist
-      ```
+
+      `$ sudo cp com.runlevel1.lo0.192.168.168.167.plist /Library/LaunchDaemons`
+
+      `$ sudo chmod 0644 /Library/LaunchDaemons/com.runlevel1.lo0.192.168.168.167.plist`
+
+      `$ sudo chown root:wheel /Library/LaunchDaemons/com.runlevel1.lo0.192.168.168.167.plist`
+
+      `$ sudo launchctl load /Library/LaunchDaemons/com.runlevel1.lo0.192.168.168.167.plist`
+
   - Windows
     - Install Microsoft Loopback Adapter (Windows 10 follow community comments as the driver was renamed)
    https://technet.microsoft.com/en-us/library/cc708322(v=ws.10).aspx
@@ -38,10 +41,10 @@
 ## Application Configuration
 1. Application Settings
  - e.g. OSF & OSF API local.py
-    ```
-    $ cp ./website/settings/local-dist.py ./website/settings/local.py
-    $ cp ./api/base/settings/local-dist.py ./api/base/settings/local.py
-    ```
+
+    `$ cp ./website/settings/local-dist.py ./website/settings/local.py`
+    
+    `$ cp ./api/base/settings/local-dist.py ./api/base/settings/local.py`
 
 2. Environment variables (incl. remote debugging)
   - e.g. .docker-compose.env
