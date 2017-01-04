@@ -89,7 +89,7 @@
 
 # Start the OSF Web and API Servers
 #
-# docker-compose up preprints web api
+# docker-compose up web api
 
 
 #########################
@@ -146,8 +146,9 @@ volumes:
     external: false
   requirements_wb_vol:
     external: false
-  preprints_vol:
-    external: false
+#  preprints_vol:
+#    external: false
+
 
 services:
 
@@ -249,12 +250,19 @@ services:
   # Preprints #
   #############
 
-  preprints:
-    image: quay.io/centerforopenscience/ember-preprints:develop
-    command: /bin/bash -c "npm install && ./node_modules/bower/bin/bower install --allow-root --config.interactive=false && ./node_modules/ember-cli/bin/ember serve --host 0.0.0.0 --port 4200"
-    restart: unless-stopped
-    volumes:
-      - preprints_vol:/code/dist
+#   WARNING: Do not pass-through volumes to EmberJS applications as there are disk i/o performance penalties
+#            due to the broccoli builds, rather run the application locally and attach the dist directly to the OSF
+#            web container. e.g. ../ember-preprints/dist/:/preprints
+#
+#  preprints:
+#    image: quay.io/centerforopenscience/ember-preprints:develop
+#    command: /bin/bash -c "npm install && ./node_modules/bower/bin/bower install --allow-root --config.intedractive=false && ./node_modules/ember-cli/bin/ember serve --host 0.0.0.0 --port 4200"
+#    restart: unless-stopped
+#    environment:
+#      - BACKEND=local
+#    volumes:
+#      - preprints_vol:/code/dist/
+
 
   #######
   # OSF #
@@ -344,7 +352,8 @@ services:
     tty: true
     volumes:
       - requirements_osf_vol:/usr/local/lib/python2.7/site-packages
-      - preprints_vol:/preprints
+#      - preprints_vol:/preprints
+#      - ../ember-preprints/dist/:/preprints
       - ./:/code
 
   api:
