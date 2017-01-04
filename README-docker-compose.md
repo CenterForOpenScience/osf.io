@@ -11,9 +11,11 @@
   - OSX
     - Alias the loopback interface
 
-      `$ sudo ifconfig lo0 alias 192.168.168.167`
-      
-        _**NOTICE**: This will need to be run **after every reboot**._
+      `$ sudo cp com.runlevel1.lo0.192.168.168.167.plist /Library/LaunchDaemons`
+      `$ sudo chmod 0644 /Library/LaunchDaemons/com.runlevel1.lo0.192.168.168.167.plist`
+      `$ sudo chown root:wheel /Library/LaunchDaemons/com.runlevel1.lo0.192.168.168.167.plist`
+      `$ sudo launchctl load /Library/LaunchDaemons/com.runlevel1.lo0.192.168.168.167.plist`
+
   - Windows
     - Install Microsoft Loopback Adapter (Windows 10 follow community comments as the driver was renamed)
    https://technet.microsoft.com/en-us/library/cc708322(v=ws.10).aspx
@@ -35,9 +37,10 @@
 
 ## Application Configuration
 1. Application Settings
- - e.g. OSF default local.py
+ - e.g. OSF & OSF API local.py
 
     `$ cp ./website/settings/local-dist.py ./website/settings/local.py`
+    `$ cp ./api/base/settings/local-dist.py ./api/base/settings/local.py`
 
 2. Environment variables (incl. remote debugging)
   - e.g. .docker-compose.env
@@ -53,21 +56,19 @@
 3. Mounting Service Code
   - By modifying the docker-compose.override.yml file you can specify the relative path to your service code directory. e.g.
 
-    ```yaml
+    ```yml
     services:
       wb:
         volumes:
           - ../waterbutler/:/code
     ```
 
-
-
 ## Application Runtime
 1. Application Environment
 
   - `$ docker-compose up requirements requirements_mfr requirements_wb`
 
-    _NOTE: When the various requirements installations are complete these containers will exit._
+    _NOTE: When the various requirements installations are complete these containers will exit. You should only need to run these containers after pulling code or if you update the python requirements._
 
 2. Start Core Component Services
   - `$ docker-compose up elasticsearch postgres tokumx`
@@ -80,8 +81,24 @@
     containers._
 4. Start the Services
   - `$ docker-compose up mfr wb fakecas`
-5. Start the OSF Web and API Servers
+5. Run migrations and create preprint providers
+  - When starting with an empty database you will need to run migrations and populate preprint providers. See the [Running arbitrary commands](#running-arbitrary-commands) section below for instructions.
+6. Start the OSF Web and API Servers
   - `$ docker-compose up web api`
+
+## Running arbitrary commands
+- Run migrations:
+  - After creating migrations, resetting your database, or starting on a fresh install you will need to run migrations to make the needed changes to database. This command looks at the migrations on disk and compares them to the list of migrations in the `django_migrations` database table and runs any migrations that have not been run.
+    - `docker-compose run --no-deps web python manage.py migrate`
+- Populate preprint providers:
+  - After resetting your database or with a new install you will need to populate the table of preprint providers. **You must have run migrations first.**
+    - `docker-compose run web python -m scripts.populate_preprint_providers`
+- Create migrations:
+  - After changing a model you will need to create migrations and apply them. Migrations are python code that changes either the structure or the data of a database. This will compare the django models on disk to the database, find the differences, and create migration code to change the database. If there are no changes this command is a noop.
+    - `docker-compose run --no-deps web python manage.py makemigrations`
+- Destroy and recreate an empty database:
+  - **WARNING**: This will delete all data in your database.
+    - `docker-compose run --no-deps web python manage.py reset_db --noinput`
 
 ## Application Debugging
 - Console Debugging with IPDB

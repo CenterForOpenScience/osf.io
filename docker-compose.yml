@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 #######################
 # Docker and OS Setup #
 #######################
@@ -300,7 +299,7 @@ services:
 
   fakecas:
     image: quay.io/centerforopenscience/fakecas:master
-    command: fakecas -host=0.0.0.0:8080 -osfhost=192.168.168.167:5000 -dbaddress=postgresql://postgres:5432
+    command: fakecas -host=0.0.0.0:8080 -osfhost=192.168.168.167:5000 -dbaddress=postgres://postgres@postgres:5432/osf?sslmode=disable
     restart: unless-stopped
     ports:
       - 8080:8080
