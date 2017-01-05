@@ -45,8 +45,8 @@ class NodeTagField(ser.Field):
 
 class NodeLicenseSerializer(ser.Serializer):
 
-    copyright_holders = ser.ListField(allow_empty=True)
-    year = ser.CharField(allow_blank=True)
+    copyright_holders = ser.ListField(allow_empty=True, required=False)
+    year = ser.CharField(allow_blank=True, required=False)
 
 
 class NodeLicenseRelationshipField(RelationshipField):
@@ -85,17 +85,23 @@ class NodeCitationStyleSerializer(JSONAPISerializer):
 
 
 def get_license_details(node, validated_data):
-    license = node.license if isinstance(node, PreprintService) else node.node_license
 
-    license_id = license.node_license.id if license else None
-    license_year = license.year if license else None
-    license_holders = license.copyright_holders if license else []
+    if node:
+        license = node.license if isinstance(node, PreprintService) else node.node_license
 
-    if 'license' in validated_data:
-        license_year = validated_data['license'].get('year', license_year)
-        license_holders = validated_data['license'].get('copyright_holders', license_holders)
-    if 'license_type' in validated_data:
-        license_id = validated_data['license_type'].id
+        license_id = license.node_license.id if license else None
+        license_year = license.year if license else None
+        license_holders = license.copyright_holders if license else []
+
+        if 'license' in validated_data:
+            license_year = validated_data['license'].get('year', license_year)
+            license_holders = validated_data['license'].get('copyright_holders', license_holders)
+        if 'license_type' in validated_data:
+            license_id = validated_data['license_type'].id
+    else:
+        license_id = validated_data['license_type'].id if validated_data.get('license_type') else None
+        license_year = validated_data['license'].get('year', None) if validated_data.get('license') else None
+        license_holders = validated_data['license'].get('copyright_holders', []) if validated_data.get('license') else []
 
     return {
         'id': license_id,
@@ -366,6 +372,13 @@ class NodeSerializer(JSONAPISerializer):
     def create(self, validated_data):
         request = self.context['request']
         user = request.user
+        validated_data_copy = validated_data
+
+        if 'license_type' in validated_data or 'license' in validated_data:
+                validated_data_copy = validated_data.copy()
+                validated_data.pop('license', None)
+                validated_data.pop('license_type', None)
+
         if 'template_from' in validated_data:
             template_from = validated_data.pop('template_from')
             template_node = Node.load(key=template_from)
@@ -402,7 +415,8 @@ class NodeSerializer(JSONAPISerializer):
                     )
 
                 node.add_contributors(contributors, auth=auth, log=True, save=True)
-        return node
+
+        return self.update(node, validated_data_copy)
 
     def update(self, node, validated_data):
         """Update instance with the validated data. Requires
