@@ -43,7 +43,7 @@
  - e.g. OSF & OSF API local.py
 
     `$ cp ./website/settings/local-dist.py ./website/settings/local.py`
-    
+
     `$ cp ./api/base/settings/local-dist.py ./api/base/settings/local.py`
 
 2. Environment variables (incl. remote debugging)
@@ -78,7 +78,8 @@
 2. Start Core Component Services
   - `$ docker-compose up elasticsearch postgres tokumx`
 
-3. Start the Assets Watcher
+3. Remove your existing node_modules and start the assets watcher
+  - `$ rm -Rf ./node_modules`
   - `$ docker-compose up assets`
 
     _NOTE: The first time the assets container is run it will take Webpack/NPM up to 15 minutes to compile resources.
