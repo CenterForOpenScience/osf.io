@@ -68,6 +68,20 @@
           - ../waterbutler/:/code
     ```
 
+## Docker Sync
+
+1. Install Docker Sync
+  - [Instructions](http://docker-sync.io)
+
+2. If you have problems trying installing macfsevents
+  - `$ sudo pip install macfsevents`
+
+3. Running Docker Sync
+
+    _NOTE: Wait for Docker Sync to fully start before running any docker-compose commands._
+  - `$ docker-sync start`
+
+
 ## Application Runtime
 1. Application Environment
 
@@ -93,6 +107,10 @@
   - `$ docker-compose up web api`
 
 ## Running arbitrary commands
+
+- View logs:
+  - `$ docker-compose -f --tail 100 <container_name>`
+    _NOTE: CTRL-c will exit_
 - Run migrations:
   - After creating migrations, resetting your database, or starting on a fresh install you will need to run migrations to make the needed changes to database. This command looks at the migrations on disk and compares them to the list of migrations in the `django_migrations` database table and runs any migrations that have not been run.
     - `docker-compose run --no-deps web python manage.py migrate`
