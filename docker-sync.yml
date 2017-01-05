@@ -12,29 +12,29 @@ syncs:
 #    dest: '/code'
 #    sync_strategy: 'unison'
 #    sync_excludes_type: 'Name'
-#    sync_excludes: ['.git', '.idea', '*.pyc']
-#    watch_excludes: ['.*/\.git', '.*/\.idea', '.*\.pyc']
+#    sync_excludes: ['.DS_Store', '*.pyc', '*.tmp', '.git', '.idea']
+#    watch_excludes: ['.*\.DS_Store', '.*\.pyc', '.*\.tmp', '.*/\.git', '.*/\.idea']
 
 #  mfr-sync:
 #    src: '../modular-file-renderer'
 #    dest: '/code'
 #    sync_strategy: 'unison'
 #    sync_excludes_type: 'Name'
-#    sync_excludes: ['.git', '.idea', '*.pyc']
-#    watch_excludes: ['.*/\.git', '.*/\.idea', '.*\.pyc']
+#    sync_excludes: ['.DS_Store', '*.pyc', '*.tmp', '.git', '.idea']
+#    watch_excludes: ['.*\.DS_Store', '.*\.pyc', '.*\.tmp', '.*/\.git', '.*/\.idea']
 
 #  preprints-sync:
 #    src: '../ember-preprints'
 #    dest: '/code'
 #    sync_strategy: 'unison'
 #    sync_excludes_type: 'Name'
-#    sync_excludes: ['.git', '.idea', 'tmp', 'dist', 'bower_components', 'node_modules']
-#    watch_excludes: ['.*/\.git', '.*/\.idea', '.*/tmp', '.*/dist', '.*/bower_components', '.*/node_modules']
+#    sync_excludes: ['.DS_Store', '*.map', '*.pyc', '*.tmp', '.git', '.idea', 'node_modules', 'tmp', 'dist', 'bower_components']
+#    watch_excludes: ['.*\.DS_Store', '.*\.map', '.*\.pyc', '.*\.tmp', '.*/\.git', '.*/\.idea', '.*/node_modules', '.*/tmp', '.*/dist', '.*/bower_components']
 
   osf-sync:
     src: './'
     dest: '/code'
     sync_strategy: 'unison'
     sync_excludes_type: 'Name'
-    sync_excludes: ['.git', '.idea', 'node_modules', '*.pyc']
-    watch_excludes: ['.*/\.git', '.*/\.idea', '.*/node_modules', '.*\.pyc']
+    sync_excludes: ['.DS_Store', '*.map', '*.pyc', '*.tmp', '.git', '.idea', 'node_modules']
+    watch_excludes: ['.*\.DS_Store', '.*\.map', '.*\.pyc', '.*\.tmp', '.*/\.git', '.*/\.idea', '.*/node_modules']

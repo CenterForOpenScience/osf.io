@@ -61,9 +61,30 @@
 #       - ../waterbutler/:/code
 
 
+###############
+# Docker Sync #
+###############
+
+# Install Docker Sync
+#
+# Instructions: docker-sync.io.
+#
+# sudo pip install macfsevents
+
+# Running Docker Sync
+#
+# NOTE: Wait for Docker Sync to fully start before running any further docker-compose commands.
+#
+# docker-sync start
+
+
 #######################
 # Application Runtime #
 #######################
+
+# Logs can be viewed for any backgrounded container by running:
+#
+# docker-compose -f --tail 100 <container_name>
 
 # Application Environment
 #
@@ -73,7 +94,7 @@
 
 # Start Core Component Services
 #
-# docker-compose up elasticsearch tokumx
+# docker-compose up -d elasticsearch tokumx
 
 # Start the Assets Watcher
 #
@@ -81,15 +102,15 @@
 #       When you see the BowerJS build occurring it is likely a safe time to move forward with starting the remaining
 #       containers.
 #
-# docker-compose run --rm --no-deps web invoke assets -dw
+# docker-compose up -d assets
 
 # Start the Services
 #
-# docker-compose up mfr wb fakecas
+# docker-compose up -d mfr wb fakecas
 
 # Start the OSF Web and API Servers
 #
-# docker-compose up web api
+# docker-compose up -d web api
 
 
 #########################
@@ -145,6 +166,8 @@ volumes:
   mfr_requirements_vol:
     external: false
   wb_requirements_vol:
+    external: false
+  wb_osfstoragecache_vol:
     external: false
   osf_requirements_vol:
     external: false
@@ -232,6 +255,7 @@ services:
     tty: true
     volumes:
       - wb_requirements_vol:/usr/local/lib/python3.5/site-packages
+      - wb_osfstoragecache_vol:/code/website/osfstoragecache
 
 
   ##################################
@@ -244,8 +268,8 @@ services:
     restart: unless-stopped
     ports:
       - 8080:8080
-#    depends_on:
-#      - tokumx
+    depends_on:
+      - tokumx
 
 
   #############
@@ -321,14 +345,22 @@ services:
   requirements:
     image: quay.io/centerforopenscience/osf:develop
     command: /bin/bash -c "invoke requirements --quick && cp -Rf /usr/local/lib/python2.7/site-packages /"
-#    restart: 'no'
+    restart: 'no'
     volumes:
       - osf_requirements_vol:/site-packages
+
+  assets:
+    image: quay.io/centerforopenscience/osf:develop
+    command: invoke assets -dw
+    restart: unless-stopped
+    volumes:
+      - osf_requirements_vol:/usr/local/lib/python2.7/site-packages
+      - osf_node_modules_vol:/code/node_modules
 
 #  admin:
 #    image: quay.io/centerforopenscience/osf:develop
 #    command: invoke adminserver -h 0.0.0.0
-##    restart: unless-stopped
+#    restart: unless-stopped
 #    ports:
 #      - 8001:8001
 #    depends_on:
@@ -346,7 +378,7 @@ services:
   api:
     image: quay.io/centerforopenscience/osf:develop
     command: invoke apiserver -h 0.0.0.0
-#    restart: unless-stopped
+    restart: unless-stopped
     ports:
       - 8000:8000
     depends_on:
@@ -364,7 +396,7 @@ services:
   web:
     image: quay.io/centerforopenscience/osf:develop
     command: invoke server -h 0.0.0.0
-#    restart: unless-stopped
+    restart: unless-stopped
     ports:
       - 5000:5000
     depends_on:

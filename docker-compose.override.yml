@@ -18,6 +18,10 @@ services:
 #    volumes_from:
 #      - container:preprints-sync
 
+  assets:
+    volumes_from:
+      - container:osf-sync
+
 #  admin:
 #    volumes_from:
 #      - container:osf-sync
