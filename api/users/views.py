@@ -1,33 +1,32 @@
 
-from rest_framework import generics
-from rest_framework import permissions as drf_permissions
-from rest_framework.exceptions import NotAuthenticated, NotFound
-from django.contrib.auth.models import AnonymousUser
-
-from modularodm import Q
-
-from framework.auth.oauth_scopes import CoreScopes
-
-from website.models import User, Node, ExternalAccount
-
+from api.addons.views import AddonSettingsMixin
 from api.base import permissions as base_permissions
-from api.base.utils import get_object_or_error
 from api.base.exceptions import Conflict
+from api.base.filters import ListFilterMixin, ODMFilterMixin
+from api.base.parsers import (JSONAPIRelationshipParser,
+                              JSONAPIRelationshipParserForRegularJSON)
 from api.base.serializers import AddonAccountSerializer
+from api.base.utils import (default_node_list_query,
+                            default_node_permission_query, get_object_or_error)
 from api.base.views import JSONAPIBaseView
-from api.base.filters import ODMFilterMixin, ListFilterMixin
-from api.base.parsers import JSONAPIRelationshipParser, JSONAPIRelationshipParserForRegularJSON
+from api.institutions.serializers import InstitutionSerializer
 from api.nodes.filters import NodePreprintsFilterMixin
 from api.nodes.serializers import NodeSerializer
 from api.preprints.serializers import PreprintSerializer
-from api.institutions.serializers import InstitutionSerializer
 from api.registrations.serializers import RegistrationSerializer
-from api.base.utils import default_node_list_query, default_node_permission_query
-from api.addons.views import AddonSettingsMixin
-
-from api.users.serializers import (UserSerializer, UserCreateSerializer,
-    UserAddonSettingsSerializer, UserDetailSerializer, UserInstitutionsRelationshipSerializer)
-from api.users.permissions import ReadOnlyOrCurrentUser, ReadOnlyOrCurrentUserRelationship, CurrentUser
+from api.users.permissions import (CurrentUser, ReadOnlyOrCurrentUser,
+                                   ReadOnlyOrCurrentUserRelationship)
+from api.users.serializers import (UserAddonSettingsSerializer,
+                                   UserCreateSerializer, UserDetailSerializer,
+                                   UserInstitutionsRelationshipSerializer,
+                                   UserSerializer)
+from django.contrib.auth.models import AnonymousUser
+from framework.auth.oauth_scopes import CoreScopes
+from modularodm import Q
+from rest_framework import permissions as drf_permissions
+from rest_framework import generics
+from rest_framework.exceptions import NotAuthenticated, NotFound
+from website.models import ExternalAccount, Node, User
 
 
 class UserMixin(object):
@@ -126,7 +125,7 @@ class UserList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
         )
         if self.request.version >= '2.3':
             return base_query & Q('merged_by', 'eq', None)
-        return base_query & Q('is_merged', 'ne', True)
+        return base_query
 
     # overrides ListCreateAPIView
     def get_queryset(self):

@@ -1,5 +1,6 @@
 # Use API defaults. This allows these settings to work with API tests
 from api.base.settings.defaults import *  # noqa
+
 DEBUG_PROPAGATE_EXCEPTIONS = True
 #DATABASES = {
 #    'default': {
@@ -21,9 +22,7 @@ PASSWORD_HASHERS = (
 
 REST_FRAMEWORK['ALLOWED_VERSIONS'] = (
         '2.0',
-        '2.0.1',
         '2.1',
         '2.2',
-        '3.0',
-        '3.0.1',
+        '2.3',
     )
