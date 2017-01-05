@@ -137,10 +137,7 @@ class TrashedFileNode(StoredObject, Commentable):
             for child in TrashedFileNode.find(Q('parent', 'eq', self)):
                 child.restore(recursive=recursive, parent=restored)
 
-        try:
-            discourse.undelete_topic(restored)
-        except (discourse.DiscourseException, requests.exceptions.ConnectionError):
-            logger.exception('Error undeleting Discourse topic')
+        discourse.topics.undelete_topic(restored)
 
         TrashedFileNode.remove_one(self)
         return restored
@@ -315,11 +312,7 @@ class StoredFileNode(StoredObject, Commentable):
     def save(self):
         # keep discourse up to date with changed filename. It will be a NOP if everything is synced already.
         if self.discourse_topic_id:
-            try:
-                discourse.sync_topic(self, should_save=False)
-            except Exception:
-                # We catch Exception so that Discourse can not accidentally cause the user action to fail completely
-                logger.exception('Error syncing/creating Discourse topic')
+            discourse.topics.sync_topic(self, should_save=False)
 
         value = super(StoredFileNode, self).save()
         return value
@@ -570,10 +563,7 @@ class FileNode(object):
         and remove it from StoredFileNode
         :param user User or None: The user that deleted this FileNode
         """
-        try:
-            discourse.delete_topic(self)
-        except (discourse.DiscourseException, requests.exceptions.ConnectionError):
-            logger.exception('Error deleting Discourse topic')
+        discourse.topics.delete_topic(self)
 
         trashed = self._create_trashed(user=user, parent=parent)
         self._repoint_guids(trashed)

@@ -142,7 +142,7 @@ class TestDiscourse(DbTestCase):
 
         self.component_node.is_public = False
         topics.sync_topic(self.component_node)
-        topics.topic_json = topics.get_topic(self.component_node)
+        topic_json = topics.get_topic(self.component_node)
         self.assertEquals(topic_json['topic_guid'], self.component_node._id)
         self.assertEquals(topic_json['slug'], self.component_node._id)
         self.assertEquals(topic_json['title'], self.component_node.label)
@@ -204,13 +204,13 @@ class TestDiscourse(DbTestCase):
             projects.get_project(self.project_node)
 
         with self.assertRaises(common.DiscourseException):
-            projects.get_topic(self.project_node)
+            topics.get_topic(self.project_node)
 
         with self.assertRaises(common.DiscourseException):
             topics.get_topic(self.component_node)
 
         with self.assertRaises(common.DiscourseException):
-            projects.get_topic(self.file_node)
+            topics.get_topic(self.file_node)
 
         projects.undelete_project(self.project_node)
 

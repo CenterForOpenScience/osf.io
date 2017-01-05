@@ -19,6 +19,7 @@ from website.project.decorators import must_be_contributor_or_public
 from osf.models import Node
 from website.project.signals import comment_added, mention_added
 
+
 @file_updated.connect
 def update_file_guid_referent(self, node, event_type, payload, user=None):
     if event_type == 'addon_file_moved' or event_type == 'addon_file_renamed':

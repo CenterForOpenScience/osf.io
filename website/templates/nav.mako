@@ -68,7 +68,6 @@
                   <a href="${web_url_for('auth_logout')}"><i class="fa fa-sign-out fa-lg p-r-xs"></i> Log out</a>
               </li>
 
-
           </ul>
         </li>
         % elif allow_login:
@@ -97,51 +96,6 @@
 
 
 </nav>
-
-<script>
-function performDiscourseLogin() {
-    var iframe = document.createElement("iframe");
-    iframe.style.display = 'none';
-    iframe.src = '${settings.DISCOURSE_SERVER_URL}/session/sso';
-    iframe.addEventListener('load', function(e) {
-        this.parentNode.removeChild(this);
-        // Verify log-in
-        $.ajax({
-            url: "${settings.DISCOURSE_SERVER_URL}/session/current.json",
-            xhrFields: { withCredentials: true }}
-        ).then(function(json) {
-            if (json.current_user && json.current_user.username == contextVars.currentUser.id) {
-                if(typeof(Storage) !== "undefined") {
-                    sessionStorage.discourseLoggedIn = "true";
-                }
-            }
-        });
-    });
-    document.body.appendChild(iframe);
-}
-
-function discourseAutoLogin() {
-    if (contextVars.currentUser.id) {
-        if (typeof(Storage) !== "undefined" && sessionStorage.discourseLoggedIn == "true") {
-            return;
-        } else {
-            performDiscourseLogin();
-        }
-    } else if (typeof(Storage) !== "undefined") {
-        sessionStorage.discourseLoggedIn = "false";
-        return;
-    }
-};
-
-if (window.addEventListener) {
-    window.addEventListener("load", discourseAutoLogin, false);
-} else if (window.attachEvent) {
-    window.attachEvent("onload", discourseAutoLogin);
-} else {
-    window.onload = discourseAutoLogin;
-}
-
-</script>
 
     <!-- ko ifnot: onSearchPage -->
         <%include file='./search_bar.mako' />

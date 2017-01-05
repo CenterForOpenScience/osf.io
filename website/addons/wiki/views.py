@@ -2,7 +2,6 @@
 
 import httplib as http
 import logging
-import requests
 
 from bs4 import BeautifulSoup
 from flask import request
@@ -214,11 +213,7 @@ def project_wiki_delete(auth, wname, **kwargs):
     node.delete_node_wiki(wiki_name, auth)
     wiki_utils.broadcast_to_sharejs('delete', sharejs_uuid, node)
 
-    try:
-        discourse.delete_topic(wiki_page)
-    except (discourse.DiscourseException, requests.exceptions.ConnectionError):
-        logger.exception('Error deleting wiki page')
-
+    discourse.topics.delete_topic(wiki_page)
     return {}
 
 
@@ -330,17 +325,11 @@ def project_wiki_view(auth, wname, path=None, **kwargs):
             'web': _get_wiki_web_urls(node, wiki_name),
             'gravatar': get_gravatar(auth.user, 25),
         },
+        'discourse_url': website.settings.DISCOURSE_SERVER_URL,
+        'discourse_topic_id': discourse.topics.get_or_create_topic_id(wiki_page),
     }
     ret.update(_view_project(node, auth, primary=True))
     ret['user']['can_edit_wiki_body'] = can_edit
-
-    ret['discourse_url'] = website.settings.DISCOURSE_SERVER_URL
-    try:
-        ret['discourse_topic_id'] = discourse.get_or_create_topic_id(wiki_page)
-    except (discourse.DiscourseException, requests.exceptions.ConnectionError):
-        logger.exception('Error creating Discourse topic')
-        ret['discourse_topic_id'] = None
-
     return ret
 
 

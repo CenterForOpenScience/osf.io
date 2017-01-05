@@ -2,8 +2,9 @@ import markupsafe
 import requests.compat
 
 import framework.discourse.common
+import framework.discourse.projects
 from framework.discourse import categories, common
-from website import settings
+from website import models, settings
 
 def _get_parent_node(obj):
     """Return the parent Node of this project, file, or wiki.
@@ -130,37 +131,41 @@ def sync_topic(obj, should_save=True):
     if framework.discourse.common.in_migration:
         return
 
-    parent_node = _get_parent_node(obj)
-    if not parent_node.discourse_project_created:
-        framework.discourse.projects.sync_project_details(parent_node)
+    try:
+        parent_node = _get_parent_node(obj)
+        if not parent_node.discourse_project_created:
+            framework.discourse.projects.sync_project_details(parent_node)
 
-    if obj.discourse_topic_id is None:
-        _create_topic(obj, should_save)
+        if obj.discourse_topic_id is None:
+            _create_topic(obj, should_save)
+            return
+
+        parent_guids = get_parent_guids(obj)
+        guids_changed = parent_guids != obj.discourse_topic_parent_guids
+        # We don't want problems with case, since discourse change case sometimes.
+        title_changed = obj.label.lower() != obj.discourse_topic_title.lower()
+
+        deletion_changed = obj.is_deleted != obj.discourse_topic_deleted
+
+        if guids_changed or title_changed or deletion_changed:
+            if title_changed:
+                _update_topic_content(obj)
+            if guids_changed or title_changed:
+                _update_topic_metadata(obj)
+
+            if deletion_changed:
+                if obj.is_deleted:
+                    delete_topic(obj, False)
+                else:
+                    undelete_topic(obj, False)
+
+            obj.discourse_topic_title = obj.label
+            obj.discourse_topic_parent_guids = parent_guids
+            if should_save:
+                obj.save()
+    except (common.DiscourseException, requests.exceptions.ConnectionError):
+        logger.exception('Error syncing a topic, check your Discourse server')
         return
-
-    parent_guids = get_parent_guids(obj)
-    guids_changed = parent_guids != obj.discourse_topic_parent_guids
-    # We don't want problems with case, since discourse change case sometimes.
-    title_changed = obj.label.lower() != obj.discourse_topic_title.lower()
-
-    deletion_changed = obj.is_deleted != obj.discourse_topic_deleted
-
-    if guids_changed or title_changed or deletion_changed:
-        if title_changed:
-            _update_topic_content(obj)
-        if guids_changed or title_changed:
-            _update_topic_metadata(obj)
-
-        if deletion_changed:
-            if obj.is_deleted:
-                delete_topic(obj, False)
-            else:
-                undelete_topic(obj, False)
-
-        obj.discourse_topic_title = obj.label
-        obj.discourse_topic_parent_guids = parent_guids
-        if should_save:
-            obj.save()
 
 def get_or_create_topic_id(obj, should_save=True):
     """Return the Discourse topic ID of the project/file/wiki, creating it if necessary
@@ -172,8 +177,13 @@ def get_or_create_topic_id(obj, should_save=True):
     if obj is None:
         return None
     if obj.discourse_topic_id is None:
-        _create_topic(obj, should_save)
+        try:
+            _create_topic(obj, should_save)
+        except (common.DiscourseException, requests.exceptions.ConnectionError):
+            logger.exception('Error creating a topic, check your Discourse server')
+            return None
     return obj.discourse_topic_id
+
 
 def get_topic(obj):
     """Return the topic (as a dict) of the project/file/wiki
@@ -183,7 +193,7 @@ def get_topic(obj):
     """
     return common.request('get', '/t/' + str(obj.discourse_topic_id) + '.json')
 
-def _some_parent_is_deleted(obj):
+def some_parent_is_deleted(obj):
     parent_node = _get_parent_node(obj)
     while parent_node:
         if parent_node.discourse_project_deleted:
@@ -193,14 +203,23 @@ def _some_parent_is_deleted(obj):
 
 def delete_topic(obj, should_save=True):
     """Delete the topic of the project/file/wiki
+    If called on a project/component, this is equivalent to calling delete_project
 
     :param Node/StoredFileNode/NodeWikiPage obj: the project/file/wiki whose topic should be deleted
     :param bool should_save: Whether the function should call obj.save()
     """
-    if obj.discourse_topic_id is None or obj.discourse_topic_deleted or _some_parent_is_deleted(obj):
+    if obj.discourse_topic_id is None or obj.discourse_topic_deleted or some_parent_is_deleted(obj):
         return
 
-    common.request('delete', '/t/' + str(obj.discourse_topic_id) + '.json')
+    if obj.target_type == 'nodes':
+        framework.discourse.projects.delete_project(obj)
+        return
+
+    try:
+        common.request('delete', '/t/' + str(obj.discourse_topic_id) + '.json')
+    except (common.DiscourseException, requests.exceptions.ConnectionError):
+        logger.exception('Error deleting a topic, check your Discourse server')
+        return
 
     obj.discourse_topic_deleted = True
     if should_save:
@@ -212,10 +231,14 @@ def undelete_topic(obj, should_save=True):
     :param Node/StoredFileNode/NodeWikiPage obj: the project/file/wiki whose topic should be undeleted
     :param bool should_save: Whether the function should call obj.save()
     """
-    if obj.discourse_topic_id is None or not obj.discourse_topic_deleted or _some_parent_is_deleted(obj):
+    if obj.discourse_topic_id is None or not obj.discourse_topic_deleted or some_parent_is_deleted(obj):
         return
 
-    common.request('put', '/t/' + str(obj.discourse_topic_id) + '/recover')
+    try:
+        common.request('put', '/t/' + str(obj.discourse_topic_id) + '/recover')
+    except (common.DiscourseException, requests.exceptions.ConnectionError):
+        logger.exception('Error undeleting a topic, check your Discourse server')
+        return
 
     obj.discourse_topic_deleted = False
     if should_save:

@@ -680,13 +680,6 @@ def _view_project(node, auth, primary=False,
             for message in messages:
                 status.push_status_message(message, kind='info', dismissible=False, trust=True)
 
-    discourse_user_apikey = None
-    if user:
-        try:
-            discourse_user_apikey = discourse.get_user_apikey()
-        except (discourse.DiscourseException, requests.exceptions.ConnectionError):
-            logger.exception('Error getting Discourse user API key')
-
     data = {
         'node': {
             'disapproval_link': disapproval_link,
@@ -795,7 +788,8 @@ def _view_project(node, auth, primary=False,
             for key, value in settings.NODE_CATEGORY_MAP.iteritems()
         ],
         'discourse_url': settings.DISCOURSE_SERVER_URL,
-        'discourse_apikey': discourse_user_apikey
+        'discourse_topic_id': discourse.topics.get_or_create_topic_id(node),
+        'discourse_apikey': discourse.users.get_user_apikey(),
     }
     
     if embed_contributors and not anonymous:
@@ -816,12 +810,6 @@ def _view_project(node, auth, primary=False,
             serialize_node_summary(node=each, auth=auth, show_path=False)
             for each in node.forks.exclude(type='osf.registration').exclude(is_deleted=True).sort('-forked_date').annotate(nlogs=Count('logs'))
         ]
-
-    try:
-        data['discourse_topic_id'] = discourse.get_or_create_topic_id(node)
-    except (discourse.DiscourseException, requests.exceptions.ConnectionError):
-        logger.exception('Error creating Discourse topic')
-        data['discourse_topic_id'] = None
 
     return data
 

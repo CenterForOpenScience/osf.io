@@ -44,14 +44,18 @@ def sync_project(project_node, should_save=True):
     if common.in_migration:
         return
 
-    sync_project_details(project_node, False)
+    try:
+        sync_project_details(project_node, False)
+    except (common.DiscourseException, requests.exceptions.ConnectionError):
+        logger.exception('Error syncing a project, check your Discourse server')
+        return
 
     framework.discourse.topics.sync_topic(project_node, False)
 
     if project_node.discourse_project_deleted and not project_node.is_deleted:
         undelete_project(project_node, False)
     elif not project_node.discourse_project_deleted and project_node.is_deleted:
-        delete_project(project_node, True)
+        delete_project(project_node, False)
 
     if should_save:
         project_node.save()
@@ -65,20 +69,29 @@ def get_project(project_node, user=None, view_only=None):
     data = {}
     if view_only:
         data['view_only'] = view_only
-    username = users.get_discourse_username(user)
+    username = 'system'
+    if user:
+        username = users.get_discourse_username(user)
     return common.request('get', '/forum/' + str(project_node._id) + '.json', data, username=username)['topic_list']
 
 def delete_project(project_node, should_save=True):
     """Delete project topics from Discourse. This makes them inaccessible,
     although the data is not actually lost and could later be restored.
+    A project cannot be deleted if a parent node has already been deleted.
+    In that case, this does nothing.
 
     :param Node project_node: Project Node to delete on Discourse
     :param bool should_save: Whether the function should call project_node.save()
     """
-    if not project_node.discourse_project_created or project_node.discourse_project_deleted:
+    if not project_node.discourse_project_created or framework.discourse.topics.some_parent_is_deleted(project_node):
         return
 
-    common.request('delete', '/forum/' + project_node._id)
+    try:
+        common.request('delete', '/forum/' + project_node._id)
+    except (common.DiscourseException, requests.exceptions.ConnectionError):
+        logger.exception('Error deleting a project, check your Discourse server')
+        return
+
     project_node.discourse_project_deleted = True
     if should_save:
         project_node.save()
@@ -93,7 +106,12 @@ def undelete_project(project_node, should_save=True):
         return
     # force resync of project
     project_node.discourse_project_created = False
-    sync_project_details(project_node, False)
+
+    try:
+        sync_project_details(project_node, False)
+    except (common.DiscourseException, requests.exceptions.ConnectionError):
+        logger.exception('Error undeleting a project, check your Discourse server')
+        return
 
     project_node.discourse_project_deleted = False
     if should_save:

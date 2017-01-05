@@ -3,7 +3,7 @@ import hashlib
 import hmac
 import urllib
 
-from website import settings
+import framework.discourse
 
 # http://stackoverflow.com/questions/6480723/urllib-urlencode-doesnt-like-unicode-values-how-about-this-workaround
 # John Machin
@@ -19,7 +19,7 @@ def _utf8_encode_dict(in_dict):
     return out_dict
 
 def sign_payload(payload):
-    sso_secret = settings.DISCOURSE_SSO_SECRET
+    sso_secret = framework.discourse.settings.DISCOURSE_SSO_SECRET
 
     encoded_return_64 = base64.b64encode(urllib.urlencode(_utf8_encode_dict(payload)))
     return_signature = hmac.new(sso_secret, encoded_return_64, hashlib.sha256).hexdigest()

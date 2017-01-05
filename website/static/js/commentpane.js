@@ -48,6 +48,55 @@
             return $(document.body).width() * options.maxWidthProp;
         };
 
+        var insertCommentsIframe = function(discourseUrl, topidId) {
+            window.DiscourseEmbed = { discourseUrl: discourseUrl, topicId: topicId };
+
+            var d = document.createElement('script');
+            d.type = 'text/javascript';
+            d.async = true;
+            d.src = discourseUrl + 'javascripts/embed.js';
+            d.onload = function() {
+                // patch the href to include the view_only parameter
+                var viewOnly = $osf.urlParams().view_only;
+                if (viewOnly) {
+                    var discourseEmbedFrame = document.getElementById('discourse-embed-frame');
+                    discourseEmbedFrame.src += '&view_only=' + viewOnly;
+                }
+            };
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(d);
+        }
+
+        // Make url end in a single slash
+        var normalizeUrl = function(url) {
+            if (url.endsWith('//')) {
+                url = url.slice(0, -1);
+            }
+            if (!url.endsWith('/')) {
+                url += '/';
+            }
+            return url;
+        };
+
+        var loadDiscourseComments = function() {
+            var discourseEmbedFrame = document.getElementById('discourse-embed-frame');
+            var discourseComments = document.getElementById('discourse-comments');
+            if (discourseEmbedFrame) {
+                // force reload.
+                discourseEmbedFrame.src += '';
+            } else if (!discourseComments.discourseBegunLoading) {
+                discourseComments.discourseBegunLoading = true;
+
+                var discourseUrl = discourseComments.getAttribute('data-discourse-url');
+                discourseUrl = normalizeUrl(discourseUrl);
+
+                var topicId = discourseComments.getAttribute('data-discourse-topic-id');
+                // initial load.
+                if (topicId !== 'None') {
+                    insertCommentsIframe(discourseUrl, topicId);
+                }
+            }
+        };
+
         self.toggle = function() {
             var width;
             if ($pane.width()) {
@@ -67,42 +116,9 @@
                 {width: width},
                 options.animateTime,
                 function() {
-                    if (width) {
-                        // Animation complete, so load the comments from Discourse
-                        var discourseEmbedFrame = document.getElementById('discourse-embed-frame');
-                        var discourseComments = document.getElementById('discourse-comments');
-                        if (discourseEmbedFrame) {
-                            // force reload.
-                            discourseEmbedFrame.src += '';
-                        } else if (!discourseComments.discourseBegunLoading) {
-                            discourseComments.discourseBegunLoading = true;
-
-                            var discourseUrl = discourseComments.getAttribute('data-discourse-url');
-                            if (discourseUrl.endsWith('//')) {
-                                discourseUrl = discourseUrl.slice(0, -1);
-                            }
-                            if (!discourseUrl.endsWith('/')) {
-                                discourseUrl += '/';
-                            }
-
-                            var topicId = discourseComments.getAttribute('data-discourse-topic-id');
-                            // initial load.
-                            if (topicId !== 'None') {
-                                window.DiscourseEmbed = { discourseUrl: discourseUrl, topicId: topicId };
-                                (function() {
-                                    var d = document.createElement('script'); d.type = 'text/javascript'; d.async = true;
-                                    d.src = discourseUrl + 'javascripts/embed.js';
-                                    d.onload = function() {
-                                        var viewOnly = $osf.urlParams().view_only;
-                                        if (viewOnly) {
-                                            discourseEmbedFrame = document.getElementById('discourse-embed-frame');
-                                            discourseEmbedFrame.src += '&view_only=' + viewOnly;
-                                        }
-                                    };
-                                    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(d);
-                                })();
-                            }
-                        }
+                    // load comments when the panel is opening
+                    if (width > 0) {
+                        loadDiscourseComments();
                     }
                 }
             );

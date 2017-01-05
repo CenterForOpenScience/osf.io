@@ -1678,10 +1678,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
 
         # No guid yet if on the first save.
         if not first_save:
-            try:
-                discourse.sync_project(self, should_save=False)
-            except Exception:
-                logger.exception('Error syncing/creating Discourse project')
+            discourse.topics.sync_project(self, should_save=False)
 
         if first_save and self.is_bookmark_collection:
             existing_bookmark_collections = Node.find(
@@ -1751,11 +1748,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
 
         # We have to wait until now to save, and then save again, because we won't have a guid until after the first save
         if first_save:
-            try:
-                discourse.sync_project(self, should_save=False)
-                saved_fields |= set(super(Node, self).save(*args, **kwargs))
-            except Exception:
-                logger.exception('Error syncing/creating Discourse project')
+            discourse.topics.sync_project(self, should_save=False)
+            saved_fields |= set(super(Node, self).save(*args, **kwargs))
 
         # Return expected value for StoredObject::save
         return saved_fields

@@ -29,10 +29,13 @@ def create_user(user, should_save=True):
     }
 
     data = api.sso.sign_payload(payload)
-    user_id = common.request('post', '/admin/users/sync_sso', data)['id']
-
-    user.discourse_user_id = user_id
-    user.discourse_user_created = True
+    try:
+        user_id = common.request('post', '/admin/users/sync_sso', data)['id']
+        user.discourse_user_id = user_id
+        user.discourse_user_created = True
+    except (common.DiscourseException, requests.exceptions.ConnectionError):
+        logger.exception('Error creating Discourse user, check your Discourse server')
+        return None
 
     if should_save:
         user.save()
@@ -47,8 +50,12 @@ def delete_user(user):
     if not user.discourse_user_created:
         return
 
-    common.request('put', '/admin/users/' + str(user.discourse_user_id) + '/delete_all_posts')
-    common.request('delete', '/admin/users/' + str(user.discourse_user_id) + '.json')
+    try:
+        common.request('put', '/admin/users/' + str(user.discourse_user_id) + '/delete_all_posts')
+        common.request('delete', '/admin/users/' + str(user.discourse_user_id) + '.json')
+    except (common.DiscourseException, requests.exceptions.ConnectionError):
+        logger.exception('Error deleting Discourse user, check your Discourse server')
+        return None
 
     user.discourse_user_id = 0
     user.discourse_user_created = False
@@ -78,6 +85,8 @@ def get_discourse_username(user=None):
 
     if not user.discourse_user_created:
         create_user(user)
+    if not user.discourse_user_created:
+        return None
     return user._id
 
 def get_user_apikey(user=None):
@@ -97,7 +106,12 @@ def get_user_apikey(user=None):
         if key_lifetime.days < 1:
             return user.discourse_apikey
 
-    result = common.request('post', 'admin/users/' + str(user.discourse_user_id) + '/generate_api_key')
+    try:
+        result = common.request('post', 'admin/users/' + str(user.discourse_user_id) + '/generate_api_key')
+    except (common.DiscourseException, requests.exceptions.ConnectionError):
+        logger.exception('Error getting user api key, check your Discourse server')
+        return None
+
     user.discourse_apikey = result['api_key']['key']
     user.discourse_apikey_date_created = datetime.utcnow()
     user.save()
@@ -113,4 +127,4 @@ def logout():
         common.request('delete', '/session/' + username, username=username)
     except (framework.discourse.DiscourseException, requests.exceptions.ConnectionError):
         # The most expected error would be that the Discourse server might not be running
-        logger.exception('Error logging user out of Discourse')
+        logger.exception('Error logging user out of Discourse, check your Discourse server')

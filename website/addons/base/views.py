@@ -731,18 +731,12 @@ def addon_view_file(auth, node, file_node, version):
         'file_tags': file_node.tags.filter(system=False).values_list('name', flat=True),
         'file_guid': file_node.get_guid()._id,
         'file_id': file_node._id,
-        'allow_comments': file_node.provider in settings.ADDONS_COMMENTABLE
+        'allow_comments': file_node.provider in settings.ADDONS_COMMENTABLE,
+        'discourse_url': settings.DISCOURSE_SERVER_URL,
+        'discourse_topic_id': discourse.topics.get_or_create_topic_id(file_node),
     })
 
     ret.update(rubeus.collect_addon_assets(node))
-
-    ret['discourse_url'] = settings.DISCOURSE_SERVER_URL
-    try:
-        ret['discourse_topic_id'] = discourse.get_or_create_topic_id(file_node)
-    except (discourse.DiscourseException, requests.exceptions.ConnectionError):
-        logger.exception('Error creating Discourse topic')
-        ret['discourse_topic_id'] = None
-
     return ret
 
 

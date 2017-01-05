@@ -9,9 +9,10 @@ from rest_framework.exceptions import AuthenticationFailed
 
 from api.base.utils import get_user_auth
 from api.base.views import JSONAPIBaseView
+from api.sso import sign_payload
 from framework.auth import cas
-from website import settings
-from . import sign_payload
+import framework.discourse
+import website
 
 class SSOView(JSONAPIBaseView):
     view_name = 'sso-view'
@@ -23,10 +24,10 @@ class SSOView(JSONAPIBaseView):
     def get(self, request, **kwargs):
         auth = get_user_auth(request)
         user = request.user
-        sso_secret = settings.DISCOURSE_SSO_SECRET
+        sso_secret = framework.discourse.settings.DISCOURSE_SSO_SECRET
 
         if not auth.logged_in:
-            return HttpResponseRedirect(cas.get_login_url(settings.DOMAIN))
+            return HttpResponseRedirect(cas.get_login_url(website.settings.DOMAIN))
 
         encoded_payload = request.GET.get('sso', '')
         payload = base64.b64decode(encoded_payload)
