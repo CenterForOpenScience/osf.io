@@ -581,36 +581,26 @@ def test_js(ctx):
     karma(ctx, single=True, browsers='PhantomJS')
 
 
-@task
-def test_travis_osf(ctx):
-    """
-    Run half of the tests to help travis go faster. Lints and Flakes happen everywhere to keep from wasting test time.
-    """
-    flake(ctx)
-    jshint(ctx)
-    test_osf(ctx)
-    test_addons(ctx)
+# For Travis, we split the test suite into multiple parts to help things go
+# faster. Lints and Flakes happen everywhere to keep from wasting test time.
+# The TEST_BUILD envvar controls which one gets run; see .travis.yml.
 
+def travis(ctx, *funcs):
+    for func in (flake, jshint) + funcs:
+        print('Running {0} ...'.format(func.__name__))
+        func(ctx)
 
 @task
-def test_travis_else(ctx):
-    """
-    Run other half of the tests to help travis go faster. Lints and Flakes happen everywhere to keep from
-    wasting test time.
-    """
-    flake(ctx)
-    jshint(ctx)
-    test_api(ctx)
-    test_admin(ctx)
-
+def test_travis_osf_and_addons(ctx):
+    travis(ctx, test_osf, test_addons)
 
 @task
-def test_travis_varnish(ctx):
-    """
-    Run the fast and quirky JS tests and varnish tests in isolation
-    """
-    test_js(ctx)
-    test_varnish(ctx)
+def test_travis_api_and_admin(ctx):
+    travis(ctx, test_api, test_admin)
+
+@task
+def test_travis_js_and_varnish(ctx):
+    travis(ctx, test_js, test_varnish)
 
 
 @task

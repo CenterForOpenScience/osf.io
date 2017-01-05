@@ -24,9 +24,9 @@ env:
     - LIBPCRE_DEB="libpcre3_8.31-2ubuntu2.3_amd64.deb"
     - VARNISH_DEB="varnish_4.1.0-1~trusty_amd64.deb"
   matrix:
-    - TEST_BUILD="osf"
-    - TEST_BUILD="else"
-    - TEST_BUILD="varnish"
+    - TEST_BUILD="osf_and_addons"
+    - TEST_BUILD="api_and_admin"
+    - TEST_BUILD="js_and_varnish"
 
 before_install:
     # cache directories
@@ -91,7 +91,7 @@ before_install:
       export LD_LIBRARY_PATH=/tmp/libpcre/lib/x86_64-linux-gnu:/tmp/libjemalloc/usr/lib/x86_64-linux-gnu:/tmp/varnish/usr/lib/varnish
       /tmp/varnish/usr/sbin/varnishd -n /tmp -p feature=+esi_disable_xml_check -p vmod_dir=/tmp/varnish/usr/lib/varnish/vmods -F -f $PROJECT_DIR/tests/test_files/varnish.vcl -a *:8080 > /dev/null &
     - |
-      if [ "$TEST_BUILD" = "varnish" ]; then
+      if [ "$TEST_BUILD" = "js_and_varnish" ]; then
         export ENABLE_VARNISH=True
       fi
 install:
