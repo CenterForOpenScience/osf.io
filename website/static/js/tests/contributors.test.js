@@ -19,7 +19,7 @@ var URLs = {
     fetchUsers: '/api/v1/user/search'
 };
 
-describe.skip('addContributors', () => {
+describe('addContributors', () => {
    describe('viewModel', () => {
        var getContributorsResult = {
            contributors: [

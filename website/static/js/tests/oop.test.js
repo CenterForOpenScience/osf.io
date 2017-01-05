@@ -7,7 +7,7 @@ sinon.assert.expose(assert, {prefix: ''});
 var oop = require('js/oop');
 
 
-describe.skip('oop', () => {
+describe('oop', () => {
     var constructorSpy = new sinon.spy();
     var methodSpy = new sinon.spy();
     var overrideSpy = new sinon.spy();

@@ -79,6 +79,7 @@ var entry = {
         'lodash.get',
         'js-cookie',
         'URIjs',
+        'stacktrace-js',
         // Common internal modules
         'js/fangorn',
         'js/citations',

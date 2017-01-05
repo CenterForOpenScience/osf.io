@@ -19,6 +19,7 @@ var NodeSelectTreebeard = require('js/nodeSelectTreebeard');
 var m = require('mithril');
 var projectSettingsTreebeardBase = require('js/projectSettingsTreebeardBase');
 
+var Raven = require('raven-js'); // XXX Debugging!
 
 function Contributor(data) {
     $.extend(this, data);
@@ -245,6 +246,7 @@ AddContributorViewModel = oop.extend(Paginator, {
         self.notification(false);
         var url = $osf.apiV2Url('nodes/' + window.contextVars.node.id + '/contributors/');
 
+        console.log('contrib adding');
         return $.ajax({
             url: url,
             type: 'GET',
@@ -254,10 +256,24 @@ AddContributorViewModel = oop.extend(Paginator, {
             xhrFields: {withCredentials: true},
             processData: false
         }).done(function (response) {
-            var contributors = response.data.map(function (contributor) {
-                // contrib ID has the form <nodeid>-<userid>
-                return contributor.id.split('-')[1];
+            Raven.captureBreadcrumb({
+              message: 'done adding contrib',
+              category: 'debugging',
+              level: 'info',
+              data: {
+                 response: response,
+                 'response.data': response ? response.data : 'n/a'
+              }
             });
+            try {
+                var contributors = response.data.map(function (contributor) {
+                    // contrib ID has the form <nodeid>-<userid>
+                    return contributor.id.split('-')[1];
+                });
+            } catch(e) {
+                Raven.captureException(e);
+                throw e;
+            }
             self.contributors(contributors);
         });
     },

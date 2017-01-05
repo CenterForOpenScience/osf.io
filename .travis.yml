@@ -24,11 +24,10 @@ env:
     - LIBPCRE_DEB="libpcre3_8.31-2ubuntu2.3_amd64.deb"
     - VARNISH_DEB="varnish_4.1.0-1~trusty_amd64.deb"
   matrix:
-    - TEST_BUILD="osf"
-    - TEST_BUILD="else"
     - TEST_BUILD="varnish"
 
 before_install:
+    - npm ls sinon || echo ''
     # cache directories
     - |
       mkdir -p $HOME/.cache/downloads

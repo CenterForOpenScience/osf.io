@@ -24,7 +24,7 @@ describe('formModelView', () => {
         });
     });
 
-    describe.skip('ViewModel', () => {
+    describe('ViewModel', () => {
         var vm;
 
         beforeEach(() => {
