@@ -69,7 +69,7 @@
 #
 # NOTE: When the various requirements installations are complete these containers will exit.
 #
-# docker-compose up requirements requirements_mfr requirements_wb
+# docker-compose up requirements mfr_requirements wb_requirements
 
 # Start Core Component Services
 #
@@ -81,7 +81,7 @@
 #       When you see the BowerJS build occurring it is likely a safe time to move forward with starting the remaining
 #       containers.
 #
-# docker-compose up assets
+# docker-compose run --rm --no-deps web invoke assets -dw
 
 # Start the Services
 #
@@ -129,25 +129,27 @@
 # Delete a persistent storage volume
 #
 # docker-compose stop -t 0 tokumx
-# docker-compose rm tokumx
-# docker volume rm [projectname]_tokumx_vol
+# docker-compose rm -v tokumx
+# docker volume rm [projectname]_tokumx_data_vol
 
 
 version: '2'
 
 volumes:
-  tokumx_vol:
+  tokumx_data_vol:
     external: false
-  elasticsearch_vol:
+  elasticsearch_data_vol:
     external: false
-  requirements_osf_vol:
+  preprints_dist_vol:
     external: false
-  requirements_mfr_vol:
+  mfr_requirements_vol:
     external: false
-  requirements_wb_vol:
+  wb_requirements_vol:
     external: false
-#  preprints_vol:
-#    external: false
+  osf_requirements_vol:
+    external: false
+  osf_node_modules_vol:
+    external: false
 
 
 services:
@@ -161,7 +163,7 @@ services:
     ports:
       - 9200:9200
     volumes:
-      - elasticsearch_vol:/usr/share/elasticsearch/data
+      - elasticsearch_data_vol:/usr/share/elasticsearch/data
 
 #  postgres:
 #    image: postgres
@@ -179,19 +181,19 @@ services:
     environment:
       TOKU_HUGE_PAGES_OK: 1
     volumes:
-      - tokumx_vol:/data/db
+      - tokumx_data_vol:/data/db
 
 
   #########################
   # Modular File Renderer #
   #########################
 
-  requirements_mfr:
+  mfr_requirements:
     image: quay.io/centerforopenscience/mfr:develop
     command: /bin/bash -c "invoke install --develop && cp -Rf /usr/local/lib/python3.5/site-packages /"
     restart: 'no'
     volumes:
-      - requirements_mfr_vol:/site-packages
+      - mfr_requirements_vol:/site-packages
 
   mfr:
     image: quay.io/centerforopenscience/mfr:develop
@@ -204,19 +206,19 @@ services:
     stdin_open: true
     tty: true
     volumes:
-      - requirements_mfr_vol:/usr/local/lib/python3.5/site-packages
+      - mfr_requirements_vol:/usr/local/lib/python3.5/site-packages
 
 
   ###############
   # WaterButler #
   ###############
 
-  requirements_wb:
+  wb_requirements:
     image: quay.io/centerforopenscience/waterbutler:develop
     command: /bin/bash -c "invoke install --develop && cp -Rf /usr/local/lib/python3.5/site-packages /"
     restart: 'no'
     volumes:
-      - requirements_wb_vol:/site-packages
+      - wb_requirements_vol:/site-packages
 
   wb:
     image: quay.io/centerforopenscience/waterbutler:develop
@@ -229,7 +231,7 @@ services:
     stdin_open: true
     tty: true
     volumes:
-      - requirements_wb_vol:/usr/local/lib/python3.5/site-packages
+      - wb_requirements_vol:/usr/local/lib/python3.5/site-packages
 
 
   ##################################
@@ -242,26 +244,26 @@ services:
     restart: unless-stopped
     ports:
       - 8080:8080
-    depends_on:
-      - tokumx
+#    depends_on:
+#      - tokumx
 
 
   #############
   # Preprints #
   #############
 
-#   WARNING: Do not pass-through volumes to EmberJS applications as there are disk i/o performance penalties
-#            due to the broccoli builds, rather run the application locally and attach the dist directly to the OSF
-#            web container. e.g. ../ember-preprints/dist/:/preprints
-#
-#  preprints:
-#    image: quay.io/centerforopenscience/ember-preprints:develop
-#    command: /bin/bash -c "npm install && ./node_modules/bower/bin/bower install --allow-root --config.intedractive=false && ./node_modules/ember-cli/bin/ember serve --host 0.0.0.0 --port 4200"
-#    restart: unless-stopped
-#    environment:
-#      - BACKEND=local
-#    volumes:
-#      - preprints_vol:/code/dist/
+  preprints:
+    image: quay.io/centerforopenscience/ember-preprints:develop
+    command: /bin/bash -c "npm install && ./node_modules/bower/bin/bower install --allow-root --config.intedractive=false && ./node_modules/ember-cli/bin/ember serve --host 0.0.0.0 --port 4200"
+    restart: unless-stopped
+    environment:
+      - BACKEND=local
+    expose:
+      - 4200
+    ports:
+      - 4200:4200
+    volumes:
+      - preprints_dist_vol:/code/dist
 
 
   #######
@@ -292,7 +294,7 @@ services:
 #      - rabbitmq
 #      - elasticsearch
 #    volumes:
-#      - requirements_osf_vol:/usr/local/lib/python2.7/site-packages
+#      - osf_requirements_vol:/usr/local/lib/python2.7/site-packages
 #      - ./:/code
 #    environment:
 #      DB_HOST: tokumx
@@ -308,7 +310,7 @@ services:
 #      - rabbitmq
 #      - elasticsearch
 #    volumes:
-#      - requirements_osf_vol:/usr/local/lib/python2.7/site-packages
+#      - osf_requirements_vol:/usr/local/lib/python2.7/site-packages
 #      - ./:/code
 #    environment:
 #      C_FORCE_ROOT: 1
@@ -319,61 +321,61 @@ services:
   requirements:
     image: quay.io/centerforopenscience/osf:develop
     command: /bin/bash -c "invoke requirements --quick && cp -Rf /usr/local/lib/python2.7/site-packages /"
-    restart: 'no'
+#    restart: 'no'
     volumes:
-      - requirements_osf_vol:/site-packages
-      - ./:/code
+      - osf_requirements_vol:/site-packages
 
-  assets:
-    image: quay.io/centerforopenscience/osf:develop
-    command: invoke assets -dw
-    restart: unless-stopped
-    volumes:
-      - requirements_osf_vol:/site-packages
-      - ./:/code
-
-  web:
-    image: quay.io/centerforopenscience/osf:develop
-    command: invoke server -h 0.0.0.0
-    restart: unless-stopped
-    ports:
-      - 5000:5000
-    depends_on:
-      - tokumx
-#      - rabbitmq
-      - elasticsearch
-#      - fakecas
-#      - cas
-#      - mfr
-#      - wb
-    env_file:
-      - .docker-compose.env
-    stdin_open: true
-    tty: true
-    volumes:
-      - requirements_osf_vol:/usr/local/lib/python2.7/site-packages
-#      - preprints_vol:/preprints
-#      - ../ember-preprints/dist/:/preprints
-      - ./:/code
+#  admin:
+#    image: quay.io/centerforopenscience/osf:develop
+#    command: invoke adminserver -h 0.0.0.0
+##    restart: unless-stopped
+#    ports:
+#      - 8001:8001
+#    depends_on:
+#      - tokumx
+##      - rabbitmq
+#      - elasticsearch
+#    env_file:
+#      - .docker-compose.env
+#    stdin_open: true
+#    tty: true
+#    volumes:
+#      - osf_requirements_vol:/usr/local/lib/python2.7/site-packages
+#      - osf_node_modules_vol:/code/node_modules
 
   api:
     image: quay.io/centerforopenscience/osf:develop
     command: invoke apiserver -h 0.0.0.0
-    restart: unless-stopped
+#    restart: unless-stopped
     ports:
       - 8000:8000
     depends_on:
       - tokumx
 #      - rabbitmq
       - elasticsearch
-#      - fakecas
-#      - cas
-#      - mfr
-#      - wb
     env_file:
       - .docker-compose.env
     stdin_open: true
     tty: true
     volumes:
-      - requirements_osf_vol:/usr/local/lib/python2.7/site-packages
-      - ./:/code
+      - osf_requirements_vol:/usr/local/lib/python2.7/site-packages
+      - osf_node_modules_vol:/code/node_modules
+
+  web:
+    image: quay.io/centerforopenscience/osf:develop
+    command: invoke server -h 0.0.0.0
+#    restart: unless-stopped
+    ports:
+      - 5000:5000
+    depends_on:
+      - tokumx
+#      - rabbitmq
+      - elasticsearch
+    env_file:
+      - .docker-compose.env
+    stdin_open: true
+    tty: true
+    volumes:
+      - osf_requirements_vol:/usr/local/lib/python2.7/site-packages
+      - osf_node_modules_vol:/code/node_modules
+      - preprints_dist_vol:/preprints

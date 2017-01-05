@@ -1,0 +1,40 @@
+options:
+
+#  verbose: true
+  compose-file-path: 'docker-compose.yml'
+  compose-dev-file-path: 'docker-compose.override.yml'
+
+
+syncs:
+
+#  wb-sync:
+#    src: '../waterbutler'
+#    dest: '/code'
+#    sync_strategy: 'unison'
+#    sync_excludes_type: 'Name'
+#    sync_excludes: ['.git', '.idea', '*.pyc']
+#    watch_excludes: ['.*/\.git', '.*/\.idea', '.*\.pyc']
+
+#  mfr-sync:
+#    src: '../modular-file-renderer'
+#    dest: '/code'
+#    sync_strategy: 'unison'
+#    sync_excludes_type: 'Name'
+#    sync_excludes: ['.git', '.idea', '*.pyc']
+#    watch_excludes: ['.*/\.git', '.*/\.idea', '.*\.pyc']
+
+#  preprints-sync:
+#    src: '../ember-preprints'
+#    dest: '/code'
+#    sync_strategy: 'unison'
+#    sync_excludes_type: 'Name'
+#    sync_excludes: ['.git', '.idea', 'tmp', 'dist', 'bower_components', 'node_modules']
+#    watch_excludes: ['.*/\.git', '.*/\.idea', '.*/tmp', '.*/dist', '.*/bower_components', '.*/node_modules']
+
+  osf-sync:
+    src: './'
+    dest: '/code'
+    sync_strategy: 'unison'
+    sync_excludes_type: 'Name'
+    sync_excludes: ['.git', '.idea', 'node_modules', '*.pyc']
+    watch_excludes: ['.*/\.git', '.*/\.idea', '.*/node_modules', '.*\.pyc']
