@@ -17,21 +17,29 @@ class Institution(Loggable, base.ObjectIDMixin, base.BaseModel):
     }
     # /TODO DELETE ME POST MIGRATION
 
-    # TODO Remove null=True for things that shouldn't be nullable
+    # TODO Remove null=True for things that shouldn't be nullable POST MIGRATION
+    # e.g. CharFields should never be null=True
 
     name = models.CharField(max_length=255)
     description = models.TextField(blank=True, null=True, default='')
 
     # TODO Could `banner_name` and `logo_name` be a FilePathField?
     # Both banner_name and logo_name are the name of the file under the `banners/` or `shields/` folder in
-    # `website/static/img/institutions/`. They cannot be null or empty, otherwise OSF dashboard page and institution
-    # project page won't finish loading.
-    banner_name = models.CharField(max_length=255, blank=True, default='')
-    logo_name = models.CharField(max_length=255, blank=True, default='')
+    # `website/static/img/institutions/`. The file must exists for OSF dashboard page to load.
+    banner_name = models.CharField(max_length=255, blank=True, null=True)
+    logo_name = models.CharField(max_length=255, blank=True, null=True)
 
-    # the protocol used to delegate authentication: `CAS`, `SAML`, `OAuth`, e.t.c
-    # only institutions with a delegation protocol (not null and not empty) shows up on institution login page
-    delegation_protocol = models.CharField(max_length=255, null=True, blank=True)
+    # The protocol used to delegate authentication: `CAS`, `SAML`, `OAuth`, e.t.c
+    # For our institution, we use shibbloeth's implementation for SAML and pac4j's implementation for CAS and OAuth
+    # Only institutions with a delegation protocol shows up on institution login page
+    DELEGATION_PROTOCOL_CHOICES = (
+        ('cas-pac4j', 'CAS by pac4j'),
+        ('saml-pac4j', 'SAML by pac4j'),
+        ('oauth-pac4j', 'OAuth by pac4j'),
+        ('saml-shib', 'SAML by shibboleth'),
+        ('', 'No Delegation Protocol'),
+    )
+    delegation_protocol = models.CharField(max_length=15, choices=DELEGATION_PROTOCOL_CHOICES, blank=True, default='')
 
     # login_url and logout_url can be null or empty
     login_url = models.URLField(null=True, blank=True)
@@ -40,15 +48,13 @@ class Institution(Loggable, base.ObjectIDMixin, base.BaseModel):
     domains = fields.ArrayField(models.CharField(max_length=255), db_index=True, null=True, blank=True)
     email_domains = fields.ArrayField(models.CharField(max_length=255), db_index=True, null=True, blank=True)
 
-    # TODO what is this field?
     contributors = models.ManyToManyField(
         settings.AUTH_USER_MODEL,
         through=InstitutionalContributor,
         related_name='institutions'
     )
 
-    # TODO Should we remove this is_deleted field given Institution now has its own model
-    # several query both in CAS and OSF uses this field, need to be careful when renaming or removing this field
+    # This field is kept for backwards compatibility with Institutions in modm that were built off the Node model.
     is_deleted = models.BooleanField(default=False, db_index=True)
 
     def __init__(self, *args, **kwargs):
