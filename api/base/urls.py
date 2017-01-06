@@ -1,11 +1,11 @@
 from django.conf import settings as drf_settings
 from django.conf.urls import include, url
 from django.conf.urls.static import static
+from django.contrib import admin
 from django.views.generic.base import RedirectView
 
-from . import views
-from . import settings
-from . import versioning
+from . import settings, versioning, views
+
 
 default_version = versioning.decimal_version_to_url_path(settings.REST_FRAMEWORK['DEFAULT_VERSION'])
 
@@ -42,7 +42,7 @@ urlpatterns = [
             ],
         )
         ),
-    url(r'^$', RedirectView.as_view(pattern_name=views.root), name='redirect-to-root', kwargs={'version': default_version})
+    url(r'^$', RedirectView.as_view(pattern_name=views.root), name='redirect-to-root', kwargs={'version': default_version}),
 ]
 
 

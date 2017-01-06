@@ -1,23 +1,23 @@
-import pytz
 import json
 
+import pytz
+from api.base.serializers import (DateByVersion, FileCommentRelationshipField,
+                                  HideIfRegistration, HideIfWithdrawal,
+                                  IDField, JSONAPIListField, LinksField,
+                                  NodeFileHyperLinkField, RelationshipField,
+                                  ShowIfVersion)
+from api.base.utils import absolute_reverse, get_user_auth
+from api.files.serializers import OsfStorageFileSerializer
+from api.nodes.serializers import (NodeContributorsSerializer,
+                                   NodeLicenseSerializer, NodeLinksSerializer,
+                                   NodeProviderSerializer, NodeSerializer,
+                                   NodeTagSerializer)
 from modularodm.exceptions import ValidationValueError
-
 from rest_framework import serializers as ser
 from rest_framework import exceptions
-
-from api.base.utils import absolute_reverse, get_user_auth
-from website.project.metadata.utils import is_prereg_admin_not_project_admin
 from website.exceptions import NodeStateError
+from website.project.metadata.utils import is_prereg_admin_not_project_admin
 from website.project.model import NodeUpdateError
-
-from api.files.serializers import OsfStorageFileSerializer
-from api.nodes.serializers import NodeSerializer, NodeProviderSerializer
-from api.nodes.serializers import NodeLinksSerializer, NodeLicenseSerializer
-from api.nodes.serializers import NodeContributorsSerializer, NodeTagField
-from api.base.serializers import (IDField, RelationshipField, LinksField, HideIfWithdrawal,
-                                  FileCommentRelationshipField, NodeFileHyperLinkField, HideIfRegistration,
-                                  JSONAPIListField, ShowIfVersion, DateByVersion,)
 
 
 class BaseRegistrationSerializer(NodeSerializer):
@@ -31,7 +31,7 @@ class BaseRegistrationSerializer(NodeSerializer):
     fork = HideIfWithdrawal(ser.BooleanField(read_only=True, source='is_fork'))
     collection = HideIfWithdrawal(ser.BooleanField(read_only=True, source='is_collection'))
     node_license = HideIfWithdrawal(NodeLicenseSerializer(read_only=True))
-    tags = HideIfWithdrawal(JSONAPIListField(child=NodeTagField(), read_only=True))
+    tags = HideIfWithdrawal(NodeTagSerializer(many=True))
     public = HideIfWithdrawal(ser.BooleanField(source='is_public', required=False,
                                                help_text='Nodes that are made public will give read-only access '
                                         'to everyone. Private nodes require explicit read '
