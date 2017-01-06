@@ -12,6 +12,8 @@ from django.apps import apps
 from django.db.models import Count
 
 from framework import status, discourse
+import framework.discourse.topics
+import framework.discourse.users
 from framework.utils import iso8601format
 from framework.flask import redirect
 from framework.auth.decorators import must_be_logged_in, collect_auth
@@ -787,7 +789,6 @@ def _view_project(node, auth, primary=False,
             {'value': key, 'display_name': value}
             for key, value in settings.NODE_CATEGORY_MAP.iteritems()
         ],
-        'discourse_url': settings.DISCOURSE_SERVER_URL,
         'discourse_topic_id': discourse.topics.get_or_create_topic_id(node),
         'discourse_apikey': discourse.users.get_user_apikey(),
     }

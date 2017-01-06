@@ -7,6 +7,7 @@ from bs4 import BeautifulSoup
 from flask import request
 
 from framework import discourse
+import framework.discourse.topics
 from framework.mongo.utils import to_mongo_key
 from framework.exceptions import HTTPError
 from framework.auth.utils import privacy_info_handle
@@ -325,7 +326,6 @@ def project_wiki_view(auth, wname, path=None, **kwargs):
             'web': _get_wiki_web_urls(node, wiki_name),
             'gravatar': get_gravatar(auth.user, 25),
         },
-        'discourse_url': website.settings.DISCOURSE_SERVER_URL,
         'discourse_topic_id': discourse.topics.get_or_create_topic_id(wiki_page),
     }
     ret.update(_view_project(node, auth, primary=True))

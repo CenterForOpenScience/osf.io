@@ -24,6 +24,7 @@ from modularodm.validators import MaxLengthValidator
 from modularodm.exceptions import KeyExistsException, ValidationValueError
 
 from framework import status, discourse
+import framework.discourse.projects
 from framework.mongo import ObjectId, DummyRequest
 from framework.mongo import StoredObject
 from framework.mongo import validators
@@ -1678,7 +1679,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
 
         # No guid yet if on the first save.
         if not first_save:
-            discourse.topics.sync_project(self, should_save=False)
+            discourse.projects.sync_project(self, should_save=False)
 
         if first_save and self.is_bookmark_collection:
             existing_bookmark_collections = Node.find(
@@ -1748,7 +1749,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
 
         # We have to wait until now to save, and then save again, because we won't have a guid until after the first save
         if first_save:
-            discourse.topics.sync_project(self, should_save=False)
+            discourse.projects.sync_project(self, should_save=False)
             saved_fields |= set(super(Node, self).save(*args, **kwargs))
 
         # Return expected value for StoredObject::save
@@ -4165,7 +4166,7 @@ class PrivateLink(StoredObject):
     def save(self, *args, **kwargs):
         super(PrivateLink, self).save(*args, **kwargs)
         for node in self.nodes:
-            discourse.sync_project(node)
+            discourse.projects.sync_project(node)
 
 
 class AlternativeCitation(StoredObject):

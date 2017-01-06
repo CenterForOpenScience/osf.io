@@ -252,12 +252,12 @@ $(function() {
     function performDiscourseLogin() {
         var iframe = document.createElement('iframe');
         iframe.style.display = 'none';
-        iframe.src = '${settings.DISCOURSE_SERVER_URL}/session/sso';
+        iframe.src = contextVars.discourseUrl + 'session/sso';
         iframe.addEventListener('load', function(e) {
             this.parentNode.removeChild(this);
             // Verify log-in
             $.ajax({
-                url: '${settings.DISCOURSE_SERVER_URL}/session/current.json',
+                url: contextVars.discourseUrl + 'session/current.json',
                 xhrFields: { withCredentials: true }}
             ).then(function(json) {
                 if (json.current_user && json.current_user.username === contextVars.currentUser.id) {

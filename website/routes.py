@@ -8,6 +8,8 @@ from flask import send_from_directory
 
 from geoip import geolite2
 
+from framework import discourse
+import framework.discourse.settings
 from framework import status
 from framework import sentry
 from framework.auth import cas
@@ -119,7 +121,8 @@ def get_globals():
             },
         },
         'maintenance': maintenance.get_maintenance(),
-        'recaptcha_site_key': settings.RECAPTCHA_SITE_KEY
+        'recaptcha_site_key': settings.RECAPTCHA_SITE_KEY,
+        'discourse_url': discourse.settings.DISCOURSE_SERVER_URL,
     }
 
 

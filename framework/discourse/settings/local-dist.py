@@ -9,7 +9,7 @@ from . import defaults
 
 DISCOURSE_SSO_SECRET = 'changeme'
 DISCOURSE_DEV_MODE = True
-DISCOURSE_SERVER_URL = 'http://localhost:4000/' if DISCOURSE_DEV_MODE else 'http://192.168.99.100'
+DISCOURSE_SERVER_URL = 'http://localhost:4000/' if DISCOURSE_DEV_MODE else 'http://192.168.99.100/'
 DISCOURSE_API_KEY = 'changeme' if DISCOURSE_DEV_MODE else 'changeme'
 DISCOURSE_API_ADMIN_USER = 'system'
 

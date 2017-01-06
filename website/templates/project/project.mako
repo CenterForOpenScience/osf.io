@@ -386,19 +386,19 @@
 
         <!-- Forum Feed (Latest Topics) -->
         % if not node['anonymous']:
-        <div class="panel panel-default">
-            <div class="panel-heading clearfix">
-                <h3 class="panel-title">Latest Forum Topics</h3>
-            </div>
-            <div class="panel-body">
-                <div id="forumFeed">
-                    <div class="spinner-loading-wrapper">
-                        <div class="logo-spin logo-lg"></div>
-                         <p class="m-t-sm fg-load-message">Loading forum topics...  </p>
+            <div class="panel panel-default">
+                <div class="panel-heading clearfix">
+                    <h3 class="panel-title">Latest Forum Topics</h3>
+                </div>
+                <div class="panel-body">
+                    <div id="forumFeed">
+                        <div class="spinner-loading-wrapper">
+                            <div class="logo-spin logo-lg"></div>
+                             <p class="m-t-sm fg-load-message">Loading forum topics...  </p>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
         % endif
 
         <!-- Show child on right if widgets -->
@@ -508,8 +508,7 @@ ${parent.javascript_bottom()}
                 public: true,
             },
         },
-        discourseUrl: ${ discourse_url | sjson, n },
-        discourseUserApikey: ${ discourse_apikey | sjson, n }
+        discourseUserApikey: ${ discourse_apikey | sjson, n },
     });
 </script>
 

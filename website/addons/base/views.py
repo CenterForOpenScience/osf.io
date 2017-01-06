@@ -732,7 +732,6 @@ def addon_view_file(auth, node, file_node, version):
         'file_guid': file_node.get_guid()._id,
         'file_id': file_node._id,
         'allow_comments': file_node.provider in settings.ADDONS_COMMENTABLE,
-        'discourse_url': settings.DISCOURSE_SERVER_URL,
         'discourse_topic_id': discourse.topics.get_or_create_topic_id(file_node),
     })
 

@@ -11,7 +11,8 @@ from api.base.utils import get_user_auth
 from api.base.views import JSONAPIBaseView
 from api.sso import sign_payload
 from framework.auth import cas
-import framework.discourse
+from framework import discourse
+import framework.discourse.settings
 import website
 
 class SSOView(JSONAPIBaseView):
@@ -24,7 +25,7 @@ class SSOView(JSONAPIBaseView):
     def get(self, request, **kwargs):
         auth = get_user_auth(request)
         user = request.user
-        sso_secret = framework.discourse.settings.DISCOURSE_SSO_SECRET
+        sso_secret = discourse.settings.DISCOURSE_SSO_SECRET
 
         if not auth.logged_in:
             return HttpResponseRedirect(cas.get_login_url(website.settings.DOMAIN))
@@ -53,7 +54,7 @@ class SSOView(JSONAPIBaseView):
                           'name': user.fullname,
                           'avatar_url': user.profile_image_url()}
 
-        return_url = furl(settings.DISCOURSE_SERVER_URL).join('/session/sso_login')
+        return_url = furl(discourse.settings.DISCOURSE_SERVER_URL).join('session/sso_login')
         return_url.args = sign_payload(return_payload)
 
         return HttpResponseRedirect(return_url.url)

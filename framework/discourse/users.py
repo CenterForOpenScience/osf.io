@@ -46,20 +46,22 @@ def delete_user(user):
     """Delete the user on Discourse with a username equal to the user GUID,
     including all of their posts on Discourse
     :param User user: the user to delete on Discourse
+    :return bool: True if the function finished without internal errors
     """
     if not user.discourse_user_created:
-        return
+        return True
 
     try:
         common.request('put', '/admin/users/' + str(user.discourse_user_id) + '/delete_all_posts')
         common.request('delete', '/admin/users/' + str(user.discourse_user_id) + '.json')
     except (common.DiscourseException, requests.exceptions.ConnectionError):
         logger.exception('Error deleting Discourse user, check your Discourse server')
-        return None
+        return False
 
     user.discourse_user_id = 0
     user.discourse_user_created = False
     user.save()
+    return True
 
 def get_current_osf_user():
     """Return the User currently logged in (to the OSF) or None
@@ -93,7 +95,7 @@ def get_user_apikey(user=None):
     """Return the Discourse user API Key of the user, making sure the user exists on Discourse
     Return None if a user is not provided and one is not logged in either
     :param User user: the target user or None to query the currently logged in user
-    :return str: the User's API Key
+    :return str: the User's API Key, or None if it could not be retrieved
     """
     if user is None:
         user = get_current_osf_user()

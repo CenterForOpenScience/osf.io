@@ -19,9 +19,6 @@ var ForumFeed = {
         self.node = required(options, 'node');
         self.user = required(options, 'user');
         self.discourse_url = required(options, 'discourse_url');
-        if (self.discourse_url.endsWith('/')) {
-            self.discourse_url = self.discourse_url.slice(0, -1);
-        }
         self.view_only = required(options, 'view_only');
         self.user_apikey = required(options, 'discourse_user_apikey');
 
@@ -38,14 +35,14 @@ var ForumFeed = {
                     var username = mention.substr(1);
                     if (self.usernamesToNames[username]) {
                         excerpt = excerpt.replace(mention, '@' + self.usernamesToNames[username]);
-                        excerpt = excerpt.replace('href="/users', 'href="' + self.discourse_url + '/users');
+                        excerpt = excerpt.replace('href="/users', 'href="' + self.discourse_url + 'users');
                     }
                 });
                 topic.excerpt = excerpt;
             }
         };
 
-        var requestUrl = self.discourse_url + '/forum/' + self.node.id + '/latest.json';
+        var requestUrl = self.discourse_url + 'forum/' + self.node.id + '/latest.json';
         var data;
         if (self.view_only) {
             data = { view_only: self.view_only };
@@ -87,8 +84,8 @@ var ForumFeed = {
             if (topic.last_read_post_number) {
                 postNumber = Math.min(topic.last_read_post_number + 1, topic.highest_post_number);
             }
-            var postUrl = ctrl.discourse_url + '/t/' + topic.slug + '/' + topic.id + '/' + postNumber + queryString;
-            var projectUrl = ctrl.discourse_url + '/forum/' + topic.project_guid + queryString;
+            var postUrl = ctrl.discourse_url + 't/' + topic.slug + '/' + topic.id + '/' + postNumber + queryString;
+            var projectUrl = ctrl.discourse_url + 'forum/' + topic.project_guid + queryString;
             return m('tr',
                 m('td', [
                     m('a.title', {href: postUrl}, topic.fancy_title),

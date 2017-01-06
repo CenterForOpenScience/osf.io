@@ -47,7 +47,7 @@ params:
   ## really be freezing this in place for sanity's sake.
   ## As soon as a beta branch includes this commit, I will change to that.
   ## And then to a stable release when the beta becomes stable.
-  version: 8bcdb668c62a3550602f3488a037886584d31a41
+  version: 7c8095294d7296f0f27d4cb4066f1555fc8c2cbc
 
 env:
   LANG: en_US.UTF-8

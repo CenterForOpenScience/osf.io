@@ -1,6 +1,11 @@
+import requests
+import logging
+
 import framework.discourse.common
 import framework.discourse.topics
 from framework.discourse import common, users
+
+logger = logging.getLogger(__name__)
 
 def sync_project_details(project_node, should_save=True):
     """If the project's public-ness, view-only keys, or contributors have changed, sync these
@@ -36,35 +41,42 @@ def sync_project_details(project_node, should_save=True):
         project_node.save()
 
 def sync_project(project_node, should_save=True):
-    """Sync project name, contributors, and visibility with Discourse creating project if necessary
+    """Sync project name, contributors, visibility, and deletion status with Discourse, creating project if necessary
 
     :param Node project_node: Project Node to sync on Discourse
     :param bool should_save: Whether the function should call project_node.save()
+    :return bool: True if the function finished without internal errors
     """
     if common.in_migration:
-        return
+        return True
 
     try:
         sync_project_details(project_node, False)
     except (common.DiscourseException, requests.exceptions.ConnectionError):
         logger.exception('Error syncing a project, check your Discourse server')
-        return
+        return False
 
-    framework.discourse.topics.sync_topic(project_node, False)
+    if not framework.discourse.topics.sync_topic(project_node, False):
+        return False
 
     if project_node.discourse_project_deleted and not project_node.is_deleted:
-        undelete_project(project_node, False)
+        if not undelete_project(project_node, False):
+            return False
     elif not project_node.discourse_project_deleted and project_node.is_deleted:
-        delete_project(project_node, False)
+        if not delete_project(project_node, False):
+            return False
 
     if should_save:
         project_node.save()
+
+    return True
 
 def get_project(project_node, user=None, view_only=None):
     """ Get the first page of the latest topics in the project
 
     :param Node project_node: Project Node to query on Discourse
     :param User user: The user to request the project as, or None for admin access
+    :return json: the json containing the latest project topics, or None if retrieval failed
     """
     data = {}
     if view_only:
@@ -72,7 +84,12 @@ def get_project(project_node, user=None, view_only=None):
     username = 'system'
     if user:
         username = users.get_discourse_username(user)
-    return common.request('get', '/forum/' + str(project_node._id) + '.json', data, username=username)['topic_list']
+
+    try:
+        return common.request('get', '/forum/' + str(project_node._id) + '.json', data, username=username)['topic_list']
+    except (common.DiscourseException, requests.exceptions.ConnectionError):
+        logger.exception('Error getting latest topics, check your Discourse server')
+        return None
 
 def delete_project(project_node, should_save=True):
     """Delete project topics from Discourse. This makes them inaccessible,
@@ -82,28 +99,41 @@ def delete_project(project_node, should_save=True):
 
     :param Node project_node: Project Node to delete on Discourse
     :param bool should_save: Whether the function should call project_node.save()
+    :return bool: True if the function finished without internal errors
     """
     if not project_node.discourse_project_created or framework.discourse.topics.some_parent_is_deleted(project_node):
-        return
+        return True
+
+    # Prevent inconsistancy -- or the callback on save() will undelete the project
+    if not project_node.is_deleted:
+        project_node.is_deleted = True
 
     try:
         common.request('delete', '/forum/' + project_node._id)
     except (common.DiscourseException, requests.exceptions.ConnectionError):
         logger.exception('Error deleting a project, check your Discourse server')
-        return
+        return False
 
     project_node.discourse_project_deleted = True
     if should_save:
         project_node.save()
+
+    return True
 
 def undelete_project(project_node, should_save=True):
     """Reverse previous deletion of project topics from Discourse.
 
     :param Node project_node: Project Node to undelete on Discourse
     :param bool should_save: Whether the function should call project_node.save()
+    :return bool: True if the function finished without internal errors
     """
     if not project_node.discourse_project_created or not project_node.discourse_project_deleted:
-        return
+        return True
+
+    # Prevent inconsistancy -- or the callback on save() will delete the project
+    if project_node.is_deleted:
+        project_node.is_deleted = False
+
     # force resync of project
     project_node.discourse_project_created = False
 
@@ -111,8 +141,10 @@ def undelete_project(project_node, should_save=True):
         sync_project_details(project_node, False)
     except (common.DiscourseException, requests.exceptions.ConnectionError):
         logger.exception('Error undeleting a project, check your Discourse server')
-        return
+        return False
 
     project_node.discourse_project_deleted = False
     if should_save:
-        project_node.save()
+        project_node.save
+
+    return True

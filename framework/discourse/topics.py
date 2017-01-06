@@ -1,10 +1,14 @@
+import logging
+
 import markupsafe
 import requests.compat
 
 import framework.discourse.common
 import framework.discourse.projects
 from framework.discourse import categories, common
-from website import models, settings
+from website import settings
+
+logger = logging.getLogger(__name__)
 
 def _get_parent_node(obj):
     """Return the parent Node of this project, file, or wiki.
@@ -127,9 +131,10 @@ def sync_topic(obj, should_save=True):
 
     :param Node/StoredFileNode/NodeWikiPage obj: the project/file/wiki whose topic should be synchronized
     :param bool should_save: Whether the function should call obj.save()
+    :return bool: True if the function finished without internal errors
     """
     if framework.discourse.common.in_migration:
-        return
+        return True
 
     try:
         parent_node = _get_parent_node(obj)
@@ -138,7 +143,7 @@ def sync_topic(obj, should_save=True):
 
         if obj.discourse_topic_id is None:
             _create_topic(obj, should_save)
-            return
+            return True
 
         parent_guids = get_parent_guids(obj)
         guids_changed = parent_guids != obj.discourse_topic_parent_guids
@@ -165,14 +170,16 @@ def sync_topic(obj, should_save=True):
                 obj.save()
     except (common.DiscourseException, requests.exceptions.ConnectionError):
         logger.exception('Error syncing a topic, check your Discourse server')
-        return
+        return False
+
+    return True
 
 def get_or_create_topic_id(obj, should_save=True):
     """Return the Discourse topic ID of the project/file/wiki, creating it if necessary
 
     :param Node/StoredFileNode/NodeWikiPage obj: the project/file/wiki whose topic ID should be returned
     :param bool should_save: Whether the function should call obj.save() if the topic is created
-    :return int: the topic ID
+    :return int: the topic ID, or None if it could not be to retrieved
     """
     if obj is None:
         return None
@@ -189,9 +196,13 @@ def get_topic(obj):
     """Return the topic (as a dict) of the project/file/wiki
 
     :param Node/StoredFileNode/NodeWikiPage obj: the project/file/wiki whose topic should be returned
-    :return dict: Dictionary with information about the Discourse topic
+    :return dict: Dictionary with information about the Discourse topic, or None if failed to retrieve
     """
-    return common.request('get', '/t/' + str(obj.discourse_topic_id) + '.json')
+    try:
+        return common.request('get', '/t/' + str(obj.discourse_topic_id) + '.json')
+    except (common.DiscourseException, requests.exceptions.ConnectionError):
+        logger.exception('Error getting topic, check your Discourse server')
+        return None
 
 def some_parent_is_deleted(obj):
     parent_node = _get_parent_node(obj)
@@ -207,39 +218,44 @@ def delete_topic(obj, should_save=True):
 
     :param Node/StoredFileNode/NodeWikiPage obj: the project/file/wiki whose topic should be deleted
     :param bool should_save: Whether the function should call obj.save()
+    :return bool: True if the function finished without internal errors
     """
     if obj.discourse_topic_id is None or obj.discourse_topic_deleted or some_parent_is_deleted(obj):
-        return
+        return True
 
     if obj.target_type == 'nodes':
-        framework.discourse.projects.delete_project(obj)
-        return
+        return framework.discourse.projects.delete_project(obj, should_save)
 
     try:
         common.request('delete', '/t/' + str(obj.discourse_topic_id) + '.json')
     except (common.DiscourseException, requests.exceptions.ConnectionError):
-        logger.exception('Error deleting a topic, check your Discourse server')
-        return
+        logger.exception('Error getting topic, check your Discourse server')
+        return False
 
     obj.discourse_topic_deleted = True
     if should_save:
         obj.save()
+
+    return True
 
 def undelete_topic(obj, should_save=True):
     """Undelete the topic of the project/file/wiki
 
     :param Node/StoredFileNode/NodeWikiPage obj: the project/file/wiki whose topic should be undeleted
     :param bool should_save: Whether the function should call obj.save()
+    :return bool: True if the function finished without internal errors
     """
     if obj.discourse_topic_id is None or not obj.discourse_topic_deleted or some_parent_is_deleted(obj):
-        return
+        return True
 
     try:
         common.request('put', '/t/' + str(obj.discourse_topic_id) + '/recover')
     except (common.DiscourseException, requests.exceptions.ConnectionError):
         logger.exception('Error undeleting a topic, check your Discourse server')
-        return
+        return False
 
     obj.discourse_topic_deleted = False
     if should_save:
         obj.save()
+
+    return True

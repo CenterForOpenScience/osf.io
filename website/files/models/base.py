@@ -13,6 +13,7 @@ from modularodm.exceptions import NoResultsFound
 from dateutil.parser import parse as parse_date
 
 from framework import discourse
+import framework.discourse.topics
 from framework.guid.model import Guid
 from framework.mongo import StoredObject
 from framework.mongo.utils import unique_on

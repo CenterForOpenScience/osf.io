@@ -48,7 +48,7 @@
             return $(document.body).width() * options.maxWidthProp;
         };
 
-        var insertCommentsIframe = function(discourseUrl, topidId) {
+        var insertCommentsIframe = function(discourseUrl, topicId) {
             window.DiscourseEmbed = { discourseUrl: discourseUrl, topicId: topicId };
 
             var d = document.createElement('script');
@@ -64,17 +64,6 @@
                 }
             };
             (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(d);
-        }
-
-        // Make url end in a single slash
-        var normalizeUrl = function(url) {
-            if (url.endsWith('//')) {
-                url = url.slice(0, -1);
-            }
-            if (!url.endsWith('/')) {
-                url += '/';
-            }
-            return url;
         };
 
         var loadDiscourseComments = function() {
@@ -87,8 +76,6 @@
                 discourseComments.discourseBegunLoading = true;
 
                 var discourseUrl = discourseComments.getAttribute('data-discourse-url');
-                discourseUrl = normalizeUrl(discourseUrl);
-
                 var topicId = discourseComments.getAttribute('data-discourse-topic-id');
                 // initial load.
                 if (topicId !== 'None') {
