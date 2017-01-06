@@ -57,6 +57,8 @@ ANONYMIZED_TITLES = ['Authors']
 LOAD_BALANCER = False
 PROXY_ADDRS = []
 
+USE_POSTGRES = True
+
 # May set these to True in local.py for development
 DEV_MODE = False
 DEBUG_MODE = False
@@ -583,6 +585,10 @@ ESI_MEDIA_TYPES = {'application/vnd.api+json', 'application/json'}
 
 # Used for gathering meta information about the current build
 GITHUB_API_TOKEN = None
+
+# switch for disabling things that shouldn't happen during
+# the modm to django migration
+RUNNING_MIGRATION = False
 
 # External Identity Provider
 EXTERNAL_IDENTITY_PROFILE = {

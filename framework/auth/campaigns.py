@@ -1,7 +1,7 @@
-from datetime import datetime
 import furl
 import logging
 
+from django.utils import timezone
 from modularodm import Q
 from modularodm.exceptions import NoResultsFound, QueryException, ImproperConfigurationError
 
@@ -12,7 +12,7 @@ from website.util.time import throttle_period_expired
 
 
 CAMPAIGNS = None
-CAMPAIGNS_LAST_REFRESHED = datetime.utcnow()
+CAMPAIGNS_LAST_REFRESHED = timezone.now()
 
 
 def get_campaigns():
@@ -75,7 +75,7 @@ def get_campaigns():
         except (NoResultsFound or QueryException or ImproperConfigurationError) as e:
             logger.warn('An error has occurred during campaign initialization: {}', e)
 
-        CAMPAIGNS_LAST_REFRESHED = datetime.utcnow()
+        CAMPAIGNS_LAST_REFRESHED = timezone.now()
 
     return CAMPAIGNS
 

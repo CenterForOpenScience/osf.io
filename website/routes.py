@@ -54,8 +54,7 @@ def get_globals():
     OSFWebRenderer.
     """
     user = _get_current_user()
-
-    user_institutions = [{'id': inst._id, 'name': inst.name, 'logo_path': inst.logo_path_rounded_corners} for inst in user.affiliated_institutions] if user else []
+    user_institutions = [{'id': inst._id, 'name': inst.name, 'logo_path': inst.logo_path_rounded_corners} for inst in user.affiliated_institutions.all()] if user else []
     location = geolite2.lookup(request.remote_addr) if request.remote_addr else None
     if request.host_url != settings.DOMAIN:
         try:
@@ -69,7 +68,7 @@ def get_globals():
         'private_link_anonymous': is_private_link_anonymous_view(),
         'user_name': user.username if user else '',
         'user_full_name': user.fullname if user else '',
-        'user_id': user._primary_key if user else '',
+        'user_id': user._id if user else '',
         'user_locale': user.locale if user and user.locale else '',
         'user_timezone': user.timezone if user and user.timezone else '',
         'user_url': user.url if user else '',
@@ -126,7 +125,7 @@ def get_globals():
 def is_private_link_anonymous_view():
     try:
         # Avoid circular import
-        from website.project.model import PrivateLink
+        from osf.models import PrivateLink
         return PrivateLink.find_one(
             Q('key', 'eq', request.args.get('view_only'))
         ).anonymous

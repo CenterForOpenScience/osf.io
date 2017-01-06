@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
+import mock
 from nose.tools import *  # flake8: noqa
 
 from api.base.settings.defaults import API_BASE
 
 from tests.base import ApiWikiTestCase, ApiTestCase
-from tests.factories import AuthUserFactory, ProjectFactory, NodeWikiFactory, RegistrationFactory
+from osf_tests.factories import AuthUserFactory, ProjectFactory, RegistrationFactory
+from addons.wiki.tests.factories import NodeWikiFactory
 
 
 class TestNodeWikiList(ApiWikiTestCase):
@@ -99,8 +101,10 @@ class TestNodeWikiList(ApiWikiTestCase):
         self.registration.is_public = True
         withdrawal = self.registration.retract_registration(user=self.user, save=True)
         token = withdrawal.approval_state.values()[0]['approval_token']
-        withdrawal.approve_retraction(self.user, token)
-        withdrawal.save()
+        # TODO: Remove mocking when StoredFileNode is implemented
+        with mock.patch('osf.models.AbstractNode.update_search'):
+            withdrawal.approve_retraction(self.user, token)
+            withdrawal.save()
         res = self.app.get(self.registration_url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
         assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
@@ -169,7 +173,9 @@ class TestFilterNodeWikiList(ApiTestCase):
         self.user = AuthUserFactory()
         self.project = ProjectFactory(creator=self.user)
         self.base_url = '/{}nodes/{}/wikis/'.format(API_BASE, self.project._id)
-        self.wiki = NodeWikiFactory(node=self.project, user=self.user)
+        # TODO: Remove mocking when StoredFileNode is implemented
+        with mock.patch('osf.models.AbstractNode.update_search'):
+            self.wiki = NodeWikiFactory(node=self.project, user=self.user)
         self.date = self.wiki.date.strftime('%Y-%m-%dT%H:%M:%S.%f')
 
     def test_node_wikis_with_no_filter_returns_all(self):

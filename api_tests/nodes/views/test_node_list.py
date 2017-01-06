@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 from nose.tools import *  # flake8: noqa
+import pytest
 
+from django.db.models import F
 from modularodm import Q
 from framework.auth.core import Auth
 
@@ -11,10 +13,11 @@ from website.util.sanitize import strip_html
 from api.base.settings.defaults import API_BASE, MAX_PAGE_SIZE
 
 from tests.base import ApiTestCase
-from tests.factories import (
+from osf_tests.factories import (
     BookmarkCollectionFactory,
     CollectionFactory,
     ProjectFactory,
+    NodeFactory,
     RegistrationFactory,
     AuthUserFactory,
     UserFactory,
@@ -34,10 +37,6 @@ class TestNodeList(ApiTestCase):
         self.public = ProjectFactory(is_public=True, creator=self.user)
 
         self.url = '/{}nodes/'.format(API_BASE)
-
-    def tearDown(self):
-        super(TestNodeList, self).tearDown()
-        Node.remove()
 
     def test_only_returns_non_deleted_public_projects(self):
         res = self.app.get(self.url)
@@ -144,10 +143,6 @@ class TestNodeFiltering(ApiTestCase):
         self.project_two.add_tag(self.tag1, Auth(self.project_two.creator), save=True)
 
         self.preprint = PreprintFactory(creator=self.user_one)
-
-    def tearDown(self):
-        super(TestNodeFiltering, self).tearDown()
-        Node.remove()
 
     def test_filtering_by_id(self):
         url = '/{}nodes/?filter[id]={}'.format(API_BASE, self.project_one._id)
@@ -433,26 +428,50 @@ class TestNodeFiltering(ApiTestCase):
         res = self.app.get(url, auth=self.user_one.auth)
         assert_equal(res.status_code, 200)
 
-        root_nodes = Node.find(Q('is_public', 'eq', True) & Q('root', 'eq', root._id))
+        root_nodes = Node.objects.get_children(root=root).filter(is_public=True)
         assert_equal(len(res.json['data']), root_nodes.count())
+
+    def test_filtering_on_parent(self):
+        root = ProjectFactory(is_public=True)
+        parent = NodeFactory(parent=root, is_public=True)
+        parent2 = NodeFactory(is_public=True, parent=root)
+        child = NodeFactory(parent=parent, is_public=True)
+        child2 = NodeFactory(parent=parent, is_public=True)
+
+        url = '/{}nodes/?filter[parent]={}'.format(API_BASE, parent._id)
+        res = self.app.get(url)
+        assert_equal(res.status_code, 200)
+
+        guids = [each['id'] for each in res.json['data']]
+        assert_in(child._id, guids)
+        assert_in(child2._id, guids)
+        assert_not_in(parent._id, guids)
+        assert_not_in(parent2._id, guids)
 
     def test_filtering_on_null_parent(self):
         # add some nodes TO be included
         new_user = AuthUserFactory()
         root = ProjectFactory(is_public=True)
-        ProjectFactory(is_public=True)
+        root2 = ProjectFactory(is_public=True)
         # Build up a some of nodes not to be included
         child = ProjectFactory(parent=root, is_public=True)
-        ProjectFactory(parent=root, is_public=True)
-        ProjectFactory(parent=child, is_public=True)
+        child2 = ProjectFactory(parent=root, is_public=True)
+        grandchild = ProjectFactory(parent=child, is_public=True)
 
         url = '/{}nodes/?filter[parent]=null'.format(API_BASE)
 
         res = self.app.get(url, auth=new_user.auth)
         assert_equal(res.status_code, 200)
 
-        public_root_nodes = Node.find(Q('is_public', 'eq', True) & Q('parent_node', 'eq', None))
+        public_root_nodes = Node.find(Q('is_public', 'eq', True)).get_roots()
         assert_equal(len(res.json['data']), public_root_nodes.count())
+
+        guids = [each['id'] for each in res.json['data']]
+        assert_in(root._id, guids)
+        assert_in(root2._id, guids)
+        assert_not_in(child._id, guids)
+        assert_not_in(child2._id, guids)
+        assert_not_in(grandchild._id, guids)
 
     def test_filtering_on_title_not_equal(self):
         url = '/{}nodes/?filter[title][ne]=Project%20One'.format(API_BASE)
@@ -489,7 +508,7 @@ class TestNodeFiltering(ApiTestCase):
         data = res.json['data']
         ids = [each['id'] for each in data]
 
-        preprints = Node.find(Q('preprint_file', 'ne', None) & Q('preprint_orphan', 'ne', True))
+        preprints = Node.find(Q('preprint_file', 'ne', None) & Q('_is_preprint_orphan', 'ne', True))
         assert_equal(len(data), len(preprints))
         assert_in(self.preprint.node._id, ids)
         assert_not_in(self.project_one._id, ids)
@@ -587,7 +606,7 @@ class TestNodeCreate(ApiTestCase):
         assert_equal(res.content_type, 'application/vnd.api+json')
         pid = res.json['data']['id']
         project = Node.load(pid)
-        assert_equal(project.logs[-1].action, NodeLog.PROJECT_CREATED)
+        assert_equal(project.logs.latest().action, NodeLog.PROJECT_CREATED)
 
     def test_creates_private_project_logged_out(self):
         res = self.app.post_json_api(self.url, self.private_project, expect_errors=True)
@@ -603,7 +622,7 @@ class TestNodeCreate(ApiTestCase):
         assert_equal(res.json['data']['attributes']['category'], self.private_project['data']['attributes']['category'])
         pid = res.json['data']['id']
         project = Node.load(pid)
-        assert_equal(project.logs[-1].action, NodeLog.PROJECT_CREATED)
+        assert_equal(project.logs.latest().action, NodeLog.PROJECT_CREATED)
 
     def test_creates_project_from_template(self):
         template_from = ProjectFactory(creator=self.user_one, is_public=True)
@@ -628,10 +647,10 @@ class TestNodeCreate(ApiTestCase):
         new_project_id = json_data['id']
         new_project = Node.load(new_project_id)
         assert_equal(new_project.title, templated_project_title)
-        assert_equal(new_project.description, None)
+        assert_equal(new_project.description, '')
         assert_false(new_project.is_public)
-        assert_equal(len(new_project.nodes), len(template_from.nodes))
-        assert_equal(new_project.nodes[0].title, template_component.title)
+        assert_equal(new_project.nodes.count(), template_from.nodes.count())
+        assert_equal(new_project.nodes.first().title, template_component.title)
 
     def test_404_on_create_from_template_of_nonexistent_project(self):
         template_from_id = 'thisisnotavalidguid'
@@ -686,7 +705,7 @@ class TestNodeCreate(ApiTestCase):
         url = '/{}nodes/{}/'.format(API_BASE, project_id)
 
         project = Node.load(project_id)
-        assert_equal(project.logs[-1].action, NodeLog.PROJECT_CREATED)
+        assert_equal(project.logs.latest().action, NodeLog.PROJECT_CREATED)
 
         res = self.app.get(url, auth=self.user_one.auth)
         assert_equal(res.json['data']['attributes']['title'], strip_html(title))
@@ -718,7 +737,7 @@ class TestNodeCreate(ApiTestCase):
     def test_create_component_inherit_contributors_with_unregistered_contributor(self):
         parent_project = ProjectFactory(creator=self.user_one)
         parent_project.add_unregistered_contributor(
-            fullname='far', email='bar', permissions=[permissions.READ],
+            fullname='far', email='foo@bar.baz', permissions=[permissions.READ],
             auth= Auth(user=self.user_one), save=True
         )
         url = '/{}nodes/{}/children/?inherit_contributors=true'.format(API_BASE, parent_project._id)
@@ -1083,7 +1102,7 @@ class TestNodeBulkUpdate(ApiTestCase):
     def test_bulk_update_public_projects_one_not_found(self):
         empty_payload = {'data': [
             {
-                'id': 12345,
+                'id': '12345',
                 'type': 'nodes',
                 'attributes': {
                     'title': self.new_title,
@@ -1336,7 +1355,7 @@ class TestNodeBulkPartialUpdate(ApiTestCase):
     def test_bulk_partial_update_public_projects_one_not_found(self):
         empty_payload = {'data': [
             {
-                'id': 12345,
+                'id': '12345',
                 'type': 'nodes',
                 'attributes': {
                     'title': self.new_title
@@ -1462,7 +1481,7 @@ class TestNodeBulkPartialUpdate(ApiTestCase):
         res = self.app.patch_json_api(self.url, {'data': [payload]}, auth=self.user.auth, bulk=True)
         assert_equal(res.status_code, 200)
         self.public_project.reload()
-        assert_equal(self.public_project.tags, ['tag1'])
+        assert_equal(list(self.public_project.tags.values_list('name', flat=True)), ['tag1'])
         assert_equal(self.public_project.is_public, False)
 
 
@@ -1850,10 +1869,6 @@ class TestNodeBulkDeleteSkipUneditable(ApiTestCase):
 
         self.url = "/{}nodes/?skip_uneditable=True".format(API_BASE)
 
-    def tearDown(self):
-        super(TestNodeBulkDeleteSkipUneditable, self).tearDown()
-        Node.remove()
-
     def test_skip_uneditable_bulk_delete(self):
         res = self.app.delete_json_api(self.url, self.payload, auth=self.user_one.auth, bulk=True)
         assert_equal(res.status_code, 200)
@@ -1924,10 +1939,6 @@ class TestNodeListPagination(ApiTestCase):
         self.projects = [ProjectFactory(is_public=True, creator=self.users[0]) for _ in range(11)]
 
         self.url = '/{}nodes/'.format(API_BASE)
-
-    def tearDown(self):
-        super(TestNodeListPagination, self).tearDown()
-        Node.remove()
 
     def test_default_pagination_size(self):
         res = self.app.get(self.url, auth=Auth(self.users[0]))

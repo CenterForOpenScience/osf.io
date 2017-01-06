@@ -1,6 +1,7 @@
-from datetime import datetime, timedelta
+from datetime import timedelta
 import httplib as http
 
+from django.utils import timezone
 from nose.tools import *  # noqa (PEP8 asserts)
 
 from modularodm.exceptions import KeyExistsException
@@ -8,8 +9,8 @@ from modularodm.exceptions import KeyExistsException
 from framework.auth import campaigns, views as auth_views, cas
 from website.util import web_url_for
 from website.project.model import ensure_schemas
+from osf_tests import factories
 from tests.base import OsfTestCase
-from tests.factories import PreprintProviderFactory, UserFactory, AuthUserFactory, UnconfirmedUserFactory
 from tests.utils import mock_auth
 
 
@@ -24,7 +25,7 @@ def set_preprint_providers():
     }
 
     for key, value in providers.items():
-        provider = PreprintProviderFactory()
+        provider = factories.PreprintProviderFactory()
         provider._id = key
         provider.name = value
         try:
@@ -48,7 +49,7 @@ class TestCampaignInitialization(OsfTestCase):
             'engrxiv-preprints',
             'psyarxiv-preprints',
         ]
-        self.refresh = datetime.utcnow()
+        self.refresh = timezone.now()
         campaigns.CAMPAIGNS = None
         campaigns.CAMPAIGNS_LAST_REFRESHED = self.refresh
 
@@ -67,7 +68,7 @@ class TestCampaignInitialization(OsfTestCase):
 
     def test_get_campaigns_update_expired(self):
         campaigns.get_campaigns()
-        self.refresh = datetime.utcnow() - timedelta(minutes=5)
+        self.refresh = timezone.now() - timedelta(minutes=5)
         campaigns.CAMPAIGNS_LAST_REFRESHED = self.refresh
         campaigns.get_campaigns()
         assert_not_equal(self.refresh, campaigns.CAMPAIGNS_LAST_REFRESHED)
@@ -155,8 +156,8 @@ class TestCampaignMethods(OsfTestCase):
         assert_true(provider is None)
 
     def test_campaign_for_user(self):
-        user = UserFactory()
-        user.system_tags.append('osf_preprints')
+        user = factories.UserFactory()
+        user.tags.add(factories.TagFactory(name='osf_preprints', system=True))
         user.save()
         campaign = campaigns.campaign_for_user(user)
         assert_equal(campaign, 'osf-preprints')
@@ -181,7 +182,7 @@ class TestCampaignsAuthViews(OsfTestCase):
             value.update({'url_login': web_url_for('auth_login', campaign=key)})
             value.update({'url_register': web_url_for('auth_register', campaign=key)})
             value.update({'url_landing': campaigns.campaign_url_for(key)})
-        self.user = AuthUserFactory()
+        self.user = factories.AuthUserFactory()
 
     def test_campaign_register_view_logged_in(self):
         for key, value in self.campaigns.items():
@@ -228,10 +229,9 @@ class TestRegistrationThroughCampaigns(OsfTestCase):
         super(TestRegistrationThroughCampaigns, self).setUp()
 
     def test_confirm_email_get_with_campaign(self):
-
-        for key, value in campaigns.get_campaigns().items():
-            user = UnconfirmedUserFactory()
-            user.system_tags.append(value.get('system_tag'))
+        for key, value in campaigns.CAMPAIGNS.items():
+            user = factories.UnconfirmedUserFactory()
+            user.add_system_tag(value.get('system_tag'))
             user.save()
             token = user.get_confirmation_token(user.username)
             kwargs = {

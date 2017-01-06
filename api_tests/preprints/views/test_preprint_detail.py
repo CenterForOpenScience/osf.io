@@ -2,14 +2,13 @@ import functools
 from modularodm import Q
 from nose.tools import *  # flake8: noqa
 
-from framework.auth.core import Auth
-from framework.mongo import database as db
-from tests.base import ApiTestCase
 from api.base.settings.defaults import API_BASE
-
-from website.project.licenses import NodeLicense, ensure_licenses
-from tests.factories import PreprintFactory, AuthUserFactory, ProjectFactory, SubjectFactory, PreprintProviderFactory
 from api_tests import utils as test_utils
+from framework.auth.core import Auth
+from osf_tests.factories import PreprintFactory, AuthUserFactory, ProjectFactory, SubjectFactory, PreprintProviderFactory
+from osf.models import PreprintService, NodeLicense
+from website.project.licenses import ensure_licenses
+from tests.base import ApiTestCase
 
 ensure_licenses = functools.partial(ensure_licenses, warn=False)
 
@@ -49,33 +48,32 @@ class TestPreprintDelete(ApiTestCase):
         self.unpublished_preprint = PreprintFactory(creator=self.user, is_published=False)
         self.published_preprint = PreprintFactory(creator=self.user)
         self.url = '/{}preprints/{{}}/'.format(API_BASE)
-    
+
     def test_can_delete_unpublished(self):
-        previous_ids = [doc['_id'] for doc in db['preprintservice'].find({}, {'_id':1})]
+        previous_ids = list(PreprintService.objects.all().values_list('pk', flat=True))
         self.app.delete(self.url.format(self.unpublished_preprint._id), auth=self.user.auth)
-        remaining_ids = [doc['_id'] for doc in db['preprintservice'].find({}, {'_id':1})]
-        assert_in(self.unpublished_preprint._id, previous_ids)
-        assert_not_in(self.unpublished_preprint._id, remaining_ids)
+        remaining_ids = list(PreprintService.objects.all().values_list('pk', flat=True))
+        assert_in(self.unpublished_preprint.pk, previous_ids)
+        assert_not_in(self.unpublished_preprint.pk, remaining_ids)
 
     def test_cannot_delete_published(self):
-        previous_ids = [doc['_id'] for doc in db['preprintservice'].find({}, {'_id':1})]
+        previous_ids = list(PreprintService.objects.all().values_list('pk', flat=True))
         res = self.app.delete(self.url.format(self.published_preprint._id), auth=self.user.auth, expect_errors=True)
-        remaining_ids = [doc['_id'] for doc in db['preprintservice'].find({}, {'_id':1})]
+        remaining_ids = list(PreprintService.objects.all().values_list('pk', flat=True))
         assert_equal(res.status_code, 409)
         assert_equal(previous_ids, remaining_ids)
-        assert_in(self.published_preprint._id, remaining_ids)
+        assert_in(self.published_preprint.pk, remaining_ids)
 
     def test_deletes_only_requested_document(self):
-        previous_ids = [doc['_id'] for doc in db['preprintservice'].find({}, {'_id':1})]
+        previous_ids = list(PreprintService.objects.all().values_list('pk', flat=True))
         res = self.app.delete(self.url.format(self.unpublished_preprint._id), auth=self.user.auth)
-        remaining_ids = [doc['_id'] for doc in db['preprintservice'].find({}, {'_id':1})]
+        remaining_ids = list(PreprintService.objects.all().values_list('pk', flat=True))
 
-        assert_in(self.unpublished_preprint._id, previous_ids)
-        assert_in(self.published_preprint._id, previous_ids)
+        assert_in(self.unpublished_preprint.pk, previous_ids)
+        assert_in(self.published_preprint.pk, previous_ids)
 
-        assert_not_in(self.unpublished_preprint._id, remaining_ids)
-        assert_in(self.published_preprint._id, remaining_ids)
-
+        assert_not_in(self.unpublished_preprint.pk, remaining_ids)
+        assert_in(self.published_preprint.pk, remaining_ids)
 
 class TestPreprintUpdate(ApiTestCase):
     def setUp(self):
@@ -119,7 +117,7 @@ class TestPreprintUpdate(ApiTestCase):
         assert_equal(self.preprint.subjects, subjects)
 
     def test_update_primary_file(self):
-        new_file = test_utils.create_test_file(self.preprint.node, 'openupthatwindow.pdf')
+        new_file = test_utils.create_test_file(self.preprint.node, self.user,  filename='openupthatwindow.pdf')
         relationships = {
             "primary_file": {
                 "data": {
@@ -135,16 +133,16 @@ class TestPreprintUpdate(ApiTestCase):
         assert_equal(res.status_code, 200)
 
         self.preprint.node.reload()
-        assert_equal(self.preprint.primary_file, new_file)
+        assert_equal(self.preprint.primary_file.wrapped(), new_file)
 
         # check logs
-        log = self.preprint.node.logs[-1]
+        log = self.preprint.node.logs.latest()
         assert_equal(log.action, 'preprint_file_updated')
         assert_equal(log.params.get('preprint'), self.preprint._id)
 
     def test_new_primary_not_in_node(self):
         project = ProjectFactory()
-        file_for_project = test_utils.create_test_file(project, 'letoutthatantidote.pdf')
+        file_for_project = test_utils.create_test_file(project, self.user, filename='letoutthatantidote.pdf')
 
         relationships = {
             "primary_file": {
@@ -161,7 +159,7 @@ class TestPreprintUpdate(ApiTestCase):
         assert_equal(res.status_code, 400)
 
         self.preprint.reload()
-        assert_not_equal(self.preprint.primary_file, file_for_project)
+        assert_not_equal(self.preprint.primary_file.wrapped(), file_for_project)
 
     def test_update_doi(self):
         new_doi = '10.1234/ASDFASDF'
@@ -180,7 +178,7 @@ class TestPreprintUpdate(ApiTestCase):
     def test_write_contrib_cannot_set_primary_file(self):
         user_two = AuthUserFactory()
         self.preprint.node.add_contributor(user_two, permissions=['read', 'write'], auth=Auth(self.user), save=True)
-        new_file = test_utils.create_test_file(self.preprint.node, 'openupthatwindow.pdf')
+        new_file = test_utils.create_test_file(self.preprint.node, self.user, filename='openupthatwindow.pdf')
 
         data = {
             'data':{
@@ -194,16 +192,16 @@ class TestPreprintUpdate(ApiTestCase):
                             'id': new_file._id
                         }
                     }
-                }    
+                }
             }
         }
- 
+
         res = self.app.patch_json_api(self.url, data, auth=user_two.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
 
     def test_noncontrib_cannot_set_primary_file(self):
         user_two = AuthUserFactory()
-        new_file = test_utils.create_test_file(self.preprint.node, 'openupthatwindow.pdf')
+        new_file = test_utils.create_test_file(self.preprint.node, self.user, filename='openupthatwindow.pdf')
 
         data = {
             'data':{
@@ -217,18 +215,19 @@ class TestPreprintUpdate(ApiTestCase):
                             'id': new_file._id
                         }
                     }
-                }    
+                }
             }
         }
- 
+
         res = self.app.patch_json_api(self.url, data, auth=user_two.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
 
     def test_write_contrib_cannot_set_subjects(self):
         user_two = AuthUserFactory()
         self.preprint.node.add_contributor(user_two, permissions=['read', 'write'], auth=Auth(self.user), save=True)
-        
-        assert_not_equal(self.preprint.subjects[0], self.subject._id)
+
+        assert_not_equal(self.preprint.subjects[0][0], self.subject._id)
+
         update_subjects_payload = build_preprint_update_payload(self.preprint._id, attributes={"subjects": [[self.subject._id]]})
 
         res = self.app.patch_json_api(self.url, update_subjects_payload, auth=user_two.auth, expect_errors=True)
@@ -239,8 +238,9 @@ class TestPreprintUpdate(ApiTestCase):
     def test_noncontrib_cannot_set_subjects(self):
         user_two = AuthUserFactory()
         self.preprint.node.add_contributor(user_two, permissions=['read', 'write'], auth=Auth(self.user), save=True)
-        
-        assert_not_equal(self.preprint.subjects[0], self.subject._id)
+
+        assert_not_equal(self.preprint.subjects[0][0], self.subject._id)
+
         update_subjects_payload = build_preprint_update_payload(self.preprint._id, attributes={"subjects": [[self.subject._id]]})
 
         res = self.app.patch_json_api(self.url, update_subjects_payload, auth=user_two.auth, expect_errors=True)
@@ -340,7 +340,7 @@ class TestPreprintUpdateLicense(ApiTestCase):
         assert_equal(self.preprint.license.copyright_holders, [])
 
         # check logs
-        log = self.preprint.node.logs[-1]
+        log = self.preprint.node.logs.latest()
         assert_equal(log.action, 'preprint_license_updated')
         assert_equal(log.params.get('preprint'), self.preprint._id)
 
@@ -417,7 +417,7 @@ class TestPreprintUpdateLicense(ApiTestCase):
     def test_update_preprint_with_existing_license_year_attribute_only(self):
         self.preprint.set_preprint_license(
             {
-                'id': self.no_license.id,
+                'id': self.no_license.license_id,
                 'year': '2014',
                 'copyrightHolders': ['Diane', 'Mr. Peanut Butter']
             },
@@ -445,7 +445,7 @@ class TestPreprintUpdateLicense(ApiTestCase):
     def test_update_preprint_with_existing_license_copyright_holders_attribute_only(self):
         self.preprint.set_preprint_license(
             {
-                'id': self.no_license.id,
+                'id': self.no_license.license_id,
                 'year': '2014',
                 'copyrightHolders': ['Diane', 'Mr. Peanut Butter']
             },
@@ -473,7 +473,7 @@ class TestPreprintUpdateLicense(ApiTestCase):
     def test_update_preprint_with_existing_license_relationship_only(self):
         self.preprint.set_preprint_license(
             {
-                'id': self.no_license.id,
+                'id': self.no_license.license_id,
                 'year': '2014',
                 'copyrightHolders': ['Diane', 'Mr. Peanut Butter']
             },
@@ -501,7 +501,7 @@ class TestPreprintUpdateLicense(ApiTestCase):
     def test_update_preprint_with_existing_license_relationship_and_attributes(self):
         self.preprint.set_preprint_license(
             {
-                'id': self.no_license.id,
+                'id': self.no_license.license_id,
                 'year': '2014',
                 'copyrightHolders': ['Diane', 'Mr. Peanut Butter']
             },
@@ -553,7 +553,7 @@ class TestPreprintUpdateLicense(ApiTestCase):
     def test_update_preprint_license_does_not_change_project_license(self):
         self.preprint.node.set_node_license(
             {
-                'id': self.no_license.id,
+                'id': self.no_license.license_id,
                 'year': '2015',
                 'copyrightHolders': ['Simba', 'Mufasa']
             },
@@ -577,7 +577,7 @@ class TestPreprintUpdateLicense(ApiTestCase):
     def test_update_preprint_license_without_change_does_not_add_log(self):
         self.preprint.set_preprint_license(
             {
-                'id': self.no_license.id,
+                'id': self.no_license.license_id,
                 'year': '2015',
                 'copyrightHolders': ['Kim', 'Kanye']
             },
@@ -585,8 +585,8 @@ class TestPreprintUpdateLicense(ApiTestCase):
             save=True
         )
 
-        before_num_logs = len(self.preprint.node.logs)
-        before_update_log = self.preprint.node.logs[-1]
+        before_num_logs = self.preprint.node.logs.count()
+        before_update_log = self.preprint.node.logs.latest()
 
         data = self.make_payload(
             node_id=self.preprint._id,
@@ -597,8 +597,8 @@ class TestPreprintUpdateLicense(ApiTestCase):
         res = self.make_request(self.url, data, auth=self.admin_contributor.auth)
         self.preprint.node.reload()
 
-        after_num_logs = len(self.preprint.node.logs)
-        after_update_log = self.preprint.node.logs[-1]
+        after_num_logs = self.preprint.node.logs.count()
+        after_update_log = self.preprint.node.logs.latest()
 
         assert_equal(res.status_code, 200)
         assert_equal(before_num_logs, after_num_logs)

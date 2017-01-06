@@ -72,6 +72,9 @@ website/gpg/
 webpack-assets.json
 sauce.json
 
+# Built log templates
+website/templates/_log_templates.mako
+
 # Build JS files
 website/static/built/*
 

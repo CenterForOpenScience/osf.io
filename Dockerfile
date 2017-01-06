@@ -16,7 +16,7 @@ RUN apt-get update \
         # matplotlib
         libfreetype6-dev \
         libxft-dev \
-        # # scipy
+        # scipy
         gfortran \
         libopenblas-dev \
         liblapack-dev \
@@ -25,6 +25,8 @@ RUN apt-get update \
         libssl-dev \
         libffi-dev \
         python-dev \
+        # postgresql
+        libpq-dev \
     && apt-get clean \
     && apt-get autoremove -y \
     && rm -rf /var/lib/apt/lists/*
@@ -120,7 +122,8 @@ COPY ./api/base/settings /code/api/base/settings/
 COPY ./website/__init__.py /code/website/__init__.py
 COPY ./addons.json /code/addons.json
 RUN mv /code/website/settings/local-dist.py /code/website/settings/local.py \
-    && mv /code/api/base/settings/local-dist.py /code/api/base/settings/local.py
+    && mv /code/api/base/settings/local-dist.py /code/api/base/settings/local.py \
+    && sed 's/DEBUG_MODE = True/DEBUG_MODE = False/' -i /code/website/settings/local.py
 
 COPY ./webpack* /code/
 COPY ./website/static /code/website/static/

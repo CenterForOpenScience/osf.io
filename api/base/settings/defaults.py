@@ -18,6 +18,26 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__fil
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/1.8/howto/deployment/checklist/
 
+DATABASES = {
+    'default': {
+        'CONN_MAX_AGE': 0,
+        'ENGINE': 'osf.db.backends.postgresql',  # django.db.backends.postgresql
+        'NAME': os.environ.get('OSF_DB_NAME', 'osf'),
+        'USER': os.environ.get('OSF_DB_USER', 'postgres'),
+        'PASSWORD': os.environ.get('OSF_DB_PASSWORD', ''),
+        'HOST': os.environ.get('OSF_DB_HOST', '127.0.0.1'),
+        'PORT': os.environ.get('OSF_DB_PORT', '5432'),
+        'ATOMIC_REQUESTS': True,
+    }
+}
+
+PASSWORD_HASHERS = [
+    'django.contrib.auth.hashers.BCryptSHA256PasswordHasher',
+    'django.contrib.auth.hashers.BCryptPasswordHasher',
+]
+
+AUTH_USER_MODEL = 'osf.OSFUser'
+
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = osf_settings.SECRET_KEY
 
@@ -26,6 +46,7 @@ AUTHENTICATION_BACKENDS = (
 )
 
 # SECURITY WARNING: don't run with debug turned on in production!
+DEV_MODE = osf_settings.DEV_MODE
 DEBUG = osf_settings.DEBUG_MODE
 DEBUG_PROPAGATE_EXCEPTIONS = True
 
@@ -49,18 +70,44 @@ ALLOWED_HOSTS = [
 INSTALLED_APPS = (
     'django.contrib.auth',
     'django.contrib.contenttypes',
+    'django.contrib.messages',
+    'django.contrib.sessions',
     'django.contrib.staticfiles',
+    'django.contrib.admin',
 
     # 3rd party
     'rest_framework',
     'rest_framework_swagger',
     'corsheaders',
     'raven.contrib.django.raven_compat',
+    'django_extensions',
+
+    # OSF
+    'osf',
+
+    # Addons
+    'addons.osfstorage',
+    'addons.box',
+    'addons.dataverse',
+    'addons.dropbox',
+    'addons.figshare',
+    'addons.forward',
+    'addons.github',
+    'addons.googledrive',
+    'addons.mendeley',
+    'addons.owncloud',
+    'addons.s3',
+    'addons.twofactor',
+    'addons.wiki',
+    'addons.zotero',
 )
 
 # local development using https
-if osf_settings.SECURE_MODE and osf_settings.DEBUG_MODE:
+if osf_settings.SECURE_MODE and DEBUG:
     INSTALLED_APPS += ('sslserver',)
+
+if DEBUG:
+    INSTALLED_APPS += ('debug_toolbar', )
 
 # TODO: Are there more granular ways to configure reporting specifically related to the API?
 RAVEN_CONFIG = {
@@ -138,14 +185,8 @@ CORS_ALLOW_CREDENTIALS = True
 INSTITUTION_ORIGINS_WHITELIST = ()
 
 MIDDLEWARE_CLASSES = (
-    # TokuMX transaction support
-    # Needs to go before CommonMiddleware, so that transactions are always started,
-    # even in the event of a redirect. CommonMiddleware may cause other middlewares'
-    # process_request to be skipped, e.g. when a trailing slash is omitted
     'api.base.middleware.DjangoGlobalMiddleware',
-    'api.base.middleware.MongoConnectionMiddleware',
     'api.base.middleware.CeleryTaskMiddleware',
-    'api.base.middleware.TokuTransactionMiddleware',
     'api.base.middleware.PostcommitTaskMiddleware',
 
     # A profiling middleware. ONLY FOR DEV USE

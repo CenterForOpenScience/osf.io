@@ -8,7 +8,7 @@ from website.util import api_v2_url
 from website.util import sanitize
 
 from tests.base import ApiTestCase
-from tests.factories import ApiOAuth2ApplicationFactory, AuthUserFactory
+from osf_tests.factories import ApiOAuth2ApplicationFactory, AuthUserFactory
 
 
 def _get_application_detail_route(app):
@@ -114,8 +114,3 @@ class TestApplicationList(ApiTestCase):
     def test_returns_401_when_not_logged_in(self):
         res = self.app.get(self.user1_list_url, expect_errors=True)
         assert_equal(res.status_code, 401)
-
-    def tearDown(self):
-        super(TestApplicationList, self).tearDown()
-        ApiOAuth2Application.remove()
-        User.remove()
