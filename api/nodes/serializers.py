@@ -1,36 +1,37 @@
-from rest_framework import serializers as ser
-from rest_framework import exceptions
-
-from modularodm.exceptions import ValidationError
-
+from api.base.exceptions import (Conflict, EndpointNotImplementedError,
+                                 InvalidModelValueError,
+                                 RelationshipPostMakesNoChanges)
+from api.base.serializers import (DateByVersion, HideIfRegistration, IDField,
+                                  JSONAPIListField,
+                                  JSONAPIRelationshipSerializer,
+                                  JSONAPISerializer, LinksField,
+                                  NodeFileHyperLinkField, RelationshipField,
+                                  ShowIfVersion, TargetTypeField, TypeField,
+                                  WaterbutlerLink, relationship_diff)
+from api.base.settings import ADDONS_FOLDER_CONFIGURABLE
+from api.base.utils import (absolute_reverse, get_object_or_error,
+                            get_user_auth, is_truthy)
+from django.apps import apps
+from django.conf import settings
 from framework.auth.core import Auth
 from framework.exceptions import PermissionsError
-
-from django.conf import settings
-from django.apps import apps
-
-from website.addons.base.exceptions import InvalidFolderError, InvalidAuthError
-from website.project.metadata.schemas import ACTIVE_META_SCHEMAS, LATEST_SCHEMA_VERSION
-from website.project.metadata.utils import is_prereg_admin_not_project_admin
-from website.models import Node, Comment, Institution, MetaSchema, DraftRegistration, PrivateLink
+from modularodm.exceptions import ValidationError
+from osf.models import Tag
+from rest_framework import serializers as ser
+from rest_framework import exceptions
+from website.addons.base.exceptions import InvalidAuthError, InvalidFolderError
 from website.exceptions import NodeStateError
-from website.util import permissions as osf_permissions
-from website.project import new_private_link
-from website.project.model import NodeUpdateError
-from website.project.licenses import NodeLicense
-from website.preprints.model import PreprintService
-
-from api.base.utils import get_user_auth, get_object_or_error, absolute_reverse, is_truthy
-from api.base.serializers import (JSONAPISerializer, WaterbutlerLink, NodeFileHyperLinkField, IDField, TypeField,
-                                  TargetTypeField, JSONAPIListField, LinksField, RelationshipField,
-                                  HideIfRegistration, JSONAPIRelationshipSerializer, relationship_diff,
-                                  ShowIfVersion, DateByVersion,)
-from api.base.exceptions import (InvalidModelValueError,
-                                 RelationshipPostMakesNoChanges, Conflict,
-                                 EndpointNotImplementedError)
-from api.base.settings import ADDONS_FOLDER_CONFIGURABLE
-
+from website.models import (Comment, DraftRegistration, Institution,
+                            MetaSchema, Node, PrivateLink)
 from website.oauth.models import ExternalAccount
+from website.preprints.model import PreprintService
+from website.project import new_private_link
+from website.project.licenses import NodeLicense
+from website.project.metadata.schemas import (ACTIVE_META_SCHEMAS,
+                                              LATEST_SCHEMA_VERSION)
+from website.project.metadata.utils import is_prereg_admin_not_project_admin
+from website.project.model import NodeUpdateError
+from website.util import permissions as osf_permissions
 
 
 class NodeTagField(ser.Field):
@@ -368,6 +369,12 @@ class NodeSerializer(JSONAPISerializer):
         request = self.context['request']
         user = request.user
         Node = apps.get_model('osf.Node')
+        tag_instances = []
+        if 'tags' in validated_data:
+            tags = validated_data.pop('tags')
+            for tag in tags:
+                tag_instance, created = Tag.objects.get_or_create(name=tag, defaults=dict(system=False))
+                tag_instances.append(tag_instance)
         if 'template_from' in validated_data:
             template_from = validated_data.pop('template_from')
             template_node = Node.load(template_from)
@@ -385,6 +392,8 @@ class NodeSerializer(JSONAPISerializer):
             node.save()
         except ValidationError as e:
             raise InvalidModelValueError(detail=e.messages[0])
+        if len(tag_instances):
+            node.tags.add(*tag_instances)
         if is_truthy(request.GET.get('inherit_contributors')) and validated_data['parent'].has_permission(user, 'write'):
             auth = get_user_auth(request)
             parent = validated_data['parent']
