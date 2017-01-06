@@ -39,6 +39,7 @@
 #
 # e.g. OSF default local.py
 # cp ./website/settings/local-dist.py ./website/settings/local.py
+# cp ./api/base/settings/local-dist.py ./api/base/settings/local.py
 
 # Environment variables (incl. remote debugging)
 #
@@ -91,6 +92,58 @@
 # docker-compose up web api
 
 
+###############
+# Docker Sync #
+###############
+
+# Install Docker Sync
+#
+# Instructions: docker-sync.io.
+#
+# sudo pip install macfsevents
+
+# Running Docker Sync
+#
+# NOTE: Wait for Docker Sync to fully start before running any further docker-compose commands.
+#
+# docker-sync start
+
+
+#######################
+# Application Runtime #
+#######################
+
+# Logs can be viewed for any backgrounded container by running:
+#
+# docker-compose -f --tail 100 <container_name>
+
+# Application Environment
+#
+# NOTE: When the various requirements installations are complete these containers will exit.
+#
+# docker-compose up requirements mfr_requirements wb_requirements
+
+# Start Core Component Services
+#
+# docker-compose up -d elasticsearch tokumx
+
+# Start the Assets Watcher
+#
+# NOTE: The first time the assets container is run it will take Webpack/NPM up to 15 minutes to compile resources.
+#       When you see the BowerJS build occurring it is likely a safe time to move forward with starting the remaining
+#       containers.
+#
+# docker-compose up -d assets
+
+# Start the Services
+#
+# docker-compose up -d mfr wb fakecas
+
+# Start the OSF Web and API Servers
+#
+# docker-compose up -d web api
+
+
 #########################
 # Application Debugging #
 #########################
@@ -129,24 +182,31 @@
 #
 # docker-compose stop -t 0 postgres
 # docker-compose rm postgres
-# docker volume rm [projectname]_postgres_vol
+# docker volume rm [projectname]_postgres_data_vol
 
 
 version: '2'
 
 volumes:
-  elasticsearch_vol:
+  postgres_data_vol:
     external: false
-  postgres_vol:
+  tokumx_data_vol:
     external: false
-  tokumx_vol:
+  elasticsearch_data_vol:
     external: false
-  requirements_osf_vol:
+  preprints_dist_vol:
     external: false
-  requirements_mfr_vol:
+  mfr_requirements_vol:
     external: false
-  requirements_wb_vol:
+  wb_requirements_vol:
     external: false
+  wb_osfstoragecache_vol:
+    external: false
+  osf_requirements_vol:
+    external: false
+  osf_node_modules_vol:
+    external: false
+
 
 services:
 
@@ -159,7 +219,7 @@ services:
     ports:
       - 9200:9200
     volumes:
-      - elasticsearch_vol:/usr/share/elasticsearch/data
+      - elasticsearch_data_vol:/usr/share/elasticsearch/data
 
   postgres:
    image: postgres:9.6
@@ -169,7 +229,7 @@ services:
    environment:
      POSTGRES_DB: osf
    volumes:
-     - postgres_vol:/var/lib/postgresql/data/
+     - postgres_data_vol:/var/lib/postgresql/data/
 
   tokumx:
     image: quay.io/centerforopenscience/tokumx:latest
@@ -179,19 +239,20 @@ services:
     environment:
       TOKU_HUGE_PAGES_OK: 1
     volumes:
-      - tokumx_vol:/data/db
+      - tokumx_data_vol:/data/db
 
 
   #########################
   # Modular File Renderer #
   #########################
 
-  requirements_mfr:
+  mfr_requirements:
     image: quay.io/centerforopenscience/mfr:develop
     command: /bin/bash -c "invoke install --develop && cp -Rf /usr/local/lib/python3.5/site-packages /"
     restart: 'no'
     volumes:
-      - requirements_mfr_vol:/site-packages
+      - mfr_requirements_vol:/site-packages
+
   mfr:
     image: quay.io/centerforopenscience/mfr:develop
     command: invoke server
@@ -201,18 +262,19 @@ services:
     env_file:
       - .docker-compose.mfr.env
     volumes:
-      - requirements_mfr_vol:/usr/local/lib/python3.5/site-packages
+      - mfr_requirements_vol:/usr/local/lib/python3.5/site-packages
 
   ###############
   # WaterButler #
   ###############
 
-  requirements_wb:
+  wb_requirements:
     image: quay.io/centerforopenscience/waterbutler:develop
     command: /bin/bash -c "invoke install --develop && cp -Rf /usr/local/lib/python3.5/site-packages /"
     restart: 'no'
     volumes:
-      - requirements_wb_vol:/site-packages
+      - wb_requirements_vol:/site-packages
+
   wb:
     image: quay.io/centerforopenscience/waterbutler:develop
     command: invoke server
@@ -222,7 +284,8 @@ services:
     env_file:
       - .docker-compose.wb.env
     volumes:
-      - requirements_wb_vol:/usr/local/lib/python3.5/site-packages
+      - wb_requirements_vol:/usr/local/lib/python3.5/site-packages
+      - wb_osfstoragecache_vol:/code/website/osfstoragecache
 
 
   ##################################
@@ -231,12 +294,30 @@ services:
 
   fakecas:
     image: quay.io/centerforopenscience/fakecas:master
-    command: fakecas -host=0.0.0.0:8080 -osfhost=192.168.168.167:5000 -dbaddress=192.168.168.167:27017
+    command: fakecas -host=0.0.0.0:8080 -osfhost=192.168.168.167:5000 -dbaddress=postgres://postgres@postgres:5432/osf?sslmode=disable
     restart: unless-stopped
     ports:
       - 8080:8080
     depends_on:
       - postgres
+
+
+  #############
+  # Preprints #
+  #############
+
+  preprints:
+    image: quay.io/centerforopenscience/ember-preprints:develop
+    command: /bin/bash -c "npm install && ./node_modules/bower/bin/bower install --allow-root --config.intedractive=false && ./node_modules/ember-cli/bin/ember serve --host 0.0.0.0 --port 4200"
+    restart: unless-stopped
+    environment:
+      - BACKEND=local
+    expose:
+      - 4200
+    ports:
+      - 4200:4200
+    volumes:
+      - preprints_dist_vol:/code/dist
 
 
   #######
@@ -267,7 +348,7 @@ services:
 #      - rabbitmq
 #      - elasticsearch
 #    volumes:
-#      - requirements_osf_vol:/usr/local/lib/python2.7/site-packages
+#      - osf_requirements_vol:/usr/local/lib/python2.7/site-packages
 #      - ./:/code
 #    environment:
 #      DB_HOST: postgres
@@ -284,7 +365,7 @@ services:
 #      - rabbitmq
 #      - elasticsearch
 #    volumes:
-#      - requirements_osf_vol:/usr/local/lib/python2.7/site-packages
+#      - osf_requirements_vol:/usr/local/lib/python2.7/site-packages
 #      - ./:/code
 #    environment:
 #      C_FORCE_ROOT: 1
@@ -297,40 +378,36 @@ services:
     command: /bin/bash -c "invoke requirements --quick && cp -Rf /usr/local/lib/python2.7/site-packages /"
     restart: 'no'
     volumes:
-      - requirements_osf_vol:/site-packages
-      - ./:/code
+      - osf_requirements_vol:/site-packages
 
   assets:
     image: quay.io/centerforopenscience/osf:feature-django-osf
     command: invoke assets -dw
     restart: unless-stopped
     volumes:
-      - requirements_osf_vol:/site-packages
-      - ./:/code
+      - osf_requirements_vol:/usr/local/lib/python2.7/site-packages
+      - osf_node_modules_vol:/code/node_modules
 
-  web:
-    image: quay.io/centerforopenscience/osf:feature-django-osf
-    command: invoke server -h 0.0.0.0
-    restart: unless-stopped
-    ports:
-      - 5000:5000
-    depends_on:
-      - postgres
-      - tokumx
-#      - rabbitmq
-      - elasticsearch
-      - fakecas
-#      - cas
-      - mfr
-      - wb
-    env_file:
-      - .docker-compose.env
-    volumes:
-      - requirements_osf_vol:/usr/local/lib/python2.7/site-packages
-      - ./:/code
+#  admin:
+#    image: quay.io/centerforopenscience/osf:develop
+#    command: invoke adminserver -h 0.0.0.0
+#    restart: unless-stopped
+#    ports:
+#      - 8001:8001
+#    depends_on:
+#      - tokumx
+##      - rabbitmq
+#      - elasticsearch
+#    env_file:
+#      - .docker-compose.env
+#    stdin_open: true
+#    tty: true
+#    volumes:
+#      - osf_requirements_vol:/usr/local/lib/python2.7/site-packages
+#      - osf_node_modules_vol:/code/node_modules
 
   api:
-    image: quay.io/centerforopenscience/osf:feature-django-osf
+    image: quay.io/centerforopenscience/osf:develop
     command: invoke apiserver -h 0.0.0.0
     restart: unless-stopped
     ports:
@@ -340,12 +417,26 @@ services:
       - tokumx
 #      - rabbitmq
       - elasticsearch
-      - fakecas
-#      - cas
-      - mfr
-      - wb
     env_file:
       - .docker-compose.env
     volumes:
-      - requirements_osf_vol:/usr/local/lib/python2.7/site-packages
-      - ./:/code
+      - osf_requirements_vol:/usr/local/lib/python2.7/site-packages
+      - osf_node_modules_vol:/code/node_modules
+
+  web:
+    image: quay.io/centerforopenscience/osf:develop
+    command: invoke server -h 0.0.0.0
+    restart: unless-stopped
+    ports:
+      - 5000:5000
+    depends_on:
+      - postgres
+      - tokumx
+#      - rabbitmq
+      - elasticsearch
+    env_file:
+      - .docker-compose.env
+    volumes:
+      - osf_requirements_vol:/usr/local/lib/python2.7/site-packages
+      - osf_node_modules_vol:/code/node_modules
+      - preprints_dist_vol:/preprints
