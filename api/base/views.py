@@ -1,6 +1,7 @@
 import weakref
 from django.conf import settings as django_settings
 from django.http import JsonResponse
+from django.db import transaction
 from rest_framework.decorators import api_view, throttle_classes
 from rest_framework.response import Response
 from rest_framework import generics
@@ -28,6 +29,8 @@ from api.nodes.permissions import ContributorOrPublic
 from api.nodes.permissions import ContributorOrPublicForRelationshipPointers
 from api.base.utils import is_bulk_request, get_user_auth
 from website.models import Pointer
+
+from osf.models.contributor import Contributor, get_contributor_permissions
 
 
 CACHE = weakref.WeakKeyDictionary()
@@ -103,7 +106,8 @@ class JSONAPIBaseView(generics.GenericAPIView):
                         view.paginator.request = request
                         ret = view.paginator.get_paginated_response(ret).data
             except Exception as e:
-                ret = view.handle_exception(e).data
+                with transaction.atomic():
+                    ret = view.handle_exception(e).data
 
             # Allow request to be gc'd
             ser._context = None
@@ -234,11 +238,8 @@ class LinkedNodesRelationship(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPI
         auth = utils.get_user_auth(self.request)
         obj = {'data': [
             pointer for pointer in
-            object.nodes_pointer
-            if not pointer.node.is_deleted
-            and not pointer.node.is_collection
-            and not pointer.node.is_registration
-            and pointer.node.can_view(auth)
+            object.linked_nodes.filter(is_deleted=False, type='osf.node')
+            if pointer.can_view(auth)
         ], 'self': object}
         self.check_object_permissions(self.request, obj)
         return obj
@@ -246,7 +247,7 @@ class LinkedNodesRelationship(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPI
     def perform_destroy(self, instance):
         data = self.request.data['data']
         auth = utils.get_user_auth(self.request)
-        current_pointers = {pointer.node._id: pointer for pointer in instance['data']}
+        current_pointers = {pointer._id: pointer for pointer in instance['data']}
         collection = instance['self']
         for val in data:
             if val['id'] in current_pointers:
@@ -341,11 +342,8 @@ class LinkedRegistrationsRelationship(JSONAPIBaseView, generics.RetrieveUpdateDe
         auth = utils.get_user_auth(self.request)
         obj = {'data': [
             pointer for pointer in
-            object.nodes_pointer
-            if not pointer.node.is_deleted
-            and not pointer.node.is_collection
-            and pointer.node.is_registration
-            and pointer.node.can_view(auth)
+            object.linked_nodes.filter(is_deleted=False, type='osf.registration')
+            if pointer.can_view(auth)
         ], 'self': object}
         self.check_object_permissions(self.request, obj)
         return obj
@@ -768,12 +766,15 @@ class BaseContributorDetail(JSONAPIBaseView, generics.RetrieveAPIView):
         user = self.get_user()
         # May raise a permission denied
         self.check_object_permissions(self.request, user)
-        if user not in node.contributors:
+        try:
+            contributor = node.contributor_set.get(user=user)
+        except Contributor.DoesNotExist:
             raise NotFound('{} cannot be found in the list of contributors.'.format(user))
-        user.permission = node.get_permissions(user)[-1]
-        user.bibliographic = node.get_visible(user)
+
+        user.permission = get_contributor_permissions(contributor, as_list=False)
+        user.bibliographic = contributor.visible
         user.node_id = node._id
-        user.index = node.contributors.index(user)
+        user.index = list(node.get_contributor_order()).index(contributor.id)
         return user
 
 class BaseContributorList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
@@ -823,12 +824,14 @@ class BaseNodeLinksList(JSONAPIBaseView, generics.ListAPIView):
 
     def get_queryset(self):
         auth = get_user_auth(self.request)
+        query = self.get_node()\
+                .node_relations.select_related('child')\
+                .filter(is_node_link=True, child__is_deleted=False)\
+                .exclude(child__type='osf.collection')
         return sorted([
-            pointer.node for pointer in
-            self.get_node().nodes_pointer
-            if not pointer.node.is_deleted and not pointer.node.is_collection and
-            pointer.node.can_view(auth) and not pointer.node.is_retracted
-        ], key=lambda n: n.date_modified, reverse=True)
+            node_link for node_link in query
+            if node_link.child.can_view(auth) and not node_link.child.is_retracted
+        ], key=lambda node_link: node_link.child.date_modified, reverse=True)
 
 
 class BaseLinkedList(JSONAPIBaseView, generics.ListAPIView):
@@ -852,11 +855,12 @@ class BaseLinkedList(JSONAPIBaseView, generics.ListAPIView):
 
     def get_queryset(self):
         auth = get_user_auth(self.request)
-        return sorted([
-            pointer.node for pointer in
-            self.get_node().nodes_pointer
-            if not pointer.node.is_deleted
-            and not pointer.node.is_collection
-            # and pointer.node.is_registration
-            and pointer.node.can_view(auth)
-        ], key=lambda n: n.date_modified, reverse=True)
+
+        linked_node_ids = [
+            each.id for each in self.get_node().linked_nodes
+            .filter(is_deleted=False)
+            .exclude(type='osf.collection')
+            .order_by('-date_modified')
+            if each.can_view(auth)
+        ]
+        return self.get_node().linked_nodes.filter(id__in=linked_node_ids)

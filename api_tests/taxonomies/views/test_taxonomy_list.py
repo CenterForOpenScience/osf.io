@@ -2,7 +2,7 @@ from nose.tools import *  # flake8: noqa
 
 from modularodm import Q
 from tests.base import ApiTestCase
-from tests.factories import SubjectFactory
+from osf_tests.factories import SubjectFactory
 from website.project.taxonomies import Subject
 from api.base.settings.defaults import API_BASE
 
@@ -25,10 +25,6 @@ class TestTaxonomy(ApiTestCase):
         self.res = self.app.get(self.url)
         self.data = self.res.json['data']
 
-    def tearDown(self):
-        super(TestTaxonomy, self).tearDown()
-        Subject.remove()
-
     def test_taxonomy_success(self):
         assert_greater(len(self.subjects), 0)  # make sure there are subjects to filter through
         assert_equal(self.res.status_code, 200)
@@ -45,8 +41,8 @@ class TestTaxonomy(ApiTestCase):
             parents_ids = []
             for parent in self.data[index]['attributes']['parents']:
                 parents_ids.append(parent['id'])
-            for parent in subject.parents:
-                assert parent._id in parents_ids
+            for parent_id in subject.parents.values_list('_id', flat=True):
+                assert parent_id in parents_ids
 
     def test_taxonomy_filter_top_level(self):
         top_level_subjects = Subject.find(
@@ -65,7 +61,7 @@ class TestTaxonomy(ApiTestCase):
 
     def test_taxonomy_filter_by_parent(self):
         children_subjects = Subject.find(
-            Q('parents', 'eq', self.subject1._id)
+            Q('parents___id', 'eq', self.subject1._id)
         )
         children_url = self.url + '?filter[parents]={}'.format(self.subject1._id)
 

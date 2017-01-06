@@ -5,6 +5,7 @@ import httplib as http
 import json
 import urllib
 
+from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
 from lxml import etree
 import requests
 
@@ -319,7 +320,10 @@ def get_user_from_cas_resp(cas_resp):
     """
 
     if cas_resp.user:
-        user = User.load(cas_resp.user)
+        try:
+            user = User.objects.get(pk=cas_resp.user)
+        except(ObjectDoesNotExist, MultipleObjectsReturned, ValueError):
+            user = None
         # cas returns a valid OSF user id
         if user:
             return user, None, 'authenticate'
