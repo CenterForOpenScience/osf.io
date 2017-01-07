@@ -21,6 +21,8 @@ volumes:
     external: false
   osf_node_modules_vol:
     external: false
+  osf_bower_components_vol:
+    external: false
 
 
 services:
@@ -201,6 +203,7 @@ services:
     restart: unless-stopped
     volumes:
       - osf_requirements_vol:/usr/local/lib/python2.7/site-packages
+      - osf_bower_components_vol:/code/website/static/vendor/bower_components
       - osf_node_modules_vol:/code/node_modules
 
 #  admin:
@@ -236,6 +239,7 @@ services:
       - .docker-compose.env
     volumes:
       - osf_requirements_vol:/usr/local/lib/python2.7/site-packages
+      - osf_bower_components_vol:/code/website/static/vendor/bower_components
       - osf_node_modules_vol:/code/node_modules
 
   web:
@@ -253,5 +257,6 @@ services:
       - .docker-compose.env
     volumes:
       - osf_requirements_vol:/usr/local/lib/python2.7/site-packages
+      - osf_bower_components_vol:/code/website/static/vendor/bower_components
       - osf_node_modules_vol:/code/node_modules
       - preprints_dist_vol:/preprints
