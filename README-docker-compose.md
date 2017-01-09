@@ -21,7 +21,7 @@
 
   - Windows
     - Install Microsoft Loopback Adapter (Windows 10 follow community comments as the driver was renamed)
-   https://technet.microsoft.com/en-us/library/cc708322(v=ws.10).aspx
+      https://technet.microsoft.com/en-us/library/cc708322(v=ws.10).aspx
     - Rename the new Loopback Interface (typically called 'Ethernet 2')
       - List interfaces
 
