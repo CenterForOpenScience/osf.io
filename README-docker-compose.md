@@ -62,24 +62,26 @@
     - This makes it so your local changes will be reflected in the docker containers. Until you do this none of your changes will have any effect.
 
   - In `docker-compose.override.yml`:
-  ```yml
-  services:
-    wb:
-      volumes_from:
-        - container:wb-sync
-  ```
+
+    ```yml
+    services:
+      wb:
+        volumes_from:
+          - container:wb-sync
+    ```
 
   - In `docker-sync.yml`:
-  ```yml
-  syncs:
-    wb-sync:
-      src: '../waterbutler'
-      dest: '/code'
-      sync_strategy: 'unison'
-      sync_excludes_type: 'Name'
-      sync_excludes: ['.DS_Store', '*.pyc', '*.tmp', '.git', '.idea']
-      watch_excludes: ['.*\.DS_Store', '.*\.pyc', '.*\.tmp', '.*/\.git', '.*/\.idea']
-  ```
+
+    ```yml
+    syncs:
+      wb-sync:
+        src: '../waterbutler'
+        dest: '/code'
+        sync_strategy: 'unison'
+        sync_excludes_type: 'Name'
+        sync_excludes: ['.DS_Store', '*.pyc', '*.tmp', '.git', '.idea']
+        watch_excludes: ['.*\.DS_Store', '.*\.pyc', '.*\.tmp', '.*/\.git', '.*/\.idea']
+    ```
 
 ## Docker Sync
 
@@ -127,17 +129,17 @@
 
 - Once the requirements have all been installed, you can start the OSF in the background with
 
-```
-$ docker-sync start
-# Wait until you see "Nothing to do: replicas have not changed since last sync."
-$ docker-compose up -d assets elasticsearch postgres tokumx mfr wb fakecas web api preprints
-```
+  ```
+  $ docker-sync start
+  # Wait until you see "Nothing to do: replicas have not changed since last sync."
+  $ docker-compose up -d assets elasticsearch postgres tokumx mfr wb fakecas web api preprints
+  ```
 
 - To view the logs for a given container: 
 
-```
-$ docker-compose logs -f -t 100 web
-```
+  ```
+  $ docker-compose logs -f -t 100 web
+  ```
 
 ## Running arbitrary commands
 
