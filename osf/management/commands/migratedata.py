@@ -27,8 +27,7 @@ from github3 import GitHubError
 from modularodm import Q as MQ
 from oauthlib.oauth2 import InvalidGrantError
 from osf.models import (BlackListGuid, ExternalAccount, NodeLog, OSFUser,
-                        PageCounter, Tag, UserActivityCounter)
-from osf.models import StoredFileNode
+                        PageCounter, StoredFileNode, Tag, UserActivityCounter)
 from osf.models.base import Guid, GuidMixin, OptionalGuidMixin
 from osf.models.node import AbstractNode
 from osf.utils.order_apps import get_ordered_models
@@ -269,6 +268,7 @@ def make_guids():
 
 def validate_guid_referents_against_ids():
     from django.apps import apps
+    import ipdb
     register_nonexistent_models_with_modm()
     with ipdb.launch_ipdb_on_exception():
         for django_model in [model for model in get_ordered_models() if (issubclass(model, GuidMixin) or issubclass(model, OptionalGuidMixin)) and (not issubclass(model, AbstractNode) or model is AbstractNode)]:
@@ -288,18 +288,32 @@ def validate_guid_referents_against_ids():
             for guid in guids:
                 guid_instance = MGuid.load(guid)
                 if not guid_instance:
+                    # There is no guid instance for this guid string
                     if len(guid) > 5:
                         continue
                     logger.info('{}:{}\'s guid doesn\'t exist.'.format(model_name, guid))
+                    import ipdb; ipdb.set_trace()
                     continue
                 if not guid_instance.referent:
+                    # the referent is not set
                     logger.info('{}:{}\'s referent is None.'.format(model_name, guid_instance._id))
+                    # find the referent with the same _id and model_name
+                    referent = modm_model.load(guid_instance._id)
+                    if referent is not None:
+                        guid.referent = referent
+                        guid.save()
+                        continue
+                    print('Could not find referent for {}:{}'.format(referent_model_name, guid_instance._id))
                     continue
                 referent_model_name = guid_instance.to_storage()['referent'][1]
                 if referent_model_name != model_name:
+                    # the referent isn't pointing at the correct type of object. Try and find the object it should be pointing to.
                     if referent_model_name == 'node' and model_name in ['node', 'abstractnode', 'registration', 'collection']:
+                        # nodes have been broken out into separate models, treat these differently
                         continue
+
                     logger.info('{}:{}\'s referent doesn\'t match {}:{}'.format(referent_model_name, guid_instance.to_storage()['referent'][0], model_name, guid_instance._id))
+
             logger.info('Finished {}...'.format(model_name))
             modm_model._cache.clear()
             modm_model._object_cache.clear()
