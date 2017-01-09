@@ -61,28 +61,25 @@
   - By modifying docker-compose.override.yml and docker-sync.yml you can specify the relative path to your service code directories. e.g.
     - This makes it so your local changes will be reflected in the docker containers. Until you do this none of your changes will have any effect.
 
+  - In `docker-compose.override.yml`:
+  ```yml
+  services:
+    wb:
+      volumes_from:
+        - container:wb-sync
+  ```
 
-In `docker-compose.override.yml`:
-
-```yml
-services:
-  wb:
-    volumes_from:
-      - container:wb-sync
-```
-
-In `docker-sync.yml`:
-
-```yml
-syncs:
-  wb-sync:
-    src: '../waterbutler'
-    dest: '/code'
-    sync_strategy: 'unison'
-    sync_excludes_type: 'Name'
-    sync_excludes: ['.DS_Store', '*.pyc', '*.tmp', '.git', '.idea']
-    watch_excludes: ['.*\.DS_Store', '.*\.pyc', '.*\.tmp', '.*/\.git', '.*/\.idea']
-```
+  - In `docker-sync.yml`:
+  ```yml
+  syncs:
+    wb-sync:
+      src: '../waterbutler'
+      dest: '/code'
+      sync_strategy: 'unison'
+      sync_excludes_type: 'Name'
+      sync_excludes: ['.DS_Store', '*.pyc', '*.tmp', '.git', '.idea']
+      watch_excludes: ['.*\.DS_Store', '.*\.pyc', '.*\.tmp', '.*/\.git', '.*/\.idea']
+  ```
 
 ## Docker Sync
 
