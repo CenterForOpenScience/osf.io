@@ -28,7 +28,7 @@ logger = logging.getLogger(__name__)
 
 class DropboxProvider(ExternalProvider):
 
-    name = 'DropBox'
+    name = 'Dropbox'
     short_name = 'dropbox'
 
     client_id = settings.DROPBOX_KEY

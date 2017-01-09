@@ -373,7 +373,8 @@ var FileViewPage = {
             }
             var fileType = mime.lookup(self.file.name.toLowerCase());
             // Only allow files < 64k to be editable
-            if (self.file.size < 65536 && fileType) { //May return false
+            // No files on figshare are editable.
+            if (self.file.size < 65536 && fileType && self.file.provider !== 'figshare') { //May return false
                 var editor = EDITORS[fileType.split('/')[0]];
                 if (editor) {
                     self.editor = new Panel('Edit', self.editHeader, editor, [self.file.urls.content, self.file.urls.sharejs, self.editorMeta, self.shareJSObservables], false);
@@ -506,8 +507,16 @@ var FileViewPage = {
         m.render(document.getElementById('toggleBar'), m('.btn-toolbar.m-t-md', [
             // Special case whether or not to show the delete button for published Dataverse files
             // Special case to not show delete if file is preprint primary file
-            (ctrl.canEdit() && !(ctrl.node.isPreprint && ctrl.node.preprintFileId === ctrl.file.id) && (ctrl.file.provider !== 'osfstorage' || !ctrl.file.checkoutUser) && ctrl.requestDone && $(document).context.URL.indexOf('version=latest-published') < 0 ) ? m('.btn-group.m-l-xs.m-t-xs', [
-                ctrl.isLatestVersion ? m('button.btn.btn-sm.btn-danger.file-delete', {onclick: $(document).trigger.bind($(document), 'fileviewpage:delete') }, 'Delete') : null
+            // Special case to not show delete for public figshare files
+            (
+                ctrl.canEdit() &&
+                !(ctrl.node.isPreprint && ctrl.node.preprintFileId === ctrl.file.id) &&
+                    !(ctrl.file.provider === 'figshare' && ctrl.file.extra.status === 'public') &&
+                (ctrl.file.provider !== 'osfstorage' || !ctrl.file.checkoutUser) &&
+                ctrl.requestDone &&
+                ($(document).context.URL.indexOf('version=latest-published') < 0)
+            ) ? m('.btn-group.m-l-xs.m-t-xs', [
+                        ctrl.isLatestVersion ? m('button.btn.btn-sm.btn-danger.file-delete', {onclick: $(document).trigger.bind($(document), 'fileviewpage:delete') }, 'Delete') : null
             ]) : '',
             ctrl.context.currentUser.canEdit && (!ctrl.canEdit()) && ctrl.requestDone && (ctrl.context.currentUser.isAdmin) ? m('.btn-group.m-l-xs.m-t-xs', [
                 ctrl.isLatestVersion ? m('.btn.btn-sm.btn-danger', {onclick: $(document).trigger.bind($(document), 'fileviewpage:force_checkin')}, 'Force check in') : null
