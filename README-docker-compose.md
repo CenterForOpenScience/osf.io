@@ -46,7 +46,7 @@
 
     `$ cp ./api/base/settings/local-dist.py ./api/base/settings/local.py`
 
-2. Environment variables (incl. remote debugging)
+2. OPTIONAL (uncomment the below lines if you will use remote debugging) Environment variables (incl. remote debugging)
   - e.g. .docker-compose.env
 
     ```bash
@@ -57,32 +57,32 @@
 
       _NOTE: Similar docker-compose.\<name\>.env environment configuration files exist for services._
 
-3. Mounting Service Code
+3. OPTIONAL (skip if you do not need to modify services, e.g. mfr and waterbutler): Mounting Service Code
   - By modifying docker-compose.override.yml and docker-sync.yml you can specify the relative path to your service code directories. e.g.
     - This makes it so your local changes will be reflected in the docker containers. Until you do this none of your changes will have any effect.
 
 
-  In docker-compose.override.yml:
+In `docker-compose.override.yml`:
 
-    ```yml
-    services:
-      wb:
-        volumes_from:
-          - container:wb-sync
-    ```
+```yml
+services:
+  wb:
+    volumes_from:
+      - container:wb-sync
+```
 
-  In docker-sync.yml:
+In `docker-sync.yml`:
 
-  ```yml
-  syncs:
-    wb-sync:
-      src: '../waterbutler'
-      dest: '/code'
-      sync_strategy: 'unison'
-      sync_excludes_type: 'Name'
-      sync_excludes: ['.DS_Store', '*.pyc', '*.tmp', '.git', '.idea']
-      watch_excludes: ['.*\.DS_Store', '.*\.pyc', '.*\.tmp', '.*/\.git', '.*/\.idea']
-  ```
+```yml
+syncs:
+  wb-sync:
+    src: '../waterbutler'
+    dest: '/code'
+    sync_strategy: 'unison'
+    sync_excludes_type: 'Name'
+    sync_excludes: ['.DS_Store', '*.pyc', '*.tmp', '.git', '.idea']
+    watch_excludes: ['.*\.DS_Store', '.*\.pyc', '.*\.tmp', '.*/\.git', '.*/\.idea']
+```
 
 ## Docker Sync
 
@@ -121,27 +121,43 @@
   - When starting with an empty database you will need to run migrations and populate preprint providers. See the [Running arbitrary commands](#running-arbitrary-commands) section below for instructions.
 6. Run Django migrations
   - `$ docker-compose run --rm web python manage.py migrate`
-7. Start the OSF Web and API Servers
-  - `$ docker-compose up web api`
+7. Start the OSF Web, API Server, and Preprints
+  - `$ docker-compose up web api preprints`
 8. View the OSF at [http://localhost:5000](http://localhost:5000).
+
+
+## Quickstart: Running all OSF services in the background
+
+- Once the requirements have all been installed, you can start the OSF in the background with
+
+```
+$ docker-sync start
+# Wait until you see "Nothing to do: replicas have not changed since last sync."
+$ docker-compose up -d assets elasticsearch postgres tokumx mfr wb fakecas web api preprints
+```
+
+- To view the logs for a given container: 
+
+```
+$ docker-compose logs -f -t 100 web
+```
 
 ## Running arbitrary commands
 
-- View logs:
-  - `$ docker-compose -f --tail 100 <container_name>`
-    _NOTE: CTRL-c will exit_
+- View logs: `$ docker-compose -f --tail 100 <container_name>`
+    - _NOTE: CTRL-c will exit_
 - Run migrations:
   - After creating migrations, resetting your database, or starting on a fresh install you will need to run migrations to make the needed changes to database. This command looks at the migrations on disk and compares them to the list of migrations in the `django_migrations` database table and runs any migrations that have not been run.
     - `docker-compose run --rm web python manage.py migrate`
 - Populate preprint providers:
   - After resetting your database or with a new install you will need to populate the table of preprint providers. **You must have run migrations first.**
-    - `docker-compose run web python -m scripts.populate_preprint_providers`
+    - `docker-compose run --rm web python -m scripts.populate_preprint_providers`
 - Create migrations:
   - After changing a model you will need to create migrations and apply them. Migrations are python code that changes either the structure or the data of a database. This will compare the django models on disk to the database, find the differences, and create migration code to change the database. If there are no changes this command is a noop.
-    - `docker-compose run --no-deps web python manage.py makemigrations`
+    - `docker-compose run --rm web python manage.py makemigrations`
 - Destroy and recreate an empty database:
   - **WARNING**: This will delete all data in your database.
-    - `docker-compose run --no-deps web python manage.py reset_db --noinput`
+    - `docker-compose run --rm web python manage.py reset_db --noinput`
 
 ## Application Debugging
 - Console Debugging with IPDB
@@ -160,15 +176,15 @@
   - Configure .docker-compose.env REMOTE_DEBUG environment variables to match settings.
 
 ## Cleanup & Docker Reset
-- Resetting the Environment
 
-  _**WARNING**: All volumes and containers are destroyed_
+Resetting the Environment:
+
+  **WARNING: All volumes and containers are destroyed**
   - `$ docker-compose down -v`
 
+Delete a persistent storage volume:
 
-- Delete a persistent storage volume
-
-  _**WARNING**: All postgres data will be destroyed._
+  **WARNING: All postgres data will be destroyed.**
   - `$ docker-compose stop -t 0 postgres`
   - `$ docker-compose rm postgres`
   - `$ docker volume rm osf_postgres_data_vol`
