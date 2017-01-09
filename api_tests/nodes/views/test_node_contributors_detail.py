@@ -6,9 +6,11 @@ from website.project.model import Auth
 from website.util import permissions
 
 from api.base.settings.defaults import API_BASE
+from website.util import disconnected_from_listeners
+from website.project.signals import contributor_removed
 
 from tests.base import ApiTestCase
-from tests.factories import (
+from osf_tests.factories import (
     ProjectFactory,
     AuthUserFactory,
 )
@@ -61,7 +63,7 @@ class TestContributorDetail(NodeCRUDTestCase):
     def setUp(self):
         super(TestContributorDetail, self).setUp()
 
-        self.public_url = '/{}nodes/{}/contributors/{}/'.format(API_BASE, self.public_project, self.user._id)
+        self.public_url = '/{}nodes/{}/contributors/{}/'.format(API_BASE, self.public_project._id, self.user._id)
         self.private_url_base = '/{}nodes/{}/contributors/{}/'.format(API_BASE, self.private_project._id, '{}')
         self.private_url = self.private_url_base.format(self.user._id)
 
@@ -73,7 +75,7 @@ class TestContributorDetail(NodeCRUDTestCase):
     def test_get_private_node_contributor_detail_contributor_auth(self):
         res = self.app.get(self.private_url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
-        assert_equal(res.json['data']['id'], '{}-{}'.format(self.private_project, self.user._id))
+        assert_equal(res.json['data']['id'], '{}-{}'.format(self.private_project._id, self.user._id))
 
     def test_get_private_node_contributor_detail_non_contributor(self):
         res = self.app.get(self.private_url, auth=self.user_two.auth, expect_errors=True)
@@ -92,7 +94,7 @@ class TestContributorDetail(NodeCRUDTestCase):
         assert_equal(res.status_code, 404)
 
     def test_unregistered_contributor_detail_show_up_as_name_associated_with_project(self):
-        project = ProjectFactory(creator=self.user, public=True)
+        project = ProjectFactory(creator=self.user, is_public=True)
         project.add_unregistered_contributor('Robert Jackson', 'robert@gmail.com', auth=Auth(self.user), save=True)
         unregistered_contributor = project.contributors[1]
         url = '/{}nodes/{}/contributors/{}/'.format(API_BASE, project._id, unregistered_contributor._id)
@@ -101,7 +103,7 @@ class TestContributorDetail(NodeCRUDTestCase):
         assert_equal(res.json['data']['embeds']['users']['data']['attributes']['full_name'], 'Robert Jackson')
         assert_equal(res.json['data']['attributes'].get('unregistered_contributor'), 'Robert Jackson')
 
-        project_two = ProjectFactory(creator=self.user, public=True)
+        project_two = ProjectFactory(creator=self.user, is_public=True)
         project_two.add_unregistered_contributor('Bob Jackson', 'robert@gmail.com', auth=Auth(self.user), save=True)
         url = '/{}nodes/{}/contributors/{}/'.format(API_BASE, project_two._id, unregistered_contributor._id)
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
@@ -119,7 +121,7 @@ class TestContributorDetail(NodeCRUDTestCase):
         other_contributor = AuthUserFactory()
         self.public_project.add_contributor(other_contributor, auth=Auth(self.user), save=True)
 
-        other_contributor_detail = '/{}nodes/{}/contributors/{}/'.format(API_BASE, self.public_project, other_contributor._id)
+        other_contributor_detail = '/{}nodes/{}/contributors/{}/'.format(API_BASE, self.public_project._id, other_contributor._id)
         res = self.app.get(other_contributor_detail)
         assert_equal(res.json['data']['attributes']['index'], 1)
 
@@ -769,7 +771,10 @@ class TestNodeContributorDelete(ApiTestCase):
 
     @assert_logs(NodeLog.CONTRIB_REMOVED, 'project')
     def test_remove_contributor_admin(self):
-        res = self.app.delete(self.url_user_two, auth=self.user.auth)
+        # Disconnect contributor_removed so that we don't check in files
+        # We can remove this when StoredFileNode is implemented in osf-models
+        with disconnected_from_listeners(contributor_removed):
+            res = self.app.delete(self.url_user_two, auth=self.user.auth)
         assert_equal(res.status_code, 204)
 
         self.project.reload()
@@ -788,7 +793,10 @@ class TestNodeContributorDelete(ApiTestCase):
     def test_remove_self_non_admin(self):
         self.project.add_contributor(self.user_three, permissions=[permissions.READ, permissions.WRITE], visible=True, save=True)
 
-        res = self.app.delete(self.url_user_three, auth=self.user_three.auth)
+        # Disconnect contributor_removed so that we don't check in files
+        # We can remove this when StoredFileNode is implemented in osf-models
+        with disconnected_from_listeners(contributor_removed):
+            res = self.app.delete(self.url_user_three, auth=self.user_three.auth)
         assert_equal(res.status_code, 204)
 
         self.project.reload()
@@ -818,13 +826,19 @@ class TestNodeContributorDelete(ApiTestCase):
 
     def test_remove_non_existing_user_admin(self):
         url_user_fake = '/{}nodes/{}/contributors/{}/'.format(API_BASE, self.project._id, 'fake')
-        res = self.app.delete(url_user_fake, auth=self.user.auth, expect_errors=True)
+        # Disconnect contributor_removed so that we don't check in files
+        # We can remove this when StoredFileNode is implemented in osf-models
+        with disconnected_from_listeners(contributor_removed):
+            res = self.app.delete(url_user_fake, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 404)
 
     @assert_logs(NodeLog.CONTRIB_REMOVED, 'project')
     def test_remove_self_contributor_not_unique_admin(self):
         self.project.add_permission(self.user_two, permissions.ADMIN, save=True)
-        res = self.app.delete(self.url_user, auth=self.user.auth)
+        # Disconnect contributor_removed so that we don't check in files
+        # We can remove this when StoredFileNode is implemented in osf-models
+        with disconnected_from_listeners(contributor_removed):
+            res = self.app.delete(self.url_user, auth=self.user.auth)
         assert_equal(res.status_code, 204)
 
         self.project.reload()
@@ -833,14 +847,20 @@ class TestNodeContributorDelete(ApiTestCase):
     @assert_logs(NodeLog.CONTRIB_REMOVED, 'project')
     def test_can_remove_self_as_contributor_not_unique_admin(self):
         self.project.add_permission(self.user_two, permissions.ADMIN, save=True)
-        res = self.app.delete(self.url_user_two, auth=self.user_two.auth)
+        # Disconnect contributor_removed so that we don't check in files
+        # We can remove this when StoredFileNode is implemented in osf-models
+        with disconnected_from_listeners(contributor_removed):
+            res = self.app.delete(self.url_user_two, auth=self.user_two.auth)
         assert_equal(res.status_code, 204)
 
         self.project.reload()
         assert_not_in(self.user_two, self.project.contributors)
 
     def test_remove_self_contributor_unique_admin(self):
-        res = self.app.delete(self.url_user, auth=self.user.auth, expect_errors=True)
+        # Disconnect contributor_removed so that we don't check in files
+        # We can remove this when StoredFileNode is implemented in osf-models
+        with disconnected_from_listeners(contributor_removed):
+            res = self.app.delete(self.url_user, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
 
         self.project.reload()

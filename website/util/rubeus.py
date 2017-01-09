@@ -3,12 +3,14 @@
 formatted hgrid list/folders.
 """
 import logging
-import datetime
 
 import hurry.filesize
+from django.utils import timezone
 
 from framework import sentry
 from framework.auth.decorators import Auth
+
+from django.apps import apps
 
 from website import settings
 from website.util import paths
@@ -150,11 +152,12 @@ class NodeFileCollector(object):
 
     """A utility class for creating rubeus formatted node data"""
     def __init__(self, node, auth, **kwargs):
-        self.node = node
+        NodeRelation = apps.get_model('osf.NodeRelation')
+        self.node = node.child if isinstance(node, NodeRelation) else node
         self.auth = auth
         self.extra = kwargs
-        self.can_view = node.can_view(auth)
-        self.can_edit = node.can_edit(auth) and not node.is_registration
+        self.can_view = self.node.can_view(auth)
+        self.can_edit = self.node.can_edit(auth) and not self.node.is_registration
 
     def to_hgrid(self):
         """Return the Rubeus.JS representation of the node's file data, including
@@ -167,22 +170,23 @@ class NodeFileCollector(object):
         rv = []
         if not node.can_view(self.auth):
             return rv
-        for child in node.nodes:
-            if child.is_deleted:
-                continue
-            elif not child.can_view(self.auth):
+        for child in node.get_nodes(is_deleted=False):
+            if not child.can_view(self.auth):
                 if child.primary:
                     for desc in child.find_readable_descendants(self.auth):
                         visited.append(desc.resolve()._id)
-                        rv.append(self._serialize_node(desc, visited=visited))
+                        rv.append(self._serialize_node(desc, visited=visited, parent=node))
             elif child.resolve()._id not in visited:
                 visited.append(child.resolve()._id)
-                rv.append(self._serialize_node(child, visited=visited))
+                rv.append(self._serialize_node(child, visited=visited, parent=node))
         return rv
 
     def _get_node_name(self, node):
         """Input node object, return the project name to be display.
         """
+        NodeRelation = apps.get_model('osf.NodeRelation')
+        is_node_relation = isinstance(node, NodeRelation)
+        node = node.child if is_node_relation else node
         can_view = node.can_view(auth=self.auth)
 
         if can_view:
@@ -191,14 +195,14 @@ class NodeFileCollector(object):
             node_name = u'Private Registration'
         elif node.is_fork:
             node_name = u'Private Fork'
-        elif not node.primary:
+        elif is_node_relation:
             node_name = u'Private Link'
         else:
             node_name = u'Private Component'
 
         return node_name
 
-    def _serialize_node(self, node, visited=None):
+    def _serialize_node(self, node, visited=None, parent=None):
         """Returns the rubeus representation of a node folder.
         """
         visited = visited or []
@@ -208,6 +212,8 @@ class NodeFileCollector(object):
             children = self._collect_addons(node) + self._collect_components(node, visited)
         else:
             children = []
+
+        is_pointer = parent and parent.has_node_link_to(node)
 
         return {
             # TODO: Remove safe_unescape_html when mako html safe comes in
@@ -223,7 +229,7 @@ class NodeFileCollector(object):
                 'fetch': None,
             },
             'children': children,
-            'isPointer': not node.primary,
+            'isPointer': is_pointer,
             'isSmartFolder': False,
             'nodeType': node.project_or_component,
             'nodeID': node.resolve()._id,
@@ -304,6 +310,6 @@ def collect_addon_css(node, visited=None):
 
 
 def delta_date(d):
-    diff = d - datetime.datetime.utcnow()
+    diff = d - timezone.now()
     s = diff.total_seconds()
     return s

@@ -1,10 +1,11 @@
 from rest_framework import serializers as ser
 from rest_framework import exceptions
-from modularodm.exceptions import ValidationValueError
 from framework.exceptions import PermissionsError
 from website.exceptions import NodeStateError
 
 from website.models import Node
+from osf.models import Collection
+from osf.exceptions import ValidationError
 from api.base.serializers import LinksField, RelationshipField
 from api.base.serializers import JSONAPISerializer, IDField, TypeField, DateByVersion
 from api.base.exceptions import InvalidModelValueError
@@ -31,25 +32,25 @@ class CollectionSerializer(JSONAPISerializer):
 
     node_links = RelationshipField(
         related_view='collections:node-pointers',
-        related_view_kwargs={'collection_id': '<pk>'},
+        related_view_kwargs={'collection_id': '<_id>'},
         related_meta={'count': 'get_node_links_count'}
     )
 
     # TODO: Add a self link to this when it's available
     linked_nodes = RelationshipField(
         related_view='collections:linked-nodes',
-        related_view_kwargs={'collection_id': '<pk>'},
+        related_view_kwargs={'collection_id': '<_id>'},
         related_meta={'count': 'get_node_links_count'},
         self_view='collections:collection-node-pointer-relationship',
-        self_view_kwargs={'collection_id': '<pk>'}
+        self_view_kwargs={'collection_id': '<_id>'}
     )
 
     linked_registrations = RelationshipField(
         related_view='collections:linked-registrations',
-        related_view_kwargs={'collection_id': '<pk>'},
+        related_view_kwargs={'collection_id': '<_id>'},
         related_meta={'count': 'get_registration_links_count'},
         self_view='collections:collection-registration-pointer-relationship',
-        self_view_kwargs={'collection_id': '<pk>'}
+        self_view_kwargs={'collection_id': '<_id>'}
     )
 
     class Meta:
@@ -64,27 +65,26 @@ class CollectionSerializer(JSONAPISerializer):
     def get_node_links_count(self, obj):
         count = 0
         auth = get_user_auth(self.context['request'])
-        for pointer in obj.nodes_pointer:
-            if not pointer.node.is_deleted and not pointer.node.is_registration and not pointer.node.is_collection and pointer.node.can_view(auth):
+        for pointer in obj.linked_nodes.filter(is_deleted=False, type='osf.node'):
+            if pointer.can_view(auth):
                 count += 1
         return count
 
     def get_registration_links_count(self, obj):
         count = 0
         auth = get_user_auth(self.context['request'])
-        for pointer in obj.nodes_pointer:
-            if not pointer.node.is_deleted and pointer.node.is_registration and not pointer.node.is_collection and pointer.node.can_view(auth):
+        for pointer in obj.linked_nodes.filter(is_deleted=False, type='osf.registration'):
+            if pointer.can_view(auth):
                 count += 1
         return count
 
     def create(self, validated_data):
-        node = Node(**validated_data)
-        node.is_collection = True
+        node = Collection(**validated_data)
         node.category = ''
         try:
             node.save()
-        except ValidationValueError as e:
-            raise InvalidModelValueError(detail=e.message)
+        except ValidationError as e:
+            raise InvalidModelValueError(detail=e.messages[0])
         except NodeStateError:
             raise ser.ValidationError('Each user cannot have more than one Bookmark collection.')
         return node
@@ -99,8 +99,8 @@ class CollectionSerializer(JSONAPISerializer):
         if validated_data:
             try:
                 node.update(validated_data, auth=auth)
-            except ValidationValueError as e:
-                raise InvalidModelValueError(detail=e.message)
+            except ValidationError as e:
+                raise InvalidModelValueError(detail=e.messages[0])
             except PermissionsError:
                 raise exceptions.PermissionDenied
 

@@ -43,7 +43,7 @@ class TokenList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMixin):
 
     def get_default_odm_query(self):
 
-        owner = self.request.user._id
+        owner = self.request.user
         return (
             Q('owner', 'eq', owner) &
             Q('is_active', 'eq', True)
