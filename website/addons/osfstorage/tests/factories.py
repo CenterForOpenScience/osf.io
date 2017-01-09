@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # encoding: utf-8
-
+from django.utils import timezone
 from factory import SubFactory, post_generation
 
 from tests.factories import ModularOdmFactory, AuthUserFactory
@@ -23,7 +23,7 @@ class FileVersionFactory(ModularOdmFactory):
         model = models.FileVersion
 
     creator = SubFactory(AuthUserFactory)
-    date_modified = datetime.datetime.utcnow()
+    date_modified = timezone.now()
     location = generic_location
     identifier = 0
 

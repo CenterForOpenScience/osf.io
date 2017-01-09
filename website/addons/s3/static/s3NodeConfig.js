@@ -209,7 +209,7 @@ var s3FolderPickerViewModel = oop.extend(OauthAddonFolderPicker, {
                                 '</div>' +
                             '</form>' +
                             '<span>For more information on locations, click ' +
-                                '<a href="http://www.bucketexplorer.com/documentation/amazon-s3--amazon-s3-buckets-and-regions.html">here</a>' + 
+                                '<a href="http://help.osf.io/m/addons/l/524149#BucketLocations">here</a>' +
                             '</span>' +
                         '</div>' +
                     '</div>',

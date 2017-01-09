@@ -7,7 +7,8 @@ from api.base.serializers import AllowMissing, JSONAPIRelationshipSerializer, Hi
 from website.models import User
 
 from api.base.serializers import (
-    JSONAPISerializer, LinksField, RelationshipField, DevOnly, IDField, TypeField
+    JSONAPISerializer, LinksField, RelationshipField, DevOnly, IDField, TypeField,
+    DateByVersion,
 )
 from api.base.utils import absolute_reverse, get_user_auth
 
@@ -29,7 +30,7 @@ class UserSerializer(JSONAPISerializer):
     middle_names = ser.CharField(required=False, allow_blank=True, help_text='For bibliographic citations')
     family_name = ser.CharField(required=False, allow_blank=True, help_text='For bibliographic citations')
     suffix = HideIfDisabled(ser.CharField(required=False, allow_blank=True, help_text='For bibliographic citations'))
-    date_registered = HideIfDisabled(ser.DateTimeField(read_only=True))
+    date_registered = HideIfDisabled(DateByVersion(read_only=True))
     active = HideIfDisabled(ser.BooleanField(read_only=True, source='is_active'))
 
     # Social Fields are broken out to get around DRF complex object bug and to make API updating more user friendly.
@@ -71,20 +72,20 @@ class UserSerializer(JSONAPISerializer):
 
     nodes = HideIfDisabled(RelationshipField(
         related_view='users:user-nodes',
-        related_view_kwargs={'user_id': '<pk>'},
+        related_view_kwargs={'user_id': '<_id>'},
         related_meta={'projects_in_common': 'get_projects_in_common'},
     ))
 
     registrations = DevOnly(HideIfDisabled(RelationshipField(
         related_view='users:user-registrations',
-        related_view_kwargs={'user_id': '<pk>'},
+        related_view_kwargs={'user_id': '<_id>'},
     )))
 
     institutions = HideIfDisabled(RelationshipField(
         related_view='users:user-institutions',
-        related_view_kwargs={'user_id': '<pk>'},
+        related_view_kwargs={'user_id': '<_id>'},
         self_view='users:user-institutions-relationship',
-        self_view_kwargs={'user_id': '<pk>'},
+        self_view_kwargs={'user_id': '<_id>'},
     ))
 
     class Meta:
@@ -93,8 +94,8 @@ class UserSerializer(JSONAPISerializer):
     def get_projects_in_common(self, obj):
         user = get_user_auth(self.context['request']).user
         if obj == user:
-            return len(user.contributor_to)
-        return len(obj.get_projects_in_common(user, primary_keys=True))
+            return user.contributor_to.count()
+        return obj.n_projects_in_common(user)
 
     def absolute_url(self, obj):
         if obj is not None:
@@ -188,7 +189,7 @@ class UserAddonSettingsSerializer(JSONAPISerializer):
                     }),
                     'nodes_connected': [n.absolute_api_v2_url for n in obj.get_attached_nodes(account)]
                 }
-                for account in obj.external_accounts
+                for account in obj.external_accounts.all()
             }
         return {}
 
