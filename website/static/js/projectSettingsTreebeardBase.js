@@ -6,7 +6,7 @@
 'use strict';
 
 var m = require('mithril');
-var Fangorn = require('js/fangorn');
+var Fangorn = require('js/fangorn').Fangorn;
 
 
 function resolveToggle(item) {

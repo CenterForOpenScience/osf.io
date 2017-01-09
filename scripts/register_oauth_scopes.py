@@ -9,13 +9,12 @@ import sys
 import logging
 
 from modularodm import Q
-from modularodm import storage
 from modularodm.exceptions import NoResultsFound
 
 from scripts import utils as script_utils
 
 from framework.auth import oauth_scopes
-from framework.mongo import set_up_storage
+from framework.mongo import set_up_storage, storage
 from framework.transactions.context import TokuTransaction
 
 from website.app import init_app

@@ -16,6 +16,7 @@ Factory boy docs: http://factoryboy.readthedocs.org/
 import datetime
 import functools
 
+from django.utils import timezone
 from factory import base, Sequence, SubFactory, post_generation, LazyAttribute
 import mock
 from mock import patch, Mock
@@ -57,6 +58,7 @@ from website.archiver import ARCHIVER_SUCCESS
 from website.project.licenses import NodeLicense, NodeLicenseRecord, ensure_licenses
 from website.util import permissions
 from website.files.models.osfstorage import OsfStorageFile, FileVersion
+from website.exceptions import InvalidSanctionApprovalToken
 
 
 ensure_licenses = functools.partial(ensure_licenses, warn=False)
@@ -102,6 +104,18 @@ class ModularOdmFactory(base.Factory):
         return instance
 
 
+class PreprintProviderFactory(ModularOdmFactory):
+    class Meta:
+        model = PreprintProvider
+        abstract = False
+
+    def __init__(self, provider_id, provider_name):
+        super(PreprintProviderFactory, self).__init()
+        self._id = provider_id
+        self.name = provider_name
+        self.save()
+
+
 class UserFactory(ModularOdmFactory):
     class Meta:
         model = User
@@ -114,7 +128,7 @@ class UserFactory(ModularOdmFactory):
     fullname = Sequence(lambda n: 'Freddie Mercury{0}'.format(n))
     is_registered = True
     is_claimed = True
-    date_confirmed = datetime.datetime(2014, 2, 21)
+    date_confirmed = timezone.now()
     merged_by = None
     email_verifications = {}
     verification_key = None
@@ -200,6 +214,7 @@ class AbstractNodeFactory(ModularOdmFactory):
 
 
 class ProjectFactory(AbstractNodeFactory):
+    type = 'osf.node'
     category = 'project'
 
 
@@ -305,7 +320,8 @@ class SubjectFactory(ModularOdmFactory):
         except NoResultsFound:
             subject = target_class(*args, **kwargs)
             subject.text = text
-            subject.parents = parents
+            subject.save()
+            subject.parents.add(*parents)
             subject.save()
         return subject
 
@@ -396,11 +412,15 @@ class WithdrawnRegistrationFactory(AbstractNodeFactory):
 
         registration.retract_registration(user)
         withdrawal = registration.retraction
-        token = withdrawal.approval_state.values()[0]['approval_token']
-        withdrawal.approve_retraction(user, token)
-        withdrawal.save()
 
-        return withdrawal
+        for token in withdrawal.approval_state.values():
+            try:
+                withdrawal.approve_retraction(user, token['approval_token'])
+                withdrawal.save()
+
+                return withdrawal
+            except InvalidSanctionApprovalToken:
+                continue
 
 
 class ForkFactory(ModularOdmFactory):

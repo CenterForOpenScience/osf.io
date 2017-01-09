@@ -5,7 +5,7 @@ from api.base.settings.defaults import API_BASE
 from website.util import permissions
 
 from tests.base import ApiTestCase
-from tests.factories import (
+from osf_tests.factories import (
     ProjectFactory,
     RegistrationFactory,
     AuthUserFactory,
@@ -230,13 +230,8 @@ class TestRegistrationUpdate(ApiTestCase):
         assert_equal(res.status_code, 409)
 
     def test_turning_private_registrations_public(self):
-        node1 = ProjectFactory(creator=self.user, is_public=False)
         node2 = ProjectFactory(creator=self.user, is_public=False)
-
-        node1.is_registration = True
-        node1.registered_from = node2
-        node1.registered_date = node1.date_modified
-        node1.save()
+        node1 = RegistrationFactory(project=node2, creator=self.user, is_public=False)
 
         payload = {
             "data": {
@@ -251,6 +246,8 @@ class TestRegistrationUpdate(ApiTestCase):
         url = '/{}registrations/{}/'.format(API_BASE, node1._id)
         res = self.app.put_json_api(url, payload, auth=self.user.auth)
         assert_equal(res.json['data']['attributes']['public'], True)
+        node1.reload()
+        assert_true(node1.is_public)
 
     def test_registration_fields_are_read_only(self):
         writeable_fields = ['type', 'public', 'draft_registration', 'registration_choice', 'lift_embargo' ]

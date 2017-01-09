@@ -8,6 +8,7 @@ import logging
 import datetime
 
 from boto.glacier.layer2 import Layer2
+from django.utils import timezone
 
 from framework.celery_tasks import app as celery_app
 
@@ -31,7 +32,7 @@ def get_vault():
 def main():
     vault = get_vault()
     job = vault.retrieve_inventory_job(
-        description='glacier-audit-{}'.format(datetime.datetime.utcnow().strftime('%c')),
+        description='glacier-audit-{}'.format(timezone.now().strftime('%c')),
         sns_topic=storage_settings.AWS_SNS_ARN,
     )
     logger.info('Started retrieve inventory job with id {}'.format(job.id))

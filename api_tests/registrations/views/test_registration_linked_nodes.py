@@ -1,11 +1,16 @@
 from nose.tools import *  # flake8: noqa
 
 from api.base.settings.defaults import API_BASE
-from tests.base import ApiTestCase
-from tests.factories import NodeFactory
-from tests.factories import AuthUserFactory
-from tests.factories import RegistrationFactory
 from framework.auth.core import Auth
+from website.util import disconnected_from_listeners
+from website.project.signals import contributor_removed
+
+from tests.base import ApiTestCase
+from osf_tests.factories import (
+    NodeFactory,
+    AuthUserFactory,
+    RegistrationFactory
+)
 
 
 class TestNodeRelationshipNodeLinks(ApiTestCase):
@@ -47,14 +52,14 @@ class TestNodeRelationshipNodeLinks(ApiTestCase):
 
         assert_in(self.linking_node.linked_nodes_self_url, res.json['links']['self'])
         assert_in(self.linking_node.linked_nodes_related_url, res.json['links']['html'])
-        assert_equal(res.json['data'][0]['id'], self.private_node._id)
+        assert_in(self.private_node._id, [e['id'] for e in res.json['data']])
 
     def test_get_public_relationship_linked_nodes_logged_out(self):
         res = self.app.get(self.public_url)
 
         assert_equal(res.status_code, 200)
         assert_equal(len(res.json['data']), 1)
-        assert_equal(res.json['data'][0]['id'], self.public_node._id)
+        assert_in(self.public_node._id, [e['id'] for e in res.json['data']])
 
     def test_get_public_relationship_linked_nodes_logged_in(self):
         res = self.app.get(self.public_url, auth=self.user.auth)
@@ -201,7 +206,7 @@ class TestNodeRelationshipNodeLinks(ApiTestCase):
         assert_equal(len(res.json['data']), 2)
 
     def test_delete_not_present(self):
-        number_of_links = len(self.linking_node.nodes)
+        number_of_links = self.linking_node.linked_nodes.count()
         res = self.app.delete_json_api(
             self.url, self.payload([self.other_node._id]),
             auth=self.user.auth, expect_errors=True
@@ -308,7 +313,7 @@ class TestNodeLinkedNodes(ApiTestCase):
         self.linking_node = RegistrationFactory(project=self.linking_node_source, creator=self.user)
 
         self.url = '/{}registrations/{}/linked_nodes/'.format(API_BASE, self.linking_node._id)
-        self.node_ids = [pointer.node._id for pointer in self.linking_node.nodes_pointer]
+        self.node_ids = list(self.linking_node.nodes_pointer.values_list('guids___id', flat=True))
 
     def test_linked_nodes_returns_everything(self):
         res = self.app.get(self.url, auth=self.user.auth)
@@ -330,7 +335,7 @@ class TestNodeLinkedNodes(ApiTestCase):
         new_linking_node.add_pointer(self.linked_node2, auth=Auth(user))
         new_linking_node.add_pointer(self.public_node, auth=Auth(user))
         new_linking_node.save()
-        new_linking_registration = RegistrationFactory(project=new_linking_node, creator=self.user)
+        new_linking_registration = RegistrationFactory(project=new_linking_node, creator=user)
 
         res = self.app.get(
             '/{}registrations/{}/linked_nodes/'.format(API_BASE, new_linking_registration._id),
@@ -344,8 +349,11 @@ class TestNodeLinkedNodes(ApiTestCase):
         for node_id in self.node_ids:
             assert_in(node_id, nodes_returned)
 
-        self.linked_node2.remove_contributor(user, auth=self.auth)
-        self.public_node.remove_contributor(user, auth=self.auth)
+        # Disconnect contributor_removed so that we don't check in files
+        # We can remove this when StoredFileNode is implemented in osf-models
+        with disconnected_from_listeners(contributor_removed):
+            self.linked_node2.remove_contributor(user, auth=self.auth)
+            self.public_node.remove_contributor(user, auth=self.auth)
 
         res = self.app.get(
             '/{}registrations/{}/linked_nodes/'.format(API_BASE, new_linking_registration._id),
