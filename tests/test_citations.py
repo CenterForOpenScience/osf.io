@@ -1,23 +1,26 @@
 # -*- coding: utf-8 -*-
 
 import datetime
+
+import pytest
+from django.utils import timezone
+from flask import redirect
 from nose.tools import *  # noqa
 
-from scripts import parse_citation_styles
 from framework.auth.core import Auth
-from website.util import api_url_for
+from osf_tests.factories import AuthUserFactory, ProjectFactory, UserFactory
+from scripts import parse_citation_styles
+from tests.base import OsfTestCase
 from website.citations.utils import datetime_to_csl
 from website.models import Node, User
-from flask import redirect
+from website.util import api_url_for
 
-from tests.base import OsfTestCase
-from tests.factories import ProjectFactory, UserFactory, AuthUserFactory
-
+pytestmark = pytest.mark.django_db
 
 class CitationsUtilsTestCase(OsfTestCase):
     def test_datetime_to_csl(self):
         # Convert a datetime instance to csl's date-variable schema
-        now = datetime.datetime.utcnow()
+        now = timezone.now()
 
         assert_equal(
             datetime_to_csl(now),
@@ -46,7 +49,7 @@ class CitationsNodeTestCase(OsfTestCase):
                     'family': self.node.creator.family_name,
                 }],
                 'URL': self.node.display_absolute_url,
-                'issued': datetime_to_csl(self.node.logs[-1].date),
+                'issued': datetime_to_csl(self.node.logs.latest().date),
                 'title': self.node.title,
                 'type': 'webpage',
                 'id': self.node._id,
@@ -74,7 +77,7 @@ class CitationsNodeTestCase(OsfTestCase):
                     }
                 ],
                 'URL': self.node.display_absolute_url,
-                'issued': datetime_to_csl(self.node.logs[-1].date),
+                'issued': datetime_to_csl(self.node.logs.latest().date),
                 'title': self.node.title,
                 'type': 'webpage',
                 'id': self.node._id,
@@ -116,9 +119,9 @@ class CitationsUserTestCase(OsfTestCase):
 
 
 class CitationsViewsTestCase(OsfTestCase):
-    @classmethod
-    def setUpClass(cls):
-        super(CitationsViewsTestCase, cls).setUpClass()
+
+    @pytest.fixture(autouse=True)
+    def _parsed_citation_styles(self):
         # populate the DB with parsed citation styles
         try:
             parse_citation_styles.main()
@@ -162,4 +165,3 @@ class CitationsViewsTestCase(OsfTestCase):
         node.save()
         response = self.app.get("/api/v1" + "/project/" + node._id + "/citation/", auto_follow=True, auth=user.auth)
         assert_true(response.json)
-

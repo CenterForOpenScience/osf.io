@@ -110,6 +110,10 @@ if __name__ == '__main__':
     init_app()
     institution_summary = InstitutionSummary()
     args = institution_summary.parse_args()
-    date = parse(args.date).date() if args.date else None
+    yesterday = args.yesterday
+    if yesterday:
+        date = (datetime.today() - timedelta(1)).date()
+    else:
+        date = parse(args.date).date() if args.date else None
     events = institution_summary.get_events(date)
     institution_summary.send_events(events)

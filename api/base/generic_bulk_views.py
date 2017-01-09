@@ -8,6 +8,7 @@ from website.project.model import Q
 from api.base.settings import BULK_SETTINGS
 from api.base.exceptions import Conflict, JSONAPIException, Gone
 from api.base.utils import is_bulk_request
+from osf.models.base import GuidMixin
 
 
 class ListBulkCreateJSONAPIView(bulk_generics.ListBulkCreateAPIView):
@@ -77,7 +78,8 @@ class BulkDestroyJSONAPIView(bulk_generics.BulkDestroyAPIView):
         """
         model_cls = request.parser_context['view'].model_class
         requested_ids = [data['id'] for data in request_data]
-        resource_object_list = model_cls.find(Q('_id', 'in', requested_ids))
+        column_name = 'guids___id' if issubclass(model_cls, GuidMixin) else '_id'
+        resource_object_list = model_cls.find(Q(column_name, 'in', requested_ids))
 
         for resource in resource_object_list:
             if getattr(resource, 'is_deleted', None):

@@ -28,7 +28,7 @@ from api.nodes.permissions import (
 )
 
 from website.exceptions import NodeStateError
-from website.models import Node, Pointer
+from osf.models import Collection, Node, NodeRelation
 from website.util.permissions import ADMIN
 
 
@@ -128,21 +128,20 @@ class CollectionList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_vie
     serializer_class = CollectionSerializer
     view_category = 'collections'
     view_name = 'collection-list'
-    model_class = Node
+    model_class = Collection
 
     ordering = ('-date_modified', )  # default ordering
 
     # overrides ODMFilterMixin
     def get_default_odm_query(self):
         base_query = (
-            Q('is_deleted', 'ne', True) &
-            Q('is_collection', 'eq', True)
+            Q('is_deleted', 'ne', True)
         )
         user = self.request.user
-        permission_query = Q('is_public', 'eq', True)
         if not user.is_anonymous():
-            permission_query = (Q('is_public', 'eq', True) | Q('contributors', 'eq', user._id))
-
+            permission_query = Q('creator', 'eq', user)
+        else:
+            permission_query = Q('is_public', 'eq', True)
         query = base_query & permission_query
         return query
 
@@ -150,17 +149,17 @@ class CollectionList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_vie
     def get_queryset(self):
         # For bulk requests, queryset is formed from request body.
         if is_bulk_request(self.request):
-            query = Q('_id', 'in', [node['id'] for node in self.request.data])
+            query = Q('_id', 'in', [coll['id'] for coll in self.request.data])
 
             auth = get_user_auth(self.request)
-            nodes = Node.find(query)
-            for node in nodes:
-                if not node.can_edit(auth):
+            collections = Collection.find(query)
+            for collection in collections:
+                if not collection.can_edit(auth):
                     raise PermissionDenied
-            return nodes
+            return collections
         else:
             query = self.get_query_from_request()
-            return Node.find(query)
+            return Collection.find(query)
 
     # overrides ListBulkCreateJSONAPIView, BulkUpdateJSONAPIView, BulkDestroyJSONAPIView
     def get_serializer_class(self):
@@ -434,9 +433,7 @@ class LinkedRegistrationsList(BaseLinkedList, CollectionMixin):
     view_name = 'linked-registrations'
 
     def get_queryset(self):
-        return [node for node in
-            super(LinkedRegistrationsList, self).get_queryset()
-            if node.is_registration]
+        return super(LinkedRegistrationsList, self).get_queryset().filter(type='osf.registration')
 
     # overrides APIView
     def get_parser_context(self, http_request):
@@ -512,14 +509,10 @@ class NodeLinksList(JSONAPIBaseView, bulk_views.BulkDestroyJSONAPIView, bulk_vie
     serializer_class = CollectionNodeLinkSerializer
     view_category = 'collections'
     view_name = 'node-pointers'
-    model_class = Pointer
+    model_class = NodeRelation
 
     def get_queryset(self):
-        return [
-            pointer for pointer in
-            self.get_node().nodes_pointer
-            if not pointer.node.is_deleted and not pointer.node.is_collection
-        ]
+        return self.get_node().node_relations.filter(child__is_deleted=False).exclude(child__type='osf.collection')
 
     # Overrides BulkDestroyJSONAPIView
     def perform_destroy(self, instance):
@@ -593,7 +586,7 @@ class NodeLinksDetail(JSONAPIBaseView, generics.RetrieveDestroyAPIView, Collecti
     def get_object(self):
         node_link_lookup_url_kwarg = 'node_link_id'
         node_link = get_object_or_error(
-            Pointer,
+            NodeRelation,
             self.kwargs[node_link_lookup_url_kwarg],
             'node link'
         )
