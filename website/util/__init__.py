@@ -7,6 +7,7 @@ import logging
 import urlparse
 from contextlib import contextmanager
 
+from blinker import ANY
 import furl
 
 from flask import request, url_for
@@ -191,10 +192,21 @@ def waterbutler_api_url_for(node_id, provider, path='/', **kwargs):
 
 @contextmanager
 def disconnected_from(signal, listener):
-    """Temporarily disconnect a Blinker signal."""
+    """Temporarily disconnect a single listener from a Blinker signal."""
     signal.disconnect(listener)
     yield
     signal.connect(listener)
+
+
+@contextmanager
+def disconnected_from_listeners(signal):
+    """Temporarily disconnect all listeners for a Blinker signal."""
+    listeners = list(signal.receivers_for(ANY))
+    for listener in listeners:
+        signal.disconnect(listener)
+    yield
+    for listener in listeners:
+        signal.connect(listener)
 
 
 def check_private_key_for_anonymized_link(private_key):

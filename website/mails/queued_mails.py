@@ -1,6 +1,6 @@
 import bson
-from datetime import datetime
 
+from django.utils import timezone
 from modularodm import fields, Q
 from framework.mongo import StoredObject
 from .mails import Mail, send_mail
@@ -53,7 +53,7 @@ class QueuedMail(StoredObject):
         self.data['osf_url'] = settings.DOMAIN
         if presend and self.user.is_active and self.user.osf_mailing_lists.get(settings.OSF_HELP_LIST):
             send_mail(self.to_addr or self.user.username, mail, mimetype='html', **(self.data or {}))
-            self.sent_at = datetime.utcnow()
+            self.sent_at = timezone.now()
             self.save()
             return True
         else:

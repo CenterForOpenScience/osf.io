@@ -57,6 +57,7 @@
        parent_exists = parent_node['exists']
        parent_title = ''
        parent_registration_url = ''
+       root_id = node['root_id']
        if parent_exists:
            parent_title = "Private {0}".format(parent_node['category'])
            parent_registration_url = ''
@@ -98,6 +99,7 @@
             preprintFileId: ${ node.get('preprint_file_id', None) | sjson, n },
             anonymous: ${ node['anonymous'] | sjson, n },
             category: ${node['category_short'] | sjson, n },
+            rootId: ${ root_id | sjson, n },
             parentTitle: ${ parent_title | sjson, n },
             parentRegisterUrl: ${parent_registration_url | sjson, n },
             parentExists: ${ parent_exists | sjson, n},

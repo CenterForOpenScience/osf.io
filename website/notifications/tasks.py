@@ -1,19 +1,16 @@
 """
 Tasks for making even transactional emails consolidated.
 """
-from bson.code import Code
-from modularodm import Q
-
+from django.db import connection
+from osf.models import (
+    OSFUser as User,
+    NotificationDigest,
+)
 from framework.celery_tasks import app as celery_app
-from framework.mongo import database as db
-from framework.auth.core import User
 from framework.sentry import log_exception
-
-from framework.transactions.context import TokuTransaction
-
-from website.notifications.utils import NotificationsDict
-from website.notifications.model import NotificationDigest
+from modularodm import Q
 from website import mails
+from website.notifications.utils import NotificationsDict
 
 
 @celery_app.task(name='website.notifications.tasks.send_users_email', max_retries=0)
@@ -65,26 +62,32 @@ def get_users_emails(send_type):
                 'user_id': ...
               }]
     """
-    with TokuTransaction():
-        emails = db['notificationdigest'].group(
-            key={'user_id': 1},
-            condition={
-                'send_type': send_type
-            },
-            initial={'info': []},
-            reduce=Code(
-                """
-                function(curr, result) {
-                    result.info.push({
-                        'message': curr.message,
-                        'node_lineage': curr.node_lineage,
-                        '_id': curr._id
-                    });
-                };
-                """
+
+    sql = """
+    SELECT json_build_object(
+            'user_id', osf_guid._id,
+            'info', json_agg(
+                json_build_object(
+                    'message', nd.message,
+                    'node_lineage', nd.node_lineage,
+                    '_id', nd._id
+                )
             )
         )
-    return emails
+    FROM osf_notificationdigest AS nd
+      LEFT JOIN osf_guid ON nd.user_id = osf_guid.object_id
+    WHERE send_type = %s
+    GROUP BY osf_guid.id
+    ORDER BY osf_guid.id ASC
+    """
+
+    with connection.cursor() as cursor:
+        cursor.execute(sql, [send_type, ])
+        rows = list(sum(cursor.fetchall(), ()))
+        if len(rows) > 0:
+            return rows
+        else:
+            return []
 
 
 def group_by_node(notifications):
