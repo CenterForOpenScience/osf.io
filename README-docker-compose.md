@@ -58,15 +58,31 @@
       _NOTE: Similar docker-compose.\<name\>.env environment configuration files exist for services._
 
 3. Mounting Service Code
-  - By modifying the docker-compose.override.yml file you can specify the relative path to your service code directory. e.g.
-    - This makes it so your local changes will be reflected in the docker container. Until you do this none of your changes will have any effect.
+  - By modifying docker-compose.override.yml and docker-sync.yml you can specify the relative path to your service code directories. e.g.
+    - This makes it so your local changes will be reflected in the docker containers. Until you do this none of your changes will have any effect.
+
+
+  In docker-compose.override.yml:
 
     ```yml
     services:
       wb:
-        volumes:
-          - ../waterbutler/:/code
+        volumes_from:
+          - container:wb-sync
     ```
+
+  In docker-sync.yml:
+
+  ```yml
+  syncs:
+    wb-sync:
+      src: '../waterbutler'
+      dest: '/code'
+      sync_strategy: 'unison'
+      sync_excludes_type: 'Name'
+      sync_excludes: ['.DS_Store', '*.pyc', '*.tmp', '.git', '.idea']
+      watch_excludes: ['.*\.DS_Store', '.*\.pyc', '.*\.tmp', '.*/\.git', '.*/\.idea']
+  ```
 
 ## Docker Sync
 
@@ -103,8 +119,11 @@
   - `$ docker-compose up mfr wb fakecas`
 5. Run migrations and create preprint providers
   - When starting with an empty database you will need to run migrations and populate preprint providers. See the [Running arbitrary commands](#running-arbitrary-commands) section below for instructions.
-6. Start the OSF Web and API Servers
+6. Run Django migrations
+  - `$ docker-compose run --rm web python manage.py migrate`
+7. Start the OSF Web and API Servers
   - `$ docker-compose up web api`
+8. View the OSF at [http://localhost:5000](http://localhost:5000).
 
 ## Running arbitrary commands
 
@@ -113,7 +132,7 @@
     _NOTE: CTRL-c will exit_
 - Run migrations:
   - After creating migrations, resetting your database, or starting on a fresh install you will need to run migrations to make the needed changes to database. This command looks at the migrations on disk and compares them to the list of migrations in the `django_migrations` database table and runs any migrations that have not been run.
-    - `docker-compose run --no-deps web python manage.py migrate`
+    - `docker-compose run --rm web python manage.py migrate`
 - Populate preprint providers:
   - After resetting your database or with a new install you will need to populate the table of preprint providers. **You must have run migrations first.**
     - `docker-compose run web python -m scripts.populate_preprint_providers`
@@ -152,4 +171,4 @@
   _**WARNING**: All postgres data will be destroyed._
   - `$ docker-compose stop -t 0 postgres`
   - `$ docker-compose rm postgres`
-  - `$ docker volume rm [projectname]_postgres_vol`
+  - `$ docker volume rm osf_postgres_data_vol`
