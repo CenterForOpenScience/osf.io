@@ -15,6 +15,7 @@ import functools
 
 from collections import defaultdict
 
+from django.db.models import F
 import progressbar
 from modularodm import Q
 
@@ -94,9 +95,10 @@ def main(send_email=False):
     projects = {}
     users = defaultdict(lambda: (0, 0))
 
-    progress_bar = progressbar.ProgressBar(maxval=Node.find(Q('parent_node', 'eq', None)).count()).start()
+    top_level_nodes = Node.objects.get_roots()
+    progress_bar = progressbar.ProgressBar(maxval=top_level_nodes.count()).start()
 
-    for i, node in enumerate(Node.find(Q('parent_node', 'eq', None))):
+    for i, node in enumerate(top_level_nodes):
         progress_bar.update(i+1)
         if node._id in WHITE_LIST:
             continue  # Dont count whitelisted nodes against users

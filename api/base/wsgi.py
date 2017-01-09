@@ -21,6 +21,11 @@ import os  # noqa
 from django.core.wsgi import get_wsgi_application  # noqa
 from website.app import init_app  # noqa
 
+if os.environ.get('API_REMOTE_DEBUG', None):
+    import pydevd
+    remote_parts = os.environ.get('API_REMOTE_DEBUG').split(':')
+    pydevd.settrace(remote_parts[0], port=int(remote_parts[1]), suspend=False, stdoutToServer=True, stderrToServer=True, trace_only_current_thread=False)
+
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'api.base.settings')
 
 #### WARNING: Here be monkeys ###############

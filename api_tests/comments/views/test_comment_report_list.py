@@ -1,3 +1,6 @@
+import mock
+import pytest
+from django.utils import timezone
 from nose.tools import *  # flake8: noqa
 from datetime import datetime
 
@@ -6,7 +9,8 @@ from framework.guid.model import Guid
 from api.base.settings.defaults import API_BASE
 from api_tests import utils as test_utils
 from tests.base import ApiTestCase
-from tests.factories import ProjectFactory, AuthUserFactory, CommentFactory, NodeWikiFactory
+from osf_tests.factories import ProjectFactory, AuthUserFactory, CommentFactory
+from addons.wiki.tests.factories import NodeWikiFactory
 
 
 class CommentReportsMixin(object):
@@ -92,7 +96,7 @@ class CommentReportsMixin(object):
         self.public_comment.reports[self.non_contributor._id] = {
             'category': 'spam',
             'text': 'This is spam',
-            'date': datetime.utcnow(),
+            'date': timezone.now(),
             'retracted': False,
         }
         self.public_comment.save()
@@ -250,7 +254,7 @@ class TestCommentReportsView(CommentReportsMixin, ApiTestCase):
         self.comment.reports[self.user._id] = {
             'category': 'spam',
             'text': 'This is spam',
-            'date': datetime.utcnow(),
+            'date': timezone.now(),
             'retracted': False,
         }
         self.comment.save()
@@ -264,12 +268,46 @@ class TestCommentReportsView(CommentReportsMixin, ApiTestCase):
         self.public_comment.reports[self.user._id] = {
             'category': 'spam',
             'text': 'This is spam',
-            'date': datetime.utcnow(),
+            'date': timezone.now(),
             'retracted': False,
         }
         self.public_comment.save()
         self.public_url = '/{}comments/{}/reports/'.format(API_BASE, self.public_comment._id)
 
+
+class TestWikiCommentReportsView(CommentReportsMixin, ApiTestCase):
+
+    def _set_up_private_project_comment_reports(self):
+        self.private_project = ProjectFactory.create(is_public=False, creator=self.user)
+        self.private_project.add_contributor(contributor=self.contributor, save=True)
+        with mock.patch('osf.models.AbstractNode.update_search'):
+            self.wiki = NodeWikiFactory(node=self.private_project, user=self.user)
+        self.comment = CommentFactory.build(node=self.private_project, target=Guid.load(self.wiki._id), user=self.contributor)
+        self.comment.reports = self.comment.reports or {}
+        self.comment.reports[self.user._id] = {
+            'category': 'spam',
+            'text': 'This is spam',
+            'date': timezone.now(),
+            'retracted': False,
+        }
+        self.comment.save()
+        self.private_url = '/{}comments/{}/reports/'.format(API_BASE, self.comment._id)
+
+    def _set_up_public_project_comment_reports(self, comment_level='public'):
+        self.public_project = ProjectFactory.create(is_public=True, creator=self.user, comment_level=comment_level)
+        self.public_project.add_contributor(contributor=self.contributor, save=True)
+        with mock.patch('osf.models.AbstractNode.update_search'):
+            self.public_wiki = NodeWikiFactory(node=self.public_project, user=self.user)
+        self.public_comment = CommentFactory.build(node=self.public_project, target=Guid.load(self.public_wiki._id), user=self.contributor)
+        self.public_comment.reports = self.public_comment.reports or {}
+        self.public_comment.reports[self.user._id] = {
+            'category': 'spam',
+            'text': 'This is spam',
+            'date': timezone.now(),
+            'retracted': False,
+        }
+        self.public_comment.save()
+        self.public_url = '/{}comments/{}/reports/'.format(API_BASE, self.public_comment._id)
 
 class TestFileCommentReportsView(CommentReportsMixin, ApiTestCase):
 
@@ -282,7 +320,7 @@ class TestFileCommentReportsView(CommentReportsMixin, ApiTestCase):
         self.comment.reports[self.user._id] = {
             'category': 'spam',
             'text': 'This is spam',
-            'date': datetime.utcnow(),
+            'date': timezone.now(),
             'retracted': False,
         }
         self.comment.save()
@@ -297,41 +335,10 @@ class TestFileCommentReportsView(CommentReportsMixin, ApiTestCase):
         self.public_comment.reports[self.user._id] = {
             'category': 'spam',
             'text': 'This is spam',
-            'date': datetime.utcnow(),
+            'date': timezone.now(),
             'retracted': False,
         }
         self.public_comment.save()
         self.public_url = '/{}comments/{}/reports/'.format(API_BASE, self.public_comment._id)
 
 
-class TestWikiCommentReportsView(CommentReportsMixin, ApiTestCase):
-
-    def _set_up_private_project_comment_reports(self):
-        self.private_project = ProjectFactory.create(is_public=False, creator=self.user)
-        self.private_project.add_contributor(contributor=self.contributor, save=True)
-        self.wiki = NodeWikiFactory(node=self.private_project, user=self.user)
-        self.comment = CommentFactory.build(node=self.private_project, target=Guid.load(self.wiki._id), user=self.contributor)
-        self.comment.reports = self.comment.reports or {}
-        self.comment.reports[self.user._id] = {
-            'category': 'spam',
-            'text': 'This is spam',
-            'date': datetime.utcnow(),
-            'retracted': False,
-        }
-        self.comment.save()
-        self.private_url = '/{}comments/{}/reports/'.format(API_BASE, self.comment._id)
-
-    def _set_up_public_project_comment_reports(self, comment_level='public'):
-        self.public_project = ProjectFactory.create(is_public=True, creator=self.user, comment_level=comment_level)
-        self.public_project.add_contributor(contributor=self.contributor, save=True)
-        self.public_wiki = NodeWikiFactory(node=self.public_project, user=self.user)
-        self.public_comment = CommentFactory.build(node=self.public_project, target=Guid.load(self.public_wiki._id), user=self.contributor)
-        self.public_comment.reports = self.public_comment.reports or {}
-        self.public_comment.reports[self.user._id] = {
-            'category': 'spam',
-            'text': 'This is spam',
-            'date': datetime.utcnow(),
-            'retracted': False,
-        }
-        self.public_comment.save()
-        self.public_url = '/{}comments/{}/reports/'.format(API_BASE, self.public_comment._id)

@@ -1,6 +1,6 @@
 from __future__ import unicode_literals
 
-from datetime import datetime
+from django.utils import timezone
 from django.views.generic import ListView, DeleteView
 from django.shortcuts import redirect
 from django.views.defaults import page_not_found
@@ -64,7 +64,7 @@ class NodeRemoveContributorView(OSFAdmin, DeleteView):
                         'node': node.pk,
                         'contributors': user.pk
                     },
-                    date=datetime.utcnow(),
+                    date=timezone.now(),
                     should_hide=True,
                 )
                 osf_log.save()
@@ -126,7 +126,7 @@ class NodeDeleteView(NodeDeleteBase):
                 osf_flag = NodeLog.NODE_CREATED
             elif not node.is_registration:
                 node.is_deleted = True
-                node.deleted_date = datetime.utcnow()
+                node.deleted_date = timezone.now()
                 flag = NODE_REMOVED
                 message = 'Node {} removed.'.format(node.pk)
                 osf_flag = NodeLog.NODE_REMOVED
@@ -147,7 +147,7 @@ class NodeDeleteView(NodeDeleteBase):
                     params={
                         'project': node.parent_id,
                     },
-                    date=datetime.utcnow(),
+                    date=timezone.now(),
                     should_hide=True,
                 )
                 osf_log.save()
