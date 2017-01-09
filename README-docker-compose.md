@@ -85,7 +85,7 @@
 ## Application Runtime
 1. Application Environment
 
-  - `$ docker-compose up requirements requirements_mfr requirements_wb`
+  - `$ docker-compose up requirements mfr_requirements wb_requirements`
 
     _NOTE: When the various requirements installations are complete these containers will exit. You should only need to run these containers after pulling code that changes python requirements or if you update the python requirements._
 

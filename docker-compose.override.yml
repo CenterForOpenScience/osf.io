@@ -19,6 +19,10 @@ services:
 #    volumes_from:
 #      - container:preprints-sync
 
+  requirements:
+    volumes_from:
+      - container:osf-sync
+
   assets:
     volumes_from:
       - container:osf-sync
