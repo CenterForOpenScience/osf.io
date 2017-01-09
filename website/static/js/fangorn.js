@@ -1311,7 +1311,7 @@ function gotoFileEvent (item, toUrl) {
     if ($osf.isIE()) {
         var viewOnly = $osf.urlParams().view_only;
         if (viewOnly) {
-            if (fileurl.indexof('?') !== -1) {
+            if (fileurl.indexOf('?') !== -1) {
                 fileurl += '&view_only=' + viewOnly;
             }else {
                 fileurl += '?view_only=' + viewOnly;
@@ -1384,7 +1384,7 @@ function _fangornVersionColumn(item, col) {
  */
 function _fangornModifiedColumn(item, col) {
     var tb = this;
-    // Kludge for DropBox date format
+    // Kludge for Dropbox date format
     // TODO [OSF-6461]: remove kludge when we either move to DropBox v2 API or implememnt
     // normalized dates in WaterButler
     var myFormats = ['ddd, DD MMM YYYY HH:mm:ss ZZ', 'YYYY-MM-DD hh:mm A'];
@@ -1750,7 +1750,7 @@ var FGItemButtons = {
         var item = args.item;
         var rowButtons = [];
         var mode = args.mode;
-        var preprintPath = getPreprintPath(window.contextVars.node.isPreprint, window.contextVars.node.preprintFileId);
+        var preprintPath = getPreprintPath(window.contextVars.node.preprintFileId);
         if (tb.options.placement !== 'fileview') {
             if (window.File && window.FileReader && item.kind === 'folder' && item.data.provider && item.data.permissions && item.data.permissions.edit) {
                 rowButtons.push(
@@ -2025,7 +2025,7 @@ var FGToolbar = {
         // Special cased to not show 'delete multiple' for github or published dataverses
         if(items.length > 1 && ctrl.tb.multiselected()[0].data.provider !== 'github' && ctrl.tb.options.placement !== 'fileview' && !(ctrl.tb.multiselected()[0].data.provider === 'dataverse' && ctrl.tb.multiselected()[0].parent().data.version === 'latest-published') ) {
             if (showDeleteMultiple(items)) {
-                var preprintPath = getPreprintPath(window.contextVars.node.isPreprint, window.contextVars.node.preprintFileId);
+                var preprintPath = getPreprintPath(window.contextVars.node.preprintFileId);
                 if (preprintPath && multiselectContainsPreprint(items, preprintPath)) {
                     generalButtons.push(
                         m.component(FGButton, {
@@ -2112,6 +2112,9 @@ var FGToolbar = {
  * @returns {Array} newRows Returns the revised list of rows
  */
 function filterRows(rows) {
+    if(rows.length === 0){
+        return;
+    }
     var tb = this;
     var i, newRows = [],
         originalRow = tb.find(tb.multiselected()[0].id),
@@ -2340,8 +2343,6 @@ function _dropLogic(event, items, folder) {
         folder = folder.parent();
     }
 
-    // if (items[0].data.kind === 'folder' && ['github', 'figshare', 'dataverse'].indexOf(folder.data.provider) !== -1) { return; }
-
     if (!folder.open) {
         return tb.updateFolder(null, folder, _dropLogic.bind(tb, event, items, folder));
     }
@@ -2423,16 +2424,6 @@ function isInvalidDropFolder(folder) {
     return false;
 }
 
-// Disallow moving INTO a public figshare folder
-function isInvalidFigshareDrop(item) {
-    return (
-        item.data.provider === 'figshare' &&
-        typeof item.data.extra !== 'undefined' &&
-        typeof item.data.extra.status !== 'undefined' &&
-        item.data.extra.status === 'public'
-    );
-}
-
 function isInvalidDropItem(folder, item, cannotBeFolder, mustBeIntra) {
     if (
         // not a valid drop if is a node
@@ -2448,9 +2439,7 @@ function isInvalidDropItem(folder, item, cannotBeFolder, mustBeIntra) {
         // no dropping if waiting on waterbutler ajax
         item.inProgress ||
         (cannotBeFolder && item.data.kind === 'folder') ||
-        (mustBeIntra && item.data.provider !== folder.data.provider) ||
-        //Disallow moving OUT of a public figshare folder
-        isInvalidFigshareDrop(item)
+        (mustBeIntra && item.data.provider !== folder.data.provider)
     ) {
         return true;
     }
@@ -2460,9 +2449,8 @@ function isInvalidDropItem(folder, item, cannotBeFolder, mustBeIntra) {
 function allowedToMove(folder, item, mustBeIntra) {
     return (
         item.data.permissions.edit &&
-        //Can only COPY OUT of figshare
-        item.data.provider !== 'figshare' &&
-        (!mustBeIntra || (item.data.provider === folder.data.provider && item.data.nodeId === folder.data.nodeId))
+        (!mustBeIntra || (item.data.provider === folder.data.provider && item.data.nodeId === folder.data.nodeId)) &&
+            !(item.data.provider === 'figshare' && item.data.extra && item.data.extra.status === 'public')
     );
 }
 
@@ -2502,8 +2490,8 @@ function multiselectContainsPreprint(items, preprintPath) {
     return false;
 }
 
-function getPreprintPath(isPreprint, preprintFileId) {
-    if (isPreprint) {
+function getPreprintPath(preprintFileId) {
+    if (preprintFileId) {
         return '/' + preprintFileId;
     }
     return null;
@@ -2516,11 +2504,17 @@ function getCopyMode(folder, items) {
         return 'forbidden';
     }
 
-    var preprintPath = getPreprintPath(window.contextVars.node.isPreprint, window.contextVars.node.preprintFileId);
+    var preprintPath = getPreprintPath(window.contextVars.node.preprintFileId);
     var canMove = true;
     var mustBeIntra = (folder.data.provider === 'github');
-    var cannotBeFolder = (folder.data.provider === 'figshare' || folder.data.provider === 'dataverse');
-    if (isInvalidDropFolder(folder) || isInvalidFigshareDrop(folder)) {
+    // Folders cannot be copied to dataverse at all.  Folders may only be copied to figshare
+    // if the target is the addon root and the root is a project (not a fileset)
+    var cannotBeFolder = (
+        folder.data.provider === 'dataverse' ||
+            (folder.data.provider === 'figshare' &&
+             !(folder.data.isAddonRoot && folder.data.rootFolderType === 'project'))
+    );
+    if (isInvalidDropFolder(folder)) {
         return 'forbidden';
     }
 
@@ -2817,7 +2811,6 @@ module.exports = {
     getAllChildren : getAllChildren,
     isInvalidDropFolder : isInvalidDropFolder,
     isInvalidDropItem : isInvalidDropItem,
-    isInvalidFigshareDrop : isInvalidFigshareDrop,
     getCopyMode : getCopyMode,
     multiselectContainsPreprint : multiselectContainsPreprint,
     showDeleteMultiple : showDeleteMultiple

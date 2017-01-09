@@ -3,7 +3,7 @@ from datetime import datetime
 from nose.tools import *  # flake8: noqa
 from pytz import utc
 
-from tests import factories
+from osf_tests import factories
 from tests.base import DbTestCase
 from tests.utils import make_drf_request_with_version
 
@@ -20,8 +20,8 @@ class TestFileSerializer(DbTestCase):
         self.node = factories.NodeFactory(creator=self.user)
         self.file = utils.create_test_file(self.node, self.user)
 
-        self.date_created = self.file.versions[0].date_created
-        self.date_modified = self.file.versions[-1].date_created
+        self.date_created = self.file.versions.first().date_created
+        self.date_modified = self.file.versions.last().date_created
         self.date_created_tz_aware = self.date_created.replace(tzinfo=utc)
         self.date_modified_tz_aware = self.date_modified.replace(tzinfo=utc)
 

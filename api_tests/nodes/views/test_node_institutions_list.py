@@ -1,7 +1,7 @@
 from nose.tools import *  # flake8: noqa
 
 from tests.base import ApiTestCase
-from tests.factories import InstitutionFactory, NodeFactory, AuthUserFactory
+from osf_tests.factories import InstitutionFactory, NodeFactory, AuthUserFactory
 
 from api.base.settings.defaults import API_BASE
 
@@ -10,7 +10,7 @@ class TestNodeInstitutionDetail(ApiTestCase):
         super(TestNodeInstitutionDetail, self).setUp()
         self.institution = InstitutionFactory()
         self.node = NodeFactory(is_public=True)
-        self.node.affiliated_institutions.append(self.institution)
+        self.node.affiliated_institutions.add(self.institution)
         self.node.save()
         self.user = AuthUserFactory()
         self.node2 = NodeFactory(creator=self.user)

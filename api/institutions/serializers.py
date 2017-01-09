@@ -1,3 +1,4 @@
+from django.apps import apps
 from rest_framework import serializers as ser
 from rest_framework import exceptions
 
@@ -27,17 +28,17 @@ class InstitutionSerializer(JSONAPISerializer):
 
     nodes = RelationshipField(
         related_view='institutions:institution-nodes',
-        related_view_kwargs={'institution_id': '<pk>'},
+        related_view_kwargs={'institution_id': '<_id>'},
     )
 
     registrations = RelationshipField(
         related_view='institutions:institution-registrations',
-        related_view_kwargs={'institution_id': '<pk>'}
+        related_view_kwargs={'institution_id': '<_id>'}
     )
 
     users = RelationshipField(
         related_view='institutions:institution-users',
-        related_view_kwargs={'institution_id': '<pk>'}
+        related_view_kwargs={'institution_id': '<_id>'}
     )
 
     def get_api_url(self, obj):
@@ -81,14 +82,15 @@ class InstitutionNodesRelationshipSerializer(ser.Serializer):
                 raise exceptions.NotFound(detail='Node with id "{}" was not found'.format(node_dict['_id']))
             if not node.has_permission(user, osf_permissions.WRITE):
                 raise exceptions.PermissionDenied(detail='Write permission on node {} required'.format(node_dict['_id']))
-            if inst not in node.affiliated_institutions:
+            if not node.is_affiliated_with_institution(inst):
                 node.add_affiliated_institution(inst, user, save=True)
                 changes_flag = True
 
         if not changes_flag:
             raise RelationshipPostMakesNoChanges
 
+        ConcreteNode = apps.get_model('osf.Node')
         return {
-            'data': list(Node.find_by_institutions(inst, Q('is_registration', 'eq', False) & Q('is_deleted', 'ne', True))),
+            'data': list(ConcreteNode.find_by_institutions(inst, Q('is_deleted', 'ne', True))),
             'self': inst
         }

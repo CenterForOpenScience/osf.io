@@ -69,7 +69,7 @@ class OAuthAddonSerializer(AddonSerializer):
         if self.user_settings is None or self.node_settings is None:
             return False
 
-        user_accounts = self.user_settings.external_accounts
+        user_accounts = self.user_settings.external_accounts.all()
         return bool(
             self.node_settings.has_auth and
             self.node_settings.external_account in user_accounts
@@ -89,7 +89,7 @@ class OAuthAddonSerializer(AddonSerializer):
     def serialized_accounts(self):
         return [
             self.serialize_account(each)
-            for each in self.user_settings.external_accounts
+            for each in self.user_settings.external_accounts.all()
         ]
 
     @property

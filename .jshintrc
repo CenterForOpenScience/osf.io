@@ -16,5 +16,6 @@
     "esnext": true,
     "predef": ["window", "document"],
     "browser": true,
-    "validthis": true
+    "validthis": true,
+    "loopfunc": true
 }
