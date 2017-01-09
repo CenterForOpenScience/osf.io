@@ -9,7 +9,7 @@ var formViewModel = require('js/formViewModel');
 // Add sinon asserts to chai.assert, so we can do assert.calledWith instead of sinon.assert.calledWith
 sinon.assert.expose(assert, {prefix: ''});
 
-describe('forgotPassword', () => {
+describe.skip('forgotPassword', () => {
     describe('ViewModels', () => {
 
         describe('ForgtoPasswordViewModel', () => {

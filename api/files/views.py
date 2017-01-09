@@ -4,8 +4,8 @@ from rest_framework.exceptions import NotFound
 
 from framework.auth.oauth_scopes import CoreScopes
 
-from website.models import Guid
-from website.files.models import (
+from osf.models import (
+    Guid,
     FileNode,
     FileVersion,
     StoredFileNode
@@ -19,6 +19,7 @@ from api.base.views import JSONAPIBaseView
 from api.base import permissions as base_permissions
 from api.nodes.permissions import ContributorOrPublic
 from api.nodes.permissions import ReadOnlyIfRegistration
+from api.files.permissions import IsPreprintFile
 from api.files.permissions import CheckedOutOrAdmin
 from api.files.serializers import FileSerializer
 from api.files.serializers import FileDetailSerializer
@@ -310,6 +311,7 @@ class FileDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, FileMixin):
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
+        IsPreprintFile,
         CheckedOutOrAdmin,
         base_permissions.TokenHasScope,
         PermissionWithGetter(ContributorOrPublic, 'node'),
@@ -397,7 +399,7 @@ class FileVersionsList(JSONAPIBaseView, generics.ListAPIView, FileMixin):
     view_name = 'file-versions'
 
     def get_queryset(self):
-        return self.get_file().versions
+        return self.get_file().versions.all()
 
 
 def node_from_version(request, view, obj):

@@ -1,7 +1,7 @@
 from __future__ import absolute_import, unicode_literals
 
-from django.core.urlresolvers import reverse
-from django.views.generic.edit import FormView
+from django.core.urlresolvers import reverse, reverse_lazy
+from django.views.generic.edit import FormView, UpdateView
 from django.contrib import messages
 from password_reset.forms import PasswordRecoveryForm
 from password_reset.views import Recover
@@ -15,8 +15,8 @@ from django.http import Http404
 from website.project.model import User
 from website.settings import PREREG_ADMIN_TAG
 
-from admin.base.utils import SuperUser
-from admin.common_auth.forms import LoginForm, UserRegistrationForm
+from admin.base.utils import SuperUser, OSFAdmin
+from admin.common_auth.forms import LoginForm, UserRegistrationForm, DeskUserForm
 from admin.common_auth.models import MyUser
 
 
@@ -65,7 +65,7 @@ class RegisterUser(SuperUser, FormView):
         osf_id = form.cleaned_data.get('osf_id')
         osf_user = User.load(osf_id)
         try:
-            osf_user.system_tags.append(PREREG_ADMIN_TAG)
+            osf_user.add_system_tag(PREREG_ADMIN_TAG)
             osf_user.save()
         except AttributeError:
             raise Http404(('OSF user with id "{}" not found.'
@@ -92,3 +92,12 @@ class RegisterUser(SuperUser, FormView):
 
     def get_success_url(self):
         return reverse('auth:register')
+
+
+class DeskUserFormView(OSFAdmin, UpdateView):
+    form_class = DeskUserForm
+    template_name = 'desk/settings.html'
+    success_url = reverse_lazy('home')
+
+    def get_object(self, queryset=None):
+        return self.request.user

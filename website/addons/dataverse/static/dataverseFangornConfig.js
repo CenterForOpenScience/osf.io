@@ -5,7 +5,7 @@ var URI = require('URIjs');
 var $ = require('jquery');
 var Raven = require('raven-js');
 
-var Fangorn = require('js/fangorn');
+var Fangorn = require('js/fangorn').Fangorn;
 var waterbutler = require('js/waterbutler');
 var $osf = require('js/osfHelpers');
 
@@ -16,7 +16,7 @@ function changeState(grid, item, version) {
 
 function _downloadEvent(event, item, col) {
     event.stopPropagation();
-    window.location = waterbutler.buildTreeBeardDownload(item, {path: item.data.extra.fileId});
+    window.location = waterbutler.buildTreeBeardDownload(item);
 }
 
 // Define Fangorn Button Actions

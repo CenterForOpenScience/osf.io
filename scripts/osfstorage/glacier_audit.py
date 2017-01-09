@@ -6,6 +6,7 @@ to the correct Glacier archive, and have an archive of the correct size.
 Should be run after `glacier_inventory.py`.
 """
 
+import gc
 import logging
 
 from modularodm import Q
@@ -104,11 +105,16 @@ def main(job_id=None):
         each['ArchiveId']: each
         for each in output['ArchiveList']
     }
-    for version in get_targets(date):
+    for idx, version in enumerate(get_targets(date)):
         try:
             check_glacier_version(version, inventory)
         except AuditError as error:
             logger.error(str(error))
+        if idx % 1000 == 0:
+            # clear modm cache so we don't run out of memory from the cursor enumeration
+            models.FileVersion._cache.clear()
+            models.FileVersion._object_cache.clear()
+            gc.collect()
 
 
 @celery_app.task(name='scripts.osfstorage.glacier_audit')

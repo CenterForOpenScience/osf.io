@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import datetime
 
+from django.utils import timezone
 from nose.tools import *  # noqa
 import mock
 from modularodm import Q
@@ -319,7 +320,7 @@ class TestFileNodeObj(FilesTestCase):
         assert_equal(trashed.path, 'afile')
         assert_equal(trashed.node, self.node)
         assert_equal(trashed.materialized_path, '/long/path/to/name')
-        assert_less((trashed.deleted_on - datetime.datetime.utcnow()).total_seconds(), 5)
+        assert_less((trashed.deleted_on - timezone.now()).total_seconds(), 5)
 
     def test_delete_with_user(self):
         fn = models.StoredFileNode(
