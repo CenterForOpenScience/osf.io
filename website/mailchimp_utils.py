@@ -4,9 +4,9 @@ import mailchimp
 
 from framework import sentry
 from framework.celery_tasks import app
-from framework.auth.core import User
 from framework.celery_tasks.handlers import queued_task
 from framework.auth.signals import user_confirmed
+from osf.models import OSFUser as User
 
 from framework.transactions.context import transaction
 

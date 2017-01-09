@@ -28,6 +28,12 @@ var OauthAddonFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
     constructor: function(addonName, url, selector, folderPicker, opts, tbOpts) {
         var self = this;
         self.super.constructor.call(self, addonName, url, selector, folderPicker);
+        self.construct(addonName, url, selector, folderPicker, opts, tbOpts);
+    },
+    construct: function(addonName, url, selector, folderPicker, opts, tbOpts){
+        // Broken out from `constructor` due to recursive scoping issue with oop super calls
+        // TODO: [OSF-7069]
+        var self = this;
         // externalAccounts
         self.accounts = ko.observableArray();
         self.selectedFolderType = ko.pureComputed(function() {
@@ -136,12 +142,7 @@ var OauthAddonFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
                     inputType: 'select',
                     inputOptions: ko.utils.arrayMap(
                         self.accounts(),
-                        function(item) {
-                            return {
-                                text: $osf.htmlEscape(item.name),
-                                value: item.id
-                            };
-                        }
+                        self.formatExternalName
                     ),
                     value: self.accounts()[0].id,
                     callback: (self.connectExistingAccount.bind(self)),
@@ -191,6 +192,7 @@ var OauthAddonFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
             self.accounts(data.accounts.map(function(account) {
                 return {
                     name: account.display_name,
+                    profile: account.profile_url,
                     id: account.id
                 };
             }));
@@ -205,6 +207,12 @@ var OauthAddonFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
             });
         });
     },
+   formatExternalName: function(item) {
+        return {
+            text: $osf.htmlEscape(item.name),
+            value: item.id
+        };
+    }
 });
 
 // Public API

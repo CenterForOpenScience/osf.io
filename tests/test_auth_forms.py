@@ -5,7 +5,7 @@ from wtforms import Form, Field
 from framework.auth import forms
 
 from tests.base import OsfTestCase
-from tests.factories import UserFactory, UnregUserFactory
+from osf_tests.factories import UserFactory, UnregUserFactory
 
 
 class TestValidation(OsfTestCase):

@@ -9,7 +9,7 @@ import inspect
 from . import defaults
 import os
 
-DB_PORT = 27017
+DB_PORT = 54321
 
 DEV_MODE = True
 DEBUG_MODE = True  # Sets app to debug mode, turns off template caching, etc.
@@ -18,12 +18,12 @@ SECURE_MODE = not DEBUG_MODE  # Disable osf secure cookie
 PROTOCOL = 'https://' if SECURE_MODE else 'http://'
 DOMAIN = PROTOCOL + 'localhost:5000/'
 API_DOMAIN = PROTOCOL + 'localhost:8000/'
+ENABLE_INSTITUTIONS = True
 
 SEARCH_ENGINE = 'elastic'
 
 USE_EMAIL = False
 USE_CELERY = False
-USE_GNUPG = False
 
 # Email
 MAIL_SERVER = 'localhost:1025'  # For local testing
@@ -71,3 +71,5 @@ KEEN = {
 }
 
 NEW_AND_NOTEWORTHY_LINKS_NODE = 'helloo'
+POPULAR_LINKS_NODE = 'hiyah'
+POPULAR_LINKS_REGISTRATIONS = 'woooo'

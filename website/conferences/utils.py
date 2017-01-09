@@ -12,11 +12,12 @@ from website.project import new_node
 from website.models import Node, MailRecord
 
 
-def record_message(message, created):
-    record = MailRecord(
+def record_message(message, nodes_created, users_created):
+    record = MailRecord.objects.create(
         data=message.raw,
-        records=created,
     )
+    record.users_created.add(*users_created),
+    record.nodes_created.add(*nodes_created)
     record.save()
 
 
@@ -30,8 +31,8 @@ def get_or_create_node(title, user):
     try:
         node = Node.find_one(
             Q('title', 'iexact', title)
-            & Q('contributors', 'eq', user._id)
             & Q('is_deleted', 'ne', True)
+            & Q('contributors', 'eq', user)
         )
         return node, False
     except ModularOdmException:
@@ -49,16 +50,17 @@ def provision_node(conference, message, node, user):
     auth = Auth(user=user)
 
     node.update_node_wiki('home', message.text, auth)
-    node.add_contributors(prepare_contributors(conference.admins), log=False)
+    node.add_contributors(prepare_contributors(conference.admins.all()), log=False)
 
     if not message.is_spam and conference.public_projects:
         node.set_privacy('public', meeting_creation=True, auth=auth)
 
     node.add_tag(message.conference_name, auth=auth)
     node.add_tag(message.conference_category, auth=auth)
-    node.system_tags.extend(['emailed', message.conference_name, message.conference_category])
+    for systag in ['emailed', message.conference_name, message.conference_category]:
+        node.add_system_tag(systag, save=False)
     if message.is_spam:
-        node.system_tags.append('spam')
+        node.add_system_tag('spam', save=False)
 
     node.save()
 

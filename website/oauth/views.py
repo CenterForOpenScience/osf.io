@@ -18,13 +18,14 @@ def oauth_disconnect(external_account_id, auth):
     if account is None:
         raise HTTPError(http.NOT_FOUND)
 
-    if account not in user.external_accounts:
+    if not user.external_accounts.filter(id=account.id).exists():
         raise HTTPError(http.FORBIDDEN)
 
     # iterate AddonUserSettings for addons
     for user_settings in user.get_oauth_addons():
-        user_settings.revoke_oauth_access(account)
-        user_settings.save()
+        if user_settings.oauth_provider.short_name == account.provider:
+            user_settings.revoke_oauth_access(account)
+            user_settings.save()
 
     # ExternalAccount.remove_one(account)
     # # only after all addons have been dealt with can we remove it from the user
@@ -47,8 +48,8 @@ def oauth_callback(service_name, auth):
     if not provider.auth_callback(user=user):
         return {}
 
-    if provider.account not in user.external_accounts:
-        user.external_accounts.append(provider.account)
+    if provider.account and not user.external_accounts.filter(id=provider.account.id).exists():
+        user.external_accounts.add(provider.account)
         user.save()
 
     oauth_complete.send(provider, account=provider.account, user=user)

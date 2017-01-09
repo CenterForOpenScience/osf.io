@@ -1,11 +1,10 @@
 # -*- coding: utf-8 -*-
-import httplib as http
 
 from framework.auth.core import Auth
 
 from nose.tools import *  # noqa
 from test_log_detail import LogsTestCase
-from tests.factories import (
+from osf_tests.factories import (
     ProjectFactory,
     PrivateLinkFactory
 )
@@ -36,8 +35,7 @@ class TestLogContributors(LogsTestCase):
     def test_unregistered_contributor_added_has_contributor_info_in_params(self):
         project = ProjectFactory(creator=self.user)
         project.add_unregistered_contributor('Robert Jackson', 'robert@gmail.com', auth=Auth(self.user), save=True)
-        unregistered_contributor = project.contributors[1]
-        relevant_log = project.logs[-1]
+        relevant_log = project.logs.latest()
         url = '/{}logs/{}/'.format(API_BASE, relevant_log._id)
         res = self.app.get(url, auth=self.user.auth)
 
@@ -58,7 +56,7 @@ class TestLogContributors(LogsTestCase):
     def test_params_do_not_appear_on_private_project_with_anonymous_view_only_link(self):
 
         private_link = PrivateLinkFactory(anonymous=True)
-        private_link.nodes.append(self.node)
+        private_link.nodes.add(self.node)
         private_link.save()
 
         url = self.url + '{}/'.format(self.log_add_contributor._id)
@@ -70,5 +68,3 @@ class TestLogContributors(LogsTestCase):
         assert_not_in('params', data['attributes'])
         body = res.body
         assert_not_in(self.user._id, body)
-
-

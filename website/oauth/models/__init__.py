@@ -10,16 +10,19 @@ import urlparse
 import uuid
 
 from flask import request
+from django.utils import timezone
 from oauthlib.oauth2.rfc6749.errors import MissingTokenError
 from requests.exceptions import HTTPError as RequestsHTTPError
 
 from modularodm import fields, Q
-from modularodm.storage.base import KeyExistsException
 from modularodm.validators import MaxLengthValidator, URLValidator
 from requests_oauthlib import OAuth1Session
 from requests_oauthlib import OAuth2Session
 
+from osf.exceptions import ValidationError
+
 from framework.auth import cas
+from framework.encryption import EncryptedStringField
 from framework.exceptions import HTTPError, PermissionsError
 from framework.mongo import ObjectId, StoredObject
 from framework.mongo.utils import unique_on
@@ -36,7 +39,6 @@ OAUTH1 = 1
 OAUTH2 = 2
 
 generate_client_secret = functools.partial(random_string, length=40)
-
 
 @unique_on(['provider', 'provider_id'])
 class ExternalAccount(StoredObject):
@@ -55,14 +57,15 @@ class ExternalAccount(StoredObject):
     # The OAuth credentials. One or both of these fields should be populated.
     # For OAuth1, this is usually the "oauth_token"
     # For OAuth2, this is usually the "access_token"
-    oauth_key = fields.StringField()
+    oauth_key = EncryptedStringField()
 
     # For OAuth1, this is usually the "oauth_token_secret"
     # For OAuth2, this is not used
-    oauth_secret = fields.StringField()
+    oauth_secret = EncryptedStringField()
 
     # Used for OAuth2 only
-    refresh_token = fields.StringField()
+    refresh_token = EncryptedStringField()
+    date_last_refreshed = fields.DateTimeField()
     expires_at = fields.DateTimeField()
     scopes = fields.StringField(list=True, default=lambda: list())
 
@@ -77,9 +80,9 @@ class ExternalAccount(StoredObject):
     provider_id = fields.StringField()
 
     # The user's name on the external service
-    display_name = fields.StringField()
+    display_name = EncryptedStringField()
     # A link to the user's profile on the external service
-    profile_url = fields.StringField()
+    profile_url = EncryptedStringField()
 
     def __repr__(self):
         return '<ExternalAccount: {}/{}>'.format(self.provider,
@@ -280,7 +283,7 @@ class ExternalProvider(object):
                 provider_name=self.name,
             )
             self.account.save()
-        except KeyExistsException:
+        except ValidationError:
             # ... or get the old one
             self.account = ExternalAccount.find_one(
                 Q('provider', 'eq', self.short_name) &
@@ -299,6 +302,7 @@ class ExternalProvider(object):
         # only for OAuth2
         self.account.expires_at = info.get('expires_at')
         self.account.refresh_token = info.get('refresh_token')
+        self.account.date_last_refreshed = datetime.datetime.utcnow()
 
         # additional information
         self.account.display_name = info.get('display_name')
@@ -307,8 +311,8 @@ class ExternalProvider(object):
         self.account.save()
 
         # add it to the user's list of ``ExternalAccounts``
-        if self.account not in user.external_accounts:
-            user.external_accounts.append(self.account)
+        if not user.external_accounts.filter(id=self.account.id).exists():
+            user.external_accounts.add(self.account)
             user.save()
 
         return True
@@ -424,6 +428,7 @@ class ExternalProvider(object):
         self.account.oauth_key = token[resp_auth_token_key]
         self.account.refresh_token = token[resp_refresh_token_key]
         self.account.expires_at = resp_expiry_fn(token)
+        self.account.date_last_refreshed = datetime.datetime.utcnow()
         self.account.save()
         return True
 
@@ -434,7 +439,7 @@ class ExternalProvider(object):
         return bool: True if needs_refresh
         """
         if self.refresh_time and self.account.expires_at:
-            return (self.account.expires_at - datetime.datetime.utcnow()).total_seconds() < self.refresh_time
+            return (self.account.expires_at - timezone.now()).total_seconds() < self.refresh_time
         return False
 
     @property
@@ -445,7 +450,7 @@ class ExternalProvider(object):
         return bool: True if cannot be refreshed
         """
         if self.expiry_time and self.account.expires_at:
-            return (datetime.datetime.utcnow() - self.account.expires_at).total_seconds() > self.expiry_time
+            return (timezone.now() - self.account.expires_at).total_seconds() > self.expiry_time
         return False
 
 
@@ -489,7 +494,7 @@ class ApiOAuth2Application(StoredObject):
     name = fields.StringField(index=True, required=True, validate=[string_required, MaxLengthValidator(200)])
     description = fields.StringField(required=False, validate=MaxLengthValidator(1000))
 
-    date_created = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow,
+    date_created = fields.DateTimeField(auto_now_add=True,
                                         editable=False)
 
     home_url = fields.StringField(required=True,
@@ -609,3 +614,42 @@ class ApiOAuth2PersonalToken(StoredObject):
     # used by django and DRF
     def get_absolute_url(self):
         return self.absolute_api_v2_url
+
+
+class BasicAuthProviderMixin(object):
+    """
+        Providers utilizing BasicAuth can utilize this class to implement the
+        storage providers framework by subclassing this mixin. This provides
+        a translation between the oauth parameters and the BasicAuth parameters.
+
+        The password here is kept decrypted by default.
+    """
+
+    def __init__(self, account=None, host=None, username=None, password=None):
+        super(BasicAuthProviderMixin, self).__init__()
+        if account:
+            self.account = account
+        elif not account and host and password and username:
+            self.account = ExternalAccount(
+                display_name=username,
+                oauth_key=password,
+                oauth_secret=host.lower(),
+                provider_id='{}:{}'.format(host.lower(), username),
+                profile_url=host.lower(),
+                provider=self.short_name,
+                provider_name=self.name
+            )
+        else:
+            self.account = None
+
+    @property
+    def host(self):
+        return self.account.profile_url
+
+    @property
+    def username(self):
+        return self.account.display_name
+
+    @property
+    def password(self):
+        return self.account.oauth_key

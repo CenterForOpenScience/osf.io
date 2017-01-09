@@ -33,7 +33,7 @@ with open(os.path.join(APP_PATH, 'package.json'), 'r') as fobj:
 
 # Expiration time for verification key
 EXPIRATION_TIME_DICT = {
-    'password': 30,         # 30 minutes for forgot and reset password
+    'password': 24 * 60,    # 24 hours in minutes for forgot and reset password
     'confirm': 24 * 60,     # 24 hours in minutes for confirm account and email
     'claim': 30 * 24 * 60   # 30 days in minutes for claim contributor-ship
 }
@@ -57,6 +57,8 @@ ANONYMIZED_TITLES = ['Authors']
 LOAD_BALANCER = False
 PROXY_ADDRS = []
 
+USE_POSTGRES = True
+
 # May set these to True in local.py for development
 DEV_MODE = False
 DEBUG_MODE = False
@@ -73,9 +75,6 @@ EXTERNAL_EMBER_APPS = {}
 LOG_PATH = os.path.join(APP_PATH, 'logs')
 TEMPLATES_PATH = os.path.join(BASE_PATH, 'templates')
 ANALYTICS_PATH = os.path.join(BASE_PATH, 'analytics')
-
-GNUPG_HOME = os.path.join(BASE_PATH, 'gpg')
-GNUPG_BINARY = 'gpg'
 
 # User management & registration
 CONFIRM_REGISTRATIONS_BY_EMAIL = True
@@ -146,9 +145,6 @@ MFR_TEMP_PATH = os.path.join(BASE_PATH, 'mfrtemp')
 
 # Use Celery for file rendering
 USE_CELERY = True
-
-# Use GnuPG for encryption
-USE_GNUPG = True
 
 # File rendering timeout (in ms)
 MFR_TIMEOUT = 30000
@@ -269,8 +265,6 @@ KEEN = {
 SENTRY_DSN = None
 SENTRY_DSN_JS = None
 
-
-# TODO: Delete me after merging GitLab
 MISSING_FILE_NAME = 'untitled'
 
 # Project Organizer
@@ -281,7 +275,10 @@ ALL_MY_REGISTRATIONS_NAME = 'All my registrations'
 
 # Most Popular and New and Noteworthy Nodes
 POPULAR_LINKS_NODE = None  # TODO Override in local.py in production.
+POPULAR_LINKS_REGISTRATIONS = None  # TODO Override in local.py in production.
 NEW_AND_NOTEWORTHY_LINKS_NODE = None  # TODO Override in local.py in production.
+
+MAX_POPULAR_PROJECTS = 10
 
 NEW_AND_NOTEWORTHY_CONTRIBUTOR_BLACKLIST = []  # TODO Override in local.py in production.
 
@@ -314,7 +311,8 @@ EZID_PASSWORD = 'changeme'
 EZID_FORMAT = '{namespace}osf.io/{guid}'
 
 SHARE_REGISTRATION_URL = ''
-SHARE_URL = 'https://share.osf.io/'
+SHARE_URL = None
+SHARE_API_TOKEN = None  # Required to send project updates to SHARE
 
 CAS_SERVER_URL = 'http://localhost:8080'
 MFR_SERVER_URL = 'http://localhost:7778'
@@ -348,6 +346,7 @@ LOW_PRI_MODULES = {
     'scripts.osfstorage.files_audit',
     'scripts.osfstorage.glacier_audit',
     'scripts.populate_new_and_noteworthy_projects',
+    'scripts.populate_popular_projects_and_registrations',
     'website.search.elastic_search',
 }
 
@@ -406,6 +405,7 @@ CELERY_IMPORTS = (
     'website.search.search',
     'website.project.tasks',
     'scripts.populate_new_and_noteworthy_projects',
+    'scripts.populate_popular_projects_and_registrations',
     'scripts.refresh_addon_tokens',
     'scripts.retract_registrations',
     'scripts.embargo_registrations',
@@ -413,6 +413,9 @@ CELERY_IMPORTS = (
     'scripts.approve_embargo_terminations',
     'scripts.triggered_mails',
     'scripts.send_queued_mails',
+    'scripts.analytics.run_keen_summaries',
+    'scripts.analytics.run_keen_snapshots',
+    'scripts.analytics.run_keen_events',
 )
 
 # Modules that need metrics and release requirements
@@ -446,7 +449,11 @@ else:
         'refresh_addons': {
             'task': 'scripts.refresh_addon_tokens',
             'schedule': crontab(minute=0, hour= 2),  # Daily 2:00 a.m
-            'kwargs': {'dry_run': False, 'addons': {'box': 60, 'googledrive': 14, 'mendeley': 14}},
+            'kwargs': {'dry_run': False, 'addons': {
+                'box': 60,          # https://docs.box.com/docs/oauth-20#section-6-using-the-access-and-refresh-tokens
+                'googledrive': 14,  # https://developers.google.com/identity/protocols/OAuth2#expiration
+                'mendeley': 14      # http://dev.mendeley.com/reference/topics/authorization_overview.html
+            }},
         },
         'retract_registrations': {
             'task': 'scripts.retract_registrations',
@@ -483,6 +490,25 @@ else:
             'schedule': crontab(minute=0, hour=2, day_of_week=6),  # Saturday 2:00 a.m.
             'kwargs': {'dry_run': False}
         },
+        'update_popular_nodes': {
+            'task': 'scripts.populate_popular_projects_and_registrations',
+            'schedule': crontab(minute=0, hour=2),  # Daily 2:00 a.m.
+            'kwargs': {'dry_run': False}
+        },
+        'run_keen_summaries': {
+            'task': 'scripts.analytics.run_keen_summaries',
+            'schedule': crontab(minute=00, hour=1),  # Daily 1:00 a.m.
+            'kwargs': {'yesterday': True}
+        },
+        'run_keen_snapshots': {
+            'task': 'scripts.analytics.run_keen_snapshots',
+            'schedule': crontab(minute=0, hour=3),  # Daily 3:00 a.m.
+        },
+        'run_keen_events': {
+            'task': 'scripts.analytics.run_keen_events',
+            'schedule': crontab(minute=0, hour=4),  # Daily 4:00 a.m.
+            'kwargs': {'yesterday': True}
+        }
     }
 
     # Tasks that need metrics and release requirements
@@ -542,6 +568,9 @@ WATERBUTLER_JWT_SECRET = 'ILiekTrianglesALot'
 WATERBUTLER_JWT_ALGORITHM = 'HS256'
 WATERBUTLER_JWT_EXPIRATION = 15
 
+SENSITIVE_DATA_SALT = 'yusaltydough'
+SENSITIVE_DATA_SECRET = 'TrainglesAre5Squares'
+
 DRAFT_REGISTRATION_APPROVAL_PERIOD = datetime.timedelta(days=10)
 assert (DRAFT_REGISTRATION_APPROVAL_PERIOD > EMBARGO_END_DATE_MIN), 'The draft registration approval period should be more than the minimum embargo end date.'
 
@@ -556,6 +585,10 @@ ESI_MEDIA_TYPES = {'application/vnd.api+json', 'application/json'}
 
 # Used for gathering meta information about the current build
 GITHUB_API_TOKEN = None
+
+# switch for disabling things that shouldn't happen during
+# the modm to django migration
+RUNNING_MIGRATION = False
 
 # External Identity Provider
 EXTERNAL_IDENTITY_PROFILE = {
@@ -1749,3 +1782,9 @@ SPAM_FLAGGED_MAKE_NODE_PRIVATE = False
 SPAM_FLAGGED_REMOVE_FROM_SEARCH = False
 
 SHARE_API_TOKEN = None
+
+# number of nodes that need to be affiliated with an institution before the institution logo is shown on the dashboard
+INSTITUTION_DISPLAY_NODE_THRESHOLD = 5
+
+# refresh campaign every 5 minutes
+CAMPAIGN_REFRESH_THRESHOLD = 5 * 60  # 5 minutes in seconds

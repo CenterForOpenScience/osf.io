@@ -39,13 +39,13 @@
             <section id='popularPublicProjects' class="m-t-lg">
                 <h3 class='anchor'>Popular public projects</h3>
                 <div class='project-list'>
-                    ${node_list(popular_public_projects, prefix='most_viewed', metric='hits')}
+                    ${node_list(popular_public_projects, prefix='most_viewed', metric='date_created')}
                 </div>
             </section>
             <section id='popularPublicRegistrations' class="m-t-lg">
                 <h3 class='anchor'>Popular public registrations</h3>
                 <div class='project-list'>
-                    ${node_list(popular_public_registrations, prefix='most_viewed', metric='hits')}
+                    ${node_list(popular_public_registrations, prefix='most_viewed', metric='registered_date')}
                 </div>
             </section>
         </div>
@@ -76,11 +76,7 @@
                         </h4>
                     </div>
                     <div class="col-md-2">
-                        % if metric == 'hits':
-                            <span class="project-meta pull-right" rel='tooltip' data-original-title='${ hits[node._id].get('hits') } views (${ hits[node._id].get('visits') } visits)'>
-                                ${ hits[node._id].get('hits') }&nbsp;views (last&nbsp;week)
-                            </span>
-                        % elif metric == 'date_created':
+                        % if metric == 'date_created':
                             <span class="project-meta pull-right" rel='tooltip' data-original-title='Created: ${explicit_date}'>
                                 ${node.date_created.date()}
                             </span>

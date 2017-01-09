@@ -2,6 +2,141 @@
 Changelog
 *********
 
+0.104.0 (2016-12-19)
+====================
+- Various APIv2 fixes and improvements to support Preprints.
+
+0.103.0 (2016-12-14)
+====================
+- Update WaterButler Dropbox Provider to use Dropbox v2 API
+- Update figshare for ExternalAccount
+- Update Figshare provider to use v2 API
+- Figshare interface improvements to go with API v2 update.
+- Update analytics display on admin dashboard
+- Add log entry for authorizing figshare through project settings for the first time
+- Keep modal from freezing when Creating a second component
+- Fix attribute error splitting username in None for analytics task
+- Ensure registration doesn't fail if two files in Google Drive have the same name
+- Fix ModularODM KeyError with osfguidstoragefile
+- Add Ohio region for S3 bucket locations
+- Update Google Analytics Linker on osf.io
+
+Migrations
+----------
+python -m scripts.migration.migrate_googledoc_paths
+python -m scripts.migration.migrate_googledoc_paths --no-i-mean-it
+python -m scripts.figshare.migrate_folder_logs
+
+0.102.0 (2016-11-30)
+====================
+- Add support for branded preprint providers
+- API v2 Add license write capability for nodes
+- API v2 Add licenses to preprints
+- Warn users on attempt to delete a node that is attached to a preprint
+- Add branded login for preprint-based logins
+- Add branded emails if registering through a branded preprint service
+- API v2 Remove ability for users to create a preprint with a deleted node
+
+Migrations
+----------
+python -m scripts.migration.migrate_subjects_from_plos_to_bepress --file /code/BePress.json
+python -m scripts.migrate_logs_branded_preprints.py
+python -m scripts.populate_preprint_providers
+
+Post-release: python -m scripts.migration.migrate_meetings_preprints_to_preprintservices --auto 9000
+
+0.101.0 (2016-11-23)
+====================
+- Fix renaming, download button, zip is broken on GitHub non-default branch
+- Prevent 500 error when oving a folder from a OSF in component to OSF storage in parent
+- Ensure IE can view files in a VOL
+- Improve error messaging for attempted moves/deletes of primary file on private preprint project
+- Make comment reply filter work
+- Fix revoked gdrive (external account) authorization
+- Improve UI for creating VOLs with nested components
+- Normalize API v2 timestamps
+- Show affiliated components in Institution Dashboard
+- Fix formatting for User Settings, Configure Addons for OwnCloud, Amazon S3, Dataverse
+- Allow Read + Write contributors adding affiliation for project with components
+- Make Prerender be able to request an appropriate number of times
+- Remove link for more information on S3 create bucket modal
+- Document Preprints endpoints
+- Add second-round nightly keen analytics
+- Create Landing Page for OSFRegistries
+- Remember where user came from during ORCiD account creation/linking
+
+0.100.0 (2016-11-09)
+====================
+- Support for editing preprints
+
+0.99.0 (2016-11-01)
+===================
+- Preprint service and migration
+
+0.98.0 (2016-10-31)
+===================
+- Keep the file editor widget on file view page from sometimes being created twice
+- Make public activity page load much more quickly
+- Update Wiki preview Length
+- Hide OSF for Institutions Logos from Dashboard Until 5 Projects Affiliated
+- On the files widget, handle renaming a file when sort-by-date is selected
+- Don't break addons when adding addons to ADDONS_REQUESTED in local.py
+- Remove reliance on Object.remove to increase IE support
+- Fix broken retraction due to incompatible text entry
+- Capitalize home wiki in wiki commenting logs
+- Ensure files in search could be visited even if they didn't have GUIDs
+- Fix Node relationship on NodeWiki for Registrations
+- Keep signing Up w/ an existing non-registered User from issuing password reset email
+- Allow deleting of replies to comments on files
+- Allow restoring deleted replies to a comment
+- Prevent renaming of files with ']' from causing problems
+- Allow IE to update project category from the settings page
+- Allow admin app to pull statistics for users from workshops and webinars
+- Allow admin app to link users to desk.com tickets
+- Allow IE to update project title and description from settings page
+- Fix shortened iframe for PDF files in MFR
+
+0.97.0 (2016-10-20)
+===================
+- API v2 Versioning
+- API v2 Redirect swagger docs to Browseable API
+- Fix wiki formatting for legacy wiki pages
+- Ensure bad file moves don't delete files
+- API v2 Make private nodes private in inter-node file moves
+- Don't create user twice in claim edge case
+- Retain formatting in preregistration
+- Render wiki on project summary widget properly in all cases
+- Fixes for throttling
+- Allow search to find words separated by things that aren't spaces
+- API v2.1 Make pagination meta match JSON API Spec
+- Move institution login to CAS
+- API v2 Create file GUIDs
+- Standardize terminology: registration form
+- Clarify that prereg comments are not registered
+- Decouple identifiers from registrations
+- API Expose latest file version
+- Update Fangorn to use WB V1 API
+- Add My Preprints to My Projects
+- Update "this project" box at the top of registration overview page
+- Add change folder toggle button
+- Improvements to invoke tasks for dockerization
+- Support test-level database isolation
+
+Migrations
+-----------
+
+- python -m scripts.encrypt_external_accounts_unicode
+
+0.96.0 (2016-10-12)
+===================
+- Add ownCloud addon
+- Encrypt addon credentials
+
+Migrations
+-----------
+
+- python -m scripts.encrypt_external_accounts
+
 0.95.0 (2016-10-05)
 ===================
 - Replace GPL-only django-queryset-csv library (the last of the GPL)
@@ -245,7 +380,7 @@ Migrations
 - Use HTTPS URLS on DOI links.
 - Set HttpOnly flag on cookies.
 - Replace jquery.cookie (deprecated) with js-cookie.
-- Improved error messaging for DropBox addon.
+- Improved error messaging for Dropbox addon.
 - More help text for Collections and Bookmarks.
 - Upgrade to invoke 0.13.0.
 
