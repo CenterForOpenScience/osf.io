@@ -150,6 +150,7 @@
     - `docker-compose run --rm web python manage.py migrate`
 - Populate preprint providers:
   - After resetting your database or with a new install you will need to populate the table of preprint providers. **You must have run migrations first.**
+    - `docker-compose run --rm web python -m scripts.update_taxonomies`
     - `docker-compose run --rm web python -m scripts.populate_preprint_providers`
 - Create migrations:
   - After changing a model you will need to create migrations and apply them. Migrations are python code that changes either the structure or the data of a database. This will compare the django models on disk to the database, find the differences, and create migration code to change the database. If there are no changes this command is a noop.
