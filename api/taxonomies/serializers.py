@@ -1,16 +1,19 @@
 from rest_framework import serializers as ser
 
 from api.base.serializers import JSONAPISerializer, LinksField, JSONAPIListField
+from website.models import Subject
 
 class TaxonomyField(ser.Field):
-    def to_representation(self, obj):
-        if obj is not None:
-            return {'id': obj._id,
-                    'text': obj.text}
+    def to_representation(self, subject):
+        if not isinstance(subject, Subject):
+            subject = Subject.load(subject)
+        if subject is not None:
+            return {'id': subject._id,
+                    'text': subject.text}
         return None
 
-    def to_internal_value(self, data):
-        return data
+    def to_internal_value(self, subject_id):
+        return subject_id
 
 class TaxonomySerializer(JSONAPISerializer):
     filterable_fields = frozenset([
@@ -29,7 +32,7 @@ class TaxonomySerializer(JSONAPISerializer):
     })
 
     def get_parent_urls(self, obj):
-        return [p.get_absolute_url() for p in obj.parents]
+        return [p.get_absolute_url() for p in obj.parents.all()]
 
     def get_absolute_url(self, obj):
         return obj.get_absolute_url()

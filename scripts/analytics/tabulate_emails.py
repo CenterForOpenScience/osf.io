@@ -7,6 +7,8 @@ import datetime
 import collections
 from cStringIO import StringIO
 
+from django.utils import timezone
+
 from framework.mongo import database
 
 from website import models
@@ -30,7 +32,7 @@ def get_emails_since(delta):
         'is_registered': True,
         'password': {'$ne': None},
         'is_merged': {'$ne': True},
-        'date_confirmed': {'$gte': datetime.datetime.utcnow() - delta},
+        'date_confirmed': {'$gte': timezone.now() - delta},
     })
 
 

@@ -11,6 +11,8 @@ urlpatterns = [
         name='known-spam'),
     url(r'^known_ham$', views.UserKnownHamList.as_view(),
         name='known-ham'),
+    url(r'^workshop$', views.UserWorkshopFormView.as_view(),
+        name='workshop'),
     url(r'^(?P<guid>[a-z0-9]+)/$', views.UserView.as_view(),
         name='user'),
     url(r'^(?P<guid>[a-z0-9]+)/reset-password/$',

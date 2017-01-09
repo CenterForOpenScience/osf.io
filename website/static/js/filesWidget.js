@@ -3,7 +3,7 @@ var Raven = require('raven-js');
 
 var $osf = require('js/osfHelpers');
 var osfLanguage = require('js/osfLanguage');
-var Fangorn = require('js/fangorn');
+var Fangorn = require('js/fangorn').Fangorn;
 
 /**
  * @class FilesWidget
@@ -27,9 +27,6 @@ var FilesWidget = function(divID, filesUrl, opts) {
         filterFullWidth: true, // Make the filter span the entire row for this view
         xhrconfig: $osf.setXHRAuthorization,
         hScroll: null,
-        lazyLoadPreprocess: function(data) {
-            return data.data;
-        },
         columnTitles: function() {
             return [{
                 title: 'Name',

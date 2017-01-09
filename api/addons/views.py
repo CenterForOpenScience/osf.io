@@ -1,6 +1,6 @@
 import importlib
 
-from rest_framework.exceptions import NotFound
+from rest_framework.exceptions import NotFound, PermissionDenied
 from rest_framework import generics, permissions as drf_permissions
 
 from framework.auth.oauth_scopes import CoreScopes
@@ -20,7 +20,7 @@ class AddonSettingsMixin(object):
     current URL. By default, fetches the settings based on the user or node available in self context.
     """
 
-    def get_addon_settings(self, provider=None, fail_if_absent=True):
+    def get_addon_settings(self, provider=None, fail_if_absent=True, check_object_permissions=True):
         owner = None
         provider = provider or self.kwargs['provider']
 
@@ -45,6 +45,15 @@ class AddonSettingsMixin(object):
 
         if not addon_settings or addon_settings.deleted:
             return None
+
+        if addon_settings and check_object_permissions:
+            authorizer = None
+            if owner_type == 'user':
+                authorizer = addon_settings.owner
+            elif hasattr(addon_settings, 'user_settings'):
+                authorizer = addon_settings.user_settings.owner
+            if authorizer and authorizer != self.request.user:
+                raise PermissionDenied('Must be addon authorizer to list folders')
 
         return addon_settings
 

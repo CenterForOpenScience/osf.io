@@ -4,6 +4,7 @@ import calendar
 from bson import ObjectId
 from datetime import datetime
 
+from django.utils import timezone
 from modularodm import fields, Q
 
 from framework.mongo import StoredObject
@@ -141,7 +142,7 @@ class BadgeAssertion(StoredObject):
         b.badge = badge
         b.node = node
         b.evidence = evidence
-        b.issued_on = calendar.timegm(datetime.utctimetuple(datetime.utcnow()))
+        b.issued_on = calendar.timegm(datetime.utctimetuple(timezone.now()))
         b._awarder = awarder
         if save:
             b.save()

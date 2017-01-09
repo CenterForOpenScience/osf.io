@@ -13,6 +13,7 @@ import datetime
 import logging
 import sys
 
+from django.utils import timezone
 from modularodm import Q
 
 from framework.transactions.context import TokuTransaction
@@ -27,7 +28,7 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
 def get_pending_embargo_termination_requests():
-    auto_approve_time = datetime.datetime.now() - settings.EMBARGO_TERMINATION_PENDING_TIME
+    auto_approve_time = timezone.now() - settings.EMBARGO_TERMINATION_PENDING_TIME
 
     return models.EmbargoTerminationApproval.find(
         Q('initiation_date', 'lt', auto_approve_time) &

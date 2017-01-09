@@ -2,8 +2,9 @@
 # encoding: utf-8
 
 import logging
-import datetime
+import math
 import time
+from django.utils import timezone
 
 from modularodm import Q
 from oauthlib.oauth2 import OAuth2Error
@@ -35,7 +36,8 @@ def get_targets(delta, addon_short_name):
     # NOTE: expires_at is the  access_token's expiration date,
     # NOT the refresh token's
     return ExternalAccount.find(
-        Q('expires_at', 'lt', datetime.datetime.utcnow() - delta) &
+        Q('expires_at', 'lt', timezone.now() - delta) &
+        Q('date_last_refreshed', 'lt', timezone.now() - delta) &
         Q('provider', 'eq', addon_short_name)
     )
 
@@ -57,7 +59,7 @@ def main(delta, Provider, rate_limit, dry_run):
         )
         if not dry_run:
             if allowance < 1:
-                try: 
+                try:
                     time.sleep(rate_limit[1] - (time.time() - last_call))
                 except (ValueError, IOError):
                     pass  # Value/IOError indicates negative sleep time in Py 3.5/2.7, respectively
@@ -88,13 +90,10 @@ def run_main(addons=None, rate_limit=(5, 1), dry_run=True):
     if not dry_run:
         scripts_utils.add_file_logger(logger, __file__)
     for addon in addons:
-        try:
-            days = int(addons[addon]) - 3 # refresh tokens that expire this in the next three days
-        except (ValueError, TypeError):
-            days = 11  # OAuth2 spec's default refresh token expiry time is 14 days
+        days = math.ceil(int(addons[addon])*0.75)
         delta = relativedelta(days=days)
         Provider = look_up_provider(addon)
         if not Provider:
-            logger.error('Unable to find Provider class for addon {}'.format(addon_short_name))
+            logger.error('Unable to find Provider class for addon {}'.format(addon))
         else:
             main(delta, Provider, rate_limit, dry_run=dry_run)

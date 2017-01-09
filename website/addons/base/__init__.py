@@ -325,7 +325,7 @@ class AddonUserSettingsBase(AddonSettingsBase):
 def oauth_complete(provider, account, user):
     if not user or not account:
         return
-    user.add_addon(account.provider)
+    user.add_addon(account.provider, Auth(user))
     user.save()
 
 
@@ -363,19 +363,19 @@ class AddonOAuthUserSettingsBase(AddonUserSettingsBase):
     def external_accounts(self):
         """The user's list of ``ExternalAccount`` instances for this provider"""
         return [
-            x for x in self.owner.external_accounts
+            x for x in self.owner.external_accounts.all()
             if x.provider == self.oauth_provider.short_name
         ]
 
     def delete(self, save=True):
-        for account in self.external_accounts:
+        for account in self.external_accounts.all():
             self.revoke_oauth_access(account, save=False)
         super(AddonOAuthUserSettingsBase, self).delete(save=save)
 
     def grant_oauth_access(self, node, external_account, metadata=None):
         """Give a node permission to use an ``ExternalAccount`` instance."""
         # ensure the user owns the external_account
-        if external_account not in self.owner.external_accounts:
+        if not self.owner.external_accounts.filter(id=external_account.id).exists():
             raise PermissionsError()
 
         metadata = metadata or {}
@@ -404,12 +404,11 @@ class AddonOAuthUserSettingsBase(AddonUserSettingsBase):
         """
         for node in self.get_nodes_with_oauth_grants(external_account):
             try:
-                addon_settings = node.get_addon(external_account.provider, deleted=True)
+                node.get_addon(external_account.provider, deleted=True).deauthorize(auth=auth)
             except AttributeError:
                 # No associated addon settings despite oauth grant
+                # Remove grant in `for` loop below
                 pass
-            else:
-                addon_settings.deauthorize(auth=auth)
 
         if User.find(Q('external_accounts', 'eq', external_account._id)).count() == 1:
             # Only this user is using the account, so revoke remote access as well.

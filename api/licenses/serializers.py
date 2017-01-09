@@ -16,6 +16,8 @@ class LicenseSerializer(JSONAPISerializer):
     type = TypeField()
     name = ser.CharField(required=True, help_text='License name')
     text = ser.CharField(required=True, help_text='Full text of the license')
+    required_fields = ser.ListField(source='properties', read_only=True,
+                                    help_text='Fields required for this license (provided to help front-end validators)')
     links = LinksField({'self': 'get_absolute_url'})
 
     class Meta:
