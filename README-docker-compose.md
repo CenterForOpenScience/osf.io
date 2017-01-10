@@ -109,7 +109,7 @@ _NOTE: After making changes to `Environment Variables` or `Volume Mounts` (e.g. 
     _NOTE: When the various requirements installations are complete these containers will exit. You should only need to run these containers after pulling code that changes python requirements or if you update the python requirements._
 
 2. Start Core Component Services
-  - `$ docker-compose up elasticsearch postgres tokumx`
+  - `$ docker-compose up elasticsearch postgres tokumx rabbitmq`
 
 3. Remove your existing node_modules and start the assets watcher
   - `$ rm -Rf ./node_modules`
