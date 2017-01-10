@@ -29,7 +29,8 @@ class NodeSummary(SummaryAnalytics):
         node_query = (
             Q('is_deleted', 'ne', True) &
             Q('is_folder', 'ne', True) &
-            Q('date_created', 'lt', query_datetime)
+            Q('date_created', 'lt', query_datetime) &
+            Q('is_collection', 'ne', True)
         )
 
         registration_query = node_query & Q('is_registration', 'eq', True)
