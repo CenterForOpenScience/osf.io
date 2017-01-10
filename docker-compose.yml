@@ -206,6 +206,20 @@ services:
       - osf_bower_components_vol:/code/website/static/vendor/bower_components
       - osf_node_modules_vol:/code/node_modules
 
+  sharejs:
+    image: quay.io/centerforopenscience/osf:develop
+    command: invoke sharejs
+    restart: unless-stopped
+    ports:
+      - 7007:7007
+    depends_on:
+      - tokumx
+    env_file:
+      - .docker-compose.sharejs.env
+    volumes:
+      - osf_requirements_vol:/usr/local/lib/python2.7/site-packages
+      - osf_node_modules_vol:/code/node_modules
+
 #  admin:
 #    image: quay.io/centerforopenscience/osf:develop
 #    command: invoke adminserver -h 0.0.0.0

@@ -39,6 +39,10 @@
 
 
 ## Application Configuration
+_NOTE: After making changes to `Environment Variables` or `Volume Mounts` (e.g. docker-sync) you will need to recreate the container(s)._
+
+  - `$ docker-compose up --force-recreate --no-deps preprints`
+
 1. Application Settings
  - e.g. OSF & OSF API local.py
 
@@ -115,7 +119,7 @@
     When you see the BowerJS build occurring it is likely a safe time to move forward with starting the remaining
     containers._
 4. Start the Services
-  - `$ docker-compose up mfr wb fakecas`
+  - `$ docker-compose up mfr wb fakecas sharejs`
 5. Run migrations and create preprint providers
   - When starting with an empty database you will need to run migrations and populate preprint providers. See the [Running arbitrary commands](#running-arbitrary-commands) section below for instructions.
 6. Run Django migrations
@@ -132,7 +136,7 @@
   ```
   $ docker-sync start
   # Wait until you see "Nothing to do: replicas have not changed since last sync."
-  $ docker-compose up -d assets elasticsearch postgres tokumx mfr wb fakecas web api preprints
+  $ docker-compose up -d assets elasticsearch postgres tokumx mfr wb fakecas sharejs web api preprints
   ```
 
 - To view the logs for a given container: 
@@ -166,14 +170,26 @@
     _NOTE: You can detach from a container and leave it running using the CTRL-p CTRL-q key sequence._
 - Remote Debugging with PyCharm
   - Add a Python Remote Debugger per container
-    - Name: Remote Debug (web)
-    - Local host name: 192.168.168.167
-    - Port: 11000
+    - Name: `Remote Debug (web)`
+    - Local host name: `192.168.168.167`
+    - Port: `11000`
     - Path mappings:
-      - /Users/\<whoami\>/Projects/cos/osf : /code
-      - /Users/\<whoami\>/.virtualenvs/osf/lib/python2.7/site-packages : /usr/local/lib/python2.7/site-packages
-    - Single Instance only
-  - Configure .docker-compose.env REMOTE_DEBUG environment variables to match settings.
+      - `~/Projects/cos/osf : /code`
+      - `~/.virtualenvs/osf/lib/python2.7/site-packages : /usr/local/lib/python2.7/site-packages`
+    - `Single Instance only`
+  - Configure `.docker-compose.env` `<APP>_REMOTE_DEBUG` environment variables to match these settings.
+
+## Managing Container State
+
+Restart a container:
+  - `$ docker-compose restart -t 0 assets`
+
+Recreate a container _(useful to ensure all environment variables/volume changes are in order)_:
+  - `$ docker-compose up --force-recreate --no-deps assets`
+
+Delete a container _(does not remove volumes)_:
+  - `$ docker-compose stop -t 0 assets`
+  - `$ docker-compose rm assets`
 
 ## Cleanup & Docker Reset
 
