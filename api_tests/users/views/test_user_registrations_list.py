@@ -2,7 +2,10 @@
 from nose.tools import *  # flake8: noqa
 
 from tests.base import ApiTestCase
-from tests.factories import AuthUserFactory, BookmarkCollectionFactory, CollectionFactory, ProjectFactory, RegistrationFactory
+from osf_tests.factories import (
+    AuthUserFactory, BookmarkCollectionFactory, CollectionFactory,
+    ProjectFactory, RegistrationFactory
+)
 
 from api.base.settings.defaults import API_BASE
 

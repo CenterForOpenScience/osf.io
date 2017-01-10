@@ -1,5 +1,5 @@
+from modularodm.exceptions import ValidationError
 from modularodm import Q
-from modularodm.exceptions import ValidationValueError
 from rest_framework import exceptions
 from rest_framework import serializers as ser
 
@@ -10,7 +10,11 @@ from api.base.serializers import (
 )
 from api.base.utils import absolute_reverse, get_user_auth
 from api.taxonomies.serializers import TaxonomyField
-from api.nodes.serializers import NodeLicenseSerializer
+from api.nodes.serializers import (
+    NodeCitationSerializer,
+    NodeLicenseSerializer,
+    get_license_details
+)
 from framework.exceptions import PermissionsError
 from website.util import permissions
 from website.exceptions import NodeStateError
@@ -69,6 +73,11 @@ class PreprintSerializer(JSONAPISerializer):
     is_preprint_orphan = ser.BooleanField(read_only=True)
     license_record = NodeLicenseSerializer(required=False, source='license')
 
+    citation = RelationshipField(
+        related_view='preprints:preprint-citation',
+        related_view_kwargs={'preprint_id': '<_id>'}
+    )
+
     node = NodeRelationshipField(
         related_view='nodes:node-detail',
         related_view_kwargs={'node_id': '<node._id>'},
@@ -114,23 +123,6 @@ class PreprintSerializer(JSONAPISerializer):
     def get_doi_url(self, obj):
         return 'https://dx.doi.org/{}'.format(obj.article_doi) if obj.article_doi else None
 
-    def get_license_details(self, preprint, validated_data):
-        license_id = preprint.license.node_license.id if preprint.license else None
-        license_year = preprint.license.year if preprint.license else None
-        license_holders = preprint.license.copyright_holders if preprint.license else []
-
-        if 'license' in validated_data:
-            license_year = validated_data['license'].get('year', license_year)
-            license_holders = validated_data['license'].get('copyright_holders', license_holders)
-        if 'license_type' in validated_data:
-            license_id = validated_data['license_type'].id
-
-        return {
-            'id': license_id,
-            'year': license_year,
-            'copyrightHolders': license_holders
-        }
-
     def update(self, preprint, validated_data):
         assert isinstance(preprint, PreprintService), 'You must specify a valid preprint to be updated'
         assert isinstance(preprint.node, Node), 'You must specify a preprint with a valid node to be updated.'
@@ -164,16 +156,16 @@ class PreprintSerializer(JSONAPISerializer):
             recently_published = published
 
         if 'license_type' in validated_data or 'license' in validated_data:
-            license_details = self.get_license_details(preprint, validated_data)
+            license_details = get_license_details(preprint, validated_data)
             self.set_field(preprint.set_preprint_license, license_details, auth)
             save_preprint = True
 
         if save_node:
             try:
                 preprint.node.save()
-            except ValidationValueError as e:
+            except ValidationError as e:
                 # Raised from invalid DOI
-                raise exceptions.ValidationError(detail=e.message)
+                raise exceptions.ValidationError(detail=e.messages[0])
 
         if save_preprint:
             preprint.save()
@@ -204,9 +196,11 @@ class PreprintCreateSerializer(PreprintSerializer):
     id = IDField(source='_id', required=False, allow_null=True)
 
     def create(self, validated_data):
-        node = Node.load(validated_data.pop('node', None))
+        node = validated_data.pop('node', None)
         if not node:
             raise exceptions.NotFound('Unable to find Node with specified id.')
+        elif node.is_deleted:
+            raise exceptions.ValidationError('Cannot create a preprint from a deleted node.')
 
         auth = get_user_auth(self.context['request'])
         if not node.has_permission(auth.user, permissions.ADMIN):
@@ -230,3 +224,9 @@ class PreprintCreateSerializer(PreprintSerializer):
         preprint.node.save()
 
         return self.update(preprint, validated_data)
+
+
+class PreprintCitationSerializer(NodeCitationSerializer):
+
+    class Meta:
+        type_ = 'preprint-citation'

@@ -6,6 +6,7 @@ from datetime import datetime, timedelta
 
 from website.models import User
 from website.app import init_app
+from framework.mongo.utils import paginated
 from scripts.analytics.base import EventAnalytics
 
 logger = logging.getLogger(__name__)
@@ -30,9 +31,10 @@ class UserDomainEvents(EventAnalytics):
         logger.info('Gathering user domains between {} and {}'.format(
             date, (date + timedelta(1)).isoformat()
         ))
-
-        user_query = Q('date_confirmed', 'lt', date + timedelta(1)) & Q('date_confirmed', 'gte', date)
-        users = User.find(user_query)
+        user_query = (Q('date_confirmed', 'lt', date + timedelta(1)) &
+                      Q('date_confirmed', 'gte', date) &
+                      Q('username', 'ne', None))
+        users = paginated(User, query=user_query)
         user_domain_events = []
         for user in users:
             user_date = user.date_confirmed.replace(tzinfo=pytz.UTC)

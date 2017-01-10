@@ -1,19 +1,18 @@
 # -*- coding: utf-8 -*-
-from nose.tools import *  # noqa
-import mock
-
 import httplib as http
-from tests.factories import AuthUserFactory
 
+import mock
 from framework.auth.decorators import Auth
-
-from website.util import api_url_for
+from nose.tools import *  # noqa
+from tests.factories import AuthUserFactory
 from website.addons.base.testing import views
 from website.addons.dataverse.model import DataverseProvider
 from website.addons.dataverse.serializer import DataverseSerializer
-from website.addons.dataverse.tests.utils import (
-    create_mock_connection, DataverseAddonTestCase, create_external_account,
-)
+from website.addons.dataverse.tests.utils import (DataverseAddonTestCase,
+                                                  create_external_account,
+                                                  create_mock_connection)
+from website.util import api_url_for
+
 
 class TestAuthViews(DataverseAddonTestCase):
 
@@ -31,7 +30,7 @@ class TestAuthViews(DataverseAddonTestCase):
 
         # Log states that node was deauthorized
         self.project.reload()
-        last_log = self.project.logs[-1]
+        last_log = self.project.logs.latest()
         assert_equal(last_log.action, 'dataverse_node_deauthorized')
         log_params = last_log.params
         assert_equal(log_params['node'], self.project._primary_key)
@@ -96,11 +95,11 @@ class TestConfigViews(DataverseAddonTestCase, views.OAuthAddonConfigViewsTestCas
         assert_equal(res.status_code, http.OK)
         self.project.reload()
         assert_equal(
-            self.project.logs[-1].action,
+            self.project.logs.latest().action,
             '{0}_dataset_linked'.format(self.ADDON_SHORT_NAME)
         )
         assert_equal(res.json['dataverse'], self.connection.get_dataverse('ALIAS3').title)
-        assert_equal(res.json['dataset'], 
+        assert_equal(res.json['dataset'],
             self.connection.get_dataverse('ALIAS3').get_dataset_by_doi('doi:12.3456/DVN/00003').title)
 
     def test_get_config(self):

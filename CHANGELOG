@@ -2,6 +2,49 @@
 Changelog
 *********
 
+0.104.0 (2016-12-19)
+====================
+- Various APIv2 fixes and improvements to support Preprints.
+
+0.103.0 (2016-12-14)
+====================
+- Update WaterButler Dropbox Provider to use Dropbox v2 API
+- Update figshare for ExternalAccount
+- Update Figshare provider to use v2 API
+- Figshare interface improvements to go with API v2 update.
+- Update analytics display on admin dashboard
+- Add log entry for authorizing figshare through project settings for the first time
+- Keep modal from freezing when Creating a second component
+- Fix attribute error splitting username in None for analytics task
+- Ensure registration doesn't fail if two files in Google Drive have the same name
+- Fix ModularODM KeyError with osfguidstoragefile
+- Add Ohio region for S3 bucket locations
+- Update Google Analytics Linker on osf.io
+
+Migrations
+----------
+python -m scripts.migration.migrate_googledoc_paths
+python -m scripts.migration.migrate_googledoc_paths --no-i-mean-it
+python -m scripts.figshare.migrate_folder_logs
+
+0.102.0 (2016-11-30)
+====================
+- Add support for branded preprint providers
+- API v2 Add license write capability for nodes
+- API v2 Add licenses to preprints
+- Warn users on attempt to delete a node that is attached to a preprint
+- Add branded login for preprint-based logins
+- Add branded emails if registering through a branded preprint service
+- API v2 Remove ability for users to create a preprint with a deleted node
+
+Migrations
+----------
+python -m scripts.migration.migrate_subjects_from_plos_to_bepress --file /code/BePress.json
+python -m scripts.migrate_logs_branded_preprints.py
+python -m scripts.populate_preprint_providers
+
+Post-release: python -m scripts.migration.migrate_meetings_preprints_to_preprintservices --auto 9000
+
 0.101.0 (2016-11-23)
 ====================
 - Fix renaming, download button, zip is broken on GitHub non-default branch
@@ -337,7 +380,7 @@ Migrations
 - Use HTTPS URLS on DOI links.
 - Set HttpOnly flag on cookies.
 - Replace jquery.cookie (deprecated) with js-cookie.
-- Improved error messaging for DropBox addon.
+- Improved error messaging for Dropbox addon.
 - More help text for Collections and Bookmarks.
 - Upgrade to invoke 0.13.0.
 

@@ -44,7 +44,6 @@ class TokenHasScope(permissions.BasePermission):
 
         # Scopes are returned as a space-delimited list in the token
         allowed_scopes = token.attributes['accessTokenScope']
-
         try:
             normalized_scopes = oauth_scopes.normalize_scopes(allowed_scopes)
         except KeyError:

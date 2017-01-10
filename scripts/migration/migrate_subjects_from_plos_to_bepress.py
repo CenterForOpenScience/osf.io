@@ -162,7 +162,37 @@ PLOS_TO_BP_MAP = {
     'Urban, Community and Regional Planning': 'Urban, Community and Regional Planning',
     'Virtual archaeology': 'Archaeological Anthropology',
     'Web-based applications': 'Computer Sciences',
-    "Women's health": "Women's Health"
+    "Women's health": "Women's Health",
+    'Gravitation': 'Cosmology, Relativity, and Gravity',
+    'Relativity': 'Cosmology, Relativity, and Gravity',
+    'Quantum mechanics': 'Quantum Physics',
+    'Technology regulations': 'Science and Technology Policy',
+    'Mathematics': 'Mathematics',
+    'Bilingual, Multilingual, and Multicultural Education': 'Bilingual, Multilingual, and Multicultural Education',
+    'Algebra': 'Algebra',
+    'Earth sciences': 'Earth Sciences',
+    'Mood disorders': 'Mental Disorders',
+    'Physical laws and principles': 'Other Physics',
+    'Law': 'Law',
+    'Behavioral disorders': 'Mental Disorders',
+    'Electromagnetism': 'Electromagnetics and Photonics',
+    'Electrochemistry': 'Other Chemistry',
+    'Number theory': 'Number Theory',
+    'Discrete mathematics': 'Discrete Mathematics and Combinatorics',
+    'Banking and Finance Law': 'Banking and Finance Law',
+    'Physics': 'Physics',
+    'Neural networks': 'Artificial Intelligence and Robotics',
+    'Digital Humanities': 'Digital Humanities',
+    'Multivariate data analysis': 'Multivariate Analysis',
+    'Mathematical physics': 'Physics',
+    'Gambling addiction': 'Mental and Social Health',
+    'Adolescent psychiatry': 'Psychiatry',
+    'Particle physics': 'Elementary Particles and Fields and String Theory',
+    'Biogeochemistry': 'Biogeochemistry',
+    'Drought': 'Climate',
+    'Conservation science': 'Natural Resources and Conservation',
+    'Appalachian Studies': 'Appalachian Studies',
+    'Data acquisition': 'Computer Sciences',
 }
 
 def validate_map_plos_correctness():
@@ -179,7 +209,7 @@ def validate_map_bepress_correctness(bp_set):
 
 def validate_map_completeness():
     logger.info('Validating completeness of PLOS->BePress mapping')
-    assert set(PLOS_TO_BP_MAP.keys()) == set([s['text'] for p in PreprintService.find() for hier in p.get_subjects() for s in hier]),\
+    assert set([s['text'] for p in PreprintService.find() for hier in p.get_subjects() for s in hier]).issubset(set(PLOS_TO_BP_MAP.keys())),\
         'Subjects not found in map: {}'.format(
             set([s['text'] for p in PreprintService.find() for hier in p.get_subjects() for s in hier]) - set(PLOS_TO_BP_MAP.keys())
         )

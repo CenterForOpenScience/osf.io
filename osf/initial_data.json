@@ -1,0 +1,819 @@
+[
+{
+    "model": "contenttypes.contenttype",
+    "fields": {
+        "app_label": "auth",
+        "model": "permission"
+    }
+},
+{
+    "model": "contenttypes.contenttype",
+    "fields": {
+        "app_label": "auth",
+        "model": "group"
+    }
+},
+{
+    "model": "contenttypes.contenttype",
+    "fields": {
+        "app_label": "auth",
+        "model": "user"
+    }
+},
+{
+    "model": "contenttypes.contenttype",
+    "fields": {
+        "app_label": "contenttypes",
+        "model": "contenttype"
+    }
+},
+{
+    "model": "contenttypes.contenttype",
+    "fields": {
+        "app_label": "sessions",
+        "model": "session"
+    }
+},
+{
+    "model": "contenttypes.contenttype",
+    "fields": {
+        "app_label": "admin",
+        "model": "logentry"
+    }
+},
+{
+    "model": "contenttypes.contenttype",
+    "fields": {
+        "app_label": "corsheaders",
+        "model": "corsmodel"
+    }
+},
+{
+    "model": "contenttypes.contenttype",
+    "fields": {
+        "app_label": "osf_models",
+        "model": "versioned"
+    }
+},
+{
+    "model": "contenttypes.contenttype",
+    "fields": {
+        "app_label": "osf_models",
+        "model": "guid"
+    }
+},
+{
+    "model": "contenttypes.contenttype",
+    "fields": {
+        "app_label": "osf_models",
+        "model": "blacklistguid"
+    }
+},
+{
+    "model": "contenttypes.contenttype",
+    "fields": {
+        "app_label": "osf_models",
+        "model": "metaschema"
+    }
+},
+{
+    "model": "contenttypes.contenttype",
+    "fields": {
+        "app_label": "osf_models",
+        "model": "tag"
+    }
+},
+{
+    "model": "contenttypes.contenttype",
+    "fields": {
+        "app_label": "osf_models",
+        "model": "user"
+    }
+},
+{
+    "model": "contenttypes.contenttype",
+    "fields": {
+        "app_label": "osf_models",
+        "model": "contributor"
+    }
+},
+{
+    "model": "contenttypes.contenttype",
+    "fields": {
+        "app_label": "osf_models",
+        "model": "embargo"
+    }
+},
+{
+    "model": "contenttypes.contenttype",
+    "fields": {
+        "app_label": "osf_models",
+        "model": "registrationapproval"
+    }
+},
+{
+    "model": "contenttypes.contenttype",
+    "fields": {
+        "app_label": "osf_models",
+        "model": "draftregistrationapproval"
+    }
+},
+{
+    "model": "contenttypes.contenttype",
+    "fields": {
+        "app_label": "osf_models",
+        "model": "embargoterminationapproval"
+    }
+},
+{
+    "model": "contenttypes.contenttype",
+    "fields": {
+        "app_label": "osf_models",
+        "model": "node"
+    }
+},
+{
+    "model": "contenttypes.contenttype",
+    "fields": {
+        "app_label": "osf_models",
+        "model": "nodelog"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can add permission",
+        "content_type": [
+            "auth",
+            "permission"
+        ],
+        "codename": "add_permission"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can change permission",
+        "content_type": [
+            "auth",
+            "permission"
+        ],
+        "codename": "change_permission"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can delete permission",
+        "content_type": [
+            "auth",
+            "permission"
+        ],
+        "codename": "delete_permission"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can add group",
+        "content_type": [
+            "auth",
+            "group"
+        ],
+        "codename": "add_group"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can change group",
+        "content_type": [
+            "auth",
+            "group"
+        ],
+        "codename": "change_group"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can delete group",
+        "content_type": [
+            "auth",
+            "group"
+        ],
+        "codename": "delete_group"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can add user",
+        "content_type": [
+            "auth",
+            "user"
+        ],
+        "codename": "add_user"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can change user",
+        "content_type": [
+            "auth",
+            "user"
+        ],
+        "codename": "change_user"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can delete user",
+        "content_type": [
+            "auth",
+            "user"
+        ],
+        "codename": "delete_user"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can add content type",
+        "content_type": [
+            "contenttypes",
+            "contenttype"
+        ],
+        "codename": "add_contenttype"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can change content type",
+        "content_type": [
+            "contenttypes",
+            "contenttype"
+        ],
+        "codename": "change_contenttype"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can delete content type",
+        "content_type": [
+            "contenttypes",
+            "contenttype"
+        ],
+        "codename": "delete_contenttype"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can add session",
+        "content_type": [
+            "sessions",
+            "session"
+        ],
+        "codename": "add_session"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can change session",
+        "content_type": [
+            "sessions",
+            "session"
+        ],
+        "codename": "change_session"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can delete session",
+        "content_type": [
+            "sessions",
+            "session"
+        ],
+        "codename": "delete_session"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can add log entry",
+        "content_type": [
+            "admin",
+            "logentry"
+        ],
+        "codename": "add_logentry"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can change log entry",
+        "content_type": [
+            "admin",
+            "logentry"
+        ],
+        "codename": "change_logentry"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can delete log entry",
+        "content_type": [
+            "admin",
+            "logentry"
+        ],
+        "codename": "delete_logentry"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can add cors model",
+        "content_type": [
+            "corsheaders",
+            "corsmodel"
+        ],
+        "codename": "add_corsmodel"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can change cors model",
+        "content_type": [
+            "corsheaders",
+            "corsmodel"
+        ],
+        "codename": "change_corsmodel"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can delete cors model",
+        "content_type": [
+            "corsheaders",
+            "corsmodel"
+        ],
+        "codename": "delete_corsmodel"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can add versioned",
+        "content_type": [
+            "osf_models",
+            "versioned"
+        ],
+        "codename": "add_versioned"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can change versioned",
+        "content_type": [
+            "osf_models",
+            "versioned"
+        ],
+        "codename": "change_versioned"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can delete versioned",
+        "content_type": [
+            "osf_models",
+            "versioned"
+        ],
+        "codename": "delete_versioned"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can add guid",
+        "content_type": [
+            "osf_models",
+            "guid"
+        ],
+        "codename": "add_guid"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can change guid",
+        "content_type": [
+            "osf_models",
+            "guid"
+        ],
+        "codename": "change_guid"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can delete guid",
+        "content_type": [
+            "osf_models",
+            "guid"
+        ],
+        "codename": "delete_guid"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can add black list guid",
+        "content_type": [
+            "osf_models",
+            "blacklistguid"
+        ],
+        "codename": "add_blacklistguid"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can change black list guid",
+        "content_type": [
+            "osf_models",
+            "blacklistguid"
+        ],
+        "codename": "change_blacklistguid"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can delete black list guid",
+        "content_type": [
+            "osf_models",
+            "blacklistguid"
+        ],
+        "codename": "delete_blacklistguid"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can add meta schema",
+        "content_type": [
+            "osf_models",
+            "metaschema"
+        ],
+        "codename": "add_metaschema"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can change meta schema",
+        "content_type": [
+            "osf_models",
+            "metaschema"
+        ],
+        "codename": "change_metaschema"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can delete meta schema",
+        "content_type": [
+            "osf_models",
+            "metaschema"
+        ],
+        "codename": "delete_metaschema"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can add tag",
+        "content_type": [
+            "osf_models",
+            "tag"
+        ],
+        "codename": "add_tag"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can change tag",
+        "content_type": [
+            "osf_models",
+            "tag"
+        ],
+        "codename": "change_tag"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can delete tag",
+        "content_type": [
+            "osf_models",
+            "tag"
+        ],
+        "codename": "delete_tag"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can add user",
+        "content_type": [
+            "osf_models",
+            "user"
+        ],
+        "codename": "add_user"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can change user",
+        "content_type": [
+            "osf_models",
+            "user"
+        ],
+        "codename": "change_user"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can delete user",
+        "content_type": [
+            "osf_models",
+            "user"
+        ],
+        "codename": "delete_user"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can add contributor",
+        "content_type": [
+            "osf_models",
+            "contributor"
+        ],
+        "codename": "add_contributor"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can change contributor",
+        "content_type": [
+            "osf_models",
+            "contributor"
+        ],
+        "codename": "change_contributor"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can delete contributor",
+        "content_type": [
+            "osf_models",
+            "contributor"
+        ],
+        "codename": "delete_contributor"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can add embargo",
+        "content_type": [
+            "osf_models",
+            "embargo"
+        ],
+        "codename": "add_embargo"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can change embargo",
+        "content_type": [
+            "osf_models",
+            "embargo"
+        ],
+        "codename": "change_embargo"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can delete embargo",
+        "content_type": [
+            "osf_models",
+            "embargo"
+        ],
+        "codename": "delete_embargo"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can add registration approval",
+        "content_type": [
+            "osf_models",
+            "registrationapproval"
+        ],
+        "codename": "add_registrationapproval"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can change registration approval",
+        "content_type": [
+            "osf_models",
+            "registrationapproval"
+        ],
+        "codename": "change_registrationapproval"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can delete registration approval",
+        "content_type": [
+            "osf_models",
+            "registrationapproval"
+        ],
+        "codename": "delete_registrationapproval"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can add draft registration approval",
+        "content_type": [
+            "osf_models",
+            "draftregistrationapproval"
+        ],
+        "codename": "add_draftregistrationapproval"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can change draft registration approval",
+        "content_type": [
+            "osf_models",
+            "draftregistrationapproval"
+        ],
+        "codename": "change_draftregistrationapproval"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can delete draft registration approval",
+        "content_type": [
+            "osf_models",
+            "draftregistrationapproval"
+        ],
+        "codename": "delete_draftregistrationapproval"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can add embargo termination approval",
+        "content_type": [
+            "osf_models",
+            "embargoterminationapproval"
+        ],
+        "codename": "add_embargoterminationapproval"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can change embargo termination approval",
+        "content_type": [
+            "osf_models",
+            "embargoterminationapproval"
+        ],
+        "codename": "change_embargoterminationapproval"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can delete embargo termination approval",
+        "content_type": [
+            "osf_models",
+            "embargoterminationapproval"
+        ],
+        "codename": "delete_embargoterminationapproval"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can add node",
+        "content_type": [
+            "osf_models",
+            "node"
+        ],
+        "codename": "add_node"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can change node",
+        "content_type": [
+            "osf_models",
+            "node"
+        ],
+        "codename": "change_node"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can delete node",
+        "content_type": [
+            "osf_models",
+            "node"
+        ],
+        "codename": "delete_node"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can add node log",
+        "content_type": [
+            "osf_models",
+            "nodelog"
+        ],
+        "codename": "add_nodelog"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can change node log",
+        "content_type": [
+            "osf_models",
+            "nodelog"
+        ],
+        "codename": "change_nodelog"
+    }
+},
+{
+    "model": "auth.permission",
+    "fields": {
+        "name": "Can delete node log",
+        "content_type": [
+            "osf_models",
+            "nodelog"
+        ],
+        "codename": "delete_nodelog"
+    }
+},
+{
+    "model": "osf_models.user",
+    "fields": {
+        "password": "pbkdf2_sha256$24000$pZxXuBPPAI5O$bP9lY92WzoaWRY6t6hglCrp6fOMnwXCLZM8BCyMqMwI=",
+        "last_login": null,
+        "is_superuser": true,
+        "username": "admin",
+        "first_name": "",
+        "last_name": "",
+        "email": "admin@cos.io",
+        "is_staff": true,
+        "is_active": true,
+        "date_joined": "2016-06-10T19:45:22.435Z",
+        "groups": [],
+        "user_permissions": []
+    }
+}
+]

@@ -1,14 +1,12 @@
 import collections
 
+from django.apps import apps
 from framework.postcommit_tasks.handlers import run_postcommit
-from modularodm import Q
 from modularodm.exceptions import NoResultsFound
 
-from website.models import Node, User
+from osf.modm_compat import Q
 from website.notifications import constants
-from website.notifications import model
 from website.notifications.exceptions import InvalidSubscriptionError
-from website.notifications.model import NotificationSubscription
 from website.project import signals
 
 from framework.celery_tasks import app
@@ -78,8 +76,10 @@ def remove_subscription(node):
 @run_postcommit(once_per_request=False, celery=True)
 @app.task(max_retries=5, default_retry_delay=60)
 def remove_subscription_task(node_id):
-    node = Node.load(node_id)
-    model.NotificationSubscription.remove(Q('owner', 'eq', node))
+    AbstractNode = apps.get_model('osf.AbstractNode')
+    NotificationSubscription = apps.get_model('osf.NotificationSubscription')
+    node = AbstractNode.load(node_id)
+    NotificationSubscription.remove(Q('node', 'eq', node))
     parent = node.parent_node
 
     if parent and parent.child_node_subscriptions:
@@ -96,11 +96,12 @@ def separate_users(node, user_ids):
     :param user_ids: List of ids, will also take and return User instances
     :return: list of subbed, list of removed user ids
     """
+    OSFUser = apps.get_model('osf.OSFUser')
     removed = []
     subbed = []
     for user_id in user_ids:
         try:
-            user = User.load(user_id)
+            user = OSFUser.load(user_id)
         except TypeError:
             user = user_id
         if node.has_permission(user, 'read'):
@@ -118,6 +119,7 @@ def users_to_remove(source_event, source_node, new_node):
     :param new_node: Node instance where a sub or new sub will be.
     :return: Dict of notification type lists with user_ids
     """
+    NotificationSubscription = apps.get_model('osf.NotificationSubscription')
     removed_users = {key: [] for key in constants.NOTIFICATION_TYPES}
     if source_node == new_node:
         return removed_users
@@ -127,7 +129,7 @@ def users_to_remove(source_event, source_node, new_node):
     if not old_sub and not old_node_sub:
         return removed_users
     for notification_type in constants.NOTIFICATION_TYPES:
-        users = getattr(old_sub, notification_type, []) + getattr(old_node_sub, notification_type, [])
+        users = list(getattr(old_sub, notification_type).values_list('guids___id', flat=True)) + list(getattr(old_node_sub, notification_type).values_list('guids___id', flat=True))
         subbed, removed_users[notification_type] = separate_users(new_node, users)
     return removed_users
 
@@ -142,21 +144,27 @@ def move_subscription(remove_users, source_event, source_node, new_event, new_no
     :param new_node: Instance of Node
     :return: Returns a NOTIFICATION_TYPES list of removed users without permissions
     """
+    NotificationSubscription = apps.get_model('osf.NotificationSubscription')
+    OSFUser = apps.get_model('osf.OSFUser')
     if source_node == new_node:
         return
     old_sub = NotificationSubscription.load(to_subscription_key(source_node._id, source_event))
     if not old_sub:
         return
     elif old_sub:
-        old_sub.update_fields(_id=to_subscription_key(new_node._id, new_event), event_name=new_event,
-                              owner=new_node)
+        old_sub._id = to_subscription_key(new_node._id, new_event)
+        old_sub.event_name = new_event
+        old_sub.owner = new_node
     new_sub = old_sub
+    new_sub.save()
     # Remove users that don't have permission on the new node.
     for notification_type in constants.NOTIFICATION_TYPES:
         if new_sub:
             for user_id in remove_users[notification_type]:
-                if user_id in getattr(new_sub, notification_type, []):
-                    user = User.load(user_id)
+                related_manager = getattr(new_sub, notification_type, None)
+                subscriptions = related_manager.all() if related_manager else []
+                if user_id in subscriptions:
+                    user = OSFUser.load(user_id)
                     new_sub.remove_user_from_subscription(user)
 
 
@@ -167,6 +175,7 @@ def get_configured_projects(user):
     :param user: modular odm User object
     :return: list of project ids for projects with no parent
     """
+    AbstractNode = apps.get_model('osf.AbstractNode')
     configured_project_ids = set()
     user_subscriptions = get_all_user_subscriptions(user)
 
@@ -177,15 +186,15 @@ def get_configured_projects(user):
         node = subscription.owner
 
         if (
-            not isinstance(node, Node) or
-            (user in subscription.none and not node.parent_id) or
+            not isinstance(node, AbstractNode) or
+            (subscription.none.filter(id=user.id).exists() and not node.parent_id) or
             node._id not in user.notifications_configured or
             node.is_collection
         ):
             continue
 
         while node.parent_id and not node.is_deleted:
-            node = Node.load(node.parent_id)
+            node = node.parent_node
 
         if not node.is_deleted:
             configured_project_ids.add(node._id)
@@ -196,15 +205,16 @@ def get_configured_projects(user):
 def check_project_subscriptions_are_all_none(user, node):
     node_subscriptions = get_all_node_subscriptions(user, node)
     for s in node_subscriptions:
-        if user not in s.none:
+        if not s.none.filter(id=user.id).exists():
             return False
     return True
 
 
 def get_all_user_subscriptions(user):
     """ Get all Subscription objects that the user is subscribed to"""
+    NotificationSubscription = apps.get_model('osf.NotificationSubscription')
     for notification_type in constants.NOTIFICATION_TYPES:
-        query = NotificationSubscription.find(Q(notification_type, 'eq', user._id))
+        query = NotificationSubscription.find(Q(notification_type, 'eq', user.pk))
         for subscription in query:
             yield subscription
 
@@ -230,10 +240,11 @@ def format_data(user, node_ids):
     :param node_ids: list of parent project ids
     :return: treebeard-formatted data
     """
+    AbstractNode = apps.get_model('osf.AbstractNode')
     items = []
 
     for node_id in node_ids:
-        node = Node.load(node_id)
+        node = AbstractNode.load(node_id)
         assert node, '{} is not a valid Node.'.format(node_id)
 
         can_read = node.has_permission(user, 'read')
@@ -275,7 +286,7 @@ def format_data(user, node_ids):
                 'title': node.title if can_read else 'Private Project',
             },
             'children': children,
-            'kind': 'folder' if not node.node__parent or not node.parent_node.has_permission(user, 'read') else 'node',
+            'kind': 'folder' if not node.parent_node or not node.parent_node.has_permission(user, 'read') else 'node',
             'nodeType': node.project_or_component,
             'category': node.category,
             'permissions': {
@@ -305,7 +316,8 @@ def format_user_subscriptions(user):
 
 def format_file_subscription(user, node_id, path, provider):
     """Format a single file event"""
-    node = Node.load(node_id)
+    AbstractNode = apps.get_model('osf.AbstractNode')
+    node = AbstractNode.load(node_id)
     wb_path = path.lstrip('/')
     for subscription in get_all_node_subscriptions(user, node):
         if wb_path in getattr(subscription, 'event_name'):
@@ -331,7 +343,7 @@ def serialize_event(user, subscription=None, node=None, event_description=None):
                 event_type = sub_type
     else:
         event_type = event_description
-    if node and node.node__parent:
+    if node and node.parent_node:
         notification_type = 'adopt_parent'
     elif event_type.startswith('global_'):
         notification_type = 'email_transactional'
@@ -339,7 +351,7 @@ def serialize_event(user, subscription=None, node=None, event_description=None):
         notification_type = 'none'
     if subscription:
         for n_type in constants.NOTIFICATION_TYPES:
-            if user in getattr(subscription, n_type):
+            if getattr(subscription, n_type).filter(id=user.id).exists():
                 notification_type = n_type
     return {
         'event': {
@@ -362,19 +374,22 @@ def get_parent_notification_type(node, event, user):
     :param obj user: modular odm User object
     :return: str notification type (e.g. 'email_transactional')
     """
-    if node and isinstance(node, Node) and node.node__parent and node.parent_node.has_permission(user, 'read'):
-        for parent in node.node__parent:
-            key = to_subscription_key(parent._id, event)
-            try:
-                subscription = model.NotificationSubscription.find_one(Q('_id', 'eq', key))
-            except NoResultsFound:
-                return get_parent_notification_type(parent, event, user)
+    AbstractNode = apps.get_model('osf.AbstractNode')
+    NotificationSubscription = apps.get_model('osf.NotificationSubscription')
 
-            for notification_type in constants.NOTIFICATION_TYPES:
-                if user in getattr(subscription, notification_type):
-                    return notification_type
-            else:
-                return get_parent_notification_type(parent, event, user)
+    if node and isinstance(node, AbstractNode) and node.parent_node and node.parent_node.has_permission(user, 'read'):
+        parent = node.parent_node
+        key = to_subscription_key(parent._id, event)
+        try:
+            subscription = NotificationSubscription.find_one(Q('_id', 'eq', key))
+        except NoResultsFound:
+            return get_parent_notification_type(parent, event, user)
+
+        for notification_type in constants.NOTIFICATION_TYPES:
+            if getattr(subscription, notification_type).filter(id=user.id).exists():
+                return notification_type
+        else:
+            return get_parent_notification_type(parent, event, user)
     else:
         return None
 
@@ -388,7 +403,8 @@ def get_global_notification_type(global_subscription, user):
     :return: str notification type (e.g. 'email_transactional')
     """
     for notification_type in constants.NOTIFICATION_TYPES:
-        if user in getattr(global_subscription, notification_type):
+        # TODO Optimize me
+        if getattr(global_subscription, notification_type).filter(id=user.id).exists():
             return notification_type
 
 
@@ -406,12 +422,14 @@ def check_if_all_global_subscriptions_are_none(user):
 
 
 def subscribe_user_to_global_notifications(user):
+    NotificationSubscription = apps.get_model('osf.NotificationSubscription')
     notification_type = 'email_transactional'
     user_events = constants.USER_SUBSCRIPTIONS_AVAILABLE
     for user_event in user_events:
         user_event_id = to_subscription_key(user._id, user_event)
 
         subscription = NotificationSubscription(_id=user_event_id, owner=user, event_name=user_event)
+        subscription.save()  # Need to save in order to access m2m fields
         subscription.add_user_to_subscription(user, notification_type)
         subscription.save()
 
@@ -421,10 +439,7 @@ def subscribe_user_to_notifications(node, user):
 
     :param user: User to subscribe to notifications
     """
-
-    if node.institution_id:
-        raise InvalidSubscriptionError('Institutions are invalid targets for subscriptions')
-
+    NotificationSubscription = apps.get_model('osf.NotificationSubscription')
     if node.is_collection:
         raise InvalidSubscriptionError('Collections are invalid targets for subscriptions')
 
@@ -449,6 +464,8 @@ def subscribe_user_to_notifications(node, user):
             if not(node and node.parent_node and not subscription and node.creator == user):
                 if not subscription:
                     subscription = NotificationSubscription(_id=event_id, owner=node, event_name=event)
+                    # Need to save here in order to access m2m fields
+                    subscription.save()
                 if global_subscription:
                     global_notification_type = get_global_notification_type(global_subscription, user)
                     subscription.add_user_to_subscription(user, global_notification_type)
