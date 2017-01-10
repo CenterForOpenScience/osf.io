@@ -158,7 +158,7 @@
 
             ga('create', ${ settings.GOOGLE_ANALYTICS_ID | sjson, n }, 'auto', {'allowLinker': true});
             ga('require', 'linker');
-            ga('linker:autoLink', ['centerforopenscience.org'] );
+            ga('linker:autoLink', ['centerforopenscience.org', 'cos.io'] );
             ga('set', 'dimension1', ${user_hash(user_id) | sjson, n});
             ga('set', 'dimension2', ${create_timestamp() | sjson, n});
             ga('send', 'pageview');

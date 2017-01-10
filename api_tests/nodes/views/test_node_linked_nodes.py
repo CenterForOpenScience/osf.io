@@ -2,10 +2,12 @@ from nose.tools import *  # flake8: noqa
 
 from api.base.settings.defaults import API_BASE
 from tests.base import ApiTestCase
-from tests.factories import (
+from osf_tests.factories import (
     NodeFactory,
     AuthUserFactory
 )
+from website.project.signals import contributor_removed
+from website.util import disconnected_from_listeners
 from framework.auth.core import Auth
 
 
@@ -216,7 +218,7 @@ class TestNodeRelationshipNodeLinks(ApiTestCase):
         assert_equal(res.json['data'], [])
 
     def test_delete_not_present(self):
-        number_of_links = len(self.linking_node.nodes)
+        number_of_links = self.linking_node.linked_nodes.count()
         res = self.app.delete_json_api(
             self.url, self.payload([self.other_node._id]),
             auth=self.user.auth
@@ -229,7 +231,7 @@ class TestNodeRelationshipNodeLinks(ApiTestCase):
         assert_equal(len(res.json['data']), number_of_links)
 
     def test_delete_invalid_payload(self):
-        number_of_links = len(self.linking_node.nodes)
+        number_of_links = self.linking_node.linked_nodes.count()
         # No id in datum
         payload = {'data': [{'type': 'linked_nodes'}]}
         res = self.app.delete_json_api(
@@ -353,7 +355,7 @@ class TestNodeLinkedNodes(ApiTestCase):
         self.linking_node.add_pointer(self.public_node, auth=self.auth)
         self.linking_node.save()
         self.url = '/{}nodes/{}/linked_nodes/'.format(API_BASE, self.linking_node._id)
-        self.node_ids = [pointer.node._id for pointer in self.linking_node.nodes_pointer]
+        self.node_ids = self.linking_node.linked_nodes.values_list('guids___id', flat=True)
 
     def test_linked_nodes_returns_everything(self):
         res = self.app.get(self.url, auth=self.user.auth)
@@ -388,8 +390,11 @@ class TestNodeLinkedNodes(ApiTestCase):
         for node_id in self.node_ids:
             assert_in(node_id, nodes_returned)
 
-        self.linked_node2.remove_contributor(user, auth=self.auth)
-        self.public_node.remove_contributor(user, auth=self.auth)
+        # Disconnect contributor_removed so that we don't check in files
+        # We can remove this when StoredFileNode is implemented in osf-models
+        with disconnected_from_listeners(contributor_removed):
+            self.linked_node2.remove_contributor(user, auth=self.auth)
+            self.public_node.remove_contributor(user, auth=self.auth)
 
         res = self.app.get(
             '/{}nodes/{}/linked_nodes/'.format(API_BASE, new_linking_node._id),

@@ -13,11 +13,9 @@ from api.registrations.serializers import RegistrationSerializer
 from api.search.serializers import SearchSerializer
 from api.users.serializers import UserSerializer
 
-from framework.auth.core import User
 from framework.auth.oauth_scopes import CoreScopes
 
-from website.files.models import FileNode
-from website.models import Node
+from osf.models import FileNode, AbstractNode as Node, OSFUser as User
 from website.search import search
 from website.search.exceptions import MalformedQueryError
 from website.search.util import build_query

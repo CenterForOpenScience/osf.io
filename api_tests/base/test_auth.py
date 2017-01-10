@@ -4,6 +4,7 @@ Tests related to authenticating API requests
 
 import mock
 
+import pytest
 from nose.tools import *  # flake8: noqa
 
 from framework.auth import cas, core
@@ -12,7 +13,7 @@ from website.addons.twofactor.tests import _valid_code
 from website.settings import API_DOMAIN
 
 from tests.base import ApiTestCase
-from tests.factories import AuthUserFactory, ProjectFactory, UserFactory
+from osf_tests.factories import AuthUserFactory, ProjectFactory, UserFactory
 
 from api.base.settings import API_BASE
 

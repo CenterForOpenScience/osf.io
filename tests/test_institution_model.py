@@ -1,6 +1,6 @@
 from nose.tools import *  # flake8: noqa
 from tests.base import OsfTestCase
-from tests.factories import InstitutionFactory
+from osf_tests.factories import InstitutionFactory
 
 from website.models import Institution, Node
 

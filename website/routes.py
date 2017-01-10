@@ -44,6 +44,7 @@ from website.addons.base import views as addon_views
 from website.discovery import views as discovery_views
 from website.conferences import views as conference_views
 from website.preprints import views as preprint_views
+from website.registries import views as registries_views
 from website.institutions import views as institution_views
 from website.notifications import views as notification_views
 
@@ -53,8 +54,7 @@ def get_globals():
     OSFWebRenderer.
     """
     user = _get_current_user()
-
-    user_institutions = [{'id': inst._id, 'name': inst.name, 'logo_path': inst.logo_path_rounded_corners} for inst in user.affiliated_institutions] if user else []
+    user_institutions = [{'id': inst._id, 'name': inst.name, 'logo_path': inst.logo_path_rounded_corners} for inst in user.affiliated_institutions.all()] if user else []
     location = geolite2.lookup(request.remote_addr) if request.remote_addr else None
     if request.host_url != settings.DOMAIN:
         try:
@@ -68,7 +68,7 @@ def get_globals():
         'private_link_anonymous': is_private_link_anonymous_view(),
         'user_name': user.username if user else '',
         'user_full_name': user.fullname if user else '',
-        'user_id': user._primary_key if user else '',
+        'user_id': user._id if user else '',
         'user_locale': user.locale if user and user.locale else '',
         'user_timezone': user.timezone if user and user.timezone else '',
         'user_url': user.url if user else '',
@@ -125,7 +125,7 @@ def get_globals():
 def is_private_link_anonymous_view():
     try:
         # Avoid circular import
-        from website.project.model import PrivateLink
+        from osf.models import PrivateLink
         return PrivateLink.find_one(
             Q('key', 'eq', request.args.get('view_only'))
         ).anonymous
@@ -375,6 +375,13 @@ def make_url_map(app):
             'get',
             preprint_views.preprint_landing_page,
             OsfWebRenderer('public/pages/preprint_landing.mako', trust=False),
+        ),
+
+        Rule(
+            '/registries/',
+            'get',
+            registries_views.registries_landing_page,
+            OsfWebRenderer('public/pages/registries_landing.mako', trust=False),
         ),
 
         Rule(

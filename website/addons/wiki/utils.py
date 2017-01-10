@@ -203,7 +203,7 @@ def serialize_wiki_settings(user, node_ids):
                 'title': node.title if can_read else 'Private Project',
             },
             'children': children,
-            'kind': 'folder' if not node.node__parent or not node.parent_node.has_permission(user, 'read') else 'node',
+            'kind': 'folder' if not node.parent_node or not node.parent_node.has_permission(user, 'read') else 'node',
             'nodeType': node.project_or_component,
             'category': node.category,
             'permissions': {
