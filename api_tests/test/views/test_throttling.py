@@ -5,7 +5,7 @@ from nose.tools import *  # flake8: noqa
 from api.base.settings.defaults import API_BASE
 
 from tests.base import ApiTestCase
-from tests.factories import AuthUserFactory
+from osf_tests.factories import AuthUserFactory
 
 
 class TestThrottling(ApiTestCase):

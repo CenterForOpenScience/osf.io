@@ -57,6 +57,8 @@ ANONYMIZED_TITLES = ['Authors']
 LOAD_BALANCER = False
 PROXY_ADDRS = []
 
+USE_POSTGRES = True
+
 # May set these to True in local.py for development
 DEV_MODE = False
 DEBUG_MODE = False
@@ -263,8 +265,6 @@ KEEN = {
 SENTRY_DSN = None
 SENTRY_DSN_JS = None
 
-
-# TODO: Delete me after merging GitLab
 MISSING_FILE_NAME = 'untitled'
 
 # Project Organizer
@@ -311,7 +311,8 @@ EZID_PASSWORD = 'changeme'
 EZID_FORMAT = '{namespace}osf.io/{guid}'
 
 SHARE_REGISTRATION_URL = ''
-SHARE_URL = 'https://share.osf.io/'
+SHARE_URL = None
+SHARE_API_TOKEN = None  # Required to send project updates to SHARE
 
 CAS_SERVER_URL = 'http://localhost:8080'
 MFR_SERVER_URL = 'http://localhost:7778'
@@ -412,6 +413,9 @@ CELERY_IMPORTS = (
     'scripts.approve_embargo_terminations',
     'scripts.triggered_mails',
     'scripts.send_queued_mails',
+    'scripts.analytics.run_keen_summaries',
+    'scripts.analytics.run_keen_snapshots',
+    'scripts.analytics.run_keen_events',
 )
 
 # Modules that need metrics and release requirements
@@ -493,8 +497,8 @@ else:
         },
         'run_keen_summaries': {
             'task': 'scripts.analytics.run_keen_summaries',
-            'schedule': crontab(minute=00, hour=2),  # Daily 2:00 a.m.
-            'kwargs': {'date': (datetime.datetime.utcnow() - datetime.timedelta(1)).date()}
+            'schedule': crontab(minute=00, hour=1),  # Daily 1:00 a.m.
+            'kwargs': {'yesterday': True}
         },
         'run_keen_snapshots': {
             'task': 'scripts.analytics.run_keen_snapshots',
@@ -502,8 +506,8 @@ else:
         },
         'run_keen_events': {
             'task': 'scripts.analytics.run_keen_events',
-            'schedule': crontab(minute=0, hour=4),
-            'kwargs': {'date': (datetime.datetime.utcnow() - datetime.timedelta(1)).date()}
+            'schedule': crontab(minute=0, hour=4),  # Daily 4:00 a.m.
+            'kwargs': {'yesterday': True}
         }
     }
 
@@ -581,6 +585,10 @@ ESI_MEDIA_TYPES = {'application/vnd.api+json', 'application/json'}
 
 # Used for gathering meta information about the current build
 GITHUB_API_TOKEN = None
+
+# switch for disabling things that shouldn't happen during
+# the modm to django migration
+RUNNING_MIGRATION = False
 
 # External Identity Provider
 EXTERNAL_IDENTITY_PROFILE = {
@@ -1777,3 +1785,6 @@ SHARE_API_TOKEN = None
 
 # number of nodes that need to be affiliated with an institution before the institution logo is shown on the dashboard
 INSTITUTION_DISPLAY_NODE_THRESHOLD = 5
+
+# refresh campaign every 5 minutes
+CAMPAIGN_REFRESH_THRESHOLD = 5 * 60  # 5 minutes in seconds

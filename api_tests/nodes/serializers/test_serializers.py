@@ -6,7 +6,7 @@ from dateutil.parser import parse as parse_date
 
 from tests.base import DbTestCase, assert_datetime_equal
 from tests.utils import make_drf_request_with_version
-from tests.factories import UserFactory, NodeFactory, RegistrationFactory, ProjectFactory
+from osf_tests.factories import UserFactory, NodeFactory, RegistrationFactory, ProjectFactory
 
 from framework.auth import Auth
 from api.nodes.serializers import NodeSerializer
@@ -34,7 +34,7 @@ class TestNodeSerializer(DbTestCase):
         assert_equal(attributes['title'], node.title)
         assert_equal(attributes['description'], node.description)
         assert_equal(attributes['public'], node.is_public)
-        assert_equal(attributes['tags'], [str(each) for each in node.tags])
+        assert_equal(attributes['tags'], [str(each.name) for each in node.tags.all()])
         assert_equal(attributes['current_user_can_comment'], False)
         assert_equal(attributes['category'], node.category)
         assert_equal(attributes['registration'], node.is_registration)
@@ -91,7 +91,7 @@ class TestNodeRegistrationSerializer(DbTestCase):
 
     def test_serialization(self):
         user = UserFactory()
-        req = make_drf_request_with_version(version='2.0')
+        req = make_drf_request_with_version(version='2.2')
         reg = RegistrationFactory(creator=user)
         result = RegistrationSerializer(reg, context={'request': req}).data
         data = result['data']

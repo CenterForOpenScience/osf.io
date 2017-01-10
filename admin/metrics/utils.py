@@ -1,7 +1,8 @@
 """
 Metrics scripts
 """
-from datetime import datetime, timedelta
+from django.db.models import timezone
+from datetime import timedelta
 from modularodm import Q
 from website.project.model import User, Node
 from website.project.utils import CONTENT_NODE_QUERY
@@ -22,7 +23,7 @@ def get_list_of_dates(start, end):
 
 def get_previous_midnight(time=None):
     if time is None:
-        time = datetime.utcnow()
+        time = timezone.now()
     return time - timedelta(  # As close to midnight utc as possible
         hours=time.hour,
         minutes=time.minute,
@@ -69,17 +70,14 @@ def get_days_statistics(time, latest=None):
 
 
 def get_projects(time=None, public=False, registered=False):
-    query = (
-        Q('parent_node', 'eq', None) &
-        CONTENT_NODE_QUERY
-    )
+    query = CONTENT_NODE_QUERY
     if time:
         query = query & Q('date_created', 'lt', time)
     if public:
         query = query & Q('is_public', 'eq', True)
     if registered:
         query = query & Q('is_registration', 'eq', True)
-    return Node.find(query).count()
+    return Node.find(query).get_roots().count()
 
 
 def get_active_user_count(time):

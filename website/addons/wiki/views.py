@@ -26,6 +26,7 @@ from website.project.decorators import (
 )
 
 from website.exceptions import NodeStateError
+from osf.exceptions import ValidationError
 
 from .exceptions import (
     NameEmptyError,
@@ -462,6 +463,11 @@ def project_wiki_rename(auth, wname, **kwargs):
         raise WIKI_PAGE_CONFLICT_ERROR
     except PageNotFoundError:
         raise WIKI_PAGE_NOT_FOUND_ERROR
+    except ValidationError as err:
+        raise HTTPError(http.BAD_REQUEST, data=dict(
+            message_short='Invalid request',
+            message_long=err.messages[0]
+        ))
     else:
         sharejs_uuid = wiki_utils.get_sharejs_uuid(node, new_wiki_name)
         wiki_utils.broadcast_to_sharejs('redirect', sharejs_uuid, node, new_wiki_name)

@@ -7,7 +7,7 @@ from nose.tools import *  # noqa
 from modularodm import Q
 
 from tests.base import OsfTestCase
-from tests import factories
+from osf_tests import factories
 from tests.utils import mock_auth
 
 from framework.exceptions import HTTPError

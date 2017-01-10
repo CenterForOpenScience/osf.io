@@ -7,12 +7,16 @@
 - COS Development Docs: http://cosdev.readthedocs.org/
 
 ## Table of contents
+- **Recommended:** [Running the OSF with docker-compose](#docker-compose)
 - [Help](#help)
-- [Running the OSF](#running-the-osf)
+- [Running the OSF locally](#running-the-osf)
 - [Running the API Server] (#running-the-api-server)
 - [Installation](#installation)
 - [Common Development Tasks](#common-development-tasks)
 
+
+## Docker Compose
+There is now a docker-compose.yml that will stand up a basic version of the OSF using PostgreSQL, fakeCAS, Waterbutler, MFR, the OSF api, and the OSF Flask application. This removes the need for users to setup the dependencies and services on their local machine allowing them all to be run in containers. The instructions for setting up the docker-compose version of the OSF are [here](README-docker-compose.md). Following these instructions means you will not need the rest of the instructions in this document.
 
 
 ## Help
@@ -26,6 +30,8 @@ The OSF `invoke` script provides several useful commands. For more information, 
 `invoke --list`
 
 ## Running the OSF
+
+**NOTICE**: The recommended way to run the OSF for development is now through [docker-compose](#docker-compose). Running locally is deprecated, unsupported, and these docs will be removed soon.
 
 If you have already installed all of the required services and Python packages, and activated your virtual environment,
 then you can start a working local test server with the following sequence:
@@ -60,7 +66,7 @@ then you can start a working local API server with the sequence delineated under
 invoke apiserver
 ```
 
-Browse to `localhost:8000/v2/` in your browser to go to the root of the browsable API. If the page looks strange, 
+Browse to `localhost:8000/v2/` in your browser to go to the root of the browsable API. If the page looks strange,
 run `python manage.py collectstatic` to ensure that CSS files are deposited in the correct location.
 
 
@@ -78,11 +84,11 @@ This will make your browser automatically refresh whenever a code change is made
 
 Some functionality depends on additional services that will not be started using the sequence above.
 For many development tasks, it is sufficient to run the OSF without these services, except as noted below.
-Some additional installation will be needed to use these features (where noted), in which case updates will also need 
+Some additional installation will be needed to use these features (where noted), in which case updates will also need
 to be installed separately.
 
 #### Authentication
-An authentication server (either CAS or FakeCAS) must be available in order to log in to the OSF while running locally. 
+An authentication server (either CAS or FakeCAS) must be available in order to log in to the OSF while running locally.
 This must be installed separately from the OSF. See [running the OSF](#running-the-osf) for details.
 
 #### Waterbutler
@@ -94,9 +100,9 @@ installed. Consult the Waterbutler
 
 #### Modular File Renderer
 
-The Modular File Renderer (MFR) is used to render uploaded files to HTML via an iFrame so that they can be 
-viewed directly on the OSF. Files will not be rendered if the MFR is not running. Consult the 
-MFR [repository] (https://github.com/CenterForOpenScience/modular-file-renderer) for information on how to install 
+The Modular File Renderer (MFR) is used to render uploaded files to HTML via an iFrame so that they can be
+viewed directly on the OSF. Files will not be rendered if the MFR is not running. Consult the
+MFR [repository] (https://github.com/CenterForOpenScience/modular-file-renderer) for information on how to install
 and run the MFR.
 
 #### Celery Beat
@@ -112,7 +118,7 @@ invoke requirements --metrics
 
 #### Sharejs
 
-ShareJS is used for collaborative editing features, such as the OSF wiki. It will be installed by the OSF installer 
+ShareJS is used for collaborative editing features, such as the OSF wiki. It will be installed by the OSF installer
 script, but must be run separately. To run a local ShareJS server:
 
 ```bash
@@ -131,7 +137,7 @@ $ invoke update_citation_styles
 
 These instructions assume a working knowledge of package managers and the command line.
 For a detailed step-by-step walkthrough suitable for new programmers, consult the
-[COS Development Docs](http://cosdev.readthedocs.org/en/latest/osf/setup.html). See [optional extras](#optional-extras) 
+[COS Development Docs](http://cosdev.readthedocs.org/en/latest/osf/setup.html). See [optional extras](#optional-extras)
 for information about services not included in the automated install process below.
 
 ### Pre-requisites
@@ -150,10 +156,10 @@ The following packages must be installed before running the automatic setup scri
     - virtualenv (`pip install virtualenv`)
 
 ##### El Capitan and newer
-If you are using Mac OS X >= 10.11 (El Capitan), you will also 
-[need](http://lists.apple.com/archives/macnetworkprog/2015/Jun/msg00025.html) to install OpenSSL headers 
+If you are using Mac OS X >= 10.11 (El Capitan), you will also
+[need](http://lists.apple.com/archives/macnetworkprog/2015/Jun/msg00025.html) to install OpenSSL headers
 and [set](http://cryptography.readthedocs.org/en/latest/installation/#building-cryptography-on-os-x) some configuration:
-```bash 
+```bash
 brew install openssl
 env LDFLAGS="-L$(brew --prefix openssl)/lib" CFLAGS="-I$(brew --prefix openssl)/include" pip install cryptography
 ```
@@ -340,7 +346,7 @@ Install Elasticsearch to use search features.
 ##### Mac OSX
 
 ```bash
-$ brew install elasticsearch
+$ brew install elasticsearch@1.7
 ```
 _note: Oracle JDK 7 must be installed for elasticsearch to run_
 
@@ -493,7 +499,7 @@ Use the following command to update your requirements and build the asset bundle
 $ inv assets -dw
 ```
 
-The -w option puts you in "watch" mode: the script will continue running so that assets will be 
+The -w option puts you in "watch" mode: the script will continue running so that assets will be
 built when a file changes.
 
 ### Setting up the Admin Module

@@ -5,6 +5,7 @@ import sys
 import logging
 import datetime
 import dateutil
+from django.utils import timezone
 from modularodm import Q
 from website.app import init_app
 from website import models
@@ -50,7 +51,7 @@ def get_new_and_noteworthy_nodes():
     Mainly: public top-level projects with the greatest number of unique log actions
 
     """
-    today = datetime.datetime.now()
+    today = timezone.now()
     last_month = (today - dateutil.relativedelta.relativedelta(months=1))
     data = db.node.find({'date_created': {'$gt': last_month}, 'is_public': True, 'is_registration': False, 'parent_node': None,
                          'is_deleted': False, 'is_collection': False})

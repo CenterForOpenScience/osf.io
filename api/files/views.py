@@ -4,8 +4,8 @@ from rest_framework.exceptions import NotFound
 
 from framework.auth.oauth_scopes import CoreScopes
 
-from website.models import Guid
-from website.files.models import (
+from osf.models import (
+    Guid,
     FileNode,
     FileVersion,
     StoredFileNode
@@ -399,7 +399,7 @@ class FileVersionsList(JSONAPIBaseView, generics.ListAPIView, FileMixin):
     view_name = 'file-versions'
 
     def get_queryset(self):
-        return self.get_file().versions
+        return self.get_file().versions.all()
 
 
 def node_from_version(request, view, obj):

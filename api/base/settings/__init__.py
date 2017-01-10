@@ -11,7 +11,6 @@ import warnings
 import itertools
 
 from .defaults import *  # noqa
-from website.settings import DEV_MODE
 
 try:
     from .local import *  # noqa
@@ -27,7 +26,7 @@ if not DEV_MODE and os.environ.get('DJANGO_SETTINGS_MODULE') == 'api.base.settin
 
 def load_institutions():
     global INSTITUTION_ORIGINS_WHITELIST
-    from website import models
+    from osf import models
     INSTITUTION_ORIGINS_WHITELIST = tuple(domain.lower() for domain in itertools.chain(*[
         institution.domains
         for institution in models.Institution.find()

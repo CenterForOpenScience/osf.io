@@ -9,7 +9,7 @@
         <img class="addon-icon" src=${addon_icon_url}>
         <span data-bind="text: properName"></span>
         <small>
-            <a href="#s3InputCredentials" data-toggle="modal" class="pull-right text-primary">Connect Account</a>
+            <a href="#s3InputCredentials" data-toggle="modal" class="pull-right text-primary">Connect or Reauthorize Account</a>
         </small>
     </h4>
 
