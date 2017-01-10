@@ -9,6 +9,8 @@ volumes:
     external: false
   elasticsearch_data_vol:
     external: false
+  rabbitmq_vol:
+    external: false
   preprints_dist_vol:
     external: false
   mfr_requirements_vol:
@@ -16,8 +18,6 @@ volumes:
   wb_requirements_vol:
     external: false
   wb_osfstoragecache_vol:
-    external: false
-  rabbitmq_mnesia_vol:
     external: false
   osf_requirements_vol:
     external: false
@@ -59,6 +59,24 @@ services:
       TOKU_HUGE_PAGES_OK: 1
     volumes:
       - tokumx_data_vol:/data/db
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - 5672:5672
+      - 15672:15672
+    volumes:
+      - rabbitmq_vol:/var/lib/rabbitmq
+
+#  flower:
+#    image: quay.io/centerforopenscience/osf:develop
+#    command: python manage.py celery flower
+#    depends_on:
+#      - rabbitmq
+#    ports:
+#      - 5555:5555
+#    environment:
+#      BROKER_URL: amqp://guest:guest@rabbitmq:5672/
 
 
   #########################
@@ -142,24 +160,6 @@ services:
   #######
   # OSF #
   #######
-
-  rabbitmq:
-    image: rabbitmq:3-management
-    ports:
-      - 5672:5672
-      - 15672:15672
-    volumes:
-      - rabbitmq_mnesia_vol:/var/lib/rabbitmq/mnesia
-
-#  flower:
-#    image: quay.io/centerforopenscience/osf:develop
-#    command: python manage.py celery flower
-#    depends_on:
-#      - rabbitmq
-#    ports:
-#      - 5555:5555
-#    environment:
-#      BROKER_URL: amqp://guest:guest@rabbitmq:5672/
 
   requirements:
     image: quay.io/centerforopenscience/osf:develop
