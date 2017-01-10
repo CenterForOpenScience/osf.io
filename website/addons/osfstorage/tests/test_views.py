@@ -728,7 +728,7 @@ class TestFileTags(StorageTestCase):
 
         assert_equal(res.status_code, 200)
         self.node.reload()
-        assert_equal(self.node.logs[-1].action, 'file_tag_added')
+        assert_equal(self.node.logs.latest().action, 'file_tag_added')
 
 
     @mock.patch('website.files.models.osfstorage.OsfStorageFile.add_tag_log')
@@ -755,7 +755,7 @@ class TestFileTags(StorageTestCase):
 
         assert_equal(res.status_code, 200)
         self.node.reload()
-        assert_equal(self.node.logs[-1].action, 'file_tag_removed')
+        assert_equal(self.node.logs.latest().action, 'file_tag_removed')
 
     @mock.patch('website.files.models.osfstorage.OsfStorageFile.add_tag_log')
     def test_file_remove_tag_fail_doesnt_create_log(self, mock_log):

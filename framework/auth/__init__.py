@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-
-from datetime import datetime
 import uuid
+
+from django.utils import timezone
 
 from framework import bcrypt
 from framework.auth import signals
@@ -44,7 +44,7 @@ def authenticate(user, access_token, response):
         'auth_user_fullname': user.fullname,
         'auth_user_access_token': access_token,
     })
-    user.date_last_login = datetime.utcnow()
+    user.date_last_login = timezone.now()
     user.clean_email_verifications()
     user.update_affiliated_institutions_by_email_domain()
     user.save()
@@ -128,5 +128,6 @@ def get_or_create_user(fullname, address, reset_password=True, is_spam=False):
         if password:
             user.verification_key_v2 = generate_verification_key(verification_type='password')
         if is_spam:
-            user.system_tags.append('is_spam')
+            user.save()  # need to save in order to add a tag
+            user.add_system_tag('is_spam')
         return user, True

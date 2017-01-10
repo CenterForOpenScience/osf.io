@@ -2,7 +2,7 @@ import bleach
 
 from rest_framework import serializers as ser
 from modularodm import Q
-from modularodm.exceptions import ValidationValueError
+from osf.exceptions import ValidationError as ModelValidationError
 from framework.auth.core import Auth
 from framework.exceptions import PermissionsError
 from framework.guid.model import Guid
@@ -44,7 +44,7 @@ class CommentSerializer(JSONAPISerializer):
 
     target = TargetField(link_type='related', meta={'type': 'get_target_type'})
     user = RelationshipField(related_view='users:user-detail', related_view_kwargs={'user_id': '<user._id>'})
-    reports = RelationshipField(related_view='comments:comment-reports', related_view_kwargs={'comment_id': '<pk>'})
+    reports = RelationshipField(related_view='comments:comment-reports', related_view_kwargs={'comment_id': '<_id>'})
 
     date_created = DateByVersion(read_only=True)
     date_modified = DateByVersion(read_only=True)
@@ -114,8 +114,8 @@ class CommentSerializer(JSONAPISerializer):
                     comment.edit(content, auth=auth, save=True)
                 except PermissionsError:
                     raise PermissionDenied('Not authorized to edit this comment.')
-                except ValidationValueError as err:
-                    raise ValidationError(err.args[0])
+                except ModelValidationError as err:
+                    raise ValidationError(err.messages[0])
         return comment
 
     def get_target_type(self, obj):
@@ -135,12 +135,12 @@ class CommentSerializer(JSONAPISerializer):
 
 
 class RegistrationCommentSerializer(CommentSerializer):
-    replies = RelationshipField(related_view='registrations:registration-comments', related_view_kwargs={'node_id': '<node._id>'}, filter={'target': '<pk>'})
+    replies = RelationshipField(related_view='registrations:registration-comments', related_view_kwargs={'node_id': '<node._id>'}, filter={'target': '<_id>'})
     node = RelationshipField(related_view='registrations:registration-detail', related_view_kwargs={'node_id': '<node._id>'})
 
 
 class NodeCommentSerializer(CommentSerializer):
-    replies = RelationshipField(related_view='nodes:node-comments', related_view_kwargs={'node_id': '<node._id>'}, filter={'target': '<pk>'})
+    replies = RelationshipField(related_view='nodes:node-comments', related_view_kwargs={'node_id': '<node._id>'}, filter={'target': '<_id>'})
     node = RelationshipField(related_view='nodes:node-detail', related_view_kwargs={'node_id': '<node._id>'})
 
 
@@ -185,8 +185,8 @@ class CommentCreateSerializer(CommentSerializer):
             comment = Comment.create(auth=auth, **validated_data)
         except PermissionsError:
             raise PermissionDenied('Not authorized to comment on this project.')
-        except ValidationValueError as err:
-            raise ValidationError(err.args[0])
+        except ModelValidationError as err:
+            raise ValidationError(err.messages[0])
         return comment
 
 
