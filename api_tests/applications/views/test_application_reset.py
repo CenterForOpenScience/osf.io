@@ -6,7 +6,7 @@ from website.models import ApiOAuth2Application, User
 from website.util import api_v2_url
 
 from tests.base import ApiTestCase
-from tests.factories import ApiOAuth2ApplicationFactory, AuthUserFactory
+from osf_tests.factories import ApiOAuth2ApplicationFactory, AuthUserFactory
 
 def _get_application_reset_route(app):
     path = "applications/{}/reset/".format(app.client_id)
@@ -80,8 +80,3 @@ class TestApplicationReset(ApiTestCase):
         mock_method.assert_not_called()
         self.user1_app.reload()
         assert_equal(old_secret, self.user1_app.client_secret)
-
-    def tearDown(self):
-        super(TestApplicationReset, self).tearDown()
-        ApiOAuth2Application.remove()
-        User.remove()
