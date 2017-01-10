@@ -2,11 +2,10 @@ from __future__ import unicode_literals
 
 import gc
 import importlib
+import logging
 import sys
 
 import ipdb
-import logging
-
 from addons.wiki.models import NodeWikiPage
 from django.apps import apps
 from django.contrib.contenttypes.fields import GenericForeignKey
@@ -30,7 +29,6 @@ from website.models import \
     NotificationSubscription as MODMNotificationSubscription
 from website.models import Pointer as MODMPointer
 from website.models import User as MODMUser
-
 
 logger = logging.getLogger('migrations')
 
@@ -445,6 +443,7 @@ class Command(BaseCommand):
         node_relation_count = 0
         page_size = Node.migration_page_size
         contributors = []
+        node_relations = []
         node_rel_hashes = set()
         contributor_hashes = set()
         with ipdb.launch_ipdb_on_exception():
@@ -491,7 +490,6 @@ class Command(BaseCommand):
                                 modm_obj._object_cache.clear()
                                 logger.info('Took out {} trashes'.format(gc.collect()))
 
-                            node_relations = []
                             noderel_order = 0
                             for modm_node in modm_obj.nodes:
                                 parent_id = self.modm_to_django[clean_node_guid]
