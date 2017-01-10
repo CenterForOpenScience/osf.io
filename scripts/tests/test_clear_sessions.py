@@ -1,4 +1,4 @@
-
+from django.utils import timezone
 from nose.tools import *  # noqa
 from tests.base import OsfTestCase
 
@@ -11,7 +11,7 @@ class TestClearSessions(OsfTestCase):
 
     def setUp(self):
         super(TestClearSessions, self).setUp()
-        now = datetime.datetime.utcnow()
+        now = timezone.now()
         self.dates = [
             now,
             now - relativedelta.relativedelta(months=2),

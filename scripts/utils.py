@@ -4,11 +4,13 @@ import os
 import logging
 import datetime
 
+from django.utils import timezone
+
 from website import settings
 
 
 def format_now():
-    return datetime.datetime.now().isoformat()
+    return timezone.now().isoformat()
 
 
 def add_file_logger(logger, script_name, suffix=None):

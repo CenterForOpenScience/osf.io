@@ -2,11 +2,10 @@
 # -*- coding: utf-8 -*-
 import httplib as http
 
+from django.core.exceptions import ValidationError
 from furl import furl
 import requests
 from flask import request
-from modularodm import Q
-from modularodm.storage.base import KeyExistsException
 from framework.auth.decorators import must_be_logged_in
 
 from website.addons.base import generic_views
@@ -77,16 +76,16 @@ def owncloud_add_user_account(auth, **kwargs):
                             username=username, password=password)
     try:
         provider.account.save()
-    except KeyExistsException:
+    except ValidationError:
         # ... or get the old one
-        provider.account = ExternalAccount.find_one(
-            Q('provider', 'eq', provider.short_name) &
-            Q('provider_id', 'eq', '{}:{}'.format(host.url, username).lower())
+        provider.account = ExternalAccount.objects.get(
+            provider=provider.short_name,
+            provider_id='{}:{}'.format(host.url, username).lower()
         )
 
     user = auth.user
-    if provider.account not in user.external_accounts:
-        user.external_accounts.append(provider.account)
+    if not user.external_accounts.filter(id=provider.account.id).exists():
+        user.external_accounts.add(provider.account)
 
     user.get_or_add_addon('owncloud', auth=auth)
     user.save()

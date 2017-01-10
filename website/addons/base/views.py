@@ -3,7 +3,7 @@ import httplib
 import os
 import uuid
 import markupsafe
-
+from django.utils import timezone
 
 from flask import make_response
 from flask import redirect
@@ -15,6 +15,7 @@ import jwt
 from modularodm import Q
 from modularodm.exceptions import NoResultsFound
 
+from addons.base.models import BaseStorageAddon
 from framework import sentry
 from framework.auth import Auth
 from framework.auth import cas
@@ -27,10 +28,9 @@ from framework.transactions.context import TokuTransaction
 from framework.transactions.handlers import no_auto_transaction
 from website import mails
 from website import settings
-from website.addons.base import StorageAddonBase
 from website.addons.base import exceptions
 from website.addons.base import signals as file_signals
-from website.files.models import FileNode, StoredFileNode, TrashedFileNode
+from osf.models import FileNode, StoredFileNode, TrashedFileNode
 from website.models import Node, NodeLog, User
 from website.profile.utils import get_gravatar
 from website.project import decorators
@@ -164,8 +164,13 @@ def check_access(node, auth, action, cas_resp):
            or required_scope not in oauth_scopes.normalize_scopes(cas_resp.attributes['accessTokenScope']):
             raise HTTPError(httplib.FORBIDDEN)
 
-    if permission == 'read' and node.can_view(auth):
-        return True
+    if permission == 'read':
+        if node.can_view(auth):
+            return True
+        # The user may have admin privileges on a parent node, in which
+        # case they should have read permissions
+        if node.is_registration and node.registered_from.can_view(auth):
+            return True
     if permission == 'write' and node.can_edit(auth):
         return True
 
@@ -196,7 +201,7 @@ def check_access(node, auth, action, cas_resp):
         )
         allowed_nodes = [node] + node.parents
         prereg_draft_registration = DraftRegistration.find(
-            Q('branched_from', 'in', [n._id for n in allowed_nodes]) &
+            Q('branched_from', 'in', [n for n in allowed_nodes]) &
             Q('registration_schema', 'eq', prereg_schema)
         )
         if action == 'download' and \
@@ -276,7 +281,7 @@ def get_auth(auth, **kwargs):
         raise HTTPError(httplib.BAD_REQUEST)
 
     return {'payload': jwe.encrypt(jwt.encode({
-        'exp': datetime.datetime.utcnow() + datetime.timedelta(seconds=settings.WATERBUTLER_JWT_EXPIRATION),
+        'exp': timezone.now() + datetime.timedelta(seconds=settings.WATERBUTLER_JWT_EXPIRATION),
         'data': {
             'auth': make_auth(auth.user),  # A waterbutler auth dict not an Auth object
             'credentials': credentials,
@@ -404,7 +409,7 @@ def create_waterbutler_log(payload, **kwargs):
                     destination_addon=payload['destination']['addon'],
                 )
 
-            if payload.get('error'):
+            if payload.get('errors'):
                 # Action failed but our function succeeded
                 # Bail out to avoid file_signals
                 return {'status': 'success'}
@@ -445,7 +450,7 @@ def addon_delete_file_node(self, node, user, event_type, payload):
             folder_children = FileNode.resolve_class(provider, FileNode.ANY).find(
                 Q('provider', 'eq', provider) &
                 Q('node', 'eq', node) &
-                Q('materialized_path', 'startswith', materialized_path)
+                Q('_materialized_path', 'startswith', materialized_path)
             )
             for item in folder_children:
                 if item.kind == 'file' and not TrashedFileNode.load(item._id):
@@ -456,7 +461,7 @@ def addon_delete_file_node(self, node, user, event_type, payload):
             try:
                 file_node = FileNode.resolve_class(provider, FileNode.FILE).find_one(
                     Q('node', 'eq', node) &
-                    Q('materialized_path', 'eq', materialized_path)
+                    Q('_materialized_path', 'eq', materialized_path)
                 )
             except NoResultsFound:
                 file_node = None
@@ -577,7 +582,7 @@ def addon_deleted_file(auth, node, error_type='BLAME_PROVIDER', **kwargs):
         'provider': file_node.provider,
         'materialized_path': file_node.materialized_path or file_path,
         'private': getattr(node.get_addon(file_node.provider), 'is_private', False),
-        'file_tags': [tag._id for tag in file_node.tags],
+        'file_tags': file_node.tags.filter(system=False).values_list('name', flat=True),
         'allow_comments': file_node.provider in settings.ADDONS_COMMENTABLE,
     })
 
@@ -601,7 +606,7 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
     if not path:
         raise HTTPError(httplib.BAD_REQUEST)
 
-    if not isinstance(node_addon, StorageAddonBase):
+    if not isinstance(node_addon, BaseStorageAddon):
         raise HTTPError(httplib.BAD_REQUEST, data={
             'message_short': 'Bad Request',
             'message_long': 'The {} add-on containing {} is no longer connected to {}.'.format(provider_safe, path_safe, project_safe)
@@ -715,7 +720,7 @@ def addon_view_file(auth, node, file_node, version):
         'extra': version.metadata.get('extra', {}),
         'size': version.size if version.size is not None else 9966699,
         'private': getattr(node.get_addon(file_node.provider), 'is_private', False),
-        'file_tags': [tag._id for tag in file_node.tags],
+        'file_tags': file_node.tags.filter(system=False).values_list('name', flat=True),
         'file_guid': file_node.get_guid()._id,
         'file_id': file_node._id,
         'allow_comments': file_node.provider in settings.ADDONS_COMMENTABLE

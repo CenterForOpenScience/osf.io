@@ -1,3 +1,5 @@
+import mock
+import pytest
 from nose.tools import *  # flake8: noqa
 
 from framework.auth.core import Auth
@@ -8,7 +10,7 @@ from website.util import permissions
 from api.base.settings.defaults import API_BASE
 
 from tests.base import ApiTestCase
-from tests.factories import (
+from osf_tests.factories import (
     NodeFactory,
     ProjectFactory,
     RegistrationFactory,
@@ -22,13 +24,12 @@ class TestRegistrationForksList(ApiTestCase):
     def setUp(self):
         super(TestRegistrationForksList, self).setUp()
         self.user = AuthUserFactory()
-        self.private_project = ProjectFactory()
-        self.private_project.add_contributor(self.user, permissions=[permissions.READ, permissions.WRITE])
+        self.private_project = ProjectFactory(creator=self.user)
         self.private_project.save()
         self.component = NodeFactory(parent=self.private_project, creator=self.user)
         self.pointer = ProjectFactory(creator=self.user)
         self.private_project.add_pointer(self.pointer, auth=Auth(self.user), save=True)
-        self.private_registration = RegistrationFactory(project = self.private_project, creator=self.user)
+        self.private_registration = RegistrationFactory(project=self.private_project, creator=self.user)
         self.private_fork = ForkFactory(project=self.private_registration, user=self.user)
         self.private_registration_url = '/{}registrations/{}/forks/'.format(API_BASE, self.private_registration._id)
 
@@ -110,7 +111,7 @@ class TestRegistrationForksList(ApiTestCase):
         assert_equal(fork_contributors['id'], self.user._id)
 
         forked_children = data['embeds']['children']['data'][0]
-        assert_equal(forked_children['id'], self.private_registration.nodes[0].forks[0]._id)
+        assert_equal(forked_children['id'], self.private_registration.forks.first().nodes.first()._id)
         assert_equal(forked_children['attributes']['title'], self.component.title)
 
         forked_node_links = data['embeds']['node_links']['data'][0]['embeds']['target_node']['data']
@@ -119,8 +120,8 @@ class TestRegistrationForksList(ApiTestCase):
         assert_equal(data['attributes']['registration'], False)
         assert_equal(data['attributes']['fork'], True)
 
-        expected_logs = [log.action for log in self.private_registration.logs]
-        expected_logs.append(self.private_registration.nodes[0].logs[0].action)
+        expected_logs = list(self.private_registration.logs.values_list('action', flat=True))
+        expected_logs.append(self.private_registration.nodes.first().logs.latest().action)
         expected_logs.append('node_forked')
         expected_logs.append('node_forked')
 
@@ -172,15 +173,11 @@ class TestRegistrationForkCreate(ApiTestCase):
         self.public_registration = RegistrationFactory(creator=self.user, project=self.public_project, is_public=True)
         self.public_registration_url = '/{}registrations/{}/forks/'.format(API_BASE, self.public_registration._id)
 
-    def tearDown(self):
-        super(TestRegistrationForkCreate, self).tearDown()
-        Node.remove()
-
     def test_create_fork_from_public_registration_with_new_title(self):
         res = self.app.post_json_api(self.public_registration_url, self.fork_data_with_title, auth=self.user.auth)
         assert_equal(res.status_code, 201)
         data = res.json['data']
-        assert_equal(data['id'], self.public_registration.forks[0]._id)
+        assert_equal(data['id'], self.public_registration.forks.first()._id)
         assert_equal(data['attributes']['title'], self.fork_data_with_title['data']['attributes']['title'])
         assert_equal(data['attributes']['registration'], False)
         assert_equal(data['attributes']['fork'], True)
@@ -189,7 +186,7 @@ class TestRegistrationForkCreate(ApiTestCase):
         res = self.app.post_json_api(self.private_registration_url, self.fork_data_with_title, auth=self.user.auth)
         assert_equal(res.status_code, 201)
         data = res.json['data']
-        assert_equal(data['id'], self.private_registration.forks[0]._id)
+        assert_equal(data['id'], self.private_registration.forks.first()._id)
         assert_equal(data['attributes']['title'], self.fork_data_with_title['data']['attributes']['title'])
         assert_equal(data['attributes']['registration'], False)
         assert_equal(data['attributes']['fork'], True)
@@ -198,7 +195,7 @@ class TestRegistrationForkCreate(ApiTestCase):
         res = self.app.post_json_api(self.public_registration_url, self.fork_data, auth=self.user_two.auth)
         assert_equal(res.status_code, 201)
         data = res.json['data']
-        assert_equal(data['id'], self.public_registration.forks[0]._id)
+        assert_equal(data['id'], self.public_registration.forks.first()._id)
         assert_equal(data['attributes']['title'], 'Fork of ' + self.public_registration.title)
         assert_equal(data['attributes']['registration'], False)
         assert_equal(data['attributes']['fork'], True)
@@ -212,7 +209,7 @@ class TestRegistrationForkCreate(ApiTestCase):
         res = self.app.post_json_api(self.public_registration_url, self.fork_data, auth=self.user.auth)
         assert_equal(res.status_code, 201)
         data = res.json['data']
-        assert_equal(data['id'], self.public_registration.forks[0]._id)
+        assert_equal(data['id'], self.public_registration.forks.first()._id)
         assert_equal(data['attributes']['title'], 'Fork of ' + self.public_registration.title)
         assert_equal(data['attributes']['registration'], False)
         assert_equal(data['attributes']['fork'], True)
@@ -257,7 +254,7 @@ class TestRegistrationForkCreate(ApiTestCase):
         res = self.app.post_json_api(url, self.fork_data, auth=self.user.auth)
         assert_equal(res.status_code, 201)
         assert_equal(res.json['data']['embeds']['children']['links']['meta']['total'], 1)
-        assert_equal(res.json['data']['embeds']['children']['data'][0]['id'], new_component.forks[0]._id)
+        assert_equal(res.json['data']['embeds']['children']['data'][0]['id'], new_component.forks.first()._id)
 
     def test_fork_private_node_links(self):
 
@@ -282,7 +279,8 @@ class TestRegistrationForkCreate(ApiTestCase):
         assert_equal(res.json['data']['embeds']['node_links']['links']['meta']['total'], 2)
 
     def test_cannot_fork_retractions(self):
-        retraction = WithdrawnRegistrationFactory(registration=self.private_registration, user=self.user)
+        with mock.patch('osf.models.AbstractNode.update_search'):
+            retraction = WithdrawnRegistrationFactory(registration=self.private_registration, user=self.user)
         url = '/{}registrations/{}/forks/'.format(API_BASE, self.private_registration._id) + '?embed=forked_from'
 
         res = self.app.post_json_api(url, self.fork_data, auth=self.user.auth, expect_errors=True)

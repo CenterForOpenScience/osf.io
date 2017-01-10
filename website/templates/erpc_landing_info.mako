@@ -10,7 +10,7 @@
 
 <%def name="steps()">
   <ol>
-    <li>Review the <a href="https://osf.io/rxmpf/">ANES Pre-Election Questionnaire</a> and/or the <a href="https://osf.io/h8ubg/">ANES Post-Election Questionnaire</a>.</li>
+    <li>Review the <a href="https://osf.io/rxmpf/">ANES Pre-Election Questionnaire</a> and/or the ANES Post-Election Questionnaire (<a href="https://osf.io/7sr55/">face-to-face</a> and <a href="https://osf.io/yprhm/">online</a>).</li>
     <li>Specify all analysis decisions before the data become available by submitting a preregistered analysis plan (below).</li>
     <li>Submit your study to a participating journal, which will consider your submission before data are available.</li>
     <li>Win a cash award of $2,000 for publishing your article.</li>

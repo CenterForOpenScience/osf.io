@@ -4,6 +4,7 @@ var $ = require('jquery');
 var bootbox = require('bootbox');  // TODO: Why is this required? Is it? See [#OSF-6100]
 var Raven = require('raven-js');
 var ko = require('knockout');
+var $3 = window.$3;
 var $osf = require('js/osfHelpers');
 var oop = require('js/oop');
 var ChangeMessageMixin = require('js/changeMessage');
@@ -68,11 +69,17 @@ var ProjectSettings = oop.extend(
                 self.changeMessage(language.updateSuccessMessage, 'text-success');
                 return;
             }
-            var requestPayload = self.serialize();
-            var request = $osf.ajaxJSON('patch',
-                self.updateUrl,
-                { data: requestPayload,
-                isCors: true });
+            var requestPayload = JSON.stringify(self.serialize());
+            var request = $3.ajax({
+                    url: self.updateUrl,
+                    type: 'PATCH',
+                    dataType: 'json',
+                    contentType: 'application/vnd.api+json',
+                    crossOrigin: true,
+                    xhrFields: {withCredentials: true},
+                    processData: false,
+                    data: requestPayload
+                });            
             request.done(function(response) {
                 self.categoryPlaceholder = response.data.attributes.category;
                 self.titlePlaceholder = response.data.attributes.title;
@@ -145,16 +152,15 @@ request.fail(function(xhr, textStatus, err) {
  * Pulls a random name from the scientist list to use as confirmation string
  *  Ignores case and whitespace
  */
-var getConfirmationCode = function(nodeType) {
+var getConfirmationCode = function(nodeType, isPreprint) {
+
+    var preprint_message = '<p class="danger">This ' + nodeType + ' contains a preprint. Deleting this ' +
+        nodeType + ' will also delete your preprint. This action is irreversible.</p>';
 
     // It's possible that the XHR request for contributors has not finished before getting to this
     // point; only construct the HTML for the list of contributors if the contribs list is populated
-    var message = '<p>It will no longer be available to other contributors on the project.';
-
-    if (window.contextVars.node.isPreprint) {
-        message += '<p>This project represents a preprint.</p>' +
-            '<p><strong>Deleting this project will remove the preprint from circulation.</strong></p>';
-    }
+    var message = '<p>It will no longer be available to other contributors on the project.' +
+        (isPreprint ? preprint_message : '');
 
     $osf.confirmDangerousAction({
         title: 'Are you sure you want to delete this ' + nodeType + '?',
