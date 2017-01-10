@@ -17,6 +17,8 @@ volumes:
     external: false
   wb_osfstoragecache_vol:
     external: false
+  rabbitmq_mnesia_vol:
+    external: false
   osf_requirements_vol:
     external: false
   osf_node_modules_vol:
@@ -141,11 +143,13 @@ services:
   # OSF #
   #######
 
-#  rabbitmq:
-#    image: rabbitmq:management
-#    ports:
-#      - 5672:5672
-#      - 15672:15672
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - 5672:5672
+      - 15672:15672
+    volumes:
+      - rabbitmq_mnesia_vol:/var/lib/rabbitmq/mnesia
 
 #  flower:
 #    image: quay.io/centerforopenscience/osf:develop
@@ -155,39 +159,6 @@ services:
 #    ports:
 #      - 5555:5555
 #    environment:
-#      BROKER_URL: amqp://guest:guest@rabbitmq:5672/
-
-#  beat:
-#    image: quay.io/centerforopenscience/osf:develop
-#    command: invoke celery_beat
-#    depends_on:
-#      - postgres
-#      - rabbitmq
-#      - elasticsearch
-#    volumes:
-#      - osf_requirements_vol:/usr/local/lib/python2.7/site-packages
-#      - ./:/code
-#    environment:
-#      DB_HOST: postgres
-#      ELASTIC_URI: elasticsearch:9200
-#      BROKER_URL: amqp://guest:guest@rabbitmq:5672/
-
-#  worker:
-#    image: quay.io/centerforopenscience/osf:develop
-#    command: invoke celery_worker
-#    restart: unless-stopped
-#    depends_on:
-#      - postgres
-#      - tokumx
-#      - rabbitmq
-#      - elasticsearch
-#    volumes:
-#      - osf_requirements_vol:/usr/local/lib/python2.7/site-packages
-#      - ./:/code
-#    environment:
-#      C_FORCE_ROOT: 1
-#      DB_HOST: postgres
-#      ELASTIC_URI: elasticsearch:9200
 #      BROKER_URL: amqp://guest:guest@rabbitmq:5672/
 
   requirements:
@@ -218,6 +189,38 @@ services:
       - .docker-compose.sharejs.env
     volumes:
       - osf_requirements_vol:/usr/local/lib/python2.7/site-packages
+      - osf_node_modules_vol:/code/node_modules
+
+#  beat:
+#    image: quay.io/centerforopenscience/osf:develop
+#    command: invoke celery_beat
+#    depends_on:
+#      - postgres
+#      - rabbitmq
+#    environment:
+#      C_FORCE_ROOT: 1
+#    env_file:
+#      - .docker-compose.env
+#    volumes:
+#      - osf_requirements_vol:/usr/local/lib/python2.7/site-packages
+#      - osf_bower_components_vol:/code/website/static/vendor/bower_components
+#      - osf_node_modules_vol:/code/node_modules
+
+  worker:
+    image: quay.io/centerforopenscience/osf:develop
+    command: invoke celery_worker
+    restart: unless-stopped
+    depends_on:
+      - postgres
+      - rabbitmq
+      - elasticsearch
+    environment:
+      C_FORCE_ROOT: 1
+    env_file:
+      - .docker-compose.env
+    volumes:
+      - osf_requirements_vol:/usr/local/lib/python2.7/site-packages
+      - osf_bower_components_vol:/code/website/static/vendor/bower_components
       - osf_node_modules_vol:/code/node_modules
 
 #  admin:
