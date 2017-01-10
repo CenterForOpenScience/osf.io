@@ -15,8 +15,8 @@ from api.nodes.serializers import NodeContributorsCreateSerializer
 
 from framework.auth.core import Auth
 
-from tests.base import ApiTestCase, capture_signals
-from tests.factories import (
+from tests.base import ApiTestCase, capture_signals, fake
+from osf_tests.factories import (
     ProjectFactory,
     AuthUserFactory,
     UserFactory
@@ -24,8 +24,8 @@ from tests.factories import (
 from tests.utils import assert_logs
 
 from website.models import NodeLog
-from website.project.signals import contributor_added, unreg_contributor_added
-from website.util import permissions
+from website.project.signals import contributor_added, unreg_contributor_added, contributor_removed
+from website.util import permissions, disconnected_from_listeners
 
 class NodeCRUDTestCase(ApiTestCase):
 
@@ -164,7 +164,7 @@ class TestNodeContributorList(NodeCRUDTestCase):
         assert_equal(res.json['links']['meta']['total_bibliographic'], len(self.public_project.visible_contributor_ids))
 
     def test_unregistered_contributor_field_is_null_if_account_claimed(self):
-        project = ProjectFactory(creator=self.user, public=True)
+        project = ProjectFactory(creator=self.user, is_public=True)
         url = '/{}nodes/{}/contributors/'.format(API_BASE, project._id)
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 200)
@@ -172,7 +172,7 @@ class TestNodeContributorList(NodeCRUDTestCase):
         assert_equal(res.json['data'][0]['attributes'].get('unregistered_contributor'), None)
 
     def test_unregistered_contributors_show_up_as_name_associated_with_project(self):
-        project = ProjectFactory(creator=self.user, public=True)
+        project = ProjectFactory(creator=self.user, is_public=True)
         project.add_unregistered_contributor('Robert Jackson', 'robert@gmail.com', auth=Auth(self.user), save=True)
         url = '/{}nodes/{}/contributors/'.format(API_BASE, project._id)
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
@@ -181,7 +181,7 @@ class TestNodeContributorList(NodeCRUDTestCase):
         assert_equal(res.json['data'][1]['embeds']['users']['data']['attributes']['full_name'], 'Robert Jackson')
         assert_equal(res.json['data'][1]['attributes'].get('unregistered_contributor'), 'Robert Jackson')
 
-        project_two = ProjectFactory(creator=self.user, public=True)
+        project_two = ProjectFactory(creator=self.user, is_public=True)
         project_two.add_unregistered_contributor('Bob Jackson', 'robert@gmail.com', auth=Auth(self.user), save=True)
         url = '/{}nodes/{}/contributors/'.format(API_BASE, project_two._id)
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
@@ -526,7 +526,7 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
         del self.data_user_two['data']['attributes']['bibliographic']
         res = self.app.post_json_api(self.public_url, self.data_user_two, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 201)
-        assert_equal(res.json['data']['id'], '{}-{}'.format(self.public_project, self.user_two._id))
+        assert_equal(res.json['data']['id'], '{}-{}'.format(self.public_project._id, self.user_two._id))
 
         self.public_project.reload()
         assert_in(self.user_two, self.public_project.contributors)
@@ -536,7 +536,7 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
     def test_adds_bibliographic_contributor_public_project_admin(self):
         res = self.app.post_json_api(self.public_url, self.data_user_two, auth=self.user.auth)
         assert_equal(res.status_code, 201)
-        assert_equal(res.json['data']['id'], '{}-{}'.format(self.public_project, self.user_two._id))
+        assert_equal(res.json['data']['id'], '{}-{}'.format(self.public_project._id, self.user_two._id))
 
         self.public_project.reload()
         assert_in(self.user_two, self.public_project.contributors)
@@ -561,7 +561,7 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
         }
         res = self.app.post_json_api(self.private_url, data, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 201)
-        assert_equal(res.json['data']['id'], '{}-{}'.format(self.private_project, self.user_two._id))
+        assert_equal(res.json['data']['id'], '{}-{}'.format(self.private_project._id, self.user_two._id))
         assert_equal(res.json['data']['attributes']['bibliographic'], False)
 
         self.private_project.reload()
@@ -574,24 +574,24 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
                                  auth=self.user_two.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
         self.public_project.reload()
-        assert_not_in(self.user_three, self.public_project.contributors)
+        assert_not_in(self.user_three, self.public_project.contributors.all())
 
     def test_adds_contributor_public_project_non_contributor(self):
         res = self.app.post_json_api(self.public_url, self.data_user_three,
                                  auth=self.user_two.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
-        assert_not_in(self.user_three, self.public_project.contributors)
+        assert_not_in(self.user_three, self.public_project.contributors.all())
 
     def test_adds_contributor_public_project_not_logged_in(self):
         res = self.app.post_json_api(self.public_url, self.data_user_two, expect_errors=True)
         assert_equal(res.status_code, 401)
-        assert_not_in(self.user_two, self.public_project.contributors)
+        assert_not_in(self.user_two, self.public_project.contributors.all())
 
     @assert_logs(NodeLog.CONTRIB_ADDED, 'private_project')
     def test_adds_contributor_private_project_admin(self):
         res = self.app.post_json_api(self.private_url, self.data_user_two, auth=self.user.auth)
         assert_equal(res.status_code, 201)
-        assert_equal(res.json['data']['id'], '{}-{}'.format(self.private_project, self.user_two._id))
+        assert_equal(res.json['data']['id'], '{}-{}'.format(self.private_project._id, self.user_two._id))
 
         self.private_project.reload()
         assert_in(self.user_two, self.private_project.contributors)
@@ -640,7 +640,7 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
         }
         res = self.app.post_json_api(self.private_url, data, auth=self.user.auth)
         assert_equal(res.status_code, 201)
-        assert_equal(res.json['data']['id'], '{}-{}'.format(self.private_project, self.user_two._id))
+        assert_equal(res.json['data']['id'], '{}-{}'.format(self.private_project._id, self.user_two._id))
 
         self.private_project.reload()
         assert_in(self.user_two, self.private_project.contributors)
@@ -667,7 +667,7 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
         }
         res = self.app.post_json_api(self.private_url, data, auth=self.user.auth)
         assert_equal(res.status_code, 201)
-        assert_equal(res.json['data']['id'], '{}-{}'.format(self.private_project, self.user_two._id))
+        assert_equal(res.json['data']['id'], '{}-{}'.format(self.private_project._id, self.user_two._id))
 
         self.private_project.reload()
         assert_in(self.user_two, self.private_project.contributors)
@@ -694,7 +694,7 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
         }
         res = self.app.post_json_api(self.private_url, data, auth=self.user.auth)
         assert_equal(res.status_code, 201)
-        assert_equal(res.json['data']['id'], '{}-{}'.format(self.private_project, self.user_two._id))
+        assert_equal(res.json['data']['id'], '{}-{}'.format(self.private_project._id, self.user_two._id))
 
         self.private_project.reload()
         assert_in(self.user_two, self.private_project.contributors)
@@ -722,7 +722,7 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
         assert_equal(res.status_code, 400)
 
         self.private_project.reload()
-        assert_not_in(self.user_two, self.private_project.contributors)
+        assert_not_in(self.user_two, self.private_project.contributors.all())
 
     @assert_logs(NodeLog.CONTRIB_ADDED, 'private_project')
     def test_adds_none_permission_contributor_private_project_admin_uses_default_permissions(self):
@@ -789,7 +789,7 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
         assert_equal(res.status_code, 403)
 
         self.private_project.reload()
-        assert_not_in(self.user_three, self.private_project.contributors)
+        assert_not_in(self.user_three, self.private_project.contributors.all())
 
     def test_adds_contributor_private_project_non_contributor(self):
         res = self.app.post_json_api(self.private_url, self.data_user_three,
@@ -797,14 +797,14 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
         assert_equal(res.status_code, 403)
 
         self.private_project.reload()
-        assert_not_in(self.user_three, self.private_project.contributors)
+        assert_not_in(self.user_three, self.private_project.contributors.all())
 
     def test_adds_contributor_private_project_not_logged_in(self):
         res = self.app.post_json_api(self.private_url, self.data_user_two, expect_errors=True)
         assert_equal(res.status_code, 401)
 
         self.private_project.reload()
-        assert_not_in(self.user_two, self.private_project.contributors)
+        assert_not_in(self.user_two, self.private_project.contributors.all())
 
     @assert_logs(NodeLog.CONTRIB_ADDED, 'public_project')
     def test_add_unregistered_contributor_with_fullname(self):
@@ -821,7 +821,8 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
         assert_equal(res.status_code, 201)
         assert_equal(res.json['data']['attributes']['unregistered_contributor'], 'John Doe')
         assert_equal(res.json['data']['attributes']['email'], None)
-        assert_in(res.json['data']['embeds']['users']['data']['id'], self.public_project.contributors)
+        assert_in(res.json['data']['embeds']['users']['data']['id'],
+                  self.public_project.contributors.values_list('guids___id', flat=True))
 
     @assert_logs(NodeLog.CONTRIB_ADDED, 'public_project')
     def test_add_contributor_with_fullname_and_email_unregistered_user(self):
@@ -841,7 +842,10 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
         assert_equal(res.json['data']['attributes']['email'], 'john@doe.com')
         assert_equal(res.json['data']['attributes']['bibliographic'], True)
         assert_equal(res.json['data']['attributes']['permission'], permissions.WRITE)
-        assert_in(res.json['data']['embeds']['users']['data']['id'], self.public_project.contributors)
+        assert_in(
+            res.json['data']['embeds']['users']['data']['id'],
+            self.public_project.contributors.values_list('guids___id', flat=True)
+        )
 
     @assert_logs(NodeLog.CONTRIB_ADDED, 'public_project')
     def test_add_contributor_with_fullname_and_email_unregistered_user_set_attributes(self):
@@ -863,7 +867,8 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
         assert_equal(res.json['data']['attributes']['email'], 'john@doe.com')
         assert_equal(res.json['data']['attributes']['bibliographic'], False)
         assert_equal(res.json['data']['attributes']['permission'], permissions.READ)
-        assert_in(res.json['data']['embeds']['users']['data']['id'], self.public_project.contributors)
+        assert_in(res.json['data']['embeds']['users']['data']['id'],
+                  self.public_project.contributors.values_list('guids___id', flat=True))
 
     @assert_logs(NodeLog.CONTRIB_ADDED, 'public_project')
     def test_add_contributor_with_fullname_and_email_registered_user(self):
@@ -882,23 +887,25 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
         assert_equal(res.status_code, 201)
         assert_equal(res.json['data']['attributes']['unregistered_contributor'], None)
         assert_equal(res.json['data']['attributes']['email'], user.username)
-        assert_in(res.json['data']['embeds']['users']['data']['id'], self.public_project.contributors)
+        assert_in(res.json['data']['embeds']['users']['data']['id'],
+                  self.public_project.contributors.values_list('guids___id', flat=True))
 
     def test_add_unregistered_contributor_already_contributor(self):
-        self.public_project.add_unregistered_contributor(auth=Auth(self.user), fullname='Alphabet', email='a@b.com')
+        name, email = fake.name(), fake.email()
+        self.public_project.add_unregistered_contributor(auth=Auth(self.user), fullname=name, email=email)
         payload = {
             'data': {
                 'type': 'contributors',
                 'attributes': {
                     'full_name': 'Doesn\'t Matter',
-                    'email': 'a@b.com'
+                    'email': email
                 }
             }
         }
         res = self.app.post_json_api(self.public_url, payload, auth=self.user.auth, expect_errors=True)
         self.public_project.reload()
         assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['detail'], 'Alphabet is already a contributor.')
+        assert_equal(res.json['errors'][0]['detail'], '{} is already a contributor.'.format(name))
 
     def test_add_contributor_index_returned(self):
         res = self.app.post_json_api(self.public_url, self.data_user_two, auth=self.user.auth)
@@ -959,7 +966,9 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
         res = self.app.post_json_api(self.public_url, payload, auth=self.user.auth)
         self.public_project.reload()
         assert_equal(res.status_code, 201)
-        assert_equal(self.public_project.contributors.index(self.user_two), 0)
+        contributor_obj = self.public_project.contributor_set.get(user=self.user_two)
+        index = list(self.public_project.get_contributor_order()).index(contributor_obj.pk)
+        assert_equal(index, 0)
 
     def test_add_contributor_set_index_last(self):
         user_one = UserFactory()
@@ -985,7 +994,9 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
         res = self.app.post_json_api(self.public_url, payload, auth=self.user.auth)
         self.public_project.reload()
         assert_equal(res.status_code, 201)
-        assert_equal(self.public_project.contributors.index(self.user_two), 3)
+        contributor_obj = self.public_project.contributor_set.get(user=self.user_two)
+        index = list(self.public_project.get_contributor_order()).index(contributor_obj.pk)
+        assert_equal(index, 3)
 
 
 class TestNodeContributorCreateValidation(NodeCRUDTestCase):
@@ -1247,7 +1258,7 @@ class TestNodeContributorBulkCreate(NodeCRUDTestCase):
         res = self.app.post_json_api(self.public_url, {'data': [self.payload_two, self.payload_one]},
                                      auth=self.user.auth, expect_errors=True, bulk=True)
         assert_equal(res.status_code, 400)
-        assert "is already a contributor" in res.json['errors'][0]['detail']
+        assert 'is already a contributor' in res.json['errors'][0]['detail']
 
         res = self.app.get(self.public_url, auth=self.user.auth)
         assert_equal(len(res.json['data']), 2)
@@ -1900,8 +1911,11 @@ class TestNodeContributorBulkDelete(NodeCRUDTestCase):
         res = self.app.get(self.public_url, auth=self.user.auth)
         assert_equal(len(res.json['data']), 3)
 
-        res = self.app.delete_json_api(self.public_url, {'data': [self.public_payload_one, self.public_payload_two]},
-                                       auth=self.user.auth, bulk=True)
+        # Disconnect contributor_removed so that we don't check in files
+        # We can remove this when StoredFileNode is implemented in osf-models
+        with disconnected_from_listeners(contributor_removed):
+            res = self.app.delete_json_api(self.public_url, {'data': [self.public_payload_one, self.public_payload_two]},
+                                           auth=self.user.auth, bulk=True)
         assert_equal(res.status_code, 204)
 
         res = self.app.get(self.public_url, auth=self.user.auth)
@@ -1922,8 +1936,11 @@ class TestNodeContributorBulkDelete(NodeCRUDTestCase):
         res = self.app.get(self.private_url, auth=self.user.auth)
         assert_equal(len(res.json['data']), 3)
 
-        res = self.app.delete_json_api(self.private_url, {'data': [self.private_payload_one, self.private_payload_two]},
-                                       auth=self.user.auth, bulk=True)
+        # Disconnect contributor_removed so that we don't check in files
+        # We can remove this when StoredFileNode is implemented in osf-models
+        with disconnected_from_listeners(contributor_removed):
+            res = self.app.delete_json_api(self.private_url, {'data': [self.private_payload_one, self.private_payload_two]},
+                                           auth=self.user.auth, bulk=True)
         assert_equal(res.status_code, 204)
 
         res = self.app.get(self.private_url, auth=self.user.auth)

@@ -507,12 +507,6 @@ var LogPieces = {
         }
     },
 
-    figshare_title: {
-        view: function(ctrl, logObject) {
-            return returnTextParams('figshare_title', '', logObject);
-        }
-    },
-
     forward_url: {
         view: function(ctrl, logObject) {
             var url = logObject.attributes.params.forward_url;
@@ -646,7 +640,37 @@ var LogPieces = {
             // Comment left on project
             return m('span', '');
         }
-    }
+    },
+
+    preprint: {
+        view: function(ctrl, logObject){
+            var preprint = logObject.attributes.params.preprint;
+            if (paramIsReturned(preprint, logObject)) {
+                return m('a', {href: '/' + preprint}, 'preprint');
+            }
+            return m('span', 'preprint');
+        }
+    },
+
+    preprint_provider: {
+        view: function(ctrl, logObject){
+            var preprint_provider = logObject.attributes.params.preprint_provider;
+            if (paramIsReturned(preprint_provider, logObject)) {
+                return m('a', {href: preprint_provider.url}, preprint_provider.name);
+            }
+            return m('span', '');
+        }
+    },
+
+    license: {
+        view: function(ctrl, logObject){
+            var license_name = logObject.attributes.params.license;
+            if (license_name) {
+                return m('span', 'to ' + license_name);
+            }
+            return m('span', '');
+        }
+    },
 };
 
 module.exports = LogText;

@@ -3,6 +3,7 @@
 import datetime
 import logging
 
+from django.utils import timezone
 from modularodm import Q
 
 from framework.auth import Auth
@@ -63,7 +64,7 @@ def main(dry_run=True):
 
 def should_be_retracted(retraction):
     """Returns true if retraction was initiated more than 48 hours prior"""
-    return (datetime.datetime.utcnow() - retraction.initiation_date) >= settings.RETRACTION_PENDING_TIME
+    return (timezone.now() - retraction.initiation_date) >= settings.RETRACTION_PENDING_TIME
 
 
 @celery_app.task(name='scripts.retract_registrations')
