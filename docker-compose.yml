@@ -136,14 +136,13 @@ services:
     stdin_open: true
     tty: true
 
-
   ##################################
   # Central Authentication Service #
   ##################################
 
   fakecas:
     image: quay.io/centerforopenscience/fakecas:master
-    command: fakecas -host=0.0.0.0:8080 -osfhost=192.168.168.167:5000 -dbaddress=postgres://postgres@postgres:5432/osf?sslmode=disable
+    command: fakecas -host=0.0.0.0:8080 -osfhost=localhost:5000 -dbaddress=postgres://postgres@postgres:5432/osf?sslmode=disable
     restart: unless-stopped
     ports:
       - 8080:8080
