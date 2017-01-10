@@ -118,6 +118,9 @@ def get_globals():
                 'write_key': settings.KEEN['private']['write_key'],
             },
         },
+        'sharejs': {
+            'use_websockets': settings.SHAREJS_USE_WEBSOCKETS
+        },
         'maintenance': maintenance.get_maintenance(),
         'recaptcha_site_key': settings.RECAPTCHA_SITE_KEY
     }

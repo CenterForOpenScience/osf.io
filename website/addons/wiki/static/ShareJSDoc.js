@@ -4,7 +4,8 @@ var WikiEditor = require('./WikiEditor.js');
 var LanguageTools = ace.require('ace/ext/language_tools');
 
 var activeUsers = [];
-var collaborative =  typeof sharejs !== 'undefined';
+var collaborative = typeof sharejs !== 'undefined';
+var useWs = typeof WebSocket !== 'undefined' && window.contextVars.sharejs.use_websockets;
 
 var ShareJSDoc = function(url, metadata, viewText, editor) {
     var self = this;
@@ -49,11 +50,17 @@ var ShareJSDoc = function(url, metadata, viewText, editor) {
         return;
     }
 
-    var BCSocket = require('browserchannel/dist/bcsocket-uncompressed').BCSocket;
+    var Socket = useWs ? require('reconnectingWebsocket') : require('browserchannel/dist/bcsocket-uncompressed').BCSocket;
     require('addons/wiki/static/ace.js');
 
-    var prefix = (window.location.protocol === 'https:') ? 'https://' : 'http://';
-    var socket = new BCSocket(prefix +  ctx.urls.sharejs + '/channel', {crossDomainXhr:true});
+    var prefix = (useWs ? 'ws' : 'http') + ((window.location.protocol === 'https:') ? 's://' : '://');
+    var url = prefix + ctx.urls.sharejs + (useWs ? '' : '/channel');
+    var socket;
+    if (useWs) {
+        socket = new Socket(url);
+    } else {
+        socket = new Socket(url, {crossDomainXhr:true});
+    }
     var sjs = new sharejs.Connection(socket);
     var doc = sjs.get('docs', metadata.docId);
     var madeConnection = false;
@@ -88,7 +95,7 @@ var ShareJSDoc = function(url, metadata, viewText, editor) {
     }
     // Send user metadata
     function register() {
-        socket.send(metadata);
+        socket.send(JSON.stringify(metadata));
     }
 
     function refreshMaybe() {
