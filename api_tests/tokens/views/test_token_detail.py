@@ -7,7 +7,7 @@ from website.models import User, ApiOAuth2PersonalToken
 from website.util import api_v2_url
 
 from tests.base import ApiTestCase
-from tests.factories import ApiOAuth2PersonalTokenFactory, AuthUserFactory
+from osf_tests.factories import ApiOAuth2PersonalTokenFactory, AuthUserFactory
 
 TOKEN_LIST_URL = api_v2_url('tokens/', base_route='/')
 
@@ -23,7 +23,7 @@ class TestTokenDetail(ApiTestCase):
         self.user1 = AuthUserFactory()
         self.user2 = AuthUserFactory()
 
-        self.user1_token = ApiOAuth2PersonalTokenFactory(owner=self.user1, user_id=self.user1._id)
+        self.user1_token = ApiOAuth2PersonalTokenFactory(owner=self.user1)
         self.user1_token_url = _get_token_detail_route(self.user1_token)
 
         self.missing_type = {
@@ -217,8 +217,3 @@ class TestTokenDetail(ApiTestCase):
         }
         res = self.app.patch_json_api(self.user1_token_url, payload, auth=self.user1.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
-
-    def tearDown(self):
-        super(TestTokenDetail, self).tearDown()
-        ApiOAuth2PersonalToken.remove()
-        User.remove()

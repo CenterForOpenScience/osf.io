@@ -1,36 +1,29 @@
 from __future__ import unicode_literals
 
-from furl import furl
 import csv
 from datetime import datetime, timedelta
-from django.views.generic import FormView, DeleteView, ListView
-from django.core.mail import send_mail
-from django.shortcuts import redirect
-from django.http import Http404, HttpResponse
-from modularodm import Q
 
-from website.project.spam.model import SpamStatus
-from website.settings import SUPPORT_EMAIL, DOMAIN
-from website.security import random_string
+from admin.base.utils import OSFAdmin
+from admin.base.views import GuidFormView, GuidView
+from admin.common_auth.logs import (CONFIRM_SPAM, USER_2_FACTOR, USER_EMAILED,
+                                    USER_REMOVED, USER_RESTORED,
+                                    update_admin_log)
+from admin.users.forms import EmailResetForm, WorkshopForm
+from admin.users.serializers import serialize_user
+from admin.users.templatetags.user_extras import reverse_user
+from django.core.mail import send_mail
+from django.http import Http404, HttpResponse
+from django.shortcuts import redirect
+from django.views.generic import DeleteView, FormView, ListView
 from framework.auth import get_user
 from framework.auth.utils import impute_names
-
-from website.project.model import User, NodeLog, Node
+from furl import furl
+from modularodm import Q
 from website.mailchimp_utils import subscribe_on_confirm
-
-from admin.base.views import GuidFormView, GuidView
-from admin.users.templatetags.user_extras import reverse_user
-from admin.base.utils import OSFAdmin
-from admin.common_auth.logs import (
-    update_admin_log,
-    USER_2_FACTOR,
-    USER_EMAILED,
-    USER_REMOVED,
-    USER_RESTORED,
-    CONFIRM_SPAM)
-
-from admin.users.serializers import serialize_user
-from admin.users.forms import EmailResetForm, WorkshopForm
+from website.project.model import Node, NodeLog, User
+from website.project.spam.model import SpamStatus
+from website.security import random_string
+from website.settings import DOMAIN, SUPPORT_EMAIL
 
 
 class UserDeleteView(OSFAdmin, DeleteView):
@@ -302,7 +295,7 @@ class UserWorkshopFormView(OSFAdmin, FormView):
     def get_user_logs_since_workshop(user, workshop_date):
         query_date = workshop_date + timedelta(days=1)
         query = Q('user', 'eq', user._id) & Q('date', 'gt', query_date)
-        return list(NodeLog.find(query=query))
+        return NodeLog.find(query=query)
 
     @staticmethod
     def get_user_nodes_since_workshop(user, workshop_date):
@@ -355,7 +348,7 @@ class UserWorkshopFormView(OSFAdmin, FormView):
             user_logs = self.get_user_logs_since_workshop(user, workshop_date)
 
             try:
-                last_log_date = user_logs[-1].date.strftime('%m/%d/%y')
+                last_log_date = user_logs.latest().date.strftime('%m/%d/%y')
             except IndexError:
                 last_log_date = ''
 

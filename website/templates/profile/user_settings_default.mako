@@ -6,7 +6,7 @@
       <img class="addon-icon" src="${addon_icon_url}">
       <span data-bind="text:properName"></span>
       <small>
-        <a data-bind="click: connectAccount" class="pull-right text-primary">Connect Account</a>
+        <a data-bind="click: connectAccount" class="pull-right text-primary">Connect or Reauthorize Account</a>
       </small>
     </h4>
     <div class="addon-auth-table" id="${addon_short_name}-header">

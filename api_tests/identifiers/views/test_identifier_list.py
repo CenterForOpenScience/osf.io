@@ -7,7 +7,7 @@ from api.base.settings.defaults import API_BASE
 from website.identifiers.model import Identifier
 
 from tests.base import ApiTestCase
-from tests.factories import (
+from osf_tests.factories import (
     RegistrationFactory,
     AuthUserFactory,
     IdentifierFactory,
@@ -30,10 +30,6 @@ class TestRegistrationIdentifierList(ApiTestCase):
         self.data = self.res.json['data']
 
         self.all_identifiers = Identifier.find()
-
-    def tearDown(self):
-        super(TestRegistrationIdentifierList, self).tearDown()
-        Identifier.remove()
 
     def test_identifier_list_success(self):
         assert_equal(self.res.status_code, 200)
@@ -65,10 +61,10 @@ class TestRegistrationIdentifierList(ApiTestCase):
 
     def test_identifier_filter_by_category(self):
         IdentifierFactory(referent=self.registration, category='nopeid')
-        identifiers_for_registration = Identifier.find(Q('referent', 'eq', self.registration))
-        assert_equal(len(identifiers_for_registration), 2)
+        identifiers_for_registration = self.registration.identifiers
+        assert_equal(identifiers_for_registration.count(), 2)
         assert_items_equal(
-            [identifier.category for identifier in identifiers_for_registration],
+            list(identifiers_for_registration.values_list('category', flat=True)),
             ['carpid', 'nopeid']
         )
 
