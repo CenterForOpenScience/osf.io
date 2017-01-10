@@ -39,16 +39,20 @@ services:
       - 9200:9200
     volumes:
       - elasticsearch_data_vol:/usr/share/elasticsearch/data
+    stdin_open: true
+    tty: true
 
   postgres:
-   image: postgres:9.6
-   command: /bin/bash -c "sed -i -e 's/max_connections.*/max_connections = 5000/' /var/lib/postgresql/data/postgresql.conf || true && sed -i -e 's/#log_min_duration_statement = .*/log_min_duration_statement = 0/' /var/lib/postgresql/data/postgresql.conf || true && /docker-entrypoint.sh postgres"
-   ports:
-     - 5432:5432
-   environment:
-     POSTGRES_DB: osf
-   volumes:
-     - postgres_data_vol:/var/lib/postgresql/data/
+    image: postgres:9.6
+    command: /bin/bash -c "sed -i -e 's/max_connections.*/max_connections = 5000/' /var/lib/postgresql/data/postgresql.conf || true && sed -i -e 's/#log_min_duration_statement = .*/log_min_duration_statement = 0/' /var/lib/postgresql/data/postgresql.conf || true && /docker-entrypoint.sh postgres"
+    ports:
+      - 5432:5432
+    environment:
+      POSTGRES_DB: osf
+    volumes:
+      - postgres_data_vol:/var/lib/postgresql/data/
+    stdin_open: true
+    tty: true
 
   tokumx:
     image: quay.io/centerforopenscience/tokumx:latest
@@ -59,6 +63,8 @@ services:
       TOKU_HUGE_PAGES_OK: 1
     volumes:
       - tokumx_data_vol:/data/db
+    stdin_open: true
+    tty: true
 
   rabbitmq:
     image: rabbitmq:3-management
@@ -67,6 +73,8 @@ services:
       - 15672:15672
     volumes:
       - rabbitmq_vol:/var/lib/rabbitmq
+    stdin_open: true
+    tty: true
 
 #  flower:
 #    image: quay.io/centerforopenscience/osf:develop
@@ -100,6 +108,8 @@ services:
       - .docker-compose.mfr.env
     volumes:
       - mfr_requirements_vol:/usr/local/lib/python3.5/site-packages
+    stdin_open: true
+    tty: true
 
   ###############
   # WaterButler #
@@ -123,6 +133,8 @@ services:
     volumes:
       - wb_requirements_vol:/usr/local/lib/python3.5/site-packages
       - wb_osfstoragecache_vol:/code/website/osfstoragecache
+    stdin_open: true
+    tty: true
 
 
   ##################################
@@ -137,6 +149,8 @@ services:
       - 8080:8080
     depends_on:
       - postgres
+    stdin_open: true
+    tty: true
 
 
   #############
@@ -155,6 +169,8 @@ services:
       - 4200:4200
     volumes:
       - preprints_dist_vol:/code/dist
+    stdin_open: true
+    tty: true
 
 
   #######
@@ -176,6 +192,8 @@ services:
       - osf_requirements_vol:/usr/local/lib/python2.7/site-packages
       - osf_bower_components_vol:/code/website/static/vendor/bower_components
       - osf_node_modules_vol:/code/node_modules
+    stdin_open: true
+    tty: true
 
   sharejs:
     image: quay.io/centerforopenscience/osf:develop
@@ -190,6 +208,8 @@ services:
     volumes:
       - osf_requirements_vol:/usr/local/lib/python2.7/site-packages
       - osf_node_modules_vol:/code/node_modules
+    stdin_open: true
+    tty: true
 
 #  beat:
 #    image: quay.io/centerforopenscience/osf:develop
@@ -222,6 +242,8 @@ services:
       - osf_requirements_vol:/usr/local/lib/python2.7/site-packages
       - osf_bower_components_vol:/code/website/static/vendor/bower_components
       - osf_node_modules_vol:/code/node_modules
+    stdin_open: true
+    tty: true
 
 #  admin:
 #    image: quay.io/centerforopenscience/osf:develop
@@ -258,6 +280,8 @@ services:
       - osf_requirements_vol:/usr/local/lib/python2.7/site-packages
       - osf_bower_components_vol:/code/website/static/vendor/bower_components
       - osf_node_modules_vol:/code/node_modules
+    stdin_open: true
+    tty: true
 
   web:
     image: quay.io/centerforopenscience/osf:develop
@@ -277,3 +301,5 @@ services:
       - osf_bower_components_vol:/code/website/static/vendor/bower_components
       - osf_node_modules_vol:/code/node_modules
       - preprints_dist_vol:/preprints
+    stdin_open: true
+    tty: true
