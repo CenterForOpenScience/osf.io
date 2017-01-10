@@ -5,7 +5,7 @@ from framework.auth import Auth
 from framework.exceptions import HTTPError
 from framework.exceptions import PermissionsError
 
-from website.oauth.models import ExternalAccount, ExternalProvider
+from osf.models.external import ExternalAccount, ExternalProvider
 
 
 class CitationsOauthProvider(ExternalProvider):
@@ -105,8 +105,7 @@ class CitationsProvider(object):
                 self.serializer(
                     user_settings=user.get_addon(self.provider_name) if user else None
                 ).serialize_account(each)
-                for each in user.external_accounts
-                if each.provider == self.provider_name
+                for each in user.external_accounts.filter(provider=self.provider_name)
             ]
         }
 
@@ -141,7 +140,7 @@ class CitationsProvider(object):
         if the user has authorization to grant"""
         external_account = ExternalAccount.load(external_account_id)
 
-        if external_account not in user.external_accounts:
+        if not user.external_accounts.filter(id=external_account.id).all():
             raise HTTPError(http.FORBIDDEN)
 
         try:
@@ -204,11 +203,7 @@ class CitationsProvider(object):
                 folder['parent_list_id'] = 'ROOT'
 
         node_account = node_addon.external_account
-        user_accounts = [
-            account for account in user.external_accounts
-            if account.provider == self.provider_name
-        ] if user else []
-        user_is_owner = node_account in user_accounts
+        user_is_owner = user.external_accounts.filter(id=node_account.id).exists()
 
         # verify this list is the attached list or its descendant
         if not user_is_owner and (list_id != attached_list_id and attached_list_id is not None):

@@ -3,15 +3,16 @@
 import httpretty
 from nose.tools import *  # noqa
 
+from django.db import IntegrityError
+
 from tests.base import OsfTestCase
-from tests.factories import AuthUserFactory
-from tests.factories import IdentifierFactory
-from tests.factories import RegistrationFactory
+from osf_tests.factories import AuthUserFactory
+from osf_tests.factories import IdentifierFactory
+from osf_tests.factories import RegistrationFactory
 from tests.test_addons import assert_urls_equal
 
 import furl
 import lxml.etree
-from modularodm.storage.base import KeyExistsException
 
 from website import settings
 from website.identifiers.utils import to_anvl
@@ -78,7 +79,7 @@ class TestIdentifierModel(OsfTestCase):
     def test_unique_constraint(self):
         node = RegistrationFactory()
         IdentifierFactory(referent=node)
-        with assert_raises(KeyExistsException):
+        with assert_raises(IntegrityError):
             IdentifierFactory(referent=node)
 
     def test_mixin_get(self):

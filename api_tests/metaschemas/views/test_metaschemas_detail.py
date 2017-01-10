@@ -6,7 +6,7 @@ from website.project.model import ensure_schemas, MetaSchema, Q
 from api.base.settings.defaults import API_BASE
 
 from tests.base import ApiTestCase
-from tests.factories import (
+from osf_tests.factories import (
     AuthUserFactory
 )
 class TestMetaSchemaDetail(ApiTestCase):

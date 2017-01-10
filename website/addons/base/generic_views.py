@@ -27,7 +27,7 @@ def import_auth(addon_short_name, Serializer):
             request.json['external_account_id']
         )
 
-        if external_account not in user_addon.external_accounts:
+        if not user_addon.external_accounts.filter(id=external_account.id).exists():
             raise HTTPError(http.FORBIDDEN)
 
         try:
