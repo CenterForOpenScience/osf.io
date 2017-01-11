@@ -22,8 +22,7 @@ var settings = {
     dbUrl: process.env.SHAREJS_DB_URL || 'mongodb://localhost:27017/sharejs',
     // Raven client
     sentryDSN: process.env.SHAREJS_SENTRY_DSN,
-    // Websockets or no
-    useWs: false
+    useWs: true
 };
 
 var client = new raven.Client(settings.sentryDSN);
@@ -72,29 +71,26 @@ app.use(function(req, res, next) {
 // Serve static sharejs files
 app.use(express.static(sharejs.scriptsDir));
 
-// Broadcasts message to all clients connected to that doc
-// TODO: Can we access the relevant list without iterating over every client?
-if (wss) {
-    wss.broadcast = function(docId, message) {
-        async.each(this.clients, function (client, cb) {
-            if (client.userMeta && client.userMeta.docId === docId) {
-                try {
-                    client.send(message);
-                } catch (e) {
-                    // ignore errors - connection should be handled by share.js library
-                }
-            }
 
-            cb();
-        });
-    };
-}
+wss.broadcast = function(docId, message) {
+    async.each(this.clients, function (client, cb) {
+        if (client.userMeta && client.userMeta.docId === docId) {
+            try {
+                client.send(message);
+            } catch (e) {
+
+            }
+        }
+        cb();
+    });
+};
+
 
 var send = function(client, id, data) {
     return wss ? wss.broadcast(id, data) : client.send(data);
 };
 
-var channelService = function(client) {
+function channelService(client) {
     var stream = new Duplex({objectMode: true});
 
     stream._read = function() {};
@@ -110,18 +106,14 @@ var channelService = function(client) {
     };
 
     stream.headers = wss ? client.upgradeReq.headers : client.headers;
-    stream.remoteAddress = wss ? client.upgradeReq.headers : client.address;
+    stream.remoteAddress = wss ? client.upgradeReq.connection.remoteAddress : client.address;
 
     client.on('message', function(data) {
         if (client.userMeta && locked[client.userMeta.docId]) {
             send(client, client.userMeta.docId, JSON.stringify({type: 'lock'}));
             return;
         }
-        try {
-            data = JSON.parse(data);
-        } catch (e) {
-            return;
-        }
+
         // Handle our custom messages separately
         if (data.registration) {
             console.info('[User Registered] docId: %s, userId: %s', data.docId, data.userId);

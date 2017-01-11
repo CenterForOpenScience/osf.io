@@ -88,7 +88,7 @@ var ShareJSDoc = function(shareWSUrl, metadata, editor, observables) {
             window.location.reload();
         }
     }
-    debugger;
+
     // Handle our custom messages separately
     var onmessage = socket.onmessage;
     socket.onmessage = function (message) {
