@@ -109,7 +109,7 @@ _NOTE: After making changes to `Environment Variables` or `Volume Mounts` (e.g. 
     _NOTE: When the various requirements installations are complete these containers will exit. You should only need to run these containers after pulling code that changes python requirements or if you update the python requirements._
 
 2. Start Core Component Services
-  - `$ docker-compose up elasticsearch postgres tokumx`
+  - `$ docker-compose up elasticsearch postgres tokumx rabbitmq`
 
 3. Remove your existing node_modules and start the assets watcher
   - `$ rm -Rf ./node_modules`
@@ -125,7 +125,7 @@ _NOTE: After making changes to `Environment Variables` or `Volume Mounts` (e.g. 
 6. Run Django migrations
   - `$ docker-compose run --rm web python manage.py migrate`
 7. Start the OSF Web, API Server, and Preprints
-  - `$ docker-compose up web api preprints`
+  - `$ docker-compose up worker web api preprints`
 8. View the OSF at [http://localhost:5000](http://localhost:5000).
 
 
@@ -136,7 +136,7 @@ _NOTE: After making changes to `Environment Variables` or `Volume Mounts` (e.g. 
   ```
   $ docker-sync start
   # Wait until you see "Nothing to do: replicas have not changed since last sync."
-  $ docker-compose up -d assets elasticsearch postgres tokumx mfr wb fakecas sharejs web api preprints
+  $ docker-compose up -d assets elasticsearch postgres tokumx mfr wb fakecas sharejs worker web api preprints
   ```
 
 - To view the logs for a given container: 
