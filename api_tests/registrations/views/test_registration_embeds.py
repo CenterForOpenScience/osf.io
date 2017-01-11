@@ -5,7 +5,7 @@ from framework.auth.core import Auth
 
 from api.base.settings.defaults import API_BASE
 from tests.base import ApiTestCase
-from tests.factories import (
+from osf_tests.factories import (
     ProjectFactory,
     AuthUserFactory,
     RegistrationFactory
@@ -37,7 +37,6 @@ class TestRegistrationEmbeds(ApiTestCase):
 
     def test_embed_children(self):
         url = '/{0}registrations/{1}/?embed=children'.format(API_BASE, self.registration._id)
-
         res = self.app.get(url, auth=self.user.auth)
         json = res.json
         embeds = json['data']['embeds']

@@ -19,7 +19,7 @@ def get_file_object(node, path, provider, request):
         else:
             obj = get_object_or_error(
                 OsfStorageFileNode,
-                Q('node', 'eq', node._id) &
+                Q('node', 'eq', node.pk) &
                 Q('_id', 'eq', path.strip('/')) &
                 Q('is_file', 'eq', not path.endswith('/'))
             )

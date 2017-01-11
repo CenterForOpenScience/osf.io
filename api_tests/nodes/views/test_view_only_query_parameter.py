@@ -4,9 +4,11 @@ from website.util import permissions
 from api.base.settings.defaults import API_BASE
 from tests.base import ApiTestCase
 
-from tests.factories import ProjectFactory
-from tests.factories import AuthUserFactory
-from tests.factories import PrivateLinkFactory
+from osf_tests.factories import (
+    ProjectFactory,
+    AuthUserFactory,
+    PrivateLinkFactory,
+)
 from website.models import Node
 
 
@@ -27,10 +29,10 @@ class ViewOnlyTestCase(ApiTestCase):
         self.private_node_one.add_contributor(self.contributing_read_user, permissions=[permissions.READ], save=True)
         self.private_node_one.add_contributor(self.contributing_write_user, permissions=[permissions.WRITE], save=True)
         self.private_node_one_anonymous_link = PrivateLinkFactory(anonymous=True)
-        self.private_node_one_anonymous_link.nodes.append(self.private_node_one)
+        self.private_node_one_anonymous_link.nodes.add(self.private_node_one)
         self.private_node_one_anonymous_link.save()
         self.private_node_one_private_link = PrivateLinkFactory(anonymous=False)
-        self.private_node_one_private_link.nodes.append(self.private_node_one)
+        self.private_node_one_private_link.nodes.add(self.private_node_one)
         self.private_node_one_private_link.save()
         self.private_node_one_url = '/{}nodes/{}/'.format(API_BASE, self.private_node_one._id)
 
@@ -43,10 +45,10 @@ class ViewOnlyTestCase(ApiTestCase):
         self.public_node_one.add_contributor(self.contributing_read_user, permissions=[permissions.READ], save=True)
         self.public_node_one.add_contributor(self.contributing_write_user, permissions=[permissions.WRITE], save=True)
         self.public_node_one_anonymous_link = PrivateLinkFactory(anonymous=True)
-        self.public_node_one_anonymous_link.nodes.append(self.public_node_one)
+        self.public_node_one_anonymous_link.nodes.add(self.public_node_one)
         self.public_node_one_anonymous_link.save()
         self.public_node_one_private_link = PrivateLinkFactory(anonymous=False)
-        self.public_node_one_private_link.nodes.append(self.public_node_one)
+        self.public_node_one_private_link.nodes.add(self.public_node_one)
         self.public_node_one_private_link.save()
         self.public_node_one_url = '/{}nodes/{}/'.format(API_BASE, self.public_node_one._id)
 
@@ -54,9 +56,6 @@ class ViewOnlyTestCase(ApiTestCase):
         self.public_node_two.add_contributor(self.contributing_read_user, permissions=[permissions.READ], save=True)
         self.public_node_two.add_contributor(self.contributing_write_user, permissions=[permissions.WRITE], save=True)
         self.public_node_two_url = '/{}nodes/{}/'.format(API_BASE, self.public_node_two._id)
-
-    def tearDown(self):
-        Node.remove()
 
 
 class TestNodeDetailViewOnlyLinks(ViewOnlyTestCase):

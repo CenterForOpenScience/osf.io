@@ -29,7 +29,8 @@ class NodeSummary(SummaryAnalytics):
         node_query = (
             Q('is_deleted', 'ne', True) &
             Q('is_folder', 'ne', True) &
-            Q('date_created', 'lt', query_datetime)
+            Q('date_created', 'lt', query_datetime) &
+            Q('is_collection', 'ne', True)
         )
 
         registration_query = node_query & Q('is_registration', 'eq', True)
@@ -98,6 +99,10 @@ if __name__ == '__main__':
     init_app()
     node_summary = NodeSummary()
     args = node_summary.parse_args()
-    date = parse(args.date).date() if args.date else None
+    yesterday = args.yesterday
+    if yesterday:
+        date = (datetime.today() - timedelta(1)).date()
+    else:
+        date = parse(args.date).date() if args.date else None
     events = node_summary.get_events(date)
     node_summary.send_events(events)

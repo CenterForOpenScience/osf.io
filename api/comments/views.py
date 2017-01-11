@@ -20,7 +20,6 @@ from api.comments.serializers import (
     CommentReport
 )
 from framework.auth.core import Auth
-from framework.guid.model import Guid
 from framework.auth.oauth_scopes import CoreScopes
 from framework.exceptions import PermissionsError
 from website.project.model import Comment, Node
@@ -39,7 +38,7 @@ class CommentMixin(object):
     def get_comment(self, check_permissions=True):
         pk = self.kwargs[self.comment_lookup_url_kwarg]
         try:
-            comment = Comment.find_one(Q('_id', 'eq', pk) & Q('root_target', 'ne', None))
+            comment = Comment.find_one(Q('guids___id', 'eq', pk) & Q('root_target', 'ne', None))
         except NoResultsFound:
             raise NotFound
 
@@ -176,7 +175,7 @@ class CommentDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, Comm
             comment_node = comment.target.referent
         elif isinstance(comment.target.referent, (NodeWikiPage,
                                                   StoredFileNode)):
-            comment_node = Guid.load(comment.target.referent.node).referent
+            comment_node = comment.target.referent.node
 
         if comment_node and comment_node.is_registration:
             self.serializer_class = RegistrationCommentDetailSerializer
