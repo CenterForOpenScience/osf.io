@@ -1160,6 +1160,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             contributor = OSFUser.load(user_id)
             if not contributor:
                 raise ValueError('User with id {} was not found.'.format(user_id))
+            if contributor.is_disabled:
+                raise ValidationValueError('Deactivated users cannot be added as contributors.')
             if self.contributor_set.filter(user=contributor).exists():
                 raise ValidationValueError('{} is already a contributor.'.format(contributor.fullname))
             self.add_contributor(contributor=contributor, auth=auth, visible=bibliographic,
