@@ -204,7 +204,6 @@ describe('fangorn', () => {
                 assert.equal(Fangorn.isInvalidDropItem(folder, item, false, false), true);
             });
 
-<<<<<<< HEAD
             it('can be dropped if item provider is dataverse and item is not published', () => {
                 folder = getItem('folder', 2);
                 item = getItem('file', 3);
@@ -214,9 +213,6 @@ describe('fangorn', () => {
             });
 
             it('cannot be dropped if item provider is dataverse and item is published', () => {
-=======
-            it('cannot be dropped if item provider is dataverse', () => {
->>>>>>> 1c6b5b278378a59a5ff0ba23a71e689b130ef73f
                 folder = getItem('folder', 2);
                 item = getItem('file', 3);
                 item.data.provider = 'dataverse';
@@ -224,7 +220,6 @@ describe('fangorn', () => {
                 assert.equal(Fangorn.isInvalidDropItem(folder, item, false, false), true);
             });
 
-<<<<<<< HEAD
             it('cannot be dropped if folder provider dataverse and item is a folder', () => {
                 folder = getItem('folder', 2);
                 folder.data.provider = 'dataverse';
@@ -239,10 +234,7 @@ describe('fangorn', () => {
                 assert.equal(Fangorn.isInvalidDropItem(folder, item, false, false), false);
             });
 
-            it('invalid drop if inProgress', () => {
-=======
             it('cannot be dropped if item inProgress is true', () => {
->>>>>>> 1c6b5b278378a59a5ff0ba23a71e689b130ef73f
                 folder = getItem('folder', 2);
                 item = getItem('file', 3);
                 item.inProgress = true;
