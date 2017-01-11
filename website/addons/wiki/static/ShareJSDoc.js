@@ -5,7 +5,7 @@ var LanguageTools = ace.require('ace/ext/language_tools');
 
 var activeUsers = [];
 var collaborative = typeof sharejs !== 'undefined';
-var useWs = typeof WebSocket !== 'undefined' && window.contextVars.sharejs.use_websockets;
+var useWs = typeof WebSocket !== 'undefined' && window.contextVars.sharejs.useWebsockets;
 
 var ShareJSDoc = function(url, metadata, viewText, editor) {
     var self = this;

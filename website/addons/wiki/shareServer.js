@@ -23,7 +23,7 @@ var settings = {
     // Raven client
     sentryDSN: process.env.SHAREJS_SENTRY_DSN,
     // Websockets or no
-    useWs: process.env.SHAREJS_USE_WEBSOCKETS || false
+    useWs: false
 };
 
 var client = new raven.Client(settings.sentryDSN);

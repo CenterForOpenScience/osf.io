@@ -2,7 +2,7 @@ var $ = require('jquery');
 var m = require('mithril');
 
 var collaborative = typeof sharejs !== 'undefined';
-var useWs = typeof WebSocket !== 'undefined' && window.contextVars.sharejs.use_websockets;
+var useWs = typeof WebSocket !== 'undefined' && window.contextVars.sharejs.useWebsockets;
 
 var ShareJSDoc = function(shareWSUrl, metadata, editor, observables) {
     var self = this;
@@ -88,7 +88,7 @@ var ShareJSDoc = function(shareWSUrl, metadata, editor, observables) {
             window.location.reload();
         }
     }
-
+    debugger;
     // Handle our custom messages separately
     var onmessage = socket.onmessage;
     socket.onmessage = function (message) {
