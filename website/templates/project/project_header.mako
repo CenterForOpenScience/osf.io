@@ -135,7 +135,7 @@
         % endif
 
         % if node['is_pending_retraction']:
-            <div class="alert alert-info">This ${node['node_type']} is currently pending entering into a withdrawn state.</div>
+            <div class="alert alert-info">This ${node['node_type']} is currently pending withdrawal.</div>
         % endif
 
         % if node['is_retracted']:

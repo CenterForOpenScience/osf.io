@@ -72,6 +72,9 @@ website/gpg/
 webpack-assets.json
 sauce.json
 
+# Built log templates
+website/templates/_log_templates.mako
+
 # Build JS files
 website/static/built/*
 
@@ -133,3 +136,4 @@ scripts/image_maniplation/test_rounded_corners.html
 .docker-compose.env
 .docker-compose.*.env
 docker-compose.override.yml
+.unison*

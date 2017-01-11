@@ -2,7 +2,15 @@ import sys
 
 from rest_framework import serializers as ser
 
-from api.base.serializers import JSONAPISerializer, IDField, TypeField, Link, LinksField, RelationshipField
+from api.base.serializers import (
+    JSONAPISerializer,
+    IDField,
+    TypeField,
+    Link,
+    LinksField,
+    RelationshipField,
+    DateByVersion,
+)
 from api.base.utils import absolute_reverse
 
 from framework.auth.core import Auth
@@ -22,7 +30,7 @@ class WikiSerializer(JSONAPISerializer):
     size = ser.SerializerMethodField()
     path = ser.SerializerMethodField()
     materialized_path = ser.SerializerMethodField(method_name='get_path')
-    date_modified = ser.DateTimeField(source='date')
+    date_modified = DateByVersion(source='date')
     content_type = ser.SerializerMethodField()
     current_user_can_comment = ser.SerializerMethodField(help_text='Whether the current user is allowed to post comments')
     extra = ser.SerializerMethodField(help_text='Additional metadata about this wiki')
@@ -84,7 +92,7 @@ class NodeWikiSerializer(WikiSerializer):
         related_view='nodes:node-comments',
         related_view_kwargs={'node_id': '<node._id>'},
         related_meta={'unread': 'get_unread_comments_count'},
-        filter={'target': '<pk>'}
+        filter={'target': '<_id>'}
     )
 
 
@@ -99,7 +107,7 @@ class RegistrationWikiSerializer(WikiSerializer):
         related_view='registrations:registration-comments',
         related_view_kwargs={'node_id': '<node._id>'},
         related_meta={'unread': 'get_unread_comments_count'},
-        filter={'target': '<pk>'}
+        filter={'target': '<_id>'}
     )
 
 

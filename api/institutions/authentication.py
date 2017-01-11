@@ -3,8 +3,7 @@ import json
 import jwe
 import jwt
 
-from datetime import datetime
-
+from django.utils import timezone
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.authentication import BaseAuthentication
 
@@ -59,7 +58,7 @@ class InstitutionAuthentication(BaseAuthentication):
             user.middle_names = provider['user'].get('middleNames')
             user.family_name = provider['user'].get('familyName')
             user.suffix = provider['user'].get('suffix')
-            user.date_last_login = datetime.utcnow()
+            user.date_last_login = timezone.now()
             user.save()
 
             # User must be saved in order to have a valid _id
@@ -71,8 +70,8 @@ class InstitutionAuthentication(BaseAuthentication):
                 user=user
             )
 
-        if institution not in user.affiliated_institutions:
-            user.affiliated_institutions.append(institution)
+        if not user.is_affiliated_with_institution(institution):
+            user.affiliated_institutions.add(institution)
             user.save()
 
         return user, None

@@ -3,11 +3,13 @@
 # Requirements that are used in the development environment only
 
 # Testing
+pytest==3.0.3
+pytest-django==3.0.0
 nose
-factory-boy==2.6.1
+factory-boy==2.7.0
 webtest-plus==0.3.3
 mock==1.0.1
-fake-factory==0.5.3
+fake-factory==0.5.4
 schema==0.3.1
 HTTPretty==0.8.14
 
@@ -20,6 +22,9 @@ watchdog==0.8.3
 
 # Django SSL for local https development
 django-sslserver==0.19
+
+# Django Debug Toolbar for local development
+django-debug-toolbar==1.5
 
 # Ipdb
 ipdb==0.10.1

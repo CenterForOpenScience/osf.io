@@ -9,7 +9,7 @@
         <img class="addon-icon" src=${addon_icon_url}>
         <span data-bind="text: properName"></span> <!-- TODO: Can we use mako addon_full_name as some other addons do? -->
         <small>
-            <a href="#dataverseInputCredentials" data-toggle="modal" class="pull-right text-primary">Connect Account</a>
+            <a href="#dataverseInputCredentials" data-toggle="modal" class="pull-right text-primary">Connect or Reauthorize Account</a>
         </small>
     </h4>
 
@@ -20,7 +20,7 @@
             <table class="table table-hover">
                 <thead>
                     <tr class="user-settings-addon-auth">
-                        <th class="text-muted default-authorized-by">Authorized on <a data-bind="attr: {href: dataverseUrl}"><em data-bind="text: dataverseHost"></em></a></th>
+                        <th class="text-muted default-authorized-by">Authorized on <a data-bind="attr: {href: dataverseUrl}"><em data-bind="text: dataverseHost"></em></a></th><th></th>
                     </tr>
                 </thead>
                 <!-- ko if: connectedNodes().length > 0 -->
