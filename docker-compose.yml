@@ -181,6 +181,8 @@ services:
     image: quay.io/centerforopenscience/osf:develop
     command: /bin/bash -c "invoke requirements --quick && cp -Rf /usr/local/lib/python2.7/site-packages /"
     restart: 'no'
+    environment:
+      DJANGO_SETTINGS_MODULE: api.base.settings
     volumes:
       - osf_requirements_vol:/site-packages
 
@@ -188,6 +190,8 @@ services:
     image: quay.io/centerforopenscience/osf:develop
     command: invoke assets -dw
     restart: unless-stopped
+    environment:
+      DJANGO_SETTINGS_MODULE: api.base.settings
     volumes:
       - osf_requirements_vol:/usr/local/lib/python2.7/site-packages
       - osf_bower_components_vol:/code/website/static/vendor/bower_components
@@ -219,6 +223,7 @@ services:
 #      - rabbitmq
 #    environment:
 #      C_FORCE_ROOT: 1
+#      DJANGO_SETTINGS_MODULE: api.base.settings
 #    env_file:
 #      - .docker-compose.env
 #    volumes:
@@ -236,6 +241,7 @@ services:
       - elasticsearch
     environment:
       C_FORCE_ROOT: 1
+      DJANGO_SETTINGS_MODULE: api.base.settings
     env_file:
       - .docker-compose.env
     volumes:
@@ -253,8 +259,10 @@ services:
 #      - 8001:8001
 #    depends_on:
 #      - tokumx
-##      - rabbitmq
+#      - rabbitmq
 #      - elasticsearch
+#    environment:
+#      DJANGO_SETTINGS_MODULE: admin.base.settings
 #    env_file:
 #      - .docker-compose.env
 #    stdin_open: true
@@ -272,8 +280,10 @@ services:
     depends_on:
       - postgres
       - tokumx
-#      - rabbitmq
+      - rabbitmq
       - elasticsearch
+    environment:
+      DJANGO_SETTINGS_MODULE: api.base.settings
     env_file:
       - .docker-compose.env
     volumes:
@@ -292,8 +302,10 @@ services:
     depends_on:
       - postgres
       - tokumx
-#      - rabbitmq
+      - rabbitmq
       - elasticsearch
+    environment:
+      DJANGO_SETTINGS_MODULE: api.base.settings
     env_file:
       - .docker-compose.env
     volumes:
