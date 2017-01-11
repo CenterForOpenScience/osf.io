@@ -9,6 +9,8 @@ volumes:
     external: false
   elasticsearch_data_vol:
     external: false
+  rabbitmq_vol:
+    external: false
   preprints_dist_vol:
     external: false
   mfr_requirements_vol:
@@ -37,16 +39,20 @@ services:
       - 9200:9200
     volumes:
       - elasticsearch_data_vol:/usr/share/elasticsearch/data
+    stdin_open: true
+    tty: true
 
   postgres:
-   image: postgres:9.6
-   command: /bin/bash -c "sed -i -e 's/max_connections.*/max_connections = 5000/' /var/lib/postgresql/data/postgresql.conf || true && sed -i -e 's/#log_min_duration_statement = .*/log_min_duration_statement = 0/' /var/lib/postgresql/data/postgresql.conf || true && /docker-entrypoint.sh postgres"
-   ports:
-     - 5432:5432
-   environment:
-     POSTGRES_DB: osf
-   volumes:
-     - postgres_data_vol:/var/lib/postgresql/data/
+    image: postgres:9.6
+    command: /bin/bash -c "sed -i -e 's/max_connections.*/max_connections = 5000/' /var/lib/postgresql/data/postgresql.conf || true && sed -i -e 's/#log_min_duration_statement = .*/log_min_duration_statement = 0/' /var/lib/postgresql/data/postgresql.conf || true && /docker-entrypoint.sh postgres"
+    ports:
+      - 5432:5432
+    environment:
+      POSTGRES_DB: osf
+    volumes:
+      - postgres_data_vol:/var/lib/postgresql/data/
+    stdin_open: true
+    tty: true
 
   tokumx:
     image: quay.io/centerforopenscience/tokumx:latest
@@ -57,6 +63,28 @@ services:
       TOKU_HUGE_PAGES_OK: 1
     volumes:
       - tokumx_data_vol:/data/db
+    stdin_open: true
+    tty: true
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - 5672:5672
+      - 15672:15672
+    volumes:
+      - rabbitmq_vol:/var/lib/rabbitmq
+    stdin_open: true
+    tty: true
+
+#  flower:
+#    image: quay.io/centerforopenscience/osf:develop
+#    command: python manage.py celery flower
+#    depends_on:
+#      - rabbitmq
+#    ports:
+#      - 5555:5555
+#    environment:
+#      BROKER_URL: amqp://guest:guest@rabbitmq:5672/
 
 
   #########################
@@ -80,6 +108,8 @@ services:
       - .docker-compose.mfr.env
     volumes:
       - mfr_requirements_vol:/usr/local/lib/python3.5/site-packages
+    stdin_open: true
+    tty: true
 
   ###############
   # WaterButler #
@@ -103,6 +133,8 @@ services:
     volumes:
       - wb_requirements_vol:/usr/local/lib/python3.5/site-packages
       - wb_osfstoragecache_vol:/code/website/osfstoragecache
+    stdin_open: true
+    tty: true
 
 
   ##################################
@@ -117,6 +149,8 @@ services:
       - 8080:8080
     depends_on:
       - postgres
+    stdin_open: true
+    tty: true
 
 
   #############
@@ -135,60 +169,13 @@ services:
       - 4200:4200
     volumes:
       - preprints_dist_vol:/code/dist
+    stdin_open: true
+    tty: true
 
 
   #######
   # OSF #
   #######
-
-#  rabbitmq:
-#    image: rabbitmq:management
-#    ports:
-#      - 5672:5672
-#      - 15672:15672
-
-#  flower:
-#    image: quay.io/centerforopenscience/osf:develop
-#    command: python manage.py celery flower
-#    depends_on:
-#      - rabbitmq
-#    ports:
-#      - 5555:5555
-#    environment:
-#      BROKER_URL: amqp://guest:guest@rabbitmq:5672/
-
-#  beat:
-#    image: quay.io/centerforopenscience/osf:develop
-#    command: invoke celery_beat
-#    depends_on:
-#      - postgres
-#      - rabbitmq
-#      - elasticsearch
-#    volumes:
-#      - osf_requirements_vol:/usr/local/lib/python2.7/site-packages
-#      - ./:/code
-#    environment:
-#      DB_HOST: postgres
-#      ELASTIC_URI: elasticsearch:9200
-#      BROKER_URL: amqp://guest:guest@rabbitmq:5672/
-
-#  worker:
-#    image: quay.io/centerforopenscience/osf:develop
-#    command: invoke celery_worker
-#    restart: unless-stopped
-#    depends_on:
-#      - postgres
-#      - tokumx
-#      - rabbitmq
-#      - elasticsearch
-#    volumes:
-#      - osf_requirements_vol:/usr/local/lib/python2.7/site-packages
-#      - ./:/code
-#    environment:
-#      C_FORCE_ROOT: 1
-#      DB_HOST: postgres
-#      ELASTIC_URI: elasticsearch:9200
-#      BROKER_URL: amqp://guest:guest@rabbitmq:5672/
 
   requirements:
     image: quay.io/centerforopenscience/osf:develop
@@ -205,6 +192,58 @@ services:
       - osf_requirements_vol:/usr/local/lib/python2.7/site-packages
       - osf_bower_components_vol:/code/website/static/vendor/bower_components
       - osf_node_modules_vol:/code/node_modules
+    stdin_open: true
+    tty: true
+
+  sharejs:
+    image: quay.io/centerforopenscience/osf:develop
+    command: invoke sharejs
+    restart: unless-stopped
+    ports:
+      - 7007:7007
+    depends_on:
+      - tokumx
+    env_file:
+      - .docker-compose.sharejs.env
+    volumes:
+      - osf_requirements_vol:/usr/local/lib/python2.7/site-packages
+      - osf_node_modules_vol:/code/node_modules
+    stdin_open: true
+    tty: true
+
+#  beat:
+#    image: quay.io/centerforopenscience/osf:develop
+#    command: invoke celery_beat
+#    depends_on:
+#      - postgres
+#      - rabbitmq
+#    environment:
+#      C_FORCE_ROOT: 1
+#    env_file:
+#      - .docker-compose.env
+#    volumes:
+#      - osf_requirements_vol:/usr/local/lib/python2.7/site-packages
+#      - osf_bower_components_vol:/code/website/static/vendor/bower_components
+#      - osf_node_modules_vol:/code/node_modules
+
+  worker:
+    image: quay.io/centerforopenscience/osf:develop
+    command: invoke celery_worker
+    restart: unless-stopped
+    depends_on:
+      - postgres
+      - rabbitmq
+      - elasticsearch
+    environment:
+      C_FORCE_ROOT: 1
+    env_file:
+      - .docker-compose.env
+    volumes:
+      - osf_requirements_vol:/usr/local/lib/python2.7/site-packages
+      - osf_bower_components_vol:/code/website/static/vendor/bower_components
+      - osf_node_modules_vol:/code/node_modules
+    stdin_open: true
+    tty: true
 
 #  admin:
 #    image: quay.io/centerforopenscience/osf:develop
@@ -241,6 +280,8 @@ services:
       - osf_requirements_vol:/usr/local/lib/python2.7/site-packages
       - osf_bower_components_vol:/code/website/static/vendor/bower_components
       - osf_node_modules_vol:/code/node_modules
+    stdin_open: true
+    tty: true
 
   web:
     image: quay.io/centerforopenscience/osf:develop
@@ -260,3 +301,5 @@ services:
       - osf_bower_components_vol:/code/website/static/vendor/bower_components
       - osf_node_modules_vol:/code/node_modules
       - preprints_dist_vol:/preprints
+    stdin_open: true
+    tty: true

@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load render_bundle from webpack_loader %}
 {% load static %}
 
 {% block title %}
@@ -937,5 +938,5 @@
 
 
 {% block bottom_js %}
-    <script src="{% static 'public/js/metrics-page.js' %}"></script>
+    {% render_bundle 'metrics-page' %}
 {% endblock %}
