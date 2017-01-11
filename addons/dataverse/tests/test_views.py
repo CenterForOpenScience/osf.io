@@ -149,11 +149,13 @@ class TestConfigViews(DataverseAddonTestCase, OAuthAddonConfigViewsTestCaseMixin
 
 class TestHgridViews(DataverseAddonTestCase, OsfTestCase, unittest.TestCase):
 
+    @mock.patch('website.addons.dataverse.views.client.get_custom_publish_text')
     @mock.patch('website.addons.dataverse.views.client.connect_from_settings')
     @mock.patch('website.addons.dataverse.views.client.get_files')
-    def test_dataverse_root_published(self, mock_files, mock_connection):
+    def test_dataverse_root_published(self, mock_files, mock_connection, mock_text):
         mock_connection.return_value = create_mock_connection()
         mock_files.return_value = ['mock_file']
+        mock_text.return_value = 'Do you want to publish?'
 
         self.project.set_privacy('public')
         self.project.save()
@@ -184,11 +186,13 @@ class TestHgridViews(DataverseAddonTestCase, OsfTestCase, unittest.TestCase):
         assert_true(res.json[0]['hasPublishedFiles'])
         assert_equal(res.json[0]['version'], 'latest-published')
 
+    @mock.patch('website.addons.dataverse.views.client.get_custom_publish_text')
     @mock.patch('website.addons.dataverse.views.client.connect_from_settings')
     @mock.patch('website.addons.dataverse.views.client.get_files')
-    def test_dataverse_root_not_published(self, mock_files, mock_connection):
+    def test_dataverse_root_not_published(self, mock_files, mock_connection, mock_text):
         mock_connection.return_value = create_mock_connection()
         mock_files.return_value = []
+        mock_text.return_value = 'Do you want to publish?'
 
         self.project.set_privacy('public')
         self.project.save()
