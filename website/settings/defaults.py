@@ -576,7 +576,8 @@ assert (DRAFT_REGISTRATION_APPROVAL_PERIOD > EMBARGO_END_DATE_MIN), 'The draft r
 
 PREREG_ADMIN_TAG = "prereg_admin"
 
-ENABLE_INSTITUTIONS = False
+# TODO: Remove references to this flag
+ENABLE_INSTITUTIONS = True
 
 ENABLE_VARNISH = False
 ENABLE_ESI = False
