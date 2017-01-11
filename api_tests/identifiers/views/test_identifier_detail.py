@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
-from nose.tools import *
+from nose.tools import *  # flake8: noqa
 import urlparse
 from api.base.settings.defaults import API_BASE
 from website.identifiers.model import Identifier
 
 from tests.base import ApiTestCase
-from tests.factories import (
+from osf_tests.factories import (
     RegistrationFactory,
     AuthUserFactory,
     IdentifierFactory,
@@ -32,10 +32,6 @@ class TestIdentifierDetail(ApiTestCase):
 
         self.node_res = self.app.get(self.node_url)
         self.node_data = self.node_res.json['data']
-
-    def tearDown(self):
-        super(TestIdentifierDetail, self).tearDown()
-        Identifier.remove()
 
     def test_identifier_detail_success_registration(self):
         assert_equal(self.registration_res.status_code, 200)

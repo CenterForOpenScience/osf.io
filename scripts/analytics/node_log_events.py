@@ -6,6 +6,7 @@ from datetime import datetime, timedelta
 
 from website.app import init_app
 from website.project.model import NodeLog
+from framework.mongo.utils import paginated
 from scripts.analytics.base import EventAnalytics
 
 logger = logging.getLogger(__name__)
@@ -33,7 +34,7 @@ class NodeLogEvents(EventAnalytics):
 
         node_log_query = Q('date', 'lt', date + timedelta(1)) & Q('date', 'gte', date)
 
-        node_logs = NodeLog.find(node_log_query)
+        node_logs = paginated(NodeLog, query=node_log_query)
         node_log_events = []
         for node_log in node_logs:
             log_date = node_log.date.replace(tzinfo=pytz.UTC)

@@ -10,9 +10,9 @@ class SnapshotHarness(BaseAnalyticsHarness):
         return [AddonSnapshot]
 
 
-@celery_app.task(name='scripts.run_keen_snapshots')
+@celery_app.task(name='scripts.analytics.run_keen_snapshots')
 def run_main():
-    SnapshotHarness().main()
+    SnapshotHarness().main(command_line=False)
 
 if __name__ == '__main__':
     SnapshotHarness().main()

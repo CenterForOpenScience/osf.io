@@ -358,9 +358,9 @@ class RelationshipField(ser.HyperlinkedIdentityField):
 
         children = RelationshipField(
             related_view='nodes:node-children',
-            related_view_kwargs={'node_id': '<pk>'},
+            related_view_kwargs={'node_id': '<_id>'},
             self_view='nodes:node-node-children-relationship',
-            self_view_kwargs={'node_id': '<pk>'},
+            self_view_kwargs={'node_id': '<_id>'},
             related_meta={'count': 'get_node_count'}
         )
 
@@ -400,7 +400,7 @@ class RelationshipField(ser.HyperlinkedIdentityField):
     replies = RelationshipField(
         self_view='nodes:node-comments',
         self_view_kwargs={'node_id': '<node._id>'},
-        filter={'target': '<pk>'})
+        filter={'target': '<_id>'})
     )
     """
     json_api_link = True  # serializes to a links object
@@ -775,15 +775,15 @@ class LinksField(ser.Field):
         links = LinksField({
             'html': 'absolute_url',
             'children': {
-                'related': Link('nodes:node-children', node_id='<pk>'),
+                'related': Link('nodes:node-children', node_id='<_id>'),
                 'count': 'get_node_count'
             },
             'contributors': {
-                'related': Link('nodes:node-contributors', node_id='<pk>'),
+                'related': Link('nodes:node-contributors', node_id='<_id>'),
                 'count': 'get_contrib_count'
             },
             'registrations': {
-                'related': Link('nodes:node-registrations', node_id='<pk>'),
+                'related': Link('nodes:node-registrations', node_id='<_id>'),
                 'count': 'get_registration_count'
             },
         })
@@ -1101,7 +1101,10 @@ class JSONAPISerializer(ser.Serializer):
                 data['attributes'][field.field_name] = None
             else:
                 try:
-                    representation = field.to_representation(attribute)
+                    if hasattr(attribute, 'all'):
+                        representation = field.to_representation(attribute.all())
+                    else:
+                        representation = field.to_representation(attribute)
                 except SkipField:
                     continue
                 if getattr(field, 'json_api_link', False) or getattr(nested_field, 'json_api_link', False):
@@ -1273,14 +1276,14 @@ class AddonAccountSerializer(JSONAPISerializer):
 
 
 class LinkedNode(JSONAPIRelationshipSerializer):
-    id = ser.CharField(source='node._id', required=False, allow_null=True)
+    id = ser.CharField(source='_id', required=False, allow_null=True)
 
     class Meta:
         type_ = 'linked_nodes'
 
 
 class LinkedRegistration(JSONAPIRelationshipSerializer):
-    id = ser.CharField(source='node._id', required=False, allow_null=True)
+    id = ser.CharField(source='_id', required=False, allow_null=True)
 
     class Meta:
         type_ = 'linked_registrations'
@@ -1303,8 +1306,8 @@ class LinkedNodesRelationshipSerializer(ser.Serializer):
 
     def get_pointers_to_add_remove(self, pointers, new_pointers):
         diff = relationship_diff(
-            current_items={pointer.node._id: pointer for pointer in pointers},
-            new_items={val['node']['_id']: val for val in new_pointers}
+            current_items={pointer._id: pointer for pointer in pointers},
+            new_items={val['_id']: val for val in new_pointers}
         )
 
         nodes_to_add = []
@@ -1320,10 +1323,7 @@ class LinkedNodesRelationshipSerializer(ser.Serializer):
         # Convenience method to format instance based on view's get_object
         return {'data': [
             pointer for pointer in
-            obj.nodes_pointer
-            if not pointer.node.is_deleted
-            and not pointer.node.is_registration
-            and not pointer.node.is_collection
+            obj.linked_nodes.filter(is_deleted=False, type='osf.node')
         ], 'self': obj}
 
     def update(self, instance, validated_data):
@@ -1372,7 +1372,7 @@ class LinkedRegistrationsRelationshipSerializer(ser.Serializer):
 
     def get_pointers_to_add_remove(self, pointers, new_pointers):
         diff = relationship_diff(
-            current_items={pointer.node._id: pointer for pointer in pointers},
+            current_items={pointer._id: pointer for pointer in pointers},
             new_items={val['node']['_id']: val for val in new_pointers}
         )
 
@@ -1389,10 +1389,7 @@ class LinkedRegistrationsRelationshipSerializer(ser.Serializer):
         # Convenience method to format instance based on view's get_object
         return {'data': [
             pointer for pointer in
-            obj.nodes_pointer
-            if not pointer.node.is_deleted
-            and pointer.node.is_registration
-            and not pointer.node.is_collection
+            obj.linked_nodes.filter(is_deleted=False, type='osf.registration')
         ], 'self': obj}
 
     def update(self, instance, validated_data):

@@ -5,7 +5,7 @@ from api.search.serializers import SearchSerializer
 from api_tests import utils
 
 from tests.base import DbTestCase
-from tests.factories import (
+from osf_tests.factories import (
     AuthUserFactory,
     NodeFactory,
     ProjectFactory,

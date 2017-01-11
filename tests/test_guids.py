@@ -8,8 +8,8 @@ from tests.factories import NodeFactory
 
 from modularodm import Q
 from modularodm import fields
-from modularodm.storage.mongostorage import MongoStorage
 
+from framework.mongo.storage import MongoStorage
 from framework.mongo import database
 from framework.guid.model import GuidStoredObject
 
