@@ -688,11 +688,15 @@ def addon_view_file(auth, node, file_node, version):
     else:
         sharejs_uuid = None
 
-    download_url = furl.furl(request.url.encode('utf-8')).set(args=dict(request.args, **{
-        'direct': None,
-        'mode': 'render',
-        'action': 'download',
-    }))
+    internal_furl = furl.furl(settings.INTERNAL_DOMAIN)
+    download_url = furl.furl(request.url.encode('utf-8')).set(
+        netloc=internal_furl.netloc,
+        args=dict(request.args, **{
+            'direct': None,
+            'mode': 'render',
+            'action': 'download',
+        })
+    )
 
     render_url = furl.furl(settings.MFR_SERVER_URL).set(
         path=['render'],

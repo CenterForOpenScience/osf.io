@@ -66,6 +66,7 @@ SECURE_MODE = not DEBUG_MODE  # Set secure cookie
 
 PROTOCOL = 'https://' if SECURE_MODE else 'http://'
 DOMAIN = PROTOCOL + 'localhost:5000/'
+INTERNAL_DOMAIN = DOMAIN
 API_DOMAIN = PROTOCOL + 'localhost:8000/'
 
 # External Ember App Local Development
