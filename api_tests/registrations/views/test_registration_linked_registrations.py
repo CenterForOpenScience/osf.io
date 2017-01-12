@@ -4,12 +4,12 @@ from nose.tools import *  # flake8: noqa
 
 from api.base.settings.defaults import API_BASE
 from framework.auth.core import Auth
-from tests.base import ApiTestCase, get_default_metaschema
-from tests.factories import (
+from osf_tests.factories import (
     AuthUserFactory,
     NodeFactory,
     RegistrationFactory,
 )
+from tests.base import ApiTestCase, get_default_metaschema
 
 
 class LinkedRegistrationsTestCase(ApiTestCase):
