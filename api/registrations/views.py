@@ -921,7 +921,7 @@ class RegistrationLinkedNodesRelationship(JSONAPIBaseView, generics.RetrieveAPIV
         auth = get_user_auth(self.request)
         obj = {'data': [
             linked_node for linked_node in
-            node.linked_nodes.filter(is_deleted=False).exclude(type='osf.collection')
+            node.linked_nodes.filter(is_deleted=False).exclude(type='osf.collection').exclude(type='osf.registration')
             if linked_node.can_view(auth)
         ], 'self': node}
         self.check_object_permissions(self.request, obj)
@@ -954,14 +954,14 @@ class RegistrationLinkedRegistrationsRelationship(JSONAPIBaseView, generics.Retr
     def get_object(self):
         node = self.get_node(check_object_permissions=False)
         auth = get_user_auth(self.request)
-        obj = {'data': [
-            pointer for pointer in
-            node.nodes_pointer
-            if not pointer.node.is_deleted
-            and not pointer.node.is_collection
-            and pointer.node.is_registration
-            and pointer.node.can_view(auth)
-        ], 'self': node}
+        obj = {
+            'data': [
+                linked_registration for linked_registration in
+                node.linked_nodes.filter(is_deleted=False, type='osf.registration').exclude(type='osf.collection')
+                if linked_registration.can_view(auth)
+            ],
+            'self': node
+        }
         self.check_object_permissions(self.request, obj)
         return obj
 
