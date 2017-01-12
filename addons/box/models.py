@@ -14,9 +14,9 @@ from oauthlib.oauth2 import InvalidGrantError
 from osf.models.external import ExternalProvider
 from osf.models.files import File, FileNode, Folder
 from urllib3.exceptions import MaxRetryError
-from website.addons.base import exceptions
-from website.addons.box import settings
-from website.addons.box.serializer import BoxSerializer
+from addons.base import exceptions
+from addons.box import settings
+from addons.box.serializer import BoxSerializer
 from website.util import api_v2_url
 
 logger = logging.getLogger(__name__)

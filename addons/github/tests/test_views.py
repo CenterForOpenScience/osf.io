@@ -22,10 +22,10 @@ from addons.base.tests.views import (
 from addons.github.tests.utils import create_mock_github, GitHubAddonTestCase
 from addons.github.tests.factories import GitHubAccountFactory
 
-from website.addons.github import utils
-from website.addons.github.api import GitHubClient
-from website.addons.github.serializer import GitHubSerializer
-from website.addons.github.utils import check_permissions
+from addons.github import utils
+from addons.github.api import GitHubClient
+from addons.github.serializer import GitHubSerializer
+from addons.github.utils import check_permissions
 
 pytestmark = pytest.mark.django_db
 

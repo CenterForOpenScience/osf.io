@@ -7,10 +7,10 @@ from django.db import models
 from framework.auth.decorators import Auth
 from framework.exceptions import HTTPError
 from osf.models.files import File, FileNode, Folder
-from website.addons.base import exceptions
-from website.addons.dataverse.client import connect_from_settings_or_401
-from website.addons.dataverse.serializer import DataverseSerializer
-from website.addons.dataverse.utils import DataverseNodeLogger
+from addons.base import exceptions
+from addons.dataverse.client import connect_from_settings_or_401
+from addons.dataverse.serializer import DataverseSerializer
+from addons.dataverse.utils import DataverseNodeLogger
 
 
 class DataverseFileNode(FileNode):

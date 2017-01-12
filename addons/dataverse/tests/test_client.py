@@ -12,12 +12,12 @@ from dataverse.exceptions import UnauthorizedError
 from addons.dataverse.models import NodeSettings
 from addons.dataverse.tests.utils import DataverseAddonTestCase, create_external_account
 from framework.exceptions import HTTPError
-from website.addons.dataverse.client import (
+from addons.dataverse.client import (
     _connect, get_files, publish_dataset, get_datasets, get_dataset,
     get_dataverses, get_dataverse, connect_from_settings, connect_or_error,
     connect_from_settings_or_401,
 )
-from website.addons.dataverse import settings
+from addons.dataverse import settings
 
 pytestmark = pytest.mark.django_db
 

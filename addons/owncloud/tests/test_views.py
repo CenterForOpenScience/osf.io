@@ -10,7 +10,7 @@ from addons.base.tests.views import (
 )
 from addons.owncloud.models import OwnCloudProvider
 from tests.base import OsfTestCase
-from website.addons.owncloud.serializer import OwnCloudSerializer
+from addons.owncloud.serializer import OwnCloudSerializer
 from addons.owncloud.tests.utils import OwnCloudAddonTestCase
 
 pytestmark = pytest.mark.django_db

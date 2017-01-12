@@ -15,7 +15,7 @@ from addons.base.tests.views import (
     OAuthAddonConfigViewsTestCaseMixin
 )
 from addons.s3.tests.utils import S3AddonTestCase
-from website.addons.s3.utils import validate_bucket_name, validate_bucket_location
+from addons.s3.utils import validate_bucket_name, validate_bucket_location
 from website.util import api_url_for
 
 pytestmark = pytest.mark.django_db

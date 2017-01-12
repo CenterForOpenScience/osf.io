@@ -7,7 +7,7 @@ import pytest
 from tests.base import OsfTestCase
 
 from addons.forward.tests.factories import ForwardSettingsFactory
-from website.addons.forward import utils
+from addons.forward import utils
 
 pytestmark = pytest.mark.django_db
 

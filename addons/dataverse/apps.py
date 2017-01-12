@@ -26,7 +26,7 @@ class DataverseAddonConfig(BaseAddonConfig):
     @property
     def get_hgrid_data(self):
         # Avoid circular import
-        from website.addons.dataverse.views import _dataverse_root_folder
+        from addons.dataverse.views import _dataverse_root_folder
         return _dataverse_root_folder
 
     FILE_ADDED = 'dataverse_file_added'

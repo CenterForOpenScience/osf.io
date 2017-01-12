@@ -41,12 +41,12 @@ from tests.factories import (ApiOAuth2ApplicationFactory, AuthUserFactory,
                              UnregUserFactory, UserFactory, WatchConfigFactory)
 from tests.utils import mock_archive
 from website import filters, language, mailchimp_utils, settings
-from website.addons.wiki.exceptions import (NameEmptyError, NameInvalidError,
+from addons.wiki.exceptions import (NameEmptyError, NameInvalidError,
                                             NameMaximumLengthError,
                                             PageCannotRenameError,
                                             PageConflictError,
                                             PageNotFoundError)
-from website.addons.wiki.model import NodeWikiPage
+from addons.wiki.models import NodeWikiPage
 from website.exceptions import NodeStateError, TagNotFoundError
 from website.project.model import (DraftRegistration, MetaSchema, Node,
                                    NodeLog, Pointer, ensure_schemas,

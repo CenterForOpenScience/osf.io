@@ -19,7 +19,7 @@ from github3.repos import Repository
 from tests.base import OsfTestCase, get_default_metaschema
 
 from framework.auth import Auth
-from website.addons.github.exceptions import NotFoundError
+from addons.github.exceptions import NotFoundError
 
 from .utils import create_mock_github
 mock_github = create_mock_github()

@@ -4,7 +4,7 @@ import pytest
 from tests.base import OsfTestCase
 from addons.base.tests.serializers import StorageAddonSerializerTestSuiteMixin
 from addons.owncloud.tests.factories import OwnCloudAccountFactory
-from website.addons.owncloud.serializer import OwnCloudSerializer
+from addons.owncloud.serializer import OwnCloudSerializer
 
 pytestmark = pytest.mark.django_db
 

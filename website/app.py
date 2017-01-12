@@ -40,7 +40,7 @@ def init_addons(settings, routes=True):
     :param module settings: The settings module.
     :param bool routes: Add each addon's routing rules to the URL map.
     """
-    from website.addons.base import init_addon
+    from addons.base import init_addon
     settings.ADDONS_AVAILABLE = getattr(settings, 'ADDONS_AVAILABLE', [])
     settings.ADDONS_AVAILABLE_DICT = getattr(settings, 'ADDONS_AVAILABLE_DICT', OrderedDict())
     for addon_name in settings.ADDONS_REQUESTED:

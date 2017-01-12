@@ -4,8 +4,8 @@ import mock
 import pytest
 
 from addons.base.tests.serializers import StorageAddonSerializerTestSuiteMixin
-from website.addons.s3.tests.factories import S3AccountFactory
-from website.addons.s3.serializer import S3Serializer
+from addons.s3.tests.factories import S3AccountFactory
+from addons.s3.serializer import S3Serializer
 
 from tests.base import OsfTestCase
 

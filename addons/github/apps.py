@@ -1,13 +1,12 @@
 import os
 from addons.base.apps import BaseAddonConfig
 
-from website.addons.github.views import github_hgrid_data
+from addons.github.views import github_hgrid_data
 from website import settings
 
+HERE = os.path.dirname(os.path.abspath(__file__))
 NODE_SETTINGS_TEMPLATE = os.path.join(
-    settings.BASE_PATH,
-    'addons',
-    'github',
+    HERE,
     'templates',
     'github_node_settings.mako',
 )

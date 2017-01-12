@@ -22,8 +22,8 @@ from tests.base import OsfTestCase, get_default_metaschema
 from osf_tests.factories import (AuthUserFactory, ProjectFactory,
                              RegistrationFactory)
 from website import settings
-from website.addons.base import AddonConfig, AddonNodeSettingsBase, views
-from website.addons.github.exceptions import ApiError
+from addons.base import AddonConfig, AddonNodeSettingsBase, views
+from addons.github.exceptions import ApiError
 from addons.github.models import GithubFolder, GithubFile, GithubFileNode
 from addons.github.tests.factories import GitHubAccountFactory
 from osf.models import files as file_models

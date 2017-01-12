@@ -11,7 +11,7 @@ from addons.base.tests.views import (
 )
 from addons.figshare.tests.utils import FigshareAddonTestCase
 from tests.base import OsfTestCase
-from website.addons.figshare.model import FigshareClient
+from addons.figshare.model import FigshareClient
 
 pytestmark = pytest.mark.django_db
 

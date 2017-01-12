@@ -9,7 +9,7 @@ from addons.base.tests.models import (OAuthAddonNodeSettingsTestSuiteMixin,
                                       OAuthAddonUserSettingTestSuiteMixin)
 
 from addons.googledrive.models import NodeSettings, GoogleDriveProvider
-from website.addons.googledrive.client import GoogleAuthClient
+from addons.googledrive.client import GoogleAuthClient
 from addons.googledrive.tests.factories import (
     GoogleDriveAccountFactory,
     GoogleDriveNodeSettingsFactory,

@@ -9,7 +9,7 @@ import mendeley
 
 from addons.mendeley import models
 from tests.base import OsfTestCase
-from website.addons.mendeley.api import APISession
+from addons.mendeley.api import APISession
 
 pytestmark = pytest.mark.django_db
 

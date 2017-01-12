@@ -19,7 +19,7 @@ from modularodm.exceptions import ValidationError
 from osf.models import Tag
 from rest_framework import serializers as ser
 from rest_framework import exceptions
-from website.addons.base.exceptions import InvalidAuthError, InvalidFolderError
+from addons.base.exceptions import InvalidAuthError, InvalidFolderError
 from website.exceptions import NodeStateError
 from website.models import (Comment, DraftRegistration, Institution,
                             MetaSchema, Node, PrivateLink)

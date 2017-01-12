@@ -19,9 +19,9 @@ from api.base.settings.defaults import API_BASE
 from osf_tests.factories import AuthUserFactory
 from tests.base import ApiAddonTestCase
 
-from website.addons.mendeley.tests.factories import (MendeleyAccountFactory,
+from addons.mendeley.tests.factories import (MendeleyAccountFactory,
                                                      MendeleyNodeSettingsFactory)
-from website.addons.zotero.tests.factories import (ZoteroAccountFactory,
+from addons.zotero.tests.factories import (ZoteroAccountFactory,
                                                    ZoteroNodeSettingsFactory)
 from website.util.permissions import WRITE, READ, ADMIN
 

@@ -1,6 +1,6 @@
 from addons.base.apps import BaseAddonConfig
 
-from website.addons.box.views import box_root_folder
+from addons.box.views import box_root_folder
 
 class BoxAddonConfig(BaseAddonConfig):
 

@@ -12,7 +12,7 @@ from nose.tools import (assert_equal, assert_false, assert_in, assert_is,
                         assert_true)
 from osf_tests.factories import ProjectFactory, UserFactory
 from tests.utils import mock_auth
-from website.addons.base import exceptions
+from addons.base import exceptions
 
 pytestmark = pytest.mark.django_db
 

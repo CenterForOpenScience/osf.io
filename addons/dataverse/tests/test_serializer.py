@@ -15,7 +15,7 @@ from addons.dataverse.models import DataverseProvider
 from addons.dataverse.tests.factories import DataverseAccountFactory
 from tests.base import OsfTestCase
 
-from website.addons.dataverse.serializer import DataverseSerializer
+from addons.dataverse.serializer import DataverseSerializer
 
 pytestmark = pytest.mark.django_db
 

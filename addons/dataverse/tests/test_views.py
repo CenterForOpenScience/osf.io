@@ -15,7 +15,7 @@ from addons.dataverse.tests.utils import (
 from framework.auth.decorators import Auth
 from tests.factories import AuthUserFactory
 from tests.base import OsfTestCase
-from website.addons.dataverse.serializer import DataverseSerializer
+from addons.dataverse.serializer import DataverseSerializer
 from website.util import api_url_for
 
 pytestmark = pytest.mark.django_db

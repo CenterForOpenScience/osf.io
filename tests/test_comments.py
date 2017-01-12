@@ -14,7 +14,7 @@ from tests.base import OsfTestCase, capture_signals
 from osf_tests.factories import (AuthUserFactory, CommentFactory, NodeFactory,
                              ProjectFactory, UserFactory)
 from website import settings
-from website.addons.osfstorage import settings as osfstorage_settings
+from addons.osfstorage import settings as osfstorage_settings
 from website.files.models import FileNode
 from website.files.models.box import BoxFile
 from website.files.models.dropbox import DropboxFile

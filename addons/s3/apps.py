@@ -1,7 +1,7 @@
 import os
 from addons.base.apps import BaseAddonConfig
 
-from website.addons.s3.views import s3_root_folder
+from addons.s3.views import s3_root_folder
 from website import settings
 
 TEMPLATE_PATH = os.path.join(

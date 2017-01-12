@@ -5,9 +5,9 @@ from framework.auth.core import Auth
 from framework.exceptions import PermissionsError
 
 from website import settings
-from website.addons.base import AddonConfig
-from website.addons.base import AddonOAuthNodeSettingsBase
-from website.addons.base import AddonOAuthUserSettingsBase
+from addons.base import AddonConfig
+from addons.base import AddonOAuthNodeSettingsBase
+from addons.base import AddonOAuthUserSettingsBase
 from website.oauth.models import ExternalProvider
 
 from tests.base import OsfTestCase

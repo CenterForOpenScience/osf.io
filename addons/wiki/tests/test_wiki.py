@@ -19,11 +19,11 @@ from osf_tests.factories import (
 from addons.wiki.tests.factories import NodeWikiFactory
 
 from website.exceptions import NodeStateError
-from website.addons.wiki import settings
-from website.addons.wiki import views
-from website.addons.wiki.exceptions import InvalidVersionError
-from website.addons.wiki.model import NodeWikiPage, render_content
-from website.addons.wiki.utils import (
+from addons.wiki import settings
+from addons.wiki import views
+from addons.wiki.exceptions import InvalidVersionError
+from addons.wiki.models import NodeWikiPage, render_content
+from addons.wiki.utils import (
     get_sharejs_uuid, generate_private_uuid, share_db, delete_share_doc,
     migrate_uuid, format_wiki_version, serialize_wiki_settings,
 )

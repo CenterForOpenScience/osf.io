@@ -1,7 +1,6 @@
 import os
 from addons.base.apps import BaseAddonConfig
 
-from website.addons.owncloud.views import owncloud_root_folder
 from website import settings
 
 TEMPLATE_PATH = os.path.join(
@@ -24,6 +23,8 @@ class OwnCloudAddonConfig(BaseAddonConfig):
 
     @property
     def get_hgrid_data(self):
+        # Import here to avoid AppRegistryNotReady error
+        from addons.owncloud.views import owncloud_root_folder
         return owncloud_root_folder
 
     actions = ()
