@@ -39,23 +39,23 @@ logger = logging.getLogger(__name__)
 
 # These are the doc_types that exist in the search database
 ALIASES = {
+    'project': 'Projects',
     'component': 'Components',
+    'registration': 'Registrations',
+    'user': 'Users',
+    'total': 'Total',
     'file': 'Files',
     'institution': 'Institutions',
-    'project': 'Projects',
     'preprint': 'Preprints',
-    'registration': 'Registrations',
-    'total': 'Total',
-    'user': 'Users',
 }
 
 DOC_TYPE_TO_MODEL = {
     'component': Node,
     'project': Node,
     'registration': Node,
-    'preprint': Node,
     'user': User,
     'file': FileNode,
+    'preprint': Node,
 }
 
 # Prevent tokenizing and stop word removal.
@@ -608,6 +608,7 @@ def delete_doc(elastic_document_id, node, index=None, category=None):
         else:
             category = node.project_or_component
     client().delete(index=index, doc_type=category, id=elastic_document_id, refresh=True, ignore=[404])
+
 
 @requires_search
 def search_contributor(query, page=0, size=10, exclude=None, current_user=None):
