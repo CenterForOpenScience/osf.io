@@ -147,7 +147,7 @@ _NOTE: After making changes to `Environment Variables` or `Volume Mounts` (e.g. 
 
 ## Running arbitrary commands
 
-- View logs: `$ docker-compose -f --tail 100 <container_name>`
+- View logs: `$ docker-compose logs -f --tail 100 <container_name>`
     - _NOTE: CTRL-c will exit_
 - Run migrations:
   - After creating migrations, resetting your database, or starting on a fresh install you will need to run migrations to make the needed changes to database. This command looks at the migrations on disk and compares them to the list of migrations in the `django_migrations` database table and runs any migrations that have not been run.
