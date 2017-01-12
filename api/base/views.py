@@ -351,7 +351,7 @@ class LinkedRegistrationsRelationship(JSONAPIBaseView, generics.RetrieveUpdateDe
     def perform_destroy(self, instance):
         data = self.request.data['data']
         auth = utils.get_user_auth(self.request)
-        current_pointers = {pointer.node._id: pointer for pointer in instance['data']}
+        current_pointers = {pointer._id: pointer for pointer in instance['data']}
         collection = instance['self']
         for val in data:
             if val['id'] in current_pointers:

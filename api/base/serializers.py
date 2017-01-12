@@ -1373,7 +1373,7 @@ class LinkedRegistrationsRelationshipSerializer(ser.Serializer):
     def get_pointers_to_add_remove(self, pointers, new_pointers):
         diff = relationship_diff(
             current_items={pointer._id: pointer for pointer in pointers},
-            new_items={val['node']['_id']: val for val in new_pointers}
+            new_items={val['_id']: val for val in new_pointers}
         )
 
         nodes_to_add = []
