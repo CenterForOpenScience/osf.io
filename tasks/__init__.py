@@ -408,7 +408,7 @@ def sharejs(ctx, host=None, port=None, db_url=None, cors_allow_origin=None):
         os.environ['SHAREJS_CORS_ALLOW_ORIGIN'] = cors_allow_origin
 
     if settings.SHAREJS_USE_WEBSOCKETS:
-        os.environ['SHAREJS_USE_WEBSOCKETS'] = '0'
+        os.environ['SHAREJS_USE_WEBSOCKETS'] = 'true'
     if settings.SENTRY_DSN:
         os.environ['SHAREJS_SENTRY_DSN'] = settings.SENTRY_DSN
 

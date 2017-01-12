@@ -22,8 +22,9 @@ var settings = {
     dbUrl: process.env.SHAREJS_DB_URL || 'mongodb://localhost:27017/sharejs',
     // Raven client
     sentryDSN: process.env.SHAREJS_SENTRY_DSN,
-    useWs: true
+    useWs: process.env.SHAREJS_USE_WEBSOCKETS ? process.env.SHAREJS_USE_WEBSOCKETS === 'true' : false,
 };
+
 
 var client = new raven.Client(settings.sentryDSN);
 
