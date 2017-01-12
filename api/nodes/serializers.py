@@ -361,16 +361,16 @@ class NodeSerializer(JSONAPISerializer):
     def get_node_links_count(self, obj):
         count = 0
         auth = get_user_auth(self.context['request'])
-        for pointer in obj.nodes_pointer:
-            if not pointer.node.is_deleted and not pointer.node.is_registration and not pointer.node.is_collection and pointer.node.can_view(auth):
+        for pointer in obj.linked_nodes.filter(is_deleted=False).exclude(type='osf.collection', type='osf.registration'):
+            if pointer.can_view(auth):
                 count += 1
         return count
 
     def get_registration_links_count(self, obj):
         count = 0
         auth = get_user_auth(self.context['request'])
-        for pointer in obj.nodes_pointer:
-            if not pointer.node.is_deleted and pointer.node.is_registration and not pointer.node.is_collection and pointer.node.can_view(auth):
+        for pointer in obj.linked_nodes.filter(is_deleted=False, type='osf.registration').exclude(type='osf.collection'):
+            if pointer.can_view(auth):
                 count += 1
         return count
 
