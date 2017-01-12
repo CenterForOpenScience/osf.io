@@ -410,34 +410,20 @@ class NodeSettings(BaseStorageAddon, BaseOAuthNodeSettings):
         :param Node fork: Forked node
         :param User user: User creating fork
         :param bool save: Save settings after callback
-        :return tuple: Tuple of cloned settings and alert message
+        :return the cloned settings
         """
-        clone, _ = super(NodeSettings, self).after_fork(
+        clone = super(NodeSettings, self).after_fork(
             node, fork, user, save=False
         )
 
         # Copy authentication if authenticated by forking user
         if self.user_settings and self.user_settings.owner == user:
             clone.user_settings = self.user_settings
-            message = (
-                'GitHub authorization copied to forked {cat}.'
-            ).format(
-                cat=markupsafe.escape(fork.project_or_component),
-            )
-        else:
-            message = (
-                'GitHub authorization not copied to forked {cat}. You may '
-                'authorize this fork on the <u><a href={url}>Settings</a></u> '
-                'page.'
-            ).format(
-                cat=markupsafe.escape(fork.project_or_component),
-                url=fork.url + 'settings/'
-            )
 
         if save:
             clone.save()
 
-        return clone, message
+        return clone
 
     def before_make_public(self, node):
         try:

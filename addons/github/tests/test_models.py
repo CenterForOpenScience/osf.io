@@ -244,7 +244,7 @@ class TestCallbacks(OsfTestCase):
 
     def test_after_fork_authenticator(self):
         fork = ProjectFactory()
-        clone, message = self.node_settings.after_fork(
+        clone = self.node_settings.after_fork(
             self.project, fork, self.project.creator,
         )
         assert_equal(
@@ -254,7 +254,7 @@ class TestCallbacks(OsfTestCase):
 
     def test_after_fork_not_authenticator(self):
         fork = ProjectFactory()
-        clone, message = self.node_settings.after_fork(
+        clone = self.node_settings.after_fork(
             self.project, fork, self.non_authenticator,
         )
         assert_equal(

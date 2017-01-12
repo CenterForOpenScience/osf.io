@@ -66,25 +66,7 @@ class TestNodeSettings(models.OAuthAddonNodeSettingsTestSuiteMixin, OsfTestCase)
         }
         assert_equal(settings, expected)
 
-    def test_after_fork_authenticator(self):
-        fork = ProjectFactory()
-        clone, message = self.node_settings.after_fork(
-            self.project, fork, self.project.creator,
-        )
-        assert_equal(
-            self.node_settings.user_settings,
-            clone.user_settings,
-        )
 
-    def test_after_fork_not_authenticator(self):
-        fork = ProjectFactory()
-        clone, message = self.node_settings.after_fork(
-            self.project, fork, self.non_authenticator,
-        )
-        assert_equal(
-            clone.user_settings,
-            None,
-        )
 
 class TestUserSettings(models.OAuthAddonUserSettingTestSuiteMixin, OsfTestCase):
 
