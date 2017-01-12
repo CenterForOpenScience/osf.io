@@ -22,7 +22,7 @@ class OSFAdmin(UserPassesTestMixin):
             raise PermissionDenied(self.get_permission_denied_message())
 
     def test_func(self):
-        return self.request.user.is_authenticated() and self.request.user.is_in_group('osf_admin')
+        return self.request.user.is_authenticated() and self.request.user.groups.filter(name='osf_admin')
 
 
 class SuperUser(OSFAdmin):
@@ -40,7 +40,7 @@ class PreregAdmin(OSFAdmin):
     permission_denied_message = 'You are not in the Pre-reg admin group.'
 
     def test_func(self):
-        return self.request.user.is_authenticated() and self.request.user.is_in_group('prereg_group')
+        return self.request.user.is_authenticated() and self.request.user.groups.filter(name='prereg_group')
 
 
 def reverse_qs(view, urlconf=None, args=None, kwargs=None, current_app=None, query_kwargs=None):
