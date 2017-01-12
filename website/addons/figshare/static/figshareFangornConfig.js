@@ -23,8 +23,20 @@ var _figshareItemButtons = {
                         className: 'text-success'
                     }, 'Upload')
                 );
+                if (item.data.rootFolderType === 'project') {
+                    buttons.push(
+                        m.component(Fangorn.Components.button, {
+                            onclick: function () {
+                                tb.toolbarMode(Fangorn.Components.toolbarModes.ADDFOLDER);
+                            },
+                            icon: 'fa fa-plus',
+                            className: 'text-success'
+                        }, 'Create Folder'));
+                }
             }
-            if (item.kind === 'file' && item.data.extra && item.data.extra.status === 'public') {
+
+            // Download file or Download-as-zip
+            if (item.kind === 'file') {
                 buttons.push(
                     m.component(Fangorn.Components.button, {
                         onclick: function (event) {
@@ -35,9 +47,17 @@ var _figshareItemButtons = {
                     }, 'Download')
                 );
             }
-            // Files can be deleted if private or if it is in a dataset that contains more than one file
-            var privateOrSiblings = (item.data.extra && item.data.extra.status !== 'public') ||
-                (!item.parent().data.isAddonRoot && item.parent().children.length > 1);
+            else {
+                buttons.push(
+                    m.component(Fangorn.Components.button, {
+                        onclick: function (event) { Fangorn.ButtonEvents._downloadZipEvent.call(tb, event, item); },
+                        icon: 'fa fa-download',
+                        className: 'text-primary'
+                    }, 'Download as zip')
+                );
+            }
+
+            // All files are viewable on the OSF.
             if (item.kind === 'file' && item.data.permissions && item.data.permissions.view) {
                 buttons.push(
                     m.component(Fangorn.Components.button, {
@@ -48,7 +68,10 @@ var _figshareItemButtons = {
                         className: 'text-info'
                     }, 'View'));
             }
-            if (item.kind === 'file' && privateOrSiblings && item.data.permissions && item.data.permissions.edit) {
+
+            // Files and folders can be deleted if private.
+            var isPrivate = (item.data.extra && item.data.extra.status !== 'public');
+            if (isPrivate && item.data.permissions && item.data.permissions.edit) {
                 buttons.push(
                     m.component(Fangorn.Components.button, {
                         onclick: function (event) {
@@ -59,6 +82,8 @@ var _figshareItemButtons = {
                     }, 'Delete')
                 );
             }
+
+            // Files are only viewable on figshare if they are public
             if (item.kind === 'file' && item.data.permissions && item.data.permissions.view && item.data.extra.status === 'public') {
                 buttons.push(
                     m('a.text-info.fangorn-toolbar-icon', {href: item.data.extra.webView}, [

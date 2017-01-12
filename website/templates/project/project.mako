@@ -435,7 +435,7 @@
                     <span id="newComponent">
                         <button class="btn btn-sm btn-default" disabled="true">Add Component</button>
                     </span>
-                    <a class="btn btn-sm btn-default" data-toggle="modal" data-target="#addPointer">Add Links</a>
+                    <a class="btn btn-sm btn-default" data-toggle="modal" data-target="#addPointer">Link Projects</a>
                 % endif
             </div>
         </div><!-- end addon-widget-header -->

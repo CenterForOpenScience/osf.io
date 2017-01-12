@@ -59,6 +59,14 @@ class TaxonomyList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
     def get_queryset(self):
         return Subject.find(self.get_query_from_request())
 
+    # overrides FilterMixin
+    def postprocess_query_param(self, key, field_name, operation):
+        # Queries on 'parents' should be by object_id
+        if field_name == 'parents':
+            if operation['value'] not in (list(), tuple()):
+                operation['source_field_name'] = 'parents___id'
+
+
 class TaxonomyDetail(JSONAPIBaseView, generics.RetrieveAPIView):
     '''[PLOS taxonomy subject](http://journals.plos.org/plosone/browse/) instance. *Read-only*
 

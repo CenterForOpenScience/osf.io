@@ -2,7 +2,7 @@ import time
 import logging
 import argparse
 import importlib
-from datetime import datetime
+from datetime import datetime, timedelta
 from dateutil.parser import parse
 
 from website.app import init_app
@@ -24,7 +24,7 @@ class BaseAnalytics(object):
         raise NotImplementedError('Must specify the analytic type for logging purposes')
 
     def get_events(self, date):
-        pass
+        raise NotImplementedError('You must define a get_events method to gather analytic events')
 
     def send_events(self, events):
         keen_project = keen_settings['private']['project_id']
@@ -83,7 +83,8 @@ class SummaryAnalytics(BaseAnalytics):
                 self.collection_name
             )
         )
-        parser.add_argument('-d', '--date', dest='date', required=True)
+        parser.add_argument('-d', '--date', dest='date')
+        parser.add_argument('-y', '--yesterday', dest='yesterday', action='store_true')
 
         return parser.parse_args()
 
@@ -127,7 +128,7 @@ class EventAnalytics(SummaryAnalytics):
 class BaseAnalyticsHarness(object):
 
     def __init__(self):
-        init_app()
+        init_app(routes=False)
 
     @property
     def analytics_classes(self):
@@ -157,13 +158,12 @@ class BaseAnalyticsHarness(object):
 
             return imported_script_classes
 
-    def main(self):
-        args = self.parse_args()
-        entered_scripts = args.analytics_scripts
-        if entered_scripts:
-            analytics_classes = self.try_to_import_from_args(entered_scripts)
-        else:
-            analytics_classes = self.analytics_classes
+    def main(self, command_line=True):
+        analytics_classes = self.analytics_classes
+        if command_line:
+            args = self.parse_args()
+            if args.analytics_scripts:
+                analytics_classes = self.try_to_import_from_args(args.analytics_scripts)
 
         for analytics_class in analytics_classes:
             class_instance = analytics_class()
@@ -179,19 +179,26 @@ class DateAnalyticsHarness(BaseAnalyticsHarness):
             '-as', '--analytics_scripts', nargs='+', dest='analytics_scripts', required=False,
             help='Enter the names of scripts inside scripts/analytics you would like to run separated by spaces (ex: -as user_summary node_summary)'
         )
-        parser.add_argument('-d', '--date', dest='date', required=True)
+        parser.add_argument('-d', '--date', dest='date', required=False)
+        parser.add_argument('-y', '--yesterday', dest='yesterday', action='store_true')
         return parser.parse_args()
 
+    def main(self, date=None, yesterday=False, command_line=True):
+        analytics_classes = self.analytics_classes
+        if yesterday:
+            date = (datetime.today() - timedelta(1)).date()
 
-    def main(self, date=None):
-        args = self.parse_args()
-        entered_scripts = args.analytics_scripts
-        if not date:
-            date = parse(args.date).date()
-        if entered_scripts:
-            analytics_classes = self.try_to_import_from_args(entered_scripts)
-        else:
-            analytics_classes = self.analytics_classes
+        if command_line:
+            args = self.parse_args()
+            if args.yesterday:
+                date = (datetime.today() - timedelta(1)).date()
+            if not date:
+                try:
+                    date = parse(args.date).date()
+                except AttributeError:
+                    raise AttributeError('You must either specify a date or use the yesterday argument to gather analytics for yesterday.')
+            if args.analytics_scripts:
+                analytics_classes = self.try_to_import_from_args(args.analytics_scripts)
 
         for analytics_class in analytics_classes:
             class_instance = analytics_class()

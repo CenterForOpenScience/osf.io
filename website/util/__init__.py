@@ -7,6 +7,7 @@ import logging
 import urlparse
 from contextlib import contextmanager
 
+from blinker import ANY
 import furl
 
 from flask import request, url_for
@@ -79,7 +80,7 @@ def _get_guid_url_for(url):
     return guid_url
 
 
-def api_url_for(view_name, _absolute=False, _xml=False, *args, **kwargs):
+def api_url_for(view_name, _absolute=False, _xml=False, _internal=False, *args, **kwargs):
     """Reverse URL lookup for API routes (that use the JSONRenderer or XMLRenderer).
     Takes the same arguments as Flask's url_for, with the addition of
     `_absolute`, which will make an absolute URL with the correct HTTP scheme
@@ -92,7 +93,8 @@ def api_url_for(view_name, _absolute=False, _xml=False, *args, **kwargs):
     if _absolute:
         # We do NOT use the url_for's _external kwarg because app.config['SERVER_NAME'] alters
         # behavior in an unknown way (currently breaks tests). /sloria /jspies
-        return urlparse.urljoin(website_settings.DOMAIN, url)
+        domain = website_settings.INTERNAL_DOMAIN if _internal else website_settings.DOMAIN
+        return urlparse.urljoin(domain, url)
     return url
 
 
@@ -191,10 +193,21 @@ def waterbutler_api_url_for(node_id, provider, path='/', **kwargs):
 
 @contextmanager
 def disconnected_from(signal, listener):
-    """Temporarily disconnect a Blinker signal."""
+    """Temporarily disconnect a single listener from a Blinker signal."""
     signal.disconnect(listener)
     yield
     signal.connect(listener)
+
+
+@contextmanager
+def disconnected_from_listeners(signal):
+    """Temporarily disconnect all listeners for a Blinker signal."""
+    listeners = list(signal.receivers_for(ANY))
+    for listener in listeners:
+        signal.disconnect(listener)
+    yield
+    for listener in listeners:
+        signal.connect(listener)
 
 
 def check_private_key_for_anonymized_link(private_key):

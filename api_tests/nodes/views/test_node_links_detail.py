@@ -8,7 +8,7 @@ from website.models import NodeLog
 from api.base.settings.defaults import API_BASE
 
 from tests.base import ApiTestCase
-from tests.factories import (
+from osf_tests.factories import (
     ProjectFactory,
     RegistrationFactory,
     AuthUserFactory,
@@ -110,7 +110,7 @@ class TestDeleteNodeLink(ApiTestCase):
     def test_delete_node_link_no_permissions_for_target_node(self):
         pointer_project = ProjectFactory(creator=self.user_two, is_public=False)
         pointer = self.public_project.add_pointer(pointer_project, auth=Auth(self.user), save=True)
-        assert_in(pointer, self.public_project.nodes)
+        assert_in(pointer.child, self.public_project.nodes)
         url = '/{}nodes/{}/node_links/{}/'.format(API_BASE, self.public_project._id, pointer._id)
         res = self.app.delete_json_api(url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 204)
