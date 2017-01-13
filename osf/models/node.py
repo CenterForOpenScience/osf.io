@@ -2160,7 +2160,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             self.set_visible(user, visible, auth=auth)
 
     def save(self, *args, **kwargs):
-        first_save = bool(self.pk)
+        first_save = not bool(self.pk)
         if 'suppress_log' in kwargs.keys():
             self._suppress_log = kwargs['suppress_log']
             del kwargs['suppress_log']
