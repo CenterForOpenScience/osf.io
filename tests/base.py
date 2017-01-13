@@ -28,7 +28,7 @@ from framework.mongo import database as database_proxy
 from framework.sessions.model import Session
 from framework.transactions import commands, messages, utils
 from website import settings
-from addons.base import AddonConfig
+from website.addons.base import AddonConfig
 from addons.wiki.models import NodeWikiPage
 from website.app import init_app
 from website.notifications.listeners import (subscribe_contributor,

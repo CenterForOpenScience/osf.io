@@ -5,7 +5,7 @@ from framework.auth.core import Auth
 from framework.exceptions import PermissionsError
 
 from website import settings
-from addons.base import AddonConfig
+from website.addons.base import AddonConfig
 from addons.base import AddonOAuthNodeSettingsBase
 from addons.base import AddonOAuthUserSettingsBase
 from website.oauth.models import ExternalProvider
