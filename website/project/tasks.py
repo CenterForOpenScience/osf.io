@@ -1,10 +1,11 @@
 import logging
-
+import urlparse
 import requests
 
 from framework.celery_tasks import app as celery_app
 
 from website import settings
+from website.util.share import GraphNode, format_contributor
 
 
 logger = logging.getLogger(__name__)
@@ -55,3 +56,56 @@ def on_node_updated(node_id, user_id, first_save, saved_fields, request_headers=
             }, headers={'Authorization': 'Bearer {}'.format(settings.SHARE_API_TOKEN), 'Content-Type': 'application/vnd.api+json'})
             logger.debug(resp.content)
             resp.raise_for_status()
+
+            if node.is_registration:
+                resp = requests.post('{}api/v2/normalizeddata/'.format(settings.SHARE_URL), json={
+                    'data': {
+                        'type': 'NormalizedData',
+                        'attributes': {
+                            'tasks': [],
+                            'raw': None,
+                            'data': {'@graph': format_registration(node)}
+                        }
+                    }
+                }, headers={'Authorization': 'Bearer {}'.format(settings.SHARE_API_TOKEN), 'Content-Type': 'application/vnd.api+json'})
+                logger.debug(resp.content)
+                resp.raise_for_status()
+
+
+def format_registration(node):
+    registration_graph = GraphNode('registration', **{
+        'title': node.title,
+        'description': node.description or '',
+        'is_deleted': not node.is_published or not node.is_public or node.is_preprint_orphan or 'qatest' in (node.tags or []) or node.is_deleted,
+        'date_published': node.registered_date.isoformat() if node.registered_date else None,
+        'registration_type': node.registered_schema[0].name if node.registered_schema else None
+    })
+
+    to_visit = [
+        registration_graph,
+        GraphNode('workidentifier', creative_work=registration_graph, uri=urlparse.urljoin(settings.DOMAIN, node.url))
+    ]
+
+
+    registration_graph.attrs['tags'] = [
+        GraphNode('throughtags', creative_work=registration_graph, tag=GraphNode('tag', name=tag._id))
+        for tag in node.tags or [] if tag._id
+    ]
+
+
+    to_visit.extend(format_contributor(registration_graph, user, bool(user._id in node.visible_contributor_ids), i) for i, user in enumerate(node.contributors))
+    to_visit.extend(GraphNode('AgentWorkRelation', creative_work=registration_graph, agent=GraphNode('institution', name=institution.name)) for institution in node.affiliated_institutions)
+
+    visited = set()
+    to_visit.extend(registration_graph.get_related())
+
+    while True:
+        if not to_visit:
+            break
+        n = to_visit.pop(0)
+        if n in visited:
+            continue
+        visited.add(n)
+        to_visit.extend(list(n.get_related()))
+
+    return [node_.serialize() for node_ in visited]
