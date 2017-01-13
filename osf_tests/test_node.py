@@ -41,6 +41,7 @@ from .factories import (
     CollectionFactory,
     NodeRelationFactory,
     InstitutionFactory,
+    PreprintFactory,
 )
 from .factories import get_default_metaschema
 from addons.wiki.tests.factories import NodeWikiFactory
@@ -60,6 +61,9 @@ def node(user):
 def auth(user):
     return Auth(user)
 
+@pytest.fixture()
+def preprint(node):
+    return PreprintFactory(project=node)
 
 def test_top_level_node_has_parent_node_none():
     project = ProjectFactory()
@@ -2618,3 +2622,13 @@ class TestAddonMethods:
             len(node.get_addon_names()) ==
             addon_count
         )
+
+class TestPreprintProperties:
+
+    def test_preprint_url_node(self, node):
+        assert node.preprint_url is None
+        with pytest.raises(AttributeError):
+            node.preprints.first().url
+
+    def test_preprint_url_preprint(self, preprint):
+        assert preprint.node.preprint_url == preprint.url
