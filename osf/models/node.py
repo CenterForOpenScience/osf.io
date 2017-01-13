@@ -393,7 +393,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     def preprint_url(self):
         if self.is_preprint:
             try:
-                return self.preprint.url
+                # if multiple preprints per project are supported on the front end this needs to change.
+                return self.preprints.get_queryset()[0].url
             except IndexError:
                 pass
 
