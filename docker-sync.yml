@@ -36,5 +36,5 @@ syncs:
     dest: '/code'
     sync_strategy: 'unison'
     sync_excludes_type: 'Name'
-    sync_excludes: ['.DS_Store', '*.map', '*.pyc', '*.tmp', '.git', '.idea', 'bower_components', 'node_modules']
-    watch_excludes: ['.*\.DS_Store', '.*\.map', '.*\.pyc', '.*\.tmp', '.*/\.git', '.*/\.idea', '.*/bower_components', '.*/node_modules']
+    sync_excludes: ['.DS_Store', '*.map', '*.pyc', '*.tmp', 'etree.py', '.git', '.idea', 'bower_components', 'node_modules']
+    watch_excludes: ['.*\.DS_Store', '.*\.map', '.*\.pyc', '.*\.tmp', '.*/etree\.py', '.*/\.git', '.*/\.idea', '.*/bower_components', '.*/node_modules']
