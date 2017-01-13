@@ -1,12 +1,9 @@
 import os
 from addons.base.apps import BaseAddonConfig
 
-from website import settings
-
+HERE = os.path.dirname(os.path.abspath(__file__))
 TEMPLATE_PATH = os.path.join(
-    settings.BASE_PATH,
-    'addons',
-    'owncloud',
+    HERE,
     'templates'
 )
 

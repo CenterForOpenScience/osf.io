@@ -2,7 +2,6 @@ import os
 from addons.base.apps import BaseAddonConfig
 
 from addons.github.views import github_hgrid_data
-from website import settings
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 NODE_SETTINGS_TEMPLATE = os.path.join(

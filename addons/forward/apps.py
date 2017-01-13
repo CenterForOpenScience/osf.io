@@ -1,12 +1,10 @@
 import os
 
 from addons.base.apps import BaseAddonConfig
-from website import settings
 
+HERE = os.path.dirname(os.path.abspath(__file__))
 NODE_SETTINGS_TEMPLATE = os.path.join(
-    settings.BASE_PATH,
-    'addons',
-    'forward',
+    HERE,
     'templates',
     'forward_node_settings.mako',
 )

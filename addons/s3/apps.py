@@ -2,12 +2,10 @@ import os
 from addons.base.apps import BaseAddonConfig
 
 from addons.s3.views import s3_root_folder
-from website import settings
 
+HERE = os.path.dirname(os.path.abspath(__file__))
 TEMPLATE_PATH = os.path.join(
-    settings.BASE_PATH,
-    'addons',
-    's3',
+    HERE,
     'templates'
 )
 

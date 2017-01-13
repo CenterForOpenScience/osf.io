@@ -2,12 +2,9 @@ import os
 
 from addons.base.apps import BaseAddonConfig
 
-from website.settings import BASE_PATH
-
+HERE = os.path.dirname(os.path.abspath(__file__))
 TEMPLATE_PATH = os.path.join(
-    BASE_PATH,
-    'addons',
-    'dataverse',
+    HERE,
     'templates'
 )
 
