@@ -105,6 +105,10 @@ class BaseModel(models.Model):
                 return cls.objects.get(guids___id=data)
             elif issubclass(cls, ObjectIDMixin):
                 return cls.objects.get(_id=data)
+            elif isinstance(data, basestring):
+                # Some models (CitationStyle) have an _id that is not a bson
+                # Looking up things by pk will never work with a basestring
+                return cls.objects.get(_id=data)
             return cls.objects.get(pk=data)
         except cls.DoesNotExist:
             return None
