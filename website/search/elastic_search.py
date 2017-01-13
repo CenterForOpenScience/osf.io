@@ -8,26 +8,21 @@ import logging
 import math
 import re
 import unicodedata
+from framework import sentry
 
-from django.apps import apps
-from elasticsearch import (
-    ConnectionError,
-    Elasticsearch,
-    NotFoundError,
-    RequestError,
-    TransportError,
-    helpers,
-)
-from modularodm import Q
 import six
 
-from framework import sentry
+from django.apps import apps
+from elasticsearch import (ConnectionError, Elasticsearch, NotFoundError,
+                           RequestError, TransportError, helpers)
 from framework.celery_tasks import app as celery_app
 from framework.mongo.utils import paginated
-
+from modularodm import Q
+from osf.models import AbstractNode as Node
+from osf.models import OSFUser as User
+from osf.models import FileNode
 from website import settings
 from website.filters import gravatar
-from osf.models import OSFUser as User, FileNode, AbstractNode as Node
 from website.project.licenses import serialize_node_license_record
 from website.search import exceptions
 from website.search.util import build_query, clean_splitters
