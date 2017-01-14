@@ -379,6 +379,7 @@ class TestStorageAddonBase(ArchiverTestCase):
                 node=self.src,
                 user=self.user,
                 view_only=True,
+                _internal=True,
             )
             httpretty.register_uri(httpretty.GET,
                                    url,

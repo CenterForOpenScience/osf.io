@@ -182,6 +182,16 @@ _NOTE: After making changes to `Environment Variables` or `Volume Mounts` (e.g. 
     - `Single Instance only`
   - Configure `.docker-compose.env` `<APP>_REMOTE_DEBUG` environment variables to match these settings.
 
+## Application Tests
+- Run All Tests
+  - `$ docker-compose run --rm web invoke test`
+
+- Run OSF Specific Tests
+  - `$ docker-compose run --rm web invoke test_osf`
+
+- Test a Specific Module
+  - `$ docker-compose run --rm web invoke test_module -m tests/test_conferences.py`
+
 ## Managing Container State
 
 Restart a container:

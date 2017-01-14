@@ -557,6 +557,7 @@ CORE_TESTS = [
     'tests/test_subjects.py',
     'tests/test_tokens.py',
     'tests/test_webtests.py',
+    'tests/test_utils.py',
 ]
 @task
 def test_osf(ctx):

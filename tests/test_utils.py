@@ -11,7 +11,7 @@ from nose.tools import *  # noqa (PEP8 asserts)
 import blinker
 
 from tests.base import OsfTestCase
-from tests.factories import RegistrationFactory
+from osf_tests.factories import RegistrationFactory
 
 from framework.routing import Rule, json_renderer
 from framework.utils import secure_filename
@@ -211,6 +211,18 @@ class TestUrlForHelpers(unittest.TestCase):
         assert_in('path=path', url)
         assert_in('provider=provider', url)
 
+    def test_waterbutler_url_for_internal(self):
+        settings.WATERBUTLER_INTERNAL_URL = 'http://1.2.3.4:7777'
+        with self.app.test_request_context():
+            url = waterbutler_url_for('upload', 'provider', 'path', mock.Mock(_id='_id'), _internal=True)
+
+        assert_not_in(settings.WATERBUTLER_URL, url)
+        assert_in(settings.WATERBUTLER_INTERNAL_URL, url)
+        assert_in('nid=_id', url)
+        assert_in('/file?', url)
+        assert_in('path=path', url)
+        assert_in('provider=provider', url)
+
     def test_waterbutler_url_for_implicit_cookie(self):
         with self.app.test_request_context() as context:
             context.request.cookies = {settings.COOKIE_NAME: 'cookie'}
@@ -388,11 +400,7 @@ class TestWebsiteUtils(unittest.TestCase):
 class TestProjectUtils(OsfTestCase):
 
     def set_registered_date(self, reg, date):
-        reg._fields['registered_date'].__set__(
-            reg,
-            date,
-            safe=True
-        )
+        reg.registered_date = date
         reg.save()
 
     def test_get_recent_public_registrations(self):
