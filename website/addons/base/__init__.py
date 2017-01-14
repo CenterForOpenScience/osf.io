@@ -769,6 +769,7 @@ class StorageAddonBase(object):
             kwargs['version'] = version
         metadata_url = waterbutler_url_for(
             'metadata',
+            _internal=True,
             **kwargs
         )
         res = requests.get(metadata_url)

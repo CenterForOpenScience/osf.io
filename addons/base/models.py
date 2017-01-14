@@ -587,7 +587,7 @@ class BaseStorageAddon(BaseModel):
             kwargs['cookie'] = cookie
         if version:
             kwargs['version'] = version
-        metadata_url = waterbutler_url_for('metadata', **kwargs)
+        metadata_url = waterbutler_url_for('metadata', _internal=True, **kwargs)
 
         res = requests.get(metadata_url)
         if res.status_code != 200:

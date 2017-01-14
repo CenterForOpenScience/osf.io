@@ -4837,21 +4837,17 @@ class TestOnNodeUpdate(OsfTestCase):
         assert_equals(task.args[2], False)
         assert_equals(task.args[3], {'title'})
 
+    @mock.patch('website.project.tasks.settings.SHARE_URL', None)
+    @mock.patch('website.project.tasks.settings.SHARE_API_TOKEN', None)
     @mock.patch('website.project.tasks.requests')
     def test_skips_no_settings(self, requests):
-        from website.project.tasks import settings
-        settings.SHARE_URL = None
-        settings.SHARE_API_TOKEN = None
-
         on_node_updated(self.node._id, self.user._id, False, {'is_public'})
         assert_false(requests.post.called)
 
+    @mock.patch('website.project.tasks.settings.SHARE_URL', 'https://share.osf.io')
+    @mock.patch('website.project.tasks.settings.SHARE_API_TOKEN', 'Token')
     @mock.patch('website.project.tasks.requests')
     def test_updates_share(self, requests):
-        from website.project.tasks import settings
-        settings.SHARE_URL = 'https://share.osf.io'
-        settings.SHARE_API_TOKEN = 'Token'
-
         on_node_updated(self.node._id, self.user._id, False, {'is_public'})
 
         kwargs = requests.post.call_args[1]
@@ -4861,12 +4857,10 @@ class TestOnNodeUpdate(OsfTestCase):
         assert_equals(kwargs['headers']['Authorization'], 'Bearer Token')
         assert_equals(graph[0]['uri'], '{}{}/'.format(settings.DOMAIN, self.node._id))
 
+    @mock.patch('website.project.tasks.settings.SHARE_URL', 'https://share.osf.io')
+    @mock.patch('website.project.tasks.settings.SHARE_API_TOKEN', 'Token')
     @mock.patch('website.project.tasks.requests')
     def test_update_share_correctly(self, requests):
-        from website.project.tasks import settings
-        settings.SHARE_URL = 'https://share.osf.io'
-        settings.SHARE_API_TOKEN = 'Token'
-
         cases = [{
             'is_deleted': False,
             'attrs': {'is_public': True, 'is_deleted': False, 'spam_status': SpamStatus.HAM}

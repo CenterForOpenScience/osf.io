@@ -643,11 +643,11 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
     # TODO clean up these urls and unify what is used as a version identifier
     if request.method == 'HEAD':
         return make_response(('', 200, {
-            'Location': file_node.generate_waterbutler_url(**dict(extras, direct=None, version=version.identifier))
+            'Location': file_node.generate_waterbutler_url(**dict(extras, direct=None, version=version.identifier, _internal=extras.get('mode') == 'render'))
         }))
 
     if action == 'download':
-        return redirect(file_node.generate_waterbutler_url(**dict(extras, direct=None, version=version.identifier)))
+        return redirect(file_node.generate_waterbutler_url(**dict(extras, direct=None, version=version.identifier, _internal=extras.get('mode') == 'render')))
 
     if action == 'get_guid':
         draft_id = extras.get('draft')
