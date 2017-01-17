@@ -411,7 +411,10 @@ def elasticsearch(ctx):
 @task
 def migrate_search(ctx, delete=False, index=settings.ELASTIC_INDEX):
     """Migrate the search-enabled models."""
+    from website.app import init_app
+    init_app(routes=False, set_backends=False)
     from website.search_migration.migrate import migrate
+
     migrate(delete, index=index)
 
 
