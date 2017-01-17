@@ -127,7 +127,6 @@ RUN mv /code/website/settings/local-dist.py /code/website/settings/local.py \
 
 COPY ./webpack* /code/
 COPY ./website/static /code/website/static/
-COPY ./addons/badges/static/ /code/addons/badges/static/
 COPY ./addons/box/static/ /code/addons/box/static/
 COPY ./addons/citations/static/ /code/addons/citations/static/
 COPY ./addons/dataverse/static/ /code/addons/dataverse/static/
