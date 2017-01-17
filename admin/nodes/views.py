@@ -8,6 +8,7 @@ from modularodm import Q
 
 from website.models import User, NodeLog
 from osf.models.node import Node
+from osf.models.registrations import Registration
 from admin.base.views import GuidFormView, GuidView
 from admin.base.utils import OSFAdmin
 from admin.common_auth.logs import (
@@ -193,10 +194,7 @@ class RegistrationListView(OSFAdmin, ListView):
     context_object_name = '-node'
 
     def get_queryset(self):
-        query = (
-            Q('is_registration', 'eq', True)
-        )
-        return Node.find(query).sort(self.ordering)
+        return Registration.objects.all()
 
     def get_context_data(self, **kwargs):
         query_set = kwargs.pop('object_list', self.object_list)
