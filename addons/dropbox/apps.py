@@ -1,6 +1,6 @@
 from addons.base.apps import BaseAddonConfig
 
-from website.addons.dropbox.views import dropbox_root_folder
+from addons.dropbox.views import dropbox_root_folder
 
 
 class DropboxAddonConfig(BaseAddonConfig):

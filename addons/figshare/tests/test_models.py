@@ -50,7 +50,7 @@ class TestNodeSettings(models.OAuthAddonNodeSettingsTestSuiteMixin, unittest.Tes
 
     # Overrides
 
-    @mock.patch('website.addons.figshare.client.FigshareClient.get_linked_folder_info')
+    @mock.patch('addons.figshare.client.FigshareClient.get_linked_folder_info')
     def test_set_folder(self, mock_info):
         # Differences from super: mocking, log action name
         folder_id = '1234567890'

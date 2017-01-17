@@ -583,7 +583,7 @@ API_TESTS2 = [
     'api_tests/users',
 ]
 API_TESTS3 = [
-    'api_tests/addons',
+    'api_tests/addons_tests',
     'api_tests/applications',
     'api_tests/base',
     'api_tests/collections',

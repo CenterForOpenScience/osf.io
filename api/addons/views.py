@@ -32,7 +32,7 @@ class AddonSettingsMixin(object):
             owner_type = 'node'
 
         try:
-            addon_module = importlib.import_module('website.addons.{}'.format(provider))
+            addon_module = importlib.import_module('addons.{}.constants'.format(provider))
         except ImportError:
             raise NotFound('Requested addon unrecognized')
 

@@ -2,12 +2,9 @@ import os
 
 from addons.base.apps import BaseAddonConfig
 
-from website.settings import BASE_PATH
-
+HERE = os.path.dirname(os.path.abspath(__file__))
 TEMPLATE_PATH = os.path.join(
-    BASE_PATH,
-    'addons',
-    'dataverse',
+    HERE,
     'templates'
 )
 
@@ -26,7 +23,7 @@ class DataverseAddonConfig(BaseAddonConfig):
     @property
     def get_hgrid_data(self):
         # Avoid circular import
-        from website.addons.dataverse.views import _dataverse_root_folder
+        from addons.dataverse.views import _dataverse_root_folder
         return _dataverse_root_folder
 
     FILE_ADDED = 'dataverse_file_added'

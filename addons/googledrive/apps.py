@@ -1,6 +1,6 @@
 from addons.base.apps import BaseAddonConfig
 
-from website.addons.googledrive.views import googledrive_root_folder
+from addons.googledrive.views import googledrive_root_folder
 
 class GoogleDriveAddonConfig(BaseAddonConfig):
 

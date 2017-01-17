@@ -12,7 +12,7 @@ from addons.osfstorage.models import OsfStorageFile
 from addons.s3.models import S3File
 from website import settings
 from website.util import permissions
-from website.addons.osfstorage import settings as osfstorage_settings
+from addons.osfstorage import settings as osfstorage_settings
 from website.project.views.comment import update_file_guid_referent
 from website.project.signals import comment_added, mention_added, contributor_added
 from framework.exceptions import PermissionsError

@@ -20,8 +20,8 @@ from addons.osfstorage.tests.utils import StorageTestCase
 import datetime
 
 from osf import models
-from website.addons.osfstorage import utils
-from website.addons.osfstorage import settings
+from addons.osfstorage import utils
+from addons.osfstorage import settings
 from website.files.exceptions import FileNodeCheckedOutError
 
 

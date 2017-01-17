@@ -1,7 +1,4 @@
 # -*- coding: utf-8 -*-
-
-import os
-
 from flask import (Flask, request, jsonify, render_template,  # noqa
     render_template_string, Blueprint, send_file, abort, make_response,
     redirect as flask_redirect, url_for, send_from_directory, current_app
@@ -23,16 +20,6 @@ app.config['SENTRY_TAGS'] = {'App': 'web'}
 app.config['SENTRY_RELEASE'] = settings.VERSION
 
 # Set up static routing for addons
-# TODO: Handle this in nginx
-addon_base_path = os.path.abspath('website/addons')
-
-
-@app.route('/static/addons/<addon>/<path:filename>')
-def addon_static(addon, filename):
-    addon_path = os.path.join(addon_base_path, addon, 'static')
-    return send_from_directory(addon_path, filename)
-
-
 def add_handler(app, handler_name, func, key=None):
     """Add handler to Flask application if handler has not already been added.
     Used to avoid attaching the same handlers more than once, e.g. when setting

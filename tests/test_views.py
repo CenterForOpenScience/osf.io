@@ -38,7 +38,7 @@ from framework.transactions.handlers import no_auto_transaction
 from tests.factories import MockAddonNodeSettings
 from website import mailchimp_utils
 from website import mails, settings
-from website.addons.osfstorage import settings as osfstorage_settings
+from addons.osfstorage import settings as osfstorage_settings
 from website.models import Node, NodeLog, Pointer
 from website.profile.utils import add_contributor_json, serialize_unregistered
 from website.profile.views import fmt_date_or_none, update_osf_help_mails_subscription

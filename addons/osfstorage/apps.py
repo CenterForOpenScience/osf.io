@@ -2,8 +2,8 @@ import os
 
 from addons.base.apps import BaseAddonConfig
 from website import settings
-from website.addons.osfstorage import settings as addon_settings
-from website.addons.osfstorage import views
+from addons.osfstorage import settings as addon_settings
+from addons.osfstorage import views
 
 
 class OSFStorageAddonConfig(BaseAddonConfig):

@@ -23,7 +23,7 @@ from framework.auth.core import Auth
 from framework.auth.oauth_scopes import CoreScopes
 from framework.exceptions import PermissionsError
 from website.project.model import Comment, Node
-from website.addons.wiki.model import NodeWikiPage
+from addons.wiki.models import NodeWikiPage
 from website.files.models.base import StoredFileNode
 
 

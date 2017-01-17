@@ -1,6 +1,6 @@
 from addons.base.apps import BaseAddonConfig
 
-from website.addons.figshare.views import figshare_root_folder
+from addons.figshare.views import figshare_root_folder
 
 
 class FigshareAddonConfig(BaseAddonConfig):

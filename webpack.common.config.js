@@ -14,7 +14,7 @@ var nodePath = function(dir) {
     return path.join(__dirname, 'node_modules', dir);
 };
 var addonsPath = function(dir) {
-    return path.join(__dirname, 'website', 'addons', dir);
+    return path.join(__dirname, 'addons', dir);
 };
 
 /**
@@ -103,20 +103,20 @@ var addonModules = ['files.js', 'node-cfg.js', 'user-cfg.js', 'file-detail.js', 
 addons.addons.forEach(function(addonName) {
     var baseDir = addonName + '/';
     addonModules.forEach(function(module) {
-        var modulePath = path.join(__dirname, 'website', 'addons',
+        var modulePath = path.join(__dirname, 'addons',
                                   addonName, 'static', module);
         if (fs.existsSync(modulePath)) {
             var entryPoint = baseDir + module.split('.')[0];
             entry[entryPoint] =  modulePath;
         }
     });
-    var logTextPath = path.join(__dirname, 'website', 'addons',
+    var logTextPath = path.join(__dirname, 'addons',
         addonName, 'static', addonName + 'LogActionList.json');
     if(fs.existsSync(logTextPath)){
         addonLog = require(logTextPath);
         for (var attrname in addonLog) { mainLogs[attrname] = addonLog[attrname]; }
     }
-    var anonymousLogTextPath = path.join(__dirname, 'website', 'addons',
+    var anonymousLogTextPath = path.join(__dirname, 'addons',
         addonName, 'static', addonName + 'AnonymousLogActionList.json');
     if(fs.existsSync(anonymousLogTextPath)) {
         anonymousAddonLog = require(anonymousLogTextPath);
@@ -156,7 +156,7 @@ var resolve = {
         'highlight-css': nodePath('highlight.js/styles/default.css'),
         'pikaday-css': nodePath('pikaday/css/pikaday.css'),
         // Also alias some internal libraries for easy access
-        'addons': path.join(__dirname, 'website', 'addons'),
+        'addons': path.join(__dirname, 'addons'),
         'tests': staticPath('js/tests'),
         // GASP Items not defined as main in its package.json
         'TweenLite' : nodePath('gsap/src/minified/TweenLite.min.js'),

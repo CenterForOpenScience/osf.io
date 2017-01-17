@@ -20,8 +20,8 @@ from tests.factories import NodeFactory
 from website.app import init_app
 from website.project.model import Node
 
-from website.addons.wiki.model import AddonWikiNodeSettings
-from website.addons.osffiles.model import AddonFilesNodeSettings
+from addons.wiki.models import AddonWikiNodeSettings
+from addons.osffiles.model import AddonFilesNodeSettings
 
 logger = logging.getLogger(__name__)
 
