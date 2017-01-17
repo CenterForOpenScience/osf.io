@@ -9,7 +9,7 @@ class BoxSerializer(StorageAddonSerializer):
     addon_short_name = 'box'
 
     def credentials_are_valid(self, user_settings, client):
-        from addons.box.model import Box  # Avoid circular import
+        from addons.box.models import Provider as Box  # Avoid circular import
         if self.node_settings.has_auth:
             if Box(self.node_settings.external_account).refresh_oauth_key():
                 return True
