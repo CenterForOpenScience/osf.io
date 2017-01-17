@@ -47,3 +47,7 @@ def reverse_qs(view, urlconf=None, args=None, kwargs=None, current_app=None, que
     base_url = reverse(view, urlconf=urlconf, args=args, kwargs=kwargs, current_app=current_app)
     if query_kwargs:
         return '{}?{}'.format(base_url, urlencode(query_kwargs))
+
+
+def osf_admin_check(user):
+    return user.is_authenticated() and user.groups.filter(name='osf_admin')
