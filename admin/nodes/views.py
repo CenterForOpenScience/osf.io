@@ -194,7 +194,7 @@ class RegistrationListView(OSFAdmin, ListView):
     context_object_name = '-node'
 
     def get_queryset(self):
-        return Registration.objects.all()
+        return Registration.objects.all().order_by(self.ordering)
 
     def get_context_data(self, **kwargs):
         query_set = kwargs.pop('object_list', self.object_list)
