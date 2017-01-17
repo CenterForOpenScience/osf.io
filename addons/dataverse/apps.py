@@ -1,6 +1,6 @@
 import os
 
-from addons.base.apps import BaseAddonConfig
+from addons.base.apps import BaseAddonAppConfig
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 TEMPLATE_PATH = os.path.join(
@@ -8,7 +8,7 @@ TEMPLATE_PATH = os.path.join(
     'templates'
 )
 
-class DataverseAddonConfig(BaseAddonConfig):
+class DataverseAddonAppConfig(BaseAddonAppConfig):
 
     name = 'addons.dataverse'
     label = 'addons_dataverse'

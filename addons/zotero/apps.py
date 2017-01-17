@@ -1,7 +1,7 @@
-from addons.base.apps import BaseAddonConfig
+from addons.base.apps import BaseAddonAppConfig
 
 
-class ZoteroAddonConfig(BaseAddonConfig):
+class ZoteroAddonAppConfig(BaseAddonAppConfig):
 
     name = 'addons.zotero'
     label = 'addons_zotero'

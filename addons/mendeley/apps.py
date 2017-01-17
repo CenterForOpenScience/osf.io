@@ -1,7 +1,7 @@
-from addons.base.apps import BaseAddonConfig
+from addons.base.apps import BaseAddonAppConfig
 
 
-class MendeleyAddonConfig(BaseAddonConfig):
+class MendeleyAddonConfig(BaseAddonAppConfig):
 
     name = 'addons.mendeley'
     label = 'addons_mendeley'
