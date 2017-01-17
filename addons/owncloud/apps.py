@@ -1,5 +1,5 @@
 import os
-from addons.base.apps import BaseAddonConfig
+from addons.base.apps import BaseAddonAppConfig
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 TEMPLATE_PATH = os.path.join(
@@ -7,7 +7,7 @@ TEMPLATE_PATH = os.path.join(
     'templates'
 )
 
-class OwnCloudAddonConfig(BaseAddonConfig):
+class OwnCloudAddonAppConfig(BaseAddonAppConfig):
 
     name = 'addons.owncloud'
     label = 'addons_owncloud'

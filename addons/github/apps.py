@@ -1,5 +1,5 @@
 import os
-from addons.base.apps import BaseAddonConfig
+from addons.base.apps import BaseAddonAppConfig
 
 from addons.github.views import github_hgrid_data
 
@@ -10,7 +10,7 @@ NODE_SETTINGS_TEMPLATE = os.path.join(
     'github_node_settings.mako',
 )
 
-class GitHubAddonConfig(BaseAddonConfig):
+class GitHubAddonConfig(BaseAddonAppConfig):
 
     name = 'addons.github'
     label = 'addons_github'

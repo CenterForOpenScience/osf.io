@@ -1,12 +1,10 @@
-import os
-
-from addons.base.apps import BaseAddonConfig
+from addons.base.apps import BaseAddonAppConfig
 from website import settings
 from addons.osfstorage import settings as addon_settings
 from addons.osfstorage import views
 
 
-class OSFStorageAddonConfig(BaseAddonConfig):
+class OSFStorageAddonAppConfig(BaseAddonAppConfig):
     name = 'addons.osfstorage'
     label = 'addons_osfstorage'
     full_name = 'OSF Storage'

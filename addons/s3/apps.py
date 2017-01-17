@@ -1,5 +1,5 @@
 import os
-from addons.base.apps import BaseAddonConfig
+from addons.base.apps import BaseAddonAppConfig
 
 from addons.s3.views import s3_root_folder
 
@@ -9,7 +9,7 @@ TEMPLATE_PATH = os.path.join(
     'templates'
 )
 
-class S3AddonConfig(BaseAddonConfig):
+class S3AddonAppConfig(BaseAddonAppConfig):
 
     name = 'addons.s3'
     label = 'addons_s3'

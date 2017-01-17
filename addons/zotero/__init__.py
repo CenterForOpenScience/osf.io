@@ -1,1 +1,1 @@
-default_app_config = 'addons.zotero.apps.ZoteroAddonConfig'
+default_app_config = 'addons.zotero.apps.ZoteroAddonAppConfig'
