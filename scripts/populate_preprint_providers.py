@@ -358,6 +358,27 @@ def main():
                 (['Social and Behavioral Sciences'], True),
             ],
         },
+        {
+            '_id': 'scielo',
+            'name': 'SciELO',
+            'logo_name': 'scielo-logo.png',
+            'description': 'Placeholder description',
+            'banner_name': 'scielo-logo.png',
+            'external_url': 'http://scielo.org',
+            'example': '', # An example guid for this provider (Will have to be updated after the provider is up)
+            # Advisory board should be valid html string in triple quotes
+            'advisory_board': '',
+            'email_contact': 'contact+scielo@osf.io',
+            'email_support': 'support+scielo@osf.io',
+            'social_twitter': ' https://twitter.com/RedeSciELO', # optional
+            'social_facebook': 'https://www.facebook.com/SciELONetwork',
+            'licenses_acceptable': ['CC0 1.0 Universal', 'CC-By Attribution 4.0 International', 'No license'], # Determined by the provider
+            'header_text': '', # Unused
+            'subjects_acceptable':[
+                (['Subject', 'Heirarchy'], True), # Tuple<List<String>, Boolean> The list should be the heirarchy of the subjects/taxonomies
+                (['Subject2', 'Subject3', 'Subject4'], False),
+            ],
+        },
     ]
 
     with TokuTransaction():
