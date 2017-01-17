@@ -3,13 +3,15 @@ This will update node links on POPULAR_LINKS_NODE, POPULAR_LINKS_REGISTRATIONS a
 """
 import sys
 import logging
+
+from django.db import transaction
 from modularodm import Q
+
 from website.app import init_app
 from website import models
 from framework.auth.core import Auth
 from scripts import utils as script_utils
 from framework.celery_tasks import app as celery_app
-from framework.transactions.context import TokuTransaction
 from website.project.utils import activity
 from website.settings import POPULAR_LINKS_NODE, POPULAR_LINKS_REGISTRATIONS
 
@@ -66,7 +68,7 @@ def main(dry_run=True):
 def run_main(dry_run=True):
     if not dry_run:
         script_utils.add_file_logger(logger, __file__)
-    with TokuTransaction():
+    with transaction.atomic():
         main(dry_run=dry_run)
 
 if __name__ == "__main__":
