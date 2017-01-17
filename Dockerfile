@@ -75,7 +75,6 @@ RUN pip install -U pip
 COPY ./requirements.txt /code/
 COPY ./requirements/ /code/requirements/
 
-COPY ./addons/badges/requirements.txt /code/addons/badges/
 COPY ./addons/box/requirements.txt /code/addons/box/
 COPY ./addons/dataverse/requirements.txt /code/addons/dataverse/
 COPY ./addons/dropbox/requirements.txt /code/addons/dropbox/
@@ -90,8 +89,7 @@ RUN pip install --no-cache-dir -c /code/requirements/constraints.txt -r /code/re
     && pip install --no-cache-dir -c /code/requirements/constraints.txt -r /code/requirements/metrics.txt \
     && pip install --no-cache-dir -c /code/requirements/constraints.txt -r /code/requirements/release.txt
 
-RUN pip install --no-cache-dir -c /code/requirements/constraints.txt -r /code/addons/badges/requirements.txt \
-    && pip install --no-cache-dir -c /code/requirements/constraints.txt -r /code/addons/box/requirements.txt \
+RUN pip install --no-cache-dir -c /code/requirements/constraints.txt -r /code/addons/box/requirements.txt \
     && pip install --no-cache-dir -c /code/requirements/constraints.txt -r /code/addons/dataverse/requirements.txt \
     && pip install --no-cache-dir -c /code/requirements/constraints.txt -r /code/addons/dropbox/requirements.txt \
     && pip install --no-cache-dir -c /code/requirements/constraints.txt -r /code/addons/github/requirements.txt \
