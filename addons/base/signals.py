@@ -1,3 +1,4 @@
+# TODO: Use django signals
 import blinker
 
 signals = blinker.Namespace()

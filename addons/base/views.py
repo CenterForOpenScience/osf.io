@@ -11,6 +11,7 @@ from flask import request
 import furl
 import jwe
 import jwt
+from django.db import transaction
 
 from modularodm import Q
 from modularodm.exceptions import NoResultsFound
@@ -309,7 +310,7 @@ LOG_ACTION_MAP = {
 @no_auto_transaction
 @must_be_valid_project
 def create_waterbutler_log(payload, **kwargs):
-    with TokuTransaction():
+    with transaction.atomic():
         try:
             auth = payload['auth']
             action = LOG_ACTION_MAP[payload['action']]
@@ -428,7 +429,7 @@ def create_waterbutler_log(payload, **kwargs):
 
             node_addon.create_waterbutler_log(auth, action, metadata)
 
-    with TokuTransaction():
+    with transaction.atomic():
         file_signals.file_updated.send(node=node, user=user, event_type=action, payload=payload)
 
     return {'status': 'success'}
