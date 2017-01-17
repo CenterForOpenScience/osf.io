@@ -372,11 +372,11 @@ def main():
             'email_support': 'support+scielo@osf.io',
             'social_twitter': ' https://twitter.com/RedeSciELO', # optional
             'social_facebook': 'https://www.facebook.com/SciELONetwork',
-            'licenses_acceptable': ['CC0 1.0 Universal', 'CC-By Attribution 4.0 International', 'No license'], # Determined by the provider
-            'header_text': '', # Unused
+            'header_text': '',
+            'licenses_acceptable': [],
             'subjects_acceptable':[
-                (['Subject', 'Heirarchy'], True), # Tuple<List<String>, Boolean> The list should be the heirarchy of the subjects/taxonomies
-                (['Subject2', 'Subject3', 'Subject4'], False),
+                (['Life Sciences'], True),
+                (['Engineering'], True),
             ],
         },
     ]
