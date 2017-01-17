@@ -83,7 +83,7 @@ class TestNodeSettings(OAuthAddonNodeSettingsTestSuiteMixin, unittest.TestCase):
 
         assert_equal(
             self.node_settings.selected_folder_name,
-            "Full Google Drive"
+            'Full Google Drive'
         )
 
     def test_selected_folder_name_empty(self):

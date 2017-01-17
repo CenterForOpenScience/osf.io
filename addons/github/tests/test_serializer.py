@@ -27,7 +27,7 @@ class TestGitHubSerializer(StorageAddonSerializerTestSuiteMixin, OsfTestCase):
 
     def setUp(self):
         super(TestGitHubSerializer, self).setUp()
-        self.mock_api_user = mock.patch("website.addons.github.api.GitHubClient.user")
+        self.mock_api_user = mock.patch('addons.github.api.GitHubClient.user')
         self.mock_api_user.return_value = mock.Mock()
         self.mock_api_user.start()
 
