@@ -6,7 +6,8 @@ from django.shortcuts import redirect
 from django.views.defaults import page_not_found
 from modularodm import Q
 
-from website.models import User, NodeLog
+from website.models import NodeLog
+from osf.models.user import OSFUser
 from osf.models.node import Node
 from osf.models.registrations import Registration
 from admin.base.views import GuidFormView, GuidView
@@ -84,13 +85,13 @@ class NodeRemoveContributorView(OSFAdmin, DeleteView):
     def get_context_data(self, **kwargs):
         context = {}
         node, user = kwargs.get('object')
-        context.setdefault('node_id', node.pk)
+        context.setdefault('node_id', node._id)
         context.setdefault('user', serialize_simple_user_and_node_permissions(node, user))
         return super(NodeRemoveContributorView, self).get_context_data(**context)
 
     def get_object(self, queryset=None):
         return (Node.load(self.kwargs.get('node_id')),
-                User.load(self.kwargs.get('user_id')))
+                OSFUser.load(self.kwargs.get('user_id')))
 
 class NodeDeleteBase(OSFAdmin, DeleteView):
     template_name = None
