@@ -1,8 +1,8 @@
-from addons.base.apps import BaseAddonConfig
+from addons.base.apps import BaseAddonAppConfig
 
-from website.addons.box.views import box_root_folder
+from addons.box.views import box_root_folder
 
-class BoxAddonConfig(BaseAddonConfig):
+class BoxAddonAppConfig(BaseAddonAppConfig):
 
     name = 'addons.box'
     label = 'addons_box'

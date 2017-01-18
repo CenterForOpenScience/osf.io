@@ -19,7 +19,7 @@ from modularodm.exceptions import ValidationError
 from osf.models import Tag
 from rest_framework import serializers as ser
 from rest_framework import exceptions
-from website.addons.base.exceptions import InvalidAuthError, InvalidFolderError
+from addons.base.exceptions import InvalidAuthError, InvalidFolderError
 from website.exceptions import NodeStateError
 from website.models import (Comment, DraftRegistration, Institution,
                             MetaSchema, Node, PrivateLink)
@@ -251,7 +251,7 @@ class NodeSerializer(JSONAPISerializer):
 
     identifiers = RelationshipField(
         related_view='nodes:identifier-list',
-        related_view_kwargs={'node_id': '<pk>'}
+        related_view_kwargs={'node_id': '<_id>'}
     )
 
     draft_registrations = HideIfRegistration(RelationshipField(
@@ -304,7 +304,7 @@ class NodeSerializer(JSONAPISerializer):
 
     preprints = HideIfRegistration(RelationshipField(
         related_view='nodes:node-preprints',
-        related_view_kwargs={'node_id': '<pk>'}
+        related_view_kwargs={'node_id': '<_id>'}
     ))
 
     def get_current_user_permissions(self, obj):

@@ -23,7 +23,7 @@ from osf_tests.factories import (AuthUserFactory, ProjectFactory,
                              RegistrationFactory)
 from website import settings
 from website.addons.base import AddonConfig, AddonNodeSettingsBase, views
-from website.addons.github.exceptions import ApiError
+from addons.github.exceptions import ApiError
 from addons.github.models import GithubFolder, GithubFile, GithubFileNode
 from addons.github.tests.factories import GitHubAccountFactory
 from osf.models import files as file_models
@@ -690,7 +690,7 @@ class TestAddonFileViews(OsfTestCase):
         # Note: version is added but us but all other url params are added as well
         assert_urls_equal(location.url, file_node.generate_waterbutler_url(action='download', direct=None, revision=1, version=''))
 
-    @mock.patch('website.addons.base.views.addon_view_file')
+    @mock.patch('addons.base.views.addon_view_file')
     def test_action_view_calls_view_file(self, mock_view_file):
         self.user.reload()
         self.project.reload()
@@ -709,7 +709,7 @@ class TestAddonFileViews(OsfTestCase):
         assert_equals(args[2], file_node)
         assert_true(isinstance(args[3], file_node.touch(None).__class__))
 
-    @mock.patch('website.addons.base.views.addon_view_file')
+    @mock.patch('addons.base.views.addon_view_file')
     def test_no_action_calls_view_file(self, mock_view_file):
         self.user.reload()
         self.project.reload()

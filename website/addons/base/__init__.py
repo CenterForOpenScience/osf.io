@@ -769,6 +769,7 @@ class StorageAddonBase(object):
             kwargs['version'] = version
         metadata_url = waterbutler_url_for(
             'metadata',
+            _internal=True,
             **kwargs
         )
         res = requests.get(metadata_url)
@@ -1059,7 +1060,7 @@ def init_addon(app, addon_name, routes=True):
         else None
 
     """
-    import_path = 'website.addons.{0}'.format(addon_name)
+    import_path = 'addons.{0}.constants'.format(addon_name)
 
     # Import addon module
     addon_module = importlib.import_module(import_path)

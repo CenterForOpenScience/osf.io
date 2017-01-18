@@ -1,7 +1,7 @@
-from addons.base.apps import BaseAddonConfig
+from addons.base.apps import BaseAddonAppConfig
 
 
-class TwoFactorAddonConfig(BaseAddonConfig):
+class TwoFactorAddonAppConfig(BaseAddonAppConfig):
 
     name = 'addons.twofactor'
     label = 'addons_twofactor'

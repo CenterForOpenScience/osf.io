@@ -1,17 +1,17 @@
 import factory
 
-from admin.common_auth.models import MyUser
+from admin.common_auth.models import AdminProfile
+from osf_tests.factories import UserFactory as OSFUserFactory
 
 
 class UserFactory(factory.Factory):
     class Meta:
-        model = MyUser
+        model = AdminProfile
 
-    id = 123
-    email = 'cello@email.org'
-    first_name = 'Yo-yo'
-    last_name = 'Ma'
-    osf_id = 'abc12'
+    user = OSFUserFactory
+
+    desk_token = 'el-p'
+    test_token_secret = 'mike'
 
     @classmethod
     def is_in_group(cls, value):

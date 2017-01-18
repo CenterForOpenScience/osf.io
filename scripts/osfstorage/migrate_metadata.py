@@ -7,7 +7,7 @@ from modularodm import Q
 import logging
 import sys
 
-from website.addons.osfstorage.model import OsfStorageFileVersion
+from addons.osfstorage.model import OsfStorageFileVersion
 from website.app import init_app
 
 from scripts import utils as scripts_utils

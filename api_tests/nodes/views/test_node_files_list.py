@@ -8,7 +8,7 @@ from nose.tools import *  # flake8: noqa
 
 from framework.auth.core import Auth
 
-from website.addons.github.tests.factories import GitHubAccountFactory
+from addons.github.tests.factories import GitHubAccountFactory
 from website.models import Node
 from website.util import waterbutler_api_url_for
 from api.base.settings.defaults import API_BASE

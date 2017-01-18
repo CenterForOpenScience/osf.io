@@ -20,7 +20,7 @@ from website.files.models import OsfStorageFile
 from website.files.models import StoredFileNode, TrashedFileNode
 from website.models import User, Node, PrivateLink, NodeLog
 from website.project.utils import CONTENT_NODE_QUERY
-from website.addons.dropbox.model import DropboxUserSettings
+from addons.dropbox.model import DropboxUserSettings
 
 from scripts.analytics import profile, tabulate_emails, tabulate_logs
 

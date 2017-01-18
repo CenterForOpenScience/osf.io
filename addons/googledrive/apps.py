@@ -1,8 +1,8 @@
-from addons.base.apps import BaseAddonConfig
+from addons.base.apps import BaseAddonAppConfig
 
-from website.addons.googledrive.views import googledrive_root_folder
+from addons.googledrive.views import googledrive_root_folder
 
-class GoogleDriveAddonConfig(BaseAddonConfig):
+class GoogleDriveAddonConfig(BaseAddonAppConfig):
 
     name = 'addons.googledrive'
     label = 'addons_googledrive'

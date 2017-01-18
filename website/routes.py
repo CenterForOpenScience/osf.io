@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from __future__ import absolute_import
 import os
 import httplib as http
 
@@ -40,7 +41,7 @@ from website.search import views as search_views
 from website.oauth import views as oauth_views
 from website.profile import views as profile_views
 from website.project import views as project_views
-from website.addons.base import views as addon_views
+from addons.base import views as addon_views
 from website.discovery import views as discovery_views
 from website.conferences import views as conference_views
 from website.preprints import views as preprint_views
@@ -1702,7 +1703,7 @@ def make_url_map(app):
 
     # Set up static routing for addons
     # NOTE: We use nginx to serve static addon assets in production
-    addon_base_path = os.path.abspath('website/addons')
+    addon_base_path = os.path.abspath('addons')
     if settings.DEV_MODE:
         @app.route('/static/addons/<addon>/<path:filename>')
         def addon_static(addon, filename):
