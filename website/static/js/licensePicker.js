@@ -162,7 +162,7 @@ var LicensePicker = oop.extend(ChangeMessageMixin, {
         });
 
         self.hideLicensePicker = ko.computed(function() {
-            return !user.isAdmin && self.selectedLicenseId() === DEFAULT_LICENSE.id;
+            return !user.isAdmin && self.savedLicenseId() === DEFAULT_LICENSE.id;
         });
     },
     togglePreview: function(labelClicked) {
