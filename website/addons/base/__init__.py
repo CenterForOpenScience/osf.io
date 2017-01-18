@@ -77,14 +77,15 @@ class AddonConfig(object):
         self.settings_models = {}
 
         from django.apps import apps
-        app = apps.get_app_config('addons_{}'.format(short_name))
+        try:
+            app = apps.get_app_config('addons_{}'.format(short_name))
+        except LookupError:
+            app = None
 
-        if app.node_settings:
-            app.node_settings.config = self
+        if app and app.node_settings:
             self.settings_models['node'] = app.node_settings
 
-        if app.user_settings:
-            app.user_settings.config = self
+        if app and app.user_settings:
             self.settings_models['user'] = app.user_settings
 
         self.short_name = short_name
