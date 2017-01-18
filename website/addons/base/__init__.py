@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 import glob
-import importlib
 import mimetypes
 import os
 from time import sleep
@@ -20,7 +19,6 @@ from framework.exceptions import (
     HTTPError,
 )
 from framework.mongo import StoredObject
-from framework.routing import process_rules
 
 from website import settings
 from website.addons.base import serializer, logger
@@ -1043,41 +1041,3 @@ class AddonOAuthNodeSettingsBase(AddonNodeSettingsBase):
         raise NotImplementedError(
             "AddonOAuthNodeSettingsBase subclasses must implement a 'serialize_waterbutler_settings' method."
         )
-
-
-# TODO: No more magicks
-def init_addon(app, addon_name, routes=True):
-    """Load addon module return its create configuration object.
-
-    If `log_fp` is provided, the addon's log templates will be appended
-    to the file.
-
-    :param app: Flask app object
-    :param addon_name: Name of addon directory
-    :param file log_fp: File pointer for the built logs file.
-    :param bool routes: Add routes
-    :return AddonConfig: AddonConfig configuration object if module found,
-        else None
-
-    """
-    import_path = 'addons.{0}.constants'.format(addon_name)
-
-    # Import addon module
-    addon_module = importlib.import_module(import_path)
-
-    data = vars(addon_module)
-    data['description'] = settings.ADDONS_DESCRIPTION.get(addon_name, '')
-    data['url'] = settings.ADDONS_URL.get(addon_name, None)
-
-    # Add routes
-    if routes:
-        for route_group in getattr(addon_module, 'ROUTES', []):
-            process_rules(app, **route_group)
-
-    # Build AddonConfig object
-    return AddonConfig(
-        **{
-            key.lower(): value
-            for key, value in data.iteritems()
-        }
-    )
