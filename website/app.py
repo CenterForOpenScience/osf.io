@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+from __future__ import absolute_import
+
 import framework
 import importlib
 import itertools
@@ -51,10 +53,10 @@ def init_addons(settings, routes=True):
     settings.ADDON_CAPABILITIES = render_addon_capabilities(settings.ADDONS_AVAILABLE)
 
 
-def attach_handlers(app, settings):
+def attach_handlers(app, settings, attach_django_handlers):
     """Add callback handlers to ``app`` in the correct order."""
     # Add callback handlers to application
-    if settings.USE_POSTGRES:
+    if settings.USE_POSTGRES and attach_django_handlers:
         add_handlers(app, django_handlers.handlers)
     else:
         add_handlers(app, mongo_handlers.handlers)
@@ -89,7 +91,7 @@ def do_set_backends(settings):
 
 
 def init_app(settings_module='website.settings', set_backends=True, routes=True,
-             attach_request_handlers=True, fixtures=True):
+             attach_request_handlers=True, fixtures=True, attach_django_handlers=True):
     """Initializes the OSF. A sort of pseudo-app factory that allows you to
     bind settings, set up routing, and set storage backends, but only acts on
     a single app instance (rather than creating multiple instances).
@@ -132,7 +134,7 @@ def init_app(settings_module='website.settings', set_backends=True, routes=True,
             pass
 
     if attach_request_handlers:
-        attach_handlers(app, settings)
+        attach_handlers(app, settings, attach_django_handlers)
 
     if app.debug:
         logger.info("Sentry disabled; Flask's debug mode enabled")

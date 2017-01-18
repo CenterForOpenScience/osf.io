@@ -7,6 +7,7 @@ logger = logging.getLogger(__name__)
 
 def before_request(*args, **kwargs):
     reset_queries()
+    close_old_connections()
 
 def teardown_request(*args, **kwargs):
     close_old_connections()
