@@ -25,7 +25,6 @@ from framework.auth.decorators import collect_auth, must_be_logged_in, must_be_s
 from framework.exceptions import HTTPError
 from framework.routing import json_renderer
 from framework.sentry import log_exception
-from framework.transactions.context import TokuTransaction
 from framework.transactions.handlers import no_auto_transaction
 from website import mails
 from website import settings
