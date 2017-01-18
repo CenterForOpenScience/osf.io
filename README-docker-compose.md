@@ -39,7 +39,8 @@
 
 
 ## Application Configuration
-_NOTE: After making changes to `Environment Variables` or `Volume Mounts` (e.g. docker-sync) you will need to recreate the container(s)._
+
+* _NOTE: After making changes to `Environment Variables` or `Volume Mounts` (e.g. docker-sync) you will need to recreate the container(s)._
 
   - `$ docker-compose up --force-recreate --no-deps preprints`
 
@@ -92,41 +93,43 @@ _NOTE: After making changes to `Environment Variables` or `Volume Mounts` (e.g. 
 1. Install Docker Sync
   - [Instructions](http://docker-sync.io)
 
-2. If you have problems trying installing macfsevents
-  - `$ sudo pip install macfsevents`
-
-3. Running Docker Sync
+2. Running Docker Sync
 
     _NOTE: Wait for Docker Sync to fully start before running any docker-compose commands._
   - `$ docker-sync start`
 
+3. OPTIONAL: If you have problems trying installing macfsevents
+  - `$ sudo pip install macfsevents`
 
 ## Application Runtime
+
+* _NOTE: Running docker containers detached (`-d`) will execute them in the background, if you would like to view/follow their console log output use the following command._
+
+  - `$ docker-compose logs -f --tail 1000 web`
+
 1. Application Environment
 
   - `$ docker-compose up requirements mfr_requirements wb_requirements`
 
     _NOTE: When the various requirements installations are complete these containers will exit. You should only need to run these containers after pulling code that changes python requirements or if you update the python requirements._
 
-2. Start Core Component Services
-  - `$ docker-compose up elasticsearch postgres tokumx rabbitmq`
+2. Start Core Component Services (Detached)
+  - `$ docker-compose up -d elasticsearch postgres tokumx rabbitmq`
 
-3. Remove your existing node_modules and start the assets watcher
+3. Remove your existing node_modules and start the assets watcher (Detached)
   - `$ rm -Rf ./node_modules`
-  - `$ docker-compose up assets`
+  - `$ docker-compose up -d assets`
 
     _NOTE: The first time the assets container is run it will take Webpack/NPM up to 15 minutes to compile resources.
     When you see the BowerJS build occurring it is likely a safe time to move forward with starting the remaining
     containers._
-4. Start the Services
-  - `$ docker-compose up mfr wb fakecas sharejs`
+4. Start the Services (Detached)
+  - `$ docker-compose up -d mfr wb fakecas sharejs`
 5. Run migrations and create preprint providers
   - When starting with an empty database you will need to run migrations and populate preprint providers. See the [Running arbitrary commands](#running-arbitrary-commands) section below for instructions.
-6. Run Django migrations
-  - `$ docker-compose run --rm web python manage.py migrate`
-7. Start the OSF Web, API Server, and Preprints
-  - `$ docker-compose up worker web api preprints`
-8. View the OSF at [http://localhost:5000](http://localhost:5000).
+6. Start the OSF Web, API Server, and Preprints (Detached)
+  - `$ docker-compose up -d worker web api preprints`
+7. View the OSF at [http://localhost:5000](http://localhost:5000).
 
 
 ## Quickstart: Running all OSF services in the background
@@ -159,10 +162,10 @@ _NOTE: After making changes to `Environment Variables` or `Volume Mounts` (e.g. 
   - After resetting your database or with a new install you will need to populate the table of preprint providers. **You must have run migrations first.**
     - `docker-compose run --rm web python -m scripts.update_taxonomies`
     - `docker-compose run --rm web python -m scripts.populate_preprint_providers`
-- Create migrations:
+- OPTIONAL: Create migrations:
   - After changing a model you will need to create migrations and apply them. Migrations are python code that changes either the structure or the data of a database. This will compare the django models on disk to the database, find the differences, and create migration code to change the database. If there are no changes this command is a noop.
     - `docker-compose run --rm web python manage.py makemigrations`
-- Destroy and recreate an empty database:
+- OPTIONAL: Destroy and recreate an empty database:
   - **WARNING**: This will delete all data in your database.
     - `docker-compose run --rm web python manage.py reset_db --noinput`
 
