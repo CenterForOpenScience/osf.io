@@ -39,6 +39,10 @@ services:
     volumes_from:
       - container:osf-sync
 
+#  adminassets:
+#    volumes_from:
+#      - container:osf-sync
+#
 #  admin:
 #    volumes_from:
 #      - container:osf-sync
