@@ -86,7 +86,6 @@ COPY ./addons/twofactor/requirements.txt /code/addons/twofactor/
 COPY ./addons/zotero/requirements.txt /code/addons/zotero/
 
 RUN pip install --no-cache-dir -c /code/requirements/constraints.txt -r /code/requirements.txt \
-    && pip install --no-cache-dir -c /code/requirements/constraints.txt -r /code/requirements/metrics.txt \
     && pip install --no-cache-dir -c /code/requirements/constraints.txt -r /code/requirements/release.txt
 
 RUN pip install --no-cache-dir -c /code/requirements/constraints.txt -r /code/addons/box/requirements.txt \

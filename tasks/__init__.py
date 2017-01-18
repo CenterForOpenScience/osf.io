@@ -465,7 +465,7 @@ def flake(ctx):
 
 
 @task(aliases=['req'])
-def requirements(ctx, base=False, addons=False, release=False, dev=False, metrics=False, quick=False):
+def requirements(ctx, base=False, addons=False, release=False, dev=False, quick=False):
     """Install python dependencies.
 
     Examples:
@@ -475,15 +475,15 @@ def requirements(ctx, base=False, addons=False, release=False, dev=False, metric
     Quick requirements are, in order, addons, dev and the base requirements. You should be able to use --quick for
     day to day development.
 
-    By default, base requirements will run. However, if any set of addons, release, dev, or metrics are chosen, base
+    By default, base requirements will run. However, if any set of addons, release, or dev are chosen, base
     will have to be mentioned explicitly in order to run. This is to remain compatible with previous usages. Release
-    requirements will prevent dev, metrics, and base from running.
+    requirements will prevent dev, and base from running.
     """
     if quick:
         base = True
         addons = True
         dev = True
-    if not(addons or dev or metrics):
+    if not(addons or dev):
         base = True
     if release or addons:
         addon_requirements(ctx)
@@ -502,12 +502,6 @@ def requirements(ctx, base=False, addons=False, release=False, dev=False, metric
                 echo=True
             )
 
-        if metrics:  # then dev requirements
-            req_file = os.path.join(HERE, 'requirements', 'metrics.txt')
-            ctx.run(
-                pip_install(req_file, constraints_file=CONSTRAINTS_PATH),
-                echo=True
-            )
         if base:  # then base requirements
             req_file = os.path.join(HERE, 'requirements.txt')
             ctx.run(
@@ -743,7 +737,7 @@ def karma(ctx, single=False, sauce=False, browsers=None):
 
 
 @task
-def wheelhouse(ctx, addons=False, release=False, dev=False, metrics=False, pty=True):
+def wheelhouse(ctx, addons=False, release=False, dev=False, pty=True):
     """Build wheels for python dependencies.
 
     Examples:
@@ -751,7 +745,6 @@ def wheelhouse(ctx, addons=False, release=False, dev=False, metrics=False, pty=T
         inv wheelhouse --dev
         inv wheelhouse --addons
         inv wheelhouse --release
-        inv wheelhouse --metrics
     """
     if release or addons:
         for directory in os.listdir(settings.ADDON_PATH):
@@ -767,8 +760,6 @@ def wheelhouse(ctx, addons=False, release=False, dev=False, metrics=False, pty=T
         req_file = os.path.join(HERE, 'requirements', 'release.txt')
     elif dev:
         req_file = os.path.join(HERE, 'requirements', 'dev.txt')
-    elif metrics:
-        req_file = os.path.join(HERE, 'requirements', 'metrics.txt')
     else:
         req_file = os.path.join(HERE, 'requirements.txt')
     cmd = 'pip wheel --find-links={} -r {} --wheel-dir={} -c {}'.format(
