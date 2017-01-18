@@ -3,9 +3,9 @@ from modularodm import Q
 
 from website.app import init_app
 from website.models import Node, User
-from website.addons.forward.model import ForwardNodeSettings
+from addons.forward.model import ForwardNodeSettings
 from framework.mongo.utils import paginated
-from website.addons.base import AddonNodeSettingsBase
+from addons.base import AddonNodeSettingsBase
 from scripts.analytics.base import SnapshotAnalytics
 
 logger = logging.getLogger(__name__)

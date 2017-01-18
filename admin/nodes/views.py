@@ -6,7 +6,9 @@ from django.shortcuts import redirect
 from django.views.defaults import page_not_found
 from modularodm import Q
 
-from website.models import Node, User, NodeLog
+from website.models import User, NodeLog
+from osf.models.node import Node
+from osf.models.registrations import Registration
 from admin.base.views import GuidFormView, GuidView
 from admin.base.utils import OSFAdmin
 from admin.common_auth.logs import (
@@ -16,7 +18,7 @@ from admin.common_auth.logs import (
     CONTRIBUTOR_REMOVED,
     CONFIRM_SPAM, CONFIRM_HAM)
 from admin.nodes.templatetags.node_extras import reverse_node
-from admin.nodes.serializers import serialize_node, serialize_simple_user
+from admin.nodes.serializers import serialize_node, serialize_simple_user_and_node_permissions
 from website.project.spam.model import SpamStatus
 
 
@@ -83,7 +85,7 @@ class NodeRemoveContributorView(OSFAdmin, DeleteView):
         context = {}
         node, user = kwargs.get('object')
         context.setdefault('node_id', node.pk)
-        context.setdefault('user', serialize_simple_user((user.pk, None)))
+        context.setdefault('user', serialize_simple_user_and_node_permissions(node, user))
         return super(NodeRemoveContributorView, self).get_context_data(**context)
 
     def get_object(self, queryset=None):
@@ -192,10 +194,7 @@ class RegistrationListView(OSFAdmin, ListView):
     context_object_name = '-node'
 
     def get_queryset(self):
-        query = (
-            Q('is_registration', 'eq', True)
-        )
-        return Node.find(query).sort(self.ordering)
+        return Registration.objects.all().order_by(self.ordering)
 
     def get_context_data(self, **kwargs):
         query_set = kwargs.pop('object_list', self.object_list)

@@ -1,9 +1,9 @@
-from addons.base.apps import BaseAddonConfig
+from addons.base.apps import BaseAddonAppConfig
 
-from website.addons.figshare.views import figshare_root_folder
+from addons.figshare.views import figshare_root_folder
 
 
-class FigshareAddonConfig(BaseAddonConfig):
+class FigshareAddonAppConfig(BaseAddonAppConfig):
 
     name = 'addons.figshare'
     label = 'addons_figshare'

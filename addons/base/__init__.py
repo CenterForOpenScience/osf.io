@@ -1,5 +1,5 @@
 from django.db.models import options
-default_app_config = 'addons.base.apps.BaseAddonConfig'
+default_app_config = 'addons.base.apps.BaseAddonAppConfig'
 
 
 # Patch to make abstractproperties overridable by djangofields

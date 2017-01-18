@@ -1,17 +1,15 @@
 import os
 
-from addons.base.apps import BaseAddonConfig
-from website import settings
+from addons.base.apps import BaseAddonAppConfig
 
+HERE = os.path.dirname(os.path.abspath(__file__))
 NODE_SETTINGS_TEMPLATE = os.path.join(
-    settings.BASE_PATH,
-    'addons',
-    'forward',
+    HERE,
     'templates',
     'forward_node_settings.mako',
 )
 
-class ForwardAddonConfig(BaseAddonConfig):
+class ForwardAddonAppConfig(BaseAddonAppConfig):
 
     name = 'addons.forward'
     label = 'addons_forward'

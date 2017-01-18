@@ -1,9 +1,9 @@
-from addons.base.apps import BaseAddonConfig
+from addons.base.apps import BaseAddonAppConfig
 
-from website.addons.dropbox.views import dropbox_root_folder
+from addons.dropbox.views import dropbox_root_folder
 
 
-class DropboxAddonConfig(BaseAddonConfig):
+class DropboxAddonAppConfig(BaseAddonAppConfig):
 
     name = 'addons.dropbox'
     label = 'addons_dropbox'

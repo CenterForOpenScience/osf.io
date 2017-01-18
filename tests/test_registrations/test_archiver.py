@@ -42,7 +42,7 @@ from website import mails
 from website import settings
 from website.util import waterbutler_url_for
 from website.project.model import MetaSchema
-from website.addons.base import StorageAddonBase
+from addons.base import StorageAddonBase
 from addons.base.models import BaseStorageAddon
 
 from osf_tests import factories
@@ -379,6 +379,7 @@ class TestStorageAddonBase(ArchiverTestCase):
                 node=self.src,
                 user=self.user,
                 view_only=True,
+                _internal=True,
             )
             httpretty.register_uri(httpretty.GET,
                                    url,

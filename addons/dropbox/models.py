@@ -14,9 +14,9 @@ from framework.sessions import session
 from osf.models.external import ExternalProvider
 from osf.models.files import File, FileNode, Folder
 from urllib3.exceptions import MaxRetryError
-from website.addons.base import exceptions
-from website.addons.dropbox import settings
-from website.addons.dropbox.serializer import DropboxSerializer
+from addons.base import exceptions
+from addons.dropbox import settings
+from addons.dropbox.serializer import DropboxSerializer
 from website.util import api_v2_url, web_url_for
 
 logger = logging.getLogger(__name__)

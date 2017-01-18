@@ -29,7 +29,7 @@ from framework.sessions.model import Session
 from framework.transactions import commands, messages, utils
 from website import settings
 from website.addons.base import AddonConfig
-from website.addons.wiki.model import NodeWikiPage
+from addons.wiki.models import NodeWikiPage
 from website.app import init_app
 from website.notifications.listeners import (subscribe_contributor,
                                              subscribe_creator)

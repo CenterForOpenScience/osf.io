@@ -1,7 +1,8 @@
-from addons.base.apps import BaseAddonConfig
+from addons.base.apps import BaseAddonAppConfig
 
 
-class WikiAddonConfig(BaseAddonConfig):
+
+class WikiAddonAppConfig(BaseAddonAppConfig):
 
     name = 'addons.wiki'
     label = 'addons_wiki'

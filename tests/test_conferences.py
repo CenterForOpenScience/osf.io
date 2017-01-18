@@ -211,6 +211,7 @@ class TestProvisionNode(ContextTestCase):
             'osfstorage',
             '/' + self.attachment.filename,
             self.node,
+            _internal=True,
             user=self.user,
         )
         mock_put.assert_called_with(
@@ -230,6 +231,7 @@ class TestProvisionNode(ContextTestCase):
             'osfstorage',
             '/' + settings.MISSING_FILE_NAME,
             self.node,
+            _internal=True,
             user=self.user,
         )
         mock_put.assert_called_with(

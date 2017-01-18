@@ -9,7 +9,7 @@ from nose.tools import *  # flake8: noqa
 
 from framework.auth import cas, core
 from website.util import api_v2_url
-from website.addons.twofactor.tests import _valid_code
+from addons.twofactor.tests import _valid_code
 from website.settings import API_DOMAIN
 
 from tests.base import ApiTestCase

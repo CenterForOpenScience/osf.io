@@ -6,7 +6,7 @@ from modularodm import Q
 from modularodm.exceptions import NoResultsFound, ValidationValueError
 
 from framework.celery_tasks import handlers
-from website.addons.osfstorage import settings as osfstorage_settings
+from addons.osfstorage import settings as osfstorage_settings
 from website.files.models.osfstorage import OsfStorageFile
 from website.preprints.tasks import format_preprint
 from website.util import permissions

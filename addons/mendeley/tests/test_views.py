@@ -9,8 +9,8 @@ from addons.base.tests.utils import MockFolder
 from addons.mendeley.models import Mendeley
 from addons.mendeley.tests.utils import MendeleyTestCase, mock_responses
 from tests.base import OsfTestCase
-from website.addons.mendeley.provider import MendeleyCitationsProvider
-from website.addons.mendeley.serializer import MendeleySerializer
+from addons.mendeley.provider import MendeleyCitationsProvider
+from addons.mendeley.serializer import MendeleySerializer
 
 
 API_URL = 'https://api.mendeley.com'

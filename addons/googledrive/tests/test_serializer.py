@@ -7,7 +7,7 @@ import pytest
 from addons.base.tests.serializers import StorageAddonSerializerTestSuiteMixin
 from addons.googledrive.models import GoogleDriveProvider
 from addons.googledrive.tests.factories import GoogleDriveAccountFactory
-from website.addons.googledrive.serializer import GoogleDriveSerializer
+from addons.googledrive.serializer import GoogleDriveSerializer
 
 from tests.base import OsfTestCase
 

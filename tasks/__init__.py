@@ -103,7 +103,7 @@ def apiserver(ctx, port=8000, wait=True, autoreload=True, host='127.0.0.1', pty=
 def adminserver(ctx, port=8001, host='127.0.0.1', pty=True):
     """Run the Admin server."""
     env = 'DJANGO_SETTINGS_MODULE="admin.base.settings"'
-    cmd = '{} python manage.py runserver {}:{} --nothreading'.format(env, host, port)
+    cmd = '{} python manage.py runserver {}:{} --no-init-app --nothreading'.format(env, host, port)
     if settings.SECURE_MODE:
         cmd = cmd.replace('runserver', 'runsslserver')
         cmd += ' --certificate {} --key {}'.format(settings.OSF_SERVER_CERT, settings.OSF_SERVER_KEY)
@@ -411,7 +411,10 @@ def elasticsearch(ctx):
 @task
 def migrate_search(ctx, delete=False, index=settings.ELASTIC_INDEX):
     """Migrate the search-enabled models."""
+    from website.app import init_app
+    init_app(routes=False, set_backends=False)
     from website.search_migration.migrate import migrate
+
     migrate(delete, index=index)
 
 
@@ -557,6 +560,7 @@ CORE_TESTS = [
     'tests/test_subjects.py',
     'tests/test_tokens.py',
     'tests/test_webtests.py',
+    'tests/test_utils.py',
 ]
 @task
 def test_osf(ctx):
@@ -582,7 +586,7 @@ API_TESTS2 = [
     'api_tests/users',
 ]
 API_TESTS3 = [
-    'api_tests/addons',
+    'api_tests/addons_tests',
     'api_tests/applications',
     'api_tests/base',
     'api_tests/collections',

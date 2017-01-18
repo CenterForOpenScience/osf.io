@@ -27,7 +27,7 @@ from website.project.licenses import ensure_licenses
 from website.project.model import ensure_schemas
 from website import maintenance
 
-# This import is necessary to set up the archiver signal listeners
+# Imports necessary to connect signals
 from website.archiver import listeners  # noqa
 from website.mails import listeners  # noqa
 from website.notifications import listeners  # noqa

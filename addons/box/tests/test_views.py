@@ -15,7 +15,7 @@ from osf_tests.factories import AuthUserFactory
 from addons.base.tests import views as views_testing
 
 from addons.box.models import NodeSettings
-from website.addons.box.serializer import BoxSerializer
+from addons.box.serializer import BoxSerializer
 from addons.box.tests.utils import (
     BoxAddonTestCase,
     MockBox,

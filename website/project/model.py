@@ -3327,7 +3327,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
         return contributor
 
     def _get_spam_content(self, saved_fields):
-        from website.addons.wiki.model import NodeWikiPage
+        from addons.wiki.models import NodeWikiPage
         spam_fields = self.SPAM_CHECK_FIELDS if self.is_public and 'is_public' in saved_fields else self.SPAM_CHECK_FIELDS.intersection(saved_fields)
         content = []
         for field in spam_fields:
@@ -3508,7 +3508,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
 
     # TODO: Move to wiki add-on
     def get_wiki_page(self, name=None, version=None, id=None):
-        from website.addons.wiki.model import NodeWikiPage
+        from addons.wiki.models import NodeWikiPage
 
         if name:
             name = (name or '').strip()
@@ -3534,7 +3534,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
         :param content: A string, the posted content.
         :param auth: All the auth information including user, API key.
         """
-        from website.addons.wiki.model import NodeWikiPage
+        from addons.wiki.models import NodeWikiPage
 
         name = (name or '').strip()
         key = to_mongo_key(name)
@@ -3604,7 +3604,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
 
         """
         # TODO: Fix circular imports
-        from website.addons.wiki.exceptions import (
+        from addons.wiki.exceptions import (
             PageCannotRenameError,
             PageConflictError,
             PageNotFoundError,

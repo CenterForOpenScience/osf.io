@@ -8,11 +8,11 @@ from framework.auth import Auth
 from framework.exceptions import HTTPError
 from osf.models.external import ExternalProvider
 from osf.models.files import File, FileNode, Folder, FileVersion
-from website.addons.base import exceptions
-from website.addons.figshare import settings as figshare_settings
-from website.addons.figshare import messages
-from website.addons.figshare.client import FigshareClient
-from website.addons.figshare.serializer import FigshareSerializer
+from addons.base import exceptions
+from addons.figshare import settings as figshare_settings
+from addons.figshare import messages
+from addons.figshare.client import FigshareClient
+from addons.figshare.serializer import FigshareSerializer
 
 
 class FigshareFileNode(FileNode):

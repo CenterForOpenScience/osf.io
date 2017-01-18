@@ -12,7 +12,7 @@ from osf_tests.factories import (AuthUserFactory, CommentFactory,
                                  ProjectFactory, UserFactory)
 from tests.base import ApiTestCase, capture_signals
 from website import settings as website_settings
-from website.addons.osfstorage import settings as osfstorage_settings
+from addons.osfstorage import settings as osfstorage_settings
 from website.project.model import NodeLog
 from website.project.signals import contributor_removed
 
