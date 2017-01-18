@@ -44,8 +44,6 @@ class DateTimeAwareJSONEncoder(DjangoJSONEncoder):
                 raise NaiveDatetimeException('Tried to encode a naive datetime.')
             return dict(type='encoded_datetime', value=o.isoformat())
         elif isinstance(o, dt.date):
-            if o.tzinfo is None or o.tzinfo.utcoffset(o) is None:
-                raise NaiveDatetimeException('Tried to encode a naive date.')
             return dict(type='encoded_date', value=o.isoformat())
         elif isinstance(o, dt.time):
             if o.tzinfo is None or o.tzinfo.utcoffset(o) is None:
@@ -84,7 +82,7 @@ class DateTimeAwareJSONField(JSONField):
             return Json(value, dumps=partial(json.dumps, cls=DateTimeAwareJSONEncoder))
         return value
 
-    def to_python(self, value):
+    def from_db_value(self, value, expression, connection, context):
         if value is None:
             return None
         return super(DateTimeAwareJSONField, self).to_python(decode_datetime_objects(value))
