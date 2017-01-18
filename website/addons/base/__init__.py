@@ -76,13 +76,16 @@ class AddonConfig(object):
         self.models = models
         self.settings_models = {}
 
-        if node_settings_model:
-            node_settings_model.config = self
-            self.settings_models['node'] = node_settings_model
+        from django.apps import apps
+        app = apps.get_app_config('addons_{}'.format(short_name))
 
-        if user_settings_model:
-            user_settings_model.config = self
-            self.settings_models['user'] = user_settings_model
+        if app.node_settings:
+            app.node_settings.config = self
+            self.settings_models['node'] = app.node_settings
+
+        if app.user_settings:
+            app.user_settings.config = self
+            self.settings_models['user'] = app.user_settings
 
         self.short_name = short_name
         self.full_name = full_name
