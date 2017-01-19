@@ -52,9 +52,9 @@ def get_default_metaschema():
         return MetaSchema.find()[0]
 
 try:
-    test_app = init_app(routes=True, set_backends=False)
+    test_app = init_app(routes=True, set_backends=False, attach_django_handlers=False)
 except AssertionError:  # Routes have already been set up
-    test_app = init_app(routes=False, set_backends=False)
+    test_app = init_app(routes=False, set_backends=False, attach_django_handlers=False)
 test_app.testing = True
 
 
