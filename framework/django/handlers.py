@@ -6,13 +6,14 @@ logger = logging.getLogger(__name__)
 
 
 def before_request(*args, **kwargs):
-    reset_queries()
     close_old_connections()
+    reset_queries()
 
-def teardown_request(*args, **kwargs):
+def close_connections(*args, **kwargs):
     close_old_connections()
 
 handlers = {
     'before_request': before_request,
-    'teardown_request': teardown_request,
+    'after_request': close_connections,
+    'teardown_request': close_connections,
 }
