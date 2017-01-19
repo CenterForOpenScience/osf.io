@@ -5,6 +5,8 @@ import mimetypes
 from django.apps import AppConfig
 
 from mako.lookup import TemplateLookup
+from framework.routing import process_rules
+from framework.flask import app
 from website import settings
 
 
@@ -45,6 +47,10 @@ class BaseAddonAppConfig(AppConfig):
     get_hgrid_data = None
     max_file_size = None
     accept_extensions = True
+    # NOTE: Subclasses may make routes a property to avoid import errors
+    routes = []
+    owners = []
+    categories = []
 
     def __init__(self, *args, **kwargs):
         ret = super(BaseAddonAppConfig, self).__init__(*args, **kwargs).__init__()
@@ -136,3 +142,9 @@ class BaseAddonAppConfig(AppConfig):
             'has_page': 'page' in self.views,
             'has_widget': 'widget' in self.views,
         }
+
+    # Override Appconfig
+    def ready(self):
+        # Set up Flask routes
+        for route_group in self.routes:
+            process_rules(app, **route_group)

@@ -17,6 +17,8 @@ class GitHubAddonConfig(BaseAddonAppConfig):
     full_name = 'GitHub'
     short_name = 'github'
     configs = ['accounts', 'node']
+    categories = ['storage']
+    owners = ['user', 'node']
     has_hgrid_files = True
     max_file_size = 100  # MB
     node_settings_template = NODE_SETTINGS_TEMPLATE
@@ -43,6 +45,11 @@ class GitHubAddonConfig(BaseAddonAppConfig):
         NODE_DEAUTHORIZED,
         NODE_DEAUTHORIZED_NO_USER,
         REPO_LINKED)
+
+    @property
+    def routes(self):
+        from . import routes
+        return [routes.api_routes]
 
     @property
     def user_settings(self):

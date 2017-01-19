@@ -14,8 +14,14 @@ class DataverseAddonAppConfig(BaseAddonAppConfig):
     label = 'addons_dataverse'
     full_name = 'Dataverse'
     short_name = 'dataverse'
+    owners = ['user', 'node']
     configs = ['accounts', 'node']
     views = ['widget']
+    categories = ['storage']
+    include_css = {
+        'widget': ['dataverse.css'],
+        'page': [],
+    }
     has_hgrid_files = True
     node_settings_template = os.path.join(TEMPLATE_PATH, 'dataverse_node_settings.mako')
     user_settings_template = os.path.join(TEMPLATE_PATH, 'dataverse_user_settings.mako')
@@ -37,6 +43,11 @@ class DataverseAddonAppConfig(BaseAddonAppConfig):
     NODE_DEAUTHORIZED_NO_USER = 'dataverse_node_deauthorized_no_user'
 
     actions = (FILE_ADDED, FILE_REMOVED, DATASET_LINKED, DATASET_PUBLISHED, STUDY_LINKED, STUDY_RELEASED, NODE_AUTHORIZED, NODE_DEAUTHORIZED, NODE_DEAUTHORIZED_NO_USER)
+
+    @property
+    def routes(self):
+        from .routes import api_routes
+        return [api_routes]
 
     @property
     def user_settings(self):

@@ -9,7 +9,9 @@ class FigshareAddonAppConfig(BaseAddonAppConfig):
     label = 'addons_figshare'
     full_name = 'figshare'
     short_name = 'figshare'
+    owners = ['user', 'node']
     configs = ['accounts', 'node']
+    categories = ['storage']
     has_hgrid_files = True
     max_file_size = 50  # MB
 
@@ -35,6 +37,11 @@ class FigshareAddonAppConfig(BaseAddonAppConfig):
         FIGSHARE_NODE_AUTHORIZED,
         FIGSHARE_NODE_DEAUTHORIZED,
         FIGSHARE_NODE_DEAUTHORIZED_NO_USER)
+
+    @property
+    def routes(self):
+        from . import routes
+        return [routes.api_routes]
 
     @property
     def user_settings(self):
