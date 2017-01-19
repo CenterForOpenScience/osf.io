@@ -1,5 +1,4 @@
 import time
-from datetime import datetime
 import unittest
 import random
 
@@ -7,8 +6,7 @@ from tests.base import DbTestCase
 from tests.factories import UserFactory, ProjectFactory, PrivateLinkFactory
 
 from framework.auth import Auth
-from framework.discourse import common, projects, topics, users
-from website import files
+from framework.discourse import projects, topics, users
 import website.files.models
 
 alreadyUsedRandomGuids = []
@@ -32,7 +30,7 @@ class TestDiscourse(DbTestCase):
                                creator=self.user1, is_public=False, category='analysis',
                                parent=self.project_node)
 
-        self.file_node = files.models.StoredFileNode(_id='testfile' + randomGuid(),
+        self.file_node = website.files.models.StoredFileNode(_id='testfile' + randomGuid(),
             name='superRickyRobot.jpg', node=self.project_node,
             path='testfolder', provider='test', materialized_path='/test/path/superRickyRobot.jpg')
 

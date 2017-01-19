@@ -14,7 +14,7 @@ Use `docker-machine create --driver virtualbox --virtualbox-disk-size "100000" d
 Use `docker-machine ls` to determine the ip address of the virtual machine.
 Use `docker-machine ssh` to ssh into the default machine.
 
-Because of how Boot2Docker does not allow any data -- including Docker containers -- to persist, we use a script to mount the /var/discourse in a persistent location. Using either vi or nano (nano can need be installed with `tce-load -wi nano`), add a persistent boot script with `sudo nano /var/lib/boot2docker/bootlocal.sh` and paste in the contents of that file from this folder and save it. Then make it executable with `chmod +x /var/lib/boot2docker/bootlocal.sh`. Finally, exit from ssh and restart the machine with `docker-machine restart`. If nano or vi gives an error about the terminal starting up, you may also need to first run `export TERM=xterm`.
+Because of how Boot2Docker does not allow any data -- including Docker containers -- to persist, we use a script to mount the /var/discourse in a persistent location. Using either vi or nano (nano can need be installed with `tce-load -wi nano`), add a persistent boot script with `sudo nano /var/lib/boot2docker/bootlocal.sh` and paste in the contents of that file from this folder and save it. Then make it executable with `sudo chmod +x /var/lib/boot2docker/bootlocal.sh`. Finally, exit from ssh and restart the machine with `docker-machine restart`. If nano or vi gives an error about the terminal starting up, you may also need to first run `export TERM=xterm`.
 (Thanks to Florian Bender for the script: https://meta.discourse.org/t/try-discourse-locally-with-docker-machine-ex-boot2docker/33593)
 
 After restarting the machine, again ssh into it.

@@ -23,8 +23,7 @@ from modularodm import fields
 from modularodm.validators import MaxLengthValidator
 from modularodm.exceptions import KeyExistsException, ValidationValueError
 
-from framework import status, discourse
-import framework.discourse.projects
+from framework import status
 from framework.mongo import ObjectId, DummyRequest
 from framework.mongo import StoredObject
 from framework.mongo import validators
@@ -950,17 +949,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
 
     notification_settings_dirty = fields.BooleanField(default=False)
 
-    discourse_project_created = fields.BooleanField(default=False)
-    discourse_project_public = fields.BooleanField(default=False)
-    discourse_project_contributors = fields.StringField(default=None, list=True)
-    discourse_view_only_keys = fields.StringField(default=None, list=True)
-    discourse_topic_id = fields.StringField(default=None)
-    discourse_topic_title = fields.StringField(default=None)
-    discourse_topic_parent_guids = fields.StringField(default=None, list=True)
-    discourse_topic_deleted = fields.BooleanField(default=False)
-    discourse_post_id = fields.StringField(default=None)
-    discourse_project_deleted = fields.BooleanField(default=False)
-
     _meta = {
         'optimistic': True,
     }
@@ -1001,16 +989,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
     def target_type(self):
         """The object "type" used in the OSF v2 API."""
         return 'nodes'
-
-    # For Discourse API compatibility
-    @property
-    def guid_id(self):
-        return self._id
-
-    # For Discourse API compatibility
-    @property
-    def label(self):
-        return self.title
 
     @property
     def root_target_page(self):
@@ -1676,11 +1654,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
         self.adjust_permissions()
 
         first_save = not self._is_loaded
-
-        # No guid yet if on the first save.
-        if not first_save:
-            discourse.projects.sync_project(self, should_save=False)
-
         if first_save and self.is_bookmark_collection:
             existing_bookmark_collections = Node.find(
                 Q('is_bookmark_collection', 'eq', True) & Q('contributors', 'eq', self.creator._id) & Q('is_deleted', 'eq', False)
@@ -1746,11 +1719,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
                 batch = children[:99]
                 Node.bulk_update_search(batch)
                 children = children[99:]
-
-        # We have to wait until now to save, and then save again, because we won't have a guid until after the first save
-        if first_save:
-            discourse.projects.sync_project(self, should_save=False)
-            saved_fields |= set(super(Node, self).save(*args, **kwargs))
 
         # Return expected value for StoredObject::save
         return saved_fields
@@ -4162,11 +4130,6 @@ class PrivateLink(StoredObject):
                       for x in self.nodes if not x.is_deleted],
             'anonymous': self.anonymous
         }
-
-    def save(self, *args, **kwargs):
-        super(PrivateLink, self).save(*args, **kwargs)
-        for node in self.nodes:
-            discourse.projects.sync_project(node)
 
 
 class AlternativeCitation(StoredObject):

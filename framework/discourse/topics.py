@@ -86,7 +86,6 @@ def _create_topic(obj, should_save=True):
         'topic_guid': obj.guid_id,
         'category': {'wiki': categories.wiki_category, 'files': categories.file_category, 'nodes': categories.project_category}[obj.target_type]
     }
-
     result = common.request('post', '/posts', data)
     topic_id = result['topic_id']
 
@@ -183,6 +182,9 @@ def get_or_create_topic_id(obj, should_save=True):
     """
     if obj is None:
         return None
+    parent_node = _get_parent_node(obj)
+    if not parent_node.discourse_project_created:
+        framework.discourse.projects.sync_project_details(parent_node)
     if obj.discourse_topic_id is None:
         try:
             _create_topic(obj, should_save)

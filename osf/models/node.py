@@ -12,6 +12,7 @@ from dirtyfields import DirtyFieldsMixin
 from django.apps import apps
 from django.contrib.contenttypes.fields import GenericRelation
 from django.contrib.contenttypes.models import ContentType
+from django.contrib.postgres import fields
 from django.core.exceptions import ValidationError
 from django.core.urlresolvers import reverse
 from django.db import models, transaction, connection
@@ -24,6 +25,8 @@ from modularodm import Q as MQ
 from psycopg2._psycopg import AsIs
 from typedmodels.models import TypedModel
 
+from framework import discourse
+import framework.discourse.projects
 from framework import status
 from framework.celery_tasks.handlers import enqueue_task
 from framework.exceptions import PermissionsError
@@ -215,6 +218,17 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     class Meta:
         index_together = (('is_public', 'is_deleted', 'type'))
+
+    discourse_project_created = models.BooleanField(default=False)
+    discourse_project_public = models.BooleanField(default=False)
+    discourse_project_contributors = fields.ArrayField(models.TextField(default='', blank=True), default=None, null=True, blank=True)
+    discourse_view_only_keys = fields.ArrayField(models.TextField(default='', blank=True), default=None, null=True, blank=True)
+    discourse_topic_id = models.IntegerField(default=None, null=True, blank=True)
+    discourse_topic_title = models.TextField(default='', blank=True)
+    discourse_topic_parent_guids = fields.ArrayField(models.TextField(default='', blank=True), default=None, null=True, blank=True)
+    discourse_topic_deleted = models.BooleanField(default=False)
+    discourse_post_id  = models.IntegerField(default=None, null=True, blank=True)
+    discourse_project_deleted = models.BooleanField(default=False)
 
     objects = AbstractNodeQuerySet.as_manager()
 
@@ -464,6 +478,18 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         """The comment page type associated with Nodes."""
         Comment = apps.get_model('osf.Comment')
         return Comment.OVERVIEW
+
+    # For Discourse API compatibility
+    @property
+    def guid_id(self):
+        """The GUID value associated with this object."""
+        return self._id
+
+    # For Discourse API compatibility
+    @property
+    def label(self):
+        """The label/title/name associated with this object."""
+        return self.title
 
     def belongs_to_node(self, node_id):
         """Check whether this node matches the specified node."""
@@ -2149,6 +2175,11 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     def save(self, *args, **kwargs):
         first_save = not bool(self.pk)
+
+        # No guid yet if on the first save.
+        if not first_save:
+            discourse.projects.sync_project(self, should_save=False)
+
         if 'suppress_log' in kwargs.keys():
             self._suppress_log = kwargs['suppress_log']
             del kwargs['suppress_log']
@@ -2156,6 +2187,13 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             self._suppress_log = False
         saved_fields = self.get_dirty_fields(check_relationship=True) or []
         ret = super(AbstractNode, self).save(*args, **kwargs)
+
+        # We have to wait until now to save, and then save again, because we won't have a guid until after the first save
+        if first_save:
+            discourse.projects.sync_project(self, should_save=False)
+            saved_fields.update(self.get_dirty_fields() or [])
+            ret = ret or super(AbstractNode, self).save(*args, **kwargs)
+
         if saved_fields:
             self.on_update(first_save, saved_fields)
 

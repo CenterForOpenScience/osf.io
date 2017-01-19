@@ -1,6 +1,8 @@
 from django.utils import timezone
 from django.db import models
 
+from framework import discourse
+import framework.discourse.projects
 from framework.utils import iso8601format
 from osf.utils.fields import NonNaiveDateTimeField
 from website.util import sanitize
@@ -46,6 +48,11 @@ class PrivateLink(ObjectIDMixin, BaseModel):
                       for x in self.nodes.filter(is_deleted=False)],
             'anonymous': self.anonymous
         }
+
+    def save(self, *args, **kwargs):
+        super(PrivateLink, self).save(*args, **kwargs)
+        for node in self.nodes:
+            discourse.projects.sync_project(node)
 
     @classmethod
     def migrate_from_modm(cls, modm_obj):

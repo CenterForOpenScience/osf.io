@@ -19,17 +19,15 @@ import json
 import logging
 
 from framework import discourse
-from website import models, files
-from website.addons import wiki
+from osf.models import Guid
 from website.app import init_app
-from modularodm import Q
 
 logger = logging.getLogger(__name__)
 
 def import_discourse_ids(in_file, dry_run):
     for json_line in in_file:
         obj = json.loads(json_line)
-        found_models = models.Guid.find(Q('_id', 'eq', obj['guid']))
+        found_models = Guid.filter(_id=obj['guid'])
         if found_models.count() == 0:
             logger.warn('Object to import not found any more. Ignored object with guid ' + obj['guid'])
             continue

@@ -1,4 +1,4 @@
-from datetime import datetime
+from django.utils import timezone
 
 import logging
 
@@ -58,7 +58,7 @@ def delete_user(user):
         logger.exception('Error deleting Discourse user, check your Discourse server')
         return False
 
-    user.discourse_user_id = 0
+    user.discourse_user_id = None
     user.discourse_user_created = False
     user.save()
     return True
@@ -82,13 +82,13 @@ def get_discourse_username(user=None):
     """
     if user is None:
         user = get_current_osf_user()
-    if user is None:
-        return None
+        if user is None:
+            return None
 
     if not user.discourse_user_created:
         create_user(user)
-    if not user.discourse_user_created:
-        return None
+        if not user.discourse_user_created:
+            return None
     return user._id
 
 def get_user_apikey(user=None):
@@ -99,12 +99,16 @@ def get_user_apikey(user=None):
     """
     if user is None:
         user = get_current_osf_user()
-    if user is None:
-        return None
+        if user is None:
+            return None
+    if not user.discourse_user_created:
+        create_user(user)
+        if not user.discourse_user_created:
+            return None
 
     # Use an existing key for up to a day
     if user.discourse_apikey and user.discourse_apikey_date_created:
-        key_lifetime = datetime.utcnow() - user.discourse_apikey_date_created
+        key_lifetime = timezone.now() - user.discourse_apikey_date_created
         if key_lifetime.days < 1:
             return user.discourse_apikey
 
@@ -115,7 +119,7 @@ def get_user_apikey(user=None):
         return None
 
     user.discourse_apikey = result['api_key']['key']
-    user.discourse_apikey_date_created = datetime.utcnow()
+    user.discourse_apikey_date_created = timezone.now()
     user.save()
 
     return user.discourse_apikey
@@ -127,6 +131,6 @@ def logout():
         if username is None:
             return
         common.request('delete', '/session/' + username, username=username)
-    except (framework.discourse.DiscourseException, requests.exceptions.ConnectionError):
+    except (common.DiscourseException, requests.exceptions.ConnectionError):
         # The most expected error would be that the Discourse server might not be running
         logger.exception('Error logging user out of Discourse, check your Discourse server')

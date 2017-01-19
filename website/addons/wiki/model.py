@@ -174,26 +174,10 @@ class NodeWikiPage(GuidStoredObject, Commentable):
     user = fields.ForeignField('user')
     node = fields.ForeignField('node')
 
-    discourse_topic_id = fields.StringField(default=None)
-    discourse_topic_title = fields.StringField(default=None)
-    discourse_topic_parent_guids = fields.StringField(default=None, list=True)
-    discourse_topic_deleted = fields.BooleanField(default=False)
-    discourse_post_id = fields.StringField(default=None)
-
     # For Django compatibility
     @property
     def pk(self):
         return self._id
-
-    # For Discourse API compatibility
-    @property
-    def guid_id(self):
-        return self._id
-
-    # For Discourse API compatibility
-    @property
-    def label(self):
-        return self.page_name
 
     @property
     def is_current(self):

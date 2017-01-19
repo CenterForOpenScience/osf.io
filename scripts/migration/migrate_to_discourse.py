@@ -18,16 +18,15 @@ import tempfile
 import json
 import logging
 
+from addons.wiki.models import NodeWikiPage
 from framework.discourse import topics
-from website import models, files
-from website.addons import wiki
+from osf.models import Comment, Node, OSFUser, StoredFileNode, TrashedFileNode
 from website.app import init_app
-from modularodm import Q
 
 logger = logging.getLogger(__name__)
 
 def serialize_users(file_out):
-    users = models.User.find(Q('username', 'ne', None))
+    users = OSFUser.objects.exclude(username=None)
 
     data = {
         'type': 'count',
@@ -61,7 +60,7 @@ def serialize_projects(file_out, select_guids):
     file_out.write('\n')
 
     for guid in select_guids:
-        project = models.Node.find_one(Q('_id', 'eq', guid))
+        project = Node.filter(_id=guid).first()
 
         contributors = [user._id for user in project.contributors if user.username]
         data = {
@@ -75,7 +74,7 @@ def serialize_projects(file_out, select_guids):
         file_out.write('\n')
 
 def serialize_comments(file_out):
-    comments = models.Comment.find().sort('date_created')
+    comments = Comment.find().sort('date_created')
 
     projects_needed = set()
     project_topics = set()
@@ -86,14 +85,14 @@ def serialize_comments(file_out):
         comment_parent = comment.target.referent if comment.target else comment.node
         projects_needed.update(topics.get_parent_guids(comment_parent))
         project_topics.update(topics.get_parent_guids(comment_parent))
-        if not isinstance(comment_parent, models.Node):
+        if not isinstance(comment_parent, Node):
             projects_needed.add(comment_parent.node.guid_id)
             project_topics.add(comment_parent.node.guid_id)
-            if isinstance(comment_parent, files.models.base.StoredFileNode):
+            if isinstance(comment_parent, StoredFileNode):
                 file_topics.add(comment_parent.guid_id)
-            elif isinstance(comment_parent, files.models.base.TrashedFileNode):
+            elif isinstance(comment_parent, TrashedFileNode):
                 trashed_file_topics.add(comment_parent.guid_id)
-            elif isinstance(comment_parent, wiki.model.NodeWikiPage):
+            elif isinstance(comment_parent, NodeWikiPage):
                 wiki_topics.add(comment_parent.guid_id)
     serialize_projects(file_out, projects_needed)
 
@@ -115,7 +114,7 @@ def serialize_comments(file_out):
         comment_parent = comment.target.referent if comment.target else comment.node
         # Create a topic for each parent up to the top.
         next_parent = comment_parent
-        while next_parent and not isinstance(next_parent, models.Comment) and next_parent.guid_id not in serialized_topics:
+        while next_parent and not isinstance(next_parent, Comment) and next_parent.guid_id not in serialized_topics:
             data = {
                 'post_type': 'topic',
                 'type': next_parent.target_type,
@@ -132,7 +131,7 @@ def serialize_comments(file_out):
 
             # Don't serialize more than once, for multiple comments...
             serialized_topics.add(next_parent.guid_id)
-            next_parent = next_parent.parent_node if isinstance(next_parent, models.Node) else next_parent.node
+            next_parent = next_parent.parent_node if isinstance(next_parent, Node) else next_parent.node
 
         user = comment.user
         while user.is_merged:
@@ -147,7 +146,7 @@ def serialize_comments(file_out):
             'is_deleted': comment.is_deleted
         }
 
-        if isinstance(comment_parent, models.Comment):
+        if isinstance(comment_parent, Comment):
             data['reply_to'] = comment_parent._id
         else:
             data['reply_to'] = comment_parent.guid_id

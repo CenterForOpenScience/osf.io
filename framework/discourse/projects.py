@@ -1,5 +1,6 @@
-import requests
 import logging
+
+import requests
 
 import framework.discourse.common
 import framework.discourse.topics
@@ -18,11 +19,12 @@ def sync_project_details(project_node, should_save=True):
     contributors = [users.get_discourse_username(osf_user) for osf_user in project_node.contributors if osf_user.username]
 
     # check if there are any changes that need a resync.
-    # note that
+    # we check the difference of the lists because migrations might report
+    # the lists back in different orders
     if (project_node.discourse_project_created and
             project_node.discourse_project_public == project_node.is_public and
-            project_node.discourse_view_only_keys == view_only_keys and
-            project_node.discourse_project_contributors == contributors):
+            len(set(project_node.discourse_view_only_keys) ^ set(view_only_keys)) == 0 and
+            len(set(project_node.discourse_project_contributors) ^ set(contributors)) == 0):
         return
 
     data = {
