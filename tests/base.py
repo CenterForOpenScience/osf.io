@@ -94,7 +94,7 @@ def teardown_database(client=None, database=None):
     client.drop_database(database)
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db
 class DbTestCase(unittest.TestCase):
     """Base `TestCase` for tests that require a scratch database.
     """
