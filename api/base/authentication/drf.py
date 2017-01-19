@@ -97,6 +97,8 @@ class OSFCASAuthentication(authentication.BaseAuthentication):
     def authenticate(self, request):
         """
         Check whether the request provides a valid OAuth2 bearer token.
+        The `user` in `cas_auth_response` is the unique GUID of the user. Please do not use
+        the primary key `id` or the email `username`.
 
         :param request: the request
         :return: the user who owns the bear token and the cas repsonse
@@ -117,11 +119,8 @@ class OSFCASAuthentication(authentication.BaseAuthentication):
         if cas_auth_response.authenticated is False:
             raise exceptions.NotAuthenticated(_('CAS server failed to authenticate this token'))
 
-        # TODO: @cslzchen use GUID when switching from OSF-Postgres-CAS to OSF-API-CAS
-        username = cas_auth_response.user
-        try:
-            user = User.objects.get(username=username)
-        except User.DoesNotExist:
+        user = User.objects.filter(guids___id=cas_auth_response.user).first()
+        if not user:
             raise exceptions.AuthenticationFailed(_('Could not find the user associated with this token'))
 
         check_user(user)
