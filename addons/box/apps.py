@@ -8,7 +8,9 @@ class BoxAddonAppConfig(BaseAddonAppConfig):
     label = 'addons_box'
     full_name = 'Box'
     short_name = 'box'
+    owners = ['user', 'node']
     configs = ['accounts', 'node']
+    categories = ['storage']
     has_hgrid_files = True
     max_file_size = 250  # MB
 
@@ -21,6 +23,11 @@ class BoxAddonAppConfig(BaseAddonAppConfig):
     NODE_DEAUTHORIZED = 'box_node_deauthorized'
 
     actions = (FOLDER_SELECTED, NODE_AUTHORIZED, NODE_DEAUTHORIZED, )
+
+    @property
+    def routes(self):
+        from . import routes
+        return [routes.api_routes]
 
     @property
     def user_settings(self):

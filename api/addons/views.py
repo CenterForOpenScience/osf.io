@@ -1,5 +1,4 @@
-import importlib
-
+from django.apps import apps
 from rest_framework.exceptions import NotFound, PermissionDenied
 from rest_framework import generics, permissions as drf_permissions
 
@@ -32,11 +31,11 @@ class AddonSettingsMixin(object):
             owner_type = 'node'
 
         try:
-            addon_module = importlib.import_module('addons.{}.constants'.format(provider))
-        except ImportError:
+            addon_module = apps.get_app_config('addons_{}'.format(provider))
+        except LookupError:
             raise NotFound('Requested addon unrecognized')
 
-        if not owner or provider not in ADDONS_OAUTH or owner_type not in addon_module.OWNERS:
+        if not owner or provider not in ADDONS_OAUTH or owner_type not in addon_module.owners:
             raise NotFound('Requested addon unavailable')
 
         addon_settings = owner.get_addon(provider)

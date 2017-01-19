@@ -12,9 +12,7 @@ from website.app import init_app
 from website import models
 from framework.auth.core import Auth
 from scripts import utils as script_utils
-from framework.mongo import database as db
 from framework.celery_tasks import app as celery_app
-from website.project.utils import activity
 from website.settings import \
     POPULAR_LINKS_NODE, NEW_AND_NOTEWORTHY_LINKS_NODE,\
     NEW_AND_NOTEWORTHY_CONTRIBUTOR_BLACKLIST, POPULAR_LINKS_REGISTRATIONS
@@ -51,15 +49,19 @@ def get_new_and_noteworthy_nodes():
     Mainly: public top-level projects with the greatest number of unique log actions
 
     """
+    from osf.models import Node, NodeLog
     today = timezone.now()
     last_month = (today - dateutil.relativedelta.relativedelta(months=1))
-    data = db.node.find({'date_created': {'$gt': last_month}, 'is_public': True, 'is_registration': False, 'parent_node': None,
-                         'is_deleted': False, 'is_collection': False})
+    data = Node.objects.filter(date_created__gte=last_month, is_public=True, is_deleted=False, parent_nodes__isnull=True)
     nodes = []
     for node in data:
-        unique_actions = len(db.nodelog.find({'node': node['_id']}).distinct('action'))
-        node['unique_actions'] = unique_actions
-        nodes.append(node)
+        unique_actions = NodeLog.objects.filter(node=node.pk).order_by('action').distinct('action').count()
+        n = {}
+        n['unique_actions'] = unique_actions
+        n['contributors'] = [c._id for c in node.contributors]
+        n['_id'] = node._id
+        n['title'] = node.title
+        nodes.append(n)
 
     noteworthy_nodes = sorted(nodes, key=lambda node: node.get('unique_actions'), reverse=True)[:25]
     filtered_new_and_noteworthy = filter_nodes(noteworthy_nodes)

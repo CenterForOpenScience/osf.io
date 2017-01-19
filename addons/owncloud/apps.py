@@ -13,7 +13,9 @@ class OwnCloudAddonAppConfig(BaseAddonAppConfig):
     label = 'addons_owncloud'
     full_name = 'ownCloud'
     short_name = 'owncloud'
+    owners = ['user', 'node']
     configs = ['accounts', 'node']
+    categories = ['storage']
     has_hgrid_files = True
     node_settings_template = os.path.join(TEMPLATE_PATH, 'owncloud_node_settings.mako')
     user_settings_template = os.path.join(TEMPLATE_PATH, 'owncloud_user_settings.mako')
@@ -25,6 +27,11 @@ class OwnCloudAddonAppConfig(BaseAddonAppConfig):
         return owncloud_root_folder
 
     actions = ()
+
+    @property
+    def routes(self):
+        from .routes import api_routes
+        return [api_routes]
 
     @property
     def user_settings(self):

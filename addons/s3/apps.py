@@ -15,6 +15,7 @@ class S3AddonAppConfig(BaseAddonAppConfig):
     label = 'addons_s3'
     full_name = 'Amazon S3'
     short_name = 's3'
+    owners = ['user', 'node']
     configs = ['accounts', 'node']
     has_hgrid_files = True
     max_file_size = 128  # MB
@@ -44,6 +45,11 @@ class S3AddonAppConfig(BaseAddonAppConfig):
         NODE_AUTHORIZED,
         NODE_DEAUTHORIZED,
         NODE_DEAUTHORIZED_NO_USER)
+
+    @property
+    def routes(self):
+        from . import routes
+        return [routes.api_routes]
 
     @property
     def user_settings(self):
