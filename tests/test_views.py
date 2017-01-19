@@ -4859,7 +4859,7 @@ class TestResetPassword(OsfTestCase):
         # check if verification_key is destroyed after service validation
         mock_service_validate.return_value = cas.CasResponse(
             authenticated=True,
-            user=self.user.pk,
+            user=self.user._id,
             attributes={'accessToken': fake.md5()}
         )
         ticket = fake.md5()

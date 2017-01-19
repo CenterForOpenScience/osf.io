@@ -14,7 +14,7 @@ from osf_tests.factories import UserFactory
 def make_successful_response(user):
     return cas.CasResponse(
         authenticated=True,
-        user=user.pk,
+        user=user._id,
         attributes={
             'accessToken': fake.md5()
         }
@@ -95,7 +95,7 @@ RESPONSE_TEMPLATE = """
 def make_service_validation_response_body(user, access_token=None):
     token = access_token or fake.md5()
     return RESPONSE_TEMPLATE.format(
-        user_id=user._primary_key,
+        user_id=user._id,
         given_name=user.given_name,
         family_name=user.family_name,
         username=user.username,
