@@ -217,6 +217,9 @@ Delete a container _(does not remove volumes)_:
   - `$ docker-compose stop -t 0 assets`
   - `$ docker-compose rm assets`
 
+List containers and status:
+  - `$ docker-compose ps`
+
 ## Cleanup & Docker Reset
 
 Resetting the Environment:
