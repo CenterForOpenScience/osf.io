@@ -25,7 +25,7 @@ def _serialize(fields, instance):
         for field in fields
     }
 
-serialize_node_license = functools.partial(_serialize, ('id', 'name', 'text'))
+serialize_node_license = functools.partial(_serialize, ('_id', 'name', 'text'))
 
 
 def serialize_node_license_record(node_license_record):

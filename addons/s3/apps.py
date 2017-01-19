@@ -1,22 +1,21 @@
 import os
-from addons.base.apps import BaseAddonConfig
+from addons.base.apps import BaseAddonAppConfig
 
-from website.addons.s3.views import s3_root_folder
-from website import settings
+from addons.s3.views import s3_root_folder
 
+HERE = os.path.dirname(os.path.abspath(__file__))
 TEMPLATE_PATH = os.path.join(
-    settings.BASE_PATH,
-    'addons',
-    's3',
+    HERE,
     'templates'
 )
 
-class S3AddonConfig(BaseAddonConfig):
+class S3AddonAppConfig(BaseAddonAppConfig):
 
     name = 'addons.s3'
     label = 'addons_s3'
     full_name = 'Amazon S3'
     short_name = 's3'
+    owners = ['user', 'node']
     configs = ['accounts', 'node']
     has_hgrid_files = True
     max_file_size = 128  # MB
@@ -46,6 +45,11 @@ class S3AddonConfig(BaseAddonConfig):
         NODE_AUTHORIZED,
         NODE_DEAUTHORIZED,
         NODE_DEAUTHORIZED_NO_USER)
+
+    @property
+    def routes(self):
+        from . import routes
+        return [routes.api_routes]
 
     @property
     def user_settings(self):

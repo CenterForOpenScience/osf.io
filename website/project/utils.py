@@ -9,8 +9,10 @@ from keen import KeenClient
 
 
 # Alias the project serializer
-from website.project.views.node import _view_project
-serialize_node = _view_project  # Not recommended practice
+
+def serialize_node(*args, **kwargs):
+    from website.project.views.node import _view_project
+    return _view_project(*args, **kwargs)  # Not recommended practice
 
 CONTENT_NODE_QUERY = (
     # Can encompass accessible projects, registrations, or forks

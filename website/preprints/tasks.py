@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 def on_preprint_updated(preprint_id):
     # WARNING: Only perform Read-Only operations in an asynchronous task, until Repeatable Read/Serializable
     # transactions are implemented in View and Task application layers.
-    from website.models import PreprintService
+    from osf.models import PreprintService
     preprint = PreprintService.load(preprint_id)
 
     if settings.SHARE_URL:

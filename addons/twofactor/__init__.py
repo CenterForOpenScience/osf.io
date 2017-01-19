@@ -1,1 +1,1 @@
-default_app_config = 'addons.twofactor.apps.TwoFactorAddonConfig'
+default_app_config = 'addons.twofactor.apps.TwoFactorAddonAppConfig'

@@ -5,12 +5,12 @@ from addons.base.models import (BaseOAuthNodeSettings, BaseOAuthUserSettings,
 from django.db import models
 from framework.auth.core import Auth
 from osf.models.files import File, FileNode, Folder
-from website.addons.base import exceptions
-from website.addons.s3.provider import S3Provider
-from website.addons.s3.serializer import S3Serializer
-from website.addons.s3.settings import (BUCKET_LOCATIONS,
+from addons.base import exceptions
+from addons.s3.provider import S3Provider
+from addons.s3.serializer import S3Serializer
+from addons.s3.settings import (BUCKET_LOCATIONS,
                                         ENCRYPT_UPLOADS_DEFAULT)
-from website.addons.s3.utils import (bucket_exists,
+from addons.s3.utils import (bucket_exists,
                                      get_bucket_location_or_error,
                                      get_bucket_names)
 

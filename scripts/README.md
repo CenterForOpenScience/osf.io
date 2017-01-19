@@ -15,7 +15,7 @@ import sys
 import logging
 from website.app import init_app
 from scripts import utils as script_utils
-from framework.transactions.context import TokuTransaction
+from django.db import transaction
 
 
 logger = logging.getLogger(__name__)
@@ -30,7 +30,7 @@ def main(dry=True):
     init_app(set_backends=True, routes=False)  # Sets the storage backends on all models
 
     # Start a transaction that will be rolled back if any exceptions are un
-    with TokuTransaction():
+    with transaction.atomic():
         do_migration()
         if dry:
             # When running in dry mode force the transaction to rollback

@@ -87,7 +87,7 @@ from osf.models import (Node, PrivateLink, NodeLog, Institution, Comment, DraftR
 from osf.models import OSFUser as User
 from osf.models import NodeRelation, AlternativeCitation, Guid
 from osf.models import StoredFileNode
-from website.addons.wiki.model import NodeWikiPage
+from addons.wiki.models import NodeWikiPage
 from website.exceptions import NodeStateError
 from website.util.permissions import ADMIN
 

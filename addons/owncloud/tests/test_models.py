@@ -10,7 +10,7 @@ from addons.owncloud.tests.factories import (
     OwnCloudAccountFactory, OwnCloudNodeSettingsFactory,
     OwnCloudUserSettingsFactory
 )
-from website.addons.owncloud.settings import USE_SSL
+from addons.owncloud.settings import USE_SSL
 
 pytestmark = pytest.mark.django_db
 

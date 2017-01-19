@@ -7,8 +7,8 @@ from addons.base.tests import views
 from addons.base.tests.utils import MockFolder
 
 from addons.zotero.models import Zotero
-from website.addons.zotero.provider import ZoteroCitationsProvider
-from website.addons.zotero.serializer import ZoteroSerializer
+from addons.zotero.provider import ZoteroCitationsProvider
+from addons.zotero.serializer import ZoteroSerializer
 
 from addons.zotero.tests.utils import ZoteroTestCase, mock_responses
 from tests.base import OsfTestCase

@@ -27,6 +27,22 @@ services:
     volumes_from:
       - container:osf-sync
 
+  sharejs:
+    volumes_from:
+      - container:osf-sync
+
+#  beat:
+#    volumes_from:
+#      - container:osf-sync
+
+  worker:
+    volumes_from:
+      - container:osf-sync
+
+#  adminassets:
+#    volumes_from:
+#      - container:osf-sync
+#
 #  admin:
 #    volumes_from:
 #      - container:osf-sync

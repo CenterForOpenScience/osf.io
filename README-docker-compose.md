@@ -10,14 +10,15 @@
 3. Setup the Operating System
   - OSX
     - Alias the loopback interface
-
-      `$ sudo cp com.runlevel1.lo0.192.168.168.167.plist /Library/LaunchDaemons`
-
-      `$ sudo chmod 0644 /Library/LaunchDaemons/com.runlevel1.lo0.192.168.168.167.plist`
-
-      `$ sudo chown root:wheel /Library/LaunchDaemons/com.runlevel1.lo0.192.168.168.167.plist`
-
-      `$ sudo launchctl load /Library/LaunchDaemons/com.runlevel1.lo0.192.168.168.167.plist`
+    
+    ```bash
+    export libdir='/Library/LaunchDaemons' \
+      && export file='com.runlevel1.lo0.192.168.168.167.plist' \
+      && sudo cp $file $libdir \
+      && sudo chmod 0644 $libdir/$file \
+      && sudo chown root:wheel $libdir/$file \
+      && sudo launchctl load $libdir/$file
+    ```
 
   - Windows
     - Install Microsoft Loopback Adapter (Windows 10 follow community comments as the driver was renamed)
@@ -39,6 +40,11 @@
 
 
 ## Application Configuration
+
+* _NOTE: After making changes to `Environment Variables` or `Volume Mounts` (e.g. docker-sync) you will need to recreate the container(s)._
+
+  - `$ docker-compose up --force-recreate --no-deps preprints`
+
 1. Application Settings
  - e.g. OSF & OSF API local.py
 
@@ -86,43 +92,49 @@
 ## Docker Sync
 
 1. Install Docker Sync
+  - Mac: `$ sudo gem install docker-sync`
   - [Instructions](http://docker-sync.io)
+  
+1. Install fswatch and unison
+  - Mac: `$ brew install fswatch unison`
 
-2. If you have problems trying installing macfsevents
-  - `$ sudo pip install macfsevents`
-
-3. Running Docker Sync
+1. Running Docker Sync
 
     _NOTE: Wait for Docker Sync to fully start before running any docker-compose commands._
   - `$ docker-sync start`
 
+1. OPTIONAL: If you have problems trying installing macfsevents
+  - `$ sudo pip install macfsevents`
 
 ## Application Runtime
+
+* _NOTE: Running docker containers detached (`-d`) will execute them in the background, if you would like to view/follow their console log output use the following command._
+
+  - `$ docker-compose logs -f --tail 1000 web`
+
 1. Application Environment
 
   - `$ docker-compose up requirements mfr_requirements wb_requirements`
 
     _NOTE: When the various requirements installations are complete these containers will exit. You should only need to run these containers after pulling code that changes python requirements or if you update the python requirements._
 
-2. Start Core Component Services
-  - `$ docker-compose up elasticsearch postgres tokumx`
+2. Start Core Component Services (Detached)
+  - `$ docker-compose up -d elasticsearch postgres tokumx rabbitmq`
 
-3. Remove your existing node_modules and start the assets watcher
+3. Remove your existing node_modules and start the assets watcher (Detached)
   - `$ rm -Rf ./node_modules`
-  - `$ docker-compose up assets`
+  - `$ docker-compose up -d assets`
 
     _NOTE: The first time the assets container is run it will take Webpack/NPM up to 15 minutes to compile resources.
     When you see the BowerJS build occurring it is likely a safe time to move forward with starting the remaining
     containers._
-4. Start the Services
-  - `$ docker-compose up mfr wb fakecas`
+4. Start the Services (Detached)
+  - `$ docker-compose up -d mfr wb fakecas sharejs`
 5. Run migrations and create preprint providers
   - When starting with an empty database you will need to run migrations and populate preprint providers. See the [Running arbitrary commands](#running-arbitrary-commands) section below for instructions.
-6. Run Django migrations
-  - `$ docker-compose run --rm web python manage.py migrate`
-7. Start the OSF Web, API Server, and Preprints
-  - `$ docker-compose up web api preprints`
-8. View the OSF at [http://localhost:5000](http://localhost:5000).
+6. Start the OSF Web, API Server, and Preprints (Detached)
+  - `$ docker-compose up -d worker web api preprints`
+7. View the OSF at [http://localhost:5000](http://localhost:5000).
 
 
 ## Quickstart: Running all OSF services in the background
@@ -132,7 +144,7 @@
   ```
   $ docker-sync start
   # Wait until you see "Nothing to do: replicas have not changed since last sync."
-  $ docker-compose up -d assets elasticsearch postgres tokumx mfr wb fakecas web api preprints
+  $ docker-compose up -d assets elasticsearch postgres tokumx mfr wb fakecas sharejs worker web api preprints
   ```
 
 - To view the logs for a given container: 
@@ -143,18 +155,22 @@
 
 ## Running arbitrary commands
 
-- View logs: `$ docker-compose -f --tail 100 <container_name>`
+- View logs: `$ docker-compose logs -f --tail 100 <container_name>`
     - _NOTE: CTRL-c will exit_
 - Run migrations:
   - After creating migrations, resetting your database, or starting on a fresh install you will need to run migrations to make the needed changes to database. This command looks at the migrations on disk and compares them to the list of migrations in the `django_migrations` database table and runs any migrations that have not been run.
     - `docker-compose run --rm web python manage.py migrate`
+- Populate institutions:
+  - After resetting your database or with a new install you will need to populate the table of institutions. **You must have run migrations first.**
+    - `docker-compose run --rm web python -m scripts.populate_institutions test`
 - Populate preprint providers:
   - After resetting your database or with a new install you will need to populate the table of preprint providers. **You must have run migrations first.**
+    - `docker-compose run --rm web python -m scripts.update_taxonomies`
     - `docker-compose run --rm web python -m scripts.populate_preprint_providers`
-- Create migrations:
+- OPTIONAL: Create migrations:
   - After changing a model you will need to create migrations and apply them. Migrations are python code that changes either the structure or the data of a database. This will compare the django models on disk to the database, find the differences, and create migration code to change the database. If there are no changes this command is a noop.
     - `docker-compose run --rm web python manage.py makemigrations`
-- Destroy and recreate an empty database:
+- OPTIONAL: Destroy and recreate an empty database:
   - **WARNING**: This will delete all data in your database.
     - `docker-compose run --rm web python manage.py reset_db --noinput`
 
@@ -165,14 +181,36 @@
     _NOTE: You can detach from a container and leave it running using the CTRL-p CTRL-q key sequence._
 - Remote Debugging with PyCharm
   - Add a Python Remote Debugger per container
-    - Name: Remote Debug (web)
-    - Local host name: 192.168.168.167
-    - Port: 11000
+    - Name: `Remote Debug (web)`
+    - Local host name: `192.168.168.167`
+    - Port: `11000`
     - Path mappings:
-      - /Users/\<whoami\>/Projects/cos/osf : /code
-      - /Users/\<whoami\>/.virtualenvs/osf/lib/python2.7/site-packages : /usr/local/lib/python2.7/site-packages
-    - Single Instance only
-  - Configure .docker-compose.env REMOTE_DEBUG environment variables to match settings.
+      - `~/Projects/cos/osf : /code`
+      - `~/.virtualenvs/osf/lib/python2.7/site-packages : /usr/local/lib/python2.7/site-packages`
+    - `Single Instance only`
+  - Configure `.docker-compose.env` `<APP>_REMOTE_DEBUG` environment variables to match these settings.
+
+## Application Tests
+- Run All Tests
+  - `$ docker-compose run --rm web invoke test`
+
+- Run OSF Specific Tests
+  - `$ docker-compose run --rm web invoke test_osf`
+
+- Test a Specific Module
+  - `$ docker-compose run --rm web invoke test_module -m tests/test_conferences.py`
+
+## Managing Container State
+
+Restart a container:
+  - `$ docker-compose restart -t 0 assets`
+
+Recreate a container _(useful to ensure all environment variables/volume changes are in order)_:
+  - `$ docker-compose up --force-recreate --no-deps assets`
+
+Delete a container _(does not remove volumes)_:
+  - `$ docker-compose stop -t 0 assets`
+  - `$ docker-compose rm assets`
 
 ## Cleanup & Docker Reset
 

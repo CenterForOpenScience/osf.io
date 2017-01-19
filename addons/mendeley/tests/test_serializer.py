@@ -5,7 +5,7 @@ import pytest
 from addons.base.tests.serializers import CitationAddonSerializerTestSuiteMixin
 from addons.base.tests.utils import MockFolder
 from addons.mendeley.tests.factories import MendeleyAccountFactory
-from website.addons.mendeley.serializer import MendeleySerializer
+from addons.mendeley.serializer import MendeleySerializer
 
 from tests.base import OsfTestCase
 
