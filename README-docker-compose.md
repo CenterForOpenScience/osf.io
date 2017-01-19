@@ -176,9 +176,14 @@
 
 ## Application Debugging
 - Console Debugging with IPDB
-  - `docker-compose up web`
+  - `$ docker attach [projectname]_web_1`
 
     _NOTE: You can detach from a container and leave it running using the CTRL-p CTRL-q key sequence._
+
+  - `$ docker-compose up web`
+
+    _NOTE: Lacks detachment key sequence, see: https://github.com/docker/compose/issues/3311_
+
 - Remote Debugging with PyCharm
   - Add a Python Remote Debugger per container
     - Name: `Remote Debug (web)`
