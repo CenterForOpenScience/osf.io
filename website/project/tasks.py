@@ -58,19 +58,22 @@ def on_node_updated(node_id, user_id, first_save, saved_fields, request_headers=
             resp.raise_for_status()
 
             if node.is_registration:
-                resp = requests.post('{}api/v2/normalizeddata/'.format(settings.SHARE_URL), json={
-                    'data': {
-                        'type': 'NormalizedData',
-                        'attributes': {
-                            'tasks': [],
-                            'raw': None,
-                            'data': {'@graph': format_registration(node)}
-                        }
-                    }
-                }, headers={'Authorization': 'Bearer {}'.format(settings.SHARE_API_TOKEN), 'Content-Type': 'application/vnd.api+json'})
-                logger.debug(resp.content)
-                resp.raise_for_status()
+                on_registration_updated(node)
 
+
+def on_registration_updated(node):
+    resp = requests.post('{}api/v2/normalizeddata/'.format(settings.SHARE_URL), json={
+        'data': {
+            'type': 'NormalizedData',
+            'attributes': {
+                'tasks': [],
+                'raw': None,
+                'data': {'@graph': format_registration(node)}
+            }
+        }
+    }, headers={'Authorization': 'Bearer {}'.format(settings.SHARE_API_TOKEN), 'Content-Type': 'application/vnd.api+json'})
+    logger.debug(resp.content)
+    resp.raise_for_status()
 
 def format_registration(node):
     registration_graph = GraphNode('registration', **{
