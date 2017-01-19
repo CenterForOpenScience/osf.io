@@ -393,7 +393,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     def preprint_url(self):
         if self.is_preprint:
             try:
-                return self.preprint.url
+                # if multiple preprints per project are supported on the front end this needs to change.
+                return self.preprints.get_queryset()[0].url
             except IndexError:
                 pass
 
@@ -2159,7 +2160,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             self.set_visible(user, visible, auth=auth)
 
     def save(self, *args, **kwargs):
-        first_save = bool(self.pk)
+        first_save = not bool(self.pk)
         if 'suppress_log' in kwargs.keys():
             self._suppress_log = kwargs['suppress_log']
             del kwargs['suppress_log']
@@ -2634,7 +2635,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
         """
         # TODO: Fix circular imports
-        from website.addons.wiki.exceptions import (
+        from addons.wiki.exceptions import (
             PageCannotRenameError,
             PageConflictError,
             PageNotFoundError,

@@ -169,7 +169,7 @@ class BaseRegistrationSerializer(NodeSerializer):
 
     preprints = HideIfWithdrawal(HideIfRegistration(RelationshipField(
         related_view='nodes:node-preprints',
-        related_view_kwargs={'node_id': '<pk>'}
+        related_view_kwargs={'node_id': '<_id>'}
     )))
 
     identifiers = HideIfWithdrawal(RelationshipField(

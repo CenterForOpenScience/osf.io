@@ -103,7 +103,7 @@ def apiserver(ctx, port=8000, wait=True, autoreload=True, host='127.0.0.1', pty=
 def adminserver(ctx, port=8001, host='127.0.0.1', pty=True):
     """Run the Admin server."""
     env = 'DJANGO_SETTINGS_MODULE="admin.base.settings"'
-    cmd = '{} python manage.py runserver {}:{} --nothreading'.format(env, host, port)
+    cmd = '{} python manage.py runserver {}:{} --no-init-app --nothreading'.format(env, host, port)
     if settings.SECURE_MODE:
         cmd = cmd.replace('runserver', 'runsslserver')
         cmd += ' --certificate {} --key {}'.format(settings.OSF_SERVER_CERT, settings.OSF_SERVER_KEY)
@@ -411,7 +411,10 @@ def elasticsearch(ctx):
 @task
 def migrate_search(ctx, delete=False, index=settings.ELASTIC_INDEX):
     """Migrate the search-enabled models."""
+    from website.app import init_app
+    init_app(routes=False, set_backends=False)
     from website.search_migration.migrate import migrate
+
     migrate(delete, index=index)
 
 
@@ -462,7 +465,7 @@ def flake(ctx):
 
 
 @task(aliases=['req'])
-def requirements(ctx, base=False, addons=False, release=False, dev=False, metrics=False, quick=False):
+def requirements(ctx, base=False, addons=False, release=False, dev=False, quick=False):
     """Install python dependencies.
 
     Examples:
@@ -472,15 +475,15 @@ def requirements(ctx, base=False, addons=False, release=False, dev=False, metric
     Quick requirements are, in order, addons, dev and the base requirements. You should be able to use --quick for
     day to day development.
 
-    By default, base requirements will run. However, if any set of addons, release, dev, or metrics are chosen, base
+    By default, base requirements will run. However, if any set of addons, release, or dev are chosen, base
     will have to be mentioned explicitly in order to run. This is to remain compatible with previous usages. Release
-    requirements will prevent dev, metrics, and base from running.
+    requirements will prevent dev, and base from running.
     """
     if quick:
         base = True
         addons = True
         dev = True
-    if not(addons or dev or metrics):
+    if not(addons or dev):
         base = True
     if release or addons:
         addon_requirements(ctx)
@@ -499,12 +502,6 @@ def requirements(ctx, base=False, addons=False, release=False, dev=False, metric
                 echo=True
             )
 
-        if metrics:  # then dev requirements
-            req_file = os.path.join(HERE, 'requirements', 'metrics.txt')
-            ctx.run(
-                pip_install(req_file, constraints_file=CONSTRAINTS_PATH),
-                echo=True
-            )
         if base:  # then base requirements
             req_file = os.path.join(HERE, 'requirements.txt')
             ctx.run(
@@ -557,6 +554,7 @@ CORE_TESTS = [
     'tests/test_subjects.py',
     'tests/test_tokens.py',
     'tests/test_webtests.py',
+    'tests/test_utils.py',
 ]
 @task
 def test_osf(ctx):
@@ -582,7 +580,7 @@ API_TESTS2 = [
     'api_tests/users',
 ]
 API_TESTS3 = [
-    'api_tests/addons',
+    'api_tests/addons_tests',
     'api_tests/applications',
     'api_tests/base',
     'api_tests/collections',
@@ -739,7 +737,7 @@ def karma(ctx, single=False, sauce=False, browsers=None):
 
 
 @task
-def wheelhouse(ctx, addons=False, release=False, dev=False, metrics=False, pty=True):
+def wheelhouse(ctx, addons=False, release=False, dev=False, pty=True):
     """Build wheels for python dependencies.
 
     Examples:
@@ -747,7 +745,6 @@ def wheelhouse(ctx, addons=False, release=False, dev=False, metrics=False, pty=T
         inv wheelhouse --dev
         inv wheelhouse --addons
         inv wheelhouse --release
-        inv wheelhouse --metrics
     """
     if release or addons:
         for directory in os.listdir(settings.ADDON_PATH):
@@ -763,8 +760,6 @@ def wheelhouse(ctx, addons=False, release=False, dev=False, metrics=False, pty=T
         req_file = os.path.join(HERE, 'requirements', 'release.txt')
     elif dev:
         req_file = os.path.join(HERE, 'requirements', 'dev.txt')
-    elif metrics:
-        req_file = os.path.join(HERE, 'requirements', 'metrics.txt')
     else:
         req_file = os.path.join(HERE, 'requirements.txt')
     cmd = 'pip wheel --find-links={} -r {} --wheel-dir={} -c {}'.format(

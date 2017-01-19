@@ -16,7 +16,7 @@ from osf.models.user import OSFUser
 from osf.modm_compat import Q
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from website import settings
-from website.addons.base import logger, serializer
+from addons.base import logger, serializer
 from website.oauth.signals import oauth_complete
 from website.util import waterbutler_url_for
 
@@ -587,7 +587,7 @@ class BaseStorageAddon(BaseModel):
             kwargs['cookie'] = cookie
         if version:
             kwargs['version'] = version
-        metadata_url = waterbutler_url_for('metadata', **kwargs)
+        metadata_url = waterbutler_url_for('metadata', _internal=True, **kwargs)
 
         res = requests.get(metadata_url)
         if res.status_code != 200:

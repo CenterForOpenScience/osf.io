@@ -15,8 +15,8 @@ from addons.dropbox.tests.utils import (DropboxAddonTestCase, MockDropbox,
 from osf_tests.factories import AuthUserFactory
 
 from framework.auth import Auth
-from website.addons.dropbox.serializer import DropboxSerializer
-from website.addons.dropbox.views import dropbox_root_folder
+from addons.dropbox.serializer import DropboxSerializer
+from addons.dropbox.views import dropbox_root_folder
 
 mock_client = MockDropbox()
 pytestmark = pytest.mark.django_db
@@ -45,7 +45,7 @@ class TestConfigViews(DropboxAddonTestCase, views_testing.OAuthAddonConfigViewsT
     Serializer = DropboxSerializer
     client = mock_client
 
-    @mock.patch('website.addons.dropbox.model.DropboxClient', return_value=mock_client)
+    @mock.patch('addons.dropbox.models.DropboxClient', return_value=mock_client)
     def test_folder_list(self, *args):
         super(TestConfigViews, self).test_folder_list()
 
@@ -77,7 +77,7 @@ class TestFilebrowserViews(DropboxAddonTestCase, OsfTestCase):
             assert first['path'] == contents[0]['path']
 
     def test_dropbox_folder_list_if_folder_is_none_and_folders_only(self):
-        with patch_client('website.addons.dropbox.model.DropboxClient'):
+        with patch_client('addons.dropbox.models.DropboxClient'):
             self.node_settings.folder = None
             self.node_settings.save()
             url = self.project.api_url_for('dropbox_folder_list')
@@ -87,16 +87,16 @@ class TestFilebrowserViews(DropboxAddonTestCase, OsfTestCase):
             assert len(res.json) == len(expected)
 
     def test_dropbox_folder_list_folders_only(self):
-        with patch_client('website.addons.dropbox.model.DropboxClient'):
+        with patch_client('addons.dropbox.models.DropboxClient'):
             url = self.project.api_url_for('dropbox_folder_list')
             res = self.app.get(url, auth=self.user.auth)
             contents = mock_client.metadata('', list=True)['contents']
             expected = [each for each in contents if each['is_dir']]
             assert len(res.json) == len(expected)
 
-    @mock.patch('website.addons.dropbox.model.DropboxClient.metadata')
+    @mock.patch('addons.dropbox.models.DropboxClient.metadata')
     def test_dropbox_folder_list_include_root(self, mock_metadata):
-        with patch_client('website.addons.dropbox.model.DropboxClient'):
+        with patch_client('addons.dropbox.models.DropboxClient'):
             url = self.project.api_url_for('dropbox_folder_list')
 
             res = self.app.get(url, auth=self.user.auth)
@@ -124,7 +124,7 @@ class TestFilebrowserViews(DropboxAddonTestCase, OsfTestCase):
 
         assert root is None
 
-    @mock.patch('website.addons.dropbox.model.DropboxClient.metadata')
+    @mock.patch('addons.dropbox.models.DropboxClient.metadata')
     def test_dropbox_folder_list_deleted(self, mock_metadata):
         # Example metadata for a deleted folder
         mock_metadata.return_value = {
@@ -182,7 +182,7 @@ class TestRestrictions(DropboxAddonTestCase, OsfTestCase):
         self.node_settings.folder = 'foo bar/bar'
         self.node_settings.save()
 
-    @mock.patch('website.addons.dropbox.model.DropboxClient.metadata')
+    @mock.patch('addons.dropbox.models.DropboxClient.metadata')
     def test_restricted_folder_list(self, mock_metadata):
         mock_metadata.return_value = mock_responses['metadata_list']
 

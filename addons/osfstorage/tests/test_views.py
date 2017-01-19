@@ -9,21 +9,21 @@ from nose.tools import *  # noqa
 
 from addons.osfstorage.models import OsfStorageFileNode
 from framework.auth.core import Auth
-from website.addons.osfstorage.tests.utils import (
+from addons.osfstorage.tests.utils import (
     StorageTestCase, Delta, AssertDeltas,
     recursively_create_file,
 )
-from website.addons.osfstorage.tests import factories
+from addons.osfstorage.tests import factories
 
 from framework.auth import signing
 from website.util import rubeus
 
 from website.models import Tag
 from website.files import models
-from website.addons.osfstorage import utils
-from website.addons.osfstorage import views
-from website.addons.base.views import make_auth
-from website.addons.osfstorage import settings as storage_settings
+from addons.osfstorage import utils
+from addons.osfstorage import views
+from addons.base.views import make_auth
+from addons.osfstorage import settings as storage_settings
 
 
 def create_record_with_version(path, node_settings, **kwargs):

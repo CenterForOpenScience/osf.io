@@ -1,9 +1,8 @@
 # Base requirements for running the OSF.
-# NOTE: This does not include addon, development, metrics or release requirements.
+# NOTE: This does not include addon, development or release requirements.
 # NOTE: When updating pinned version, you may also need to update constraints.txt
 # To install addon requirements: inv requirements --addons
 # To install dev requirements: inv requirements --dev
-# To install metrics requirements: inv requirements --metrics
 # To install release requirements: inv requirements --release
 
 invoke==0.13.0
@@ -60,7 +59,7 @@ requests==2.5.3
 urllib3==1.10.4
 oauthlib==1.1.2
 requests-oauthlib==0.5.0
-raven==5.10.2
+raven==5.32.0
 webcolors==1.4
 
 # API requirements

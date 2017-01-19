@@ -11,10 +11,10 @@ from website.addons.base import AddonOAuthUserSettingsBase, AddonOAuthNodeSettin
 from website.addons.base import StorageAddonBase
 from website.oauth.models import ExternalProvider
 
-from website.addons.figshare import messages
-from website.addons.figshare.client import FigshareClient
-from website.addons.figshare import settings
-from website.addons.figshare.serializer import FigshareSerializer
+from addons.figshare import messages
+from addons.figshare.client import FigshareClient
+from addons.figshare import settings
+from addons.figshare.serializer import FigshareSerializer
 
 class Figshare(ExternalProvider):
     name = 'figshare'

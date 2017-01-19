@@ -111,9 +111,9 @@ Normally you don't need to run celery_beat. If you work on tasks that are dispat
 ```
 invoke celery_beat
 ```
-Some beat-dispatched tasks require metrics and release requirements. If needed:
+Some beat-dispatched tasks require release requirements. If needed:
 ```
-invoke requirements --metrics
+invoke requirements --release
 ```
 
 #### Sharejs

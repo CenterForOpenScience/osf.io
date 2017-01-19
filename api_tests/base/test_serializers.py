@@ -276,7 +276,7 @@ class TestRelationshipField:
 
         field_with_filters = base_serializers.RelationshipField(
             related_view='nodes:node-detail',
-            related_view_kwargs={'node_id': '<pk>'},
+            related_view_kwargs={'node_id': '<_id>'},
             filter={'target': 'hello', 'woop': 'yea'}
         )
 

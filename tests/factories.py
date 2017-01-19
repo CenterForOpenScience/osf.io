@@ -31,7 +31,7 @@ from framework.sessions.model import Session
 from tests.base import fake
 from tests.base import get_default_metaschema
 from website.addons import base as addons_base
-from website.addons.wiki.model import NodeWikiPage
+from addons.wiki.models import NodeWikiPage
 from website.oauth.models import (
     ApiOAuth2Application,
     ApiOAuth2PersonalToken,

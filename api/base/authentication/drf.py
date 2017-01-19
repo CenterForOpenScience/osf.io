@@ -93,17 +93,22 @@ class OSFBasicAuthentication(BasicAuthentication):
 
 
 class OSFCASAuthentication(authentication.BaseAuthentication):
-    """Check whether the user provides a valid OAuth2 bearer token"""
 
     def authenticate(self, request):
-        client = cas.get_client()  # Returns a CAS server client
+        """
+        Check whether the request provides a valid OAuth2 bearer token.
+
+        :param request: the request
+        :return: the user who owns the bear token and the cas repsonse
+        """
+
+        client = cas.get_client()
         try:
             auth_header_field = request.META['HTTP_AUTHORIZATION']
             auth_token = cas.parse_auth_header(auth_header_field)
         except (cas.CasTokenError, KeyError):
-            return None  # If no token in header, then this method is not applicable
+            return None
 
-        # Found a token; query CAS for the associated user id
         try:
             cas_auth_response = client.profile(auth_token)
         except cas.CasHTTPError:
@@ -112,9 +117,11 @@ class OSFCASAuthentication(authentication.BaseAuthentication):
         if cas_auth_response.authenticated is False:
             raise exceptions.NotAuthenticated(_('CAS server failed to authenticate this token'))
 
-        user_id = cas_auth_response.user
-        user = User.load(user_id)
-        if user is None:
+        # TODO: @cslzchen use GUID when switching from OSF-Postgres-CAS to OSF-API-CAS
+        username = cas_auth_response.user
+        try:
+            user = User.objects.get(username=username)
+        except User.DoesNotExist:
             raise exceptions.AuthenticationFailed(_('Could not find the user associated with this token'))
 
         check_user(user)

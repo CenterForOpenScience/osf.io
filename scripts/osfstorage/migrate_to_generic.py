@@ -14,7 +14,7 @@ from framework.transactions.context import TokuTransaction
 
 from website.files import models
 from website.app import init_app
-from website.addons.osfstorage import model as osfstorage_model
+from addons.osfstorage import model as osfstorage_model
 
 NOW = timezone.now()
 logger = logging.getLogger(__name__)

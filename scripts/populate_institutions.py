@@ -7,10 +7,10 @@ import sys
 import urllib
 
 import django
+from django.db import transaction
 from modularodm import Q
 django.setup()
 
-from framework.transactions.context import TokuTransaction
 from website import settings
 from website.app import init_app
 from website.models import Institution, Node
@@ -468,7 +468,7 @@ def main(env):
         ]
 
     init_app(routes=False)
-    with TokuTransaction():
+    with transaction.atomic():
         for inst_data in INSTITUTIONS:
             new_inst, inst_created = update_or_create(inst_data)
             # update the nodes elastic docs, to have current names of institutions. This will
