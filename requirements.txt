@@ -89,3 +89,4 @@ git+https://github.com/cwisecarver/django-typed-models@0.5.2
 django-dirtyfields==1.2
 django-extensions==1.6.1
 psycopg2==2.6.2
+psycogreen==1.0
