@@ -1,19 +1,22 @@
+from __future__ import unicode_literals
 import logging
 
-from django.db import close_old_connections, reset_queries
+from django.db import close_old_connections, reset_queries, connections, connection
 
 logger = logging.getLogger(__name__)
 
 
-def before_request(*args, **kwargs):
-    close_old_connections()
+def reset_django_db_queries_and_close_connections(*args, **kwargs):
     reset_queries()
-
-def close_connections(*args, **kwargs):
     close_old_connections()
+
+def close_old_django_db_connections(resp=None):
+    close_old_connections()
+
+    return resp
 
 handlers = {
-    'before_request': before_request,
-    'after_request': close_connections,
-    'teardown_request': close_connections,
+    'before_request': reset_django_db_queries_and_close_connections,
+    'after_request': close_old_django_db_connections,
+    'teardown_request': close_old_django_db_connections,
 }
