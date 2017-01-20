@@ -47,8 +47,6 @@ class UserDeleteView(NodesAndUsers, DeleteView, PermissionRequiredMixin):
     def delete(self, request, *args, **kwargs):
         try:
             user = self.get_object()
-            if not user.has_perm('auth.admin'):
-                raise HttpResponseForbidden('You do not have permission to delete this user.')
             if user.date_disabled is None or kwargs.get('is_spam'):
                 user.disable_account()
                 user.is_registered = False
