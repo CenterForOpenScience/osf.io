@@ -359,7 +359,7 @@ var MyProjects = {
         self.systemCollections = options.systemCollections || [
             new LinkObject('collection', { nodeType : 'projects'}, 'All my projects'),
             new LinkObject('collection', { nodeType : 'registrations'}, 'All my registrations'),
-            new LinkObject('collection', { nodeType : 'preprints', link: $osf.apiV2Url('users/me/nodes/', { query : { 'filter[preprint]': true, 'related_counts' : 'children', 'embed' : 'contributors'}})}, 'All my preprints')
+            new LinkObject('collection', { nodeType : 'preprints', link: $osf.apiV2Url('users/me/nodes/', { query : { 'filter[preprint]': true, 'related_counts' : 'children', 'embed' : ['contributors', 'preprints']}})}, 'All my preprints')
         ];
 
         self.fetchers = {};
