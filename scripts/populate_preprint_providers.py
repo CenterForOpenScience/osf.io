@@ -14,6 +14,7 @@ from website.models import Subject, PreprintProvider, NodeLicense
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
+ENVS = ['prod', 'stage']
 SUBJECTS_CACHE = {}
 
 def get_subject_id(name):
@@ -56,7 +57,7 @@ def update_or_create(provider_data):
         print('Added new preprint provider: {}'.format(provider._id))
         return new_provider, True
 
-def main():
+def main(env):
     use_plos = '--plos' in sys.argv
 
     PREPRINT_PROVIDERS = [
@@ -357,8 +358,11 @@ def main():
                 (['Law'], True),
                 (['Social and Behavioral Sciences'], True),
             ],
-        },
-        {
+        }
+    ]
+
+    if env == 'stage':
+        PREPRINT_PROVIDERS.append({
             '_id': 'scielo',
             'name': 'SciELO',
             'logo_name': 'scielo-logo.png',
@@ -377,9 +381,8 @@ def main():
             'subjects_acceptable':[
                 (['Life Sciences'], True),
                 (['Engineering'], True),
-            ],
-        },
-    ]
+            ]
+        })
 
     with TokuTransaction():
         for provider_data in PREPRINT_PROVIDERS:
@@ -388,4 +391,10 @@ def main():
 
 if __name__ == '__main__':
     init_app(set_backends=True, routes=False)
-    main()
+    env = str(sys.argv[1]).lower() if len(sys.argv) == 2 else False
+    if not env:
+        env = 'prod'
+    elif env not in ENVS:
+        print 'An specified environment must be one of: {}'.format(ENVS)
+        sys.exit(1)
+    main(env)
