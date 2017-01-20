@@ -132,6 +132,35 @@
             </div>
         </div>
     </div>
+    <div id="advisory" class="space-top advisory">
+      <div class="container">
+        <div class="row">
+          <div class="col-md-7 text-left">
+            <h2>Advisory Group</h2>
+            <p>Our advisory group includes leaders in registries and scholarly communication</p>
+          </div>
+          <div class="row">
+            <div class="col-sm-6 registries-il">
+              <ul class="registries-ul">  
+                <li><b>Stuart Buck:</b> Laura and John Arnold Foundation</li>
+                <li><b>Chris Chambers:</b> Registered Reports, Cardiff University</li>
+                <li><b>Ben Goldacre:</b> University of Oxford</li>
+                <li><b>Susan Hyde:</b> EGAP, UC Berkeley</li>
+                <li><b>Brendan Nyhan:</b> Dartmouth College</li>
+            </div>
+            <div class="col-sm-6">
+              <ul class="registries-ul"> 
+                <li><b>Mario Picon:</b> RIDIE, 3ie</li>
+                <li><b>Jessaca Spybrook:</b> IES, Western Michigan University</li>
+                <li><b>James Turitto:</b> Poverty Action Lab</li>
+                <li><b>Coosje Veldkamp:</b> Tilburg University</li>
+                <li><b>Deborah Zarin:</b> clinicaltrials.gov</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>    
 </%def>
 
 
