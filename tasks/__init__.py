@@ -679,8 +679,8 @@ def test_travis_osf(ctx):
     """
     Run half of the tests to help travis go faster. Lints and Flakes happen everywhere to keep from wasting test time.
     """
-    #flake(ctx)
-    #jshint(ctx)
+    flake(ctx)
+    jshint(ctx)
     test_osf(ctx)
     test_addons(ctx)
     test_osf_models(ctx)
@@ -691,8 +691,8 @@ def test_travis_else(ctx):
     Run other half of the tests to help travis go faster. Lints and Flakes happen everywhere to keep from
     wasting test time.
     """
-    #flake(ctx)
-    #jshint(ctx)
+    flake(ctx)
+    jshint(ctx)
     test_else(ctx)
     # TODO: Enable admin tests
     # test_admin(ctx)
