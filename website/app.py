@@ -1,4 +1,7 @@
 # -*- coding: utf-8 -*-
+from __future__ import absolute_import
+
+import framework
 import importlib
 import itertools
 import json
@@ -8,30 +11,28 @@ import thread
 from collections import OrderedDict
 
 import django
-from django.apps import apps
 import modularodm
-from werkzeug.contrib.fixers import ProxyFix
-
-import framework
 import website.models
+from api.caching import listeners  # noqa
+from django.apps import apps
 from framework.addons.utils import render_addon_capabilities
-from framework.flask import app, add_handlers
+from framework.celery_tasks import handlers as celery_task_handlers
+from framework.django import handlers as django_handlers
+from framework.flask import add_handlers, app
 from framework.logging import logger
 from framework.mongo import handlers as mongo_handlers
 from framework.mongo import set_up_storage, storage
 from framework.postcommit_tasks import handlers as postcommit_handlers
 from framework.sentry import sentry
-from framework.celery_tasks import handlers as celery_task_handlers
 from framework.transactions import handlers as transaction_handlers
-from website.project.licenses import ensure_licenses
-from website.project.model import ensure_schemas
 from website import maintenance
-
 # Imports necessary to connect signals
 from website.archiver import listeners  # noqa
 from website.mails import listeners  # noqa
 from website.notifications import listeners  # noqa
-from api.caching import listeners  # noqa
+from website.project.licenses import ensure_licenses
+from website.project.model import ensure_schemas
+from werkzeug.contrib.fixers import ProxyFix
 
 
 def init_addons(settings, routes=True):
@@ -57,7 +58,9 @@ def init_addons(settings, routes=True):
 def attach_handlers(app, settings):
     """Add callback handlers to ``app`` in the correct order."""
     # Add callback handlers to application
-    if not settings.USE_POSTGRES:
+    if settings.USE_POSTGRES:
+        add_handlers(app, django_handlers.handlers)
+    else:
         add_handlers(app, mongo_handlers.handlers)
     add_handlers(app, celery_task_handlers.handlers)
     add_handlers(app, transaction_handlers.handlers)
