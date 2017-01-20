@@ -28,7 +28,10 @@ def rm_handler(app, handler_name, func, key=None):
     """
     handler_funcs_name = '{0}_funcs'.format(handler_name)
     handler_funcs = getattr(app, handler_funcs_name)
-    handler_funcs.get(key, []).remove(func)
+    try:
+        handler_funcs.get(key, []).remove(func)
+    except ValueError:
+        pass
 
 def rm_handlers(app, handlers, key=None):
     """Remove multiple handlers from an application.
