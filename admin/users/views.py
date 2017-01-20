@@ -7,7 +7,7 @@ from django.views.generic import FormView, DeleteView, ListView
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.core.mail import send_mail
 from django.shortcuts import redirect
-from django.http import Http404, HttpResponse, HttpResponseForbidden
+from django.http import Http404, HttpResponse
 from modularodm import Q
 
 from website.project.spam.model import SpamStatus

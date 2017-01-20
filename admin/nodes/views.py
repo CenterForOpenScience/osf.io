@@ -5,12 +5,11 @@ from django.views.generic import ListView, DeleteView
 from django.shortcuts import redirect
 from django.views.defaults import page_not_found
 from django.contrib.auth.mixins import PermissionRequiredMixin
-from django.http import HttpResponseForbidden
 from modularodm import Q
 
 from website.models import Node, User, NodeLog
 from admin.base.views import GuidFormView, GuidView
-from admin.base.utils import OSFAdmin, NodesAndUsers
+from admin.base.utils import NodesAndUsers
 from admin.common_auth.logs import (
     update_admin_log,
     NODE_REMOVED,
