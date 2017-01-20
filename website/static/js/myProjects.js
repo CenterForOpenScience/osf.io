@@ -264,7 +264,7 @@ function getUID() {
 function _formatDataforPO(item) {
     item.kind = 'folder';
     item.uid = item.id;
-    item.name = item.attributes.title;
+    item.name = $osf.decodeText(item.attributes.title);
     item.tags = item.attributes.tags.toString();
     item.contributors = '';
     var contributorsData = lodashGet(item, 'embeds.contributors.data', null);
@@ -825,7 +825,7 @@ var MyProjects = {
             promise.then(function(result){
                 result.data.forEach(function(node){
                     var count = node.relationships.linked_registrations.links.related.meta.count + node.relationships.linked_nodes.links.related.meta.count;
-                    self.collections().push(new LinkObject('collection', {nodeType : 'collection', node : node, count : m.prop(count), loaded: 1 }, node.attributes.title));
+                    self.collections().push(new LinkObject('collection', {nodeType : 'collection', node : node, count : m.prop(count), loaded: 1 }, $osf.decodeText(node.attributes.title)));
 
                     var regLink = $osf.apiV2Url('collections/' + node.id + '/linked_registrations/', { query : { 'related_counts' : 'children', 'embed' : 'contributors', 'version': '2.2' }});
                     var link = $osf.apiV2Url('collections/' + node.id + '/linked_nodes/', { query : { 'related_counts' : 'children', 'embed' : 'contributors' }});
@@ -1118,8 +1118,10 @@ var Collections = {
             promise.then(function(result){
                 var node = result.data;
                 var count = node.relationships.linked_nodes.links.related.meta.count || 0;
-                self.collections().push(new LinkObject('collection', { path : 'collections/' + node.id + '/linked_nodes/', query : { 'related_counts' : 'children' }, node : node, count : m.prop(count), nodeType : 'collection' }, node.attributes.title));
+
+                self.collections().push(new LinkObject('collection', { path : 'collections/' + node.id + '/linked_nodes/', query : { 'related_counts' : 'children' }, node : node, count : m.prop(count), nodeType : 'collection' }, $osf.decodeText(node.attributes.title)));
                 var link = $osf.apiV2Url('collections/' + node.id + '/linked_nodes/', { query : { 'related_counts' : 'children', 'embed' : 'contributors'}});
+
                 args.fetchers[self.collections()[self.collections().length-1].id] = new NodeFetcher('nodes', link);
                 args.fetchers[self.collections()[self.collections().length-1].id].on(['page', 'done'], args.onPageLoad);
 
@@ -1828,7 +1830,8 @@ var Information = {
                 } }, 'Remove from collection')) : '',
                     m('h3', m('a', { href : item.links.html, onclick: function(){
                         $osf.trackClick('myProjects', 'information-panel', 'navigate-to-project');
-                    }}, item.attributes.title)),
+                    // Information tab ampersands
+                    }}, $osf.decodeText(item.attributes.title))),
                 m('[role="tabpanel"]', [
                     m('ul.nav.nav-tabs.m-b-md[role="tablist"]', [
                         m('li[role="presentation"].active', m('a[href="#tab-information"][aria-controls="information"][role="tab"][data-toggle="tab"]', {onclick: function(){
@@ -1879,7 +1882,7 @@ var Information = {
                     return m('.db-info-multi', [
                         m('h4', m('a', { href : item.data.links.html, onclick: function(){
                             $osf.trackClick('myProjects', 'information-panel', 'navigate-to-project-multiple-selected');
-                        }}, item.data.attributes.title)),
+                        }}, $osf.decodeText(item.data.attributes.title))),
                         m('p.db-info-meta.text-muted', [
                             m('span', item.data.attributes.public ? 'Public' : 'Private' + ' ' + item.data.attributes.category),
                             m('span', ', Last Modified on ' + item.data.date.local)
