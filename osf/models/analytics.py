@@ -125,9 +125,7 @@ class PageCounter(BaseModel):
             # if the user who is downloading isn't a contributor to the project
             page_type = cleaned_page.split(':')[0]
             if page_type == 'download' and node_info:
-                contributors = node_info['contributors']
-                current_user = session.data.get('auth_user_id')
-                if current_user and current_user in contributors:
+                if node_info['contributors'].filter(guids___id=session.data.get('auth_user_id')).exists():
                     model_instance.save()
                     return
 
