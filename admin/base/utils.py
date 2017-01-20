@@ -22,7 +22,7 @@ class OSFAdmin(UserPassesTestMixin):
             raise PermissionDenied(self.get_permission_denied_message())
 
     def test_func(self):
-        return self.request.user.is_authenticated() and self.request.user.is_in_group('osf_admin')
+        return self.request.user.is_authenticated() and (self.request.user.is_in_group('osf_admin') or self.request.user.is_superuser)
 
 
 class NodesAndUsers(OSFAdmin):
@@ -32,7 +32,7 @@ class NodesAndUsers(OSFAdmin):
     permission_denied_message = 'You are not allowed to access information about Nodes and Users on the OSF Admin.'
 
     def test_func(self):
-        return self.request.user.is_authenticated() and self.request.user.is_in_group('nodes_and_users')
+        return self.request.user.is_authenticated() and (self.request.user.is_in_group('nodes_and_users') or self.request.user.is_superuser)
 
 
 class SuperUser(OSFAdmin):
@@ -50,7 +50,7 @@ class Prereg(OSFAdmin):
     permission_denied_message = 'You are not in the Pre-reg admin group.'
 
     def test_func(self):
-        return self.request.user.is_authenticated() and self.request.user.is_in_group('prereg')
+        return self.request.user.is_authenticated() and (self.request.user.is_in_group('prereg') or self.request.user.is_superuser)
 
 
 def reverse_qs(view, urlconf=None, args=None, kwargs=None, current_app=None, query_kwargs=None):
