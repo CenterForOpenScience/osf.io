@@ -19,8 +19,9 @@ from framework.auth import get_user
 from framework.auth.utils import impute_names
 from furl import furl
 from modularodm import Q
+from osf.models.user import OSFUser
 from website.mailchimp_utils import subscribe_on_confirm
-from website.project.model import Node, NodeLog, User
+from website.project.model import Node, NodeLog
 from website.project.spam.model import SpamStatus
 from website.security import random_string
 from website.settings import DOMAIN, SUPPORT_EMAIL
@@ -158,13 +159,13 @@ class UserSpamList(OSFAdmin, ListView):
     paginate_by = 25
     paginate_orphans = 1
     ordering = ('date_disabled')
-    context_object_name = '-user'
+    # context_object_name = '-user'
 
     def get_queryset(self):
         query = (
             Q('system_tags', 'eq', self.SPAM_TAG)
         )
-        return User.find(query).sort(self.ordering)
+        return OSFUser.find(query).sort(self.ordering)
 
     def get_context_data(self, **kwargs):
         query_set = kwargs.pop('object_list', self.object_list)
