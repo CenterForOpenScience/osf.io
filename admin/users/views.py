@@ -86,7 +86,7 @@ class UserDeleteView(OSFAdmin, DeleteView):
         return super(UserDeleteView, self).get_context_data(**context)
 
     def get_object(self, queryset=None):
-        return User.load(self.kwargs.get('guid'))
+        return OSFUser.load(self.kwargs.get('guid'))
 
 
 class SpamUserDeleteView(UserDeleteView):
@@ -254,7 +254,7 @@ class UserView(OSFAdmin, GuidView):
         return kwargs
 
     def get_object(self, queryset=None):
-        return serialize_user(User.load(self.kwargs.get('guid')))
+        return serialize_user(OSFUser.load(self.kwargs.get('guid')))
 
 
 class UserWorkshopFormView(OSFAdmin, FormView):
@@ -276,17 +276,17 @@ class UserWorkshopFormView(OSFAdmin, FormView):
 
     @staticmethod
     def find_user_by_email(email):
-        user_list = User.find_by_email(email=email)
+        user_list = OSFUser.find_by_email(email=email)
         return user_list[0] if user_list else None
 
     @staticmethod
     def find_user_by_full_name(full_name):
-        user_list = User.find(Q('fullname', 'eq', full_name))
+        user_list = OSFUser.objects.filter(fullname=full_name)
         return user_list[0] if user_list.count() == 1 else None
 
     @staticmethod
     def find_user_by_family_name(family_name):
-        user_list = User.find(Q('family_name', 'eq', family_name))
+        user_list = OSFUser.objects.filter(family_name=family_name)
         return user_list[0] if user_list.count() == 1 else None
 
     @staticmethod
@@ -367,7 +367,7 @@ class ResetPasswordView(OSFAdmin, FormView):
     context_object_name = 'user'
 
     def get_context_data(self, **kwargs):
-        user = User.load(self.kwargs.get('guid'))
+        user = OSFUser.load(self.kwargs.get('guid'))
         try:
             self.initial.setdefault('emails', [(r, r) for r in user.emails])
         except AttributeError:
