@@ -18,8 +18,8 @@ from website.addons.base import AddonOAuthUserSettingsBase, AddonOAuthNodeSettin
 from website.addons.base import StorageAddonBase
 from website.util import api_v2_url
 
-from addons.box import settings
-from addons.box.serializer import BoxSerializer
+from website.addons.box import settings
+from website.addons.box.serializer import BoxSerializer
 from website.oauth.models import ExternalProvider
 
 logger = logging.getLogger(__name__)
