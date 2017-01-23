@@ -210,8 +210,8 @@ class BaseRegistrationSerializer(NodeSerializer):
     def get_node_links_count(self, obj):
         count = 0
         auth = get_user_auth(self.context['request'])
-        for pointer in obj.nodes_pointer:
-            if not pointer.node.is_deleted and not pointer.node.is_collection and pointer.node.can_view(auth):
+        for node in obj.nodes_pointer:
+            if not node.is_deleted and not node.is_collection and node.can_view(auth):
                 count += 1
         return count
 
