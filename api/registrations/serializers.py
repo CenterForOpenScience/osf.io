@@ -1,3 +1,4 @@
+import pytz
 import json
 
 from modularodm.exceptions import ValidationValueError
@@ -10,7 +11,7 @@ from website.project.metadata.utils import is_prereg_admin_not_project_admin
 from website.exceptions import NodeStateError
 from website.project.model import NodeUpdateError
 
-from api.files.serializers import FileSerializer
+from api.files.serializers import OsfStorageFileSerializer
 from api.nodes.serializers import NodeSerializer, NodeProviderSerializer
 from api.nodes.serializers import NodeLinksSerializer, NodeLicenseSerializer
 from api.nodes.serializers import NodeContributorsSerializer, NodeTagField
@@ -66,41 +67,41 @@ class BaseRegistrationSerializer(NodeSerializer):
 
     registered_by = HideIfWithdrawal(RelationshipField(
         related_view='users:user-detail',
-        related_view_kwargs={'user_id': '<registered_user_id>'}
+        related_view_kwargs={'user_id': '<registered_user._id>'}
     ))
 
     registered_from = HideIfWithdrawal(RelationshipField(
         related_view='nodes:node-detail',
-        related_view_kwargs={'node_id': '<registered_from_id>'}
+        related_view_kwargs={'node_id': '<registered_from._id>'}
     ))
 
     children = HideIfWithdrawal(RelationshipField(
         related_view='registrations:registration-children',
-        related_view_kwargs={'node_id': '<pk>'},
+        related_view_kwargs={'node_id': '<_id>'},
         related_meta={'count': 'get_node_count'},
     ))
 
     comments = HideIfWithdrawal(RelationshipField(
         related_view='registrations:registration-comments',
-        related_view_kwargs={'node_id': '<pk>'},
+        related_view_kwargs={'node_id': '<_id>'},
         related_meta={'unread': 'get_unread_comments_count'},
-        filter={'target': '<pk>'}
+        filter={'target': '<_id>'}
     ))
 
     contributors = RelationshipField(
         related_view='registrations:registration-contributors',
-        related_view_kwargs={'node_id': '<pk>'},
+        related_view_kwargs={'node_id': '<_id>'},
         related_meta={'count': 'get_contrib_count'}
     )
 
     files = HideIfWithdrawal(RelationshipField(
         related_view='registrations:registration-providers',
-        related_view_kwargs={'node_id': '<pk>'}
+        related_view_kwargs={'node_id': '<_id>'}
     ))
 
     wikis = HideIfWithdrawal(RelationshipField(
         related_view='registrations:registration-wikis',
-        related_view_kwargs={'node_id': '<pk>'},
+        related_view_kwargs={'node_id': '<_id>'},
     ))
 
     forked_from = HideIfWithdrawal(RelationshipField(
@@ -120,17 +121,17 @@ class BaseRegistrationSerializer(NodeSerializer):
 
     logs = HideIfWithdrawal(RelationshipField(
         related_view='registrations:registration-logs',
-        related_view_kwargs={'node_id': '<pk>'},
+        related_view_kwargs={'node_id': '<_id>'},
     ))
 
     forks = HideIfWithdrawal(RelationshipField(
         related_view='registrations:registration-forks',
-        related_view_kwargs={'node_id': '<pk>'}
+        related_view_kwargs={'node_id': '<_id>'}
     ))
 
     node_links = ShowIfVersion(HideIfWithdrawal(RelationshipField(
         related_view='registrations:registration-pointers',
-        related_view_kwargs={'node_id': '<pk>'},
+        related_view_kwargs={'node_id': '<_id>'},
         related_meta={'count': 'get_pointers_count'},
         help_text='This feature is deprecated as of version 2.1. Use linked_nodes instead.'
     )), min_version='2.0', max_version='2.0')
@@ -148,7 +149,7 @@ class BaseRegistrationSerializer(NodeSerializer):
 
     affiliated_institutions = HideIfWithdrawal(RelationshipField(
         related_view='registrations:registration-institutions',
-        related_view_kwargs={'node_id': '<pk>'}
+        related_view_kwargs={'node_id': '<_id>'}
     ))
 
     registration_schema = RelationshipField(
@@ -158,41 +159,41 @@ class BaseRegistrationSerializer(NodeSerializer):
 
     registrations = HideIfRegistration(RelationshipField(
         related_view='nodes:node-registrations',
-        related_view_kwargs={'node_id': '<pk>'}
+        related_view_kwargs={'node_id': '<_id>'}
     ))
 
     draft_registrations = HideIfRegistration(RelationshipField(
         related_view='nodes:node-draft-registrations',
-        related_view_kwargs={'node_id': '<pk>'}
+        related_view_kwargs={'node_id': '<_id>'}
     ))
 
     preprints = HideIfWithdrawal(HideIfRegistration(RelationshipField(
         related_view='nodes:node-preprints',
-        related_view_kwargs={'node_id': '<pk>'}
+        related_view_kwargs={'node_id': '<_id>'}
     )))
 
     identifiers = HideIfWithdrawal(RelationshipField(
         related_view='registrations:identifier-list',
-        related_view_kwargs={'node_id': '<pk>'}
+        related_view_kwargs={'node_id': '<_id>'}
     ))
 
     linked_nodes = HideIfWithdrawal(RelationshipField(
         related_view='registrations:linked-nodes',
-        related_view_kwargs={'node_id': '<pk>'},
+        related_view_kwargs={'node_id': '<_id>'},
         related_meta={'count': 'get_node_links_count'},
         self_view='registrations:node-pointer-relationship',
-        self_view_kwargs={'node_id': '<pk>'}
+        self_view_kwargs={'node_id': '<_id>'}
     ))
 
     view_only_links = HideIfWithdrawal(RelationshipField(
         related_view='registrations:registration-view-only-links',
-        related_view_kwargs={'node_id': '<pk>'},
+        related_view_kwargs={'node_id': '<_id>'},
         related_meta={'count': 'get_view_only_links_count'},
     ))
 
     citation = HideIfWithdrawal(RelationshipField(
         related_view='registrations:registration-citation',
-        related_view_kwargs={'node_id': '<pk>'}
+        related_view_kwargs={'node_id': '<_id>'}
     ))
 
     links = LinksField({'self': 'get_registration_url', 'html': 'get_absolute_html_url'})
@@ -231,7 +232,7 @@ class BaseRegistrationSerializer(NodeSerializer):
         if registration_choice == 'embargo':
             if not embargo_lifted:
                 raise exceptions.ValidationError('lift_embargo must be specified.')
-            embargo_end_date = embargo_lifted.replace(tzinfo=None)
+            embargo_end_date = embargo_lifted.replace(tzinfo=pytz.utc)
             try:
                 registration.embargo_registration(auth.user, embargo_end_date)
             except ValidationValueError as err:
@@ -263,7 +264,7 @@ class BaseRegistrationSerializer(NodeSerializer):
 
     def get_registration_supplement(self, obj):
         if obj.registered_schema:
-            schema = obj.registered_schema[0]
+            schema = obj.registered_schema.first()
             if schema is None:
                 return None
             return schema.name
@@ -328,7 +329,7 @@ class RegistrationContributorsSerializer(NodeContributorsSerializer):
         )
 
 
-class RegistrationFileSerializer(FileSerializer):
+class RegistrationFileSerializer(OsfStorageFileSerializer):
 
     files = NodeFileHyperLinkField(
         related_view='registrations:registration-files',

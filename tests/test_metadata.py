@@ -4,7 +4,8 @@ import unittest
 from nose.tools import *  # PEP8 asserts
 
 from framework.forms.utils import process_payload
-from modularodm.exceptions import KeyExistsException
+from modularodm.exceptions import ValidationError
+from modularodm import Q
 
 from website.project.model import MetaSchema
 from website.project.model import ensure_schemas
@@ -13,7 +14,7 @@ from website.project.metadata.schemas import OSF_META_SCHEMAS
 from tests.base import DbIsolationMixin, OsfTestCase
 
 
-class TestMetaData(DbIsolationMixin, OsfTestCase):
+class TestMetaData(OsfTestCase):
 
     def test_ensure_schemas(self):
 
@@ -30,16 +31,13 @@ class TestMetaData(DbIsolationMixin, OsfTestCase):
         )
 
     def test_metaschema_uniqueness_is_enforced_in_the_database(self):
-        # Using MongoDB's uniqueness instead of modular-odm's allows us to
-        # kludge a race-less upsert in ensure_schema.
-        MetaSchema(name='foo', schema_version=1).save()
-        assert_raises(KeyExistsException, MetaSchema(name='foo', schema_version=1).save)
-        # modular-odm's uniqueness constraint would raise ValidationValueError instead.
+        MetaSchema(name='foo', schema={'foo': 42}, schema_version=1).save()
+        assert_raises(ValidationError, MetaSchema(name='foo', schema={'bar': 24}, schema_version=1).save)
 
     def test_metaschema_is_fine_with_same_name_but_different_version(self):
-        MetaSchema(name='foo', schema_version=1).save()
-        MetaSchema(name='foo', schema_version=2).save()
-        assert_equal(MetaSchema.find(name='foo').count(), 2)
+        MetaSchema(name='foo', schema={'foo': 42}, schema_version=1).save()
+        MetaSchema(name='foo', schema={'foo': 42}, schema_version=2).save()
+        assert_equal(MetaSchema.find(Q('name', 'eq', 'foo')).count(), 2)
 
     def test_process(self):
         processed = process_payload({'foo': 'bar&baz'})

@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
-import datetime
 import furl
 import httplib as http
 import re
 import urllib
 
 import markupsafe
+from django.utils import timezone
 from flask import request
 import uuid
 
@@ -180,7 +180,7 @@ def forgot_password_post():
                 else:
                     # new random verification key (v2)
                     user_obj.verification_key_v2 = generate_verification_key(verification_type='password')
-                    user_obj.email_last_sent = datetime.datetime.utcnow()
+                    user_obj.email_last_sent = timezone.now()
                     user_obj.save()
                     reset_link = furl.urljoin(
                         settings.DOMAIN,
@@ -493,13 +493,13 @@ def external_login_confirm_email_get(auth, uid, token):
         raise HTTPError(http.FORBIDDEN, e.message)
 
     if not user.is_registered:
-        user.set_password(uuid.uuid4(), notify=False)
+        user.set_unusable_password()
         user.register(email)
 
     if email.lower() not in user.emails:
         user.emails.append(email.lower())
 
-    user.date_last_logged_in = datetime.datetime.utcnow()
+    user.date_last_logged_in = timezone.now()
     user.external_identity[provider][provider_id] = 'VERIFIED'
     user.social[provider.lower()] = provider_id
     del user.email_verifications[token]
@@ -578,7 +578,7 @@ def confirm_email_get(token, auth=None, **kwargs):
         })
 
     if is_initial_confirmation:
-        user.date_last_login = datetime.datetime.utcnow()
+        user.date_last_login = timezone.now()
         user.save()
 
         # send out our welcome message
@@ -842,7 +842,7 @@ def resend_confirmation_post(auth):
                     # already confirmed, redirect to dashboard
                     status_message = 'This email {0} has already been confirmed.'.format(clean_email)
                     kind = 'warning'
-                user.email_last_sent = datetime.datetime.utcnow()
+                user.email_last_sent = timezone.now()
                 user.save()
             else:
                 status_message = ('You have recently requested to resend your confirmation email. '

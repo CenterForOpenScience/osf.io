@@ -19,7 +19,7 @@ import pyrax
 from modularodm import Q
 
 from website.app import init_app
-from website.addons.osfstorage import model
+from addons.osfstorage import model
 
 from scripts import utils as script_utils
 from scripts.osfstorage import settings as storage_settings
@@ -88,7 +88,7 @@ import mock
 from nose.tools import *  # noqa
 
 from tests.base import OsfTestCase
-from website.addons.osfstorage.tests.factories import FileVersionFactory
+from addons.osfstorage.tests.factories import FileVersionFactory
 
 
 class TestMigrateContainer(OsfTestCase):

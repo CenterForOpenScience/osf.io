@@ -16,8 +16,8 @@ from framework.sessions import session
 
 from website.util import web_url_for, api_v2_url
 from website.addons.base import exceptions
-from website.addons.base import AddonOAuthUserSettingsBase, AddonOAuthNodeSettingsBase
 from website.addons.base import StorageAddonBase
+from website.addons.base import AddonOAuthUserSettingsBase, AddonOAuthNodeSettingsBase
 from website.oauth.models import ExternalProvider
 
 from website.addons.dropbox import settings
@@ -28,7 +28,7 @@ logger = logging.getLogger(__name__)
 
 class DropboxProvider(ExternalProvider):
 
-    name = 'DropBox'
+    name = 'Dropbox'
     short_name = 'dropbox'
 
     client_id = settings.DROPBOX_KEY

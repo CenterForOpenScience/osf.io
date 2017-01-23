@@ -1,7 +1,7 @@
 from nose.tools import *
 
 from framework.auth.core import Auth
-from website.addons import base as addons_base
+from addons import base as addons_base
 
 from tests import base
 from tests import factories
