@@ -127,7 +127,7 @@ def main(env):
                 'logo_name': 'mli-shield.png',
                 'auth_url': None,
                 'logout_url': None,
-                'domains': [],
+                'domains': ['research.mindandlife.org'],
                 'email_domains': ['mindandlife.org'],
             },
             {
@@ -193,7 +193,7 @@ def main(env):
                 'logo_name': 'uct-shield.png',
                 'auth_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('http://adfs.uct.ac.za/adfs/services/trust')),
                 'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://osf.io/goodbye')),
-                'domains': [],
+                'domains': ['osf.uct.ac.za'],
                 'email_domains': [],
             },
             {
@@ -232,7 +232,7 @@ def main(env):
             {
                 '_id': 'uw',
                 'name': 'University of Washington',
-                'description': 'This service is supported by the University of Washington Libraries. Do not use this service to store or transfer personally identifiable information or personal health information. Questions? Email the Libraries Research Data Services Unit at libdata@uw.edu.',
+                'description': 'This service is supported by the University of Washington Libraries. Do not use this service to store or transfer personally identifiable information or personal health information. Questions? Email the Libraries Research Data Services Unit at <a href="mailto:libdata@uw.edu">libdata@uw.edu</a>.',
                 'banner_name': 'uw-banner.png',
                 'logo_name': 'uw-shield.png',
                 'auth_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('urn:mace:incommon:washington.edu')),
@@ -393,13 +393,13 @@ def main(env):
             },
             {
                 '_id': 'mli',
-                'name': 'Mind & Life Institute',
+                'name': 'Mind & Life Institute [Test]',
                 'description': 'Funding rigorous research in the field of contemplative science to understand the human mind for the purpose of reducing suffering. Learn more about <a href="https://www.mindandlife.org">Mind & Life research funding and other programs</a>.',
                 'banner_name': 'mli-banner.png',
                 'logo_name': 'mli-shield.png',
                 'auth_url': None,
                 'logout_url': None,
-                'domains': [],
+                'domains': ['research.mindandlife.org'],
                 'email_domains': ['mindandlife.org'],
             },
             {
@@ -459,13 +459,13 @@ def main(env):
             },
             {
                 '_id': 'uct',
-                'name': 'University of Cape Town',
+                'name': 'University of Cape Town [Test]',
                 'description': 'UCT Libraries, UCT eResearch & ICTS present the UCT OSF institutional service to UCT affiliated students, staff and researchers. The UCT OSF facility should be used in conjunction with the institution’s Research Data Management (RDM) Policy, Open Access Policy and IP Policy. Visit the UCT Digital Library Services for more information and/or assistance with RDM and data sharing. We also encourage the use of UCT Libraries’ Data Management Planning tool, DMPonline.',
                 'banner_name': 'uct-banner.png',
                 'logo_name': 'uct-shield.png',
                 'auth_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('http://adfs.uct.ac.za/adfs/services/trust')),
                 'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://test.osf.io/goodbye')),
-                'domains': [],
+                'domains': ['osf.uct.ac.za'],
                 'email_domains': [],
             },
             {
@@ -503,8 +503,8 @@ def main(env):
             },
             {
                 '_id': 'uw',
-                'name': 'University of Washington',
-                'description': 'This service is supported by the University of Washington Libraries. Do not use this service to store or transfer personally identifiable information or personal health information. Questions? Email the Libraries Research Data Services Unit at libdata@uw.edu.',
+                'name': 'University of Washington [Test]',
+                'description': 'This service is supported by the University of Washington Libraries. Do not use this service to store or transfer personally identifiable information or personal health information. Questions? Email the Libraries Research Data Services Unit at <a href="mailto:libdata@uw.edu">libdata@uw.edu</a>.',
                 'banner_name': 'uw-banner.png',
                 'logo_name': 'uw-shield.png',
                 'auth_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('urn:mace:incommon:washington.edu')),
