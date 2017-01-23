@@ -3,6 +3,7 @@
 import httplib
 import logging
 
+from django.db import transaction
 from django.utils import timezone
 from modularodm import Q
 from modularodm.exceptions import ModularOdmException
@@ -10,7 +11,6 @@ from modularodm.exceptions import ModularOdmException
 from framework.auth import get_or_create_user
 from framework.exceptions import HTTPError
 from framework.flask import redirect
-from framework.transactions.context import TokuTransaction
 from framework.transactions.handlers import no_auto_transaction
 
 from website import settings
@@ -74,7 +74,7 @@ def add_poster_by_email(conference, message):
     nodes_created = []
     users_created = []
 
-    with TokuTransaction():
+    with transaction.atomic():
         user, user_created = get_or_create_user(
             message.sender_display,
             message.sender_email,
