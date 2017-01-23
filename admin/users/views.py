@@ -159,13 +159,10 @@ class UserSpamList(OSFAdmin, ListView):
     paginate_by = 25
     paginate_orphans = 1
     ordering = ('date_disabled')
-    # context_object_name = '-user'
+    context_object_name = '-user'
 
     def get_queryset(self):
-        query = (
-            Q('system_tags', 'eq', self.SPAM_TAG)
-        )
-        return OSFUser.find(query).sort(self.ordering)
+        return OSFUser.objects.filter(tags__name=self.SPAM_TAG).order_by(self.ordering)
 
     def get_context_data(self, **kwargs):
         query_set = kwargs.pop('object_list', self.object_list)
