@@ -3,8 +3,8 @@ from __future__ import unicode_literals
 from django.views.generic import FormView, ListView, DetailView
 from django.http import Http404
 
-from modularodm import Q
-from website.project.model import Comment
+from osf.models.comment import Comment
+from osf.models.user import OSFUser
 from website.project.spam.model import SpamStatus
 
 from admin.base.utils import OSFAdmin
@@ -42,12 +42,11 @@ class SpamList(OSFAdmin, ListView):
     context_object_name = 'spam'
 
     def get_queryset(self):
-        query = (
-            Q('reports', 'ne', {}) &
-            Q('reports', 'ne', None) &
-            Q('spam_status', 'eq', int(self.request.GET.get('status', '1')))
-        )
-        return Comment.find(query).sort(self.ordering)
+        return Comment.objects.filter(
+            spam_status=int(self.request.GET.get('status', '1'))
+        ).exclude(reports={}).exclude(reports=None)
+
+
 
     def get_context_data(self, **kwargs):
         queryset = kwargs.pop('object_list', self.object_list)
@@ -70,13 +69,12 @@ class UserSpamList(SpamList):
     template_name = 'spam/user.html'
 
     def get_queryset(self):
-        query = (
-            Q('reports', 'ne', {}) &
-            Q('reports', 'ne', None) &
-            Q('user', 'eq', self.kwargs.get('user_id', None)) &
-            Q('spam_status', 'eq', int(self.request.GET.get('status', '1')))
-        )
-        return Comment.find(query).sort(self.ordering)
+        user = OSFUser.load(self.kwargs.get('user_id', None))
+
+        return Comment.objects.filter(
+            spam_status=int(self.request.GET.get('status', '1')),
+            user=user
+        ).exclude(reports={}).exclude(reports=None).order_by(self.ordering)
 
     def get_context_data(self, **kwargs):
         kwargs.setdefault('user_id', self.kwargs.get('user_id', None))
