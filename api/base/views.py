@@ -813,10 +813,10 @@ class BaseNodeLinksDetail(JSONAPIBaseView, generics.RetrieveAPIView):
     def get_queryset(self):
         auth = get_user_auth(self.request)
         return sorted([
-            pointer.node for pointer in
+            node for node in
             self.get_node().nodes_pointer
-            if not pointer.node.is_deleted and not pointer.node.is_collection and
-            pointer.node.can_view(auth) and not pointer.node.is_retracted
+            if not node.is_deleted and not node.is_collection and
+            node.can_view(auth) and not node.is_retracted
         ], key=lambda n: n.date_modified, reverse=True)
 
 
