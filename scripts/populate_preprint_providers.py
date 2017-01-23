@@ -1,13 +1,12 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""Populate development database with Preprint Provicer elements"""
-
+"""Populate development database with PreprintProvider fixtures"""
 import logging
 import sys
 
+from django.db import transaction
 from modularodm import Q
 from modularodm.exceptions import NoResultsFound
-from framework.transactions.context import TokuTransaction
 from website.app import init_app
 from website.models import Subject, PreprintProvider, NodeLicense
 
@@ -364,7 +363,7 @@ def main():
         },
     ]
 
-    with TokuTransaction():
+    with transaction.atomic():
         for provider_data in PREPRINT_PROVIDERS:
             update_or_create(provider_data)
 

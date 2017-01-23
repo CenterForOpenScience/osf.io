@@ -8,7 +8,9 @@ class GoogleDriveAddonConfig(BaseAddonAppConfig):
     label = 'addons_googledrive'
     full_name = 'Google Drive'
     short_name = 'googledrive'
+    owners = ['user', 'node']
     configs = ['accounts', 'node']
+    categories = ['storage']
     has_hgrid_files = True
 
     @property
@@ -20,6 +22,11 @@ class GoogleDriveAddonConfig(BaseAddonAppConfig):
     NODE_DEAUTHORIZED = 'googledrive_node_deauthorized'
 
     actions = (FOLDER_SELECTED, NODE_AUTHORIZED, NODE_DEAUTHORIZED, )
+
+    @property
+    def routes(self):
+        from . import routes
+        return [routes.api_routes]
 
     @property
     def user_settings(self):

@@ -550,16 +550,6 @@ else:
     #         'schedule': crontab(minute=0, hour=2, day_of_week=0),  # Sunday 2:00 a.m.
     #         'kwargs': {'num_of_workers': 4, 'dry_run': False},
     #     },
-    #     'analytics': {
-    #         'task': 'scripts.analytics.tasks',
-    #         'schedule': crontab(minute=0, hour=2),  # Daily 2:00 a.m.
-    #         'kwargs': {}
-    #     },
-    #     'analytics-upload': {
-    #         'task': 'scripts.analytics.upload',
-    #         'schedule': crontab(minute=0, hour=6),  # Daily 6:00 a.m.
-    #         'kwargs': {}
-    #     },
     # })
 
 

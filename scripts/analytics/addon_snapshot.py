@@ -1,11 +1,11 @@
+from __future__ import absolute_import
+
 import logging
 from modularodm import Q
 
 from website.app import init_app
 from website.models import Node, User
-from addons.forward.model import ForwardNodeSettings
 from framework.mongo.utils import paginated
-from addons.base import AddonNodeSettingsBase
 from scripts.analytics.base import SnapshotAnalytics
 
 logger = logging.getLogger(__name__)
@@ -21,6 +21,8 @@ def get_enabled_authorized_linked(user_settings_list, has_external_account, shor
     :param short_name: short name of addon to get correct node_settings
     :return:  dict with number of users that have at least one project at each stage
     """
+    from addons.forward.models import NodeSettings as ForwardNodeSettings
+
     num_enabled = 0  # of users w/ 1+ addon account connected
     num_authorized = 0  # of users w/ 1+ addon account connected to 1+ node
     num_linked = 0  # of users w/ 1+ addon account connected to 1+ node and configured
@@ -68,17 +70,15 @@ class AddonSnapshot(SnapshotAnalytics):
     def get_events(self, date=None):
         super(AddonSnapshot, self).get_events(date)
 
+        from addons.base.models import BaseNodeSettings
         from website.settings import ADDONS_AVAILABLE
+
         counts = []
         addons_available = {k: v for k, v in [(addon.short_name, addon) for addon in ADDONS_AVAILABLE]}
 
         for short_name, addon in addons_available.iteritems():
 
-            has_external_account = True
-
-            if addon.settings_models.get('user'):
-                if AddonNodeSettingsBase in addon.settings_models['user'].__class__.__bases__:
-                    has_external_account = False
+            has_external_account = hasattr(addon.settings_models.get('node'), 'external_account')
 
             connected_count = 0
             deleted_count = 0
@@ -86,16 +86,17 @@ class AddonSnapshot(SnapshotAnalytics):
             node_settings_model = addon.settings_models.get('node')
             if node_settings_model:
                 for node_settings in paginated(node_settings_model):
-                    if AddonNodeSettingsBase in node_settings.__class__.__bases__:
-                        has_external_account = False
                     if node_settings.owner and not node_settings.owner.is_bookmark_collection:
                         connected_count += 1
                 deleted_count = addon.settings_models['node'].find(Q('deleted', 'eq', True)).count() if addon.settings_models.get('node') else 0
                 if has_external_account:
                     disconnected_count = addon.settings_models['node'].find(Q('external_account', 'eq', None) & Q('deleted', 'ne', True)).count() if addon.settings_models.get('node') else 0
                 else:
-                    disconnected_count = addon.settings_models['node'].find(Q('configured', 'eq', True) & Q('complete', 'eq', False) & Q('deleted', 'ne', True)).count() if addon.settings_models.get('node') else 0
-                total = connected_count + deleted_count + disconnected_count
+                    if addon.settings_models.get('node'):
+                        for nsm in addon.settings_models['node'].find(Q('deleted', 'ne', True)):
+                            if nsm.configured and not nsm.complete:
+                                disconnected_count += 1
+            total = connected_count + deleted_count + disconnected_count
             usage_counts = get_enabled_authorized_linked(addon.settings_models.get('user'), has_external_account, addon.short_name)
 
             counts.append({

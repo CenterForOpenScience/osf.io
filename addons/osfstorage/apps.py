@@ -3,6 +3,9 @@ from website import settings
 from addons.osfstorage import settings as addon_settings
 from addons.osfstorage import views
 
+# Ensure blinker signal listeners are connected
+import addons.osfstorage.listeners  # noqa
+
 
 class OSFStorageAddonAppConfig(BaseAddonAppConfig):
     name = 'addons.osfstorage'
@@ -12,11 +15,16 @@ class OSFStorageAddonAppConfig(BaseAddonAppConfig):
     added_default = ['node']
     added_mandatory = ['node']
 
+    categories = ['storage']
+
     has_hgrid_files = True
 
     get_hgrid_data = views.osf_storage_root
 
-    OWNERS = ['node']
+    max_file_size = 5 * 1024  # 5 GB
+    high_max_file_size = 5 * 1024  # 5 GB
+
+    owners = ['node']
 
     WATERBUTLER_CREDENTIALS = addon_settings.WATERBUTLER_CREDENTIALS
 
@@ -31,6 +39,11 @@ class OSFStorageAddonAppConfig(BaseAddonAppConfig):
     NODE_DEAUTHORIZED = 'osfstorage_node_deauthorized'
 
     actions = (FOLDER_SELECTED, NODE_AUTHORIZED, NODE_DEAUTHORIZED, )
+
+    @property
+    def routes(self):
+        from addons.osfstorage import routes
+        return [routes.api_routes]
 
     @property
     def node_settings(self):

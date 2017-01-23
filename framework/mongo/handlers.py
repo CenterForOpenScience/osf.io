@@ -5,10 +5,8 @@ import threading
 
 import pymongo
 from pymongo.errors import ConnectionFailure
-from werkzeug.local import LocalProxy
-
 from website import settings
-
+from werkzeug.local import LocalProxy
 
 logger = logging.getLogger(__name__)
 

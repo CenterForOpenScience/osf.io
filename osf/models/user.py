@@ -417,6 +417,23 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
         return social_user_fields
 
     @property
+    def given_name_initial(self):
+        """
+        The user's preferred initialization of their given name.
+
+        Some users with common names may choose to distinguish themselves from
+        their colleagues in this way. For instance, there could be two
+        well-known researchers in a single field named "Robert Walker".
+        "Walker, R" could then refer to either of them. "Walker, R.H." could
+        provide easy disambiguation.
+
+        NOTE: The internal representation for this should never end with a
+              period. "R" and "R.H" would be correct in the prior case, but
+              "R.H." would not.
+        """
+        return self.given_name[0]
+
+    @property
     def email(self):
         if self.has_usable_username():
             return self.username

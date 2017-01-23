@@ -258,25 +258,39 @@ services:
     stdin_open: true
     tty: true
 
-#  admin:
-#    image: quay.io/centerforopenscience/osf:develop
-#    command: invoke adminserver -h 0.0.0.0
-#    restart: unless-stopped
-#    ports:
-#      - 8001:8001
-#    depends_on:
-#      - tokumx
-#      - rabbitmq
-#      - elasticsearch
-#    environment:
-#      DJANGO_SETTINGS_MODULE: admin.base.settings
-#    env_file:
-#      - .docker-compose.env
-#    stdin_open: true
-#    tty: true
-#    volumes:
-#      - osf_requirements_vol:/usr/local/lib/python2.7/site-packages
-#      - osf_node_modules_vol:/code/node_modules
+  adminassets:
+    image: quay.io/centerforopenscience/osf:develop
+    command: invoke admin.assets -dw
+    restart: unless-stopped
+    volumes:
+      - osf_requirements_vol:/usr/local/lib/python2.7/site-packages
+      - osf_bower_components_vol:/code/admin/static/vendor/bower_components
+      - osf_node_modules_vol:/code/admin/node_modules
+      - osf_bower_components_vol:/code/website/static/vendor/bower_components
+      - osf_node_modules_vol:/code/node_modules
+
+  admin:
+    image: quay.io/centerforopenscience/osf:develop
+    command: invoke adminserver -h 0.0.0.0
+    restart: unless-stopped
+    environment:
+      DJANGO_SETTINGS_MODULE: admin.base.settings
+    ports:
+      - 8001:8001
+    depends_on:
+      - postgres
+      - tokumx
+      - elasticsearch
+    env_file:
+      - .docker-compose.env
+    stdin_open: true
+    tty: true
+    volumes:
+      - osf_requirements_vol:/usr/local/lib/python2.7/site-packages
+      - osf_node_modules_vol:/code/admin/node_modules
+      - osf_bower_components_vol:/code/website/static/vendor/bower_components
+      - osf_bower_components_vol:/code/admin/static/vendor/bower_components
+      - osf_node_modules_vol:/code/node_modules
 
   api:
     image: quay.io/centerforopenscience/osf:develop
