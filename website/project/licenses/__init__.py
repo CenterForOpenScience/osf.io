@@ -1,4 +1,3 @@
-import functools
 import json
 import os
 import warnings
@@ -25,8 +24,12 @@ def _serialize(fields, instance):
         for field in fields
     }
 
-serialize_node_license = functools.partial(_serialize, ('_id', 'name', 'text'))
-
+def serialize_node_license(node_license):
+    return {
+        'id': node_license.license_id,
+        'name': node_license.name,
+        'text': node_license.text,
+    }
 
 def serialize_node_license_record(node_license_record):
     if node_license_record is None:
