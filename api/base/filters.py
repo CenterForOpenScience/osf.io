@@ -464,7 +464,11 @@ class ListFilterMixin(FilterMixin):
         if field_name == 'tags':
             if operation['value'] not in (list(), tuple()):
                 operation['source_field_name'] = 'tags__name'
-                operation['op'] = 'iexact'
+                operation['op'] = 'icontains'
+        if field_name == 'contributors':
+            if operation['value'] not in (list(), tuple()):
+                operation['source_field_name'] = '_contributors__guids___id'
+                operation['op'] = 'icontains'
 
     def get_filtered_queryset(self, field_name, params, default_queryset):
         """filters default queryset based on the serializer field type"""
