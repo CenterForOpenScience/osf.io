@@ -317,7 +317,7 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
         if field_name == 'contributors':
             if operation['value'] not in (list(), tuple()):
                 operation['source_field_name'] = '_contributors__guids___id'
-                operation['op'] = 'icontains'      
+                operation['op'] = 'icontains'
 
     # overrides ODMFilterMixin
     def get_default_odm_query(self):
