@@ -314,10 +314,11 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
             if operation['value'] not in (list(), tuple()):
                 operation['source_field_name'] = 'tags__name'
                 operation['op'] = 'icontains'
+        # contributors iexact because guid matching
         if field_name == 'contributors':
             if operation['value'] not in (list(), tuple()):
                 operation['source_field_name'] = '_contributors__guids___id'
-                operation['op'] = 'icontains'
+                operation['op'] = 'iexact'
 
     # overrides ODMFilterMixin
     def get_default_odm_query(self):
@@ -1924,7 +1925,7 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
         if field_name == 'tags':
             if operation['value'] not in (list(), tuple()):
                 operation['source_field_name'] = 'tags__name'
-                operation['op'] = 'iexact'
+                operation['op'] = 'icontains'
 
     def get_default_queryset(self):
         # Don't bother going to waterbutler for osfstorage
