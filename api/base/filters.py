@@ -469,7 +469,7 @@ class ListFilterMixin(FilterMixin):
         if operation['source_field_name'] == 'kind':
             operation['source_field_name'] = 'is_file'
             # The value should be boolean
-            operation['value'] = operation['value'] == 'file'                
+            operation['value'] = operation['value'] == 'file'
 
     def get_filtered_queryset(self, field_name, params, default_queryset):
         """filters default queryset based on the serializer field type"""
