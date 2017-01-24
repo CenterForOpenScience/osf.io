@@ -24,6 +24,14 @@ def add_groups(*args):
             logger.info('prereg group created')
 
 
+def remove_groups(*args):
+    Group.objects.filter(name='nodes_and_users').delete()
+
+    group = Group.objects.get(name='prereg')
+    group.name = 'prereg_group'
+    group.save()
+
+
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -31,5 +39,5 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(add_groups),
+        migrations.RunPython(add_groups, remove_groups),
     ]
