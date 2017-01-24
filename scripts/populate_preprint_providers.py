@@ -380,7 +380,7 @@ def main(env):
             'social_twitter': ' https://twitter.com/RedeSciELO', # optional
             'social_facebook': 'https://www.facebook.com/SciELONetwork',
             'header_text': '',
-            'licenses_acceptable': [],
+            'licenses_acceptable': ['CC0 1.0 Universal'],
             'subjects_acceptable':[
                 (['Life Sciences'], True),
                 (['Engineering'], True),
