@@ -24,7 +24,7 @@ class UserRegistrationForm(forms.Form):
 
     group_perms = forms.ModelMultipleChoiceField(
         queryset=Group.objects.filter(Q(name='prereg_group') | Q(name='osf_admin')),
-        required=True
+        required=False
     )
 
 
