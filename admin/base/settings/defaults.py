@@ -89,7 +89,12 @@ INSTALLED_APPS = (
     'django_nose',
     'password_reset',
 
-    'osf'
+    # OSF
+    'osf',
+
+    # Addons
+    'addons.osfstorage',
+    'addons.wiki',
 )
 
 USE_TZ = True
