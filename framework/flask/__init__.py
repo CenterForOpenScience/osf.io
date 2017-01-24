@@ -19,6 +19,30 @@ app.debug = settings.DEBUG_MODE
 app.config['SENTRY_TAGS'] = {'App': 'web'}
 app.config['SENTRY_RELEASE'] = settings.VERSION
 
+def rm_handler(app, handler_name, func, key=None):
+    """Remove a handler from an application.
+    :param app: Flask app
+    :param handler_name: Name of handler type, e.g. 'before_request'
+    :param func: Handler function to attach
+    :param key: Blueprint name
+    """
+    handler_funcs_name = '{0}_funcs'.format(handler_name)
+    handler_funcs = getattr(app, handler_funcs_name)
+    try:
+        handler_funcs.get(key, []).remove(func)
+    except ValueError:
+        pass
+
+def rm_handlers(app, handlers, key=None):
+    """Remove multiple handlers from an application.
+
+    :param app: Flask application
+    :param handlers: Mapping from handler names to handler functions
+    """
+    for handler_name, func in handlers.iteritems():
+        rm_handler(app, handler_name, func, key=key)
+
+
 # Set up static routing for addons
 def add_handler(app, handler_name, func, key=None):
     """Add handler to Flask application if handler has not already been added.

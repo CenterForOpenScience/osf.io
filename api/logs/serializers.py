@@ -36,7 +36,10 @@ class NodeLogFileParamsSerializer(RestrictedDictSerializer):
         user = self.context['request'].user
         node_title = obj['node']['title']
         node = Node.load(obj['node']['_id'])
-        if node.has_permission(user, osf_permissions.READ):
+        if not user.is_authenticated():
+            if node.is_public:
+                return node_title
+        elif node.has_permission(user, osf_permissions.READ):
             return node_title
         return 'Private Component'
 

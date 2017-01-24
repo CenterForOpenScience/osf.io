@@ -1,0 +1,11 @@
+{
+  "s3_bucket_linked" : "${user} linked the Amazon S3 bucket ${bucket} to ${node}",
+  "s3_bucket_unlinked" : "${user} unselected the Amazon S3 bucket ${bucket} in ${node}",
+  "s3_file_added" : "${user} added file ${path} to Amazon S3 bucket ${bucket} in ${node}",
+  "s3_file_removed" : "${user} removed ${path} in Amazon S3 bucket ${bucket} in ${node}",
+  "s3_file_updated" : "${user} updated file ${path} in Amazon S3 bucket ${bucket} in ${node}",
+  "s3_folder_created" : "${user} created folder ${path} in Amazon S3 bucket ${bucket} in ${node}",
+  "s3_node_authorized" : "${user} authorized the Amazon S3 addon for ${node}",
+  "s3_node_deauthorized" : "${user} deauthorized the Amazon S3 addon for ${node}",
+  "s3_node_deauthorized_no_user" : "Amazon S3 addon for ${node} deauthorized"
+}

@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 """Unit tests for website.app."""
 
-from nose.tools import *  # noqa (PEP8 asserts)
-from flask import Flask
-
 import framework
-from website.app import attach_handlers
+
+from flask import Flask
+from nose.tools import *  # noqa (PEP8 asserts)
 from website import settings
+from website.app import attach_handlers
 
 
 def test_attach_handlers():

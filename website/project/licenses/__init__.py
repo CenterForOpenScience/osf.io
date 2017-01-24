@@ -114,15 +114,21 @@ def ensure_licenses(warn=True):
             text = info['text']
             properties = info.get('properties', [])
             try:
-                NodeLicense(
+
+                model_kwargs = dict(
                     license_id=id,
                     name=name,
                     text=text,
                     properties=properties
-                ).save()
+                )
+                if not settings.USE_POSTGRES:
+                    del model_kwargs['license_id']
+                    model_kwargs['id'] = id
+                NodeLicense(**model_kwargs).save()
             except (modm_exceptions.KeyExistsException, ValidationError):
+                license_id_field = 'license_id' if settings.USE_POSTGRES else 'id'
                 node_license = NodeLicense.find_one(
-                    Q('license_id', 'eq', id)
+                    Q(license_id_field, 'eq', id)
                 )
                 node_license.name = name
                 node_license.text = text
