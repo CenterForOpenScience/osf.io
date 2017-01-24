@@ -6,7 +6,7 @@ from django.core.urlresolvers import reverse
 from django.http import Http404
 
 from framework.auth.core import get_user
-from website.conferences.model import Conference, DEFAULT_FIELD_NAMES
+from osf.models.conference import Conference, DEFAULT_FIELD_NAMES
 from website.conferences.exceptions import ConferenceError
 
 from admin.base.utils import OSFAdmin
@@ -98,12 +98,14 @@ class MeetingCreateFormView(OSFAdmin, FormView):
         self.kwargs.setdefault('endpoint', endpoint)
         # Form validation already checks emails for existence
         admin_users = get_admin_users(data.pop('admins'))
+        edit = data.pop('edit')
         # Form validation already catches if a conference endpoint exists
         new_conf = Conference(
             endpoint=endpoint,
-            admins=admin_users,
             **data
         )
+        new_conf.save()
+        new_conf.admins = admin_users
         new_conf.field_names.update(custom_fields)
         new_conf.save()
         return super(MeetingCreateFormView, self).form_valid(form)
