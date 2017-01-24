@@ -28,31 +28,15 @@ var ShareJSDoc = function(shareWSUrl, metadata, editor, observables) {
     self.observables = observables;
 
 
-    function whenReady() {
-        if (!collaborative) {
-            if (typeof WebSocket === 'undefined') {
-                self.observables.status('unsupported');
-            } else {
-                self.observables.status('disconnected');
-            }
-            return;
-        }
-
-        // Create a text document if one does not exist
-        if (!doc.type) {
-            var x = self.editor.getValue();
-            doc.create('text');
-            doc.attachAce(self.editor);
-            self.editor.setValue(x);
+    if (!collaborative) {
+        if (typeof WebSocket === 'undefined') {
+            self.observables.status('unsupported');
         } else {
-            doc.attachAce(self.editor);
+            self.observables.status('disconnected');
         }
-
-        unlockEditor();
-        self.observables.status('connected');
-        madeConnection = true;
-
+        return;
     }
+
 
     // Requirements load order is specific in this case to compensate
     // for older browsers.
@@ -70,6 +54,23 @@ var ShareJSDoc = function(shareWSUrl, metadata, editor, observables) {
     var refreshTriggered = false;
     var canEdit = true;
 
+    function whenReady() {
+
+        // Create a text document if one does not exist
+        if (!doc.type) {
+            var x = self.editor.getValue();
+            doc.create('text');
+            doc.attachAce(self.editor);
+            self.editor.setValue(x);
+        } else {
+            doc.attachAce(self.editor);
+        }
+
+        unlockEditor();
+        self.observables.status('connected');
+        madeConnection = true;
+
+    }
 
     function unlockEditor() {
         self.editor.gotoLine(0,0);
