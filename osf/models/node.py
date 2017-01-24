@@ -258,7 +258,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                   t.child_id
                 FROM %s AS t
                   LEFT JOIN %s AS p ON p.child_id = t.parent_id
-                WHERE p.child_id IS NULL
+                WHERE p.child_id IS NULL AND p.is_node_link IS FALSE
                 UNION ALL
                 SELECT
                   top_parent,
