@@ -460,7 +460,7 @@ class ListFilterMixin(FilterMixin):
         if field_name == 'tags':
             if operation['value'] not in (list(), tuple()):
                 operation['source_field_name'] = 'tags__name'
-                operation['op'] = 'icontains'
+                operation['op'] = 'iexact'
         # contributors iexact because guid matching
         if field_name == 'contributors':
             if operation['value'] not in (list(), tuple()):
