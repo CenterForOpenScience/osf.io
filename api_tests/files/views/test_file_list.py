@@ -50,7 +50,7 @@ class TestFileFiltering(ApiTestCase):
         nt.assert_in('file1', names)
         nt.assert_in('file2', names)
 
-    def test_allow_substring_filtering_on_tags(self):
+    def test_exclusive_tags(self):
         self.file1.add_tag('news', Auth(self.user))
         self.file2.add_tag('news', Auth(self.user))
         self.file1.add_tag('new', Auth(self.user))
@@ -60,7 +60,7 @@ class TestFileFiltering(ApiTestCase):
             ),
             auth=self.user.auth
         )
-        nt.assert_equal(len(res.json.get('data')), 3)
+        nt.assert_equal(len(res.json.get('data')), 1)
 
     def test_query_capitalized(self):
         self.file1.add_tag('new', Auth(self.user))
