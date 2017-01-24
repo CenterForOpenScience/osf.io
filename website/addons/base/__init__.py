@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import glob
+import importlib
 import mimetypes
 import os
 from time import sleep
@@ -220,6 +221,38 @@ class AddonConfig(object):
     def path(self):
         return os.path.join(settings.BASE_PATH, self.short_name)
 
+# NOTE: This only exists for the modm -> django migration
+# TODO: Delete this after the migration
+def init_addon(app, addon_name, routes=True):
+    """Load addon module return its create configuration object.
+
+    If `log_fp` is provided, the addon's log templates will be appended
+    to the file.
+
+    :param app: Flask app object
+    :param addon_name: Name of addon directory
+    :param file log_fp: File pointer for the built logs file.
+    :param bool routes: Add routes
+    :return AddonConfig: AddonConfig configuration object if module found,
+        else None
+
+    """
+    import_path = 'website.addons.{0}'.format(addon_name)
+
+    # Import addon module
+    addon_module = importlib.import_module(import_path)
+
+    data = vars(addon_module)
+    data['description'] = settings.ADDONS_DESCRIPTION.get(addon_name, '')
+    data['url'] = settings.ADDONS_URL.get(addon_name, None)
+
+    # Build AddonConfig object
+    return AddonConfig(
+        **{
+            key.lower(): value
+            for key, value in data.iteritems()
+        }
+    )
 
 class AddonSettingsBase(StoredObject):
 
