@@ -152,8 +152,8 @@ def main(env):
                 'description': '<a href="http://www.library.okstate.edu/research-support/research-data-services/">OSU Library Research Data Services</a>',
                 'banner_name': 'okstate-banner.png',
                 'logo_name': 'okstate-shield.png',
-                'login_url': None,  # https://stwcas.okstate.edu/cas/login?service=...
-                'logout_url': None,
+                'login_url': None,
+                'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://osf.io/goodbye')),
                 'domains': ['osf.library.okstate.edu'],
                 'email_domains': [],
                 'delegation_protocol': 'cas-pac4j',
@@ -412,19 +412,8 @@ def main(env):
                 'description': '<a href="http://www.library.okstate.edu/research-support/research-data-services/">OSU Library Research Data Services</a>',
                 'banner_name': 'okstate-banner.png',
                 'logo_name': 'okstate-shield.png',
-                # TODO: Improve Institution Model
-                # Current implementation is a straight-forward implementation for OKState University:
-                #   1.  `login_url` is configured in CAS, must be None in OSF
-                #   2.  `logout_url` must be None in OSF
-                #   3.  `CasClient.name` in CAS must be identical to the `_id` in OSF
-                #
-                # Below is the improved implementation proposed:
-                #   1.  add a dedicated field `delegation_protocol` in the institution model
-                #   2.  shibboleth institutions have full `login_url`
-                #   3.  cas and oauth institutions have the base `login_url`
-                #   4.  `logout_url` can be customized if necessary
-                'login_url': None,  # https://stwcas.okstate.edu/cas/login?service=...
-                'logout_url': None,
+                'login_url': None,
+                'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://test.osf.io/goodbye')),
                 'domains': ['test-osf-library-okstate.cos.io'],
                 'email_domains': [],
                 'delegation_protocol': 'cas-pac4j',
