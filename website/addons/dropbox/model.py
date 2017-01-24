@@ -16,8 +16,8 @@ from framework.sessions import session
 
 from website.util import web_url_for, api_v2_url
 from website.addons.base import exceptions
-from website.addons.base import StorageAddonBase
 from website.addons.base import AddonOAuthUserSettingsBase, AddonOAuthNodeSettingsBase
+from website.addons.base import StorageAddonBase
 from website.oauth.models import ExternalProvider
 
 from website.addons.dropbox import settings
