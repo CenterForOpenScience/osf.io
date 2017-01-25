@@ -101,7 +101,7 @@ services:
 
   mfr_requirements:
     image: quay.io/centerforopenscience/mfr:develop
-    command: /bin/bash -c "invoke install --develop && cp -Rf /usr/local/lib/python3.5/site-packages /"
+    command: /bin/bash -c "invoke install --develop && rm -Rf /site-packages/* && cp -Rf /usr/local/lib/python3.5/site-packages /"
     restart: 'no'
     volumes:
       - mfr_requirements_vol:/site-packages
@@ -125,7 +125,7 @@ services:
 
   wb_requirements:
     image: quay.io/centerforopenscience/waterbutler:develop
-    command: /bin/bash -c "invoke install --develop && cp -Rf /usr/local/lib/python3.5/site-packages /"
+    command: /bin/bash -c "invoke install --develop && rm -Rf /site-packages/* && cp -Rf /usr/local/lib/python3.5/site-packages /"
     restart: 'no'
     volumes:
       - wb_requirements_vol:/site-packages
@@ -186,7 +186,7 @@ services:
 
   requirements:
     image: quay.io/centerforopenscience/osf:develop
-    command: /bin/bash -c "invoke requirements --quick && cp -Rf /usr/local/lib/python2.7/site-packages /"
+    command: /bin/bash -c "invoke requirements --quick && rm -Rf /site-packages/* && cp -Rf /usr/local/lib/python2.7/site-packages /"
     restart: 'no'
     environment:
       DJANGO_SETTINGS_MODULE: api.base.settings

@@ -12,8 +12,7 @@ def activity():
 
     # New and Noreworthy Projects
     try:
-        new_and_noteworthy_pointers = Node.load(settings.NEW_AND_NOTEWORTHY_LINKS_NODE).nodes_pointer
-        new_and_noteworthy_projects = [pointer.node for pointer in new_and_noteworthy_pointers]
+        new_and_noteworthy_projects = Node.load(settings.NEW_AND_NOTEWORTHY_LINKS_NODE).nodes_pointer
     except AttributeError:
         new_and_noteworthy_projects = []
 

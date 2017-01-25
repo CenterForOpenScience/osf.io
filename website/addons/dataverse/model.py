@@ -11,9 +11,9 @@ from website.addons.base import (
 )
 from website.addons.base import StorageAddonBase
 
-from addons.dataverse.client import connect_from_settings_or_401
-from addons.dataverse.serializer import DataverseSerializer
-from addons.dataverse.utils import DataverseNodeLogger
+from website.addons.dataverse.client import connect_from_settings_or_401
+from website.addons.dataverse.serializer import DataverseSerializer
+from website.addons.dataverse.utils import DataverseNodeLogger
 
 
 class DataverseProvider(object):

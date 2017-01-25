@@ -110,8 +110,7 @@ def activity():
                 break
 
     # New and Noteworthy projects are updated manually
-    new_and_noteworthy_pointers = Node.find_one(Q('_id', 'eq', settings.NEW_AND_NOTEWORTHY_LINKS_NODE)).nodes_pointer
-    new_and_noteworthy_projects = [pointer.node for pointer in new_and_noteworthy_pointers]
+    new_and_noteworthy_projects = list(Node.find_one(Q('_id', 'eq', settings.NEW_AND_NOTEWORTHY_LINKS_NODE)).nodes_pointer)
 
     return {
         'new_and_noteworthy_projects': new_and_noteworthy_projects,

@@ -8,10 +8,10 @@ from website.addons.base import exceptions
 from website.addons.base import AddonOAuthUserSettingsBase, AddonOAuthNodeSettingsBase
 from website.addons.base import StorageAddonBase
 
-from addons.s3.provider import S3Provider
-from addons.s3.serializer import S3Serializer
-from addons.s3.settings import ENCRYPT_UPLOADS_DEFAULT, BUCKET_LOCATIONS
-from addons.s3.utils import bucket_exists, get_bucket_names, get_bucket_location_or_error
+from website.addons.s3.provider import S3Provider
+from website.addons.s3.serializer import S3Serializer
+from website.addons.s3.settings import ENCRYPT_UPLOADS_DEFAULT, BUCKET_LOCATIONS
+from website.addons.s3.utils import bucket_exists, get_bucket_names, get_bucket_location_or_error
 
 
 class S3UserSettings(AddonOAuthUserSettingsBase):
