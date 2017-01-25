@@ -72,7 +72,8 @@ class AbstractNodeQueryset(MODMCompatibilityQuerySet):
         return self.extra(
             where=['"osf_abstractnode".id in (SELECT id FROM osf_abstractnode WHERE id NOT IN (SELECT child_id FROM '
                    'osf_noderelation WHERE is_node_link IS false))'])
-
+      
+    # TODO Optimize performance. This could be done in a recursive CTE for better performance.
     def get_children(self, root, primary_keys=False):
         children = list()
         if isinstance(root, int):
