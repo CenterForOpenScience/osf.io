@@ -1,14 +1,13 @@
 from __future__ import unicode_literals
 
 from django.views.generic import FormView, ListView, DetailView
-from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.http import Http404
 
 from modularodm import Q
 from website.project.model import Comment
 from website.project.spam.model import SpamStatus
 
-from admin.base.utils import OSFAdmin, NodesAndUsers
+from admin.base.utils import NodesAndUsers
 from admin.common_auth.logs import (
     update_admin_log,
     CONFIRM_HAM,
