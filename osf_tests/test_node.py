@@ -114,6 +114,7 @@ def test_components_have_root():
     assert greatgrandchild3.root == root
     assert greatgrandchild_1.root == root
 
+
 def test_get_children():
     root = ProjectFactory()
     child = NodeFactory(parent=root)
@@ -137,7 +138,42 @@ def test_get_children():
     greatgrandchild3 = NodeFactory(parent=grandchild3)
     greatgrandchild_1 = NodeFactory(parent=grandchild_1)
 
-    assert 20 == Node.objects.get_children(root).count()
+    assert 20 == len(Node.objects.get_children(root))
+
+def test_get_children_with_barren_parent():
+    root = ProjectFactory()
+
+    assert 0 == len(Node.objects.get_children(root))
+
+
+def test_get_children_with_links():
+    root = ProjectFactory()
+    child = NodeFactory(parent=root)
+    child1 = NodeFactory(parent=root)
+    child2 = NodeFactory(parent=root)
+    grandchild = NodeFactory(parent=child)
+    grandchild1 = NodeFactory(parent=child)
+    grandchild2 = NodeFactory(parent=child)
+    grandchild3 = NodeFactory(parent=child)
+    grandchild_1 = NodeFactory(parent=child1)
+    grandchild1_1 = NodeFactory(parent=child1)
+    grandchild2_1 = NodeFactory(parent=child1)
+    grandchild3_1 = NodeFactory(parent=child1)
+    grandchild_2 = NodeFactory(parent=child2)
+    grandchild1_2 = NodeFactory(parent=child2)
+    grandchild2_2 = NodeFactory(parent=child2)
+    grandchild3_2 = NodeFactory(parent=child2)
+    greatgrandchild = NodeFactory(parent=grandchild)
+    greatgrandchild1 = NodeFactory(parent=grandchild1)
+    greatgrandchild2 = NodeFactory(parent=grandchild2)
+    greatgrandchild3 = NodeFactory(parent=grandchild3)
+    greatgrandchild_1 = NodeFactory(parent=grandchild_1)
+
+    child.add_node_link(root, auth=Auth(root.creator))
+    child.add_node_link(greatgrandchild_1, auth=Auth(greatgrandchild_1.creator))
+    greatgrandchild_1.add_node_link(child, auth=Auth(child.creator))
+
+    assert 20 == len(Node.objects.get_children(root))
 
 def test_get_roots():
     top_level1 = ProjectFactory(is_public=True)
