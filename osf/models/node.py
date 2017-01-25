@@ -19,6 +19,7 @@ from django.db.models import Model
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils import timezone
+from django.utils.functional import cached_property
 from keen import scoped_keys
 from modularodm import Q as MQ
 from psycopg2._psycopg import AsIs
@@ -243,37 +244,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         if self.is_fork:
             return self.forked_from.parent_node
         return None
-
-    @property
-    def root(self):
-        sql = """
-            WITH RECURSIVE
-                parents_cte AS (
-                SELECT
-                  t.parent_id AS top_parent,
-                  t.child_id
-                FROM %s AS t
-                  LEFT JOIN %s AS p ON p.child_id = t.parent_id
-                WHERE p.child_id IS NULL
-                UNION ALL
-                SELECT
-                  top_parent,
-                  C.child_id
-                FROM parents_cte AS t
-                  JOIN %s AS C ON t.child_id = C.parent_id)
-            SELECT top_parent
-            FROM parents_cte AS h
-            WHERE h.child_id = %s;
-        """
-
-        with connection.cursor() as cursor:
-            node_relation_table = AsIs(NodeRelation._meta.db_table)
-            cursor.execute(sql, [node_relation_table, node_relation_table, node_relation_table, self.pk])
-            row = cursor.fetchone()
-            if not row:
-                return self
-            parent = AbstractNode.objects.get(id=row[0])
-        return parent if not parent.is_collection else self
 
     @property
     def root_id(self):
@@ -1067,7 +1037,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                                                        contributor=contributor,
                                                        auth=auth, email_template=send_email)
 
-            return True
+            return contrib_to_add, True
 
         # Permissions must be overridden if changed when contributor is
         # added to parent he/she is already on a child of.
@@ -1159,7 +1129,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 raise ValueError('User with id {} was not found.'.format(user_id))
             if self.contributor_set.filter(user=contributor).exists():
                 raise ValidationValueError('{} is already a contributor.'.format(contributor.fullname))
-            self.add_contributor(contributor=contributor, auth=auth, visible=bibliographic,
+            contributor, _ = self.add_contributor(contributor=contributor, auth=auth, visible=bibliographic,
                                  permissions=permissions, send_email=send_email, save=True)
         else:
 
@@ -1449,10 +1419,15 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     def private_link_keys_deleted(self):
         return self.private_links.filter(is_deleted=True).values_list('key', flat=True)
 
-    @property
-    def _root(self):
+    # TODO: Traversing up the tree in Python is inefficient. Optimize me.
+    # We might be able to use a recursive query/cte, as we used to do
+    # (see https://github.com/CenterForOpenScience/osf.io/blob/e7e0c28ec01c2a015dab2fc6685590e294a3f240/osf/models/node.py#L251-L280)
+    # but the implementation would have to account for node links
+    # (in order to avoid bugs like https://openscience.atlassian.net/browse/OSF-7378)
+    @cached_property
+    def root(self):
         if self.parent_node:
-            return self.parent_node._root
+            return self.parent_node.root
         else:
             return self
 

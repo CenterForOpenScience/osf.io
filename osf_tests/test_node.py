@@ -114,6 +114,15 @@ def test_components_have_root():
     assert greatgrandchild3.root == root
     assert greatgrandchild_1.root == root
 
+# https://openscience.atlassian.net/browse/OSF-7378
+def test_root_for_linked_node_does_not_return_linking_parent():
+    project = ProjectFactory(title='Project')
+    root = ProjectFactory(title='Root')
+    child = NodeFactory(title='Child', parent=root)
+
+    project.add_node_link(root, auth=Auth(project.creator), save=True)
+    assert root.root == root
+    assert child.root == root
 
 def test_get_children():
     root = ProjectFactory()

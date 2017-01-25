@@ -165,6 +165,7 @@ class PreprintList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMixin):
         if field_name == 'tags':
             if operation['value'] not in (list(), tuple()):
                 operation['source_field_name'] = 'tags__name'
+                operation['op'] = 'iexact'
 
         if field_name == 'provider':
             operation['source_field_name'] = 'provider___id'
