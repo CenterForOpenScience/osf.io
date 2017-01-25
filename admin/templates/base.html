@@ -100,6 +100,7 @@
           <!-- Sidebar Menu -->
           <ul class="sidebar-menu">
             <li class="header">Menu</li>
+            {% if 'nodes_and_users' in request.user.group_names %}
             <li><a href="{% url 'nodes:search' %}"><i class='fa fa-link'></i><span> OSF Nodes</span> </a></li>
             <li>
               <ul class="sidebar-menu" style="position:relative; left: 20px;">
@@ -122,6 +123,7 @@
             {% if 'prereg_group' in request.user.group_names %}
             <li><a href="{% url 'pre_reg:prereg' %}"><i class='fa fa-link'></i> <span>OSF Prereg</span></a></li>
             {% endif %}
+          {% endif %}
             <li><a href="{% url 'metrics:metrics' %}"><i class='fa fa-link'></i> <span>OSF Metrics</span></a></li>
           </ul><!-- /.sidebar-menu -->
         </section>
