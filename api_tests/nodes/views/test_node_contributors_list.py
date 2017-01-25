@@ -998,6 +998,30 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
         index = list(self.public_project.get_contributor_order()).index(contributor_obj.pk)
         assert_equal(index, 3)
 
+    def test_add_inactive_merged_user_as_contributor(self):
+        primary_user = UserFactory()
+        merged_user = UserFactory(merged_by=primary_user)
+
+        payload = {
+            'data': {
+                'type': 'contributors',
+                'attributes': {},
+                'relationships': {
+                    'users': {
+                        'data': {
+                            'type': 'users',
+                            'id': merged_user._id
+                        }
+                    }
+                }
+            }
+        }
+
+        res = self.app.post_json_api(self.public_url, payload, auth=self.user.auth)
+        assert_equal(res.status_code, 201)
+        contributor_added = res.json['data']['embeds']['users']['data']['id']
+        assert_equal(contributor_added, primary_user._id)
+
 
 class TestNodeContributorCreateValidation(NodeCRUDTestCase):
 

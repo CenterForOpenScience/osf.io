@@ -1071,7 +1071,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                                                        contributor=contributor,
                                                        auth=auth, email_template=send_email)
 
-            return True
+            return contrib_to_add, True
 
         # Permissions must be overridden if changed when contributor is
         # added to parent he/she is already on a child of.
@@ -1163,7 +1163,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 raise ValueError('User with id {} was not found.'.format(user_id))
             if self.contributor_set.filter(user=contributor).exists():
                 raise ValidationValueError('{} is already a contributor.'.format(contributor.fullname))
-            self.add_contributor(contributor=contributor, auth=auth, visible=bibliographic,
+            contributor, _ = self.add_contributor(contributor=contributor, auth=auth, visible=bibliographic,
                                  permissions=permissions, send_email=send_email, save=True)
         else:
 
