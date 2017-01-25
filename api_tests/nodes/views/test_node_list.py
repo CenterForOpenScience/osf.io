@@ -260,6 +260,91 @@ class TestNodeFiltering(ApiTestCase):
         assert_not_in(self.project_two._id, ids)
         assert_in(project_no_tag._id, ids)
 
+    def test_filtering_tags_exact(self):
+        self.project_one.add_tag('cats', Auth(self.user_one))
+        self.project_two.add_tag('cats', Auth(self.user_one))
+        self.project_one.add_tag('cat', Auth(self.user_one))
+        res = self.app.get(
+            '/{}nodes/?filter[tags]=cat'.format(
+                API_BASE
+            ),
+            auth=self.user_one.auth
+        )
+        assert_equal(len(res.json.get('data')), 1)
+
+    def test_filtering_tags_capitalized_query(self):
+        self.project_one.add_tag('cat', Auth(self.user_one))
+        res = self.app.get(
+            '/{}nodes/?filter[tags]=CAT'.format(
+                API_BASE
+            ),
+            auth=self.user_one.auth
+        )
+        assert_equal(len(res.json.get('data')), 1)
+
+    def test_filtering_tags_capitalized_tag(self):
+        self.project_one.add_tag('CAT', Auth(self.user_one))
+        res = self.app.get(
+            '/{}nodes/?filter[tags]=cat'.format(
+                API_BASE
+            ),
+            auth=self.user_one.auth
+        )
+        assert_equal(len(res.json.get('data')), 1)
+
+    def test_filtering_on_multiple_tags(self):
+        self.project_one.add_tag('cat', Auth(self.user_one))
+        self.project_one.add_tag('sand', Auth(self.user_one))
+        res = self.app.get(
+            '/{}nodes/?filter[tags]=cat&filter[tags]=sand'.format(
+                API_BASE
+            ),
+            auth=self.user_one.auth
+        )
+        assert_equal(len(res.json.get('data')), 1)
+
+    def test_filtering_on_multiple_tags_must_match_both(self):
+        self.project_one.add_tag('cat', Auth(self.user_one))
+        res = self.app.get(
+            '/{}nodes/?filter[tags]=cat&filter[tags]=sand'.format(
+                API_BASE
+            ),
+            auth=self.user_one.auth
+        )
+        assert_equal(len(res.json.get('data')), 0)
+
+    def test_filtering_tags_returns_distinct(self):
+       # regression test for returning multiple of the same file
+        self.project_one.add_tag('cat', Auth(self.user_one))
+        self.project_one.add_tag('cAt', Auth(self.user_one))
+        self.project_one.add_tag('caT', Auth(self.user_one))
+        self.project_one.add_tag('CAT', Auth(self.user_one))
+        res = self.app.get(
+            '/{}nodes/?filter[tags]=cat'.format(
+                API_BASE
+            ),
+            auth=self.user_one.auth
+        )
+        assert_equal(len(res.json.get('data')), 1)
+
+    def test_filtering_contributors(self):
+        res = self.app.get(
+            '/{}nodes/?filter[contributors]={}'.format(
+                API_BASE, self.user_one._id
+            ),
+            auth=self.user_one.auth
+        )
+        assert_equal(len(res.json.get('data')), 2)
+
+    def test_filtering_contributors_bad_id(self):
+        res = self.app.get(
+            '/{}nodes/?filter[contributors]=acatdresseduplikeahuman'.format(
+                API_BASE
+            ),
+            auth=self.user_one.auth
+        )
+        assert_equal(len(res.json.get('data')), 0)
+
     def test_get_all_projects_with_no_filter_logged_in(self):
         res = self.app.get(self.url, auth=self.user_one.auth)
         node_json = res.json['data']
