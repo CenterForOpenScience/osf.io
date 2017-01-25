@@ -1,13 +1,14 @@
 from __future__ import unicode_literals
 
 from django.views.generic import FormView, ListView, DetailView
+from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.http import Http404
 
 from modularodm import Q
 from website.project.model import Comment
 from website.project.spam.model import SpamStatus
 
-from admin.base.utils import OSFAdmin
+from admin.base.utils import OSFAdmin, NodesAndUsers
 from admin.common_auth.logs import (
     update_admin_log,
     CONFIRM_HAM,
@@ -18,7 +19,7 @@ from admin.spam.forms import ConfirmForm
 from admin.spam.templatetags.spam_extras import reverse_spam_detail
 
 
-class EmailView(OSFAdmin, DetailView):
+class EmailView(NodesAndUsers, DetailView):
     template_name = 'spam/email.html'
     context_object_name = 'spam'
 
@@ -30,7 +31,7 @@ class EmailView(OSFAdmin, DetailView):
             raise Http404('Spam with id {} not found.'.format(spam_id))
 
 
-class SpamList(OSFAdmin, ListView):
+class SpamList(NodesAndUsers, ListView):
     """ Allow authorized admin user to see the things people have marked as spam
 
     Interface with OSF database. No admin models.
@@ -83,7 +84,7 @@ class UserSpamList(SpamList):
         return super(UserSpamList, self).get_context_data(**kwargs)
 
 
-class SpamDetail(OSFAdmin, FormView):
+class SpamDetail(NodesAndUsers, FormView):
     """ Allow authorized admin user to see details of reported spam.
 
     Interface with OSF database. Logs action (confirming spam) on admin db.
