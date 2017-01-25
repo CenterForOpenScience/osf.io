@@ -50,7 +50,9 @@ class PreprintProviderRelationshipField(RelationshipField):
 class PreprintLicenseRelationshipField(RelationshipField):
     def to_internal_value(self, license_id):
         license = NodeLicense.load(license_id)
-        return {'license_type': license}
+        if license:
+            return {'license_type': license}
+        raise exceptions.NotFound('Unable to find specified license.')
 
 
 class PreprintSerializer(JSONAPISerializer):
