@@ -74,7 +74,7 @@ class AbstractNodeQueryset(MODMCompatibilityQuerySet):
                    'osf_noderelation WHERE is_node_link IS false))'])
 
     def get_children(self, root, primary_keys=False):
-        children = []
+        children = list()
         if isinstance(root, int):
             lookup_id = root
         elif isinstance(root, Model):
@@ -83,7 +83,7 @@ class AbstractNodeQueryset(MODMCompatibilityQuerySet):
             raise ValueError('Please submit a proper Node primary key or Node instance.')
 
         def get_child_ids(parent_id):
-            all_child_ids = []
+            all_child_ids = list()
             child_ids = NodeRelation.objects.filter(parent_id=parent_id, is_node_link=False).values_list('child_id', flat=True)
 
             all_child_ids += child_ids
