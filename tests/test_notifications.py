@@ -1313,6 +1313,15 @@ class TestMoveSubscription(NotificationTestCase):
         utils.move_subscription(self.blank, 'xyz42_file_updated', self.project, 'abc42_file_updated', self.private_node)
         assert_false(self.file_sub.email_digest.filter().exists())
 
+    # Regression test for commit ea15186
+    def test_garrulous_event_name(self):
+        self.file_sub.email_transactional.add(self.user_2, self.user_3, self.user_4)
+        self.file_sub.save()
+        self.private_node.add_contributor(self.user_2, permissions=['admin', 'write', 'read'], auth=self.auth)
+        self.private_node.add_contributor(self.user_3, permissions=['write', 'read'], auth=self.auth)
+        self.private_node.save()
+        results = utils.users_to_remove('complicated/path_to/some/file/ASDFASDF.txt_file_updated', self.project, self.private_node)
+        assert_equal({'email_transactional': [], 'email_digest': [], 'none': []}, results)
 
 class TestSendEmails(NotificationTestCase):
     def setUp(self):

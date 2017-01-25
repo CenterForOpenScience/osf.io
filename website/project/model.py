@@ -1982,7 +1982,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
         """Recursively checks whether the current node or any of its nodes
         contains a pointer.
         """
-        if self.nodes_pointer:
+        if self.nodes_pointer.exists():
             return True
         for node in self.nodes_primary:
             if node.has_pointers_recursive:

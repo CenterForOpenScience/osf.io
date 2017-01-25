@@ -559,6 +559,41 @@ class TestContributorMethods:
             contrib.unclaimed_records.keys()
         )
 
+# Copied from tests/test_models.py
+class TestNodeAddContributorRegisteredOrNot:
+
+    def test_add_contributor_user_id(self, user, node):
+        registered_user = UserFactory()
+        contributor = node.add_contributor_registered_or_not(auth=Auth(user), user_id=registered_user._id, save=True)
+        assert contributor in node.contributors
+        assert contributor.is_registered is True
+
+    def test_add_contributor_user_id_already_contributor(self, user, node):
+        with pytest.raises(MODMValidationError) as excinfo:
+            node.add_contributor_registered_or_not(auth=Auth(user), user_id=user._id, save=True)
+        assert 'is already a contributor' in excinfo.value.message
+
+    def test_add_contributor_invalid_user_id(self, user, node):
+        with pytest.raises(ValueError) as excinfo:
+            node.add_contributor_registered_or_not(auth=Auth(user), user_id='abcde', save=True)
+        assert 'was not found' in excinfo.value.message
+
+    def test_add_contributor_fullname_email(self, user, node):
+        contributor = node.add_contributor_registered_or_not(auth=Auth(user), full_name='Jane Doe', email='jane@doe.com')
+        assert contributor in node.contributors
+        assert contributor.is_registered is False
+
+    def test_add_contributor_fullname(self, user, node):
+        contributor = node.add_contributor_registered_or_not(auth=Auth(user), full_name='Jane Doe')
+        assert contributor in node.contributors
+        assert contributor.is_registered is False
+
+    def test_add_contributor_fullname_email_already_exists(self, user, node):
+        registered_user = UserFactory()
+        contributor = node.add_contributor_registered_or_not(auth=Auth(user), full_name='F Mercury', email=registered_user.username)
+        assert contributor in node.contributors
+        assert contributor.is_registered is True
+
 class TestContributorProperties:
 
     def test_admin_contributors(self, user):

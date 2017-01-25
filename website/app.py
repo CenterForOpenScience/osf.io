@@ -34,26 +34,28 @@ from website.project.licenses import ensure_licenses
 from website.project.model import ensure_schemas
 from werkzeug.contrib.fixers import ProxyFix
 
-
 def init_addons(settings, routes=True):
     """Initialize each addon in settings.ADDONS_REQUESTED.
 
     :param module settings: The settings module.
     :param bool routes: Add each addon's routing rules to the URL map.
     """
+    from website.addons.base import init_addon
     settings.ADDONS_AVAILABLE = getattr(settings, 'ADDONS_AVAILABLE', [])
     settings.ADDONS_AVAILABLE_DICT = getattr(settings, 'ADDONS_AVAILABLE_DICT', OrderedDict())
     for addon_name in settings.ADDONS_REQUESTED:
-        try:
-            addon = apps.get_app_config('addons_{}'.format(addon_name))
-        except LookupError:
-            pass
+        if settings.USE_POSTGRES:
+            try:
+                addon = apps.get_app_config('addons_{}'.format(addon_name))
+            except LookupError:
+                addon = None
         else:
+            addon = init_addon(app, addon_name, routes=routes)
+        if addon:
             if addon not in settings.ADDONS_AVAILABLE:
                 settings.ADDONS_AVAILABLE.append(addon)
             settings.ADDONS_AVAILABLE_DICT[addon.short_name] = addon
     settings.ADDON_CAPABILITIES = render_addon_capabilities(settings.ADDONS_AVAILABLE)
-
 
 def attach_handlers(app, settings):
     """Add callback handlers to ``app`` in the correct order."""
