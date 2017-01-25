@@ -489,7 +489,7 @@ class DraftRegistration(ObjectIDMixin, BaseModel):
     @property
     def status_logs(self):
         """ List of logs associated with this node"""
-        return self.logs.all().order('date')
+        return self.logs.all().order_by('date')
 
     @classmethod
     def create_from_node(cls, node, user, schema, data=None):
