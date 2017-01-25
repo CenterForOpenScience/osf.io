@@ -317,7 +317,7 @@ class BaseOAuthUserSettings(BaseUserSettings):
             config = settings.ADDONS_AVAILABLE_DICT[
                 self.oauth_provider.short_name
             ]
-            Model = config.settings_models['node']
+            Model = config.models['nodesettings']
         except KeyError:
             pass
         else:

@@ -17,6 +17,7 @@ class S3AddonAppConfig(BaseAddonAppConfig):
     short_name = 's3'
     owners = ['user', 'node']
     configs = ['accounts', 'node']
+    categories = ['storage']
     has_hgrid_files = True
     max_file_size = 128  # MB
     node_settings_template = os.path.join(TEMPLATE_PATH, 's3_node_settings.mako')
