@@ -78,26 +78,26 @@ class AddonSnapshot(SnapshotAnalytics):
 
         for short_name, addon in addons_available.iteritems():
 
-            has_external_account = hasattr(addon.settings_models.get('node'), 'external_account')
+            has_external_account = hasattr(addon.models.get('nodesettings'), 'external_account')
 
             connected_count = 0
             deleted_count = 0
             disconnected_count = 0
-            node_settings_model = addon.settings_models.get('node')
+            node_settings_model = addon.models.get('nodesettings')
             if node_settings_model:
                 for node_settings in paginated(node_settings_model):
                     if node_settings.owner and not node_settings.owner.is_bookmark_collection:
                         connected_count += 1
-                deleted_count = addon.settings_models['node'].find(Q('deleted', 'eq', True)).count() if addon.settings_models.get('node') else 0
+                deleted_count = addon.models['nodesettings'].find(Q('deleted', 'eq', True)).count() if addon.models.get('nodesettings') else 0
                 if has_external_account:
-                    disconnected_count = addon.settings_models['node'].find(Q('external_account', 'eq', None) & Q('deleted', 'ne', True)).count() if addon.settings_models.get('node') else 0
+                    disconnected_count = addon.models['nodesettings'].find(Q('external_account', 'eq', None) & Q('deleted', 'ne', True)).count() if addon.models.get('nodesettings') else 0
                 else:
-                    if addon.settings_models.get('node'):
-                        for nsm in addon.settings_models['node'].find(Q('deleted', 'ne', True)):
+                    if addon.models.get('nodesettings'):
+                        for nsm in addon.models['nodesettings'].find(Q('deleted', 'ne', True)):
                             if nsm.configured and not nsm.complete:
                                 disconnected_count += 1
             total = connected_count + deleted_count + disconnected_count
-            usage_counts = get_enabled_authorized_linked(addon.settings_models.get('user'), has_external_account, addon.short_name)
+            usage_counts = get_enabled_authorized_linked(addon.models.get('usersettings'), has_external_account, addon.short_name)
 
             counts.append({
                 'provider': {
