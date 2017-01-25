@@ -323,6 +323,21 @@ class TestPreprintUpdateLicense(ApiTestCase):
     def make_request(self, url, data, auth=None, expect_errors=False):
         return self.app.patch_json_api(url, data, auth=auth, expect_errors=expect_errors)
 
+    def test_admin_update_license_with_invalid_id(self):
+        data = self.make_payload(
+            node_id=self.preprint._id,
+            license_id='thisisafakelicenseid'
+        )
+
+        assert_equal(self.preprint.license, None)
+
+        res = self.make_request(self.url, data, auth=self.admin_contributor.auth, expect_errors=True)
+        assert_equal(res.status_code, 404)
+        assert_equal(res.json['errors'][0]['detail'], 'Unable to find specified license.')
+
+        self.preprint.reload()
+        assert_equal(self.preprint.license, None)
+
     def test_admin_can_update_license(self):
         data = self.make_payload(
             node_id=self.preprint._id,
