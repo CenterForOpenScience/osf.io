@@ -14,7 +14,7 @@ from django.contrib.contenttypes.fields import GenericRelation
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.core.urlresolvers import reverse
-from django.db import connection, models, transaction
+from django.db import models, transaction
 from django.db.models import Model
 from django.db.models.signals import post_save
 from django.dispatch import receiver
@@ -22,7 +22,6 @@ from django.utils import timezone
 from django.utils.functional import cached_property
 from keen import scoped_keys
 from modularodm import Q as MQ
-from psycopg2._psycopg import AsIs
 from typedmodels.models import TypedModel
 
 from framework import status
@@ -73,7 +72,7 @@ class AbstractNodeQueryset(MODMCompatibilityQuerySet):
         return self.extra(
             where=['"osf_abstractnode".id in (SELECT id FROM osf_abstractnode WHERE id NOT IN (SELECT child_id FROM '
                    'osf_noderelation WHERE is_node_link IS false))'])
-      
+
     # TODO Optimize performance. This could be done in a recursive CTE for better performance.
     def get_children(self, root, primary_keys=False):
         children = list()
