@@ -186,12 +186,18 @@ services:
 
   requirements:
     image: quay.io/centerforopenscience/osf:develop
-    command: /bin/bash -c "invoke requirements --quick && rm -Rf /site-packages/* && cp -Rf /usr/local/lib/python2.7/site-packages /"
+    command: |-
+      /bin/bash -c "
+        invoke requirements --quick &&
+        (python -m compileall /usr/local/lib/python2.7 || true) &&
+        rm -Rf /python2.7/* &&
+        cp -Rf -p /usr/local/lib/python2.7 /
+      "
     restart: 'no'
     environment:
       DJANGO_SETTINGS_MODULE: api.base.settings
     volumes:
-      - osf_requirements_vol:/site-packages
+      - osf_requirements_vol:/python2.7
 
   assets:
     image: quay.io/centerforopenscience/osf:develop
@@ -200,7 +206,7 @@ services:
     environment:
       DJANGO_SETTINGS_MODULE: api.base.settings
     volumes:
-      - osf_requirements_vol:/usr/local/lib/python2.7/site-packages
+      - osf_requirements_vol:/usr/local/lib/python2.7
       - osf_bower_components_vol:/code/website/static/vendor/bower_components
       - osf_node_modules_vol:/code/node_modules
     stdin_open: true
@@ -217,7 +223,7 @@ services:
     env_file:
       - .docker-compose.sharejs.env
     volumes:
-      - osf_requirements_vol:/usr/local/lib/python2.7/site-packages
+      - osf_requirements_vol:/usr/local/lib/python2.7
       - osf_node_modules_vol:/code/node_modules
     stdin_open: true
     tty: true
@@ -234,7 +240,7 @@ services:
 #    env_file:
 #      - .docker-compose.env
 #    volumes:
-#      - osf_requirements_vol:/usr/local/lib/python2.7/site-packages
+#      - osf_requirements_vol:/usr/local/lib/python2.7
 #      - osf_bower_components_vol:/code/website/static/vendor/bower_components
 #      - osf_node_modules_vol:/code/node_modules
 
@@ -252,7 +258,7 @@ services:
     env_file:
       - .docker-compose.env
     volumes:
-      - osf_requirements_vol:/usr/local/lib/python2.7/site-packages
+      - osf_requirements_vol:/usr/local/lib/python2.7
       - osf_bower_components_vol:/code/website/static/vendor/bower_components
       - osf_node_modules_vol:/code/node_modules
     stdin_open: true
@@ -263,7 +269,7 @@ services:
     command: invoke admin.assets -dw
     restart: unless-stopped
     volumes:
-      - osf_requirements_vol:/usr/local/lib/python2.7/site-packages
+      - osf_requirements_vol:/usr/local/lib/python2.7
       - osf_bower_components_vol:/code/admin/static/vendor/bower_components
       - osf_node_modules_vol:/code/admin/node_modules
       - osf_bower_components_vol:/code/website/static/vendor/bower_components
@@ -286,7 +292,7 @@ services:
     stdin_open: true
     tty: true
     volumes:
-      - osf_requirements_vol:/usr/local/lib/python2.7/site-packages
+      - osf_requirements_vol:/usr/local/lib/python2.7
       - osf_node_modules_vol:/code/admin/node_modules
       - osf_bower_components_vol:/code/website/static/vendor/bower_components
       - osf_bower_components_vol:/code/admin/static/vendor/bower_components
@@ -308,7 +314,7 @@ services:
     env_file:
       - .docker-compose.env
     volumes:
-      - osf_requirements_vol:/usr/local/lib/python2.7/site-packages
+      - osf_requirements_vol:/usr/local/lib/python2.7
       - osf_bower_components_vol:/code/website/static/vendor/bower_components
       - osf_node_modules_vol:/code/node_modules
     stdin_open: true
@@ -330,7 +336,7 @@ services:
     env_file:
       - .docker-compose.env
     volumes:
-      - osf_requirements_vol:/usr/local/lib/python2.7/site-packages
+      - osf_requirements_vol:/usr/local/lib/python2.7
       - osf_bower_components_vol:/code/website/static/vendor/bower_components
       - osf_node_modules_vol:/code/node_modules
       - preprints_dist_vol:/preprints
