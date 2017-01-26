@@ -101,10 +101,16 @@ services:
 
   mfr_requirements:
     image: quay.io/centerforopenscience/mfr:develop
-    command: /bin/bash -c "invoke install --develop && rm -Rf /site-packages/* && cp -Rf /usr/local/lib/python3.5/site-packages /"
+    command: |-
+      /bin/bash -c "
+        invoke install --develop &&
+        (python -m compileall /usr/local/lib/python3.5 || true) &&
+        rm -Rf /python3.5/* &&
+        cp -Rf -p /usr/local/lib/python3.5 /
+      "
     restart: 'no'
     volumes:
-      - mfr_requirements_vol:/site-packages
+      - mfr_requirements_vol:/python3.5
 
   mfr:
     image: quay.io/centerforopenscience/mfr:develop
@@ -115,7 +121,7 @@ services:
     env_file:
       - .docker-compose.mfr.env
     volumes:
-      - mfr_requirements_vol:/usr/local/lib/python3.5/site-packages
+      - mfr_requirements_vol:/usr/local/lib/python3.5
     stdin_open: true
     tty: true
 
@@ -125,10 +131,16 @@ services:
 
   wb_requirements:
     image: quay.io/centerforopenscience/waterbutler:develop
-    command: /bin/bash -c "invoke install --develop && rm -Rf /site-packages/* && cp -Rf /usr/local/lib/python3.5/site-packages /"
+    command: |-
+      /bin/bash -c "
+        invoke install --develop &&
+        (python -m compileall /usr/local/lib/python3.5 || true) &&
+        rm -Rf /python3.5/* &&
+        cp -Rf -p /usr/local/lib/python3.5 /
+      "
     restart: 'no'
     volumes:
-      - wb_requirements_vol:/site-packages
+      - wb_requirements_vol:/python3.5
 
   wb:
     image: quay.io/centerforopenscience/waterbutler:develop
@@ -139,7 +151,7 @@ services:
     env_file:
       - .docker-compose.wb.env
     volumes:
-      - wb_requirements_vol:/usr/local/lib/python3.5/site-packages
+      - wb_requirements_vol:/usr/local/lib/python3.5
       - wb_osfstoragecache_vol:/code/website/osfstoragecache
     stdin_open: true
     tty: true
