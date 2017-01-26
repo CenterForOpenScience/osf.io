@@ -57,17 +57,18 @@ class TestNodeDeleteView(AdminTestCase):
     def test_get_context(self):
         res = self.view.get_context_data(object=self.node)
         nt.assert_in('guid', res)
-        nt.assert_equal(res.get('guid'), self.node._id)
+        nt.assert_equal(res.get('guid'), self.node.id)
 
     def test_remove_node(self):
         count = OSFLogEntry.objects.count()
         self.view.delete(self.request)
-        self.node.reload()
+        self.node.refresh_from_db()
         nt.assert_true(self.node.is_deleted)
         nt.assert_equal(OSFLogEntry.objects.count(), count + 1)
 
     def test_restore_node(self):
         self.view.delete(self.request)
+        self.node.refresh_from_db()
         nt.assert_true(self.node.is_deleted)
         count = OSFLogEntry.objects.count()
         self.view.delete(self.request)
