@@ -314,6 +314,11 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
             if operation['value'] not in (list(), tuple()):
                 operation['source_field_name'] = 'tags__name'
                 operation['op'] = 'iexact'
+        # contributors iexact because guid matching
+        if field_name == 'contributors':
+            if operation['value'] not in (list(), tuple()):
+                operation['source_field_name'] = '_contributors__guids___id'
+                operation['op'] = 'iexact'
 
     # overrides ODMFilterMixin
     def get_default_odm_query(self):
@@ -348,7 +353,7 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
             return nodes
         else:
             query = self.get_query_from_request()
-            return AbstractNode.find(query)
+            return AbstractNode.find(query).distinct()
 
     # overrides ListBulkCreateJSONAPIView, BulkUpdateJSONAPIView, BulkDestroyJSONAPIView
     def get_serializer_class(self):
@@ -1937,7 +1942,7 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
 
     # overrides ListAPIView
     def get_queryset(self):
-        return self.get_queryset_from_request()
+        return self.get_queryset_from_request().distinct()
 
 
 class NodeFileDetail(JSONAPIBaseView, generics.RetrieveAPIView, WaterButlerMixin, NodeMixin):

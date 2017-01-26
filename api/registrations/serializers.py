@@ -280,6 +280,8 @@ class BaseRegistrationSerializer(NodeSerializer):
                 registration.update(validated_data)
             except NodeUpdateError as err:
                 raise exceptions.ValidationError(err.reason)
+            except NodeStateError as err:
+                raise exceptions.ValidationError(err.message)
         else:
             raise exceptions.ValidationError('Registrations can only be turned from private to public.')
         return registration

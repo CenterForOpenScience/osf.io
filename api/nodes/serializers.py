@@ -54,7 +54,9 @@ class NodeLicenseRelationshipField(RelationshipField):
 
     def to_internal_value(self, license_id):
         node_license = NodeLicense.load(license_id)
-        return {'license_type': node_license}
+        if node_license:
+            return {'license_type': node_license}
+        raise exceptions.NotFound('Unable to find specified license.')
 
 
 class NodeCitationSerializer(JSONAPISerializer):

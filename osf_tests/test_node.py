@@ -114,6 +114,16 @@ def test_components_have_root():
     assert greatgrandchild3.root == root
     assert greatgrandchild_1.root == root
 
+# https://openscience.atlassian.net/browse/OSF-7378
+def test_root_for_linked_node_does_not_return_linking_parent():
+    project = ProjectFactory(title='Project')
+    root = ProjectFactory(title='Root')
+    child = NodeFactory(title='Child', parent=root)
+
+    project.add_node_link(root, auth=Auth(project.creator), save=True)
+    assert root.root == root
+    assert child.root == root
+
 def test_get_children():
     root = ProjectFactory()
     child = NodeFactory(parent=root)
@@ -137,7 +147,42 @@ def test_get_children():
     greatgrandchild3 = NodeFactory(parent=grandchild3)
     greatgrandchild_1 = NodeFactory(parent=grandchild_1)
 
-    assert 20 == Node.objects.get_children(root).count()
+    assert 20 == len(Node.objects.get_children(root))
+
+def test_get_children_with_barren_parent():
+    root = ProjectFactory()
+
+    assert 0 == len(Node.objects.get_children(root))
+
+
+def test_get_children_with_links():
+    root = ProjectFactory()
+    child = NodeFactory(parent=root)
+    child1 = NodeFactory(parent=root)
+    child2 = NodeFactory(parent=root)
+    grandchild = NodeFactory(parent=child)
+    grandchild1 = NodeFactory(parent=child)
+    grandchild2 = NodeFactory(parent=child)
+    grandchild3 = NodeFactory(parent=child)
+    grandchild_1 = NodeFactory(parent=child1)
+    grandchild1_1 = NodeFactory(parent=child1)
+    grandchild2_1 = NodeFactory(parent=child1)
+    grandchild3_1 = NodeFactory(parent=child1)
+    grandchild_2 = NodeFactory(parent=child2)
+    grandchild1_2 = NodeFactory(parent=child2)
+    grandchild2_2 = NodeFactory(parent=child2)
+    grandchild3_2 = NodeFactory(parent=child2)
+    greatgrandchild = NodeFactory(parent=grandchild)
+    greatgrandchild1 = NodeFactory(parent=grandchild1)
+    greatgrandchild2 = NodeFactory(parent=grandchild2)
+    greatgrandchild3 = NodeFactory(parent=grandchild3)
+    greatgrandchild_1 = NodeFactory(parent=grandchild_1)
+
+    child.add_node_link(root, auth=Auth(root.creator))
+    child.add_node_link(greatgrandchild_1, auth=Auth(greatgrandchild_1.creator))
+    greatgrandchild_1.add_node_link(child, auth=Auth(child.creator))
+
+    assert 20 == len(Node.objects.get_children(root))
 
 def test_get_roots():
     top_level1 = ProjectFactory(is_public=True)
@@ -558,6 +603,41 @@ class TestContributorMethods:
             node._id not in
             contrib.unclaimed_records.keys()
         )
+
+# Copied from tests/test_models.py
+class TestNodeAddContributorRegisteredOrNot:
+
+    def test_add_contributor_user_id(self, user, node):
+        registered_user = UserFactory()
+        contributor = node.add_contributor_registered_or_not(auth=Auth(user), user_id=registered_user._id, save=True)
+        assert contributor in node.contributors
+        assert contributor.is_registered is True
+
+    def test_add_contributor_user_id_already_contributor(self, user, node):
+        with pytest.raises(MODMValidationError) as excinfo:
+            node.add_contributor_registered_or_not(auth=Auth(user), user_id=user._id, save=True)
+        assert 'is already a contributor' in excinfo.value.message
+
+    def test_add_contributor_invalid_user_id(self, user, node):
+        with pytest.raises(ValueError) as excinfo:
+            node.add_contributor_registered_or_not(auth=Auth(user), user_id='abcde', save=True)
+        assert 'was not found' in excinfo.value.message
+
+    def test_add_contributor_fullname_email(self, user, node):
+        contributor = node.add_contributor_registered_or_not(auth=Auth(user), full_name='Jane Doe', email='jane@doe.com')
+        assert contributor in node.contributors
+        assert contributor.is_registered is False
+
+    def test_add_contributor_fullname(self, user, node):
+        contributor = node.add_contributor_registered_or_not(auth=Auth(user), full_name='Jane Doe')
+        assert contributor in node.contributors
+        assert contributor.is_registered is False
+
+    def test_add_contributor_fullname_email_already_exists(self, user, node):
+        registered_user = UserFactory()
+        contributor = node.add_contributor_registered_or_not(auth=Auth(user), full_name='F Mercury', email=registered_user.username)
+        assert contributor in node.contributors
+        assert contributor.is_registered is True
 
 class TestContributorProperties:
 

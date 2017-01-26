@@ -14,13 +14,14 @@ from django.contrib.contenttypes.fields import GenericRelation
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.core.urlresolvers import reverse
-from django.db import connection, models, transaction
+from django.db import models, transaction
+from django.db.models import Model
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils import timezone
+from django.utils.functional import cached_property
 from keen import scoped_keys
 from modularodm import Q as MQ
-from psycopg2._psycopg import AsIs
 from typedmodels.models import TypedModel
 
 from framework import status
@@ -72,38 +73,33 @@ class AbstractNodeQueryset(MODMCompatibilityQuerySet):
             where=['"osf_abstractnode".id in (SELECT id FROM osf_abstractnode WHERE id NOT IN (SELECT child_id FROM '
                    'osf_noderelation WHERE is_node_link IS false))'])
 
+    # TODO Optimize performance. This could be done in a recursive CTE for better performance.
     def get_children(self, root, primary_keys=False):
-        sql = """
-            WITH RECURSIVE
-                descendants AS (
-                SELECT
-                  parent_id,
-                  child_id AS descendant,
-                  1        AS LEVEL
-                FROM %s
-                UNION ALL
-                SELECT
-                  d.parent_id,
-                  s.child_id,
-                  d.level + 1
-                FROM descendants AS d
-                  JOIN %s AS s
-                    ON d.descendant = s.parent_id
-              ) SELECT array_agg(DISTINCT descendant)
-                FROM descendants
-                WHERE parent_id = %s;
-        """
+        children = list()
+        if isinstance(root, int):
+            lookup_id = root
+        elif isinstance(root, Model):
+            lookup_id = root.pk
+        else:
+            raise ValueError('Please submit a proper Node primary key or Node instance.')
 
-        with connection.cursor() as cursor:
-            node_relation_table = AsIs(NodeRelation._meta.db_table)
-            cursor.execute(sql, [node_relation_table, node_relation_table, root.pk])
-            row = cursor.fetchone()
-            if not row:
-                return row
-            if primary_keys:
-                return row[0]
-            else:
-                return AbstractNode.objects.filter(id__in=row[0])
+        def get_child_ids(parent_id):
+            all_child_ids = list()
+            child_ids = NodeRelation.objects.filter(parent_id=parent_id, is_node_link=False).values_list('child_id', flat=True)
+
+            all_child_ids += child_ids
+
+            for child_id in child_ids:
+                all_child_ids += get_child_ids(parent_id=child_id)
+
+            return all_child_ids
+
+        children += get_child_ids(lookup_id)
+
+        if not primary_keys:
+            return AbstractNode.objects.filter(pk__in=children)
+
+        return children
 
 
 class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixin,
@@ -247,37 +243,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         if self.is_fork:
             return self.forked_from.parent_node
         return None
-
-    @property
-    def root(self):
-        sql = """
-            WITH RECURSIVE
-                parents_cte AS (
-                SELECT
-                  t.parent_id AS top_parent,
-                  t.child_id
-                FROM %s AS t
-                  LEFT JOIN %s AS p ON p.child_id = t.parent_id
-                WHERE p.child_id IS NULL
-                UNION ALL
-                SELECT
-                  top_parent,
-                  C.child_id
-                FROM parents_cte AS t
-                  JOIN %s AS C ON t.child_id = C.parent_id)
-            SELECT top_parent
-            FROM parents_cte AS h
-            WHERE h.child_id = %s;
-        """
-
-        with connection.cursor() as cursor:
-            node_relation_table = AsIs(NodeRelation._meta.db_table)
-            cursor.execute(sql, [node_relation_table, node_relation_table, node_relation_table, self.pk])
-            row = cursor.fetchone()
-            if not row:
-                return self
-            parent = AbstractNode.objects.get(id=row[0])
-        return parent if not parent.is_collection else self
 
     @property
     def root_id(self):
@@ -1071,7 +1036,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                                                        contributor=contributor,
                                                        auth=auth, email_template=send_email)
 
-            return True
+            return contrib_to_add, True
 
         # Permissions must be overridden if changed when contributor is
         # added to parent he/she is already on a child of.
@@ -1163,7 +1128,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 raise ValueError('User with id {} was not found.'.format(user_id))
             if self.contributor_set.filter(user=contributor).exists():
                 raise ValidationValueError('{} is already a contributor.'.format(contributor.fullname))
-            self.add_contributor(contributor=contributor, auth=auth, visible=bibliographic,
+            contributor, _ = self.add_contributor(contributor=contributor, auth=auth, visible=bibliographic,
                                  permissions=permissions, send_email=send_email, save=True)
         else:
 
@@ -1453,10 +1418,15 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     def private_link_keys_deleted(self):
         return self.private_links.filter(is_deleted=True).values_list('key', flat=True)
 
-    @property
-    def _root(self):
+    # TODO: Traversing up the tree in Python is inefficient. Optimize me.
+    # We might be able to use a recursive query/cte, as we used to do
+    # (see https://github.com/CenterForOpenScience/osf.io/blob/e7e0c28ec01c2a015dab2fc6685590e294a3f240/osf/models/node.py#L251-L280)
+    # but the implementation would have to account for node links
+    # (in order to avoid bugs like https://openscience.atlassian.net/browse/OSF-7378)
+    @cached_property
+    def root(self):
         if self.parent_node:
-            return self.parent_node._root
+            return self.parent_node.root
         else:
             return self
 

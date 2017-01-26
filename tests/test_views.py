@@ -79,6 +79,7 @@ from osf_tests.factories import (
     ProjectFactory,
     NodeFactory,
     CommentFactory,
+    CollectionFactory,
     InstitutionFactory,
     RegistrationFactory,
     ApiOAuth2ApplicationFactory,
@@ -2915,7 +2916,6 @@ class TestPointerViews(OsfTestCase):
         assert_equal(len(has_controls), 0)
 
     # https://github.com/CenterForOpenScience/openscienceframework.org/issues/1109
-    @pytest.mark.skip('get_pointed unused. Mark for deletion?')
     def test_get_pointed_excludes_folders(self):
         pointer_project = ProjectFactory(is_public=True)  # project that points to another project
         pointed_project = ProjectFactory(creator=self.user)  # project that other project points to
@@ -3186,7 +3186,6 @@ class TestPointerViews(OsfTestCase):
         ]
         assert_equal(len(prompts), 0)
 
-    @pytest.mark.skip('get_pointed unused. Mark for deletion?')
     def test_get_pointed(self):
         pointing_node = ProjectFactory(creator=self.user)
         pointing_node.add_pointer(self.project, auth=Auth(self.user))
@@ -3198,7 +3197,6 @@ class TestPointerViews(OsfTestCase):
         assert_equal(pointed[0]['title'], pointing_node.title)
         assert_equal(pointed[0]['authorShort'], abbrev_authors(pointing_node))
 
-    @pytest.mark.skip('get_pointed unused. Mark for deletion?')
     def test_get_pointed_private(self):
         secret_user = UserFactory()
         pointing_node = ProjectFactory(creator=secret_user)
