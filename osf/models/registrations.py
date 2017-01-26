@@ -556,6 +556,7 @@ class DraftRegistration(ObjectIDMixin, BaseModel):
 
     def approve(self, user):
         self.approval.approve(user)
+        self.refresh_from_db()
         self.add_status_log(user, DraftRegistrationLog.APPROVED)
         self.approval.save()
 
