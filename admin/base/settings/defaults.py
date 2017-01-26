@@ -81,7 +81,6 @@ INSTALLED_APPS = (
     'admin.users',
     'admin.desk',
     'admin.meetings',
-    'admin.sales_analytics',
 
     # 3rd party
     'raven.contrib.django.raven_compat',
