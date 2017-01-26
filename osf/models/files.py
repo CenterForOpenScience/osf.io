@@ -744,6 +744,9 @@ class File(FileNode):
         # Dont save the latest information
         if revision is not None:
             version.save()
+            if self._state.adding:
+                # Must be saved before ManyRelatedManager is used.
+                self.save()
             self.versions.add(version)
 
         for entry in self.history:
