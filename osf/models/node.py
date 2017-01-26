@@ -14,14 +14,14 @@ from django.contrib.contenttypes.fields import GenericRelation
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.core.urlresolvers import reverse
-from django.db import connection, models, transaction
+from django.db import models, transaction
+from django.db.models import Model
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils import timezone
 from django.utils.functional import cached_property
 from keen import scoped_keys
 from modularodm import Q as MQ
-from psycopg2._psycopg import AsIs
 from typedmodels.models import TypedModel
 
 from framework import status
@@ -73,38 +73,33 @@ class AbstractNodeQueryset(MODMCompatibilityQuerySet):
             where=['"osf_abstractnode".id in (SELECT id FROM osf_abstractnode WHERE id NOT IN (SELECT child_id FROM '
                    'osf_noderelation WHERE is_node_link IS false))'])
 
+    # TODO Optimize performance. This could be done in a recursive CTE for better performance.
     def get_children(self, root, primary_keys=False):
-        sql = """
-            WITH RECURSIVE
-                descendants AS (
-                SELECT
-                  parent_id,
-                  child_id AS descendant,
-                  1        AS LEVEL
-                FROM %s
-                UNION ALL
-                SELECT
-                  d.parent_id,
-                  s.child_id,
-                  d.level + 1
-                FROM descendants AS d
-                  JOIN %s AS s
-                    ON d.descendant = s.parent_id
-              ) SELECT array_agg(DISTINCT descendant)
-                FROM descendants
-                WHERE parent_id = %s;
-        """
+        children = list()
+        if isinstance(root, int):
+            lookup_id = root
+        elif isinstance(root, Model):
+            lookup_id = root.pk
+        else:
+            raise ValueError('Please submit a proper Node primary key or Node instance.')
 
-        with connection.cursor() as cursor:
-            node_relation_table = AsIs(NodeRelation._meta.db_table)
-            cursor.execute(sql, [node_relation_table, node_relation_table, root.pk])
-            row = cursor.fetchone()
-            if not row:
-                return row
-            if primary_keys:
-                return row[0]
-            else:
-                return AbstractNode.objects.filter(id__in=row[0])
+        def get_child_ids(parent_id):
+            all_child_ids = list()
+            child_ids = NodeRelation.objects.filter(parent_id=parent_id, is_node_link=False).values_list('child_id', flat=True)
+
+            all_child_ids += child_ids
+
+            for child_id in child_ids:
+                all_child_ids += get_child_ids(parent_id=child_id)
+
+            return all_child_ids
+
+        children += get_child_ids(lookup_id)
+
+        if not primary_keys:
+            return AbstractNode.objects.filter(pk__in=children)
+
+        return children
 
 
 class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixin,
