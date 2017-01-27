@@ -14,14 +14,13 @@ from django.contrib.contenttypes.fields import GenericRelation
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.core.urlresolvers import reverse
-from django.db import models, transaction
-from django.db.models import Model
+from django.db import models, transaction, connection
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils import timezone
-from django.utils.functional import cached_property
 from keen import scoped_keys
 from modularodm import Q as MQ
+from psycopg2._psycopg import AsIs
 from typedmodels.models import TypedModel
 
 from framework import status
@@ -73,33 +72,36 @@ class AbstractNodeQueryset(MODMCompatibilityQuerySet):
             where=['"osf_abstractnode".id in (SELECT id FROM osf_abstractnode WHERE id NOT IN (SELECT child_id FROM '
                    'osf_noderelation WHERE is_node_link IS false))'])
 
-    # TODO Optimize performance. This could be done in a recursive CTE for better performance.
     def get_children(self, root, primary_keys=False):
-        children = list()
-        if isinstance(root, int):
-            lookup_id = root
-        elif isinstance(root, Model):
-            lookup_id = root.pk
-        else:
-            raise ValueError('Please submit a proper Node primary key or Node instance.')
-
-        def get_child_ids(parent_id):
-            all_child_ids = list()
-            child_ids = NodeRelation.objects.filter(parent_id=parent_id, is_node_link=False).values_list('child_id', flat=True)
-
-            all_child_ids += child_ids
-
-            for child_id in child_ids:
-                all_child_ids += get_child_ids(parent_id=child_id)
-
-            return all_child_ids
-
-        children += get_child_ids(lookup_id)
-
-        if not primary_keys:
-            return AbstractNode.objects.filter(pk__in=children)
-
-        return children
+        sql = """
+            WITH RECURSIVE descendants AS (
+              SELECT
+                parent_id,
+                child_id,
+                1 AS LEVEL
+              FROM %s
+              WHERE is_node_link IS FALSE
+              UNION ALL
+              SELECT
+                s.parent_id,
+                d.child_id,
+                d.level + 1
+              FROM descendants AS d
+                JOIN %s AS s
+                  ON d.parent_id = s.child_id
+              WHERE s.is_node_link IS FALSE
+            ) SELECT array_agg(DISTINCT child_id)
+              FROM descendants
+              WHERE parent_id = %s;
+        """
+        with connection.cursor() as cursor:
+            node_relation_table = AsIs(NodeRelation._meta.db_table)
+            cursor.execute(sql, [node_relation_table, node_relation_table, root.pk])
+            row = cursor.fetchone()[0]
+            if row is None or primary_keys:
+                return row or []
+            else:
+                return AbstractNode.objects.filter(id__in=row)
 
 
 class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixin,
@@ -1418,16 +1420,37 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     def private_link_keys_deleted(self):
         return self.private_links.filter(is_deleted=True).values_list('key', flat=True)
 
-    # TODO: Traversing up the tree in Python is inefficient. Optimize me.
-    # We might be able to use a recursive query/cte, as we used to do
-    # (see https://github.com/CenterForOpenScience/osf.io/blob/e7e0c28ec01c2a015dab2fc6685590e294a3f240/osf/models/node.py#L251-L280)
-    # but the implementation would have to account for node links
-    # (in order to avoid bugs like https://openscience.atlassian.net/browse/OSF-7378)
-    @cached_property
+    @property
     def root(self):
-        if self.parent_node:
-            return self.parent_node.root
-        else:
+        sql = """
+            WITH RECURSIVE ascendants AS (
+              SELECT
+                parent_id,
+                child_id,
+                1 AS LEVEL
+              FROM %s
+              WHERE is_node_link IS FALSE
+              UNION ALL
+              SELECT
+                S.parent_id,
+                D.child_id,
+                D.level + 1
+              FROM ascendants AS D
+                JOIN %s AS S
+                  ON D.parent_id = S.child_id
+              WHERE S.is_node_link IS FALSE
+            ) SELECT parent_id
+              FROM ascendants
+              WHERE child_id = %s
+              ORDER BY level DESC
+              LIMIT 1;
+        """
+        with connection.cursor() as cursor:
+            node_relation_table = AsIs(NodeRelation._meta.db_table)
+            cursor.execute(sql, [node_relation_table, node_relation_table, self.pk])
+            res = cursor.fetchone()
+            if res:
+                return AbstractNode.objects.get(pk=res[0])
             return self
 
     def find_readable_antecedent(self, auth):
