@@ -58,5 +58,5 @@ services:
   preprints:
     build:
       context: ../ember-osf2/ember-preprints
-    #volumes_from:
-    #  - container:preprints-sync
+    volumes_from:
+      - container:preprints-sync
