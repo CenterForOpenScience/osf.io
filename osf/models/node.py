@@ -2268,7 +2268,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     def confirm_spam(self, save=False):
         super(AbstractNode, self).confirm_spam(save=False)
-        self.set_privacy(Node.PRIVATE, auth=None, log=False, save=False, check_addons=False)
+        self.set_privacy(Node.PRIVATE, auth=None, log=False, save=False)
         log = self.add_log(
             action=NodeLog.MADE_PRIVATE,
             params={
