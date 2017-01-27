@@ -1421,16 +1421,37 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     def private_link_keys_deleted(self):
         return self.private_links.filter(is_deleted=True).values_list('key', flat=True)
 
-    # TODO: Traversing up the tree in Python is inefficient. Optimize me.
-    # We might be able to use a recursive query/cte, as we used to do
-    # (see https://github.com/CenterForOpenScience/osf.io/blob/e7e0c28ec01c2a015dab2fc6685590e294a3f240/osf/models/node.py#L251-L280)
-    # but the implementation would have to account for node links
-    # (in order to avoid bugs like https://openscience.atlassian.net/browse/OSF-7378)
-    @cached_property
+    @property
     def root(self):
-        if self.parent_node:
-            return self.parent_node.root
-        else:
+        sql = """
+            WITH RECURSIVE ascendants AS (
+              SELECT
+                parent_id,
+                child_id,
+                1 AS LEVEL
+              FROM %s
+              WHERE is_node_link IS FALSE
+              UNION ALL
+              SELECT
+                S.parent_id,
+                D.child_id,
+                D.level + 1
+              FROM ascendants AS D
+                JOIN %s AS S
+                  ON D.parent_id = S.child_id
+              WHERE S.is_node_link IS FALSE
+            ) SELECT parent_id
+              FROM ascendants
+              WHERE child_id = %s
+              ORDER BY level DESC
+              LIMIT 1;
+        """
+        with connection.cursor() as cursor:
+            node_relation_table = AsIs(NodeRelation._meta.db_table)
+            cursor.execute(sql, [node_relation_table, node_relation_table, self.pk])
+            res = cursor.fetchone()
+            if res:
+                return AbstractNode.objects.get(pk=res[0])
             return self
 
     def find_readable_antecedent(self, auth):
