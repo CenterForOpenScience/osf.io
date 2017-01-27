@@ -1,8 +1,18 @@
 from __future__ import unicode_literals
 
 import csv
+from furl import furl
 from datetime import datetime, timedelta
+from django.core.mail import send_mail
+from django.http import Http404, HttpResponse
+from django.shortcuts import redirect
+from django.views.generic import DeleteView, FormView, ListView
 
+from osf.models.user import OSFUser
+from osf.models.node import Node, NodeLog
+from osf.models.spam import SpamStatus
+from framework.auth import get_user
+from framework.auth.utils import impute_names
 from admin.base.utils import OSFAdmin
 from admin.base.views import GuidFormView, GuidView
 from admin.common_auth.logs import (CONFIRM_SPAM, USER_2_FACTOR, USER_EMAILED,
@@ -11,18 +21,7 @@ from admin.common_auth.logs import (CONFIRM_SPAM, USER_2_FACTOR, USER_EMAILED,
 from admin.users.forms import EmailResetForm, WorkshopForm
 from admin.users.serializers import serialize_user
 from admin.users.templatetags.user_extras import reverse_user
-from django.core.mail import send_mail
-from django.http import Http404, HttpResponse
-from django.shortcuts import redirect
-from django.views.generic import DeleteView, FormView, ListView
-from framework.auth import get_user
-from framework.auth.utils import impute_names
-from furl import furl
-from modularodm import Q
-from osf.models.user import OSFUser
 from website.mailchimp_utils import subscribe_on_confirm
-from website.project.model import Node, NodeLog
-from website.project.spam.model import SpamStatus
 from website.security import random_string
 from website.settings import DOMAIN, SUPPORT_EMAIL
 
@@ -276,7 +275,7 @@ class UserWorkshopFormView(OSFAdmin, FormView):
 
     @staticmethod
     def find_user_by_email(email):
-        user_list = OSFUser.find_by_email(email=email)
+        user_list = OSFUser.objects.filter(emails__contains=[email])
         return user_list[0] if user_list else None
 
     @staticmethod
@@ -292,14 +291,12 @@ class UserWorkshopFormView(OSFAdmin, FormView):
     @staticmethod
     def get_user_logs_since_workshop(user, workshop_date):
         query_date = workshop_date + timedelta(days=1)
-        query = Q('user', 'eq', user._id) & Q('date', 'gt', query_date)
-        return NodeLog.find(query=query)
+        return NodeLog.objects.filter(user=user, date__gt=query_date)
 
     @staticmethod
     def get_user_nodes_since_workshop(user, workshop_date):
         query_date = workshop_date + timedelta(days=1)
-        query = Q('creator', 'eq', user._id) & Q('date_created', 'gt', query_date)
-        return list(Node.find(query=query))
+        return Node.objects.filter(creator=user, date_created__gt=query_date)
 
     def parse(self, csv_file):
         """ Parse and add to csv file.
@@ -344,11 +341,7 @@ class UserWorkshopFormView(OSFAdmin, FormView):
             workshop_date = datetime.strptime(row[1], '%m/%d/%y')
             nodes = self.get_user_nodes_since_workshop(user, workshop_date)
             user_logs = self.get_user_logs_since_workshop(user, workshop_date)
-
-            try:
-                last_log_date = user_logs.latest().date.strftime('%m/%d/%y')
-            except IndexError:
-                last_log_date = ''
+            last_log_date = user_logs.latest().date.strftime('%m/%d/%y') if user_logs else ''
 
             row.extend([
                 user.pk, len(user_logs), len(nodes), last_log_date
