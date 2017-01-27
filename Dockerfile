@@ -160,6 +160,7 @@ COPY ./admin/package.json /code/admin/
 RUN npm install --production
 
 COPY ./admin/webpack* /code/admin/
+COPY ./admin/static /code/admin/static/
 
 RUN node ./node_modules/webpack/bin/webpack.js --config webpack.prod.config.js \
     && rm -rf /root/.npm \
