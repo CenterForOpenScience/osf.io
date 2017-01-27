@@ -94,6 +94,7 @@ INSTALLED_APPS = (
     # Addons
     'addons.osfstorage',
     'addons.wiki',
+    'addons.twofactor',
 )
 
 USE_TZ = True
