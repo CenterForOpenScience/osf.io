@@ -43,8 +43,10 @@ def generate_guid(length=5):
                 # valid and unique guid
                 return guid_id
 
+
 def generate_object_id():
     return str(bson.ObjectId())
+
 
 class MODMCompatibilityQuerySet(models.QuerySet):
 
