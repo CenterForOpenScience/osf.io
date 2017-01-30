@@ -119,7 +119,7 @@ class DraftDetailView(PreregAdmin, DetailView):
             ))
 
     def checkout_files(self, draft):
-        prereg_user = self.request.user.osf_user
+        prereg_user = self.request.user
         for item in get_metadata_files(draft):
             item.checkout = prereg_user
             item.save()
@@ -253,8 +253,7 @@ def get_metadata_files(draft):
                     draft.update_metadata(data)
                     draft.save()
                 else:
-                    guid = Guid.load(file_guid)
-                    item = guid.referent
+                    item = FileNode.load(file_info['data']['path'].replace('/', ''))
                 if item is None:
                     raise Http404(
                         'File with guid "{}" in "{}" does not exist'.format(
@@ -282,8 +281,7 @@ def get_metadata_files(draft):
                 draft.update_metadata(data)
                 draft.save()
             else:
-                guid = Guid.load(file_guid)
-                item = guid.referent
+                item = FileNode.load(file_info['data']['path'].replace('/', ''))
             if item is None:
                 raise Http404(
                     'File with guid "{}" in "{}" does not exist'.format(
