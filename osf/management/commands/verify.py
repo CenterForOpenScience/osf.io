@@ -1,5 +1,4 @@
 from __future__ import unicode_literals
-from __future__ import print_function
 
 import importlib
 
@@ -14,11 +13,11 @@ from django.core.management import BaseCommand
 from osf.management.commands.migratedata import register_nonexistent_models_with_modm
 from osf.management.commands.migraterelations import build_toku_django_lookup_table_cache
 from osf.models import BlackListGuid
-from osf.models import Institution
 from osf.models import Tag
 from osf.utils.order_apps import get_ordered_models
-from scripts.register_oauth_scopes import set_backend
-
+from .migratedata import set_backend
+import logging
+logger = logging.getLogger('migrations')
 
 class NotGonnaDoItException(BaseException):
     pass
@@ -39,7 +38,7 @@ class Command(BaseCommand):
         for django_model in django_models:
 
             if not hasattr(django_model, 'modm_model_path'):
-                print('################################################\n'
+                logger.info('################################################\n'
                       '{} doesn\'t have a modm_model_path\n'
                       '################################################'.format(
                     django_model._meta.model.__name__))
@@ -63,7 +62,7 @@ class Command(BaseCommand):
 
             modm_model._cache.clear()
             modm_model._object_cache.clear()
-            print('Took out {} trashes'.format(gc.collect()))
+            logger.info('Took out {} trashes'.format(gc.collect()))
 
     def validate_m2m_field(self, field_name, django_obj, modm_obj):
         # TODO need to make this smarter
@@ -96,7 +95,7 @@ class Command(BaseCommand):
         if modm_thing:
             assert getattr(django_obj, field_name)._id == getattr(modm_obj, field_name)._id
         else:
-            print('{} of {} were None'.format(field_name, modm_obj))
+            logger.info('{} of {} were None'.format(field_name, modm_obj))
 
     def validate_basic_field(self, field_name, django_obj, modm_obj):
         if field_name in ['id', 'pk', 'object_id']:
@@ -132,7 +131,7 @@ class Command(BaseCommand):
             return self.modm_to_django['guid:{}'.format(modm_object._id)]
 
     def validate_model_data(self, modm_queryset, django_model, page_size=20000):
-        print('Starting {} on {}...'.format(
+        logger.info('Starting {} on {}...'.format(
             sys._getframe().f_code.co_name, django_model._meta.model.__name__))
         count = 0
         field_count = 0
@@ -174,8 +173,8 @@ class Command(BaseCommand):
                 count += 1
 
                 if count % page_size == 0 or count == total:
-                    print('Through {} {}s and {} fields...'.format(count, django_model._meta.model.__name__, field_count))
+                    logger.info('Through {} {}s and {} fields...'.format(count, django_model._meta.model.__name__, field_count))
 
                     modm_queryset[0]._cache.clear()
                     modm_queryset[0]._object_cache.clear()
-                    print('Took out {} trashes...'.format(gc.collect()))
+                    logger.info('Took out {} trashes...'.format(gc.collect()))
