@@ -98,7 +98,9 @@ class MeetingCreateFormView(OSFAdmin, FormView):
         self.kwargs.setdefault('endpoint', endpoint)
         # Form validation already checks emails for existence
         admin_users = get_admin_users(data.pop('admins'))
-        edit = data.pop('edit')
+        # Note - Mongo was OK with having this in the payload, but Postgres is not
+        # This edit variable was unused in the past, but keeping it in case we want to use it in the future.
+        data.pop('edit')
         # Form validation already catches if a conference endpoint exists
         new_conf = Conference(
             endpoint=endpoint,

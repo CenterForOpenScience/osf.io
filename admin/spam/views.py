@@ -46,7 +46,6 @@ class SpamList(OSFAdmin, ListView):
             spam_status=int(self.request.GET.get('status', '1'))
         ).exclude(reports={}).exclude(reports=None)
 
-
     def get_context_data(self, **kwargs):
         queryset = kwargs.pop('object_list', self.object_list)
         page_size = self.get_paginate_by(queryset)
