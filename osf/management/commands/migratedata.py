@@ -7,6 +7,8 @@ import logging
 import pprint
 import sys
 from framework import encryption
+from framework.mongo import set_up_storage
+from framework.mongo import storage
 from osf.models import ExternalAccount
 from osf.models import OSFUser
 from addons.s3 import utils
@@ -32,7 +34,6 @@ from osf.models.base import Guid, GuidMixin, OptionalGuidMixin
 from osf.models.node import AbstractNode
 from osf.utils.order_apps import get_ordered_models
 from psycopg2._psycopg import AsIs
-from scripts.register_oauth_scopes import set_backend
 from typedmodels.models import TypedModel
 from addons.github.api import GitHubClient
 from website.addons.github.api import GitHubClient
@@ -42,11 +43,16 @@ from website.models import Guid as MGuid
 from website.models import Node as MODMNode
 from website.models import NodeLog as MNodeLog
 from website.models import User as MUser
+from website.oauth.models import ApiOAuth2Scope
 
 logger = logging.getLogger('migrations')
 
 encryption.encrypt = lambda x: x
 encryption.decrypt = lambda x: x
+
+def set_backend():
+    set_up_storage([ApiOAuth2Scope], storage.MongoStorage)
+
 
 def get_modm_model(django_model):
     module_path, model_name = django_model.modm_model_path.rsplit('.', 1)
