@@ -808,7 +808,7 @@ class RegistrationApproval(PreregCallbackMixin, EmailApprovableSanction):
         # an admin on components (component admins had the opportunity
         # to disapprove the registration by this point)
         register.set_privacy('public', auth=None, log=False)
-        for child in register.get_descendants_recursive(lambda n: n.primary):
+        for child in register.get_descendants_recursive(primary_only=True):
             child.set_privacy('public', auth=None, log=False)
         # Accounts for system actions where no `User` performs the final approval
         auth = Auth(user) if user else None

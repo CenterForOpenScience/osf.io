@@ -127,7 +127,7 @@ class TestRegistrationForksList(ApiTestCase):
 
         forked_logs = data['embeds']['logs']['data']
         assert_equal(set(expected_logs), set(log['attributes']['action'] for log in forked_logs))
-        assert_equal(len(forked_logs), 6)
+        assert_equal(len(forked_logs), len(expected_logs))
 
         forked_from = data['embeds']['forked_from']['data']
         assert_equal(forked_from['id'], self.private_registration._id)
