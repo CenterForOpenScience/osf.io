@@ -876,7 +876,7 @@ class FileVersion(ObjectIDMixin, BaseModel):
     date_modified = models.DateTimeField(null=True, blank=True)
 
     metadata = DateTimeAwareJSONField(blank=True, default=dict)
-    location = DateTimeAwareJSONField(default=dict, blank=True, null=True, validators=[validate_location])
+    location = DateTimeAwareJSONField(default=None, blank=True, null=True, validators=[validate_location])
 
     @property
     def location_hash(self):
