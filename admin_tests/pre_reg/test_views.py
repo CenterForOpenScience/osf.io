@@ -273,7 +273,8 @@ class TestPreregFiles(AdminTestCase):
                                draft_pk=self.draft._id)
         view.checkout_files(self.draft)
         for q, f in self.d_of_qs.iteritems():
-            nt.assert_equal(self.prereg_user, f.checkout)
+            f.refresh_from_db()
+            nt.assert_equal(self.admin_user, f.checkout)
 
     def test_checkin_files(self):
         self.draft.submit_for_review(self.user, {}, save=True)
