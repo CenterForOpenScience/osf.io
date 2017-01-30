@@ -177,6 +177,7 @@ def _build_guid_url(base, suffix=None):
         url = url.decode('utf-8')
     return u'/{0}/'.format(url)
 
+preprints_dir = os.path.abspath(os.path.join(os.getcwd(), EXTERNAL_EMBER_APPS['preprints']['path']))
 
 def resolve_guid(guid, suffix=None):
     """Load GUID by primary key, look up the corresponding view function in the
@@ -214,10 +215,10 @@ def resolve_guid(guid, suffix=None):
         if not referent.deep_url:
             raise HTTPError(http.NOT_FOUND)
         if isinstance(referent, PreprintService):
-            return send_from_directory(
-                os.path.abspath(os.path.join(os.getcwd(), EXTERNAL_EMBER_APPS['preprints']['path'])),
-                'index.html'
-            )
+            if referent.provider._id == 'osf' or not referent.provider.domain:
+                return send_from_directory(preprints_dir, 'index.html')
+
+            return redirect(referent.absolute_url, 301)
         url = _build_guid_url(urllib.unquote(referent.deep_url), suffix)
         return proxy_url(url)
 

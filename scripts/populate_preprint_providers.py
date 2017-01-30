@@ -69,6 +69,7 @@ def main():
             'logo_name': 'cos-logo.png',
             'description': 'A scholarly commons to connect the entire research cycle',
             'banner_name': 'cos-banner.png',
+            'domain': 'osf.io',
             'external_url': 'https://osf.io/preprints/',
             'example': 'khbvy',
             'advisory_board': '',
@@ -87,6 +88,7 @@ def main():
             'logo_name': 'engrxiv-logo.png',
             'description': 'The open archive of engineering.',
             'banner_name': 'engrxiv-banner.png',
+            'domain': 'engrxiv.org',
             'external_url': 'http://engrxiv.org',
             'example': 'k7fgk',
             'advisory_board': '''
@@ -229,6 +231,7 @@ def main():
             'logo_name': 'psyarxiv-logo.png',
             'description': 'A free preprint service for the psychological sciences.',
             'banner_name': 'psyarxiv-banner.png',
+            'domain': 'psyarxiv.com',
             'external_url': 'http://psyarxiv.com',
             'example': 'k9mn3',
             'advisory_board': '''
@@ -317,6 +320,7 @@ def main():
             'logo_name': 'socarxiv-logo.png',
             'description': 'Open archive of the social sciences',
             'banner_name': 'socarxiv-banner.png',
+            'domain': 'socarxiv.org',
             'external_url': 'http://socarxiv.org',
             'example': 'qmdc4',
             'advisory_board': '''

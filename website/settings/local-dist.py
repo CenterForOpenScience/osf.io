@@ -23,6 +23,10 @@ API_DOMAIN = PROTOCOL + 'localhost:8000/'
 #WATERBUTLER_INTERNAL_URL = WATERBUTLER_URL
 
 LIVE_RELOAD_DOMAIN = 'http://localhost:4200'
+PREPRINT_PROVIDER_DOMAINS = {
+    'prefix': 'http://local.',
+    'suffix': ':4200'
+}
 USE_EXTERNAL_EMBER = True
 EXTERNAL_EMBER_APPS = {
     'preprints': {

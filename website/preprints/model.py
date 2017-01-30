@@ -18,7 +18,6 @@ from website.util import api_v2_url
 from website.util.permissions import ADMIN
 from website import settings
 
-
 @unique_on(['node', 'provider'])
 class PreprintService(GuidStoredObject):
 
@@ -63,15 +62,25 @@ class PreprintService(GuidStoredObject):
 
     @property
     def url(self):
-        if self.provider._id != 'osf':
-            # Note that this will change with Phase 2 of branded preprints.
-            return '/preprints/{}/{}/'.format(self.provider._id, self._id)
+        if self.provider._id == 'osf' or hasattr(self.provider, 'domain'):
+            return '/{}/'.format(self._id)
 
-        return '/{}/'.format(self._id)
+        return '/preprints/{}/{}/'.format(self.provider._id, self._id)
+
+    if settings.DEV_MODE:
+        def get_provider_domain(self):
+            domain_settings = settings.PREPRINT_PROVIDER_DOMAINS
+            return ''.join((domain_settings['prefix'], self.provider.domain, domain_settings['suffix']))
+    else:
+        def get_provider_domain(self):
+            return settings.PROTOCOL + self.provider.domain
 
     @property
     def absolute_url(self):
-        return urlparse.urljoin(settings.DOMAIN, self.url)
+        use_osf_domain = self.provider._id == 'osf' or not hasattr(self.provider, 'domain')
+        host = settings.DOMAIN if use_osf_domain else self.get_provider_domain()
+
+        return urlparse.urljoin(host, self.url)
 
     @property
     def absolute_api_v2_url(self):
@@ -206,6 +215,7 @@ class PreprintProvider(StoredObject):
     logo_name = fields.StringField()
     header_text = fields.StringField()
     description = fields.StringField()
+    domain = fields.StringField()
     banner_name = fields.StringField()
     external_url = fields.StringField()
     email_contact = fields.StringField()
