@@ -20,7 +20,6 @@ from admin.pre_reg import serializers
 from admin.pre_reg.forms import DraftRegistrationForm
 from admin.pre_reg.utils import sort_drafts, SORT_BY
 from framework.exceptions import PermissionsError
-from osf.models.base import Guid
 from website.exceptions import NodeStateError
 from osf.models.files import FileNode
 from osf.models.node import Node

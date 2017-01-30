@@ -184,7 +184,7 @@ class UserFlaggedSpamList(UserSpamList, DeleteView):
             if uid != 'csrfmiddlewaretoken'
         ]
         for uid in user_ids:
-            user = User.load(uid)
+            user = OSFUser.load(uid)
             if 'spam_flagged' in user.system_tags:
                 user.system_tags.remove('spam_flagged')
             user.system_tags.append('spam_confirmed')
