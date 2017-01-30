@@ -20,7 +20,7 @@ from osf.models.contributor import (AbstractBaseContributor, Contributor,
                                     InstitutionalContributor)
 from osf.models.node import AbstractNode, Node
 from osf.utils.order_apps import get_ordered_models
-from scripts.register_oauth_scopes import set_backend
+from .migratedata import set_backend
 from website.models import Guid as MODMGuid
 from website.models import Institution as MODMInstitution
 from website.models import Node as MODMNode
@@ -149,7 +149,6 @@ class Command(BaseCommand):
                                 or django_model is ApiOAuth2Scope or \
                                 (issubclass(django_model, AbstractNode) and django_model is not AbstractNode) or \
                                 not hasattr(django_model, 'modm_model_path'):
-                            # if django_model is not NotificationSubscription:
                             continue
 
                         module_path, model_name = django_model.modm_model_path.rsplit('.', 1)
@@ -176,8 +175,7 @@ class Command(BaseCommand):
         logger.info(
             'Starting {} on {}...'.format(sys._getframe().f_code.co_name, django_model._meta.model.__name__))
 
-        # TODO: Collections is getting user_id added to the bad fields. It shouldn't be.
-
+        # TODO: Collections is getting user_id added to the bad fields. It shouldn't be. ???? IS IT STILL ????
         fk_relations = [field for field in django_model._meta.get_fields() if
                         field.is_relation and not field.auto_created and field.many_to_one]
 
@@ -196,6 +194,7 @@ class Command(BaseCommand):
                 return 'guid:{}'.format(unicode(modm_obj._id).lower())
             if isinstance(modm_obj, basestring):
                 try:
+                    # this is causing a lot of queries
                     guid = Guid.objects.get(_id=unicode(modm_obj).lower())
                 except Guid.DoesNotExist:
                     # well ... I guess?
@@ -207,15 +206,27 @@ class Command(BaseCommand):
         while model_count < model_total:
             with transaction.atomic():
                 for modm_obj in modm_queryset.sort('-_id')[model_count:model_count + page_size]:
+                    # if it's a nodelog with both a node and an institution skip
                     if isinstance(modm_obj, MODMNodeLog) and modm_obj.node and modm_obj.node.institution_id:
                         model_count += 1
                         continue
-                    django_obj = django_model.objects.get(
-                        pk=self.modm_to_django[format_lookup_string(modm_obj)])
+                    try:
+                        django_pk = self.modm_to_django[format_lookup_string(modm_obj)]
+                    except KeyError:
+                        if format_lookup_string(modm_obj).startswith('none_') and django_model is NotificationSubscription:
+                            print('{} NotificationSubscription is bad data, skipping'.format(modm_obj))
+                            model_count += 1
+                            continue
+                        else:
+                            raise
+
+                    # TODO this could be switched around to be an __in query, that would greatly reduce the number of
+                    # TODO sql queries happening, as would making the eager guid stuff work
+                    django_obj = django_model.objects.get(pk=django_pk)
                     dirty = False
 
-                    # if an institution has a file, it doesn't
                     # TODO This is doing a mongo query for each Node, could probably be more performant
+                    # if an institution has a file, it doesn't
                     if isinstance(django_obj, StoredFileNode) and modm_obj.node is not None and \
                                     modm_obj.node.institution_id is not None:
                         model_count += 1
@@ -250,11 +261,12 @@ class Command(BaseCommand):
                                     gfk_model = apps.get_model('osf', 'AbstractNode')
                                 else:
                                     gfk_model = apps.get_model('osf', value.__class__.__name__)
-                                # TODO in theory, if I saved the content_type_pk in the lookup table this
-                                # query
-                                # could go away
+                                # TODo in theory, if I saved the content_type_pk in the lookup table this
+                                # TODo query could go away
                                 gfk_instance = gfk_model.objects.get(
                                     pk=self.modm_to_django[format_lookup_string(value)])
+                                # TODo Introspect the GFK, find the object_id field and content_type_id field and remove
+                                # TODo the above query then set the individual fields because speed
                                 setattr(django_obj, field_name, gfk_instance)
                                 dirty = True
                                 fk_count += 1
@@ -394,7 +406,7 @@ class Command(BaseCommand):
                             # if it's a class instance
                             elif hasattr(item, '_id'):
                                 # grab it's id if it has one.
-                                str_value = unicode(item._id)
+                                str_value = unicode(item._id).lower()
                                 # append the pk to the list of pks
                                 if field_name == 'system_tags' and 'system_tags' not in field_aliases.keys():
                                     remote_pks.add(self.modm_to_django['{}:system'.format(str_value)])
