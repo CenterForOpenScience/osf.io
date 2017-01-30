@@ -381,10 +381,7 @@ def main(env):
             'social_facebook': 'https://www.facebook.com/SciELONetwork',
             'header_text': '',
             'licenses_acceptable': ['CC0 1.0 Universal'],
-            'subjects_acceptable':[
-                (['Life Sciences'], True),
-                (['Engineering'], True),
-            ]
+            'subjects_acceptable':[]
         },
         'agrixiv': {
             '_id': 'agrixiv',
@@ -412,6 +409,7 @@ def main(env):
                     <li><b>Satendra Kumar Singh</b>, Indian Council of Agricultural Research</li>
                     <li><b>Vassilis Protonotarios</b>, Neuropublic</li>
                     <li><b>Vinodh Ilangovan</b>, Max Planck Institute for Biophysical Chemistry</li>
+                    <li><b>Kuldeep Singh Jadon</b>, Central Arid Zone Research Institute</li>
                     </ul>
                 </div>
                 <div class="col-xs-6">
@@ -420,8 +418,9 @@ def main(env):
                     <li><b>Dinesh Kumar</b>, Indian Agricultural Statistics Research Institute</li>
                     <li><b>Gopinath KA</b>, Central Research Institute for Dryland Agriculture</li>
                     <li><b>Ivonne Lujano</b>, University of the State of Mexico</li>
+                    <li><b>Khelif Karima</b>, 'Institut National de la Recherche Agronomique d'Algérie</li>
                     <li><b>Paraj Shukla</b>, King Saud University</li>
-                    <li><b>Sridhar Gutam</b>, Open Access India</li>
+                    <li><b>Sridhar Gutam</b>,  ICAR RCER Research Centre/Open Access India</li>
                     <li><b>Sumant Vyas</b>, National Research Centre on Camel</li>
                     <li><b>Susmita Das</b>, Bangladesh Agricultural Research Council</li>
                     </ul>
