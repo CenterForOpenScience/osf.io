@@ -27,10 +27,10 @@ from osf.models.registrations import DraftRegistration
 from website.prereg.utils import get_prereg_schema
 from website.project.metadata.schemas import from_json
 
-from admin.base.utils import PreregAdmin
+from admin.base.utils import Prereg
 
 
-class DraftListView(PreregAdmin, ListView):
+class DraftListView(Prereg, ListView):
     template_name = 'pre_reg/draft_list.html'
     ordering = '-date'
     context_object_name = 'draft'
@@ -102,7 +102,7 @@ class DraftDownloadListView(DraftListView):
         return response
 
 
-class DraftDetailView(PreregAdmin, DetailView):
+class DraftDetailView(Prereg, DetailView):
     template_name = 'pre_reg/draft_detail.html'
     context_object_name = 'draft'
 
@@ -124,7 +124,7 @@ class DraftDetailView(PreregAdmin, DetailView):
             item.save()
 
 
-class DraftFormView(PreregAdmin, FormView):
+class DraftFormView(Prereg, FormView):
     template_name = 'pre_reg/draft_form.html'
     form_class = DraftRegistrationForm
     context_object_name = 'draft'
@@ -191,7 +191,7 @@ class DraftFormView(PreregAdmin, FormView):
                                    self.request.POST.get('page', 1))
 
 
-class CommentUpdateView(PreregAdmin, UpdateView):
+class CommentUpdateView(Prereg, UpdateView):
     context_object_name = 'draft'
 
     def post(self, request, *args, **kwargs):
