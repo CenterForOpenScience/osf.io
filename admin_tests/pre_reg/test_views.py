@@ -5,22 +5,20 @@ from django.db import transaction
 from django.http import Http404
 
 from tests.base import AdminTestCase
-from tests.factories import (
+from osf_tests.factories import (
     DraftRegistrationFactory,
     AuthUserFactory,
-    DraftRegistration,
     ProjectFactory,
+    UserFactory
 )
-from website.files.models import (
-    OsfStorageFile,
-    OsfStorageFileNode,
-    StoredFileNode,
-)
+from osf.models.registrations import DraftRegistration
+from website.files.models import StoredFileNode
+from addons.osfstorage.models import OsfStorageFile, OsfStorageFileNode
+
 from website.project.model import ensure_schemas
 from website.prereg.utils import get_prereg_schema
 
 from admin_tests.utilities import setup_view, setup_form_view, setup_user_view
-from admin_tests.factories import UserFactory
 from admin_tests.pre_reg import utils
 
 from admin.pre_reg.views import (
@@ -265,7 +263,7 @@ class TestPreregFiles(AdminTestCase):
             registration_metadata=data
         )
         self.prereg_user.save()
-        self.admin_user = UserFactory(osf_id=self.prereg_user.pk)
+        self.admin_user = UserFactory()
 
     def test_checkout_files(self):
         self.draft.submit_for_review(self.user, {}, save=True)
