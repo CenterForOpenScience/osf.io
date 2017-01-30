@@ -2847,6 +2847,12 @@ class Node(AbstractNode):
         """For v1 compat"""
         return False
 
+    class Meta:
+        # custom permissions for use in the OSF Admin App
+        permissions = (
+            ('view_node', 'Can view node details'),
+        )
+
 
 class Collection(AbstractNode):
     # TODO DELETE ME POST MIGRATION
