@@ -21,13 +21,16 @@ from website.archiver import (
     AggregateStatResult,
 )
 from website.archiver import utils
-from website.archiver.model import ArchiveJob
 from website.archiver import signals as archiver_signals
 
 from website.project import signals as project_signals
-from website.project.model import Node, DraftRegistration
 from website import settings
 from website.app import init_addons, do_set_backends
+from osf.models import (
+    ArchiveJob,
+    AbstractNode as Node,
+    DraftRegistration,
+)
 
 def create_app_context():
     try:
@@ -207,7 +210,7 @@ def archive_addon(addon_short_name, job_pk, stat_result):
     src_provider = src.get_addon(addon_name)
     folder_name = src_provider.archive_folder_name
     cookie = user.get_or_create_cookie()
-    copy_url = settings.WATERBUTLER_URL + '/ops/copy'
+    copy_url = settings.WATERBUTLER_INTERNAL_URL + '/ops/copy'
     if addon_name == 'dataverse':
         # The dataverse API will not differentiate between published and draft files
         # unless expcicitly asked. We need to create seperate folders for published and
@@ -284,7 +287,7 @@ def archive(job_pk):
                     addon_short_name=target.name,
                     job_pk=job_pk,
                 )
-                for target in job.target_addons
+                for target in job.target_addons.all()
             ),
             archive_node.s(
                 job_pk=job_pk
@@ -319,7 +322,7 @@ def archive_success(dst_pk, job_pk):
     # questions. These files are references to files on the unregistered Node, and
     # consequently we must migrate those file paths after archiver has run. Using
     # sha256 hashes is a convenient way to identify files post-archival.
-    for schema in dst.registered_schema:
+    for schema in dst.registered_schema.all():
         if schema.has_files:
             utils.migrate_file_metadata(dst, schema)
     job = ArchiveJob.load(job_pk)

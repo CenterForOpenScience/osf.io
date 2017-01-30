@@ -1,55 +1,44 @@
 # -*- coding: utf-8 -*-
 '''Base TestCase class for OSF unittests. Uses a temporary MongoDB database.'''
 import abc
-import os
-import re
-import shutil
-import logging
-import unittest
-import functools
 import datetime as dt
-from json import dumps
+import functools
+import logging
+import re
+import os
+import shutil
+import unittest
 
 import blinker
 import httpretty
-from webtest_plus import TestApp
-from webtest.utils import NoDefault
-
 import mock
-from faker import Factory
-from nose.tools import *  # noqa (PEP8 asserts)
-from pymongo.errors import OperationFailure
-from modularodm import storage
-from django.test import SimpleTestCase, override_settings
+import pytest
 from django.test import TestCase as DjangoTestCase
+from faker import Factory
+from nose.tools import *  # noqa (PEP8 asserts); noqa (PEP8 asserts)
+from pymongo.errors import OperationFailure
+from webtest_plus import TestApp
 
-
-from api.base.wsgi import application as api_django_app
-from framework.mongo import set_up_storage
 from framework.auth import User
 from framework.auth.core import Auth
-from framework.sessions.model import Session
+from framework.celery_tasks.handlers import celery_before_request
 from framework.guid.model import Guid
 from framework.mongo import client as client_proxy
 from framework.mongo import database as database_proxy
+from framework.sessions.model import Session
 from framework.transactions import commands, messages, utils
-from framework.celery_tasks.handlers import celery_before_request
-
-from website.project.model import (
-    Node, NodeLog, Tag, WatchConfig, MetaSchema,
-    ensure_schemas,
-)
 from website import settings
-
-from website.addons.wiki.model import NodeWikiPage
-
-import website.models
-from website.notifications.listeners import subscribe_contributor, subscribe_creator
-from website.signals import ALL_SIGNALS
-from website.project.signals import contributor_added, project_created
-from website.app import init_app
 from website.addons.base import AddonConfig
+from addons.wiki.models import NodeWikiPage
+from website.app import init_app
+from website.notifications.listeners import (subscribe_contributor,
+                                             subscribe_creator)
+from website.project.model import (MetaSchema, Node, NodeLog, Tag, WatchConfig,
+                                   ensure_schemas)
+from website.project.signals import contributor_added, project_created
 from website.project.views.contributor import notify_added_contributor
+from website.signals import ALL_SIGNALS
+from .json_api_test_app import JSONAPITestApp
 
 
 def get_default_metaschema():
@@ -60,10 +49,10 @@ def get_default_metaschema():
         ensure_schemas()
         return MetaSchema.find()[0]
 
-# Just a simple app without routing set up or backends
-test_app = init_app(
-    settings_module='website.settings', routes=True, set_backends=False,
-)
+try:
+    test_app = init_app(routes=True, set_backends=False)
+except AssertionError:  # Routes have already been set up
+    test_app = init_app(routes=False, set_backends=False)
 test_app.testing = True
 
 
@@ -72,11 +61,13 @@ SILENT_LOGGERS = [
     'factory.generate',
     'factory.containers',
     'website.search.elastic_search',
+    'framework.analytics',
     'framework.auth.core',
     'website.mails',
     'website.search_migration.migrate',
     'website.util.paths',
-    'api.caching.tasks'
+    'api.caching.tasks',
+    'website.notifications.listeners',
 ]
 for logger_name in SILENT_LOGGERS:
     logging.getLogger(logger_name).setLevel(logging.CRITICAL)
@@ -101,6 +92,7 @@ def teardown_database(client=None, database=None):
     client.drop_database(database)
 
 
+@pytest.mark.django_db
 class DbTestCase(unittest.TestCase):
     """Base `TestCase` for tests that require a scratch database.
     """
@@ -126,23 +118,24 @@ class DbTestCase(unittest.TestCase):
                 init_mock_addon(short_name, **options)
             )
 
-        cls._original_db_name = settings.DB_NAME
-        settings.DB_NAME = cls.DB_NAME
+        # cls._original_db_name = settings.DB_NAME
+        # settings.DB_NAME = cls.DB_NAME
         cls._original_enable_email_subscriptions = settings.ENABLE_EMAIL_SUBSCRIPTIONS
         settings.ENABLE_EMAIL_SUBSCRIPTIONS = False
 
         cls._original_bcrypt_log_rounds = settings.BCRYPT_LOG_ROUNDS
         settings.BCRYPT_LOG_ROUNDS = 1
 
-        teardown_database(database=database_proxy._get_current_object())
+        # teardown_database(database=database_proxy._get_current_object())
+
         # TODO: With `database` as a `LocalProxy`, we should be able to simply
         # this logic
-        set_up_storage(
-            website.models.MODELS,
-            storage.MongoStorage,
-            addons=settings.ADDONS_AVAILABLE,
-        )
-        cls.db = database_proxy
+        # set_up_storage(
+        #     website.models.MODELS,
+        #     storage.MongoStorage,
+        #     addons=settings.ADDONS_AVAILABLE,
+        # )
+        # cls.db = database_proxy
 
     @classmethod
     def tearDownClass(cls):
@@ -151,8 +144,8 @@ class DbTestCase(unittest.TestCase):
         for addon in cls.__ADDONS_UNDER_TEST:
             remove_mock_addon(addon)
 
-        teardown_database(database=database_proxy._get_current_object())
-        settings.DB_NAME = cls._original_db_name
+        # teardown_database(database=database_proxy._get_current_object())
+        # settings.DB_NAME = cls._original_db_name
         settings.ENABLE_EMAIL_SUBSCRIPTIONS = cls._original_enable_email_subscriptions
         settings.BCRYPT_LOG_ROUNDS = cls._original_bcrypt_log_rounds
 
@@ -222,64 +215,14 @@ class AppTestCase(unittest.TestCase):
                 signal.connect(receiver)
 
 
-class JSONAPIWrapper(object):
-    """
-    Creates wrapper with stated content_type.
-    """
-    def make_wrapper(self, url, method, content_type, params=NoDefault, **kw):
-        """
-        Helper method for generating wrapper method.
-        """
-
-        if params is not NoDefault:
-            params = dumps(params, cls=self.JSONEncoder)
-        kw.update(
-            params=params,
-            content_type=content_type,
-            upload_files=None,
-        )
-        wrapper = self._gen_request(method, url, **kw)
-
-        subst = dict(lmethod=method.lower(), method=method)
-        wrapper.__name__ = str('%(lmethod)s_json_api' % subst)
-
-        return wrapper
-
-
-class TestAppJSONAPI(TestApp, JSONAPIWrapper):
-    """
-    Extends TestApp to add json_api_methods(post, put, patch, and delete)
-    which put content_type 'application/vnd.api+json' in header. Adheres to
-    JSON API spec.
-    """
-
-    def __init__(self, app, *args, **kwargs):
-        super(TestAppJSONAPI, self).__init__(app, *args, **kwargs)
-        self.auth = None
-        self.auth_type = 'basic'
-
-    def json_api_method(method):
-
-        def wrapper(self, url, params=NoDefault, bulk=False, **kw):
-            content_type = 'application/vnd.api+json'
-            if bulk:
-                content_type = 'application/vnd.api+json; ext=bulk'
-            return JSONAPIWrapper.make_wrapper(self, url, method, content_type , params, **kw)
-        return wrapper
-
-    post_json_api = json_api_method('POST')
-    put_json_api = json_api_method('PUT')
-    patch_json_api = json_api_method('PATCH')
-    delete_json_api = json_api_method('DELETE')
-
-
-@override_settings(DEBUG_PROPAGATE_EXCEPTIONS=True)
-class ApiAppTestCase(SimpleTestCase):
+class ApiAppTestCase(unittest.TestCase):
     """Base `TestCase` for OSF API v2 tests that require the WSGI app (but no database).
     """
+    allow_database_queries = True
+
     def setUp(self):
         super(ApiAppTestCase, self).setUp()
-        self.app = TestAppJSONAPI(api_django_app)
+        self.app = JSONAPITestApp()
 
 
 class UploadTestCase(unittest.TestCase):
@@ -320,17 +263,20 @@ def kill(*args, **kwargs):
 
 class MockRequestTestCase(unittest.TestCase):
 
+    DISABLE_OUTGOING_CONNECTIONS = False
+
     @classmethod
     def setUpClass(cls):
         super(MockRequestTestCase, cls).setUpClass()
-        httpretty.enable()
-        for method in methods:
-            httpretty.register_uri(
-                method,
-                re.compile(r'.*'),
-                body=kill,
-                priority=-1,
-            )
+        if cls.DISABLE_OUTGOING_CONNECTIONS:
+            httpretty.enable()
+            for method in methods:
+                httpretty.register_uri(
+                    method,
+                    re.compile(r'.*'),
+                    body=kill,
+                    priority=-1,
+                )
 
     def tearDown(self):
         super(MockRequestTestCase, self).tearDown()
@@ -364,6 +310,7 @@ class ApiAddonTestCase(ApiTestCase):
     """Base `TestCase` for tests that require interaction with addons.
 
     """
+    DISABLE_OUTGOING_CONNECTIONS = True
 
     @abc.abstractproperty
     def short_name(self):
@@ -390,15 +337,15 @@ class ApiAddonTestCase(ApiTestCase):
 
     def setUp(self):
         super(ApiAddonTestCase, self).setUp()
-        from tests.factories import (
+        from osf_tests.factories import (
             ProjectFactory,
             AuthUserFactory,
         )
-        from website.addons.base import (
-            AddonOAuthNodeSettingsBase, AddonNodeSettingsBase,
-            AddonOAuthUserSettingsBase, AddonUserSettingsBase
+        from addons.base.models import (
+            BaseOAuthNodeSettings,
+            BaseOAuthUserSettings
         )
-        assert self.addon_type in ('CONFIGURABLE', 'OAUTH', 'UNMANAGEABLE', 'INVALID')  
+        assert self.addon_type in ('CONFIGURABLE', 'OAUTH', 'UNMANAGEABLE', 'INVALID')
         self.account = None
         self.node_settings = None
         self.user_settings = None
@@ -409,7 +356,7 @@ class ApiAddonTestCase(ApiTestCase):
         if self.addon_type not in ('UNMANAGEABLE', 'INVALID'):
             if self.addon_type in ('OAUTH', 'CONFIGURABLE'):
                 self.account = self.AccountFactory()
-                self.user.external_accounts.append(self.account)
+                self.user.external_accounts.add(self.account)
                 self.user.save()
 
             self.user_settings = self.user.get_or_add_addon(self.short_name)
@@ -418,10 +365,12 @@ class ApiAddonTestCase(ApiTestCase):
             if self.addon_type in ('OAUTH', 'CONFIGURABLE'):
                 self.node_settings.set_auth(self.account, self.user)
                 self._apply_auth_configuration()
-            
+
         if self.addon_type in ('OAUTH', 'CONFIGURABLE'):
-            assert isinstance(self.node_settings, AddonOAuthNodeSettingsBase)
-            assert isinstance(self.user_settings, AddonOAuthUserSettingsBase)
+            assert isinstance(self.node_settings, BaseOAuthNodeSettings)
+            assert isinstance(self.user_settings, BaseOAuthUserSettings)
+            self.node_settings.reload()
+            self.user_settings.reload()
 
         self.account_id = self.account._id if self.account else None
         self.set_urls()
@@ -463,15 +412,17 @@ class NotificationTestCase(OsfTestCase):
 class ApiWikiTestCase(ApiTestCase):
 
     def setUp(self):
-        from tests.factories import AuthUserFactory
+        from osf_tests.factories import AuthUserFactory
         super(ApiWikiTestCase, self).setUp()
         self.user = AuthUserFactory()
         self.non_contributor = AuthUserFactory()
 
     def _add_project_wiki_page(self, node, user):
-        from tests.factories import NodeWikiFactory
+        from addons.wiki.tests.factories import NodeWikiFactory
         # API will only return current wiki pages
-        return NodeWikiFactory(node=node, user=user)
+        # Mock out update_search. TODO: Remove when StoredFileNode is implemented
+        with mock.patch('osf.models.AbstractNode.update_search'):
+            return NodeWikiFactory(node=node, user=user)
 
 # From Flask-Security: https://github.com/mattupstate/flask-security/blob/develop/flask_security/utils.py
 class CaptureSignals(object):
@@ -527,7 +478,7 @@ def capture_signals():
     return CaptureSignals(ALL_SIGNALS)
 
 
-def assert_is_redirect(response, msg="Response is a redirect."):
+def assert_is_redirect(response, msg='Response is a redirect.'):
     assert 300 <= response.status_code < 400, msg
 
 

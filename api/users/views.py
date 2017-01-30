@@ -1,33 +1,32 @@
 
-from rest_framework import generics
-from rest_framework import permissions as drf_permissions
-from rest_framework.exceptions import NotAuthenticated, NotFound
-from django.contrib.auth.models import AnonymousUser
-
-from modularodm import Q
-
-from framework.auth.oauth_scopes import CoreScopes
-
-from website.models import User, Node, ExternalAccount
-
+from api.addons.views import AddonSettingsMixin
 from api.base import permissions as base_permissions
-from api.base.utils import get_object_or_error
 from api.base.exceptions import Conflict
+from api.base.filters import ListFilterMixin, ODMFilterMixin
+from api.base.parsers import (JSONAPIRelationshipParser,
+                              JSONAPIRelationshipParserForRegularJSON)
 from api.base.serializers import AddonAccountSerializer
+from api.base.utils import (default_node_list_query,
+                            default_node_permission_query, get_object_or_error)
 from api.base.views import JSONAPIBaseView
-from api.base.filters import ODMFilterMixin, ListFilterMixin
-from api.base.parsers import JSONAPIRelationshipParser, JSONAPIRelationshipParserForRegularJSON
+from api.institutions.serializers import InstitutionSerializer
 from api.nodes.filters import NodePreprintsFilterMixin
 from api.nodes.serializers import NodeSerializer
 from api.preprints.serializers import PreprintSerializer
-from api.institutions.serializers import InstitutionSerializer
 from api.registrations.serializers import RegistrationSerializer
-from api.base.utils import default_node_list_query, default_node_permission_query
-from api.addons.views import AddonSettingsMixin
-
-from api.users.serializers import (UserSerializer, UserCreateSerializer,
-    UserAddonSettingsSerializer, UserDetailSerializer, UserInstitutionsRelationshipSerializer)
-from api.users.permissions import ReadOnlyOrCurrentUser, ReadOnlyOrCurrentUserRelationship, CurrentUser
+from api.users.permissions import (CurrentUser, ReadOnlyOrCurrentUser,
+                                   ReadOnlyOrCurrentUserRelationship)
+from api.users.serializers import (UserAddonSettingsSerializer,
+                                   UserCreateSerializer, UserDetailSerializer,
+                                   UserInstitutionsRelationshipSerializer,
+                                   UserSerializer)
+from django.contrib.auth.models import AnonymousUser
+from framework.auth.oauth_scopes import CoreScopes
+from modularodm import Q
+from rest_framework import permissions as drf_permissions
+from rest_framework import generics
+from rest_framework.exceptions import NotAuthenticated, NotFound
+from website.models import ExternalAccount, Node, User
 
 
 class UserMixin(object):
@@ -126,7 +125,7 @@ class UserList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
         )
         if self.request.version >= '2.3':
             return base_query & Q('merged_by', 'eq', None)
-        return base_query & Q('is_merged', 'ne', True)
+        return base_query
 
     # overrides ListCreateAPIView
     def get_queryset(self):
@@ -333,7 +332,7 @@ class UserAddonDetail(JSONAPIBaseView, generics.RetrieveAPIView, UserMixin, Addo
     view_name = 'user-addon-detail'
 
     def get_object(self):
-        return self.get_addon_settings()
+        return self.get_addon_settings(check_object_permissions=False)
 
 
 class UserAddonAccountList(JSONAPIBaseView, generics.ListAPIView, UserMixin, AddonSettingsMixin):
@@ -376,7 +375,7 @@ class UserAddonAccountList(JSONAPIBaseView, generics.ListAPIView, UserMixin, Add
     view_name = 'user-external_accounts'
 
     def get_queryset(self):
-        return self.get_addon_settings().external_accounts
+        return self.get_addon_settings(check_object_permissions=False).external_accounts
 
 class UserAddonAccountDetail(JSONAPIBaseView, generics.RetrieveAPIView, UserMixin, AddonSettingsMixin):
     """Detail of an individual external_account authorized by this user *Read-only*
@@ -418,11 +417,11 @@ class UserAddonAccountDetail(JSONAPIBaseView, generics.RetrieveAPIView, UserMixi
     view_name = 'user-external_account-detail'
 
     def get_object(self):
-        user_settings = self.get_addon_settings()
+        user_settings = self.get_addon_settings(check_object_permissions=False)
         account_id = self.kwargs['account_id']
 
         account = ExternalAccount.load(account_id)
-        if not (account and account in user_settings.external_accounts):
+        if not (account and user_settings.external_accounts.filter(id=account.id).exists()):
             raise NotFound('Requested addon unavailable')
         return account
 
@@ -523,7 +522,7 @@ class UserPreprints(UserNodes):
 
         query = (
             Q('is_deleted', 'ne', True) &
-            Q('contributors', 'eq', user._id) &
+            Q('contributors', 'eq', user) &
             Q('preprint_file', 'ne', None) &
             Q('is_public', 'eq', True)
         )
@@ -549,10 +548,9 @@ class UserPreprints(UserNodes):
         # so that a query that is guaranteed to return only
         # preprints can be constructed.
         for node in nodes:
-            for preprint in node.preprints:
+            for preprint in node.preprints.all():
                 if provider_filter is None or preprint.provider._id == provider_filter:
                     preprints.append(preprint)
-
         return preprints
 
 class UserInstitutions(JSONAPIBaseView, generics.ListAPIView, UserMixin):
@@ -672,14 +670,13 @@ class UserRegistrations(UserNodes):
         current_user = self.request.user
 
         query = (
-            Q('is_collection', 'ne', True) &
             Q('is_deleted', 'ne', True) &
-            Q('is_registration', 'eq', True) &
-            Q('contributors', 'eq', user._id)
+            Q('type', 'eq', 'osf.registration') &
+            Q('contributors', 'eq', user)
         )
         permission_query = Q('is_public', 'eq', True)
         if not current_user.is_anonymous():
-            permission_query = (permission_query | Q('contributors', 'eq', current_user._id))
+            permission_query = (permission_query | Q('contributors', 'eq', current_user))
         query = query & permission_query
         return query
 
@@ -703,7 +700,7 @@ class UserInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveDestroyAPIV
     def get_object(self):
         user = self.get_user(check_permissions=False)
         obj = {
-            'data': user.affiliated_institutions,
+            'data': user.affiliated_institutions.all(),
             'self': user
         }
         self.check_object_permissions(self.request, obj)
@@ -712,7 +709,7 @@ class UserInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveDestroyAPIV
     def perform_destroy(self, instance):
         data = self.request.data['data']
         user = self.request.user
-        current_institutions = {inst._id for inst in user.affiliated_institutions}
+        current_institutions = set(user.affiliated_institutions.values_list('_id', flat=True))
 
         # DELETEs normally dont get type checked
         # not the best way to do it, should be enforced everywhere, maybe write a test for it

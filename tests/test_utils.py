@@ -4,13 +4,14 @@ import mock
 import os
 import time
 import unittest
+from django.utils import timezone
 
 from flask import Flask
 from nose.tools import *  # noqa (PEP8 asserts)
 import blinker
 
 from tests.base import OsfTestCase
-from tests.factories import RegistrationFactory
+from osf_tests.factories import RegistrationFactory
 
 from framework.routing import Rule, json_renderer
 from framework.utils import secure_filename
@@ -37,7 +38,7 @@ class TestTimeUtils(unittest.TestCase):
         assert_true(is_expired)
 
     def test_throttle_period_expired_using_datetime(self):
-        timestamp = datetime.datetime.utcnow()
+        timestamp = timezone.now()
         is_expired = throttle_period_expired(timestamp=(timestamp + datetime.timedelta(seconds=29)),  throttle=30)
         assert_false(is_expired)
 
@@ -205,6 +206,18 @@ class TestUrlForHelpers(unittest.TestCase):
         with self.app.test_request_context():
             url = waterbutler_url_for('upload', 'provider', 'path', mock.Mock(_id='_id'))
 
+        assert_in('nid=_id', url)
+        assert_in('/file?', url)
+        assert_in('path=path', url)
+        assert_in('provider=provider', url)
+
+    def test_waterbutler_url_for_internal(self):
+        settings.WATERBUTLER_INTERNAL_URL = 'http://1.2.3.4:7777'
+        with self.app.test_request_context():
+            url = waterbutler_url_for('upload', 'provider', 'path', mock.Mock(_id='_id'), _internal=True)
+
+        assert_not_in(settings.WATERBUTLER_URL, url)
+        assert_in(settings.WATERBUTLER_INTERNAL_URL, url)
         assert_in('nid=_id', url)
         assert_in('/file?', url)
         assert_in('path=path', url)
@@ -387,11 +400,7 @@ class TestWebsiteUtils(unittest.TestCase):
 class TestProjectUtils(OsfTestCase):
 
     def set_registered_date(self, reg, date):
-        reg._fields['registered_date'].__set__(
-            reg,
-            date,
-            safe=True
-        )
+        reg.registered_date = date
         reg.save()
 
     def test_get_recent_public_registrations(self):
@@ -401,7 +410,7 @@ class TestProjectUtils(OsfTestCase):
             reg = RegistrationFactory()
             reg.is_public = True
             count = count + 1
-            tdiff = datetime.datetime.now() - datetime.timedelta(days=count)
+            tdiff = timezone.now() - datetime.timedelta(days=count)
             self.set_registered_date(reg, tdiff)
         regs = [r for r in project_utils.recent_public_registrations()]
         assert_equal(len(regs), 5)
@@ -411,7 +420,7 @@ class TestProjectUtils(OsfTestCase):
             reg = RegistrationFactory()
             reg.is_public = True
             count = count + 1
-            tdiff = datetime.datetime.now() - datetime.timedelta(days=count)
+            tdiff = timezone.now() - datetime.timedelta(days=count)
             self.set_registered_date(reg, tdiff)
         regs = [r for r in project_utils.recent_public_registrations(7)]
         assert_equal(len(regs), 7)

@@ -75,5 +75,5 @@ def bower_install(ctx):
     if os.getcwd() != HERE:
         os.chdir(HERE)
     bower_bin = os.path.join(HERE, 'node_modules', 'bower', 'bin', 'bower')
-    ctx.run('{} prune'.format(bower_bin), echo=True)
-    ctx.run('{} install'.format(bower_bin), echo=True)
+    ctx.run('{} prune --allow-root'.format(bower_bin), echo=True)
+    ctx.run('{} install --allow-root'.format(bower_bin), echo=True)

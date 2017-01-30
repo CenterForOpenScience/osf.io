@@ -2,59 +2,34 @@
 # encoding: utf-8
 
 import functools
-from datetime import datetime
-
-from dateutil import parser
-
-from framework.mongo import database
-from framework.postcommit_tasks.handlers import run_postcommit
-from framework.sessions import session
-from framework.celery_tasks import app
+import logging
 
 from flask import request
 
-collection = database['pagecounters']
+from framework.celery_tasks import app
+from framework.postcommit_tasks.handlers import run_postcommit
+
+logger = logging.getLogger(__name__)
+
+# TODO Find out why this is here and fix it.
+collection = None
+# if database._get_current_object() is not None:
+#     collection = database['pagecounters']
+# elif database._get_current_object() is None and settings.DEBUG_MODE:
+#     logger.warn('Cannot connect to database. Analytics will be unavailable')
+# else:
+#     raise RuntimeError('Cannot connect to database')
 
 @run_postcommit(once_per_request=False, celery=True)
 @app.task(max_retries=5, default_retry_delay=60)
 def increment_user_activity_counters(user_id, action, date_string, db=None):
-    db = db or database  # default to local proxy
-    collection = database['useractivitycounters']
-    date = parser.parse(date_string).strftime('%Y/%m/%d')
-    query = {
-        '$inc': {
-            'total': 1,
-            'date.{0}.total'.format(date): 1,
-            'action.{0}.total'.format(action): 1,
-            'action.{0}.date.{1}'.format(action, date): 1,
-        }
-    }
-    collection.update(
-        {'_id': user_id},
-        query,
-        upsert=True,
-        manipulate=False,
-    )
-    return True
+    from osf.models import UserActivityCounter
+    return UserActivityCounter.increment(user_id, action, date_string)
 
 
 def get_total_activity_count(user_id, db=None):
-    db = db or database
-    collection = database['useractivitycounters']
-    result = collection.find_one(
-        {'_id': user_id}, {'total': 1}
-    )
-    if result and 'total' in result:
-        return result['total']
-    return 0
-
-
-def clean_page(page):
-    return page.replace(
-        '.', '_'
-    ).replace(
-        '$', '_'
-    )
+    from osf.models import UserActivityCounter
+    return UserActivityCounter.get_total_activity_count(user_id)
 
 
 def build_page(rex, kwargs):
@@ -81,54 +56,8 @@ def update_counter(page, node_info=None, db=None):
     :param str page: Colon-delimited page key in analytics collection
     :param db: MongoDB database or `None`
     """
-    db = db or database
-    collection = db['pagecounters']
-
-    date = datetime.utcnow()
-    date = date.strftime('%Y/%m/%d')
-
-    page = clean_page(page)
-
-    d = {'$inc': {}}
-
-    visited_by_date = session.data.get('visited_by_date')
-    if not visited_by_date:
-        visited_by_date = {'date': date, 'pages': []}
-
-    if date == visited_by_date['date']:
-        if page not in visited_by_date['pages']:
-            d['$inc']['date.%s.unique' % date] = 1
-            visited_by_date['pages'].append(page)
-            session.data['visited_by_date'] = visited_by_date
-    else:
-        visited_by_date['date'] = date
-        visited_by_date['pages'] = []
-        d['$inc']['date.%s.unique' % date] = 1
-        visited_by_date['pages'].append(page)
-        session.data['visited_by_date'] = visited_by_date
-
-    d['$inc']['date.%s.total' % date] = 1
-
-    visited = session.data.get('visited')  # '/project/x/, project/y/'
-    if not visited:
-        visited = []
-    if page not in visited:
-        d['$inc']['unique'] = 1
-        visited.append(page)
-        session.data['visited'] = visited
-    d['$inc']['total'] = 1
-
-    # If a download counter is being updated, only perform the update
-    # if the user who is downloading isn't a contributor to the project
-    page_type = page.split(':')[0]
-    if page_type == 'download' and node_info:
-        contributors = node_info['contributors']
-        current_user = session.data.get('auth_user_id')
-        if current_user and current_user in contributors:
-            d['$inc']['unique'] = 0
-            d['$inc']['total'] = 0
-
-    collection.update({'_id': page}, d, True, False)
+    from osf.models import PageCounter
+    return PageCounter.update_counter(page, node_info)
 
 def update_counters(rex, node_info=None, db=None):
     """Create a decorator that updates analytics in `pagecounters` when the
@@ -150,20 +79,5 @@ def update_counters(rex, node_info=None, db=None):
 
 
 def get_basic_counters(page, db=None):
-    db = db or database
-    collection = db['pagecounters']
-    unique = 0
-    total = 0
-    collection = database['pagecounters']
-    result = collection.find_one(
-        {'_id': clean_page(page)},
-        {'total': 1, 'unique': 1}
-    )
-    if result:
-        if 'unique' in result:
-            unique = result['unique']
-        if 'total' in result:
-            total = result['total']
-        return unique, total
-    else:
-        return None, None
+    from osf.models import PageCounter
+    return PageCounter.get_basic_counters(page)

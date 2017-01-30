@@ -1,0 +1,40 @@
+options:
+
+#  verbose: true
+  compose-file-path: 'docker-compose.yml'
+  compose-dev-file-path: 'docker-compose.override.yml'
+
+
+syncs:
+
+#  wb-sync:
+#    src: '../waterbutler'
+#    dest: '/code'
+#    sync_strategy: 'unison'
+#    sync_excludes_type: 'Name'
+#    sync_excludes: ['.DS_Store', '*.pyc', '*.tmp', '.git', '.idea']
+#    watch_excludes: ['.*\.DS_Store', '.*\.pyc', '.*\.tmp', '.*/\.git', '.*/\.idea']
+
+#  mfr-sync:
+#    src: '../modular-file-renderer'
+#    dest: '/code'
+#    sync_strategy: 'unison'
+#    sync_excludes_type: 'Name'
+#    sync_excludes: ['.DS_Store', '*.pyc', '*.tmp', '.git', '.idea']
+#    watch_excludes: ['.*\.DS_Store', '.*\.pyc', '.*\.tmp', '.*/\.git', '.*/\.idea']
+
+#  preprints-sync:
+#    src: '../ember-preprints'
+#    dest: '/code'
+#    sync_strategy: 'unison'
+#    sync_excludes_type: 'Name'
+#    sync_excludes: ['.DS_Store', '*.map', '*.pyc', '*.tmp', '.git', '.idea', 'bower_components', 'node_modules', 'tmp', 'dist']
+#    watch_excludes: ['.*\.DS_Store', '.*\.map', '.*\.pyc', '.*\.tmp', '.*/\.git', '.*/\.idea', '.*/bower_components', '.*/node_modules', '.*/tmp', '.*/dist']
+
+  osf-sync:
+    src: './'
+    dest: '/code'
+    sync_strategy: 'unison'
+    sync_excludes_type: 'Name'
+    sync_excludes: ['.DS_Store', '*.map', '*.pyc', '*.tmp', 'etree.py', '.git', '.idea', 'bower_components', 'node_modules']
+    watch_excludes: ['.*\.DS_Store', '.*\.map', '.*\.pyc', '.*\.tmp', '.*/etree\.py', '.*/\.git', '.*/\.idea', '.*/bower_components', '.*/node_modules']

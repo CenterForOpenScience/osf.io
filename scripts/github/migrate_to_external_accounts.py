@@ -12,10 +12,10 @@ from website import settings
 from website.app import init_app
 from website.models import User, Node
 from website.oauth.models import ExternalAccount
-from website.addons.github.api import GitHubClient
-from website.addons.github import settings as github_settings
-from website.addons.github.utils import make_hook_secret
-from website.addons.github.exceptions import GitHubError, ApiError
+from addons.github.api import GitHubClient
+from addons.github import settings as github_settings
+from addons.github.utils import make_hook_secret
+from addons.github.exceptions import GitHubError, ApiError
 from scripts import utils as script_utils
 
 logger = logging.getLogger(__name__)

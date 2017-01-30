@@ -158,7 +158,7 @@ class TestS3Views(S3AddonTestCase, testing.views.OAuthAddonConfigViewsTestCaseMi
         self.project.reload()
         self.node_settings.reload()
         assert_equal(
-            self.project.logs[-1].action,
+            self.project.logs.latest().action,
             '{0}_bucket_linked'.format(self.ADDON_SHORT_NAME)
         )
         assert_equal(res.json['result']['folder']['name'], self.node_settings.folder_name)

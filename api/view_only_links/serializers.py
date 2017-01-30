@@ -68,7 +68,7 @@ class ViewOnlyLinkNodesSerializer(ser.Serializer):
 
     def make_instance_obj(self, obj):
         return {
-            'data': obj.nodes,
+            'data': obj.nodes.all(),
             'self': obj
         }
 
@@ -117,7 +117,7 @@ class ViewOnlyLinkNodesSerializer(ser.Serializer):
                 raise PermissionDenied
             if node not in eligible_nodes:
                 raise NonDescendantNodeError(node_id=node._id)
-            view_only_link.nodes.append(node)
+            view_only_link.nodes.add(node)
 
         view_only_link.save()
 
@@ -140,7 +140,7 @@ class ViewOnlyLinkNodesSerializer(ser.Serializer):
             view_only_link.nodes.remove(node)
         view_only_link.save()
 
-        nodes = [Node.load(node) for node in view_only_link.nodes]
+        nodes = view_only_link.nodes.all()
         eligible_nodes = self.get_eligible_nodes(nodes)
 
         for node in add:
@@ -148,7 +148,7 @@ class ViewOnlyLinkNodesSerializer(ser.Serializer):
                 raise PermissionDenied
             if node not in eligible_nodes:
                 raise NonDescendantNodeError(node_id=node._id)
-            view_only_link.nodes.append(node)
+            view_only_link.nodes.add(node)
         view_only_link.save()
 
         return self.make_instance_obj(view_only_link)

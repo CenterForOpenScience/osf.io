@@ -380,7 +380,7 @@ Migrations
 - Use HTTPS URLS on DOI links.
 - Set HttpOnly flag on cookies.
 - Replace jquery.cookie (deprecated) with js-cookie.
-- Improved error messaging for DropBox addon.
+- Improved error messaging for Dropbox addon.
 - More help text for Collections and Bookmarks.
 - Upgrade to invoke 0.13.0.
 

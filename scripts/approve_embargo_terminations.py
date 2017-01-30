@@ -13,9 +13,10 @@ import datetime
 import logging
 import sys
 
+from django.utils import timezone
+from django.db import transaction
 from modularodm import Q
 
-from framework.transactions.context import TokuTransaction
 from framework.celery_tasks import app as celery_app
 
 from website import models, settings
@@ -27,7 +28,7 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
 def get_pending_embargo_termination_requests():
-    auto_approve_time = datetime.datetime.now() - settings.EMBARGO_TERMINATION_PENDING_TIME
+    auto_approve_time = timezone.now() - settings.EMBARGO_TERMINATION_PENDING_TIME
 
     return models.EmbargoTerminationApproval.find(
         Q('initiation_date', 'lt', auto_approve_time) &
@@ -66,7 +67,7 @@ def run_main(dry_run=True):
     if not dry_run:
         scripts_utils.add_file_logger(logger, __file__)
     init_app(routes=False)
-    with TokuTransaction():
+    with transaction.atomic():
         main()
         if dry_run:
             raise RuntimeError("Dry run, rolling back transaction")

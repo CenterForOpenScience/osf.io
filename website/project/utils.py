@@ -1,44 +1,35 @@
 # -*- coding: utf-8 -*-
 """Various node-related utilities."""
+from django.apps import apps
 from modularodm import Q
 
 from website import settings
-from website.project import Node
 
 from keen import KeenClient
 
 
 # Alias the project serializer
-from website.project.views.node import _view_project
-serialize_node = _view_project  # Not recommended practice
+
+def serialize_node(*args, **kwargs):
+    from website.project.views.node import _view_project
+    return _view_project(*args, **kwargs)  # Not recommended practice
 
 CONTENT_NODE_QUERY = (
     # Can encompass accessible projects, registrations, or forks
     # Note: is_bookmark collection(s) are implicitly assumed to also be collections; that flag intentionally omitted
-    Q('is_collection', 'ne', True) &
-    Q('is_deleted', 'eq', False)
+    Q('is_deleted', 'eq', False) &
+    Q('type', 'ne', 'osf.collection')
 )
 
-PROJECT_QUERY = (
-    # Excludes registrations
-    CONTENT_NODE_QUERY &
-    Q('is_registration', 'ne', True)
-)
-
-TOP_LEVEL_PROJECT_QUERY = (
-    # Top level project is defined based on whether node (of any category) has a parent. Can include forks.
-    Q('parent_node', 'eq', None) &
-    PROJECT_QUERY
-)
+PROJECT_QUERY = CONTENT_NODE_QUERY
 
 
 def recent_public_registrations(n=10):
-    registrations = Node.find(
+    Registration = apps.get_model('osf.Registration')
+    registrations = Registration.find(
         CONTENT_NODE_QUERY &
-        Q('parent_node', 'eq', None) &
-        Q('is_public', 'eq', True) &
-        Q('is_registration', 'eq', True)
-    ).sort(
+        Q('is_public', 'eq', True)
+    ).get_roots().sort(
         '-registered_date'
     )
     for reg in registrations:
@@ -91,6 +82,7 @@ def activity():
     """Generate analytics for most popular public projects and registrations.
     Called by `scripts/update_populate_projects_and_registrations`
     """
+    Node = apps.get_model('osf.AbstractNode')
     popular_public_projects = []
     popular_public_registrations = []
     max_projects_to_display = settings.MAX_POPULAR_PROJECTS
