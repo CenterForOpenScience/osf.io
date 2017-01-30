@@ -142,31 +142,27 @@ class Command(BaseCommand):
         with ipdb.launch_ipdb_on_exception():
             self.modm_to_django = build_toku_django_lookup_table_cache(with_guids=True)
 
-            for migration_type in ['fk', 'm2m']:
-                for django_model in models:
-                    with transaction.atomic():
-                        if issubclass(django_model, AbstractBaseContributor) \
-                                or django_model is ApiOAuth2Scope or \
-                                (issubclass(django_model, AbstractNode) and django_model is not AbstractNode) or \
-                                not hasattr(django_model, 'modm_model_path'):
-                            continue
+            for django_model in models:
+                with transaction.atomic():
+                    if issubclass(django_model, AbstractBaseContributor) \
+                            or django_model is ApiOAuth2Scope or \
+                            (issubclass(django_model, AbstractNode) and django_model is not AbstractNode) or \
+                            not hasattr(django_model, 'modm_model_path'):
+                        continue
 
-                        module_path, model_name = django_model.modm_model_path.rsplit('.', 1)
-                        modm_module = importlib.import_module(module_path)
-                        modm_model = getattr(modm_module, model_name)
-                        if isinstance(django_model.modm_query, dict):
-                            modm_queryset = modm_model.find(**django_model.modm_query)
-                        else:
-                            modm_queryset = modm_model.find(django_model.modm_query)
+                    module_path, model_name = django_model.modm_model_path.rsplit('.', 1)
+                    modm_module = importlib.import_module(module_path)
+                    modm_model = getattr(modm_module, model_name)
+                    if isinstance(django_model.modm_query, dict):
+                        modm_queryset = modm_model.find(**django_model.modm_query)
+                    else:
+                        modm_queryset = modm_model.find(django_model.modm_query)
 
-                        page_size = django_model.migration_page_size
+                    page_size = django_model.migration_page_size
 
-                        with ipdb.launch_ipdb_on_exception():
-                            with transaction.atomic():
-                                if migration_type == 'fk':
-                                    self.save_fk_relationships(modm_queryset, django_model, page_size)
-                                elif migration_type == 'm2m':
-                                    self.save_m2m_relationships(modm_queryset, django_model, page_size)
+                    with ipdb.launch_ipdb_on_exception():
+                        self.save_fk_relationships(modm_queryset, django_model, page_size)
+                        self.save_m2m_relationships(modm_queryset, django_model, page_size)
 
             self.migrate_node_through_models()
 
@@ -205,24 +201,28 @@ class Command(BaseCommand):
 
         while model_count < model_total:
             with transaction.atomic():
-                for modm_obj in modm_queryset.sort('-_id')[model_count:model_count + page_size]:
-                    # if it's a nodelog with both a node and an institution skip
-                    if isinstance(modm_obj, MODMNodeLog) and modm_obj.node and modm_obj.node.institution_id:
-                        model_count += 1
-                        continue
+                modm_page = modm_queryset.sort('-_id')[model_count:model_count + page_size]
+                modm_keys = modm_page.get_keys()
+
+                django_keys = []
+                for modm_key in modm_keys:
                     try:
-                        django_pk = self.modm_to_django[format_lookup_string(modm_obj)]
+                        django_keys.append(self.modm_to_django[format_lookup_string(modm_key)])
                     except KeyError:
-                        if format_lookup_string(modm_obj).startswith('none_') and django_model is NotificationSubscription:
-                            print('{} NotificationSubscription is bad data, skipping'.format(modm_obj))
+                        if format_lookup_string(modm_key).startswith('none_') and django_model is NotificationSubscription:
+                            logger.info('{} NotificationSubscription is bad data, skipping'.format(modm_key))
                             model_count += 1
                             continue
                         else:
                             raise
 
-                    # TODO this could be switched around to be an __in query, that would greatly reduce the number of
-                    # TODO sql queries happening, as would making the eager guid stuff work
-                    django_obj = django_model.objects.get(pk=django_pk)
+                # TODO this could be switched around to be an __in query, that would greatly reduce the number of
+                # TODO sql queries happening, as would making the eager guid stuff work
+                django_objects = django_model.objects.filter(pk__in=django_keys)
+                assert django_objects.count() == len(django_keys)
+                for i, django_obj in enumerate(django_objects):
+                    modm_obj = modm_page[i]
+
                     dirty = False
 
                     # TODO This is doing a mongo query for each Node, could probably be more performant
