@@ -363,10 +363,9 @@ class PreregCallbackMixin(object):
 
         registration = self._get_registration()
         prereg_schema = MetaSchema.get_prereg_schema()
-
         draft = DraftRegistration.objects.get(registered_node=registration)
 
-        if prereg_schema in registration.registered_schema:
+        if registration.registered_schema.filter(id=prereg_schema.id).exists():
             mails.send_mail(draft.initiator.username,
                             mails.PREREG_CHALLENGE_ACCEPTED,
                             user=draft.initiator,

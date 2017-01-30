@@ -20,10 +20,10 @@ from admin.pre_reg import serializers
 from admin.pre_reg.forms import DraftRegistrationForm
 from admin.pre_reg.utils import sort_drafts, SORT_BY
 from framework.exceptions import PermissionsError
-from framework.guid.model import Guid
 from website.exceptions import NodeStateError
-from website.files.models import FileNode
-from website.project.model import DraftRegistration, Node
+from osf.models.files import FileNode
+from osf.models.node import Node
+from osf.models.registrations import DraftRegistration
 from website.prereg.utils import get_prereg_schema
 from website.project.metadata.schemas import from_json
 
@@ -118,7 +118,7 @@ class DraftDetailView(PreregAdmin, DetailView):
             ))
 
     def checkout_files(self, draft):
-        prereg_user = self.request.user.osf_user
+        prereg_user = self.request.user
         for item in get_metadata_files(draft):
             item.checkout = prereg_user
             item.save()
@@ -158,7 +158,7 @@ class DraftFormView(PreregAdmin, FormView):
 
     def form_valid(self, form):
         if 'approve_reject' in form.changed_data:
-            osf_user = self.request.user.osf_user
+            osf_user = self.request.user
             try:
                 if form.cleaned_data.get('approve_reject') == 'approve':
                     flag = ACCEPT_PREREG
@@ -252,8 +252,7 @@ def get_metadata_files(draft):
                     draft.update_metadata(data)
                     draft.save()
                 else:
-                    guid = Guid.load(file_guid)
-                    item = guid.referent
+                    item = FileNode.load(file_info['data']['path'].replace('/', ''))
                 if item is None:
                     raise Http404(
                         'File with guid "{}" in "{}" does not exist'.format(
@@ -281,8 +280,7 @@ def get_metadata_files(draft):
                 draft.update_metadata(data)
                 draft.save()
             else:
-                guid = Guid.load(file_guid)
-                item = guid.referent
+                item = FileNode.load(file_info['data']['path'].replace('/', ''))
             if item is None:
                 raise Http404(
                     'File with guid "{}" in "{}" does not exist'.format(

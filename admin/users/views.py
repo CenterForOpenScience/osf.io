@@ -1,8 +1,18 @@
 from __future__ import unicode_literals
 
 import csv
+from furl import furl
 from datetime import datetime, timedelta
+from django.core.mail import send_mail
+from django.http import Http404, HttpResponse
+from django.shortcuts import redirect
+from django.views.generic import DeleteView, FormView, ListView
 
+from osf.models.user import OSFUser
+from osf.models.node import Node, NodeLog
+from osf.models.spam import SpamStatus
+from framework.auth import get_user
+from framework.auth.utils import impute_names
 from admin.base.utils import OSFAdmin
 from admin.base.views import GuidFormView, GuidView
 from admin.common_auth.logs import (CONFIRM_SPAM, USER_2_FACTOR, USER_EMAILED,
@@ -11,17 +21,7 @@ from admin.common_auth.logs import (CONFIRM_SPAM, USER_2_FACTOR, USER_EMAILED,
 from admin.users.forms import EmailResetForm, WorkshopForm
 from admin.users.serializers import serialize_user
 from admin.users.templatetags.user_extras import reverse_user
-from django.core.mail import send_mail
-from django.http import Http404, HttpResponse
-from django.shortcuts import redirect
-from django.views.generic import DeleteView, FormView, ListView
-from framework.auth import get_user
-from framework.auth.utils import impute_names
-from furl import furl
-from modularodm import Q
 from website.mailchimp_utils import subscribe_on_confirm
-from website.project.model import Node, NodeLog, User
-from website.project.spam.model import SpamStatus
 from website.security import random_string
 from website.settings import DOMAIN, SUPPORT_EMAIL
 
@@ -85,7 +85,7 @@ class UserDeleteView(OSFAdmin, DeleteView):
         return super(UserDeleteView, self).get_context_data(**context)
 
     def get_object(self, queryset=None):
-        return User.load(self.kwargs.get('guid'))
+        return OSFUser.load(self.kwargs.get('guid'))
 
 
 class SpamUserDeleteView(UserDeleteView):
@@ -161,10 +161,7 @@ class UserSpamList(OSFAdmin, ListView):
     context_object_name = '-user'
 
     def get_queryset(self):
-        query = (
-            Q('system_tags', 'eq', self.SPAM_TAG)
-        )
-        return User.find(query).sort(self.ordering)
+        return OSFUser.objects.filter(tags__name=self.SPAM_TAG).order_by(self.ordering)
 
     def get_context_data(self, **kwargs):
         query_set = kwargs.pop('object_list', self.object_list)
@@ -187,7 +184,7 @@ class UserFlaggedSpamList(UserSpamList, DeleteView):
             if uid != 'csrfmiddlewaretoken'
         ]
         for uid in user_ids:
-            user = User.load(uid)
+            user = OSFUser.load(uid)
             if 'spam_flagged' in user.system_tags:
                 user.system_tags.remove('spam_flagged')
             user.system_tags.append('spam_confirmed')
@@ -256,7 +253,7 @@ class UserView(OSFAdmin, GuidView):
         return kwargs
 
     def get_object(self, queryset=None):
-        return serialize_user(User.load(self.kwargs.get('guid')))
+        return serialize_user(OSFUser.load(self.kwargs.get('guid')))
 
 
 class UserWorkshopFormView(OSFAdmin, FormView):
@@ -278,30 +275,28 @@ class UserWorkshopFormView(OSFAdmin, FormView):
 
     @staticmethod
     def find_user_by_email(email):
-        user_list = User.find_by_email(email=email)
+        user_list = OSFUser.objects.filter(emails__contains=[email])
         return user_list[0] if user_list else None
 
     @staticmethod
     def find_user_by_full_name(full_name):
-        user_list = User.find(Q('fullname', 'eq', full_name))
+        user_list = OSFUser.objects.filter(fullname=full_name)
         return user_list[0] if user_list.count() == 1 else None
 
     @staticmethod
     def find_user_by_family_name(family_name):
-        user_list = User.find(Q('family_name', 'eq', family_name))
+        user_list = OSFUser.objects.filter(family_name=family_name)
         return user_list[0] if user_list.count() == 1 else None
 
     @staticmethod
     def get_user_logs_since_workshop(user, workshop_date):
         query_date = workshop_date + timedelta(days=1)
-        query = Q('user', 'eq', user._id) & Q('date', 'gt', query_date)
-        return NodeLog.find(query=query)
+        return NodeLog.objects.filter(user=user, date__gt=query_date)
 
     @staticmethod
     def get_user_nodes_since_workshop(user, workshop_date):
         query_date = workshop_date + timedelta(days=1)
-        query = Q('creator', 'eq', user._id) & Q('date_created', 'gt', query_date)
-        return list(Node.find(query=query))
+        return Node.objects.filter(creator=user, date_created__gt=query_date)
 
     def parse(self, csv_file):
         """ Parse and add to csv file.
@@ -346,11 +341,7 @@ class UserWorkshopFormView(OSFAdmin, FormView):
             workshop_date = datetime.strptime(row[1], '%m/%d/%y')
             nodes = self.get_user_nodes_since_workshop(user, workshop_date)
             user_logs = self.get_user_logs_since_workshop(user, workshop_date)
-
-            try:
-                last_log_date = user_logs.latest().date.strftime('%m/%d/%y')
-            except IndexError:
-                last_log_date = ''
+            last_log_date = user_logs.latest().date.strftime('%m/%d/%y') if user_logs else ''
 
             row.extend([
                 user.pk, len(user_logs), len(nodes), last_log_date
@@ -369,7 +360,7 @@ class ResetPasswordView(OSFAdmin, FormView):
     context_object_name = 'user'
 
     def get_context_data(self, **kwargs):
-        user = User.load(self.kwargs.get('guid'))
+        user = OSFUser.load(self.kwargs.get('guid'))
         try:
             self.initial.setdefault('emails', [(r, r) for r in user.emails])
         except AttributeError:
