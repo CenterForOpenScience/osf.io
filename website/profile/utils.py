@@ -1,7 +1,4 @@
 # -*- coding: utf-8 -*-
-
-from modularodm import Q
-
 from framework import auth
 
 from website import settings
@@ -12,25 +9,14 @@ from website.util.permissions import reduce_permissions
 
 def get_projects(user):
     """Return a list of user's projects, excluding registrations and folders."""
+    from website.project.utils import PROJECT_QUERY
     # Note: If the user is a contributor to a child (but does not have access to the parent), it will be
     # excluded from this view
-    # Avoid circular import
-    from website.project.utils import TOP_LEVEL_PROJECT_QUERY
-
-    return Node.find_for_user(user, subquery=TOP_LEVEL_PROJECT_QUERY)
+    return Node.find_for_user(user, PROJECT_QUERY).get_roots()
 
 def get_public_projects(user):
     """Return a list of a user's public projects."""
-    # Avoid circular import
-    from website.project.utils import TOP_LEVEL_PROJECT_QUERY
-
-    return Node.find_for_user(
-        user,
-        subquery=(
-            Q('is_public', 'eq', True) &
-            TOP_LEVEL_PROJECT_QUERY
-        )
-    )
+    return Node.find_for_user(user).filter(is_public=True, is_deleted=False).get_roots()
 
 
 def get_gravatar(user, size=None):
@@ -70,7 +56,7 @@ def serialize_user(user, node=None, admin=False, full=False, is_profile=False):
             }
         else:
             flags = {
-                'visible': user._id in node.visible_contributor_ids,
+                'visible': node.contributor_set.filter(user=user, visible=True).exists(),
                 'permission': reduce_permissions(node.get_permissions(user)),
             }
         ret.update(flags)

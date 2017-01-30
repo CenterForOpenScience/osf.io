@@ -42,7 +42,7 @@ def get_node_contributors_abbrev(auth, node, **kwargs):
     if 'user_ids' in kwargs:
         users = [
             User.load(user_id) for user_id in kwargs['user_ids']
-            if user_id in node.visible_contributor_ids
+            if node.contributor_set.filter(user__guid__guid=user_id).exists()
         ]
     else:
         users = node.visible_contributors
@@ -179,7 +179,7 @@ def deserialize_contributors(node, user_dicts, auth, validate=False):
                     fullname=fullname,
                     email=email)
                 contributor.save()
-            except ValidationValueError:
+            except ValidationError:
                 ## FIXME: This suppresses an exception if ID not found & new validation fails; get_user will return None
                 contributor = get_user(email=email)
 
@@ -333,8 +333,8 @@ def project_remove_contributor(auth, **kwargs):
             if auth.user != contributor:
                 raise HTTPError(http.FORBIDDEN)
 
-        if len(node.visible_contributor_ids) == 1 \
-                and node.visible_contributor_ids[0] == contributor._id:
+        if node.visible_contributors.count() == 1 \
+                and node.visible_contributors[0] == contributor:
             raise HTTPError(http.FORBIDDEN, data={
                 'message_long': 'Must have at least one bibliographic contributor'
             })
@@ -712,10 +712,11 @@ def claim_user_form(auth, **kwargs):
     user.update_guessed_names()
     # The email can be the original referrer email if no claimer email has been specified.
     claimer_email = unclaimed_record.get('claimer_email') or unclaimed_record.get('email')
-
     # If there is a registered user with this email, redirect to 're-enter password' page
-    found_by_email = User.find_by_email(claimer_email)
-    user_from_email = found_by_email[0] if found_by_email else None
+    try:
+        user_from_email = User.objects.get(emails__icontains=claimer_email) if claimer_email else None
+    except User.DoesNotExist:
+        user_from_email = None
     if user_from_email and user_from_email.is_registered:
         return redirect(web_url_for('claim_user_registered', uid=uid, pid=pid, token=token))
 

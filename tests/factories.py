@@ -16,6 +16,7 @@ Factory boy docs: http://factoryboy.readthedocs.org/
 import datetime
 import functools
 
+from django.utils import timezone
 from factory import base, Sequence, SubFactory, post_generation, LazyAttribute
 import mock
 from mock import patch, Mock
@@ -30,7 +31,7 @@ from framework.sessions.model import Session
 from tests.base import fake
 from tests.base import get_default_metaschema
 from website.addons import base as addons_base
-from website.addons.wiki.model import NodeWikiPage
+from addons.wiki.models import NodeWikiPage
 from website.oauth.models import (
     ApiOAuth2Application,
     ApiOAuth2PersonalToken,
@@ -127,7 +128,7 @@ class UserFactory(ModularOdmFactory):
     fullname = Sequence(lambda n: 'Freddie Mercury{0}'.format(n))
     is_registered = True
     is_claimed = True
-    date_confirmed = datetime.datetime(2014, 2, 21)
+    date_confirmed = timezone.now()
     merged_by = None
     email_verifications = {}
     verification_key = None
@@ -213,6 +214,7 @@ class AbstractNodeFactory(ModularOdmFactory):
 
 
 class ProjectFactory(AbstractNodeFactory):
+    type = 'osf.node'
     category = 'project'
 
 
@@ -318,7 +320,8 @@ class SubjectFactory(ModularOdmFactory):
         except NoResultsFound:
             subject = target_class(*args, **kwargs)
             subject.text = text
-            subject.parents = parents
+            subject.save()
+            subject.parents.add(*parents)
             subject.save()
         return subject
 

@@ -1,15 +1,56 @@
+
 version: '2'
 
-#services:
+services:
 
 #  fakecas:
 #    image: quay.io/centerforopenscience/fakecas:latest
 #    command: fakecas -host=0.0.0.0:8080 -dbaddress=172.19.0.7:27017
 
 #  wb:
-#    volumes:
-#      - ../waterbutler/:/code
+#    volumes_from:
+#      - container:wb-sync
 
 #  mfr:
-#    volumes:
-#      - ../modular-file-renderer/:/code
+#    volumes_from:
+#      - container:mfr-sync
+
+#  preprints:
+#    volumes_from:
+#      - container:preprints-sync
+
+  requirements:
+    volumes_from:
+      - container:osf-sync
+
+  assets:
+    volumes_from:
+      - container:osf-sync
+
+  sharejs:
+    volumes_from:
+      - container:osf-sync
+
+#  beat:
+#    volumes_from:
+#      - container:osf-sync
+
+  worker:
+    volumes_from:
+      - container:osf-sync
+
+#  adminassets:
+#    volumes_from:
+#      - container:osf-sync
+#
+#  admin:
+#    volumes_from:
+#      - container:osf-sync
+
+  web:
+    volumes_from:
+      - container:osf-sync
+
+  api:
+    volumes_from:
+      - container:osf-sync

@@ -1,6 +1,5 @@
 /**
-* Controls the actions in the project header (make public/private, watch button,
-* forking, etc.)
+* Controls the actions in the project header (make public/private, forking, etc.)
 */
 'use strict';
 
@@ -24,7 +23,7 @@ var NodesPrivacy = require('js/nodesPrivacy').NodesPrivacy;
  */
 var ProjectViewModel = function(data, options) {
     var self = this;
-    
+
     self._id = data.node.id;
     self.apiUrl = data.node.api_url;
     self.dateCreated = new $osf.FormattableDate(data.node.date_created);
@@ -34,8 +33,6 @@ var ProjectViewModel = function(data, options) {
     self.doi = ko.observable(data.node.identifiers.doi);
     self.ark = ko.observable(data.node.identifiers.ark);
     self.idCreationInProgress = ko.observable(false);
-    self.watchedCount = ko.observable(data.node.watched_count);
-    self.userIsWatching = ko.observable(data.user.is_watching);
     self.dateRegistered = new $osf.FormattableDate(data.node.registered_date);
     self.inDashboard = ko.observable(data.node.in_dashboard);
     self.dashboard = data.user.dashboard_id;
@@ -56,15 +53,6 @@ var ProjectViewModel = function(data, options) {
             return 'A request to make this registration public is pending';
         }
         return null;
-    });
-
-    // WATCH button is removed, functionality is still here in case of future implementation -- CU
-    // The button text to display (e.g. "Watch" if not watching)
-    self.watchButtonDisplay = ko.pureComputed(function() {
-        return self.watchedCount().toString();
-    });
-    self.watchButtonAction = ko.pureComputed(function() {
-        return self.userIsWatching() ? 'Unwatch' : 'Watch';
     });
 
     self.canBeOrganized = ko.pureComputed(function() {
@@ -177,35 +165,6 @@ var ProjectViewModel = function(data, options) {
             self.inDashboard(true);
             $osf.growl('Error', 'The project could not be removed', 'danger');
         });
-    };
-
-
-    /**
-     * Toggle the watch status for this project.
-     */
-    var watchUpdateInProgress = false;
-    self.toggleWatch = function() {
-        // When there is no watch-update in progress,
-        // send POST request to node's watch API url and update the watch count
-        if(!watchUpdateInProgress) {
-            if (self.userIsWatching()) {
-                self.watchedCount(self.watchedCount() - 1);
-            } else {
-                self.watchedCount(self.watchedCount() + 1);
-            }
-            watchUpdateInProgress = true;
-            $osf.postJSON(
-                self.apiUrl + 'togglewatch/',
-                {}
-            ).done(function (data) {
-                // Update watch count in DOM
-                watchUpdateInProgress = false;
-                self.userIsWatching(data.watched);
-                self.watchedCount(data.watchCount);
-            }).fail(
-                $osf.handleJSONError
-            );
-        }
     };
 
     self.forkNode = function() {

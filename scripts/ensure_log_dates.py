@@ -11,6 +11,7 @@ import datetime
 import logging
 import sys
 
+from django.utils import timezone
 from modularodm import Q
 
 from website.models import NodeLog
@@ -74,7 +75,7 @@ class TestEnsureLogDates(OsfTestCase):
 
         self.mongo.update(
             {'_id': self.bad_log._id},
-            {'$set': {'date': datetime.datetime.utcnow() - datetime.timedelta(weeks=52)}},
+            {'$set': {'date': timezone.now() - datetime.timedelta(weeks=52)}},
         )
         self.bad_log.reload()
 

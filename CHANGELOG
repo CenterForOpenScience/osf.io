@@ -2,6 +2,10 @@
 Changelog
 *********
 
+0.104.0 (2016-12-19)
+====================
+- Various APIv2 fixes and improvements to support Preprints.
+
 0.103.0 (2016-12-14)
 ====================
 - Update WaterButler Dropbox Provider to use Dropbox v2 API
@@ -21,6 +25,7 @@ Migrations
 ----------
 python -m scripts.migration.migrate_googledoc_paths
 python -m scripts.migration.migrate_googledoc_paths --no-i-mean-it
+python -m scripts.figshare.migrate_folder_logs
 
 0.102.0 (2016-11-30)
 ====================
@@ -375,7 +380,7 @@ Migrations
 - Use HTTPS URLS on DOI links.
 - Set HttpOnly flag on cookies.
 - Replace jquery.cookie (deprecated) with js-cookie.
-- Improved error messaging for DropBox addon.
+- Improved error messaging for Dropbox addon.
 - More help text for Collections and Bookmarks.
 - Upgrade to invoke 0.13.0.
 

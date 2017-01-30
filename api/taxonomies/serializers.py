@@ -32,7 +32,7 @@ class TaxonomySerializer(JSONAPISerializer):
     })
 
     def get_parent_urls(self, obj):
-        return [p.get_absolute_url() for p in obj.parents]
+        return [p.get_absolute_url() for p in obj.parents.all()]
 
     def get_absolute_url(self, obj):
         return obj.get_absolute_url()

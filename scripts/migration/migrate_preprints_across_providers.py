@@ -20,7 +20,7 @@ def migrate(targets):
         logger.info('Updating PreprintService {preprint_id} provider to {provider_id}'.format(**target))
         database.preprintservice.find_and_modify(
             {'_id': target['preprint_id']},
-            {'$set': {'provider': target}}
+            {'$set': {'provider': target['provider_id']}}
         )
 
 def main():
