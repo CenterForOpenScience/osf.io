@@ -1705,7 +1705,15 @@ def make_url_map(app):
     # NOTE: We use nginx to serve static addon assets in production
     addon_base_path = os.path.abspath('addons')
     if settings.DEV_MODE:
+        from flask import stream_with_context, Response
+        import requests
+
         @app.route('/static/addons/<addon>/<path:filename>')
         def addon_static(addon, filename):
             addon_path = os.path.join(addon_base_path, addon, 'static')
             return send_from_directory(addon_path, filename)
+
+        @app.route('/ember-cli-live-reload.js')
+        def ember_cli_live_reload():
+            req = requests.get('{}/ember-cli-live-reload.js'.format(settings.LIVE_RELOAD_DOMAIN), stream=True)
+            return Response(stream_with_context(req.iter_content()), content_type=req.headers['content-type'])
