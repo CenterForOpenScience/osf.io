@@ -27,6 +27,10 @@ services:
     volumes:
       - ./:/code
 
+  admin_assets:
+    volumes:
+      - ./:/code
+
   sharejs:
     volumes:
       - ./:/code
@@ -39,13 +43,9 @@ services:
     volumes:
       - ./:/code
 
-#  adminassets:
-#    volumes:
-#      - ./:/code
-#
-#  admin:
-#    volumes:
-#      - ./:/code
+  admin:
+    volumes:
+      - ./:/code
 
   web:
     volumes:
