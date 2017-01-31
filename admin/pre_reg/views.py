@@ -6,6 +6,8 @@ from modularodm import Q
 
 from django.views.generic import ListView, DetailView, FormView, UpdateView
 from django.views.defaults import permission_denied, bad_request
+from django.contrib.auth.decorators import permission_required
+from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.core.urlresolvers import reverse
 from django.http import JsonResponse, Http404, HttpResponse
 from django.shortcuts import redirect
@@ -27,13 +29,12 @@ from osf.models.registrations import DraftRegistration
 from website.prereg.utils import get_prereg_schema
 from website.project.metadata.schemas import from_json
 
-from admin.base.utils import Prereg
 
-
-class DraftListView(Prereg, ListView):
+class DraftListView(ListView, PermissionRequiredMixin):
     template_name = 'pre_reg/draft_list.html'
     ordering = '-date'
     context_object_name = 'draft'
+    permission_required = 'admin.view_prereg'
 
     def get_queryset(self):
         query = (
@@ -102,9 +103,10 @@ class DraftDownloadListView(DraftListView):
         return response
 
 
-class DraftDetailView(Prereg, DetailView):
+class DraftDetailView(DetailView, PermissionRequiredMixin):
     template_name = 'pre_reg/draft_detail.html'
     context_object_name = 'draft'
+    permission_required = 'admin.view_prereg'
 
     def get_object(self, queryset=None):
         draft = DraftRegistration.load(self.kwargs.get('draft_pk'))
@@ -124,10 +126,11 @@ class DraftDetailView(Prereg, DetailView):
             item.save()
 
 
-class DraftFormView(Prereg, FormView):
+class DraftFormView(FormView, PermissionRequiredMixin):
     template_name = 'pre_reg/draft_form.html'
     form_class = DraftRegistrationForm
     context_object_name = 'draft'
+    permission_required = 'admin.view_prereg'
 
     def dispatch(self, request, *args, **kwargs):
         self.draft = DraftRegistration.load(self.kwargs.get('draft_pk'))
@@ -191,8 +194,9 @@ class DraftFormView(Prereg, FormView):
                                    self.request.POST.get('page', 1))
 
 
-class CommentUpdateView(Prereg, UpdateView):
+class CommentUpdateView(UpdateView, PermissionRequiredMixin):
     context_object_name = 'draft'
+    permission_required = ('admin.view_prereg', 'admin.administer_prereg')
 
     def post(self, request, *args, **kwargs):
         try:
@@ -222,12 +226,14 @@ class CommentUpdateView(Prereg, UpdateView):
             return bad_request(request, e)
 
 
+@permission_required('admin.view_prereg')
 def view_file(request, node_id, provider, file_id):
     fp = FileNode.load(file_id)
     wb_url = fp.generate_waterbutler_url()
     return redirect(wb_url)
 
 
+@permission_required('admin.view_prereg')
 def get_metadata_files(draft):
     data = draft.registration_metadata
     for q, question in get_file_questions('prereg-prize.json'):
@@ -289,6 +295,7 @@ def get_metadata_files(draft):
             yield item
 
 
+@permission_required('admin.view_prereg')
 def get_file_questions(json_file):
     uploader = {
         'id': 'uploader',
