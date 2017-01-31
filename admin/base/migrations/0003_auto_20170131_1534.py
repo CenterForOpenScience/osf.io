@@ -15,6 +15,7 @@ logger = logging.getLogger(__file__)
 def get_read_only_permissions():
     return Permission.objects.filter(
         Q(codename='view_node') |
+        Q(codename='view_registration') |
         Q(codename='view_user') |
         Q(codename='view_conference') |
         Q(codename='view_spam') |
