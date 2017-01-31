@@ -8,7 +8,6 @@ class AdminProfile(models.Model):
     desk_token = models.CharField(max_length=45, blank=True)
     desk_token_secret = models.CharField(max_length=45, blank=True)
 
-
     class Meta:
         # custom permissions for use in the OSF Admin App
         permissions = (
