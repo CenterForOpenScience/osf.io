@@ -217,9 +217,9 @@ Ubuntu: Skip install of docker-sync, fswatch, and unison. instead...
     - Name: `Remote Debug (web)`
     - Local host name: `192.168.168.167`
     - Port: `11000`
-    - Path mappings:
-      - `~/Projects/cos/osf : /code`
-      - `~/.virtualenvs/osf/lib/python2.7/site-packages : /usr/local/lib/python2.7/site-packages`
+    - Path mappings: (It is recommended to use absolute path. `~/` may not work.)
+      - `/Users/<your username>/Projects/cos/osf : /code`
+      - (Optional) `/Users/<your username>/.virtualenvs/osf/lib/python2.7/site-packages : /usr/local/lib/python2.7/site-packages`
     - `Single Instance only`
   - Configure `.docker-compose.env` `<APP>_REMOTE_DEBUG` environment variables to match these settings.
 
