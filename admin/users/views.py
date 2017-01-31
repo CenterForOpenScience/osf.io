@@ -90,7 +90,7 @@ class UserDeleteView(DeleteView, PermissionRequiredMixin):
 
     def get_context_data(self, **kwargs):
         context = {}
-        context.setdefault('guid', kwargs.get('object').pk)
+        context.setdefault('guid', kwargs.get('object')._id)
         return super(UserDeleteView, self).get_context_data(**context)
 
     def get_object(self, queryset=None):
