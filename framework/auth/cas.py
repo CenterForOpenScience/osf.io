@@ -285,7 +285,7 @@ def make_response_from_ticket(ticket, service_url):
             # if user is authenticated by CAS
             return authenticate(
                 user,
-                cas_resp.attributes['accessToken'],
+                cas_resp.attributes.get('accessToken', ''),
                 redirect(service_furl.url)
             )
         # first time login from external identity provider
@@ -299,7 +299,7 @@ def make_response_from_ticket(ticket, service_url):
                 'external_id_provider': external_credential['provider'],
                 'external_id': external_credential['id'],
                 'fullname': fullname,
-                'access_token': cas_resp.attributes['accessToken'],
+                'access_token': cas_resp.attributes.get('accessToken', ''),
                 'service_url': service_furl.url,
             }
             return external_first_login_authenticate(

@@ -163,8 +163,8 @@ def main(env):
                 'description': '<a href="http://www.library.okstate.edu/research-support/research-data-services/">OSU Library Research Data Services</a>',
                 'banner_name': 'okstate-banner.png',
                 'logo_name': 'okstate-shield.png',
-                'login_url': None,  # https://stwcas.okstate.edu/cas/login?service=...
-                'logout_url': None,
+                'login_url': None,
+                'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://osf.io/goodbye')),
                 'domains': ['osf.library.okstate.edu'],
                 'email_domains': [],
                 'delegation_protocol': 'cas-pac4j',
@@ -467,8 +467,8 @@ def main(env):
                 'description': '<a href="http://www.library.okstate.edu/research-support/research-data-services/">OSU Library Research Data Services</a>',
                 'banner_name': 'okstate-banner.png',
                 'logo_name': 'okstate-shield.png',
-                'login_url': None,  # https://stwcas.okstate.edu/cas/login?service=...
-                'logout_url': None,
+                'login_url': None,
+                'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://test.osf.io/goodbye')),
                 'domains': ['test-osf-library-okstate.cos.io'],
                 'email_domains': [],
                 'delegation_protocol': 'cas-pac4j',

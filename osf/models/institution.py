@@ -24,17 +24,15 @@ class Institution(Loggable, base.ObjectIDMixin, base.BaseModel):
     description = models.TextField(blank=True, null=True, default='')
 
     # TODO Could `banner_name` and `logo_name` be a FilePathField?
-    # Both banner_name and logo_name are the name of the file under the `banners/` or `shields/` folder in
-    # `website/static/img/institutions/`. The file must exists for OSF dashboard page to load.
+    # The image files for banners and shields must exists for OSF dashboard page to load.
     banner_name = models.CharField(max_length=255, blank=True, null=True)
     logo_name = models.CharField(max_length=255, blank=True, null=True)
 
     # The protocol used to delegate authentication: `CAS`, `SAML`, `OAuth`, e.t.c
-    # For our institution, we use shibbloeth's implementation for SAML and pac4j's implementation for CAS and OAuth
-    # Only institutions with a delegation protocol shows up on institution login page
+    # We use shibbloeth's implementation for SAML and pac4j's implementation for CAS and OAuth
+    # Only institutions with a valid delegation protocol shows up on institution login page
     DELEGATION_PROTOCOL_CHOICES = (
         ('cas-pac4j', 'CAS by pac4j'),
-        ('saml-pac4j', 'SAML by pac4j'),
         ('oauth-pac4j', 'OAuth by pac4j'),
         ('saml-shib', 'SAML by shibboleth'),
         ('', 'No Delegation Protocol'),
