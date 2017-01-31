@@ -3,14 +3,18 @@
 
 1. Install the Docker Client
   - OSX: https://www.docker.com/products/docker#/mac
+  - Ubuntu
+    - docker: https://docs.docker.com/engine/installation/linux/ubuntulinux
+    - docker-compose: https://docs.docker.com/compose/install/
   - Windows: https://www.docker.com/products/docker#/windows
 2. Grant the docker client additional memory and cpu (minimum of 4GB and 2 CPU)
    - OSX: https://docs.docker.com/docker-for-mac/#/preferences
+   - Ubuntu: N/A
    - Windows: https://docs.docker.com/docker-for-windows/#advanced
 3. Setup the Operating System
   - OSX
     - Alias the loopback interface
-    
+
     ```bash
     export libdir='/Library/LaunchDaemons' \
       && export file='com.runlevel1.lo0.192.168.168.167.plist' \
@@ -19,6 +23,21 @@
       && sudo chown root:wheel $libdir/$file \
       && sudo launchctl load $libdir/$file
     ```
+  - Ubuntu
+    - Add loopback alias
+      `sudo ifconfig lo:0 192.168.168.167 netmask 255.255.255.255 up`
+      - For persistance, add to /etc/network/interfaces...
+        ```iface lo:0 inet static
+               address 192.168.168.167
+               netmask 255.255.255.255
+               network 192.168.168.167
+        ```
+    - If UFW enabled. Enable UFW forwarding.
+      - https://docs.docker.com/engine/installation/linux/ubuntulinux/#/enable-ufw-forwarding
+    - If needed. Configure a DNS server for use by Docker.
+      - https://docs.docker.com/engine/installation/linux/ubuntulinux/#/configure-a-dns-server-for-use-by-docker
+    - Configure docker to start at boot for Ubuntu 15.04 onwards
+      `sudo systemctl enable docker`
 
   - Windows
     - Install Microsoft Loopback Adapter (Windows 10 follow community comments as the driver was renamed)
@@ -91,10 +110,14 @@
 
 ## Docker Sync
 
+Ubuntu: Skip install of docker-sync, fswatch, and unison. instead...
+        `cp docker-compose.ubuntu.yml docker-compose.override.yml`
+        Ignore future steps that start, stop, or wait for docker-sync
+
 1. Install Docker Sync
   - Mac: `$ sudo gem install docker-sync`
   - [Instructions](http://docker-sync.io)
-  
+
 1. Install fswatch and unison
   - Mac: `$ brew install fswatch unison`
 
@@ -151,7 +174,7 @@
 - To view the logs for a given container: 
 
   ```
-  $ docker-compose logs -f -t 100 web
+  $ docker-compose logs -f --tail 100 web
   ```
 
 ## Running arbitrary commands
