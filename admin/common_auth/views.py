@@ -8,12 +8,12 @@ from django.views.decorators.cache import never_cache
 from django.views.decorators.csrf import csrf_protect
 from django.views.generic.edit import FormView, UpdateView, CreateView
 from django.contrib import messages
+from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.contrib.auth import login, REDIRECT_FIELD_NAME, authenticate, logout
 
 from website.settings import PREREG_ADMIN_TAG
 
 from osf.models.user import OSFUser
-from admin.base.utils import SuperUser, OSFAdmin
 from admin.common_auth.forms import LoginForm, UserRegistrationForm, DeskUserForm
 
 
@@ -54,9 +54,10 @@ def logout_user(request):
     return redirect('auth:login')
 
 
-class RegisterUser(SuperUser, FormView):
+class RegisterUser(FormView, PermissionRequiredMixin):
     form_class = UserRegistrationForm
     template_name = 'register.html'
+    permission_required = 'osf.change_user'
 
     def form_valid(self, form):
         osf_id = form.cleaned_data.get('osf_id')
@@ -78,20 +79,22 @@ class RegisterUser(SuperUser, FormView):
         return reverse('auth:register')
 
 
-class DeskUserCreateFormView(OSFAdmin, CreateView):
+class DeskUserCreateFormView(CreateView, PermissionRequiredMixin):
     form_class = DeskUserForm
     template_name = 'desk/settings.html'
     success_url = reverse_lazy('auth:desk')
+    permissions_required = 'admin.view_desk'
 
     def form_valid(self, form):
         form.instance.user = self.request.user
         return super(DeskUserCreateFormView, self).form_valid(form)
 
 
-class DeskUserUpdateFormView(OSFAdmin, UpdateView):
+class DeskUserUpdateFormView(UpdateView, PermissionRequiredMixin):
     form_class = DeskUserForm
     template_name = 'desk/settings.html'
     success_url = reverse_lazy('auth:desk')
+    permissions_required = 'admin.view_desk'
 
     def get_object(self, queryset=None):
         return self.request.user.admin_profile
