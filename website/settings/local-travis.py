@@ -20,6 +20,15 @@ DOMAIN = PROTOCOL + 'localhost:5000/'
 API_DOMAIN = PROTOCOL + 'localhost:8000/'
 ENABLE_INSTITUTIONS = True
 
+USE_EXTERNAL_EMBER = True
+EXTERNAL_EMBER_APPS = {
+    'preprints': {
+        'url': '/preprints/',
+        'server': 'http://localhost:4200',
+        'path': '/preprints/'
+    }
+}
+
 SEARCH_ENGINE = 'elastic'
 
 USE_EMAIL = False
