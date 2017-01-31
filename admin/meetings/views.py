@@ -15,11 +15,12 @@ from admin.meetings.forms import MeetingForm
 from admin.meetings.serializers import serialize_meeting
 
 
-class MeetingListView(NodesAndUsers, ListView):
+class MeetingListView(ListView, PermissionRequiredMixin):
     template_name = 'meetings/list.html'
     paginate_by = 10
     paginate_orphans = 1
     context_object_name = 'meeting'
+    permission_required = 'osf.view_conference'
 
     def get_queryset(self):
         return Conference.find()
@@ -38,7 +39,7 @@ class MeetingListView(NodesAndUsers, ListView):
 class MeetingFormView(NodesAndUsers, FormView, PermissionRequiredMixin):
     template_name = 'meetings/detail.html'
     form_class = MeetingForm
-    permission_required = 'auth.admin'
+    permission_required = 'osf.view_conference'
 
     def dispatch(self, request, *args, **kwargs):
         endpoint = self.kwargs.get('endpoint')
@@ -88,7 +89,7 @@ class MeetingFormView(NodesAndUsers, FormView, PermissionRequiredMixin):
 class MeetingCreateFormView(NodesAndUsers, FormView, PermissionRequiredMixin):
     template_name = 'meetings/create.html'
     form_class = MeetingForm
-    permission_required = 'auth.admin'
+    permission_required = 'osf.change_conference'
 
     def get_initial(self):
         self.initial.update(DEFAULT_FIELD_NAMES)
