@@ -10,7 +10,6 @@ from framework.auth.core import get_user
 from osf.models.conference import Conference, DEFAULT_FIELD_NAMES
 from website.conferences.exceptions import ConferenceError
 
-from admin.base.utils import NodesAndUsers
 from admin.meetings.forms import MeetingForm
 from admin.meetings.serializers import serialize_meeting
 
@@ -36,7 +35,7 @@ class MeetingListView(ListView, PermissionRequiredMixin):
         return super(MeetingListView, self).get_context_data(**kwargs)
 
 
-class MeetingFormView(NodesAndUsers, FormView, PermissionRequiredMixin):
+class MeetingFormView(FormView, PermissionRequiredMixin):
     template_name = 'meetings/detail.html'
     form_class = MeetingForm
     permission_required = 'osf.view_conference'
@@ -86,7 +85,7 @@ class MeetingFormView(NodesAndUsers, FormView, PermissionRequiredMixin):
                        kwargs={'endpoint': self.kwargs.get('endpoint')})
 
 
-class MeetingCreateFormView(NodesAndUsers, FormView, PermissionRequiredMixin):
+class MeetingCreateFormView(FormView, PermissionRequiredMixin):
     template_name = 'meetings/create.html'
     form_class = MeetingForm
     permission_required = ('osf.view_conference', 'osf.change_conference')
