@@ -124,6 +124,7 @@
 3. Remove your existing node_modules and start the assets watcher (Detached)
   - `$ rm -Rf ./node_modules`
   - `$ docker-compose up -d assets`
+  - `$ docker-compose up -d admin_assets`
 
     _NOTE: The first time the assets container is run it will take Webpack/NPM up to 15 minutes to compile resources.
     When you see the BowerJS build occurring it is likely a safe time to move forward with starting the remaining
@@ -133,7 +134,7 @@
 5. Run migrations and create preprint providers
   - When starting with an empty database you will need to run migrations and populate preprint providers. See the [Running arbitrary commands](#running-arbitrary-commands) section below for instructions.
 6. Start the OSF Web, API Server, and Preprints (Detached)
-  - `$ docker-compose up -d worker web api preprints`
+  - `$ docker-compose up -d worker web api admin preprints`
 7. View the OSF at [http://localhost:5000](http://localhost:5000).
 
 
@@ -144,7 +145,7 @@
   ```
   $ docker-sync start
   # Wait until you see "Nothing to do: replicas have not changed since last sync."
-  $ docker-compose up -d assets elasticsearch postgres tokumx mfr wb fakecas sharejs worker web api preprints
+  $ docker-compose up -d assets admin_assets mfr wb fakecas sharejs worker web api admin preprints
   ```
 
 - To view the logs for a given container: 
@@ -160,6 +161,7 @@
 - Run migrations:
   - After creating migrations, resetting your database, or starting on a fresh install you will need to run migrations to make the needed changes to database. This command looks at the migrations on disk and compares them to the list of migrations in the `django_migrations` database table and runs any migrations that have not been run.
     - `docker-compose run --rm web python manage.py migrate`
+    - `docker-compose run --rm admin python manage.py migrate`
 - Populate institutions:
   - After resetting your database or with a new install you will need to populate the table of institutions. **You must have run migrations first.**
     - `docker-compose run --rm web python -m scripts.populate_institutions test`

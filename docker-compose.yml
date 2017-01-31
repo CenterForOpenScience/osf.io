@@ -25,6 +25,10 @@ volumes:
     external: false
   osf_bower_components_vol:
     external: false
+  osf_admin_node_modules_vol:
+    external: false
+  osf_admin_bower_components_vol:
+    external: false
 
 
 services:
@@ -224,6 +228,21 @@ services:
     stdin_open: true
     tty: true
 
+  admin_assets:
+    image: quay.io/centerforopenscience/osf:develop
+    command: invoke admin.assets -dw
+    restart: unless-stopped
+    environment:
+      DJANGO_SETTINGS_MODULE: admin.base.settings
+    volumes:
+      - osf_requirements_vol:/usr/local/lib/python2.7
+      - osf_node_modules_vol:/code/node_modules  # needed due to admin references of ../webpack.<...>.js configurations.
+      - osf_bower_components_vol:/code/website/static/vendor/bower_components
+      - osf_admin_bower_components_vol:/code/admin/static/vendor/bower_components
+      - osf_admin_node_modules_vol:/code/admin/node_modules
+    stdin_open: true
+    tty: true
+
   sharejs:
     image: quay.io/centerforopenscience/osf:develop
     command: invoke sharejs
@@ -276,17 +295,6 @@ services:
     stdin_open: true
     tty: true
 
-  adminassets:
-    image: quay.io/centerforopenscience/osf:develop
-    command: invoke admin.assets -dw
-    restart: unless-stopped
-    volumes:
-      - osf_requirements_vol:/usr/local/lib/python2.7
-      - osf_bower_components_vol:/code/admin/static/vendor/bower_components
-      - osf_node_modules_vol:/code/admin/node_modules
-      - osf_bower_components_vol:/code/website/static/vendor/bower_components
-      - osf_node_modules_vol:/code/node_modules
-
   admin:
     image: quay.io/centerforopenscience/osf:develop
     command: invoke adminserver -h 0.0.0.0
@@ -298,6 +306,7 @@ services:
     depends_on:
       - postgres
       - tokumx
+      - rabbitmq
       - elasticsearch
     env_file:
       - .docker-compose.env
@@ -305,10 +314,10 @@ services:
     tty: true
     volumes:
       - osf_requirements_vol:/usr/local/lib/python2.7
-      - osf_node_modules_vol:/code/admin/node_modules
       - osf_bower_components_vol:/code/website/static/vendor/bower_components
-      - osf_bower_components_vol:/code/admin/static/vendor/bower_components
       - osf_node_modules_vol:/code/node_modules
+      - osf_admin_bower_components_vol:/code/admin/static/vendor/bower_components
+      - osf_admin_node_modules_vol:/code/admin/node_modules
 
   api:
     image: quay.io/centerforopenscience/osf:develop
