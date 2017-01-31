@@ -89,7 +89,7 @@ class MeetingFormView(NodesAndUsers, FormView, PermissionRequiredMixin):
 class MeetingCreateFormView(NodesAndUsers, FormView, PermissionRequiredMixin):
     template_name = 'meetings/create.html'
     form_class = MeetingForm
-    permission_required = 'osf.change_conference'
+    permission_required = ('osf.view_conference', 'osf.change_conference')
 
     def get_initial(self):
         self.initial.update(DEFAULT_FIELD_NAMES)
