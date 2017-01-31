@@ -82,7 +82,7 @@ class PreprintService(GuidMixin, BaseModel):
     if settings.DEV_MODE:
         def get_provider_domain(self):
             domain_settings = settings.PREPRINT_PROVIDER_DOMAINS
-            return ''.join((domain_settings['prefix'], self.provider.domain, domain_settings['suffix']))
+            return ''.join((domain_settings['prefix'], str(self.provider.domain), domain_settings['suffix']))
     else:
         def get_provider_domain(self):
             return settings.PROTOCOL + self.provider.domain
