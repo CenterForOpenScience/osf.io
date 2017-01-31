@@ -1182,6 +1182,18 @@ class TestGetNodeTree(OsfTestCase):
         assert_equal(child2_id, child2._primary_key)
         assert_equal(child3_id, child3._primary_key)
 
+    def test_get_node_with_child_linked_to_parent(self):
+        project = ProjectFactory(creator=self.user)
+        child1 = NodeFactory(parent=project, creator=self.user)
+        child1.add_pointer(project, Auth(self.user))
+        child1.save()
+        url = project.api_url_for('get_node_tree')
+        res = self.app.get(url, auth=self.user.auth)
+        tree = res.json[0]
+        parent_node_id = tree['node']['id']
+        child1_id = tree['children'][0]['node']['id']
+        assert_equal(child1_id, child1._primary_key)
+
     def test_get_node_not_parent_owner(self):
         project = ProjectFactory(creator=self.user2)
         child = NodeFactory(parent=project, creator=self.user2)
@@ -4420,7 +4432,7 @@ class TestProjectCreation(OsfTestCase):
         post_data = {'title': '<b>New <blink>Component</blink> Title</b>', 'category': ''}
         request = self.app.post(url, post_data, auth=user.auth).follow()
         project.reload()
-        child = project.nodes.first()
+        child = project.nodes[0]
         # HTML has been stripped
         assert_equal(child.title, 'New Component Title')
 
@@ -4479,7 +4491,7 @@ class TestProjectCreation(OsfTestCase):
         post_data = {'title': 'New Component With Contributors Title', 'category': '', 'inherit_contributors': True}
         res = self.app.post(url, post_data, auth=self.user1.auth)
         self.project.reload()
-        child = self.project.nodes.first()
+        child = self.project.nodes[0]
         assert_equal(child.title, 'New Component With Contributors Title')
         assert_in(self.user1, child.contributors)
         assert_in(self.user2, child.contributors)
@@ -4494,7 +4506,7 @@ class TestProjectCreation(OsfTestCase):
         post_data = {'title': 'New Component With Contributors Title', 'category': '', 'inherit_contributors': True}
         res = self.app.post(url, post_data, auth=non_admin.auth)
         self.project.reload()
-        child = self.project.nodes.first()
+        child = self.project.nodes[0]
         assert_equal(child.title, 'New Component With Contributors Title')
         assert_in(non_admin, child.contributors)
         assert_in(self.user1, child.contributors)
@@ -4517,7 +4529,7 @@ class TestProjectCreation(OsfTestCase):
         post_data = {'title': 'New Component With Contributors Title', 'category': ''}
         res = self.app.post(url, post_data, auth=self.user1.auth)
         self.project.reload()
-        child = self.project.nodes.first()
+        child = self.project.nodes[0]
         assert_equal(child.title, 'New Component With Contributors Title')
         assert_in(self.user1, child.contributors)
         assert_not_in(self.user2, child.contributors)

@@ -81,7 +81,6 @@ INSTALLED_APPS = (
     'admin.users',
     'admin.desk',
     'admin.meetings',
-    'admin.sales_analytics',
 
     # 3rd party
     'raven.contrib.django.raven_compat',
@@ -89,7 +88,13 @@ INSTALLED_APPS = (
     'django_nose',
     'password_reset',
 
-    'osf'
+    # OSF
+    'osf',
+
+    # Addons
+    'addons.osfstorage',
+    'addons.wiki',
+    'addons.twofactor',
 )
 
 USE_TZ = True

@@ -1,8 +1,6 @@
 from __future__ import absolute_import, unicode_literals
 
 from django.core.urlresolvers import reverse, reverse_lazy
-from password_reset.views import Recover
-from password_reset.forms import PasswordRecoveryForm
 from django.http import Http404
 from django.shortcuts import redirect
 from django.utils.decorators import method_decorator
@@ -73,13 +71,6 @@ class RegisterUser(SuperUser, FormView):
         for group in form.cleaned_data.get('group_perms'):
             osf_user.groups.add(group)
         osf_user.save()
-        reset_form = PasswordRecoveryForm(
-            data={'username_or_email': osf_user.username}
-        )
-        if reset_form.is_valid():
-            send = Recover()
-            send.request = self.request
-            send.form_valid(reset_form)
         messages.success(self.request, 'Registration successful!')
         return super(RegisterUser, self).form_valid(form)
 
