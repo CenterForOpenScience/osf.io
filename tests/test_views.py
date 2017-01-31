@@ -38,7 +38,7 @@ from framework.transactions.handlers import no_auto_transaction
 from tests.factories import MockAddonNodeSettings
 from website import mailchimp_utils
 from website import mails, settings
-from website.addons.osfstorage import settings as osfstorage_settings
+from addons.osfstorage import settings as osfstorage_settings
 from website.models import Node, NodeLog, Pointer
 from website.profile.utils import add_contributor_json, serialize_unregistered
 from website.profile.views import fmt_date_or_none, update_osf_help_mails_subscription
@@ -79,6 +79,7 @@ from osf_tests.factories import (
     ProjectFactory,
     NodeFactory,
     CommentFactory,
+    CollectionFactory,
     InstitutionFactory,
     RegistrationFactory,
     ApiOAuth2ApplicationFactory,
@@ -1180,6 +1181,18 @@ class TestGetNodeTree(OsfTestCase):
         assert_equal(child1_id, child1._primary_key)
         assert_equal(child2_id, child2._primary_key)
         assert_equal(child3_id, child3._primary_key)
+
+    def test_get_node_with_child_linked_to_parent(self):
+        project = ProjectFactory(creator=self.user)
+        child1 = NodeFactory(parent=project, creator=self.user)
+        child1.add_pointer(project, Auth(self.user))
+        child1.save()
+        url = project.api_url_for('get_node_tree')
+        res = self.app.get(url, auth=self.user.auth)
+        tree = res.json[0]
+        parent_node_id = tree['node']['id']
+        child1_id = tree['children'][0]['node']['id']
+        assert_equal(child1_id, child1._primary_key)
 
     def test_get_node_not_parent_owner(self):
         project = ProjectFactory(creator=self.user2)
@@ -2915,7 +2928,6 @@ class TestPointerViews(OsfTestCase):
         assert_equal(len(has_controls), 0)
 
     # https://github.com/CenterForOpenScience/openscienceframework.org/issues/1109
-    @pytest.mark.skip('get_pointed unused. Mark for deletion?')
     def test_get_pointed_excludes_folders(self):
         pointer_project = ProjectFactory(is_public=True)  # project that points to another project
         pointed_project = ProjectFactory(creator=self.user)  # project that other project points to
@@ -3186,7 +3198,6 @@ class TestPointerViews(OsfTestCase):
         ]
         assert_equal(len(prompts), 0)
 
-    @pytest.mark.skip('get_pointed unused. Mark for deletion?')
     def test_get_pointed(self):
         pointing_node = ProjectFactory(creator=self.user)
         pointing_node.add_pointer(self.project, auth=Auth(self.user))
@@ -3198,7 +3209,6 @@ class TestPointerViews(OsfTestCase):
         assert_equal(pointed[0]['title'], pointing_node.title)
         assert_equal(pointed[0]['authorShort'], abbrev_authors(pointing_node))
 
-    @pytest.mark.skip('get_pointed unused. Mark for deletion?')
     def test_get_pointed_private(self):
         secret_user = UserFactory()
         pointing_node = ProjectFactory(creator=secret_user)
@@ -4422,7 +4432,7 @@ class TestProjectCreation(OsfTestCase):
         post_data = {'title': '<b>New <blink>Component</blink> Title</b>', 'category': ''}
         request = self.app.post(url, post_data, auth=user.auth).follow()
         project.reload()
-        child = project.nodes.first()
+        child = project.nodes[0]
         # HTML has been stripped
         assert_equal(child.title, 'New Component Title')
 
@@ -4481,7 +4491,7 @@ class TestProjectCreation(OsfTestCase):
         post_data = {'title': 'New Component With Contributors Title', 'category': '', 'inherit_contributors': True}
         res = self.app.post(url, post_data, auth=self.user1.auth)
         self.project.reload()
-        child = self.project.nodes.first()
+        child = self.project.nodes[0]
         assert_equal(child.title, 'New Component With Contributors Title')
         assert_in(self.user1, child.contributors)
         assert_in(self.user2, child.contributors)
@@ -4496,7 +4506,7 @@ class TestProjectCreation(OsfTestCase):
         post_data = {'title': 'New Component With Contributors Title', 'category': '', 'inherit_contributors': True}
         res = self.app.post(url, post_data, auth=non_admin.auth)
         self.project.reload()
-        child = self.project.nodes.first()
+        child = self.project.nodes[0]
         assert_equal(child.title, 'New Component With Contributors Title')
         assert_in(non_admin, child.contributors)
         assert_in(self.user1, child.contributors)
@@ -4519,7 +4529,7 @@ class TestProjectCreation(OsfTestCase):
         post_data = {'title': 'New Component With Contributors Title', 'category': ''}
         res = self.app.post(url, post_data, auth=self.user1.auth)
         self.project.reload()
-        child = self.project.nodes.first()
+        child = self.project.nodes[0]
         assert_equal(child.title, 'New Component With Contributors Title')
         assert_in(self.user1, child.contributors)
         assert_not_in(self.user2, child.contributors)
@@ -4859,7 +4869,7 @@ class TestResetPassword(OsfTestCase):
         # check if verification_key is destroyed after service validation
         mock_service_validate.return_value = cas.CasResponse(
             authenticated=True,
-            user=self.user.pk,
+            user=self.user._id,
             attributes={'accessToken': fake.md5()}
         )
         ticket = fake.md5()

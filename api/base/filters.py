@@ -457,14 +457,19 @@ class ListFilterMixin(FilterMixin):
         # But queries on lists should be tags, e.g.
         # ?filter[tags]=foo,bar should be translated to Q('tags', 'isnull', True)
         # ?filter[tags]=[] should be translated to Q('tags', 'isnull', True)
-        if operation['source_field_name'] == 'kind':
-            operation['source_field_name'] = 'is_file'
-            # The value should be boolean
-            operation['value'] = operation['value'] == 'file'
         if field_name == 'tags':
             if operation['value'] not in (list(), tuple()):
                 operation['source_field_name'] = 'tags__name'
                 operation['op'] = 'iexact'
+        # contributors iexact because guid matching
+        if field_name == 'contributors':
+            if operation['value'] not in (list(), tuple()):
+                operation['source_field_name'] = '_contributors__guids___id'
+                operation['op'] = 'iexact'
+        if operation['source_field_name'] == 'kind':
+            operation['source_field_name'] = 'is_file'
+            # The value should be boolean
+            operation['value'] = operation['value'] == 'file'
 
     def get_filtered_queryset(self, field_name, params, default_queryset):
         """filters default queryset based on the serializer field type"""

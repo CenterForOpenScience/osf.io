@@ -97,6 +97,7 @@ def main(send_email=False):
 
     top_level_nodes = Node.objects.get_roots()
     progress_bar = progressbar.ProgressBar(maxval=top_level_nodes.count()).start()
+    top_level_nodes = top_level_nodes.iterator()
 
     for i, node in enumerate(top_level_nodes):
         progress_bar.update(i+1)
@@ -108,11 +109,6 @@ def main(send_email=False):
                 users[contrib._id] = tuple(map(sum, zip(users[contrib._id], projects[node._id])))  # Adds tuples together, map(sum, zip((a, b), (c, d))) -> (a+c, b+d)
 
         if i % 25 == 0:
-            # Clear all caches
-            for key in ('node', 'user', 'fileversion', 'storedfilenode'):
-                Node._cache.data.get(key, {}).clear()
-                Node._object_cache.data.get(key, {}).clear()
-            # Collect garbage
             gc.collect()
     progress_bar.finish()
 

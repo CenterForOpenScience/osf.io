@@ -14,7 +14,7 @@ from django.contrib.contenttypes.fields import GenericRelation
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.core.urlresolvers import reverse
-from django.db import connection, models, transaction
+from django.db import models, transaction, connection
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils import timezone
@@ -74,36 +74,34 @@ class AbstractNodeQueryset(MODMCompatibilityQuerySet):
 
     def get_children(self, root, primary_keys=False):
         sql = """
-            WITH RECURSIVE
-                descendants AS (
-                SELECT
-                  parent_id,
-                  child_id AS descendant,
-                  1        AS LEVEL
-                FROM %s
-                UNION ALL
-                SELECT
-                  d.parent_id,
-                  s.child_id,
-                  d.level + 1
-                FROM descendants AS d
-                  JOIN %s AS s
-                    ON d.descendant = s.parent_id
-              ) SELECT array_agg(DISTINCT descendant)
-                FROM descendants
-                WHERE parent_id = %s;
+            WITH RECURSIVE descendants AS (
+              SELECT
+                parent_id,
+                child_id,
+                1 AS LEVEL
+              FROM %s
+              WHERE is_node_link IS FALSE
+              UNION ALL
+              SELECT
+                s.parent_id,
+                d.child_id,
+                d.level + 1
+              FROM descendants AS d
+                JOIN %s AS s
+                  ON d.parent_id = s.child_id
+              WHERE s.is_node_link IS FALSE
+            ) SELECT array_agg(DISTINCT child_id)
+              FROM descendants
+              WHERE parent_id = %s;
         """
-
         with connection.cursor() as cursor:
             node_relation_table = AsIs(NodeRelation._meta.db_table)
             cursor.execute(sql, [node_relation_table, node_relation_table, root.pk])
-            row = cursor.fetchone()
-            if not row:
-                return row
-            if primary_keys:
-                return row[0]
+            row = cursor.fetchone()[0]
+            if row is None or primary_keys:
+                return row or []
             else:
-                return AbstractNode.objects.filter(id__in=row[0])
+                return AbstractNode.objects.filter(id__in=row)
 
 
 class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixin,
@@ -249,37 +247,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         return None
 
     @property
-    def root(self):
-        sql = """
-            WITH RECURSIVE
-                parents_cte AS (
-                SELECT
-                  t.parent_id AS top_parent,
-                  t.child_id
-                FROM %s AS t
-                  LEFT JOIN %s AS p ON p.child_id = t.parent_id
-                WHERE p.child_id IS NULL
-                UNION ALL
-                SELECT
-                  top_parent,
-                  C.child_id
-                FROM parents_cte AS t
-                  JOIN %s AS C ON t.child_id = C.parent_id)
-            SELECT top_parent
-            FROM parents_cte AS h
-            WHERE h.child_id = %s;
-        """
-
-        with connection.cursor() as cursor:
-            node_relation_table = AsIs(NodeRelation._meta.db_table)
-            cursor.execute(sql, [node_relation_table, node_relation_table, node_relation_table, self.pk])
-            row = cursor.fetchone()
-            if not row:
-                return self
-            parent = AbstractNode.objects.get(id=row[0])
-        return parent if not parent.is_collection else self
-
-    @property
     def root_id(self):
         return self.root.id
 
@@ -303,14 +270,27 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         return self.linked_from.filter(type='osf.collection')
 
     def get_nodes(self, **kwargs):
-        """Return queryset of nodes. ``kwargs`` are used to filter against
+        """Return list of children nodes. ``kwargs`` are used to filter against
         children.
         """
         # Prepend 'child__' to kwargs for filtering
         filter_kwargs = {'child__{}'.format(key): val for key, val in kwargs.items()}
-        return AbstractNode.objects.filter(id__in=NodeRelation.objects.filter(parent=self,
-                                                                      **filter_kwargs).select_related(
-            'child').values_list('child', flat=True)).order_by('noderelation___order').distinct()
+        child_ids = (NodeRelation.objects.filter(parent=self, **filter_kwargs)
+                     .select_related('child')
+                     .values_list('child', flat=True))
+        query = (AbstractNode.objects.filter(id__in=child_ids)
+                .order_by('noderelation___order')
+                .distinct())
+        # NOTE: The query may return duplicate nodes when child nodes have
+        # multiple parents (i.e. when they are linked to). Unfortunately,
+        # we cannot both (1) remove duplicates and (2) ordering NodeRelation._order
+        # in the same query. The following lines are done to return unique nodes
+        # while maintaining order.
+        ret = []
+        for node in query:
+            if node not in ret:
+                ret.append(node)
+        return ret
 
     @property
     def linked_nodes(self):
@@ -393,7 +373,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     def preprint_url(self):
         if self.is_preprint:
             try:
-                return self.preprint.url
+                # if multiple preprints per project are supported on the front end this needs to change.
+                return self.preprints.get_queryset()[0].url
             except IndexError:
                 pass
 
@@ -712,7 +693,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     def get_aggregate_logs_query(self, auth):
         ids = [self._id] + [n._id
-                            for n in self.get_descendants_recursive()
+                            for n in self.get_descendants_recursive(primary_only=True)
                             if n.can_view(auth)]
         query = Q('node', 'in', ids) & Q('should_hide', 'ne', True)
         return query
@@ -724,15 +705,15 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     @property
     def comment_level(self):
         if self.public_comments:
-            return 'public'
+            return self.PUBLIC
         else:
-            return 'private'
+            return self.PRIVATE
 
     @comment_level.setter
     def comment_level(self, value):
-        if value == 'public':
+        if value == self.PUBLIC:
             self.public_comments = True
-        elif value == 'private':
+        elif value == self.PRIVATE:
             self.public_comments = False
         else:
             raise ValidationError(
@@ -1070,7 +1051,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                                                        contributor=contributor,
                                                        auth=auth, email_template=send_email)
 
-            return True
+            return contrib_to_add, True
 
         # Permissions must be overridden if changed when contributor is
         # added to parent he/she is already on a child of.
@@ -1162,7 +1143,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 raise ValueError('User with id {} was not found.'.format(user_id))
             if self.contributor_set.filter(user=contributor).exists():
                 raise ValidationValueError('{} is already a contributor.'.format(contributor.fullname))
-            self.add_contributor(contributor=contributor, auth=auth, visible=bibliographic,
+            contributor, _ = self.add_contributor(contributor=contributor, auth=auth, visible=bibliographic,
                                  permissions=permissions, send_email=send_email, save=True)
         else:
 
@@ -1453,10 +1434,36 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         return self.private_links.filter(is_deleted=True).values_list('key', flat=True)
 
     @property
-    def _root(self):
-        if self.parent_node:
-            return self.parent_node._root
-        else:
+    def root(self):
+        sql = """
+            WITH RECURSIVE ascendants AS (
+              SELECT
+                parent_id,
+                child_id,
+                1 AS LEVEL
+              FROM %s
+              WHERE is_node_link IS FALSE
+              UNION ALL
+              SELECT
+                S.parent_id,
+                D.child_id,
+                D.level + 1
+              FROM ascendants AS D
+                JOIN %s AS S
+                  ON D.parent_id = S.child_id
+              WHERE S.is_node_link IS FALSE
+            ) SELECT parent_id
+              FROM ascendants
+              WHERE child_id = %s
+              ORDER BY level DESC
+              LIMIT 1;
+        """
+        with connection.cursor() as cursor:
+            node_relation_table = AsIs(NodeRelation._meta.db_table)
+            cursor.execute(sql, [node_relation_table, node_relation_table, self.pk])
+            res = cursor.fetchone()
+            if res:
+                return AbstractNode.objects.get(pk=res[0])
             return self
 
     def find_readable_antecedent(self, auth):
@@ -2159,7 +2166,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             self.set_visible(user, visible, auth=auth)
 
     def save(self, *args, **kwargs):
-        first_save = bool(self.pk)
+        first_save = not bool(self.pk)
         if 'suppress_log' in kwargs.keys():
             self._suppress_log = kwargs['suppress_log']
             del kwargs['suppress_log']
@@ -2294,7 +2301,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     def confirm_spam(self, save=False):
         super(AbstractNode, self).confirm_spam(save=False)
-        self.set_privacy(Node.PRIVATE, auth=None, log=False, save=False, check_addons=False)
+        self.set_privacy(Node.PRIVATE, auth=None, log=False, save=False)
         log = self.add_log(
             action=NodeLog.MADE_PRIVATE,
             params={
@@ -2634,7 +2641,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
         """
         # TODO: Fix circular imports
-        from website.addons.wiki.exceptions import (
+        from addons.wiki.exceptions import (
             PageCannotRenameError,
             PageConflictError,
             PageNotFoundError,

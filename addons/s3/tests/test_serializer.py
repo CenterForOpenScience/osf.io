@@ -4,8 +4,8 @@ import mock
 import pytest
 
 from addons.base.tests.serializers import StorageAddonSerializerTestSuiteMixin
-from website.addons.s3.tests.factories import S3AccountFactory
-from website.addons.s3.serializer import S3Serializer
+from addons.s3.tests.factories import S3AccountFactory
+from addons.s3.serializer import S3Serializer
 
 from tests.base import OsfTestCase
 
@@ -21,7 +21,7 @@ class TestS3Serializer(StorageAddonSerializerTestSuiteMixin, OsfTestCase):
         self.node_settings.folder_id = pid
 
     def setUp(self):
-        self.mock_can_list = mock.patch('website.addons.s3.serializer.utils.can_list')
+        self.mock_can_list = mock.patch('addons.s3.serializer.utils.can_list')
         self.mock_can_list.return_value = True
         self.mock_can_list.start()
         super(TestS3Serializer, self).setUp()

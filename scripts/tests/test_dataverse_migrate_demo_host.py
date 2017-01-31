@@ -4,7 +4,7 @@ from scripts.dataverse.migrate_demo_host import (
     migrate, get_targets, OLD_HOST, NEW_HOST
 )
 from tests.base import OsfTestCase
-from website.addons.dataverse.tests.factories import DataverseAccountFactory
+from addons.dataverse.tests.factories import DataverseAccountFactory
 
 class TestDemoHostMigration(OsfTestCase):
 

@@ -17,7 +17,7 @@ from addons.base.models import BaseOAuthNodeSettings
 from framework import encryption
 from osf.models import ExternalAccount
 from osf.models import OSFUser
-from website.addons.s3 import utils
+from addons.s3 import utils
 
 
 import ipdb
@@ -37,7 +37,7 @@ from psycopg2._psycopg import AsIs
 from scripts.register_oauth_scopes import set_backend
 from typedmodels.models import TypedModel
 
-from website.addons.github.api import GitHubClient
+from addons.github.api import GitHubClient
 from website.files.models import StoredFileNode as MODMStoredFileNode
 from website.models import Guid as MODMGuid
 from website.models import Node as MODMNode

@@ -896,6 +896,38 @@ class TestNotificationUtils(OsfTestCase):
         assert schema.validate(data)
         assert has(data, event)
 
+    def test_format_data_user_subscriptions_if_children_points_to_parent(self):
+        private_project = factories.ProjectFactory(creator=self.user)
+        node = factories.NodeFactory(parent=private_project, creator=self.user)
+        node.add_pointer(private_project, Auth(self.user))
+        node.save()
+        node_comments_subscription = factories.NotificationSubscriptionFactory(
+            _id=node._id + '_' + 'comments',
+            node=node,
+            event_name='comments'
+        )
+        node_comments_subscription.save()
+        node_comments_subscription.email_transactional.add(node.creator)
+        node_comments_subscription.save()
+
+        node.creator.notifications_configured[node._id] = True
+        node.creator.save()
+        configured_project_ids = utils.get_configured_projects(node.creator)
+        data = utils.format_data(node.creator, configured_project_ids)
+        event = {
+            'event': {
+                'title': 'comments',
+                'description': constants.NODE_SUBSCRIPTIONS_AVAILABLE['comments'],
+                'notificationType': 'email_transactional',
+                'parent_notification_type': None
+            },
+            'kind': 'event',
+            'children': [],
+        }
+        schema = subscription_schema(self.project, ['event', ['event']])
+        assert schema.validate(data)
+        assert has(data, event)
+
     def test_format_user_subscriptions(self):
         data = utils.format_user_subscriptions(self.user)
         expected = [
@@ -1313,6 +1345,15 @@ class TestMoveSubscription(NotificationTestCase):
         utils.move_subscription(self.blank, 'xyz42_file_updated', self.project, 'abc42_file_updated', self.private_node)
         assert_false(self.file_sub.email_digest.filter().exists())
 
+    # Regression test for commit ea15186
+    def test_garrulous_event_name(self):
+        self.file_sub.email_transactional.add(self.user_2, self.user_3, self.user_4)
+        self.file_sub.save()
+        self.private_node.add_contributor(self.user_2, permissions=['admin', 'write', 'read'], auth=self.auth)
+        self.private_node.add_contributor(self.user_3, permissions=['write', 'read'], auth=self.auth)
+        self.private_node.save()
+        results = utils.users_to_remove('complicated/path_to/some/file/ASDFASDF.txt_file_updated', self.project, self.private_node)
+        assert_equal({'email_transactional': [], 'email_digest': [], 'none': []}, results)
 
 class TestSendEmails(NotificationTestCase):
     def setUp(self):

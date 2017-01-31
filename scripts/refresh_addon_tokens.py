@@ -15,9 +15,9 @@ from framework.celery_tasks import app as celery_app
 from scripts import utils as scripts_utils
 
 from website.app import init_app
-from website.addons.box.model import Box
-from website.addons.googledrive.model import GoogleDriveProvider
-from website.addons.mendeley.model import Mendeley
+from addons.box.models import Provider as Box
+from addons.googledrive.models import GoogleDriveProvider
+from addons.mendeley.models import Mendeley
 from website.oauth.models import ExternalAccount
 
 logger = logging.getLogger(__name__)

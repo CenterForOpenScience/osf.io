@@ -16,5 +16,6 @@ urlpatterns = [
     url(r'^password_change/done/$', password_change_done,
         {'template_name': 'password_change_done.html'},
         name='password_change_done'),
-    url(r'^settings/desk/$', views.DeskUserFormView.as_view(), name='desk'),
+    url(r'^settings/desk/$', views.DeskUserCreateFormView.as_view(), name='desk'),
+    url(r'^settings/desk/update/$', views.DeskUserUpdateFormView.as_view(), name='desk_update'),
 ]

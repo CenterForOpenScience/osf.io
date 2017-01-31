@@ -21,7 +21,7 @@ def parent_dir(path):
 HERE = os.path.dirname(os.path.abspath(__file__))
 BASE_PATH = parent_dir(HERE)  # website/ directory
 APP_PATH = parent_dir(BASE_PATH)
-ADDON_PATH = os.path.join(BASE_PATH, 'addons')
+ADDON_PATH = os.path.join(APP_PATH, 'addons')
 STATIC_FOLDER = os.path.join(BASE_PATH, 'static')
 STATIC_URL_PATH = '/static'
 ASSET_HASH_PATH = os.path.join(APP_PATH, 'webpack-assets.json')
@@ -66,6 +66,7 @@ SECURE_MODE = not DEBUG_MODE  # Set secure cookie
 
 PROTOCOL = 'https://' if SECURE_MODE else 'http://'
 DOMAIN = PROTOCOL + 'localhost:5000/'
+INTERNAL_DOMAIN = DOMAIN
 API_DOMAIN = PROTOCOL + 'localhost:8000/'
 
 # External Ember App Local Development
@@ -299,6 +300,7 @@ PINGDOM_ID = None
 DEFAULT_HMAC_SECRET = 'changeme'
 DEFAULT_HMAC_ALGORITHM = hashlib.sha256
 WATERBUTLER_URL = 'http://localhost:7777'
+WATERBUTLER_INTERNAL_URL = WATERBUTLER_URL
 WATERBUTLER_ADDRS = ['127.0.0.1']
 
 # Test identifier namespaces
@@ -548,16 +550,6 @@ else:
     #         'schedule': crontab(minute=0, hour=2, day_of_week=0),  # Sunday 2:00 a.m.
     #         'kwargs': {'num_of_workers': 4, 'dry_run': False},
     #     },
-    #     'analytics': {
-    #         'task': 'scripts.analytics.tasks',
-    #         'schedule': crontab(minute=0, hour=2),  # Daily 2:00 a.m.
-    #         'kwargs': {}
-    #     },
-    #     'analytics-upload': {
-    #         'task': 'scripts.analytics.upload',
-    #         'schedule': crontab(minute=0, hour=6),  # Daily 6:00 a.m.
-    #         'kwargs': {}
-    #     },
     # })
 
 
@@ -576,7 +568,8 @@ assert (DRAFT_REGISTRATION_APPROVAL_PERIOD > EMBARGO_END_DATE_MIN), 'The draft r
 
 PREREG_ADMIN_TAG = "prereg_admin"
 
-ENABLE_INSTITUTIONS = False
+# TODO: Remove references to this flag
+ENABLE_INSTITUTIONS = True
 
 ENABLE_VARNISH = False
 ENABLE_ESI = False

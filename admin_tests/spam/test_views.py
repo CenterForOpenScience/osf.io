@@ -10,9 +10,9 @@ from website.project.model import Comment
 from admin.common_auth.logs import OSFLogEntry
 from admin.spam.forms import ConfirmForm
 from tests.base import AdminTestCase
-from tests.factories import CommentFactory, AuthUserFactory, ProjectFactory
+from tests.factories import AuthUserFactory, ProjectFactory
+from osf_tests.factories import CommentFactory, UserFactory
 from admin_tests.utilities import setup_view, setup_form_view
-from admin_tests.factories import UserFactory
 
 from admin.spam.views import (
     SpamList,

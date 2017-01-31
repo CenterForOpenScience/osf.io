@@ -179,7 +179,7 @@ def project_before_register(auth, node, **kwargs):
     }
     errors = {}
 
-    addon_set = [n.get_addons() for n in itertools.chain([node], node.get_descendants_recursive(lambda n: n.primary))]
+    addon_set = [n.get_addons() for n in itertools.chain([node], node.get_descendants_recursive(primary_only=True))]
     for addon in itertools.chain(*addon_set):
         if not addon.complete:
             continue

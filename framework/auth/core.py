@@ -1516,7 +1516,7 @@ class User(GuidStoredObject, AddonModelMixin):
 
         # Disconnect signal to prevent emails being sent about being a new contributor when merging users
         # be sure to reconnect it at the end of this code block. Import done here to prevent circular import error.
-        from website.addons.osfstorage.listeners import checkin_files_by_user
+        from addons.osfstorage.listeners import checkin_files_by_user
         from website.project.signals import contributor_added, contributor_removed
         from website.project.views.contributor import notify_added_contributor
         from website.util import disconnected_from

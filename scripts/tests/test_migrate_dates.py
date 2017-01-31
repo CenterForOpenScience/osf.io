@@ -9,9 +9,9 @@ from website import settings
 ensure_osf_files(settings)
 
 # Hack: Must configure add-ons before importing `OsfTestCase`
-from website.addons.osfstorage.tests.factories import FileVersionFactory
-from website.addons.osfstorage.model import OsfStorageFileRecord
-from website.addons.osffiles.model import NodeFile
+from addons.osfstorage.tests.factories import FileVersionFactory
+from addons.osfstorage.model import OsfStorageFileRecord
+from addons.osffiles.model import NodeFile
 from tests.base import OsfTestCase
 from tests.factories import ProjectFactory
 

@@ -9,7 +9,7 @@ from osf.models import Guid
 from framework.postcommit_tasks.handlers import enqueue_postcommit_task
 from modularodm import Q
 from website import settings
-from website.addons.base.signals import file_updated
+from addons.base.signals import file_updated
 from osf.models import FileNode, TrashedFileNode
 from osf.models import Comment
 from website.notifications.constants import PROVIDERS

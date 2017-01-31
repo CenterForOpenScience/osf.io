@@ -1,0 +1,17 @@
+{
+    "bucketLocations": {
+        "": "US Standard",
+        "us-east-2": "Ohio",
+        "eu-central-1": "Frankfurt",
+        "eu-west-1": "Ireland",
+        "us-west-1": "California",
+        "us-west-2": "Oregon",
+        "ap-northeast-1": "Tokyo",
+        "ap-northeast-2": "Seoul",
+        "ap-southeast-1": "Singapore",
+        "ap-southeast-2": "Sydney",
+        "ap-south-1": "Mumbai",
+        "sa-east-1": "Sao Paulo"
+    },
+    "encryptUploads": true
+}

@@ -1,4 +1,3 @@
-import functools
 import json
 import os
 import warnings
@@ -25,8 +24,12 @@ def _serialize(fields, instance):
         for field in fields
     }
 
-serialize_node_license = functools.partial(_serialize, ('id', 'name', 'text'))
-
+def serialize_node_license(node_license):
+    return {
+        'id': node_license.license_id,
+        'name': node_license.name,
+        'text': node_license.text,
+    }
 
 def serialize_node_license_record(node_license_record):
     if node_license_record is None:
@@ -111,15 +114,21 @@ def ensure_licenses(warn=True):
             text = info['text']
             properties = info.get('properties', [])
             try:
-                NodeLicense(
+
+                model_kwargs = dict(
                     license_id=id,
                     name=name,
                     text=text,
                     properties=properties
-                ).save()
+                )
+                if not settings.USE_POSTGRES:
+                    del model_kwargs['license_id']
+                    model_kwargs['id'] = id
+                NodeLicense(**model_kwargs).save()
             except (modm_exceptions.KeyExistsException, ValidationError):
+                license_id_field = 'license_id' if settings.USE_POSTGRES else 'id'
                 node_license = NodeLicense.find_one(
-                    Q('license_id', 'eq', id)
+                    Q(license_id_field, 'eq', id)
                 )
                 node_license.name = name
                 node_license.text = text

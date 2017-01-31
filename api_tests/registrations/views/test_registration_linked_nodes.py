@@ -54,6 +54,13 @@ class TestNodeRelationshipNodeLinks(ApiTestCase):
         assert_in(self.linking_node.linked_nodes_related_url, res.json['links']['html'])
         assert_in(self.private_node._id, [e['id'] for e in res.json['data']])
 
+    def test_get_linked_nodes_related_counts(self):
+        res = self.app.get(
+            '/{}registrations/{}/?related_counts=linked_nodes'.format(API_BASE, self.linking_node._id),
+            auth=self.user.auth
+        )
+        assert_equal(res.json['data']['relationships']['linked_nodes']['links']['related']['meta']['count'], 2)
+
     def test_get_public_relationship_linked_nodes_logged_out(self):
         res = self.app.get(self.public_url)
 

@@ -32,7 +32,7 @@ from website.project.decorators import (
 from website.tokens import process_token_or_pass
 from website.util.permissions import ADMIN, READ, WRITE, CREATOR_PERMISSIONS
 from website.util.rubeus import collect_addon_js
-from website.project.model import has_anonymous_link, get_pointer_parent, NodeUpdateError, validate_title
+from website.project.model import has_anonymous_link, NodeUpdateError, validate_title
 from website.project.forms import NewNodeForm
 from website.project.metadata.utils import serialize_meta_schemas
 from website.models import Node, Pointer, WatchConfig, PrivateLink, Comment
@@ -970,15 +970,14 @@ def node_child_tree(user, node_ids):
             'name': affiliated_institution.name
         } for affiliated_institution in node.affiliated_institutions.all()]
 
+        node_children = Node.objects.get_children(node)
+        if node_children:
+            node_children = node_children.exclude(is_deleted=True).values_list('guids___id', flat=True)
         children = []
         # List project/node if user has at least 'read' permissions (contributor or admin viewer) or if
         # user is contributor on a component of the project/node
-        children.extend(node_child_tree(
-            user,
-            list(node.node_relations.select_related('child')
-                 .exclude(child__is_deleted=True)
-                 .values_list('child__guids___id', flat=True))
-        ))
+        children.extend(node_child_tree(user, node_children))
+
         item = {
             'node': {
                 'id': node_id,
@@ -1328,14 +1327,12 @@ def fork_pointer(auth, node, **kwargs):
 def abbrev_authors(node):
     lead_author = node.visible_contributors[0]
     ret = lead_author.family_name or lead_author.given_name or lead_author.fullname
-    if len(node.visible_contributors.count()) > 1:
+    if node.visible_contributors.count() > 1:
         ret += ' et al.'
     return ret
 
 
-def serialize_pointer(pointer, auth):
-    node = get_pointer_parent(pointer)
-
+def serialize_pointer(node, auth):
     if node.can_view(auth):
         return {
             'id': node._id,
@@ -1353,9 +1350,9 @@ def serialize_pointer(pointer, auth):
 @must_be_contributor_or_public
 def get_pointed(auth, node, **kwargs):
     """View that returns the pointers for a project."""
+    NodeRelation = apps.get_model('osf.NodeRelation')
     # exclude folders
     return {'pointed': [
-        serialize_pointer(each, auth)
-        for each in node.pointed
-        if not get_pointer_parent(each).is_collection
+        serialize_pointer(each.parent, auth)
+        for each in NodeRelation.objects.filter(child=node, is_node_link=True).exclude(parent__type='osf.collection')
     ]}

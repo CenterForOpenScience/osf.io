@@ -7,10 +7,10 @@ import sys
 import urllib
 
 import django
+from django.db import transaction
 from modularodm import Q
 django.setup()
 
-from framework.transactions.context import TokuTransaction
 from website import settings
 from website.app import init_app
 from website.models import Institution, Node
@@ -123,6 +123,17 @@ def main(env):
                 'delegation_protocol': '',
             },
             {
+                '_id': 'mli',
+                'name': 'Mind & Life Institute',
+                'description': 'Funding rigorous research in the field of contemplative science to understand the human mind for the purpose of reducing suffering. Learn more about <a href="https://www.mindandlife.org">Mind & Life research funding and other programs</a>.',
+                'banner_name': 'mli-banner.png',
+                'logo_name': 'mli-shield.png',
+                'login_url': None,
+                'logout_url': None,
+                'domains': ['research.mindandlife.org'],
+                'email_domains': ['mindandlife.org'],
+            },
+            {
                 '_id': 'nd',
                 'name': 'University of Notre Dame',
                 'description': 'In <a href="https://research.nd.edu/news/64035-notre-dame-center-for-open-science-partner-to-advance-open-science-initiatives/">partnership</a> with the <a href="https://crc.nd.edu">Center for Research Computing</a>, <a href="http://esc.nd.edu">Engineering &amp; Science Computing</a>, and the <a href="https://library.nd.edu">Hesburgh Libraries</a>',
@@ -159,6 +170,17 @@ def main(env):
                 'delegation_protocol': 'cas-pac4j',
             },
             {
+                '_id': 'thelabatdc',
+                'name': 'The Lab @ DC',
+                'description': 'The Lab @ DC is an entity of the <a href="https://mayor.dc.gov/">Executive Office of the Mayor of the District of Columbia Government</a>. We work in the <a href="https://oca.dc.gov/">Office of the City Administrator</a> and in partnership with a network of universities and research centers to apply the scientific method into day-to-day governance.',
+                'banner_name': 'thelabatdc-banner.png',
+                'logo_name': 'thelabatdc-shield.png',
+                'login_url': None,
+                'logout_url': None,
+                'domains': [],
+                'email_domains': ['dc.gov'],
+            },
+            {
                 '_id': 'ucsd',
                 'name': 'University of California San Diego',
                 'description': 'This service is supported on campus by the UC San Diego Library for our research community. Do not use this service to store or transfer personally identifiable information, personal health information, or any other controlled unclassified information. For assistance please contact the Library\'s Research Data Curation Program at <a href="mailto:research-data-curation@ucsd.edu">research-data-curation@ucsd.edu</a>.',
@@ -181,6 +203,17 @@ def main(env):
                 'domains': ['osf.ucr.edu'],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+            },
+            {
+                '_id': 'uct',
+                'name': 'University of Cape Town',
+                'description': '<a href="http://www.lib.uct.ac.za/">UCT Libraries</a>, <a href="http://www.eresearch.uct.ac.za/">UCT eResearch</a> &amp; <a href="http://www.icts.uct.ac.za/">ICTS</a> present the UCT OSF institutional service to UCT affiliated students, staff and researchers. The UCT OSF facility should be used in conjunction with the institution\'s <a href="http://www.digitalservices.lib.uct.ac.za/dls/rdm-policy">Research Data Management (RDM) Policy</a>, <a href="https://www.uct.ac.za/downloads/uct.ac.za/about/policies/UCTOpenAccessPolicy.pdf">Open Access Policy</a> and <a href="https://www.uct.ac.za/downloads/uct.ac.za/about/policies/UCTOpenAccessPolicy.pdf">IP Policy</a>. Visit the <a href="http://www.digitalservices.lib.uct.ac.za/">UCT Digital Library Services</a> for more information and/or assistance with <a href="http://www.digitalservices.lib.uct.ac.za/dls/rdm">RDM</a> and <a href="http://www.digitalservices.lib.uct.ac.za/dls/data-sharing-guidelines">data sharing</a>. We also encourage the use of UCT Libraries\'s Data Management Planning tool, <a href="http://dmp.lib.uct.ac.za/about_us">DMPonline</a>',
+                'banner_name': 'uct-banner.png',
+                'logo_name': 'uct-shield.png',
+                'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('http://adfs.uct.ac.za/adfs/services/trust')),
+                'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://osf.io/goodbye')),
+                'domains': ['osf.uct.ac.za'],
+                'email_domains': [],
             },
             {
                 '_id': 'ugent',
@@ -217,6 +250,17 @@ def main(env):
                 'domains': ['osf.virginia.edu'],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+            },
+            {
+                '_id': 'uw',
+                'name': 'University of Washington',
+                'description': 'This service is supported by the University of Washington Libraries. Do not use this service to store or transfer personally identifiable information or personal health information. Questions? Email the Libraries Research Data Services Unit at <a href="mailto:libdata@uw.edu">libdata@uw.edu</a>.',
+                'banner_name': 'uw-banner.png',
+                'logo_name': 'uw-shield.png',
+                'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('urn:mace:incommon:washington.edu')),
+                'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://osf.io/goodbye')),
+                'domains': [],
+                'email_domains': [],
             },
             {
                 '_id': 'vcu',
@@ -383,6 +427,17 @@ def main(env):
                 'delegation_protocol': '',
             },
             {
+                '_id': 'mli',
+                'name': 'Mind & Life Institute [Test]',
+                'description': 'Funding rigorous research in the field of contemplative science to understand the human mind for the purpose of reducing suffering. Learn more about <a href="https://www.mindandlife.org">Mind & Life research funding and other programs</a>.',
+                'banner_name': 'mli-banner.png',
+                'logo_name': 'mli-shield.png',
+                'login_url': None,
+                'logout_url': None,
+                'domains': ['research.mindandlife.org'],
+                'email_domains': ['mindandlife.org'],
+            },
+            {
                 '_id': 'nd',
                 'name': 'University of Notre Dame [Test]',
                 'description': 'In <a href="https://research.nd.edu/news/64035-notre-dame-center-for-open-science-partner-to-advance-open-science-initiatives/">partnership</a> with the <a href="https://crc.nd.edu">Center for Research Computing</a>, <a href="http://esc.nd.edu">Engineering &amp; Science Computing</a>, and the <a href="https://library.nd.edu">Hesburgh Libraries</a>',
@@ -419,6 +474,17 @@ def main(env):
                 'delegation_protocol': 'cas-pac4j',
             },
             {
+                '_id': 'thelabatdc',
+                'name': 'The Lab @ DC',
+                'description': 'The Lab @ DC is an entity of the <a href="https://mayor.dc.gov/">Executive Office of the Mayor of the District of Columbia Government</a>. We work in the <a href="https://oca.dc.gov/">Office of the City Administrator</a> and in partnership with a network of universities and research centers to apply the scientific method into day-to-day governance.',
+                'banner_name': 'thelabatdc-banner.png',
+                'logo_name': 'thelabatdc-shield.png',
+                'login_url': None,
+                'logout_url': None,
+                'domains': [],
+                'email_domains': ['dc.gov'],
+            },
+            {
                 '_id': 'ucsd',
                 'name': 'University of California San Diego [Test]',
                 'description': 'This service is supported on campus by the UC San Diego Library for our research community. Do not use this service to store or transfer personally identifiable information, personal health information, or any other controlled unclassified information. For assistance please contact the Library\'s Research Data Curation Program at <a href="mailto:research-data-curation@ucsd.edu">research-data-curation@ucsd.edu</a>.',
@@ -441,6 +507,17 @@ def main(env):
                 'domains': ['test-osf-ucr.cos.io'],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
+            },
+            {
+                '_id': 'uct',
+                'name': 'University of Cape Town [Test]',
+                'description': '<a href="http://www.lib.uct.ac.za/">UCT Libraries</a>, <a href="http://www.eresearch.uct.ac.za/">UCT eResearch</a> &amp; <a href="http://www.icts.uct.ac.za/">ICTS</a> present the UCT OSF institutional service to UCT affiliated students, staff and researchers. The UCT OSF facility should be used in conjunction with the institution\'s <a href="http://www.digitalservices.lib.uct.ac.za/dls/rdm-policy">Research Data Management (RDM) Policy</a>, <a href="https://www.uct.ac.za/downloads/uct.ac.za/about/policies/UCTOpenAccessPolicy.pdf">Open Access Policy</a> and <a href="https://www.uct.ac.za/downloads/uct.ac.za/about/policies/UCTOpenAccessPolicy.pdf">IP Policy</a>. Visit the <a href="http://www.digitalservices.lib.uct.ac.za/">UCT Digital Library Services</a> for more information and/or assistance with <a href="http://www.digitalservices.lib.uct.ac.za/dls/rdm">RDM</a> and <a href="http://www.digitalservices.lib.uct.ac.za/dls/data-sharing-guidelines">data sharing</a>. We also encourage the use of UCT Libraries\'s Data Management Planning tool, <a href="http://dmp.lib.uct.ac.za/about_us">DMPonline</a>',
+                'banner_name': 'uct-banner.png',
+                'logo_name': 'uct-shield.png',
+                'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('http://adfs.uct.ac.za/adfs/services/trust')),
+                'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://test.osf.io/goodbye')),
+                'domains': ['osf.uct.ac.za'],
+                'email_domains': [],
             },
             {
                 '_id': 'ugent',
@@ -479,6 +556,17 @@ def main(env):
                 'delegation_protocol': 'saml-shib',
             },
             {
+                '_id': 'uw',
+                'name': 'University of Washington [Test]',
+                'description': 'This service is supported by the University of Washington Libraries. Do not use this service to store or transfer personally identifiable information or personal health information. Questions? Email the Libraries Research Data Services Unit at <a href="mailto:libdata@uw.edu">libdata@uw.edu</a>.',
+                'banner_name': 'uw-banner.png',
+                'logo_name': 'uw-shield.png',
+                'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('urn:mace:incommon:washington.edu')),
+                'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://test.osf.io/goodbye')),
+                'domains': [],
+                'email_domains': [],
+            },
+            {
                 '_id': 'vcu',
                 'name': 'Virginia Commonwealth University [Test]',
                 'description': 'This service is supported by the VCU Libraries and the VCU Office of Research and Innovation for our research community. Do not use this service to store or transfer personally identifiable information (PII), personal health information (PHI), or any other controlled unclassified information (CUI). VCU\'s policy entitled "<a href="http://www.policy.vcu.edu/sites/default/files/Research%20Data%20Ownership,%20Retention,%20Access%20and%20Securty.pdf">Research Data Ownership, Retention, Access and Security</a>" applies. For assistance please contact the <a href="https://www.library.vcu.edu/services/data/">VCU Libraries Research Data Management Program</a>.',
@@ -505,7 +593,7 @@ def main(env):
         ]
 
     init_app(routes=False)
-    with TokuTransaction():
+    with transaction.atomic():
         for inst_data in INSTITUTIONS:
             new_inst, inst_created = update_or_create(inst_data)
             # update the nodes elastic docs, to have current names of institutions. This will
