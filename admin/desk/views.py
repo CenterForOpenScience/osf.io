@@ -1,18 +1,19 @@
 from django.shortcuts import render
 from django.views.generic import ListView, DetailView
+from django.contrib.auth.mixins import PermissionRequiredMixin
 
 from website.project.model import User
 
-from admin.base.utils import OSFAdmin
 from admin.desk.utils import DeskClient, DeskError, DeskCustomerNotFound
 
 
-class DeskCaseList(OSFAdmin, ListView):
+class DeskCaseList(ListView, PermissionRequiredMixin):
     template_name = 'desk/cases.html'
     ordering = 'updated_at'
     context_object_name = 'cases'
     paginate_by = 100
     paginate_orphans = 5
+    permission_required = 'admin.view_desk'
 
     def dispatch(self, request, *args, **kwargs):
         try:
@@ -45,9 +46,10 @@ class DeskCaseList(OSFAdmin, ListView):
         return super(DeskCaseList, self).get_context_data(**kwargs)
 
 
-class DeskCustomer(OSFAdmin, DetailView):
+class DeskCustomer(DetailView, PermissionRequiredMixin):
     template_name = 'desk/customer.html'
     context_object_name = 'customer'
+    permission_required = 'admin.view_desk'
 
     def dispatch(self, request, *args, **kwargs):
         try:
