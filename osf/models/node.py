@@ -275,10 +275,15 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         children.
         """
         # Prepend 'child__' to kwargs for filtering
-        filter_kwargs = {'child__{}'.format(key): val for key, val in kwargs.items()}
+        filter_kwargs = {}
+        if 'is_node_link' in kwargs.keys():
+            filter_kwargs['is_node_link'] = kwargs['is_node_link']
+            del kwargs['is_node_link']
+        for key, val in kwargs.items():
+            filter_kwargs['child__{}'.format(key)] = val
+        # TODO: per wisecarver, this is getting more data back than necessary and should be reworked
         return AbstractNode.objects.filter(id__in=NodeRelation.objects.filter(parent=self,
-                                                                      **filter_kwargs).select_related(
-            'child').values_list('child', flat=True)).order_by('noderelation___order').distinct()
+                **filter_kwargs).values_list('child_id', flat=True)).order_by('noderelation___order').distinct()
 
     @property
     def linked_nodes(self):

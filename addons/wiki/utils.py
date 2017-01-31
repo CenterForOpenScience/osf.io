@@ -174,9 +174,7 @@ def serialize_wiki_settings(user, node_ids):
         if not include_wiki_settings:
             continue
 
-        node_children = Node.objects.get_children(node)
-        if node_children:
-            node_children = node_children.exclude(is_deleted=True).values_list('guids___id', flat=True)
+        node_children = node.get_nodes(**{'is_deleted': False, 'is_node_link': False}).values_list('guids___id', flat=True)
         children = []
 
         if node.admin_public_wiki(user):

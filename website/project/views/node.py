@@ -970,9 +970,7 @@ def node_child_tree(user, node_ids):
             'name': affiliated_institution.name
         } for affiliated_institution in node.affiliated_institutions.all()]
 
-        node_children = Node.objects.get_children(node)
-        if node_children:
-            node_children = node_children.exclude(is_deleted=True).values_list('guids___id', flat=True)
+        node_children = node.get_nodes(**{'is_deleted': False, 'is_node_link': False}).values_list('guids___id', flat=True)
         children = []
         # List project/node if user has at least 'read' permissions (contributor or admin viewer) or if
         # user is contributor on a component of the project/node
