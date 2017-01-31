@@ -6,7 +6,6 @@ from modularodm import Q
 
 from django.views.generic import ListView, DetailView, FormView, UpdateView
 from django.views.defaults import permission_denied, bad_request
-from django.contrib.auth.decorators import permission_required
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.core.urlresolvers import reverse
 from django.http import JsonResponse, Http404, HttpResponse
@@ -226,14 +225,12 @@ class CommentUpdateView(UpdateView, PermissionRequiredMixin):
             return bad_request(request, e)
 
 
-@permission_required('admin.view_prereg')
 def view_file(request, node_id, provider, file_id):
     fp = FileNode.load(file_id)
     wb_url = fp.generate_waterbutler_url()
     return redirect(wb_url)
 
 
-@permission_required('admin.view_prereg')
 def get_metadata_files(draft):
     data = draft.registration_metadata
     for q, question in get_file_questions('prereg-prize.json'):
@@ -295,7 +292,6 @@ def get_metadata_files(draft):
             yield item
 
 
-@permission_required('admin.view_prereg')
 def get_file_questions(json_file):
     uploader = {
         'id': 'uploader',
