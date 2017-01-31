@@ -275,22 +275,10 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         """
         # Prepend 'child__' to kwargs for filtering
         filter_kwargs = {'child__{}'.format(key): val for key, val in kwargs.items()}
-        child_ids = (NodeRelation.objects.filter(parent=self, **filter_kwargs)
-                     .select_related('child')
-                     .values_list('child', flat=True))
-        query = (AbstractNode.objects.filter(id__in=child_ids)
-                .order_by('noderelation___order')
-                .distinct())
-        # NOTE: The query may return duplicate nodes when child nodes have
-        # multiple parents (i.e. when they are linked to). Unfortunately,
-        # we cannot both (1) remove duplicates and (2) ordering NodeRelation._order
-        # in the same query. The following lines are done to return unique nodes
-        # while maintaining order.
-        ret = []
-        for node in query:
-            if node not in ret:
-                ret.append(node)
-        return ret
+        node_relations = (NodeRelation.objects.filter(parent=self, **filter_kwargs)
+                        .select_related('child')
+                        .order_by('_order'))
+        return [each.child for each in node_relations]
 
     @property
     def linked_nodes(self):
