@@ -33,6 +33,13 @@ def get_admin_permissions():
     )
 
 
+def get_prereg_admin_permissions():
+    return Permission.objects.filter(
+        Q(codename='admin.view_prereg') |
+        Q(codename='admin.administer_prereg')
+    )
+
+
 def add_group_permissions(*args):
 
     # Rename nodes_and_users group to read_only which makes more sense
@@ -42,9 +49,8 @@ def add_group_permissions(*args):
         group.save()
         logger.info('nodes_and_users renamed to read_only')
     except Group.DoesNotExist:
-        group, created = Group.objects.get_or_create(name='read_only')
-        if created:
-            logger.info('read_only group created')
+        group = Group.objects.get_or_create(name='read_only')
+        logger.info('read_only group created')
 
     # Read only for nodes, users, meetings, and spam
     [group.permissions.add(perm) for perm in get_read_only_permissions()]
@@ -59,6 +65,20 @@ def add_group_permissions(*args):
     [admin_group.permissions.add(perm) for perm in get_admin_permissions()]
     group.save()
     logger.info('Administrator permissions for Node, user, spam and meeting permissions added to admin group')
+
+    # rename prereg group to prereg_admin
+    try:
+        prereg_group = Group.objects.get(name='prereg')
+        prereg_group.name = 'prereg_admin'
+        prereg_group.save()
+        logger.info('prereg renamed to prereg_admin')
+    except Group.DoesNotExist:
+        prereg_group = Group.objects.create(name='prereg_admin')
+        logger.info('read_only group created')
+
+    [prereg_group.permissions.add(perm) for perm in get_prereg_admin_permissions()]
+    prereg_group.save()
+    logger.info('Prereg read and administer permissions added to the prereg_admin group')
 
     # Remove superfluous osf_group
     try:
@@ -79,6 +99,13 @@ def remove_group_permissions(*args):
     admin_group = Group.objects.get(name='osf_admin')
     [admin_group.permissions.remove(perm) for perm in get_read_only_permissions()]
     [admin_group.permissions.remove(perm) for perm in get_admin_permissions()]
+    admin_group.save()
+
+    # reverse the naming for prereg to prereg_admin
+    prereg_group = Group.objects.get(name='prereg_admin')
+    [prereg_group.permissions.remmove(perm) for perm in get_prereg_admin_permissions()]
+    prereg_group.name = 'prereg'
+    prereg_group.save()
 
     # re-create osf_group
     group, created = Group.objects.get_or_create(name='osf_group')
