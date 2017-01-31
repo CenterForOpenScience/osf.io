@@ -14,6 +14,15 @@ class Migration(migrations.Migration):
     operations = [
         migrations.AlterModelOptions(
             name='adminprofile',
-            options={'permissions': (('mark_spam', 'Can mark comments, projects and registrations as spam'), ('view_spam', 'Can view nodes, comments, and projects marked as spam'), ('view_metrics', 'Can view metrics on the OSF Admin app'), ('view_prereg', 'Can view entries for the preregistration chellenge on the admin'), ('administer_prereg', 'Can update, comment on, and approve entries to the prereg challenge'))},
+            options={
+                'permissions': (
+                    ('mark_spam', 'Can mark comments, projects and registrations as spam'),
+                    ('view_spam', 'Can view nodes, comments, and projects marked as spam'),
+                    ('view_metrics', 'Can view metrics on the OSF Admin app'),
+                    ('view_prereg', 'Can view entries for the preregistration chellenge on the admin'),
+                    ('administer_prereg', 'Can update, comment on, and approve entries to the prereg challenge'),
+                    ('view_desk', 'Can view details about Desk users')
+                )
+            },
         ),
     ]
