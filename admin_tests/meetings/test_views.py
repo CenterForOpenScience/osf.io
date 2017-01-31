@@ -2,7 +2,6 @@ from nose import tools as nt
 
 from django.test import RequestFactory
 from django.http import Http404
-from modularodm import Q
 from tests.base import AdminTestCase
 from tests.factories import AuthUserFactory
 from tests.test_conferences import ConferenceFactory
@@ -82,7 +81,7 @@ class TestMeetingFormView(AdminTestCase):
         view.conf = self.conf
         view.form_valid(self.form)
         self.conf.reload()
-        nt.assert_equal(self.conf.admins[0].emails[0], self.user.emails[0])
+        nt.assert_equal(self.conf.admins.all()[0].emails[0], self.user.emails[0])
         nt.assert_equal(self.conf.location, self.form.cleaned_data['location'])
         nt.assert_equal(self.conf.start_date, self.form.cleaned_data['start_date'])
 
@@ -108,10 +107,7 @@ class TestMeetingCreateFormView(AdminTestCase):
     def test_form_valid(self):
         view = setup_form_view(self.view, self.request, self.form)
         view.form_valid(self.form)
-        nt.assert_equal(
-            Conference.find(Q('endpoint', 'iexact', data['endpoint'])).count(),
-            1
-        )
+        nt.assert_equal(Conference.objects.filter(endpoint=data['endpoint']).count(), 1)
 
 
 class TestMeetingMisc(AdminTestCase):

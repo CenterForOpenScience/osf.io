@@ -5,6 +5,7 @@ from framework.postcommit_tasks.handlers import run_postcommit
 from modularodm.exceptions import NoResultsFound
 
 from osf.modm_compat import Q
+from website.models import Node
 from website.notifications import constants
 from website.notifications.exceptions import InvalidSubscriptionError
 from website.project import signals
@@ -257,6 +258,9 @@ def format_data(user, node_ids):
         if not can_read and not can_read_children:
             continue
 
+        node_children = Node.objects.get_children(node)
+        if node_children:
+            node_children = node_children.exclude(is_deleted=True).values_list('guids___id', flat=True)
         children = []
         # List project/node if user has at least 'read' permissions (contributor or admin viewer) or if
         # user is contributor on a component of the project/node
@@ -273,15 +277,7 @@ def format_data(user, node_ids):
                     children.append(serialize_event(user, node=node, event_description=node_sub))
             children.sort(key=lambda s: s['event']['title'])
 
-        children.extend(format_data(
-            user,
-            [
-                n._id
-                for n in node.nodes
-                if n.primary and
-                not n.is_deleted
-            ]
-        ))
+        children.extend(format_data(user, node_children))
 
         item = {
             'node': {

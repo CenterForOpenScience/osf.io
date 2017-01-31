@@ -744,7 +744,10 @@ class File(FileNode):
         # Dont save the latest information
         if revision is not None:
             version.save()
-            self.versions.append(version)
+            if self._state.adding:
+                # Must be saved before ManyRelatedManager is used.
+                self.save()
+            self.versions.add(version)
 
         for entry in self.history:
             if 'etag' in entry and 'etag' in data and entry['etag'] == data['etag']:

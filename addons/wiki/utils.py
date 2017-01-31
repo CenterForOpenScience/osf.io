@@ -174,6 +174,9 @@ def serialize_wiki_settings(user, node_ids):
         if not include_wiki_settings:
             continue
 
+        node_children = Node.objects.get_children(node)
+        if node_children:
+            node_children = node_children.exclude(is_deleted=True).values_list('guids___id', flat=True)
         children = []
 
         if node.admin_public_wiki(user):
@@ -186,15 +189,8 @@ def serialize_wiki_settings(user, node_ids):
                         else 'private'
                 },
             })
-        children.extend(serialize_wiki_settings(
-            user,
-            [
-                n._id
-                for n in node.nodes
-                if n.primary and
-                not n.is_deleted
-            ]
-        ))
+
+        children.extend(serialize_wiki_settings(user, node_children))
 
         item = {
             'node': {

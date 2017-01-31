@@ -1,5 +1,8 @@
 # OSF Dataverse Add-on
 
+## Deprecation Warning: ./website/addons has been moved to ./addons
+## Please configure in the new location
+
 Enabling the addon for development
 
 Ensure `"dataverse"` exists in the addons list in `"addons.json"`

@@ -896,6 +896,38 @@ class TestNotificationUtils(OsfTestCase):
         assert schema.validate(data)
         assert has(data, event)
 
+    def test_format_data_user_subscriptions_if_children_points_to_parent(self):
+        private_project = factories.ProjectFactory(creator=self.user)
+        node = factories.NodeFactory(parent=private_project, creator=self.user)
+        node.add_pointer(private_project, Auth(self.user))
+        node.save()
+        node_comments_subscription = factories.NotificationSubscriptionFactory(
+            _id=node._id + '_' + 'comments',
+            node=node,
+            event_name='comments'
+        )
+        node_comments_subscription.save()
+        node_comments_subscription.email_transactional.add(node.creator)
+        node_comments_subscription.save()
+
+        node.creator.notifications_configured[node._id] = True
+        node.creator.save()
+        configured_project_ids = utils.get_configured_projects(node.creator)
+        data = utils.format_data(node.creator, configured_project_ids)
+        event = {
+            'event': {
+                'title': 'comments',
+                'description': constants.NODE_SUBSCRIPTIONS_AVAILABLE['comments'],
+                'notificationType': 'email_transactional',
+                'parent_notification_type': None
+            },
+            'kind': 'event',
+            'children': [],
+        }
+        schema = subscription_schema(self.project, ['event', ['event']])
+        assert schema.validate(data)
+        assert has(data, event)
+
     def test_format_user_subscriptions(self):
         data = utils.format_user_subscriptions(self.user)
         expected = [
