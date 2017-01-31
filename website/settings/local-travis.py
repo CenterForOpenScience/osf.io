@@ -21,6 +21,10 @@ API_DOMAIN = PROTOCOL + 'localhost:8000/'
 ENABLE_INSTITUTIONS = True
 
 USE_EXTERNAL_EMBER = True
+PREPRINT_PROVIDER_DOMAINS = {
+    'prefix': 'http://local.',
+    'suffix': ':4200'
+}
 EXTERNAL_EMBER_APPS = {
     'preprints': {
         'url': '/preprints/',
