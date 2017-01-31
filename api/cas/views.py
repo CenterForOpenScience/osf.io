@@ -1,6 +1,7 @@
 from django.contrib.auth.models import AnonymousUser
 
 from rest_framework import generics
+from rest_framework import status
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.response import Response
 
@@ -100,3 +101,16 @@ class CasRegister(JSONAPIBaseView, generics.CreateAPIView):
             }
 
         return Response(content)
+
+
+class CasInstitutionAuthenticate(JSONAPIBaseView, generics.CreateAPIView):
+
+    view_category = 'cas'
+    view_name = 'cas-institution-authenticate'
+
+    serializer_class = JSONAPISerializer
+
+    authentication_classes = (CasAuthentication,)
+
+    def post(self, request, *args, **kwargs):
+        return Response(status=status.HTTP_204_NO_CONTENT)

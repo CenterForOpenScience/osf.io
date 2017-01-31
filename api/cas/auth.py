@@ -9,15 +9,20 @@ from modularodm.exceptions import ModularOdmException
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.authentication import BaseAuthentication
 
+from django.utils import timezone
+
 from api.base import settings
 
-from framework.auth import register_unconfirmed
+from framework.auth import register_unconfirmed, get_or_create_user
 from framework.auth import campaigns
 from framework.auth.core import get_user
 from framework.auth.exceptions import DuplicateEmailError
 from framework.auth.views import send_confirm_email
 
+from osf.models import Institution
+
 from website.addons.twofactor.models import TwoFactorUserSettings
+from website.mails import send_mail, WELCOME_OSF4I
 
 
 class CasAuthentication(BaseAuthentication):
@@ -66,6 +71,7 @@ class CasAuthentication(BaseAuthentication):
                 return user, None
             # initial verification fails
             raise AuthenticationFailed(detail=error_message)
+
         # The `data` payload structure for type "REGISTER"
         # {
         #     "type": "REGISTER",
@@ -76,13 +82,65 @@ class CasAuthentication(BaseAuthentication):
         #         "campaign": None,
         #     },
         # },
-        elif data.get('type') == 'REGISTER':
+        if data.get('type') == 'REGISTER':
             user, error_message = handle_register(data.get('user'))
             if user and not error_message:
                 return user, None
             raise AuthenticationFailed(detail=error_message)
 
+        # The `data` payload structure for type "INSTITUTION_AUTHENTICATE":
+        # {
+        #     "type": "INSTITUTION_AUTHENTICATE"
+        #     "provider": {
+        #         "idp": "",
+        #         "id": "",
+        #         "user": {
+        #             "middleNames": "",
+        #             "familyName": "",
+        #             "givenName": "",
+        #             "fullname": "",
+        #             "suffix": "",
+        #             "username": ""
+        #     }
+        # }
+        if data.get('type') == 'INSTITUTION_AUTHENTICATE':
+            return handle_institution_authenticate(data.get('provider'))
+
         return AuthenticationFailed
+
+
+def handle_institution_authenticate(provider):
+    institution = Institution.load(provider['id'])
+    if not institution:
+        raise AuthenticationFailed('Invalid institution id specified "{}"'.format(provider['id']))
+
+    username = provider['user']['username']
+    fullname = provider['user']['fullname']
+
+    user, created = get_or_create_user(fullname, username, reset_password=False)
+
+    if created:
+        user.given_name = provider['user'].get('givenName')
+        user.middle_names = provider['user'].get('middleNames')
+        user.family_name = provider['user'].get('familyName')
+        user.suffix = provider['user'].get('suffix')
+        user.date_last_login = timezone.now()
+        user.save()
+
+        # User must be saved in order to have a valid _id
+        user.register(username)
+        send_mail(
+            to_addr=user.username,
+            mail=WELCOME_OSF4I,
+            mimetype='html',
+            user=user
+        )
+
+    if not user.is_affiliated_with_institution(institution):
+        user.affiliated_institutions.add(institution)
+        user.save()
+
+    return user, None
 
 
 def handle_login(user):
@@ -137,24 +195,6 @@ def handle_register(user):
     return user, None
 
 
-def decrypt_payload(body):
-    if not settings.API_CAS_ENCRYPTION:
-        try:
-            return json.loads(body)
-        except TypeError:
-            raise AuthenticationFailed
-    try:
-        payload = jwt.decode(
-            jwe.decrypt(body, settings.JWE_SECRET),
-            settings.JWT_SECRET,
-            options={'verify_exp': False},
-            algorithm='HS256'
-        )
-    except (jwt.InvalidTokenError, TypeError):
-        raise AuthenticationFailed
-    return payload
-
-
 def get_user_with_two_factor(user):
     try:
         return TwoFactorUserSettings.find_one(Q('owner', 'eq', user._id))
@@ -206,3 +246,21 @@ def verify_user_status(user):
 
     # If the status does not meet any of the above criteria, return `USER_NOT_ACTIVE` and ask the user to contact OSF.
     return 'USER_NOT_ACTIVE'
+
+
+def decrypt_payload(body):
+    if not settings.API_CAS_ENCRYPTION:
+        try:
+            return json.loads(body)
+        except TypeError:
+            raise AuthenticationFailed
+    try:
+        payload = jwt.decode(
+            jwe.decrypt(body, settings.JWE_SECRET),
+            settings.JWT_SECRET,
+            options={'verify_exp': False},
+            algorithm='HS256'
+        )
+    except (jwt.InvalidTokenError, TypeError):
+        raise AuthenticationFailed
+    return payload
