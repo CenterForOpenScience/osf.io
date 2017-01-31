@@ -11,7 +11,7 @@ from datetime import datetime
 import pytz
 from django.core.management import BaseCommand
 from osf.management.commands.migratedata import register_nonexistent_models_with_modm
-from osf.management.commands.migraterelations import build_toku_django_lookup_table_cache
+from osf.management.commands.migraterelations import build_toku_django_lookup_table_cache, format_lookup_key
 from osf.models import BlackListGuid
 from osf.models import Tag
 from osf.utils.order_apps import get_ordered_models
@@ -117,18 +117,8 @@ class Command(BaseCommand):
             return
         assert getattr(django_obj, field_name) == getattr(modm_obj, modm_field_name)
 
-    def get_pk(self, modm_object):
-        from website.models import Tag as MODMTag
-        from website.models import Guid as MODMGuid
-
-        key = unicode(modm_object._id).lower()
-
-        if key in self.modm_to_django:
-            return self.modm_to_django[key]
-        elif isinstance(modm_object, MODMTag):
-            raise NotGonnaDoItException('Can\'t get pk for tag.')
-        elif isinstance(modm_object, MODMGuid):
-            return self.modm_to_django['guid:{}'.format(modm_object._id)]
+    def get_pk(self, modm_object, django_model):
+        return self.modm_to_django[format_lookup_key(modm_object._id, model=django_model)]
 
     def validate_model_data(self, modm_queryset, django_model, page_size=20000):
         logger.info('Starting {} on {}...'.format(
@@ -151,7 +141,7 @@ class Command(BaseCommand):
             limit = (count + page_size) if (count + page_size) < total else total
 
             page_of_modm_objects = modm_queryset.sort('-_id')[offset:limit]
-            django_ids = [self.get_pk(modm_obj) for modm_obj in page_of_modm_objects]
+            django_ids = [self.get_pk(modm_obj, django_model) for modm_obj in page_of_modm_objects]
             django_objects = django_model.objects.filter(id__in=django_ids)
 
             # TODO users aren't going to match
@@ -159,7 +149,7 @@ class Command(BaseCommand):
             assert len(django_ids) == len(django_objects) == len(page_of_modm_objects), 'Lost some keys along the way for {}'.format(django_model._meta.model.__name__)
 
             for modm_obj in page_of_modm_objects:
-                django_obj = django_objects.get(pk=self.get_pk(modm_obj))
+                django_obj = django_objects.get(pk=self.get_pk(modm_obj, django_model))
                 for m2m_field in m2m_relations:
                     self.validate_m2m_field(m2m_field.name, django_obj, modm_obj)
                     field_count += 1
