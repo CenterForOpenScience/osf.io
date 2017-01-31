@@ -693,7 +693,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     def get_aggregate_logs_query(self, auth):
         ids = [self._id] + [n._id
-                            for n in self.get_descendants_recursive()
+                            for n in self.get_descendants_recursive(primary_only=True)
                             if n.can_view(auth)]
         query = Q('node', 'in', ids) & Q('should_hide', 'ne', True)
         return query
@@ -705,15 +705,15 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     @property
     def comment_level(self):
         if self.public_comments:
-            return 'public'
+            return self.PUBLIC
         else:
-            return 'private'
+            return self.PRIVATE
 
     @comment_level.setter
     def comment_level(self, value):
-        if value == 'public':
+        if value == self.PUBLIC:
             self.public_comments = True
-        elif value == 'private':
+        elif value == self.PRIVATE:
             self.public_comments = False
         else:
             raise ValidationError(
