@@ -49,6 +49,13 @@ def generate_object_id():
 
 
 class MODMCompatibilityQuerySet(models.QuerySet):
+    def __init__(self, model=None, query=None, using=None, hints=None):
+        super(MODMCompatibilityQuerySet, self).__init__(model=model, query=query, using=using, hints=hints)
+        if issubclass(self.model, (GuidMixin, OptionalGuidMixin)):
+            # GenericRelatedObjectManager has a _prefetched_objects_cache which
+            # is a dictionary of field_name to list of shit `{'guids': [<Guid: Guid object>]}`
+            # Maybe put the stuff in it at the right place.
+            self._prefetch_related_lookups = ['guids']
 
     def __getitem__(self, k):
         item = super(MODMCompatibilityQuerySet, self).__getitem__(k)
