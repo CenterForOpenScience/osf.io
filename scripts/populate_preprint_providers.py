@@ -15,6 +15,9 @@ logging.basicConfig(level=logging.INFO)
 
 ENVS = ['prod', 'stage']
 SUBJECTS_CACHE = {}
+STAGING_PREPRINT_PROVIDERS = ['osf', 'psyarxiv', 'engrxiv', 'socarxiv', 'scielo', 'agrixiv']
+PROD_PREPRINT_PROVIDERS = ['osf', 'psyarxiv', 'engrxiv', 'socarxiv']
+
 
 def get_subject_id(name):
     if not name in SUBJECTS_CACHE:
@@ -1005,10 +1008,7 @@ def main(env):
         }
     }
 
-    if env == 'stage':
-        preprint_providers_to_add = ['osf', 'psyarxiv', 'engrxiv', 'socarxiv', 'scielo', 'agrixiv']
-    else:
-        preprint_providers_to_add = ['osf', 'psyarxiv', 'engrxiv', 'socarxiv']
+    preprint_providers_to_add = STAGING_PREPRINT_PROVIDERS if env == 'stage' else PROD_PREPRINT_PROVIDERS
 
     with transaction.atomic():
         for provider_id in preprint_providers_to_add:
