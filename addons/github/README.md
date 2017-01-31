@@ -7,7 +7,7 @@
 3. In the Homepage URL field, enter "http://localhost:5000/“
 4. In the Authorization Callback URL field, enter "http://localhost:5000/oauth/callback/github".
 5. Submit the form.
-6. cp website/addons/github/settings/defaults.py website/addons/github/settings/local.py
+6. cp addons/github/settings/defaults.py addons/github/settings/local.py
 7. Copy your client ID and client secret from Github into the new local.py file.
 8. Ensure `"github"` exists in the addons list in `"addons.json"`
 9. Restart your app server.
@@ -17,4 +17,4 @@
 To test Github webhooks, your development server must be exposed to the web using a service like ngrok:
 * brew install ngrok
 * ngrok 5000
-* Copy forwarding address to website/addons/github/settings/local.py:HOOK_DOMAIN
+* Copy forwarding address to addons/github/settings/local.py:HOOK_DOMAIN
