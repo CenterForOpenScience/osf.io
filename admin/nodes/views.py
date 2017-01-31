@@ -1,6 +1,7 @@
 from __future__ import unicode_literals
 
 from django.utils import timezone
+from django.core.exceptions import PermissionDenied
 from django.views.generic import ListView, DeleteView
 from django.shortcuts import redirect
 from django.views.defaults import page_not_found
@@ -44,7 +45,7 @@ class NodeRemoveContributorView(DeleteView, PermissionRequiredMixin):
     """
     template_name = 'nodes/remove_contributor.html'
     context_object_name = 'node'
-    permission_required = 'osf.change_node'
+    permission_required = ('osf.view_node', 'osf.change_node')
 
     def delete(self, request, *args, **kwargs):
         try:
@@ -117,7 +118,7 @@ class NodeDeleteView(NodeDeleteBase, PermissionRequiredMixin):
     """
     template_name = 'nodes/remove_node.html'
     object = None
-    permission_required = 'osf.delete_node'
+    permission_required = ('osf.view_node', 'osf.delete_node')
 
     def delete(self, request, *args, **kwargs):
         try:
@@ -245,6 +246,8 @@ class NodeFlaggedSpamList(NodeSpamList, DeleteView):
     template_name = 'nodes/flagged_spam_list.html'
 
     def delete(self, request, *args, **kwargs):
+        if not request.user.has_perm('auth.mark_spam'):
+            raise PermissionDenied('You do not have permission to update a node flagged as spam.')
         node_ids = [
             nid for nid in request.POST.keys()
             if nid != 'csrfmiddlewaretoken'
