@@ -28,8 +28,7 @@ class CasLogin(JSONAPIBaseView, generics.CreateAPIView):
         # The response `data` payload is expected in the following structures
         # {
         #     'status': 'AUTHENTICATION SUCCESS',
-        #     'userId': <Postgres ID (Primary Key)>
-        #     'guidId': <Mongo GUID (_id) >
+        #     'userId': <the user's GUID>
         #     'attributes': {
         #         'username': 'testuser@fakecos.io',
         #         'givenName': 'User',
@@ -38,8 +37,7 @@ class CasLogin(JSONAPIBaseView, generics.CreateAPIView):
         # }
         content = {
             'status': 'AUTHENTICATION_SUCCESS',
-            'userId': user.pk,
-            'guidId': user._id,
+            'userId': user._id,
             'attributes': {
                 'username': user.username,
                 'givenName': user.given_name,
