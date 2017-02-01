@@ -253,7 +253,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
 
     # Attached external accounts (OAuth)
     # external_accounts = fields.ForeignField("externalaccount", list=True)
-    external_accounts = models.ManyToManyField('ExternalAccount')
+    external_accounts = models.ManyToManyField('ExternalAccount', blank=True)
 
     # CSL names
     given_name = models.CharField(max_length=255, blank=True)
@@ -340,7 +340,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
     # whether the user has requested to deactivate their account
     requested_deactivation = models.BooleanField(default=False)
 
-    affiliated_institutions = models.ManyToManyField('Institution')
+    affiliated_institutions = models.ManyToManyField('Institution', blank=True)
 
     notifications_configured = DateTimeAwareJSONField(default=dict, blank=True)
 
