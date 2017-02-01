@@ -61,12 +61,12 @@ from website.util.permissions import (ADMIN, CREATOR_PERMISSIONS,
                                       DEFAULT_CONTRIBUTOR_PERMISSIONS, READ,
                                       WRITE, expand_permissions,
                                       reduce_permissions)
-from .base import BaseModel, Guid, GuidMixin, MODMCompatibilityQuerySet
+from .base import BaseModel, Guid, GuidMixin, GuidMODMCompatibilityQuerySet
 
 logger = logging.getLogger(__name__)
 
 
-class AbstractNodeQueryset(MODMCompatibilityQuerySet):
+class AbstractNodeQueryset(GuidMODMCompatibilityQuerySet):
     def get_roots(self):
         return self.extra(
             where=['"osf_abstractnode".id in (SELECT id FROM osf_abstractnode WHERE id NOT IN (SELECT child_id FROM '
@@ -1887,6 +1887,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         new.template_node = self
         # Need to save in order to access contributors m2m table
         new.save(suppress_log=True)
+
         new.add_contributor(contributor=auth.user, permissions=CREATOR_PERMISSIONS, log=False, save=False)
         new.is_fork = False
         new.node_license = self.license.copy() if self.license else None
