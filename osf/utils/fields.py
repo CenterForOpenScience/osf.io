@@ -7,6 +7,11 @@ from osf.exceptions import NaiveDatetimeException
 SENSITIVE_DATA_KEY = jwe.kdf(settings.SENSITIVE_DATA_SECRET.encode('utf-8'),
                              settings.SENSITIVE_DATA_SALT.encode('utf-8'))
 
+def ensure_bytes(value):
+    """Helper function to ensure all inputs are encoded to the proper value utf-8 value regardless of input type"""
+    if isinstance(value, bytes):
+        return value
+    return value.encode('utf-8')
 
 class LowercaseCharField(models.CharField):
     def get_prep_value(self, value):
@@ -25,11 +30,13 @@ class EncryptedTextField(models.TextField):
 
     def get_db_prep_value(self, value, **kwargs):
         if value and not value.startswith(self.prefix):
+            value = ensure_bytes(value)
             value = self.prefix + jwe.encrypt(bytes(value), SENSITIVE_DATA_KEY)
         return value
 
     def to_python(self, value):
         if value and value.startswith(self.prefix):
+            value = ensure_bytes(value)
             value = jwe.decrypt(bytes(value[len(self.prefix):]), SENSITIVE_DATA_KEY)
         return value
 
