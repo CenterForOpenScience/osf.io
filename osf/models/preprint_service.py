@@ -74,7 +74,7 @@ class PreprintService(GuidMixin, BaseModel):
 
     @property
     def url(self):
-        if self.provider._id == 'osf' or hasattr(self.provider, 'domain'):
+        if self.provider._id == 'osf' or self.provider.domain:
             return '/{}/'.format(self._id)
 
         return '/preprints/{}/{}/'.format(self.provider._id, self._id)
@@ -89,7 +89,7 @@ class PreprintService(GuidMixin, BaseModel):
 
     @property
     def absolute_url(self):
-        use_osf_domain = self.provider._id == 'osf' or not hasattr(self.provider, 'domain')
+        use_osf_domain = self.provider._id == 'osf' or not self.provider.domain
         host = settings.DOMAIN if use_osf_domain else self.get_provider_domain()
 
         return urlparse.urljoin(host, self.url)
