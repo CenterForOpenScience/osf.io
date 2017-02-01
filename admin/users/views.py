@@ -15,6 +15,7 @@ from osf.models.node import Node, NodeLog
 from osf.models.spam import SpamStatus
 from framework.auth import get_user
 from framework.auth.utils import impute_names
+from framework.auth.core import generate_verification_key
 
 from website.mailchimp_utils import subscribe_on_confirm
 
@@ -386,13 +387,13 @@ class ResetPasswordView(FormView, PermissionRequiredMixin):
                     self.context_object_name.title(),
                     self.kwargs.get('guid')
                 ))
-        kwargs.setdefault('guid', user.pk)
+        kwargs.setdefault('guid', user._id)
         return super(ResetPasswordView, self).get_context_data(**kwargs)
 
     def form_valid(self, form):
         email = form.cleaned_data.get('emails')
         user = get_user(email)
-        if user is None or user.pk != self.kwargs.get('guid'):
+        if user is None or user._id != self.kwargs.get('guid'):
             return HttpResponse(
                 '{} with id "{}" and email "{}" not found.'.format(
                     self.context_object_name.title(),
@@ -402,9 +403,11 @@ class ResetPasswordView(FormView, PermissionRequiredMixin):
                 status=409
             )
         reset_abs_url = furl(DOMAIN)
-        user.verification_key = random_string(20)
+
+        user.verification_key_v2 = generate_verification_key(verification_type='password')
         user.save()
-        reset_abs_url.path.add(('resetpassword/{}'.format(user.verification_key)))
+
+        reset_abs_url.path.add(('resetpassword/{}/{}'.format(user._id, user.verification_key_v2['token'])))
 
         send_mail(
             subject='Reset OSF Password',
