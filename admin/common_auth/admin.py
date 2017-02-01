@@ -7,6 +7,7 @@ from django.core.urlresolvers import reverse
 from django.utils.html import escape
 
 from admin.common_auth.logs import OSFLogEntry
+from admin.common_auth.models import AdminProfile
 
 
 class PermissionAdmin(admin.ModelAdmin):
@@ -14,6 +15,7 @@ class PermissionAdmin(admin.ModelAdmin):
 
 
 admin.site.register(Permission, PermissionAdmin)
+admin.site.register(AdminProfile)
 
 
 class LogEntryAdmin(admin.ModelAdmin):
