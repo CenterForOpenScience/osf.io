@@ -6,8 +6,11 @@ import os
 from urlparse import urlparse
 from website import settings as osf_settings
 from django.contrib import messages
+from api.base.settings import *  # noqa
 
 # import local  # Build own local.py (used with postgres)
+
+# TODO - remove duplicated items, as this is now using settings from the API
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 # Quick-start development settings - unsuitable for production
@@ -48,6 +51,11 @@ AUTH_PASSWORD_VALIDATORS = [
             'min_length': 5,
         }
     },
+]
+
+PASSWORD_HASHERS = [
+    'django.contrib.auth.hashers.BCryptSHA256PasswordHasher',
+    'django.contrib.auth.hashers.BCryptPasswordHasher',
 ]
 
 # Email settings. Account created for testing. Password shouldn't be hardcoded
