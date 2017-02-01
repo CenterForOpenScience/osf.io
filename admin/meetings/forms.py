@@ -9,6 +9,14 @@ from website.conferences.exceptions import ConferenceError
 
 
 class MultiEmailField(forms.Field):
+
+    def prepare_value(self, value):
+        if isinstance(value, basestring):
+            ret = value
+        else:
+            ret = ', '.join(list(value))
+        return ret
+
     def to_python(self, value):
         if not value:
             return []
