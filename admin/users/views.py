@@ -31,7 +31,6 @@ from admin.common_auth.logs import (
 from admin.users.serializers import serialize_user
 from admin.users.forms import EmailResetForm, WorkshopForm
 from admin.users.templatetags.user_extras import reverse_user
-from website.security import random_string
 from website.settings import DOMAIN, SUPPORT_EMAIL
 
 
