@@ -781,7 +781,7 @@ class TestNotificationUtils(OsfTestCase):
         assert_equal(nt, None)
 
     def test_format_data_project_settings(self):
-        data = utils.format_data(self.user, [self.project._id])
+        data = utils.format_data(self.user, [self.project])
         parent_event = {
             'event': {
                 'title': 'comments',
@@ -809,7 +809,7 @@ class TestNotificationUtils(OsfTestCase):
         assert has(data, child_event)
 
     def test_format_data_node_settings(self):
-        data = utils.format_data(self.user, [self.node._id])
+        data = utils.format_data(self.user, [self.node])
         event = {
             'event': {
                 'title': 'comments',
@@ -828,7 +828,7 @@ class TestNotificationUtils(OsfTestCase):
         # Test private components in which parent project admins are not contributors still appear in their
         # notifications settings.
         node = factories.NodeFactory(parent=self.project)
-        data = utils.format_data(self.user, [self.project._id])
+        data = utils.format_data(self.user, [self.project])
         event = {
             'event': {
                 'title': 'comments',
