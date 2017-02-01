@@ -11,5 +11,5 @@ def reverse_qs(view, urlconf=None, args=None, kwargs=None, current_app=None, que
         return '{}?{}'.format(base_url, urlencode(query_kwargs))
 
 
-def osf_admin_check(user):
-    return user.is_authenticated() and user.groups.filter(name='osf_admin')
+def osf_staff_check(user):
+    return user.is_authenticated() and user.is_staff
