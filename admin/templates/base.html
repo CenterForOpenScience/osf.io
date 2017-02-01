@@ -100,7 +100,7 @@
           <!-- Sidebar Menu -->
           <ul class="sidebar-menu">
             <li class="header">Menu</li>
-            {% if perms.admin.view_node %}
+            {% if perms.osf.view_node %}
             <li><a href="{% url 'nodes:search' %}"><i class='fa fa-link'></i><span> OSF Nodes</span> </a></li>
             <li>
               <ul class="sidebar-menu" style="position:relative; left: 20px;">
@@ -110,7 +110,7 @@
               </ul>
             </li>
             {% endif %}
-              {% if perms.admin.view_user %}
+              {% if perms.osf.view_user %}
             <li><a href="{% url 'users:search' %}"><i class='fa fa-link'></i> <span>OSF Users</span></a></li>
             <li>
               <ul class="sidebar-menu" style="position:relative; left: 20px;">
@@ -120,15 +120,15 @@
               </ul>
             </li>
               {% endif %}
-          {% if perms.admin.view_spam %}
+          {% if perms.common_auth.view_spam %}
             <li><a href="{% url 'spam:spam' %}"><i class='fa fa-link'></i> <span>OSF Spam</span></a></li>
             <li><a href="{% url 'nodes:registrations' %}"><i class='fa fa-link'></i> <span>OSF Registrations</span></a></li>
             <li><a href="{% url 'meetings:list' %}"><i class='fa fa-link'></i> <span>OSF Meetings</span></a></li>
           {% endif %}
-          {% if perms.admin.view_prereg %}
+          {% if perms.common_auth.view_prereg %}
             <li><a href="{% url 'pre_reg:prereg' %}"><i class='fa fa-link'></i> <span>OSF Prereg</span></a></li>
             {% endif %}
-          {% if perms.admin.view_metrics %}
+          {% if perms.common_auth.view_metrics %}
             <li><a href="{% url 'metrics:metrics' %}"><i class='fa fa-link'></i> <span>OSF Metrics</span></a></li>
           {% endif %}
           </ul><!-- /.sidebar-menu -->
