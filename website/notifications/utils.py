@@ -244,7 +244,6 @@ def format_data(user, nodes):
     :param nodes: list of parent project node objects
     :return: treebeard-formatted data
     """
-    AbstractNode = apps.get_model('osf.AbstractNode')
     items = []
 
     for node in nodes:
