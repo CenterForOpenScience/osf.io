@@ -1196,7 +1196,7 @@ class TestPublicWiki(OsfTestCase):
         node = NodeFactory(parent=self.project, creator=self.user, is_public=True)
         node.get_addon('wiki').set_editing(
             permissions=True, auth=self.consolidate_auth, log=True)
-        data = serialize_wiki_settings(self.user, [node._id])
+        data = serialize_wiki_settings(self.user, [node])
         expected = [{
             'node': {
                 'id': node._id,
@@ -1225,7 +1225,7 @@ class TestPublicWiki(OsfTestCase):
             permissions=True, auth=self.consolidate_auth, log=True)
         node.add_pointer(self.project, Auth(self.user))
         node.save()
-        data = serialize_wiki_settings(self.user, [node._id])
+        data = serialize_wiki_settings(self.user, [node])
         expected = [{
             'node': {
                 'id': node._id,
@@ -1251,7 +1251,7 @@ class TestPublicWiki(OsfTestCase):
     def test_serialize_wiki_settings_no_wiki(self):
         node = NodeFactory(parent=self.project, creator=self.user)
         node.delete_addon('wiki', self.consolidate_auth)
-        data = serialize_wiki_settings(self.user, [node._id])
+        data = serialize_wiki_settings(self.user, [node])
         expected = []
 
         assert_equal(data, expected)

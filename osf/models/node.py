@@ -271,10 +271,15 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     def get_nodes(self, **kwargs):
         """Return list of children nodes. ``kwargs`` are used to filter against
-        children.
+        children. In addition `is_node_link=<bool>` can be passed to filter against
+        node links.
         """
         # Prepend 'child__' to kwargs for filtering
-        filter_kwargs = {'child__{}'.format(key): val for key, val in kwargs.items()}
+        filter_kwargs = {}
+        if 'is_node_link' in kwargs:
+            filter_kwargs['is_node_link'] = kwargs.pop('is_node_link')
+        for key, val in kwargs.items():
+            filter_kwargs['child__{}'.format(key)] = val
         node_relations = (NodeRelation.objects.filter(parent=self, **filter_kwargs)
                         .select_related('child')
                         .order_by('_order'))
