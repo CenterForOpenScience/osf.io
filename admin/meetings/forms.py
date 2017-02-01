@@ -37,10 +37,9 @@ class MeetingForm(forms.Form):
         required=True,
         widget=forms.TextInput(attrs={'size': '40'}),
     )
-    info_url = forms.CharField(
+    info_url = forms.URLField(
         label='Info url',
-        required=False,
-        widget=forms.TextInput(attrs={'size': '60'}),
+        required=True
     )
     homepage_link_text = forms.CharField(
         label='Homepage link text (Default: "Conference homepage")',
