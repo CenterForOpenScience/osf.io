@@ -101,15 +101,13 @@ RUN pip install --no-cache-dir -c /code/requirements/constraints.txt -r /code/ad
 RUN (pip uninstall uritemplate.py --yes || true) \
     && pip install --no-cache-dir uritemplate.py==0.3.0
 
-# Bower setup and clean up
+# OSF: Assets
 COPY ./.bowerrc /code/
 COPY ./bower.json /code/
 RUN npm install bower \
     && ./node_modules/bower/bin/bower install --allow-root \
     && ./node_modules/bower/bin/bower cache clean --allow-root
-# /Bower
 
-# NPM/webpack
 COPY ./package.json /code/
 RUN npm install --production
 
@@ -145,8 +143,32 @@ RUN mkdir -p /code/website/static/built/ \
     # && rm -rf /code/node_modules \ (needed for sharejs)
     && npm install list-of-licenses \
     && rm -rf /root/.npm \
-    npm cache clean
-    # /NPM/webpack
+    && npm cache clean
+# /OSF: Assets
+
+# Admin: Assets
+WORKDIR /code/admin
+
+COPY ./admin/.bowerrc /code/admin/
+COPY ./admin/bower.json /code/admin/
+RUN mkdir node_modules \
+    && npm install bower \
+    && ./node_modules/bower/bin/bower install --allow-root \
+    && ./node_modules/bower/bin/bower cache clean --allow-root
+
+COPY ./admin/package.json /code/admin/
+RUN npm install --production
+
+COPY ./admin/webpack* /code/admin/
+COPY ./admin/static /code/admin/static/
+
+RUN node ./node_modules/webpack/bin/webpack.js --config webpack.prod.config.js \
+    && rm -rf /root/.npm \
+    && npm cache clean
+
+WORKDIR /code
+# /Admin: Assets
+
 
 # Copy the rest of the code over
 COPY ./ /code/

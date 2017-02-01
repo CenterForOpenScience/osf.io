@@ -2071,6 +2071,21 @@ class TestNodeOrdering:
         private_nodes = list(project.get_nodes(is_public=False))
         assert private_nodes == [children[1], children[0]]
 
+    def test_get_nodes_does_not_return_duplicates(self):
+        parent = ProjectFactory(title='Parent')
+        child = NodeFactory(parent=parent, title='Child', is_public=True)
+        linker = ProjectFactory(title='Linker', is_public=True)
+        unrelated = ProjectFactory(title='Unrelated', is_public=True)
+
+        linker.add_node_link(child, auth=Auth(linker.creator), save=True)
+        linker.add_node_link(unrelated, auth=Auth(linker.creator), save=True)
+
+        rel1 = NodeRelation.objects.get(parent=linker, child=child)
+        rel2 = NodeRelation.objects.get(parent=linker, child=unrelated)
+        linker.set_noderelation_order([rel2.pk, rel1.pk])
+
+        assert len(parent.get_nodes()) == 1  # child
+        assert len(linker.get_nodes()) == 2  # child and unrelated
 
 def test_node_ids(node):
     child1, child2 = NodeFactory(parent=node), NodeFactory(parent=node)

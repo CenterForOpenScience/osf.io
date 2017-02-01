@@ -1,4 +1,7 @@
-## Setup figshare for development
+# Setup figshare for development
+
+## Deprecation Warning: ./website/addons has been moved to ./addons
+## Please configure in the new location
 
 **Note:** The figshare account you test with **cannot** be the same as the figshare account
 associated with the API application. Attempting to use the same account will result in errors

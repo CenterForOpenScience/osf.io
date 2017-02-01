@@ -6,11 +6,13 @@ import mock
 from factory import SubFactory
 from factory.fuzzy import FuzzyDateTime, FuzzyAttribute, FuzzyChoice
 from mock import patch, Mock
+from random import randint
 
 import factory
 import pytz
 from factory.django import DjangoModelFactory
 from django.utils import timezone
+from django.db.utils import IntegrityError
 from faker import Factory
 from modularodm.exceptions import NoResultsFound
 
@@ -478,7 +480,10 @@ class SubjectFactory(DjangoModelFactory):
 
     @classmethod
     def _create(cls, target_class, parents=None, *args, **kwargs):
-        ret = super(SubjectFactory, cls)._create(target_class, *args, **kwargs)
+        try:
+            ret = super(SubjectFactory, cls)._create(target_class, *args, **kwargs)
+        except IntegrityError:
+            ret = models.Subject.objects.get(text=kwargs['text'])
         if parents:
             ret.parents.add(*parents)
         return ret

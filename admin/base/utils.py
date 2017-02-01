@@ -22,7 +22,17 @@ class OSFAdmin(UserPassesTestMixin):
             raise PermissionDenied(self.get_permission_denied_message())
 
     def test_func(self):
-        return self.request.user.is_authenticated() and self.request.user.groups.filter(name='osf_admin')
+        return self.request.user.is_authenticated() and (self.request.user.is_in_group('osf_admin') or self.request.user.is_superuser)
+
+
+class NodesAndUsers(OSFAdmin):
+    """User needs to be in the nodes_and_users group to be able to access views with node
+    and user information. Specific admin permissions to be checked template side
+    """
+    permission_denied_message = 'You are not allowed to access information about Nodes and Users on the OSF Admin.'
+
+    def test_func(self):
+        return self.request.user.is_authenticated() and (self.request.user.is_in_group('nodes_and_users') or self.request.user.is_superuser)
 
 
 class SuperUser(OSFAdmin):
@@ -35,12 +45,12 @@ class SuperUser(OSFAdmin):
         return self.request.user.is_authenticated() and self.request.user.is_superuser
 
 
-class PreregAdmin(OSFAdmin):
+class Prereg(OSFAdmin):
     """For testing for Prereg credentials of user."""
     permission_denied_message = 'You are not in the Pre-reg admin group.'
 
     def test_func(self):
-        return self.request.user.is_authenticated() and self.request.user.groups.filter(name='prereg_group')
+        return self.request.user.is_authenticated() and (self.request.user.is_in_group('prereg') or self.request.user.is_superuser)
 
 
 def reverse_qs(view, urlconf=None, args=None, kwargs=None, current_app=None, query_kwargs=None):

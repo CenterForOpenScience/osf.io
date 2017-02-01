@@ -18,7 +18,6 @@ from django.db import models, transaction, connection
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils import timezone
-from django.utils.functional import cached_property
 from keen import scoped_keys
 from modularodm import Q as MQ
 from psycopg2._psycopg import AsIs
@@ -271,7 +270,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         return self.linked_from.filter(type='osf.collection')
 
     def get_nodes(self, **kwargs):
-        """Return queryset of nodes. ``kwargs`` are used to filter against
+        """Return list of children nodes. ``kwargs`` are used to filter against
         children.
         """
         # Prepend 'child__' to kwargs for filtering
@@ -281,9 +280,10 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             del kwargs['is_node_link']
         for key, val in kwargs.items():
             filter_kwargs['child__{}'.format(key)] = val
-        # TODO: per wisecarver, this is getting more data back than necessary and should be reworked
-        return AbstractNode.objects.filter(id__in=NodeRelation.objects.filter(parent=self,
-                **filter_kwargs).values_list('child_id', flat=True)).order_by('noderelation___order').distinct()
+        node_relations = (NodeRelation.objects.filter(parent=self, **filter_kwargs)
+                        .select_related('child')
+                        .order_by('_order'))
+        return [each.child for each in node_relations]
 
     @property
     def linked_nodes(self):
@@ -686,7 +686,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     def get_aggregate_logs_query(self, auth):
         ids = [self._id] + [n._id
-                            for n in self.get_descendants_recursive()
+                            for n in self.get_descendants_recursive(primary_only=True)
                             if n.can_view(auth)]
         query = Q('node', 'in', ids) & Q('should_hide', 'ne', True)
         return query
@@ -698,15 +698,15 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     @property
     def comment_level(self):
         if self.public_comments:
-            return 'public'
+            return self.PUBLIC
         else:
-            return 'private'
+            return self.PRIVATE
 
     @comment_level.setter
     def comment_level(self, value):
-        if value == 'public':
+        if value == self.PUBLIC:
             self.public_comments = True
-        elif value == 'private':
+        elif value == self.PRIVATE:
             self.public_comments = False
         else:
             raise ValidationError(
@@ -1426,16 +1426,37 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     def private_link_keys_deleted(self):
         return self.private_links.filter(is_deleted=True).values_list('key', flat=True)
 
-    # TODO: Traversing up the tree in Python is inefficient. Optimize me.
-    # We might be able to use a recursive query/cte, as we used to do
-    # (see https://github.com/CenterForOpenScience/osf.io/blob/e7e0c28ec01c2a015dab2fc6685590e294a3f240/osf/models/node.py#L251-L280)
-    # but the implementation would have to account for node links
-    # (in order to avoid bugs like https://openscience.atlassian.net/browse/OSF-7378)
-    @cached_property
+    @property
     def root(self):
-        if self.parent_node:
-            return self.parent_node.root
-        else:
+        sql = """
+            WITH RECURSIVE ascendants AS (
+              SELECT
+                parent_id,
+                child_id,
+                1 AS LEVEL
+              FROM %s
+              WHERE is_node_link IS FALSE
+              UNION ALL
+              SELECT
+                S.parent_id,
+                D.child_id,
+                D.level + 1
+              FROM ascendants AS D
+                JOIN %s AS S
+                  ON D.parent_id = S.child_id
+              WHERE S.is_node_link IS FALSE
+            ) SELECT parent_id
+              FROM ascendants
+              WHERE child_id = %s
+              ORDER BY level DESC
+              LIMIT 1;
+        """
+        with connection.cursor() as cursor:
+            node_relation_table = AsIs(NodeRelation._meta.db_table)
+            cursor.execute(sql, [node_relation_table, node_relation_table, self.pk])
+            res = cursor.fetchone()
+            if res:
+                return AbstractNode.objects.get(pk=res[0])
             return self
 
     def find_readable_antecedent(self, auth):
@@ -2273,7 +2294,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     def confirm_spam(self, save=False):
         super(AbstractNode, self).confirm_spam(save=False)
-        self.set_privacy(Node.PRIVATE, auth=None, log=False, save=False, check_addons=False)
+        self.set_privacy(Node.PRIVATE, auth=None, log=False, save=False)
         log = self.add_log(
             action=NodeLog.MADE_PRIVATE,
             params={

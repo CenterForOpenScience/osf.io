@@ -158,7 +158,7 @@ class TestNodeChildCreate(ApiTestCase):
         assert_equal(res.status_code, 401)
 
         self.project.reload()
-        assert_equal(self.project.nodes.count(), 0)
+        assert_equal(len(self.project.nodes), 0)
 
     def test_creates_child_logged_in_owner(self):
         res = self.app.post_json_api(self.url, self.child, auth=self.user.auth)
@@ -168,8 +168,8 @@ class TestNodeChildCreate(ApiTestCase):
         assert_equal(res.json['data']['attributes']['category'], self.child['data']['attributes']['category'])
 
         self.project.reload()
-        assert_equal(res.json['data']['id'], self.project.nodes.first()._id)
-        assert_equal(self.project.nodes.first().logs.latest().action, NodeLog.PROJECT_CREATED)
+        assert_equal(res.json['data']['id'], self.project.nodes[0]._id)
+        assert_equal(self.project.nodes[0].logs.latest().action, NodeLog.PROJECT_CREATED)
 
     def test_creates_child_logged_in_write_contributor(self):
         self.project.add_contributor(self.user_two, permissions=[permissions.READ, permissions.WRITE], auth=Auth(self.user), save=True)
@@ -182,7 +182,7 @@ class TestNodeChildCreate(ApiTestCase):
 
         self.project.reload()
         child_id = res.json['data']['id']
-        assert_equal(child_id, self.project.nodes.first()._id)
+        assert_equal(child_id, self.project.nodes[0]._id)
         assert_equal(Node.load(child_id).logs.latest().action, NodeLog.PROJECT_CREATED)
 
     def test_creates_child_logged_in_read_contributor(self):
@@ -191,14 +191,14 @@ class TestNodeChildCreate(ApiTestCase):
         assert_equal(res.status_code, 403)
 
         self.project.reload()
-        assert_equal(self.project.nodes.count(), 0)
+        assert_equal(len(self.project.nodes), 0)
 
     def test_creates_child_logged_in_non_contributor(self):
         res = self.app.post_json_api(self.url, self.child, auth=self.user_two.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
 
         self.project.reload()
-        assert_equal(self.project.nodes.count(), 0)
+        assert_equal(len(self.project.nodes), 0)
 
     def test_creates_child_creates_child_and_sanitizes_html_logged_in_owner(self):
         title = '<em>Cool</em> <strong>Project</strong>'
@@ -226,7 +226,7 @@ class TestNodeChildCreate(ApiTestCase):
 
         self.project.reload()
         child_id = res.json['data']['id']
-        assert_equal(child_id, self.project.nodes.first()._id)
+        assert_equal(child_id, self.project.nodes[0]._id)
         assert_equal(Node.load(child_id).logs.latest().action, NodeLog.PROJECT_CREATED)
 
     def test_cannot_create_child_on_a_registration(self):
@@ -333,7 +333,7 @@ class TestNodeChildrenBulkCreate(ApiTestCase):
         assert_equal(res.status_code, 401)
 
         self.project.reload()
-        assert_equal(self.project.nodes.count(), 0)
+        assert_equal(len(self.project.nodes), 0)
 
     def test_bulk_creates_children_logged_in_owner(self):
         res = self.app.post_json_api(self.url, {'data': [self.child, self.child_two]}, auth=self.user.auth, bulk=True)
@@ -346,7 +346,7 @@ class TestNodeChildrenBulkCreate(ApiTestCase):
         assert_equal(res.json['data'][1]['attributes']['category'], self.child_two['attributes']['category'])
 
         self.project.reload()
-        nodes = self.project.nodes.all()
+        nodes = self.project.nodes
         assert_equal(res.json['data'][0]['id'], nodes[0]._id)
         assert_equal(res.json['data'][1]['id'], nodes[1]._id)
 
@@ -369,7 +369,7 @@ class TestNodeChildrenBulkCreate(ApiTestCase):
         self.project.reload()
         child_id = res.json['data'][0]['id']
         child_two_id = res.json['data'][1]['id']
-        nodes = self.project.nodes.all()
+        nodes = self.project.nodes
         assert_equal(child_id, nodes[0]._id)
         assert_equal(child_two_id, nodes[1]._id)
 
@@ -383,7 +383,7 @@ class TestNodeChildrenBulkCreate(ApiTestCase):
         assert_equal(res.status_code, 403)
 
         self.project.reload()
-        assert_equal(self.project.nodes.count(), 0)
+        assert_equal(len(self.project.nodes), 0)
 
     def test_bulk_creates_children_logged_in_non_contributor(self):
         res = self.app.post_json_api(self.url, {'data': [self.child, self.child_two]},
@@ -391,7 +391,7 @@ class TestNodeChildrenBulkCreate(ApiTestCase):
         assert_equal(res.status_code, 403)
 
         self.project.reload()
-        assert_equal(self.project.nodes.count(), 0)
+        assert_equal(len(self.project.nodes), 0)
 
     def test_bulk_creates_children_and_sanitizes_html_logged_in_owner(self):
         title = '<em>Cool</em> <strong>Project</strong>'
@@ -419,7 +419,7 @@ class TestNodeChildrenBulkCreate(ApiTestCase):
 
         self.project.reload()
         child_id = res.json['data']['id']
-        assert_equal(child_id, self.project.nodes.first()._id)
+        assert_equal(child_id, self.project.nodes[0]._id)
         assert_equal(Node.load(child_id).logs.latest().action, NodeLog.PROJECT_CREATED)
 
     def test_cannot_bulk_create_children_on_a_registration(self):
@@ -439,7 +439,7 @@ class TestNodeChildrenBulkCreate(ApiTestCase):
         assert_equal(res.status_code, 404)
 
         self.project.reload()
-        assert_equal(self.project.nodes.count(), 0)
+        assert_equal(len(self.project.nodes), 0)
 
     def test_bulk_creates_children_no_type(self):
         child = {
@@ -457,7 +457,7 @@ class TestNodeChildrenBulkCreate(ApiTestCase):
         assert_equal(res.json['errors'][0]['source']['pointer'], '/data/1/type')
 
         self.project.reload()
-        assert_equal(self.project.nodes.count(), 0)
+        assert_equal(len(self.project.nodes), 0)
 
     def test_bulk_creates_children_incorrect_type(self):
         child = {
@@ -475,7 +475,7 @@ class TestNodeChildrenBulkCreate(ApiTestCase):
         assert_equal(res.json['errors'][0]['detail'], 'This resource has a type of "nodes", but you set the json body\'s type field to "Wrong type.". You probably need to change the type field to match the resource\'s type.')
 
         self.project.reload()
-        assert_equal(self.project.nodes.count(), 0)
+        assert_equal(len(self.project.nodes), 0)
 
     def test_bulk_creates_children_properties_not_nested(self):
         child = {
@@ -491,4 +491,5 @@ class TestNodeChildrenBulkCreate(ApiTestCase):
         assert_equal(res.json['errors'][0]['source']['pointer'], '/data/attributes')
 
         self.project.reload()
-        assert_equal(self.project.nodes.count(), 0)
+        assert_equal(len(self.project.nodes), 0)
+

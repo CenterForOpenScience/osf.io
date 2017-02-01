@@ -734,8 +734,8 @@ class TestNodeCreate(ApiTestCase):
         assert_equal(new_project.title, templated_project_title)
         assert_equal(new_project.description, '')
         assert_false(new_project.is_public)
-        assert_equal(new_project.nodes.count(), template_from.nodes.count())
-        assert_equal(new_project.nodes.first().title, template_component.title)
+        assert_equal(len(new_project.nodes), len(template_from.nodes))
+        assert_equal(new_project.nodes[0].title, template_component.title)
 
     def test_404_on_create_from_template_of_nonexistent_project(self):
         template_from_id = 'thisisnotavalidguid'
