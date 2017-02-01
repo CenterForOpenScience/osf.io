@@ -8,6 +8,7 @@ from django.views.decorators.cache import never_cache
 from django.views.decorators.csrf import csrf_protect
 from django.views.generic.edit import FormView, UpdateView, CreateView
 from django.contrib import messages
+from django.contrib.auth.models import Group
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.contrib.auth import login, REDIRECT_FIELD_NAME, authenticate, logout
 
@@ -62,15 +63,18 @@ class RegisterUser(FormView, PermissionRequiredMixin):
     def form_valid(self, form):
         osf_id = form.cleaned_data.get('osf_id')
         osf_user = OSFUser.load(osf_id)
-        try:
-            osf_user.add_system_tag(PREREG_ADMIN_TAG)
-            osf_user.save()
-        except AttributeError:
-            raise Http404(('OSF user with id "{}" not found.'
-                           ' Please double check.').format(osf_id))
 
+        if not osf_user:
+            raise Http404(('OSF user with id "{}" not found. Please double check.').format(osf_id))
+
+        osf_user.is_staff = True
+
+        prereg_admin_group = Group.objects.get(name='prereg_admin')
         for group in form.cleaned_data.get('group_perms'):
             osf_user.groups.add(group)
+            if group == prereg_admin_group:
+                osf_user.add_system_tag(PREREG_ADMIN_TAG)
+
         osf_user.save()
         messages.success(self.request, 'Registration successful!')
         return super(RegisterUser, self).form_valid(form)
