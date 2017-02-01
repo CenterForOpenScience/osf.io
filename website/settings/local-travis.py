@@ -29,7 +29,7 @@ EXTERNAL_EMBER_APPS = {
     'preprints': {
         'url': '/preprints/',
         'server': 'http://localhost:4200',
-        'path': '/preprints/'
+        'path': os.environ.get('HOME') + '/preprints/'
     }
 }
 

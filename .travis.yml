@@ -106,7 +106,7 @@ install:
     - cd $PROJECT_DIR
     - cp website/settings/local-travis.py website/settings/local.py
     - cp api/base/settings/local-travis.py api/base/settings/local.py
-    - '[ -d /preprints ] || ( mkdir /preprints && touch /preprints/index.html )'
+    - '[ -d $HOME/preprints ] || ( mkdir -p $HOME/preprints && touch $HOME/preprints/index.html )'
 
     - travis_retry pip install --upgrade pip
     - travis_retry pip install invoke==0.13.0
