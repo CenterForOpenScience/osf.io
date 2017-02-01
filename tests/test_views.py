@@ -85,6 +85,8 @@ from osf_tests.factories import (
     ApiOAuth2ApplicationFactory,
     ApiOAuth2PersonalTokenFactory,
     ProjectWithAddonFactory,
+    PreprintFactory,
+    PreprintProviderFactory,
 )
 
 class Addon(MockAddonNodeSettings):
@@ -4932,6 +4934,35 @@ class TestIndexView(OsfTestCase):
         assert_not_equal(dashboard_institutions[0]['id'], self.inst_three._id)
         assert_not_equal(dashboard_institutions[0]['id'], self.inst_four._id)
         assert_not_equal(dashboard_institutions[0]['id'], self.inst_five._id)
+
+
+class TestResolveGuid(OsfTestCase):
+    def setUp(self):
+        super(TestResolveGuid, self).setUp()
+
+    def test_preprint_provider_without_domain(self):
+        provider = PreprintProviderFactory(domain='')
+        preprint = PreprintFactory(provider=provider)
+        url = web_url_for('resolve_guid', _guid=True, guid=preprint._id)
+        res = self.app.get(url)
+        assert_equal(res.status_code, 200)
+
+
+    def test_preprint_provider_with_domain(self):
+        provider = PreprintProviderFactory(_id='test', domain='test.com')
+        preprint = PreprintFactory(provider=provider)
+        url = web_url_for('resolve_guid', _guid=True, guid=preprint._id)
+        res = self.app.get(url)
+        assert_is_redirect(res)
+        assert_equal(res.status_code, 301)
+
+    def test_preprint_provider_with_osf_domain(self):
+        provider = PreprintProviderFactory(_id='osf', domain='osf.io')
+        preprint = PreprintFactory(provider=provider)
+        url = web_url_for('resolve_guid', _guid=True, guid=preprint._id)
+        res = self.app.get(url)
+        assert_equal(res.status_code, 200)
+
 
 if __name__ == '__main__':
     unittest.main()

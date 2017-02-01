@@ -27,6 +27,7 @@ from website.settings import EXTERNAL_EMBER_APPS
 from website.util import permissions
 
 logger = logging.getLogger(__name__)
+preprints_dir = os.path.abspath(os.path.join(os.getcwd(), EXTERNAL_EMBER_APPS['preprints']['path']))
 
 
 def _render_node(node, auth=None, parent_node=None):
@@ -177,7 +178,6 @@ def _build_guid_url(base, suffix=None):
         url = url.decode('utf-8')
     return u'/{0}/'.format(url)
 
-preprints_dir = os.path.abspath(os.path.join(os.getcwd(), EXTERNAL_EMBER_APPS['preprints']['path']))
 
 def resolve_guid(guid, suffix=None):
     """Load GUID by primary key, look up the corresponding view function in the
