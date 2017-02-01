@@ -1,7 +1,7 @@
 from __future__ import absolute_import, unicode_literals
 
 from django.core.urlresolvers import reverse, reverse_lazy
-from django.http import Http404
+from django.http import Http404, HttpResponseBadRequest
 from django.shortcuts import redirect
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import never_cache
@@ -15,6 +15,7 @@ from django.contrib.auth import login, REDIRECT_FIELD_NAME, authenticate, logout
 from website.settings import PREREG_ADMIN_TAG
 
 from osf.models.user import OSFUser
+from admin.common_auth.models import AdminProfile
 from admin.common_auth.forms import LoginForm, UserRegistrationForm, DeskUserForm
 
 
@@ -65,9 +66,17 @@ class RegisterUser(FormView, PermissionRequiredMixin):
         osf_user = OSFUser.load(osf_id)
 
         if not osf_user:
-            raise Http404(('OSF user with id "{}" not found. Please double check.').format(osf_id))
+            raise Http404('OSF user with id "{}" not found. Please double check.').format(osf_id)
 
         osf_user.is_staff = True
+        osf_user.save()
+
+        # create AdminProfile for this new user
+        profile, created = AdminProfile.objects.get_or_create(user=osf_user)
+        if not created:
+            return HttpResponseBadRequest(
+                'This user is already able to access the OSF Admin - please update their permissions with a superuser'
+            )
 
         prereg_admin_group = Group.objects.get(name='prereg_admin')
         for group in form.cleaned_data.get('group_perms'):
@@ -76,7 +85,8 @@ class RegisterUser(FormView, PermissionRequiredMixin):
                 osf_user.add_system_tag(PREREG_ADMIN_TAG)
 
         osf_user.save()
-        messages.success(self.request, 'Registration successful!')
+
+        messages.success(self.request, 'Registration successful for OSF User {}!'.format(osf_user.username))
         return super(RegisterUser, self).form_valid(form)
 
     def get_success_url(self):
