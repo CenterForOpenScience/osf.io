@@ -38,7 +38,7 @@ class MeetingListView(ListView, PermissionRequiredMixin):
 class MeetingFormView(FormView, PermissionRequiredMixin):
     template_name = 'meetings/detail.html'
     form_class = MeetingForm
-    permission_required = 'osf.view_conference'
+    permission_required = 'osf.change_conference'
 
     def dispatch(self, request, *args, **kwargs):
         endpoint = self.kwargs.get('endpoint')
@@ -58,6 +58,9 @@ class MeetingFormView(FormView, PermissionRequiredMixin):
         self.initial = serialize_meeting(self.conf)
         self.initial.setdefault('edit', True)
         return super(MeetingFormView, self).get_initial()
+
+    def is_valid(self):
+        return super(MeetingFormView, self).is_valid()
 
     def form_valid(self, form):
         custom_fields, data = get_custom_fields(form.cleaned_data)
