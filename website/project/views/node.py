@@ -850,7 +850,7 @@ def get_recent_logs(node, **kwargs):
     return {'logs': logs}
 
 
-def _get_summary(node, auth, primary=True, link_id=None, show_path=False):
+def _get_summary(node, auth, primary=True, show_path=False):
     # TODO(sloria): Refactor this or remove (lots of duplication with _view_project)
     summary = {
         'id': node._id,
@@ -909,11 +909,10 @@ def _get_summary(node, auth, primary=True, link_id=None, show_path=False):
 @must_be_valid_project(retractions_valid=True)
 def get_summary(auth, node, **kwargs):
     primary = kwargs.get('primary')
-    link_id = kwargs.get('link_id')
     show_path = kwargs.get('show_path', False)
 
     return _get_summary(
-        node, auth, primary=primary, link_id=link_id, show_path=show_path
+        node, auth, primary=primary, show_path=show_path
     )
 
 @must_be_contributor_or_public
