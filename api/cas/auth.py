@@ -3,25 +3,23 @@ import json
 import jwe
 import jwt
 
-from modularodm import Q
-from modularodm.exceptions import ModularOdmException
-
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.authentication import BaseAuthentication
 
+from django.db.models import Q
 from django.utils import timezone
+
+from addons.twofactor.models import UserSettings
 
 from api.base import settings
 
 from framework.auth import register_unconfirmed, get_or_create_user
 from framework.auth import campaigns
-from framework.auth.core import get_user
 from framework.auth.exceptions import DuplicateEmailError
 from framework.auth.views import send_confirm_email
 
-from osf.models import Institution
+from osf.models import Institution, OSFUser
 
-from website.addons.twofactor.models import TwoFactorUserSettings
 from website.mails import send_mail, WELCOME_OSF4I
 
 
@@ -32,7 +30,7 @@ class CasAuthentication(BaseAuthentication):
     def authenticate(self, request):
 
         payload = decrypt_payload(request.body)
-        data = payload.get('data')
+        data = json.loads(payload['data'])
         # The `data` payload structure for type "LOGIN"
         # {
         #     "type": "LOGIN",
@@ -152,7 +150,7 @@ def handle_login(user):
     if not email or not (remote_authenticated or verification_key or password):
         return None, 'MISSING_CREDENTIALS'
 
-    user = get_user(email)
+    user = OSFUser.objects.filter(Q(username=email) | Q(emails__icontains=email)).first()
     if not user:
         return None, 'ACCOUNT_NOT_FOUND'
 
@@ -196,10 +194,7 @@ def handle_register(user):
 
 
 def get_user_with_two_factor(user):
-    try:
-        return TwoFactorUserSettings.find_one(Q('owner', 'eq', user._id))
-    except ModularOdmException:
-        return None
+    return UserSettings.objects.filter(owner_id=user.pk).first()
 
 
 def verify_two_factor(user, one_time_password):
