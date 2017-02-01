@@ -3,7 +3,7 @@
 
     <li
             node_id="${summary['id']}"
-            node_reference="${summary['id']}:${'node' if summary['primary'] else 'pointer'}"
+            node_reference="${summary['id']}"
             class="
                 project list-group-item list-group-item-node cite-container
                 ${'pointer' if not summary['primary'] else ''}

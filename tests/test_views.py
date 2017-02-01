@@ -4320,8 +4320,8 @@ class TestReorderComponents(OsfTestCase):
         # contrib tries to reorder components
         payload = {
             'new_list': [
-                '{0}:node'.format(self.private_component._primary_key),
-                '{0}:node'.format(self.public_component._primary_key),
+                '{0}'.format(self.private_component._id),
+                '{0}'.format(self.public_component._id),
             ]
         }
         url = self.project.api_url_for('project_reorder_components')
