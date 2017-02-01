@@ -943,14 +943,16 @@ def get_readable_descendants(auth, node, **kwargs):
                 descendants.append(descendant)
     return _render_nodes(descendants, auth=auth, parent_node=node)
 
-def node_child_tree(user, node_ids):
+def node_child_tree(user, nodes):
     """ Format data to test for node privacy settings for use in treebeard.
+    :param user: modular odm User object
+    :param nodes: list of parent project node objects
+    :return: treebeard-formatted data
     """
     items = []
 
-    for node_id in node_ids:
-        node = Node.load(node_id)
-        assert node, '{} is not a valid Node.'.format(node_id)
+    for node in nodes:
+        assert node, '{} is not a valid Node.'.format(node._id)
 
         can_read = node.has_permission(user, READ)
         can_read_children = node.has_permission_on_children(user, 'read')
@@ -970,15 +972,15 @@ def node_child_tree(user, node_ids):
             'name': affiliated_institution.name
         } for affiliated_institution in node.affiliated_institutions.all()]
 
-        node_children = node.get_nodes(**{'is_deleted': False, 'is_node_link': False}).values_list('guids___id', flat=True)
-        children = []
+        children = node.get_nodes(**{'is_deleted': False, 'is_node_link': False})
+        children_tree = []
         # List project/node if user has at least 'read' permissions (contributor or admin viewer) or if
         # user is contributor on a component of the project/node
-        children.extend(node_child_tree(user, node_children))
+        children_tree.extend(node_child_tree(user, children))
 
         item = {
             'node': {
-                'id': node_id,
+                'id': node._id,
                 'url': node.url if can_read else '',
                 'title': node.title if can_read else 'Private Project',
                 'is_public': node.is_public,
@@ -988,7 +990,7 @@ def node_child_tree(user, node_ids):
                 'affiliated_institutions': affiliated_institutions
             },
             'user_id': user._id,
-            'children': children,
+            'children': children_tree,
             'kind': 'folder' if not node.parent_node or not node.parent_node.has_permission(user, 'read') else 'node',
             'nodeType': node.project_or_component,
             'category': node.category,
@@ -1007,7 +1009,7 @@ def node_child_tree(user, node_ids):
 @must_be_valid_project
 def get_node_tree(auth, **kwargs):
     node = kwargs.get('node') or kwargs['project']
-    tree = node_child_tree(auth.user, [node._id])
+    tree = node_child_tree(auth.user, [node])
     return tree
 
 @must_be_contributor_or_public

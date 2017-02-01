@@ -714,10 +714,10 @@ class TestNotificationUtils(OsfTestCase):
         assert_items_equal(node_subscription_ids, expected_node_subscription_ids)
 
     def test_get_configured_project_ids_does_not_return_user_or_node_ids(self):
-        configured_ids = utils.get_configured_projects(self.user)
-
-        # No dupilcates!
-        assert_equal(len(configured_ids), 1)
+        configured_nodes = utils.get_configured_projects(self.user)
+        configured_ids = [n._id for n in configured_nodes]
+        # No duplicates!
+        assert_equal(len(configured_nodes), 1)
 
         assert_in(self.project._id, configured_ids)
         assert_not_in(self.node._id, configured_ids)
@@ -727,11 +727,11 @@ class TestNotificationUtils(OsfTestCase):
         project = factories.ProjectFactory()
         project.is_deleted = True
         project.save()
-        assert_not_in(project._id, utils.get_configured_projects(self.user))
+        assert_not_in(project, utils.get_configured_projects(self.user))
 
     def test_get_configured_project_ids_excludes_node_with_project_category(self):
         node = factories.NodeFactory(parent=self.project, category='project')
-        assert_not_in(node._id, utils.get_configured_projects(self.user))
+        assert_not_in(node, utils.get_configured_projects(self.user))
 
     def test_get_configured_project_ids_includes_top_level_private_projects_if_subscriptions_on_node(self):
         private_project = factories.ProjectFactory()
@@ -747,8 +747,8 @@ class TestNotificationUtils(OsfTestCase):
 
         node.creator.notifications_configured[node._id] = True
         node.creator.save()
-        configured_project_ids = utils.get_configured_projects(node.creator)
-        assert_in(private_project._id, configured_project_ids)
+        configured_project_nodes = utils.get_configured_projects(node.creator)
+        assert_in(private_project, configured_project_nodes)
 
     def test_get_configured_project_ids_excludes_private_projects_if_no_subscriptions_on_node(self):
         user = factories.UserFactory()
@@ -759,8 +759,8 @@ class TestNotificationUtils(OsfTestCase):
 
         utils.remove_contributor_from_subscriptions(node, user)
 
-        configured_project_ids = utils.get_configured_projects(user)
-        assert_not_in(private_project._id, configured_project_ids)
+        configured_project_nodes = utils.get_configured_projects(user)
+        assert_not_in(private_project, configured_project_nodes)
 
     def test_get_parent_notification_type(self):
         nt = utils.get_parent_notification_type(self.node, 'comments', self.user)
@@ -849,8 +849,8 @@ class TestNotificationUtils(OsfTestCase):
         project.add_pointer(pointed, Auth(project.creator))
         project.creator.notifications_configured[project._id] = True
         project.creator.save()
-        configured_project_ids = utils.get_configured_projects(project.creator)
-        data = utils.format_data(project.creator, configured_project_ids)
+        configured_project_nodes = utils.get_configured_projects(project.creator)
+        data = utils.format_data(project.creator, configured_project_nodes)
         event = {
             'event': {
                 'title': 'comments',
@@ -880,8 +880,8 @@ class TestNotificationUtils(OsfTestCase):
 
         node.creator.notifications_configured[node._id] = True
         node.creator.save()
-        configured_project_ids = utils.get_configured_projects(node.creator)
-        data = utils.format_data(node.creator, configured_project_ids)
+        configured_project_nodes = utils.get_configured_projects(node.creator)
+        data = utils.format_data(node.creator, configured_project_nodes)
         event = {
             'event': {
                 'title': 'comments',
@@ -912,8 +912,8 @@ class TestNotificationUtils(OsfTestCase):
 
         node.creator.notifications_configured[node._id] = True
         node.creator.save()
-        configured_project_ids = utils.get_configured_projects(node.creator)
-        data = utils.format_data(node.creator, configured_project_ids)
+        configured_project_nodes = utils.get_configured_projects(node.creator)
+        data = utils.format_data(node.creator, configured_project_nodes)
         event = {
             'event': {
                 'title': 'comments',
