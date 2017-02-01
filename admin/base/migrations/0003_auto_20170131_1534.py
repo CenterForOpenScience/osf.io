@@ -87,6 +87,18 @@ def add_group_permissions(*args):
     except Group.DoesNotExist:
         pass
 
+    # Add a metrics_only Group for ease in the user registration form
+    metrics_group, created = Group.objects.get_or_create(name='metrics_only')
+    metrics_permission = Permission.objects.get(codename='view_metrics')
+    metrics_group.permissions.add(metrics_permission)
+    metrics_group.save()
+
+    # Add a view_prereg Group for ease in the user registration form
+    prereg_view_group, created = Group.objects.get_or_create(name='prereg_view')
+    prereg_view_permission = Permission.objects.get(codename='view_prereg')
+    prereg_view_group.permissions.add(prereg_view_permission)
+    prereg_view_group.save()
+
 
 def remove_group_permissions(*args):
 
@@ -112,6 +124,12 @@ def remove_group_permissions(*args):
     group, created = Group.objects.get_or_create(name='osf_group')
     if created:
         logger.info('osf_group created')
+
+    # remove the new metrics group
+    Group.objects.get(name='metrics_only').delete()
+
+    # remove the new prereg view group
+    Group.objects.get(name='prereg_view').delete()
 
 
 class Migration(migrations.Migration):
