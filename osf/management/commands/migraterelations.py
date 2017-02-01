@@ -78,10 +78,10 @@ def build_toku_django_lookup_table_cache():
 
     # add the "special" ones
     lookups.update(
-        {format_lookup_key(u'{}:not_system'.format(x['name']), ContentType.objects.get_for_model(Tag).pk): x['pk'] for x in
+        {format_lookup_key(x['name'], ContentType.objects.get_for_model(Tag).pk, template='{}:not_system'): x['pk'] for x in
          Tag.objects.filter(system=False).values('name', 'pk')})
     lookups.update(
-        {format_lookup_key(u'{}:system'.format(x['name']), ContentType.objects.get_for_model(Tag).pk): x['pk'] for x in
+        {format_lookup_key(x['name'], ContentType.objects.get_for_model(Tag).pk, template='{}:system'): x['pk'] for x in
          Tag.objects.filter(system=True).values('name', 'pk')})
 
     lookups.update({format_lookup_key(x['_id'], ContentType.objects.get_for_model(CitationStyle).pk): x['pk']
@@ -135,11 +135,13 @@ def fix_bad_data(django_obj, dirty):
     return (django_obj, dirty)
 
 
-def format_lookup_key(guid, content_type_id=None, model=None):
+def format_lookup_key(guid, content_type_id=None, model=None, template=None):
     if not content_type_id and model:
-        content_type_id = ContentType.objects.get_for_model(model)
+        content_type_id = ContentType.objects.get_for_model(model).pk
     elif not content_type_id and not model:
         raise Exception('Please specify either a content_type_id or a model')
+    if template:
+        return content_type_id, template.format(unicode(guid).lower())
     return content_type_id, unicode(guid).lower()
 
 
@@ -158,8 +160,6 @@ class Command(BaseCommand):
                         or django_model is ApiOAuth2Scope or \
                         (issubclass(django_model, AbstractNode) and django_model is not AbstractNode) or \
                         not hasattr(django_model, 'modm_model_path'):
-                    continue
-                if django_model is not OSFUser:
                     continue
 
                 module_path, model_name = django_model.modm_model_path.rsplit('.', 1)
@@ -298,7 +298,7 @@ class Command(BaseCommand):
                                 elif hasattr(value, '_id'):
                                     # let's just assume it's a modm model instance
                                     setattr(django_obj, django_field_name,
-                                            self.modm_to_django[format_lookup_key(value, model=field.related_model)])
+                                            self.modm_to_django[format_lookup_key(value._id, model=field.related_model)])
                                     dirty = True
                                     fk_count += 1
 
@@ -390,11 +390,11 @@ class Command(BaseCommand):
                             if isinstance(item, basestring):
                                 # append the pk to the list of pks
                                 if field_name == 'system_tags' and 'system_tags' not in field_aliases.keys():
-                                    remote_pks.add(self.modm_to_django['{}:system'.format(format_lookup_key(item, model=model))])
+                                    remote_pks.add(self.modm_to_django[format_lookup_key(item, model=model, template='{}:system')])
                                 elif field_name == 'tags' and 'system_tags' in field_aliases.keys():
-                                    remote_pks.add(self.modm_to_django['{}:system'.format(format_lookup_key(item, model=model))])
+                                    remote_pks.add(self.modm_to_django[format_lookup_key(item, model=model, template='{}:system')])
                                 elif field_name == 'tags':
-                                    remote_pks.add(self.modm_to_django['{}:not_system'.format(format_lookup_key(item, model=model))])
+                                    remote_pks.add(self.modm_to_django[format_lookup_key(item, model=model, template='{}:not_system')])
                                 else:
                                     remote_pks.add(self.modm_to_django[format_lookup_key(item, model=model)])
                             # if it's a class instance
@@ -403,11 +403,11 @@ class Command(BaseCommand):
                                 str_value = item._id
                                 # append the pk to the list of pks
                                 if field_name == 'system_tags' and 'system_tags' not in field_aliases.keys():
-                                    remote_pks.add(self.modm_to_django['{}:system'.format(format_lookup_key(str_value, model=model))])
+                                    remote_pks.add(self.modm_to_django[format_lookup_key(str_value, model=model, template='{}:system')])
                                 elif field_name == 'tags' and 'system_tags' in field_aliases.keys():
-                                    remote_pks.add(self.modm_to_django['{}:system'.format(format_lookup_key(str_value, model=model))])
+                                    remote_pks.add(self.modm_to_django[format_lookup_key(str_value, model=model, template='{}:system')])
                                 elif field_name == 'tags':
-                                    remote_pks.add(self.modm_to_django['{}:not_system'.format(format_lookup_key(str_value, model=model))])
+                                    remote_pks.add(self.modm_to_django[format_lookup_key(str_value, model=model, template='{}:not_system')])
                                 else:
                                     remote_pks.add(self.modm_to_django[format_lookup_key(str_value, model=model)])
                             elif item is None:
