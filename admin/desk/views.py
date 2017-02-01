@@ -2,7 +2,7 @@ from django.shortcuts import render
 from django.views.generic import ListView, DetailView
 from django.contrib.auth.mixins import PermissionRequiredMixin
 
-from website.project.model import User
+from osf.models.user import OSFUser
 
 from admin.desk.utils import DeskClient, DeskError, DeskCustomerNotFound
 
@@ -30,7 +30,7 @@ class DeskCaseList(ListView, PermissionRequiredMixin):
 
     def get_queryset(self):
         customer_id = self.kwargs.get('user_id', None)
-        customer = User.load(customer_id)
+        customer = OSFUser.load(customer_id)
         email = customer.emails[0]
         desk = DeskClient(self.request.user)
         params = {
@@ -74,7 +74,7 @@ class DeskCustomer(DetailView, PermissionRequiredMixin):
 
     def get_object(self, queryset=None):
         customer_id = self.kwargs.get('user_id', None)
-        customer = User.load(customer_id)
+        customer = OSFUser.load(customer_id)
         email = customer.emails[0]
         desk = DeskClient(self.request.user)
         params = {'email': email}
