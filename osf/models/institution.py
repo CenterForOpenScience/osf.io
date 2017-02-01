@@ -13,7 +13,15 @@ class Institution(Loggable, base.ObjectIDMixin, base.BaseModel):
     modm_model_path = 'website.project.model.Node'
     modm_query = dict(query=MQ('institution_id', 'ne', None), allow_institution=True)
     FIELD_ALIASES = {
-        'auth_url': 'login_url'
+        'institution_auth_url': 'login_url',
+        'institution_logout_url': 'logout_url',
+        'title': 'name',
+        '_id': False,
+        'institution_id': '_id',
+        'institution_banner_name': 'banner_name',
+        'institution_domains': 'domains',
+        'institution_email_domains': 'email_domains',
+        'institution_logo_name': 'logo_name',
     }
     # /TODO DELETE ME POST MIGRATION
 

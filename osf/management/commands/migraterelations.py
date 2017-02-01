@@ -2,9 +2,12 @@ from __future__ import unicode_literals
 
 import gc
 import importlib
+import logging
 import sys
 
 import ipdb
+from django.contrib.contenttypes.models import ContentType
+
 from addons.wiki.models import NodeWikiPage
 from django.apps import apps
 from django.contrib.contenttypes.fields import GenericForeignKey
@@ -14,12 +17,13 @@ from osf import models
 from osf.models import (ApiOAuth2Scope, BlackListGuid, CitationStyle, Guid,
                         Institution, NodeRelation, NotificationSubscription,
                         RecentlyAddedContributor, StoredFileNode, Tag)
+from osf.models import OSFUser
 from osf.models.base import OptionalGuidMixin
 from osf.models.contributor import (AbstractBaseContributor, Contributor,
                                     InstitutionalContributor)
 from osf.models.node import AbstractNode, Node
 from osf.utils.order_apps import get_ordered_models
-from scripts.register_oauth_scopes import set_backend
+from .migratedata import set_backend
 from website.models import Guid as MODMGuid
 from website.models import Institution as MODMInstitution
 from website.models import Node as MODMNode
@@ -29,9 +33,12 @@ from website.models import \
 from website.models import Pointer as MODMPointer
 from website.models import User as MODMUser
 
+logger = logging.getLogger('migrations')
 
-def build_toku_django_lookup_table_cache(with_guids=False):
+
+def build_toku_django_lookup_table_cache():
     models = get_ordered_models()
+
     # ignored models
     models.pop(models.index(BlackListGuid))
     models.pop(models.index(RecentlyAddedContributor))
@@ -47,50 +54,49 @@ def build_toku_django_lookup_table_cache(with_guids=False):
     models.append(NodeWikiPage)
 
     lookups = {}
-
     for model in models:
-        if (issubclass(model, AbstractNode) and model is not AbstractNode):
+        if issubclass(model, AbstractNode) and model is not AbstractNode:
             continue
         lookup_string = model.primary_identifier_name
 
         lookup_dict = {}
-
-        for mapping in model.objects.all().values(lookup_string, 'pk'):
-            if isinstance(mapping[lookup_string], list):
-                for guid in mapping[lookup_string]:
-                    lookup_dict[unicode(guid)] = mapping['pk']
+        content_type_pk = ContentType.objects.get_for_model(model).pk
+        for guid_string, pk in model.objects.all().values_list(lookup_string, 'pk'):
+            if isinstance(guid_string, list):
+                for guid in guid_string:
+                    lookup_key = format_lookup_key(guid, content_type_pk)
+                    if lookup_key in lookup_dict:
+                        logger.info('Key {} exists with value {} but {} tried to replace it.'.format(lookup_key, lookup_dict[lookup_key], pk))
+                    lookup_dict[lookup_key] = pk
             else:
-                lookup_dict[unicode(mapping[lookup_string])] = mapping['pk']
-
-        if issubclass(model, OptionalGuidMixin):
-            for mapping in model.objects.filter(guid_string__isnull=False).values('guid_string', 'guids__pk'):
-                if isinstance(mapping['guid_string'], list):
-                    for guid in mapping['guid_string']:
-                        lookup_dict[unicode(guid)] = mapping['guids__pk']
-                else:
-                    lookup_dict[unicode(mapping['guid_string'])] = mapping['guids__pk']
-        print('Got {} guids for {}'.format(len(lookup_dict), model._meta.model.__name__))
+                lookup_key = format_lookup_key(guid_string, content_type_pk)
+                if lookup_key in lookup_dict:
+                    logger.info('Key {} exists with value {} but {} tried to replace it.'.format(lookup_key, lookup_dict[lookup_key], pk))
+                lookup_dict[lookup_key] = pk
+        logger.info('Got {} guids for {}.{}'.format(len(lookup_dict), model._meta.model.__module__, model._meta.model.__name__))
         lookups.update(lookup_dict)
 
     # add the "special" ones
     lookups.update(
-        {u'{}:not_system'.format(x['name']): x['pk'] for x in
+        {format_lookup_key(x['name'], ContentType.objects.get_for_model(Tag).pk, template='{}:not_system'): x['pk'] for x in
          Tag.objects.filter(system=False).values('name', 'pk')})
     lookups.update(
-        {u'{}:system'.format(x['name']): x['pk'] for x in
+        {format_lookup_key(x['name'], ContentType.objects.get_for_model(Tag).pk, template='{}:system'): x['pk'] for x in
          Tag.objects.filter(system=True).values('name', 'pk')})
 
-    lookups.update({unicode(x['_id']): x['pk']
+    lookups.update({format_lookup_key(x['_id'], ContentType.objects.get_for_model(CitationStyle).pk): x['pk']
                     for x in CitationStyle.objects.all().values('_id', 'pk')})
-    lookups.update({unicode(x['_id']): x['pk']
+    lookups.update({format_lookup_key(x['_id'], ContentType.objects.get_for_model(NotificationSubscription).pk): x['pk']
                     for x in NotificationSubscription.objects.all().values('_id', 'pk')})
-    lookups.update({u'guid:{}'.format(x['_id']): x['pk'] for x in Guid.objects.all().values('_id', 'pk')})
+    lookups.update({format_lookup_key(x['_id'], ContentType.objects.get_for_model(Guid).pk): x['pk'] for x in Guid.objects.all().values('_id', 'pk')})
+
     # institutions used to be nodes but their _id wasn't the 5-str guid it was their assigned institution_id
-    # in django their _id is their institution_id which is already added to the list by line 46-68
-    institution_guid_mapping = {unicode(x._id): x.node._id for x in MODMInstitution.find(deleted=True)}
-    lookups.update(
-        {institution_guid_mapping[unicode(x['_id'])]: x['pk']
-         for x in Institution.objects.all().values('_id', 'pk')})
+    # in django their _id is their institution_id which is already added to the list by line 60-71
+
+    # make a list of MODMInstitution._id to MODMInstitution.node._id
+    institution_guid_mapping = {x._id: x.node._id for x in MODMInstitution.find(deleted=True)}
+    # update lookups with x.node._id -> pk
+    lookups.update(format_lookup_key(institution_guid_mapping[x['_id']], ContentType.objects.get_for_model(Node).pk) for x in Institution.objects.all().values('_id', 'pk'))
     return lookups
 
 
@@ -129,89 +135,108 @@ def fix_bad_data(django_obj, dirty):
     return (django_obj, dirty)
 
 
+def format_lookup_key(guid, content_type_id=None, model=None, template=None):
+    if not content_type_id and model:
+        content_type_id = ContentType.objects.get_for_model(model).pk
+    elif not content_type_id and not model:
+        raise Exception('Please specify either a content_type_id or a model')
+    if template:
+        return content_type_id, template.format(unicode(guid).lower())
+    return content_type_id, unicode(guid).lower()
+
+
 class Command(BaseCommand):
     help = 'Migrations FK and M2M relationships from tokumx to postgres'
     modm_to_django = None
+
+    def get_pk_for_unknown_node_model(self, guid):
+        abstract_node_subclasses = AbstractNode.__subclasses__()
+        # I don't *think* I need this
+        # abstract_node_subclasses.append(AbstractNode)
+        content_type_id_mapping = {ContentType.objects.get_for_model(model).pk: model for model in
+                                   abstract_node_subclasses}
+        keys = {format_lookup_key(guid, content_type_id=ct): model for ct, model in content_type_id_mapping.iteritems()}
+        for key, model in keys.iteritems():
+            try:
+                pk = self.modm_to_django[key]
+            except KeyError:
+                pass
+            else:
+                return pk
 
     def handle(self, *args, **options):
         set_backend()
         models = get_ordered_models()
         with ipdb.launch_ipdb_on_exception():
-            self.modm_to_django = build_toku_django_lookup_table_cache(with_guids=True)
+            self.modm_to_django = build_toku_django_lookup_table_cache()
 
-        for migration_type in ['fk', 'm2m']:
-            with transaction.atomic():
-                for django_model in models:
-                    if issubclass(django_model, AbstractBaseContributor) \
-                            or django_model is ApiOAuth2Scope or \
-                            (issubclass(django_model, AbstractNode) and django_model is not AbstractNode) or \
-                            not hasattr(django_model, 'modm_model_path'):
-                        # if django_model is not NotificationSubscription:
-                        continue
+            for django_model in models:
+                if issubclass(django_model, AbstractBaseContributor) \
+                        or django_model is ApiOAuth2Scope or \
+                        (issubclass(django_model, AbstractNode) and django_model is not AbstractNode) or \
+                        not hasattr(django_model, 'modm_model_path'):
+                    continue
 
-                    module_path, model_name = django_model.modm_model_path.rsplit('.', 1)
-                    modm_module = importlib.import_module(module_path)
-                    modm_model = getattr(modm_module, model_name)
-                    if isinstance(django_model.modm_query, dict):
-                        modm_queryset = modm_model.find(**django_model.modm_query)
-                    else:
-                        modm_queryset = modm_model.find(django_model.modm_query)
+                module_path, model_name = django_model.modm_model_path.rsplit('.', 1)
+                modm_module = importlib.import_module(module_path)
+                modm_model = getattr(modm_module, model_name)
+                if isinstance(django_model.modm_query, dict):
+                    modm_queryset = modm_model.find(**django_model.modm_query)
+                else:
+                    modm_queryset = modm_model.find(django_model.modm_query)
 
-                    page_size = django_model.migration_page_size
+                page_size = django_model.migration_page_size
 
-                    with ipdb.launch_ipdb_on_exception():
-                        with transaction.atomic():
-                            if migration_type == 'fk':
-                                self.save_fk_relationships(modm_queryset, django_model, page_size)
-                            elif migration_type == 'm2m':
-                                self.save_m2m_relationships(modm_queryset, django_model, page_size)
-                self.migrate_contributors()
+                with ipdb.launch_ipdb_on_exception():
+                    self.save_fk_relationships(modm_queryset, django_model, page_size)
+                    self.save_m2m_relationships(modm_queryset, django_model, page_size)
 
+            self.migrate_node_through_models()
 
     def save_fk_relationships(self, modm_queryset, django_model, page_size):
-        print(
+        logger.info(
             'Starting {} on {}...'.format(sys._getframe().f_code.co_name, django_model._meta.model.__name__))
 
-        # TODO: Collections is getting user_id added to the bad fields. It shouldn't be.
-
+        # TODO: Collections is getting user_id added to the bad fields. It shouldn't be. ???? IS IT STILL ????
         fk_relations = [field for field in django_model._meta.get_fields() if
                         field.is_relation and not field.auto_created and field.many_to_one]
 
         if len(fk_relations) == 0:
-            print('{} doesn\'t have foreign keys.'.format(django_model._meta.model.__name__))
+            logger.info('{} doesn\'t have foreign keys.'.format(django_model._meta.model.__name__))
             return
         else:
-            print('FKS: {}'.format(fk_relations))
+            logger.info('FKS: {}'.format(fk_relations))
         fk_count = 0
         model_count = 0
         model_total = modm_queryset.count()
-        bad_fields = ['external_account_id',]  # external accounts are handled in their own migration
-
-        def format_lookup_string(modm_obj):
-            if isinstance(modm_obj, MODMGuid):
-                return 'guid:{}'.format(unicode(modm_obj._id).lower())
-            if isinstance(modm_obj, basestring):
-                try:
-                    guid = Guid.objects.get(_id=unicode(modm_obj).lower())
-                except Guid.DoesNotExist:
-                    # well ... I guess?
-                    return unicode(modm_obj).lower()
-                else:
-                    return u'guid:{}'.format(unicode(modm_obj)).lower()
-            return unicode(modm_obj._id).lower()
+        bad_fields = ['external_account_id', ]  # external accounts are handled in their own migration
 
         while model_count < model_total:
-            with transaction.atomic():
-                for modm_obj in modm_queryset.sort('-_id')[model_count:model_count + page_size]:
-                    if isinstance(modm_obj, MODMNodeLog) and modm_obj.node and modm_obj.node.institution_id:
-                        model_count += 1
-                        continue
-                    django_obj = django_model.objects.get(
-                        pk=self.modm_to_django[format_lookup_string(modm_obj)])
+            with transaction.atomic():  # one transaction per page
+                modm_page = modm_queryset.sort('-_id')[model_count:model_count + page_size]
+                modm_keys = modm_page.get_keys()
+
+                django_keys = []
+                for modm_key in modm_keys:
+                    try:
+                        django_keys.append(self.modm_to_django[format_lookup_key(modm_key, ContentType.objects.get_for_model(django_model).pk)])
+                    except KeyError:
+                        if format_lookup_key(modm_key, model=django_model)[1].startswith(
+                                'none_') and django_model is NotificationSubscription:
+                            logger.info('{} NotificationSubscription is bad data, skipping'.format(modm_key))
+                            model_count += 1
+                            continue
+                        else:
+                            raise
+
+                django_objects = django_model.objects.filter(pk__in=django_keys)
+                for i, django_obj in enumerate(django_objects):
+                    modm_obj = modm_page[i]
+
                     dirty = False
 
-                    # if an institution has a file, it doesn't
                     # TODO This is doing a mongo query for each Node, could probably be more performant
+                    # if an institution has a file, it doesn't
                     if isinstance(django_obj, StoredFileNode) and modm_obj.node is not None and \
                                     modm_obj.node.institution_id is not None:
                         model_count += 1
@@ -223,36 +248,41 @@ class Command(BaseCommand):
                             if isinstance(modm_obj, MODMNotificationSubscription):
                                 if isinstance(modm_obj.owner, MODMUser):
                                     # TODO this is also doing a mongo query for each owner
-                                    django_obj.user_id = self.modm_to_django[modm_obj.owner._id]
+                                    django_obj.user_id = self.modm_to_django[format_lookup_key(modm_obj.owner._id, model=OSFUser)]
                                     django_obj.node_id = None
                                 elif isinstance(modm_obj.owner, MODMNode):
                                     # TODO this is also doing a mongo query for each owner
                                     django_obj.user_id = None
-                                    django_obj.node_id = self.modm_to_django[modm_obj.owner._id]
+                                    # TODO model=Node won't work here because they could be registrations or collections
+                                    # TODO or really any of the things that used to be a node. Typed models each have a
+                                    # TODO different content_type_id
+                                    django_obj.node_id = self.modm_to_django[format_lookup_key(modm_obj.owner._id, model=Node)]
                                 elif modm_obj.owner is None:
                                     django_obj.node_id = None
                                     django_obj.user_id = None
-                                    print(
+                                    logger.info(
                                         'NotificationSubscription {} is abandoned. It\'s owner is {}.'.format(
                                             unicode(modm_obj._id), modm_obj.owner))
 
                             if isinstance(field, GenericForeignKey):
                                 field_name = field.name
+                                ct_field_name = field.ct_field
+                                fk_field_name = field.fk_field
                                 value = getattr(modm_obj, field_name)
                                 if value is None:
                                     continue
-                                if value.__class__.__name__ in ['Node', 'Registration', 'Collection',
-                                                                'Preprint']:
+                                if value.__class__.__name__ in ['Node', 'Registration', 'Collection', 'Preprint']:
                                     gfk_model = apps.get_model('osf', 'AbstractNode')
                                 else:
                                     gfk_model = apps.get_model('osf', value.__class__.__name__)
-                                # TODO in theory, if I saved the content_type_pk in the lookup table this
-                                # query
-                                # could go away
-                                gfk_instance = gfk_model.objects.get(
-                                    pk=self.modm_to_django[format_lookup_string(value)])
-                                setattr(django_obj, field_name, gfk_instance)
+
+                                ct_field_value, formatted_guid = format_lookup_key(value._id, model=gfk_model)
+                                fk_field_value = self.modm_to_django[(ct_field_value, formatted_guid)]
+                                setattr(django_obj, ct_field_name, ct_field_value)
+                                setattr(django_obj, fk_field_name, fk_field_value)
                                 dirty = True
+                                fk_count += 1
+
                             else:
                                 field_name = field.attname
                                 if field_name in bad_fields:
@@ -260,10 +290,10 @@ class Command(BaseCommand):
                                 try:
                                     value = getattr(modm_obj, field_name.replace('_id', ''))
                                 except AttributeError:
-                                    print('|||||||||||||||||||||||||||||||||||||||||||||||||||||||\n'
-                                          '||| Couldn\'t find {} adding to bad_fields\n'
-                                          '|||||||||||||||||||||||||||||||||||||||||||||||||||||||'
-                                          .format(field_name.replace('_id', '')))
+                                    logger.info('|||||||||||||||||||||||||||||||||||||||||||||||||||||||\n'
+                                                '||| Couldn\'t find {} adding to bad_fields\n'
+                                                '|||||||||||||||||||||||||||||||||||||||||||||||||||||||'
+                                                .format(field_name.replace('_id', '')))
                                     bad_fields.append(field_name)
                                     value = None
                                 if value is None:
@@ -277,37 +307,36 @@ class Command(BaseCommand):
                                 if isinstance(value, basestring):
                                     # it's guid as a string
                                     setattr(django_obj, django_field_name,
-                                            self.modm_to_django[format_lookup_string(value)])
+                                            self.modm_to_django[format_lookup_key(value, model=field.related_model)])
                                     dirty = True
+                                    fk_count += 1
+
                                 elif hasattr(value, '_id'):
                                     # let's just assume it's a modm model instance
                                     setattr(django_obj, django_field_name,
-                                            self.modm_to_django[format_lookup_string(value)])
+                                            self.modm_to_django[format_lookup_key(value._id, model=field.related_model)])
                                     dirty = True
+                                    fk_count += 1
+
                                 else:
-                                    print('Value is a {}'.format(type(value)))
+                                    logger.info('Value is a {}'.format(type(value)))
                                     ipdb.set_trace()
 
                     django_obj, dirty = fix_bad_data(django_obj, dirty)
                     if dirty:
-                        fk_count += 1
                         django_obj.save()
                     model_count += 1
                     if model_count % page_size == 0 or model_count == model_total:
-                        print(
+                        logger.info(
                             'Through {} {}s and {} FKs...'.format(model_count,
                                                                   django_model._meta.model.__name__,
                                                                   fk_count))
                         modm_queryset[0]._cache.clear()
                         modm_queryset[0]._object_cache.clear()
-                        print('Took out {} trashes'.format(gc.collect()))
-
-                modm_queryset[0]._cache.clear()
-                modm_queryset[0]._object_cache.clear()
-                print('Took out {} trashes'.format(gc.collect()))
+                        logger.info('Took out {} trashes'.format(gc.collect()))
 
     def save_m2m_relationships(self, modm_queryset, django_model, page_size):
-        print(
+        logger.info(
             'Starting {} on {}...'.format(sys._getframe().f_code.co_name, django_model._meta.model.__name__))
 
         m2m_relations = [(field.attname or field.name, field.related_model) for field in
@@ -315,31 +344,32 @@ class Command(BaseCommand):
                          field.is_relation and field.many_to_many and not hasattr(field, 'field')]
 
         if len(m2m_relations) == 0:
-            print(
+            logger.info(
                 '{} doesn\'t have any many to many relationships.'.format(django_model._meta.model.__name__))
             return
         else:
-            print('{} M2M relations: {}'.format(django_model._meta.model.__name__, m2m_relations))
+            logger.info('{} M2M relations:'.format(django_model._meta.model.__name__))
+            for rel in m2m_relations:
+                logger.info('{}'.format(rel))
         m2m_count = 0
         model_count = 0
         model_total = modm_queryset.count()
         field_aliases = getattr(django_model, 'FIELD_ALIASES', {})
-        bad_fields = []
+        bad_fields = ['_nodes', ]  # we'll handle noderelations by hand
 
         while model_count < model_total:
-            with transaction.atomic():
+            with transaction.atomic():  # one transaction per page
                 for modm_obj in modm_queryset.sort('-_id')[model_count:model_count + page_size]:
 
                     if django_model is Institution:
                         # If it's an institution look it up by it's institution_id
                         django_obj = django_model.objects.get(
-                            pk=self.modm_to_django[unicode(modm_obj.institution_id)]
+                            pk=self.modm_to_django[format_lookup_key(modm_obj.institution_id, model=django_model)]
                         )
                     else:
-                        django_obj = django_model.objects.get(pk=self.modm_to_django[unicode(modm_obj._id)])
+                        django_obj = django_model.objects.get(pk=self.modm_to_django[format_lookup_key(modm_obj._id, model=django_model)])
 
                     # TODO linked_nodes is getting added to bad fields for AbstractNode
-
                     for field_name, model in m2m_relations:
                         # figure out a field name based on field_aliases
                         if field_name in ['_contributors', 'external_accounts', 'watched']:
@@ -360,10 +390,10 @@ class Command(BaseCommand):
                             else:
                                 value = getattr(modm_obj, django_field_name)
                         except AttributeError:
-                            print('|||||||||||||||||||||||||||||||||||||||||||||||||||||||\n'
-                                  '||| Couldn\'t find {} adding to bad_fields\n'
-                                  '|||||||||||||||||||||||||||||||||||||||||||||||||||||||'
-                                  .format(field_name))
+                            logger.info('|||||||||||||||||||||||||||||||||||||||||||||||||||||||\n'
+                                        '||| Couldn\'t find {} adding to bad_fields\n'
+                                        '|||||||||||||||||||||||||||||||||||||||||||||||||||||||'
+                                        .format(field_name))
                             # if we get an attribute error print debugging and mark the field to skip
                             bad_fields.append(field_name)
                             value = []
@@ -378,26 +408,26 @@ class Command(BaseCommand):
                             if isinstance(item, basestring):
                                 # append the pk to the list of pks
                                 if field_name == 'system_tags' and 'system_tags' not in field_aliases.keys():
-                                    remote_pks.add(self.modm_to_django['{}:system'.format(item)])
+                                    remote_pks.add(self.modm_to_django[format_lookup_key(item, model=model, template='{}:system')])
                                 elif field_name == 'tags' and 'system_tags' in field_aliases.keys():
-                                    remote_pks.add(self.modm_to_django['{}:system'.format(item)])
+                                    remote_pks.add(self.modm_to_django[format_lookup_key(item, model=model, template='{}:system')])
                                 elif field_name == 'tags':
-                                    remote_pks.add(self.modm_to_django['{}:not_system'.format(item)])
+                                    remote_pks.add(self.modm_to_django[format_lookup_key(item, model=model, template='{}:not_system')])
                                 else:
-                                    remote_pks.add(self.modm_to_django[item])
+                                    remote_pks.add(self.modm_to_django[format_lookup_key(item, model=model)])
                             # if it's a class instance
                             elif hasattr(item, '_id'):
                                 # grab it's id if it has one.
-                                str_value = unicode(item._id)
+                                str_value = item._id
                                 # append the pk to the list of pks
                                 if field_name == 'system_tags' and 'system_tags' not in field_aliases.keys():
-                                    remote_pks.add(self.modm_to_django['{}:system'.format(str_value)])
+                                    remote_pks.add(self.modm_to_django[format_lookup_key(str_value, model=model, template='{}:system')])
                                 elif field_name == 'tags' and 'system_tags' in field_aliases.keys():
-                                    remote_pks.add(self.modm_to_django['{}:system'.format(str_value)])
+                                    remote_pks.add(self.modm_to_django[format_lookup_key(str_value, model=model, template='{}:system')])
                                 elif field_name == 'tags':
-                                    remote_pks.add(self.modm_to_django['{}:not_system'.format(str_value)])
+                                    remote_pks.add(self.modm_to_django[format_lookup_key(str_value, model=model, template='{}:not_system')])
                                 else:
-                                    remote_pks.add(self.modm_to_django[str_value])
+                                    remote_pks.add(self.modm_to_django[format_lookup_key(str_value, model=model)])
                             elif item is None:
                                 continue
                             else:
@@ -422,13 +452,13 @@ class Command(BaseCommand):
                     if model_count % page_size == 0 or model_count == model_total:
                         modm_queryset[0]._cache.clear()
                         modm_queryset[0]._object_cache.clear()
-                        print('Took out {} trashes'.format(gc.collect()))
-                        print(
+                        logger.info('Took out {} trashes'.format(gc.collect()))
+                        logger.info(
                             'Through {} {}s and {} m2m'.format(model_count, django_model._meta.model.__name__,
                                                                m2m_count))
 
     def migrate_node_through_models(self):
-        print('Starting {}...'.format(sys._getframe().f_code.co_name))
+        logger.info('Starting {}...'.format(sys._getframe().f_code.co_name))
         if not self.modm_to_django.keys():
             self.modm_to_django = build_toku_django_lookup_table_cache()
         total = MODMNode.find().count()
@@ -437,79 +467,90 @@ class Command(BaseCommand):
         node_relation_count = 0
         page_size = Node.migration_page_size
         contributors = []
-
-        with transaction.atomic():
+        node_relations = []
+        node_rel_hashes = set()
+        contributor_hashes = set()
+        with ipdb.launch_ipdb_on_exception():
             while count < total:
-                with transaction.atomic():
+                with transaction.atomic():  # one transaction per page.
                     for modm_obj in MODMNode.find().sort('-_id')[count:page_size + count]:
                         order = 0
-                        hashes = set()
+                        clean_node_guid = unicode(modm_obj._id).lower()
                         for modm_contributor in modm_obj.contributors:
-                            read = 'read' in modm_obj.permissions[unicode(modm_contributor._id)]
-                            write = 'write' in modm_obj.permissions[unicode(modm_contributor._id)]
-                            admin = 'admin' in modm_obj.permissions[unicode(modm_contributor._id)]
-                            visible = unicode(modm_contributor._id) in modm_obj.visible_contributor_ids
-                            if (self.modm_to_django[unicode(modm_contributor._id)],
-                                self.modm_to_django[unicode(modm_obj._id)]) not in hashes:
+                            clean_user_guid = unicode(modm_contributor._id).lower()
+                            read = 'read' in modm_obj.permissions[clean_user_guid]
+                            write = 'write' in modm_obj.permissions[clean_user_guid]
+                            admin = 'admin' in modm_obj.permissions[clean_user_guid]
+                            visible = clean_user_guid in modm_obj.visible_contributor_ids
+
+                            if (
+                                    self.modm_to_django[format_lookup_key(clean_user_guid, model=OSFUser)],
+                                    self.get_pk_for_unknown_node_model(clean_node_guid)
+                            ) not in contributor_hashes:
                                 contributors.append(
                                     Contributor(
                                         read=read,
                                         write=write,
                                         admin=admin,
-                                        user_id=self.modm_to_django[unicode(modm_contributor._id)],
-                                        node_id=self.modm_to_django[unicode(modm_obj._id)],
+                                        user_id=self.modm_to_django[format_lookup_key(clean_user_guid, model=OSFUser)],
+                                        node_id=self.get_pk_for_unknown_node_model(clean_node_guid),
                                         _order=order,
                                         visible=visible
                                     )
                                 )
-                                hashes.add((self.modm_to_django[unicode(modm_contributor._id)],
-                                            self.modm_to_django[unicode(modm_obj._id)]))
+                                contributor_hashes.add((self.modm_to_django[format_lookup_key(clean_user_guid, model=OSFUser)],
+                                                        self.get_pk_for_unknown_node_model(clean_node_guid)))
                                 order += 1
                                 contributor_count += 1
                             else:
-                                print('({},{}) already in hashes.'.format(
-                                    self.modm_to_django[unicode(modm_contributor._id)],
-                                    self.modm_to_django[unicode(modm_obj._id)]))
+                                logger.info('({},{}) already in contributor_hashes.'.format(
+                                    self.modm_to_django[format_lookup_key(clean_user_guid, model=OSFUser)],
+                                    self.get_pk_for_unknown_node_model(clean_node_guid)))
                         count += 1
 
                         if count % page_size == 0 or count == total:
                             Contributor.objects.bulk_create(contributors)
-                            print('Through {} nodes and {} contributors, '
-                                  'saved {} contributors'.format(count, contributor_count, len(contributors)))
+                            logger.info('Through {} nodes and {} contributors, '
+                                        'saved {} contributors'.format(count, contributor_count, len(contributors)))
                             contributors = []
                             modm_obj._cache.clear()
                             modm_obj._object_cache.clear()
-                            print('Took out {} trashes'.format(gc.collect()))
+                            logger.info('Took out {} trashes'.format(gc.collect()))
 
-                        node_relations = []
+                        noderel_order = 0
                         for modm_node in modm_obj.nodes:
-                            parent_id = self.modm_to_django[unicode(modm_obj._id)]
-                            child_id = self.modm_to_django[unicode(modm_obj._id)]
-                            if isinstance(modm_node, MODMPointer):
-                                node_relations.append(
-                                    NodeRelation(
-                                        _id=modm_node._id,  # preserve GUID on pointers
-                                        is_node_link=True,
-                                        parent_id=parent_id,
-                                        child_id=child_id
+                            parent_id = self.modm_to_django[format_lookup_key(clean_node_guid, model=Node)]
+                            child_id = self.get_pk_for_unknown_node_model(clean_node_guid)
+                            if not (parent_id, child_id) in node_rel_hashes:
+                                if isinstance(modm_node, MODMPointer):
+                                    node_relations.append(
+                                        NodeRelation(
+                                            _id=modm_node._id,  # preserve GUID on pointers
+                                            is_node_link=True,
+                                            parent_id=parent_id,
+                                            child_id=child_id,
+                                            _order=noderel_order
+                                        )
                                     )
-                                )
-                            else:
-                                node_relations.append(
-                                    NodeRelation(
-                                        is_node_link=False,
-                                        parent_id=parent_id,
-                                        child_id=child_id
+                                else:
+                                    node_relations.append(
+                                        NodeRelation(
+                                            is_node_link=False,
+                                            parent_id=parent_id,
+                                            child_id=child_id,
+                                            _order=noderel_order
+                                        )
                                     )
-                                )
-                            node_relation_count += 1
+                                node_rel_hashes.add((parent_id, child_id))
+                                node_relation_count += 1
+                                noderel_order += 1
 
                         if count % page_size == 0 or count == total:
                             NodeRelation.objects.bulk_create(node_relations)
-                            print('Through {} nodes and {} node relations, '
-                                  'saved {} NodeRelations'
-                                  .format(count, node_relation_count, len(node_relations)))
-                            contributors = []
+                            logger.info('Through {} nodes and {} node relations, '
+                                        'saved {} NodeRelations'
+                                        .format(count, node_relation_count, len(node_relations)))
+                            node_relations = []
                             modm_obj._cache.clear()
                             modm_obj._object_cache.clear()
-                            print('Took out {} trashes'.format(gc.collect()))
+                            logger.info('Took out {} trashes'.format(gc.collect()))
