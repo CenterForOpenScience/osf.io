@@ -26,7 +26,7 @@
                       var sortListElm = this;
                       var idList = $(sortListElm).sortable(
                           'toArray',
-                          {attribute: 'node_reference'}
+                          {attribute: 'node_id'}
                       );
                       NodeActions.reorderChildren(idList, sortListElm);
                   }
