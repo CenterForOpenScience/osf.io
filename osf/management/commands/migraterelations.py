@@ -149,6 +149,21 @@ class Command(BaseCommand):
     help = 'Migrations FK and M2M relationships from tokumx to postgres'
     modm_to_django = None
 
+    def get_pk_for_unknown_node_model(self, guid):
+        abstract_node_subclasses = AbstractNode.__subclasses__()
+        # I don't *think* I need this
+        # abstract_node_subclasses.append(AbstractNode)
+        content_type_id_mapping = {ContentType.objects.get_for_model(model).pk: model for model in
+                                   abstract_node_subclasses}
+        keys = {format_lookup_key(guid, content_type_id=ct): model for ct, model in content_type_id_mapping.iteritems()}
+        for key, model in keys.iteritems():
+            try:
+                pk = self.modm_to_django[key]
+            except KeyError:
+                pass
+            else:
+                return pk
+
     def handle(self, *args, **options):
         set_backend()
         models = get_ordered_models()
@@ -215,8 +230,6 @@ class Command(BaseCommand):
                             raise
 
                 django_objects = django_model.objects.filter(pk__in=django_keys)
-                # if things changed types Node -> Institution, Node -> Registration this won't be true
-                # assert django_objects.count() == len(django_keys)
                 for i, django_obj in enumerate(django_objects):
                     modm_obj = modm_page[i]
 
@@ -240,6 +253,9 @@ class Command(BaseCommand):
                                 elif isinstance(modm_obj.owner, MODMNode):
                                     # TODO this is also doing a mongo query for each owner
                                     django_obj.user_id = None
+                                    # TODO model=Node won't work here because they could be registrations or collections
+                                    # TODO or really any of the things that used to be a node. Typed models each have a
+                                    # TODO different content_type_id
                                     django_obj.node_id = self.modm_to_django[format_lookup_key(modm_obj.owner._id, model=Node)]
                                 elif modm_obj.owner is None:
                                     django_obj.node_id = None
@@ -261,7 +277,7 @@ class Command(BaseCommand):
                                     gfk_model = apps.get_model('osf', value.__class__.__name__)
 
                                 ct_field_value, formatted_guid = format_lookup_key(value._id, model=gfk_model)
-                                fk_field_value = self.modm_to_django[(ct_field_name, formatted_guid)]
+                                fk_field_value = self.modm_to_django[(ct_field_value, formatted_guid)]
                                 setattr(django_obj, ct_field_name, ct_field_value)
                                 setattr(django_obj, fk_field_name, fk_field_value)
                                 dirty = True
@@ -332,7 +348,9 @@ class Command(BaseCommand):
                 '{} doesn\'t have any many to many relationships.'.format(django_model._meta.model.__name__))
             return
         else:
-            logger.info('{} M2M relations: {}'.format(django_model._meta.model.__name__, m2m_relations))
+            logger.info('{} M2M relations:'.format(django_model._meta.model.__name__))
+            for rel in m2m_relations:
+                logger.info('{}'.format(rel))
         m2m_count = 0
         model_count = 0
         model_total = modm_queryset.count()
@@ -464,9 +482,10 @@ class Command(BaseCommand):
                             write = 'write' in modm_obj.permissions[clean_user_guid]
                             admin = 'admin' in modm_obj.permissions[clean_user_guid]
                             visible = clean_user_guid in modm_obj.visible_contributor_ids
+
                             if (
                                     self.modm_to_django[format_lookup_key(clean_user_guid, model=OSFUser)],
-                                    self.modm_to_django[format_lookup_key(clean_node_guid, model=Node)]
+                                    self.get_pk_for_unknown_node_model(clean_node_guid)
                             ) not in contributor_hashes:
                                 contributors.append(
                                     Contributor(
@@ -474,19 +493,19 @@ class Command(BaseCommand):
                                         write=write,
                                         admin=admin,
                                         user_id=self.modm_to_django[format_lookup_key(clean_user_guid, model=OSFUser)],
-                                        node_id=self.modm_to_django[format_lookup_key(clean_node_guid, model=Node)],
+                                        node_id=self.get_pk_for_unknown_node_model(clean_node_guid),
                                         _order=order,
                                         visible=visible
                                     )
                                 )
                                 contributor_hashes.add((self.modm_to_django[format_lookup_key(clean_user_guid, model=OSFUser)],
-                                                        self.modm_to_django[format_lookup_key(clean_node_guid, model=Node)]))
+                                                        self.get_pk_for_unknown_node_model(clean_node_guid)))
                                 order += 1
                                 contributor_count += 1
                             else:
                                 logger.info('({},{}) already in contributor_hashes.'.format(
                                     self.modm_to_django[format_lookup_key(clean_user_guid, model=OSFUser)],
-                                    self.modm_to_django[format_lookup_key(clean_node_guid, model=Node)]))
+                                    self.get_pk_for_unknown_node_model(clean_node_guid)))
                         count += 1
 
                         if count % page_size == 0 or count == total:
@@ -501,7 +520,7 @@ class Command(BaseCommand):
                         noderel_order = 0
                         for modm_node in modm_obj.nodes:
                             parent_id = self.modm_to_django[format_lookup_key(clean_node_guid, model=Node)]
-                            child_id = self.modm_to_django[format_lookup_key(modm_node._id, model=Node)]
+                            child_id = self.get_pk_for_unknown_node_model(clean_node_guid)
                             if not (parent_id, child_id) in node_rel_hashes:
                                 if isinstance(modm_node, MODMPointer):
                                     node_relations.append(
