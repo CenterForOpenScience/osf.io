@@ -36,8 +36,8 @@ def get_admin_permissions():
 
 def get_prereg_admin_permissions():
     return Permission.objects.filter(
-        Q(codename='admin.view_prereg') |
-        Q(codename='admin.administer_prereg')
+        Q(codename='view_prereg') |
+        Q(codename='administer_prereg')
     )
 
 
