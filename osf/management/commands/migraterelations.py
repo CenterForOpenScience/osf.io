@@ -5,8 +5,11 @@ import importlib
 import logging
 import sys
 
+import gevent
 import ipdb
 from django.contrib.contenttypes.models import ContentType
+from gevent.pool import Pool
+from gevent.threadpool import ThreadPool
 
 from addons.wiki.models import NodeWikiPage
 from django.apps import apps
@@ -17,6 +20,7 @@ from osf import models
 from osf.models import (ApiOAuth2Scope, BlackListGuid, CitationStyle, Guid,
                         Institution, NodeRelation, NotificationSubscription,
                         RecentlyAddedContributor, StoredFileNode, Tag)
+from osf.models import Identifier
 from osf.models import OSFUser
 from osf.models.base import OptionalGuidMixin
 from osf.models.contributor import (AbstractBaseContributor, Contributor,
@@ -34,6 +38,17 @@ from website.models import Pointer as MODMPointer
 from website.models import User as MODMUser
 
 logger = logging.getLogger('migrations')
+
+
+class HashableDict(dict):
+    def __key(self):
+        return tuple((k,self[k]) for k in sorted(self))
+
+    def __hash__(self):
+        return hash(self.__key())
+
+    def __eq__(self, other):
+        return self.__key() == other.__key()
 
 
 def build_toku_django_lookup_table_cache():
@@ -164,40 +179,47 @@ class Command(BaseCommand):
             else:
                 return pk
 
+    def do_model(self, django_model):
+        if issubclass(django_model, AbstractBaseContributor) \
+                or django_model is ApiOAuth2Scope or \
+                (issubclass(django_model, AbstractNode) and django_model is not AbstractNode) or \
+                not hasattr(django_model, 'modm_model_path'):
+            return
+
+        module_path, model_name = django_model.modm_model_path.rsplit('.', 1)
+        modm_module = importlib.import_module(module_path)
+        modm_model = getattr(modm_module, model_name)
+        if isinstance(django_model.modm_query, dict):
+            modm_queryset = modm_model.find(**django_model.modm_query)
+        else:
+            modm_queryset = modm_model.find(django_model.modm_query)
+
+        page_size = django_model.migration_page_size
+
+        with ipdb.launch_ipdb_on_exception():
+            self.save_fk_relationships(modm_queryset, django_model, page_size)
+            self.save_m2m_relationships(modm_queryset, django_model, page_size)
+
     def handle(self, *args, **options):
         set_backend()
         models = get_ordered_models()
         with ipdb.launch_ipdb_on_exception():
             self.modm_to_django = build_toku_django_lookup_table_cache()
 
-            for django_model in models:
-                if issubclass(django_model, AbstractBaseContributor) \
-                        or django_model is ApiOAuth2Scope or \
-                        (issubclass(django_model, AbstractNode) and django_model is not AbstractNode) or \
-                        not hasattr(django_model, 'modm_model_path'):
-                    continue
-
-                module_path, model_name = django_model.modm_model_path.rsplit('.', 1)
-                modm_module = importlib.import_module(module_path)
-                modm_model = getattr(modm_module, model_name)
-                if isinstance(django_model.modm_query, dict):
-                    modm_queryset = modm_model.find(**django_model.modm_query)
-                else:
-                    modm_queryset = modm_model.find(django_model.modm_query)
-
-                page_size = django_model.migration_page_size
-
-                with ipdb.launch_ipdb_on_exception():
-                    self.save_fk_relationships(modm_queryset, django_model, page_size)
-                    self.save_m2m_relationships(modm_queryset, django_model, page_size)
-
-            self.migrate_node_through_models()
-            self.migration_institutional_contributors()
+            # for model in models:
+            #     self.do_model(model)
+            pool = ThreadPool(10)
+            for model in models:
+                pool.spawn(self.do_model, model)
+            pool.spawn(self.migrate_node_through_models)
+            pool.spawn(self.migration_institutional_contributors)
+            gevent.wait()
 
     def save_fk_relationships(self, modm_queryset, django_model, page_size):
         logger.info(
             'Starting {} on {}...'.format(sys._getframe().f_code.co_name, django_model._meta.model.__name__))
-
+        if django_model is not Identifier:
+            return
         # TODO: Collections is getting user_id added to the bad fields. It shouldn't be. ???? IS IT STILL ????
         fk_relations = [field for field in django_model._meta.get_fields() if
                         field.is_relation and not field.auto_created and field.many_to_one]
@@ -231,11 +253,11 @@ class Command(BaseCommand):
                             continue
                         else:
                             raise
-
+                # TODO!! this list isn't sorted how I thought it was sorted.
                 django_objects = django_model.objects.filter(pk__in=django_keys)
-                for i, django_obj in enumerate(django_objects):
-                    modm_obj = modm_page[i]
-
+                django_objects_dict = {obj.pk: obj for obj in django_objects}
+                for modm_obj in modm_page:
+                    django_obj = django_objects_dict[self.modm_to_django[format_lookup_key(modm_obj._id, model=django_model)]]
                     dirty = False
 
                     # TODO This is doing a mongo query for each Node, could probably be more performant
@@ -360,6 +382,12 @@ class Command(BaseCommand):
         model_total = modm_queryset.count()
         field_aliases = getattr(django_model, 'FIELD_ALIASES', {})
         bad_fields = ['_nodes', 'contributors']  # we'll handle noderelations and contributors by hand
+        added_relationships = dict()
+        # {
+        #   'field_name' : set(rel_dict, rel_dict, rel_dict),
+        #   'field_name' : set(rel_dict, rel_dict, rel_dict),
+        #   'field_name' : set(rel_dict, rel_dict, rel_dict),
+        # }
 
         while model_count < model_total:
             with transaction.atomic():  # one transaction per page
@@ -447,10 +475,16 @@ class Command(BaseCommand):
                             field_model_instance = field.through
                             for remote_pk in remote_pks:
                                 # rel_dict is a dict of the properties of the through model
-                                rel_dict = {}
+                                rel_dict = HashableDict()
                                 rel_dict['{}_id'.format(source_field_name)] = django_obj.pk
                                 rel_dict['{}_id'.format(target_field_name)] = remote_pk
-                                django_objects.append(field_model_instance(**rel_dict))
+                                if field_name not in added_relationships:
+                                    added_relationships[field_name] = set()
+                                if rel_dict not in added_relationships[field_name]:
+                                    added_relationships[field_name].add(rel_dict)
+                                    django_objects.append(field_model_instance(**rel_dict))
+                                else:
+                                    logger.info('Relation {} already exists for {}'.format(rel_dict, field_name))
                             field_model_instance.objects.bulk_create(django_objects)
                             m2m_count += len(django_objects)
                     model_count += 1
