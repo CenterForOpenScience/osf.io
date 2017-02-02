@@ -1,6 +1,6 @@
 version: '2'
 
-#services:
+services:
 
 #  fakecas:
 #    image: quay.io/centerforopenscience/fakecas:latest
@@ -19,8 +19,8 @@ version: '2'
 #      - container:preprints-sync
 
   registries:
-   volumes_from:
-     - container:registries-sync
+    volumes_from:
+      - container:registries-sync
 
   requirements:
     volumes_from:
