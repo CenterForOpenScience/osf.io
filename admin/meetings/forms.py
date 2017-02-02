@@ -11,10 +11,13 @@ from website.conferences.exceptions import ConferenceError
 class MultiEmailField(forms.Field):
 
     def prepare_value(self, value):
-        if isinstance(value, basestring):
-            ret = value
+        if not value:
+            ret = None
         else:
-            ret = ', '.join(list(value))
+            if isinstance(value, basestring):
+                ret = value
+            else:
+                ret = ', '.join(list(value))
         return ret
 
     def to_python(self, value):
@@ -59,14 +62,12 @@ class MeetingForm(forms.Form):
         required=False,
     )
     start_date = forms.DateField(
-        widget=forms.DateInput(format='%b %d %Y'),
         required=False,
-        label='Start date (e.g. Nov 7 2016)'
+        label='Start date (e.g. Nov 7 2016 or 11/7/2016)'
     )
     end_date = forms.DateField(
-        widget=forms.DateInput(format='%b %d %Y'),
         required=False,
-        label='End date (e.g. Nov 9 2016)'
+        label='End date (e.g. Nov 9 2016 or 11/9/2016)'
     )
     logo_url = forms.CharField(
         label='Logo url',
