@@ -10,8 +10,7 @@ ROUTES = [routes.api_routes]
 ADDED_DEFAULT = []
 ADDED_MANDATORY = []
 
-# make the evernote addon show up as a widget like Zotero, Mendeley
-VIEWS = ['widget']
+VIEWS = []
 
 # does this setting make it show up in the Files section?
 HAS_HGRID_FILES = True

@@ -18,7 +18,7 @@ OWNERS = ['user', 'node']
 ADDED_DEFAULT = []
 ADDED_MANDATORY = []
 
-VIEWS = ['widget']
+VIEWS = []
 CONFIGS = ['accounts', 'node']
 
 CATEGORIES = ['storage']
