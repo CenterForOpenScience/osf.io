@@ -7,24 +7,22 @@ import hmac
 import hashlib
 from StringIO import StringIO
 
+from django.db import IntegrityError
 import furl
 from modularodm import Q
 from modularodm.exceptions import ValidationError
 
 from framework.auth import get_or_create_user
 from framework.auth.core import Auth
-from framework.transactions import commands
 
 from website import settings
 from website.models import User, Node
 from website.conferences import views
-from website.conferences.model import Conference
 from website.conferences import utils, message
 from website.util import api_url_for, web_url_for
 
 from tests.base import OsfTestCase, fake
-from tests.factories import ModularOdmFactory, FakerAttribute, ProjectFactory, UserFactory
-from factory import Sequence, post_generation
+from osf_tests.factories import ConferenceFactory, ProjectFactory, UserFactory
 
 
 def assert_absolute(url):
@@ -39,20 +37,6 @@ def assert_equal_urls(first, second):
     parsed_second = furl.furl(second)
     parsed_second.port = None
     assert_equal(parsed_first, parsed_second)
-
-
-class ConferenceFactory(ModularOdmFactory):
-    class Meta:
-        model = Conference
-
-    endpoint = Sequence(lambda n: 'conference{0}'.format(n))
-    name = FakerAttribute('catch_phrase')
-    active = True
-    is_meeting = True
-
-    @post_generation
-    def admins(self, create, extracted, **kwargs):
-        self.admins = extracted or [UserFactory()]
 
 
 def create_fake_conference_nodes(n, endpoint):
@@ -78,6 +62,7 @@ class TestConferenceUtils(OsfTestCase):
         fullname = 'Roger Taylor'
         username = 'roger@queen.com'
         fetched, created = get_or_create_user(fullname, username, is_spam=False)
+        fetched.save()  # in order to access m2m fields, e.g. tags
         assert_true(created)
         assert_equal(fetched.fullname, fullname)
         assert_equal(fetched.username, username)
@@ -87,6 +72,7 @@ class TestConferenceUtils(OsfTestCase):
         fullname = 'John Deacon'
         username = 'deacon@queen.com'
         fetched, created = get_or_create_user(fullname, username, is_spam=True)
+        fetched.save()  # in order to access m2m fields, e.g. tags
         assert_true(created)
         assert_equal(fetched.fullname, fullname)
         assert_equal(fetched.username, username)
@@ -135,13 +121,6 @@ class ContextTestCase(OsfTestCase):
     def tearDownClass(cls):
         super(ContextTestCase, cls).tearDownClass()
         settings.MAILGUN_API_KEY = cls._MAILGUN_API_KEY
-
-    def tearDown(self):
-        try:
-            commands.commit()
-        except Exception:
-            pass
-        super(ContextTestCase, self).tearDown()
 
     def make_context(self, method='POST', **kwargs):
         data = {
@@ -194,10 +173,10 @@ class TestProvisionNode(ContextTestCase):
             msg = message.ConferenceMessage()
             utils.provision_node(self.conference, msg, self.node, self.user)
         assert_true(self.node.is_public)
-        assert_in(self.conference.admins[0], self.node.contributors)
+        assert_in(self.conference.admins.first(), self.node.contributors)
         assert_in('emailed', self.node.system_tags)
         assert_in(self.conference.endpoint, self.node.system_tags)
-        assert_in(self.conference.endpoint, self.node.tags)
+        assert_true(self.node.tags.filter(name=self.conference.endpoint).exists())
         assert_not_in('spam', self.node.system_tags)
 
     def test_provision_private(self):
@@ -207,7 +186,7 @@ class TestProvisionNode(ContextTestCase):
             msg = message.ConferenceMessage()
             utils.provision_node(self.conference, msg, self.node, self.user)
         assert_false(self.node.is_public)
-        assert_in(self.conference.admins[0], self.node.contributors)
+        assert_in(self.conference.admins.first(), self.node.contributors)
         assert_in('emailed', self.node.system_tags)
         assert_not_in('spam', self.node.system_tags)
 
@@ -216,7 +195,7 @@ class TestProvisionNode(ContextTestCase):
             msg = message.ConferenceMessage()
             utils.provision_node(self.conference, msg, self.node, self.user)
         assert_false(self.node.is_public)
-        assert_in(self.conference.admins[0], self.node.contributors)
+        assert_in(self.conference.admins.first(), self.node.contributors)
         assert_in('emailed', self.node.system_tags)
         assert_in('spam', self.node.system_tags)
 
@@ -232,6 +211,7 @@ class TestProvisionNode(ContextTestCase):
             'osfstorage',
             '/' + self.attachment.filename,
             self.node,
+            _internal=True,
             user=self.user,
         )
         mock_put.assert_called_with(
@@ -251,6 +231,7 @@ class TestProvisionNode(ContextTestCase):
             'osfstorage',
             '/' + settings.MISSING_FILE_NAME,
             self.node,
+            _internal=True,
             user=self.user,
         )
         mock_put.assert_called_with(
@@ -391,16 +372,8 @@ class TestMessage(ContextTestCase):
             with assert_raises(message.ConferenceError):
                 msg.route
 
-    def test_route_valid(self):
-        recipient = '{0}conf-talk@osf.io'.format('test-' if settings.DEV_MODE else '')
-        with self.make_context(data={'recipient': recipient}):
-            self.app.app.preprocess_request()
-            msg = message.ConferenceMessage()
-            assert_equal(msg.conference_name, 'conf')
-            assert_equal(msg.conference_category, 'talk')
-
-    def test_alternate_route_valid(self):
-        conf = ConferenceFactory.build(endpoint='chocolate', active=True)
+    def test_route_valid_alternate(self):
+        conf = ConferenceFactory(endpoint='chocolate', active=True)
         conf.name = 'Chocolate Conference'
         conf.field_names['submission2'] = 'data'
         conf.save()
@@ -411,6 +384,14 @@ class TestMessage(ContextTestCase):
             assert_equal(msg.conference_name, 'chocolate')
             assert_equal(msg.conference_category, 'data')
         conf.__class__.remove_one(conf)
+
+    def test_route_valid_b(self):
+        recipient = '{0}conf-poster@osf.io'.format('test-' if settings.DEV_MODE else '')
+        with self.make_context(data={'recipient': recipient}):
+            self.app.app.preprocess_request()
+            msg = message.ConferenceMessage()
+            assert_equal(msg.conference_name, 'conf')
+            assert_equal(msg.conference_category, 'poster')
 
     def test_alternate_route_invalid(self):
         recipient = '{0}chocolate-data@osf.io'.format('test-' if settings.DEV_MODE else '')
@@ -535,10 +516,12 @@ class TestConferenceEmailViews(OsfTestCase):
 
 class TestConferenceModel(OsfTestCase):
 
-    def test_endpoint_and_name_are_required(self):
-        with assert_raises(ValidationError):
+    def test_endpoint_is_required(self):
+        with assert_raises(IntegrityError):
             ConferenceFactory(endpoint=None, name=fake.company()).save()
-        with assert_raises(ValidationError):
+
+    def test_name_is_required(self):
+        with assert_raises(IntegrityError):
             ConferenceFactory(endpoint='spsp2014', name=None).save()
 
     def test_default_field_names(self):

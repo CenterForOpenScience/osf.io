@@ -4,6 +4,7 @@ import mock
 import mendeley
 import time
 import datetime
+from django.utils import timezone
 
 from tests.base import OsfTestCase
 
@@ -25,7 +26,7 @@ class MendeleyApiTestCase(OsfTestCase):
         self.mock_credentials = {
             'access_token': '1234567890987654321',
             'refresh_token': 'asdfghjklkjhgfdsa',
-            'expires_at': time.mktime((datetime.datetime.utcnow() + datetime.timedelta(days=10)).timetuple()),
+            'expires_at': time.mktime((timezone.now() + datetime.timedelta(days=10)).timetuple()),
             'token_type': 'bearer',
         }
 

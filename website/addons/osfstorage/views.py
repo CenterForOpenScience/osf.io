@@ -3,6 +3,7 @@ from __future__ import unicode_literals
 import httplib
 import logging
 
+from django.core.exceptions import ValidationError
 from modularodm import Q
 from modularodm.storage.base import KeyExistsException
 
@@ -13,7 +14,7 @@ from framework.sessions import get_session
 from framework.exceptions import HTTPError
 from framework.auth.decorators import must_be_signed
 
-from website.exceptions import InvalidTagError, TagNotFoundError
+from osf.exceptions import InvalidTagError, TagNotFoundError
 from website.models import User
 from website.project.decorators import (
     must_not_be_registration, must_have_addon, must_have_permission
@@ -31,7 +32,7 @@ from website.addons.osfstorage import settings as osf_storage_settings
 logger = logging.getLogger(__name__)
 
 
-def osf_storage_root(node_settings, auth, **kwargs):
+def osf_storage_root(addon_config, node_settings, auth, **kwargs):
     """Build HGrid JSON for root node. Note: include node URLs for client-side
     URL creation for uploaded files.
     """
@@ -82,8 +83,8 @@ def osfstorage_get_revisions(file_node, node_addon, payload, **kwargs):
     # Return revisions in descending order
     return {
         'revisions': [
-            utils.serialize_revision(node_addon.owner, file_node, version, index=len(file_node.versions) - idx - 1, anon=is_anon)
-            for idx, version in enumerate(reversed(file_node.versions))
+            utils.serialize_revision(node_addon.owner, file_node, version, index=file_node.versions.count() - idx - 1, anon=is_anon)
+            for idx, version in enumerate(file_node.versions.all().order_by('-date_created'))
         ]
     }
 
@@ -101,6 +102,11 @@ def osfstorage_move_hook(source, destination, name=None, **kwargs):
         raise HTTPError(httplib.METHOD_NOT_ALLOWED, data={
             'message_long': 'Cannot move file as it is checked out.'
         })
+    except exceptions.FileNodeIsPrimaryFile:
+        raise HTTPError(httplib.FORBIDDEN, data={
+            'message_long': 'Cannot move file as it is the primary file of preprint.'
+        })
+
 
 @must_be_signed
 @decorators.autoload_filenode(default_root=True)
@@ -133,7 +139,7 @@ def osfstorage_get_metadata(file_node, **kwargs):
 def osfstorage_get_children(file_node, **kwargs):
     return [
         child.serialize()
-        for child in file_node.children
+        for child in file_node.children.all()
     ]
 
 
@@ -154,7 +160,7 @@ def osfstorage_create_child(file_node, payload, node_addon, **kwargs):
             created, file_node = True, parent.append_folder(name)
         else:
             created, file_node = True, parent.append_file(name)
-    except KeyExistsException:
+    except (KeyExistsException, ValidationError):
         created, file_node = False, parent.find_child_by_name(name, kind=int(not is_folder))
 
     if not created and is_folder:
@@ -217,6 +223,10 @@ def osfstorage_delete(file_node, payload, node_addon, **kwargs):
 
     except exceptions.FileNodeCheckedOutError:
         raise HTTPError(httplib.FORBIDDEN)
+    except exceptions.FileNodeIsPrimaryFile:
+        raise HTTPError(httplib.FORBIDDEN, data={
+            'message_long': 'Cannot delete file as it is the primary file of preprint.'
+        })
 
     return {'status': 'success'}
 

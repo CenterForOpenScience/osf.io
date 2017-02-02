@@ -5,7 +5,7 @@ from scripts.dataverse.migrate_study import do_migration, get_targets
 from tests.base import OsfTestCase
 from tests.factories import ProjectFactory
 
-from website.addons.dataverse.model import AddonDataverseNodeSettings
+from addons.dataverse.model import AddonDataverseNodeSettings
 
 
 class TestDatasetMigration(OsfTestCase):

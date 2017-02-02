@@ -6,7 +6,7 @@ from modularodm import Q
 from framework.mongo import database
 from framework.transactions.context import TokuTransaction
 
-from website.addons.box.model import BoxNodeSettings
+from addons.box.model import BoxNodeSettings
 from website.app import init_app
 from scripts import utils as script_utils
 

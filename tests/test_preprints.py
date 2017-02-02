@@ -1,24 +1,25 @@
-    # -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 from nose.tools import *  # flake8: noqa (PEP8 asserts)
 import mock
+import urlparse
 from modularodm import Q
 from modularodm.exceptions import NoResultsFound, ValidationValueError
 
-from website.addons.osfstorage import settings as osfstorage_settings
+from framework.celery_tasks import handlers
+from addons.osfstorage import settings as osfstorage_settings
 from website.files.models.osfstorage import OsfStorageFile
+from website.preprints.tasks import format_preprint
 from website.util import permissions
 
 from framework.auth import Auth
 from framework.exceptions import PermissionsError
 
 from website import settings
-from website.project.model import (
-    NodeLog,
-    NodeStateError
-)
+from osf.models import NodeLog, Subject
+from osf.exceptions import NodeStateError
 
 from tests.base import OsfTestCase
-from tests.factories import (
+from osf_tests.factories import (
     AuthUserFactory,
     ProjectFactory,
     PreprintFactory,
@@ -110,13 +111,13 @@ class TestSetPreprintFile(OsfTestCase):
 
     def test_add_primary_file(self):
         self.preprint.set_primary_file(self.file, auth=self.auth, save=True)
-        assert_equal(self.project.preprint_file, self.file)
+        assert_equal(self.project.preprint_file.wrapped(), self.file)
         assert_equal(type(self.project.preprint_file), type(self.file.stored_object))
 
     @assert_logs(NodeLog.PREPRINT_FILE_UPDATED, 'project')
     def test_change_primary_file(self):
         self.preprint.set_primary_file(self.file, auth=self.auth, save=True)
-        assert_equal(self.project.preprint_file, self.file)
+        assert_equal(self.project.preprint_file.wrapped(), self.file)
 
         self.preprint.set_primary_file(self.file_two, auth=self.auth, save=True)
         assert_equal(self.project.preprint_file._id, self.file_two._id)
@@ -232,7 +233,7 @@ class TestPreprintServicePermissions(OsfTestCase):
 class TestPreprintProviders(OsfTestCase):
     def setUp(self):
         super(TestPreprintProviders, self).setUp()
-        self.preprint = PreprintFactory(providers=[])
+        self.preprint = PreprintFactory(provider=None, is_published=False)
         self.provider = PreprintProviderFactory(name='WWEArxiv')
 
     def test_add_provider(self):
@@ -250,3 +251,236 @@ class TestPreprintProviders(OsfTestCase):
         self.preprint.reload()
 
         assert_equal(self.preprint.provider, None)
+
+class TestOnPreprintUpdatedTask(OsfTestCase):
+    def setUp(self):
+        super(TestOnPreprintUpdatedTask, self).setUp()
+        self.user = AuthUserFactory()
+        if len(self.user.fullname.split(' ')) > 2:
+            # Prevent unexpected keys ('suffix', 'additional_name')
+            self.user.fullname = 'David Davidson'
+            self.user.middle_names = ''
+            self.user.suffix = ''
+            self.user.save()
+
+        self.auth = Auth(user=self.user)
+        self.preprint = PreprintFactory()
+
+        self.preprint.node.add_tag('preprint', self.auth, save=False)
+        self.preprint.node.add_tag('spoderman', self.auth, save=False)
+        self.preprint.node.add_unregistered_contributor('BoJack Horseman', 'horse@man.org', Auth(self.preprint.node.creator))
+        self.preprint.node.add_contributor(self.user, visible=False)
+        self.preprint.node.save()
+
+        self.preprint.node.creator.given_name = u'ZZYZ'
+        if len(self.preprint.node.creator.fullname.split(' ')) > 2:
+            # Prevent unexpected keys ('suffix', 'additional_name')
+            self.preprint.node.creator.fullname = 'David Davidson'
+            self.preprint.node.creator.middle_names = ''
+            self.preprint.node.creator.suffix = ''
+        self.preprint.node.creator.save()
+
+        self.preprint.set_subjects([[SubjectFactory()._id]], auth=Auth(self.preprint.node.creator), save=False)
+
+    def tearDown(self):
+        handlers.celery_before_request()
+        super(TestOnPreprintUpdatedTask, self).tearDown()
+
+    def test_format_preprint(self):
+        res = format_preprint(self.preprint)
+
+        assert set(gn['@type'] for gn in res) == {'creator', 'contributor', 'throughsubjects', 'subject', 'throughtags', 'tag', 'workidentifier', 'agentidentifier', 'person', 'preprint'}
+
+        nodes = dict(enumerate(res))
+        preprint = nodes.pop(next(k for k, v in nodes.items() if v['@type'] == 'preprint'))
+        assert preprint['title'] == self.preprint.node.title
+        assert preprint['description'] == self.preprint.node.description
+        assert preprint['is_deleted'] == (not self.preprint.is_published or not self.preprint.node.is_public or self.preprint.node.is_preprint_orphan)
+        assert preprint['date_updated'] == self.preprint.date_modified.isoformat()
+        assert preprint['date_published'] == self.preprint.date_published.isoformat()
+
+        tags = [nodes.pop(k) for k, v in nodes.items() if v['@type'] == 'tag']
+        through_tags = [nodes.pop(k) for k, v in nodes.items() if v['@type'] == 'throughtags']
+        assert sorted(tag['@id'] for tag in tags) == sorted(tt['tag']['@id'] for tt in through_tags)
+        assert sorted(tag['name'] for tag in tags) == ['preprint', 'spoderman']
+
+        subjects = [nodes.pop(k) for k, v in nodes.items() if v['@type'] == 'subject']
+        through_subjects = [nodes.pop(k) for k, v in nodes.items() if v['@type'] == 'throughsubjects']
+        assert sorted(subject['@id'] for subject in subjects) == sorted(tt['subject']['@id'] for tt in through_subjects)
+        assert sorted(subject['name'] for subject in subjects) == [Subject.load(s).text for h in self.preprint.subjects for s in h]
+
+        people = sorted([nodes.pop(k) for k, v in nodes.items() if v['@type'] == 'person'], key=lambda x: x['given_name'])
+        expected_people = sorted([{
+            '@type': 'person',
+            'given_name': u'BoJack',
+            'family_name': u'Horseman',
+        }, {
+            '@type': 'person',
+            'given_name': self.user.given_name,
+            'family_name': self.user.family_name,
+        }, {
+            '@type': 'person',
+            'given_name': self.preprint.node.creator.given_name,
+            'family_name': self.preprint.node.creator.family_name,
+        }], key=lambda x: x['given_name'])
+        for i, p in enumerate(expected_people):
+            expected_people[i]['@id'] = people[i]['@id']
+
+        assert people == expected_people
+
+        creators = sorted([nodes.pop(k) for k, v in nodes.items() if v['@type'] == 'creator'], key=lambda x: x['order_cited'])
+        assert creators == [{
+            '@id': creators[0]['@id'],
+            '@type': 'creator',
+            'order_cited': 0,
+            'cited_as': u'{}'.format(self.preprint.node.creator.fullname),
+            'agent': {'@id': [p['@id'] for p in people if p['given_name'] == self.preprint.node.creator.given_name][0], '@type': 'person'},
+            'creative_work': {'@id': preprint['@id'], '@type': preprint['@type']},
+        }, {
+            '@id': creators[1]['@id'],
+            '@type': 'creator',
+            'order_cited': 1,
+            'cited_as': u'BoJack Horseman',
+            'agent': {'@id': [p['@id'] for p in people if p['given_name'] == u'BoJack'][0], '@type': 'person'},
+            'creative_work': {'@id': preprint['@id'], '@type': preprint['@type']},
+        }]
+
+        contributors = [nodes.pop(k) for k, v in nodes.items() if v['@type'] == 'contributor']
+        assert contributors == [{
+            '@id': contributors[0]['@id'],
+            '@type': 'contributor',
+            'cited_as': u'{}'.format(self.user.fullname),
+            'agent': {'@id': [p['@id'] for p in people if p['given_name'] == self.user.given_name][0], '@type': 'person'},
+            'creative_work': {'@id': preprint['@id'], '@type': preprint['@type']},
+        }]
+
+        agentidentifiers = {nodes.pop(k)['uri'] for k, v in nodes.items() if v['@type'] == 'agentidentifier'}
+        assert agentidentifiers == set([
+            'mailto:' + self.user.username,
+            'mailto:' + self.preprint.node.creator.username,
+            self.user.profile_image_url(),
+            self.preprint.node.creator.profile_image_url(),
+        ]) | set(urlparse.urljoin(settings.DOMAIN, user.profile_url) for user in self.preprint.node.contributors if user.is_registered)
+
+        workidentifiers = {nodes.pop(k)['uri'] for k, v in nodes.items() if v['@type'] == 'workidentifier'}
+        assert workidentifiers == set([
+            'http://dx.doi.org/{}'.format(self.preprint.article_doi),
+            urlparse.urljoin(settings.DOMAIN, self.preprint.url)
+        ])
+
+        assert nodes == {}
+
+    def test_format_preprint_nones(self):
+        self.preprint.node.tags = []
+        self.preprint.date_published = None
+        self.preprint.set_subjects([], auth=Auth(self.preprint.node.creator), save=False)
+
+        res = format_preprint(self.preprint)
+
+        assert set(gn['@type'] for gn in res) == {'creator', 'contributor', 'workidentifier', 'agentidentifier', 'person', 'preprint'}
+
+        nodes = dict(enumerate(res))
+        preprint = nodes.pop(next(k for k, v in nodes.items() if v['@type'] == 'preprint'))
+        assert preprint['title'] == self.preprint.node.title
+        assert preprint['description'] == self.preprint.node.description
+        assert preprint['is_deleted'] == (not self.preprint.is_published or not self.preprint.node.is_public or self.preprint.node.is_preprint_orphan)
+        assert preprint['date_updated'] == self.preprint.date_modified.isoformat()
+        assert preprint.get('date_published') is None
+
+        people = sorted([nodes.pop(k) for k, v in nodes.items() if v['@type'] == 'person'], key=lambda x: x['given_name'])
+        expected_people = sorted([{
+            '@type': 'person',
+            'given_name': u'BoJack',
+            'family_name': u'Horseman',
+        }, {
+            '@type': 'person',
+            'given_name': self.user.given_name,
+            'family_name': self.user.family_name,
+        }, {
+            '@type': 'person',
+            'given_name': self.preprint.node.creator.given_name,
+            'family_name': self.preprint.node.creator.family_name,
+        }], key=lambda x: x['given_name'])
+        for i, p in enumerate(expected_people):
+            expected_people[i]['@id'] = people[i]['@id']
+
+        assert people == expected_people
+
+        creators = sorted([nodes.pop(k) for k, v in nodes.items() if v['@type'] == 'creator'], key=lambda x: x['order_cited'])
+        assert creators == [{
+            '@id': creators[0]['@id'],
+            '@type': 'creator',
+            'order_cited': 0,
+            'cited_as': self.preprint.node.creator.fullname,
+            'agent': {'@id': [p['@id'] for p in people if p['given_name'] == self.preprint.node.creator.given_name][0], '@type': 'person'},
+            'creative_work': {'@id': preprint['@id'], '@type': preprint['@type']},
+        }, {
+            '@id': creators[1]['@id'],
+            '@type': 'creator',
+            'order_cited': 1,
+            'cited_as': u'BoJack Horseman',
+            'agent': {'@id': [p['@id'] for p in people if p['given_name'] == u'BoJack'][0], '@type': 'person'},
+            'creative_work': {'@id': preprint['@id'], '@type': preprint['@type']},
+        }]
+
+        contributors = [nodes.pop(k) for k, v in nodes.items() if v['@type'] == 'contributor']
+        assert contributors == [{
+            '@id': contributors[0]['@id'],
+            '@type': 'contributor',
+            'cited_as': self.user.fullname,
+            'agent': {'@id': [p['@id'] for p in people if p['given_name'] == self.user.given_name][0], '@type': 'person'},
+            'creative_work': {'@id': preprint['@id'], '@type': preprint['@type']},
+        }]
+
+        agentidentifiers = {nodes.pop(k)['uri'] for k, v in nodes.items() if v['@type'] == 'agentidentifier'}
+        assert agentidentifiers == set([
+            'mailto:' + self.user.username,
+            'mailto:' + self.preprint.node.creator.username,
+            self.user.profile_image_url(),
+            self.preprint.node.creator.profile_image_url(),
+        ]) | set(urlparse.urljoin(settings.DOMAIN, user.profile_url) for user in self.preprint.node.contributors if user.is_registered)
+
+        workidentifiers = {nodes.pop(k)['uri'] for k, v in nodes.items() if v['@type'] == 'workidentifier'}
+        assert workidentifiers == set([
+            'http://dx.doi.org/{}'.format(self.preprint.article_doi),
+            urlparse.urljoin(settings.DOMAIN, self.preprint.url)
+        ])
+
+        assert nodes == {}
+
+    def test_format_preprint_is_deleted(self):
+        CASES = {
+            'is_published': (True, False),
+            'is_published': (False, True),
+            'node.is_public': (True, False),
+            'node.is_public': (False, True),
+            'node._is_preprint_orphan': (True, True),
+            'node._is_preprint_orphan': (False, False),
+            'node.is_deleted': (True, True),
+            'node.is_deleted': (False, False),
+        }
+        for key, (value, is_deleted) in CASES.items():
+            target = self.preprint
+            for k in key.split('.')[:-1]:
+                if k:
+                    target = getattr(target, k)
+            orig_val = getattr(target, key.split('.')[-1])
+            setattr(target, key.split('.')[-1], value)
+
+            res = format_preprint(self.preprint)
+
+            preprint = next(v for v in res if v['@type'] == 'preprint')
+            assert preprint['is_deleted'] is is_deleted
+
+            setattr(target, key.split('.')[-1], orig_val)
+
+    def test_format_preprint_is_deleted_true_if_qatest_tag_is_added(self):
+        res = format_preprint(self.preprint)
+        preprint = next(v for v in res if v['@type'] == 'preprint')
+        assert preprint['is_deleted'] is False
+
+        self.preprint.node.add_tag('qatest', auth=self.auth, save=True)
+
+        res = format_preprint(self.preprint)
+        preprint = next(v for v in res if v['@type'] == 'preprint')
+        assert preprint['is_deleted'] is True

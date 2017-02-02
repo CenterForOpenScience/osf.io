@@ -140,9 +140,10 @@ def parity_targets():
 
 def audit(targets, num_of_workers, worker_id, dry_run):
     maxval = math.ceil(targets.count() / num_of_workers)
+    target_iterator = targets.iterator()
     idx = 0
     last_progress = -1
-    for version in targets:
+    for version in target_iterator:
         if hash(version._id) % num_of_workers == worker_id:
             if version.size == 0:
                 continue
@@ -152,9 +153,6 @@ def audit(targets, num_of_workers, worker_id, dry_run):
             if last_progress < 100 and last_progress < progress:
                 logger.info(str(progress) + '%')
                 last_progress = progress
-                # clear modm cache so we don't run out of memory from the cursor enumeration
-                models.FileVersion._cache.clear()
-                models.FileVersion._object_cache.clear()
                 gc.collect()
 
 

@@ -1,5 +1,5 @@
-<h2 style="padding-bottom: 30px;">${ meeting['name'] }
-    ${meeting['field_names']['meeting_title_type'] if meeting['poster'] and meeting['talk'] else meeting['field_names']['submission1_plural'].capitalize() if meeting['poster'] else meeting['field_names']['submission2_plural'].capitalize()}
+<h2 style="padding-bottom: 30px;">
+  ${ meeting['name'] }
 </h2>
 
 % if meeting['logo_url']:

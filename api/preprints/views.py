@@ -1,6 +1,8 @@
+import re
+
 from modularodm import Q
 from rest_framework import generics
-from rest_framework.exceptions import NotFound
+from rest_framework.exceptions import NotFound, PermissionDenied, NotAuthenticated
 from rest_framework import permissions as drf_permissions
 
 from website.models import PreprintService
@@ -9,10 +11,21 @@ from framework.auth.oauth_scopes import CoreScopes
 from api.base.exceptions import Conflict
 from api.base.views import JSONAPIBaseView
 from api.base.filters import ODMFilterMixin
-from api.base.utils import get_object_or_error
+from api.base.parsers import (
+    JSONAPIMultipleRelationshipsParser,
+    JSONAPIMultipleRelationshipsParserForRegularJSON,
+)
+from api.base.utils import get_object_or_error, get_user_auth
 from api.base import permissions as base_permissions
-from api.preprints.parsers import PreprintsJSONAPIParser, PreprintsJSONAPIParserForRegularJSON
-from api.preprints.serializers import PreprintSerializer, PreprintCreateSerializer
+from api.citations.utils import render_citation, preprint_csl
+from api.preprints.serializers import (
+    PreprintSerializer,
+    PreprintCreateSerializer,
+    PreprintCitationSerializer,
+)
+from api.nodes.serializers import (
+    NodeCitationStyleSerializer,
+)
 from api.nodes.views import NodeMixin, WaterButlerMixin
 from api.nodes.permissions import ContributorOrPublic
 
@@ -39,9 +52,6 @@ class PreprintMixin(NodeMixin):
 class PreprintList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMixin):
     """Preprints that represent a special kind of preprint node. *Writeable*.
 
-    ##Note
-    **This API endpoint is under active development, and is subject to change in the future.**
-
     Paginated list of preprints ordered by their `date_created`.  Each resource contains a representation of the
     preprint.
 
@@ -55,8 +65,8 @@ class PreprintList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMixin):
         date_modified                   iso8601 timestamp                   timestamp that the preprint was last modified
         date_published                  iso8601 timestamp                   timestamp when the preprint was published
         is_published                    boolean                             whether or not this preprint is published
-        subjects                        list of lists of dictionaries       ids of Subject in the PLOS taxonomy. Dictrionary, containing the subject text and subject ID
-        provider                        string                              original source of the preprint
+        is_preprint_orphan              boolean                             whether or not this preprint is orphaned
+        subjects                        list of lists of dictionaries       ids of Subject in the PLOS taxonomy. Dictionary, containing the subject text and subject ID
         doi                             string                              bare DOI for the manuscript, as entered by the user
 
     ##Relationships
@@ -134,7 +144,7 @@ class PreprintList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMixin):
         ContributorOrPublic,
     )
 
-    parser_classes = (PreprintsJSONAPIParser, PreprintsJSONAPIParserForRegularJSON,)
+    parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON,)
 
     required_read_scopes = [CoreScopes.NODE_PREPRINTS_READ]
     required_write_scopes = [CoreScopes.NODE_PREPRINTS_WRITE]
@@ -144,6 +154,21 @@ class PreprintList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMixin):
     ordering = ('-date_created')
     view_category = 'preprints'
     view_name = 'preprint-list'
+
+    # overrides FilterMixin
+    def postprocess_query_param(self, key, field_name, operation):
+        # tag queries will usually be on Tag.name,
+        # ?filter[tags]=foo should be translated to Q('tags__name', 'eq', 'foo')
+        # But queries on lists should be tags, e.g.
+        # ?filter[tags]=foo,bar should be translated to Q('tags', 'isnull', True)
+        # ?filter[tags]=[] should be translated to Q('tags', 'isnull', True)
+        if field_name == 'tags':
+            if operation['value'] not in (list(), tuple()):
+                operation['source_field_name'] = 'tags__name'
+                operation['op'] = 'iexact'
+
+        if field_name == 'provider':
+            operation['source_field_name'] = 'provider___id'
 
     def get_serializer_class(self):
         if self.request.method == 'POST':
@@ -164,9 +189,6 @@ class PreprintList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMixin):
 class PreprintDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, PreprintMixin, WaterButlerMixin):
     """Preprint Detail  *Writeable*.
 
-    ##Note
-    **This API endpoint is under active development, and is subject to change in the future.**
-
     ##Preprint Attributes
 
     OSF Preprint entities have the "preprints" `type`.
@@ -178,11 +200,26 @@ class PreprintDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, Pre
         date_published                  iso8601 timestamp                   timestamp when the preprint was published
         is_published                    boolean                             whether or not this preprint is published
         is_preprint_orphan              boolean                             whether or not this preprint is orphaned
-        subjects                        array of tuples of dictionaries     ids of Subject in the PLOS taxonomy. Dictrionary, containing the subject text and subject ID
-        provider                        string                              original source of the preprint
+        subjects                        array of tuples of dictionaries     ids of Subject in the PLOS taxonomy. Dictionary, containing the subject text and subject ID
         doi                             string                              bare DOI for the manuscript, as entered by the user
 
-    ###Updating Preprints
+    ##Relationships
+
+    ###Node
+    The node that this preprint was created for
+
+    ###Primary File
+    The file that is designated as the preprint's primary file, or the manuscript of the preprint.
+
+    ###Provider
+    Link to preprint_provider detail for this preprint
+
+    ##Links
+    - `self` -- Preprint detail page for the current preprint
+    - `html` -- Project on the OSF corresponding to the current preprint
+    - `doi` -- URL representation of the DOI entered by the user for the preprint manuscript
+
+    ##Updating Preprints
 
     Update a preprint by sending a patch request to the guid of the existing preprint node that you'd like to update.
 
@@ -216,7 +253,7 @@ class PreprintDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, Pre
         base_permissions.TokenHasScope,
         ContributorOrPublic,
     )
-    parser_classes = (PreprintsJSONAPIParser, PreprintsJSONAPIParserForRegularJSON,)
+    parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON,)
 
     required_read_scopes = [CoreScopes.NODE_PREPRINTS_READ]
     required_write_scopes = [CoreScopes.NODE_PREPRINTS_WRITE]
@@ -233,3 +270,79 @@ class PreprintDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, Pre
         if instance.is_published:
             raise Conflict('Published preprints cannot be deleted.')
         PreprintService.remove_one(instance)
+
+
+class PreprintCitationDetail(JSONAPIBaseView, generics.RetrieveAPIView, PreprintMixin):
+    """ The citation details for a preprint, in CSL format *Read Only*
+
+    ##PreprintCitationDetail Attributes
+
+        name                     type                description
+        =================================================================================
+        id                       string               unique ID for the citation
+        title                    string               title of project or component
+        author                   list                 list of authors for the preprint
+        publisher                string               publisher - the preprint provider
+        type                     string               type of citation - web
+        doi                      string               doi of the resource
+
+    """
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+    )
+
+    required_read_scopes = [CoreScopes.NODE_CITATIONS_READ]
+    required_write_scopes = [CoreScopes.NULL]
+
+    serializer_class = PreprintCitationSerializer
+    view_category = 'preprints'
+    view_name = 'preprint-citation'
+
+    def get_object(self):
+        preprint = self.get_preprint()
+        auth = get_user_auth(self.request)
+
+        if preprint.node.is_public or preprint.node.can_view(auth) or preprint.is_published:
+            return preprint_csl(preprint, preprint.node)
+
+        raise PermissionDenied if auth.user else NotAuthenticated
+
+
+class PreprintCitationStyleDetail(JSONAPIBaseView, generics.RetrieveAPIView, PreprintMixin):
+    """ The citation for a preprint in a specific style's format. *Read Only*
+
+    ##NodeCitationDetail Attributes
+
+        name                     type                description
+        =================================================================================
+        citation                string               complete citation for a preprint in the given style
+
+    """
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+    )
+
+    required_read_scopes = [CoreScopes.NODE_CITATIONS_READ]
+    required_write_scopes = [CoreScopes.NULL]
+
+    serializer_class = NodeCitationStyleSerializer
+    view_category = 'preprint'
+    view_name = 'preprint-citation'
+
+    def get_object(self):
+        preprint = self.get_preprint()
+        auth = get_user_auth(self.request)
+        style = self.kwargs.get('style_id')
+
+        if preprint.node.is_public or preprint.node.can_view(auth) or preprint.is_published:
+            try:
+                citation = render_citation(node=preprint, style=style)
+            except ValueError as err:  # style requested could not be found
+                csl_name = re.findall('[a-zA-Z]+\.csl', err.message)[0]
+                raise NotFound('{} is not a known style.'.format(csl_name))
+
+            return {'citation': citation, 'id': style}
+
+        raise PermissionDenied if auth.user else NotAuthenticated

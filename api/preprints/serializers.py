@@ -1,19 +1,25 @@
+from modularodm.exceptions import ValidationError
 from modularodm import Q
-from modularodm.exceptions import ValidationValueError
 from rest_framework import exceptions
 from rest_framework import serializers as ser
 
 from api.base.exceptions import Conflict
 from api.base.serializers import (
     JSONAPISerializer, IDField, JSONAPIListField,
-    LinksField, RelationshipField
+    LinksField, RelationshipField, DateByVersion,
 )
 from api.base.utils import absolute_reverse, get_user_auth
 from api.taxonomies.serializers import TaxonomyField
+from api.nodes.serializers import (
+    NodeCitationSerializer,
+    NodeLicenseSerializer,
+    get_license_details
+)
 from framework.exceptions import PermissionsError
 from website.util import permissions
+from website.exceptions import NodeStateError
 from website.project import signals as project_signals
-from website.models import StoredFileNode, PreprintService, PreprintProvider, Node
+from website.models import StoredFileNode, PreprintService, PreprintProvider, Node, NodeLicense
 
 
 class PrimaryFileRelationshipField(RelationshipField):
@@ -40,6 +46,15 @@ class PreprintProviderRelationshipField(RelationshipField):
         provider = self.get_object(data)
         return {'provider': provider}
 
+
+class PreprintLicenseRelationshipField(RelationshipField):
+    def to_internal_value(self, license_id):
+        license = NodeLicense.load(license_id)
+        if license:
+            return {'license_type': license}
+        raise exceptions.NotFound('Unable to find specified license.')
+
+
 class PreprintSerializer(JSONAPISerializer):
     filterable_fields = frozenset([
         'id',
@@ -52,16 +67,28 @@ class PreprintSerializer(JSONAPISerializer):
 
     id = IDField(source='_id', read_only=True)
     subjects = JSONAPIListField(child=JSONAPIListField(child=TaxonomyField()), allow_null=True, required=False)
-    date_created = ser.DateTimeField(read_only=True)
-    date_modified = ser.DateTimeField(read_only=True)
-    date_published = ser.DateTimeField(read_only=True)
+    date_created = DateByVersion(read_only=True)
+    date_modified = DateByVersion(read_only=True)
+    date_published = DateByVersion(read_only=True)
     doi = ser.CharField(source='article_doi', required=False, allow_null=True)
     is_published = ser.BooleanField(required=False)
     is_preprint_orphan = ser.BooleanField(read_only=True)
+    license_record = NodeLicenseSerializer(required=False, source='license')
+
+    citation = RelationshipField(
+        related_view='preprints:preprint-citation',
+        related_view_kwargs={'preprint_id': '<_id>'}
+    )
 
     node = NodeRelationshipField(
         related_view='nodes:node-detail',
         related_view_kwargs={'node_id': '<node._id>'},
+        read_only=False
+    )
+
+    license = PreprintLicenseRelationshipField(
+        related_view='licenses:license-detail',
+        related_view_kwargs={'license_id': '<license.node_license._id>'},
         read_only=False
     )
 
@@ -130,12 +157,17 @@ class PreprintSerializer(JSONAPISerializer):
             save_preprint = True
             recently_published = published
 
+        if 'license_type' in validated_data or 'license' in validated_data:
+            license_details = get_license_details(preprint, validated_data)
+            self.set_field(preprint.set_preprint_license, license_details, auth)
+            save_preprint = True
+
         if save_node:
             try:
                 preprint.node.save()
-            except ValidationValueError as e:
+            except ValidationError as e:
                 # Raised from invalid DOI
-                raise exceptions.ValidationError(detail=e.message)
+                raise exceptions.ValidationError(detail=e.messages[0])
 
         if save_preprint:
             preprint.save()
@@ -153,9 +185,11 @@ class PreprintSerializer(JSONAPISerializer):
     def set_field(self, func, val, auth, save=False):
         try:
             func(val, auth, save=save)
-        except PermissionsError:
-            raise exceptions.PermissionDenied('Not authorized to update this node.')
+        except PermissionsError as e:
+            raise exceptions.PermissionDenied(detail=e.message)
         except ValueError as e:
+            raise exceptions.ValidationError(detail=e.message)
+        except NodeStateError as e:
             raise exceptions.ValidationError(detail=e.message)
 
 
@@ -164,9 +198,11 @@ class PreprintCreateSerializer(PreprintSerializer):
     id = IDField(source='_id', required=False, allow_null=True)
 
     def create(self, validated_data):
-        node = Node.load(validated_data.pop('node', None))
+        node = validated_data.pop('node', None)
         if not node:
             raise exceptions.NotFound('Unable to find Node with specified id.')
+        elif node.is_deleted:
+            raise exceptions.ValidationError('Cannot create a preprint from a deleted node.')
 
         auth = get_user_auth(self.context['request'])
         if not node.has_permission(auth.user, permissions.ADMIN):
@@ -190,3 +226,9 @@ class PreprintCreateSerializer(PreprintSerializer):
         preprint.node.save()
 
         return self.update(preprint, validated_data)
+
+
+class PreprintCitationSerializer(NodeCitationSerializer):
+
+    class Meta:
+        type_ = 'preprint-citation'

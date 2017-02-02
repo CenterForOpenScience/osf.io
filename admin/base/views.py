@@ -1,14 +1,15 @@
 from __future__ import unicode_literals
 
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import user_passes_test
 from django.shortcuts import render
 from django.views.generic import FormView, DetailView
 from django.views.defaults import page_not_found
 
 from admin.base.forms import GuidForm
+from admin.base.utils import osf_admin_check
 
 
-@login_required
+@user_passes_test(osf_admin_check)
 def home(request):
     context = {}
     return render(request, 'home.html', context)

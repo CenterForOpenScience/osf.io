@@ -16,3 +16,7 @@ class FileNodeCheckedOutError(FileException):
     out, or if any of its children is checked out
     '''
     pass
+
+
+class FileNodeIsPrimaryFile(FileException):
+    pass

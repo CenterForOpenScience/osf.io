@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
-
-from datetime import datetime
 import httplib as http
 import urllib
 import urlparse
 
+from django.utils import timezone
+from django.apps import apps
 import bson.objectid
 import itsdangerous
 from flask import request
@@ -13,7 +13,6 @@ from weakref import WeakKeyDictionary
 from werkzeug.local import LocalProxy
 
 from framework.flask import redirect
-from framework.mongo import database
 from framework.sessions.model import Session
 from framework.sessions.utils import remove_session
 from website import settings
@@ -160,7 +159,8 @@ def before_request():
             return
         if not util_time.throttle_period_expired(user_session.date_created, settings.OSF_SESSION_TIMEOUT):
             if user_session.data.get('auth_user_id') and 'api' not in request.url:
-                database['user'].update({'_id': user_session.data.get('auth_user_id')}, {'$set': {'date_last_login': datetime.utcnow()}}, w=0)
+                OSFUser = apps.get_model('osf.OSFUser')
+                OSFUser.objects.filter(guids___id=user_session.data['auth_user_id']).update(date_last_login=timezone.now())
             set_session(user_session)
         else:
             remove_session(user_session)
