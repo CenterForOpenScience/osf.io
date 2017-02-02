@@ -1,3 +1,4 @@
+import logging
 from nose.tools import *  # noqa
 
 
@@ -8,9 +9,13 @@ from scripts.update_taxonomies import main as taxonomy_main
 from scripts.populate_preprint_providers import main as populate_main
 from scripts.populate_preprint_providers import STAGING_PREPRINT_PROVIDERS, PROD_PREPRINT_PROVIDERS
 
+
+
 class TestAddPreprintProviders(OsfTestCase):
     def setUp(self):
-        taxonomy_main(warn=False)
+        logger = logging.getLogger()
+        logger.setLevel(logging.WARNING)
+        taxonomy_main()
         ensure_licenses(warn=False)
 
     def tearDown(self):
