@@ -1,36 +1,33 @@
 from django.conf import settings
 import psycopg2
 
-CACHED_MASTER = None
-
 
 class PostgreSQLFailoverRouter(object):
     """
-    1. CHECK MASTER_SERVER_DSN @ THREAD LOCAL
-    2. THERE?, GOTO 9
-    3. GET RANDOM_SERVER FROM `settings.DATABASES`
-    4. CONNECT TO RANDOM_SERVER
-    5. IS MASTER SERVER?
-    6. YES? GOTO 8
-    7. NO?, `exit()`
-    8. STOR MASTER_SERVER_DSN @ THREAD_LOCAL
-    9. PROFIT
-    Number of servers can be assumed to be > 1 but shouldn't assume 2 max.
-    Might be nice to keep track of the servers that have been tried from settings.DATABASES so we don't get into a loop.
+    A custom database router that loops through the databases defined in django.conf.settings.DATABASES and returns the
+    first one that is not read only. If it finds none that are writable it calls exit() in order to convince docker
+    to restart the container.
     """
     DSNS = dict()
+    CACHED_MASTER = None
 
     def __init__(self):
+        """
+        Builds the list of DSNs from django's config and determines the writeable host.
+        """
         self._get_dsns()
-        global CACHED_MASTER
-        if not CACHED_MASTER:
-            CACHED_MASTER = self._get_master()
+        if not self.CACHED_MASTER:
+            self.CACHED_MASTER = self._get_master()
 
     def _get_master(self):
+        """
+        Finds the first database that's writeable and returns the configuration name.
+        :return: :str: name of database config or None
+        """
         for name, dsn in self.DSNS.iteritems():
             conn = self._get_conn(dsn)
             cur = conn.cursor()
-            cur.execute('SELECT pg_is_in_recovery();')
+            cur.execute('SHOW transaction_read_only;')
             row = cur.fetchone()
             if not row[0]:
                 cur.close()
@@ -41,30 +38,54 @@ class PostgreSQLFailoverRouter(object):
         return None
 
     def _get_dsns(self):
+        """
+        Builds a list of databases DSNs
+        :return: None
+        """
         template = '{protocol}://{USER}:{PASSWORD}@{HOST}:{PORT}/{NAME}'
         for name, db in settings.DATABASES.iteritems():
             if 'postgresql' in db['ENGINE']:
                 db['protocol'] = 'postgres'
-                # db.setdefault('protocol', 'postgres')
             else:
                 raise Exception('PostgreSQLFailoverRouter only works with PostgreSQL... ... ...')
             self.DSNS[name] = template.format(**db)
 
     def _get_conn(self, dsn):
+        """
+        Returns a psycopg2 connection for a DSN
+        :param dsn: postgres DSN
+        :return: psycopg2 connection
+        """
         return psycopg2.connect(dsn)
 
     def db_for_read(self, model, **hints):
-        if not CACHED_MASTER:
+        """
+        Returns a django database connection name for reading or kills itself
+        :param model: django model (disused)
+        :param hints: hints to help choosing a database (disused)
+        :return:
+        """
+        if not self.CACHED_MASTER:
             exit()
-        return CACHED_MASTER
+        return self.CACHED_MASTER
 
     def db_for_write(self, model, **hints):
-        if not CACHED_MASTER:
+        """
+        Returns a django database connection name for writing or kills itself
+        :param model: django model (disused)
+        :param hints: hints to help choosing a database (disused)
+        :return:
+        """
+        if not self.CACHED_MASTER:
             exit()
-        return CACHED_MASTER
+        return self.CACHED_MASTER
 
     def allow_relation(self, obj1, obj2, **hints):
+        # None if the router has no opinion
+        # https://docs.djangoproject.com/en/1.10/topics/db/multi-db/#allow_relation
         return None
 
     def allow_migrate(self, db, app_label, model_name=None, **hints):
+        # None if the router has no opinion.
+        # https://docs.djangoproject.com/en/1.10/topics/db/multi-db/#allow_migrate
         return None
