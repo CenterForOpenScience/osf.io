@@ -192,6 +192,7 @@ class Command(BaseCommand):
                     self.save_m2m_relationships(modm_queryset, django_model, page_size)
 
             self.migrate_node_through_models()
+            self.migration_institutional_contributors()
 
     def save_fk_relationships(self, modm_queryset, django_model, page_size):
         logger.info(
@@ -205,7 +206,9 @@ class Command(BaseCommand):
             logger.info('{} doesn\'t have foreign keys.'.format(django_model._meta.model.__name__))
             return
         else:
-            logger.info('FKS: {}'.format(fk_relations))
+            logger.info('{} FK relations:'.format(django_model._meta.model.__name__))
+            for rel in fk_relations:
+                logger.info('{}'.format(rel))
         fk_count = 0
         model_count = 0
         model_total = modm_queryset.count()
@@ -276,9 +279,10 @@ class Command(BaseCommand):
                                 else:
                                     gfk_model = apps.get_model('osf', value.__class__.__name__)
 
-                                ct_field_value, formatted_guid = format_lookup_key(value._id, model=gfk_model)
-                                fk_field_value = self.modm_to_django[(ct_field_value, formatted_guid)]
-                                setattr(django_obj, ct_field_name, ct_field_value)
+                                content_type_primary_key, formatted_guid = format_lookup_key(value._id, model=gfk_model)
+                                fk_field_value = self.modm_to_django[(content_type_primary_key, formatted_guid)]
+                                # this next line could be better if we just got all the content_types
+                                setattr(django_obj, ct_field_name, ContentType.objects.get_for_model(gfk_model))
                                 setattr(django_obj, fk_field_name, fk_field_value)
                                 dirty = True
                                 fk_count += 1
@@ -355,7 +359,7 @@ class Command(BaseCommand):
         model_count = 0
         model_total = modm_queryset.count()
         field_aliases = getattr(django_model, 'FIELD_ALIASES', {})
-        bad_fields = ['_nodes', ]  # we'll handle noderelations by hand
+        bad_fields = ['_nodes', 'contributors']  # we'll handle noderelations and contributors by hand
 
         while model_count < model_total:
             with transaction.atomic():  # one transaction per page
@@ -442,6 +446,7 @@ class Command(BaseCommand):
                             target_field_name = field.target_field.name
                             field_model_instance = field.through
                             for remote_pk in remote_pks:
+                                # rel_dict is a dict of the properties of the through model
                                 rel_dict = {}
                                 rel_dict['{}_id'.format(source_field_name)] = django_obj.pk
                                 rel_dict['{}_id'.format(target_field_name)] = remote_pk
@@ -456,6 +461,60 @@ class Command(BaseCommand):
                         logger.info(
                             'Through {} {}s and {} m2m'.format(model_count, django_model._meta.model.__name__,
                                                                m2m_count))
+
+    def migration_institutional_contributors(self):
+        logger.info('Starting {}...'.format(sys._getframe().f_code.co_name))
+        if not self.modm_to_django.keys():
+            self.modm_to_django = build_toku_django_lookup_table_cache()
+        total = MODMInstitution.find(deleted=True).count()
+        count = 0
+        contributor_count = 0
+        page_size = Institution.migration_page_size
+        contributors = []
+        contributor_hashes = set()
+        with ipdb.launch_ipdb_on_exception():
+            while count < total:
+                with transaction.atomic():  # one transaction per page.
+                    for modm_obj in MODMInstitution.find(deleted=True).sort('-_id')[count:page_size + count]:
+                        clean_institution_guid = unicode(modm_obj.institution_id).lower()
+                        for modm_contributor in modm_obj.contributors:
+                            clean_user_guid = unicode(modm_contributor._id).lower()
+                            read = 'read' in modm_obj.permissions[clean_user_guid]
+                            write = 'write' in modm_obj.permissions[clean_user_guid]
+                            admin = 'admin' in modm_obj.permissions[clean_user_guid]
+                            visible = clean_user_guid in modm_obj.visible_contributor_ids
+
+                            if (
+                                    self.modm_to_django[format_lookup_key(clean_user_guid, model=OSFUser)],
+                                    self.get_pk_for_unknown_node_model(clean_institution_guid)
+                            ) not in contributor_hashes:
+                                contributors.append(
+                                    InstitutionalContributor(
+                                        read=read,
+                                        write=write,
+                                        admin=admin,
+                                        user_id=self.modm_to_django[format_lookup_key(clean_user_guid, model=OSFUser)],
+                                        node_id=self.get_pk_for_unknown_node_model(clean_institution_guid),
+                                        visible=visible
+                                    )
+                                )
+                                contributor_hashes.add((self.modm_to_django[format_lookup_key(clean_user_guid, model=OSFUser)],
+                                                        self.get_pk_for_unknown_node_model(clean_institution_guid)))
+                                contributor_count += 1
+                            else:
+                                logger.info('({},{}) already in institutional contributor_hashes.'.format(
+                                    self.modm_to_django[format_lookup_key(clean_user_guid, model=OSFUser)],
+                                    self.get_pk_for_unknown_node_model(clean_institution_guid)))
+                        count += 1
+
+                        if count % page_size == 0 or count == total:
+                            InstitutionalContributor.objects.bulk_create(contributors)
+                            logger.info('Through {} nodes and {} institutional contributors, '
+                                        'saved {} institutional contributors'.format(count, contributor_count, len(contributors)))
+                            contributors = []
+                            modm_obj._cache.clear()
+                            modm_obj._object_cache.clear()
+                            logger.info('Took out {} trashes'.format(gc.collect()))\
 
     def migrate_node_through_models(self):
         logger.info('Starting {}...'.format(sys._getframe().f_code.co_name))
@@ -473,6 +532,7 @@ class Command(BaseCommand):
         with ipdb.launch_ipdb_on_exception():
             while count < total:
                 with transaction.atomic():  # one transaction per page.
+                    # is this query okay? isn't it going to catch things we don't want?
                     for modm_obj in MODMNode.find().sort('-_id')[count:page_size + count]:
                         order = 0
                         clean_node_guid = unicode(modm_obj._id).lower()
