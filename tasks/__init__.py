@@ -694,8 +694,7 @@ def test_travis_else(ctx):
     flake(ctx)
     jshint(ctx)
     test_else(ctx)
-    # TODO: Enable admin tests
-    # test_admin(ctx)
+    test_admin(ctx)
 
 @task
 def test_travis_api1(ctx):
