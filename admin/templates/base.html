@@ -65,11 +65,6 @@
                   </span>
                 </a>
                 <ul class="dropdown-menu user-menu">
-                  <li>
-                    <a href="{% url 'auth:password_change' %}">
-                      Change Password
-                    </a>
-                  </li>
                     {%  if perms.osf.change_user %}
                   <li>
                     <a href="{% url 'auth:register' %}">
