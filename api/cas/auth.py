@@ -114,13 +114,25 @@ def handle_institution_authenticate(provider):
 
     username = provider['user']['username']
     fullname = provider['user']['fullname']
+    given_name = provider['user'].get('givenName')
+    family_name = provider['user'].get('familyName')
+
+    # use given name an family name to build full name if not provided
+    if given_name and family_name and not fullname:
+        fullname = given_name + ' ' + family_name
+
+    # use username if no names are provided
+    if not fullname:
+        fullname = username
 
     user, created = get_or_create_user(fullname, username, reset_password=False)
 
     if created:
-        user.given_name = provider['user'].get('givenName')
+        if given_name:
+            user.given_name = given_name
+        if family_name:
+            user.family_name = family_name
         user.middle_names = provider['user'].get('middleNames')
-        user.family_name = provider['user'].get('familyName')
         user.suffix = provider['user'].get('suffix')
         user.date_last_login = timezone.now()
         user.save()
