@@ -24,13 +24,6 @@ class Comment(GuidMixin, SpamMixin, CommentableMixin, BaseModel):
     modm_query = None
     # /TODO DELETE ME POST MIGRATION
     __guid_min_length__ = 12
-
-    # FIELD_ALIASES = {
-    #     # TODO: Find a better way
-    #     'root_target': 'root_target___id',
-    #     'target': 'target___id'
-    # }
-
     OVERVIEW = 'node'
     FILES = 'files'
     WIKI = 'wiki'

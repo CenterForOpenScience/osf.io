@@ -2077,9 +2077,11 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 )
 
             if to_retain != users:
-                # TODO: Can we prevent n queries?
-                sorted_contribs = [self.contributor_set.get(user=user).pk for user in users]
-                self.set_contributor_order(sorted_contribs)
+                # Ordered Contributor PKs, sorted according to the passed list of user IDs
+                sorted_contrib_ids = [
+                    each.id for each in sorted(self.contributor_set.all(), key=lambda c: user_ids.index(c.user._id))
+                ]
+                self.set_contributor_order(sorted_contrib_ids)
                 self.add_log(
                     action=NodeLog.CONTRIB_REORDERED,
                     params={
