@@ -57,7 +57,7 @@ class TestNodeDeleteView(AdminTestCase):
     def test_get_context(self):
         res = self.view.get_context_data(object=self.node)
         nt.assert_in('guid', res)
-        nt.assert_equal(res.get('guid'), self.node.id)
+        nt.assert_equal(res.get('guid'), self.node._id)
 
     def test_remove_node(self):
         count = OSFLogEntry.objects.count()
