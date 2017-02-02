@@ -50,7 +50,7 @@ class MeetingForm(forms.Form):
     )
     info_url = forms.URLField(
         label='Info url',
-        required=True
+        required=False
     )
     homepage_link_text = forms.CharField(
         label='Homepage link text (Default: "Conference homepage")',
