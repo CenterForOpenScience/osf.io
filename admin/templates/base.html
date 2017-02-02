@@ -70,11 +70,13 @@
                       Change Password
                     </a>
                   </li>
+                    {%  if perms.osf.change_user %}
                   <li>
                     <a href="{% url 'auth:register' %}">
                       Admin-User Registration
                     </a>
                   </li>
+                    {% endif %}
                   <li>
                     <a href="{% url 'auth:desk' %}">
                       Desk information
