@@ -6,6 +6,15 @@
 <div class="register-box">
     <div class="register-box-body">
         <h4>Add an OSF Admin user</h4>
+        <div>
+          {% if messages %}
+            <ul class="login_page_messages">
+              {% for message in messages %}
+                    <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+              {% endfor %}
+            </ul>
+          {% endif %}
+        </div>
         <form action="" method="post">
             {% csrf_token %}
 
@@ -39,16 +48,6 @@
                 </div><!-- /.col -->
             </div>
         </form>
-        <div>
-          {% if messages %}
-            <ul class="login_page_messages">
-              {% for message in messages %}
-                   <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}
-                   </li>
-              {% endfor %}
-            </ul>
-          {% endif %}
-        </div>
     </div><!-- /.form-box -->
 </div><!-- /.register-box -->
 {% endblock %}
