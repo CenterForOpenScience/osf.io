@@ -93,6 +93,22 @@
       wb:
         volumes_from:
           - container:wb-sync
+
+      wb_worker:
+        volumes_from:
+          - container:wb-sync
+
+      wb_requirements:
+        volumes_from:
+          - container:wb-sync
+
+      mfr:
+        volumes_from:
+          - container:mfr-sync
+
+      mfr_requirements:
+        volumes_from:
+          - container:mfr-sync
     ```
 
   - In `docker-sync.yml`:
@@ -103,6 +119,15 @@
         src: '../waterbutler'
         dest: '/code'
         sync_strategy: 'unison'
+        sync_excludes_type: 'Name'
+        sync_excludes: ['.DS_Store', '*.pyc', '*.tmp', '.git', '.idea']
+        watch_excludes: ['.*\.DS_Store', '.*\.pyc', '.*\.tmp', '.*/\.git', '.*/\.idea']
+
+      mfr-sync:
+        src: '../modular-file-renderer'
+        dest: '/code'
+        sync_strategy: 'unison'
+        sync_args: [ '-prefer newer'' ]
         sync_excludes_type: 'Name'
         sync_excludes: ['.DS_Store', '*.pyc', '*.tmp', '.git', '.idea']
         watch_excludes: ['.*\.DS_Store', '.*\.pyc', '.*\.tmp', '.*/\.git', '.*/\.idea']
