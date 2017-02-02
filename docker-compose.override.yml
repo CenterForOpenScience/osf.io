@@ -54,9 +54,3 @@ services:
   api:
     volumes_from:
       - container:osf-sync
-
-  preprints:
-    build:
-      context: ../ember-osf2/ember-preprints
-    volumes_from:
-      - container:preprints-sync

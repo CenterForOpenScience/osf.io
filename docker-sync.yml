@@ -26,7 +26,7 @@ syncs:
 #    watch_excludes: ['.*\.DS_Store', '.*\.pyc', '.*\.tmp', '.*/\.git', '.*/\.idea']
 
 #  preprints-sync:
-#    src: '../ember-osf2/ember-preprints'
+#    src: '../ember-preprints'
 #    dest: '/code'
 #    sync_strategy: 'unison'
 #    sync_args: [ '-prefer newer' ]
