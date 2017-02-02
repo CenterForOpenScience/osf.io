@@ -6,6 +6,7 @@ from django.db.models import Q
 from django.db import migrations
 from django.contrib.auth.models import Group
 from django.contrib.auth.models import Permission
+from django.core.management.sql import emit_post_migrate_signal
 
 import logging
 
@@ -42,6 +43,8 @@ def get_prereg_admin_permissions():
 
 
 def add_group_permissions(*args):
+    # this is to make sure that the permissions created in an earlier migration exist!
+    emit_post_migrate_signal(2, False, 'default')
 
     # Rename nodes_and_users group to read_only which makes more sense
     try:
@@ -136,6 +139,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('base', '0002_groups'),
+        ('common_auth', '0006_auto_20170130_1611')
     ]
 
     operations = [

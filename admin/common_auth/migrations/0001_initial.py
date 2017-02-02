@@ -2,7 +2,7 @@
 from __future__ import unicode_literals
 
 from django.db import models, migrations
-import datetime
+from django.utils import timezone
 
 
 class Migration(migrations.Migration):
@@ -25,7 +25,7 @@ class Migration(migrations.Migration):
                 ('is_active', models.BooleanField(default=True)),
                 ('is_admin', models.BooleanField(default=False)),
                 ('is_staff', models.BooleanField(default=False)),
-                ('date_joined', models.DateTimeField(default=datetime.datetime.now)),
+                ('date_joined', models.DateTimeField(default=timezone.now())),
                 ('confirmed', models.BooleanField(default=False)),
                 ('osf_id', models.CharField(default=False, max_length=10, blank=True)),
                 ('groups', models.ManyToManyField(related_query_name='user', related_name='user_set', to='auth.Group', blank=True, help_text='The groups this user belongs to. A user will get all permissions granted to each of their groups.', verbose_name='groups')),
