@@ -41,7 +41,7 @@ class MeetingFormView(FormView, PermissionRequiredMixin):
     permission_required = 'osf.change_conference'
 
     def dispatch(self, request, *args, **kwargs):
-        endpoint = self.kwargs.get('endpoint')
+        endpoint = kwargs.get('endpoint')
         try:
             self.conf = Conference.get_by_endpoint(endpoint, active=False)
         except ConferenceError:
@@ -58,9 +58,6 @@ class MeetingFormView(FormView, PermissionRequiredMixin):
         self.initial = serialize_meeting(self.conf)
         self.initial.setdefault('edit', True)
         return super(MeetingFormView, self).get_initial()
-
-    def is_valid(self):
-        return super(MeetingFormView, self).is_valid()
 
     def form_valid(self, form):
         custom_fields, data = get_custom_fields(form.cleaned_data)
