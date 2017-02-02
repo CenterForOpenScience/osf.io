@@ -12,7 +12,7 @@ logger = logging.getLogger(__file__)
 
 def remove_web_stats_model(*args):
     try:
-        ContentType.objects.get(app_label="metrics", model='osfwebsitestatistics').delete()
+        ContentType.objects.get(app_label='metrics', model='osfwebsitestatistics').delete()
         migrations.DeleteModel(name='OSFWebsiteStatistics')
     except ContentType.DoesNotExist:
         pass
