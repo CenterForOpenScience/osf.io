@@ -18,10 +18,10 @@ from admin.spam.forms import ConfirmForm
 from admin.spam.templatetags.spam_extras import reverse_spam_detail
 
 
-class EmailView(DetailView, PermissionRequiredMixin):
+class EmailView(PermissionRequiredMixin, DetailView):
     template_name = 'spam/email.html'
     context_object_name = 'spam'
-    permission_required = 'admin.view_spam'
+    permission_required = 'common_auth.view_spam'
 
     def get_object(self, queryset=None):
         spam_id = self.kwargs.get('spam_id')
@@ -31,7 +31,7 @@ class EmailView(DetailView, PermissionRequiredMixin):
             raise Http404('Spam with id {} not found.'.format(spam_id))
 
 
-class SpamList(ListView, PermissionRequiredMixin):
+class SpamList(PermissionRequiredMixin, ListView):
     """ Allow authorized admin user to see the things people have marked as spam
 
     Interface with OSF database. No admin models.
@@ -41,7 +41,8 @@ class SpamList(ListView, PermissionRequiredMixin):
     paginate_orphans = 1
     ordering = '-date_last_reported'
     context_object_name = 'spam'
-    permission_required = 'admin.view_spam'
+    permission_required = 'common_auth.view_spam'
+    raise_exception = True
 
     def get_queryset(self):
         return Comment.objects.filter(
@@ -81,14 +82,15 @@ class UserSpamList(SpamList):
         return super(UserSpamList, self).get_context_data(**kwargs)
 
 
-class SpamDetail(FormView, PermissionRequiredMixin):
+class SpamDetail(PermissionRequiredMixin, FormView):
     """ Allow authorized admin user to see details of reported spam.
 
     Interface with OSF database. Logs action (confirming spam) on admin db.
     """
     form_class = ConfirmForm
     template_name = 'spam/detail.html'
-    permission_required = 'admin.view_spam'
+    permission_required = 'common_auth.view_spam'
+    raise_exception = True
 
     def get_context_data(self, **kwargs):
         spam_id = self.kwargs.get('spam_id')

@@ -24,7 +24,7 @@ from admin.nodes.serializers import serialize_node, serialize_simple_user_and_no
 from website.project.spam.model import SpamStatus
 
 
-class NodeFormView(GuidFormView, PermissionRequiredMixin):
+class NodeFormView(PermissionRequiredMixin, GuidFormView):
     """ Allow authorized admin user to input specific node guid.
 
     Basic form. No admin models.
@@ -32,13 +32,14 @@ class NodeFormView(GuidFormView, PermissionRequiredMixin):
     template_name = 'nodes/search.html'
     object_type = 'node'
     permission_required = 'osf.view_node'
+    raise_exception = True
 
     @property
     def success_url(self):
         return reverse_node(self.guid)
 
 
-class NodeRemoveContributorView(DeleteView, PermissionRequiredMixin):
+class NodeRemoveContributorView(PermissionRequiredMixin, DeleteView):
     """ Allow authorized admin user to remove project contributor
 
     Interface with OSF database. No admin models.
@@ -46,6 +47,7 @@ class NodeRemoveContributorView(DeleteView, PermissionRequiredMixin):
     template_name = 'nodes/remove_contributor.html'
     context_object_name = 'node'
     permission_required = ('osf.view_node', 'osf.change_node')
+    raise_exception = True
 
     def delete(self, request, *args, **kwargs):
         try:
@@ -111,7 +113,7 @@ class NodeDeleteBase(DeleteView):
         return Node.load(self.kwargs.get('guid'))
 
 
-class NodeDeleteView(NodeDeleteBase, PermissionRequiredMixin):
+class NodeDeleteView(PermissionRequiredMixin, NodeDeleteBase):
     """ Allow authorized admin user to remove/hide nodes
 
     Interface with OSF database. No admin models.
@@ -119,6 +121,7 @@ class NodeDeleteView(NodeDeleteBase, PermissionRequiredMixin):
     template_name = 'nodes/remove_node.html'
     object = None
     permission_required = ('osf.view_node', 'osf.delete_node')
+    raise_exception = True
 
     def delete(self, request, *args, **kwargs):
         try:
@@ -172,7 +175,7 @@ class NodeDeleteView(NodeDeleteBase, PermissionRequiredMixin):
         return redirect(reverse_node(self.kwargs.get('guid')))
 
 
-class NodeView(GuidView, PermissionRequiredMixin):
+class NodeView(PermissionRequiredMixin, GuidView):
     """ Allow authorized admin user to view nodes
 
     View of OSF database. No admin models.
@@ -180,6 +183,7 @@ class NodeView(GuidView, PermissionRequiredMixin):
     template_name = 'nodes/node.html'
     context_object_name = 'node'
     permission_required = 'osf.view_node'
+    raise_exception = True
 
     def get_context_data(self, **kwargs):
         kwargs = super(NodeView, self).get_context_data(**kwargs)
@@ -190,7 +194,7 @@ class NodeView(GuidView, PermissionRequiredMixin):
         return serialize_node(Node.load(self.kwargs.get('guid')))
 
 
-class RegistrationListView(ListView, PermissionRequiredMixin):
+class RegistrationListView(PermissionRequiredMixin, ListView):
     """ Allow authorized admin user to view list of registrations
 
     View of OSF database. No admin models.
@@ -201,6 +205,7 @@ class RegistrationListView(ListView, PermissionRequiredMixin):
     ordering = 'date_created'
     context_object_name = '-node'
     permission_required = 'osf.view_registration'
+    raise_exception = True
 
     def get_queryset(self):
         return Registration.objects.all().order_by(self.ordering)
@@ -216,14 +221,15 @@ class RegistrationListView(ListView, PermissionRequiredMixin):
         }
 
 
-class NodeSpamList(ListView, PermissionRequiredMixin):
+class NodeSpamList(PermissionRequiredMixin, ListView):
     SPAM_STATE = SpamStatus.UNKNOWN
 
     paginate_by = 25
     paginate_orphans = 1
     ordering = 'date_created'
     context_object_name = '-node'
-    permission_required = 'admin.view_spam'
+    permission_required = 'common_auth.view_spam'
+    raise_exception = True
 
     def get_queryset(self):
         query = (
@@ -273,9 +279,10 @@ class NodeKnownHamList(NodeSpamList):
     SPAM_STATE = SpamStatus.HAM
     template_name = 'nodes/known_spam_list.html'
 
-class NodeConfirmSpamView(NodeDeleteBase, PermissionRequiredMixin):
+class NodeConfirmSpamView(PermissionRequiredMixin, NodeDeleteBase):
     template_name = 'nodes/confirm_spam.html'
-    permission_required = 'admin.mark_spam'
+    permission_required = 'common_auth.mark_spam'
+    raise_exception = True
 
     def delete(self, request, *args, **kwargs):
         node = self.get_object()
@@ -289,9 +296,10 @@ class NodeConfirmSpamView(NodeDeleteBase, PermissionRequiredMixin):
         )
         return redirect(reverse_node(self.kwargs.get('guid')))
 
-class NodeConfirmHamView(NodeDeleteBase, PermissionRequiredMixin):
+class NodeConfirmHamView(PermissionRequiredMixin, NodeDeleteBase):
     template_name = 'nodes/confirm_ham.html'
-    permission_required = 'admin.mark_spam'
+    permission_required = 'common_auth.mark_spam'
+    raise_exception = True
 
     def delete(self, request, *args, **kwargs):
         node = self.get_object()

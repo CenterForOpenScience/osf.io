@@ -34,7 +34,7 @@ from admin.users.templatetags.user_extras import reverse_user
 from website.settings import DOMAIN, SUPPORT_EMAIL
 
 
-class UserDeleteView(DeleteView, PermissionRequiredMixin):
+class UserDeleteView(PermissionRequiredMixin, DeleteView):
     """ Allow authorised admin user to remove/restore user
 
     Interface with OSF database. No admin models.
@@ -42,7 +42,8 @@ class UserDeleteView(DeleteView, PermissionRequiredMixin):
     template_name = 'users/remove_user.html'
     context_object_name = 'user'
     object = None
-    permission_required = 'admin.change_user'
+    permission_required = 'osf.change_user'
+    raise_exception = True
 
     def delete(self, request, *args, **kwargs):
         try:
@@ -162,14 +163,15 @@ class HamUserRestoreView(UserDeleteView):
         return super(HamUserRestoreView, self).delete(request, *args, **kwargs)
 
 
-class UserSpamList(ListView, PermissionRequiredMixin):
+class UserSpamList(PermissionRequiredMixin, ListView):
     SPAM_TAG = 'spam_flagged'
 
     paginate_by = 25
     paginate_orphans = 1
     ordering = ('date_disabled')
     context_object_name = '-user'
-    permission_required = ('admin.view_spam', 'osf.view_user')
+    permission_required = ('common_auth.view_spam', 'osf.view_user')
+    raise_exception = True
 
     def get_queryset(self):
         return OSFUser.objects.filter(tags__name=self.SPAM_TAG).order_by(self.ordering)
@@ -247,20 +249,22 @@ class User2FactorDeleteView(UserDeleteView):
         return redirect(reverse_user(self.kwargs.get('guid')))
 
 
-class UserFormView(GuidFormView, PermissionRequiredMixin):
+class UserFormView(PermissionRequiredMixin, GuidFormView):
     template_name = 'users/search.html'
     object_type = 'user'
     permission_required = 'osf.view_user'
+    raise_exception = True
 
     @property
     def success_url(self):
         return reverse_user(self.guid)
 
 
-class UserView(GuidView, PermissionRequiredMixin):
+class UserView(PermissionRequiredMixin, GuidView):
     template_name = 'users/user.html'
     context_object_name = 'user'
     permission_required = 'osf.view_user'
+    raise_exception = True
 
     def get_context_data(self, **kwargs):
         kwargs = super(UserView, self).get_context_data(**kwargs)
@@ -271,11 +275,12 @@ class UserView(GuidView, PermissionRequiredMixin):
         return serialize_user(OSFUser.load(self.kwargs.get('guid')))
 
 
-class UserWorkshopFormView(FormView, PermissionRequiredMixin):
+class UserWorkshopFormView(PermissionRequiredMixin, FormView):
     form_class = WorkshopForm
     object_type = 'user'
     template_name = 'users/workshop.html'
     permission_required = 'osf.view_user'
+    raise_exception = True
 
     def form_valid(self, form):
         csv_file = form.cleaned_data['document']
@@ -370,11 +375,12 @@ class UserWorkshopFormView(FormView, PermissionRequiredMixin):
         super(UserWorkshopFormView, self).form_invalid(form)
 
 
-class ResetPasswordView(FormView, PermissionRequiredMixin):
+class ResetPasswordView(PermissionRequiredMixin, FormView):
     form_class = EmailResetForm
     template_name = 'users/reset.html'
     context_object_name = 'user'
     permission_required = 'osf.change_user'
+    raise_exception = True
 
     def get_context_data(self, **kwargs):
         user = OSFUser.load(self.kwargs.get('guid'))

@@ -4,9 +4,10 @@ from django.contrib.auth.mixins import PermissionRequiredMixin
 from admin.base.settings import KEEN_CREDENTIALS
 
 
-class MetricsView(TemplateView, PermissionRequiredMixin):
+class MetricsView(PermissionRequiredMixin, TemplateView):
     template_name = 'metrics/osf_metrics.html'
-    permission_required = 'admin.view_metrics'
+    permission_required = 'common_auth.view_metrics'
+    raise_exception = True
 
     def get_context_data(self, **kwargs):
 

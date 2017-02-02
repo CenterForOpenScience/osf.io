@@ -7,13 +7,14 @@ from osf.models.user import OSFUser
 from admin.desk.utils import DeskClient, DeskError, DeskCustomerNotFound
 
 
-class DeskCaseList(ListView, PermissionRequiredMixin):
+class DeskCaseList(PermissionRequiredMixin, ListView):
     template_name = 'desk/cases.html'
     ordering = 'updated_at'
     context_object_name = 'cases'
     paginate_by = 100
     paginate_orphans = 5
-    permission_required = 'admin.view_desk'
+    permission_required = 'common_auth.view_desk'
+    raise_exception = True
 
     def dispatch(self, request, *args, **kwargs):
         try:
@@ -46,10 +47,11 @@ class DeskCaseList(ListView, PermissionRequiredMixin):
         return super(DeskCaseList, self).get_context_data(**kwargs)
 
 
-class DeskCustomer(DetailView, PermissionRequiredMixin):
+class DeskCustomer(PermissionRequiredMixin, DetailView):
     template_name = 'desk/customer.html'
     context_object_name = 'customer'
-    permission_required = 'admin.view_desk'
+    permission_required = 'common_auth.view_desk'
+    raise_exception = True
 
     def dispatch(self, request, *args, **kwargs):
         try:

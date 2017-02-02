@@ -29,11 +29,12 @@ from website.prereg.utils import get_prereg_schema
 from website.project.metadata.schemas import from_json
 
 
-class DraftListView(ListView, PermissionRequiredMixin):
+class DraftListView(PermissionRequiredMixin, ListView):
     template_name = 'pre_reg/draft_list.html'
     ordering = '-date'
     context_object_name = 'draft'
-    permission_required = 'admin.view_prereg'
+    permission_required = 'common_auth.view_prereg'
+    raise_exception = True
 
     def get_queryset(self):
         query = (
@@ -102,10 +103,11 @@ class DraftDownloadListView(DraftListView):
         return response
 
 
-class DraftDetailView(DetailView, PermissionRequiredMixin):
+class DraftDetailView(PermissionRequiredMixin, DetailView):
     template_name = 'pre_reg/draft_detail.html'
     context_object_name = 'draft'
-    permission_required = 'admin.view_prereg'
+    permission_required = 'common_auth.view_prereg'
+    raise_exception = True
 
     def get_object(self, queryset=None):
         draft = DraftRegistration.load(self.kwargs.get('draft_pk'))
@@ -125,11 +127,12 @@ class DraftDetailView(DetailView, PermissionRequiredMixin):
             item.save()
 
 
-class DraftFormView(FormView, PermissionRequiredMixin):
+class DraftFormView(PermissionRequiredMixin, FormView):
     template_name = 'pre_reg/draft_form.html'
     form_class = DraftRegistrationForm
     context_object_name = 'draft'
-    permission_required = 'admin.view_prereg'
+    permission_required = 'common_auth.view_prereg'
+    raise_exception = True
 
     def dispatch(self, request, *args, **kwargs):
         self.draft = DraftRegistration.load(self.kwargs.get('draft_pk'))
@@ -193,9 +196,10 @@ class DraftFormView(FormView, PermissionRequiredMixin):
                                    self.request.POST.get('page', 1))
 
 
-class CommentUpdateView(UpdateView, PermissionRequiredMixin):
+class CommentUpdateView(PermissionRequiredMixin, UpdateView):
     context_object_name = 'draft'
-    permission_required = ('admin.view_prereg', 'admin.administer_prereg')
+    permission_required = ('common_auth.view_prereg', 'common_auth.administer_prereg')
+    raise_exception = True
 
     def post(self, request, *args, **kwargs):
         try:
