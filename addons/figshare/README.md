@@ -23,7 +23,6 @@ has instructions for use with ngrok, but there are other methods.
 7. Open addons/figshare/settings/local.py
   * Copy the *consumer_key* to **CLIENT_ID**
   * Copy the *consumer_secret* to **CLIENT_SECRET**
-8. Open settings/local.py, add *figshare* to ADDONS_REQUESTED
 
 ### B) Manual generation of auth token and ExternalAccount
 
