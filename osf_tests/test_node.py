@@ -2495,6 +2495,14 @@ class TestTemplateNode:
         assert new.date_created != project.date_created
         self._verify_log(new)
 
+    def test_use_as_template_adds_default_addons(self, project, auth):
+        new = project.use_as_template(
+            auth=auth
+        )
+
+        assert new.has_addon('wiki')
+        assert new.has_addon('osfstorage')
+
     def test_use_as_template_preserves_license(self, project, auth):
         license = NodeLicenseRecordFactory()
         project.node_license = license

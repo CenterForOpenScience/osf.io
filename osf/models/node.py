@@ -330,6 +330,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     def __init__(self, *args, **kwargs):
         self._parent = kwargs.pop('parent', None)
+        self._is_templated_clone = False
         super(AbstractNode, self).__init__(*args, **kwargs)
 
     def __unicode__(self):
@@ -1872,6 +1873,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             attributes = dict()
 
         new = self.clone()
+        new._is_templated_clone = True  # This attribute may be read in post_save handlers
 
         # Clear quasi-foreign fields
         new.wiki_pages_current.clear()
@@ -1924,13 +1926,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             log_date=new.date_created,
             save=False,
         )
-
-        # add mandatory addons
-        # TODO: This logic also exists in self.save()
-        for addon in settings.ADDONS_AVAILABLE:
-            if 'node' in addon.added_default:
-                new.add_addon(addon.short_name, auth=None, log=False)
-
         new.save()
         # deal with the children of the node, if any
         for node_relation in self.node_relations.select_related('child').filter(child__is_deleted=False):
@@ -2936,8 +2931,7 @@ def send_osf_signal(sender, instance, created, **kwargs):
 @receiver(post_save, sender=Collection)
 @receiver(post_save, sender=Node)
 def add_default_node_addons(sender, instance, created, **kwargs):
-    if created and instance.is_original and not instance._suppress_log:
-        # TODO: This logic also exists in self.use_as_template()
+    if (created or instance._is_templated_clone) and instance.is_original and not instance._suppress_log:
         for addon in settings.ADDONS_AVAILABLE:
             if 'node' in addon.added_default:
                 instance.add_addon(addon.short_name, auth=None, log=False)
