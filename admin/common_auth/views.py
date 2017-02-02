@@ -66,7 +66,7 @@ class RegisterUser(FormView, PermissionRequiredMixin):
         osf_user = OSFUser.load(osf_id)
 
         if not osf_user:
-            raise Http404('OSF user with id "{}" not found. Please double check.').format(osf_id)
+            raise Http404('OSF user with id "{}" not found. Please double check.'.format(osf_id))
 
         osf_user.is_staff = True
         osf_user.save()
