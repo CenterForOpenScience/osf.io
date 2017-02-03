@@ -1,27 +1,18 @@
-import logging
-
-from website.addons.base.serializer import OAuthAddonSerializer
+from oauthlib.oauth2 import InvalidGrantError
 
 from website.util import api_url_for
-
-from website.addons.onedrive.client import OneDriveClient
-
-logger = logging.getLogger(__name__)
+from website.addons.base.serializer import StorageAddonSerializer
 
 
-class OneDriveSerializer(OAuthAddonSerializer):
+class OneDriveSerializer(StorageAddonSerializer):
 
     addon_short_name = 'onedrive'
 
     def credentials_are_valid(self, user_settings, client):
-        if not user_settings:
-            return False
         try:
-            client = client or OneDriveClient(user_settings.external_accounts[0].oauth_key)
-            client.get_user_info()
-        except (IndexError):
+            self.node_settings.fetch_access_token()
+        except (InvalidGrantError, AttributeError):
             return False
-
         return True
 
     def serialized_folder(self, node_settings):
@@ -37,10 +28,10 @@ class OneDriveSerializer(OAuthAddonSerializer):
         return {
             'auth': api_url_for('oauth_connect',
                                 service_name='onedrive'),
-            'importAuth': node.api_url_for('onedrive_add_user_auth'),
+            'importAuth': node.api_url_for('onedrive_import_auth'),
             'files': node.web_url_for('collect_file_trees'),
             'folders': node.api_url_for('onedrive_folder_list'),
             'config': node.api_url_for('onedrive_set_config'),
-            'deauthorize': node.api_url_for('onedrive_remove_user_auth'),
-            'accounts': node.api_url_for('onedrive_get_user_settings'),
+            'deauthorize': node.api_url_for('onedrive_deauthorize_node'),
+            'accounts': node.api_url_for('onedrive_account_list'),
         }
