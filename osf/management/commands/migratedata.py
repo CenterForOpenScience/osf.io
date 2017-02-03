@@ -1,11 +1,13 @@
 from __future__ import unicode_literals
 
+import datetime as dt
 import gc
 import importlib
 import itertools
 import logging
-import pprint
 import sys
+from cProfile import Profile
+import pstats
 
 import gevent
 from gevent.threadpool import ThreadPool
@@ -13,8 +15,6 @@ from gevent.threadpool import ThreadPool
 from framework import encryption
 from framework.mongo import set_up_storage
 from framework.mongo import storage
-from osf.models import ExternalAccount
-from osf.models import OSFUser
 from addons.s3 import utils
 import ipdb
 from addons.base.models import BaseOAuthNodeSettings
@@ -40,8 +40,6 @@ from osf.utils.order_apps import get_ordered_models
 from psycopg2._psycopg import AsIs
 from typedmodels.models import TypedModel
 from addons.github.api import GitHubClient
-from website.addons.github.api import GitHubClient
-from website.addons.s3 import utils
 from website.files.models import StoredFileNode as MODMStoredFileNode
 from website.models import Guid as MGuid
 from website.models import Node as MODMNode
@@ -790,6 +788,7 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument('--nodelogs', action='store_true', help='Run nodelog migrations')
         parser.add_argument('--nodelogsguids', action='store_true', help='Run nodelog guid migrations')
+        parser.add_argument('--profile', action='store', help='Filename to dump profiling information')
 
     def do_model(self, django_model, options):
         modm_model = get_modm_model(django_model)
@@ -807,6 +806,16 @@ class Command(BaseCommand):
         logger.info('Took out {} trashes'.format(gc.collect()))
 
     def handle(self, *args, **options):
+        if options['profile']:
+            profiler = Profile()
+            profiler.runcall(self._handle, *args, **options)
+            stats = pstats.Stats(profiler).sort_stats('cumulative')
+            stats.print_stats()
+            stats.dump_stats(options['profile'])
+        else:
+            self._handle(*args, **options)
+
+    def _handle(self, *args, **options):
         set_backend()
         # it's either this or catch the exception and put them in the blacklistguid table
         register_nonexistent_models_with_modm()
