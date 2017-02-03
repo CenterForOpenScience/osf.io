@@ -8,6 +8,7 @@ from framework.auth import Auth
 from framework.exceptions import HTTPError
 from website.oauth.models import ExternalProvider
 
+from website.util import api_v2_url
 from website.addons.base import exceptions
 from website.addons.base import StorageAddonBase
 from website.addons.base import AddonOAuthUserSettingsBase, AddonOAuthNodeSettingsBase
@@ -113,6 +114,11 @@ class OneDriveNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         # path = kwargs.get('path') or ''
         folder_id = kwargs.get('folder_id') or 'root'
 
+        try:
+            access_token = self.fetch_access_token()
+        except exceptions.InvalidAuthError:
+            raise HTTPError(403)
+
         if folder_id is None:
             return [{
                 'id': '0',
@@ -121,17 +127,13 @@ class OneDriveNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
                 'kind': 'folder',
                 'name': '/ (Full OneDrive)',
                 'urls': {
-                    'folders': node.api_url_for('onedrive_folder_list', folderId=0),
+                    'folders': api_v2_url('nodes/{}/addons/onedrive/folders/'.format(self.owner._id),
+                                          params={'path': '/', 'id': 0}),
                 }
             }]
 
         if folder_id == '0':
             folder_id = 'root'
-
-        try:
-            access_token = self.fetch_access_token()
-        except exceptions.InvalidAuthError:
-            raise HTTPError(403)
 
         oneDriveClient = OneDriveClient(access_token)
         items = oneDriveClient.folders(folder_id)
