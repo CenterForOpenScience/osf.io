@@ -254,6 +254,19 @@ def verify_user_status(user):
     """
     Verify users' status.
 
+    Possible User Status during authentication:
+
+                        registered      confirmed       disabled        merged      usable password     claimed
+    USER_ACTIVE:        x               x               o               o           x                   ?
+    USER_NOT_CONFIRMED: o               o               o               o           x                   ?
+    USER_NOT_CLAIMED:   o               o               o               o           o                   ?
+    USER_DISABLE:       o               ?               x               o           ?                   ?
+
+    Unreachable User Status (or something is horribly wrong)
+    USER_STATUS_INVALID
+        USER_MERGED:    ?               ?               ?               x           o                   ?
+        !USER_ACTIVE, but does not fall into any of the above category
+
     :param user: the user
     :return: USER_ACTIVE, USER_NOT_CLAIMED, USER_NOT_CONFIRMED, USER_DISABLED, USER_STATUS_INVALID
     """
