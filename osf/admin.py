@@ -2,11 +2,6 @@ from django.contrib import admin
 from django_extensions.admin import ForeignKeyAutocompleteAdmin
 
 from osf.models import *  # noqa
-from osf import models
-import inspect
-
-from django.db.models.base import ModelBase
-from django.contrib.admin.sites import AlreadyRegistered
 
 
 class NodeAdmin(ForeignKeyAutocompleteAdmin):
@@ -55,12 +50,4 @@ class NodeAdmin(ForeignKeyAutocompleteAdmin):
 
 
 admin.site.register(Node, NodeAdmin)  # noqa
-
-for name, obj in inspect.getmembers(models):
-    if inspect.isclass(obj):
-        if isinstance(obj, ModelBase):
-            if not obj._meta.abstract:
-                try:
-                    admin.site.register(obj)
-                except AlreadyRegistered:
-                    pass
+admin.site.register(OSFUser)

@@ -16,7 +16,7 @@
                class="btn btn-primary col-md-1">
                 <i class="fa fa-search"></i>
             </a>
-            {%  if perms.auth.admin %}
+            {%  if perms.osf.delete_node %}
                 {% if not node.is_registration %}
                     {% if not node.deleted %}
                         <span class="col-md-2">
@@ -43,6 +43,8 @@
                         </span>
                     {% endif %}
                 {% endif %}
+                {% endif %}
+            {% if perms.common_auth.mark_spam %}
             <span class="col-md-2">
                 <a href="{% url 'nodes:confirm-spam' guid=node.id %}"
                    data-toggle="modal" data-target="#confirmSpamModal"
@@ -143,7 +145,7 @@
                             </td>
                             <td>{{ user.name }}</td>
                             <td>{{ user.permission|capfirst }}</td>
-                            {%  if perms.auth.admin %}
+                            {%  if perms.osf.change_node %}
                                 <td>
                                 {% if not node.is_registration %}
                                     <a href="{% url 'nodes:remove_user' node_id=node.id user_id=user.id %}"
@@ -192,7 +194,7 @@
                             <td>{{ child.title }}</td>
                             <td>{{ child.public }}</td>
                             <td>{{ child.number_contributors }}</td>
-                            {%  if perms.auth.admin %}
+                            {%  if perms.osf.delete_node %}
                             <td>
                                 {% if not child.is_registration %}
                                     {% if child.deleted %}

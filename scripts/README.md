@@ -44,30 +44,15 @@ if __name__ == '__main__':
         script_utils.add_file_logger(logger, __file__)
 
     # Allow setting the log level just by appending the level to the command
-    if 'debug' in sys.argv:
+    if '--debug' in sys.argv:
         logger.setLevel(logging.DEBUG)
-    elif 'warning' in sys.argv:
+    elif '--warning' in sys.argv:
         logger.setLevel(logging.WARNING)
-    elif 'info' in sys.argv:
+    elif '--info' in sys.argv:
         logger.setLevel(logging.INFO)
-    elif 'error' in sys.argv:
+    elif '--error' in sys.argv:
         logger.setLevel(logging.ERROR)
 
     # Finally run the migration
     main(dry=dry)
-```
-
-
-## Cursor timeouts
-
-Sometimes and slowly iterating over a large collection the mongo cursor will time out
-
-The code snippet below will paginate result and load them into memory so timeouts are no longer an issue
-
-```python
-from framework.mongo.utils import paginated
-
-nodes = paginated(Node, Q('is_public', 'eq', True))
-for node in nodes:
-    #...
 ```

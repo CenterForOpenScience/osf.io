@@ -9,6 +9,17 @@ from website.conferences.exceptions import ConferenceError
 
 
 class MultiEmailField(forms.Field):
+
+    def prepare_value(self, value):
+        if not value:
+            ret = None
+        else:
+            if isinstance(value, basestring):
+                ret = value
+            else:
+                ret = ', '.join(list(value))
+        return ret
+
     def to_python(self, value):
         if not value:
             return []
@@ -37,10 +48,9 @@ class MeetingForm(forms.Form):
         required=True,
         widget=forms.TextInput(attrs={'size': '40'}),
     )
-    info_url = forms.CharField(
+    info_url = forms.URLField(
         label='Info url',
-        required=False,
-        widget=forms.TextInput(attrs={'size': '60'}),
+        required=False
     )
     homepage_link_text = forms.CharField(
         label='Homepage link text (Default: "Conference homepage")',
@@ -52,14 +62,12 @@ class MeetingForm(forms.Form):
         required=False,
     )
     start_date = forms.DateField(
-        widget=forms.DateInput(format='%b %d %Y'),
         required=False,
-        label='Start date (e.g. Nov 7 2016)'
+        label='Start date (e.g. Nov 7 2016 or 11/7/2016)'
     )
     end_date = forms.DateField(
-        widget=forms.DateInput(format='%b %d %Y'),
         required=False,
-        label='End date (e.g. Nov 9 2016)'
+        label='End date (e.g. Nov 9 2016 or 11/9/2016)'
     )
     logo_url = forms.CharField(
         label='Logo url',

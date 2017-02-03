@@ -340,6 +340,11 @@ class Registration(AbstractNode):
         for child in self.nodes_primary:
             child.delete_registration_tree(save=save)
 
+    class Meta:
+        # custom permissions for use in the OSF Admin App
+        permissions = (
+            ('view_registration', 'Can view registration details'),
+        )
 
 class DraftRegistrationLog(ObjectIDMixin, BaseModel):
     """ Simple log to show status changes for DraftRegistrations

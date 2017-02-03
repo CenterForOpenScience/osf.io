@@ -90,7 +90,7 @@ class TestDisableUser(AdminTestCase):
     def test_get_context(self):
         res = self.view.get_context_data(object=self.user)
         nt.assert_in('guid', res)
-        nt.assert_equal(res.get('guid'), self.user.id)
+        nt.assert_equal(res.get('guid'), self.user._id)
 
     def test_disable_user(self):
         settings.ENABLE_EMAIL_SUBSCRIPTIONS = False
@@ -131,7 +131,7 @@ class TestDisableSpamUser(AdminTestCase):
     def test_get_context(self):
         res = self.view.get_context_data(object=self.user)
         nt.assert_in('guid', res)
-        nt.assert_equal(res.get('guid'), self.user.id)
+        nt.assert_equal(res.get('guid'), self.user._id)
 
     def test_disable_spam_user(self):
         settings.ENABLE_EMAIL_SUBSCRIPTIONS = False
