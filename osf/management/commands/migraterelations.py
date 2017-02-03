@@ -14,6 +14,7 @@ from gevent.pool import Pool
 from gevent.threadpool import ThreadPool
 
 from addons.wiki.models import NodeWikiPage
+from bulk_update.helper import bulk_update
 from django.apps import apps
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.core.management import BaseCommand
@@ -282,6 +283,7 @@ class Command(BaseCommand):
                             raise
 
                 django_objects = django_model.objects.filter(pk__in=django_keys)
+                django_objects_to_update = []
                 django_objects_dict = {obj.pk: obj for obj in django_objects}
                 for modm_obj in modm_page:
                     django_obj = django_objects_dict[self.modm_to_django[format_lookup_key(modm_obj._id, model=django_model)]]
@@ -374,7 +376,7 @@ class Command(BaseCommand):
 
                     django_obj, dirty = fix_bad_data(django_obj, dirty)
                     if dirty:
-                        django_obj.save()
+                        django_objects_to_update.append(django_obj)
                     model_count += 1
                     if model_count % page_size == 0 or model_count == model_total:
                         logger.info(
@@ -384,6 +386,7 @@ class Command(BaseCommand):
                         modm_queryset[0]._cache.clear()
                         modm_queryset[0]._object_cache.clear()
                         logger.info('Took out {} trashes'.format(gc.collect()))
+                bulk_update(django_objects_to_update)
 
     def save_m2m_relationships(self, modm_queryset, django_model, page_size):
         logger.info(
