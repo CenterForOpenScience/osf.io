@@ -531,9 +531,10 @@ class Command(BaseCommand):
         contributors = []
         contributor_hashes = set()
     # with ipdb.launch_ipdb_on_exception():
+        institutions = MODMInstitution.find(deleted=True).sort('-_id')
         while count < total:
             with transaction.atomic():  # one transaction per page.
-                for modm_obj in MODMInstitution.find(deleted=True).sort('-_id')[count:page_size + count]:
+                for modm_obj in institutions[count:page_size + count]:
                     clean_institution_guid = unicode(modm_obj.node._id).lower()
                     for modm_contributor in modm_obj.contributors:
                         clean_user_guid = unicode(modm_contributor._id).lower()
@@ -588,10 +589,11 @@ class Command(BaseCommand):
         node_rel_hashes = set()
         contributor_hashes = set()
     # with ipdb.launch_ipdb_on_exception():
+        nodes = MODMNode.find().sort('-_id')
         while count < total:
             with transaction.atomic():  # one transaction per page.
                 # is this query okay? isn't it going to catch things we don't want?
-                for modm_obj in MODMNode.find().sort('-_id')[count:page_size + count]:
+                for modm_obj in nodes[count:page_size + count]:
                     order = 0
                     clean_node_guid = unicode(modm_obj._id).lower()
                     for modm_contributor in modm_obj.contributors:
