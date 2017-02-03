@@ -11,7 +11,7 @@ from website.settings import PREREG_ADMIN_TAG
 from api.base.settings.defaults import API_BASE
 
 from tests.base import ApiTestCase
-from tests.factories import (
+from osf_tests.factories import (
     ProjectFactory,
     RegistrationFactory,
     AuthUserFactory,
@@ -158,12 +158,12 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
         assert_equal(data['embeds']['initiator']['data']['id'], self.user._id)
 
     def test_write_only_contributor_cannot_create_draft(self):
-        assert_in(self.read_write_user._id, self.public_project.contributors)
+        assert_in(self.read_write_user, self.public_project.contributors.all())
         res = self.app.post_json_api(self.url, self.payload, auth=self.read_write_user.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
 
     def test_read_only_contributor_cannot_create_draft(self):
-        assert_in(self.read_only_user._id, self.public_project.contributors)
+        assert_in(self.read_only_user, self.public_project.contributors.all())
         res = self.app.post_json_api(self.url, self.payload, auth=self.read_only_user.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
 
@@ -245,7 +245,7 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
 
         prereg_draft_registration = DraftRegistrationFactory(
             initiator=self.user,
-            registration_schema=prereg_schema._id,
+            registration_schema=prereg_schema,
             branched_from=self.public_project
         )
 
@@ -351,9 +351,9 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
 
     def test_reviewer_cannot_create_draft_registration(self):
         user = AuthUserFactory()
-        user.system_tags.append(PREREG_ADMIN_TAG)
+        user.add_system_tag(PREREG_ADMIN_TAG)
         user.save()
 
-        assert_in(self.read_only_user._id, self.public_project.contributors)
+        assert_in(self.read_only_user, self.public_project.contributors.all())
         res = self.app.post_json_api(self.url, self.payload, auth=user.auth, expect_errors=True)
         assert_equal(res.status_code, 403)

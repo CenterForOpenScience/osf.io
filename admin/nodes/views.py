@@ -1,14 +1,18 @@
 from __future__ import unicode_literals
 
-from datetime import datetime
+from django.utils import timezone
 from django.views.generic import ListView, DeleteView
 from django.shortcuts import redirect
 from django.views.defaults import page_not_found
+from django.contrib.auth.mixins import PermissionRequiredMixin
 from modularodm import Q
 
-from website.models import Node, User, NodeLog
+from website.models import NodeLog
+from osf.models.user import OSFUser
+from osf.models.node import Node
+from osf.models.registrations import Registration
 from admin.base.views import GuidFormView, GuidView
-from admin.base.utils import OSFAdmin
+from admin.base.utils import NodesAndUsers
 from admin.common_auth.logs import (
     update_admin_log,
     NODE_REMOVED,
@@ -16,11 +20,11 @@ from admin.common_auth.logs import (
     CONTRIBUTOR_REMOVED,
     CONFIRM_SPAM, CONFIRM_HAM)
 from admin.nodes.templatetags.node_extras import reverse_node
-from admin.nodes.serializers import serialize_node, serialize_simple_user
+from admin.nodes.serializers import serialize_node, serialize_simple_user_and_node_permissions
 from website.project.spam.model import SpamStatus
 
 
-class NodeFormView(OSFAdmin, GuidFormView):
+class NodeFormView(NodesAndUsers, GuidFormView):
     """ Allow authorized admin user to input specific node guid.
 
     Basic form. No admin models.
@@ -33,13 +37,14 @@ class NodeFormView(OSFAdmin, GuidFormView):
         return reverse_node(self.guid)
 
 
-class NodeRemoveContributorView(OSFAdmin, DeleteView):
+class NodeRemoveContributorView(NodesAndUsers, DeleteView, PermissionRequiredMixin):
     """ Allow authorized admin user to remove project contributor
 
     Interface with OSF database. No admin models.
     """
     template_name = 'nodes/remove_contributor.html'
     context_object_name = 'node'
+    permission_required = 'auth.admin'
 
     def delete(self, request, *args, **kwargs):
         try:
@@ -63,7 +68,7 @@ class NodeRemoveContributorView(OSFAdmin, DeleteView):
                         'node': node.pk,
                         'contributors': user.pk
                     },
-                    date=datetime.utcnow(),
+                    date=timezone.now(),
                     should_hide=True,
                 )
                 osf_log.save()
@@ -82,15 +87,15 @@ class NodeRemoveContributorView(OSFAdmin, DeleteView):
     def get_context_data(self, **kwargs):
         context = {}
         node, user = kwargs.get('object')
-        context.setdefault('node_id', node.pk)
-        context.setdefault('user', serialize_simple_user((user.pk, None)))
+        context.setdefault('node_id', node._id)
+        context.setdefault('user', serialize_simple_user_and_node_permissions(node, user))
         return super(NodeRemoveContributorView, self).get_context_data(**context)
 
     def get_object(self, queryset=None):
         return (Node.load(self.kwargs.get('node_id')),
-                User.load(self.kwargs.get('user_id')))
+                OSFUser.load(self.kwargs.get('user_id')))
 
-class NodeDeleteBase(OSFAdmin, DeleteView):
+class NodeDeleteBase(NodesAndUsers, DeleteView):
     template_name = None
     context_object_name = 'node'
     object = None
@@ -103,13 +108,14 @@ class NodeDeleteBase(OSFAdmin, DeleteView):
     def get_object(self, queryset=None):
         return Node.load(self.kwargs.get('guid'))
 
-class NodeDeleteView(NodeDeleteBase):
+class NodeDeleteView(NodeDeleteBase, PermissionRequiredMixin):
     """ Allow authorized admin user to remove/hide nodes
 
     Interface with OSF database. No admin models.
     """
     template_name = 'nodes/remove_node.html'
     object = None
+    permission_required = 'auth.admin'
 
     def delete(self, request, *args, **kwargs):
         try:
@@ -125,7 +131,7 @@ class NodeDeleteView(NodeDeleteBase):
                 osf_flag = NodeLog.NODE_CREATED
             elif not node.is_registration:
                 node.is_deleted = True
-                node.deleted_date = datetime.utcnow()
+                node.deleted_date = timezone.now()
                 flag = NODE_REMOVED
                 message = 'Node {} removed.'.format(node.pk)
                 osf_flag = NodeLog.NODE_REMOVED
@@ -146,7 +152,7 @@ class NodeDeleteView(NodeDeleteBase):
                     params={
                         'project': node.parent_id,
                     },
-                    date=datetime.utcnow(),
+                    date=timezone.now(),
                     should_hide=True,
                 )
                 osf_log.save()
@@ -163,7 +169,7 @@ class NodeDeleteView(NodeDeleteBase):
         return redirect(reverse_node(self.kwargs.get('guid')))
 
 
-class NodeView(OSFAdmin, GuidView):
+class NodeView(NodesAndUsers, GuidView):
     """ Allow authorized admin user to view nodes
 
     View of OSF database. No admin models.
@@ -180,7 +186,7 @@ class NodeView(OSFAdmin, GuidView):
         return serialize_node(Node.load(self.kwargs.get('guid')))
 
 
-class RegistrationListView(OSFAdmin, ListView):
+class RegistrationListView(NodesAndUsers, ListView):
     """ Allow authorized admin user to view list of registrations
 
     View of OSF database. No admin models.
@@ -192,10 +198,7 @@ class RegistrationListView(OSFAdmin, ListView):
     context_object_name = '-node'
 
     def get_queryset(self):
-        query = (
-            Q('is_registration', 'eq', True)
-        )
-        return Node.find(query).sort(self.ordering)
+        return Registration.objects.all().order_by(self.ordering)
 
     def get_context_data(self, **kwargs):
         query_set = kwargs.pop('object_list', self.object_list)
@@ -207,7 +210,8 @@ class RegistrationListView(OSFAdmin, ListView):
             'page': page,
         }
 
-class NodeSpamList(OSFAdmin, ListView):
+
+class NodeSpamList(NodesAndUsers, ListView):
     SPAM_STATE = SpamStatus.UNKNOWN
 
     paginate_by = 25
@@ -261,8 +265,9 @@ class NodeKnownHamList(NodeSpamList):
     SPAM_STATE = SpamStatus.HAM
     template_name = 'nodes/known_spam_list.html'
 
-class NodeConfirmSpamView(NodeDeleteBase):
+class NodeConfirmSpamView(NodeDeleteBase, PermissionRequiredMixin):
     template_name = 'nodes/confirm_spam.html'
+    permission_required = 'auth.admin'
 
     def delete(self, request, *args, **kwargs):
         node = self.get_object()
@@ -276,8 +281,9 @@ class NodeConfirmSpamView(NodeDeleteBase):
         )
         return redirect(reverse_node(self.kwargs.get('guid')))
 
-class NodeConfirmHamView(NodeDeleteBase):
+class NodeConfirmHamView(NodeDeleteBase, PermissionRequiredMixin):
     template_name = 'nodes/confirm_ham.html'
+    permission_required = 'auth.admin'
 
     def delete(self, request, *args, **kwargs):
         node = self.get_object()

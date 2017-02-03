@@ -127,15 +127,14 @@ def waterbutler_url_for(request_type, provider, path, node_id, token, obj_args=N
 def default_node_list_query():
     return (
         Q('is_deleted', 'ne', True) &
-        Q('is_collection', 'ne', True) &
-        Q('is_registration', 'ne', True)
+        Q('type', 'eq', 'osf.node')
     )
 
 
 def default_node_permission_query(user):
     permission_query = Q('is_public', 'eq', True)
     if not user.is_anonymous():
-        permission_query = (permission_query | Q('contributors', 'eq', user._id))
+        permission_query = (permission_query | Q('contributors', 'eq', user.pk))
 
     return permission_query
 

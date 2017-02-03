@@ -1,17 +1,14 @@
-from nose.tools import *  # noqa
 import mock
-
-from tests.base import get_default_metaschema
 from framework.auth.decorators import Auth
-
+from nose.tools import *  # noqa
+from tests.base import get_default_metaschema
 from website.addons.base.testing import models
-
 from website.addons.dataverse.model import AddonDataverseNodeSettings
-from website.addons.dataverse.tests.factories import (
-    DataverseAccountFactory, DataverseNodeSettingsFactory,
-    DataverseUserSettingsFactory
-)
-from website.addons.dataverse.tests import utils 
+from website.addons.dataverse.tests import utils
+from website.addons.dataverse.tests.factories import (DataverseAccountFactory,
+                                                      DataverseNodeSettingsFactory,
+                                                      DataverseUserSettingsFactory)
+
 
 class TestNodeSettings(models.OAuthAddonNodeSettingsTestSuiteMixin, utils.DataverseAddonTestCase):
 
@@ -57,11 +54,11 @@ class TestNodeSettings(models.OAuthAddonNodeSettingsTestSuiteMixin, utils.Datave
         self.node.reload()
         assert_equal(len(self.node.logs), nlog + 1)
         assert_equal(
-            self.node.logs[-1].action,
+            self.node.logs.latest().action,
             '{0}_{1}'.format(self.short_name, action),
         )
         assert_equal(
-            self.node.logs[-1].params['filename'],
+            self.node.logs.latest().params['filename'],
             filename
         )
 
@@ -72,7 +69,7 @@ class TestNodeSettings(models.OAuthAddonNodeSettingsTestSuiteMixin, utils.Datave
         # Folder was set
         assert_equal(self.node_settings.folder_id, dataset.id)
         # Log was saved
-        last_log = self.node.logs[-1]
+        last_log = self.node.logs.latest()
         assert_equal(last_log.action, '{0}_dataset_linked'.format(self.short_name))
 
     def test_serialize_credentials(self):

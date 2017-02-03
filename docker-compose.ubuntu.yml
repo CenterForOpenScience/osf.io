@@ -1,0 +1,56 @@
+
+version: '2'
+
+services:
+
+#  fakecas:
+#    image: quay.io/centerforopenscience/fakecas:latest
+#    command: fakecas -host=0.0.0.0:8080 -dbaddress=172.19.0.7:27017
+
+#  wb:
+#    volumes:
+#      - ../waterbutler:/code
+
+#  mfr:
+#    volumes:
+#      - ../modular-file-renderer:/code
+
+#  preprints:
+#    volumes:
+#      - ../ember-preprints:/code
+
+  requirements:
+    volumes:
+      - ./:/code
+
+  assets:
+    volumes:
+      - ./:/code
+
+  admin_assets:
+    volumes:
+      - ./:/code
+
+  sharejs:
+    volumes:
+      - ./:/code
+
+#  beat:
+#    volumes:
+#      - ./:/code
+
+  worker:
+    volumes:
+      - ./:/code
+
+  admin:
+    volumes:
+      - ./:/code
+
+  web:
+    volumes:
+      - ./:/code
+
+  api:
+    volumes:
+      - ./:/code

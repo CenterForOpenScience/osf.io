@@ -1,7 +1,7 @@
-from nose.tools import *
+from nose.tools import *  # flake8: noqa
 
 from tests.base import ApiTestCase
-from tests.factories import InstitutionFactory, AuthUserFactory, ProjectFactory, NodeFactory
+from osf_tests.factories import InstitutionFactory, AuthUserFactory, ProjectFactory, NodeFactory
 
 from api.base.settings.defaults import API_BASE
 
@@ -11,14 +11,14 @@ class TestInstitutionNodeList(ApiTestCase):
         super(TestInstitutionNodeList, self).setUp()
         self.institution = InstitutionFactory()
         self.node1 = ProjectFactory(is_public=True)
-        self.node1.affiliated_institutions.append(self.institution)
+        self.node1.affiliated_institutions.add(self.institution)
         self.node1.save()
         self.user1 = AuthUserFactory()
         self.node2 = ProjectFactory(creator=self.user1, is_public=False)
-        self.node2.affiliated_institutions.append(self.institution)
+        self.node2.affiliated_institutions.add(self.institution)
         self.node2.save()
         self.node3 = ProjectFactory(is_public=False)
-        self.node3.affiliated_institutions.append(self.institution)
+        self.node3.affiliated_institutions.add(self.institution)
         self.node3.save()
 
         self.institution_node_url = '/{0}institutions/{1}/nodes/'.format(API_BASE, self.institution._id)
@@ -46,7 +46,7 @@ class TestInstitutionNodeList(ApiTestCase):
     def test_affiliated_component_with_affiliated_parent_not_returned(self):
         # version < 2.2
         self.component = NodeFactory(parent=self.node1, is_public=True)
-        self.component.affiliated_institutions.append(self.institution)
+        self.component.affiliated_institutions.add(self.institution)
         self.component.save()
         res = self.app.get(self.institution_node_url, auth=self.user1.auth)
         affiliated_node_ids = [node['id'] for node in res.json['data']]
@@ -58,7 +58,7 @@ class TestInstitutionNodeList(ApiTestCase):
         # version < 2.2
         self.node = ProjectFactory(is_public=True)
         self.component = NodeFactory(parent=self.node, is_public=True)
-        self.component.affiliated_institutions.append(self.institution)
+        self.component.affiliated_institutions.add(self.institution)
         self.component.save()
         res = self.app.get(self.institution_node_url, auth=self.user1.auth)
         affiliated_node_ids = [node['id'] for node in res.json['data']]
@@ -69,7 +69,7 @@ class TestInstitutionNodeList(ApiTestCase):
     def test_affiliated_component_with_affiliated_parent_returned(self):
         # version 2.2
         self.component = NodeFactory(parent=self.node1, is_public=True)
-        self.component.affiliated_institutions.append(self.institution)
+        self.component.affiliated_institutions.add(self.institution)
         self.component.save()
         url = '{}?version=2.2'.format(self.institution_node_url)
         res = self.app.get(url, auth=self.user1.auth)
@@ -82,7 +82,7 @@ class TestInstitutionNodeList(ApiTestCase):
         # version 2.2
         self.node = ProjectFactory(is_public=True)
         self.component = NodeFactory(parent=self.node, is_public=True)
-        self.component.affiliated_institutions.append(self.institution)
+        self.component.affiliated_institutions.add(self.institution)
         self.component.save()
         url = '{}?version=2.2'.format(self.institution_node_url)
         res = self.app.get(url, auth=self.user1.auth)

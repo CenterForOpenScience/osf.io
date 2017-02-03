@@ -1,5 +1,8 @@
 # OSF Github Addon
 
+## Deprecation Warning: ./website/addons has been moved to ./addons
+## Please configure in the new location
+
 ## Enabling the addon for development
 
 1. On your Github user settings, go to “OAuth Applications” -> "Developer applications" -> “Register new application”

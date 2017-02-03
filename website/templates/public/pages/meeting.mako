@@ -1,5 +1,5 @@
 <%inherit file="base.mako"/>
-<%def name="title()">${ meeting['name'] } Presentations</%def>
+<%def name="title()">${ meeting['name'] }</%def>
 
 <%def name="content()">
     <%include file="public/pages/meeting_body.mako" />

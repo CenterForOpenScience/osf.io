@@ -1,12 +1,11 @@
 """Views for the node settings page."""
 # -*- coding: utf-8 -*-
-import datetime
 import httplib as http
-from requests.exceptions import SSLError
 
+from django.utils import timezone
+from django.core.exceptions import ValidationError
+from requests.exceptions import SSLError
 from flask import request
-from modularodm import Q
-from modularodm.storage.base import KeyExistsException
 
 from framework.auth.decorators import must_be_logged_in
 from framework.exceptions import HTTPError
@@ -98,15 +97,15 @@ def dataverse_add_user_account(auth, **kwargs):
             provider_id=api_token,   # Change to username if Dataverse allows
         )
         provider.account.save()
-    except KeyExistsException:
+    except ValidationError:
         # ... or get the old one
-        provider.account = ExternalAccount.find_one(
-            Q('provider', 'eq', provider.short_name) &
-            Q('provider_id', 'eq', api_token)
+        provider.account = ExternalAccount.objects.get(
+            provider=provider.short_name,
+            provider_id=api_token
         )
 
-    if provider.account not in user.external_accounts:
-        user.external_accounts.append(provider.account)
+    if not user.external_accounts.filter(id=provider.account.id).exists():
+        user.external_accounts.add(provider.account)
 
     user_addon = auth.user.get_addon('dataverse')
     if not user_addon:
@@ -180,7 +179,7 @@ def dataverse_publish_dataset(node_addon, auth, **kwargs):
     node = node_addon.owner
     publish_both = request.json.get('publish_both', False)
 
-    now = datetime.datetime.utcnow()
+    now = timezone.now()
 
     connection = client.connect_from_settings_or_401(node_addon)
 
