@@ -46,6 +46,7 @@ class PreprintProviderList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin
         domain                   string              the domain name of the preprint provider
         domain_redirect_enabled  boolean             whether or not redirects are enabled for the provider's domain
         example                  string              an example guid for a preprint created for the preprint provider
+        blog                     string              link to the preprint provider's blog
 
     ##Relationships
 
@@ -110,6 +111,7 @@ class PreprintProviderDetail(JSONAPIBaseView, generics.RetrieveAPIView):
         domain                   string              the domain name of the preprint provider
         domain_redirect_enabled  boolean             whether or not redirects are enabled for the provider's domain
         example                  string              an example guid for a preprint created for the preprint provider
+        blog                     string              link to the preprint provider's blog
 
     ##Relationships
 
