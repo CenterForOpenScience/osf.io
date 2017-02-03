@@ -5,18 +5,6 @@ from website.util.client import BaseClient
 from website.addons.onedrive import settings
 
 
-class OneDriveAuthClient(BaseClient):
-
-    def user_info(self, access_token):
-        return self._make_request(
-            'GET',
-            self._build_url(settings.MSLIVE_API_URL, 'me'),
-            params={'access_token': access_token},
-            expects=(200, ),
-            throws=HTTPError(401)
-        ).json()
-
-
 class OneDriveClient(BaseClient):
 
     def __init__(self, access_token=None):
@@ -50,3 +38,12 @@ class OneDriveClient(BaseClient):
             throws=HTTPError(401)
         )
         return res.json()['value']
+
+    def user_info_for_token(self, access_token):
+        return self._make_request(
+            'GET',
+            self._build_url(settings.MSLIVE_API_URL, 'me'),
+            params={'access_token': access_token},
+            expects=(200, ),
+            throws=HTTPError(401)
+        ).json()

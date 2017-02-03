@@ -13,9 +13,9 @@ from website.addons.base import StorageAddonBase
 from website.addons.base import AddonOAuthUserSettingsBase, AddonOAuthNodeSettingsBase
 
 from website.addons.onedrive import settings
+from website.addons.onedrive.client import OneDriveClient
 from website.addons.onedrive.utils import OneDriveNodeLogger
 from website.addons.onedrive.serializer import OneDriveSerializer
-from website.addons.onedrive.client import OneDriveAuthClient, OneDriveClient
 
 
 class OneDrive(ExternalProvider):
@@ -32,14 +32,13 @@ class OneDrive(ExternalProvider):
 
     expiry_time = settings.REFRESH_TIME
 
-    _auth_client = OneDriveAuthClient()
     _drive_client = OneDriveClient()
 
     def handle_callback(self, response):
         """View called when the Oauth flow is completed. Adds a new OneDriveUserSettings
         record to the user and saves the user's access token and account info.
         """
-        userInfo = self._auth_client.user_info(response['access_token'])
+        userInfo = self._drive_client.user_info_for_token(response['access_token'])
 
         return {
             'provider_id': userInfo['id'],
