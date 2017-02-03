@@ -213,7 +213,7 @@ class Command(BaseCommand):
                 pool.spawn(self.do_model, model)
             pool.spawn(self.migrate_node_through_models)
             pool.spawn(self.migration_institutional_contributors)
-            gevent.wait()
+            pool.join()
 
     def save_fk_relationships(self, modm_queryset, django_model, page_size):
         logger.info(
@@ -253,7 +253,7 @@ class Command(BaseCommand):
                             continue
                         else:
                             raise
-                # TODO!! this list isn't sorted how I thought it was sorted.
+
                 django_objects = django_model.objects.filter(pk__in=django_keys)
                 django_objects_dict = {obj.pk: obj for obj in django_objects}
                 for modm_obj in modm_page:
