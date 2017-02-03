@@ -218,8 +218,6 @@ class Command(BaseCommand):
     def save_fk_relationships(self, modm_queryset, django_model, page_size):
         logger.info(
             'Starting {} on {}...'.format(sys._getframe().f_code.co_name, django_model._meta.model.__name__))
-        if django_model is not Identifier:
-            return
         # TODO: Collections is getting user_id added to the bad fields. It shouldn't be. ???? IS IT STILL ????
         fk_relations = [field for field in django_model._meta.get_fields() if
                         field.is_relation and not field.auto_created and field.many_to_one]

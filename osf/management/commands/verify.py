@@ -10,6 +10,8 @@ from datetime import datetime
 
 import pytz
 from django.core.management import BaseCommand
+from gevent.threadpool import ThreadPool
+
 from osf.management.commands.migratedata import register_nonexistent_models_with_modm
 from osf.management.commands.migraterelations import build_toku_django_lookup_table_cache, format_lookup_key
 from osf.models import BlackListGuid
@@ -26,6 +28,21 @@ class NotGonnaDoItException(BaseException):
 class Command(BaseCommand):
     help = 'Validates migrations from tokumx to postgres'
 
+    def do_model(self, django_model):
+        module_path, model_name = django_model.modm_model_path.rsplit('.', 1)
+        modm_module = importlib.import_module(module_path)
+        modm_model = getattr(modm_module, model_name)
+        if isinstance(django_model.modm_query, dict):
+            modm_queryset = modm_model.find(**django_model.modm_query)
+        else:
+            modm_queryset = modm_model.find(django_model.modm_query)
+        with ipdb.launch_ipdb_on_exception():
+            self.validate_model_data(modm_queryset, django_model, page_size=django_model.migration_page_size)
+
+        modm_model._cache.clear()
+        modm_model._object_cache.clear()
+        logger.info('Took out {} trashes'.format(gc.collect()))
+
     def handle(self, *args, **options):
         set_backend()
 
@@ -34,6 +51,8 @@ class Command(BaseCommand):
         self.modm_to_django = build_toku_django_lookup_table_cache()
 
         django_models = get_ordered_models()
+
+        tp = ThreadPool(100)
 
         for django_model in django_models:
 
@@ -48,21 +67,10 @@ class Command(BaseCommand):
                 # we'll do blacklistguids by hand because they've got a bunch of new ones that don't exist in modm
                 # specifically, from register_none_existent_models
                 continue
+            tp.spawn(self.do_model, django_model)
 
-            module_path, model_name = django_model.modm_model_path.rsplit('.', 1)
-            modm_module = importlib.import_module(module_path)
-            modm_model = getattr(modm_module, model_name)
-            if isinstance(django_model.modm_query, dict):
-                modm_queryset = modm_model.find(**django_model.modm_query)
-            else:
-                modm_queryset = modm_model.find(django_model.modm_query)
+        tp.join()
 
-            with ipdb.launch_ipdb_on_exception():
-                self.validate_model_data(modm_queryset, django_model, page_size=django_model.migration_page_size)
-
-            modm_model._cache.clear()
-            modm_model._object_cache.clear()
-            logger.info('Took out {} trashes'.format(gc.collect()))
 
     def validate_m2m_field(self, field_name, django_obj, modm_obj):
         # TODO need to make this smarter
@@ -90,12 +98,14 @@ class Command(BaseCommand):
         if field_name in ['content_type', 'content_type_id']:
             # modm doesn't have gfk
             return
-        django_thing = getattr(django_obj, field_name)
-        modm_thing = getattr(modm_obj, field_name)
-        if modm_thing:
-            assert getattr(django_obj, field_name)._id == getattr(modm_obj, field_name)._id
+        django_field_value = getattr(django_obj, field_name)
+        modm_field_value = getattr(modm_obj, field_name)
+        if modm_field_value and django_field_value:
+            assert modm_field_value._id == django_field_value._id
+        elif modm_field_value is not None and django_field_value is None:
+            logger.info('{} of {!r} was None in django but {} in modm'.format(field_name, modm_obj, django_obj, modm_field_value))
         else:
-            logger.info('{} of {} were None'.format(field_name, modm_obj))
+            logger.info('{} of {!r} were None'.format(field_name, modm_obj))
 
     def validate_basic_field(self, field_name, django_obj, modm_obj):
         if field_name in ['id', 'pk', 'object_id']:
