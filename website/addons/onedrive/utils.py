@@ -45,27 +45,35 @@ class OneDriveNodeLogger(object):
             'folder_name': self.node.get_addon('onedrive', deleted=True).folder_name,
             'folder': self.node.get_addon('onedrive', deleted=True).folder_path
         }
+
         # If logging a file-related action, add the file's view and download URLs
         if self.path:
             params.update({
                 'urls': {
-                    'view': self.node.web_url_for('addon_view_or_download_file', path=self.path, provider='onedrive'),
+                    'view': self.node.web_url_for(
+                        'addon_view_or_download_file',
+                        path=self.path,
+                        provider='onedrive',
+                    ),
                     'download': self.node.web_url_for(
                         'addon_view_or_download_file',
                         path=self.path,
-                        provider='onedrive'
+                        provider='onedrive',
                     )
                 },
                 'path': self.path,
             })
+
         if extra:
             params.update(extra)
+
         # Prefix the action with onedrive_
         self.node.add_log(
-            action="onedrive_{0}".format(action),
+            action='onedrive_{0}'.format(action),
             params=params,
             auth=self.auth
         )
+
         if save:
             self.node.save()
 

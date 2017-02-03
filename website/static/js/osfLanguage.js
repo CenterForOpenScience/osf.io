@@ -94,6 +94,13 @@ module.exports = {
                 'associated with this account.',
             deauthError: 'Could not disconnect the Google Drive account at this time',
         },
+        onedrive: {
+            // Shown on clicking "Delete Access Token" for onedrive
+            confirmDeauth: 'Are you sure you want to disconnect the Microsoft OneDrive account? ' +
+                'This will revoke access to Microsoft OneDrive for all projects you have ' +
+                'associated with this account.',
+            deauthError: 'Could not disconnect the Microsoft OneDrive account at this time',
+        },
         owncloud: {
             authError: 'Invalid ownCloud server',
             authInvalid: 'Invalid credentials. Please enter a valid username and password.',

@@ -741,6 +741,7 @@ def root(request, format=None, **kwargs):
         github       GitHub
         gitlab       GitLab
         googledrive  Google Drive
+        onedrive     Microsoft OneDrive
         osfstorage   OSF Storage
         s3           Amazon S3
 
