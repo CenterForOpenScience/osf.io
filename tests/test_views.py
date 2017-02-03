@@ -3937,6 +3937,7 @@ class TestExternalAuthViews(OsfTestCase):
         self.user.reload()
         assert_equal(self.user.external_identity['service'][self.provider_id], 'VERIFIED')
         assert_true(self.user.is_registered)
+        assert_true(self.user.has_usable_password())
 
     @mock.patch('website.mails.send_mail')
     def test_external_login_confirm_email_get_link(self, mock_link_confirm):
@@ -3954,6 +3955,7 @@ class TestExternalAuthViews(OsfTestCase):
         self.user.reload()
         assert_equal(self.user.external_identity['service'][self.provider_id], 'VERIFIED')
         assert_true(self.user.is_registered)
+        assert_true(self.user.has_usable_password())
 
     @mock.patch('website.mails.send_mail')
     def test_external_login_confirm_email_get_duped_id(self, mock_confirm):
