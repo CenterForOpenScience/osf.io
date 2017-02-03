@@ -19,9 +19,9 @@ services:
 #    volumes_from:
 #      - container:preprints-sync
 
-  registries:
-    volumes_from:
-      - container:registries-sync
+#  registries:
+#    volumes_from:
+#      - container:registries-sync
 
   requirements:
     volumes_from:
