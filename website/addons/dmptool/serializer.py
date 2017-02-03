@@ -73,18 +73,6 @@ class DmptoolSerializer(OAuthAddonSerializer):
             result.update({
                 'dmptoolHost': dmptool_host,
                 'connected': connection is not None,
-                # 'dmptools': [
-                #     {'title': dmptool.title, 'alias': dmptool.alias}
-                #     for dmptool in dmptools
-                # ],
-                # 'savedDmptool': {
-                #     'title': self.node_settings.dmptool,
-                #     'alias': self.node_settings.dmptool_alias,
-                # },
-                # 'savedDataset': {
-                #     'title': self.node_settings.dataset,
-                #     'doi': self.node_settings.dataset_doi,
-                # }
             })
 
         return result
