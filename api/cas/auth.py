@@ -6,6 +6,7 @@ import jwt
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.authentication import BaseAuthentication
 
+from django.contrib.auth import hashers
 from django.db.models import Q
 from django.utils import timezone
 
@@ -21,6 +22,26 @@ from framework.auth.views import send_confirm_email
 from osf.models import Institution, OSFUser
 
 from website.mails import send_mail, WELCOME_OSF4I
+
+UNUSABLE_PASSWORD_PREFIX = hashers.UNUSABLE_PASSWORD_PREFIX
+
+# user status
+USER_ACTIVE = 'USER_ACTIVE'
+USER_NOT_CLAIMED = 'USER_NOT_CLAIMED'
+USER_NOT_CONFIRMED = 'USER_NOT_CONFIRMED'
+USER_DISABLED = 'USER_DISABLED'
+USER_STATUS_INVALID = 'USER_STATUS_INVALID'
+
+# login exception
+MISSING_CREDENTIALS = 'MISSING_CREDENTIALS'
+ACCOUNT_NOT_FOUND = 'ACCOUNT_NOT_FOUND'
+INVALID_PASSWORD = 'INVALID_PASSWORD'
+INVALID_VERIFICATION_KEY = 'INVALID_VERIFICATION_KEY'
+INVALID_ONE_TIME_PASSWORD = 'INVALID_ONE_TIME_PASSWORD'
+TWO_FACTOR_AUTHENTICATION_REQUIRED = 'TWO_FACTOR_AUTHENTICATION_REQUIRED'
+
+# register exception
+ALREADY_REGISTERED = 'ALREADY_REGISTERED'
 
 
 class CasAuthentication(BaseAuthentication):
@@ -50,7 +71,7 @@ class CasAuthentication(BaseAuthentication):
                 if not get_user_with_two_factor(user):
                     # two-factor not required, check user status
                     error_message = verify_user_status(user)
-                    if error_message:
+                    if error_message != USER_ACTIVE:
                         # invalid user status
                         raise AuthenticationFailed(detail=error_message)
                     # valid user status
@@ -62,7 +83,7 @@ class CasAuthentication(BaseAuthentication):
                     raise AuthenticationFailed(detail=error_message)
                 # two-factor success, check user status
                 error_message = verify_user_status(user)
-                if error_message:
+                if error_message != USER_ACTIVE:
                     # invalid user status
                     raise AuthenticationFailed(detail=error_message)
                 # valid user status
@@ -159,25 +180,35 @@ def handle_login(user):
     remote_authenticated = user.get('remoteAuthenticated')
     verification_key = user.get('verificationKey')
     password = user.get('password')
-    if not email or not (remote_authenticated or verification_key or password):
-        return None, 'MISSING_CREDENTIALS'
 
+    # check if credentials are provided
+    if not email or not (remote_authenticated or verification_key or password):
+        return None, MISSING_CREDENTIALS
+
+    # retrieve the user
     user = OSFUser.objects.filter(Q(username=email) | Q(emails__icontains=email)).first()
     if not user:
-        return None, 'ACCOUNT_NOT_FOUND'
+        return None, ACCOUNT_NOT_FOUND
 
+    # verify user status
+    if verify_user_status(user) == USER_NOT_CLAIMED:
+        return None, USER_NOT_CLAIMED
+
+    # by remote authentication
     if remote_authenticated:
         return user, None
 
+    # by verification key
     if verification_key:
         if verification_key == user.verification_key:
             return user, None
-        return None, 'INVALID_VERIFICATION_KEY'
+        return None, INVALID_VERIFICATION_KEY
 
+    # by password
     if password:
         if user.check_password(password):
             return user, None
-        return None, 'INVALID_PASSWORD'
+        return None, INVALID_PASSWORD
 
 
 def handle_register(user):
@@ -211,48 +242,34 @@ def get_user_with_two_factor(user):
 
 def verify_two_factor(user, one_time_password):
     if not one_time_password:
-        return 'TWO_FACTOR_AUTHENTICATION_REQUIRED'
+        return TWO_FACTOR_AUTHENTICATION_REQUIRED
 
     two_factor = get_user_with_two_factor(user)
     if two_factor and two_factor.verify_code(one_time_password):
         return None
-    return 'INVALID_ONE_TIME_PASSWORD'
+    return INVALID_ONE_TIME_PASSWORD
 
 
-# TODO: OSF user status is quite complicated, which sometimes requires more than one status below to decide.
-# TODO: Revisit this part when switching to Django-OSF
 def verify_user_status(user):
-    # An active user must be registered, claimed, not disabled, not merged and has a not null/None password.
-    # Only active user can passes the verification.
+    """
+    Verify users' status.
+
+    :param user: the user
+    :return: USER_ACTIVE, USER_NOT_CLAIMED, USER_NOT_CONFIRMED, USER_DISABLED, USER_STATUS_INVALID
+    """
     if user.is_active:
-        return None
+        return USER_ACTIVE
 
-    # If the user instance is not claimed, it is also not registered. It can be either a contributor or a new user
-    # pending confirmation.
-    if not user.is_claimed and not user.is_registered:
-        # If the user instance has a null/None password, it must be an unclaimed contributor.
-        # TODO: For now, this case cannot be reached by normal authentication flow given no password.
-        # TODO: For now, it is possible for the user to register before claim the account.
-        if not user.password:
-            return 'USER_NOT_CLAIMED'
-        # If the user instance has a password, it must be a unconfirmed user who registered for a new account.
-        # When the user tries to login, a message for he/she to check the confirmation email with the option of
-        # resending confirmation is displayed.
-        return 'USER_NOT_CONFIRMED'
+    if not user.is_claimed and not user.is_registered and not user.is_confirmed:
+        if user.password is None or user.password.startswith(UNUSABLE_PASSWORD_PREFIX):
+            return USER_NOT_CLAIMED
+        if user.has_usable_password():
+            return USER_NOT_CONFIRMED
 
-    # If the user instance is merged by another user, it is registered and claimed. However, its username and
-    # password fields are both null/None.
-    # TODO: For now, this case cannot be reached by normal authentication flow given no username and password.
-    if user.is_merged and user.is_registered and user.is_claimed:
-        return 'USER_MERGED'
-
-    # If the user instance is disabled, it is also not registered. However, it still has the username and password.
-    # When the user tries to login, an account disabled message will be displayed.
     if user.is_disabled and not user.is_registered and user.is_claimed:
-        return 'USER_DISABLED'
+        return USER_DISABLED
 
-    # If the status does not meet any of the above criteria, return `USER_NOT_ACTIVE` and ask the user to contact OSF.
-    return 'USER_NOT_ACTIVE'
+    return USER_STATUS_INVALID
 
 
 def decrypt_payload(body):
