@@ -530,6 +530,10 @@ function doItemOp(operation, to, from, rename, conflict) {
         moveSpec.branch = from.data.branch;
     }
 
+    if(from.data.provider === 'googledrive'){
+        from.data.path = '/' + encodeURIComponent(from.data.path.slice(1, from.data.path.length));
+    }
+
     from.inProgress = true;
     tb.clearMultiselect();
 
