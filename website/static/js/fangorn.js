@@ -528,7 +528,7 @@ function doItemOp(operation, to, from, rename, conflict) {
     if(from.data.provider === 'github'){
         options.branch = from.data.branch;
         moveSpec.branch = from.data.branch;
-        from.data.path = '/' + encodeURIComponent(from.data.path].slice(1,from.data.path].length));
+        from.data.path = '/' + encodeURIComponent(from.data.path.slice(1,from.data.path.length));
     }
 
     from.inProgress = true;
