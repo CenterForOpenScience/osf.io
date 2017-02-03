@@ -31,7 +31,7 @@ def on_node_updated(node_id, user_id, first_save, saved_fields, request_headers=
 
     if need_update:
         node.update_search()
-        
+
         if settings.SHARE_URL:
             if not settings.SHARE_API_TOKEN:
                 return logger.warning('SHARE_API_TOKEN not set. Could not send %s to SHARE.'.format(node))
@@ -59,7 +59,6 @@ def on_node_updated(node_id, user_id, first_save, saved_fields, request_headers=
             resp.raise_for_status()
             if node.is_registration:
                 on_registration_updated(node)
-
 
 def on_registration_updated(node):
     resp = requests.post('{}api/v2/normalizeddata/'.format(settings.SHARE_URL), json={
@@ -91,12 +90,10 @@ def format_registration(node):
         GraphNode('workidentifier', creative_work=registration_graph, uri=urlparse.urljoin(settings.DOMAIN, node.url))
     ]
 
-
     registration_graph.attrs['tags'] = [
         GraphNode('throughtags', creative_work=registration_graph, tag=GraphNode('tag', name=tag._id))
         for tag in node.tags.all() or [] if tag._id
     ]
-
 
     to_visit.extend(format_contributor(registration_graph, user, bool(user._id in node.visible_contributor_ids), i) for i, user in enumerate(node.contributors))
     to_visit.extend(GraphNode('AgentWorkRelation', creative_work=registration_graph, agent=GraphNode('institution', name=institution.name)) for institution in node.affiliated_institutions.all())
