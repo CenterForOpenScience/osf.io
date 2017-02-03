@@ -6,6 +6,10 @@ import itertools
 import logging
 import pprint
 import sys
+
+import gevent
+from gevent.threadpool import ThreadPool
+
 from framework import encryption
 from framework.mongo import set_up_storage
 from framework.mongo import storage
@@ -787,6 +791,21 @@ class Command(BaseCommand):
         parser.add_argument('--nodelogs', action='store_true', help='Run nodelog migrations')
         parser.add_argument('--nodelogsguids', action='store_true', help='Run nodelog guid migrations')
 
+    def do_model(self, django_model, options):
+        modm_model = get_modm_model(django_model)
+        if isinstance(django_model.modm_query, dict):
+            modm_queryset = modm_model.find(**django_model.modm_query)
+        else:
+            modm_queryset = modm_model.find(django_model.modm_query)
+
+        with ipdb.launch_ipdb_on_exception():
+            if not options['nodelogsguids']:
+                save_bare_models(modm_queryset, django_model,
+                                 page_size=django_model.migration_page_size)
+        modm_model._cache.clear()
+        modm_model._object_cache.clear()
+        logger.info('Took out {} trashes'.format(gc.collect()))
+
     def handle(self, *args, **options):
         set_backend()
         # it's either this or catch the exception and put them in the blacklistguid table
@@ -801,6 +820,7 @@ class Command(BaseCommand):
             merge_duplicate_users()
             # merged users get blank usernames, running it twice fixes it.
             merge_duplicate_users()
+        pool = ThreadPool(self.threads)
 
         for django_model in models:
             if not options['nodelogs'] and not options['nodelogsguids'] and django_model is NodeLog:
@@ -816,19 +836,8 @@ class Command(BaseCommand):
                       '################################################'.format(
                     django_model._meta.model.__name__))
                 continue
-            modm_model = get_modm_model(django_model)
-            if isinstance(django_model.modm_query, dict):
-                modm_queryset = modm_model.find(**django_model.modm_query)
-            else:
-                modm_queryset = modm_model.find(django_model.modm_query)
-
-            with ipdb.launch_ipdb_on_exception():
-                if not options['nodelogsguids']:
-                    save_bare_models(modm_queryset, django_model,
-                                     page_size=django_model.migration_page_size)
-            modm_model._cache.clear()
-            modm_model._object_cache.clear()
-            logger.info('Took out {} trashes'.format(gc.collect()))
+            pool.spawn(self.do_model, django_model, options)
+        pool.join()
 
         # Handle system tags, they're on nodes, they need a special migration
         if not options['nodelogs'] and not options['nodelogsguids']:
