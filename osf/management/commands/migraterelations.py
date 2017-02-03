@@ -1,5 +1,7 @@
 from __future__ import unicode_literals
 
+from cProfile import Profile
+import pstats
 import gc
 import importlib
 import logging
@@ -178,6 +180,9 @@ class Command(BaseCommand):
     help = 'Migrations FK and M2M relationships from tokumx to postgres'
     modm_to_django = None
 
+    def add_arguments(self, parser):
+        parser.add_argument('--profile', action='store', help='Filename to dump profiling information')
+
     def get_pk_for_unknown_node_model(self, guid):
         abstract_node_subclasses = AbstractNode.__subclasses__()
         abstract_node_subclasses.append(Institution)
@@ -215,6 +220,16 @@ class Command(BaseCommand):
         self.save_m2m_relationships(modm_queryset, django_model, page_size)
 
     def handle(self, *args, **options):
+        if options['profile']:
+            profiler = Profile()
+            profiler.runcall(self._handle, *args, **options)
+            stats = pstats.Stats(profiler).sort_stats('cumulative')
+            stats.print_stats()
+            stats.dump_stats(options['profile'])
+        else:
+            self._handle(*args, **options)
+
+    def _handle(self, *args, **options):
         set_backend()
         models = get_ordered_models()
     # with ipdb.launch_ipdb_on_exception():
