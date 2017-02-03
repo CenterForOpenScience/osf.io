@@ -111,7 +111,7 @@ def build_toku_django_lookup_table_cache():
     # make a list of MODMInstitution._id to MODMInstitution.node._id
     institution_guid_mapping = {x._id: x.node._id for x in MODMInstitution.find(deleted=True)}
     # update lookups with x.node._id -> pk
-    lookups.update(format_lookup_key(institution_guid_mapping[x['_id']], ContentType.objects.get_for_model(Node).pk) for x in Institution.objects.all().values('_id', 'pk'))
+    lookups.update({format_lookup_key(institution_guid_mapping[x['_id']], ContentType.objects.get_for_model(Institution).pk): x['pk'] for x in Institution.objects.all().values('_id', 'pk')})
     return lookups
 
 
@@ -166,18 +166,18 @@ class Command(BaseCommand):
 
     def get_pk_for_unknown_node_model(self, guid):
         abstract_node_subclasses = AbstractNode.__subclasses__()
-        # I don't *think* I need this
-        # abstract_node_subclasses.append(AbstractNode)
-        content_type_id_mapping = {ContentType.objects.get_for_model(model).pk: model for model in
-                                   abstract_node_subclasses}
-        keys = {format_lookup_key(guid, content_type_id=ct): model for ct, model in content_type_id_mapping.iteritems()}
-        for key, model in keys.iteritems():
+        abstract_node_subclasses.append(Institution)
+
+        for model in abstract_node_subclasses:
+            key = format_lookup_key(guid, model=model)
             try:
                 pk = self.modm_to_django[key]
             except KeyError:
                 pass
             else:
                 return pk
+
+        raise Exception('Could not find key for {} guid'.format(guid))
 
     def do_model(self, django_model):
         if issubclass(django_model, AbstractBaseContributor) \
@@ -206,14 +206,14 @@ class Command(BaseCommand):
         with ipdb.launch_ipdb_on_exception():
             self.modm_to_django = build_toku_django_lookup_table_cache()
 
-            # for model in models:
-            #     self.do_model(model)
             pool = ThreadPool(10)
             for model in models:
                 pool.spawn(self.do_model, model)
             pool.spawn(self.migrate_node_through_models)
             pool.spawn(self.migration_institutional_contributors)
             pool.join()
+
+
 
     def save_fk_relationships(self, modm_queryset, django_model, page_size):
         logger.info(
@@ -510,7 +510,7 @@ class Command(BaseCommand):
             while count < total:
                 with transaction.atomic():  # one transaction per page.
                     for modm_obj in MODMInstitution.find(deleted=True).sort('-_id')[count:page_size + count]:
-                        clean_institution_guid = unicode(modm_obj.institution_id).lower()
+                        clean_institution_guid = unicode(modm_obj.node._id).lower()
                         for modm_contributor in modm_obj.contributors:
                             clean_user_guid = unicode(modm_contributor._id).lower()
                             read = 'read' in modm_obj.permissions[clean_user_guid]
@@ -528,7 +528,7 @@ class Command(BaseCommand):
                                         write=write,
                                         admin=admin,
                                         user_id=self.modm_to_django[format_lookup_key(clean_user_guid, model=OSFUser)],
-                                        node_id=self.get_pk_for_unknown_node_model(clean_institution_guid),
+                                        institution_id=self.get_pk_for_unknown_node_model(clean_institution_guid),
                                         visible=visible
                                     )
                                 )
