@@ -56,10 +56,11 @@ def logout_user(request):
     return redirect('auth:login')
 
 
-class RegisterUser(FormView, PermissionRequiredMixin):
+class RegisterUser(PermissionRequiredMixin, FormView):
     form_class = UserRegistrationForm
     template_name = 'register.html'
     permission_required = 'osf.change_user'
+    raise_exception = True
 
     def form_valid(self, form):
         osf_id = form.cleaned_data.get('osf_id')
@@ -93,22 +94,24 @@ class RegisterUser(FormView, PermissionRequiredMixin):
         return reverse('auth:register')
 
 
-class DeskUserCreateFormView(CreateView, PermissionRequiredMixin):
+class DeskUserCreateFormView(PermissionRequiredMixin, CreateView):
     form_class = DeskUserForm
     template_name = 'desk/settings.html'
     success_url = reverse_lazy('auth:desk')
     permissions_required = 'admin.view_desk'
+    raise_exception = True
 
     def form_valid(self, form):
         form.instance.user = self.request.user
         return super(DeskUserCreateFormView, self).form_valid(form)
 
 
-class DeskUserUpdateFormView(UpdateView, PermissionRequiredMixin):
+class DeskUserUpdateFormView(PermissionRequiredMixin, UpdateView):
     form_class = DeskUserForm
     template_name = 'desk/settings.html'
     success_url = reverse_lazy('auth:desk')
     permissions_required = 'admin.view_desk'
+    raise_exception = True
 
     def get_object(self, queryset=None):
         return self.request.user.admin_profile
