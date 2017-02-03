@@ -12,6 +12,7 @@
                class="btn btn-primary col-md-1">
                 <i class="fa fa-search"></i>
             </a>
+                {% if perms.osf.delete_node %}
                 {% if not preprint.node.deleted %}
                 <span class="col-md-2">
                     <a href="{% url 'nodes:remove' guid=preprint.node.id %}"
@@ -35,6 +36,7 @@
                                value="Restore Preprint Node" />
                     </form>
                 </span>
+            {% endif %}
             {% endif %}
         </div>
         <div class="row">
