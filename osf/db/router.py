@@ -27,9 +27,9 @@ class PostgreSQLFailoverRouter(object):
         for name, dsn in self.DSNS.iteritems():
             conn = self._get_conn(dsn)
             cur = conn.cursor()
-            cur.execute('SHOW transaction_read_only;')
+            cur.execute('SHOW transaction_read_only;')  # 'on' for slaves, 'off' for masters
             row = cur.fetchone()
-            if not row[0]:
+            if row[0] == u'off':
                 cur.close()
                 conn.close()
                 return name
