@@ -5,7 +5,6 @@ import httplib as http
 import logging
 
 from flask import request
-from website.addons.onedrive.client import OneDriveClient
 
 from framework.exceptions import HTTPError
 
@@ -60,48 +59,7 @@ def onedrive_folder_list(node_addon, **kwargs):
     if not node_addon.has_auth:
         raise HTTPError(http.FORBIDDEN)
 
-    node = node_addon.owner
-    folder_id = request.args.get('folderId')
-    logger.debug('oauth_provider::' + repr(node_addon.oauth_provider))
-    logger.debug('fetch_access_token::' + repr(node_addon))
-    logger.debug('node_addon.external_account::' + repr(node_addon.external_account))
-    logger.debug('node_addon.external_account::oauth_key' + repr(node_addon.external_account.oauth_key))
-    logger.debug('node_addon.external_account::expires_at' + repr(node_addon.external_account.refresh_token))
-    logger.debug('node_addon.external_account::expires_at' + repr(node_addon.external_account.expires_at))
+    path = request.args.get('path', '')
+    folder_id = request.args.get('folder_id', 'root')
 
-    if folder_id is None:
-        return [{
-            'id': '0',
-            'path': 'All Files',
-            'addon': 'onedrive',
-            'kind': 'folder',
-            'name': '/ (Full OneDrive)',
-            'urls': {
-                'folders': node.api_url_for('onedrive_folder_list', folderId=0),
-            }
-        }]
-
-    if folder_id == '0':
-        folder_id = 'root'
-
-    access_token = node_addon.fetch_access_token()
-    logger.debug('access_token::' + repr(access_token))
-
-    oneDriveClient = OneDriveClient(access_token)
-    items = oneDriveClient.folders(folder_id)
-    logger.debug('folders::' + repr(items))
-
-    return [
-        {
-            'addon': 'onedrive',
-            'kind': 'folder',
-            'id': item['id'],
-            'name': item['name'],
-            'path': item['name'],
-            'urls': {
-                'folders': node.api_url_for('onedrive_folder_list', folderId=item['id']),
-            }
-        }
-        for item in items
-
-    ]
+    return node_addon.get_folders(folder_path=path, folder_id=folder_id)

@@ -7,6 +7,7 @@ import urllib
 from modularodm import fields
 
 from framework.auth import Auth
+from framework.exceptions import HTTPError
 
 from website.addons.base import exceptions
 from website.addons.base import AddonOAuthUserSettingsBase, AddonOAuthNodeSettingsBase
@@ -113,6 +114,51 @@ class OneDriveNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
     def clear_settings(self):
         self.folder_id = None
         self.folder_path = None
+
+    def get_folder(self, **kwargs):
+        node = self.owner
+
+        #  Defaults exist when called by the API, but are `None`
+        path = kwargs.get('path') or ''
+        folder_id = kwargs.get('folder_id') or 'root'
+
+
+        if folder_id is None:
+            return [{
+                'id': '0',
+                'path': 'All Files',
+                'addon': 'onedrive',
+                'kind': 'folder',
+                'name': '/ (Full OneDrive)',
+                'urls': {
+                    'folders': node.api_url_for('onedrive_folder_list', folderId=0),
+                }
+            }]
+
+        if folder_id == '0':
+            folder_id = 'root'
+
+        try:
+            access_token = self.fetch_access_token()
+        except exceptions.InvalidAuthError:
+            raise HTTPError(403)
+
+        oneDriveClient = OneDriveClient(access_token)
+        items = oneDriveClient.folders(folder_id)
+
+        return [
+            {
+                'addon': 'onedrive',
+                'kind': 'folder',
+                'id': item['id'],
+                'name': item['name'],
+                'path': item['name'],
+                'urls': {
+                    'folders': node.api_url_for('onedrive_folder_list', folderId=item['id']),
+                }
+            }
+            for item in items
+        ]
 
     def set_folder(self, folder, auth):
         self.folder_id = folder['id']
