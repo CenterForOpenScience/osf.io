@@ -87,7 +87,6 @@ def onedrive_add_user_auth(auth, node_addon, user_addon, **kwargs):
     except PermissionsError:
         raise HTTPError(http.FORBIDDEN)
 
-    node_addon.set_user_auth(user_addon)
     node_addon.save()
 
     return {

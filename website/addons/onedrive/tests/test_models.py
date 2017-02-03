@@ -86,18 +86,6 @@ class TestOneDriveNodeSettingsModel(OsfTestCase):
         assert_in('project', params)
         assert_in('folder', params)
 
-    def test_set_user_auth(self):
-        node_settings = OneDriveNodeSettingsFactory()
-        user_settings = OneDriveUserSettingsFactory()
-
-        node_settings.set_user_auth(user_settings)
-        node_settings.save()
-
-        assert_equal(node_settings.user_settings, user_settings)
-        # A log was saved
-        last_log = node_settings.owner.logs[-1]
-        assert_equal(last_log.action, 'onedrive_node_authorized')
-
     def test_serialize_credentials_not_authorized(self):
         self.node_settings.user_settings = None
         self.node_settings.save()

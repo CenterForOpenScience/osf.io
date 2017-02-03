@@ -89,11 +89,6 @@ class OneDriveNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         return self._api
 
     @property
-    def has_auth(self):
-        """Whether an access token is associated with this node."""
-        return bool(self.user_settings and self.user_settings.has_auth)
-
-    @property
     def complete(self):
         return bool(self.has_auth and self.user_settings.verify_oauth_access(
             node=self.owner,
@@ -115,6 +110,10 @@ class OneDriveNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
     def fetch_folder_name(self):
         return self.folder_name
 
+    def clear_settings(self):
+        self.folder_id = None
+        self.folder_path = None
+
     def set_folder(self, folder, auth):
         self.folder_id = folder['id']
         self.folder_path = folder['name']
@@ -132,15 +131,6 @@ class OneDriveNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         nodelogger = OneDriveNodeLogger(node=self.owner, auth=auth)  # AddonOAuthNodeSettingsBase.nodelogger(self)
         nodelogger.log(action="folder_selected", save=True)
 
-    def set_user_auth(self, user_settings):
-        """Import a user's OneDrive authentication and create a NodeLog.
-
-        :param OneDriveUserSettings user_settings: The user settings to link.
-        """
-        self.user_settings = user_settings
-        nodelogger = OneDriveNodeLogger(node=self.owner, auth=Auth(user_settings.owner))
-        nodelogger.log(action="node_authorized", save=True)
-
     def deauthorize(self, auth=None, add_log=True):
         """Remove user authorization from this node and log the event."""
         node = self.owner
@@ -152,7 +142,6 @@ class OneDriveNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
 
         self.folder_id = None
         self._update_folder_data()
-        self.user_settings = None
         self.clear_auth()
 
         self.save()
