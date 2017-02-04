@@ -15,7 +15,7 @@ class NotificationSubscription(BaseModel):
     # TODO DELETE ME POST MIGRATION
     modm_model_path = 'website.notifications.model.NotificationSubscription'
     modm_query = None
-    migration_page_size = 120000
+    migration_page_size = 20000
     # /TODO DELETE ME POST MIGRATION
     _id = models.CharField(max_length=50, db_index=True)  # pxyz_wiki_updated, uabc_comment_replies
 
