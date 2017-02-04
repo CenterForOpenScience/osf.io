@@ -3,6 +3,7 @@ from framework.exceptions import HTTPError
 
 from website.util.client import BaseClient
 from website.addons.onedrive import settings
+from website.addons.onedrive.settings import DEFAULT_ROOT_ID
 
 
 class OneDriveClient(BaseClient):
@@ -16,30 +17,43 @@ class OneDriveClient(BaseClient):
             return {'Authorization': 'bearer {}'.format(self.access_token)}
         return {}
 
-    def about(self):
-        return self._make_request(
-            'GET',
-            self._build_url(settings.ONEDRIVE_API_URL, 'drive', 'v2', 'about', ),
-            expects=(200, ),
-            throws=HTTPError(401)
-        ).json()
+    def folders(self, folder_id=None):
+        """Get list of subfolders of the folder with id ``folder_id``
 
-    def folders(self, folder_id='root/'):
-        query = 'folder ne null'
+        API Docs:  https://dev.onedrive.com/items/list.htm
 
-        if folder_id != 'root':
-            folder_id = 'items/{}'.format(folder_id)
+        :param str folder_id: the id of the parent folder. defaults to ``None``
+        :rtype: list
+        :return: a list of metadata objects representing the child folders of ``folder_id``
+        """
+
+        if folder_id is None or folder_id == DEFAULT_ROOT_ID:
+            url = self._build_url(settings.ONEDRIVE_API_URL, 'drive', 'root', 'children')
+        else:
+            url = self._build_url(settings.ONEDRIVE_API_URL, 'drive', 'items',
+                                  folder_id, 'children')
 
         res = self._make_request(
             'GET',
-            self._build_url(settings.ONEDRIVE_API_URL, 'drive/', folder_id, '/children/'),
-            params={'filter': query},
+            url,
+            params={'filter': 'folder ne null'},
             expects=(200, ),
             throws=HTTPError(401)
         )
         return res.json()['value']
 
     def user_info_for_token(self, access_token):
+        """Given an access token, return information about the token's owner.
+
+        API Docs::
+
+        https://msdn.microsoft.com/en-us/library/hh826533.aspx#requesting_info_using_rest
+        https://msdn.microsoft.com/en-us/library/hh243648.aspx#user
+
+        :param str access_token: a valid Microsoft Live access token
+        :rtype: dict
+        :return: a dict containing metadata about the token's owner.
+        """
         return self._make_request(
             'GET',
             self._build_url(settings.MSLIVE_API_URL, 'me'),

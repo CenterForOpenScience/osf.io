@@ -39,11 +39,13 @@
         "github",
         "googledrive",
         "owncloud",
-        "s3"
+        "s3",
+        "onedrive"
     ],
     "addons_based_on_ids": [
         "osfstorage",
-        "box"
+        "box",
+        "onedrive"
     ],
     "addons_description": {
         "box": "Box is a file storage add-on. Connect your Box account to an OSF project to interact with files hosted on Box via the OSF.",
@@ -59,7 +61,8 @@
         "s3": "Amazon S3 is a file storage add-on. Connect your S3 account to an OSF project to interact with files hosted on S3 via the OSF.",
         "twofactor": "Two-factor authentication is a security add-on. By using two-factor authentication, you'll protect your OSF account with both your password and your mobile phone.",
         "wiki": "The wiki is a versatile communication tool. Wikis can be used to explain the main points of your project and can contain information like lab notes or contact information.",
-        "googledrive": "Google Drive is a file storage add-on. Connect your Google Drive account to an OSF project to interact with files hosted on Google Drive via the OSF."
+        "googledrive": "Google Drive is a file storage add-on. Connect your Google Drive account to an OSF project to interact with files hosted on Google Drive via the OSF.",
+        "onedrive": "Microsoft OneDrive is a file storage add-on. Connect your Microsoft OneDrive account to an OSF project to interact with files hosted on Microsoft OneDrive via the OSF."
     },
     "addons_url": {
         "box": "http://www.box.com",
@@ -71,6 +74,7 @@
         "owncloud": "https://owncloud.org/",
         "zotero": "http://www.zotero.org",
         "s3": "https://aws.amazon.com/s3/",
-        "googledrive": "https://drive.google.com"
+        "googledrive": "https://drive.google.com",
+        "onedrive": "https://onedrive.live.com"
     }
 }

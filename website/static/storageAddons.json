@@ -37,6 +37,6 @@
     },
     "onedrive": {
         "fullName": "OneDrive",
-        "externalView": false
+        "externalView": true
     }
 }

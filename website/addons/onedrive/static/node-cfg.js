@@ -1,7 +1,6 @@
 'use strict';
 
-require('./onedrive.css');
 var OauthAddonNodeConfig = require('js/oauthAddonNodeConfig').OauthAddonNodeConfig;
 
-var url = window.contextVars.node.urls.api + 'onedrive/settings/';
-new OauthAddonNodeConfig('Onedrive', '#onedriveScope', url, '#onedriveGrid');
+var url = window.contextVars.node.urls.api + 'onedrive/config/';
+new OauthAddonNodeConfig('Microsoft OneDrive', '#onedriveScope', url, '#onedriveGrid');
