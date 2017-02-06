@@ -2,8 +2,9 @@ import furl
 
 from django.utils import timezone
 
+from osf.models import PreprintProvider
+
 from website import mails
-from website.models import PreprintProvider
 from website.settings import DOMAIN, CAMPAIGN_REFRESH_THRESHOLD
 from website.util.time import throttle_period_expired
 
@@ -51,16 +52,19 @@ def get_campaigns():
                 template = 'osf'
                 name = 'OSF'
                 url_path = 'preprints/'
+                external_url = None
             else:
                 template = 'branded'
                 name = provider.name
                 url_path = 'preprints/{}'.format(provider._id)
+                external_url = provider.get_provider_domain()
             campaign = '{}-preprints'.format(provider._id)
             system_tag = '{}_preprints'.format(provider._id)
             CAMPAIGNS.update({
                 campaign: {
                     'system_tag': system_tag,
                     'redirect_url': furl.furl(DOMAIN).add(path=url_path).url,
+                    'external_url': external_url,
                     'confirmation_email_template': mails.CONFIRM_EMAIL_PREPRINTS(template, name),
                     'login_type': 'proxy',
                     'provider': name,
@@ -127,3 +131,13 @@ def campaign_url_for(campaign):
     if campaign in campaigns:
         return campaigns.get(campaign).get('redirect_url')
     return None
+
+
+def get_external_domains():
+    campaigns = get_campaigns()
+    external_domains = []
+    for campaign, config in campaigns.items():
+        external_url = config.get('external_url', None)
+        if external_url:
+            external_domains.append(external_url)
+    return external_domains

@@ -1020,7 +1020,7 @@ def validate_next_url(next_url):
     if next_url.startswith(settings.CAS_SERVER_URL) or next_url.startswith(settings.MFR_SERVER_URL):
         # CAS or MFR
         return True
-    for url in settings.EXTERNAL_EMBER_DOMAINS:
+    for url in campaigns.get_external_domains():
         # Branded Preprints Phase 2
         if url.startswith(url):
             return True
