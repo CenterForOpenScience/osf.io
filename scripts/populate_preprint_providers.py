@@ -227,7 +227,7 @@ def main():
             '_id': 'psyarxiv',
             'name': 'PsyArXiv',
             'logo_name': 'psyarxiv-logo.png',
-            'description': 'A free preprint service for the psychological sciences. Maintained by <a href="http://improvingpsych.org">SIPS</a>',
+            'description': 'A free preprint service for the psychological sciences.<div>Maintained by <a href="http://improvingpsych.org">The Society for the Improvement of Psychological Science</a>.</div>',
             'banner_name': 'psyarxiv-banner.png',
             'external_url': 'http://psyarxiv.com',
             'example': 'k9mn3',
