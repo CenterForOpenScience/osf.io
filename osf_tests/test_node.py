@@ -1790,9 +1790,9 @@ class TestForkNode:
 
         fork_user_auth = Auth(user=fork_user)
         # Recursively compare children
-        for idx, child in enumerate(original._nodes.all()):
+        for idx, child in enumerate(original.get_nodes()):
             if child.can_view(fork_user_auth):
-                self._cmp_fork_original(fork_user, fork_date, fork._nodes.all()[idx],
+                self._cmp_fork_original(fork_user, fork_date, fork.get_nodes()[idx],
                                         child, title_prepend='')
 
     @mock.patch('framework.status.push_status_message')
