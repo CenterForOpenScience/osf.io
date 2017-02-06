@@ -29,11 +29,11 @@ from framework.exceptions import HTTPError
 from framework.flask import redirect  # VOL-aware redirect
 from framework.sessions.utils import remove_sessions_for_user, remove_session
 from framework.sessions import get_session
-from website import settings, mails, language
 
-from website.util.time import throttle_period_expired
+from website import settings, mails, language
 from website.models import User
 from website.util import web_url_for
+from website.util.time import throttle_period_expired
 from website.util.sanitize import strip_html
 
 
@@ -1012,13 +1012,20 @@ def validate_next_url(next_url):
     # like http:// or https:// depending on the use of SSL on the page already.
     if next_url.startswith('//'):
         return False
-    # only OSF, MFR and CAS domains are allowed
-    if not (next_url[0] == '/' or
-            next_url.startswith(settings.DOMAIN) or
-            next_url.startswith(settings.CAS_SERVER_URL) or
-            next_url.startswith(settings.MFR_SERVER_URL)):
-        return False
-    return True
+
+    # only OSF, MFR, CAS and Branded Preprints domains are allowed
+    if next_url[0] == '/' or next_url.startswith(settings.DOMAIN):
+        # OSF
+        return True
+    if next_url.startswith(settings.CAS_SERVER_URL) or next_url.startswith(settings.MFR_SERVER_URL):
+        # CAS or MFR
+        return True
+    for url in settings.EXTERNAL_EMBER_DOMAINS:
+        # Branded Preprints Phase 2
+        if url.startswith(url):
+            return True
+
+    return False
 
 
 def check_service_url_with_proxy_campaign(service_url, campaign_url):

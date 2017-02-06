@@ -72,6 +72,11 @@ API_DOMAIN = PROTOCOL + 'localhost:8000/'
 # External Ember App Local Development
 USE_EXTERNAL_EMBER = False
 EXTERNAL_EMBER_APPS = {}
+EXTERNAL_EMBER_DOMAINS = [
+    'http://local.engrxiv.com:4200/',
+    'http://local.psyarxiv.com:4200/',
+    'http://local.socarxiv.com:4200/',
+]
 
 LOG_PATH = os.path.join(APP_PATH, 'logs')
 TEMPLATES_PATH = os.path.join(BASE_PATH, 'templates')
