@@ -446,83 +446,85 @@ def fix_guids():
     logger.info('Updated referents: {}'.format(updated_referents))
 
 
-
-def save_bare_models(modm_queryset, django_model, page_size=20000):
-    logger.info('Starting {} on {}.{}...'.format(sys._getframe().f_code.co_name, django_model._meta.model.__module__, django_model._meta.model.__name__))
-    count = 0
-    total = modm_queryset.count()
+def save_page_of_bare_models(modm_page, django_model):
     hashes = set()
+    start = timezone.now()
+    count = 0
+    with transaction.atomic():
+        django_objects = list()
+        if not hasattr(django_model, '_natural_key'):
+            logger.info('{}.{} is missing a natural key!'.format(django_model._meta.model.__module__,
+                                                                 django_model._meta.model.__name__))
 
-    while count < total:
-        with transaction.atomic():
-            django_objects = list()
-
-            offset = count
-            limit = (count + page_size) if (count + page_size) < total else total
-
-            page_of_modm_objects = modm_queryset.sort('-_id')[offset:limit]
-
-            if not hasattr(django_model, '_natural_key'):
-                logger.info('{}.{} is missing a natural key!'.format(django_model._meta.model.__module__, django_model._meta.model.__name__))
-
-            for modm_obj in page_of_modm_objects:
-                django_instance = django_model.migrate_from_modm(modm_obj)
-                if django_instance is None:
-                    count += 1
-                    continue
-                if django_instance._natural_key() is not None:
-                    # if there's a natural key
-                    if isinstance(django_instance._natural_key(), list):
-                        found = []
-                        for nk in django_instance._natural_key():
-                            if nk not in hashes:
-                                hashes.add(nk)
-                            else:
-                                found.append(nk)
-                        if not found:
-                            django_objects.append(django_instance)
+        for modm_obj in modm_page:
+            django_instance = django_model.migrate_from_modm(modm_obj)
+            if django_instance is None:
+                continue
+            if django_instance._natural_key() is not None:
+                # if there's a natural key
+                if isinstance(django_instance._natural_key(), list):
+                    found = []
+                    for nk in django_instance._natural_key():
+                        if nk not in hashes:
+                            hashes.add(nk)
                         else:
-                            count += 1
-                            logger.info('{}.{} with guids {} was already in hashes'.format(django_instance._meta.model.__module__, django_instance._meta.model.__name__, found))
-                            continue
+                            found.append(nk)
+                    if not found:
+                        django_objects.append(django_instance)
                     else:
-                        if django_instance._natural_key() not in hashes:
-                            # and that natural key doesn't exist in hashes
-                            # add it to hashes and append the object
-                            hashes.add(django_instance._natural_key())
-                            django_objects.append(django_instance)
-                        else:
-                            count += 1
-                            continue
+                        count += 1
+                        logger.info(
+                            '{}.{} with guids {} was already in hashes'.format(django_instance._meta.model.__module__,
+                                                                               django_instance._meta.model.__name__,
+                                                                               found))
+                        continue
                 else:
-                    django_objects.append(django_instance)
-
-                count += 1
-                if count % page_size == 0 or count == total:
-                    page_finish_time = timezone.now()
-                    if (count - page_size) < 0:
-                        start = 0
+                    if django_instance._natural_key() not in hashes:
+                        # and that natural key doesn't exist in hashes
+                        # add it to hashes and append the object
+                        hashes.add(django_instance._natural_key())
+                        django_objects.append(django_instance)
                     else:
-                        start = count - page_size
-                    logger.info(
-                        'Saving {}.{} {} through {}...'.format(django_model._meta.model.__module__, django_model._meta.model.__name__,
-                                                            start,
-                                                            count))
-                    saved_django_objects = django_model.objects.bulk_create(django_objects)
+                        count += 1
+                        continue
+            else:
+                django_objects.append(django_instance)
 
-                    logger.info('Done with {} {}.{} in {} seconds...'.format(len(saved_django_objects),
-                                                                    django_model._meta.model.__module__, django_model._meta.model.__name__, (
-                                                                        timezone.now() -
-                                                                        page_finish_time).total_seconds()))
-                    modm_obj._cache.clear()
-                    modm_obj._object_cache.clear()
-                    saved_django_objects = []
-                    page_of_modm_objects = []
-                    logger.info('Took out {} trashes'.format(gc.collect()))
+            count += 1
+        page_finish_time = timezone.now()
+        logger.info(
+            'Saving {} of {}.{}...'.format(count, django_model._meta.model.__module__, django_model._meta.model.__name__))
+        saved_django_objects = django_model.objects.bulk_create(django_objects)
+
+        logger.info('Done with {} {}.{} in {} seconds...'.format(len(saved_django_objects),
+                                                                 django_model._meta.model.__module__,
+                                                                 django_model._meta.model.__name__, (
+                                                                     timezone.now() -
+                                                                     page_finish_time).total_seconds()))
+        modm_obj._cache.clear()
+        modm_obj._object_cache.clear()
+        saved_django_objects = []
+        page_of_modm_objects = []
+        logger.info('Took out {} trashes'.format(gc.collect()))
     total = None
     count = None
     hashes = None
     logger.info('Took out {} trashes'.format(gc.collect()))
+
+
+def save_bare_models(modm_queryset, django_model, page_size=20000):
+    threads = multiprocessing.cpu_count() * 2
+    logger.info('Starting {} on {}.{}...'.format(sys._getframe().f_code.co_name, django_model._meta.model.__module__, django_model._meta.model.__name__))
+    count = 0
+    total = modm_queryset.count()
+    tp = ThreadPool(threads)
+
+    while count < total:
+        logger.info('{}.{} starting'.format(django_model._meta.model.__module__, django_model._meta.model.__name__))
+        modm_page = modm_queryset.sort('-_id')[count: count + page_size]
+        tp.spawn(save_page_of_bare_models, modm_page, django_model)
+        count += page_size
+    tp.join()
 
 
 class DuplicateExternalAccounts(Exception):
