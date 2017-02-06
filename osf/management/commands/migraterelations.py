@@ -523,7 +523,7 @@ class Command(BaseCommand):
                                     django_objects.append(field_model_instance(**rel_dict))
                                 else:
                                     logger.info('Relation {} already exists for {}'.format(rel_dict, field_name))
-                            if len(django_objects):
+                            if len(django_objects) > 0 and django_objects is not None:
                                 field_model_instance.objects.bulk_create(django_objects, batch_size=len(django_objects) // 5)
                             m2m_count += len(django_objects)
                     model_count += 1
