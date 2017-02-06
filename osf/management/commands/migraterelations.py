@@ -1,5 +1,7 @@
 from __future__ import unicode_literals
 
+from cProfile import Profile
+import pstats
 import gc
 import importlib
 import logging
@@ -12,6 +14,7 @@ from gevent.pool import Pool
 from gevent.threadpool import ThreadPool
 
 from addons.wiki.models import NodeWikiPage
+from bulk_update.helper import bulk_update
 from django.apps import apps
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.core.management import BaseCommand
@@ -178,6 +181,9 @@ class Command(BaseCommand):
     help = 'Migrations FK and M2M relationships from tokumx to postgres'
     modm_to_django = None
 
+    def add_arguments(self, parser):
+        parser.add_argument('--profile', action='store', help='Filename to dump profiling information')
+
     def get_pk_for_unknown_node_model(self, guid):
         abstract_node_subclasses = AbstractNode.__subclasses__()
         abstract_node_subclasses.append(Institution)
@@ -215,6 +221,16 @@ class Command(BaseCommand):
         self.save_m2m_relationships(modm_queryset, django_model, page_size)
 
     def handle(self, *args, **options):
+        if options['profile']:
+            profiler = Profile()
+            profiler.runcall(self._handle, *args, **options)
+            stats = pstats.Stats(profiler).sort_stats('cumulative')
+            stats.print_stats()
+            stats.dump_stats(options['profile'])
+        else:
+            self._handle(*args, **options)
+
+    def _handle(self, *args, **options):
         set_backend()
         models = get_ordered_models()
     # with ipdb.launch_ipdb_on_exception():
@@ -267,6 +283,7 @@ class Command(BaseCommand):
                             raise
 
                 django_objects = django_model.objects.filter(pk__in=django_keys)
+                django_objects_to_update = []
                 django_objects_dict = {obj.pk: obj for obj in django_objects}
                 for modm_obj in modm_page:
                     django_obj = django_objects_dict[self.modm_to_django[format_lookup_key(modm_obj._id, model=django_model)]]
@@ -359,7 +376,7 @@ class Command(BaseCommand):
 
                     django_obj, dirty = fix_bad_data(django_obj, dirty)
                     if dirty:
-                        django_obj.save()
+                        django_objects_to_update.append(django_obj)
                     model_count += 1
                     if model_count % page_size == 0 or model_count == model_total:
                         logger.info(
@@ -369,6 +386,7 @@ class Command(BaseCommand):
                         modm_queryset[0]._cache.clear()
                         modm_queryset[0]._object_cache.clear()
                         logger.info('Took out {} trashes'.format(gc.collect()))
+                bulk_update(django_objects_to_update)
 
     def save_m2m_relationships(self, modm_queryset, django_model, page_size):
         logger.info(
@@ -516,9 +534,10 @@ class Command(BaseCommand):
         contributors = []
         contributor_hashes = set()
     # with ipdb.launch_ipdb_on_exception():
+        institutions = MODMInstitution.find(deleted=True).sort('-_id')
         while count < total:
             with transaction.atomic():  # one transaction per page.
-                for modm_obj in MODMInstitution.find(deleted=True).sort('-_id')[count:page_size + count]:
+                for modm_obj in institutions[count:page_size + count]:
                     clean_institution_guid = unicode(modm_obj.node._id).lower()
                     for modm_contributor in modm_obj.contributors:
                         clean_user_guid = unicode(modm_contributor._id).lower()
@@ -573,10 +592,11 @@ class Command(BaseCommand):
         node_rel_hashes = set()
         contributor_hashes = set()
     # with ipdb.launch_ipdb_on_exception():
+        nodes = MODMNode.find().sort('-_id')
         while count < total:
             with transaction.atomic():  # one transaction per page.
                 # is this query okay? isn't it going to catch things we don't want?
-                for modm_obj in MODMNode.find().sort('-_id')[count:page_size + count]:
+                for modm_obj in nodes[count:page_size + count]:
                     order = 0
                     clean_node_guid = unicode(modm_obj._id).lower()
                     for modm_contributor in modm_obj.contributors:
