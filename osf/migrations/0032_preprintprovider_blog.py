@@ -14,7 +14,7 @@ class Migration(migrations.Migration):
     operations = [
         migrations.AddField(
             model_name='preprintprovider',
-            name='blog',
+            name='blog_url',
             field=models.URLField(blank=True, null=True),
         ),
     ]

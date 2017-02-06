@@ -28,7 +28,7 @@ class PreprintProviderSerializer(JSONAPISerializer):
     subjects_acceptable = ser.JSONField(required=False, allow_null=True)
     logo_path = ser.CharField(read_only=True)
     banner_path = ser.CharField(read_only=True)
-    blog = ser.URLField(required=False, allow_null=True)
+    blog_url = ser.URLField(required=False, allow_null=True)
 
     preprints = RelationshipField(
         related_view='preprint_providers:preprints-list',
