@@ -1,44 +1,38 @@
 from __future__ import unicode_literals
 
-from cProfile import Profile
-import pstats
 import gc
 import importlib
 import logging
+import pstats
 import sys
+from cProfile import Profile
 
-import gevent
 import ipdb
-from django.contrib.contenttypes.models import ContentType
-from gevent.pool import Pool
-from gevent.threadpool import ThreadPool
-
-from addons.wiki.models import NodeWikiPage
 from bulk_update.helper import bulk_update
 from django.apps import apps
 from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.models import ContentType
 from django.core.management import BaseCommand
 from django.db import transaction
+from gevent.threadpool import ThreadPool
+
+from addons.wiki.models import NodeWikiPage
 from osf import models
 from osf.models import (ApiOAuth2Scope, BlackListGuid, CitationStyle, Guid,
                         Institution, NodeRelation, NotificationSubscription,
                         RecentlyAddedContributor, StoredFileNode, Tag)
-from osf.models import Identifier
 from osf.models import OSFUser
-from osf.models.base import OptionalGuidMixin
 from osf.models.contributor import (AbstractBaseContributor, Contributor,
                                     InstitutionalContributor)
 from osf.models.node import AbstractNode, Node
 from osf.utils.order_apps import get_ordered_models
-from .migratedata import set_backend
-from website.models import Guid as MODMGuid
 from website.models import Institution as MODMInstitution
 from website.models import Node as MODMNode
-from website.models import NodeLog as MODMNodeLog
 from website.models import \
     NotificationSubscription as MODMNotificationSubscription
 from website.models import Pointer as MODMPointer
 from website.models import User as MODMUser
+from .migratedata import set_backend
 
 logger = logging.getLogger('migrations')
 
@@ -122,12 +116,12 @@ def build_toku_django_lookup_table_cache():
 
     # make a list of MODMInstitution._id to MODMInstitution.node._id
     institution_guid_mapping = {x._id: x.node._id for x in MODMInstitution.find(deleted=True)}
-    # update lookups with x.node._id -> pk
+    # update lookups with institution ct, x.node._id -> pk
     lookups.update({format_lookup_key(institution_guid_mapping[x['_id']], ContentType.objects.get_for_model(Institution).pk): x['pk'] for x in Institution.objects.all().values('_id', 'pk')})
 
     # make a list of MODMInstitution._id to MODMInstitution.node._id
     institution_guid_mapping = {x._id: x.node._id for x in MODMInstitution.find(deleted=True)}
-    # update lookups with x.node._id -> pk
+    # update lookups with node_ct, x.node._id -> pk
     lookups.update({format_lookup_key(institution_guid_mapping[x['_id']], ContentType.objects.get_for_model(Node).pk): x['pk'] for x in Institution.objects.all().values('_id', 'pk')})
     return lookups
 
@@ -216,9 +210,13 @@ class Command(BaseCommand):
 
         page_size = django_model.migration_page_size
     # with ipdb.launch_ipdb_on_exception():
-        self.save_fk_relationships(modm_queryset, django_model, page_size)
+        try:
+            self.save_fk_relationships(modm_queryset, django_model, page_size)
+            self.save_m2m_relationships(modm_queryset, django_model, page_size)
+        except Exception as ex:
+            logger.info('##################################################{} just died on {}.#############################################################'.format(django_model, ex))
+            raise ex
             # TODO Maybe spawn these into threads too
-        self.save_m2m_relationships(modm_queryset, django_model, page_size)
 
     def handle(self, *args, **options):
         if options['profile']:
@@ -236,14 +234,12 @@ class Command(BaseCommand):
     # with ipdb.launch_ipdb_on_exception():
         self.modm_to_django = build_toku_django_lookup_table_cache()
 
-        pool = ThreadPool(5)
+        pool = ThreadPool(10)
         for model in models:
             pool.spawn(self.do_model, model)
         pool.spawn(self.migrate_node_through_models)
         pool.spawn(self.migration_institutional_contributors)
         pool.join()
-
-
 
     def save_fk_relationships(self, modm_queryset, django_model, page_size):
         logger.info(
