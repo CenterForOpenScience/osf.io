@@ -16,11 +16,13 @@
                class="btn btn-primary">
                 Back to user's list
             </a>
+            {%  if perms.common_auth.mark_spam %}
             <a href="{% url 'spam:email' comment.id %}"
                data-toggle="modal" data-target="#email"
                class="btn btn-default">
                 Email
             </a>
+            {% endif %}
             <div class="modal" id="email">
                 <div class="modal-dialog">
                     <div class="modal-content"></div>
@@ -31,6 +33,7 @@
 
         <br>
 
+        {%  if perms.common_auth.mark_spam %}
         <div class="row">
         <div class="panel col-md-6">
         <form action="{% reverse_spam_detail comment.id page=page_number status=status %}"
@@ -52,6 +55,7 @@
         </form>
         </div>
         </div>
+        {% endif %}
 
         {# General info about the comment #}
         <div class="row">

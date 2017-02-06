@@ -79,6 +79,12 @@ class Conference(ObjectIDMixin, BaseModel):
     def get_by_endpoint(cls, endpoint, active):
         return cls.objects.get_by_endpoint(endpoint, active)
 
+    class Meta:
+        # custom permissions for use in the OSF Admin App
+        permissions = (
+            ('view_conference', 'Can view conference details in the admin app.'),
+        )
+
 
 class MailRecord(ObjectIDMixin, BaseModel):
     # TODO DELETE ME POST MIGRATION

@@ -174,13 +174,13 @@ def move_subscription(remove_users, source_event, source_node, new_event, new_no
 
 def get_configured_projects(user):
     """Filter all user subscriptions for ones that are on parent projects
-     and return the project ids.
+     and return the node objects.
 
     :param user: modular odm User object
-    :return: list of project ids for projects with no parent
+    :return: list of node objects for projects with no parent
     """
     AbstractNode = apps.get_model('osf.AbstractNode')
-    configured_project_ids = set()
+    configured_projects = set()
     user_subscriptions = get_all_user_subscriptions(user)
 
     for subscription in user_subscriptions:
@@ -201,9 +201,9 @@ def get_configured_projects(user):
             node = node.parent_node
 
         if not node.is_deleted:
-            configured_project_ids.add(node._id)
+            configured_projects.add(node)
 
-    return list(configured_project_ids)
+    return list(configured_projects)
 
 
 def check_project_subscriptions_are_all_none(user, node):
@@ -238,18 +238,16 @@ def get_all_node_subscriptions(user, node, user_subscriptions=None):
             yield subscription
 
 
-def format_data(user, node_ids):
+def format_data(user, nodes):
     """ Format subscriptions data for project settings page
     :param user: modular odm User object
-    :param node_ids: list of parent project ids
+    :param nodes: list of parent project node objects
     :return: treebeard-formatted data
     """
-    AbstractNode = apps.get_model('osf.AbstractNode')
     items = []
 
-    for node_id in node_ids:
-        node = AbstractNode.load(node_id)
-        assert node, '{} is not a valid Node.'.format(node_id)
+    for node in nodes:
+        assert node, '{} is not a valid Node.'.format(node._id)
 
         can_read = node.has_permission(user, 'read')
         can_read_children = node.has_permission_on_children(user, 'read')
@@ -257,7 +255,8 @@ def format_data(user, node_ids):
         if not can_read and not can_read_children:
             continue
 
-        children = []
+        children = node.get_nodes(**{'is_deleted': False, 'is_node_link': False})
+        children_tree = []
         # List project/node if user has at least 'read' permissions (contributor or admin viewer) or if
         # user is contributor on a component of the project/node
 
@@ -267,29 +266,21 @@ def format_data(user, node_ids):
                              if getattr(subscription, 'event_name') in node_sub_available]
             for subscription in subscriptions:
                 index = node_sub_available.index(getattr(subscription, 'event_name'))
-                children.append(serialize_event(user, subscription=subscription,
+                children_tree.append(serialize_event(user, subscription=subscription,
                                                 node=node, event_description=node_sub_available.pop(index)))
             for node_sub in node_sub_available:
-                    children.append(serialize_event(user, node=node, event_description=node_sub))
-            children.sort(key=lambda s: s['event']['title'])
+                    children_tree.append(serialize_event(user, node=node, event_description=node_sub))
+            children_tree.sort(key=lambda s: s['event']['title'])
 
-        children.extend(format_data(
-            user,
-            [
-                n._id
-                for n in node.nodes
-                if n.primary and
-                not n.is_deleted
-            ]
-        ))
+        children_tree.extend(format_data(user, children))
 
         item = {
             'node': {
-                'id': node_id,
+                'id': node._id,
                 'url': node.url if can_read else '',
                 'title': node.title if can_read else 'Private Project',
             },
-            'children': children,
+            'children': children_tree,
             'kind': 'folder' if not node.parent_node or not node.parent_node.has_permission(user, 'read') else 'node',
             'nodeType': node.project_or_component,
             'category': node.category,

@@ -4,7 +4,7 @@ import mock
 from django.test import RequestFactory
 from django.http import Http404
 from tests.base import AdminTestCase
-from tests.factories import AuthUserFactory
+from osf_tests.factories import AuthUserFactory
 
 from admin_tests.utilities import setup_form_view
 
@@ -18,11 +18,6 @@ class TestRegisterUser(AdminTestCase):
         super(TestRegisterUser, self).setUp()
         self.user = AuthUserFactory()
         self.data = {
-            'email': self.user.email,
-            'first_name': 'Zak',
-            'last_name': 'K',
-            'password1': 'password',
-            'password2': 'password',
             'osf_id': 'abc12',
         }
         self.view = RegisterUser()
@@ -35,9 +30,8 @@ class TestRegisterUser(AdminTestCase):
         with nt.assert_raises(Http404):
             view.form_valid(form)
 
-    @mock.patch('admin.common_auth.views.Recover.form_valid')
     @mock.patch('admin.common_auth.views.messages.success')
-    def test_add_user(self, mock_save, mock_message):
+    def test_add_user(self, mock_save):
         count = OSFUser.objects.count()
         self.data.update(osf_id=self.user._id)
         form = UserRegistrationForm(data=self.data)
@@ -45,5 +39,4 @@ class TestRegisterUser(AdminTestCase):
         view = setup_form_view(self.view, self.request, form)
         view.form_valid(form)
         nt.assert_true(mock_save.called)
-        nt.assert_true(mock_message.called)
         nt.assert_equal(OSFUser.objects.count(), count + 1)

@@ -1,32 +1,40 @@
 from __future__ import unicode_literals
 
 import csv
+from furl import furl
 from datetime import datetime, timedelta
-
-from admin.base.utils import OSFAdmin
-from admin.base.views import GuidFormView, GuidView
-from admin.common_auth.logs import (CONFIRM_SPAM, USER_2_FACTOR, USER_EMAILED,
-                                    USER_REMOVED, USER_RESTORED,
-                                    update_admin_log)
-from admin.users.forms import EmailResetForm, WorkshopForm
-from admin.users.serializers import serialize_user
-from admin.users.templatetags.user_extras import reverse_user
+from django.views.generic import FormView, DeleteView, ListView
+from django.contrib.auth.mixins import PermissionRequiredMixin
+from django.core.exceptions import PermissionDenied
 from django.core.mail import send_mail
 from django.http import Http404, HttpResponse
 from django.shortcuts import redirect
-from django.views.generic import DeleteView, FormView, ListView
+
+from osf.models.user import OSFUser
+from osf.models.node import Node, NodeLog
+from osf.models.spam import SpamStatus
 from framework.auth import get_user
 from framework.auth.utils import impute_names
-from furl import furl
-from modularodm import Q
+from framework.auth.core import generate_verification_key
+
 from website.mailchimp_utils import subscribe_on_confirm
-from website.project.model import Node, NodeLog, User
-from website.project.spam.model import SpamStatus
-from website.security import random_string
+
+from admin.base.views import GuidFormView, GuidView
+from admin.common_auth.logs import (
+    update_admin_log,
+    USER_2_FACTOR,
+    USER_EMAILED,
+    USER_REMOVED,
+    USER_RESTORED,
+    CONFIRM_SPAM)
+
+from admin.users.serializers import serialize_user
+from admin.users.forms import EmailResetForm, WorkshopForm
+from admin.users.templatetags.user_extras import reverse_user
 from website.settings import DOMAIN, SUPPORT_EMAIL
 
 
-class UserDeleteView(OSFAdmin, DeleteView):
+class UserDeleteView(PermissionRequiredMixin, DeleteView):
     """ Allow authorised admin user to remove/restore user
 
     Interface with OSF database. No admin models.
@@ -34,6 +42,8 @@ class UserDeleteView(OSFAdmin, DeleteView):
     template_name = 'users/remove_user.html'
     context_object_name = 'user'
     object = None
+    permission_required = 'osf.change_user'
+    raise_exception = True
 
     def delete(self, request, *args, **kwargs):
         try:
@@ -81,11 +91,11 @@ class UserDeleteView(OSFAdmin, DeleteView):
 
     def get_context_data(self, **kwargs):
         context = {}
-        context.setdefault('guid', kwargs.get('object').pk)
+        context.setdefault('guid', kwargs.get('object')._id)
         return super(UserDeleteView, self).get_context_data(**context)
 
     def get_object(self, queryset=None):
-        return User.load(self.kwargs.get('guid'))
+        return OSFUser.load(self.kwargs.get('guid'))
 
 
 class SpamUserDeleteView(UserDeleteView):
@@ -120,6 +130,7 @@ class SpamUserDeleteView(UserDeleteView):
         kwargs.update({'is_spam': True})
         return super(SpamUserDeleteView, self).delete(request, *args, **kwargs)
 
+
 class HamUserRestoreView(UserDeleteView):
     """
     Allow authorized admin user to undelete a ham user
@@ -152,19 +163,18 @@ class HamUserRestoreView(UserDeleteView):
         return super(HamUserRestoreView, self).delete(request, *args, **kwargs)
 
 
-class UserSpamList(OSFAdmin, ListView):
+class UserSpamList(PermissionRequiredMixin, ListView):
     SPAM_TAG = 'spam_flagged'
 
     paginate_by = 25
     paginate_orphans = 1
     ordering = ('date_disabled')
     context_object_name = '-user'
+    permission_required = ('common_auth.view_spam', 'osf.view_user')
+    raise_exception = True
 
     def get_queryset(self):
-        query = (
-            Q('system_tags', 'eq', self.SPAM_TAG)
-        )
-        return User.find(query).sort(self.ordering)
+        return OSFUser.objects.filter(tags__name=self.SPAM_TAG).order_by(self.ordering)
 
     def get_context_data(self, **kwargs):
         query_set = kwargs.pop('object_list', self.object_list)
@@ -182,12 +192,14 @@ class UserFlaggedSpamList(UserSpamList, DeleteView):
     template_name = 'users/flagged_spam_list.html'
 
     def delete(self, request, *args, **kwargs):
+        if not request.user.get_perms('admin.mark_spam'):
+            raise PermissionDenied("You don't have permission to update this user's spam status.")
         user_ids = [
             uid for uid in request.POST.keys()
             if uid != 'csrfmiddlewaretoken'
         ]
         for uid in user_ids:
-            user = User.load(uid)
+            user = OSFUser.load(uid)
             if 'spam_flagged' in user.system_tags:
                 user.system_tags.remove('spam_flagged')
             user.system_tags.append('spam_confirmed')
@@ -237,18 +249,22 @@ class User2FactorDeleteView(UserDeleteView):
         return redirect(reverse_user(self.kwargs.get('guid')))
 
 
-class UserFormView(OSFAdmin, GuidFormView):
+class UserFormView(PermissionRequiredMixin, GuidFormView):
     template_name = 'users/search.html'
     object_type = 'user'
+    permission_required = 'osf.view_user'
+    raise_exception = True
 
     @property
     def success_url(self):
         return reverse_user(self.guid)
 
 
-class UserView(OSFAdmin, GuidView):
+class UserView(PermissionRequiredMixin, GuidView):
     template_name = 'users/user.html'
     context_object_name = 'user'
+    permission_required = 'osf.view_user'
+    raise_exception = True
 
     def get_context_data(self, **kwargs):
         kwargs = super(UserView, self).get_context_data(**kwargs)
@@ -256,13 +272,15 @@ class UserView(OSFAdmin, GuidView):
         return kwargs
 
     def get_object(self, queryset=None):
-        return serialize_user(User.load(self.kwargs.get('guid')))
+        return serialize_user(OSFUser.load(self.kwargs.get('guid')))
 
 
-class UserWorkshopFormView(OSFAdmin, FormView):
+class UserWorkshopFormView(PermissionRequiredMixin, FormView):
     form_class = WorkshopForm
     object_type = 'user'
     template_name = 'users/workshop.html'
+    permission_required = 'osf.view_user'
+    raise_exception = True
 
     def form_valid(self, form):
         csv_file = form.cleaned_data['document']
@@ -278,30 +296,28 @@ class UserWorkshopFormView(OSFAdmin, FormView):
 
     @staticmethod
     def find_user_by_email(email):
-        user_list = User.find_by_email(email=email)
+        user_list = OSFUser.objects.filter(emails__contains=[email])
         return user_list[0] if user_list else None
 
     @staticmethod
     def find_user_by_full_name(full_name):
-        user_list = User.find(Q('fullname', 'eq', full_name))
+        user_list = OSFUser.objects.filter(fullname=full_name)
         return user_list[0] if user_list.count() == 1 else None
 
     @staticmethod
     def find_user_by_family_name(family_name):
-        user_list = User.find(Q('family_name', 'eq', family_name))
+        user_list = OSFUser.objects.filter(family_name=family_name)
         return user_list[0] if user_list.count() == 1 else None
 
     @staticmethod
     def get_user_logs_since_workshop(user, workshop_date):
         query_date = workshop_date + timedelta(days=1)
-        query = Q('user', 'eq', user._id) & Q('date', 'gt', query_date)
-        return NodeLog.find(query=query)
+        return NodeLog.objects.filter(user=user, date__gt=query_date)
 
     @staticmethod
     def get_user_nodes_since_workshop(user, workshop_date):
         query_date = workshop_date + timedelta(days=1)
-        query = Q('creator', 'eq', user._id) & Q('date_created', 'gt', query_date)
-        return list(Node.find(query=query))
+        return Node.objects.filter(creator=user, date_created__gt=query_date)
 
     def parse(self, csv_file):
         """ Parse and add to csv file.
@@ -346,11 +362,7 @@ class UserWorkshopFormView(OSFAdmin, FormView):
             workshop_date = datetime.strptime(row[1], '%m/%d/%y')
             nodes = self.get_user_nodes_since_workshop(user, workshop_date)
             user_logs = self.get_user_logs_since_workshop(user, workshop_date)
-
-            try:
-                last_log_date = user_logs.latest().date.strftime('%m/%d/%y')
-            except IndexError:
-                last_log_date = ''
+            last_log_date = user_logs.latest().date.strftime('%m/%d/%y') if user_logs else ''
 
             row.extend([
                 user.pk, len(user_logs), len(nodes), last_log_date
@@ -363,13 +375,15 @@ class UserWorkshopFormView(OSFAdmin, FormView):
         super(UserWorkshopFormView, self).form_invalid(form)
 
 
-class ResetPasswordView(OSFAdmin, FormView):
+class ResetPasswordView(PermissionRequiredMixin, FormView):
     form_class = EmailResetForm
     template_name = 'users/reset.html'
     context_object_name = 'user'
+    permission_required = 'osf.change_user'
+    raise_exception = True
 
     def get_context_data(self, **kwargs):
-        user = User.load(self.kwargs.get('guid'))
+        user = OSFUser.load(self.kwargs.get('guid'))
         try:
             self.initial.setdefault('emails', [(r, r) for r in user.emails])
         except AttributeError:
@@ -378,13 +392,13 @@ class ResetPasswordView(OSFAdmin, FormView):
                     self.context_object_name.title(),
                     self.kwargs.get('guid')
                 ))
-        kwargs.setdefault('guid', user.pk)
+        kwargs.setdefault('guid', user._id)
         return super(ResetPasswordView, self).get_context_data(**kwargs)
 
     def form_valid(self, form):
         email = form.cleaned_data.get('emails')
         user = get_user(email)
-        if user is None or user.pk != self.kwargs.get('guid'):
+        if user is None or user._id != self.kwargs.get('guid'):
             return HttpResponse(
                 '{} with id "{}" and email "{}" not found.'.format(
                     self.context_object_name.title(),
@@ -394,9 +408,11 @@ class ResetPasswordView(OSFAdmin, FormView):
                 status=409
             )
         reset_abs_url = furl(DOMAIN)
-        user.verification_key = random_string(20)
+
+        user.verification_key_v2 = generate_verification_key(verification_type='password')
         user.save()
-        reset_abs_url.path.add(('resetpassword/{}'.format(user.verification_key)))
+
+        reset_abs_url.path.add(('resetpassword/{}/{}'.format(user._id, user.verification_key_v2['token'])))
 
         send_mail(
             subject='Reset OSF Password',

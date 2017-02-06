@@ -7,7 +7,6 @@
                     "uri": "${each['api_url']}get_summary/",
                     "view_kwargs": {
                         "primary": ${int(each['primary'])},
-                        "link_id": "${each['id']}",
                         "uid": "${user_id}",
                         "show_path": ${"true" if show_path else "false"}
                     },
@@ -27,7 +26,7 @@
                       var sortListElm = this;
                       var idList = $(sortListElm).sortable(
                           'toArray',
-                          {attribute: 'node_reference'}
+                          {attribute: 'node_id'}
                       );
                       NodeActions.reorderChildren(idList, sortListElm);
                   }

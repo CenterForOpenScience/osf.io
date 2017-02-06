@@ -388,36 +388,29 @@ def view_project(auth, node, **kwargs):
 def project_reorder_components(node, **kwargs):
     """Reorders the components in a project's component list.
 
-    :param-json list new_list: List of strings that include node IDs and
-        node type delimited by ':'.
-
+    :param-json list new_list: List of strings that include node GUIDs.
     """
-    NodeRelation = apps.get_model('osf.NodeRelation')
-    # TODO(sloria): Change new_list parameter to be an array of objects
-    # {
-    #   'newList': {
-    #       {'key': 'abc123', 'type': 'node'}
-    #   }
-    # }
-    new_node_guids = [
-        each.split(':')
-        for each in request.get_json().get('new_list', [])
-    ]
-    # TODO: Optimize me. This is doing n queries. Ew.
+    ordered_guids = request.get_json().get('new_list', [])
+    node_relations = node.node_relations.select_related('child').filter(child__is_deleted=False)
+    deleted_node_relation_ids = list(
+        node.node_relations.select_related('child')
+        .filter(child__is_deleted=True)
+        .values_list('pk', flat=True)
+    )
+
+    if len(ordered_guids) > len(node_relations):
+        raise HTTPError(http.BAD_REQUEST, data=dict(message_long='Too many node IDs'))
+
+    # Ordered NodeRelation pks, sorted according the order of guids passed in the request payload
     new_node_relation_ids = [
-        NodeRelation.load(id_).id if type_ == 'pointer'
-        else node.node_relations.get(child__guids___id=id_).id
-        for id_, type_ in new_node_guids
+        each.id for each in sorted(node_relations,
+                                   key=lambda nr: ordered_guids.index(nr.child._id))
     ]
 
-    node_relations = node.node_relations.select_related('child').all()
-    valid_node_relation_ids = [each.id for each in node_relations if not each.child.is_deleted]
-    deleted_node_relation_ids = [each.id for each in node_relations if each.child.is_deleted]
-
-    if len(valid_node_relation_ids) == len(new_node_guids) and set(valid_node_relation_ids) == set(new_node_relation_ids):
+    if len(node_relations) == len(ordered_guids):
         node.set_noderelation_order(new_node_relation_ids + deleted_node_relation_ids)
         node.save()
-        return {}
+        return {'nodes': ordered_guids}
 
     logger.error('Got invalid node list in reorder components')
     raise HTTPError(http.BAD_REQUEST)
@@ -857,10 +850,10 @@ def get_recent_logs(node, **kwargs):
     return {'logs': logs}
 
 
-def _get_summary(node, auth, primary=True, link_id=None, show_path=False):
+def _get_summary(node, auth, primary=True, show_path=False):
     # TODO(sloria): Refactor this or remove (lots of duplication with _view_project)
     summary = {
-        'id': link_id if link_id else node._id,
+        'id': node._id,
         'primary': primary,
         'is_registration': node.is_registration,
         'is_fork': node.is_fork,
@@ -916,11 +909,10 @@ def _get_summary(node, auth, primary=True, link_id=None, show_path=False):
 @must_be_valid_project(retractions_valid=True)
 def get_summary(auth, node, **kwargs):
     primary = kwargs.get('primary')
-    link_id = kwargs.get('link_id')
     show_path = kwargs.get('show_path', False)
 
     return _get_summary(
-        node, auth, primary=primary, link_id=link_id, show_path=show_path
+        node, auth, primary=primary, show_path=show_path
     )
 
 @must_be_contributor_or_public
@@ -943,14 +935,16 @@ def get_readable_descendants(auth, node, **kwargs):
                 descendants.append(descendant)
     return _render_nodes(descendants, auth=auth, parent_node=node)
 
-def node_child_tree(user, node_ids):
+def node_child_tree(user, nodes):
     """ Format data to test for node privacy settings for use in treebeard.
+    :param user: modular odm User object
+    :param nodes: list of parent project node objects
+    :return: treebeard-formatted data
     """
     items = []
 
-    for node_id in node_ids:
-        node = Node.load(node_id)
-        assert node, '{} is not a valid Node.'.format(node_id)
+    for node in nodes:
+        assert node, '{} is not a valid Node.'.format(node._id)
 
         can_read = node.has_permission(user, READ)
         can_read_children = node.has_permission_on_children(user, 'read')
@@ -970,18 +964,15 @@ def node_child_tree(user, node_ids):
             'name': affiliated_institution.name
         } for affiliated_institution in node.affiliated_institutions.all()]
 
-        children = []
+        children = node.get_nodes(**{'is_deleted': False, 'is_node_link': False})
+        children_tree = []
         # List project/node if user has at least 'read' permissions (contributor or admin viewer) or if
         # user is contributor on a component of the project/node
-        children.extend(node_child_tree(
-            user,
-            list(node.node_relations.select_related('child')
-                 .exclude(child__is_deleted=True)
-                 .values_list('child__guids___id', flat=True))
-        ))
+        children_tree.extend(node_child_tree(user, children))
+
         item = {
             'node': {
-                'id': node_id,
+                'id': node._id,
                 'url': node.url if can_read else '',
                 'title': node.title if can_read else 'Private Project',
                 'is_public': node.is_public,
@@ -991,7 +982,7 @@ def node_child_tree(user, node_ids):
                 'affiliated_institutions': affiliated_institutions
             },
             'user_id': user._id,
-            'children': children,
+            'children': children_tree,
             'kind': 'folder' if not node.parent_node or not node.parent_node.has_permission(user, 'read') else 'node',
             'nodeType': node.project_or_component,
             'category': node.category,
@@ -1010,7 +1001,7 @@ def node_child_tree(user, node_ids):
 @must_be_valid_project
 def get_node_tree(auth, **kwargs):
     node = kwargs.get('node') or kwargs['project']
-    tree = node_child_tree(auth.user, [node._id])
+    tree = node_child_tree(auth.user, [node])
     return tree
 
 @must_be_contributor_or_public

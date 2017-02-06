@@ -1,11 +1,8 @@
 from __future__ import absolute_import
 
 from django import forms
-from django.contrib.auth.forms import UserCreationForm
-from django.contrib.admin.widgets import FilteredSelectMultiple
 from django.contrib.auth.models import Group
 
-from osf.models.user import OSFUser
 from admin.common_auth.models import AdminProfile
 
 
@@ -18,22 +15,16 @@ class LoginForm(forms.Form):
     )
 
 
-class UserRegistrationForm(UserCreationForm):
+class UserRegistrationForm(forms.Form):
+    """ A form that finds an existing OSF User, and grants permissions to that
+    user so that they can use the admin app"""
+
+    osf_id = forms.CharField(required=True, max_length=5, min_length=5)
+
     group_perms = forms.ModelMultipleChoiceField(
-        queryset=Group.objects.filter(name='prereg_group'),
-        widget=FilteredSelectMultiple('verbose name', is_stacked=False),
+        queryset=Group.objects.all(),
         required=False
     )
-
-    class Meta:
-            model = OSFUser
-            fields = ['given_name', 'username']
-
-    def __init__(self, *args, **kwargs):
-        super(UserRegistrationForm, self).__init__(*args, **kwargs)
-        self.fields['first_name'].required = True
-        self.fields['last_name'].required = True
-        self.fields['osf_id'].required = True
 
 
 class DeskUserForm(forms.ModelForm):

@@ -340,6 +340,11 @@ class Registration(AbstractNode):
         for child in self.nodes_primary:
             child.delete_registration_tree(save=save)
 
+    class Meta:
+        # custom permissions for use in the OSF Admin App
+        permissions = (
+            ('view_registration', 'Can view registration details'),
+        )
 
 class DraftRegistrationLog(ObjectIDMixin, BaseModel):
     """ Simple log to show status changes for DraftRegistrations
@@ -489,7 +494,7 @@ class DraftRegistration(ObjectIDMixin, BaseModel):
     @property
     def status_logs(self):
         """ List of logs associated with this node"""
-        return self.logs.all().order('date')
+        return self.logs.all().order_by('date')
 
     @classmethod
     def create_from_node(cls, node, user, schema, data=None):
@@ -556,6 +561,7 @@ class DraftRegistration(ObjectIDMixin, BaseModel):
 
     def approve(self, user):
         self.approval.approve(user)
+        self.refresh_from_db()
         self.add_status_log(user, DraftRegistrationLog.APPROVED)
         self.approval.save()
 

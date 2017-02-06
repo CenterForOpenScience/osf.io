@@ -65,16 +65,13 @@
                   </span>
                 </a>
                 <ul class="dropdown-menu user-menu">
-                  <li>
-                    <a href="{% url 'auth:password_change' %}">
-                      Change Password
-                    </a>
-                  </li>
+                    {%  if perms.osf.change_user %}
                   <li>
                     <a href="{% url 'auth:register' %}">
                       Admin-User Registration
                     </a>
                   </li>
+                    {% endif %}
                   <li>
                     <a href="{% url 'auth:desk' %}">
                       Desk information
@@ -100,6 +97,7 @@
           <!-- Sidebar Menu -->
           <ul class="sidebar-menu">
             <li class="header">Menu</li>
+            {% if perms.osf.view_node %}
             <li><a href="{% url 'nodes:search' %}"><i class='fa fa-link'></i><span> OSF Nodes</span> </a></li>
             <li>
               <ul class="sidebar-menu" style="position:relative; left: 20px;">
@@ -108,6 +106,8 @@
                 <li><a href="{% url 'nodes:known-ham' %}"><i class="fa fa-star"></i><span> Known Ham</span> </a></li>
               </ul>
             </li>
+            {% endif %}
+              {% if perms.osf.view_user %}
             <li><a href="{% url 'users:search' %}"><i class='fa fa-link'></i> <span>OSF Users</span></a></li>
             <li>
               <ul class="sidebar-menu" style="position:relative; left: 20px;">
@@ -116,13 +116,18 @@
                 <li><a href="{% url 'users:known-ham' %}"><i class="fa fa-star"></i><span> Known Ham</span> </a></li>
               </ul>
             </li>
+              {% endif %}
+          {% if perms.common_auth.view_spam %}
             <li><a href="{% url 'spam:spam' %}"><i class='fa fa-link'></i> <span>OSF Spam</span></a></li>
             <li><a href="{% url 'nodes:registrations' %}"><i class='fa fa-link'></i> <span>OSF Registrations</span></a></li>
             <li><a href="{% url 'meetings:list' %}"><i class='fa fa-link'></i> <span>OSF Meetings</span></a></li>
-            {% if 'prereg_group' in request.user.group_names %}
+          {% endif %}
+          {% if perms.common_auth.view_prereg %}
             <li><a href="{% url 'pre_reg:prereg' %}"><i class='fa fa-link'></i> <span>OSF Prereg</span></a></li>
             {% endif %}
+          {% if perms.common_auth.view_metrics %}
             <li><a href="{% url 'metrics:metrics' %}"><i class='fa fa-link'></i> <span>OSF Metrics</span></a></li>
+          {% endif %}
           </ul><!-- /.sidebar-menu -->
         </section>
         <!-- /.sidebar -->

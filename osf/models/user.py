@@ -5,6 +5,7 @@ import urllib
 import urlparse
 import uuid
 from copy import deepcopy
+from flask import Request as FlaskRequest
 from framework import analytics
 
 # OSF imports
@@ -27,6 +28,7 @@ from framework.auth.exceptions import (ChangePasswordError, ExpiredTokenError,
 from framework.exceptions import PermissionsError
 from framework.sentry import log_exception
 from framework.sessions.utils import remove_sessions_for_user
+from framework.mongo import get_cache_key
 from modularodm.exceptions import NoResultsFound
 from osf.exceptions import reraise_django_validation_errors
 from osf.models.base import BaseModel, GuidMixin
@@ -251,7 +253,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
 
     # Attached external accounts (OAuth)
     # external_accounts = fields.ForeignField("externalaccount", list=True)
-    external_accounts = models.ManyToManyField('ExternalAccount')
+    external_accounts = models.ManyToManyField('ExternalAccount', blank=True)
 
     # CSL names
     given_name = models.CharField(max_length=255, blank=True)
@@ -338,7 +340,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
     # whether the user has requested to deactivate their account
     requested_deactivation = models.BooleanField(default=False)
 
-    affiliated_institutions = models.ManyToManyField('Institution')
+    affiliated_institutions = models.ManyToManyField('Institution', blank=True)
 
     notifications_configured = DateTimeAwareJSONField(default=dict, blank=True)
 
@@ -676,6 +678,40 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
         user.merged_by = self
 
         user.save()
+
+    def disable_account(self):
+        """
+        Disables user account, making is_disabled true, while also unsubscribing user
+        from mailchimp emails, remove any existing sessions.
+
+        Ported from framework/auth/core.py
+        """
+        from website import mailchimp_utils
+        from framework.auth import logout
+
+        try:
+            mailchimp_utils.unsubscribe_mailchimp(
+                list_name=website_settings.MAILCHIMP_GENERAL_LIST,
+                user_id=self._id,
+                username=self.username
+            )
+        except mailchimp_utils.mailchimp.ListNotSubscribedError:
+            pass
+        except mailchimp_utils.mailchimp.InvalidApiKeyError:
+            if not website_settings.ENABLE_EMAIL_SUBSCRIPTIONS:
+                pass
+            else:
+                raise
+        except mailchimp_utils.mailchimp.EmailNotExistsError:
+            pass
+        self.is_disabled = True
+
+        # we must call both methods to ensure the current session is cleared and all existing
+        # sessions are revoked.
+        req = get_cache_key()
+        if isinstance(req, FlaskRequest):
+            logout()
+        remove_sessions_for_user(self)
 
     def update_is_active(self):
         """Update ``is_active`` to be consistent with the fields that
@@ -1330,3 +1366,9 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
         """
         default_timestamp = dt.datetime(1970, 1, 1, 12, 0, 0, tzinfo=pytz.utc)
         return self.comments_viewed_timestamp.get(target_id, default_timestamp)
+
+    class Meta:
+        # custom permissions for use in the OSF Admin App
+        permissions = (
+            ('view_user', 'Can view user details'),
+        )
