@@ -8,6 +8,7 @@ import sys
 
 from datetime import datetime
 
+import multiprocessing
 import pytz
 from django.core.management import BaseCommand
 from gevent.threadpool import ThreadPool
@@ -52,7 +53,7 @@ class Command(BaseCommand):
 
         django_models = get_ordered_models()
 
-        tp = ThreadPool(100)
+        tp = ThreadPool(multiprocessing.cpu_count() * 2)
 
         for django_model in django_models:
 

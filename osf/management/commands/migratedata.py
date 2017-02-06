@@ -10,6 +10,7 @@ from cProfile import Profile
 import pstats
 
 import gevent
+import multiprocessing
 from gevent.threadpool import ThreadPool
 
 from framework import encryption
@@ -783,7 +784,7 @@ def merge_duplicate_users():
 
 class Command(BaseCommand):
     help = 'Migrates data from tokumx to postgres'
-    threads = 5
+    threads = multiprocessing.cpu_count() * 2
 
     def add_arguments(self, parser):
         parser.add_argument('--nodelogs', action='store_true', help='Run nodelog migrations')
