@@ -31,8 +31,8 @@ class DeskClient(object):
         self.oauth = OAuth1Session(
             settings.DESK_KEY,
             client_secret=settings.DESK_KEY_SECRET,
-            resource_owner_key=user.desk_token,
-            resource_owner_secret=user.desk_token_secret
+            resource_owner_key=user.admin_profile.desk_token,
+            resource_owner_secret=user.admin_profile.desk_token_secret
         )
 
     def build_url(self, service):

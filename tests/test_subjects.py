@@ -3,7 +3,7 @@ from nose.tools import *  # flake8: noqa (PEP8 asserts)
 from modularodm.exceptions import NoResultsFound, ValidationValueError
 
 from tests.base import OsfTestCase
-from tests.factories import SubjectFactory
+from osf_tests.factories import SubjectFactory
 
 from website.project.taxonomies import validate_subject_hierarchy
 

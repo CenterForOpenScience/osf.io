@@ -128,8 +128,9 @@ def link_archive_provider(node, user):
     :param user: target user (currently unused, but left in for future-proofing
     the code for use with archive providers other than OSF Storage)
     """
-    addon = node.get_or_add_addon(settings.ARCHIVE_PROVIDER, auth=Auth(user))
-    addon.on_add()
+    addon = node.get_or_add_addon(settings.ARCHIVE_PROVIDER, auth=Auth(user), log=False)
+    if hasattr(addon, 'on_add'):
+        addon.on_add()
     node.save()
 
 def aggregate_file_tree_metadata(addon_short_name, fileobj_metadata, user):
@@ -158,7 +159,7 @@ def aggregate_file_tree_metadata(addon_short_name, fileobj_metadata, user):
 
 def before_archive(node, user):
     link_archive_provider(node, user)
-    job = ArchiveJob(
+    job = ArchiveJob.objects.create(
         src_node=node.registered_from,
         dst_node=node,
         initiator=user
@@ -203,7 +204,7 @@ def get_file_map(node, file_map):
             yield (key, value, node_id)
 
 def find_registration_file(value, node):
-    from website.models import Node
+    from osf.models import AbstractNode as Node
 
     orig_sha256 = value['sha256']
     orig_name = value['selectedFileName']

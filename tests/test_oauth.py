@@ -7,6 +7,7 @@ import urlparse
 
 import httpretty
 from nose.tools import *  # noqa
+import pytz
 from oauthlib.oauth2 import OAuth2Error
 
 from framework.auth import authenticate
@@ -21,7 +22,7 @@ from website.oauth.models import (
 from website.util import api_url_for, web_url_for
 
 from tests.base import OsfTestCase
-from tests.factories import (
+from osf_tests.factories import (
     AuthUserFactory,
     ExternalAccountFactory,
     MockOAuth2Provider,
@@ -98,12 +99,6 @@ class TestExternalAccount(OsfTestCase):
         self.user = AuthUserFactory()
         self.provider = MockOAuth2Provider()
 
-    def tearDown(self):
-        ExternalAccount._clear_caches()
-        ExternalAccount.remove()
-        self.user.remove()
-        super(TestExternalAccount, self).tearDown()
-
     def test_disconnect(self):
         # Disconnect an external account from a user
         external_account = ExternalAccountFactory(
@@ -111,14 +106,14 @@ class TestExternalAccount(OsfTestCase):
             provider_id='mock_provider_id',
             provider_name='Mock Provider',
         )
-        self.user.external_accounts.append(external_account)
+        self.user.external_accounts.add(external_account)
         self.user.save()
 
         # If the external account isn't attached, this test has no meaning
         assert_equal(ExternalAccount.find().count(), 1)
         assert_in(
             external_account,
-            self.user.external_accounts,
+            self.user.external_accounts.all(),
         )
 
         response = self.app.delete(
@@ -139,7 +134,7 @@ class TestExternalAccount(OsfTestCase):
         # External account has been disassociated with the user
         assert_not_in(
             external_account,
-            self.user.external_accounts,
+            self.user.external_accounts.all(),
         )
 
         # External account is still in the database
@@ -152,11 +147,11 @@ class TestExternalAccount(OsfTestCase):
             provider_id='mock_provider_id',
             provider_name='Mock Provider',
         )
-        self.user.external_accounts.append(external_account)
+        self.user.external_accounts.add(external_account)
         self.user.save()
 
         other_user = UserFactory()
-        other_user.external_accounts.append(external_account)
+        other_user.external_accounts.add(external_account)
         other_user.save()
 
         response = self.app.delete(
@@ -176,7 +171,7 @@ class TestExternalAccount(OsfTestCase):
         # External account has been disassociated with the user
         assert_not_in(
             external_account,
-            self.user.external_accounts,
+            self.user.external_accounts.all(),
         )
 
         # External account is still in the database
@@ -187,7 +182,7 @@ class TestExternalAccount(OsfTestCase):
         # External account is still associated with the other user
         assert_in(
             external_account,
-            other_user.external_accounts,
+            other_user.external_accounts.all(),
         )
 
 
@@ -198,11 +193,6 @@ class TestExternalProviderOAuth1(OsfTestCase):
         super(TestExternalProviderOAuth1, self).setUp()
         self.user = UserFactory()
         self.provider = MockOAuth1Provider()
-
-    def tearDown(self):
-        ExternalAccount.remove()
-        self.user.remove()
-        super(TestExternalProviderOAuth1, self).tearDown()
 
     @httpretty.activate
     def test_start_flow(self):
@@ -271,7 +261,7 @@ class TestExternalProviderOAuth1(OsfTestCase):
             # do the key exchange
             self.provider.auth_callback(user=user)
 
-        account = ExternalAccount.find_one()
+        account = ExternalAccount.objects.first()
         assert_equal(account.oauth_key, 'perm_token')
         assert_equal(account.oauth_secret, 'perm_secret')
         assert_equal(account.provider_id, 'mock_provider_id')
@@ -305,12 +295,11 @@ class TestExternalProviderOAuth1(OsfTestCase):
             provider="mock1a",
             provider_name='Mock 1A',
             oauth_key="temp_key",
-            oauth_secret="temp_secret",
-            temporary=True
+            oauth_secret="temp_secret"
         )
         account.save()
         # associate this ExternalAccount instance with the user
-        user.external_accounts.append(account)
+        user.external_accounts.add(account)
         user.save()
 
         malicious_user = UserFactory()
@@ -335,12 +324,6 @@ class TestExternalProviderOAuth2(OsfTestCase):
         super(TestExternalProviderOAuth2, self).setUp()
         self.user = UserFactory()
         self.provider = MockOAuth2Provider()
-
-    def tearDown(self):
-        ExternalAccount._clear_caches()
-        ExternalAccount.remove()
-        self.user.remove()
-        super(TestExternalProviderOAuth2, self).tearDown()
 
     def test_oauth_version_default(self):
         # OAuth 2.0 is the default version
@@ -417,7 +400,7 @@ class TestExternalProviderOAuth2(OsfTestCase):
 
             self.provider.auth_callback(user=user)
 
-        account = ExternalAccount.find_one()
+        account = ExternalAccount.objects.first()
         assert_equal(account.oauth_key, 'mock_access_token')
         assert_equal(account.provider_id, 'mock_provider_id')
 
@@ -496,7 +479,7 @@ class TestExternalProviderOAuth2(OsfTestCase):
             provider_id='mock_provider_id',
             provider_name='Mock Provider',
         )
-        user_a.external_accounts.append(external_account)
+        user_a.external_accounts.add(external_account)
         user_a.save()
 
         user_b = UserFactory()
@@ -528,8 +511,8 @@ class TestExternalProviderOAuth2(OsfTestCase):
         external_account.reload()
 
         assert_equal(
-            user_a.external_accounts,
-            user_b.external_accounts,
+            list(user_a.external_accounts.values_list('pk', flat=True)),
+            list(user_b.external_accounts.values_list('pk', flat=True)),
         )
 
         assert_equal(
@@ -545,7 +528,7 @@ class TestExternalProviderOAuth2(OsfTestCase):
             provider_name='Mock Provider',
             oauth_key='old_key',
             oauth_secret='old_secret',
-            expires_at=datetime.utcfromtimestamp(time.time() - 200)
+            expires_at=datetime.utcfromtimestamp(time.time() - 200).replace(tzinfo=pytz.utc)
         )
 
         # mock a successful call to the provider to refresh tokens
@@ -558,7 +541,7 @@ class TestExternalProviderOAuth2(OsfTestCase):
                 'refresh_token': 'refreshed_refresh_token'
             })
         )
-        
+
         old_expiry = external_account.expires_at
         self.provider.account = external_account
         self.provider.refresh_oauth_key(force=True)
@@ -577,7 +560,7 @@ class TestExternalProviderOAuth2(OsfTestCase):
             provider_name='Mock Provider',
             oauth_key='old_key',
             oauth_secret='old_secret',
-            expires_at=datetime.utcfromtimestamp(time.time() - 200),
+            expires_at=datetime.utcfromtimestamp(time.time() - 200).replace(tzinfo=pytz.utc),
         )
 
         # mock a successful call to the provider to refresh tokens
@@ -590,7 +573,7 @@ class TestExternalProviderOAuth2(OsfTestCase):
                 'refresh_token': 'refreshed_refresh_token'
             })
         )
-        
+
         old_expiry = external_account.expires_at
         self.provider.account = external_account
         self.provider.refresh_oauth_key(force=False)
@@ -611,7 +594,7 @@ class TestExternalProviderOAuth2(OsfTestCase):
             oauth_key='old_key',
             oauth_secret='old_secret',
             refresh_token='old_refresh',
-            expires_at=datetime.utcfromtimestamp(time.time() + 200),
+            expires_at=datetime.utcfromtimestamp(time.time() + 200).replace(tzinfo=pytz.utc),
         )
 
         # mock a successful call to the provider to refresh tokens
@@ -624,11 +607,11 @@ class TestExternalProviderOAuth2(OsfTestCase):
             status=500
         )
 
-        # .reload() has the side effect of rounding the microsends down to 3 significant figures 
-        # (e.g. DT(YMDHMS, 365420) becomes DT(YMDHMS, 365000)), 
+        # .reload() has the side effect of rounding the microsends down to 3 significant figures
+        # (e.g. DT(YMDHMS, 365420) becomes DT(YMDHMS, 365000)),
         # but must occur after possible refresh to reload tokens.
         # Doing so before allows the `old_expiry == EA.expires_at` comparison to work.
-        external_account.reload()  
+        external_account.reload()
         old_expiry = external_account.expires_at
         self.provider.account = external_account
         self.provider.refresh_oauth_key(force=False)
@@ -646,7 +629,7 @@ class TestExternalProviderOAuth2(OsfTestCase):
             provider_name='Mock Provider',
             oauth_key='old_key',
             oauth_secret='old_secret',
-            expires_at=0  # causes `.needs_refresh()` to return False
+            expires_at=datetime.utcfromtimestamp(time.time() + 9999).replace(tzinfo=pytz.utc)
         )
 
         # mock a successful call to the provider to refresh tokens
@@ -657,8 +640,8 @@ class TestExternalProviderOAuth2(OsfTestCase):
                 'err_msg': 'Should not be hit'
             }),
             status=500
-        )  
-        
+        )
+
         self.provider.account = external_account
         ret = self.provider.refresh_oauth_key(force=False)
         assert_false(ret)
@@ -671,7 +654,7 @@ class TestExternalProviderOAuth2(OsfTestCase):
             provider_name='Mock Provider',
             oauth_key='old_key',
             oauth_secret='old_secret',
-            expires_at=datetime.utcfromtimestamp(time.time() - 200)
+            expires_at=datetime.utcfromtimestamp(time.time() - 200).replace(tzinfo=pytz.utc)
         )
         self.provider.client_id = None
         self.provider.client_secret = None
@@ -685,8 +668,8 @@ class TestExternalProviderOAuth2(OsfTestCase):
                 'err_msg': 'Should not be hit'
             }),
             status=500
-        )  
-        
+        )
+
         ret = self.provider.refresh_oauth_key(force=False)
         assert_false(ret)
 
@@ -698,7 +681,7 @@ class TestExternalProviderOAuth2(OsfTestCase):
             provider_name='Mock Provider',
             oauth_key='old_key',
             oauth_secret='old_secret',
-            expires_at=datetime.utcfromtimestamp(time.time() + 200)
+            expires_at=datetime.utcfromtimestamp(time.time() + 200).replace(tzinfo=pytz.utc)
         )
 
 
@@ -710,8 +693,8 @@ class TestExternalProviderOAuth2(OsfTestCase):
                 'err_msg': 'Should not be hit'
             }),
             status=500
-        )  
-        
+        )
+
         ret = self.provider.refresh_oauth_key(force=False)
         assert_false(ret)
 
@@ -723,7 +706,7 @@ class TestExternalProviderOAuth2(OsfTestCase):
             provider_name='Mock Provider',
             oauth_key='old_key',
             oauth_secret='old_secret',
-            expires_at=datetime.utcfromtimestamp(time.time() - 10000)  # Causes has_expired_credentials to be True
+            expires_at=datetime.utcfromtimestamp(time.time() - 10000).replace(tzinfo=pytz.utc)  # Causes has_expired_credentials to be True
         )
         self.provider.account = external_account
 
@@ -735,8 +718,8 @@ class TestExternalProviderOAuth2(OsfTestCase):
                 'err': 'Should not be hit'
             }),
             status=500
-        )  
-        
+        )
+
         ret = self.provider.refresh_oauth_key(force=False)
         assert_false(ret)
 
@@ -748,7 +731,7 @@ class TestExternalProviderOAuth2(OsfTestCase):
             provider_name='Mock Provider',
             oauth_key='old_key',
             oauth_secret='old_secret',
-            expires_at=datetime.utcfromtimestamp(time.time() - 10000)  # Causes has_expired_credentials to be True
+            expires_at=datetime.utcfromtimestamp(time.time() - 10000).replace(tzinfo=pytz.utc)  # Causes has_expired_credentials to be True
         )
         self.provider.account = external_account
 
@@ -760,7 +743,7 @@ class TestExternalProviderOAuth2(OsfTestCase):
                 'error': 'invalid_grant',
             }),
             status=401
-        )  
-        
+        )
+
         with assert_raises(OAuth2Error):
             ret = self.provider.refresh_oauth_key(force=True)

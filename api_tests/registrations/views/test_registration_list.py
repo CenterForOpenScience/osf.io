@@ -2,6 +2,8 @@ import mock
 import datetime
 import dateutil.relativedelta
 from urlparse import urlparse
+
+from django.utils import timezone
 from nose.tools import *  # flake8: noqa
 
 from website.project.model import ensure_schemas
@@ -14,7 +16,7 @@ from api_tests.nodes.views.test_node_draft_registration_list import DraftRegistr
 
 
 from tests.base import ApiTestCase
-from tests.factories import (
+from osf_tests.factories import (
     ProjectFactory,
     RegistrationFactory,
     AuthUserFactory,
@@ -37,10 +39,6 @@ class TestRegistrationList(ApiTestCase):
         self.public_project = ProjectFactory(is_public=True, creator=self.user)
         self.public_registration_project = RegistrationFactory(creator=self.user, project=self.public_project, is_public=True)
         self.user_two = AuthUserFactory()
-
-    def tearDown(self):
-        super(TestRegistrationList, self).tearDown()
-        Node.remove()
 
     def test_return_public_registrations_logged_out(self):
         res = self.app.get(self.url)
@@ -118,10 +116,6 @@ class TestRegistrationFiltering(ApiTestCase):
 
         self.url = "/{}registrations/".format(API_BASE)
 
-    def tearDown(self):
-        super(TestRegistrationFiltering, self).tearDown()
-        Node.remove()
-
     def test_filtering_by_category(self):
         url = '/{}registrations/?filter[category]=hypothesis'.format(API_BASE)
         res = self.app.get(url, auth=self.user_one.auth)
@@ -192,6 +186,98 @@ class TestRegistrationFiltering(ApiTestCase):
         assert_not_in(self.project_three_reg._id, ids)
         assert_not_in(self.private_project_user_one_reg._id, ids)
         assert_not_in(self.private_project_user_two_reg._id, ids)
+
+    def test_filtering_tags_exact(self):
+        self.project_one.add_tag('cats', Auth(self.user_one))
+        self.project_two.add_tag('cats', Auth(self.user_one))
+        self.project_one.add_tag('cat', Auth(self.user_one))
+        self.project_one_reg = RegistrationFactory(creator=self.user_one, project=self.project_one, is_public=True)
+        self.project_two_reg = RegistrationFactory(creator=self.user_one, project=self.project_two, is_public=True)
+        res = self.app.get(
+            '/{}registrations/?filter[tags]=cat'.format(
+                API_BASE
+            ),
+            auth=self.user_one.auth
+        )
+        assert_equal(len(res.json.get('data')), 1)
+
+    def test_filtering_tags_capitalized_query(self):
+        self.project_one.add_tag('cat', Auth(self.user_one))
+        self.project_one_reg = RegistrationFactory(creator=self.user_one, project=self.project_one, is_public=True)
+        res = self.app.get(
+            '/{}registrations/?filter[tags]=CAT'.format(
+                API_BASE
+            ),
+            auth=self.user_one.auth
+        )
+        assert_equal(len(res.json.get('data')), 1)
+
+    def test_filtering_tags_capitalized_tag(self):
+        self.project_one.add_tag('CAT', Auth(self.user_one))
+        self.project_one_reg = RegistrationFactory(creator=self.user_one, project=self.project_one, is_public=True)
+        res = self.app.get(
+            '/{}registrations/?filter[tags]=cat'.format(
+                API_BASE
+            ),
+            auth=self.user_one.auth
+        )
+        assert_equal(len(res.json.get('data')), 1)
+
+    def test_filtering_on_multiple_tags(self):
+        self.project_one.add_tag('cat', Auth(self.user_one))
+        self.project_one.add_tag('sand', Auth(self.user_one))
+        self.project_one_reg = RegistrationFactory(creator=self.user_one, project=self.project_one, is_public=True)
+        res = self.app.get(
+            '/{}registrations/?filter[tags]=cat&filter[tags]=sand'.format(
+                API_BASE
+            ),
+            auth=self.user_one.auth
+        )
+        assert_equal(len(res.json.get('data')), 1)
+
+    def test_filtering_on_multiple_tags_must_match_both(self):
+        self.project_one.add_tag('cat', Auth(self.user_one))
+        self.project_one_reg = RegistrationFactory(creator=self.user_one, project=self.project_one, is_public=True)
+        res = self.app.get(
+            '/{}registrations/?filter[tags]=cat&filter[tags]=sand'.format(
+                API_BASE
+            ),
+            auth=self.user_one.auth
+        )
+        assert_equal(len(res.json.get('data')), 0)
+
+    def test_filtering_tags_returns_distinct(self):
+       # regression test for returning multiple of the same file
+        self.project_one.add_tag('cat', Auth(self.user_one))
+        self.project_one.add_tag('cAt', Auth(self.user_one))
+        self.project_one.add_tag('caT', Auth(self.user_one))
+        self.project_one.add_tag('CAT', Auth(self.user_one))
+        self.project_one_reg = RegistrationFactory(creator=self.user_one, project=self.project_one, is_public=True)
+        res = self.app.get(
+            '/{}registrations/?filter[tags]=cat'.format(
+                API_BASE
+            ),
+            auth=self.user_one.auth
+        )
+        assert_equal(len(res.json.get('data')), 1)
+
+    def test_filtering_contributors(self):
+        res = self.app.get(
+            '/{}registrations/?filter[contributors]={}'.format(
+                API_BASE, self.user_one._id
+            ),
+            auth=self.user_one.auth
+        )
+        assert_equal(len(res.json.get('data')), 3)
+
+    def test_filtering_contributors_bad_id(self):
+        res = self.app.get(
+            '/{}registrations/?filter[contributors]=acatdresseduplikeahuman'.format(
+                API_BASE
+            ),
+            auth=self.user_one.auth
+        )
+        assert_equal(len(res.json.get('data')), 0)
 
     def test_get_all_registrations_with_no_filter_logged_in(self):
         res = self.app.get(self.url, auth=self.user_one.auth)
@@ -655,7 +741,7 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
 
     @mock.patch('framework.celery_tasks.handlers.enqueue_task')
     def test_embargo_must_be_less_than_four_years(self, mock_enqueue):
-        today = datetime.datetime.utcnow()
+        today = timezone.now()
         five_years = (today + dateutil.relativedelta.relativedelta(years=5)).strftime('%Y-%m-%dT%H:%M:%S')
         payload = {
             "data": {
@@ -674,7 +760,7 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
 
     @mock.patch('framework.celery_tasks.handlers.enqueue_task')
     def test_embargo_registration(self, mock_enqueue):
-        today = datetime.datetime.utcnow()
+        today = timezone.now()
         next_week = (today + dateutil.relativedelta.relativedelta(months=1)).strftime('%Y-%m-%dT%H:%M:%S')
         payload = {
             "data": {
@@ -694,7 +780,7 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
         assert_equal(data['pending_embargo_approval'], True)
 
     def test_embargo_end_date_must_be_in_the_future(self):
-        today = datetime.datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%S')
+        today = timezone.now().strftime('%Y-%m-%dT%H:%M:%S')
         payload = {
             "data": {
                 "type": "registrations",
@@ -711,7 +797,7 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
         assert_equal(res.json['errors'][0]['detail'], 'Embargo end date must be at least three days in the future.')
 
     def test_invalid_embargo_end_date_format(self):
-        today = datetime.datetime.utcnow().isoformat()
+        today = timezone.now().isoformat()
         payload = {
             "data": {
                 "type": "registrations",

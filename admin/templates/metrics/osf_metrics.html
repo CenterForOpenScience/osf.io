@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load render_bundle from webpack_loader %}
 {% load static %}
 
 {% block title %}
@@ -11,80 +12,931 @@
         if ('{{ keen_ready }}' == 'True') {
             var keenProjectId = '{{ keen_project_id }}';
             var keenReadKey = '{{ keen_read_key }}';
+            var keenPublicProjectId = '{{ keen_public_project_id }}';
+            var keenPublicReadKey = '{{ keen_public_read_key }}';
         }
     </script>
-
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.6/d3.min.js" charset="utf-8"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/c3/0.4.10/c3.min.js"></script>
 {% endblock top_includes %}
 
 {% block content %}
 
-    <h2>OSF Metrics</h2>
-
-    <div class="dropdown">
-        <button class="btn btn-default btn-large dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown">
-            Jump to...
-            <span class="caret"></span>
-        </button>
-        <ul class="dropdown-menu">
-            <li><a href="#active_users">Yesterday's Active Users</a></li>
-            <li><a href="#active_users_over_time">Active Users Over Time</a></li>
-            <li><a href="#affiliated_projects">Affiliated Public and Private projects by Institution</a></li>
-            <li><a href="#email_domain">Previous 7 days of user registrations by email domain</a></li>
-            <li><a href="#node_logs_by_user">Yesterday's Node logs by user</a></li>
-            <li><a href="#users_by_status">Previous 7 days of users by status</a></li>
-            <li><a href="#linked_addon_by_name">Previous 7 days of linked addon by addon name</a></li>
+    <h1>OSF Metrics</h1>
+    <div>
+        <!-- Nav tabs -->
+        <ul class="nav nav-tabs" role="tablist">
+            <li role="presentation" class="active" id="user-tab"><a href="#user-data" role="tab" data-toggle="tab">User Data</a></li>
+            <li role="presentation" id="institution-tab"><a href="#institution-metrics" role="tab" data-toggle="tab">Institution Metrics</a></li>
+            <li role="presentation" id="active-user-tab"><a href="#active-user-metrics" role="tab" data-toggle="tab">Active User Metrics</a></li>
+            <li role="presentation" id="healthy-user-tab"><a href="#healthy-user-metrics" role="tab" data-toggle="tab">Healthy User Metrics</a></li>
+            <li role="presentation" id="raw-numbers-tab"><a href="#raw-numbers" role="tab" data-toggle="tab">Raw Numbers</a></li>
+            <li role="presentation" id="addons-tab"><a href="#addons" role="tab" data-toggle="tab">Addons</a></li>
         </ul>
-    </div>
 
-    <div class="row">
-        <div class="col-md-12" id="active_users">
-            <h3>Yesterday's Active Users</h3>
-            <div id="active-user-count">Loading...</div>
+        <!-- Tab panes -->
+        <div class="tab-content">
+            <div role="tabpanel" class="tab-pane active" id="user-data">
+                <div class="row">
+                    <div class="col-sm-3">
+                        <h3>User Data</h3>
+                    </div>
+                    <div class="col-sm-9">
+                        <div class="dropdown">
+                            <button class="btn btn-default btn-large dropdown-toggle pull-right" type="button" id="dropdownMenuButton" data-toggle="dropdown">
+                                Jump to...
+                                <span class="caret"></span>
+                            </button>
+                            <ul class="dropdown-menu pull-right">
+                                <li><a href="#user-growth-row">User Growth</a></li>
+                                <li><a href="#user-gain-per-day">User gain per day</a></li>
+                                <li><a href="#registration-by-email-domain">Registrations by Email Domain</a></li>
+                                <li><a href="#node-logs-by-user-row">Node Logs by User</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <hr class="hr-menu">
+
+                <div class="container-fluid">
+
+                    <div class="row" id="user-growth-row">
+                        <div class="col-sm-8">
+                            <div class="chart-wrapper">
+                                <div class="chart-title">
+                                    User Growth - Previous 800 days
+                                </div>
+                                <div class="chart-stage">
+                                    <div id="active-user-chart"></div>
+                                </div>
+                                <div class="chart-notes">
+                                    The growth of OSF Confirmed Users over the past 800 days.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-sm-4">
+                            <div class="chart-wrapper">
+                                <div class="chart-title">
+                                    Total Users
+                                </div>
+                                <div class="chart-stage">
+                                    <div id="active-user-count"></div>
+                                </div>
+                                <div class="chart-notes">
+                                    This is the total number of OSF Users with confirmed accounts.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-sm-4">
+                            <div class="chart-wrapper">
+                                <div class="chart-title">
+                                    Monthly User Increase
+                                </div>
+                                <div class="chart-stage">
+                                    <div id="monthly-user-increase"></div>
+                                </div>
+                                <div class="chart-notes">
+                                    The number of users gained in the past month.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-sm-4">
+                            <div class="chart-wrapper">
+                                <div class="chart-title">
+                                    Daily User Increase
+                                </div>
+                                <div class="chart-stage">
+                                    <div id="daily-user-increase"></div>
+                                </div>
+                                <div class="chart-notes">
+                                    The number of users gained from two days ago until yesterday.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-sm-4">
+                            <div class="chart-wrapper">
+                                <div class="chart-title">
+                                    Average Daily User Gain
+                                </div>
+                                <div class="chart-stage">
+                                    <div id="average-gain-metric"></div>
+                                </div>
+                                <div class="chart-notes">
+                                    The average daily user gain over the past 7 days.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row" id="user-gain-per-day">
+                        <div class="col-sm-12">
+                            <div class="chart-wrapper">
+                                <div class="chart-title">
+                                    User Gain per Day
+                                </div>
+                                <div class="chart-stage">
+                                    <div id="user-gain-chart"></div>
+                                </div>
+                                <div class="chart-notes">
+                                    The number of users gained in the past month.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-sm-4">
+                            <div class="chart-wrapper">
+                                <div class="chart-title">
+                                    Unverified New Users
+                                </div>
+                                <div class="chart-stage">
+                                    <div id="unverified-new-users"></div>
+                                </div>
+                                <div class="chart-notes">
+                                    Users created within the last 7 days that have not been confirmed.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-sm-8">
+                            <div class="chart-wrapper">
+                                <div class="chart-title">
+                                    User Growth over the Last Seven Days
+                                </div>
+                                <div class="chart-stage">
+                                    <div id="previous-7-days-of-users-by-status"></div>
+                                </div>
+                                <div class="chart-notes">
+                                    The last 7 days of users, organized by status. Click a category in the legend to resize the axes.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row" id="registration-by-email-domain">
+                        <div class="col-sm-12">
+                            <div class="chart-wrapper">
+                                <div class="chart-title">
+                                    Previous 7 days of user registrations by email domain
+                                </div>
+                                <div class="chart-stage">
+                                    <div id="user-registration-by-email-domain"></div>
+                                </div>
+                                <div class="chart-notes">
+                                    The last 7 days of users, organized by status.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row" id="node-logs-by-user-row">
+                        <div class="col-sm-12">
+                            <div class="chart-wrapper">
+                                <div class="chart-title">
+                                    Yesterday's Node logs by user
+                                    <a id="reload-node-logs" class="glyphicon glyphicon-refresh"></a>
+                                </div>
+                                <div class="chart-stage">
+                                    <div id="yesterdays-node-logs-by-user"></div>
+                                </div>
+                                <div class="chart-notes">
+                                    The last day of node logs by user, if a user had over 100 node logs.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div role="tabpanel" class="tab-pane" id="institution-metrics">
+                <div class="row">
+                    <div class="col-sm-3">
+                        <h3>Institution Metrics</h3>
+                    </div>
+                    <div class="col-sm-9">
+                        <div class="dropdown">
+                            <button class="btn btn-default btn-large dropdown-toggle pull-right" type="button" id="dropdownMenuButton" data-toggle="dropdown">
+                                Jump to...
+                                <span class="caret"></span>
+                            </button>
+                            <ul class="dropdown-menu pull-right">
+                                <li><a href="#institutional-users-row">Total Institutional Users</a></li>
+                                <li><a href="#institutional-users-growth-row">Institutional Users Growth</a></li>
+                                <li><a href="#affiliated-nodes">Affiliated Nodes</a></li>
+                                <li><a href="#affiliated-projects">Affiliated Projects</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <hr class="hr-menu">
+                <div class="row" id="institutional-users-row">
+                    <div class="col-sm-6">
+                        <div class="chart-wrapper">
+                            <div class="chart-title">
+                                Total institutional Users
+                            </div>
+                            <div class="chart-stage">
+                                <div id="total-institutional-users"></div>
+                            </div>
+                            <div class="chart-notes">
+                                Total number of users who have accounts associated with their institutions.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-sm-6">
+                        <div class="chart-wrapper">
+                            <div class="chart-title">
+                                Institutional Users / Total OSF Users
+                            </div>
+                            <div class="chart-stage">
+                                <div id="percentage-institutional-users"></div>
+                            </div>
+                            <div class="chart-notes">
+                                The percentage of users who created an account through their institution.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row" id="institutional-users-growth-row">
+                    <div class="col-sm-12">
+                        <div class="chart-wrapper">
+                            <div class="chart-title">
+                                Institutional Users over the past 100 Days
+                            </div>
+                            <div class="chart-stage">
+                                <div id="institution-growth"></div>
+                            </div>
+                            <div class="chart-notes">
+                                The growth of users who have accounts associated with their institutions. Click on an institution name in the key to remove its line and resize the chart axes.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="institution-tables">
+                    <div class="row" id="affiliated-nodes">
+                        <div class="col-sm-12">
+                            <h4>Affiliated Nodes</h4>
+                            <p>Nodes (at all levels, projects and components) created by each institution as of yesterday.</p>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-sm-6">
+                            <div class="chart-wrapper">
+                                <div class="chart-title">
+                                    Affiliated Public Nodes
+                                </div>
+                                <div class="chart-stage">
+                                    <div id="affiliated-public-nodes"></div>
+                                </div>
+                                <div class="chart-notes">
+                                    Total number of public nodes (at all levels, projects and components) created by each institution as of yesterday.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="chart-wrapper">
+                                <div class="chart-title">
+                                    Affiliated Private Nodes
+                                </div>
+                                <div class="chart-stage">
+                                    <div id="affiliated-private-nodes"></div>
+                                </div>
+                                <div class="chart-notes">
+                                    Total number of private nodes (at all levels, projects and components) created by each institution as of yesterday.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-sm-6">
+                            <div class="chart-wrapper">
+                                <div class="chart-title">
+                                    Affiliated Public Registrations
+                                </div>
+                                <div class="chart-stage">
+                                    <div id="affiliated-public-registered-nodes"></div>
+                                </div>
+                                <div class="chart-notes">
+                                    Total number of public registered nodes (at all levels, projects and components) created by each institution as of yesterday.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="chart-wrapper">
+                                <div class="chart-title">
+                                    Affiliated Embargoed Registrations
+                                </div>
+                                <div class="chart-stage">
+                                    <div id="affiliated-embargoed-registered-nodes"></div>
+                                </div>
+                                <div class="chart-notes">
+                                    Total number of private registered nodes (at all levels, projects and components) created by each institution as of yesterday.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row" id="affiliated-projects">
+                        <div class="col-sm-12">
+                            <h4>Affiliated Projects</h4>
+                            <p>Top level projects created by each institution as of yesterday.</p>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-sm-6">
+                            <div class="chart-wrapper">
+                                <div class="chart-title">
+                                    Affiliated Public Projects
+                                </div>
+                                <div class="chart-stage">
+                                    <div id="affiliated-public-projects"></div>
+                                </div>
+                                <div class="chart-notes">
+                                    Total number of public top level projects created by each institution as of yesterday.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="chart-wrapper">
+                                <div class="chart-title">
+                                    Affiliated Private Projects
+                                </div>
+                                <div class="chart-stage">
+                                    <div id="affiliated-private-projects"></div>
+                                </div>
+                                <div class="chart-notes">
+                                    Total number of private top level projects created by each institution as of yesterday.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-sm-6">
+                            <div class="chart-wrapper">
+                                <div class="chart-title">
+                                    Affiliated Public Project Registrations
+                                </div>
+                                <div class="chart-stage">
+                                    <div id="affiliated-public-registered-projects"></div>
+                                </div>
+                                <div class="chart-notes">
+                                    Total number of public registeredtop level projects created by each institution as of yesterday.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="chart-wrapper">
+                                <div class="chart-title">
+                                    Affiliated Embargoed Project Registrations
+                                </div>
+                                <div class="chart-stage">
+                                    <div id="affiliated-embargoed-registered-projects"></div>
+                                </div>
+                                <div class="chart-notes">
+                                    Total number of private registered top level projects created by each institution as of yesterday.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div role="tabpanel" class="tab-pane" id="active-user-metrics">
+                <div class="row">
+                    <div class="col-sm-3">
+                        <h3>Active User Metrics!</h3>
+                    </div>
+                    <div class="col-sm-9">
+                        <div class="dropdown">
+                            <button class="btn btn-default btn-large dropdown-toggle pull-right" type="button" id="dropdownMenuButton" data-toggle="dropdown">
+                                Jump to...
+                                <span class="caret"></span>
+                            </button>
+                            <ul class="dropdown-menu pull-right">
+                                <li><a href="#daily-active-users-row">Daily Active Users</a></li>
+                                <li><a href="#monthly-and-yearly-active-users">Monthly and Yearly Users</a></li>
+                                <li><a href="#project-to-user-ratio">Project to User Ratios</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <h3></h3>
+                <hr class="hr-menu">
+                <div class="row" id="daily-active-users-row">
+                    <div class="col-sm-12">
+                        <div class="chart-wrapper">
+                            <div class="chart-title">
+                                Recent Daily Unique Sessions
+                            </div>
+                            <div class="chart-stage">
+                                <div id="recent-daily-unique-sessions"></div>
+                            </div>
+                            <div class="chart-notes">
+                                The previous 14 days of unique visitor sessions.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-sm-6">
+                        <div class="chart-wrapper">
+                            <div class="chart-title">
+                                Daily Active Logged In Users
+                            </div>
+                            <div class="chart-stage">
+                                <div id="daily-active-users"></div>
+                            </div>
+                            <div class="chart-notes">
+                                This is the number of logged in users with user ids who had at least one pageview on the OSF yesterday.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-sm-6">
+                        <div class="chart-wrapper">
+                            <div class="chart-title">
+                                Daily Active Users / Total Users
+                            </div>
+                            <div class="chart-stage">
+                                <div id="daily-active-over-total-users"></div>
+                            </div>
+                            <div class="chart-notes">
+                                Notes about this chart
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row" id="monthly-and-yearly-active-users">
+                    <div class="col-sm-4">
+                        <div class="chart-wrapper">
+                            <div class="chart-title">
+                                Monthly Active Users (MAU)
+                            </div>
+                            <div class="chart-stage">
+                                <div id="monthly-active-users"></div>
+                            </div>
+                            <div class="chart-notes">
+                                Users who visited at least one page on the OSF from last month.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-sm-4">
+                        <div class="chart-wrapper">
+                            <div class="chart-title">
+                                Last Month's Active Users / Total Users
+                            </div>
+                            <div class="chart-stage">
+                                <div id="monthly-active-over-total-users"></div>
+                            </div>
+                            <div class="chart-notes">
+                                Last month's active users / total confirmed users
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-sm-4">
+                        <div class="chart-wrapper">
+                            <div class="chart-title">
+                                Monthly Growth of MAU%
+                            </div>
+                            <div class="chart-stage">
+                                <div id="monthly-active-user-increase"></div>
+                            </div>
+                            <div class="chart-notes">
+                                The percent increase from two months ago to one month ago of what percentage of users with an account were active on the OSF.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-sm-6">
+                        <div class="chart-wrapper">
+                            <div class="chart-title">
+                                Yearly Active Users
+                            </div>
+                            <div class="chart-stage">
+                                <div id="yearly-active-users"></div>
+                            </div>
+                            <div class="chart-notes">
+                                Users who were active on the OSF over the past year.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-sm-6">
+                        <div class="chart-wrapper">
+                            <div class="chart-title">
+                                Yearly Active Users / Total Users
+                            </div>
+                            <div class="chart-stage">
+                                <div id="yearly-active-over-total-users"></div>
+                            </div>
+                            <div class="chart-notes">
+                                The percentage of our yearly active users compared to our total users with confirmed accounts.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row" id="project-to-user-ratio">
+                    <div class="col-sm-12">
+                        <h4>Project to User Ratios</h4>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-sm-6">
+                        <div class="chart-wrapper">
+                            <div class="chart-title">
+                                Projects / Users
+                            </div>
+                            <div class="chart-stage">
+                                <div id="projects-per-user"></div>
+                            </div>
+                            <div class="chart-notes">
+                                The number of projects divided by the number of users with active accounts.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-sm-6">
+                        <div class="chart-wrapper">
+                            <div class="chart-title">
+                                 Projects / Monthly Active Users
+                            </div>
+                            <div class="chart-stage">
+                                <div id="projects-per-monthly-user"></div>
+                            </div>
+                            <div class="chart-notes">
+                                The number of projects divided by the number of people who had accounts and were active last month.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div role="tabpanel" class="tab-pane" id="healthy-user-metrics">
+                <div><h2>Healthy User Metrics</h2></div>
+                <hr class="hr-menu">
+                <div class="row">
+                    <div class="col-sm-12">
+                        <div class="chart-wrapper">
+                            <div class="chart-title">
+                                Stickiness Ratio
+                            </div>
+                            <div class="chart-stage">
+                                <div id="stickiness-ratio"></div>
+                            </div>
+                            <div class="chart-notes">
+                                Of those that are active in the last month, how many are active daily? Daily Active Users / Monthly Active Users.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div role="tabpanel" class="tab-pane" id="raw-numbers">
+                <div class="container-fluid">
+
+                    <div class="row">
+                        <div class="col-sm-3">
+                            <h3>Raw Numbers</h3>
+                        </div>
+                        <div class="col-sm-9">
+                            <div class="dropdown">
+                                <button class="btn btn-default btn-large dropdown-toggle pull-right" type="button" id="dropdownMenuButton" data-toggle="dropdown">
+                                    Jump to...
+                                    <span class="caret"></span>
+                                </button>
+                                <ul class="dropdown-menu pull-right">
+                                    <li><a href="#downloads">Downloads</a></li>
+                                    <li><a href="#projects">Projects - Top Level</a></li>
+                                    <li><a href="#nodes">Nodes - Projects & Components</a></li>
+                                    <li><a href="#registered-projects">Registered Projects</a></li>
+                                    <li><a href="#registered-nodes">Registered Nodes</a></li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <hr class="hr-menu">
+                    <div class="row" id="downloads">
+                        <div class="col-sm-12">
+                            <h3>Downloads</h3>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-sm-6">
+                            <div class="chart-wrapper">
+                                <div class="chart-title">
+                                    Downloads
+                                </div>
+                                <div class="chart-stage">
+                                    <div id="number-of-downloads"></div>
+                                </div>
+                                <div class="chart-notes">
+                                    The total number of files downloaded from the OSF
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="chart-wrapper">
+                                <div class="chart-title">
+                                    Unique Downloads
+                                </div>
+                                <div class="chart-stage">
+                                    <div id="number-of-unique-downloads"></div>
+                                </div>
+                                <div class="chart-notes">
+                                    The number of unique downloads of files on the OSF.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row" id="projects">
+                        <div class="col-sm-12">
+                            <h3>Projects</h3>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-sm-12">
+                            <div class="chart-wrapper">
+                                <div class="chart-title">
+                                    Total Projects
+                                </div>
+                                <div class="chart-stage">
+                                    <div id="total-projects"></div>
+                                </div>
+                                <div class="chart-notes">
+                                    The total number of all top level projects on the OSF
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-sm-6">
+                            <div class="row">
+                                <div class="col-sm-12">
+                                    <div class="chart-wrapper">
+                                        <div class="chart-title">
+                                            Public Projects
+                                        </div>
+                                        <div class="chart-stage">
+                                            <div id="public-projects"></div>
+                                        </div>
+                                        <div class="chart-notes">
+                                            Notes about this chart
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-sm-12">
+                                    <div class="chart-wrapper">
+                                        <div class="chart-title">
+                                            Private Projects
+                                        </div>
+                                        <div class="chart-stage">
+                                            <div id="private-projects"></div>
+                                        </div>
+                                        <div class="chart-notes">
+                                            Notes about this chart
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="chart-wrapper">
+                                <div class="chart-title">
+                                    Public vs Private Projects
+                                </div>
+                                <div class="chart-stage">
+                                    <div id="total-projects-pie"></div>
+                                </div>
+                                <div class="chart-notes">
+                                    Notes about this chart
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row" id="nodes">
+                        <div class="col-sm-12">
+                            <h3>Nodes</h3>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-sm-12">
+                            <div class="chart-wrapper">
+                                <div class="chart-title">
+                                    Total Nodes - Projects and Components
+                                </div>
+                                <div class="chart-stage">
+                                    <div id="total-nodes"></div>
+                                </div>
+                                <div class="chart-notes">
+                                    The total number of all projects and components on the OSF.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-sm-6">
+                            <div class="row">
+                                <div class="col-sm-12">
+                                    <div class="chart-wrapper">
+                                        <div class="chart-title">
+                                            Public Nodes
+                                        </div>
+                                        <div class="chart-stage">
+                                            <div id="public-nodes"></div>
+                                        </div>
+                                        <div class="chart-notes">
+                                            The total number of private nodes - inccluding projects and components
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-sm-12">
+                                    <div class="chart-wrapper">
+                                        <div class="chart-title">
+                                            Private Nodes
+                                        </div>
+                                        <div class="chart-stage">
+                                            <div id="private-nodes"></div>
+                                        </div>
+                                        <div class="chart-notes">
+                                            Notes about this chart
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="chart-wrapper">
+                                <div class="chart-title">
+                                    Public vs Private Nodes - Components & Projects
+                                </div>
+                                <div class="chart-stage">
+                                    <div id="total-nodes-pie"></div>
+                                </div>
+                                <div class="chart-notes">
+                                    The percentages of public vs private combined projects and components on the OSF.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row" id="registered-projects">
+                        <div class="col-sm-12">
+                            <h3>Registered Projects</h3>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-sm-12">
+                            <div class="chart-wrapper">
+                                <div class="chart-title">
+                                    Total Registered Projects
+                                </div>
+                                <div class="chart-stage">
+                                    <div id="total-registered-projects"></div>
+                                </div>
+                                <div class="chart-notes">
+                                    The total number of all registered top level projects on the OSF.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-sm-6">
+                            <div class="row">
+                                <div class="col-sm-12">
+                                    <div class="chart-wrapper">
+                                        <div class="chart-title">
+                                            Public Registered Projects
+                                        </div>
+                                        <div class="chart-stage">
+                                            <div id="public-registered-projects"></div>
+                                        </div>
+                                        <div class="chart-notes">
+                                            The total number of public registered top level projects
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-sm-12">
+                                    <div class="chart-wrapper">
+                                        <div class="chart-title">
+                                            Embargoed Registered Projects
+                                        </div>
+                                        <div class="chart-stage">
+                                            <div id="embargoed-registered-projects"></div>
+                                        </div>
+                                        <div class="chart-notes">
+                                            The number of private registered top level projects
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="chart-wrapper">
+                                <div class="chart-title">
+                                    Public vs Embargoed Registered Top-Level Projects
+                                </div>
+                                <div class="chart-stage">
+                                    <div id="total-registered-projects-pie"></div>
+                                </div>
+                                <div class="chart-notes">
+                                    The percentages of public vs embargoed top-level project registrations on the OSF.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row" id="registered-nodes">
+                        <div class="col-sm-12">
+                            <h3>Registered Nodes</h3>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-sm-12">
+                            <div class="chart-wrapper">
+                                <div class="chart-title">
+                                    Total Registered Nodes - Projects & Components
+                                </div>
+                                <div class="chart-stage">
+                                    <div id="total-registered-nodes"></div>
+                                </div>
+                                <div class="chart-notes">
+                                    The total number of all registered nodes - projects & components on the OSF.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-sm-6">
+                            <div class="row">
+                                <div class="col-sm-12">
+                                    <div class="chart-wrapper">
+                                        <div class="chart-title">
+                                            Public Registered Nodes
+                                        </div>
+                                        <div class="chart-stage">
+                                            <div id="public-registered-nodes"></div>
+                                        </div>
+                                        <div class="chart-notes">
+                                            The total number of public registered nodes - projects & components
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-sm-12">
+                                    <div class="chart-wrapper">
+                                        <div class="chart-title">
+                                            Embargoed Registered Nodes
+                                        </div>
+                                        <div class="chart-stage">
+                                            <div id="embargoed-registered-nodes"></div>
+                                        </div>
+                                        <div class="chart-notes">
+                                            The number of embargoed registered projects and components
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="chart-wrapper">
+                                <div class="chart-title">
+                                    Public vs Embargoed Registered Nodes
+                                </div>
+                                <div class="chart-stage">
+                                    <div id="total-registered-nodes-pie"></div>
+                                </div>
+                                <div class="chart-notes">
+                                    The percentages of public vs embargoed top-level project registrations on the OSF.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div role="tabpanel" class="tab-pane" id="addons">
+                <div><h2>Addons</h2></div>
+                <hr class="hr-menu">
+                <div class="row">
+                    <div class="col-sm-12">
+                        <div class="chart-wrapper">
+                            <div class="chart-title">
+                                Pevious 7 days of addon by name
+                            </div>
+                            <div class="chart-stage">
+                                <div id="previous-7-days-of-linked-addon-by-addon-name"></div>
+                            </div>
+                            <div class="chart-notes">
+                                The total number of all registered nodes - projects & components on the OSF.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
-    </div>
-
-    <div class="row">
-        <div class="col-md-12" id="active_users_over_time">
-            <h3>Active Users Over Time</h3>
-            <div id="active-user-chart">Loading...</div>
-        </div>
-    </div>
-
-    <div class="row" id="affiliated_projects">
-        <div class="col-md-6">
-            <h3>Affiliated Public projects by Institution</h3>
-            <div id="affiliated-public-projects">Loading...</div>
-        </div>
-
-        <div class="col-md-6">
-            <h3>Affiliated Private projects by Institution</h3>
-            <div id="affiliated-private-projects">Loading...</div>
-        </div>
-    </div>
-
-    <div id="email_domain">
-        <h3>Previous 7 days of user registrations by email domain</h3>
-        <div id="user-registration-by-email-domain">Loading...</div>
-    </div>
-
-    <div id="node_logs_by_user">
-        <h3>Yesterday's Node logs by user</h3>
-        <div id="yesterdays-node-logs-by-user">Loading...</div>
-    </div>
-
-    <div id="users_by_status">
-        <h3>Previous 7 days of users by status</h3>
-        <div id="previous-7-days-of-users-by-status">Loading...</div>
-    </div>
-
-    <div id="linked_addon_by_name">
-        <h3>Previous 7 days of linked addon by addon name</h3>
-        <div id="previous-7-days-of-linked-addon-by-addon-name">Loading...</div>
     </div>
 
 {% endblock content %}
 
 
 {% block bottom_js %}
-    <script src="{% static 'public/js/metrics.js' %}"></script>
+    {% render_bundle 'metrics-page' %}
 {% endblock %}

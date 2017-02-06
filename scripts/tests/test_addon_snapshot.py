@@ -10,10 +10,10 @@ from scripts.analytics.addon_snapshot import AddonSnapshot
 from website.models import Node
 from framework.auth.core import User
 from website.settings import ADDONS_AVAILABLE
-from website.addons.github.tests.factories import GitHubAccountFactory
-from website.addons.github.model import GitHubNodeSettings, GitHubUserSettings
-from website.addons.googledrive.tests.factories import GoogleDriveAccountFactory
-from website.addons.googledrive.model import GoogleDriveNodeSettings, GoogleDriveUserSettings
+from addons.github.tests.factories import GitHubAccountFactory
+from addons.github.model import GitHubNodeSettings, GitHubUserSettings
+from addons.googledrive.tests.factories import GoogleDriveAccountFactory
+from addons.googledrive.model import GoogleDriveNodeSettings, GoogleDriveUserSettings
 
 
 class TestAddonCount(OsfTestCase):

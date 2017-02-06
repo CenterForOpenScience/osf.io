@@ -17,16 +17,20 @@ env:
   global:
     - PROJECT_DIR="$PWD"
     - WHEELHOUSE="$HOME/.cache/wheelhouse"
-    - TOKU_HUGE_PAGES_OK=1
-    - TOKUMX_ARCHIVE="tokumx-2.0.0-linux-x86_64-main.tar.gz"
+    - LIBXML2_DEB="libxml2_2.7.8.dfsg-5.1ubuntu4.15_amd64.deb"
+    - POSTGRES_DEB="postgresql-9.5_9.5.5-1.pgdg12.4+1_amd64.deb"
     - ELASTICSEARCH_ARCHIVE="elasticsearch-1.5.0.tar.gz"
     - LIBJEMALLOC_DEB="libjemalloc1_3.5.1-2_amd64.deb"
     - LIBPCRE_DEB="libpcre3_8.31-2ubuntu2.3_amd64.deb"
     - VARNISH_DEB="varnish_4.1.0-1~trusty_amd64.deb"
+    - OSF_DB_PORT="54321"
   matrix:
     - TEST_BUILD="osf"
     - TEST_BUILD="else"
-    - TEST_BUILD="varnish"
+    - TEST_BUILD="api1"
+    - TEST_BUILD="api2"
+    - TEST_BUILD="api3"
+    # - TEST_BUILD="varnish"
 
 before_install:
     # cache directories
@@ -34,23 +38,27 @@ before_install:
       mkdir -p $HOME/.cache/downloads
       mkdir -p $HOME/.cache/pip
       mkdir -p $HOME/.cache/wheelhouse
-    # tokumx
+    # postgres
     - |
       cd $HOME/.cache/downloads
 
-      if [ ! -f "$TOKUMX_ARCHIVE" ]; then
-        curl -SLO https://s3.amazonaws.com/tokumx-2.0.0/$TOKUMX_ARCHIVE
+      if [ ! -f "$LIBXML2_DEB" ]; then
+        curl -SLO http://security.ubuntu.com/ubuntu/pool/main/libx/libxml2/$LIBXML2_DEB
       fi
 
-      if [ ! -f "$TOKUMX_ARCHIVE.md5" ]; then
-        curl -SLO https://s3.amazonaws.com/tokumx-2.0.0/$TOKUMX_ARCHIVE.md5
+      if [ ! -f "$POSTGRES_DEB" ]; then
+        curl -SLO http://apt.postgresql.org/pub/repos/apt/pool/main/p/postgresql-9.5/$POSTGRES_DEB
       fi
 
-      md5sum --check $TOKUMX_ARCHIVE.md5
-
-      mkdir -p /tmp/tokumx/data
-      tar xzf $TOKUMX_ARCHIVE -C /tmp/tokumx --strip-components=1
-    - /tmp/tokumx/bin/mongod --dbpath=/tmp/tokumx/data > /dev/null &
+      dpkg -x $LIBXML2_DEB /tmp/libxml2
+      dpkg -x $POSTGRES_DEB /tmp/postgres
+    - |
+      export LD_LIBRARY_PATH=/tmp/libxml2/usr/lib/x86_64-linux-gnu
+      /tmp/postgres/usr/lib/postgresql/9.5/bin/initdb /tmp/postgres/data --nosync -U postgres
+      sed -i -e 's/#fsync.*/fsync = off/' /tmp/postgres/data/postgresql.conf
+      sed -i -e 's/#synchronous_commit.*/synchronous_commit = off/' /tmp/postgres/data/postgresql.conf
+      sed -i -e 's/#full_page_writes.*/full_page_writes = off/' /tmp/postgres/data/postgresql.conf
+      /tmp/postgres/usr/lib/postgresql/9.5/bin/postgres -k /tmp -D /tmp/postgres/data -p 54321 > /dev/null &
     # elasticsearch
     - |
       cd $HOME/.cache/downloads

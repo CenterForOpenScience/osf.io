@@ -1,19 +1,14 @@
-from django.test import RequestFactory
-from nose import tools as nt
 import mock
-
 from admin.common_auth.logs import OSFLogEntry
-from tests.base import AdminTestCase
-from tests.factories import ProjectFactory, AuthUserFactory
-from admin_tests.utilities import setup_view, setup_log_view
-
-from admin.nodes.views import (
-    NodeView,
-    NodeRemoveContributorView,
-    NodeDeleteView
-)
-from website.project.model import NodeLog, Node
+from admin.nodes.views import (NodeDeleteView, NodeRemoveContributorView,
+                               NodeView)
+from admin_tests.utilities import setup_log_view, setup_view
+from django.test import RequestFactory
 from framework.auth import User
+from nose import tools as nt
+from tests.base import AdminTestCase
+from tests.factories import AuthUserFactory, ProjectFactory
+from website.project.model import Node, NodeLog
 
 
 class TestNodeView(AdminTestCase):
@@ -67,12 +62,13 @@ class TestNodeDeleteView(AdminTestCase):
     def test_remove_node(self):
         count = OSFLogEntry.objects.count()
         self.view.delete(self.request)
-        self.node.reload()
+        self.node.refresh_from_db()
         nt.assert_true(self.node.is_deleted)
         nt.assert_equal(OSFLogEntry.objects.count(), count + 1)
 
     def test_restore_node(self):
         self.view.delete(self.request)
+        self.node.refresh_from_db()
         nt.assert_true(self.node.is_deleted)
         count = OSFLogEntry.objects.count()
         self.view.delete(self.request)
@@ -138,4 +134,4 @@ class TestRemoveContributor(AdminTestCase):
         view = setup_log_view(self.view, self.request, node_id=self.node._id,
                               user_id=self.user_2._id)
         view.delete(self.request)
-        nt.assert_not_equal(self.node.logs[-1].action, NodeLog.CONTRIB_REMOVED)
+        nt.assert_not_equal(self.node.logs.latest().action, NodeLog.CONTRIB_REMOVED)

@@ -155,6 +155,21 @@ class PreprintList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMixin):
     view_category = 'preprints'
     view_name = 'preprint-list'
 
+    # overrides FilterMixin
+    def postprocess_query_param(self, key, field_name, operation):
+        # tag queries will usually be on Tag.name,
+        # ?filter[tags]=foo should be translated to Q('tags__name', 'eq', 'foo')
+        # But queries on lists should be tags, e.g.
+        # ?filter[tags]=foo,bar should be translated to Q('tags', 'isnull', True)
+        # ?filter[tags]=[] should be translated to Q('tags', 'isnull', True)
+        if field_name == 'tags':
+            if operation['value'] not in (list(), tuple()):
+                operation['source_field_name'] = 'tags__name'
+                operation['op'] = 'iexact'
+
+        if field_name == 'provider':
+            operation['source_field_name'] = 'provider___id'
+
     def get_serializer_class(self):
         if self.request.method == 'POST':
             return PreprintCreateSerializer

@@ -11,16 +11,23 @@ DEV_MODE = True
 DEBUG_MODE = True  # Sets app to debug mode, turns off template caching, etc.
 SECURE_MODE = not DEBUG_MODE  # Disable osf cookie secure
 
+# NOTE: Internal Domains/URLs have been added to facilitate docker development environments
+#       when localhost inside a container != localhost on the client machine/docker host.
+
 PROTOCOL = 'https://' if SECURE_MODE else 'http://'
 DOMAIN = PROTOCOL + 'localhost:5000/'
+INTERNAL_DOMAIN = DOMAIN
 API_DOMAIN = PROTOCOL + 'localhost:8000/'
+
+#WATERBUTLER_URL = 'http://localhost:7777'
+#WATERBUTLER_INTERNAL_URL = WATERBUTLER_URL
 
 USE_EXTERNAL_EMBER = True
 EXTERNAL_EMBER_APPS = {
     'preprints': {
         'url': '/preprints/',
         'server': 'http://localhost:4200',
-        'path': '../ember-preprints/dist/'
+        'path': '/preprints/'
     },
     # 'meetings': {
     #     'url': '/meetings/',

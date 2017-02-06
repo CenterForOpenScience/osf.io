@@ -15,10 +15,10 @@ def copy_files(src, target_node, parent=None, name=None):
     cloned.name = name or cloned.name
     cloned.copied_from = src
 
-    if src.is_file:
-        cloned.versions = src.versions
-
     cloned.save()
+
+    if src.is_file and src.versions.exists():
+        cloned.versions.add(*src.versions.all())
 
     if not src.is_file:
         for child in src.children:
@@ -71,7 +71,7 @@ class GenWrapper(object):
 def validate_location(value):
     if value is None:
         return  # Allow for None locations but not broken dicts
-    from website.addons.osfstorage import settings
+    from addons.osfstorage import settings
     for key in ('service', settings.WATERBUTLER_RESOURCE, 'object'):
         if key not in value:
             raise ValidationValueError('Location {} missing key "{}"'.format(value, key))

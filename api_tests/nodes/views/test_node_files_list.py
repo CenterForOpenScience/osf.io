@@ -2,20 +2,23 @@ import datetime
 import json
 
 import httpretty
+import pytest
+from django.utils import timezone
 from nose.tools import *  # flake8: noqa
 
 from framework.auth.core import Auth
 
-from website.addons.github.tests.factories import GitHubAccountFactory
+from addons.github.tests.factories import GitHubAccountFactory
 from website.models import Node
 from website.util import waterbutler_api_url_for
 from api.base.settings.defaults import API_BASE
 from api_tests import utils as api_utils
 from tests.base import ApiTestCase
-from tests.factories import (
+from osf_tests.factories import (
     ProjectFactory,
     AuthUserFactory
 )
+
 
 def prepare_mock_wb_response(
         node=None,
@@ -106,7 +109,7 @@ class TestNodeFilesList(ApiTestCase):
         oauth_settings = GitHubAccountFactory()
         oauth_settings.save()
         self.user.add_addon('github')
-        self.user.external_accounts.append(oauth_settings)
+        self.user.external_accounts.add(oauth_settings)
         self.user.save()
         addon.user_settings = self.user.get_addon('github')
         addon.save()
@@ -200,7 +203,7 @@ class TestNodeFilesList(ApiTestCase):
         oauth_settings = GitHubAccountFactory()
         oauth_settings.save()
         self.user.add_addon('github')
-        self.user.external_accounts.append(oauth_settings)
+        self.user.external_accounts.add(oauth_settings)
         self.user.save()
         addon.user_settings = self.user.get_addon('github')
         addon.save()
@@ -345,7 +348,7 @@ class TestNodeFilesListFiltering(ApiTestCase):
         oauth_settings = GitHubAccountFactory()
         oauth_settings.save()
         self.user.add_addon('github')
-        self.user.external_accounts.append(oauth_settings)
+        self.user.external_accounts.add(oauth_settings)
         self.user.save()
         addon.user_settings = self.user.get_addon('github')
         addon.save()
@@ -384,7 +387,7 @@ class TestNodeFilesListFiltering(ApiTestCase):
         assert_equal(res.json['data'][0]['attributes']['name'], 'abc')
 
     def test_node_files_external_provider_can_filter_by_last_touched(self):
-        yesterday_stamp = datetime.datetime.utcnow() - datetime.timedelta(days=1)
+        yesterday_stamp = timezone.now() - datetime.timedelta(days=1)
         self.add_github()
         url = '/{}nodes/{}/files/github/?filter[last_touched][gt]={}'.format(API_BASE,
                                                                              self.project._id,
@@ -394,7 +397,7 @@ class TestNodeFilesListFiltering(ApiTestCase):
         assert_equal(len(res.json['data']), 2)
 
     def test_node_files_osfstorage_cannot_filter_by_last_touched(self):
-        yesterday_stamp = datetime.datetime.utcnow() - datetime.timedelta(days=1)
+        yesterday_stamp = timezone.now() - datetime.timedelta(days=1)
         self.file = api_utils.create_test_file(self.project, self.user)
 
         url = '/{}nodes/{}/files/osfstorage/?filter[last_touched][gt]={}'.format(API_BASE,
@@ -426,7 +429,7 @@ class TestNodeFilesListPagination(ApiTestCase):
         oauth_settings = GitHubAccountFactory()
         oauth_settings.save()
         self.user.add_addon('github')
-        self.user.external_accounts.append(oauth_settings)
+        self.user.external_accounts.add(oauth_settings)
         self.user.save()
         addon.user_settings = self.user.get_addon('github')
         addon.save()

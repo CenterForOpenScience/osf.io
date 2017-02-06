@@ -1,5 +1,5 @@
+from modularodm.exceptions import ValidationError
 from modularodm import Q
-from modularodm.exceptions import ValidationValueError
 from rest_framework import exceptions
 from rest_framework import serializers as ser
 
@@ -50,7 +50,9 @@ class PreprintProviderRelationshipField(RelationshipField):
 class PreprintLicenseRelationshipField(RelationshipField):
     def to_internal_value(self, license_id):
         license = NodeLicense.load(license_id)
-        return {'license_type': license}
+        if license:
+            return {'license_type': license}
+        raise exceptions.NotFound('Unable to find specified license.')
 
 
 class PreprintSerializer(JSONAPISerializer):
@@ -163,9 +165,9 @@ class PreprintSerializer(JSONAPISerializer):
         if save_node:
             try:
                 preprint.node.save()
-            except ValidationValueError as e:
+            except ValidationError as e:
                 # Raised from invalid DOI
-                raise exceptions.ValidationError(detail=e.message)
+                raise exceptions.ValidationError(detail=e.messages[0])
 
         if save_preprint:
             preprint.save()
@@ -196,7 +198,7 @@ class PreprintCreateSerializer(PreprintSerializer):
     id = IDField(source='_id', required=False, allow_null=True)
 
     def create(self, validated_data):
-        node = Node.load(validated_data.pop('node', None))
+        node = validated_data.pop('node', None)
         if not node:
             raise exceptions.NotFound('Unable to find Node with specified id.')
         elif node.is_deleted:

@@ -20,8 +20,8 @@ from scripts import utils as script_utils
 from framework.transactions.context import TokuTransaction
 from framework.mongo import database
 
-from website.addons.googledrive.model import GoogleDriveUserSettings
-from website.addons.googledrive.model import GoogleDriveNodeSettings
+from addons.googledrive.model import GoogleDriveUserSettings
+from addons.googledrive.model import GoogleDriveNodeSettings
 from website.oauth.models import ExternalAccount
 
 logger = logging.getLogger(__name__)
