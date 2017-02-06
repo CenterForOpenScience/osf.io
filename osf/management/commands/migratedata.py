@@ -448,7 +448,7 @@ def fix_guids():
 
 
 def save_bare_models(modm_queryset, django_model, page_size=20000):
-    logger.info('Starting {} on {}...'.format(sys._getframe().f_code.co_name, django_model._meta.model.__module__))
+    logger.info('Starting {} on {}.{}...'.format(sys._getframe().f_code.co_name, django_model._meta.model.__module__, django_model._meta.model.__name__))
     count = 0
     total = modm_queryset.count()
     hashes = set()
@@ -463,7 +463,7 @@ def save_bare_models(modm_queryset, django_model, page_size=20000):
             page_of_modm_objects = modm_queryset.sort('-_id')[offset:limit]
 
             if not hasattr(django_model, '_natural_key'):
-                logger.info('{} is missing a natural key!'.format(django_model._meta.model.__module__))
+                logger.info('{}.{} is missing a natural key!'.format(django_model._meta.model.__module__, django_model._meta.model.__name__))
 
             for modm_obj in page_of_modm_objects:
                 django_instance = django_model.migrate_from_modm(modm_obj)
@@ -483,7 +483,7 @@ def save_bare_models(modm_queryset, django_model, page_size=20000):
                             django_objects.append(django_instance)
                         else:
                             count += 1
-                            logger.info('{} with guids {} was already in hashes'.format(django_instance._meta.model.__module__, found))
+                            logger.info('{}.{} with guids {} was already in hashes'.format(django_instance._meta.model.__module__, django_instance._meta.model.__name__, found))
                             continue
                     else:
                         if django_instance._natural_key() not in hashes:
@@ -505,13 +505,13 @@ def save_bare_models(modm_queryset, django_model, page_size=20000):
                     else:
                         start = count - page_size
                     logger.info(
-                        'Saving {} {} through {}...'.format(django_model._meta.model.__module__,
+                        'Saving {}.{} {} through {}...'.format(django_model._meta.model.__module__, django_model._meta.model.__name__,
                                                             start,
                                                             count))
                     saved_django_objects = django_model.objects.bulk_create(django_objects)
 
-                    logger.info('Done with {} {} in {} seconds...'.format(len(saved_django_objects),
-                                                                    django_model._meta.model.__module__, (
+                    logger.info('Done with {} {}.{} in {} seconds...'.format(len(saved_django_objects),
+                                                                    django_model._meta.model.__module__, django_model._meta.model.__name__, (
                                                                         timezone.now() -
                                                                         page_finish_time).total_seconds()))
                     modm_obj._cache.clear()
@@ -842,9 +842,9 @@ class Command(BaseCommand):
 
             if not hasattr(django_model, 'modm_model_path'):
                 logger.info('################################################\n'
-                      '{} doesn\'t have a modm_model_path\n'
+                      '{}.{} doesn\'t have a modm_model_path\n'
                       '################################################'.format(
-                    django_model._meta.model.__module__))
+                    django_model._meta.model.__module__, django_model._meta.model.__name__,))
                 continue
             pool.spawn(self.do_model, django_model, options)
         pool.join()
