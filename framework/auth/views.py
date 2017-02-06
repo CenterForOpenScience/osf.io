@@ -379,30 +379,55 @@ def auth_register(auth):
 
     raise HTTPError(http.BAD_REQUEST)
 
-
-def auth_logout(redirect_url=None):
+@collect_auth
+def auth_logout(auth=None, redirect_url=None, next_url=None):
     """
     Log out, delete current session and remove OSF cookie.
     Redirect to CAS logout which clears sessions and cookies for CAS and Shibboleth (if any).
     Final landing page may vary.
     HTTP Method: GET
 
-    :param redirect_url: url to redirect user after CAS logout, default is 'goodbye'
-    :return:
+    :param the auth context
+    :param redirect_url: url to DIRECTLY redirect after CAS logout, default is `OSF/goodbye`
+    :param next_url: url to redirect after OSF logout, which is after CAS logout
+    :return: the response
     """
 
-    # OSF tells CAS where it wants to be redirected back after successful logout.
-    # However, CAS logout flow may not respect this url if user is authenticated through remote identity provider.
-    redirect_url = redirect_url or request.args.get('redirect_url') or web_url_for('goodbye', _absolute=True)
-    # OSF log out, remove current OSF session
-    osf_logout()
-    # set redirection to CAS log out (or log in if `reauth` is present)
-    if 'reauth' in request.args:
-        cas_endpoint = cas.get_login_url(redirect_url)
+    # OSF tells CAS where it wants to be redirected back after successful logout. However, CAS logout flow may not
+    # respect this url if user is authenticated through remote identity provider.
+
+    # There are two options for OSF logout: using `next` or using `redirect_url`.
+    # For `?next=`:
+    #   the url must be a valid OSF next url,
+    #   the full request url is set to CAS service url,
+    #   does not support `reauth`
+    # For `?redirect_url=`:
+    #   the url must be valid CAS service url
+    #   the redirect url is set to CAS service url.
+    #   support `reauth`
+
+    # logout/?next=<an OSF verified next url>
+    next_url = next_url or request.args.get('next_url')
+    if next_url and validate_next_url(next_url):
+        cas_logout_endpoint = cas.get_logout_url(request.url)
+        if auth.logged_in:
+            resp = redirect(cas_logout_endpoint)
+        else:
+            resp = redirect(next_url)
+    # logout/ or logout/?redirect_url=<a CAS verified redirect url>
     else:
-        cas_endpoint = cas.get_logout_url(redirect_url)
-    resp = redirect(cas_endpoint)
-    # delete OSF cookie
+        redirect_url = redirect_url or request.args.get('redirect_url') or web_url_for('goodbye', _absolute=True)
+        # set redirection to CAS log out (or log in if `reauth` is present)
+        if 'reauth' in request.args:
+            cas_endpoint = cas.get_login_url(redirect_url)
+        else:
+            cas_endpoint = cas.get_logout_url(redirect_url)
+        resp = redirect(cas_endpoint)
+
+    # perform OSF logout
+    osf_logout()
+
+    # set response to delete OSF cookie
     resp.delete_cookie(settings.COOKIE_NAME, domain=settings.OSF_COOKIE_DOMAIN)
 
     return resp
