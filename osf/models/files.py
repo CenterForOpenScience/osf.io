@@ -40,7 +40,7 @@ class TrashedFileNode(CommentableMixin, OptionalGuidMixin, ObjectIDMixin, BaseMo
     # TODO DELETE ME POST MIGRATION
     modm_model_path = 'website.files.models.TrashedFileNode'
     modm_query = None
-    migration_page_size = 10000
+    migration_page_size = 100000
     # /TODO DELETE ME POST MIGRATION
 
     last_touched = models.DateTimeField(null=True, blank=True)

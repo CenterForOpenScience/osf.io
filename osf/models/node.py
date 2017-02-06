@@ -134,7 +134,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     primary_identifier_name = 'guid_string'
     modm_model_path = 'website.models.Node'
     modm_query = None
-    migration_page_size = 10000
+    migration_page_size = 100000
 
     #: Whether this is a pointer or not
     primary = True
