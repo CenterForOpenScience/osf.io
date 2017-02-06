@@ -87,11 +87,11 @@ def migrate_page_counters(page_size=20000):
                         start = 0
                     else:
                         start = count - page_size
-                    logger.info('Saving {} {} through {}...'.format(PageCounter._meta.model.__name__, start, count))
+                    logger.info('Saving {} {} through {}...'.format(PageCounter._meta.model.__module__, start, count))
 
                     saved_django_objects = PageCounter.objects.bulk_create(django_objects)
 
-                    logger.info('Done with {} {} in {} seconds...'.format(len(saved_django_objects), PageCounter._meta.model.__name__, (timezone.now()-page_finish_time).total_seconds()))
+                    logger.info('Done with {} {} in {} seconds...'.format(len(saved_django_objects), PageCounter._meta.model.__module__, (timezone.now()-page_finish_time).total_seconds()))
                     saved_django_objects = []
                     logger.info('Took out {} trashes'.format(gc.collect()))
     total = None
@@ -124,11 +124,11 @@ def migrate_user_activity_counters(page_size=20000):
                         start = 0
                     else:
                         start = count - page_size
-                    logger.info('Saving {} {} through {}...'.format(UserActivityCounter._meta.model.__name__, start, count))
+                    logger.info('Saving {} {} through {}...'.format(UserActivityCounter._meta.model.__module__, start, count))
 
                     saved_django_objects = UserActivityCounter.objects.bulk_create(django_objects)
 
-                    logger.info('Done with {} {} in {} seconds...'.format(len(saved_django_objects), UserActivityCounter._meta.model.__name__, (timezone.now()-page_finish_time).total_seconds()))
+                    logger.info('Done with {} {} in {} seconds...'.format(len(saved_django_objects), UserActivityCounter._meta.model.__module__, (timezone.now()-page_finish_time).total_seconds()))
                     saved_django_objects = []
                     logger.info('Took out {} trashes'.format(gc.collect()))
     total = None
@@ -191,7 +191,7 @@ def make_guids():
                                   t.guid_string IS NOT NULL AND
                                   t.content_type_pk IS NOT NULL;
                               """.format(content_type.app_label, content_type.model)
-                    logger.info('Making guids for {}'.format(model._meta.model.__name__))
+                    logger.info('Making guids for {}'.format(model._meta.model.__module__))
                     try:
                         cursor.execute(sql)
                     except IntegrityError as ex:
@@ -219,7 +219,7 @@ def make_guids():
             guids_to_make = (set(guid_keys) - set(orphaned_guids)) - set(existing_guids)
             logger.info('{} MODM Guids, {} Orphaned Guids, {} Guids to Make, {} Existing guids'.format(len(guid_keys), len(orphaned_guids), len(guids_to_make), len(existing_guids)))
             from django.apps import apps
-            model_names = {m._meta.model.__name__.lower(): m._meta.model for m in apps.get_models()}
+            model_names = {m._meta.model.__module__.lower(): m._meta.model for m in apps.get_models()}
 
             with ipdb.launch_ipdb_on_exception():
                 # loop through missing guids
@@ -250,7 +250,7 @@ def make_guids():
                             # find it's referent
                             referent_instance = referent_model.objects.get(guid_string__contains=[modm_model_id.lower()])
                         except referent_model.DoesNotExist:
-                            logger.info('Couldn\'t find referent for {}:{}'.format(referent_model._meta.model.__name__, modm_model_id))
+                            logger.info('Couldn\'t find referent for {}:{}'.format(referent_model._meta.model.__module__, modm_model_id))
                             continue
                     else:
                         # we shouldn't ever get here, bad data
@@ -261,7 +261,7 @@ def make_guids():
                     if referent_instance:
                         Guid.objects.create(referent=referent_instance)
                     else:
-                        logger.info('{} {} didn\'t create a Guid'.format(referent_model._meta.model.__name__, modm_model_id))
+                        logger.info('{} {} didn\'t create a Guid'.format(referent_model._meta.model.__module__, modm_model_id))
 
             logger.info('Started creating blacklist orphaned guids.')
             with connection.cursor() as cursor:
@@ -285,10 +285,10 @@ def validate_guid_referents_against_ids():
                 logger.info('################################################\n'
                             '{} doesn\'t have a modm_model_path\n'
                             '################################################'.format(
-                    django_model._meta.model.__name__))
+                    django_model._meta.model.__module__))
                 continue
             modm_model = get_modm_model(django_model)
-            model_name = django_model._meta.model.__name__.lower()
+            model_name = django_model._meta.model.__module__.lower()
             if model_name == 'osfuser':
                 model_name = 'user'
 
@@ -448,7 +448,7 @@ def fix_guids():
 
 
 def save_bare_models(modm_queryset, django_model, page_size=20000):
-    logger.info('Starting {} on {}...'.format(sys._getframe().f_code.co_name, django_model._meta.model.__name__))
+    logger.info('Starting {} on {}...'.format(sys._getframe().f_code.co_name, django_model._meta.model.__module__))
     count = 0
     total = modm_queryset.count()
     hashes = set()
@@ -463,7 +463,7 @@ def save_bare_models(modm_queryset, django_model, page_size=20000):
             page_of_modm_objects = modm_queryset.sort('-_id')[offset:limit]
 
             if not hasattr(django_model, '_natural_key'):
-                logger.info('{} is missing a natural key!'.format(django_model._meta.model.__name__))
+                logger.info('{} is missing a natural key!'.format(django_model._meta.model.__module__))
 
             for modm_obj in page_of_modm_objects:
                 django_instance = django_model.migrate_from_modm(modm_obj)
@@ -483,7 +483,7 @@ def save_bare_models(modm_queryset, django_model, page_size=20000):
                             django_objects.append(django_instance)
                         else:
                             count += 1
-                            logger.info('{} with guids {} was already in hashes'.format(django_instance._meta.model.__name__, found))
+                            logger.info('{} with guids {} was already in hashes'.format(django_instance._meta.model.__module__, found))
                             continue
                     else:
                         if django_instance._natural_key() not in hashes:
@@ -505,13 +505,13 @@ def save_bare_models(modm_queryset, django_model, page_size=20000):
                     else:
                         start = count - page_size
                     logger.info(
-                        'Saving {} {} through {}...'.format(django_model._meta.model.__name__,
+                        'Saving {} {} through {}...'.format(django_model._meta.model.__module__,
                                                             start,
                                                             count))
                     saved_django_objects = django_model.objects.bulk_create(django_objects)
 
                     logger.info('Done with {} {} in {} seconds...'.format(len(saved_django_objects),
-                                                                    django_model._meta.model.__name__, (
+                                                                    django_model._meta.model.__module__, (
                                                                         timezone.now() -
                                                                         page_finish_time).total_seconds()))
                     modm_obj._cache.clear()
@@ -844,7 +844,7 @@ class Command(BaseCommand):
                 logger.info('################################################\n'
                       '{} doesn\'t have a modm_model_path\n'
                       '################################################'.format(
-                    django_model._meta.model.__name__))
+                    django_model._meta.model.__module__))
                 continue
             pool.spawn(self.do_model, django_model, options)
         pool.join()
