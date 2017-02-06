@@ -494,7 +494,7 @@ def save_page_of_bare_models(modm_page, django_model):
         page_finish_time = timezone.now()
         logger.info(
             'Saving {} of {}.{}...'.format(count, django_model._meta.model.__module__, django_model._meta.model.__name__))
-        if len(django_objects):
+        if len(django_objects) > 0 and django_objects is not None:
             saved_django_objects = django_model.objects.bulk_create(django_objects, batch_size=len(django_objects) // 5)
 
         logger.info('Done with {} {}.{} in {} seconds...'.format(len(saved_django_objects),
