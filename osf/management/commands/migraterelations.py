@@ -7,6 +7,7 @@ import pstats
 import sys
 from cProfile import Profile
 
+import gevent
 import ipdb
 import multiprocessing
 from bulk_update.helper import bulk_update
@@ -237,14 +238,146 @@ class Command(BaseCommand):
         pool = ThreadPool(multiprocessing.cpu_count() * 2)
         for model in models:
             pool.spawn(self.do_model, model)
-        pool.spawn(self.migrate_node_through_models)
-        pool.spawn(self.migration_institutional_contributors)
+        # pool.spawn(self.migrate_node_through_models)
+        # pool.spawn(self.migration_institutional_contributors)
         pool.join()
+
+    def save_page_of_fk_relationships(self, modm_page, django_model, fk_relations):
+        with transaction.atomic():  # one transaction per page
+            bad_fields = ['external_account_id', ]  # external accounts are handled in their own migration
+
+            model_count = 0
+            fk_count = 0
+            modm_keys = modm_page.get_keys()
+            modm_list = list(modm_page)
+
+            django_keys = []
+            for modm_key in modm_keys:
+                try:
+                    django_keys.append(self.modm_to_django[
+                                           format_lookup_key(modm_key, ContentType.objects.get_for_model(django_model).pk)])
+                except KeyError:
+                    if format_lookup_key(modm_key, model=django_model)[1].startswith(
+                            'none_') and django_model is NotificationSubscription:
+                        logger.info('{!r} NotificationSubscription is bad data, skipping'.format(modm_key))
+                        model_count += 1
+                        continue
+                    else:
+                        raise
+
+            django_objects = django_model.objects.filter(pk__in=django_keys)
+            django_objects_to_update = []
+            django_objects_dict = {obj.pk: obj for obj in django_objects}
+            for modm_obj in modm_list:
+                django_obj = django_objects_dict[self.modm_to_django[format_lookup_key(modm_obj._id, model=django_model)]]
+                dirty = False
+
+                # TODO This is doing a mongo query for each Node, could probably be more performant
+                # if an institution has a file, it doesn't
+                if isinstance(django_obj, StoredFileNode) and modm_obj.node is not None and \
+                                modm_obj.node.institution_id is not None:
+                    model_count += 1
+                    continue
+
+                    # with ipdb.launch_ipdb_on_exception():
+                for field in fk_relations:
+                    # notification subscriptions have a AbstractForeignField that's becoming two FKs
+                    if isinstance(modm_obj, MODMNotificationSubscription):
+                        if isinstance(modm_obj.owner, MODMUser):
+                            # TODO this is also doing a mongo query for each owner
+                            django_obj.user_id = self.modm_to_django[format_lookup_key(modm_obj.owner._id, model=OSFUser)]
+                            django_obj.node_id = None
+                        elif isinstance(modm_obj.owner, MODMNode):
+                            # TODO this is also doing a mongo query for each owner
+                            django_obj.user_id = None
+                            django_obj.node_id = self.modm_to_django[
+                                format_lookup_key(modm_obj.owner._id, model=AbstractNode)]
+                        elif modm_obj.owner is None:
+                            django_obj.node_id = None
+                            django_obj.user_id = None
+                            logger.info(
+                                'NotificationSubscription {!r} is abandoned. It\'s owner is {!r}.'.format(
+                                    unicode(modm_obj._id), modm_obj.owner))
+
+                    if isinstance(field, GenericForeignKey):
+                        field_name = field.name
+                        ct_field_name = field.ct_field
+                        fk_field_name = field.fk_field
+                        value = getattr(modm_obj, field_name)
+                        if value is None:
+                            continue
+                        if value.__class__.__name__ in ['Node', 'Registration', 'Collection', 'Preprint']:
+                            gfk_model = apps.get_model('osf', 'AbstractNode')
+                        else:
+                            gfk_model = apps.get_model('osf', value.__class__.__name__)
+
+                        content_type_primary_key, formatted_guid = format_lookup_key(value._id, model=gfk_model)
+                        fk_field_value = self.modm_to_django[(content_type_primary_key, formatted_guid)]
+                        # this next line could be better if we just got all the content_types
+                        setattr(django_obj, ct_field_name, ContentType.objects.get_for_model(gfk_model))
+                        setattr(django_obj, fk_field_name, fk_field_value)
+                        dirty = True
+                        fk_count += 1
+
+                    else:
+                        field_name = field.attname
+                        if field_name in bad_fields:
+                            continue
+                        try:
+                            value = getattr(modm_obj, field_name.replace('_id', ''))
+                        except AttributeError:
+                            logger.info('|||||||||||||||||||||||||||||||||||||||||||||||||||||||\n'
+                                        '||| Couldn\'t find {!r} adding to bad_fields\n'
+                                        '|||||||||||||||||||||||||||||||||||||||||||||||||||||||'
+                                        .format(field_name.replace('_id', '')))
+                            bad_fields.append(field_name)
+                            value = None
+                        if value is None:
+                            continue
+
+                        if field_name.endswith('_id'):
+                            django_field_name = field_name
+                        else:
+                            django_field_name = '{}_id'.format(field_name)
+
+                        if isinstance(value, basestring):
+                            # it's guid as a string
+                            setattr(django_obj, django_field_name,
+                                    self.modm_to_django[format_lookup_key(value, model=field.related_model)])
+                            dirty = True
+                            fk_count += 1
+
+                        elif hasattr(value, '_id'):
+                            # let's just assume it's a modm model instance
+                            setattr(django_obj, django_field_name,
+                                    self.modm_to_django[format_lookup_key(value._id, model=field.related_model)])
+                            dirty = True
+                            fk_count += 1
+
+                        else:
+                            logger.info('Value is a {!r}'.format(type(value)))
+                            ipdb.set_trace()
+
+                django_obj, dirty = fix_bad_data(django_obj, dirty)
+                if dirty:
+                    django_objects_to_update.append(django_obj)
+                model_count += 1
+            logger.info(
+                'Through {} {}.{}s and {} FKs...'.format(model_count,
+                                                      django_model._meta.model.__module__,
+                                                      django_model._meta.model.__name__,
+                                                      fk_count))
+            bulk_update(django_objects_to_update,
+                        batch_size=len(django_objects_to_update) // 5)
+            logger.info('Took out {} trashes'.format(gc.collect()))
+            modm_obj._cache.clear()
+            modm_obj._object_cache.clear()
+
+        return model_count
 
     def save_fk_relationships(self, modm_queryset, django_model, page_size):
         logger.info(
             'Starting {} on {}...'.format(sys._getframe().f_code.co_name, django_model._meta.model.__module__))
-        # TODO: Collections is getting user_id added to the bad fields. It shouldn't be. ???? IS IT STILL ????
         fk_relations = [field for field in django_model._meta.get_fields() if
                         field.is_relation and not field.auto_created and field.many_to_one]
 
@@ -255,135 +388,16 @@ class Command(BaseCommand):
             logger.info('{} FK relations:'.format(django_model._meta.model.__module__))
             for rel in fk_relations:
                 logger.info('{!r}'.format(rel))
-        fk_count = 0
         model_count = 0
         model_total = modm_queryset.count()
-        bad_fields = ['external_account_id', ]  # external accounts are handled in their own migration
+        tp = ThreadPool(multiprocessing.cpu_count() * 2)
 
         while model_count < model_total:
-            with transaction.atomic():  # one transaction per page
-                modm_page = modm_queryset.sort('-_id')[model_count:model_count + page_size]
-                modm_keys = modm_page.get_keys()
-                modm_list = list(modm_page)
-
-                django_keys = []
-                for modm_key in modm_keys:
-                    try:
-                        django_keys.append(self.modm_to_django[format_lookup_key(modm_key, ContentType.objects.get_for_model(django_model).pk)])
-                    except KeyError:
-                        if format_lookup_key(modm_key, model=django_model)[1].startswith(
-                                'none_') and django_model is NotificationSubscription:
-                            logger.info('{!r} NotificationSubscription is bad data, skipping'.format(modm_key))
-                            model_count += 1
-                            continue
-                        else:
-                            raise
-
-                django_objects = django_model.objects.filter(pk__in=django_keys)
-                django_objects_to_update = []
-                django_objects_dict = {obj.pk: obj for obj in django_objects}
-                for modm_obj in modm_list:
-                    django_obj = django_objects_dict[self.modm_to_django[format_lookup_key(modm_obj._id, model=django_model)]]
-                    dirty = False
-
-                    # TODO This is doing a mongo query for each Node, could probably be more performant
-                    # if an institution has a file, it doesn't
-                    if isinstance(django_obj, StoredFileNode) and modm_obj.node is not None and \
-                                    modm_obj.node.institution_id is not None:
-                        model_count += 1
-                        continue
-
-                # with ipdb.launch_ipdb_on_exception():
-                    for field in fk_relations:
-                        # notification subscriptions have a AbstractForeignField that's becoming two FKs
-                        if isinstance(modm_obj, MODMNotificationSubscription):
-                            if isinstance(modm_obj.owner, MODMUser):
-                                # TODO this is also doing a mongo query for each owner
-                                django_obj.user_id = self.modm_to_django[format_lookup_key(modm_obj.owner._id, model=OSFUser)]
-                                django_obj.node_id = None
-                            elif isinstance(modm_obj.owner, MODMNode):
-                                # TODO this is also doing a mongo query for each owner
-                                django_obj.user_id = None
-                                django_obj.node_id = self.modm_to_django[format_lookup_key(modm_obj.owner._id, model=AbstractNode)]
-                            elif modm_obj.owner is None:
-                                django_obj.node_id = None
-                                django_obj.user_id = None
-                                logger.info(
-                                    'NotificationSubscription {!r} is abandoned. It\'s owner is {!r}.'.format(
-                                        unicode(modm_obj._id), modm_obj.owner))
-
-                        if isinstance(field, GenericForeignKey):
-                            field_name = field.name
-                            ct_field_name = field.ct_field
-                            fk_field_name = field.fk_field
-                            value = getattr(modm_obj, field_name)
-                            if value is None:
-                                continue
-                            if value.__class__.__name__ in ['Node', 'Registration', 'Collection', 'Preprint']:
-                                gfk_model = apps.get_model('osf', 'AbstractNode')
-                            else:
-                                gfk_model = apps.get_model('osf', value.__class__.__name__)
-
-                            content_type_primary_key, formatted_guid = format_lookup_key(value._id, model=gfk_model)
-                            fk_field_value = self.modm_to_django[(content_type_primary_key, formatted_guid)]
-                            # this next line could be better if we just got all the content_types
-                            setattr(django_obj, ct_field_name, ContentType.objects.get_for_model(gfk_model))
-                            setattr(django_obj, fk_field_name, fk_field_value)
-                            dirty = True
-                            fk_count += 1
-
-                        else:
-                            field_name = field.attname
-                            if field_name in bad_fields:
-                                continue
-                            try:
-                                value = getattr(modm_obj, field_name.replace('_id', ''))
-                            except AttributeError:
-                                logger.info('|||||||||||||||||||||||||||||||||||||||||||||||||||||||\n'
-                                            '||| Couldn\'t find {!r} adding to bad_fields\n'
-                                            '|||||||||||||||||||||||||||||||||||||||||||||||||||||||'
-                                            .format(field_name.replace('_id', '')))
-                                bad_fields.append(field_name)
-                                value = None
-                            if value is None:
-                                continue
-
-                            if field_name.endswith('_id'):
-                                django_field_name = field_name
-                            else:
-                                django_field_name = '{}_id'.format(field_name)
-
-                            if isinstance(value, basestring):
-                                # it's guid as a string
-                                setattr(django_obj, django_field_name,
-                                        self.modm_to_django[format_lookup_key(value, model=field.related_model)])
-                                dirty = True
-                                fk_count += 1
-
-                            elif hasattr(value, '_id'):
-                                # let's just assume it's a modm model instance
-                                setattr(django_obj, django_field_name,
-                                        self.modm_to_django[format_lookup_key(value._id, model=field.related_model)])
-                                dirty = True
-                                fk_count += 1
-
-                            else:
-                                logger.info('Value is a {!r}'.format(type(value)))
-                                ipdb.set_trace()
-
-                    django_obj, dirty = fix_bad_data(django_obj, dirty)
-                    if dirty:
-                        django_objects_to_update.append(django_obj)
-                    model_count += 1
-                    if model_count % page_size == 0 or model_count == model_total:
-                        logger.info(
-                            'Through {} {}s and {} FKs...'.format(model_count,
-                                                                  django_model._meta.model.__module__,
-                                                                  fk_count))
-                        modm_queryset[0]._cache.clear()
-                        modm_queryset[0]._object_cache.clear()
-                        logger.info('Took out {} trashes'.format(gc.collect()))
-                bulk_update(django_objects_to_update)
+            logger.info('{}.{} starting'.format(django_model._meta.model.__module__, django_model._meta.model.__name__))
+            modm_page = modm_queryset.sort('-_id')[model_count:model_count + page_size]
+            tp.spawn(self.save_page_of_fk_relationships, modm_page, django_model, fk_relations)
+            model_count += page_size
+        tp.join()
 
     def save_m2m_relationships(self, modm_queryset, django_model, page_size):
         logger.info(

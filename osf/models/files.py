@@ -857,7 +857,7 @@ class FileVersion(ObjectIDMixin, BaseModel):
     # TODO DELETE ME POST MIGRATION
     modm_model_path = 'website.files.models.base.FileVersion'
     modm_query = None
-    migration_page_size = 10000
+    migration_page_size = 100000
     # /TODO DELETE ME POST MIGRATION
 
     creator = models.ForeignKey('OSFUser', null=True, blank=True)
