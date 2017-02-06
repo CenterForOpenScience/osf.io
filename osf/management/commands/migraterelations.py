@@ -8,6 +8,7 @@ import sys
 from cProfile import Profile
 
 import ipdb
+import multiprocessing
 from bulk_update.helper import bulk_update
 from django.apps import apps
 from django.contrib.contenttypes.fields import GenericForeignKey
@@ -89,7 +90,7 @@ def build_toku_django_lookup_table_cache():
 
 
     lookups = {}
-    tp = ThreadPool(50)
+    tp = ThreadPool(multiprocessing.cpu_count() * 2)
     results = tp.imap_unordered(do_model, models)
     tp.join()
     for res in results:
@@ -212,11 +213,10 @@ class Command(BaseCommand):
     # with ipdb.launch_ipdb_on_exception():
         try:
             self.save_fk_relationships(modm_queryset, django_model, page_size)
-            self.save_m2m_relationships(modm_queryset, django_model, page_size)
+            # self.save_m2m_relationships(modm_queryset, django_model, page_size)
         except Exception as ex:
             logger.info('##################################################{} just died on {}.#############################################################'.format(django_model, ex))
             raise ex
-            # TODO Maybe spawn these into threads too
 
     def handle(self, *args, **options):
         if options['profile']:
@@ -234,7 +234,7 @@ class Command(BaseCommand):
     # with ipdb.launch_ipdb_on_exception():
         self.modm_to_django = build_toku_django_lookup_table_cache()
 
-        pool = ThreadPool(10)
+        pool = ThreadPool(multiprocessing.cpu_count() * 2)
         for model in models:
             pool.spawn(self.do_model, model)
         pool.spawn(self.migrate_node_through_models)
@@ -264,6 +264,7 @@ class Command(BaseCommand):
             with transaction.atomic():  # one transaction per page
                 modm_page = modm_queryset.sort('-_id')[model_count:model_count + page_size]
                 modm_keys = modm_page.get_keys()
+                modm_list = list(modm_page)
 
                 django_keys = []
                 for modm_key in modm_keys:
@@ -281,7 +282,7 @@ class Command(BaseCommand):
                 django_objects = django_model.objects.filter(pk__in=django_keys)
                 django_objects_to_update = []
                 django_objects_dict = {obj.pk: obj for obj in django_objects}
-                for modm_obj in modm_page:
+                for modm_obj in modm_list:
                     django_obj = django_objects_dict[self.modm_to_django[format_lookup_key(modm_obj._id, model=django_model)]]
                     dirty = False
 

@@ -118,7 +118,7 @@ class BaseModel(models.Model):
     modular-odm ``StoredObject`` interface.
     """
 
-    migration_page_size = 5000
+    migration_page_size = 50000
 
     objects = MODMCompatibilityQuerySet.as_manager()
 
