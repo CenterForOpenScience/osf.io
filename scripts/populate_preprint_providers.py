@@ -378,8 +378,8 @@ def main(env):
             'advisory_board': '',
             'email_contact': 'contact+scielo@osf.io',
             'email_support': 'support+scielo@osf.io',
-            'social_twitter': ' https://twitter.com/RedeSciELO', # optional
-            'social_facebook': 'https://www.facebook.com/SciELONetwork',
+            'social_twitter': 'RedeSciELO', # optional
+            'social_facebook': 'SciELONetwork',
             'header_text': '',
             'licenses_acceptable': ['CC0 1.0 Universal'],
             'subjects_acceptable':[]
@@ -398,40 +398,40 @@ def main(env):
                     <p class="m-b-lg"></p>
                 </div>
                 <div class="col-xs-6">
-                    <h3>Team</h3>
+                    <h3>Working Group</h3>
                     <p class="m-b-lg"></p>
                 </div>
                 <div class="col-xs-6">
                     <ul>
-                    <li><b>Abeer Elhalwagi</b>, National Gene Bank, Egypt</li>
-                    <li><b>Ajit Maru</b>, Global Forum on Agricultural Research</li>
-                    <li><b>Oya Yildirim Rieger</b>, Cornell University</li>
-                    <li><b>Prateek Mahalwar</b>, Formerly, Max Planck Institute for Developmental Biology</li>
-                    <li><b>Satendra Kumar Singh</b>, Indian Council of Agricultural Research</li>
-                    <li><b>Vassilis Protonotarios</b>, Neuropublic</li>
-                    <li><b>Vinodh Ilangovan</b>, Max Planck Institute for Biophysical Chemistry</li>
-                    <li><b>Kuldeep Singh Jadon</b>, Central Arid Zone Research Institute</li>
+                        <li><b>Abeer Elhalwagi</b>, National Gene Bank, Egypt</li>
+                        <li><b>Ajit Maru</b>, Global Forum on Agricultural Research</li>
+                        <li><b>Dinesh Kumar</b>, Indian Agricultural Statistics Research Institute</li>
+                        <li><b>Oya Yildirim Rieger</b>, Cornell University</li>
+                        <li><b>Prateek Mahalwar</b>, Ernst & Young GmbH Wirtschaftsprüfungsgesellschaft</li>
+                        <li><b>Satendra Kumar Singh</b>, Indian Council of Agricultural Research</li>
+                        <li><b>Vassilis Protonotarios</b>, Neuropublic</li>
+                        <li><b>Vinodh Ilangovan</b>, Max Planck Institute for Biophysical Chemistry</li>
                     </ul>
                 </div>
                 <div class="col-xs-6">
                     <ul>
-                    <li><b>Chandni Singh</b>, Indian Institute for Human Settlements</li>
-                    <li><b>Dinesh Kumar</b>, Indian Agricultural Statistics Research Institute</li>
-                    <li><b>Gopinath KA</b>, Central Research Institute for Dryland Agriculture</li>
-                    <li><b>Ivonne Lujano</b>, University of the State of Mexico</li>
-                    <li><b>Khelif Karima</b>, 'Institut National de la Recherche Agronomique d'Algérie</li>
-                    <li><b>Paraj Shukla</b>, King Saud University</li>
-                    <li><b>Sridhar Gutam</b>,  ICAR RCER Research Centre/Open Access India</li>
-                    <li><b>Sumant Vyas</b>, National Research Centre on Camel</li>
-                    <li><b>Susmita Das</b>, Bangladesh Agricultural Research Council</li>
+                        <li><b>Chandni Singh</b>, Indian Institute for Human Settlements</li>
+                        <li><b>Gopinath KA</b>, Central Research Institute for Dryland Agriculture</li>
+                        <li><b>Ivonne Lujano</b>, University of the State of Mexico</li>
+                        <li><b>Khelif Karima</b>, Institut National de la Recherche Agronomique d'Algérie</li>
+                        <li><b>Kuldeep Singh Jadon</b>, Central Arid Zone Research Institute</li>
+                        <li><b>Paraj Shukla</b>, King Saud University</li>
+                        <li><b>Sridhar Gutam</b>,  ICAR RCER Research Centre/Open Access India</li>
+                        <li><b>Sumant Vyas</b>, National Research Centre on Camel</li>
+                        <li><b>Susmita Das</b>, Bangladesh Agricultural Research Council</li>
                     </ul>
                 </div>
             ''',
             'email_contact': 'contact+agrixiv@osf.io',
             'email_support': 'support+agrixiv@osf.io',
-            'social_twitter': 'https://twitter.com/AgriXiv',
-            'social_facebook': 'http://facebook.com/agrixiv',
-            'social_instagram': 'http://instagram.com/agrixiv',
+            'social_twitter': 'AgriXiv',
+            'social_facebook': 'agrixiv',
+            'social_instagram': 'agrixiv',
             'licenses_acceptable': ['CC0 1.0 Universal', 'CC-By Attribution 4.0 International'],
             'header_text': '',
             'subjects_acceptable': [
