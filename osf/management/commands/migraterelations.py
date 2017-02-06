@@ -85,7 +85,7 @@ def build_toku_django_lookup_table_cache():
                 if lookup_key in lookup_dict:
                     logger.info('Key {} exists with value {} but {} tried to replace it.'.format(lookup_key, lookup_dict[lookup_key], pk))
                 lookup_dict[lookup_key] = pk
-        logger.info('Got {} guids for {}.{}'.format(len(lookup_dict), model._meta.model.__module__, model._meta.model.__name__))
+        logger.info('Got {} guids for {}.{}'.format(len(lookup_dict), model._meta.model.__module__, model._meta.model.__module__))
         return lookup_dict
 
 
@@ -243,16 +243,16 @@ class Command(BaseCommand):
 
     def save_fk_relationships(self, modm_queryset, django_model, page_size):
         logger.info(
-            'Starting {} on {}...'.format(sys._getframe().f_code.co_name, django_model._meta.model.__name__))
+            'Starting {} on {}...'.format(sys._getframe().f_code.co_name, django_model._meta.model.__module__))
         # TODO: Collections is getting user_id added to the bad fields. It shouldn't be. ???? IS IT STILL ????
         fk_relations = [field for field in django_model._meta.get_fields() if
                         field.is_relation and not field.auto_created and field.many_to_one]
 
         if len(fk_relations) == 0:
-            logger.info('{} doesn\'t have foreign keys.'.format(django_model._meta.model.__name__))
+            logger.info('{} doesn\'t have foreign keys.'.format(django_model._meta.model.__module__))
             return
         else:
-            logger.info('{} FK relations:'.format(django_model._meta.model.__name__))
+            logger.info('{} FK relations:'.format(django_model._meta.model.__module__))
             for rel in fk_relations:
                 logger.info('{!r}'.format(rel))
         fk_count = 0
@@ -378,7 +378,7 @@ class Command(BaseCommand):
                     if model_count % page_size == 0 or model_count == model_total:
                         logger.info(
                             'Through {} {}s and {} FKs...'.format(model_count,
-                                                                  django_model._meta.model.__name__,
+                                                                  django_model._meta.model.__module__,
                                                                   fk_count))
                         modm_queryset[0]._cache.clear()
                         modm_queryset[0]._object_cache.clear()
@@ -387,7 +387,7 @@ class Command(BaseCommand):
 
     def save_m2m_relationships(self, modm_queryset, django_model, page_size):
         logger.info(
-            'Starting {} on {}...'.format(sys._getframe().f_code.co_name, django_model._meta.model.__name__))
+            'Starting {} on {}...'.format(sys._getframe().f_code.co_name, django_model._meta.model.__module__))
 
         m2m_relations = [(field.attname or field.name, field.related_model) for field in
                          django_model._meta.get_fields() if
@@ -395,10 +395,10 @@ class Command(BaseCommand):
 
         if len(m2m_relations) == 0:
             logger.info(
-                '{} doesn\'t have any many to many relationships.'.format(django_model._meta.model.__name__))
+                '{} doesn\'t have any many to many relationships.'.format(django_model._meta.model.__module__))
             return
         else:
-            logger.info('{} M2M relations:'.format(django_model._meta.model.__name__))
+            logger.info('{} M2M relations:'.format(django_model._meta.model.__module__))
             for rel in m2m_relations:
                 logger.info('{}'.format(rel))
         m2m_count = 0
@@ -517,7 +517,7 @@ class Command(BaseCommand):
                         modm_queryset[0]._object_cache.clear()
                         logger.info('Took out {} trashes'.format(gc.collect()))
                         logger.info(
-                            'Through {} {}s and {} m2m'.format(model_count, django_model._meta.model.__name__,
+                            'Through {} {}s and {} m2m'.format(model_count, django_model._meta.model.__module__,
                                                                m2m_count))
 
     def migration_institutional_contributors(self):
