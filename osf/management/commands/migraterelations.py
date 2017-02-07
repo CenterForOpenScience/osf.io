@@ -210,8 +210,8 @@ def do_model(django_model, modm_to_django):
     page_size = 10000
 # with ipdb.launch_ipdb_on_exception():
     try:
-        save_fk_relationships(modm_queryset, django_model, page_size, modm_to_django)
-        save_m2m_relationships(modm_queryset, django_model, page_size, modm_to_django)
+        save_fk_relationships.delay(django_model, page_size, modm_to_django)
+        save_m2m_relationships.delay(django_model, page_size, modm_to_django)
     except Exception as ex:
         logger.info('##################################################{} just died on {}.#############################################################'.format(django_model, ex))
         raise ex
@@ -363,8 +363,8 @@ def save_page_of_fk_relationships(django_model, fk_relations, modm_to_django, of
 
     return model_count
 
-
-def save_fk_relationships(modm_queryset, django_model, page_size, modm_to_django):
+@app.task()
+def save_fk_relationships(django_model, page_size, modm_to_django):
     logger.info(
         'Starting {} on {}...'.format(sys._getframe().f_code.co_name, django_model._meta.model.__module__))
     fk_relations = [field for field in django_model._meta.get_fields() if
@@ -378,6 +378,11 @@ def save_fk_relationships(modm_queryset, django_model, page_size, modm_to_django
         for rel in fk_relations:
             logger.info('{!r}'.format(rel))
     model_count = 0
+    modm_model = get_modm_model(django_model)
+    if isinstance(django_model.modm_query, dict):
+        modm_queryset = modm_model.find(**django_model.modm_query)
+    else:
+        modm_queryset = modm_model.find(django_model.modm_query)
     model_total = modm_queryset.count()
 
     while model_count < model_total:
@@ -517,8 +522,8 @@ def save_page_of_m2m_relationships(django_model, m2m_relations, modm_to_django, 
             'Through {} {}s and {} m2m'.format(model_count, django_model._meta.model.__module__,
                                                m2m_count))
 
-
-def save_m2m_relationships(modm_queryset, django_model, page_size, modm_to_django):
+@app.task()
+def save_m2m_relationships(django_model, page_size, modm_to_django):
     logger.info(
         'Starting {} on {}...'.format(sys._getframe().f_code.co_name, django_model._meta.model.__module__))
 
@@ -536,6 +541,11 @@ def save_m2m_relationships(modm_queryset, django_model, page_size, modm_to_djang
             logger.info('{}'.format(rel))
 
     model_count = 0
+    modm_model = get_modm_model(django_model)
+    if isinstance(django_model.modm_query, dict):
+        modm_queryset = modm_model.find(**django_model.modm_query)
+    else:
+        modm_queryset = modm_model.find(django_model.modm_query)
     model_total = modm_queryset.count()
 
     while model_count < model_total:
