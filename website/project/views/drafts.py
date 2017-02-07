@@ -128,6 +128,10 @@ def submit_draft_for_review(auth, node, draft, *args, **kwargs):
         validate_embargo_end_date(end_date_string, node)
         meta['embargo_end_date'] = end_date_string
     meta['registration_choice'] = registration_choice
+
+    if draft.approval:
+        raise HTTPError(http.CONFLICT, data=dict(message_long='Cannot resubmit previously submitted draft.'))
+
     draft.submit_for_review(
         initiated_by=auth.user,
         meta=meta,
@@ -180,6 +184,9 @@ def register_draft_registration(auth, node, draft, *args, **kwargs):
     data = request.get_json()
     registration_choice = data.get('registrationChoice', 'immediate')
     validate_registration_choice(registration_choice)
+
+    if draft.approval:
+        raise HTTPError(http.CONFLICT, data=dict(message_long='Cannot resubmit previously submitted draft.'))
 
     register = draft.register(auth)
     draft.save()
