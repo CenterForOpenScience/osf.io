@@ -207,6 +207,7 @@ def do_model(django_model, modm_to_django):
         modm_queryset = modm_model.find(django_model.modm_query)
 
     page_size = django_model.migration_page_size
+    page_size = 10000
 # with ipdb.launch_ipdb_on_exception():
     try:
         save_fk_relationships(modm_queryset, django_model, page_size, modm_to_django)
