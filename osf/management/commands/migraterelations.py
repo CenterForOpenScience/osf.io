@@ -513,7 +513,6 @@ def save_m2m_relationships(modm_queryset, django_model, page_size, modm_to_djang
                                                            m2m_count))
 
 
-
 class Command(BaseCommand):
     help = 'Migrations FK and M2M relationships from tokumx to postgres'
     modm_to_django = None
@@ -548,6 +547,7 @@ class Command(BaseCommand):
 def migration_institutional_contributors(modm_to_django):
     logger.info('Starting {}...'.format(sys._getframe().f_code.co_name))
     init_app(routes=False, attach_request_handlers=False, fixtures=False)
+    set_backend()
 
     if not modm_to_django.keys():
         modm_to_django = build_toku_django_lookup_table_cache()
@@ -606,6 +606,7 @@ def migration_institutional_contributors(modm_to_django):
 def migrate_node_through_models(modm_to_django):
     logger.info('Starting {}...'.format(sys._getframe().f_code.co_name))
     init_app(routes=False, attach_request_handlers=False, fixtures=False)
+    set_backend()
 
     if not modm_to_django.keys():
         modm_to_django = build_toku_django_lookup_table_cache()
