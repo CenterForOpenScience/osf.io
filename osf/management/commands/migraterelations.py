@@ -217,6 +217,7 @@ def do_model(django_model, modm_to_django):
         raise ex
 
 
+@app.task()
 def save_page_of_fk_relationships(django_model, fk_relations, modm_to_django, offset, limit):
     with transaction.atomic():  # one transaction per page
         bad_fields = ['external_account_id', ]  # external accounts are handled in their own migration
@@ -381,7 +382,7 @@ def save_fk_relationships(modm_queryset, django_model, page_size, modm_to_django
 
     while model_count < model_total:
         logger.info('{}.{} starting'.format(django_model._meta.model.__module__, django_model._meta.model.__name__))
-        save_page_of_fk_relationships(django_model, fk_relations, modm_to_django, model_count, model_count+page_size)
+        save_page_of_fk_relationships.delay(django_model, fk_relations, modm_to_django, model_count, model_count+page_size)
         model_count += page_size
 
 
@@ -563,7 +564,9 @@ class Command(BaseCommand):
             self._handle(*args, **options)
 
     def _handle(self, *args, **options):
+        init_app(routes=False, attach_request_handlers=False, fixtures=False)
         set_backend()
+        register_nonexistent_models_with_modm()
         models = get_ordered_models()
     # with ipdb.launch_ipdb_on_exception():
         modm_to_django = build_toku_django_lookup_table_cache()
