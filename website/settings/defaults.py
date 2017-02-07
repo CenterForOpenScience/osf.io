@@ -418,6 +418,7 @@ CELERY_IMPORTS = (
     'scripts.analytics.run_keen_summaries',
     'scripts.analytics.run_keen_snapshots',
     'scripts.analytics.run_keen_events',
+    'scripts.generate_sitemap',
 )
 
 # Modules that need metrics and release requirements
@@ -510,6 +511,10 @@ else:
             'task': 'scripts.analytics.run_keen_events',
             'schedule': crontab(minute=0, hour=4),  # Daily 4:00 a.m.
             'kwargs': {'yesterday': True}
+        },
+        'generate_sitemap': {
+            'task': 'scripts.generate_sitemap',
+            'schedule': crontab(minute=0, hour=0),  # Daily 12:00 a.m.
         }
     }
 

@@ -174,9 +174,9 @@ def robots():
 def sitemap_file(path):
     """Serves the sitemap/* files."""
     if path.endswith('.xml.gz'):
-        mime='application/x-gzip'
+        mime = 'application/x-gzip'
     elif path.endswith('.xml'):
-        mime='text/xml'
+        mime = 'text/xml'
     else:
         raise HTTPError(http.NOT_FOUND)
     return send_from_directory(
