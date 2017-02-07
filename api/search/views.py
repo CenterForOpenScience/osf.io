@@ -12,10 +12,11 @@ from api.nodes.serializers import NodeSerializer
 from api.registrations.serializers import RegistrationSerializer
 from api.search.serializers import SearchSerializer
 from api.users.serializers import UserSerializer
+from api.institutions.serializers import InstitutionSerializer
 
 from framework.auth.oauth_scopes import CoreScopes
 
-from osf.models import FileNode, AbstractNode as Node, OSFUser as User
+from osf.models import Institution, FileNode, AbstractNode as Node, OSFUser as User
 from website.search import search
 from website.search.exceptions import MalformedQueryError
 from website.search.util import build_query
@@ -580,3 +581,46 @@ class SearchUsers(BaseSearchView):
     doc_type = 'user'
     view_category = 'search'
     view_name = 'search-user'
+
+
+class SearchInstitutions(BaseSearchView):
+    """
+    *Read-Only*
+
+    Institutions that have been found by the given Elasticsearch query.
+
+    <!-- Copied spiel from InstitutionDetail -->
+
+    ##Attributes
+
+    OSF Institutions have the "institutions" `type`.
+
+        name           type               description
+        =========================================================================
+        name           string             title of the institution
+        id             string             unique identifier in the OSF
+        logo_path      string             a path to the institution's static logo
+
+    ##Relationships
+
+    ###Nodes
+    List of nodes that have this institution as its primary institution.
+
+    ###Users
+    List of users that are affiliated with this institution.
+
+    ##Links
+
+        self:  the canonical api endpoint of this institution
+        html:  this institution's page on the OSF website
+
+    # This Request/Response
+
+    """
+
+    model_class = Institution
+    serializer_class = InstitutionSerializer
+
+    doc_type = 'institution'
+    view_category = 'search'
+    view_name = 'search-institution'
