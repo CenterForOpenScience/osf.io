@@ -525,7 +525,7 @@ def save_bare_models(modm_queryset, django_model, page_size=20000):
 
     while count < total:
         logger.info('{}.{} starting'.format(django_model._meta.model.__module__, django_model._meta.model.__name__))
-        modm_page = list(modm_queryset.sort('-_id')[count: count + page_size])
+        modm_page = modm_queryset.sort('-_id')[count: count + page_size]
         tp.spawn(save_page_of_bare_models, modm_page, django_model)
         count += page_size
     tp.join()

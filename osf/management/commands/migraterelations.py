@@ -249,7 +249,7 @@ class Command(BaseCommand):
             model_count = 0
             fk_count = 0
             modm_keys = modm_page.get_keys()
-            modm_list = list(modm_page)
+            modm_list = modm_page
 
             django_keys = []
             for modm_key in modm_keys:
