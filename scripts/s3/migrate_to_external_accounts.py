@@ -13,8 +13,8 @@ from website import settings
 from website.app import init_app
 from website.models import User, Node
 from website.oauth.models import ExternalAccount
-from website.addons.s3 import settings as s3_settings
-from website.addons.s3 import utils
+from addons.s3 import settings as s3_settings
+from addons.s3 import utils
 from scripts import utils as script_utils
 
 logger = logging.getLogger(__name__)

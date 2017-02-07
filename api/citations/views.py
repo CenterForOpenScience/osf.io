@@ -1,14 +1,14 @@
-from rest_framework import generics, permissions as drf_permissions
-
-from api.base.views import JSONAPIBaseView
-from api.base.utils import get_object_or_error
+from api.base import permissions as base_permissions
 from api.base.filters import ODMFilterMixin
 from api.base.pagination import NoMaxPageSizePagination
-from api.base import permissions as base_permissions
+from api.base.utils import get_object_or_error
+from api.base.views import JSONAPIBaseView
 from api.citations.serializers import CitationSerializer
 from framework.auth.oauth_scopes import CoreScopes
-
+from rest_framework import permissions as drf_permissions
+from rest_framework import generics
 from website.models import CitationStyle
+
 
 class CitationStyleList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
     '''List of standard citation styles available for rendering citations. *Read-only*

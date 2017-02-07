@@ -1,0 +1,19 @@
+.dropbox-folder-picker {
+    margin-top: 10px;
+}
+
+.selected-folder {
+    margin: 12px;
+    font-size: 1.3em;
+}
+
+.dropbox-loading-text {
+    padding-top: 20px;
+}
+
+.dropbox-folderpicker-odd {
+    background-color: #f5f5f5;
+}
+.dropbox-folderpicker-even {
+    background-color: #fff;
+}

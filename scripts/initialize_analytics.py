@@ -35,7 +35,7 @@ if __name__ == '__main__':
     logger.info('Verifying...')
     nodes_with_keen_keys = Node.find(
         Q('is_public', 'eq', True) & Q('is_deleted', 'eq', False)
-        & Q('keenio_read_key', 'nin', ['', None])
+        & Q('keenio_read_key', 'ne', '') & Q('keenio_read_key', 'ne', None)
     )
     total_with_keys = len(nodes_with_keen_keys)
     logger.info('Found {} nodes with keenio keys, expected {}'.format(total_with_keys, count))

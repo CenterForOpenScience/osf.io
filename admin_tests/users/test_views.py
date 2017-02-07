@@ -1,19 +1,22 @@
 from django.test import RequestFactory
 from django.http import Http404
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.utils import timezone
 from nose import tools as nt
 import mock
 import csv
 import os
-from datetime import datetime, timedelta
+from datetime import timedelta
 
 from tests.base import AdminTestCase
 from website import settings
-from framework.auth import User, Auth
-from tests.factories import (
+from framework.auth import Auth
+from osf.models.user import OSFUser
+from osf_tests.factories import (
     UserFactory,
     AuthUserFactory,
     ProjectFactory,
+    TagFactory
 )
 from admin_tests.utilities import setup_view, setup_log_view, setup_form_view
 
@@ -82,7 +85,7 @@ class TestDisableUser(AdminTestCase):
 
     def test_get_object(self):
         obj = self.view.get_object()
-        nt.assert_is_instance(obj, User)
+        nt.assert_is_instance(obj, OSFUser)
 
     def test_get_context(self):
         res = self.view.get_context_data(object=self.user)
@@ -123,7 +126,7 @@ class TestDisableSpamUser(AdminTestCase):
 
     def test_get_object(self):
         obj = self.view.get_object()
-        nt.assert_is_instance(obj, User)
+        nt.assert_is_instance(obj, OSFUser)
 
     def test_get_context(self):
         res = self.view.get_context_data(object=self.user)
@@ -148,9 +151,23 @@ class TestDisableSpamUser(AdminTestCase):
 
 class SpamUserListMixin(AdminTestCase):
     def setUp(self):
-        self.flagged_user = UserFactory(system_tags=['spam_flagged'])
-        self.spam_user = UserFactory(system_tags=['spam_confirmed'])
-        self.ham_user = UserFactory(system_tags=['ham_confirmed'])
+
+        spam_flagged = TagFactory(name='spam_flagged')
+        spam_confirmed = TagFactory(name='spam_confirmed')
+        ham_confirmed = TagFactory(name='ham_confirmed')
+
+        self.flagged_user = UserFactory()
+        self.flagged_user.tags.add(spam_flagged)
+        self.flagged_user.save()
+
+        self.spam_user = UserFactory()
+        self.spam_user.tags.add(spam_confirmed)
+        self.spam_user.save()
+
+        self.ham_user = UserFactory()
+        self.ham_user.tags.add(ham_confirmed)
+        self.ham_user.save()
+
         self.request = RequestFactory().post('/fake_path')
 
 
@@ -198,7 +215,7 @@ class TestRemove2Factor(AdminTestCase):
         self.view = User2FactorDeleteView()
         self.view = setup_log_view(self.view, self.request, guid=self.user._id)
 
-    @mock.patch('admin.users.views.User.delete_addon')
+    @mock.patch('osf.models.user.OSFUser.delete_addon')
     def test_remove_two_factor_get(self, mock_delete_addon):
         self.view.delete(self.request)
         mock_delete_addon.assert_called_with('twofactor')
@@ -221,7 +238,7 @@ class TestUserWorkshopFormView(AdminTestCase):
         self.user_1 = AuthUserFactory()
         self.auth_1 = Auth(self.user_1)
         self.view = UserWorkshopFormView()
-        self.workshop_date = datetime.now()
+        self.workshop_date = timezone.now()
         self.data = [
             ['none', 'date', 'none', 'none', 'none', 'email', 'none'],
             [None, self.workshop_date.strftime('%m/%d/%y'), None, None, None, self.user_1.username, None],
@@ -276,7 +293,7 @@ class TestUserWorkshopFormView(AdminTestCase):
         nt.assert_equal(user_nodes_created_since_workshop, 0)
 
     def test_user_activity_before_workshop_only(self):
-        activity_date = datetime.now() - timedelta(days=1)
+        activity_date = timezone.now() - timedelta(days=1)
         self._create_nodes_and_add_logs(first_activity_date=activity_date)
 
         result_csv = self._create_and_parse_test_file(self.data)
@@ -287,7 +304,7 @@ class TestUserWorkshopFormView(AdminTestCase):
         nt.assert_equal(user_nodes_created_since_workshop, 0)
 
     def test_user_activity_after_workshop_only(self):
-        activity_date = datetime.now() + timedelta(days=1)
+        activity_date = timezone.now() + timedelta(days=1)
         self._create_nodes_and_add_logs(first_activity_date=activity_date)
 
         result_csv = self._create_and_parse_test_file(self.data)
@@ -298,7 +315,7 @@ class TestUserWorkshopFormView(AdminTestCase):
         nt.assert_equal(user_nodes_created_since_workshop, 1)
 
     def test_user_activity_day_of_workshop_and_before(self):
-        activity_date = datetime.now() - timedelta(days=1)
+        activity_date = timezone.now() - timedelta(days=1)
         self._create_nodes_and_add_logs(
             first_activity_date=self.workshop_date,
             second_activity_date=activity_date
@@ -312,7 +329,7 @@ class TestUserWorkshopFormView(AdminTestCase):
         nt.assert_equal(user_nodes_created_since_workshop, 0)
 
     def test_user_activity_day_of_workshop_and_after(self):
-        activity_date = datetime.now() + timedelta(days=1)
+        activity_date = timezone.now() + timedelta(days=1)
         self._create_nodes_and_add_logs(
             first_activity_date=self.workshop_date,
             second_activity_date=activity_date
@@ -326,8 +343,8 @@ class TestUserWorkshopFormView(AdminTestCase):
         nt.assert_equal(user_nodes_created_since_workshop, 1)
 
     def test_user_activity_before_workshop_and_after(self):
-        before_activity_date = datetime.now() - timedelta(days=1)
-        after_activity_date = datetime.now() + timedelta(days=1)
+        before_activity_date = timezone.now() - timedelta(days=1)
+        after_activity_date = timezone.now() + timedelta(days=1)
         self._create_nodes_and_add_logs(
             first_activity_date=before_activity_date,
             second_activity_date=after_activity_date
@@ -342,24 +359,24 @@ class TestUserWorkshopFormView(AdminTestCase):
 
     def test_user_osf_account_not_found(self):
         result_csv = self._create_and_parse_test_file(self.user_not_found_data)
-        user_guid = result_csv[1][-4]
+        user_id = result_csv[1][-4]
         last_log_date = result_csv[1][-1]
         user_logs_since_workshop = result_csv[1][-3]
         user_nodes_created_since_workshop = result_csv[1][-2]
 
-        nt.assert_equal(user_guid, '')
+        nt.assert_equal(user_id, '')
         nt.assert_equal(last_log_date, '')
         nt.assert_equal(user_logs_since_workshop, 0)
         nt.assert_equal(user_nodes_created_since_workshop, 0)
 
     def test_user_found_by_name(self):
         result_csv = self._create_and_parse_test_file(self.user_exists_by_name_data)
-        user_guid = result_csv[1][-4]
+        user_id = result_csv[1][-4]
         last_log_date = result_csv[1][-1]
         user_logs_since_workshop = result_csv[1][-3]
         user_nodes_created_since_workshop = result_csv[1][-2]
 
-        nt.assert_equal(user_guid, self.user_1._id)
+        nt.assert_equal(user_id, self.user_1.id)
         nt.assert_equal(last_log_date, '')
         nt.assert_equal(user_logs_since_workshop, 0)
         nt.assert_equal(user_nodes_created_since_workshop, 0)

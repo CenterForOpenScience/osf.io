@@ -1,12 +1,26 @@
 from rest_framework.throttling import UserRateThrottle, AnonRateThrottle, SimpleRateThrottle
+import logging
+
+from api.base import settings
+
+logger = logging.getLogger(__name__)
 
 
 class BaseThrottle(SimpleRateThrottle):
+
+    def get_ident(self, request):
+        if request.META.get('HTTP_X_THROTTLE_TOKEN'):
+            return request.META['HTTP_X_THROTTLE_TOKEN']
+        return super(BaseThrottle, self).get_ident(request)
 
     def allow_request(self, request, view):
         """
         Implement the check to see if the request should be throttled.
         """
+        if self.get_ident(request) == settings.BYPASS_THROTTLE_TOKEN:
+            logger.info('Bypass header (X-Throttle-Token) passed')
+            return True
+
         if self.rate is None:
             return True
 
@@ -73,11 +87,11 @@ class RootAnonThrottle(AnonRateThrottle):
     scope = 'root-anon-throttle'
 
 
-class TestUserRateThrottle(UserRateThrottle):
+class TestUserRateThrottle(BaseThrottle, UserRateThrottle):
 
     scope = 'test-user'
 
 
-class TestAnonRateThrottle(AnonRateThrottle):
+class TestAnonRateThrottle(BaseThrottle, AnonRateThrottle):
 
     scope = 'test-anon'

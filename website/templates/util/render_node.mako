@@ -3,7 +3,6 @@
 
     <li
             node_id="${summary['id']}"
-            node_reference="${summary['id']}:${'node' if summary['primary'] else 'pointer'}"
             class="
                 project list-group-item list-group-item-node cite-container
                 ${'pointer' if not summary['primary'] else ''}
@@ -114,7 +113,7 @@
 
 % else:
     <li
-        node_reference="${summary['id']}:${'node' if summary['primary'] else 'pointer'}"
+        node_id="${summary['id']}"
         class="project list-group-item list-group-item-node">
         <p class="list-group-item-heading f-w-lg">
             %if summary['is_registration']:

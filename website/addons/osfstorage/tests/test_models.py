@@ -2,6 +2,8 @@ from __future__ import unicode_literals
 
 import mock
 import unittest
+
+from django.utils import timezone
 from nose.tools import *  # noqa
 
 from tests.factories import ProjectFactory, NodeFactory, CommentFactory
@@ -65,6 +67,7 @@ class TestOsfstorageFileNode(StorageTestCase):
             u'downloads': 0,
             u'size': None,
             u'modified': None,
+            u'created': None,
             u'contentType': None,
             u'checkout': None,
             u'md5': None,
@@ -91,13 +94,14 @@ class TestOsfstorageFileNode(StorageTestCase):
             'downloads': 0,
             'size': 1234,
             'modified': None,
+            'created': None,
             'contentType': 'text/plain',
             'checkout': None,
             'md5': None,
             'sha256': None,
         })
 
-        date = datetime.datetime.now()
+        date = timezone.now()
         version.update_metadata({
             'modified': date.isoformat()
         })
@@ -111,6 +115,7 @@ class TestOsfstorageFileNode(StorageTestCase):
             'downloads': 0,
             'size': 1234,
             'modified': date.isoformat(),
+            'created': date.isoformat(),
             'contentType': 'text/plain',
             'checkout': None,
             'md5': None,
@@ -512,6 +517,21 @@ class TestOsfstorageFileNode(StorageTestCase):
             '/'+folder._id, provider='osfstorage', node=node)
         assert [] == all_guids
 
+    def test_delete_allowed(self):
+        node = self.node_settings.owner
+        file = models.OsfStorageFile(name='Godspeed', node=node)
+        file.save()
+        assert_true(file.delete_allowed)
+        node.preprint_file = file.stored_object
+        node.save()
+        assert_false(file.delete_allowed)
+        node._has_abandoned_preprint = True
+        node.save()
+        assert_true(file.delete_allowed)
+        file.check_in_or_out(self.user, self.user, save=True)
+        file.save()
+        assert_false(file.delete_allowed)
+
 
 class TestNodeSettingsModel(StorageTestCase):
 
@@ -551,7 +571,7 @@ class TestOsfStorageFileVersion(StorageTestCase):
         version = factories.FileVersionFactory(
             size=1024,
             content_type='application/json',
-            date_modified=datetime.datetime.now(),
+            date_modified=timezone.now(),
         )
         retrieved = models.FileVersion.load(version._id)
         assert_true(retrieved.creator)
@@ -690,22 +710,22 @@ class TestOsfStorageCheckout(StorageTestCase):
         self.file.reload()
         self.node.reload()
         assert_equal(self.file.checkout, non_admin)
-        assert_equal(self.node.logs[-1].action, 'checked_out')
-        assert_equal(self.node.logs[-1].user, non_admin)
+        assert_equal(self.node.logs.latest().action, 'checked_out')
+        assert_equal(self.node.logs.latest().user, non_admin)
 
         self.file.check_in_or_out(self.user, None, save=True)
         self.file.reload()
         self.node.reload()
         assert_equal(self.file.checkout, None)
-        assert_equal(self.node.logs[-1].action, 'checked_in')
-        assert_equal(self.node.logs[-1].user, self.user)
+        assert_equal(self.node.logs.latest().action, 'checked_in')
+        assert_equal(self.node.logs.latest().user, self.user)
 
         self.file.check_in_or_out(self.user, self.user, save=True)
         self.file.reload()
         self.node.reload()
         assert_equal(self.file.checkout, self.user)
-        assert_equal(self.node.logs[-1].action, 'checked_out')
-        assert_equal(self.node.logs[-1].user, self.user)
+        assert_equal(self.node.logs.latest().action, 'checked_out')
+        assert_equal(self.node.logs.latest().user, self.user)
 
         with assert_raises(FileNodeCheckedOutError):
             self.file.check_in_or_out(non_admin, None, save=True)

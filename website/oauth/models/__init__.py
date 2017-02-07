@@ -10,14 +10,16 @@ import urlparse
 import uuid
 
 from flask import request
+from django.utils import timezone
 from oauthlib.oauth2.rfc6749.errors import MissingTokenError
 from requests.exceptions import HTTPError as RequestsHTTPError
 
 from modularodm import fields, Q
-from modularodm.storage.base import KeyExistsException
 from modularodm.validators import MaxLengthValidator, URLValidator
 from requests_oauthlib import OAuth1Session
 from requests_oauthlib import OAuth2Session
+
+from osf.exceptions import ValidationError
 
 from framework.auth import cas
 from framework.encryption import EncryptedStringField
@@ -63,6 +65,7 @@ class ExternalAccount(StoredObject):
 
     # Used for OAuth2 only
     refresh_token = EncryptedStringField()
+    date_last_refreshed = fields.DateTimeField()
     expires_at = fields.DateTimeField()
     scopes = fields.StringField(list=True, default=lambda: list())
 
@@ -280,7 +283,7 @@ class ExternalProvider(object):
                 provider_name=self.name,
             )
             self.account.save()
-        except KeyExistsException:
+        except ValidationError:
             # ... or get the old one
             self.account = ExternalAccount.find_one(
                 Q('provider', 'eq', self.short_name) &
@@ -299,6 +302,7 @@ class ExternalProvider(object):
         # only for OAuth2
         self.account.expires_at = info.get('expires_at')
         self.account.refresh_token = info.get('refresh_token')
+        self.account.date_last_refreshed = datetime.datetime.utcnow()
 
         # additional information
         self.account.display_name = info.get('display_name')
@@ -307,8 +311,8 @@ class ExternalProvider(object):
         self.account.save()
 
         # add it to the user's list of ``ExternalAccounts``
-        if self.account not in user.external_accounts:
-            user.external_accounts.append(self.account)
+        if not user.external_accounts.filter(id=self.account.id).exists():
+            user.external_accounts.add(self.account)
             user.save()
 
         return True
@@ -424,6 +428,7 @@ class ExternalProvider(object):
         self.account.oauth_key = token[resp_auth_token_key]
         self.account.refresh_token = token[resp_refresh_token_key]
         self.account.expires_at = resp_expiry_fn(token)
+        self.account.date_last_refreshed = datetime.datetime.utcnow()
         self.account.save()
         return True
 
@@ -434,7 +439,7 @@ class ExternalProvider(object):
         return bool: True if needs_refresh
         """
         if self.refresh_time and self.account.expires_at:
-            return (self.account.expires_at - datetime.datetime.utcnow()).total_seconds() < self.refresh_time
+            return (self.account.expires_at - timezone.now()).total_seconds() < self.refresh_time
         return False
 
     @property
@@ -445,7 +450,7 @@ class ExternalProvider(object):
         return bool: True if cannot be refreshed
         """
         if self.expiry_time and self.account.expires_at:
-            return (datetime.datetime.utcnow() - self.account.expires_at).total_seconds() > self.expiry_time
+            return (timezone.now() - self.account.expires_at).total_seconds() > self.expiry_time
         return False
 
 
@@ -489,7 +494,7 @@ class ApiOAuth2Application(StoredObject):
     name = fields.StringField(index=True, required=True, validate=[string_required, MaxLengthValidator(200)])
     description = fields.StringField(required=False, validate=MaxLengthValidator(1000))
 
-    date_created = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow,
+    date_created = fields.DateTimeField(auto_now_add=True,
                                         editable=False)
 
     home_url = fields.StringField(required=True,

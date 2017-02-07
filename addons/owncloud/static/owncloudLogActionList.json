@@ -1,0 +1,11 @@
+{
+    "owncloud_file_added" : "${user} added file ${path} to ownCloud in ${node}",
+    "owncloud_file_removed" : "${user} removed ${path_type} ${path} from ownCloud in ${node}",
+    "owncloud_file_updated" : "${user} updated file ${path} in ownCloud in ${node}",
+    "owncloud_folder_created" : "${user} created folder ${path} in ownCloud in ${node}",
+    "owncloud_folder_selected" : "${user} linked ownCloud folder ${folder} to ${node}",
+    "owncloud_node_authorized" : "${user} authorized the ownCloud addon for ${node}",
+    "owncloud_node_deauthorized" : "${user} deauthorized the ownCloud addon for ${node}",
+    "owncloud_node_deauthorized_no_user" : "ownCloud addon for ${node} deauthorized"
+
+}
