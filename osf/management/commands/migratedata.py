@@ -1,24 +1,15 @@
 from __future__ import unicode_literals
 
-import datetime as dt
 import gc
 import importlib
 import itertools
 import logging
+import multiprocessing
+import pstats
 import sys
 from cProfile import Profile
-import pstats
 
-import gevent
-import multiprocessing
-from gevent.threadpool import ThreadPool
-
-from framework import encryption
-from framework.mongo import set_up_storage
-from framework.mongo import storage
-from addons.s3 import utils
 import ipdb
-from addons.base.models import BaseOAuthNodeSettings
 from box import BoxClient, BoxClientException
 from bson import ObjectId
 from django.contrib.contenttypes.models import ContentType
@@ -27,24 +18,31 @@ from django.db import IntegrityError, connection, transaction
 from django.utils import timezone
 from dropbox.client import DropboxClient
 from dropbox.rest import ErrorResponse
-from framework.auth.core import User as MODMUser
-from framework.mongo import database
-from framework.transactions.context import transaction as modm_transaction
 from github3 import GitHubError
 from modularodm import Q as MQ
 from oauthlib.oauth2 import InvalidGrantError
+from psycopg2._psycopg import AsIs
+from typedmodels.models import TypedModel
+
+from addons.base.models import BaseOAuthNodeSettings
+from addons.github.api import GitHubClient
+from addons.s3 import utils
+from api.base.celery import app
+from framework import encryption
+from framework.auth.core import User as MODMUser
+from framework.mongo import database
+from framework.mongo import set_up_storage
+from framework.mongo import storage
+from framework.transactions.context import transaction as modm_transaction
 from osf.models import (BlackListGuid, ExternalAccount, NodeLog, OSFUser,
                         PageCounter, StoredFileNode, Tag, UserActivityCounter)
 from osf.models.base import Guid, GuidMixin, OptionalGuidMixin
 from osf.models.node import AbstractNode
 from osf.utils.order_apps import get_ordered_models
-from psycopg2._psycopg import AsIs
-from typedmodels.models import TypedModel
-from addons.github.api import GitHubClient
+from website.app import init_app
 from website.files.models import StoredFileNode as MODMStoredFileNode
 from website.models import Guid as MGuid
 from website.models import Node as MODMNode
-from website.models import NodeLog as MNodeLog
 from website.models import User as MUser
 from website.oauth.models import ApiOAuth2Scope
 
@@ -276,7 +274,6 @@ def make_guids():
 
 
 def validate_guid_referents_against_ids():
-    from django.apps import apps
     import ipdb
     register_nonexistent_models_with_modm()
     with ipdb.launch_ipdb_on_exception():
@@ -448,7 +445,6 @@ def fix_guids():
 
 def save_page_of_bare_models(modm_page, django_model):
     hashes = set()
-    start = timezone.now()
     count = 0
     with transaction.atomic():
         django_objects = list()
@@ -515,20 +511,24 @@ def save_page_of_bare_models(modm_page, django_model):
     hashes = None
     logger.info('Took out {} trashes'.format(gc.collect()))
 
-
-def save_bare_models(modm_queryset, django_model, page_size=20000):
-    threads = multiprocessing.cpu_count() * 2
+@app.task()
+def save_bare_models(django_model):
     logger.info('Starting {} on {}.{}...'.format(sys._getframe().f_code.co_name, django_model._meta.model.__module__, django_model._meta.model.__name__))
+    init_app(routes=False, attach_request_handlers=False, fixtures=False)
     count = 0
+    modm_model = get_modm_model(django_model)
+    page_size = django_model.migration_page_size
+    if isinstance(django_model.modm_query, dict):
+        modm_queryset = modm_model.find(**django_model.modm_query)
+    else:
+        modm_queryset = modm_model.find(django_model.modm_query)
     total = modm_queryset.count()
-    tp = ThreadPool(threads)
 
     while count < total:
         logger.info('{}.{} starting'.format(django_model._meta.model.__module__, django_model._meta.model.__name__))
         modm_page = modm_queryset.sort('-_id')[count: count + page_size]
-        tp.spawn(save_page_of_bare_models, modm_page, django_model)
+        save_page_of_bare_models(modm_page, django_model)
         count += page_size
-    tp.join()
 
 
 class DuplicateExternalAccounts(Exception):
@@ -790,7 +790,6 @@ def merge_duplicate_users():
 
 class Command(BaseCommand):
     help = 'Migrates data from tokumx to postgres'
-    threads = multiprocessing.cpu_count() * 2
 
     def add_arguments(self, parser):
         parser.add_argument('--nodelogs', action='store_true', help='Run nodelog migrations')
@@ -798,19 +797,9 @@ class Command(BaseCommand):
         parser.add_argument('--profile', action='store', help='Filename to dump profiling information')
 
     def do_model(self, django_model, options):
-        modm_model = get_modm_model(django_model)
-        if isinstance(django_model.modm_query, dict):
-            modm_queryset = modm_model.find(**django_model.modm_query)
-        else:
-            modm_queryset = modm_model.find(django_model.modm_query)
-
         with ipdb.launch_ipdb_on_exception():
             if not options['nodelogsguids']:
-                save_bare_models(modm_queryset, django_model,
-                                 page_size=django_model.migration_page_size)
-        modm_model._cache.clear()
-        modm_model._object_cache.clear()
-        logger.info('Took out {} trashes'.format(gc.collect()))
+                save_bare_models.delay(django_model)
 
     def handle(self, *args, **options):
         if options['profile']:
@@ -836,7 +825,6 @@ class Command(BaseCommand):
             merge_duplicate_users()
             # merged users get blank usernames, running it twice fixes it.
             merge_duplicate_users()
-        pool = ThreadPool(self.threads)
 
         for django_model in models:
             if not options['nodelogs'] and not options['nodelogsguids'] and django_model is NodeLog:
@@ -852,8 +840,7 @@ class Command(BaseCommand):
                       '################################################'.format(
                     django_model._meta.model.__module__, django_model._meta.model.__name__,))
                 continue
-            pool.spawn(self.do_model, django_model, options)
-        pool.join()
+            self.do_model(django_model, options)
 
         # Handle system tags, they're on nodes, they need a special migration
         if not options['nodelogs'] and not options['nodelogsguids']:
