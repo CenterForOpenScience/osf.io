@@ -93,10 +93,8 @@ def migrate_page_counters(page_size=20000):
 
                     logger.info('Done with {} {} in {} seconds...'.format(len(saved_django_objects), PageCounter._meta.model.__module__, (timezone.now()-page_finish_time).total_seconds()))
                     saved_django_objects = []
-                    logger.info('Took out {} trashes'.format(gc.collect()))
     total = None
     count = None
-    logger.info('Took out {} trashes'.format(gc.collect()))
     logger.info('Finished {} in {} seconds...'.format(sys._getframe().f_code.co_name, (timezone.now()-start_time).total_seconds()))
 
 @app.task()
@@ -130,10 +128,8 @@ def migrate_user_activity_counters(page_size=20000):
 
                     logger.info('Done with {} {} in {} seconds...'.format(len(saved_django_objects), UserActivityCounter._meta.model.__module__, (timezone.now()-page_finish_time).total_seconds()))
                     saved_django_objects = []
-                    logger.info('Took out {} trashes'.format(gc.collect()))
     total = None
     count = None
-    logger.info('Took out {} trashes'.format(gc.collect()))
     logger.info('Finished {} in {} seconds...'.format(sys._getframe().f_code.co_name, (timezone.now()-start_time).total_seconds()))
 
 
@@ -524,11 +520,9 @@ def save_page_of_bare_models(django_model, offset, limit):
         modm_obj._object_cache.clear()
         saved_django_objects = []
         page_of_modm_objects = []
-        logger.info('Took out {} trashes'.format(gc.collect()))
     total = None
     count = None
     hashes = None
-    logger.info('Took out {} trashes'.format(gc.collect()))
 
 
 @app.task()
