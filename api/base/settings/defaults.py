@@ -32,6 +32,10 @@ DATABASES = {
 }
 
 DATABASE_ROUTERS = ['osf.db.router.PostgreSQLFailoverRouter', ]
+CELERY_IMPORTS = [
+    'osf.management.commands.migratedata',
+    'osf.management.commands.migraterelations',
+]
 
 PASSWORD_HASHERS = [
     'django.contrib.auth.hashers.BCryptSHA256PasswordHasher',
