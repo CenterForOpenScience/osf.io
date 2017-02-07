@@ -187,7 +187,7 @@ def get_pk_for_unknown_node_model(modm_to_django, guid):
 
 
 @app.task()
-def do_model(django_model, modm_to_django):
+def do_model(django_model):
     init_app(routes=False, attach_request_handlers=False, fixtures=False)
     set_backend()
     register_nonexistent_models_with_modm()
@@ -210,8 +210,8 @@ def do_model(django_model, modm_to_django):
     page_size = 10000
 # with ipdb.launch_ipdb_on_exception():
     try:
-        save_fk_relationships.delay(django_model, page_size, modm_to_django)
-        save_m2m_relationships.delay(django_model, page_size, modm_to_django)
+        save_fk_relationships.delay(django_model, page_size)
+        save_m2m_relationships.delay(django_model, page_size)
     except Exception as ex:
         logger.info('##################################################{} just died on {}.#############################################################'.format(django_model, ex))
         raise ex
@@ -364,7 +364,7 @@ def save_page_of_fk_relationships(django_model, fk_relations, modm_to_django, of
     return model_count
 
 @app.task()
-def save_fk_relationships(django_model, page_size, modm_to_django):
+def save_fk_relationships(django_model, page_size):
     logger.info(
         'Starting {} on {}...'.format(sys._getframe().f_code.co_name, django_model._meta.model.__module__))
     fk_relations = [field for field in django_model._meta.get_fields() if
@@ -379,6 +379,7 @@ def save_fk_relationships(django_model, page_size, modm_to_django):
             logger.info('{!r}'.format(rel))
     model_count = 0
     modm_model = get_modm_model(django_model)
+    modm_to_django = build_toku_django_lookup_table_cache()
     if isinstance(django_model.modm_query, dict):
         modm_queryset = modm_model.find(**django_model.modm_query)
     else:
@@ -522,8 +523,9 @@ def save_page_of_m2m_relationships(django_model, m2m_relations, modm_to_django, 
             'Through {} {}s and {} m2m'.format(model_count, django_model._meta.model.__module__,
                                                m2m_count))
 
+
 @app.task()
-def save_m2m_relationships(django_model, page_size, modm_to_django):
+def save_m2m_relationships(django_model, page_size):
     logger.info(
         'Starting {} on {}...'.format(sys._getframe().f_code.co_name, django_model._meta.model.__module__))
 
@@ -541,6 +543,7 @@ def save_m2m_relationships(django_model, page_size, modm_to_django):
             logger.info('{}'.format(rel))
 
     model_count = 0
+    modm_to_django = build_toku_django_lookup_table_cache()
     modm_model = get_modm_model(django_model)
     if isinstance(django_model.modm_query, dict):
         modm_queryset = modm_model.find(**django_model.modm_query)
@@ -579,23 +582,21 @@ class Command(BaseCommand):
         register_nonexistent_models_with_modm()
         models = get_ordered_models()
     # with ipdb.launch_ipdb_on_exception():
-        modm_to_django = build_toku_django_lookup_table_cache()
 
         for model in models:
-            do_model.delay(model, modm_to_django)
-        migrate_node_through_models.delay(modm_to_django)
-        migration_institutional_contributors.delay(modm_to_django)
+            do_model.delay(model)
+        migrate_node_through_models.delay()
+        migration_institutional_contributors.delay()
 
 
 @app.task()
-def migration_institutional_contributors(modm_to_django):
+def migration_institutional_contributors():
     logger.info('Starting {}...'.format(sys._getframe().f_code.co_name))
     init_app(routes=False, attach_request_handlers=False, fixtures=False)
     set_backend()
     register_nonexistent_models_with_modm()
 
-    if not modm_to_django.keys():
-        modm_to_django = build_toku_django_lookup_table_cache()
+    modm_to_django = build_toku_django_lookup_table_cache()
     total = MODMInstitution.find(deleted=True).count()
     count = 0
     contributor_count = 0
@@ -647,14 +648,13 @@ def migration_institutional_contributors(modm_to_django):
                     modm_obj._object_cache.clear()
 
 @app.task()
-def migrate_node_through_models(modm_to_django):
+def migrate_node_through_models():
     logger.info('Starting {}...'.format(sys._getframe().f_code.co_name))
     init_app(routes=False, attach_request_handlers=False, fixtures=False)
     set_backend()
     register_nonexistent_models_with_modm()
 
-    if not modm_to_django.keys():
-        modm_to_django = build_toku_django_lookup_table_cache()
+    modm_to_django = build_toku_django_lookup_table_cache()
     total = MODMNode.find().count()
     count = 0
     contributor_count = 0
