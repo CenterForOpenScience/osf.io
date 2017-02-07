@@ -379,7 +379,7 @@ def auth_register(auth):
     raise HTTPError(http.BAD_REQUEST)
 
 @collect_auth
-def auth_logout(auth=None, redirect_url=None, next_url=None):
+def auth_logout(auth, redirect_url=None, next_url=None):
     """
     Log out, delete current session and remove OSF cookie.
     If next url is valid and auth is logged in, redirect to CAS logout endpoint with the current request url as service.
@@ -391,7 +391,7 @@ def auth_logout(auth=None, redirect_url=None, next_url=None):
     Note: OSF tells CAS where it wants to be redirected back after successful logout. However, CAS logout flow may not
     respect this url if user is authenticated through remote identity provider.
 
-    :param the auth context
+    :param auth: the authentication context
     :param redirect_url: url to DIRECTLY redirect after CAS logout, default is `OSF/goodbye`
     :param next_url: url to redirect after OSF logout, which is after CAS logout
     :return: the response
