@@ -259,17 +259,18 @@ def make_guids():
                         Guid.objects.create(referent=referent_instance)
                     else:
                         logger.info('{} {} didn\'t create a Guid'.format(referent_model._meta.model.__module__, modm_model_id))
-
-            logger.info('Started creating blacklist orphaned guids.')
-            with connection.cursor() as cursor:
-                sql = """
-                    INSERT INTO
-                      osf_blacklistguid
-                      (guid)
-                    VALUES %(guids)s ON CONFLICT DO NOTHING;
-                """
-                params = ''.join(['(\'{}\'), '.format(og) for og in orphaned_guids])[0:-2]
-                cursor.execute(sql, {'guids': AsIs(params)})
+            # TODO think about this for prod
+            if orphaned_guids:
+                logger.info('Started creating blacklist orphaned guids.')
+                with connection.cursor() as cursor:
+                    sql = """
+                        INSERT INTO
+                          osf_blacklistguid
+                          (guid)
+                        VALUES %(guids)s ON CONFLICT DO NOTHING;
+                    """
+                    params = ''.join(['(\'{}\'), '.format(og) for og in orphaned_guids])[0:-2]
+                    cursor.execute(sql, {'guids': AsIs(params)})
 
 
 def validate_guid_referents_against_ids():
@@ -332,13 +333,10 @@ def fix_guids():
     dj_guids = Guid.objects.all().values_list('_id', flat=True)
     set_of_modm_guids = set(modm_guids)
     set_of_django_guids = set(dj_guids)
-    blacklist_guids = BlackListGuid.objects.all().values_list('guid', flat=True)
-    set_of_blacklist_guids = set(blacklist_guids)
     missing = set_of_modm_guids - set_of_django_guids
-    still_missing = missing - set_of_blacklist_guids
-    short_missing = [x for x in still_missing if len(x) < 6]
-    long_missing = [x for x in still_missing if len(x) > 5]
-    assert len(short_missing) + len(long_missing) == len(still_missing), 'It broke'
+    short_missing = [x for x in missing if len(x) < 6]
+    long_missing = [x for x in missing if len(x) > 5]
+    assert len(short_missing) + len(long_missing) == len(missing), 'It broke'
     short_missing_guids = MGuid.find(MQ('_id', 'in', short_missing))
     long_missing_guids = MGuid.find(MQ('_id', 'in', long_missing))
 
@@ -836,9 +834,9 @@ class Command(BaseCommand):
         register_nonexistent_models_with_modm()
 
         if options['dependents']:
-            fix_guids()
             make_guids()
-            save_bare_external_accounts()
+            fix_guids()
+            # save_bare_external_accounts()
             return
 
         models = get_ordered_models()
