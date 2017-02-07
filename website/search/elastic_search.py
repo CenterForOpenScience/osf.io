@@ -8,26 +8,21 @@ import logging
 import math
 import re
 import unicodedata
+from framework import sentry
 
-from elasticsearch import (
-    ConnectionError,
-    Elasticsearch,
-    NotFoundError,
-    RequestError,
-    TransportError,
-    helpers,
-)
-from modularodm import Q
 import six
 
-from framework import sentry
+from django.apps import apps
+from elasticsearch import (ConnectionError, Elasticsearch, NotFoundError,
+                           RequestError, TransportError, helpers)
 from framework.celery_tasks import app as celery_app
 from framework.mongo.utils import paginated
-
+from modularodm import Q
+from osf.models import AbstractNode as Node
+from osf.models import OSFUser as User
+from osf.models import FileNode
 from website import settings
-from website.files.models import FileNode
 from website.filters import gravatar
-from website.models import User, Node
 from website.project.licenses import serialize_node_license_record
 from website.search import exceptions
 from website.search.util import build_query, clean_splitters
@@ -64,36 +59,43 @@ ENGLISH_ANALYZER_PROPERTY = {'type': 'string', 'analyzer': 'english'}
 
 INDEX = settings.ELASTIC_INDEX
 
-try:
-    es = Elasticsearch(
-        settings.ELASTIC_URI,
-        request_timeout=settings.ELASTIC_TIMEOUT
-    )
-    logging.getLogger('elasticsearch').setLevel(logging.WARN)
-    logging.getLogger('elasticsearch.trace').setLevel(logging.WARN)
-    logging.getLogger('urllib3').setLevel(logging.WARN)
-    logging.getLogger('requests').setLevel(logging.WARN)
-    es.cluster.health(wait_for_status='yellow')
-except ConnectionError as e:
-    message = (
-        'The SEARCH_ENGINE setting is set to "elastic", but there '
-        'was a problem starting the elasticsearch interface. Is '
-        'elasticsearch running?'
-    )
-    if settings.SENTRY_DSN:
+CLIENT = None
+
+
+def client():
+    global CLIENT
+    if CLIENT is None:
         try:
-            sentry.log_exception()
-            sentry.log_message(message)
-        except AssertionError:  # App has not yet been initialized
-            logger.exception(message)
-    else:
-        logger.error(message)
-    exit(1)
+            CLIENT = Elasticsearch(
+                settings.ELASTIC_URI,
+                request_timeout=settings.ELASTIC_TIMEOUT
+            )
+            logging.getLogger('elasticsearch').setLevel(logging.WARN)
+            logging.getLogger('elasticsearch.trace').setLevel(logging.WARN)
+            logging.getLogger('urllib3').setLevel(logging.WARN)
+            logging.getLogger('requests').setLevel(logging.WARN)
+            CLIENT.cluster.health(wait_for_status='yellow')
+        except ConnectionError:
+            message = (
+                'The SEARCH_ENGINE setting is set to "elastic", but there '
+                'was a problem starting the elasticsearch interface. Is '
+                'elasticsearch running?'
+            )
+            if settings.SENTRY_DSN:
+                try:
+                    sentry.log_exception()
+                    sentry.log_message(message)
+                except AssertionError:  # App has not yet been initialized
+                    logger.exception(message)
+            else:
+                logger.error(message)
+            exit(1)
+    return CLIENT
 
 
 def requires_search(func):
     def wrapped(*args, **kwargs):
-        if es is not None:
+        if client() is not None:
             try:
                 return func(*args, **kwargs)
             except ConnectionError:
@@ -123,7 +125,7 @@ def get_aggregations(query, doc_type):
         }
     }
 
-    res = es.search(index=INDEX, doc_type=doc_type, search_type='count', body=query)
+    res = client().search(index=INDEX, doc_type=doc_type, search_type='count', body=query)
     ret = {
         doc_type: {
             item['key']: item['doc_count']
@@ -145,7 +147,7 @@ def get_counts(count_query, clean=True):
         }
     }
 
-    res = es.search(index=INDEX, doc_type=None, search_type='count', body=count_query)
+    res = client().search(index=INDEX, doc_type=None, search_type='count', body=count_query)
     counts = {x['key']: x['doc_count'] for x in res['aggregations']['counts']['buckets'] if x['key'] in ALIASES.keys()}
 
     counts['total'] = sum([val for val in counts.values()])
@@ -160,7 +162,7 @@ def get_tags(query, index):
         }
     }
 
-    results = es.search(index=index, doc_type=None, body=query)
+    results = client().search(index=index, doc_type=None, body=query)
     tags = results['aggregations']['tag_cloud']['buckets']
 
     return tags
@@ -203,7 +205,7 @@ def search(query, index=None, doc_type='_all', raw=False):
     counts = get_counts(count_query, index)
 
     # Run the real query and get the results
-    raw_results = es.search(index=index, doc_type=doc_type, body=query)
+    raw_results = client().search(index=index, doc_type=doc_type, body=query)
     results = [hit['_source'] for hit in raw_results['hits']['hits']]
 
     return_value = {
@@ -294,14 +296,15 @@ def get_doctype_from_node(node):
 
 @celery_app.task(bind=True, max_retries=5, default_retry_delay=60)
 def update_node_async(self, node_id, index=None, bulk=False):
-    node = Node.load(node_id)
+    AbstractNode = apps.get_model('osf.AbstractNode')
+    node = AbstractNode.load(node_id)
     try:
         update_node(node=node, index=index, bulk=bulk, async=True)
     except Exception as exc:
         self.retry(exc=exc)
 
 def serialize_node(node, category):
-    from website.addons.wiki.model import NodeWikiPage
+    NodeWikiPage = apps.get_model('addons_wiki.NodeWikiPage')
 
     elastic_document = {}
     parent_id = node.parent_id
@@ -325,7 +328,7 @@ def serialize_node(node, category):
         'normalized_title': normalized_title,
         'category': category,
         'public': node.is_public,
-        'tags': [tag._id for tag in node.tags if tag],
+        'tags': list(node.tags.values_list('name', flat=True)),
         'description': node.description,
         'url': node.url,
         'is_registration': node.is_registration,
@@ -339,7 +342,7 @@ def serialize_node(node, category):
         'parent_id': parent_id,
         'date_created': node.date_created,
         'license': serialize_node_license_record(node.license),
-        'affiliated_institutions': [inst.name for inst in node.affiliated_institutions],
+        'affiliated_institutions': list(node.affiliated_institutions.values_list('name', flat=True)),
         'boost': int(not node.is_registration) + 1,  # This is for making registered projects less relevant
         'extra_search_terms': clean_splitters(node.title),
     }
@@ -354,9 +357,8 @@ def serialize_node(node, category):
 
 @requires_search
 def update_node(node, index=None, bulk=False, async=False):
+    from addons.osfstorage.models import OsfStorageFile
     index = index or INDEX
-
-    from website.files.models.osfstorage import OsfStorageFile
     for file_ in paginated(OsfStorageFile, Q('node', 'eq', node)):
         update_file(file_.wrapped(), index=index)
 
@@ -368,7 +370,7 @@ def update_node(node, index=None, bulk=False, async=False):
         if bulk:
             return elastic_document
         else:
-            es.index(index=index, doc_type=category, id=node._id, body=elastic_document, refresh=True)
+            client().index(index=index, doc_type=category, id=node._id, body=elastic_document, refresh=True)
 
 def bulk_update_nodes(serialize, nodes, index=None):
     """Updates the list of input projects
@@ -392,7 +394,7 @@ def bulk_update_nodes(serialize, nodes, index=None):
                 'doc_as_upsert': True,
             })
     if actions:
-        return helpers.bulk(es, actions)
+        return helpers.bulk(client(), actions)
 
 def serialize_contributors(node):
     return {
@@ -415,7 +417,7 @@ def update_user(user, index=None):
     index = index or INDEX
     if not user.is_active:
         try:
-            es.delete(index=index, doc_type='user', id=user._id, refresh=True, ignore=[404])
+            client().delete(index=index, doc_type='user', id=user._id, refresh=True, ignore=[404])
         except NotFoundError:
             pass
         return
@@ -454,14 +456,14 @@ def update_user(user, index=None):
         'boost': 2,  # TODO(fabianvf): Probably should make this a constant or something
     }
 
-    es.index(index=index, doc_type='user', body=user_doc, id=user._id, refresh=True)
+    client().index(index=index, doc_type='user', body=user_doc, id=user._id, refresh=True)
 
 @requires_search
 def update_file(file_, index=None, delete=False):
     index = index or INDEX
 
     if not file_.node.is_public or delete or file_.node.is_deleted or file_.node.archiving:
-        es.delete(
+        client().delete(
             index=index,
             doc_type='file',
             id=file_._id,
@@ -487,7 +489,7 @@ def update_file(file_, index=None, delete=False):
         'id': file_._id,
         'deep_url': file_deep_url,
         'guid_url': guid_url,
-        'tags': [tag._id for tag in file_.tags],
+        'tags': list(file_.tags.values_list('name', flat=True)),
         'name': file_.name,
         'category': 'file',
         'node_url': node_url,
@@ -498,7 +500,7 @@ def update_file(file_, index=None, delete=False):
         'extra_search_terms': clean_splitters(file_.name),
     }
 
-    es.index(
+    client().index(
         index=index,
         doc_type='file',
         body=file_doc,
@@ -511,7 +513,7 @@ def update_institution(institution, index=None):
     index = index or INDEX
     id_ = institution._id
     if institution.is_deleted:
-        es.delete(index=index, doc_type='institution', id=id_, refresh=True, ignore=[404])
+        client().delete(index=index, doc_type='institution', id=id_, refresh=True, ignore=[404])
     else:
         institution_doc = {
             'id': id_,
@@ -521,7 +523,7 @@ def update_institution(institution, index=None):
             'name': institution.name,
         }
 
-        es.index(index=index, doc_type='institution', body=institution_doc, id=id_, refresh=True)
+        client().index(index=index, doc_type='institution', body=institution_doc, id=id_, refresh=True)
 
 @requires_search
 def delete_all():
@@ -530,7 +532,7 @@ def delete_all():
 
 @requires_search
 def delete_index(index):
-    es.indices.delete(index, ignore=[404])
+    client().indices.delete(index, ignore=[404])
 
 
 @requires_search
@@ -543,7 +545,7 @@ def create_index(index=None):
     project_like_types = ['project', 'component', 'registration']
     analyzed_fields = ['title', 'description']
 
-    es.indices.create(index, ignore=[400])  # HTTP 400 if index already exists
+    client().indices.create(index, ignore=[400])  # HTTP 400 if index already exists
     for type_ in document_types:
         mapping = {
             'properties': {
@@ -581,13 +583,13 @@ def create_index(index=None):
                 },
             }
             mapping['properties'].update(fields)
-        es.indices.put_mapping(index=index, doc_type=type_, body=mapping, ignore=[400, 404])
+        client().indices.put_mapping(index=index, doc_type=type_, body=mapping, ignore=[400, 404])
 
 @requires_search
 def delete_doc(elastic_document_id, node, index=None, category=None):
     index = index or INDEX
     category = category or 'registration' if node.is_registration else node.project_or_component
-    es.delete(index=index, doc_type=category, id=elastic_document_id, refresh=True, ignore=[404])
+    client().delete(index=index, doc_type=category, id=elastic_document_id, refresh=True, ignore=[404])
 
 
 @requires_search

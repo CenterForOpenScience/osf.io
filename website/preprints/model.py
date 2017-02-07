@@ -119,23 +119,18 @@ class PreprintService(GuidStoredObject):
         if preprint_file.node != self.node or preprint_file.provider != 'osfstorage':
             raise ValueError('This file is not a valid primary file for this preprint.')
 
-        # there is no preprint file yet! This is the first time!
-        if not self.node.preprint_file:
-            self.node.preprint_file = preprint_file
-            self.node.add_log(action=NodeLog.PREPRINT_INITIATED, params={
-                'preprint': {'id': self._id, 'title': self.node.title},
-                'service': {'title': self.provider.name}
-            }, auth=auth, save=False)
-        elif preprint_file != self.node.preprint_file:
-            # if there was one, check if it's a new file
-            self.node.preprint_file = preprint_file
+        existing_file = self.node.preprint_file
+        self.node.preprint_file = preprint_file
+
+        # only log if updating the preprint file, not adding for the first time
+        if existing_file:
             self.node.add_log(
                 action=NodeLog.PREPRINT_FILE_UPDATED,
                 params={
                     'preprint': self._id
                 },
                 auth=auth,
-                save=False,
+                save=False
             )
 
         if save:
@@ -183,22 +178,18 @@ class PreprintService(GuidStoredObject):
 
     def set_preprint_license(self, license_detail, auth, save=False):
 
-        set_license(self, license_detail, auth, node_type='preprint')
+        license_record, license_changed = set_license(self, license_detail, auth, node_type='preprint')
 
-        self.node.add_log(
-            action=NodeLog.PREPRINT_LICENSE_UPDATED,
-            params={
-                'preprint': {
-                    'id': self._id,
-                    'title': self.node.title
+        if license_changed:
+            self.node.add_log(
+                action=NodeLog.PREPRINT_LICENSE_UPDATED,
+                params={
+                    'preprint': self._id,
+                    'new_license': license_record.node_license.name
                 },
-                'service': {
-                    'title': self.provider.name
-                }
-            },
-            auth=auth,
-            save=False
-        )
+                auth=auth,
+                save=False
+            )
 
         if save:
             self.save()
@@ -219,6 +210,7 @@ class PreprintProvider(StoredObject):
     external_url = fields.StringField()
     email_contact = fields.StringField()
     email_support = fields.StringField()
+    example = fields.StringField()
     access_token = EncryptedStringField()
     advisory_board = fields.StringField()
     social_twitter = fields.StringField()

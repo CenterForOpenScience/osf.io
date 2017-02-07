@@ -1,5 +1,8 @@
 # OSF Mendeley Addon
 
+## Deprecation Warning: ./website/addons has been moved to ./addons
+## Please configure in the new location
+
 ## Enabling the addon for development
 
 1. Go to http://dev.mendeley.com/myapps.html and register a new application

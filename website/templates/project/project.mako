@@ -308,7 +308,7 @@
                 % if addons[addon]['has_widget']:
                     %if addon != 'wiki': ## We already show the wiki widget at the top
                     <div class="addon-widget-container" mod-meta='{
-                            "tpl": "../addons/${addon}/templates/${addon}_widget.mako",
+                            "tpl": "../../addons/${addon}/templates/${addon}_widget.mako",
                             "uri": "${node['api_url']}${addon}/widget/"
                         }'></div>
                     %endif

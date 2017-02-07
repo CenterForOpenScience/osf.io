@@ -1,5 +1,8 @@
 # OSF Google Drive Addon
 
+## Deprecation Warning: ./website/addons has been moved to ./addons
+## Please configure in the new location
+
 
 Enabling the addon for development
 

@@ -15,6 +15,7 @@ import functools
 
 from collections import defaultdict
 
+from django.db.models import F
 import progressbar
 from modularodm import Q
 
@@ -94,9 +95,11 @@ def main(send_email=False):
     projects = {}
     users = defaultdict(lambda: (0, 0))
 
-    progress_bar = progressbar.ProgressBar(maxval=Node.find(Q('parent_node', 'eq', None)).count()).start()
+    top_level_nodes = Node.objects.get_roots()
+    progress_bar = progressbar.ProgressBar(maxval=top_level_nodes.count()).start()
+    top_level_nodes = top_level_nodes.iterator()
 
-    for i, node in enumerate(Node.find(Q('parent_node', 'eq', None))):
+    for i, node in enumerate(top_level_nodes):
         progress_bar.update(i+1)
         if node._id in WHITE_LIST:
             continue  # Dont count whitelisted nodes against users
@@ -106,11 +109,6 @@ def main(send_email=False):
                 users[contrib._id] = tuple(map(sum, zip(users[contrib._id], projects[node._id])))  # Adds tuples together, map(sum, zip((a, b), (c, d))) -> (a+c, b+d)
 
         if i % 25 == 0:
-            # Clear all caches
-            for key in ('node', 'user', 'fileversion', 'storedfilenode'):
-                Node._cache.data.get(key, {}).clear()
-                Node._object_cache.data.get(key, {}).clear()
-            # Collect garbage
             gc.collect()
     progress_bar.finish()
 

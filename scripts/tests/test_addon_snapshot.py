@@ -10,10 +10,10 @@ from scripts.analytics.addon_snapshot import AddonSnapshot
 from website.models import Node
 from framework.auth.core import User
 from website.settings import ADDONS_AVAILABLE
-from website.addons.github.tests.factories import GitHubAccountFactory
-from website.addons.github.model import GitHubNodeSettings, GitHubUserSettings
-from website.addons.googledrive.tests.factories import GoogleDriveAccountFactory
-from website.addons.googledrive.model import GoogleDriveNodeSettings, GoogleDriveUserSettings
+from addons.github.tests.factories import GitHubAccountFactory
+from addons.github.model import GitHubNodeSettings, GitHubUserSettings
+from addons.googledrive.tests.factories import GoogleDriveAccountFactory
+from addons.googledrive.model import GoogleDriveNodeSettings, GoogleDriveUserSettings
 
 
 class TestAddonCount(OsfTestCase):
@@ -75,7 +75,6 @@ class TestAddonCount(OsfTestCase):
         results = AddonSnapshot().get_events()
         github_res = [res for res in results if res['provider']['name'] == 'github'][0]
         assert_equal(github_res['users']['enabled'], 1)
-        # import ipdb; ipdb.set_trace()
 
     def test_one_user_with_multiple_addons(self):
         results = AddonSnapshot().get_events()

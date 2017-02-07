@@ -3,6 +3,7 @@ import sys
 from datetime import datetime
 import logging
 
+from django.utils import timezone
 from modularodm import Q
 
 from website.archiver import (
@@ -26,7 +27,7 @@ logger = logging.getLogger(__name__)
 
 
 def find_failed_registrations():
-    expired_if_before = datetime.utcnow() - ARCHIVE_TIMEOUT_TIMEDELTA
+    expired_if_before = timezone.now() - ARCHIVE_TIMEOUT_TIMEDELTA
     jobs = ArchiveJob.find(
         Q('sent', 'eq', False) &
         Q('datetime_initiated', 'lt', expired_if_before) &
