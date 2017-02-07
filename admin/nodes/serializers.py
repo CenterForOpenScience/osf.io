@@ -1,6 +1,5 @@
 import json
 
-from website.project.model import User
 from website.util.permissions import reduce_permissions
 
 from admin.users.serializers import serialize_simple_node
@@ -21,8 +20,7 @@ def serialize_node(node):
         'date_created': node.date_created,
         'withdrawn': node.is_retracted,
         'embargo': embargo,
-        'contributors': map(serialize_simple_user,
-                            node.permissions.iteritems()),
+        'contributors': [serialize_simple_user_and_node_permissions(node, user) for user in node.contributors],
         'children': map(serialize_simple_node, node.nodes),
         'deleted': node.is_deleted,
         'pending_registration': node.is_pending_registration,
@@ -33,10 +31,9 @@ def serialize_node(node):
     }
 
 
-def serialize_simple_user(user_info):
-    user = User.load(user_info[0])
+def serialize_simple_user_and_node_permissions(node, user):
     return {
         'id': user._id,
         'name': user.fullname,
-        'permission': reduce_permissions(user_info[1]) if user_info[1] else None,
+        'permission': reduce_permissions(node.get_permissions(user))
     }

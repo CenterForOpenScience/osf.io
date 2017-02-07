@@ -16,7 +16,7 @@ import invoke
 from invoke import Collection
 
 from website import settings
-from utils import pip_install, bin_prefix
+from .utils import pip_install, bin_prefix
 
 logging.getLogger('invoke').setLevel(logging.CRITICAL)
 
@@ -24,13 +24,6 @@ logging.getLogger('invoke').setLevel(logging.CRITICAL)
 HERE = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
 WHEELHOUSE_PATH = os.environ.get('WHEELHOUSE')
 CONSTRAINTS_PATH = os.path.join(HERE, 'requirements', 'constraints.txt')
-
-try:
-    __import__('rednose')
-except ImportError:
-    TEST_CMD = 'nosetests'
-else:
-    TEST_CMD = 'nosetests --rednose'
 
 ns = Collection()
 
@@ -56,59 +49,12 @@ def task(*args, **kwargs):
     return decorator
 
 
-def _monkey_patch_werkzeug_reloader_for_docker():
-    from werkzeug import _reloader
-    from werkzeug._reloader import _find_observable_paths
-
-    def _find_common_roots(paths):
-        """Out of some paths it finds the common roots that need monitoring."""
-        # rv = orig_docker_find_common_roots(paths)
-        rv = set()
-        root = os.getcwd()
-        rv.add(root)
-        for path in paths:
-            if path.startswith(root):
-                rv.add(path)
-        return rv
-    _reloader._find_common_roots = _find_common_roots
-
-    def run(self):
-        watches = {}
-        observer = self.observer_class()
-        observer.start()
-
-        while not self.should_reload:
-            to_delete = set(watches)
-            paths = _find_observable_paths(self.extra_files)
-            for path in paths:
-                if path not in watches:
-                    try:
-                        watches[path] = observer.schedule(
-                            self.event_handler, path, recursive=False)  # FIX: docker-compose performance issue
-                    except OSError:
-                        # "Path is not a directory". We could filter out
-                        # those paths beforehand, but that would cause
-                        # additional stat calls.
-                        watches[path] = None
-                to_delete.discard(path)
-            for path in to_delete:
-                watch = watches.pop(path, None)
-                if watch is not None:
-                    observer.unschedule(watch)
-            self.observable_paths = paths
-            self._sleep(self.interval)
-
-        sys.exit(3)
-    _reloader.WatchdogReloaderLoop.run = run
-
-
 @task
 def server(ctx, host=None, port=5000, debug=True, gitlogs=False):
     """Run the app server."""
     if os.environ.get('WERKZEUG_RUN_MAIN') == 'true' or not debug:
         if os.environ.get('WEB_REMOTE_DEBUG', None):
             import pydevd
-            _monkey_patch_werkzeug_reloader_for_docker()
             # e.g. '127.0.0.1:5678'
             remote_parts = os.environ.get('WEB_REMOTE_DEBUG').split(':')
             pydevd.settrace(remote_parts[0], port=int(remote_parts[1]), suspend=False, stdoutToServer=True, stderrToServer=True)
@@ -157,7 +103,7 @@ def apiserver(ctx, port=8000, wait=True, autoreload=True, host='127.0.0.1', pty=
 def adminserver(ctx, port=8001, host='127.0.0.1', pty=True):
     """Run the Admin server."""
     env = 'DJANGO_SETTINGS_MODULE="admin.base.settings"'
-    cmd = '{} python manage.py runserver {}:{} --nothreading'.format(env, host, port)
+    cmd = '{} python manage.py runserver {}:{} --no-init-app --nothreading'.format(env, host, port)
     if settings.SECURE_MODE:
         cmd = cmd.replace('runserver', 'runsslserver')
         cmd += ' --certificate {} --key {}'.format(settings.OSF_SERVER_CERT, settings.OSF_SERVER_KEY)
@@ -417,6 +363,7 @@ def sharejs(ctx, host=None, port=None, db_url=None, cors_allow_origin=None):
 @task(aliases=['celery'])
 def celery_worker(ctx, level='debug', hostname=None, beat=False):
     """Run the Celery process."""
+    os.environ['DJANGO_SETTINGS_MODULE'] = 'api.base.settings'
     cmd = 'celery worker -A framework.celery_tasks -l {0}'.format(level)
     if hostname:
         cmd = cmd + ' --hostname={}'.format(hostname)
@@ -429,6 +376,7 @@ def celery_worker(ctx, level='debug', hostname=None, beat=False):
 @task(aliases=['beat'])
 def celery_beat(ctx, level='debug', schedule=None):
     """Run the Celery process."""
+    os.environ['DJANGO_SETTINGS_MODULE'] = 'api.base.settings'
     # beat sets up a cron like scheduler, refer to website/settings
     cmd = 'celery beat -A framework.celery_tasks -l {0} --pidfile='.format(level)
     if schedule:
@@ -463,17 +411,36 @@ def elasticsearch(ctx):
 @task
 def migrate_search(ctx, delete=False, index=settings.ELASTIC_INDEX):
     """Migrate the search-enabled models."""
+    from website.app import init_app
+    init_app(routes=False, set_backends=False)
     from website.search_migration.migrate import migrate
+
     migrate(delete, index=index)
 
 
 @task
 def rebuild_search(ctx):
     """Delete and recreate the index for elasticsearch"""
-    ctx.run('curl -s -XDELETE {uri}/{index}*'.format(uri=settings.ELASTIC_URI,
-                                             index=settings.ELASTIC_INDEX))
-    ctx.run('curl -s -XPUT {uri}/{index}'.format(uri=settings.ELASTIC_URI,
-                                          index=settings.ELASTIC_INDEX))
+    from website.app import init_app
+    import requests
+    from website import settings
+
+    init_app(routes=False, set_backends=True)
+    if not settings.ELASTIC_URI.startswith('http'):
+        protocol = 'http://' if settings.DEBUG_MODE else 'https://'
+    else:
+        protocol = ''
+    url = '{protocol}{uri}/{index}'.format(
+        protocol=protocol,
+        uri=settings.ELASTIC_URI.rstrip('/'),
+        index=settings.ELASTIC_INDEX,
+    )
+    print('Deleting index {}'.format(settings.ELASTIC_INDEX))
+    print('----- DELETE {}*'.format(url))
+    requests.delete(url + '*')
+    print('Creating index {}'.format(settings.ELASTIC_INDEX))
+    print('----- PUT {}'.format(url))
+    requests.put(url)
     migrate_search(ctx)
 
 
@@ -498,7 +465,7 @@ def flake(ctx):
 
 
 @task(aliases=['req'])
-def requirements(ctx, base=False, addons=False, release=False, dev=False, metrics=False, quick=False):
+def requirements(ctx, base=False, addons=False, release=False, dev=False, quick=False):
     """Install python dependencies.
 
     Examples:
@@ -508,15 +475,15 @@ def requirements(ctx, base=False, addons=False, release=False, dev=False, metric
     Quick requirements are, in order, addons, dev and the base requirements. You should be able to use --quick for
     day to day development.
 
-    By default, base requirements will run. However, if any set of addons, release, dev, or metrics are chosen, base
+    By default, base requirements will run. However, if any set of addons, release, or dev are chosen, base
     will have to be mentioned explicitly in order to run. This is to remain compatible with previous usages. Release
-    requirements will prevent dev, metrics, and base from running.
+    requirements will prevent dev, and base from running.
     """
     if quick:
         base = True
         addons = True
         dev = True
-    if not(addons or dev or metrics):
+    if not(addons or dev):
         base = True
     if release or addons:
         addon_requirements(ctx)
@@ -534,12 +501,7 @@ def requirements(ctx, base=False, addons=False, release=False, dev=False, metric
                 pip_install(req_file, constraints_file=CONSTRAINTS_PATH),
                 echo=True
             )
-        if metrics:  # then dev requirements
-            req_file = os.path.join(HERE, 'requirements', 'metrics.txt')
-            ctx.run(
-                pip_install(req_file, constraints_file=CONSTRAINTS_PATH),
-                echo=True
-            )
+
         if base:  # then base requirements
             req_file = os.path.join(HERE, 'requirements.txt')
             ctx.run(
@@ -551,26 +513,104 @@ def requirements(ctx, base=False, addons=False, release=False, dev=False, metric
     ctx.run('pip install --no-cache-dir uritemplate.py==0.3.0')
 
 @task
-def test_module(ctx, module=None, verbosity=2):
+def test_module(ctx, module=None):
     """Helper for running tests.
     """
-    # Allow selecting specific submodule
-    module_fmt = ' '.join(module) if isinstance(module, list) else module
-    args = ' --verbosity={0} -s {1}'.format(verbosity, module_fmt)
-    # Use pty so the process buffers "correctly"
-    ctx.run(bin_prefix(TEST_CMD) + args, pty=True)
+    import pytest
+    args = ['-s']
+    modules = [module] if isinstance(module, basestring) else module
+    args.extend(modules)
+    retcode = pytest.main(args)
+    sys.exit(retcode)
 
-
+# TODO: Add to this list when more modules are ported for djangosf compat
+CORE_TESTS = [
+    'osf_tests',
+    'tests/test_views.py',
+    'tests/test_addons.py',
+    'tests/test_alternative_citations.py',
+    'tests/test_auth.py',
+    'tests/test_auth_basic_auth.py',
+    'tests/test_auth_forms.py',
+    'tests/test_campaigns.py',
+    'tests/test_cas_authentication.py',
+    'tests/test_citations.py',
+    'tests/test_conferences.py',
+    'tests/test_contributors_views.py',
+    'tests/test_events.py',
+    'tests/test_identifiers.py',
+    'tests/test_mailchimp.py',
+    'tests/test_metadata.py',
+    'tests/test_node_licenses.py',
+    'tests/test_notifications.py',
+    'tests/test_oauth.py',
+    'tests/test_permissions.py',
+    'tests/test_preprints.py',
+    'tests/test_rubeus.py',
+    'tests/test_sanitize.py',
+    'tests/test_security.py',
+    'tests/test_serializers.py',
+    'tests/test_spam_mixin.py',
+    'tests/test_subjects.py',
+    'tests/test_tokens.py',
+    'tests/test_webtests.py',
+    'tests/test_utils.py',
+]
 @task
 def test_osf(ctx):
     """Run the OSF test suite."""
-    test_module(ctx, module='tests/')
+    test_module(ctx, module=CORE_TESTS)
 
+
+ELSE_TESTS = [
+    'addons',
+]
+API_TESTS1 = [
+    'api_tests/identifiers',
+    'api_tests/institutions',
+    'api_tests/licenses',
+    'api_tests/logs',
+    'api_tests/metaschemas',
+    'api_tests/preprint_providers',
+    'api_tests/preprints',
+    'api_tests/registrations',
+]
+API_TESTS2 = [
+    'api_tests/nodes',
+    'api_tests/users',
+]
+API_TESTS3 = [
+    'api_tests/addons_tests',
+    'api_tests/applications',
+    'api_tests/base',
+    'api_tests/collections',
+    'api_tests/comments',
+    'api_tests/files',
+    'api_tests/guids',
+    'api_tests/search',
+    'api_tests/taxonomies',
+    'api_tests/test',
+    'api_tests/tokens',
+    'api_tests/view_only_links',
+    'api_tests/wikis',
+]
 
 @task
-def test_api(ctx):
+def test_else(ctx):
     """Run the API test suite."""
-    test_module(ctx, module='api_tests/')
+    test_module(ctx, module=ELSE_TESTS)
+@task
+def test_api1(ctx):
+    """Run the API test suite."""
+    test_module(ctx, module=API_TESTS1)
+@task
+def test_api2(ctx):
+    """Run the API test suite."""
+    test_module(ctx, module=API_TESTS2)
+@task
+def test_api3(ctx):
+    """Run the API test suite."""
+    test_module(ctx, module=API_TESTS3)
 
 
 @task
@@ -593,15 +633,14 @@ def test_varnish(ctx):
         proc.kill()
 
 
+ADDON_TESTS = [
+    'addons/',
+]
 @task
 def test_addons(ctx):
     """Run all the tests in the addons directory.
     """
-    modules = []
-    for addon in settings.ADDONS_REQUESTED:
-        module = os.path.join(settings.BASE_PATH, 'addons', addon)
-        modules.append(module)
-    test_module(ctx, module=modules)
+    test_module(ctx, module=ADDON_TESTS)
 
 
 @task
@@ -614,13 +653,20 @@ def test(ctx, all=False, syntax=False):
         jshint(ctx)
 
     test_osf(ctx)
-    test_api(ctx)
-    test_admin(ctx)
+    test_else(ctx)
+    # TODO: Enable admin tests
+    # test_admin(ctx)
 
     if all:
         test_addons(ctx)
         karma(ctx, single=True, browsers='PhantomJS')
 
+OSF_MODELS_TESTS = [
+    'osf_tests',
+]
+@task
+def test_osf_models(ctx):
+    test_module(ctx, OSF_MODELS_TESTS)
 
 @task
 def test_js(ctx):
@@ -637,7 +683,7 @@ def test_travis_osf(ctx):
     jshint(ctx)
     test_osf(ctx)
     test_addons(ctx)
-
+    test_osf_models(ctx)
 
 @task
 def test_travis_else(ctx):
@@ -647,9 +693,20 @@ def test_travis_else(ctx):
     """
     flake(ctx)
     jshint(ctx)
-    test_api(ctx)
+    test_else(ctx)
     test_admin(ctx)
 
+@task
+def test_travis_api1(ctx):
+    test_api1(ctx)
+
+@task
+def test_travis_api2(ctx):
+    test_api2(ctx)
+
+@task
+def test_travis_api3(ctx):
+    test_api3(ctx)
 
 @task
 def test_travis_varnish(ctx):
@@ -679,7 +736,7 @@ def karma(ctx, single=False, sauce=False, browsers=None):
 
 
 @task
-def wheelhouse(ctx, addons=False, release=False, dev=False, metrics=False, pty=True):
+def wheelhouse(ctx, addons=False, release=False, dev=False, pty=True):
     """Build wheels for python dependencies.
 
     Examples:
@@ -687,7 +744,6 @@ def wheelhouse(ctx, addons=False, release=False, dev=False, metrics=False, pty=T
         inv wheelhouse --dev
         inv wheelhouse --addons
         inv wheelhouse --release
-        inv wheelhouse --metrics
     """
     if release or addons:
         for directory in os.listdir(settings.ADDON_PATH):
@@ -703,8 +759,6 @@ def wheelhouse(ctx, addons=False, release=False, dev=False, metrics=False, pty=T
         req_file = os.path.join(HERE, 'requirements', 'release.txt')
     elif dev:
         req_file = os.path.join(HERE, 'requirements', 'dev.txt')
-    elif metrics:
-        req_file = os.path.join(HERE, 'requirements', 'metrics.txt')
     else:
         req_file = os.path.join(HERE, 'requirements.txt')
     cmd = 'pip wheel --find-links={} -r {} --wheel-dir={} -c {}'.format(
@@ -773,11 +827,11 @@ def packages(ctx):
         'upgrade',
         'install libxml2',
         'install libxslt',
-        'install elasticsearch',
+        'install elasticsearch@1.7',
         'install rabbitmq',
         'install node',
         'tap tokutek/tokumx',
-        'install tokumx-bin',
+        'install chrisseto/homebrew-tokumx/tokumx-bin',
     ]
     if platform.system() == 'Darwin':
         print('Running brew commands')
@@ -808,6 +862,40 @@ def setup(ctx):
     build_js_config_files(ctx)
     assets(ctx, dev=True, watch=False)
 
+@task
+def docker_init(ctx):
+    """Initial docker setup"""
+    import platform
+    print('You will be asked for your sudo password to continue...')
+    if platform.system() == 'Darwin':  # Mac OSX
+        ctx.run('sudo ifconfig lo0 alias 192.168.168.167')
+    else:
+        print('Your system is not recognized, you will have to setup docker manually')
+
+def ensure_docker_env_setup(ctx):
+    if hasattr(os.environ, 'DOCKER_ENV_SETUP') and os.environ['DOCKER_ENV_SETUP'] == '1':
+        pass
+    else:
+        os.environ['WEB_REMOTE_DEBUG'] = '192.168.168.167:11000'
+        os.environ['API_REMOTE_DEBUG'] = '192.168.168.167:12000'
+        os.environ['WORKER_REMOTE_DEBUG'] = '192.168.168.167:13000'
+        os.environ['DOCKER_ENV_SETUP'] = '1'
+        docker_init(ctx)
+
+@task
+def docker_requirements(ctx):
+    ensure_docker_env_setup(ctx)
+    ctx.run('docker-compose up requirements requirements_mfr requirements_wb')
+
+@task
+def docker_appservices(ctx):
+    ensure_docker_env_setup(ctx)
+    ctx.run('docker-compose up assets fakecas elasticsearch tokumx postgres')
+
+@task
+def docker_osf(ctx):
+    ensure_docker_env_setup(ctx)
+    ctx.run('docker-compose up mfr wb web api')
 
 @task
 def clear_sessions(ctx, months=1, dry_run=False):

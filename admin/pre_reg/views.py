@@ -6,6 +6,7 @@ from modularodm import Q
 
 from django.views.generic import ListView, DetailView, FormView, UpdateView
 from django.views.defaults import permission_denied, bad_request
+from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.core.urlresolvers import reverse
 from django.http import JsonResponse, Http404, HttpResponse
 from django.shortcuts import redirect
@@ -20,20 +21,20 @@ from admin.pre_reg import serializers
 from admin.pre_reg.forms import DraftRegistrationForm
 from admin.pre_reg.utils import sort_drafts, SORT_BY
 from framework.exceptions import PermissionsError
-from framework.guid.model import Guid
 from website.exceptions import NodeStateError
-from website.files.models import FileNode
-from website.project.model import DraftRegistration, Node
+from osf.models.files import FileNode
+from osf.models.node import Node
+from osf.models.registrations import DraftRegistration
 from website.prereg.utils import get_prereg_schema
 from website.project.metadata.schemas import from_json
 
-from admin.base.utils import PreregAdmin
 
-
-class DraftListView(PreregAdmin, ListView):
+class DraftListView(PermissionRequiredMixin, ListView):
     template_name = 'pre_reg/draft_list.html'
     ordering = '-date'
     context_object_name = 'draft'
+    permission_required = 'common_auth.view_prereg'
+    raise_exception = True
 
     def get_queryset(self):
         query = (
@@ -102,9 +103,11 @@ class DraftDownloadListView(DraftListView):
         return response
 
 
-class DraftDetailView(PreregAdmin, DetailView):
+class DraftDetailView(PermissionRequiredMixin, DetailView):
     template_name = 'pre_reg/draft_detail.html'
     context_object_name = 'draft'
+    permission_required = 'common_auth.view_prereg'
+    raise_exception = True
 
     def get_object(self, queryset=None):
         draft = DraftRegistration.load(self.kwargs.get('draft_pk'))
@@ -118,16 +121,18 @@ class DraftDetailView(PreregAdmin, DetailView):
             ))
 
     def checkout_files(self, draft):
-        prereg_user = self.request.user.osf_user
+        prereg_user = self.request.user
         for item in get_metadata_files(draft):
             item.checkout = prereg_user
             item.save()
 
 
-class DraftFormView(PreregAdmin, FormView):
+class DraftFormView(PermissionRequiredMixin, FormView):
     template_name = 'pre_reg/draft_form.html'
     form_class = DraftRegistrationForm
     context_object_name = 'draft'
+    permission_required = 'common_auth.view_prereg'
+    raise_exception = True
 
     def dispatch(self, request, *args, **kwargs):
         self.draft = DraftRegistration.load(self.kwargs.get('draft_pk'))
@@ -158,7 +163,7 @@ class DraftFormView(PreregAdmin, FormView):
 
     def form_valid(self, form):
         if 'approve_reject' in form.changed_data:
-            osf_user = self.request.user.osf_user
+            osf_user = self.request.user
             try:
                 if form.cleaned_data.get('approve_reject') == 'approve':
                     flag = ACCEPT_PREREG
@@ -191,8 +196,10 @@ class DraftFormView(PreregAdmin, FormView):
                                    self.request.POST.get('page', 1))
 
 
-class CommentUpdateView(PreregAdmin, UpdateView):
+class CommentUpdateView(PermissionRequiredMixin, UpdateView):
     context_object_name = 'draft'
+    permission_required = ('common_auth.view_prereg', 'common_auth.administer_prereg')
+    raise_exception = True
 
     def post(self, request, *args, **kwargs):
         try:
@@ -252,8 +259,7 @@ def get_metadata_files(draft):
                     draft.update_metadata(data)
                     draft.save()
                 else:
-                    guid = Guid.load(file_guid)
-                    item = guid.referent
+                    item = FileNode.load(file_info['data']['path'].replace('/', ''))
                 if item is None:
                     raise Http404(
                         'File with guid "{}" in "{}" does not exist'.format(
@@ -281,8 +287,7 @@ def get_metadata_files(draft):
                 draft.update_metadata(data)
                 draft.save()
             else:
-                guid = Guid.load(file_guid)
-                item = guid.referent
+                item = FileNode.load(file_info['data']['path'].replace('/', ''))
             if item is None:
                 raise Http404(
                     'File with guid "{}" in "{}" does not exist'.format(

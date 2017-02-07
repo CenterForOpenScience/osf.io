@@ -1,13 +1,14 @@
 """
 This will add a date_modified field to all nodes.  Date_modified will be equivalent to the date of the last log.
 """
-import sys
 import logging
-from modularodm import Q
-from website.app import init_app
-from website import models
-from scripts import utils as script_utils
+import sys
+
 from framework.transactions.context import TokuTransaction
+from modularodm import Q
+from scripts import utils as script_utils
+from website import models
+from website.app import init_app
 
 logger = logging.getLogger(__name__)
 
@@ -17,7 +18,7 @@ def date_updated(node):
     the logs.
     """
     try:
-        return node.logs[-1].date
+        return node.logs.latest().date
     except IndexError:
         return node.date_created
 

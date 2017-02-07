@@ -1,5 +1,5 @@
+from modularodm.exceptions import ValidationError
 from modularodm import Q
-from modularodm.exceptions import ValidationValueError
 from rest_framework import exceptions
 from rest_framework import serializers as ser
 
@@ -10,7 +10,11 @@ from api.base.serializers import (
 )
 from api.base.utils import absolute_reverse, get_user_auth
 from api.taxonomies.serializers import TaxonomyField
-from api.nodes.serializers import NodeLicenseSerializer, get_license_details
+from api.nodes.serializers import (
+    NodeCitationSerializer,
+    NodeLicenseSerializer,
+    get_license_details
+)
 from framework.exceptions import PermissionsError
 from website.util import permissions
 from website.exceptions import NodeStateError
@@ -46,7 +50,9 @@ class PreprintProviderRelationshipField(RelationshipField):
 class PreprintLicenseRelationshipField(RelationshipField):
     def to_internal_value(self, license_id):
         license = NodeLicense.load(license_id)
-        return {'license_type': license}
+        if license:
+            return {'license_type': license}
+        raise exceptions.NotFound('Unable to find specified license.')
 
 
 class PreprintSerializer(JSONAPISerializer):
@@ -68,6 +74,11 @@ class PreprintSerializer(JSONAPISerializer):
     is_published = ser.BooleanField(required=False)
     is_preprint_orphan = ser.BooleanField(read_only=True)
     license_record = NodeLicenseSerializer(required=False, source='license')
+
+    citation = RelationshipField(
+        related_view='preprints:preprint-citation',
+        related_view_kwargs={'preprint_id': '<_id>'}
+    )
 
     node = NodeRelationshipField(
         related_view='nodes:node-detail',
@@ -154,9 +165,9 @@ class PreprintSerializer(JSONAPISerializer):
         if save_node:
             try:
                 preprint.node.save()
-            except ValidationValueError as e:
+            except ValidationError as e:
                 # Raised from invalid DOI
-                raise exceptions.ValidationError(detail=e.message)
+                raise exceptions.ValidationError(detail=e.messages[0])
 
         if save_preprint:
             preprint.save()
@@ -187,7 +198,7 @@ class PreprintCreateSerializer(PreprintSerializer):
     id = IDField(source='_id', required=False, allow_null=True)
 
     def create(self, validated_data):
-        node = Node.load(validated_data.pop('node', None))
+        node = validated_data.pop('node', None)
         if not node:
             raise exceptions.NotFound('Unable to find Node with specified id.')
         elif node.is_deleted:
@@ -215,3 +226,9 @@ class PreprintCreateSerializer(PreprintSerializer):
         preprint.node.save()
 
         return self.update(preprint, validated_data)
+
+
+class PreprintCitationSerializer(NodeCitationSerializer):
+
+    class Meta:
+        type_ = 'preprint-citation'

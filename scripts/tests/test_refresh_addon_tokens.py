@@ -1,13 +1,14 @@
 # -*- coding: utf-8 -*-
 
 import mock
+from django.utils import timezone
 from nose.tools import *  # noqa
 
 from tests.base import OsfTestCase
 
-from website.addons.box.tests.factories import BoxAccountFactory
-from website.addons.googledrive.tests.factories import GoogleDriveAccountFactory
-from website.addons.mendeley.tests.factories import MendeleyAccountFactory
+from addons.box.tests.factories import BoxAccountFactory
+from addons.googledrive.tests.factories import GoogleDriveAccountFactory
+from addons.mendeley.tests.factories import MendeleyAccountFactory
 
 import datetime
 
@@ -38,7 +39,7 @@ class TestRefreshTokens(OsfTestCase):
         assert_equal(fake_result, None)
 
     def test_get_targets(self):
-        now = datetime.datetime.utcnow()
+        now = timezone.now()
         records = [
             BoxAccountFactory(date_last_refreshed=now - datetime.timedelta(days=4)),
             BoxAccountFactory(date_last_refreshed=now - datetime.timedelta(days=2)),
@@ -61,12 +62,12 @@ class TestRefreshTokens(OsfTestCase):
     @mock.patch('scripts.refresh_addon_tokens.GoogleDriveProvider.refresh_oauth_key')
     @mock.patch('scripts.refresh_addon_tokens.Box.refresh_oauth_key')
     def test_refresh(self, mock_box_refresh, mock_drive_refresh, mock_mendeley_refresh):
-        fake_authorized_box_account = BoxAccountFactory(date_last_refreshed=datetime.datetime.utcnow())
-        fake_authorized_drive_account = GoogleDriveAccountFactory(date_last_refreshed=datetime.datetime.utcnow())
-        fake_authorized_mendeley_account = MendeleyAccountFactory(date_last_refreshed=datetime.datetime.utcnow())
-        fake_unauthorized_box_account = BoxAccountFactory(date_last_refreshed=datetime.datetime.utcnow() - datetime.timedelta(days=4))
-        fake_unauthorized_drive_account = GoogleDriveAccountFactory(date_last_refreshed=datetime.datetime.utcnow() - datetime.timedelta(days=4))
-        fake_unauthorized_mendeley_account = MendeleyAccountFactory(date_last_refreshed=datetime.datetime.utcnow() - datetime.timedelta(days=4))
+        fake_authorized_box_account = BoxAccountFactory(date_last_refreshed=timezone.now())
+        fake_authorized_drive_account = GoogleDriveAccountFactory(date_last_refreshed=timezone.now())
+        fake_authorized_mendeley_account = MendeleyAccountFactory(date_last_refreshed=timezone.now())
+        fake_unauthorized_box_account = BoxAccountFactory(date_last_refreshed=timezone.now() - datetime.timedelta(days=4))
+        fake_unauthorized_drive_account = GoogleDriveAccountFactory(date_last_refreshed=timezone.now() - datetime.timedelta(days=4))
+        fake_unauthorized_mendeley_account = MendeleyAccountFactory(date_last_refreshed=timezone.now() - datetime.timedelta(days=4))
         for addon in self.addons:
             Provider = look_up_provider(addon)
             main(delta=relativedelta(days=3), Provider=Provider, rate_limit=(5, 1), dry_run=False)

@@ -5,26 +5,27 @@ from __future__ import absolute_import
 import datetime as dt
 import mock
 import httplib as http
-from dateutil.parser import parse as parse_date
+import pytz
+from django.utils import timezone
 
 from nose.tools import *  # noqa PEP8 asserts
 
 from modularodm import Q
 
 from framework.exceptions import HTTPError
-from framework.auth import Auth
 
 from website.models import Node, MetaSchema, DraftRegistration
 from website.project.metadata.schemas import ACTIVE_META_SCHEMAS, _name_to_id
 from website.util import permissions, api_url_for
 from website.project.views import drafts as draft_views
 
-from tests.factories import (
+from osf_tests.factories import (
     NodeFactory, AuthUserFactory, DraftRegistrationFactory, RegistrationFactory
 )
 from tests.test_registrations.base import RegistrationsTestBase
 
 from tests.base import get_default_metaschema
+from osf.models import Registration
 
 class TestRegistrationViews(RegistrationsTestBase):
 
@@ -88,10 +89,6 @@ class TestRegistrationViews(RegistrationsTestBase):
 
 
 class TestDraftRegistrationViews(RegistrationsTestBase):
-
-    def tearDown(self):
-        super(TestDraftRegistrationViews, self).tearDown()
-        DraftRegistration.remove()
 
     def test_submit_draft_for_review(self):
         url = self.draft_api_url('submit_draft_for_review')
@@ -166,7 +163,7 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
         assert_equal(res.status_code, http.ACCEPTED)
         self.node.reload()
         # Most recent node is a registration
-        reg = self.node.registrations_all[-1]
+        reg = self.node.registrations_all.order_by('-registered_date').first()
         assert_true(reg.is_registration)
         # The registration created is public
         assert_true(reg.is_pending_registration)
@@ -182,7 +179,7 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
         assert_equal(res.status_code, http.ACCEPTED)
         self.node.reload()
         # Most recent node is a registration
-        reg = self.node.registrations_all[-1]
+        reg = self.node.registrations_all.order_by('-registered_date').first()
         for node in reg.get_descendants_recursive():
             assert_true(node.is_registration)
             assert_true(node.is_pending_registration)
@@ -190,7 +187,7 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
     @mock.patch('framework.celery_tasks.handlers.enqueue_task')
     def test_register_draft_registration_with_embargo_creates_embargo(self, mock_enqueue):
         url = self.node.api_url_for('register_draft_registration', draft_id=self.draft._id)
-        end_date = dt.datetime.utcnow() + dt.timedelta(days=3)
+        end_date = timezone.now() + dt.timedelta(days=3)
         res = self.app.post_json(
             url,
             {
@@ -202,17 +199,17 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
         assert_equal(res.status_code, http.ACCEPTED)
         self.node.reload()
         # Most recent node is a registration
-        reg = self.node.registrations_all[-1]
+        reg = self.node.registrations_all.order_by('-registered_date').first()
         assert_true(reg.is_registration)
         # The registration created is not public
         assert_false(reg.is_public)
         # The registration is pending an embargo that has not been approved
         assert_true(reg.is_pending_embargo)
-        assert_true(reg.embargo_end_date)
+        assert_true(reg.embargo.end_date)
 
     @mock.patch('framework.celery_tasks.handlers.enqueue_task')
     def test_register_draft_registration_with_embargo_adds_to_parent_project_logs(self, mock_enqueue):
-        initial_project_logs = len(self.node.logs)
+        initial_project_logs = self.node.logs.count()
         res = self.app.post_json(
             self.node.api_url_for('register_draft_registration', draft_id=self.draft._id),
             self.embargo_payload,
@@ -222,7 +219,7 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
         assert_equal(res.status_code, http.ACCEPTED)
         self.node.reload()
         # Logs: Created, registered, embargo initiated
-        assert_equal(len(self.node.logs), initial_project_logs + 1)
+        assert_equal(self.node.logs.count(), initial_project_logs + 1)
 
     @mock.patch('framework.celery_tasks.handlers.enqueue_task')
     def test_register_draft_registration_with_embargo_is_not_public(self, mock_enqueue):
@@ -234,9 +231,8 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
 
         assert_equal(res.status_code, http.ACCEPTED)
 
-        registration = Node.find().sort('-registered_date')[0]
+        registration = Registration.find().sort('-registered_date').first()
 
-        assert_true(registration.is_registration)
         assert_false(registration.is_public)
         assert_true(registration.is_pending_embargo)
         assert_is_not_none(registration.embargo)
@@ -471,30 +467,33 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
         ))
 
     def test_validate_embargo_end_date_too_soon(self):
-        today = dt.datetime.today()
+        registration = RegistrationFactory(project=self.node)
+        today = dt.datetime.today().replace(tzinfo=pytz.utc)
         too_soon = today + dt.timedelta(days=5)
         try:
-            draft_views.validate_embargo_end_date(too_soon.isoformat(), self.node)
+            draft_views.validate_embargo_end_date(too_soon.isoformat(), registration)
         except HTTPError as e:
             assert_equal(e.code, http.BAD_REQUEST)
         else:
             self.fail()
 
     def test_validate_embargo_end_date_too_late(self):
-        today = dt.datetime.today()
+        registration = RegistrationFactory(project=self.node)
+        today = dt.datetime.today().replace(tzinfo=pytz.utc)
         too_late = today + dt.timedelta(days=(4 * 365) + 1)
         try:
-            draft_views.validate_embargo_end_date(too_late.isoformat(), self.node)
+            draft_views.validate_embargo_end_date(too_late.isoformat(), registration)
         except HTTPError as e:
             assert_equal(e.code, http.BAD_REQUEST)
         else:
             self.fail()
 
     def test_validate_embargo_end_date_ok(self):
-        today = dt.datetime.today()
+        registration = RegistrationFactory(project=self.node)
+        today = dt.datetime.today().replace(tzinfo=pytz.utc)
         too_late = today + dt.timedelta(days=12)
         try:
-            draft_views.validate_embargo_end_date(too_late.isoformat(), self.node)
+            draft_views.validate_embargo_end_date(too_late.isoformat(), registration)
         except Exception:
             self.fail()
 

@@ -1,30 +1,27 @@
 # -*- coding: utf-8 -*-
 
-from copy import deepcopy
 import datetime as dt
+import framework
 import itertools
 import logging
 import re
-import urlparse
 import urllib
+import urlparse
+from copy import deepcopy
+from framework import analytics
 
 import bson
-import pytz
 import itsdangerous
-
+import pytz
+from django.utils import timezone
 from flask import Request as FlaskRequest
-
-from modularodm import fields, Q
-from modularodm.exceptions import NoResultsFound, ValidationError, ValidationValueError, QueryException
-from modularodm.validators import URLValidator
-
-import framework
-from framework import analytics
 from framework.addons import AddonModelMixin
 from framework.auth import signals, utils
-from framework.auth.exceptions import (ChangePasswordError, ExpiredTokenError, InvalidTokenError,
-                                       MergeConfirmedRequiredError, MergeConflictError)
-from framework.bcrypt import generate_password_hash, check_password_hash
+from framework.auth.exceptions import (ChangePasswordError, ExpiredTokenError,
+                                       InvalidTokenError,
+                                       MergeConfirmedRequiredError,
+                                       MergeConflictError)
+from framework.bcrypt import check_password_hash, generate_password_hash
 from framework.exceptions import PermissionsError
 from framework.guid.model import GuidStoredObject
 from framework.mongo import get_cache_key
@@ -33,7 +30,11 @@ from framework.sentry import log_exception
 from framework.sessions import session
 from framework.sessions.model import Session
 from framework.sessions.utils import remove_sessions_for_user
-from website import mails, settings, filters, security
+from modularodm import Q, fields
+from modularodm.exceptions import (NoResultsFound, QueryException,
+                                   ValidationError, ValidationValueError)
+from modularodm.validators import URLValidator
+from website import filters, mails, security, settings
 
 name_formatters = {
     'long': lambda user: user.fullname,
@@ -47,7 +48,6 @@ name_formatters = {
 logger = logging.getLogger(__name__)
 
 
-# generate verification key
 def generate_verification_key(verification_type=None):
     """
     Generate a one-time verification key with an optional expiration time.
@@ -61,7 +61,7 @@ def generate_verification_key(verification_type=None):
     if not verification_type:
         return token
     # v2 with a token and the expiration time
-    expires = dt.datetime.utcnow() + dt.timedelta(minutes=settings.EXPIRATION_TIME_DICT[verification_type])
+    expires = timezone.now() + dt.timedelta(minutes=settings.EXPIRATION_TIME_DICT[verification_type])
     return {
         'token': token,
         'expires': expires,
@@ -550,7 +550,7 @@ class User(GuidStoredObject, AddonModelMixin):
         if campaign:
             # needed to prevent circular import
             from framework.auth.campaigns import system_tag_for_campaign  # skipci
-            user.system_tags.append(system_tag_for_campaign(campaign))
+            user.add_system_tag(system_tag_for_campaign(campaign))
         return user
 
     @classmethod
@@ -630,7 +630,7 @@ class User(GuidStoredObject, AddonModelMixin):
             self.emails.append(username)
         self.is_registered = True
         self.is_claimed = True
-        self.date_confirmed = dt.datetime.utcnow()
+        self.date_confirmed = timezone.now()
         self.update_search()
         self.update_search_nodes()
 
@@ -723,7 +723,7 @@ class User(GuidStoredObject, AddonModelMixin):
             return False
         valid = record['token'] == token
         if 'expires' in record:
-            valid = valid and record['expires'] > dt.datetime.utcnow()
+            valid = valid and record['expires'] > timezone.now()
         return valid
 
     def get_claim_url(self, project_id, external=False):
@@ -754,7 +754,7 @@ class User(GuidStoredObject, AddonModelMixin):
         if token and self.verification_key_v2:
             try:
                 return (self.verification_key_v2['token'] == token and
-                        self.verification_key_v2['expires'] > dt.datetime.utcnow())
+                        self.verification_key_v2['expires'] > timezone.now())
             except AttributeError:
                 return False
         return False
@@ -928,7 +928,7 @@ class User(GuidStoredObject, AddonModelMixin):
                     new_token = self.add_unconfirmed_email(email)
                     self.save()
                     return new_token
-                if not expiration or (expiration and expiration < dt.datetime.utcnow()):
+                if not expiration or (expiration and expiration < timezone.now()):
                     if not force:
                         raise ExpiredTokenError('Token for email "{0}" is expired'.format(email))
                     else:
@@ -973,7 +973,7 @@ class User(GuidStoredObject, AddonModelMixin):
         # Not all tokens are guaranteed to have expiration dates
         if (
             'expiration' in verification and
-            verification['expiration'] < dt.datetime.utcnow()
+            verification['expiration'] < timezone.now()
         ):
             raise ExpiredTokenError
 
@@ -1028,7 +1028,7 @@ class User(GuidStoredObject, AddonModelMixin):
         # Complete registration if primary email
         if email.lower() == self.username.lower():
             self.register(self.username)
-            self.date_confirmed = dt.datetime.utcnow()
+            self.date_confirmed = timezone.now()
         # Revoke token
         del self.email_verifications[token]
 
@@ -1240,7 +1240,7 @@ class User(GuidStoredObject, AddonModelMixin):
     def is_disabled(self, val):
         """Set whether or not this account has been disabled."""
         if val and not self.date_disabled:
-            self.date_disabled = dt.datetime.utcnow()
+            self.date_disabled = timezone.now()
         elif val is False:
             self.date_disabled = None
 
@@ -1376,7 +1376,7 @@ class User(GuidStoredObject, AddonModelMixin):
         log_ids = []
         # Default since to 60 days before today if since is None
         # timezone aware utcnow
-        utcnow = dt.datetime.utcnow().replace(tzinfo=pytz.utc)
+        utcnow = timezone.now()
         since_date = since or (utcnow - dt.timedelta(days=60))
         for config in self.watched:
             # Extract the timestamps for each log from the log_id (fast!)
@@ -1394,7 +1394,7 @@ class User(GuidStoredObject, AddonModelMixin):
         '''Return a generator of log ids generated in the past day
         (starting at UTC 00:00).
         '''
-        utcnow = dt.datetime.utcnow()
+        utcnow = timezone.now()
         midnight = dt.datetime(
             utcnow.year, utcnow.month, utcnow.day,
             0, 0, 0, tzinfo=pytz.utc
@@ -1413,7 +1413,6 @@ class User(GuidStoredObject, AddonModelMixin):
         registered user and set this account to the highest permission of the two
         and set this account to be visible if either of the two are visible on
         the project.
-
         :param user: A User object to be merged.
         """
         # Fail if the other user has conflicts.
@@ -1452,13 +1451,14 @@ class User(GuidStoredObject, AddonModelMixin):
         notifications_configured.update(self.notifications_configured)
         self.notifications_configured = notifications_configured
 
-        for key, value in user.mailchimp_mailing_lists.iteritems():
-            # subscribe to each list if either user was subscribed
-            subscription = value or self.mailchimp_mailing_lists.get(key)
-            signals.user_merged.send(self, list_name=key, subscription=subscription)
+        if not settings.RUNNING_MIGRATION:
+            for key, value in user.mailchimp_mailing_lists.iteritems():
+                # subscribe to each list if either user was subscribed
+                subscription = value or self.mailchimp_mailing_lists.get(key)
+                signals.user_merged.send(self, list_name=key, subscription=subscription)
 
-            # clear subscriptions for merged user
-            signals.user_merged.send(user, list_name=key, subscription=False, send_goodbye=False)
+                # clear subscriptions for merged user
+                signals.user_merged.send(user, list_name=key, subscription=False, send_goodbye=False)
 
         for target_id, timestamp in user.comments_viewed_timestamp.iteritems():
             if not self.comments_viewed_timestamp.get(target_id):
@@ -1516,7 +1516,7 @@ class User(GuidStoredObject, AddonModelMixin):
 
         # Disconnect signal to prevent emails being sent about being a new contributor when merging users
         # be sure to reconnect it at the end of this code block. Import done here to prevent circular import error.
-        from website.addons.osfstorage.listeners import checkin_files_by_user
+        from addons.osfstorage.listeners import checkin_files_by_user
         from website.project.signals import contributor_added, contributor_removed
         from website.project.views.contributor import notify_added_contributor
         from website.util import disconnected_from
@@ -1546,6 +1546,7 @@ class User(GuidStoredObject, AddonModelMixin):
                         permissions=node.get_permissions(user),
                         visible=node.get_visible(user),
                         log=False,
+                        send_email='false'
                     )
 
                 with disconnected_from(signal=contributor_removed, listener=checkin_files_by_user):

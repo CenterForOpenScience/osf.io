@@ -1,0 +1,4 @@
+cachecontrol==0.10.2
+github3.py==0.9.0
+python-magic==0.4.6
+uritemplate.py==2.0.0

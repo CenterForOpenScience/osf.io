@@ -8,13 +8,13 @@ import unittest
 from framework.auth import cas
 
 from tests.base import OsfTestCase, fake
-from tests.factories import UserFactory
+from osf_tests.factories import UserFactory
 
 
 def make_successful_response(user):
     return cas.CasResponse(
         authenticated=True,
-        user=user._primary_key,
+        user=user._id,
         attributes={
             'accessToken': fake.md5()
         }
@@ -95,7 +95,7 @@ RESPONSE_TEMPLATE = """
 def make_service_validation_response_body(user, access_token=None):
     token = access_token or fake.md5()
     return RESPONSE_TEMPLATE.format(
-        user_id=user._primary_key,
+        user_id=user._id,
         given_name=user.given_name,
         family_name=user.family_name,
         username=user.username,
@@ -243,6 +243,7 @@ class TestCASTicketAuthentication(OsfTestCase):
         ticket = fake.md5()
         service_url = 'http://localhost:5000/'
         resp = cas.make_response_from_ticket(ticket, service_url)
+        self.user.reload()
         assert_true(self.user.verification_key is None)
 
 
@@ -326,6 +327,7 @@ class TestCASExternalLogin(OsfTestCase):
         service_url = 'http://localhost:5000/'
         verification_key = self.user.verification_key
         resp = cas.make_response_from_ticket(ticket, service_url)
+        self.user.reload()
         assert_not_equal(self.user.verification_key, verification_key)
 
     @mock.patch('framework.auth.cas.CasClient.service_validate')
