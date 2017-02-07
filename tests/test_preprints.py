@@ -27,6 +27,7 @@ from osf_tests.factories import (
     SubjectFactory
 )
 from tests.utils import assert_logs, assert_not_logs
+from website.project.views.contributor import find_preprint_provider
 
 
 class TestPreprintFactory(OsfTestCase):
@@ -251,6 +252,14 @@ class TestPreprintProviders(OsfTestCase):
         self.preprint.reload()
 
         assert_equal(self.preprint.provider, None)
+
+    def test_find_provider(self):
+        self.preprint.provider = self.provider
+        self.preprint.save()
+        self.preprint.reload()
+
+        assert ('branded', 'WWEArxiv') == find_preprint_provider(self.preprint.node)
+
 
 class TestOnPreprintUpdatedTask(OsfTestCase):
     def setUp(self):

@@ -62,12 +62,13 @@ class TestNodeDeleteView(AdminTestCase):
     def test_remove_node(self):
         count = OSFLogEntry.objects.count()
         self.view.delete(self.request)
-        self.node.reload()
+        self.node.refresh_from_db()
         nt.assert_true(self.node.is_deleted)
         nt.assert_equal(OSFLogEntry.objects.count(), count + 1)
 
     def test_restore_node(self):
         self.view.delete(self.request)
+        self.node.refresh_from_db()
         nt.assert_true(self.node.is_deleted)
         count = OSFLogEntry.objects.count()
         self.view.delete(self.request)

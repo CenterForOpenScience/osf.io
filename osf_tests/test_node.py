@@ -1790,9 +1790,9 @@ class TestForkNode:
 
         fork_user_auth = Auth(user=fork_user)
         # Recursively compare children
-        for idx, child in enumerate(original._nodes.all()):
+        for idx, child in enumerate(original.get_nodes()):
             if child.can_view(fork_user_auth):
-                self._cmp_fork_original(fork_user, fork_date, fork._nodes.all()[idx],
+                self._cmp_fork_original(fork_user, fork_date, fork.get_nodes()[idx],
                                         child, title_prepend='')
 
     @mock.patch('framework.status.push_status_message')
@@ -2071,6 +2071,21 @@ class TestNodeOrdering:
         private_nodes = list(project.get_nodes(is_public=False))
         assert private_nodes == [children[1], children[0]]
 
+    def test_get_nodes_does_not_return_duplicates(self):
+        parent = ProjectFactory(title='Parent')
+        child = NodeFactory(parent=parent, title='Child', is_public=True)
+        linker = ProjectFactory(title='Linker', is_public=True)
+        unrelated = ProjectFactory(title='Unrelated', is_public=True)
+
+        linker.add_node_link(child, auth=Auth(linker.creator), save=True)
+        linker.add_node_link(unrelated, auth=Auth(linker.creator), save=True)
+
+        rel1 = NodeRelation.objects.get(parent=linker, child=child)
+        rel2 = NodeRelation.objects.get(parent=linker, child=unrelated)
+        linker.set_noderelation_order([rel2.pk, rel1.pk])
+
+        assert len(parent.get_nodes()) == 1  # child
+        assert len(linker.get_nodes()) == 2  # child and unrelated
 
 def test_node_ids(node):
     child1, child2 = NodeFactory(parent=node), NodeFactory(parent=node)
@@ -2479,6 +2494,14 @@ class TestTemplateNode:
         assert new.title == changed_title
         assert new.date_created != project.date_created
         self._verify_log(new)
+
+    def test_use_as_template_adds_default_addons(self, project, auth):
+        new = project.use_as_template(
+            auth=auth
+        )
+
+        assert new.has_addon('wiki')
+        assert new.has_addon('osfstorage')
 
     def test_use_as_template_preserves_license(self, project, auth):
         license = NodeLicenseRecordFactory()

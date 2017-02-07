@@ -6,8 +6,11 @@ import os
 from urlparse import urlparse
 from website import settings as osf_settings
 from django.contrib import messages
+from api.base.settings import *  # noqa
 
 # import local  # Build own local.py (used with postgres)
+
+# TODO - remove duplicated items, as this is now using settings from the API
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 # Quick-start development settings - unsuitable for production
@@ -50,6 +53,13 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+USE_L10N = False
+
+PASSWORD_HASHERS = [
+    'django.contrib.auth.hashers.BCryptSHA256PasswordHasher',
+    'django.contrib.auth.hashers.BCryptPasswordHasher',
+]
+
 # Email settings. Account created for testing. Password shouldn't be hardcoded
 # [DEVOPS] this should be set to 'django.core.mail.backends.smtp.EmailBackend' in the > dev local.py.
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
@@ -81,7 +91,6 @@ INSTALLED_APPS = (
     'admin.users',
     'admin.desk',
     'admin.meetings',
-    'admin.sales_analytics',
 
     # 3rd party
     'raven.contrib.django.raven_compat',
@@ -89,7 +98,13 @@ INSTALLED_APPS = (
     'django_nose',
     'password_reset',
 
-    'osf'
+    # OSF
+    'osf',
+
+    # Addons
+    'addons.osfstorage',
+    'addons.wiki',
+    'addons.twofactor',
 )
 
 USE_TZ = True

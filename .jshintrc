@@ -14,7 +14,7 @@
     "node": true,
     "evil": true,
     "esnext": true,
-    "predef": ["window", "document"],
+    "predef": ["window", "document", "__ENABLE_DEV_MODE_CONTROLS"],
     "browser": true,
     "validthis": true,
     "loopfunc": true

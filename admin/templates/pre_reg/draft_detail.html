@@ -99,7 +99,9 @@
         <a data-bind="click: nextPage" class="btn btn-primary">Next Page</a>
     </div>
 </div>
-{% include "pre_reg/comment_editor.html" %}
+    {% if perms.common_auth.administer_prereg %}
+        {% include "pre_reg/comment_editor.html" %}
+    {% endif %}
 {% endblock %}
 
 {% block bottom_js %}

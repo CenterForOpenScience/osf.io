@@ -1184,6 +1184,18 @@ class TestGetNodeTree(OsfTestCase):
         assert_equal(child2_id, child2._primary_key)
         assert_equal(child3_id, child3._primary_key)
 
+    def test_get_node_with_child_linked_to_parent(self):
+        project = ProjectFactory(creator=self.user)
+        child1 = NodeFactory(parent=project, creator=self.user)
+        child1.add_pointer(project, Auth(self.user))
+        child1.save()
+        url = project.api_url_for('get_node_tree')
+        res = self.app.get(url, auth=self.user.auth)
+        tree = res.json[0]
+        parent_node_id = tree['node']['id']
+        child1_id = tree['children'][0]['node']['id']
+        assert_equal(child1_id, child1._primary_key)
+
     def test_get_node_not_parent_owner(self):
         project = ProjectFactory(creator=self.user2)
         child = NodeFactory(parent=project, creator=self.user2)
@@ -2859,7 +2871,7 @@ class TestPointerViews(OsfTestCase):
         res = self.app.get(url, auth=self.user.auth).maybe_follow()
         assert_equal(res.status_code, 200)
 
-        has_controls = res.lxml.xpath('//li[@node_reference]/p[starts-with(normalize-space(text()), "Private Link")]//i[contains(@class, "remove-pointer")]')
+        has_controls = res.lxml.xpath('//li[@node_id]/p[starts-with(normalize-space(text()), "Private Link")]//i[contains(@class, "remove-pointer")]')
         assert_true(has_controls)
 
     def test_pointer_list_write_contributor_can_remove_public_component_entry(self):
@@ -2874,7 +2886,7 @@ class TestPointerViews(OsfTestCase):
         assert_equal(res.status_code, 200)
 
         has_controls = res.lxml.xpath(
-            '//li[@node_reference]//i[contains(@class, "remove-pointer")]')
+            '//li[@node_id]//i[contains(@class, "remove-pointer")]')
         assert_equal(len(has_controls), 3)
 
     def test_pointer_list_read_contributor_cannot_remove_private_component_entry(self):
@@ -2890,8 +2902,8 @@ class TestPointerViews(OsfTestCase):
         res = self.app.get(url, auth=user2.auth).maybe_follow()
         assert_equal(res.status_code, 200)
 
-        pointer_nodes = res.lxml.xpath('//li[@node_reference]')
-        has_controls = res.lxml.xpath('//li[@node_reference]/p[starts-with(normalize-space(text()), "Private Link")]//i[contains(@class, "remove-pointer")]')
+        pointer_nodes = res.lxml.xpath('//li[@node_id]')
+        has_controls = res.lxml.xpath('//li[@node_id]/p[starts-with(normalize-space(text()), "Private Link")]//i[contains(@class, "remove-pointer")]')
         assert_equal(len(pointer_nodes), 1)
         assert_false(has_controls)
 
@@ -2911,9 +2923,9 @@ class TestPointerViews(OsfTestCase):
         res = self.app.get(url, auth=user2.auth).maybe_follow()
         assert_equal(res.status_code, 200)
 
-        pointer_nodes = res.lxml.xpath('//li[@node_reference]')
+        pointer_nodes = res.lxml.xpath('//li[@node_id]')
         has_controls = res.lxml.xpath(
-            '//li[@node_reference]//i[contains(@class, "remove-pointer")]')
+            '//li[@node_id]//i[contains(@class, "remove-pointer")]')
         assert_equal(len(pointer_nodes), 1)
         assert_equal(len(has_controls), 0)
 
@@ -3875,6 +3887,54 @@ class TestAuthLoginAndRegisterLogic(OsfTestCase):
         assert_true(data.get('must_login_warning'))
 
 
+class TestAuthLogout(OsfTestCase):
+
+    def setUp(self):
+        super(TestAuthLogout, self).setUp()
+        self.goodbye_url = web_url_for('goodbye', _absolute=True)
+        self.redirect_url = web_url_for('forgot_password_get', _absolute=True)
+        self.valid_next_url = web_url_for('dashboard', _absolute=True)
+        self.invalid_next_url = 'http://localhost:1234/abcde'
+        self.auth_user = AuthUserFactory()
+        self.user = UserFactory()
+
+    def test_logout_with_valid_next_url_logged_in(self):
+        logout_url = web_url_for('auth_logout', _absolute=True, next_url=self.valid_next_url)
+        resp = self.app.get(logout_url, auth=self.auth_user.auth)
+        assert_equal(resp.status_code, http.FOUND)
+        assert_equal(cas.get_logout_url(logout_url), resp.headers['Location'])
+
+    def test_logout_with_valid_next_url_logged_out(self):
+        logout_url = web_url_for('auth_logout', _absolute=True, next_url=self.valid_next_url)
+        resp = self.app.get(logout_url, auth=None)
+        assert_equal(resp.status_code, http.FOUND)
+        assert_equal(self.valid_next_url, resp.headers['Location'])
+
+    def test_logout_with_invalid_next_url_logged_in(self):
+        logout_url = web_url_for('auth_logout', _absolute=True, next_url=self.invalid_next_url)
+        resp = self.app.get(logout_url, auth=self.auth_user.auth)
+        assert_equal(resp.status_code, http.FOUND)
+        assert_equal(cas.get_logout_url(self.goodbye_url), resp.headers['Location'])
+
+    def test_logout_with_invalid_next_url_logged_out(self):
+        logout_url = web_url_for('auth_logout', _absolute=True, next_url=self.invalid_next_url)
+        resp = self.app.get(logout_url, auth=None)
+        assert_equal(resp.status_code, http.FOUND)
+        assert_equal(cas.get_logout_url(self.goodbye_url), resp.headers['Location'])
+
+    def test_logout_with_redirect_url(self):
+        logout_url = web_url_for('auth_logout', _absolute=True, redirect_url=self.redirect_url)
+        resp = self.app.get(logout_url, auth=self.auth_user.auth)
+        assert_equal(resp.status_code, http.FOUND)
+        assert_equal(cas.get_logout_url(self.redirect_url), resp.headers['Location'])
+
+    def test_logout_with_no_parameter(self):
+        logout_url = web_url_for('auth_logout', _absolute=True)
+        resp = self.app.get(logout_url, auth=None)
+        assert_equal(resp.status_code, http.FOUND)
+        assert_equal(cas.get_logout_url(self.goodbye_url), resp.headers['Location'])
+
+
 class TestExternalAuthViews(OsfTestCase):
 
     def setUp(self):
@@ -3927,6 +3987,7 @@ class TestExternalAuthViews(OsfTestCase):
         self.user.reload()
         assert_equal(self.user.external_identity['service'][self.provider_id], 'VERIFIED')
         assert_true(self.user.is_registered)
+        assert_true(self.user.has_usable_password())
 
     @mock.patch('website.mails.send_mail')
     def test_external_login_confirm_email_get_link(self, mock_link_confirm):
@@ -3944,6 +4005,7 @@ class TestExternalAuthViews(OsfTestCase):
         self.user.reload()
         assert_equal(self.user.external_identity['service'][self.provider_id], 'VERIFIED')
         assert_true(self.user.is_registered)
+        assert_true(self.user.has_usable_password())
 
     @mock.patch('website.mails.send_mail')
     def test_external_login_confirm_email_get_duped_id(self, mock_confirm):
@@ -4310,8 +4372,8 @@ class TestReorderComponents(OsfTestCase):
         # contrib tries to reorder components
         payload = {
             'new_list': [
-                '{0}:node'.format(self.private_component._primary_key),
-                '{0}:node'.format(self.public_component._primary_key),
+                '{0}'.format(self.private_component._id),
+                '{0}'.format(self.public_component._id),
             ]
         }
         url = self.project.api_url_for('project_reorder_components')
@@ -4422,7 +4484,7 @@ class TestProjectCreation(OsfTestCase):
         post_data = {'title': '<b>New <blink>Component</blink> Title</b>', 'category': ''}
         request = self.app.post(url, post_data, auth=user.auth).follow()
         project.reload()
-        child = project.nodes.first()
+        child = project.nodes[0]
         # HTML has been stripped
         assert_equal(child.title, 'New Component Title')
 
@@ -4481,7 +4543,7 @@ class TestProjectCreation(OsfTestCase):
         post_data = {'title': 'New Component With Contributors Title', 'category': '', 'inherit_contributors': True}
         res = self.app.post(url, post_data, auth=self.user1.auth)
         self.project.reload()
-        child = self.project.nodes.first()
+        child = self.project.nodes[0]
         assert_equal(child.title, 'New Component With Contributors Title')
         assert_in(self.user1, child.contributors)
         assert_in(self.user2, child.contributors)
@@ -4496,7 +4558,7 @@ class TestProjectCreation(OsfTestCase):
         post_data = {'title': 'New Component With Contributors Title', 'category': '', 'inherit_contributors': True}
         res = self.app.post(url, post_data, auth=non_admin.auth)
         self.project.reload()
-        child = self.project.nodes.first()
+        child = self.project.nodes[0]
         assert_equal(child.title, 'New Component With Contributors Title')
         assert_in(non_admin, child.contributors)
         assert_in(self.user1, child.contributors)
@@ -4519,7 +4581,7 @@ class TestProjectCreation(OsfTestCase):
         post_data = {'title': 'New Component With Contributors Title', 'category': ''}
         res = self.app.post(url, post_data, auth=self.user1.auth)
         self.project.reload()
-        child = self.project.nodes.first()
+        child = self.project.nodes[0]
         assert_equal(child.title, 'New Component With Contributors Title')
         assert_in(self.user1, child.contributors)
         assert_not_in(self.user2, child.contributors)
