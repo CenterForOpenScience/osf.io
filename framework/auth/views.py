@@ -382,9 +382,14 @@ def auth_register(auth):
 def auth_logout(auth=None, redirect_url=None, next_url=None):
     """
     Log out, delete current session and remove OSF cookie.
-    Redirect to CAS logout which clears sessions and cookies for CAS and Shibboleth (if any).
-    Final landing page may vary.
+    If next url is valid and auth is logged in, redirect to CAS logout endpoint with the current request url as service.
+    If next url is valid and auth is logged out, redirect directly to the next url.
+    Otherwise, redirect to CAS logout or login endpoint with redirect url as service.
+    The CAS logout endpoint which clears sessions and cookies for CAS and Shibboleth.
     HTTP Method: GET
+
+    Note: OSF tells CAS where it wants to be redirected back after successful logout. However, CAS logout flow may not
+    respect this url if user is authenticated through remote identity provider.
 
     :param the auth context
     :param redirect_url: url to DIRECTLY redirect after CAS logout, default is `OSF/goodbye`
@@ -392,11 +397,8 @@ def auth_logout(auth=None, redirect_url=None, next_url=None):
     :return: the response
     """
 
-    # OSF tells CAS where it wants to be redirected back after successful logout. However, CAS logout flow may not
-    # respect this url if user is authenticated through remote identity provider.
-
-    # There are two options for OSF logout: using `next` or using `redirect_url`.
-    # For `?next=`:
+    # For `?next_url=`:
+    #   takes priority
     #   the url must be a valid OSF next url,
     #   the full request url is set to CAS service url,
     #   does not support `reauth`
