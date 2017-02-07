@@ -278,6 +278,8 @@ def make_guids():
 
 def validate_guid_referents_against_ids():
     import ipdb
+    init_app(routes=False, attach_request_handlers=False, fixtures=False)
+    set_backend()
     register_nonexistent_models_with_modm()
     with ipdb.launch_ipdb_on_exception():
         for django_model in [model for model in get_ordered_models() if (issubclass(model, GuidMixin) or issubclass(model, OptionalGuidMixin)) and (not issubclass(model, AbstractNode) or model is AbstractNode)]:
@@ -448,6 +450,10 @@ def fix_guids():
 
 @app.task()
 def save_page_of_bare_models(django_model, offset, limit):
+    init_app(routes=False, attach_request_handlers=False, fixtures=False)
+    set_backend()
+    register_nonexistent_models_with_modm()
+
     hashes = set()
     count = 0
 
@@ -530,6 +536,7 @@ def save_bare_models(django_model):
     logger.info('Starting {} on {}.{}...'.format(sys._getframe().f_code.co_name, django_model._meta.model.__module__, django_model._meta.model.__name__))
     init_app(routes=False, attach_request_handlers=False, fixtures=False)
     set_backend()
+    register_nonexistent_models_with_modm()
     count = 0
     modm_model = get_modm_model(django_model)
     page_size = django_model.migration_page_size
@@ -811,7 +818,7 @@ class Command(BaseCommand):
         parser.add_argument('--nodelogs', action='store_true', help='Run nodelog migrations')
         parser.add_argument('--nodelogsguids', action='store_true', help='Run nodelog guid migrations')
         parser.add_argument('--profile', action='store', help='Filename to dump profiling information')
-        parser.add_argument('--fixguids', action='store', help='Run just the fix guids command.')
+        parser.add_argument('--dependents', action='store', help='Migrate things that are dependent on other things.')
 
     def do_model(self, django_model, options):
         with ipdb.launch_ipdb_on_exception():
@@ -830,10 +837,14 @@ class Command(BaseCommand):
 
     def _handle(self, *args, **options):
         # it's either this or catch the exception and put them in the blacklistguid table
+        init_app(routes=False, attach_request_handlers=False, fixtures=False)
+        set_backend()
         register_nonexistent_models_with_modm()
 
-        if options['fixguids']:
-            fix_guids.delay()
+        if options['dependents']:
+            fix_guids()
+            make_guids()
+            save_bare_external_accounts()
             return
 
         models = get_ordered_models()
@@ -866,7 +877,5 @@ class Command(BaseCommand):
         if not options['nodelogs'] and not options['nodelogsguids']:
             with ipdb.launch_ipdb_on_exception():
                 save_bare_system_tags.delay()
-                make_guids.delay()
-                save_bare_external_accounts.delay()
                 migrate_page_counters.delay()
                 migrate_user_activity_counters.delay()
