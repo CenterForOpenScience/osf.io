@@ -36,6 +36,7 @@ from framework.mongo import storage
 from framework.transactions.context import transaction as modm_transaction
 from osf.models import (BlackListGuid, ExternalAccount, NodeLog, OSFUser,
                         PageCounter, StoredFileNode, Tag, UserActivityCounter)
+from osf.models import Comment
 from osf.models.base import Guid, GuidMixin, OptionalGuidMixin
 from osf.models.node import AbstractNode
 from osf.utils.order_apps import get_ordered_models
@@ -43,6 +44,7 @@ from website.app import init_app
 from website.files.models import StoredFileNode as MODMStoredFileNode
 from website.models import Guid as MGuid
 from website.models import Node as MODMNode
+from website.models import Comment as MODMComment
 from website.models import User as MUser
 from website.oauth.models import ApiOAuth2Scope
 
@@ -346,6 +348,7 @@ def fix_guids():
     nodes = 0
     users = 0
     files = 0
+    comments = 0
     missing = 0
     for guid in short_missing_guids.get_keys():
         user = MUser.load(guid)
@@ -388,10 +391,10 @@ def fix_guids():
 
                 nodes += 1
             else:
-                sfn = MODMStoredFileNode.load(guid)
-                if sfn is not None:
-                    logger.info('Guid {} is a file.'.format(guid))
-                    guid_instance.referent = sfn
+                comment = MODMComment.load(guid)
+                if comment is not None:
+                    logger.info('Guid {} is a node.'.format(guid))
+                    guid_instance.referent = comment
                     guid_instance.save()
                     try:
                         # see if the existing guid exists
@@ -399,20 +402,40 @@ def fix_guids():
                     except Guid.DoesNotExist:
                         # try and get a user that has n+1 guids pointing at them
                         try:
-                            existing_django_guid = StoredFileNode.objects.get(guids___id=unicode(guid).lower())
-                        except StoredFileNode.DoesNotExist:
+                            existing_django_guid = Comment.objects.get(guids___id=unicode(guid).lower())
+                        except AbstractNode.DoesNotExist:
                             # create a new guid
                             existing_django_guid = Guid.migrate_from_modm(guid_instance)
                             existing_django_guid.save()
 
-                    files += 1
+                    comments += 1
                 else:
-                    logger.info('Guid {} does not match.'.format(guid))
-                    missing += 1
-                    continue
+                    sfn = MODMStoredFileNode.load(guid)
+                    if sfn is not None:
+                        logger.info('Guid {} is a file.'.format(guid))
+                        guid_instance.referent = sfn
+                        guid_instance.save()
+                        try:
+                            # see if the existing guid exists
+                            existing_django_guid = Guid.objects.get(_id=unicode(guid).lower())
+                        except Guid.DoesNotExist:
+                            # try and get a user that has n+1 guids pointing at them
+                            try:
+                                existing_django_guid = StoredFileNode.objects.get(guids___id=unicode(guid).lower())
+                            except StoredFileNode.DoesNotExist:
+                                # create a new guid
+                                existing_django_guid = Guid.migrate_from_modm(guid_instance)
+                                existing_django_guid.save()
+
+                        files += 1
+                    else:
+                        logger.info('Guid {} does not match.'.format(guid))
+                        missing += 1
+                        continue
 
     logger.info('Users: {}'.format(users))
     logger.info('Nodes: {}'.format(nodes))
+    logger.info('Comments: {}'.format(comments))
     logger.info('Files: {}'.format(files))
     logger.info('Missing: {}'.format(missing))
     logger.info('Total: {}'.format(len(short_missing_guids)))
