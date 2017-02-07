@@ -541,7 +541,7 @@ def save_bare_models(django_model):
 
     while count < total:
         logger.info('{}.{} starting'.format(django_model._meta.model.__module__, django_model._meta.model.__name__))
-        save_page_of_bare_models.delay(django_model, count, page_size)
+        save_page_of_bare_models.delay(django_model, count, count+page_size)
         count += page_size
 
 
@@ -832,7 +832,7 @@ class Command(BaseCommand):
         # it's either this or catch the exception and put them in the blacklistguid table
         register_nonexistent_models_with_modm()
 
-        if options['fix_guids']:
+        if options['fixguids']:
             fix_guids.delay()
             return
 
