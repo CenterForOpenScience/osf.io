@@ -198,14 +198,6 @@ def do_model(django_model):
             not hasattr(django_model, 'modm_model_path'):
         return
 
-    module_path, model_name = django_model.modm_model_path.rsplit('.', 1)
-    modm_module = importlib.import_module(module_path)
-    modm_model = getattr(modm_module, model_name)
-    if isinstance(django_model.modm_query, dict):
-        modm_queryset = modm_model.find(**django_model.modm_query)
-    else:
-        modm_queryset = modm_model.find(django_model.modm_query)
-
     page_size = django_model.migration_page_size
     page_size = 10000
 # with ipdb.launch_ipdb_on_exception():
@@ -218,7 +210,7 @@ def do_model(django_model):
 
 
 @app.task()
-def save_page_of_fk_relationships(django_model, fk_relations, modm_to_django, offset, limit):
+def save_page_of_fk_relationships(django_model, fk_relations, offset, limit):
     with transaction.atomic():  # one transaction per page
         bad_fields = ['external_account_id', ]  # external accounts are handled in their own migration
 
@@ -232,7 +224,7 @@ def save_page_of_fk_relationships(django_model, fk_relations, modm_to_django, of
         model_count = 0
         fk_count = 0
         modm_keys = modm_page.get_keys()
-        modm_list = modm_page
+        modm_to_django = build_toku_django_lookup_table_cache()
 
         django_keys = []
         for modm_key in modm_keys:
@@ -251,7 +243,7 @@ def save_page_of_fk_relationships(django_model, fk_relations, modm_to_django, of
         django_objects = django_model.objects.filter(pk__in=django_keys)
         django_objects_to_update = []
         django_objects_dict = {obj.pk: obj for obj in django_objects}
-        for modm_obj in modm_list:
+        for modm_obj in modm_page:
             django_obj = django_objects_dict[modm_to_django[format_lookup_key(modm_obj._id, model=django_model)]]
             dirty = False
 
@@ -379,7 +371,6 @@ def save_fk_relationships(django_model, page_size):
             logger.info('{!r}'.format(rel))
     model_count = 0
     modm_model = get_modm_model(django_model)
-    modm_to_django = build_toku_django_lookup_table_cache()
     if isinstance(django_model.modm_query, dict):
         modm_queryset = modm_model.find(**django_model.modm_query)
     else:
@@ -388,14 +379,15 @@ def save_fk_relationships(django_model, page_size):
 
     while model_count < model_total:
         logger.info('{}.{} starting'.format(django_model._meta.model.__module__, django_model._meta.model.__name__))
-        save_page_of_fk_relationships.delay(django_model, fk_relations, modm_to_django, model_count, model_count+page_size)
+        save_page_of_fk_relationships.delay(django_model, fk_relations, model_count, model_count+page_size)
         model_count += page_size
 
 
 @app.task()
-def save_page_of_m2m_relationships(django_model, m2m_relations, modm_to_django, offset, limit):
+def save_page_of_m2m_relationships(django_model, m2m_relations, offset, limit):
     with transaction.atomic():  # one transaction per page
         modm_model = get_modm_model(django_model)
+        modm_to_django = build_toku_django_lookup_table_cache()
         if isinstance(django_model.modm_query, dict):
             modm_queryset = modm_model.find(**django_model.modm_query)
         else:
@@ -543,7 +535,6 @@ def save_m2m_relationships(django_model, page_size):
             logger.info('{}'.format(rel))
 
     model_count = 0
-    modm_to_django = build_toku_django_lookup_table_cache()
     modm_model = get_modm_model(django_model)
     if isinstance(django_model.modm_query, dict):
         modm_queryset = modm_model.find(**django_model.modm_query)
@@ -552,7 +543,7 @@ def save_m2m_relationships(django_model, page_size):
     model_total = modm_queryset.count()
 
     while model_count < model_total:
-        save_page_of_m2m_relationships.delay(django_model, m2m_relations, modm_to_django, model_count, model_count+page_size)
+        save_page_of_m2m_relationships.delay(django_model, m2m_relations, model_count, model_count+page_size)
         model_count += page_size
 
 
