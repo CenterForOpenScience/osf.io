@@ -51,6 +51,7 @@ logger = logging.getLogger('migrations')
 encryption.encrypt = lambda x: x
 encryption.decrypt = lambda x: x
 
+
 def set_backend():
     set_up_storage([ApiOAuth2Scope], storage.MongoStorage)
 
@@ -515,6 +516,7 @@ def save_page_of_bare_models(modm_page, django_model):
 def save_bare_models(django_model):
     logger.info('Starting {} on {}.{}...'.format(sys._getframe().f_code.co_name, django_model._meta.model.__module__, django_model._meta.model.__name__))
     init_app(routes=False, attach_request_handlers=False, fixtures=False)
+    set_backend()
     count = 0
     modm_model = get_modm_model(django_model)
     page_size = django_model.migration_page_size
@@ -812,7 +814,7 @@ class Command(BaseCommand):
             self._handle(*args, **options)
 
     def _handle(self, *args, **options):
-        set_backend()
+        ()
         # it's either this or catch the exception and put them in the blacklistguid table
         register_nonexistent_models_with_modm()
 
