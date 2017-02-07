@@ -1,12 +1,10 @@
 import furl
-import logging
 
 from django.utils import timezone
-from modularodm import Q
-from modularodm.exceptions import NoResultsFound, QueryException, ImproperConfigurationError
+
+from osf.models import PreprintProvider
 
 from website import mails
-from website.models import PreprintProvider
 from website.settings import DOMAIN, CAMPAIGN_REFRESH_THRESHOLD
 from website.util.time import throttle_period_expired
 
@@ -19,8 +17,6 @@ def get_campaigns():
 
     global CAMPAIGNS
     global CAMPAIGNS_LAST_REFRESHED
-
-    logger = logging.getLogger(__name__)
 
     if not CAMPAIGNS or throttle_period_expired(CAMPAIGNS_LAST_REFRESHED, CAMPAIGN_REFRESH_THRESHOLD):
 
@@ -50,30 +46,30 @@ def get_campaigns():
         })
 
         # Proxy campaigns: Preprints, both OSF and branded ones
-        try:
-            preprint_providers = PreprintProvider.find(Q('_id', 'ne', None))
-            for provider in preprint_providers:
-                if provider._id == 'osf':
-                    template = 'osf'
-                    name = 'OSF'
-                    url_path = 'preprints/'
-                else:
-                    template = 'branded'
-                    name = provider.name
-                    url_path = 'preprints/{}'.format(provider._id)
-                campaign = '{}-preprints'.format(provider._id)
-                system_tag = '{}_preprints'.format(provider._id)
-                CAMPAIGNS.update({
-                    campaign: {
-                        'system_tag': system_tag,
-                        'redirect_url': furl.furl(DOMAIN).add(path=url_path).url,
-                        'confirmation_email_template': mails.CONFIRM_EMAIL_PREPRINTS(template, name),
-                        'login_type': 'proxy',
-                        'provider': name,
-                    }
-                })
-        except (NoResultsFound or QueryException or ImproperConfigurationError) as e:
-            logger.warn('An error has occurred during campaign initialization: {}', e)
+        preprint_providers = PreprintProvider.objects.all()
+        for provider in preprint_providers:
+            if provider._id == 'osf':
+                template = 'osf'
+                name = 'OSF'
+                url_path = 'preprints/'
+                external_url = None
+            else:
+                template = 'branded'
+                name = provider.name
+                url_path = 'preprints/{}'.format(provider._id)
+                external_url = provider.get_provider_domain()
+            campaign = '{}-preprints'.format(provider._id)
+            system_tag = '{}_preprints'.format(provider._id)
+            CAMPAIGNS.update({
+                campaign: {
+                    'system_tag': system_tag,
+                    'redirect_url': furl.furl(DOMAIN).add(path=url_path).url,
+                    'external_url': external_url,
+                    'confirmation_email_template': mails.CONFIRM_EMAIL_PREPRINTS(template, name),
+                    'login_type': 'proxy',
+                    'provider': name,
+                }
+            })
 
         CAMPAIGNS_LAST_REFRESHED = timezone.now()
 
@@ -135,3 +131,13 @@ def campaign_url_for(campaign):
     if campaign in campaigns:
         return campaigns.get(campaign).get('redirect_url')
     return None
+
+
+def get_external_domains():
+    campaigns = get_campaigns()
+    external_domains = []
+    for campaign, config in campaigns.items():
+        external_url = config.get('external_url', None)
+        if external_url:
+            external_domains.append(external_url)
+    return external_domains

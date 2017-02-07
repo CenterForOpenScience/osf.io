@@ -1,14 +1,17 @@
 # -*- coding: utf-8 -*-
 from django.db import models
 
-from website.util import api_v2_url
 from modularodm import Q
 
 from osf.models.base import BaseModel, ObjectIDMixin
-from osf.utils.fields import EncryptedTextField
-from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.models.licenses import NodeLicense
 from osf.models.subject import Subject
+from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
+from osf.utils.fields import EncryptedTextField
+
+from website import settings
+from website.util import api_v2_url
+
 
 class PreprintProvider(ObjectIDMixin, BaseModel):
     # TODO REMOVE AFTER MIGRATION
@@ -77,3 +80,11 @@ class PreprintProvider(ObjectIDMixin, BaseModel):
             return '/static/img/preprint_providers/{}'.format(self.logo_name)
         else:
             return None
+
+    if settings.DEV_MODE:
+        def get_provider_domain(self):
+            domain_settings = settings.PREPRINT_PROVIDER_DOMAINS
+            return ''.join((domain_settings['prefix'], str(self.domain), domain_settings['suffix']))
+    else:
+        def get_provider_domain(self):
+            return settings.PROTOCOL + self.domain

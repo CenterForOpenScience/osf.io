@@ -29,11 +29,11 @@ from framework.exceptions import HTTPError
 from framework.flask import redirect  # VOL-aware redirect
 from framework.sessions.utils import remove_sessions_for_user, remove_session
 from framework.sessions import get_session
-from website import settings, mails, language
 
-from website.util.time import throttle_period_expired
+from website import settings, mails, language
 from website.models import User
 from website.util import web_url_for
+from website.util.time import throttle_period_expired
 from website.util.sanitize import strip_html
 
 
@@ -378,30 +378,57 @@ def auth_register(auth):
 
     raise HTTPError(http.BAD_REQUEST)
 
-
-def auth_logout(redirect_url=None):
+@collect_auth
+def auth_logout(auth=None, redirect_url=None, next_url=None):
     """
     Log out, delete current session and remove OSF cookie.
-    Redirect to CAS logout which clears sessions and cookies for CAS and Shibboleth (if any).
-    Final landing page may vary.
+    If next url is valid and auth is logged in, redirect to CAS logout endpoint with the current request url as service.
+    If next url is valid and auth is logged out, redirect directly to the next url.
+    Otherwise, redirect to CAS logout or login endpoint with redirect url as service.
+    The CAS logout endpoint which clears sessions and cookies for CAS and Shibboleth.
     HTTP Method: GET
 
-    :param redirect_url: url to redirect user after CAS logout, default is 'goodbye'
-    :return:
+    Note: OSF tells CAS where it wants to be redirected back after successful logout. However, CAS logout flow may not
+    respect this url if user is authenticated through remote identity provider.
+
+    :param the auth context
+    :param redirect_url: url to DIRECTLY redirect after CAS logout, default is `OSF/goodbye`
+    :param next_url: url to redirect after OSF logout, which is after CAS logout
+    :return: the response
     """
 
-    # OSF tells CAS where it wants to be redirected back after successful logout.
-    # However, CAS logout flow may not respect this url if user is authenticated through remote identity provider.
-    redirect_url = redirect_url or request.args.get('redirect_url') or web_url_for('goodbye', _absolute=True)
-    # OSF log out, remove current OSF session
-    osf_logout()
-    # set redirection to CAS log out (or log in if `reauth` is present)
-    if 'reauth' in request.args:
-        cas_endpoint = cas.get_login_url(redirect_url)
+    # For `?next_url=`:
+    #   takes priority
+    #   the url must be a valid OSF next url,
+    #   the full request url is set to CAS service url,
+    #   does not support `reauth`
+    # For `?redirect_url=`:
+    #   the url must be valid CAS service url
+    #   the redirect url is set to CAS service url.
+    #   support `reauth`
+
+    # logout/?next=<an OSF verified next url>
+    next_url = next_url or request.args.get('next_url')
+    if next_url and validate_next_url(next_url):
+        cas_logout_endpoint = cas.get_logout_url(request.url)
+        if auth.logged_in:
+            resp = redirect(cas_logout_endpoint)
+        else:
+            resp = redirect(next_url)
+    # logout/ or logout/?redirect_url=<a CAS verified redirect url>
     else:
-        cas_endpoint = cas.get_logout_url(redirect_url)
-    resp = redirect(cas_endpoint)
-    # delete OSF cookie
+        redirect_url = redirect_url or request.args.get('redirect_url') or web_url_for('goodbye', _absolute=True)
+        # set redirection to CAS log out (or log in if `reauth` is present)
+        if 'reauth' in request.args:
+            cas_endpoint = cas.get_login_url(redirect_url)
+        else:
+            cas_endpoint = cas.get_logout_url(redirect_url)
+        resp = redirect(cas_endpoint)
+
+    # perform OSF logout
+    osf_logout()
+
+    # set response to delete OSF cookie
     resp.delete_cookie(settings.COOKIE_NAME, domain=settings.OSF_COOKIE_DOMAIN)
 
     return resp
@@ -1011,13 +1038,20 @@ def validate_next_url(next_url):
     # like http:// or https:// depending on the use of SSL on the page already.
     if next_url.startswith('//'):
         return False
-    # only OSF, MFR and CAS domains are allowed
-    if not (next_url[0] == '/' or
-            next_url.startswith(settings.DOMAIN) or
-            next_url.startswith(settings.CAS_SERVER_URL) or
-            next_url.startswith(settings.MFR_SERVER_URL)):
-        return False
-    return True
+
+    # only OSF, MFR, CAS and Branded Preprints domains are allowed
+    if next_url[0] == '/' or next_url.startswith(settings.DOMAIN):
+        # OSF
+        return True
+    if next_url.startswith(settings.CAS_SERVER_URL) or next_url.startswith(settings.MFR_SERVER_URL):
+        # CAS or MFR
+        return True
+    for url in campaigns.get_external_domains():
+        # Branded Preprints Phase 2
+        if url.startswith(url):
+            return True
+
+    return False
 
 
 def check_service_url_with_proxy_campaign(service_url, campaign_url):
