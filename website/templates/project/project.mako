@@ -155,17 +155,6 @@
                 % endif
                 % if node['is_registration']:
                     <p>
-                    Registration Form:
-                    % for meta_schema in node['registered_schemas']:
-                    <a href="${node['url']}register/${meta_schema['id']}">${meta_schema['schema_name']}</a>
-                      % if len(node['registered_schemas']) > 1:
-                      ,
-                      % endif
-                    % endfor
-                    </p>
-                % endif
-                % if node['is_registration']:
-                    <p>
                     Date registered:
                     <span data-bind="text: dateRegistered.local, tooltip: {title: dateRegistered.utc}" class="date node-date-registered"></span>
                     </p>
@@ -210,19 +199,32 @@
                         ${node['description']}</span>
                     </p>
                 % endif
-                % if ('admin' in user['permissions'] or node['license'].get('name', 'No license') != 'No license'):
-                    <p>
-                      <license-picker params="saveUrl: '${node['update_url']}',
-                                              saveMethod: 'PUT',
-                                              license: window.contextVars.node.license,
-                                              saveLicenseKey: 'node_license',
-                                              readonly: ${ node['is_registration'] | sjson, n}">
-                        <span id="license">License:</span>
-                        <span class="text-muted"> ${node['license'].get('name', 'No license')} </span>
-                      </license-picker>
-                    </p>
-                 % endif
-
+                <div class="row">
+                    % if not node['is_registration']:
+                        <div class="col-xs-12">
+                    % else:
+                        <div class="col-xs-6">
+                    % endif
+                            % if ('admin' in user['permissions'] or node['license'].get('name', 'No license') != 'No license'):
+                                <p>
+                                  <license-picker params="saveUrl: '${node['update_url']}',
+                                                          saveMethod: 'PUT',
+                                                          license: window.contextVars.node.license,
+                                                          saveLicenseKey: 'node_license',
+                                                          readonly: ${ node['is_registration'] | sjson, n}">
+                                    <span id="license">License:</span>
+                                    <span class="text-muted"> ${node['license'].get('name', 'No license')} </span>
+                                  </license-picker>
+                                </p>
+                             % endif
+                        </div>
+                        % if node['is_registration']:
+                            <div class="col-xs-6">
+                                ##  Note - this will only show *one* registered_schema, even though its technically possible for there to be multiple
+                                <a class="btn btn-primary pull-right" href="${node['url']}register/${node['registered_schemas'][0]['id']}">View Registration Form</a>
+                            </div>
+                    % endif
+                </div>
             </div>
         </div>
 
@@ -261,6 +263,7 @@
     </div>
 </div>
 % endif
+
 
 <div class="row">
 
