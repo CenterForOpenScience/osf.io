@@ -429,7 +429,8 @@ def fix_guids():
 
                         files += 1
                     else:
-                        logger.info('Guid {} does not match.'.format(guid))
+
+                        logger.info('Guid {} does not match it\'s referent was a {}.'.format(guid, guid_instance.to_storage().referent[1]))
                         missing += 1
                         continue
 
