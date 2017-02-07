@@ -54,13 +54,13 @@ class Search(BaseSearchView):
     """
     *Read-Only*
 
-    Objects (including projects, components, registrations, users, and files) that have been found by the given
+    Objects (including projects, components, registrations, users, files, and institutions) that have been found by the given
     Elasticsearch query. Each object is serialized with the appropriate serializer for its type (files are serialized as
     files, users are serialized as users, etc.) and returned collectively.
 
     ## Search Fields
 
-        <type>  # either projects, components, registrations, users, or files
+        <type>  # either projects, components, registrations, users, files, or institutions
             related
                 href    # the canonical api endpoint to search within a certain object type, e.g `/v2/search/users/`
                 meta
