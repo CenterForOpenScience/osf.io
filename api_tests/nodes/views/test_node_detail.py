@@ -5,6 +5,7 @@ import functools
 
 from framework.auth.core import Auth
 from modularodm import Q
+import pytest
 
 from website.models import NodeLog
 from website.views import find_bookmark_collection
@@ -14,7 +15,7 @@ from website.util.sanitize import strip_html
 from api.base.settings.defaults import API_BASE
 
 from tests.base import ApiTestCase, fake
-from tests.factories import (
+from osf_tests.factories import (
     NodeFactory,
     ProjectFactory,
     RegistrationFactory,
@@ -164,7 +165,7 @@ class TestNodeDetail(ApiTestCase):
     def test_node_comments_link_query_params_formatted(self):
         CommentFactory(node=self.public_project, user=self.user)
         self.private_project_link = PrivateLinkFactory(anonymous=False)
-        self.private_project_link.nodes.append(self.private_project)
+        self.private_project_link.nodes.add(self.private_project)
         self.private_project_link.save()
 
         res = self.app.get(self.private_url, auth=self.user.auth)
@@ -192,7 +193,7 @@ class TestNodeDetail(ApiTestCase):
         assert_equal(res.json['data']['attributes']['tags'], [])
 
     def test_requesting_folder_returns_error(self):
-        folder = NodeFactory(is_collection=True, creator=self.user)
+        folder = CollectionFactory(creator=self.user)
         res = self.app.get(
             '/{}nodes/{}/'.format(API_BASE, folder._id),
             auth=self.user.auth,
@@ -657,18 +658,18 @@ class TestNodeUpdate(NodeCRUDTestCase):
         self.private_project.save()
         new_category = 'data'
         payload = make_node_payload(self.private_project, attributes={'category': new_category})
-        original_n_logs = len(self.private_project.logs)
+        original_n_logs = self.private_project.logs.count()
 
         res = self.app.patch_json_api(self.private_url, payload, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         self.private_project.reload()
         assert_equal(self.private_project.category, new_category)
-        assert_equal(len(self.private_project.logs), original_n_logs + 1)  # sanity check
+        assert_equal(self.private_project.logs.count(), original_n_logs + 1)  # sanity check
 
         res = self.app.patch_json_api(self.private_url, payload, auth=self.user.auth)
         self.private_project.reload()
         assert_equal(self.private_project.category, new_category)
-        assert_equal(len(self.private_project.logs), original_n_logs + 1)
+        assert_equal(self.private_project.logs.count(), original_n_logs + 1)
 
     def test_partial_update_invalid_id(self):
         res = self.app.patch_json_api(self.public_url, {
@@ -948,8 +949,8 @@ class TestNodeTags(ApiTestCase):
         assert_equal(res.json['data']['attributes']['tags'][0], 'new-tag')
         # Ensure data is correct in the database
         self.public_project.reload()
-        assert_equal(len(self.public_project.tags), 1)
-        assert_equal(self.public_project.tags[0]._id, 'new-tag')
+        assert_equal(self.public_project.tags.count(), 1)
+        assert_equal(self.public_project.tags.first()._id, 'new-tag')
         # Ensure data is correct when GETting the resource again
         reload_res = self.app.get(self.public_url)
         assert_equal(len(reload_res.json['data']['attributes']['tags']), 1)
@@ -964,8 +965,8 @@ class TestNodeTags(ApiTestCase):
         assert_equal(res.json['data']['attributes']['tags'][0], 'new-tag')
         # Ensure data is correct in the database
         self.private_project.reload()
-        assert_equal(len(self.private_project.tags), 1)
-        assert_equal(self.private_project.tags[0]._id, 'new-tag')
+        assert_equal(self.private_project.tags.count(), 1)
+        assert_equal(self.private_project.tags.first()._id, 'new-tag')
         # Ensure data is correct when GETting the resource again
         reload_res = self.app.get(self.private_url, auth=self.user.auth)
         assert_equal(len(reload_res.json['data']['attributes']['tags']), 1)
@@ -1112,3 +1113,356 @@ class TestNodeLicense(ApiTestCase):
         expected_license_url = '/{}licenses/{}'.format(API_BASE, self.node_license._id)
         actual_license_url = res.json['data']['relationships']['license']['links']['related']['href']
         assert_in(expected_license_url, actual_license_url)
+
+    def test_component_return_parent_license_if_no_license(self):
+        node = NodeFactory(parent=self.public_project, creator=self.user)
+        node.save()
+        node_url = '/{}nodes/{}/'.format(API_BASE, node._id)
+        res = self.app.get(node_url, auth=self.user.auth)
+        assert_false(node.node_license)
+        assert_equal(self.public_project.node_license.year, res.json['data']['attributes']['node_license']['year'])
+        actual_license_url = res.json['data']['relationships']['license']['links']['related']['href']
+        expected_license_url = '/{}licenses/{}'.format(API_BASE, self.node_license._id)
+        assert_in(expected_license_url, actual_license_url)
+
+class TestNodeUpdateLicense(ApiTestCase):
+
+    def setUp(self):
+        super(TestNodeUpdateLicense, self).setUp()
+
+        ensure_licenses()
+
+        self.admin_contributor = AuthUserFactory()
+        self.rw_contributor = AuthUserFactory()
+        self.read_contributor = AuthUserFactory()
+        self.non_contributor = AuthUserFactory()
+
+        self.node = NodeFactory(creator=self.admin_contributor)
+
+        self.node.add_contributor(self.rw_contributor, auth=Auth(self.admin_contributor))
+        self.node.add_contributor(self.read_contributor, auth=Auth(self.admin_contributor), permissions=['read'])
+        self.node.save()
+
+        self.cc0_license = NodeLicense.find_one(Q('name', 'eq', 'CC0 1.0 Universal'))
+        self.mit_license = NodeLicense.find_one(Q('name', 'eq', 'MIT License'))
+        self.no_license = NodeLicense.find_one(Q('name', 'eq', 'No license'))
+
+        self.url = '/{}nodes/{}/'.format(API_BASE, self.node._id)
+
+    def make_payload(self, node_id, license_id=None, license_year=None, copyright_holders=None):
+        attributes = {}
+
+        if license_year and copyright_holders:
+            attributes = {
+                'node_license': {
+                    'year': license_year,
+                    'copyright_holders': copyright_holders
+                }
+            }
+        elif license_year:
+            attributes = {
+                'node_license': {
+                    'year': license_year
+                }
+            }
+        elif copyright_holders:
+            attributes = {
+                'node_license': {
+                    'copyright_holders': copyright_holders
+                }
+            }
+
+        return {
+            'data': {
+                'type': 'nodes',
+                'id': node_id,
+                'attributes': attributes,
+                'relationships': {
+                    'license': {
+                        'data': {
+                            'type': 'licenses',
+                            'id': license_id
+                        }
+                    }
+                }
+            }
+        } if license_id else {
+            'data': {
+                'type': 'nodes',
+                'id': node_id,
+                'attributes': attributes
+            }
+        }
+
+    def make_request(self, url, data, auth=None, expect_errors=False):
+        return self.app.patch_json_api(url, data, auth=auth, expect_errors=expect_errors)
+
+    def test_admin_update_license_with_invalid_id(self):
+        data = self.make_payload(
+            node_id=self.node._id,
+            license_id='thisisafakelicenseid'
+        )
+
+        assert_equal(self.node.node_license, None)
+
+        res = self.make_request(self.url, data, auth=self.admin_contributor.auth, expect_errors=True)
+        assert_equal(res.status_code, 404)
+        assert_equal(res.json['errors'][0]['detail'], 'Unable to find specified license.')
+
+        self.node.reload()
+        assert_equal(self.node.node_license, None)
+
+    def test_admin_can_update_license(self):
+        data = self.make_payload(
+            node_id=self.node._id,
+            license_id=self.cc0_license._id
+        )
+
+        assert_equal(self.node.node_license, None)
+
+        res = self.make_request(self.url, data, auth=self.admin_contributor.auth)
+        assert_equal(res.status_code, 200)
+        self.node.reload()
+
+        assert_equal(self.node.node_license.node_license, self.cc0_license)
+        assert_equal(self.node.node_license.year, None)
+        assert_equal(self.node.node_license.copyright_holders, [])
+
+    def test_admin_can_update_license_record(self):
+        data = self.make_payload(
+            node_id=self.node._id,
+            license_id=self.no_license._id,
+            license_year='2015',
+            copyright_holders=['Bojack Horseman', 'Princess Carolyn']
+        )
+
+        assert_equal(self.node.node_license, None)
+
+        res = self.make_request(self.url, data, auth=self.admin_contributor.auth)
+        assert_equal(res.status_code, 200)
+        self.node.reload()
+
+        assert_equal(self.node.node_license.node_license, self.no_license)
+        assert_equal(self.node.node_license.year, '2015')
+        assert_equal(self.node.node_license.copyright_holders, ['Bojack Horseman', 'Princess Carolyn'])
+
+    def test_rw_contributor_cannot_update_license(self):
+        data = self.make_payload(
+            node_id=self.node._id,
+            license_id=self.cc0_license._id
+        )
+
+        res = self.make_request(self.url, data, auth=self.rw_contributor.auth, expect_errors=True)
+        assert_equal(res.status_code, 403)
+        assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
+
+    def test_read_contributor_cannot_update_license(self):
+        data = self.make_payload(
+            node_id=self.node._id,
+            license_id=self.cc0_license._id
+        )
+
+        res = self.make_request(self.url, data, auth=self.read_contributor.auth, expect_errors=True)
+        assert_equal(res.status_code, 403)
+        assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
+
+    def test_non_contributor_cannot_update_license(self):
+        data = self.make_payload(
+            node_id=self.node._id,
+            license_id=self.cc0_license._id
+        )
+
+        res = self.make_request(self.url, data, auth=self.non_contributor.auth, expect_errors=True)
+        assert_equal(res.status_code, 403)
+        assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
+
+    def test_unauthenticated_user_cannot_update_license(self):
+        data = self.make_payload(
+            node_id=self.node._id,
+            license_id=self.cc0_license._id
+        )
+
+        res = self.make_request(self.url, data, expect_errors=True)
+        assert_equal(res.status_code, 401)
+        assert_equal(res.json['errors'][0]['detail'], 'Authentication credentials were not provided.')
+
+    def test_update_node_with_existing_license_year_attribute_only(self):
+        self.node.set_node_license(
+            {
+                'id': self.no_license.license_id,
+                'year': '2014',
+                'copyrightHolders': ['Diane', 'Mr. Peanut Butter']
+            },
+            Auth(self.admin_contributor),
+        )
+        self.node.save()
+
+        assert_equal(self.node.node_license.node_license, self.no_license)
+        assert_equal(self.node.node_license.year, '2014')
+        assert_equal(self.node.node_license.copyright_holders, ['Diane', 'Mr. Peanut Butter'])
+
+        data = self.make_payload(
+            node_id=self.node._id,
+            license_year='2015'
+        )
+
+        res = self.make_request(self.url, data, auth=self.admin_contributor.auth)
+        assert_equal(res.status_code, 200)
+        self.node.node_license.reload()
+
+        assert_equal(self.node.node_license.node_license, self.no_license)
+        assert_equal(self.node.node_license.year, '2015')
+        assert_equal(self.node.node_license.copyright_holders, ['Diane', 'Mr. Peanut Butter'])
+
+    def test_update_node_with_existing_license_copyright_holders_attribute_only(self):
+        self.node.set_node_license(
+            {
+                'id': self.no_license.license_id,
+                'year': '2014',
+                'copyrightHolders': ['Diane', 'Mr. Peanut Butter']
+            },
+            Auth(self.admin_contributor),
+        )
+        self.node.save()
+
+        assert_equal(self.node.node_license.node_license, self.no_license)
+        assert_equal(self.node.node_license.year, '2014')
+        assert_equal(self.node.node_license.copyright_holders, ['Diane', 'Mr. Peanut Butter'])
+
+        data = self.make_payload(
+            node_id=self.node._id,
+            copyright_holders=['Bojack Horseman', 'Princess Carolyn']
+        )
+
+        res = self.make_request(self.url, data, auth=self.admin_contributor.auth)
+        assert_equal(res.status_code, 200)
+        self.node.node_license.reload()
+
+        assert_equal(self.node.node_license.node_license, self.no_license)
+        assert_equal(self.node.node_license.year, '2014')
+        assert_equal(self.node.node_license.copyright_holders, ['Bojack Horseman', 'Princess Carolyn'])
+
+    def test_update_node_with_existing_license_relationship_only(self):
+        self.node.set_node_license(
+            {
+                'id': self.no_license.license_id,
+                'year': '2014',
+                'copyrightHolders': ['Diane', 'Mr. Peanut Butter']
+            },
+            Auth(self.admin_contributor),
+        )
+        self.node.save()
+
+        assert_equal(self.node.node_license.node_license, self.no_license)
+        assert_equal(self.node.node_license.year, '2014')
+        assert_equal(self.node.node_license.copyright_holders, ['Diane', 'Mr. Peanut Butter'])
+
+        data = self.make_payload(
+            node_id=self.node._id,
+            license_id=self.cc0_license._id
+        )
+
+        res = self.make_request(self.url, data, auth=self.admin_contributor.auth)
+        assert_equal(res.status_code, 200)
+        self.node.node_license.reload()
+
+        assert_equal(self.node.node_license.node_license, self.cc0_license)
+        assert_equal(self.node.node_license.year, '2014')
+        assert_equal(self.node.node_license.copyright_holders, ['Diane', 'Mr. Peanut Butter'])
+
+    def test_update_node_with_existing_license_relationship_and_attributes(self):
+        self.node.set_node_license(
+            {
+                'id': self.no_license.license_id,
+                'year': '2014',
+                'copyrightHolders': ['Diane', 'Mr. Peanut Butter']
+            },
+            Auth(self.admin_contributor),
+            save=True
+        )
+
+        assert_equal(self.node.node_license.node_license, self.no_license)
+        assert_equal(self.node.node_license.year, '2014')
+        assert_equal(self.node.node_license.copyright_holders, ['Diane', 'Mr. Peanut Butter'])
+
+        data = self.make_payload(
+            node_id=self.node._id,
+            license_id=self.cc0_license._id,
+            license_year='2015',
+            copyright_holders=['Bojack Horseman', 'Princess Carolyn']
+        )
+
+        res = self.make_request(self.url, data, auth=self.admin_contributor.auth)
+        assert_equal(res.status_code, 200)
+        self.node.node_license.reload()
+
+        assert_equal(self.node.node_license.node_license, self.cc0_license)
+        assert_equal(self.node.node_license.year, '2015')
+        assert_equal(self.node.node_license.copyright_holders, ['Bojack Horseman', 'Princess Carolyn'])
+
+    def test_update_node_license_without_required_year_in_payload(self):
+        data = self.make_payload(
+            node_id=self.node._id,
+            license_id=self.no_license._id,
+            copyright_holders=['Rick', 'Morty']
+        )
+
+        res = self.make_request(self.url, data, auth=self.admin_contributor.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], 'year must be specified for this license')
+
+    def test_update_node_license_without_required_copyright_holders_in_payload_(self):
+        data = self.make_payload(
+            node_id=self.node._id,
+            license_id=self.no_license._id,
+            license_year='1994'
+        )
+
+        res = self.make_request(self.url, data, auth=self.admin_contributor.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], 'copyrightHolders must be specified for this license')
+
+    def test_update_node_license_adds_log(self):
+        data = self.make_payload(
+            node_id=self.node._id,
+            license_id=self.cc0_license._id
+        )
+        logs_before_update = self.node.logs.count()
+
+        res = self.make_request(self.url, data, auth=self.admin_contributor.auth)
+        assert_equal(res.status_code, 200)
+        self.node.reload()
+        logs_after_update = self.node.logs.count()
+
+        assert_not_equal(logs_before_update, logs_after_update)
+        assert_equal(self.node.logs.latest().action, 'license_changed')
+
+    def test_update_node_license_without_change_does_not_add_log(self):
+        self.node.set_node_license(
+            {
+                'id': self.no_license.license_id,
+                'year': '2015',
+                'copyrightHolders': ['Kim', 'Kanye']
+            },
+            auth=Auth(self.admin_contributor),
+            save=True
+        )
+
+        before_num_logs = self.node.logs.count()
+        before_update_log = self.node.logs.latest()
+
+        data = self.make_payload(
+            node_id=self.node._id,
+            license_id=self.no_license._id,
+            license_year='2015',
+            copyright_holders=['Kanye', 'Kim']
+        )
+        res = self.make_request(self.url, data, auth=self.admin_contributor.auth)
+        self.node.reload()
+
+        after_num_logs = self.node.logs.count()
+        after_update_log = self.node.logs.latest()
+
+        assert_equal(res.status_code, 200)
+        assert_equal(before_num_logs, after_num_logs)
+        assert_equal(before_update_log._id, after_update_log._id)

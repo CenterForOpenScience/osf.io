@@ -4,15 +4,12 @@ import urlparse
 
 import httpretty
 import mock
-from nose.tools import *  # noqa (PEP8 asserts)
-
 from framework.auth import Auth
 from framework.exceptions import HTTPError
-
-from website.addons.base.testing.base import OAuthAddonTestCaseMixin
-from website.util import api_url_for, web_url_for, permissions
-
+from nose.tools import *  # noqa (PEP8 asserts)
 from tests.factories import AuthUserFactory, ProjectFactory
+from website.addons.base.testing.base import OAuthAddonTestCaseMixin
+from website.util import api_url_for, permissions, web_url_for
 
 
 class OAuthAddonAuthViewsTestCaseMixin(OAuthAddonTestCaseMixin):
@@ -102,7 +99,7 @@ class OAuthAddonConfigViewsTestCaseMixin(OAuthAddonTestCaseMixin):
         assert_equal(node_settings.external_account._id, ea._id)
 
         node.reload()
-        last_log = node.logs[-1]
+        last_log = node.logs.latest()
         assert_equal(last_log.action, '{0}_node_authorized'.format(self.ADDON_SHORT_NAME))
 
     def test_import_auth_invalid_account(self):
@@ -143,7 +140,7 @@ class OAuthAddonConfigViewsTestCaseMixin(OAuthAddonTestCaseMixin):
         assert_equal(res.status_code, http.OK)
         self.project.reload()
         assert_equal(
-            self.project.logs[-1].action,
+            self.project.logs.latest().action,
             '{0}_folder_selected'.format(self.ADDON_SHORT_NAME)
         )
         assert_equal(res.json['result']['folder']['path'], self.folder['path'])
@@ -217,7 +214,7 @@ class OAuthAddonConfigViewsTestCaseMixin(OAuthAddonTestCaseMixin):
 
         # A log event was saved
         self.project.reload()
-        last_log = self.project.logs[-1]
+        last_log = self.project.logs.latest()
         assert_equal(last_log.action, '{0}_node_deauthorized'.format(self.ADDON_SHORT_NAME))
 
 class OAuthCitationAddonConfigViewsTestCaseMixin(OAuthAddonConfigViewsTestCaseMixin):
@@ -261,7 +258,7 @@ class OAuthCitationAddonConfigViewsTestCaseMixin(OAuthAddonConfigViewsTestCaseMi
             assert_equal(res.status_code, http.OK)
             self.project.reload()
             assert_equal(
-                self.project.logs[-1].action,
+                self.project.logs.latest().action,
                 '{0}_folder_selected'.format(self.ADDON_SHORT_NAME)
             )
             assert_equal(res.json['result']['folder']['name'], self.folder.name)

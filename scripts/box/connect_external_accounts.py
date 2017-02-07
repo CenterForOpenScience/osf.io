@@ -13,7 +13,7 @@ from website.app import init_app
 from scripts import utils as script_utils
 from framework.transactions.context import TokuTransaction
 
-from website.addons.box.model import BoxNodeSettings
+from addons.box.model import BoxNodeSettings
 
 logger = logging.getLogger(__name__)
 

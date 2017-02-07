@@ -1,0 +1,11 @@
+{
+    "s3_bucket_linked" : "A user linked an Amazon S3 bucket to a project",
+    "s3_bucket_unlinked" : "A user unselected an Amazon S3 bucket in a project",
+    "s3_file_added" : "A user added a file to an Amazon S3 bucket in a project",
+    "s3_file_removed" : "A user removed a file in an Amazon S3 bucket in a project",
+    "s3_file_updated" : "A user updated a file in an Amazon S3 bucket in a project",
+    "s3_folder_created" : "A user created a folder in an Amazon S3 in a project",
+    "s3_node_authorized" : "A user authorized the Amazon S3 addon for a project",
+    "s3_node_deauthorized" : "A user deauthorized the Amazon S3 addon for a project",
+    "s3_node_deauthorized_no_user" : "Amazon S3 addon for a project deauthorized"
+}

@@ -6,7 +6,7 @@ from website.util import permissions
 
 from test_node_view_only_links_list import ViewOnlyLinkTestCase
 
-from tests.factories import NodeFactory, AuthUserFactory
+from osf_tests.factories import NodeFactory, AuthUserFactory
 
 
 class TestViewOnlyLinksDetail(ViewOnlyLinkTestCase):

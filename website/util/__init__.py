@@ -7,6 +7,7 @@ import logging
 import urlparse
 from contextlib import contextmanager
 
+from blinker import ANY
 import furl
 
 from flask import request, url_for
@@ -79,7 +80,7 @@ def _get_guid_url_for(url):
     return guid_url
 
 
-def api_url_for(view_name, _absolute=False, _xml=False, *args, **kwargs):
+def api_url_for(view_name, _absolute=False, _xml=False, _internal=False, *args, **kwargs):
     """Reverse URL lookup for API routes (that use the JSONRenderer or XMLRenderer).
     Takes the same arguments as Flask's url_for, with the addition of
     `_absolute`, which will make an absolute URL with the correct HTTP scheme
@@ -92,7 +93,8 @@ def api_url_for(view_name, _absolute=False, _xml=False, *args, **kwargs):
     if _absolute:
         # We do NOT use the url_for's _external kwarg because app.config['SERVER_NAME'] alters
         # behavior in an unknown way (currently breaks tests). /sloria /jspies
-        return urlparse.urljoin(website_settings.DOMAIN, url)
+        domain = website_settings.INTERNAL_DOMAIN if _internal else website_settings.DOMAIN
+        return urlparse.urljoin(domain, url)
     return url
 
 
@@ -144,7 +146,7 @@ def is_json_request():
     return content_type and ('application/json' in content_type)
 
 
-def waterbutler_url_for(route, provider, path, node, user=None, **kwargs):
+def waterbutler_url_for(route, provider, path, node, user=None, _internal=False, **kwargs):
     """DEPRECATED Use waterbutler_api_url_for
     Reverse URL lookup for WaterButler routes
     :param str route: The action to preform, upload, download, delete...
@@ -154,7 +156,7 @@ def waterbutler_url_for(route, provider, path, node, user=None, **kwargs):
     :param User user: The user whos cookie will be used or None
     :param dict kwargs: Addition query parameters to be appended
     """
-    url = furl.furl(website_settings.WATERBUTLER_URL)
+    url = furl.furl(website_settings.WATERBUTLER_INTERNAL_URL if _internal else website_settings.WATERBUTLER_URL)
     url.path.segments.append(waterbutler_action_map[route])
 
     url.args.update({
@@ -180,9 +182,9 @@ def waterbutler_url_for(route, provider, path, node, user=None, **kwargs):
     return url.url
 
 
-def waterbutler_api_url_for(node_id, provider, path='/', **kwargs):
+def waterbutler_api_url_for(node_id, provider, path='/', _internal=False, **kwargs):
     assert path.startswith('/'), 'Path must always start with /'
-    url = furl.furl(website_settings.WATERBUTLER_URL)
+    url = furl.furl(website_settings.WATERBUTLER_INTERNAL_URL if _internal else website_settings.WATERBUTLER_URL)
     segments = ['v1', 'resources', node_id, 'providers', provider] + path.split('/')[1:]
     url.path.segments.extend([urllib.quote(x.encode('utf-8')) for x in segments])
     url.args.update(kwargs)
@@ -191,10 +193,21 @@ def waterbutler_api_url_for(node_id, provider, path='/', **kwargs):
 
 @contextmanager
 def disconnected_from(signal, listener):
-    """Temporarily disconnect a Blinker signal."""
+    """Temporarily disconnect a single listener from a Blinker signal."""
     signal.disconnect(listener)
     yield
     signal.connect(listener)
+
+
+@contextmanager
+def disconnected_from_listeners(signal):
+    """Temporarily disconnect all listeners for a Blinker signal."""
+    listeners = list(signal.receivers_for(ANY))
+    for listener in listeners:
+        signal.disconnect(listener)
+    yield
+    for listener in listeners:
+        signal.connect(listener)
 
 
 def check_private_key_for_anonymized_link(private_key):

@@ -3,6 +3,8 @@ from __future__ import unicode_literals
 import sys
 import logging
 import datetime
+
+from django.utils import timezone
 from modularodm import Q
 from modularodm.storage.base import KeyExistsException
 
@@ -12,9 +14,9 @@ from framework.transactions.context import TokuTransaction
 
 from website.files import models
 from website.app import init_app
-from website.addons.osfstorage import model as osfstorage_model
+from addons.osfstorage import model as osfstorage_model
 
-NOW = datetime.datetime.utcnow()
+NOW = timezone.now()
 logger = logging.getLogger(__name__)
 
 
@@ -86,7 +88,7 @@ def migrate_trashedfilenodes():
 def migrate_filenodes():
     for node_settings in paginated(osfstorage_model.OsfStorageNodeSettings):
         if node_settings.owner is None:
-            logger.warning('OsfStorageNodeSettings {} has no parent; skipping'.format(node_settings._id))
+            logger.warning('NodeSettings {} has no parent; skipping'.format(node_settings._id))
             continue
         logger.info('Migrating files for {!r}'.format(node_settings.owner))
 

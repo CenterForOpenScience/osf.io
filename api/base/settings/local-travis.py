@@ -29,6 +29,8 @@ REST_FRAMEWORK = {
         '2.0',
         '2.0.1',
         '2.1',
+        '2.2',
+        '2.3',
         '3.0',
         '3.0.1',
     ),
@@ -41,10 +43,7 @@ REST_FRAMEWORK = {
         'api.base.authentication.drf.OSFSessionAuthentication',
         'api.base.authentication.drf.OSFCASAuthentication'
     ),
-    'DEFAULT_THROTTLE_CLASSES': (
-        'rest_framework.throttling.UserRateThrottle',
-        'api.base.throttling.NonCookieAuthThrottle',
-    ),
+    'DEFAULT_THROTTLE_CLASSES': [],
     'DEFAULT_THROTTLE_RATES': {
         'user': '1000000/hour',
         'non-cookie-auth': '1000000/hour',

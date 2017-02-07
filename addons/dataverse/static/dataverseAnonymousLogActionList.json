@@ -1,0 +1,11 @@
+{
+    "dataverse_file_added" : "A user added a file to a Dataverse dataset in a project",
+    "dataverse_file_removed" : "A user removed a file from a Dataverse dataset in a project",
+    "dataverse_dataset_linked" : "A user linked a Dataverse dataset to a project",
+    "dataverse_study_linked" : "A user linked a Dataverse dataset to a project",
+    "dataverse_dataset_published" : "A user published a new version of a Dataverse dataset to a project",
+    "dataverse_study_released" : "A user published a new version of a Dataverse dataset to a project",
+    "dataverse_node_authorized" : "A user authorized the Dataverse addon for a project",
+    "dataverse_node_deauthorized" : "A user deauthorized the Dataverse addon for a project",
+    "dataverse_node_deauthorized_no_user" : "Dataverse addon for a project deauthorized"
+}

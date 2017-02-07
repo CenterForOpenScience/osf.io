@@ -1,5 +1,8 @@
 # OSF Zotero Addon
 
+## Deprecation Warning: ./website/addons has been moved to ./addons
+## Please configure in the new location
+
 ## Enabling the addon for development
 
 1. Go to https://www.zotero.org/oauth/apps and create a new application

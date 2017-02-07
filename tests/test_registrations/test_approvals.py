@@ -1,14 +1,11 @@
 """Tests related to embargoes of registrations"""
 import datetime
-import httplib as http
-import json
 
-from modularodm import Q
+from django.utils import timezone
 
-import mock
 from nose.tools import *  # noqa
-from tests.base import fake, OsfTestCase
-from tests.factories import (
+from tests.base import OsfTestCase
+from osf_tests.factories import (
     AuthUserFactory, EmbargoFactory, NodeFactory, ProjectFactory,
     RegistrationFactory, UserFactory, UnconfirmedUserFactory, DraftRegistrationFactory
 )
@@ -19,8 +16,6 @@ from website.exceptions import (
     InvalidSanctionRejectionToken, InvalidSanctionApprovalToken, NodeStateError,
 )
 from website import tokens
-from website.models import Embargo, Node
-from website.project.model import ensure_schemas
 
 
 DUMMY_TOKEN = tokens.encode({
@@ -40,5 +35,5 @@ class DraftRegistrationApprovalTestCase(OsfTestCase):
         )
         self.registration = RegistrationFactory(project=self.project)
         self.embargo = EmbargoFactory(user=self.user)
-        self.valid_embargo_end_date = datetime.datetime.utcnow() + datetime.timedelta(days=3)
+        self.valid_embargo_end_date = timezone.now() + datetime.timedelta(days=3)
 

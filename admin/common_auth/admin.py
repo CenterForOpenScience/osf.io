@@ -2,40 +2,20 @@ from __future__ import absolute_import
 
 from django.contrib import admin
 from django.contrib.admin.models import DELETION
-from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth.models import Permission
 from django.core.urlresolvers import reverse
 from django.utils.html import escape
 
 from admin.common_auth.logs import OSFLogEntry
-from admin.common_auth.forms import UserRegistrationForm
-from admin.common_auth.models import MyUser
+from admin.common_auth.models import AdminProfile
 
 
 class PermissionAdmin(admin.ModelAdmin):
     search_fields = ['name', 'codename']
 
 
-class CustomUserAdmin(UserAdmin):
-    add_form = UserRegistrationForm
-    list_display = ['email', 'first_name', 'last_name', 'is_active', 'confirmed', 'osf_id']
-    fieldsets = (
-        (None, {'fields': ('email', 'password',)}),
-        ('Personal info', {'fields': ('first_name', 'last_name', 'email', 'date_joined', 'last_login', 'osf_id')}),
-        ('Permissions', {'fields': ('is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions',)}),
-    )
-    add_fieldsets = (
-        (None, {'fields':
-                ('email', 'first_name', 'last_name', 'password1', 'password2', 'osf_id'),
-                }),)
-    search_fields = ('email', 'first_name', 'last_name',)
-    ordering = ('last_name', 'first_name',)
-    actions = ['send_email_invitation']
-    readonly_fields = ('date_joined',)
-
-
-admin.site.register(MyUser, CustomUserAdmin)
 admin.site.register(Permission, PermissionAdmin)
+admin.site.register(AdminProfile)
 
 
 class LogEntryAdmin(admin.ModelAdmin):

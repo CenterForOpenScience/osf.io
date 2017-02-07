@@ -1,9 +1,10 @@
 from django.core.urlresolvers import reverse
+from django.db.models.query import QuerySet as DjangoQuerySet
 
 from modularodm import Q
 from modularodm.exceptions import NoResultsFound
 from modularodm.query.query import RawQuery
-from modularodm.storage.mongostorage import MongoQuerySet
+from framework.mongo.storage import MongoQuerySet
 
 
 class AffiliatedInstitutionsList(list):
@@ -40,8 +41,19 @@ class AffiliatedInstitutionsList(list):
 
 
 class InstitutionQuerySet(MongoQuerySet):
+
     def __init__(self, queryset):
-        super(InstitutionQuerySet, self).__init__(queryset.schema, queryset.data)
+        if isinstance(queryset, DjangoQuerySet):
+            model = queryset.model
+            data = queryset.all()
+        else:
+            model = queryset.schema
+            data = queryset.data
+        super(InstitutionQuerySet, self).__init__(model, data)
+
+    def sort(self, *field_names):
+        actual_field_names = [Institution.attribute_map.get(each, each) for each in field_names]
+        return super(InstitutionQuerySet, self).sort(*actual_field_names)
 
     def __iter__(self):
         for each in super(InstitutionQuerySet, self).__iter__():
@@ -116,11 +128,10 @@ class Institution(object):
         from website.models import Node
         if query and getattr(query, 'nodes', False):
             for node in query.nodes:
-                replacement_attr = cls.attribute_map.get(node.attribute, False)
-                node.attribute = replacement_attr if replacement_attr else node.attribute
-        elif isinstance(query, RawQuery):
-            replacement_attr = cls.attribute_map.get(query.attribute, False)
-            query.attribute = replacement_attr if replacement_attr else query.attribute
+                if node._Q__key in cls.attribute_map:
+                    node._Q__key = cls.attribute_map[node._Q__key]
+        elif isinstance(query, RawQuery) and query._Q__key in cls.attribute_map:
+            query._Q__key = cls.attribute_map[query._Q__key]
         query = query & Q('institution_id', 'ne', None) if query else Q('institution_id', 'ne', None)
         query = query & Q('is_deleted', 'ne', True) if not deleted else query
         node = Node.find_one(query, allow_institution=True, **kwargs)

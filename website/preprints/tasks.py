@@ -1,4 +1,3 @@
-import datetime
 import logging
 import uuid
 import urlparse
@@ -9,22 +8,30 @@ from framework.celery_tasks import app as celery_app
 
 from website import settings
 
+
 logger = logging.getLogger(__name__)
+
 
 @celery_app.task(ignore_results=True)
 def on_preprint_updated(preprint_id):
     # WARNING: Only perform Read-Only operations in an asynchronous task, until Repeatable Read/Serializable
     # transactions are implemented in View and Task application layers.
-    from website.models import PreprintService
+    from osf.models import PreprintService
     preprint = PreprintService.load(preprint_id)
 
-    if settings.SHARE_URL and settings.SHARE_API_TOKEN:
+    if settings.SHARE_URL:
+        if not preprint.provider.access_token:
+            raise ValueError('No access_token for {}. Unable to send {} to SHARE.'.format(preprint.provider, preprint))
         resp = requests.post('{}api/v2/normalizeddata/'.format(settings.SHARE_URL), json={
-            'created_at': datetime.datetime.utcnow().isoformat(),
-            'normalized_data': {
-                '@graph': format_preprint(preprint)
-            },
-        }, headers={'Authorization': 'Bearer {}'.format(settings.SHARE_API_TOKEN)})
+            'data': {
+                'type': 'NormalizedData',
+                'attributes': {
+                    'tasks': [],
+                    'raw': None,
+                    'data': {'@graph': format_preprint(preprint)}
+                }
+            }
+        }, headers={'Authorization': 'Bearer {}'.format(preprint.provider.access_token), 'Content-Type': 'application/vnd.api+json'})
         logger.debug(resp.content)
         resp.raise_for_status()
 
@@ -51,10 +58,10 @@ class GraphNode(object):
     def serialize(self):
         ser = {}
         for key, value in self.attrs.items():
-            if isinstance(value, list):
-                ser[key] = [v.ref for v in value]
-            elif isinstance(value, GraphNode):
+            if isinstance(value, GraphNode):
                 ser[key] = value.ref
+            elif isinstance(value, list) or value in {None, ''}:
+                continue
             else:
                 ser[key] = value
 
@@ -69,27 +76,25 @@ def format_user(user):
         'additional_name': user.middle_names,
     })
 
-    person.attrs['identifiers'] = [
-        GraphNode('throughidentifiers', person=person, identifier=GraphNode('identifier', **{
-            'url': urlparse.urljoin(settings.DOMAIN, user.profile_url),
-            'base_url': settings.DOMAIN
-        }))
-    ]
+    person.attrs['identifiers'] = [GraphNode('agentidentifier', agent=person, uri='mailto:{}'.format(uri)) for uri in user.emails]
 
-    person.attrs['affiliations'] = [GraphNode('affiliation', person=person, entity=GraphNode('institution', name=institution.name)) for institution in user.affiliated_institutions]
+    if user.is_registered:
+        person.attrs['identifiers'].append(GraphNode('agentidentifier', agent=person, uri=user.profile_image_url()))
+        person.attrs['identifiers'].append(GraphNode('agentidentifier', agent=person, uri=urlparse.urljoin(settings.DOMAIN, user.profile_url)))
+
+    person.attrs['related_agents'] = [GraphNode('isaffiliatedwith', subject=person, related=GraphNode('institution', name=institution))
+                                      for institution in user.affiliated_institutions.values_list('name', flat=True)]
 
     return person
 
 
-def format_contributor(preprint, user, index):
-    person = format_user(user)
-
+def format_contributor(preprint, user, bibliographic, index):
     return GraphNode(
-        'contributor',
-        person=person,
-        order_cited=index,
+        'creator' if bibliographic else 'contributor',
+        agent=format_user(user),
+        order_cited=index if bibliographic else None,
         creative_work=preprint,
-        cited_name=user.fullname,
+        cited_as=user.fullname,
     )
 
 
@@ -97,41 +102,41 @@ def format_preprint(preprint):
     preprint_graph = GraphNode('preprint', **{
         'title': preprint.node.title,
         'description': preprint.node.description or '',
-        'is_deleted': not preprint.is_published or not preprint.node.is_public or preprint.node.is_preprint_orphan,
+        'is_deleted': (
+            not preprint.is_published or
+            not preprint.node.is_public or
+            preprint.node.is_preprint_orphan or
+            preprint.node.tags.filter(name='qatest').exists() or
+            preprint.node.is_deleted
+        ),
         'date_updated': preprint.date_modified.isoformat(),
-        'date_published': preprint.date_published.isoformat()
+        'date_published': preprint.date_published.isoformat() if preprint.date_published else None
     })
 
-    preprint_graph.attrs['links'] = [
-        GraphNode('throughlinks', creative_work=preprint_graph, link=GraphNode('link', **{
-            'type': 'provider',
-            'url': urlparse.urljoin(settings.DOMAIN, preprint.url),
-        }))
+    to_visit = [
+        preprint_graph,
+        GraphNode('workidentifier', creative_work=preprint_graph, uri=urlparse.urljoin(settings.DOMAIN, preprint.url))
     ]
 
     if preprint.article_doi:
-        preprint_graph.attrs['links'].append(
-            GraphNode('throughlinks', creative_work=preprint_graph, link=GraphNode('link', **{
-                'type': 'doi',
-                'url': 'http://dx.doi.org/{}'.format(preprint.article_doi.upper().strip('/')),
-            }))
-        )
+        to_visit.append(GraphNode('workidentifier', creative_work=preprint_graph, uri='http://dx.doi.org/{}'.format(preprint.article_doi)))
 
-    preprint_graph.attrs['subjects'] = [
-        GraphNode('throughsubjects', creative_work=preprint_graph, subject=GraphNode('subject', name=tag._id))
-        for tag in preprint.node.tags
+    preprint_graph.attrs['tags'] = [
+        GraphNode('throughtags', creative_work=preprint_graph, tag=GraphNode('tag', name=tag))
+        for tag in preprint.node.tags.values_list('name', flat=True)
     ]
 
     preprint_graph.attrs['subjects'] = [
         GraphNode('throughsubjects', creative_work=preprint_graph, subject=GraphNode('subject', name=subject))
-        for subject in set(x['text'] for hier in preprint.get_subjects() for x in hier)
+        for subject in set(x['text'] for hier in preprint.get_subjects() or [] for x in hier) if subject
     ]
 
-    preprint_graph.attrs['contributors'] = [format_contributor(preprint_graph, user, i) for i, user in enumerate(preprint.node.contributors)]
-    preprint_graph.attrs['institutions'] = [GraphNode('association', creative_work=preprint_graph, entity=GraphNode('institution', name=institution.name)) for institution in preprint.node.affiliated_institutions]
+    to_visit.extend(format_contributor(preprint_graph, user, preprint.node.get_visible(user), i) for i, user in enumerate(preprint.node.contributors))
+    to_visit.extend(GraphNode('AgentWorkRelation', creative_work=preprint_graph, agent=GraphNode('institution', name=institution))
+                    for institution in preprint.node.affiliated_institutions.values_list('name', flat=True))
 
     visited = set()
-    to_visit = list(preprint_graph.get_related())
+    to_visit.extend(preprint_graph.get_related())
 
     while True:
         if not to_visit:

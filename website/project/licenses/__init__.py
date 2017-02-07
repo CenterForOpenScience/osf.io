@@ -1,18 +1,21 @@
-import functools
 import json
 import os
 import warnings
 
 from modularodm import fields, Q
-from modularodm.exceptions import KeyExistsException
+from osf.exceptions import ValidationError
+from modularodm import exceptions as modm_exceptions
 
+from framework import exceptions as framework_exceptions
 from framework.mongo import (
     ObjectId,
     StoredObject,
     utils as mongo_utils
 )
 
+from website import exceptions as web_exceptions
 from website import settings
+from website.util import permissions
 
 
 def _serialize(fields, instance):
@@ -21,8 +24,12 @@ def _serialize(fields, instance):
         for field in fields
     }
 
-serialize_node_license = functools.partial(_serialize, ('id', 'name', 'text'))
-
+def serialize_node_license(node_license):
+    return {
+        'id': node_license.license_id,
+        'name': node_license.name,
+        'text': node_license.text,
+    }
 
 def serialize_node_license_record(node_license_record):
     if node_license_record is None:
@@ -107,15 +114,21 @@ def ensure_licenses(warn=True):
             text = info['text']
             properties = info.get('properties', [])
             try:
-                NodeLicense(
-                    id=id,
+
+                model_kwargs = dict(
+                    license_id=id,
                     name=name,
                     text=text,
                     properties=properties
-                ).save()
-            except KeyExistsException:
+                )
+                if not settings.USE_POSTGRES:
+                    del model_kwargs['license_id']
+                    model_kwargs['id'] = id
+                NodeLicense(**model_kwargs).save()
+            except (modm_exceptions.KeyExistsException, ValidationError):
+                license_id_field = 'license_id' if settings.USE_POSTGRES else 'id'
                 node_license = NodeLicense.find_one(
-                    Q('id', 'eq', id)
+                    Q(license_id_field, 'eq', id)
                 )
                 node_license.name = name
                 node_license.text = text
@@ -132,3 +145,53 @@ def ensure_licenses(warn=True):
                     )
                 ninserted += 1
     return ninserted, nupdated
+
+
+def set_license(node, license_detail, auth, node_type='node'):
+
+    if node_type not in ['node', 'preprint']:
+        raise ValueError('{} is not a valid node_type argument'.format(node_type))
+
+    license_record = node.node_license if node_type == 'node' else node.license
+
+    license_id = license_detail.get('id')
+    license_year = license_detail.get('year')
+    copyright_holders = license_detail.get('copyrightHolders', [])
+
+    if license_record and (
+        license_id == license_record.license_id and
+        license_year == license_record.year and
+        sorted(copyright_holders) == sorted(license_record.copyright_holders)
+    ):
+        return {}, False
+
+    if not node.has_permission(auth.user, permissions.ADMIN):
+        raise framework_exceptions.PermissionsError('Only admins can change a {}\'s license'.format(node_type))
+
+    try:
+        node_license = NodeLicense.find_one(
+            Q('license_id', 'eq', license_id)
+        )
+    except modm_exceptions.NoResultsFound:
+        raise web_exceptions.NodeStateError('Trying to update a {} with an invalid license'.format(node_type))
+
+    if node_type == 'preprint':
+        if node.provider.licenses_acceptable.exists() and not node.provider.licenses_acceptable.filter(id=node_license.id):
+            raise framework_exceptions.PermissionsError('Invalid license chosen for {}'.format(node.provider.name))
+
+    for required_property in node_license.properties:
+        if not license_detail.get(required_property):
+            raise modm_exceptions.ValidationValueError('{} must be specified for this license'.format(required_property))
+
+    if license_record is None:
+        license_record = NodeLicenseRecord(node_license=node_license)
+    license_record.node_license = node_license
+    license_record.year = license_year
+    license_record.copyright_holders = copyright_holders
+    license_record.save()
+    if node_type == 'node':
+        node.node_license = license_record
+    elif node_type == 'preprint':
+        node.license = license_record
+
+    return license_record, True
