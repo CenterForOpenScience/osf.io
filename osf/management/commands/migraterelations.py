@@ -33,7 +33,7 @@ from website.models import \
     NotificationSubscription as MODMNotificationSubscription
 from website.models import Pointer as MODMPointer
 from website.models import User as MODMUser
-from .migratedata import set_backend, get_modm_model
+from .migratedata import set_backend, get_modm_model, register_nonexistent_models_with_modm
 
 logger = logging.getLogger('migrations')
 
@@ -189,6 +189,8 @@ def get_pk_for_unknown_node_model(modm_to_django, guid):
 @app.task()
 def do_model(django_model, modm_to_django):
     init_app(routes=False, attach_request_handlers=False, fixtures=False)
+    set_backend()
+    register_nonexistent_models_with_modm()
 
     if issubclass(django_model, AbstractBaseContributor) \
             or django_model is ApiOAuth2Scope or \
@@ -548,6 +550,8 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         init_app(routes=False, attach_request_handlers=False, fixtures=False)
+        set_backend()
+        register_nonexistent_models_with_modm()
         if options['profile']:
             profiler = Profile()
             profiler.runcall(self._handle, *args, **options)
@@ -574,6 +578,7 @@ def migration_institutional_contributors(modm_to_django):
     logger.info('Starting {}...'.format(sys._getframe().f_code.co_name))
     init_app(routes=False, attach_request_handlers=False, fixtures=False)
     set_backend()
+    register_nonexistent_models_with_modm()
 
     if not modm_to_django.keys():
         modm_to_django = build_toku_django_lookup_table_cache()
@@ -632,6 +637,7 @@ def migrate_node_through_models(modm_to_django):
     logger.info('Starting {}...'.format(sys._getframe().f_code.co_name))
     init_app(routes=False, attach_request_handlers=False, fixtures=False)
     set_backend()
+    register_nonexistent_models_with_modm()
 
     if not modm_to_django.keys():
         modm_to_django = build_toku_django_lookup_table_cache()
