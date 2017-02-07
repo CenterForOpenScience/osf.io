@@ -62,6 +62,7 @@ def get_modm_model(django_model):
     return getattr(modm_module, model_name)
 
 
+@app.task()
 def migrate_page_counters(page_size=20000):
     logger.info('Starting {}...'.format(sys._getframe().f_code.co_name))
     collection = database['pagecounters']
@@ -98,7 +99,7 @@ def migrate_page_counters(page_size=20000):
     logger.info('Took out {} trashes'.format(gc.collect()))
     logger.info('Finished {} in {} seconds...'.format(sys._getframe().f_code.co_name, (timezone.now()-start_time).total_seconds()))
 
-
+@app.task()
 def migrate_user_activity_counters(page_size=20000):
     logger.info('Starting {}...'.format(sys._getframe().f_code.co_name))
     collection = database['useractivitycounters']
@@ -136,6 +137,7 @@ def migrate_user_activity_counters(page_size=20000):
     logger.info('Finished {} in {} seconds...'.format(sys._getframe().f_code.co_name, (timezone.now()-start_time).total_seconds()))
 
 
+@app.task()
 def make_guids():
     logger.info('Starting {}...'.format(sys._getframe().f_code.co_name))
 
@@ -326,7 +328,7 @@ def validate_guid_referents_against_ids():
             modm_model._object_cache.clear()
             gc.collect()
 
-
+@app.task()
 def fix_guids():
     modm_guids = MGuid.find().get_keys()
     dj_guids = Guid.objects.all().values_list('_id', flat=True)
@@ -444,9 +446,19 @@ def fix_guids():
     logger.info('Updated referents: {}'.format(updated_referents))
 
 
-def save_page_of_bare_models(modm_page, django_model):
+@app.task()
+def save_page_of_bare_models(django_model, offset, limit):
     hashes = set()
     count = 0
+
+    modm_model = get_modm_model(django_model)
+    if isinstance(django_model.modm_query, dict):
+        modm_queryset = modm_model.find(**django_model.modm_query)
+    else:
+        modm_queryset = modm_model.find(django_model.modm_query)
+
+    modm_page = modm_queryset.sort('-_id')[offset: limit]
+
     with transaction.atomic():
         django_objects = list()
         if not hasattr(django_model, '_natural_key'):
@@ -512,6 +524,7 @@ def save_page_of_bare_models(modm_page, django_model):
     hashes = None
     logger.info('Took out {} trashes'.format(gc.collect()))
 
+
 @app.task()
 def save_bare_models(django_model):
     logger.info('Starting {} on {}.{}...'.format(sys._getframe().f_code.co_name, django_model._meta.model.__module__, django_model._meta.model.__name__))
@@ -528,8 +541,7 @@ def save_bare_models(django_model):
 
     while count < total:
         logger.info('{}.{} starting'.format(django_model._meta.model.__module__, django_model._meta.model.__name__))
-        modm_page = modm_queryset.sort('-_id')[count: count + page_size]
-        save_page_of_bare_models(modm_page, django_model)
+        save_page_of_bare_models.delay(django_model, count, page_size)
         count += page_size
 
 
@@ -537,6 +549,7 @@ class DuplicateExternalAccounts(Exception):
     pass
 
 
+@app.task()
 def save_bare_external_accounts(page_size=100000):
     from website.models import ExternalAccount as MODMExternalAccount
 
@@ -647,6 +660,7 @@ def save_bare_external_accounts(page_size=100000):
                             django_model.external_accounts.add(external_account_mapping[newest_modm_external_account_id])
 
 
+@app.task()
 def save_bare_system_tags(page_size=10000):
     logger.info('Starting save_bare_system_tags...')
     start = timezone.now()
@@ -797,6 +811,7 @@ class Command(BaseCommand):
         parser.add_argument('--nodelogs', action='store_true', help='Run nodelog migrations')
         parser.add_argument('--nodelogsguids', action='store_true', help='Run nodelog guid migrations')
         parser.add_argument('--profile', action='store', help='Filename to dump profiling information')
+        parser.add_argument('--fixguids', action='store', help='Run just the fix guids command.')
 
     def do_model(self, django_model, options):
         with ipdb.launch_ipdb_on_exception():
@@ -814,9 +829,12 @@ class Command(BaseCommand):
             self._handle(*args, **options)
 
     def _handle(self, *args, **options):
-        ()
         # it's either this or catch the exception and put them in the blacklistguid table
         register_nonexistent_models_with_modm()
+
+        if options['fix_guids']:
+            fix_guids.delay()
+            return
 
         models = get_ordered_models()
         # guids never, pls
@@ -847,9 +865,8 @@ class Command(BaseCommand):
         # Handle system tags, they're on nodes, they need a special migration
         if not options['nodelogs'] and not options['nodelogsguids']:
             with ipdb.launch_ipdb_on_exception():
-                save_bare_system_tags()
-                make_guids()
-                fix_guids()
-                save_bare_external_accounts()
-                migrate_page_counters()
-                migrate_user_activity_counters()
+                save_bare_system_tags.delay()
+                make_guids.delay()
+                save_bare_external_accounts.delay()
+                migrate_page_counters.delay()
+                migrate_user_activity_counters.delay()

@@ -339,9 +339,14 @@ def save_page_of_fk_relationships(modm_page, django_model, fk_relations, modm_to
                                                   django_model._meta.model.__module__,
                                                   django_model._meta.model.__name__,
                                                   fk_count))
-        bulk_update(django_objects_to_update,
-                    batch_size=len(django_objects_to_update) // 5)
-        logger.info('Took out {} trashes'.format(gc.collect()))
+        if django_objects_to_update:
+            n_objects_to_update = len(django_objects_to_update)
+            if n_objects_to_update > 5:
+                batch_size = n_objects_to_update // 5
+            else:
+                batch_size = None
+            bulk_update(django_objects_to_update,
+                        batch_size=batch_size)
         modm_obj._cache.clear()
         modm_obj._object_cache.clear()
 
@@ -507,7 +512,6 @@ def save_m2m_relationships(modm_queryset, django_model, page_size, modm_to_djang
                 if model_count % page_size == 0 or model_count == model_total:
                     modm_queryset[0]._cache.clear()
                     modm_queryset[0]._object_cache.clear()
-                    logger.info('Took out {} trashes'.format(gc.collect()))
                     logger.info(
                         'Through {} {}s and {} m2m'.format(model_count, django_model._meta.model.__module__,
                                                            m2m_count))
@@ -600,7 +604,6 @@ def migration_institutional_contributors(modm_to_django):
                     contributors = []
                     modm_obj._cache.clear()
                     modm_obj._object_cache.clear()
-                    logger.info('Took out {} trashes'.format(gc.collect()))\
 
 @app.task()
 def migrate_node_through_models(modm_to_django):
@@ -666,7 +669,6 @@ def migrate_node_through_models(modm_to_django):
                     contributors = []
                     modm_obj._cache.clear()
                     modm_obj._object_cache.clear()
-                    logger.info('Took out {} trashes'.format(gc.collect()))
 
                 noderel_order = 0
                 for modm_node in modm_obj.nodes:
@@ -704,4 +706,3 @@ def migrate_node_through_models(modm_to_django):
                     node_relations = []
                     modm_obj._cache.clear()
                     modm_obj._object_cache.clear()
-                    logger.info('Took out {} trashes'.format(gc.collect()))
