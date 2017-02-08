@@ -388,8 +388,9 @@ def auth_logout(auth, redirect_url=None, next_url=None):
     The CAS logout endpoint which clears sessions and cookies for CAS and Shibboleth.
     HTTP Method: GET
 
-    Note: OSF tells CAS where it wants to be redirected back after successful logout. However, CAS logout flow may not
+    Note 1: OSF tells CAS where it wants to be redirected back after successful logout. However, CAS logout flow may not
     respect this url if user is authenticated through remote identity provider.
+    Note 2: The name of the query parameter is `next`, `next_url` is used to avoid python reserved word.
 
     :param auth: the authentication context
     :param redirect_url: url to DIRECTLY redirect after CAS logout, default is `OSF/goodbye`
@@ -397,7 +398,7 @@ def auth_logout(auth, redirect_url=None, next_url=None):
     :return: the response
     """
 
-    # For `?next_url=`:
+    # For `?next=`:
     #   takes priority
     #   the url must be a valid OSF next url,
     #   the full request url is set to CAS service url,
@@ -408,7 +409,7 @@ def auth_logout(auth, redirect_url=None, next_url=None):
     #   support `reauth`
 
     # logout/?next=<an OSF verified next url>
-    next_url = next_url or request.args.get('next_url')
+    next_url = request.args.get('next') or next_url
     if next_url and validate_next_url(next_url):
         cas_logout_endpoint = cas.get_logout_url(request.url)
         if auth.logged_in:
