@@ -35,6 +35,7 @@ DATABASE_ROUTERS = ['osf.db.router.PostgreSQLFailoverRouter', ]
 CELERY_IMPORTS = [
     'osf.management.commands.migratedata',
     'osf.management.commands.migraterelations',
+    'osf.management.commands.verify',
 ]
 
 PASSWORD_HASHERS = [
