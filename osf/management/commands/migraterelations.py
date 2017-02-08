@@ -21,6 +21,7 @@ from osf import models
 from osf.models import (ApiOAuth2Scope, BlackListGuid, CitationStyle, Guid,
                         Institution, NodeRelation, NotificationSubscription,
                         RecentlyAddedContributor, StoredFileNode, Tag)
+from osf.models import NodeLog
 from osf.models import OSFUser
 from osf.models.contributor import (AbstractBaseContributor, Contributor,
                                     InstitutionalContributor)
@@ -64,7 +65,6 @@ def build_toku_django_lookup_table_cache():
     models.pop(models.index(NotificationSubscription))
 
     models.pop(models.index(Guid))
-    models.append(NodeWikiPage)
 
     lookups = {}
     for model in models:
@@ -211,6 +211,9 @@ def do_model(django_model):
 
 @app.task()
 def save_page_of_fk_relationships(django_model, fk_relations, offset, limit):
+    init_app(routes=False, attach_request_handlers=False, fixtures=False)
+    set_backend()
+    register_nonexistent_models_with_modm()
     with transaction.atomic():  # one transaction per page
         bad_fields = ['external_account_id', ]  # external accounts are handled in their own migration
 
@@ -231,20 +234,24 @@ def save_page_of_fk_relationships(django_model, fk_relations, offset, limit):
             try:
                 django_keys.append(modm_to_django[
                                        format_lookup_key(modm_key, ContentType.objects.get_for_model(django_model).pk)])
-            except KeyError:
+            except KeyError as ex:
                 if format_lookup_key(modm_key, model=django_model)[1].startswith(
                         'none_') and django_model is NotificationSubscription:
                     logger.info('{!r} NotificationSubscription is bad data, skipping'.format(modm_key))
                     model_count += 1
                     continue
                 else:
-                    raise
-
+                    logger.error('modm key {} not found in lookup table'.format(format_lookup_key(modm_key, ContentType.objects.get_for_model(django_model).pk)))
+                    continue
         django_objects = django_model.objects.filter(pk__in=django_keys)
         django_objects_to_update = []
         django_objects_dict = {obj.pk: obj for obj in django_objects}
         for modm_obj in modm_page:
-            django_obj = django_objects_dict[modm_to_django[format_lookup_key(modm_obj._id, model=django_model)]]
+            try:
+                django_obj = django_objects_dict[modm_to_django[format_lookup_key(modm_obj._id, model=django_model)]]
+            except KeyError as ex:
+                logger.error('modm key {} not found in lookup table'.format(format_lookup_key(modm_obj._id, ContentType.objects.get_for_model(django_model).pk)))
+                continue
             dirty = False
 
             # TODO This is doing a mongo query for each Node, could probably be more performant
@@ -359,6 +366,9 @@ def save_page_of_fk_relationships(django_model, fk_relations, offset, limit):
 def save_fk_relationships(django_model, page_size):
     logger.info(
         'Starting {} on {}...'.format(sys._getframe().f_code.co_name, django_model._meta.model.__module__))
+    init_app(routes=False, attach_request_handlers=False, fixtures=False)
+    set_backend()
+    register_nonexistent_models_with_modm()
     fk_relations = [field for field in django_model._meta.get_fields() if
                     field.is_relation and not field.auto_created and field.many_to_one]
 
@@ -406,15 +416,18 @@ def save_page_of_m2m_relationships(django_model, m2m_relations, offset, limit):
         # }
 
         for modm_obj in modm_page:
-
-            if django_model is Institution:
-                # If it's an institution look it up by it's institution_id
-                django_obj = django_model.objects.get(
-                    pk=modm_to_django[format_lookup_key(modm_obj.institution_id, model=django_model)]
-                )
-            else:
-                django_obj = django_model.objects.get(
-                    pk=modm_to_django[format_lookup_key(modm_obj._id, model=django_model)])
+            try:
+                if django_model is Institution:
+                    # If it's an institution look it up by it's institution_id
+                    django_obj = django_model.objects.get(
+                        pk=modm_to_django[format_lookup_key(modm_obj.institution_id, model=django_model)]
+                    )
+                else:
+                    django_obj = django_model.objects.get(
+                        pk=modm_to_django[format_lookup_key(modm_obj._id, model=django_model)])
+            except KeyError as ex:
+                logger.error('modm key {} not found in lookup table'.format(format_lookup_key(modm_obj._id, model=django_model)))
+                continue
 
             # TODO linked_nodes is getting added to bad fields for AbstractNode
             for field_name, model in m2m_relations:
@@ -520,6 +533,10 @@ def save_page_of_m2m_relationships(django_model, m2m_relations, offset, limit):
 def save_m2m_relationships(django_model, page_size):
     logger.info(
         'Starting {} on {}...'.format(sys._getframe().f_code.co_name, django_model._meta.model.__module__))
+
+    init_app(routes=False, attach_request_handlers=False, fixtures=False)
+    set_backend()
+    register_nonexistent_models_with_modm()
 
     m2m_relations = [(field.attname or field.name, field.related_model) for field in
                      django_model._meta.get_fields() if
