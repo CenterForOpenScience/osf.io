@@ -3689,25 +3689,25 @@ class TestAuthLogout(OsfTestCase):
         self.auth_user = AuthUserFactory()
 
     def test_logout_with_valid_next_url_logged_in(self):
-        logout_url = web_url_for('auth_logout', _absolute=True, next_url=self.valid_next_url)
+        logout_url = web_url_for('auth_logout', _absolute=True, next=self.valid_next_url)
         resp = self.app.get(logout_url, auth=self.auth_user.auth)
         assert_equal(resp.status_code, http.FOUND)
         assert_equal(cas.get_logout_url(logout_url), resp.headers['Location'])
 
     def test_logout_with_valid_next_url_logged_out(self):
-        logout_url = web_url_for('auth_logout', _absolute=True, next_url=self.valid_next_url)
+        logout_url = web_url_for('auth_logout', _absolute=True, next=self.valid_next_url)
         resp = self.app.get(logout_url, auth=None)
         assert_equal(resp.status_code, http.FOUND)
         assert_equal(self.valid_next_url, resp.headers['Location'])
 
     def test_logout_with_invalid_next_url_logged_in(self):
-        logout_url = web_url_for('auth_logout', _absolute=True, next_url=self.invalid_next_url)
+        logout_url = web_url_for('auth_logout', _absolute=True, next=self.invalid_next_url)
         resp = self.app.get(logout_url, auth=self.auth_user.auth)
         assert_equal(resp.status_code, http.FOUND)
         assert_equal(cas.get_logout_url(self.goodbye_url), resp.headers['Location'])
 
     def test_logout_with_invalid_next_url_logged_out(self):
-        logout_url = web_url_for('auth_logout', _absolute=True, next_url=self.invalid_next_url)
+        logout_url = web_url_for('auth_logout', _absolute=True, next=self.invalid_next_url)
         resp = self.app.get(logout_url, auth=None)
         assert_equal(resp.status_code, http.FOUND)
         assert_equal(cas.get_logout_url(self.goodbye_url), resp.headers['Location'])
