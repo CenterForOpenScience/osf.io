@@ -1,17 +1,11 @@
 from __future__ import unicode_literals
 
-import importlib
-
-import gc
-import ipdb
+import logging
 import sys
-
 from datetime import datetime
 
-import multiprocessing
 import pytz
 from django.core.management import BaseCommand
-from gevent.threadpool import ThreadPool
 
 from api.base.celery import app
 from osf.management.commands.migratedata import register_nonexistent_models_with_modm, get_modm_model
@@ -22,7 +16,6 @@ from osf.models import Tag
 from osf.utils.order_apps import get_ordered_models
 from website.app import init_app
 from .migratedata import set_backend
-import logging
 logger = logging.getLogger('migrations')
 
 class NotGonnaDoItException(BaseException):
@@ -123,6 +116,10 @@ def get_pk(modm_object, django_model, modm_to_django):
 
 @app.task()
 def validate_page_of_model_data(django_model, basic_fields, fk_relations, m2m_relations, offset, limit):
+    set_backend()
+    init_app(routes=False, attach_request_handlers=False, fixtures=False)
+    register_nonexistent_models_with_modm()
+
     modm_model = get_modm_model(django_model)
     modm_to_django = build_toku_django_lookup_table_cache()
 
