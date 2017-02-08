@@ -99,6 +99,7 @@ def migrate_page_counters(page_size=20000):
     count = None
     logger.info('Finished {} in {} seconds...'.format(sys._getframe().f_code.co_name, (timezone.now()-start_time).total_seconds()))
 
+
 @app.task()
 def migrate_user_activity_counters(page_size=20000):
     logger.info('Starting {}...'.format(sys._getframe().f_code.co_name))
