@@ -182,3 +182,4 @@ def validate_model_data(django_model, page_size=20000):
         offset = count
         limit = (count + page_size) if (count + page_size) < total else total
         validate_page_of_model_data.delay(django_model, basic_fields, fk_relations, m2m_relations, offset, limit)
+        count += page_size
