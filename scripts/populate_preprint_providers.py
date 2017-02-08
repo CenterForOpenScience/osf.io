@@ -82,6 +82,7 @@ def main(env):
             'social_twitter': '',
             'social_facebook': '',
             'social_instagram': '',
+            'about_link': '',
             'licenses_acceptable': ['CC0 1.0 Universal', 'CC-By Attribution 4.0 International', 'No license'],
             'header_text': '',
             'subjects_acceptable': [],
@@ -121,6 +122,7 @@ def main(env):
             'social_twitter': 'engrxiv',
             'social_facebook': 'engrXiv',
             'social_instagram': 'engrxiv',
+            'about_link': 'http://blog.engrxiv.org/about/',
             'licenses_acceptable': ['CC0 1.0 Universal', 'CC-By Attribution 4.0 International', 'No license'],
             'header_text': '',
             'subjects_acceptable': [
@@ -266,6 +268,7 @@ def main(env):
             'social_twitter': 'psyarxiv',
             'social_facebook': 'PsyArXiv',
             'social_instagram': 'psyarxiv',
+            'about_link': 'http://blog.psyarxiv.com/psyarxiv/about-psyarxiv/',
             'licenses_acceptable': ['CC0 1.0 Universal', 'CC-By Attribution 4.0 International', 'No license'],
             'header_text': '',
             'subjects_acceptable': [
@@ -352,6 +355,7 @@ def main(env):
             'social_twitter': 'socarxiv',
             'social_facebook': 'socarxiv',
             'social_instagram': 'socarxiv',
+            'about_link': 'https://socopen.org/welcome/',
             'licenses_acceptable': ['CC0 1.0 Universal', 'CC-By Attribution 4.0 International', 'No license'],
             'header_text': '',
             'subjects_acceptable': [
@@ -380,6 +384,7 @@ def main(env):
             'email_support': 'support+scielo@osf.io',
             'social_twitter': ' https://twitter.com/RedeSciELO', # optional
             'social_facebook': 'https://www.facebook.com/SciELONetwork',
+            'about_link': '',
             'header_text': '',
             'licenses_acceptable': ['CC0 1.0 Universal'],
             'subjects_acceptable':[]
@@ -432,6 +437,7 @@ def main(env):
             'social_twitter': 'https://twitter.com/AgriXiv',
             'social_facebook': 'http://facebook.com/agrixiv',
             'social_instagram': 'http://instagram.com/agrixiv',
+            'about_link': 'https://agrixiv.wordpress.com/about/',
             'licenses_acceptable': ['CC0 1.0 Universal', 'CC-By Attribution 4.0 International'],
             'header_text': '',
             'subjects_acceptable': [
