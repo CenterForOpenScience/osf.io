@@ -113,12 +113,12 @@ def do_model_lookup(model):
         if isinstance(guid_string, list):
             for guid in guid_string:
                 lookup_key = format_lookup_key(guid, content_type_pk)
-                if lookup_key in lookup_dict:
+                # if lookup_key in lookup_dict:
                     # logger.info('Key {} exists with value {} but {} tried to replace it.'.format(lookup_key, lookup_dict[lookup_key], pk))
                 lookup_dict[lookup_key] = pk
         else:
             lookup_key = format_lookup_key(guid_string, content_type_pk)
-            if lookup_key in lookup_dict:
+            # if lookup_key in lookup_dict:
                 # logger.info('Key {} exists with value {} but {} tried to replace it.'.format(lookup_key, lookup_dict[lookup_key], pk))
             lookup_dict[lookup_key] = pk
     # logger.info('Got {} guids for {}.{}'.format(len(lookup_dict), model._meta.model.__module__, model._meta.model.__module__))
