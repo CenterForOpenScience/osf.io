@@ -58,7 +58,7 @@ def do_model(django_model):
     register_nonexistent_models_with_modm()
 
     page_size = django_model.migration_page_size
-    page_size = 100
+    page_size = 10000
 
     validate_model_data(django_model, page_size=page_size)
 
