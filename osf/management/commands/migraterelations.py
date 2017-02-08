@@ -187,7 +187,7 @@ def get_pk_for_unknown_node_model(modm_to_django, guid):
 
 
 @app.task()
-def do_model(django_model, **options):
+def do_model(django_model, *args, **options):
     init_app(routes=False, attach_request_handlers=False, fixtures=False)
     set_backend()
     register_nonexistent_models_with_modm()
