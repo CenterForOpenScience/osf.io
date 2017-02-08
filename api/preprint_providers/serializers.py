@@ -22,6 +22,7 @@ class PreprintProviderSerializer(JSONAPISerializer):
     social_twitter = ser.CharField(required=False, allow_null=True)
     social_facebook = ser.CharField(required=False, allow_null=True)
     social_instagram = ser.CharField(required=False, allow_null=True)
+    about_link = ser.CharField(required=False, allow_null=True)
     header_text = ser.CharField(required=False, allow_null=True)
     subjects_acceptable = ser.JSONField(required=False, allow_null=True)
     logo_path = ser.CharField(read_only=True)

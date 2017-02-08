@@ -216,6 +216,7 @@ class PreprintProvider(StoredObject):
     social_twitter = fields.StringField()
     social_facebook = fields.StringField()
     social_instagram = fields.StringField()
+    about_link = fields.StringField()
     subjects_acceptable = fields.DictionaryField(list=True, default=lambda: [])
     licenses_acceptable = fields.ForeignField('NodeLicense', list=True, default=lambda: [])
 
