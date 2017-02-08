@@ -202,7 +202,7 @@ def do_model(django_model):
     page_size = 10000
 # with ipdb.launch_ipdb_on_exception():
     try:
-        save_fk_relationships.apply_async((django_model, page_size), link=save_m2m_relationships.si(django_model, page_size))
+        save_fk_relationships.apply_async((django_model, page_size), link=save_m2m_relationships.si((django_model, page_size)))
     except Exception as ex:
         logger.info('##################################################{} just died on {}.#############################################################'.format(django_model, ex))
         raise ex
