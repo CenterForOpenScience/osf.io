@@ -10,9 +10,9 @@ from rest_framework import exceptions
 from addons.twofactor.models import UserSettings
 from api.base.exceptions import (UnconfirmedAccountError, UnclaimedAccountError, DeactivatedAccountError,
                                  MergedAccountError, InvalidAccountError, TwoFactorRequiredError)
-from osf.models import OSFUser, Session
 from framework.auth import cas
 from framework.auth.core import get_user
+from osf.models import OSFUser, Session
 from website import settings
 
 UNUSABLE_PASSWORD_PREFIX = hashers.UNUSABLE_PASSWORD_PREFIX
@@ -35,13 +35,11 @@ def check_user(user):
     Verify users' status.
 
                         registered      confirmed       disabled        merged      usable password     claimed
-    ACTIVE:             x               x               o               o           x                   ?
-    NOT_CONFIRMED:      o               o               o               o           x                   ?
-    NOT_CLAIMED:        o               o               o               o           o                   ?
-    DISABLED:           o               ?               x               o           ?                   ?
-    USER_MERGED:        ?               ?               ?               x           o                   ?
-
-    OSF does not recognize other user status.
+    ACTIVE:             x               x               o               o           x                   x
+    NOT_CONFIRMED:      o               o               o               o           x                   o
+    NOT_CLAIMED:        o               o               o               o           o                   o
+    DISABLED:           o               x               x               o           x                   x
+    USER_MERGED:        x               x               o               x           o                   x
 
     :param user: the user
     :raises UnconfirmedAccountError
@@ -51,20 +49,27 @@ def check_user(user):
     :raises InvalidAccountError
     """
 
+    # active user must be registered, claimed, confirmed, not merged or disabled, and has a usable password
+    if user.is_active:
+        return
+
+    # user disabled
     if user.is_disabled:
         raise DeactivatedAccountError
 
+    # user merged
     if user.is_merged:
         raise MergedAccountError
 
-    if not user.is_confirmed:
+    # user not confimred or contributor not claimed
+    if not user.is_confirmed and not user.is_registered and not user.is_claimed:
         if user.password is None or user.password.startswith(UNUSABLE_PASSWORD_PREFIX):
             raise UnclaimedAccountError
         if user.has_usable_password():
             raise UnconfirmedAccountError
 
-    if not user.is_active:
-        raise InvalidAccountError
+    # OSF does not recognize other user status.
+    raise InvalidAccountError
 
 
 # Three customized DRF authentication classes: basic, session/cookie and access token.
@@ -72,7 +77,8 @@ def check_user(user):
 
 
 class OSFSessionAuthentication(authentication.BaseAuthentication):
-    """Custom DRF authentication class for API call with OSF cookie/session.
+    """
+    Custom DRF authentication class for API call with OSF cookie/session.
     """
 
     def authenticate(self, request):
@@ -96,14 +102,15 @@ class OSFSessionAuthentication(authentication.BaseAuthentication):
         return None
 
 
-# TODO: is the API deprecated
+# TODO: @steve is this authentication deprecated?
 class OSFBasicAuthentication(BasicAuthentication):
-    """Custom DRF authentication class for API call with email, password, and two-factor if necessary.
+    """
+    Custom DRF authentication class for API call with email, password, and two-factor if necessary.
     """
 
     def authenticate(self, request):
         """
-        Overwrite BasicAuthentication.
+        Overwrite BasicAuthentication to authenticate by email, password and two-factor code.
         `authenticate_credentials` handles email and password,
         `authenticate_twofactor_credentials` handles two-factor.
 
@@ -118,7 +125,7 @@ class OSFBasicAuthentication(BasicAuthentication):
 
     def authenticate_credentials(self, userid, password):
         """
-        Authenticate the user by userid and password.
+        Authenticate the user by userid (email) and password.
 
         :param userid: the username or email
         :param password: the password
@@ -133,8 +140,9 @@ class OSFBasicAuthentication(BasicAuthentication):
             raise exceptions.AuthenticationFailed(_('Invalid username/password.'))
         elif userid is None and password is None:
             raise exceptions.NotAuthenticated()
+
         check_user(user)
-        return (user, None)
+        return user, None
 
     @staticmethod
     def authenticate_twofactor_credentials(user, request):
@@ -147,12 +155,12 @@ class OSFBasicAuthentication(BasicAuthentication):
         :raises AuthenticationFailed
         """
 
-        twofator = UserSettings.objects.filter(owner_id=user.pk).first()
-        if twofator and twofator.is_confirmed:
+        two_fator = UserSettings.objects.filter(owner_id=user.pk).first()
+        if two_fator and two_fator.is_confirmed:
             otp = request.META.get('HTTP_X_OSF_OTP')
             if otp is None:
                 raise TwoFactorRequiredError()
-            if not twofator.verify_code(otp):
+            if not two_fator.verify_code(otp):
                 raise exceptions.AuthenticationFailed(_('Invalid two-factor authentication OTP code.'))
 
     def authenticate_header(self, request):
@@ -197,4 +205,7 @@ class OSFCASAuthentication(authentication.BaseAuthentication):
         return user, cas_auth_response
 
     def authenticate_header(self, request):
+        """
+        Return an empty string.
+        """
         return ''
