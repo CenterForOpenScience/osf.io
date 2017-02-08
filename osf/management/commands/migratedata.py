@@ -27,6 +27,7 @@ from typedmodels.models import TypedModel
 from addons.base.models import BaseOAuthNodeSettings
 from addons.github.api import GitHubClient
 from addons.s3 import utils
+from addons.wiki.models import NodeWikiPage
 from api.base.celery import app
 from framework import encryption
 from framework.auth.core import User as MODMUser
@@ -45,6 +46,7 @@ from website.files.models import StoredFileNode as MODMStoredFileNode
 from website.models import Guid as MGuid
 from website.models import Node as MODMNode
 from website.models import Comment as MODMComment
+from website.addons.wiki.model import NodeWikiPage as MODMNodeWikiPage
 from website.models import User as MUser
 from website.oauth.models import ApiOAuth2Scope
 
@@ -350,6 +352,7 @@ def fix_guids():
     users = 0
     files = 0
     comments = 0
+    wiki = 0
     missing = 0
     for guid in short_missing_guids.get_keys():
         user = MUser.load(guid)
@@ -430,14 +433,34 @@ def fix_guids():
 
                         files += 1
                     else:
+                        wiki = MODMNodeWikiPage.load(guid)
+                        if wiki is not None:
+                            logger.info('Guid {} is a file.'.format(guid))
+                            guid_instance.referent = wiki
+                            guid_instance.save()
+                            try:
+                                # see if the existing guid exists
+                                existing_django_guid = Guid.objects.get(_id=unicode(guid).lower())
+                            except Guid.DoesNotExist:
+                                # try and get a user that has n+1 guids pointing at them
+                                try:
+                                    existing_django_guid = NodeWikiPage.objects.get(guids___id=unicode(guid).lower())
+                                except StoredFileNode.DoesNotExist:
+                                    # create a new guid
+                                    existing_django_guid = Guid.migrate_from_modm(guid_instance)
+                                    existing_django_guid.save()
 
-                        logger.info('Guid {} does not match it\'s referent was a {}.'.format(guid, guid_instance.to_storage()['referent'][1]))
-                        missing += 1
-                        continue
+                            wiki += 1
+                        else:
+
+                            logger.info('Guid {} does not match it\'s referent was a {}.'.format(guid, guid_instance.to_storage()['referent'][1]))
+                            missing += 1
+                            continue
 
     logger.info('Users: {}'.format(users))
     logger.info('Nodes: {}'.format(nodes))
     logger.info('Comments: {}'.format(comments))
+    logger.info('Wiki: {}'.format(wiki))
     logger.info('Files: {}'.format(files))
     logger.info('Missing: {}'.format(missing))
     logger.info('Total: {}'.format(len(short_missing_guids)))
