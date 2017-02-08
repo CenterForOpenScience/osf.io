@@ -187,7 +187,7 @@ def get_pk_for_unknown_node_model(modm_to_django, guid):
 
 
 @app.task()
-def do_model(django_model):
+def do_model(django_model, **options):
     init_app(routes=False, attach_request_handlers=False, fixtures=False)
     set_backend()
     register_nonexistent_models_with_modm()
@@ -202,7 +202,11 @@ def do_model(django_model):
     page_size = 10000
 # with ipdb.launch_ipdb_on_exception():
     try:
-        save_fk_relationships.apply_async((django_model, page_size), link=save_m2m_relationships.si((django_model, page_size)))
+        if options['fk']:
+            save_fk_relationships.delay(django_model, page_size)
+        elif options['m2m']:
+            save_m2m_relationships.delay(django_model, page_size)
+
     except Exception as ex:
         logger.info('##################################################{} just died on {}.#############################################################'.format(django_model, ex))
         raise ex
@@ -569,6 +573,8 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument('--profile', action='store', help='Filename to dump profiling information')
+        parser.add_argument('--fk', action='store_true', help='Run fk migrations')
+        parser.add_argument('--m2m', action='store_true', help='Run m2m migrations')
 
     def handle(self, *args, **options):
         init_app(routes=False, attach_request_handlers=False, fixtures=False)
@@ -589,11 +595,13 @@ class Command(BaseCommand):
         register_nonexistent_models_with_modm()
         models = get_ordered_models()
     # with ipdb.launch_ipdb_on_exception():
-
+        if not options['m2m'] and not options['fk']:
+            return
         for model in models:
-            do_model.delay(model)
-        migrate_node_through_models.delay()
-        migration_institutional_contributors.delay()
+            do_model.delay(model, **options)
+        if options['m2m']:
+            migrate_node_through_models.delay()
+            migration_institutional_contributors.delay()
 
 
 @app.task()
