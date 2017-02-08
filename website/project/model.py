@@ -39,6 +39,7 @@ from framework.mongo.utils import to_mongo_key, unique_on
 from framework.sentry import log_exception
 from framework.transactions.context import TokuTransaction
 from framework.utils import iso8601format
+
 from keen import scoped_keys
 from website import language, settings
 from website.citations.utils import datetime_to_csl
@@ -2447,23 +2448,25 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
             if message and not recur:
                 status.push_status_message(message, kind='info', trust=False)
 
-        children_nodes = original.nodes
-        while(children_nodes):
-            batch = children_nodes[:30]
-            for node_contained in batch:
-                if not node_contained.is_deleted:
-                    child_registration = node_contained.register_node(
-                        schema=schema,
-                        auth=auth,
-                        data=data,
-                        parent=registered,
-                        recur=True,
-                    )
-                    if child_registration and not child_registration.primary:
-                        registered.nodes.append(child_registration)
+        for node_relation in original.node_relations.filter(child__is_deleted=False):
+            node_contained = node_relation.child
+            # Register child nodes
+            if not node_relation.is_node_link:
+                registered_child = node_contained.register_node(  # noqa
+                    schema=schema,
+                    auth=auth,
+                    data=data,
+                    parent=registered,
+                )
+            else:
+                from osf.models.node_relation import NodeRelation
+                NodeRelation.objects.get_or_create(
+                    is_node_link=True,
+                    parent=registered,
+                    child=node_contained
+                )
 
-            registered.save()
-            children_nodes = children_nodes[30:]
+        registered.save()
 
         if settings.ENABLE_ARCHIVER:
             registered.reload()
