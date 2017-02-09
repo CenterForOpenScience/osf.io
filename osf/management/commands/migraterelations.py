@@ -218,157 +218,158 @@ def save_page_of_fk_relationships(self, django_model, fk_relations, offset, limi
     init_app(routes=False, attach_request_handlers=False, fixtures=False)
     set_backend()
     register_nonexistent_models_with_modm()
-    with transaction.atomic():  # one transaction per page
-        bad_fields = ['external_account_id', ]  # external accounts are handled in their own migration
+    try:
+        with transaction.atomic():  # one transaction per page
+            bad_fields = ['external_account_id', ]  # external accounts are handled in their own migration
 
-        modm_model = get_modm_model(django_model)
-        if isinstance(django_model.modm_query, dict):
-            modm_queryset = modm_model.find(**django_model.modm_query)
-        else:
-            modm_queryset = modm_model.find(django_model.modm_query)
+            modm_model = get_modm_model(django_model)
+            if isinstance(django_model.modm_query, dict):
+                modm_queryset = modm_model.find(**django_model.modm_query)
+            else:
+                modm_queryset = modm_model.find(django_model.modm_query)
 
-        modm_page = modm_queryset.sort('_id')[offset:limit]
-        model_count = 0
-        fk_count = 0
-        modm_keys = modm_page.get_keys()
-        modm_to_django = build_toku_django_lookup_table_cache()
+            modm_page = modm_queryset.sort('_id')[offset:limit]
+            model_count = 0
+            fk_count = 0
+            modm_keys = modm_page.get_keys()
+            modm_to_django = build_toku_django_lookup_table_cache()
 
-        django_keys = []
-        for modm_key in modm_keys:
-            try:
-                django_keys.append(modm_to_django[
-                                       format_lookup_key(modm_key, ContentType.objects.get_for_model(django_model).pk)])
-            except KeyError as ex:
-                if format_lookup_key(modm_key, model=django_model)[1].startswith(
-                        'none_') and django_model is NotificationSubscription:
-                    logger.info('{!r} NotificationSubscription is bad data, skipping'.format(modm_key))
+            django_keys = []
+            for modm_key in modm_keys:
+                try:
+                    django_keys.append(modm_to_django[
+                                           format_lookup_key(modm_key, ContentType.objects.get_for_model(django_model).pk)])
+                except KeyError as ex:
+                    if format_lookup_key(modm_key, model=django_model)[1].startswith(
+                            'none_') and django_model is NotificationSubscription:
+                        logger.info('{!r} NotificationSubscription is bad data, skipping'.format(modm_key))
+                        model_count += 1
+                        continue
+                    else:
+                        logger.error('modm key {} not found in lookup table'.format(format_lookup_key(modm_key, ContentType.objects.get_for_model(django_model).pk)))
+                        continue
+            django_objects = django_model.objects.filter(pk__in=django_keys)
+            django_objects_to_update = []
+            django_objects_dict = {obj.pk: obj for obj in django_objects}
+            for modm_obj in modm_page:
+                try:
+                    django_obj = django_objects_dict[modm_to_django[format_lookup_key(modm_obj._id, model=django_model)]]
+                except KeyError as ex:
+                    logger.error('modm key {} not found in lookup table'.format(format_lookup_key(modm_obj._id, ContentType.objects.get_for_model(django_model).pk)))
+                    continue
+                dirty = False
+
+                # TODO This is doing a mongo query for each Node, could probably be more performant
+                # if an institution has a file, it doesn't
+                if isinstance(django_obj, StoredFileNode) and modm_obj.node is not None and \
+                                modm_obj.node.institution_id is not None:
                     model_count += 1
                     continue
-                else:
-                    logger.error('modm key {} not found in lookup table'.format(format_lookup_key(modm_key, ContentType.objects.get_for_model(django_model).pk)))
-                    continue
-        django_objects = django_model.objects.filter(pk__in=django_keys)
-        django_objects_to_update = []
-        django_objects_dict = {obj.pk: obj for obj in django_objects}
-        for modm_obj in modm_page:
-            try:
-                django_obj = django_objects_dict[modm_to_django[format_lookup_key(modm_obj._id, model=django_model)]]
-            except KeyError as ex:
-                logger.error('modm key {} not found in lookup table'.format(format_lookup_key(modm_obj._id, ContentType.objects.get_for_model(django_model).pk)))
-                continue
-            dirty = False
 
-            # TODO This is doing a mongo query for each Node, could probably be more performant
-            # if an institution has a file, it doesn't
-            if isinstance(django_obj, StoredFileNode) and modm_obj.node is not None and \
-                            modm_obj.node.institution_id is not None:
+                    # with ipdb.launch_ipdb_on_exception():
+                for field in fk_relations:
+                    # notification subscriptions have a AbstractForeignField that's becoming two FKs
+                    if isinstance(modm_obj, MODMNotificationSubscription):
+                        if isinstance(modm_obj.owner, MODMUser):
+                            # TODO this is also doing a mongo query for each owner
+                            django_obj.user_id = modm_to_django[format_lookup_key(modm_obj.owner._id, model=OSFUser)]
+                            django_obj.node_id = None
+                        elif isinstance(modm_obj.owner, MODMNode):
+                            # TODO this is also doing a mongo query for each owner
+                            django_obj.user_id = None
+                            django_obj.node_id = modm_to_django[
+                                format_lookup_key(modm_obj.owner._id, model=AbstractNode)]
+                        elif modm_obj.owner is None:
+                            django_obj.node_id = None
+                            django_obj.user_id = None
+                            logger.info(
+                                'NotificationSubscription {!r} is abandoned. It\'s owner is {!r}.'.format(
+                                    unicode(modm_obj._id), modm_obj.owner))
+
+                    if isinstance(field, GenericForeignKey):
+                        field_name = field.name
+                        ct_field_name = field.ct_field
+                        fk_field_name = field.fk_field
+                        value = getattr(modm_obj, field_name)
+                        if value is None:
+                            continue
+                        if value.__class__.__name__ in ['Node', 'Registration', 'Collection', 'Preprint']:
+                            gfk_model = apps.get_model('osf', 'AbstractNode')
+                        else:
+                            gfk_model = apps.get_model('osf', value.__class__.__name__)
+
+                        content_type_primary_key, formatted_guid = format_lookup_key(value._id, model=gfk_model)
+                        fk_field_value = modm_to_django[(content_type_primary_key, formatted_guid)]
+                        # this next line could be better if we just got all the content_types
+                        setattr(django_obj, ct_field_name, ContentType.objects.get_for_model(gfk_model))
+                        setattr(django_obj, fk_field_name, fk_field_value)
+                        dirty = True
+                        fk_count += 1
+
+                    else:
+                        field_name = field.attname
+                        if field_name in bad_fields:
+                            continue
+                        try:
+                            value = getattr(modm_obj, field_name.replace('_id', ''))
+                        except AttributeError:
+                            logger.info('|||||||||||||||||||||||||||||||||||||||||||||||||||||||\n'
+                                        '||| Couldn\'t find {!r} adding to bad_fields\n'
+                                        '|||||||||||||||||||||||||||||||||||||||||||||||||||||||'
+                                        .format(field_name.replace('_id', '')))
+                            bad_fields.append(field_name)
+                            value = None
+                        if value is None:
+                            continue
+
+                        if field_name.endswith('_id'):
+                            django_field_name = field_name
+                        else:
+                            django_field_name = '{}_id'.format(field_name)
+
+                        if isinstance(value, basestring):
+                            # it's guid as a string
+                            setattr(django_obj, django_field_name,
+                                    modm_to_django[format_lookup_key(value, model=field.related_model)])
+                            dirty = True
+                            fk_count += 1
+
+                        elif hasattr(value, '_id'):
+                            # let's just assume it's a modm model instance
+                            setattr(django_obj, django_field_name,
+                                    modm_to_django[format_lookup_key(value._id, model=field.related_model)])
+                            dirty = True
+                            fk_count += 1
+
+                        else:
+                            logger.info('Value is a {!r}'.format(type(value)))
+                            ipdb.set_trace()
+
+                django_obj, dirty = fix_bad_data(django_obj, dirty)
+                if dirty:
+                    django_objects_to_update.append(django_obj)
                 model_count += 1
-                continue
-
-                # with ipdb.launch_ipdb_on_exception():
-            for field in fk_relations:
-                # notification subscriptions have a AbstractForeignField that's becoming two FKs
-                if isinstance(modm_obj, MODMNotificationSubscription):
-                    if isinstance(modm_obj.owner, MODMUser):
-                        # TODO this is also doing a mongo query for each owner
-                        django_obj.user_id = modm_to_django[format_lookup_key(modm_obj.owner._id, model=OSFUser)]
-                        django_obj.node_id = None
-                    elif isinstance(modm_obj.owner, MODMNode):
-                        # TODO this is also doing a mongo query for each owner
-                        django_obj.user_id = None
-                        django_obj.node_id = modm_to_django[
-                            format_lookup_key(modm_obj.owner._id, model=AbstractNode)]
-                    elif modm_obj.owner is None:
-                        django_obj.node_id = None
-                        django_obj.user_id = None
-                        logger.info(
-                            'NotificationSubscription {!r} is abandoned. It\'s owner is {!r}.'.format(
-                                unicode(modm_obj._id), modm_obj.owner))
-
-                if isinstance(field, GenericForeignKey):
-                    field_name = field.name
-                    ct_field_name = field.ct_field
-                    fk_field_name = field.fk_field
-                    value = getattr(modm_obj, field_name)
-                    if value is None:
-                        continue
-                    if value.__class__.__name__ in ['Node', 'Registration', 'Collection', 'Preprint']:
-                        gfk_model = apps.get_model('osf', 'AbstractNode')
-                    else:
-                        gfk_model = apps.get_model('osf', value.__class__.__name__)
-
-                    content_type_primary_key, formatted_guid = format_lookup_key(value._id, model=gfk_model)
-                    fk_field_value = modm_to_django[(content_type_primary_key, formatted_guid)]
-                    # this next line could be better if we just got all the content_types
-                    setattr(django_obj, ct_field_name, ContentType.objects.get_for_model(gfk_model))
-                    setattr(django_obj, fk_field_name, fk_field_value)
-                    dirty = True
-                    fk_count += 1
-
+            logger.info(
+                'Through {} {}.{}s and {} FKs...'.format(model_count,
+                                                      django_model._meta.model.__module__,
+                                                      django_model._meta.model.__name__,
+                                                      fk_count))
+            if django_objects_to_update:
+                n_objects_to_update = len(django_objects_to_update)
+                if n_objects_to_update > 1000:
+                    batch_size = n_objects_to_update // 5
                 else:
-                    field_name = field.attname
-                    if field_name in bad_fields:
-                        continue
-                    try:
-                        value = getattr(modm_obj, field_name.replace('_id', ''))
-                    except AttributeError:
-                        logger.info('|||||||||||||||||||||||||||||||||||||||||||||||||||||||\n'
-                                    '||| Couldn\'t find {!r} adding to bad_fields\n'
-                                    '|||||||||||||||||||||||||||||||||||||||||||||||||||||||'
-                                    .format(field_name.replace('_id', '')))
-                        bad_fields.append(field_name)
-                        value = None
-                    if value is None:
-                        continue
+                    batch_size = None
+                try:
+                    bulk_update(django_objects_to_update,
+                                batch_size=batch_size)
 
-                    if field_name.endswith('_id'):
-                        django_field_name = field_name
-                    else:
-                        django_field_name = '{}_id'.format(field_name)
+            modm_obj._cache.clear()
+            modm_obj._object_cache.clear()
 
-                    if isinstance(value, basestring):
-                        # it's guid as a string
-                        setattr(django_obj, django_field_name,
-                                modm_to_django[format_lookup_key(value, model=field.related_model)])
-                        dirty = True
-                        fk_count += 1
-
-                    elif hasattr(value, '_id'):
-                        # let's just assume it's a modm model instance
-                        setattr(django_obj, django_field_name,
-                                modm_to_django[format_lookup_key(value._id, model=field.related_model)])
-                        dirty = True
-                        fk_count += 1
-
-                    else:
-                        logger.info('Value is a {!r}'.format(type(value)))
-                        ipdb.set_trace()
-
-            django_obj, dirty = fix_bad_data(django_obj, dirty)
-            if dirty:
-                django_objects_to_update.append(django_obj)
-            model_count += 1
-        logger.info(
-            'Through {} {}.{}s and {} FKs...'.format(model_count,
-                                                  django_model._meta.model.__module__,
-                                                  django_model._meta.model.__name__,
-                                                  fk_count))
-        if django_objects_to_update:
-            n_objects_to_update = len(django_objects_to_update)
-            if n_objects_to_update > 1000:
-                batch_size = n_objects_to_update // 5
-            else:
-                batch_size = None
-            try:
-                bulk_update(django_objects_to_update,
-                            batch_size=batch_size)
-            except Exception as ex:
-                logger.error('Retrying: Failed to save page of foreign keys with exception {}'.format(ex.message))
-                self.retry(countdown=60)  # retry in 1m
-        modm_obj._cache.clear()
-        modm_obj._object_cache.clear()
-
-    return model_count
+    except Exception as ex:
+        logger.error('Retrying: Failed to save page of foreign keys with exception {}'.format(ex.message))
+        self.retry(countdown=60)  # retry in 1m
 
 
 @app.task()
@@ -404,144 +405,143 @@ def save_fk_relationships(django_model, page_size):
 
 @app.task(bind=True)
 def save_page_of_m2m_relationships(self, django_model, m2m_relations, offset, limit):
-    with transaction.atomic():  # one transaction per page
-        modm_model = get_modm_model(django_model)
-        modm_to_django = build_toku_django_lookup_table_cache()
-        if isinstance(django_model.modm_query, dict):
-            modm_queryset = modm_model.find(**django_model.modm_query)
-        else:
-            modm_queryset = modm_model.find(django_model.modm_query)
+    try:
+        with transaction.atomic():  # one transaction per page
+            modm_model = get_modm_model(django_model)
+            modm_to_django = build_toku_django_lookup_table_cache()
+            if isinstance(django_model.modm_query, dict):
+                modm_queryset = modm_model.find(**django_model.modm_query)
+            else:
+                modm_queryset = modm_model.find(django_model.modm_query)
 
-        modm_page = modm_queryset.sort('-_id')[offset:limit]
-        model_count = 0
-        m2m_count = 0
-        field_aliases = getattr(django_model, 'FIELD_ALIASES', {})
-        bad_fields = ['_nodes', 'contributors']  # we'll handle noderelations and contributors by hand
-        added_relationships = dict()
-        # {
-        #   'field_name' : set(rel_dict, rel_dict, rel_dict),
-        #   'field_name' : set(rel_dict, rel_dict, rel_dict),
-        #   'field_name' : set(rel_dict, rel_dict, rel_dict),
-        # }
+            modm_page = modm_queryset.sort('-_id')[offset:limit]
+            model_count = 0
+            m2m_count = 0
+            field_aliases = getattr(django_model, 'FIELD_ALIASES', {})
+            bad_fields = ['_nodes', 'contributors']  # we'll handle noderelations and contributors by hand
+            added_relationships = dict()
+            # {
+            #   'field_name' : set(rel_dict, rel_dict, rel_dict),
+            #   'field_name' : set(rel_dict, rel_dict, rel_dict),
+            #   'field_name' : set(rel_dict, rel_dict, rel_dict),
+            # }
 
-        for modm_obj in modm_page:
-            try:
-                if django_model is Institution:
-                    # If it's an institution look it up by it's institution_id
-                    django_obj = django_model.objects.get(
-                        pk=modm_to_django[format_lookup_key(modm_obj.institution_id, model=django_model)]
-                    )
-                else:
-                    django_obj = django_model.objects.get(
-                        pk=modm_to_django[format_lookup_key(modm_obj._id, model=django_model)])
-            except KeyError as ex:
-                logger.error('modm key {} not found in lookup table'.format(format_lookup_key(modm_obj._id, model=django_model)))
-                continue
-
-            # TODO linked_nodes is getting added to bad fields for AbstractNode
-            for field_name, model in m2m_relations:
-                # figure out a field name based on field_aliases
-                if field_name in ['_contributors', 'external_accounts', 'watched']:
-                    # these are handled elsewhere
-                    continue
-                django_field_name = None
-                if field_name in field_aliases.values():
-                    django_field_name = {v: k for k, v in field_aliases.iteritems()}[field_name]
-
-                remote_pks = set()
-                # skip fields that have been marked as bad
-                if field_name in bad_fields:
-                    continue
-
+            for modm_obj in modm_page:
                 try:
-                    if not django_field_name:
-                        value = getattr(modm_obj, field_name)
+                    if django_model is Institution:
+                        # If it's an institution look it up by it's institution_id
+                        django_obj = django_model.objects.get(
+                            pk=modm_to_django[format_lookup_key(modm_obj.institution_id, model=django_model)]
+                        )
                     else:
-                        value = getattr(modm_obj, django_field_name)
-                except AttributeError:
-                    logger.info('|||||||||||||||||||||||||||||||||||||||||||||||||||||||\n'
-                                '||| Couldn\'t find {} adding to bad_fields\n'
-                                '|||||||||||||||||||||||||||||||||||||||||||||||||||||||'
-                                .format(field_name))
-                    # if we get an attribute error print debugging and mark the field to skip
-                    bad_fields.append(field_name)
-                    value = []
-
-                # there's a m2m, list of stuff, if the list is empty, skip
-                if len(value) < 1:
+                        django_obj = django_model.objects.get(
+                            pk=modm_to_django[format_lookup_key(modm_obj._id, model=django_model)])
+                except KeyError as ex:
+                    logger.error('modm key {} not found in lookup table'.format(format_lookup_key(modm_obj._id, model=django_model)))
                     continue
 
-                # for each rel in the m2m
-                for item in value:
-                    # if it's a string, probably guid
-                    if isinstance(item, basestring):
-                        # append the pk to the list of pks
-                        if field_name == 'system_tags' and 'system_tags' not in field_aliases.keys():
-                            remote_pks.add(modm_to_django[format_lookup_key(item, model=model, template='{}:system')])
-                        elif field_name == 'tags' and 'system_tags' in field_aliases.keys():
-                            remote_pks.add(modm_to_django[format_lookup_key(item, model=model, template='{}:system')])
-                        elif field_name == 'tags':
-                            remote_pks.add(
-                                modm_to_django[format_lookup_key(item, model=model, template='{}:not_system')])
-                        else:
-                            remote_pks.add(modm_to_django[format_lookup_key(item, model=model)])
-                    # if it's a class instance
-                    elif hasattr(item, '_id'):
-                        # grab it's id if it has one.
-                        str_value = item._id
-                        # append the pk to the list of pks
-                        if field_name == 'system_tags' and 'system_tags' not in field_aliases.keys():
-                            remote_pks.add(
-                                modm_to_django[format_lookup_key(str_value, model=model, template='{}:system')])
-                        elif field_name == 'tags' and 'system_tags' in field_aliases.keys():
-                            remote_pks.add(
-                                modm_to_django[format_lookup_key(str_value, model=model, template='{}:system')])
-                        elif field_name == 'tags':
-                            remote_pks.add(
-                                modm_to_django[format_lookup_key(str_value, model=model, template='{}:not_system')])
-                        else:
-                            remote_pks.add(modm_to_django[format_lookup_key(str_value, model=model)])
-                    elif item is None:
+                # TODO linked_nodes is getting added to bad fields for AbstractNode
+                for field_name, model in m2m_relations:
+                    # figure out a field name based on field_aliases
+                    if field_name in ['_contributors', 'external_accounts', 'watched']:
+                        # these are handled elsewhere
                         continue
-                    else:
-                        # wth is it
-                        ipdb.set_trace()
+                    django_field_name = None
+                    if field_name in field_aliases.values():
+                        django_field_name = {v: k for k, v in field_aliases.iteritems()}[field_name]
 
-                # if the list of pks isn't empty
-                if len(remote_pks) > 0:
-                    django_objects = []
-                    field = getattr(django_obj, field_name)
-                    source_field_name = field.source_field.name
-                    target_field_name = field.target_field.name
-                    field_model_instance = field.through
-                    for remote_pk in remote_pks:
-                        # rel_dict is a dict of the properties of the through model
-                        rel_dict = HashableDict()
-                        rel_dict['{}_id'.format(source_field_name)] = django_obj.pk
-                        rel_dict['{}_id'.format(target_field_name)] = remote_pk
-                        if field_name not in added_relationships:
-                            added_relationships[field_name] = set()
-                        if rel_dict not in added_relationships[field_name]:
-                            added_relationships[field_name].add(rel_dict)
-                            django_objects.append(field_model_instance(**rel_dict))
+                    remote_pks = set()
+                    # skip fields that have been marked as bad
+                    if field_name in bad_fields:
+                        continue
+
+                    try:
+                        if not django_field_name:
+                            value = getattr(modm_obj, field_name)
                         else:
-                            logger.info('Relation {} already exists for {}'.format(rel_dict, field_name))
-                    if len(django_objects) > 1000:
-                        batch_size = len(django_objects) // 5
-                    else:
-                        batch_size = len(django_objects)
-                        try:
-                            field_model_instance.objects.bulk_create(django_objects, batch_size=batch_size)
-                        except Exception as ex:
-                            logger.error(
-                                'Retrying: Failed to save page of m2m with exception {}'.format(ex.message))
-                            self.retry(countdown=60)  # retry in 1m
-                    m2m_count += len(django_objects)
-            model_count += 1
-        logger.info(
-            'Through {} {}s and {} m2m'.format(model_count, django_model._meta.model.__module__,
-                                               m2m_count))
+                            value = getattr(modm_obj, django_field_name)
+                    except AttributeError:
+                        logger.info('|||||||||||||||||||||||||||||||||||||||||||||||||||||||\n'
+                                    '||| Couldn\'t find {} adding to bad_fields\n'
+                                    '|||||||||||||||||||||||||||||||||||||||||||||||||||||||'
+                                    .format(field_name))
+                        # if we get an attribute error print debugging and mark the field to skip
+                        bad_fields.append(field_name)
+                        value = []
 
+                    # there's a m2m, list of stuff, if the list is empty, skip
+                    if len(value) < 1:
+                        continue
+
+                    # for each rel in the m2m
+                    for item in value:
+                        # if it's a string, probably guid
+                        if isinstance(item, basestring):
+                            # append the pk to the list of pks
+                            if field_name == 'system_tags' and 'system_tags' not in field_aliases.keys():
+                                remote_pks.add(modm_to_django[format_lookup_key(item, model=model, template='{}:system')])
+                            elif field_name == 'tags' and 'system_tags' in field_aliases.keys():
+                                remote_pks.add(modm_to_django[format_lookup_key(item, model=model, template='{}:system')])
+                            elif field_name == 'tags':
+                                remote_pks.add(
+                                    modm_to_django[format_lookup_key(item, model=model, template='{}:not_system')])
+                            else:
+                                remote_pks.add(modm_to_django[format_lookup_key(item, model=model)])
+                        # if it's a class instance
+                        elif hasattr(item, '_id'):
+                            # grab it's id if it has one.
+                            str_value = item._id
+                            # append the pk to the list of pks
+                            if field_name == 'system_tags' and 'system_tags' not in field_aliases.keys():
+                                remote_pks.add(
+                                    modm_to_django[format_lookup_key(str_value, model=model, template='{}:system')])
+                            elif field_name == 'tags' and 'system_tags' in field_aliases.keys():
+                                remote_pks.add(
+                                    modm_to_django[format_lookup_key(str_value, model=model, template='{}:system')])
+                            elif field_name == 'tags':
+                                remote_pks.add(
+                                    modm_to_django[format_lookup_key(str_value, model=model, template='{}:not_system')])
+                            else:
+                                remote_pks.add(modm_to_django[format_lookup_key(str_value, model=model)])
+                        elif item is None:
+                            continue
+                        else:
+                            # wth is it
+                            ipdb.set_trace()
+
+                    # if the list of pks isn't empty
+                    if len(remote_pks) > 0:
+                        django_objects = []
+                        field = getattr(django_obj, field_name)
+                        source_field_name = field.source_field.name
+                        target_field_name = field.target_field.name
+                        field_model_instance = field.through
+                        for remote_pk in remote_pks:
+                            # rel_dict is a dict of the properties of the through model
+                            rel_dict = HashableDict()
+                            rel_dict['{}_id'.format(source_field_name)] = django_obj.pk
+                            rel_dict['{}_id'.format(target_field_name)] = remote_pk
+                            if field_name not in added_relationships:
+                                added_relationships[field_name] = set()
+                            if rel_dict not in added_relationships[field_name]:
+                                added_relationships[field_name].add(rel_dict)
+                                django_objects.append(field_model_instance(**rel_dict))
+                            else:
+                                logger.info('Relation {} already exists for {}'.format(rel_dict, field_name))
+                        if len(django_objects) > 1000:
+                            batch_size = len(django_objects) // 5
+                        else:
+                            batch_size = len(django_objects)
+                            field_model_instance.objects.bulk_create(django_objects, batch_size=batch_size)
+                        m2m_count += len(django_objects)
+                model_count += 1
+            logger.info(
+                'Through {} {}s and {} m2m'.format(model_count, django_model._meta.model.__module__,
+                                                   m2m_count))
+    except Exception as ex:
+        logger.error(
+            'Retrying: Failed to save page of m2m with exception {}'.format(ex.message))
+        self.retry(countdown=60)  # retry in 1m
 
 @app.task()
 def save_m2m_relationships(django_model, page_size):
