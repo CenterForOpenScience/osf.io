@@ -562,7 +562,7 @@ def save_page_of_m2m_relationships(self, django_model, m2m_relations, offset, li
                                                    m2m_count))
     except Exception as ex:
         logger.error(
-            'Retrying: Failed to save page {} offset:{} limit:{} of m2m with exception {}'.format(django_model, offset, limit, ex.message))
+            'Retrying: Failed to save page {} offset:{} limit:{} of m2m with exception {}'.format(django_model, offset, limit, ex))
         self.retry(countdown=60)  # retry in 1m
 
 @app.task()
