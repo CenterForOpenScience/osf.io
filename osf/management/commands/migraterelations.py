@@ -5,6 +5,7 @@ import importlib
 import logging
 import pstats
 import sys
+import traceback
 from cProfile import Profile
 
 import ipdb
@@ -561,8 +562,9 @@ def save_page_of_m2m_relationships(self, django_model, m2m_relations, offset, li
                 'Through {} {}s and {} m2m'.format(model_count, django_model._meta.model.__module__,
                                                    m2m_count))
     except Exception as ex:
+        tb = traceback.format_exc()
         logger.error(
-            'Retrying: Failed to save page {} offset:{} limit:{} of m2m with exception {}'.format(django_model, offset, limit, ex))
+            'Retrying: Failed to save page {} offset:{} limit:{} of m2m with exception {}\n{}'.format(django_model, offset, limit, ex, tb))
         self.retry(countdown=60)  # retry in 1m
 
 @app.task()
