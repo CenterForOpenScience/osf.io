@@ -19,6 +19,8 @@ volumes:
     external: false
   wb_requirements_vol:
     external: false
+  wb_tmp_vol:
+    external: false
   osfstoragecache_vol:
     external: false
   osf_requirements_vol:
@@ -161,6 +163,7 @@ services:
     volumes:
       - wb_requirements_vol:/usr/local/lib/python3.5
       - osfstoragecache_vol:/code/website/osfstoragecache
+      - wb_tmp_vol:/tmp
     stdin_open: true
     tty: true
 
@@ -179,6 +182,7 @@ services:
     volumes:
       - wb_requirements_vol:/usr/local/lib/python3.5
       - osfstoragecache_vol:/code/website/osfstoragecache
+      - wb_tmp_vol:/tmp
     stdin_open: true
     tty: true
 
