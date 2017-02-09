@@ -451,11 +451,12 @@ def save_page_of_m2m_relationships(self, django_model, m2m_relations, offset, li
                         )
                     else:
                         try:
-                            django_obj = django_model.objects.get(
-                                pk=modm_to_django[format_lookup_key(modm_obj._id, model=django_model)])
+                            django_obj = django_model.objects.get(pk=modm_to_django[format_lookup_key(modm_obj._id, model=django_model)])
                         except MultipleObjectsReturned as ex:
+                            query = str(django_model.objects.get(pk=modm_to_django[format_lookup_key(modm_obj._id, model=django_model)]).query)
                             pks = modm_to_django[format_lookup_key(modm_obj._id, model=django_model)]
-                            logger.error('Found multiple objects for {} at {} with pk of {}'.format(django_model, format_lookup_key(modm_obj._id, model=django_model), pks))
+                            logger.error('Found multiple objects for {} at {} with pk of {}\n'
+                                         'query: {}'.format(django_model, format_lookup_key(modm_obj._id, model=django_model), pks, query))
                             raise ex
                 except KeyError as ex:
                     logger.error('modm key {} not found in lookup table'.format(format_lookup_key(modm_obj._id, model=django_model)))
