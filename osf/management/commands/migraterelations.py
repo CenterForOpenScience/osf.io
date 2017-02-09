@@ -454,7 +454,7 @@ def save_page_of_m2m_relationships(self, django_model, m2m_relations, offset, li
                         try:
                             django_obj = django_model.objects.get(pk=modm_to_django[format_lookup_key(modm_obj._id, model=django_model)])
                         except Exception as ex:
-                            query = str(django_model.objects.get(pk=modm_to_django[format_lookup_key(modm_obj._id, model=django_model)]).query)
+                            query = str(django_model.objects.filter(pk=modm_to_django[format_lookup_key(modm_obj._id, model=django_model)]).query)
                             pks = modm_to_django[format_lookup_key(modm_obj._id, model=django_model)]
                             logger.error('{} for {} at {} with pk of {}\n'
                                          'query: {}'.format(ex, django_model, format_lookup_key(modm_obj._id, model=django_model), pks, query))
