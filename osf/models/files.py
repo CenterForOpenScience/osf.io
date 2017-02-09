@@ -361,7 +361,11 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
                 break
         else:
             # Insert into history if there is no matching etag
-            utils.insort(self.history, data, lambda x: x['modified'])
+            if data.get('modified'):
+                utils.insort(self.history, data, lambda x: x['modified'])
+            # If modified not included in the metadata, insert at the end of the history
+            else:
+                self.history.append(data)
 
         # Finally update last touched
         self.last_touched = timezone.now()
