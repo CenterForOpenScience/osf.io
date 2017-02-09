@@ -265,7 +265,7 @@ $(document).ready(function () {
             url: ctx.urls.wikiContent
         });
         request.done(function(resp) {
-            var rawText = resp.wiki_content || '*No wiki content*';
+            var rawText = resp.wiki_content || '*Add important information, links, or images here to describe your project.*';
             var renderedText = ctx.renderedBeforeUpdate ? oldMd.render(rawText) : md.render(rawText);
             var truncatedText = $.truncate(renderedText, {length: 400});
             markdownElement.html(truncatedText);
