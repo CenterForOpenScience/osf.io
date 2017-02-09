@@ -179,7 +179,8 @@ def get_pk_for_unknown_node_model(modm_to_django, guid):
         try:
             pk = modm_to_django[key]
         except KeyError:
-            pass
+            logger.error('modm key {} not found in lookup table'.format(
+                format_lookup_key(guid, ContentType.objects.get_for_model(model).pk)))
         else:
             return pk
 
@@ -212,8 +213,8 @@ def do_model(django_model, *args, **options):
         raise ex
 
 
-@app.task()
-def save_page_of_fk_relationships(django_model, fk_relations, offset, limit):
+@app.task(bind=True)
+def save_page_of_fk_relationships(self, django_model, fk_relations, offset, limit):
     init_app(routes=False, attach_request_handlers=False, fixtures=False)
     set_backend()
     register_nonexistent_models_with_modm()
@@ -358,12 +359,17 @@ def save_page_of_fk_relationships(django_model, fk_relations, offset, limit):
                 batch_size = n_objects_to_update // 5
             else:
                 batch_size = None
-            bulk_update(django_objects_to_update,
-                        batch_size=batch_size)
+            try:
+                bulk_update(django_objects_to_update,
+                            batch_size=batch_size)
+            except Exception as ex:
+                logger.error('Retrying: Failed to save page of foreign keys with exception {}'.format(ex.message))
+                self.retry(countdown=60)  # retry in 1m
         modm_obj._cache.clear()
         modm_obj._object_cache.clear()
 
     return model_count
+
 
 @app.task()
 def save_fk_relationships(django_model, page_size):
@@ -396,8 +402,8 @@ def save_fk_relationships(django_model, page_size):
         model_count += page_size
 
 
-@app.task()
-def save_page_of_m2m_relationships(django_model, m2m_relations, offset, limit):
+@app.task(bind=True)
+def save_page_of_m2m_relationships(self, django_model, m2m_relations, offset, limit):
     with transaction.atomic():  # one transaction per page
         modm_model = get_modm_model(django_model)
         modm_to_django = build_toku_django_lookup_table_cache()
@@ -524,7 +530,12 @@ def save_page_of_m2m_relationships(django_model, m2m_relations, offset, limit):
                         batch_size = len(django_objects) // 5
                     else:
                         batch_size = len(django_objects)
-                        field_model_instance.objects.bulk_create(django_objects, batch_size=batch_size)
+                        try:
+                            field_model_instance.objects.bulk_create(django_objects, batch_size=batch_size)
+                        except Exception as ex:
+                            logger.error(
+                                'Retrying: Failed to save page of m2m with exception {}'.format(ex.message))
+                            self.retry(countdown=60)  # retry in 1m
                     m2m_count += len(django_objects)
             model_count += 1
         logger.info(
