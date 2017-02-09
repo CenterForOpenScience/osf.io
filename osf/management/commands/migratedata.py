@@ -859,7 +859,7 @@ class Command(BaseCommand):
         parser.add_argument('--nodelogs', action='store_true', help='Run nodelog migrations')
         parser.add_argument('--nodelogsguids', action='store_true', help='Run nodelog guid migrations')
         parser.add_argument('--profile', action='store', help='Filename to dump profiling information')
-        parser.add_argument('--dependents', action='store', help='Migrate things that are dependent on other things.')
+        parser.add_argument('--dependents', action='store_true', help='Migrate things that are dependent on other things.')
 
     def do_model(self, django_model, options):
         with ipdb.launch_ipdb_on_exception():
