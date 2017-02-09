@@ -12,6 +12,7 @@ from bulk_update.helper import bulk_update
 from django.apps import apps
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
+from django.core.exceptions import MultipleObjectsReturned
 from django.core.management import BaseCommand
 from django.db import transaction
 
@@ -449,8 +450,12 @@ def save_page_of_m2m_relationships(self, django_model, m2m_relations, offset, li
                             pk=modm_to_django[format_lookup_key(modm_obj.institution_id, model=django_model)]
                         )
                     else:
-                        django_obj = django_model.objects.get(
-                            pk=modm_to_django[format_lookup_key(modm_obj._id, model=django_model)])
+                        try:
+                            django_obj = django_model.objects.get(
+                                pk=modm_to_django[format_lookup_key(modm_obj._id, model=django_model)])
+                        except MultipleObjectsReturned as ex:
+                            logger.error('Found multiple objects for {} at {}'.format(django_model, format_lookup_key(modm_obj._id, model=django_model)))
+                            raise ex
                 except KeyError as ex:
                     logger.error('modm key {} not found in lookup table'.format(format_lookup_key(modm_obj._id, model=django_model)))
                     continue
