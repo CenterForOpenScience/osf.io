@@ -409,7 +409,7 @@ def auth_logout(auth, redirect_url=None, next_url=None):
     #   support `reauth`
 
     # logout/?next=<an OSF verified next url>
-    next_url = request.args.get('next') or next_url
+    next_url = next_url or request.args.get('next', None)
     if next_url and validate_next_url(next_url):
         cas_logout_endpoint = cas.get_logout_url(request.url)
         if auth.logged_in:
