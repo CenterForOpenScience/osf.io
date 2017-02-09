@@ -299,7 +299,13 @@ def save_page_of_fk_relationships(self, django_model, fk_relations, offset, limi
                             gfk_model = apps.get_model('osf', value.__class__.__name__)
 
                         content_type_primary_key, formatted_guid = format_lookup_key(value._id, model=gfk_model)
-                        fk_field_value = modm_to_django[(content_type_primary_key, formatted_guid)]
+                        try:
+                            fk_field_value = modm_to_django[(content_type_primary_key, formatted_guid)]
+                        except KeyError as ex:
+                            logger.error('modm key {} not found in lookup table'.format(
+                                format_lookup_key(modm_obj._id, model=django_model)))
+                            continue
+
                         # this next line could be better if we just got all the content_types
                         setattr(django_obj, ct_field_name, ContentType.objects.get_for_model(gfk_model))
                         setattr(django_obj, fk_field_name, fk_field_value)
@@ -329,10 +335,16 @@ def save_page_of_fk_relationships(self, django_model, fk_relations, offset, limi
 
                         if isinstance(value, basestring):
                             # it's guid as a string
-                            setattr(django_obj, django_field_name,
-                                    modm_to_django[format_lookup_key(value, model=field.related_model)])
-                            dirty = True
-                            fk_count += 1
+                            try:
+                                setattr(django_obj, django_field_name,
+                                        modm_to_django[format_lookup_key(value, model=field.related_model)])
+                            except KeyError as ex:
+                                logger.error('modm key {} not found in lookup table'.format(
+                                    format_lookup_key(modm_obj._id, model=django_model)))
+                                continue
+                            else:
+                                dirty = True
+                                fk_count += 1
 
                         elif hasattr(value, '_id'):
                             # let's just assume it's a modm model instance
@@ -366,7 +378,7 @@ def save_page_of_fk_relationships(self, django_model, fk_relations, offset, limi
             modm_obj._object_cache.clear()
 
     except Exception as ex:
-        logger.error('Retrying: Failed to save page of foreign keys with exception {}'.format(ex.message))
+        logger.error('Retrying: Failed to save page model: {} offset:{} limit:{} of foreign keys with exception {}'.format(django_model, offset, limit, ex.message))
         self.retry(countdown=60)  # retry in 1m
 
 
@@ -538,7 +550,7 @@ def save_page_of_m2m_relationships(self, django_model, m2m_relations, offset, li
                                                    m2m_count))
     except Exception as ex:
         logger.error(
-            'Retrying: Failed to save page of m2m with exception {}'.format(ex.message))
+            'Retrying: Failed to save page {} offset:{} limit:{} of m2m with exception {}'.format(django_model, offset, limit, ex.message))
         self.retry(countdown=60)  # retry in 1m
 
 @app.task()
