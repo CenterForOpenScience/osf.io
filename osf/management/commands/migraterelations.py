@@ -348,8 +348,13 @@ def save_page_of_fk_relationships(self, django_model, fk_relations, offset, limi
 
                         elif hasattr(value, '_id'):
                             # let's just assume it's a modm model instance
-                            setattr(django_obj, django_field_name,
-                                    modm_to_django[format_lookup_key(value._id, model=field.related_model)])
+                            try:
+                                setattr(django_obj, django_field_name,
+                                        modm_to_django[format_lookup_key(value._id, model=field.related_model)])
+                            except KeyError as ex:
+                                logger.error('modm key {} not found in lookup table'.format(
+                                    format_lookup_key(modm_obj._id, model=django_model)))
+                                continue
                             dirty = True
                             fk_count += 1
 
