@@ -23,6 +23,7 @@ from osf import models
 from osf.models import (ApiOAuth2Scope, BlackListGuid, CitationStyle, Guid,
                         Institution, NodeRelation, NotificationSubscription,
                         RecentlyAddedContributor, StoredFileNode, Tag)
+from osf.models import Comment
 from osf.models import NodeLog
 from osf.models import OSFUser
 from osf.models.contributor import (AbstractBaseContributor, Contributor,
@@ -175,6 +176,8 @@ def format_lookup_key(guid, content_type_id=None, model=None, template=None):
 def get_pk_for_unknown_node_model(modm_to_django, guid):
     abstract_node_subclasses = AbstractNode.__subclasses__()
     abstract_node_subclasses.append(Institution)
+    abstract_node_subclasses.append(Comment)
+    abstract_node_subclasses.append(StoredFileNode)
 
     for model in abstract_node_subclasses:
         key = format_lookup_key(guid, model=model)
@@ -186,7 +189,7 @@ def get_pk_for_unknown_node_model(modm_to_django, guid):
         else:
             return pk
 
-    raise Exception('Could not find key for {} guid'.format(guid))
+    logger.error('Could not find key for {} guid'.format(guid))
 
 
 @app.task()
