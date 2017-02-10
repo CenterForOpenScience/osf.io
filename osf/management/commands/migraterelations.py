@@ -268,18 +268,22 @@ def save_page_of_fk_relationships(self, django_model, fk_relations, offset, limi
                         # TODO this is also doing a mongo query for each owner
                         django_obj.user_id = modm_to_django[format_lookup_key(modm_obj.owner._id, model=OSFUser)]
                         django_obj.node_id = None
+                        dirty = True
                     elif isinstance(modm_obj.owner, MODMNode):
                         # TODO this is also doing a mongo query for each owner
                         django_obj.user_id = None
                         django_obj.node_id = modm_to_django[format_lookup_key(modm_obj.owner._id, model=AbstractNode)]
+                        dirty = True
                     elif modm_obj.owner is None:
                         django_obj.node_id = None
                         django_obj.user_id = None
+                        dirty = True
                         logger.info(
                             'NotificationSubscription {!r} is abandoned. It\'s owner is {!r}.'.format(
                                 unicode(modm_obj._id), modm_obj.owner))
                     else:
                         logger.error('NotificationSubscription {} owner was {}'.format(modm_obj._id, modm_obj.owner.__repr__()))
+
 
                     # with ipdb.launch_ipdb_on_exception():
                 for field in fk_relations:
