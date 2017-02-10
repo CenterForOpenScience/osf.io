@@ -176,8 +176,6 @@ def format_lookup_key(guid, content_type_id=None, model=None, template=None):
 def get_pk_for_unknown_node_model(modm_to_django, guid):
     abstract_node_subclasses = AbstractNode.__subclasses__()
     abstract_node_subclasses.append(Institution)
-    abstract_node_subclasses.append(Comment)
-    abstract_node_subclasses.append(StoredFileNode)
 
     for model in abstract_node_subclasses:
         key = format_lookup_key(guid, model=model)
@@ -768,7 +766,10 @@ def migrate_node_through_models():
                 noderel_order = 0
                 for modm_node in modm_obj.nodes:
                     parent_id = modm_to_django[format_lookup_key(clean_node_guid, model=Node)]
-                    child_id = get_pk_for_unknown_node_model(modm_to_django, modm_node._id)
+                    if isinstance(modm_node, MODMPointer):
+                        child_id = get_pk_for_unknown_node_model(modm_to_django, modm_node.node._id)
+                    else:
+                        child_id = get_pk_for_unknown_node_model(modm_to_django, modm_node._id)
                     if not (parent_id, child_id) in node_rel_hashes:
                         if isinstance(modm_node, MODMPointer):
                             node_relations.append(
