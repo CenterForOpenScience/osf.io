@@ -9,23 +9,23 @@ services:
 
 # wb:
 #   volumes:
-#     - ../../wb/waterbutler:/code
+#     - ../waterbutler:/code
 
 # wb_worker:
 #   volumes:
-#     - ../../wb/waterbutler:/code
+#     - ../waterbutler:/code
 
 # wb_requirements:
 #   volumes:
-#     - ../../wb/waterbutler:/code
+#     - ../waterbutler:/code
 
 # mfr:
 #   volumes:
-#     - ../../mfr/modular-file-renderer:/code
+#     - ../modular-file-renderer:/code
 
 # mfr_requirements:
 #   volumes:
-#     - ../../mfr/modular-file-renderer:/code
+#     - ../modular-file-renderer:/code
 
 #  preprints:
 #    volumes:
