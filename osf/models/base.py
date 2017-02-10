@@ -233,7 +233,7 @@ class Guid(BaseModel):
     referent = GenericForeignKey()
     content_type = models.ForeignKey(ContentType, null=True, blank=True)
     object_id = models.PositiveIntegerField(null=True, blank=True)
-    created = models.DateTimeField(db_index=True, auto_now_add=True)
+    created = models.DateTimeField(db_index=True, default=timezone.now)  # auto_now_add=True)
 
     # Override load in order to load by GUID
     @classmethod
