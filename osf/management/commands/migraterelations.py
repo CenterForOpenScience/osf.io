@@ -1,7 +1,5 @@
 from __future__ import unicode_literals
 
-import gc
-import importlib
 import logging
 import pstats
 import sys
@@ -13,18 +11,14 @@ from bulk_update.helper import bulk_update
 from django.apps import apps
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
-from django.core.exceptions import MultipleObjectsReturned
 from django.core.management import BaseCommand
 from django.db import transaction
 
-from addons.wiki.models import NodeWikiPage
 from api.base.celery import app
 from osf import models
 from osf.models import (ApiOAuth2Scope, BlackListGuid, CitationStyle, Guid,
                         Institution, NodeRelation, NotificationSubscription,
                         RecentlyAddedContributor, StoredFileNode, Tag)
-from osf.models import Comment
-from osf.models import NodeLog
 from osf.models import OSFUser
 from osf.models.contributor import (AbstractBaseContributor, Contributor,
                                     InstitutionalContributor)
@@ -223,7 +217,7 @@ def save_page_of_fk_relationships(self, django_model, fk_relations, offset, limi
     register_nonexistent_models_with_modm()
     try:
         with transaction.atomic():  # one transaction per page
-            bad_fields = ['external_account_id', ]  # external accounts are handled in their own migration
+            bad_fields = []
 
             modm_model = get_modm_model(django_model)
             if isinstance(django_model.modm_query, dict):
@@ -268,27 +262,27 @@ def save_page_of_fk_relationships(self, django_model, fk_relations, offset, limi
                                 modm_obj.node.institution_id is not None:
                     model_count += 1
                     continue
+                    # notification subscriptions have a AbstractForeignField that's becoming two FKs
+                if isinstance(modm_obj, MODMNotificationSubscription):
+                    if isinstance(modm_obj.owner, MODMUser):
+                        # TODO this is also doing a mongo query for each owner
+                        django_obj.user_id = modm_to_django[format_lookup_key(modm_obj.owner._id, model=OSFUser)]
+                        django_obj.node_id = None
+                    elif isinstance(modm_obj.owner, MODMNode):
+                        # TODO this is also doing a mongo query for each owner
+                        django_obj.user_id = None
+                        django_obj.node_id = modm_to_django[format_lookup_key(modm_obj.owner._id, model=AbstractNode)]
+                    elif modm_obj.owner is None:
+                        django_obj.node_id = None
+                        django_obj.user_id = None
+                        logger.info(
+                            'NotificationSubscription {!r} is abandoned. It\'s owner is {!r}.'.format(
+                                unicode(modm_obj._id), modm_obj.owner))
+                    else:
+                        logger.error('NotificationSubscription {} owner was {}'.format(modm_obj._id, modm_obj.owner.__repr__()))
 
                     # with ipdb.launch_ipdb_on_exception():
                 for field in fk_relations:
-                    # notification subscriptions have a AbstractForeignField that's becoming two FKs
-                    if isinstance(modm_obj, MODMNotificationSubscription):
-                        if isinstance(modm_obj.owner, MODMUser):
-                            # TODO this is also doing a mongo query for each owner
-                            django_obj.user_id = modm_to_django[format_lookup_key(modm_obj.owner._id, model=OSFUser)]
-                            django_obj.node_id = None
-                        elif isinstance(modm_obj.owner, MODMNode):
-                            # TODO this is also doing a mongo query for each owner
-                            django_obj.user_id = None
-                            django_obj.node_id = modm_to_django[
-                                format_lookup_key(modm_obj.owner._id, model=AbstractNode)]
-                        elif modm_obj.owner is None:
-                            django_obj.node_id = None
-                            django_obj.user_id = None
-                            logger.info(
-                                'NotificationSubscription {!r} is abandoned. It\'s owner is {!r}.'.format(
-                                    unicode(modm_obj._id), modm_obj.owner))
-
                     if isinstance(field, GenericForeignKey):
                         field_name = field.name
                         ct_field_name = field.ct_field
@@ -398,7 +392,7 @@ def save_fk_relationships(django_model, page_size):
     set_backend()
     register_nonexistent_models_with_modm()
     fk_relations = [field for field in django_model._meta.get_fields() if
-                    field.is_relation and not field.auto_created and field.many_to_one]
+                    field.is_relation and not field.auto_created and (field.many_to_one or field.one_to_one)]
 
     if len(fk_relations) == 0:
         logger.info('{} doesn\'t have foreign keys.'.format(django_model._meta.model.__module__))
@@ -467,7 +461,7 @@ def save_page_of_m2m_relationships(self, django_model, m2m_relations, offset, li
                 # TODO linked_nodes is getting added to bad fields for AbstractNode
                 for field_name, model in m2m_relations:
                     # figure out a field name based on field_aliases
-                    if field_name in ['_contributors', 'external_accounts', 'watched']:
+                    if field_name in ['_contributors', 'watched']:
                         # these are handled elsewhere
                         continue
                     django_field_name = None
