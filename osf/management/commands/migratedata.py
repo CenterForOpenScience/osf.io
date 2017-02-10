@@ -453,7 +453,13 @@ def fix_guids():
                             wiki += 1
                         else:
 
-                            logger.info('Guid {} does not match it\'s referent was a {}.'.format(guid, guid_instance.to_storage()['referent'][1]))
+                            if guid_instance.to_storage()['referent'] is not None:
+                                logger.info('Guid {} does not match it\'s referent was a {}.'.format(guid,
+                                                                                                     guid_instance.to_storage()[
+                                                                                                         'referent'][
+                                                                                                         1]))
+                            else:
+                                logger.info('Guid {} does not match it\'s referent was a {}.'.format(guid, None))
                             missing += 1
                             continue
 
