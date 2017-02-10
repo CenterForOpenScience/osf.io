@@ -39,6 +39,7 @@ def clean_up_common_errors(cit):
 
 def render_citation(node, style='apa'):
     """Given a node, return a citation"""
+    csl = None
     if isinstance(node, Node):
         data = [node.csl, ]
     elif isinstance(node, PreprintService):
