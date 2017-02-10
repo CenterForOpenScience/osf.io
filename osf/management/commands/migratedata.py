@@ -605,6 +605,9 @@ class DuplicateExternalAccounts(Exception):
 
 @app.task()
 def save_bare_external_accounts(page_size=100000):
+    init_app(routes=False, attach_request_handlers=False, fixtures=False)
+    set_backend()
+    register_nonexistent_models_with_modm()
     from website.models import ExternalAccount as MODMExternalAccount
 
     def validate_box(external_account):
@@ -891,7 +894,7 @@ class Command(BaseCommand):
         if options['dependents']:
             make_guids()
             fix_guids()
-            # save_bare_external_accounts()
+            save_bare_external_accounts()
             return
 
         models = get_ordered_models()
