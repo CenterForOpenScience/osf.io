@@ -8,6 +8,7 @@ from dateutil.parser import parse as parse_date
 
 from flask import request
 import markupsafe
+import mailchimp
 from modularodm.exceptions import ValidationError, NoResultsFound, MultipleResultsFound
 from modularodm import Q
 
@@ -548,7 +549,7 @@ def update_mailchimp_subscription(user, list_name, subscription, send_goodbye=Tr
     else:
         try:
             mailchimp_utils.unsubscribe_mailchimp_async(list_name, user._id, username=user.username, send_goodbye=send_goodbye)
-        except mailchimp_utils.mailchimp.ListNotSubscribedError:
+        except mailchimp.Error:
             # User has already unsubscribed, so nothing to do
             pass
 
