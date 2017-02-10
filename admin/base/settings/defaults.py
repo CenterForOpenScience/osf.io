@@ -186,6 +186,8 @@ DATABASES = {
     }
 }
 
+DATABASE_ROUTERS = ['osf.db.router.PostgreSQLFailoverRouter', ]
+
 ROOT_URLCONF = 'admin.base.urls'
 WSGI_APPLICATION = 'admin.base.wsgi.application'
 ADMIN_BASE = ''
