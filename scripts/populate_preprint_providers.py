@@ -41,12 +41,14 @@ def get_license(name):
 
 def update_or_create(provider_data):
     provider = PreprintProvider.load(provider_data['_id'])
+    licenses = [get_license(name) for name in provider_data.pop('licenses_acceptable', [])]
     if provider:
         provider_data['subjects_acceptable'] = map(
             lambda rule: (map(get_subject_id, rule[0]), rule[1]),
             provider_data['subjects_acceptable']
         )
-        provider_data['licenses_acceptable'] = [get_license(name) for name in provider_data['licenses_acceptable']]
+        if licenses:
+            provider.licenses_acceptable.add(*licenses)
         for key, val in provider_data.iteritems():
             setattr(provider, key, val)
         changed_fields = provider.save()
@@ -56,6 +58,8 @@ def update_or_create(provider_data):
     else:
         new_provider = PreprintProvider(**provider_data)
         new_provider.save()
+        if licenses:
+            new_provider.licenses_acceptable.add(*licenses)
         provider = PreprintProvider.load(new_provider._id)
         print('Added new preprint provider: {}'.format(provider._id))
         return new_provider, True
@@ -387,7 +391,6 @@ def main(env):
             'logo_name': 'agrixiv-logo.svg',
             'description': 'Preprints for Agriculture and Allied Sciences',
             'banner_name': 'agrixiv-banner.svg',
-            'external_url': '',
             'example': '',
             'advisory_board': '''
                 <div class="col-xs-6">
@@ -1004,13 +1007,13 @@ def main(env):
                 (['Social and Behavioral Sciences', 'Other Social and Behavioral Sciences'], False)
             ]
         },
-        'bitss' : {
+        'bitss': {
             '_id': 'bitss',
             'name': 'BITSS',
             'logo_name': 'bitss-logo.png',
             'description': 'An interdisciplinary archive of articles focused on improving research transparency and reproducibility',
             'banner_name': 'bitss-banner.png',
-            'external_url': 'www.bitss.org',
+            'external_url': 'http://www.bitss.org',
             'example': '',
             'advisory_board': '''
                 <div class="col-xs-12">
