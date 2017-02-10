@@ -2,31 +2,20 @@ from __future__ import unicode_literals
 
 import gc
 import importlib
-import itertools
 import logging
-import multiprocessing
 import pstats
 import sys
 from cProfile import Profile
 
 import ipdb
-from box import BoxClient, BoxClientException
-from bson import ObjectId
 from django.contrib.contenttypes.models import ContentType
 from django.core.management import BaseCommand
 from django.db import IntegrityError, connection, transaction
 from django.utils import timezone
-from dropbox.client import DropboxClient
-from dropbox.rest import ErrorResponse
-from github3 import GitHubError
 from modularodm import Q as MQ
-from oauthlib.oauth2 import InvalidGrantError
 from psycopg2._psycopg import AsIs
 from typedmodels.models import TypedModel
 
-from addons.base.models import BaseOAuthNodeSettings
-from addons.github.api import GitHubClient
-from addons.s3 import utils
 from addons.wiki.models import NodeWikiPage
 from api.base.celery import app
 from framework import encryption
@@ -35,18 +24,18 @@ from framework.mongo import database
 from framework.mongo import set_up_storage
 from framework.mongo import storage
 from framework.transactions.context import transaction as modm_transaction
-from osf.models import (BlackListGuid, ExternalAccount, NodeLog, OSFUser,
-                        PageCounter, StoredFileNode, Tag, UserActivityCounter)
 from osf.models import Comment
+from osf.models import (NodeLog, OSFUser,
+                        PageCounter, StoredFileNode, Tag, UserActivityCounter)
 from osf.models.base import Guid, GuidMixin, OptionalGuidMixin
 from osf.models.node import AbstractNode
 from osf.utils.order_apps import get_ordered_models
+from website.addons.wiki.model import NodeWikiPage as MODMNodeWikiPage
 from website.app import init_app
 from website.files.models import StoredFileNode as MODMStoredFileNode
+from website.models import Comment as MODMComment
 from website.models import Guid as MGuid
 from website.models import Node as MODMNode
-from website.models import Comment as MODMComment
-from website.addons.wiki.model import NodeWikiPage as MODMNodeWikiPage
 from website.models import User as MUser
 from website.oauth.models import ApiOAuth2Scope
 
@@ -604,120 +593,6 @@ class DuplicateExternalAccounts(Exception):
 
 
 @app.task()
-def save_bare_external_accounts(page_size=100000):
-    init_app(routes=False, attach_request_handlers=False, fixtures=False)
-    set_backend()
-    register_nonexistent_models_with_modm()
-    from website.models import ExternalAccount as MODMExternalAccount
-
-    def validate_box(external_account):
-        client = BoxClient(external_account.oauth_key)
-        try:
-            client.get_user_info()
-        except (BoxClientException, IndexError):
-            return False
-        return True
-
-    def validate_dropbox(external_account):
-        client = DropboxClient(external_account.oauth_key)
-        try:
-            client.account_info()
-        except (ValueError, IndexError, ErrorResponse):
-            return False
-        return True
-
-    def validate_github(external_account):
-        client = GitHubClient(external_account=external_account)
-        try:
-            client.user()
-        except (GitHubError, IndexError):
-            return False
-        return True
-
-    def validate_googledrive(external_account):
-        try:
-            external_account.node_settings.fetch_access_token()
-        except (InvalidGrantError, AttributeError):
-            return False
-        return True
-
-    def validate_s3(external_account):
-        if utils.can_list(external_account.oauth_key, external_account.oauth_secret):
-            return True
-        return False
-
-    account_validators = dict(
-        box=validate_box,
-        dropbox=validate_dropbox,
-        github=validate_github,
-        googledrive=validate_googledrive,
-        s3=validate_s3
-    )
-
-    django_model_classes_with_fk_to_external_account = BaseOAuthNodeSettings.__subclasses__()
-    django_model_classes_with_m2m_to_external_account = [OSFUser]
-
-
-    logger.info('Starting save_bare_external_accounts...')
-    start = timezone.now()
-
-    external_accounts = MODMExternalAccount.find()
-    accounts_by_provider = dict()
-
-    for ea in external_accounts:
-        provider_tuple = (ea.provider, str(ea.provider_id))
-        if provider_tuple in accounts_by_provider.keys():
-            accounts_by_provider[provider_tuple].append(ea)
-        else:
-            accounts_by_provider[provider_tuple] = [ea, ]
-
-    bad_accounts = {k:v for k, v in accounts_by_provider.iteritems() if len(v) > 1}
-    good_accounts = [v[0] for k, v in accounts_by_provider.iteritems() if len(v) == 1]
-
-    for (provider, provider_id), providers_accounts in bad_accounts.iteritems():
-        good_provider_accounts = []
-        for modm_external_acct in providers_accounts:
-            if account_validators[provider](modm_external_acct):
-                logger.info('Account {} checks out as valid.'.format(modm_external_acct))
-                good_provider_accounts.append(modm_external_acct)
-        if len(good_provider_accounts) > 1:
-            raise DuplicateExternalAccounts('{} {} had {} good accounts.'.format(provider, provider_id, len(good_provider_accounts)))
-        else:
-            itertools.chain(good_accounts, good_provider_accounts)
-
-    with transaction.atomic():
-        good_django_accounts = ExternalAccount.objects.bulk_create([ExternalAccount.migrate_from_modm(x) for x in good_accounts])
-
-        external_account_mapping = dict(ExternalAccount.objects.all().values_list('_id', 'id'))
-
-        for (provider, provider_id), providers_accounts in bad_accounts.iteritems():
-            newest_modm_external_account_id = str(ObjectId.from_datetime(timezone.datetime(1970, 1, 1, tzinfo=timezone.UTC())))
-            modm_external_account_ids_to_replace = []
-            for modm_external_acct in providers_accounts:
-                if ObjectId(modm_external_acct._id).generation_time > ObjectId(newest_modm_external_account_id).generation_time:
-                    modm_external_account_ids_to_replace.append(newest_modm_external_account_id)
-                    newest_modm_external_account_id = modm_external_acct._id
-
-            ext = ExternalAccount.migrate_from_modm(MODMExternalAccount.load(newest_modm_external_account_id))
-            ext.save()
-            external_account_mapping[newest_modm_external_account_id] = ext.id
-
-            for modm_external_account_to_replace in modm_external_account_ids_to_replace:
-                for django_model_class in django_model_classes_with_fk_to_external_account:
-                    if hasattr(django_model_class, 'modm_model_path'):
-                        modm_model_class = get_modm_model(django_model_class)
-                        matching_models = modm_model_class.find(MQ('external_account', 'eq', modm_external_account_to_replace))
-                        django_model_class.objects.filter(_id__in=matching_models.get_keys()).update(external_account_id=external_account_mapping[newest_modm_external_account_id])
-
-                for django_model_class in django_model_classes_with_m2m_to_external_account:
-                    if hasattr(django_model_class, 'modm_model_path'):
-                        modm_model_class = get_modm_model(django_model_class)
-                        for model_guid in modm_model_class.find(MQ('external_accounts', 'eq', modm_external_account_to_replace)).get_keys():
-                            django_model = django_model_class.objects.get(guids___id=model_guid)
-                            django_model.external_accounts.add(external_account_mapping[newest_modm_external_account_id])
-
-
-@app.task()
 def save_bare_system_tags(page_size=10000):
     logger.info('Starting save_bare_system_tags...')
     start = timezone.now()
@@ -740,7 +615,7 @@ def save_bare_system_tags(page_size=10000):
         system_tags.append(Tag(name=system_tag_id,
                                system=True))
 
-    created_system_tags = Tag.objects.bulk_create(system_tags)
+    Tag.objects.bulk_create(system_tags)
 
     logger.info('MODM System Tags: {}'.format(total))
     logger.info('django system tags: {}'.format(Tag.objects.filter(system=True).count()))
@@ -894,13 +769,11 @@ class Command(BaseCommand):
         if options['dependents']:
             make_guids()
             fix_guids()
-            save_bare_external_accounts()
             return
 
         models = get_ordered_models()
         # guids never, pls
         models.pop(models.index(Guid))
-        models.pop(models.index(ExternalAccount))
 
         if not options['nodelogs'] and not options['nodelogsguids']:
             merge_duplicate_users()
