@@ -57,7 +57,7 @@ def get_campaigns():
                 template = 'branded'
                 name = provider.name
                 url_path = 'preprints/{}'.format(provider._id)
-                external_url = provider.get_provider_domain()
+                external_url = provider.get_provider_external_domain()
             campaign = '{}-preprints'.format(provider._id)
             system_tag = '{}_preprints'.format(provider._id)
             CAMPAIGNS.update({
@@ -127,13 +127,35 @@ def get_service_provider(campaign):
 
 
 def campaign_url_for(campaign):
+    """
+    Return the campaign's URL on OSF domain.
+
+    :param campaign: the campaign
+    :return: the url
+    """
     campaigns = get_campaigns()
     if campaign in campaigns:
         return campaigns.get(campaign).get('redirect_url')
     return None
 
 
+def external_campaign_url_for(campaign):
+    """
+    Return the campaign's URL on Non-OSF domain, which is available for phase 2 branded preprints only.
+
+    :param campaign: the campaign
+    :return: the external url if the campaign is hosted on Non-OSF domain, None otherwise
+    """
+    campaigns = get_campaigns()
+    if campaign in campaigns:
+        return campaigns.get(campaign).get('external_url')
+    return None
+
+
 def get_external_domains():
+    """
+    Return a list of trusted external domains for all eligible campaigns.
+    """
     campaigns = get_campaigns()
     external_domains = []
     for campaign, config in campaigns.items():
