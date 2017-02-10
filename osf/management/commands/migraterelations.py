@@ -765,7 +765,7 @@ def migrate_node_through_models():
                 noderel_order = 0
                 for modm_node in modm_obj.nodes:
                     parent_id = modm_to_django[format_lookup_key(clean_node_guid, model=Node)]
-                    child_id = get_pk_for_unknown_node_model(modm_to_django, clean_node_guid)
+                    child_id = get_pk_for_unknown_node_model(modm_to_django, modm_node)
                     if not (parent_id, child_id) in node_rel_hashes:
                         if isinstance(modm_node, MODMPointer):
                             node_relations.append(
