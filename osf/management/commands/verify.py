@@ -5,6 +5,7 @@ import sys
 from datetime import datetime
 
 import pytz
+from django.contrib.auth.models import Group, Permission
 from django.core.management import BaseCommand
 
 from api.base.celery import app
@@ -62,6 +63,9 @@ def validate_m2m_field(field_name, django_obj, modm_obj):
     # handle both forward and reverse rels
     if hasattr(django_obj, field_name):
         manager = field
+        # skip groups and permissions
+        if manager.model is Group or manager.model is Permission:
+            return
         primary_identifier_name = manager.model.primary_identifier_name
     else:
         manager_name = '{}_set'.format(field.through._meta.object_name).lower()
@@ -71,8 +75,14 @@ def validate_m2m_field(field_name, django_obj, modm_obj):
         except AttributeError:
             primary_identifier_name = '_id'
     django_guids = manager.all().values(primary_identifier_name)
+    # if there's a field alias, let's use that.
+    if getattr(django_obj, 'FIELD_ALIASES', None) is None:
+        modm_field_name = field_name
+    else:
+        modm_field_name = {v: k for k, v in getattr(django_obj, 'FIELD_ALIASES', {}).iteritems()}.get(field_name, None)
+    modm_guids = [obj._id for obj in getattr(modm_obj, modm_field_name)]
     for django_guid in django_guids:
-        assert django_guid in getattr(modm_obj, field_name).get_keys()
+        assert django_guid in modm_guids
 
 
 def validate_fk_relation(field_name, django_obj, modm_obj):
@@ -80,7 +90,12 @@ def validate_fk_relation(field_name, django_obj, modm_obj):
         # modm doesn't have gfk
         return
     django_field_value = getattr(django_obj, field_name)
-    modm_field_value = getattr(modm_obj, field_name)
+    # if there's a field alias, let's use that.
+    if getattr(django_obj, 'FIELD_ALIASES', None) is None:
+        modm_field_name = field_name
+    else:
+        modm_field_name = {v: k for k, v in getattr(django_obj, 'FIELD_ALIASES', {}).iteritems()}.get(field_name, None)
+    modm_field_value = getattr(modm_obj, modm_field_name)
     if modm_field_value and django_field_value:
         assert modm_field_value._id == django_field_value._id, 'Modm field {} of obj {}:{} with value of {} doesn\'t equal django field with value {}'.format(field_name, type(modm_obj), modm_obj._id, modm_field_value._id, django_field_value._id)
     elif modm_field_value is not None and django_field_value is None:
@@ -88,8 +103,8 @@ def validate_fk_relation(field_name, django_obj, modm_obj):
 
 
 def validate_basic_field(field_name, django_obj, modm_obj):
-    if field_name in ['id', 'pk', 'object_id']:
-        # modm doesn't have ids
+    if field_name in ['id', 'pk', 'object_id', 'guid_string']:
+        # modm doesn't have ids or guids
         return
     # if there's a field alias, let's use that.
     if getattr(django_obj, 'FIELD_ALIASES', None) is None:
@@ -172,7 +187,7 @@ def validate_model_data(django_model, page_size=20000):
                      field.is_relation and field.many_to_many and not hasattr(field, 'field')]
 
     fk_relations = [field for field in django_model._meta.get_fields() if
-                    field.is_relation and not field.auto_created and field.many_to_one]
+                    field.is_relation and not field.auto_created and (field.many_to_one or field.one_to_one)]
 
     basic_fields = [field for field in django_model._meta.get_fields() if not field.is_relation]
 
