@@ -14,6 +14,8 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.management import BaseCommand
 from django.db import transaction
 
+from addons.wiki.models import NodeSettings as WikiNodeSettings
+from addons.osfstorage.models import NodeSettings as OSFStorageNodeSettings
 from api.base.celery import app
 from osf import models
 from osf.models import (ApiOAuth2Scope, BlackListGuid, CitationStyle, Guid,
@@ -264,7 +266,11 @@ def save_page_of_fk_relationships(self, django_model, fk_relations, offset, limi
                                 modm_obj.node.institution_id is not None:
                     model_count += 1
                     continue
-                    # notification subscriptions have a AbstractForeignField that's becoming two FKs
+                # If we're migrating a NodeSetting pointing at an institution then commit seppuku
+                if isinstance(django_obj, (WikiNodeSettings, OSFStorageNodeSettings)) and modm_obj.owner is not None and modm_obj.owner.institution_id is not None:
+                    model_count += 1
+                    continue
+                # notification subscriptions have a AbstractForeignField that's becoming two FKs
                 if isinstance(modm_obj, MODMNotificationSubscription):
                     if isinstance(modm_obj.owner, MODMUser):
                         # TODO this is also doing a mongo query for each owner
