@@ -37,9 +37,9 @@ class Command(BaseCommand):
                     django_model._meta.model.__name__))
                 continue
             elif django_model is Tag or django_model is BlackListGuid:
-                # we'll do this by hand because tags are special
-                # we'll do blacklistguids by hand because they've got a bunch of new ones that don't exist in modm
-                # specifically, from register_none_existent_models
+                # TODO we'll do this by hand because tags are special
+                # TODO we'll do blacklistguids by hand because they've got a bunch of new ones that don't exist in modm
+                # TODO specifically, from register_none_existent_models
                 continue
             do_model.delay(django_model)
 
@@ -82,11 +82,9 @@ def validate_fk_relation(field_name, django_obj, modm_obj):
     django_field_value = getattr(django_obj, field_name)
     modm_field_value = getattr(modm_obj, field_name)
     if modm_field_value and django_field_value:
-        assert modm_field_value._id == django_field_value._id
+        assert modm_field_value._id == django_field_value._id, 'Modm field {} of obj {}:{} with value of {} doesn\'t equal django field with value {}'.format(field_name, type(modm_obj), modm_obj._id, modm_field_value._id, django_field_value._id)
     elif modm_field_value is not None and django_field_value is None:
         logger.info('{} of {!r} was None in django but {} in modm'.format(field_name, modm_obj, django_obj, modm_field_value))
-    else:
-        logger.info('{} of {!r} were None'.format(field_name, modm_obj))
 
 
 def validate_basic_field(field_name, django_obj, modm_obj):
