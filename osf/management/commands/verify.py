@@ -86,7 +86,10 @@ def validate_m2m_field(field_name, django_obj, modm_obj):
 
     modm_guids = [obj._id for obj in getattr(modm_obj, modm_field_name)]
     for django_guid in django_guids:
-        assert django_guid in modm_guids, '{} for model {}.{} was not in modm guids'.format(django_guid, django_obj._meta.model.__module__, django_obj._meta.model.__name__)
+        try:
+            assert django_guid in modm_guids, '{} for model {}.{} was not in modm guids'.format(django_guid, django_obj._meta.model.__module__, django_obj._meta.model.__name__)
+        except AssertionError as ex:
+            logger.error(ex)
 
 
 def validate_fk_relation(field_name, django_obj, modm_obj):
@@ -104,7 +107,10 @@ def validate_fk_relation(field_name, django_obj, modm_obj):
         modm_field_name = {v: k for k, v in getattr(django_obj, 'FIELD_ALIASES', {}).iteritems()}.get(field_name, field_name)
     modm_field_value = getattr(modm_obj, modm_field_name)
     if modm_field_value and django_field_value:
-        assert modm_field_value._id == django_field_value._id, 'Modm field {} of obj {}:{} with value of {} doesn\'t equal django field with value {}'.format(field_name, type(modm_obj), modm_obj._id, modm_field_value._id, django_field_value._id)
+        try:
+            assert modm_field_value._id == django_field_value._id, 'Modm field {} of obj {}:{} with value of {} doesn\'t equal django field with value {}'.format(field_name, type(modm_obj), modm_obj._id, modm_field_value._id, django_field_value._id)
+        except AssertionError as ex:
+            logger.error(ex)
     elif modm_field_value is not None and django_field_value is None:
         logger.info('{} of {!r} was None in django but {} in modm'.format(field_name, modm_obj, django_obj, modm_field_value))
 
@@ -122,9 +128,15 @@ def validate_basic_field(field_name, django_obj, modm_obj):
     if modm_field_name is False:
         return
     if isinstance(getattr(modm_obj, modm_field_name), datetime):
-        assert getattr(django_obj, field_name) == pytz.utc.localize(getattr(modm_obj, modm_field_name)), '{} {}:{} {}:{}'.format(django_obj, field_name, getattr(django_obj, field_name), modm_field_name, pytz.utc.localize(getattr(modm_obj, modm_field_name)))
+        try:
+            assert getattr(django_obj, field_name) == pytz.utc.localize(getattr(modm_obj, modm_field_name)), '{} {}:{} {}:{}'.format(django_obj, field_name, getattr(django_obj, field_name), modm_field_name, pytz.utc.localize(getattr(modm_obj, modm_field_name)))
+        except AssertionError as ex:
+            logger.error(ex)
         return
-    assert getattr(django_obj, field_name) == getattr(modm_obj, modm_field_name), '{} {}:{} {}:{}'.format(django_obj, field_name, getattr(django_obj, field_name), modm_field_name, getattr(modm_obj, modm_field_name))
+    try:
+        assert getattr(django_obj, field_name) == getattr(modm_obj, modm_field_name), '{} {}:{} {}:{}'.format(django_obj, field_name, getattr(django_obj, field_name), modm_field_name, getattr(modm_obj, modm_field_name))
+    except AssertionError as ex:
+        logger.error(ex)
 
 
 def get_pk(modm_object, django_model, modm_to_django):
@@ -155,16 +167,19 @@ def validate_page_of_model_data(django_model, basic_fields, fk_relations, m2m_re
 
     # TODO users aren't going to match
     if django_model is not OSFUser:
-        assert len(django_ids) == len(django_objects) == len(page_of_modm_objects), 'Lost some keys along the way for {}.{}\n' \
+        try:
+            assert len(django_ids) == len(django_objects) == len(page_of_modm_objects), 'Lost some keys along the way for {}.{}\n' \
                                                                                     'Django_id count: {}\n' \
                                                                                     'Django count: {}\n' \
                                                                                     'Modm count: {}'.format(
-            django_model._meta.model.__module__,
-            django_model._meta.model.__name__,
-            len(django_ids),
-            len(django_objects),
-            len(page_of_modm_objects),
-        )
+                django_model._meta.model.__module__,
+                django_model._meta.model.__name__,
+                len(django_ids),
+                len(django_objects),
+                len(page_of_modm_objects),
+            )
+        except AssertionError as ex:
+            logger.error(ex)
 
     for modm_obj in page_of_modm_objects:
         django_obj = django_objects.get(pk=get_pk(modm_obj, django_model, modm_to_django))
