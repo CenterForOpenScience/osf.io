@@ -6,18 +6,21 @@ from datetime import datetime
 
 import pytz
 from django.contrib.auth.models import Group, Permission
+from django.contrib.contenttypes.models import ContentType
 from django.core.management import BaseCommand
 
 from api.base.celery import app
 from osf.management.commands.migratedata import register_nonexistent_models_with_modm, get_modm_model
 from osf.management.commands.migraterelations import build_toku_django_lookup_table_cache, format_lookup_key
 from osf.models import BlackListGuid
+from osf.models import EmbargoTerminationApproval
 from osf.models import OSFUser
 from osf.models import Tag
 from osf.utils.order_apps import get_ordered_models
 from website.app import init_app
 from .migratedata import set_backend
 logger = logging.getLogger('migrations')
+
 
 class NotGonnaDoItException(BaseException):
     pass
@@ -89,6 +92,9 @@ def validate_fk_relation(field_name, django_obj, modm_obj):
     if field_name in ['content_type', 'content_type_id']:
         # modm doesn't have gfk
         return
+    if django_obj.model is EmbargoTerminationApproval and field_name == 'initiated_by':
+        # EmbargoTerminationApproval didn't have an initiated_by in modm even though it was supposed to.
+        return
     django_field_value = getattr(django_obj, field_name)
     # if there's a field alias, let's use that.
     if getattr(django_obj, 'FIELD_ALIASES', None) is None:
@@ -118,13 +124,17 @@ def validate_basic_field(field_name, django_obj, modm_obj):
     if modm_field_name is False:
         return
     if isinstance(getattr(modm_obj, modm_field_name), datetime):
-        assert getattr(django_obj, field_name) == pytz.utc.localize(getattr(modm_obj, modm_field_name))
+        assert getattr(django_obj, field_name) == pytz.utc.localize(getattr(modm_obj, modm_field_name)), '{} {}:{} {}:{}'.format(django_obj, field_name, getattr(django_obj, field_name), modm_field_name, pytz.utc.localize(getattr(modm_obj, modm_field_name)))
         return
-    assert getattr(django_obj, field_name) == getattr(modm_obj, modm_field_name)
+    assert getattr(django_obj, field_name) == getattr(modm_obj, modm_field_name), '{} {}:{} {}:{}'.format(django_obj, field_name, getattr(django_obj, field_name), modm_field_name, getattr(modm_obj, modm_field_name))
 
 
 def get_pk(modm_object, django_model, modm_to_django):
-    return modm_to_django[format_lookup_key(modm_object._id, model=django_model)]
+    try:
+        return modm_to_django[format_lookup_key(modm_object._id, model=django_model)]
+    except KeyError as ex:
+        logger.error('modm key {} not found in lookup table {}'.format(
+            format_lookup_key(modm_object._id, ContentType.objects.get_for_model(django_model).pk, ex)))
 
 
 @app.task()
