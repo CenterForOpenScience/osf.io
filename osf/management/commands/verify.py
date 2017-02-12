@@ -86,7 +86,7 @@ def validate_m2m_field(field_name, django_obj, modm_obj):
 
     modm_guids = [obj._id for obj in getattr(modm_obj, modm_field_name)]
     for django_guid in django_guids:
-        assert django_guid in modm_guids
+        assert django_guid in modm_guids, '{} for model {}.{} was not in modm guids'.format(django_guid, django_obj._meta.model.__module__, django_obj._meta.model.__name__)
 
 
 def validate_fk_relation(field_name, django_obj, modm_obj):
@@ -155,10 +155,11 @@ def validate_page_of_model_data(django_model, basic_fields, fk_relations, m2m_re
 
     # TODO users aren't going to match
     if django_model is not OSFUser:
-        assert len(django_ids) == len(django_objects) == len(page_of_modm_objects), 'Lost some keys along the way for {}\n' \
+        assert len(django_ids) == len(django_objects) == len(page_of_modm_objects), 'Lost some keys along the way for {}.{}\n' \
                                                                                     'Django_id count: {}\n' \
                                                                                     'Django count: {}\n' \
                                                                                     'Modm count: {}'.format(
+            django_model._meta.model.__module__,
             django_model._meta.model.__name__,
             len(django_ids),
             len(django_objects),
