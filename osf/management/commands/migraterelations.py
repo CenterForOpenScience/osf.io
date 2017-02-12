@@ -6,7 +6,6 @@ import sys
 import traceback
 from cProfile import Profile
 
-import bson
 import ipdb
 from bulk_update.helper import bulk_update
 from django.apps import apps
@@ -15,8 +14,8 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.management import BaseCommand
 from django.db import transaction
 
-from addons.wiki.models import NodeSettings as WikiNodeSettings
 from addons.osfstorage.models import NodeSettings as OSFStorageNodeSettings
+from addons.wiki.models import NodeSettings as WikiNodeSettings
 from api.base.celery import app
 from osf import models
 from osf.models import (ApiOAuth2Scope, BlackListGuid, CitationStyle, Guid,
@@ -395,140 +394,6 @@ def save_page_of_fk_relationships(self, django_model, fk_relations, offset, limi
     except Exception as ex:
         logger.error('Retrying: Failed to save page model: {} offset:{} limit:{} of foreign keys with exception {}'.format(django_model, offset, limit, ex.message))
         self.retry(countdown=60)  # retry in 1m
-
-
-def find_duplicate_addon_user_settings():
-    COLLECTIONS = [
-        'addondataverseusersettings',
-        'addonfigshareusersettings',
-        # 'addongithubusersettings',  # old, unused
-        'addonowncloudusersettings',
-        # 'addons3usersettings',  # old, unused
-        'boxusersettings',
-        'dropboxusersettings',
-        'githubusersettings',
-        'googledriveusersettings',
-        'mendeleyusersettings',
-        'osfstorageusersettings',
-        's3usersettings',
-        'zoterousersettings',
-        'addonwikiusersettings'
-    ]
-    from framework.mongo.handlers import database
-    for collection in COLLECTIONS:
-        targets = database[collection].aggregate([
-            {
-                "$group": {
-                    "_id": "$owner",
-                    "ids": {"$addToSet": "$_id"},
-                    "count": {"$sum": 1}
-                }
-            },
-                {
-                    "$match": {
-                        "count": {"$gt": 1}
-                    }
-                },
-                {
-                    "$sort": {
-                        "count": -1
-                    }
-                }
-        ]).get('result')
-        for group in targets:
-            oauth_grants = {}
-            bad = []
-            good = []
-            newest = None
-            for _id in group['ids']:
-                instance = database[collection].find_one(_id)
-                if 'oauth_grants' in instance:
-                    oauth_grants.update(instance['oauth_grants'])
-                if instance['deleted']:
-                    bad.append(instance)
-                else:
-                    good.append(instance)
-            for us in good:
-                if not newest or bson.ObjectId(us['_id']).generation_time > bson.ObjectId(newest['_id']).generation_time:
-                    newest = us
-            # remove the keeper
-            good.pop(good.index(newest))
-            logger.info('Updating {} oauth_grants to {}'.format(newest['_id'], oauth_grants))
-            database[collection].update({'_id': newest['_id']}, {"$set": {'oauth_grants': oauth_grants}})
-            for worst in good + bad:
-                logger.info('Removing {} from {}'.format(worst['_id'], collection))
-                database[collection].remove(worst['_id'])
-
-
-def find_duplicate_addon_node_settings():
-    COLLECTIONS = [
-        'addondataversenodesettings',
-        'addonfigsharenodesettings',
-        # 'addongithubnodesettings',  # old, unused
-        'addonowncloudnodesettings',
-        # 'addons3nodesettings',  # old, unused
-        'boxnodesettings',
-        'dropboxnodesettings',
-        'githubnodesettings',
-        'googledrivenodesettings',
-        'mendeleynodesettings',
-        'osfstoragenodesettings',
-        's3nodesettings',
-        'zoteronodesettings',
-        'addonwikinodesettings'
-    ]
-    from framework.mongo.handlers import database
-
-    for collection in COLLECTIONS:
-        targets = database[collection].aggregate([
-            {
-                "$group": {
-                    "_id": "$owner",
-                    "ids": {"$addToSet": "$_id"},
-                    "count": {"$sum": 1}
-                }
-            },
-            {
-                "$match": {
-                    "count": {"$gt": 1}
-                }
-            },
-            {
-                "$sort": {
-                    "count": -1
-                }
-            }
-        ]).get('result')
-        for group in targets:
-            if not group['_id']:
-                for _id in group['ids']:
-                    if _id:
-                        logger.info('Removing {} from {}'.format(_id, collection))
-                        database[collection].remove(_id)
-                    else:
-                        logger.info('_id was None: {}'.format(group))
-            else:
-                active_ns = []
-                for _id in group['ids']:
-                    if database[collection].find_one(_id)['external_account']:  # or w/e key it is
-                        active_ns.append(_id)
-                if not active_ns:
-                    good = group['ids'].pop()
-                    for bad in group['ids']:
-                        if bad:
-                            logger.info('Removing {} from {}'.format(bad, collection))
-                            database[collection].remove(bad)
-                        else:
-                            logger.info('_id was None: {}'.format(group))
-                elif len(active_ns) == 1:
-                    for _id in group['ids']:
-                        if _id  and _id not in active_ns:
-                            logger.info('Removing {} from {}'.format(_id, collection))
-                            database[collection].remove(_id)
-                        else:
-                            logger.info('_id was None: {}'.format(group))
-                else:
-                    raise Exception('Something untoward happened.')
 
 
 @app.task()
