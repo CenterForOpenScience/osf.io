@@ -82,14 +82,15 @@ def validate_m2m_field(field_name, django_obj, modm_obj):
     if getattr(django_obj, 'FIELD_ALIASES', None) is None:
         modm_field_name = field_name
     else:
-        modm_field_name = {v: k for k, v in getattr(django_obj, 'FIELD_ALIASES', {}).iteritems()}.get(field_name, None)
+        modm_field_name = {v: k for k, v in getattr(django_obj, 'FIELD_ALIASES', {}).iteritems()}.get(field_name, field_name)
+
     modm_guids = [obj._id for obj in getattr(modm_obj, modm_field_name)]
     for django_guid in django_guids:
         assert django_guid in modm_guids
 
 
 def validate_fk_relation(field_name, django_obj, modm_obj):
-    if field_name in ['content_type', 'content_type_id']:
+    if field_name in ['content_type', 'content_type_pk', 'content_type_id']:
         # modm doesn't have gfk
         return
     if django_obj._meta.model is EmbargoTerminationApproval and field_name == 'initiated_by':
@@ -100,7 +101,7 @@ def validate_fk_relation(field_name, django_obj, modm_obj):
     if getattr(django_obj, 'FIELD_ALIASES', None) is None:
         modm_field_name = field_name
     else:
-        modm_field_name = {v: k for k, v in getattr(django_obj, 'FIELD_ALIASES', {}).iteritems()}.get(field_name, None)
+        modm_field_name = {v: k for k, v in getattr(django_obj, 'FIELD_ALIASES', {}).iteritems()}.get(field_name, field_name)
     modm_field_value = getattr(modm_obj, modm_field_name)
     if modm_field_value and django_field_value:
         assert modm_field_value._id == django_field_value._id, 'Modm field {} of obj {}:{} with value of {} doesn\'t equal django field with value {}'.format(field_name, type(modm_obj), modm_obj._id, modm_field_value._id, django_field_value._id)
@@ -116,10 +117,7 @@ def validate_basic_field(field_name, django_obj, modm_obj):
     if getattr(django_obj, 'FIELD_ALIASES', None) is None:
         modm_field_name = field_name
     else:
-        modm_field_name = {v: k for k, v in getattr(django_obj, 'FIELD_ALIASES', {}).iteritems()}.get(field_name, None)
-
-    if modm_field_name is None:
-        modm_field_name = field_name
+        modm_field_name = {v: k for k, v in getattr(django_obj, 'FIELD_ALIASES', {}).iteritems()}.get(field_name, field_name)
 
     if modm_field_name is False:
         return
