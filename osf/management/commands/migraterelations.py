@@ -201,8 +201,6 @@ def do_model(django_model, *args, **options):
 # with ipdb.launch_ipdb_on_exception():
     try:
         if options['fk']:
-            logger.info('Removing duplicate addon node settings...')
-            find_duplicate_addon_node_settings()
             logger.info('Starting fk migrations...')
             save_fk_relationships.delay(django_model, page_size)
         elif options['m2m']:
@@ -706,6 +704,9 @@ class Command(BaseCommand):
     # with ipdb.launch_ipdb_on_exception():
         if not options['m2m'] and not options['fk']:
             return
+        if options['fk']:
+            logger.info('Removing duplicate addon node settings...')
+            find_duplicate_addon_node_settings()
         for model in models:
             do_model.delay(model, **options)
         if options['m2m']:
