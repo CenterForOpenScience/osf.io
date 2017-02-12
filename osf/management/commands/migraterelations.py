@@ -509,30 +509,70 @@ def save_page_of_m2m_relationships(self, django_model, m2m_relations, offset, li
                         if isinstance(item, basestring):
                             # append the pk to the list of pks
                             if field_name == 'system_tags' and 'system_tags' not in field_aliases.keys():
-                                remote_pks.add(modm_to_django[format_lookup_key(item, model=model, template='{}:system')])
+                                try:
+                                    remote_pks.add(modm_to_django[format_lookup_key(item, model=model, template='{}:system')])
+                                except KeyError as ex:
+                                    logger.error('{} for {} at {}'.format(ex, django_model,
+                                                                    format_lookup_key(modm_obj._id, model=django_model)))
+                                    continue
                             elif field_name == 'tags' and 'system_tags' in field_aliases.keys():
-                                remote_pks.add(modm_to_django[format_lookup_key(item, model=model, template='{}:system')])
+                                try:
+                                    remote_pks.add(modm_to_django[format_lookup_key(item, model=model, template='{}:system')])
+                                except KeyError as ex:
+                                    logger.error('{} for {} at {}'.format(ex, django_model,
+                                                                    format_lookup_key(modm_obj._id, model=django_model)))
+                                    continue
                             elif field_name == 'tags':
-                                remote_pks.add(
-                                    modm_to_django[format_lookup_key(item, model=model, template='{}:not_system')])
+                                try:
+                                    remote_pks.add(
+                                        modm_to_django[format_lookup_key(item, model=model, template='{}:not_system')])
+                                except KeyError as ex:
+                                    logger.error('{} for {} at {}'.format(ex, django_model,
+                                                                    format_lookup_key(modm_obj._id, model=django_model)))
+                                    continue
                             else:
-                                remote_pks.add(modm_to_django[format_lookup_key(item, model=model)])
+                                try:
+                                    remote_pks.add(modm_to_django[format_lookup_key(item, model=model)])
+                                except KeyError as ex:
+                                    logger.error('{} for {} at {}'.format(ex, django_model,
+                                                                    format_lookup_key(modm_obj._id, model=django_model)))
+                                    continue
                         # if it's a class instance
                         elif hasattr(item, '_id'):
                             # grab it's id if it has one.
                             str_value = item._id
                             # append the pk to the list of pks
                             if field_name == 'system_tags' and 'system_tags' not in field_aliases.keys():
-                                remote_pks.add(
-                                    modm_to_django[format_lookup_key(str_value, model=model, template='{}:system')])
+                                try:
+                                    remote_pks.add(
+                                        modm_to_django[format_lookup_key(str_value, model=model, template='{}:system')])
+                                except KeyError as ex:
+                                    logger.error('{} for {} at {}'.format(ex, django_model,
+                                                                    format_lookup_key(modm_obj._id, model=django_model)))
+                                    continue
                             elif field_name == 'tags' and 'system_tags' in field_aliases.keys():
-                                remote_pks.add(
-                                    modm_to_django[format_lookup_key(str_value, model=model, template='{}:system')])
+                                try:
+                                    remote_pks.add(
+                                        modm_to_django[format_lookup_key(str_value, model=model, template='{}:system')])
+                                except KeyError as ex:
+                                    logger.error('{} for {} at {}'.format(ex, django_model,
+                                                                    format_lookup_key(modm_obj._id, model=django_model)))
+                                    continue
                             elif field_name == 'tags':
-                                remote_pks.add(
-                                    modm_to_django[format_lookup_key(str_value, model=model, template='{}:not_system')])
+                                try:
+                                    remote_pks.add(
+                                        modm_to_django[format_lookup_key(str_value, model=model, template='{}:not_system')])
+                                except KeyError as ex:
+                                    logger.error('{} for {} at {}'.format(ex, django_model,
+                                                                    format_lookup_key(modm_obj._id, model=django_model)))
+                                    continue
                             else:
-                                remote_pks.add(modm_to_django[format_lookup_key(str_value, model=model)])
+                                try:
+                                    remote_pks.add(modm_to_django[format_lookup_key(str_value, model=model)])
+                                except KeyError as ex:
+                                    logger.error('{} for {} at {}'.format(ex, django_model,
+                                                                    format_lookup_key(modm_obj._id, model=django_model)))
+                                    continue
                         elif item is None:
                             continue
                         else:
