@@ -510,6 +510,7 @@ def save_page_of_bare_models(django_model, offset, limit):
                                                                  django_model._meta.model.__name__))
 
         for modm_obj in modm_page:
+            # TODO should we do the same for files relating to an institution?
             # If we're migrating a NodeSetting pointing at an institution continue
             if isinstance(modm_obj, (AddonWikiNodeSettings,
                                      OsfStorageNodeSettings)) and modm_obj.owner is not None and modm_obj.owner.institution_id is not None:
