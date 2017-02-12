@@ -92,7 +92,7 @@ def validate_fk_relation(field_name, django_obj, modm_obj):
     if field_name in ['content_type', 'content_type_id']:
         # modm doesn't have gfk
         return
-    if django_obj.model is EmbargoTerminationApproval and field_name == 'initiated_by':
+    if django_obj._meta.model is EmbargoTerminationApproval and field_name == 'initiated_by':
         # EmbargoTerminationApproval didn't have an initiated_by in modm even though it was supposed to.
         return
     django_field_value = getattr(django_obj, field_name)
@@ -134,7 +134,7 @@ def get_pk(modm_object, django_model, modm_to_django):
         return modm_to_django[format_lookup_key(modm_object._id, model=django_model)]
     except KeyError as ex:
         logger.error('modm key {} not found in lookup table {}'.format(
-            format_lookup_key(modm_object._id, ContentType.objects.get_for_model(django_model).pk, ex)))
+            format_lookup_key(modm_object._id, ContentType.objects.get_for_model(django_model).pk), ex))
 
 
 @app.task()
