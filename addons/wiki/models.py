@@ -6,6 +6,7 @@ import urllib
 
 import markdown
 import pytz
+from modularodm import Q
 from addons.base.models import BaseNodeSettings
 from bleach.callbacks import nofollow
 from django.db import models
@@ -15,6 +16,7 @@ from markdown.extensions import codehilite, fenced_code, wikilinks
 from osf.models import AbstractNode, NodeLog
 from osf.models.base import BaseModel, GuidMixin
 from website import settings
+from website.models import Node as MODMNode
 from addons.wiki import utils as wiki_utils
 from website.exceptions import NodeStateError
 from website.util import api_v2_url
@@ -274,7 +276,7 @@ class NodeWikiPage(GuidMixin, BaseModel):
 class NodeSettings(BaseNodeSettings):
     # TODO DELETE ME POST MIGRATION
     modm_model_path = 'website.addons.wiki.model.AddonWikiNodeSettings'
-    modm_query = None
+    modm_query = Q('owner_id', 'nin', MODMNode.find(Q('institution_id', 'ne', None)))
     # /TODO DELETE ME POST MIGRATION
     complete = True
     has_auth = True
