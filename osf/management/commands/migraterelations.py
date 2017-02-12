@@ -396,6 +396,7 @@ def save_page_of_fk_relationships(self, django_model, fk_relations, offset, limi
         logger.error('Retrying: Failed to save page model: {} offset:{} limit:{} of foreign keys with exception {}'.format(django_model, offset, limit, ex.message))
         self.retry(countdown=60)  # retry in 1m
 
+
 def find_duplicate_addon_user_settings():
     COLLECTIONS = [
         'addondataverseusersettings',
@@ -776,6 +777,8 @@ class Command(BaseCommand):
         if options['fk']:
             logger.info('Removing duplicate addon node settings...')
             find_duplicate_addon_node_settings()
+            logger.info('Removing duplicate addon user settings...')
+            find_duplicate_addon_user_settings()
         for model in models:
             do_model.delay(model, **options)
         if options['m2m']:
