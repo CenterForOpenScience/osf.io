@@ -30,7 +30,8 @@ from osf.models import (NodeLog, OSFUser,
 from osf.models.base import Guid, GuidMixin, OptionalGuidMixin
 from osf.models.node import AbstractNode
 from osf.utils.order_apps import get_ordered_models
-from website.addons.wiki.model import NodeWikiPage as MODMNodeWikiPage
+from website.addons.osfstorage.model import OsfStorageNodeSettings
+from website.addons.wiki.model import NodeWikiPage as MODMNodeWikiPage, AddonWikiNodeSettings
 from website.app import init_app
 from website.files.models import StoredFileNode as MODMStoredFileNode
 from website.models import Comment as MODMComment
@@ -509,6 +510,10 @@ def save_page_of_bare_models(django_model, offset, limit):
                                                                  django_model._meta.model.__name__))
 
         for modm_obj in modm_page:
+            # If we're migrating a NodeSetting pointing at an institution continue
+            if isinstance(modm_obj, (AddonWikiNodeSettings,
+                                     OsfStorageNodeSettings)) and modm_obj.owner is not None and modm_obj.owner.institution_id is not None:
+                continue
             django_instance = django_model.migrate_from_modm(modm_obj)
             if django_instance is None:
                 continue
