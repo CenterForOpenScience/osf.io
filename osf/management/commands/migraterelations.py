@@ -774,11 +774,7 @@ class Command(BaseCommand):
     # with ipdb.launch_ipdb_on_exception():
         if not options['m2m'] and not options['fk']:
             return
-        if options['fk']:
-            logger.info('Removing duplicate addon node settings...')
-            find_duplicate_addon_node_settings()
-            logger.info('Removing duplicate addon user settings...')
-            find_duplicate_addon_user_settings()
+
         for model in models:
             do_model.delay(model, **options)
         if options['m2m']:

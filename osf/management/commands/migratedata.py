@@ -24,6 +24,8 @@ from framework.mongo import database
 from framework.mongo import set_up_storage
 from framework.mongo import storage
 from framework.transactions.context import transaction as modm_transaction
+from osf.management.commands.migraterelations import find_duplicate_addon_node_settings
+from osf.management.commands.migraterelations import find_duplicate_addon_user_settings
 from osf.models import Comment
 from osf.models import (NodeLog, OSFUser,
                         PageCounter, StoredFileNode, Tag, UserActivityCounter)
@@ -785,7 +787,11 @@ class Command(BaseCommand):
             merge_duplicate_users()
             # merged users get blank usernames, running it twice fixes it.
             merge_duplicate_users()
-
+        if not options['nodelogs']:
+            logger.info('Removing duplicate addon node settings...')
+            find_duplicate_addon_node_settings()
+            logger.info('Removing duplicate addon user settings...')
+            find_duplicate_addon_user_settings()
         for django_model in models:
             if not options['nodelogs'] and not options['nodelogsguids'] and django_model is NodeLog:
                 continue
