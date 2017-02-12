@@ -13,7 +13,6 @@ from osf.utils.auth import Auth
 from website.files import utils as files_utils
 from website.files import exceptions
 from website.util import permissions
-from website.models import Node as MODMNode
 
 settings = apps.get_app_config('addons_osfstorage')
 
@@ -361,7 +360,7 @@ class OsfStorageFolder(OsfStorageFileNode, Folder):
 class NodeSettings(BaseStorageAddon, BaseNodeSettings):
     # TODO DELETE ME POST MIGRATION
     modm_model_path = 'website.addons.osfstorage.model.OsfStorageNodeSettings'
-    modm_query = Q('owner_id', 'nin', MODMNode.find(Q('institution_id', 'ne', None)))
+    modm_query = None
     # /TODO DELETE ME POST MIGRATION
     # Required overrides
     complete = True
