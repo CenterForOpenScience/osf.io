@@ -1,21 +1,18 @@
 import itsdangerous
 
-from django.contrib.auth import hashers
 from django.utils.translation import ugettext_lazy as _
 
 from rest_framework import authentication
 from rest_framework.authentication import BasicAuthentication
 from rest_framework import exceptions
 
-from addons.twofactor.models import UserSettings
+from addons.twofactor.models import UserSettings as TwoFactorUserSettings
 from api.base.exceptions import (UnconfirmedAccountError, UnclaimedAccountError, DeactivatedAccountError,
                                  MergedAccountError, InvalidAccountError, TwoFactorRequiredError)
 from framework.auth import cas
 from framework.auth.core import get_user
 from osf.models import OSFUser, Session
 from website import settings
-
-UNUSABLE_PASSWORD_PREFIX = hashers.UNUSABLE_PASSWORD_PREFIX
 
 
 def get_session_from_cookie(cookie_val):
@@ -27,7 +24,11 @@ def get_session_from_cookie(cookie_val):
     """
 
     session_id = itsdangerous.Signer(settings.SECRET_KEY).unsign(cookie_val)
-    return Session.objects.filter(_id=session_id).first()
+    try:
+        session = Session.objects.get(_id=session_id)
+        return session
+    except Session.DoesNotExist:
+        return None
 
 
 def check_user(user):
@@ -61,14 +62,13 @@ def check_user(user):
     if user.is_merged:
         raise MergedAccountError
 
-    # user not confimred or contributor not claimed
+    # user not confirmed or contributor not claimed
     if not user.is_confirmed and not user.is_registered and not user.is_claimed:
-        if user.password is None or user.password.startswith(UNUSABLE_PASSWORD_PREFIX):
-            raise UnclaimedAccountError
         if user.has_usable_password():
             raise UnconfirmedAccountError
+        raise UnclaimedAccountError
 
-    # OSF does not recognize other user status.
+    # OSF does not recognize other user status
     raise InvalidAccountError
 
 
@@ -95,14 +95,16 @@ class OSFSessionAuthentication(authentication.BaseAuthentication):
         if not session:
             return None
         user_id = session.data.get('auth_user_id')
-        user = OSFUser.objects.filter(guids___id=user_id).first()
+        try:
+            user = OSFUser.objects.get(guids___id=user_id)
+        except OSFUser.DoesNotExist:
+            user = None
         if user:
             check_user(user)
             return user, None
         return None
 
 
-# TODO: @steve is this authentication deprecated?
 class OSFBasicAuthentication(BasicAuthentication):
     """
     Custom DRF authentication class for API call with email, password, and two-factor if necessary.
@@ -155,12 +157,15 @@ class OSFBasicAuthentication(BasicAuthentication):
         :raises AuthenticationFailed
         """
 
-        two_fator = UserSettings.objects.filter(owner_id=user.pk).first()
-        if two_fator and two_fator.is_confirmed:
+        try:
+            two_factor = TwoFactorUserSettings.objects.get(owner_id=user.pk)
+        except TwoFactorUserSettings.DoesNotExist:
+            two_factor = None
+        if two_factor and two_factor.is_confirmed:
             otp = request.META.get('HTTP_X_OSF_OTP')
             if otp is None:
                 raise TwoFactorRequiredError()
-            if not two_fator.verify_code(otp):
+            if not two_factor.verify_code(otp):
                 raise exceptions.AuthenticationFailed(_('Invalid two-factor authentication OTP code.'))
 
     def authenticate_header(self, request):
@@ -197,7 +202,10 @@ class OSFCASAuthentication(authentication.BaseAuthentication):
         if cas_auth_response.authenticated is False:
             raise exceptions.NotAuthenticated(_('CAS server failed to authenticate this token'))
 
-        user = OSFUser.objects.filter(guids___id=cas_auth_response.user).first()
+        try:
+            user = OSFUser.objects.get(guids___id=cas_auth_response.user)
+        except OSFUser.DoesNotExist:
+            user = None
         if not user:
             raise exceptions.AuthenticationFailed(_('Could not find the user associated with this token'))
 
