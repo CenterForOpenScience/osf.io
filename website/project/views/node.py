@@ -690,7 +690,7 @@ def _view_project(node, auth, primary=False):
             'is_public': node.is_public,
             'is_archiving': node.archiving,
             'date_created': iso8601format(node.date_created),
-            'date_modified': iso8601format(node.logs.latest().date) if node.logs else '',
+            'date_modified': iso8601format(node.logs.latest().date) if node.logs.exists() else '',
             'tags': list(node.tags.values_list('name', flat=True)),
             'children': bool(node.nodes_active),
             'is_registration': node.is_registration,
