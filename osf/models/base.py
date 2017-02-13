@@ -14,6 +14,7 @@ from django.core.exceptions import MultipleObjectsReturned
 from django.db import models
 from django.db.models import F
 from django.db.models import ForeignKey
+from django.db.models import QuerySet
 from django.db.models.manager import Manager
 from django.db.models.signals import post_save
 from django.dispatch import receiver
@@ -44,8 +45,10 @@ def generate_guid(length=5):
                 # valid and unique guid
                 return guid_id
 
+
 def generate_object_id():
     return str(bson.ObjectId())
+
 
 class MODMCompatibilityManager(Manager):
     def __getitem__(self, k):
@@ -383,18 +386,29 @@ class ObjectIDMixin(BaseIDMixin):
 class InvalidGuid(Exception):
     pass
 
+GUID_FIELDS = [
+    'guids__id',
+    'guids___id',
+    'guids__content_type',
+    'guids__object_id',
+    'guids__created',
+]
+
+
+class GuidMixinQuerySet(QuerySet):
+    def update(self, **kwargs):
+        for k, v in self.query.annotations.iteritems():
+            if k in GUID_FIELDS:
+                del self.query.annotations[k]
+        super(GuidMixinQuerySet, self).update(**kwargs)
+
 
 class GuidMixinManager(MODMCompatibilityManager):
+
     def get_queryset(self):
-        queryset = super(GuidMixinManager, self).get_queryset()
-        guid_fields = [
-            'guids__id',
-            'guids___id',
-            'guids__content_type',
-            'guids__object_id',
-            'guids__created',
-        ]
-        for field in guid_fields:
+        queryset = GuidMixinQuerySet(model=self.model, using=self._db, hints=self._hints)
+
+        for field in GUID_FIELDS:
             queryset.query.add_annotation(
                 F(field), field, is_summary=False
             )
