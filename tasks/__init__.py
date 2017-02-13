@@ -103,7 +103,7 @@ def apiserver(ctx, port=8000, wait=True, autoreload=True, host='127.0.0.1', pty=
 def adminserver(ctx, port=8001, host='127.0.0.1', pty=True):
     """Run the Admin server."""
     env = 'DJANGO_SETTINGS_MODULE="admin.base.settings"'
-    cmd = '{} python manage.py runserver {}:{} --no-init-app --nothreading'.format(env, host, port)
+    cmd = '{} python manage.py runserver {}:{} --nothreading'.format(env, host, port)
     if settings.SECURE_MODE:
         cmd = cmd.replace('runserver', 'runsslserver')
         cmd += ' --certificate {} --key {}'.format(settings.OSF_SERVER_CERT, settings.OSF_SERVER_KEY)
