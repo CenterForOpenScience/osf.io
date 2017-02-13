@@ -1,7 +1,7 @@
 import logging
 from modularodm import Q
 from website.app import init_app
-from website.addons.osfstorage.model import OsfStorageFileNode
+from addons.osfstorage.model import OsfStorageFileNode
 from scripts import utils as scripts_utils
 from framework.transactions.context import TokuTransaction
 

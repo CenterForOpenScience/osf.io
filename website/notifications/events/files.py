@@ -18,7 +18,7 @@ from website.notifications.events.base import (
 from website.notifications.events import utils as event_utils
 from website.models import Node
 from website.project.model import NodeLog
-from website.addons.base.signals import file_updated as signal
+from addons.base.signals import file_updated as signal
 
 
 @signal.connect

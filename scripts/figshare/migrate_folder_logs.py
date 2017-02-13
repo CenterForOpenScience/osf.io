@@ -16,7 +16,7 @@ def validate_migration(expected_count):
     actual_count = updated_logs.count()
     for log in updated_logs:
         assert log['params']['folder_name'] == log['params']['figshare']['title']
-        assert log['params']['folder_path'] == log['params']['figshare']['type']
+        assert log['params']['folder'] == log['params']['figshare']['type']
         assert log['params']['folder_id'] == log['params']['figshare']['id']
 
     assert actual_count == expected_count
@@ -34,7 +34,7 @@ def do_migration(records, dry=False):
         params = log['params']
         params.update({
             'folder_name': log['params']['figshare']['title'],
-            'folder_path': log['params']['figshare']['type'],
+            'folder': log['params']['figshare']['type'],
             'folder_id': log['params']['figshare']['id']
         })
         database['nodelog'].find_and_modify(

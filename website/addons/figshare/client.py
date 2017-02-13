@@ -76,6 +76,15 @@ class FigshareClient(BaseClient):
     def article_is_public(self, article_id):
         return self.article(article_id).get('is_public')
 
+    def project_is_public(self, project_id):
+        return bool(self.project(project_id).get('date_published'))
+
+    def container_is_public(self, container_id, container_type):
+        if container_type == 'project':
+            return self.project_is_public(container_id)
+        elif container_type == 'fileset':
+            return self.article_is_public(container_id)
+
     def article(self, article_id):
         return self._make_request(
             'GET',

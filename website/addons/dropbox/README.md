@@ -1,5 +1,8 @@
 # OSF Dropbox Addon
 
+## Deprecation Warning: ./website/addons has been moved to ./addons
+## Please configure in the new location
+
 Enabling the addon for development
 
 1. Create a local dropbox settings file with `cp website/addons/dropbox/settings/local-dist.py website/addons/dropbox/setings/local.py`

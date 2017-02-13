@@ -1,19 +1,13 @@
-import mock
 from urllib import quote
 
-from modularodm import Q
-
+import mock
 from framework.auth import Auth
-
+from modularodm import Q
+from scripts.osfstorage import finish_oldel_migration as finishm
+from scripts.osfstorage import migrate_from_oldels as migration
 from tests.base import OsfTestCase
 from tests.factories import ProjectFactory
-
-from website.addons.osfstorage import model
-from website.addons.osfstorage import utils
-from website.addons.osfstorage import oldels
-
-from scripts.osfstorage import migrate_from_oldels as migration
-from scripts.osfstorage import finish_oldel_migration as finishm
+from addons.osfstorage import model, oldels, utils
 
 
 class TestMigrateOldels(OsfTestCase):
@@ -121,13 +115,13 @@ class TestMigrateOldels(OsfTestCase):
             names.append('DEAR GOD! {} CARPNADOS'.format(num))
             x, _ = oldels.OsfStorageFileRecord.get_or_create(names[-1], self.node_settings)
             x.delete(None)
-            self.project.logs[-1].params['path'] = x.path
-            self.project.logs[-1].save()
+            self.project.logs.latest().params['path'] = x.path
+            self.project.logs.latest().save()
 
             if num % 2 == 0:
                 x.undelete(None)
-                self.project.logs[-1].params['path'] = x.path
-                self.project.logs[-1].save()
+                self.project.logs.latest().params['path'] = x.path
+                self.project.logs.latest().save()
 
         migration.migrate_node_settings(self.node_settings, dry=False)
         migration.migrate_children(self.node_settings, dry=False)
@@ -173,8 +167,8 @@ class TestMigrateOldels(OsfTestCase):
                     'object': '{}{}'.format(index, _id),
                 })
                 utils.update_analytics(self.project, fobj.path, _id + 1)
-                self.project.logs[-1].params['path'] = 'notnone'
-                self.project.logs[-1].save()
+                self.project.logs.latest().params['path'] = 'notnone'
+                self.project.logs.latest().save()
 
             assert len(fobj.versions) == index
             assert fobj.get_download_count() == index

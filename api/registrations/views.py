@@ -150,12 +150,12 @@ class RegistrationList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
     def get_default_odm_query(self):
         base_query = (
             Q('is_deleted', 'ne', True) &
-            Q('is_registration', 'eq', True)
+            Q('type', 'eq', 'osf.registration')
         )
         user = self.request.user
         permission_query = Q('is_public', 'eq', True)
         if not user.is_anonymous():
-            permission_query = (permission_query | Q('contributors', 'eq', user._id))
+            permission_query = (permission_query | Q('contributors', 'eq', user))
 
         query = base_query & permission_query
         return query
@@ -174,7 +174,7 @@ class RegistrationList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
     def get_queryset(self):
         query = self.get_query_from_request()
         blacklisted = self.is_blacklisted(query)
-        nodes = Node.find(query)
+        nodes = Node.find(query).distinct()
         # If attempting to filter on a blacklisted field, exclude withdrawals.
         if blacklisted:
             non_withdrawn_list = [node._id for node in nodes if not node.is_retracted]
@@ -182,6 +182,21 @@ class RegistrationList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
             return non_withdrawn_nodes
         return nodes
 
+    # overrides FilterMixin
+    def postprocess_query_param(self, key, field_name, operation):
+        # tag queries will usually be on Tag.name,
+        # ?filter[tags]=foo should be translated to Q('tags__name', 'eq', 'foo')
+        # But queries on lists should be tags, e.g.
+        # ?filter[tags]=foo,bar should be translated to Q('tags', 'isnull', True)
+        # ?filter[tags]=[] should be translated to Q('tags', 'isnull', True)
+        if field_name == 'tags':
+            if operation['value'] not in (list(), tuple()):
+                operation['source_field_name'] = 'tags__name'
+                operation['op'] = 'iexact'
+        if field_name == 'contributors':
+            if operation['value'] not in (list(), tuple()):
+                operation['source_field_name'] = '_contributors__guids___id'
+                operation['op'] = 'iexact'
 
 class RegistrationDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, RegistrationMixin, WaterButlerMixin):
     """Node Registrations.
@@ -524,12 +539,12 @@ class RegistrationChildrenList(JSONAPIBaseView, generics.ListAPIView, ODMFilterM
     def get_default_odm_query(self):
         base_query = (
             Q('is_deleted', 'ne', True) &
-            Q('is_registration', 'eq', True)
+            Q('type', 'eq', 'osf.registration')
         )
         user = self.request.user
         permission_query = Q('is_public', 'eq', True)
         if not user.is_anonymous():
-            permission_query = (permission_query | Q('contributors', 'eq', user._id))
+            permission_query = (permission_query | Q('contributors', 'eq', user))
 
         query = base_query & permission_query
         return query
@@ -538,13 +553,16 @@ class RegistrationChildrenList(JSONAPIBaseView, generics.ListAPIView, ODMFilterM
         node = self.get_node()
         req_query = self.get_query_from_request()
 
+        node_pks = node.node_relations.filter(is_node_link=False).select_related('child').values_list('child__pk', flat=True)
+
         query = (
-            Q('_id', 'in', [e._id for e in node.nodes if e.primary]) &
+            Q('pk', 'in', node_pks) &
             req_query
         )
-        nodes = Node.find(query)
+        nodes = Node.find(query).order_by('-date_modified')
         auth = get_user_auth(self.request)
-        return sorted([each for each in nodes if each.can_view(auth)], key=lambda n: n.date_modified, reverse=True)
+        pks = [each.pk for each in nodes if each.can_view(auth)]
+        return Node.objects.filter(pk__in=pks).order_by('-date_modified')
 
 
 class RegistrationCitationDetail(NodeCitationDetail, RegistrationMixin):
@@ -905,10 +923,9 @@ class RegistrationLinkedNodesRelationship(JSONAPIBaseView, generics.RetrieveAPIV
         node = self.get_node(check_object_permissions=False)
         auth = get_user_auth(self.request)
         obj = {'data': [
-            pointer for pointer in
-            node.nodes_pointer
-            if not pointer.node.is_deleted and not pointer.node.is_collection and
-            pointer.node.can_view(auth)
+            linked_node for linked_node in
+            node.linked_nodes.filter(is_deleted=False).exclude(type='osf.collection')
+            if linked_node.can_view(auth)
         ], 'self': node}
         self.check_object_permissions(self.request, obj)
         return obj

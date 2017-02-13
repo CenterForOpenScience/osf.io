@@ -149,9 +149,9 @@ class FigshareNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         self.folder_id = info['id']
         self.folder_name = info['name']
         self.folder_path = info['path']
-
-        self.nodelogger.log(action='content_linked')
         self.save()
+
+        self.nodelogger.log(action='folder_selected', save=True)
 
     #############
     # Callbacks #
@@ -186,9 +186,9 @@ class FigshareNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
                 message = messages.BEFORE_PAGE_LOAD_PUBLIC_NODE_MIXED_FS.format(category=node.project_or_component, project_id=figshare.folder_id)
 
         connect = FigshareClient(self.external_account.oauth_key)
-        article_is_public = connect.article_is_public(self.folder_id)
+        project_is_public = connect.container_is_public(self.folder_id, self.folder_path)
 
-        article_permissions = 'public' if article_is_public else 'private'
+        article_permissions = 'public' if project_is_public else 'private'
 
         if article_permissions != node_permissions:
             message = messages.BEFORE_PAGE_LOAD_PERM_MISMATCH.format(
@@ -196,8 +196,9 @@ class FigshareNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
                 node_perm=node_permissions,
                 figshare_perm=article_permissions,
                 figshare_id=self.folder_id,
+                folder_type=self.folder_path,
             )
             if article_permissions == 'private' and node_permissions == 'public':
-                message += messages.BEFORE_PAGE_LOAD_PUBLIC_NODE_PRIVATE_FS
+                message += messages.BEFORE_PAGE_LOAD_PUBLIC_NODE_PRIVATE_FS.format(folder_type=self.folder_path)
             # No HTML snippets, so escape message all at once
             return [markupsafe.escape(message)]

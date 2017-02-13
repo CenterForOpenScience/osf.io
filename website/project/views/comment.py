@@ -1,23 +1,21 @@
 # -*- coding: utf-8 -*-
 
-from datetime import datetime
-
 import markdown
-import pytz
+from django.utils import timezone
 from flask import request
 
 from api.caching.tasks import ban_url
-from framework.guid.model import Guid
+from osf.models import Guid
 from framework.postcommit_tasks.handlers import enqueue_postcommit_task
 from modularodm import Q
 from website import settings
-from website.addons.base.signals import file_updated
-from website.files.models import FileNode, TrashedFileNode
-from website.models import Comment
+from addons.base.signals import file_updated
+from osf.models import FileNode, TrashedFileNode
+from osf.models import Comment
 from website.notifications.constants import PROVIDERS
 from website.notifications.emails import notify, notify_mentions
 from website.project.decorators import must_be_contributor_or_public
-from website.project.model import Node
+from osf.models import Node
 from website.project.signals import comment_added, mention_added
 
 
@@ -41,7 +39,7 @@ def update_file_guid_referent(self, node, event_type, payload, user=None):
 
         for guid in file_guids:
             obj = Guid.load(guid)
-            if source_node != destination_node and Comment.find(Q('root_target', 'eq', guid)).count() != 0:
+            if source_node != destination_node and Comment.find(Q('root_target._id', 'eq', guid)).count() != 0:
                 update_comment_node(guid, source_node, destination_node)
 
             if source['provider'] != destination['provider'] or source['provider'] != 'osfstorage':
@@ -74,7 +72,7 @@ def create_new_file(obj, source, destination, destination_node):
             new_file = FileNode.resolve_class(destination['provider'], FileNode.FILE).get_or_create(destination_node, new_path)
             new_file.name = new_path.split('/')[-1]
             new_file.materialized_path = new_path
-            new_file.save()
+    new_file.save()
     return new_file
 
 
@@ -99,7 +97,7 @@ def find_and_create_file_from_metadata(children, source, destination, destinatio
 
 
 def update_comment_node(root_target_id, source_node, destination_node):
-    Comment.update(Q('root_target', 'eq', root_target_id), data={'node': destination_node})
+    Comment.objects.filter(root_target___id=root_target_id).update(node=destination_node)
     source_node.save()
     destination_node.save()
 
@@ -123,7 +121,7 @@ def send_comment_added_notification(comment, auth):
         parent_comment=target.referent.content if is_reply(target) else '',
         url=comment.get_comment_page_url()
     )
-    time_now = datetime.utcnow().replace(tzinfo=pytz.utc)
+    time_now = timezone.now()
     sent_subscribers = notify(
         event='comments',
         user=auth.user,
@@ -159,7 +157,7 @@ def send_mention_added_notification(comment, new_mentions, auth):
         new_mentions=new_mentions,
         url=comment.get_comment_page_url()
     )
-    time_now = datetime.utcnow().replace(tzinfo=pytz.utc)
+    time_now = timezone.now()
     notify_mentions(
         event='global_mentions',
         user=auth.user,
@@ -184,7 +182,7 @@ def _update_comments_timestamp(auth, node, page=Comment.OVERVIEW, root_id=None):
         # update node timestamp
         if page == Comment.OVERVIEW:
             root_id = node._id
-        auth.user.comments_viewed_timestamp[root_id] = datetime.utcnow()
+        auth.user.comments_viewed_timestamp[root_id] = timezone.now()
         auth.user.save()
         return {root_id: auth.user.comments_viewed_timestamp[root_id].isoformat()}
     else:

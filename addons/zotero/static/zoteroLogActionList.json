@@ -1,0 +1,5 @@
+{
+  "zotero_folder_selected" : "${user} linked Zotero folder ${folder_name} to ${node}",
+  "zotero_node_authorized" : "${user} authorized the Zotero addon for ${node}",
+  "zotero_node_deauthorized" : "${user} deauthorized the Zotero addon for ${node}"
+}

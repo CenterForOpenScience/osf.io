@@ -36,7 +36,10 @@ class NodeLogFileParamsSerializer(RestrictedDictSerializer):
         user = self.context['request'].user
         node_title = obj['node']['title']
         node = Node.load(obj['node']['_id'])
-        if node.has_permission(user, osf_permissions.READ):
+        if not user.is_authenticated():
+            if node.is_public:
+                return node_title
+        elif node.has_permission(user, osf_permissions.READ):
             return node_title
         return 'Private Component'
 
@@ -57,6 +60,7 @@ class NodeLogParamsSerializer(RestrictedDictSerializer):
     kind = ser.CharField(read_only=True)
     folder = ser.CharField(read_only=True)
     folder_name = ser.CharField(read_only=True)
+    license = ser.CharField(read_only=True, source='new_license')
     identifiers = NodeLogIdentifiersSerializer(read_only=True)
     institution = NodeLogInstitutionSerializer(read_only=True)
     old_page = ser.CharField(read_only=True)

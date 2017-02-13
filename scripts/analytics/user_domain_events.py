@@ -31,8 +31,9 @@ class UserDomainEvents(EventAnalytics):
         logger.info('Gathering user domains between {} and {}'.format(
             date, (date + timedelta(1)).isoformat()
         ))
-
-        user_query = Q('date_confirmed', 'lt', date + timedelta(1)) & Q('date_confirmed', 'gte', date)
+        user_query = (Q('date_confirmed', 'lt', date + timedelta(1)) &
+                      Q('date_confirmed', 'gte', date) &
+                      Q('username', 'ne', None))
         users = paginated(User, query=user_query)
         user_domain_events = []
         for user in users:

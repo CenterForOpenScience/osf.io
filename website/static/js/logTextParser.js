@@ -655,8 +655,18 @@ var LogPieces = {
     preprint_provider: {
         view: function(ctrl, logObject){
             var preprint_provider = logObject.attributes.params.preprint_provider;
-            if (paramIsReturned((preprint_provider, logObject))) {
+            if (paramIsReturned(preprint_provider, logObject)) {
                 return m('a', {href: preprint_provider.url}, preprint_provider.name);
+            }
+            return m('span', '');
+        }
+    },
+
+    license: {
+        view: function(ctrl, logObject){
+            var license_name = logObject.attributes.params.license;
+            if (license_name) {
+                return m('span', 'to ' + license_name);
             }
             return m('span', '');
         }
