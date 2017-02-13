@@ -1466,7 +1466,9 @@ class User(GuidStoredObject, AddonModelMixin):
             elif timestamp > self.comments_viewed_timestamp[target_id]:
                 self.comments_viewed_timestamp[target_id] = timestamp
 
-        self.emails.extend(user.emails)
+        for email in user.emails:
+            if email not in self.emails:
+                self.emails.append(email)
         user.emails = []
 
         for k, v in user.email_verifications.iteritems():

@@ -114,7 +114,6 @@ class TestNodeList(ApiTestCase):
             assert_equal(project_json['embeds']['root']['data']['id'], project.root._id)
 
 
-
 class TestNodeFiltering(ApiTestCase):
 
     def setUp(self):
@@ -630,6 +629,67 @@ class TestNodeFiltering(ApiTestCase):
         assert_not_in(self.project_one._id, ids)
         assert_not_in(self.project_two._id, ids)
         assert_not_in(self.project_three._id, ids)
+
+    def test_deleted_preprint_file_not_in_filtered_results(self):
+        orphan = PreprintFactory(creator=self.preprint.node.creator)
+
+        # orphan the preprint by deleting the file
+        orphan.primary_file.delete()
+        orphan.save()
+
+        url = '/{}nodes/?filter[preprint]=true'.format(API_BASE)
+        res = self.app.get(url, auth=self.user_one.auth)
+        assert_equal(res.status_code, 200)
+        data = res.json['data']
+
+        ids = [each['id'] for each in data]
+
+        assert_in(self.preprint.node._id, ids)
+        assert_not_in(orphan.node._id, ids)
+
+    def test_deleted_preprint_file_in_preprint_false_filtered_results(self):
+        orphan = PreprintFactory(creator=self.preprint.node.creator)
+
+        # orphan the preprint by deleting the file
+        orphan.primary_file.delete()
+        orphan.save()
+        orphan.refresh_from_db()
+
+        url = '/{}nodes/?filter[preprint]=false'.format(API_BASE)
+        res = self.app.get(url, auth=self.user_one.auth)
+        assert_equal(res.status_code, 200)
+        data = res.json['data']
+
+        ids = [each['id'] for each in data]
+
+        assert_not_in(self.preprint.node._id, ids)
+        assert_in(orphan.node._id, ids)
+
+    def test_unpublished_preprint_not_in_preprint_true_filter_results(self):
+        unpublished = PreprintFactory(creator=self.preprint.node.creator, is_published=False)
+        assert_false(unpublished.is_published)
+
+        url = '/{}nodes/?filter[preprint]=true'.format(API_BASE)
+        res = self.app.get(url, auth=self.user_one.auth)
+        assert_equal(res.status_code, 200)
+        data = res.json['data']
+        ids = [each['id'] for each in data]
+
+        assert_in(self.preprint.node._id, ids)
+        assert_not_in(unpublished.node._id, ids)
+
+    def test_unpublished_preprint_in_preprint_false_filter_results(self):
+        unpublished = PreprintFactory(creator=self.preprint.node.creator, is_published=False)
+        assert_false(unpublished.is_published)
+
+        url = '/{}nodes/?filter[preprint]=false'.format(API_BASE)
+        res = self.app.get(url, auth=self.user_one.auth)
+        assert_equal(res.status_code, 200)
+        data = res.json['data']
+        ids = [each['id'] for each in data]
+
+        assert_not_in(self.preprint.node._id, ids)
+        assert_in(unpublished.node._id, ids)
 
 
 class TestNodeCreate(ApiTestCase):

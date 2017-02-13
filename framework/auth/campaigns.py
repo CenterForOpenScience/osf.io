@@ -1,7 +1,6 @@
 import furl
 
 from django.utils import timezone
-
 from osf.models import PreprintProvider
 
 from website import mails
