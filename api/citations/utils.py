@@ -40,6 +40,7 @@ def preprint_csl(preprint, node):
 
 def render_citation(node, style='apa'):
     """Given a node, return a citation"""
+    csl = None
     if isinstance(node, Node):
         data = [node.csl, ]
     elif isinstance(node, PreprintService):
@@ -65,7 +66,7 @@ def render_citation(node, style='apa'):
     bib = bibliography.bibliography()
     cit = unicode(bib[0] if len(bib) else '')
 
-    title = node.csl['title']
+    title = csl['title'] if csl else node.csl['title']
     if cit.count(title) == 1:
         i = cit.index(title)
         prefix = clean_up_common_errors(cit[0:i])
