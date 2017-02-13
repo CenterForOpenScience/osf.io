@@ -61,12 +61,12 @@ from website.util.permissions import (ADMIN, CREATOR_PERMISSIONS,
                                       DEFAULT_CONTRIBUTOR_PERMISSIONS, READ,
                                       WRITE, expand_permissions,
                                       reduce_permissions)
-from .base import BaseModel, Guid, GuidMixin, GuidMODMCompatibilityQuerySet
+from .base import BaseModel, Guid, GuidMixin, GuidMixinManager
 
 logger = logging.getLogger(__name__)
 
 
-class AbstractNodeQueryset(GuidMODMCompatibilityQuerySet):
+class AbstractNodeManager(GuidMixinManager):
     def get_roots(self):
         return self.extra(
             where=['"osf_abstractnode".id in (SELECT id FROM osf_abstractnode WHERE id NOT IN (SELECT child_id FROM '
@@ -227,7 +227,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                                     through_fields=('parent', 'child'),
                                     related_name='parent_nodes')
 
-    objects = AbstractNodeQueryset.as_manager()
+    objects = AbstractNodeManager()
 
     @property
     def parent_node(self):

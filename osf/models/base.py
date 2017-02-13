@@ -14,6 +14,7 @@ from django.core.exceptions import MultipleObjectsReturned
 from django.db import models
 from django.db.models import F
 from django.db.models import ForeignKey
+from django.db.models.manager import Manager
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils import timezone
@@ -46,17 +47,16 @@ def generate_guid(length=5):
 def generate_object_id():
     return str(bson.ObjectId())
 
-class MODMCompatibilityQuerySet(models.QuerySet):
-
+class MODMCompatibilityManager(Manager):
     def __getitem__(self, k):
-        item = super(MODMCompatibilityQuerySet, self).__getitem__(k)
+        item = super(MODMCompatibilityManager, self).__getitem__(k)
         if hasattr(item, 'wrapped'):
             return item.wrapped()
         else:
             return item
 
     def __iter__(self):
-        items = super(MODMCompatibilityQuerySet, self).__iter__()
+        items = super(MODMCompatibilityManager, self).__iter__()
         for item in items:
             if hasattr(item, 'wrapped'):
                 yield item.wrapped()
@@ -83,27 +83,6 @@ class MODMCompatibilityQuerySet(models.QuerySet):
         return self[:n]
 
 
-class GuidMODMCompatibilityQuerySet(MODMCompatibilityQuerySet):
-    """ Hijacks Django internals, adding annotations to read queries
-        to limit the number of DB calls when serializing objects with Guids.
-    """
-
-    def __init__(self, model=None, query=None, using=None, hints=None):
-        self.__for_write = False
-        return super(GuidMODMCompatibilityQuerySet, self).__init__(model=model, query=query, using=using, hints=hints)
-
-    @property
-    def _for_write(self):
-        return self.__for_write
-
-    @_for_write.setter
-    def _for_write(self, value):
-        self.query.annotations.pop('guids___id', None)
-        if not value:
-            self.query.add_annotation(F('guids___id'), 'guids___id', is_summary=False)
-        self.__for_write = value
-
-
 class BaseModel(models.Model):
     """Base model that acts makes subclasses mostly compatible with the
     modular-odm ``StoredObject`` interface.
@@ -111,7 +90,7 @@ class BaseModel(models.Model):
 
     migration_page_size = 20000
 
-    objects = MODMCompatibilityQuerySet.as_manager()
+    objects = MODMCompatibilityManager()
 
     class Meta:
         abstract = True
@@ -400,8 +379,26 @@ class ObjectIDMixin(BaseIDMixin):
             pass
         return copy
 
+
 class InvalidGuid(Exception):
     pass
+
+
+class GuidMixinManager(MODMCompatibilityManager):
+    def get_queryset(self):
+        queryset = super(GuidMixinManager, self).get_queryset()
+        guid_fields = [
+            'guids__id',
+            'guids___id',
+            'guids__content_type',
+            'guids__object_id',
+            'guids__created',
+        ]
+        for field in guid_fields:
+            queryset.query.add_annotation(
+                F(field), field, is_summary=False
+            )
+        return queryset
 
 
 class OptionalGuidMixin(BaseIDMixin):
@@ -410,9 +407,6 @@ class OptionalGuidMixin(BaseIDMixin):
     Things that inherit from this must also inherit from ObjectIDMixin ... probably
     """
     __guid_min_length__ = 5
-
-    objects = GuidMODMCompatibilityQuerySet.as_manager()
-    subselect = MODMCompatibilityQuerySet.as_manager()
 
     guids = GenericRelation(Guid, related_name='referent', related_query_name='referents')
     guid_string = ArrayField(models.CharField(max_length=255, null=True, blank=True), null=True, blank=True)
@@ -450,10 +444,9 @@ class OptionalGuidMixin(BaseIDMixin):
 class GuidMixin(BaseIDMixin):
     __guid_min_length__ = 5
 
-    objects = GuidMODMCompatibilityQuerySet.as_manager()
-    subselect = MODMCompatibilityQuerySet.as_manager()
-
     primary_identifier_name = 'guid_string'
+
+    objects = GuidMixinManager()
 
     guids = GenericRelation(Guid, related_name='referent', related_query_name='referents')
     guid_string = ArrayField(models.CharField(max_length=255, null=True, blank=True), null=True, blank=True)
