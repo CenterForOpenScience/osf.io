@@ -687,7 +687,7 @@ def register_nonexistent_models_with_modm():
 
 
 @modm_transaction()
-def merge_duplicate_users():
+def ensure_no_duplicate_users():
     logger.info('Starting {}...'.format(sys._getframe().f_code.co_name))
     start = timezone.now()
 
@@ -712,35 +712,12 @@ def merge_duplicate_users():
             }
         }
     ]).get('result')
-    # [
-    #   {
-    #       'count': 5,
-    #       '_id': 'duplicated@username.com',
-    #       'ids': [
-    #           'listo','fidst','hatma','tchth','euser','name!'
-    #       ]
-    #   }
-    # ]
-    logger.info('Found {} duplicate usernames.'.format(len(duplicates)))
-    for duplicate in duplicates:
-        logger.info('Found {} copies of {}'.format(len(duplicate.get('ids')), duplicate.get('_id')))
-        if duplicate.get('_id'):
-            # _id is an email address, merge users keeping the one that was logged into last
-            users = list(MODMUser.find(MQ('_id', 'in', duplicate.get('ids'))).sort('-last_login'))
-            best_match = users.pop()
-            for user in users:
-                logger.info('Merging user {} into user {}'.format(user._id, best_match._id))
-                best_match.merge_user(user)
-        else:
-            # _id is null, set all usernames to their guid
-            users = MODMUser.find(MQ('_id', 'in', duplicate.get('ids')))
-            for user in users:
-                logger.info('Setting username for {}'.format(user._id))
-                user.username = user._id
-                user.save()
-    logger.info('Done with {} in {} seconds...'.format(
-        sys._getframe().f_code.co_name,
-        (timezone.now() - start).total_seconds()))
+    if duplicates:
+        raise AssertionError('Duplicate usernames found: {}. '
+                             'Use the scripts.merge_duplicate_users and '
+                             'scripts.set_null_usernames_to_guid scripts '
+                             'to ensure uniqueness.'.format(duplicates))
+
 def find_duplicate_addon_user_settings():
     COLLECTIONS = [
         'addondataverseusersettings',
@@ -915,9 +892,7 @@ class Command(BaseCommand):
         models.pop(models.index(Guid))
 
         if not options['nodelogs'] and not options['nodelogsguids']:
-            merge_duplicate_users()
-            # merged users get blank usernames, running it twice fixes it.
-            merge_duplicate_users()
+            ensure_no_duplicate_users()
         if not options['nodelogs']:
             logger.info('Removing duplicate addon node settings...')
             find_duplicate_addon_node_settings()
