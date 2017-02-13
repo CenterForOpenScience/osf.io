@@ -6,7 +6,7 @@ import os
 from urlparse import urlparse
 from website import settings as osf_settings
 from django.contrib import messages
-from api.base.settings import *  # noqa 
+from api.base.settings import *  # noqa
 # TODO ALL SETTINGS FROM API WILL BE IMPORTED AND WILL NEED TO BE OVERRRIDEN
 # TODO THIS IS A STEP TOWARD INTEGRATING ADMIN & API INTO ONE PROJECT
 
