@@ -81,10 +81,12 @@ class PreprintProvider(ObjectIDMixin, BaseModel):
         else:
             return None
 
-    if settings.DEV_MODE:
-        def get_provider_domain(self):
+    def get_provider_external_domain(self):
+        """
+        Return the provider's external domain.
+        """
+        if settings.DEV_MODE:
             domain_settings = settings.PREPRINT_PROVIDER_DOMAINS
-            return ''.join((domain_settings['prefix'], str(self.domain), domain_settings['suffix']))
-    else:
-        def get_provider_domain(self):
-            return settings.PROTOCOL + self.domain
+            return ''.join((domain_settings['prefix'], str(self.domain), domain_settings['suffix'], '/'))
+        else:
+            return settings.PROTOCOL + self.domain + '/'

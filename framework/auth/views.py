@@ -497,7 +497,11 @@ def external_login_confirm_email_get(auth, uid, token):
         # if it is the expected user
         new = request.args.get('new', None)
         if destination in campaigns.get_campaigns():
-            return redirect(campaigns.campaign_url_for(destination))
+            # external domain takes priority
+            campaign_url = campaigns.external_campaign_url_for(destination)
+            if not campaign_url:
+                campaign_url = campaigns.campaign_url_for(destination)
+            return redirect(campaign_url)
         if new:
             status.push_status_message(language.WELCOME_MESSAGE, kind='default', jumbotron=True, trust=True)
         return redirect(web_url_for('dashboard'))
@@ -925,9 +929,10 @@ def external_login_email_post():
             # `urlparse/urllib` to generate service url. `furl` handles `urlparser/urllib` generated urls while ` but
             # not vice versa.
             campaign_url = furl.furl(campaigns.campaign_url_for(campaign)).url
+            external_campaign_url = furl.furl(campaigns.external_campaign_url_for(campaign)).url
             if campaigns.is_proxy_login(campaign):
                 # proxy campaigns: OSF Preprints and branded ones
-                if check_service_url_with_proxy_campaign(service_url, campaign_url):
+                if check_service_url_with_proxy_campaign(service_url, campaign_url, external_campaign_url):
                     destination = campaign
                     # continue to check branded preprints even service url matches osf preprints
                     if campaign != 'osf-preprints':
@@ -1054,14 +1059,20 @@ def validate_next_url(next_url):
     return False
 
 
-def check_service_url_with_proxy_campaign(service_url, campaign_url):
+def check_service_url_with_proxy_campaign(service_url, campaign_url, external_campaign_url=None):
     """
     Check if service url belongs to proxy campaigns: OSF Preprints and branded ones.
     Both service_url and campaign_url are parsed using `furl` encoding scheme.
 
     :param service_url: the `furl` formatted service url
     :param campaign_url: the `furl` formatted campaign url
+    :param external_campaign_url: the `furl` formatted external campaign url
     :return: the matched object or None
     """
-    regex = '^' + settings.DOMAIN + 'login/?\\?next=' + campaign_url
+    regex_prefix = '^' + settings.DOMAIN + 'login/?\\?next='
+    if external_campaign_url:
+        regex_suffix = '((' + campaign_url + ')|(' + external_campaign_url + '))'
+    else:
+        regex_suffix = campaign_url
+    regex = regex_prefix + regex_suffix
     return re.match(regex, service_url)

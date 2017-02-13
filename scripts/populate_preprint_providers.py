@@ -93,8 +93,8 @@ def main(env):
             'logo_name': 'engrxiv-logo.png',
             'description': 'The open archive of engineering.',
             'banner_name': 'engrxiv-banner.png',
-            'domain': 'engrxiv.org',
-            'external_url': 'http://engrxiv.org',
+            'domain': 'engrxiv.com',
+            'external_url': 'http://engrxiv.com',
             'example': 'k7fgk',
             'advisory_board': '''
                 <div class="col-xs-12">
@@ -236,8 +236,8 @@ def main(env):
             'logo_name': 'psyarxiv-logo.png',
             'description': 'A free preprint service for the psychological sciences.',
             'banner_name': 'psyarxiv-banner.png',
-            'domain': 'psyarxiv.com',
-            'external_url': 'http://psyarxiv.com',
+            'domain': 'psyarxiv.org',
+            'external_url': 'http://psyarxiv.org',
             'example': 'k9mn3',
             'advisory_board': '''
                 <div class="col-xs-12">
