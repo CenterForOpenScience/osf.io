@@ -6,7 +6,9 @@ import os
 from urlparse import urlparse
 from website import settings as osf_settings
 from django.contrib import messages
-from api.base.settings import *  # noqa
+from api.base.settings import *  # noqa 
+# TODO ALL SETTINGS FROM API WILL BE IMPORTED AND WILL NEED TO BE OVERRRIDEN
+# TODO THIS IS A STEP TOWARD INTEGRATING ADMIN & API INTO ONE PROJECT
 
 # import local  # Build own local.py (used with postgres)
 
@@ -54,11 +56,6 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 USE_L10N = False
-
-PASSWORD_HASHERS = [
-    'django.contrib.auth.hashers.BCryptSHA256PasswordHasher',
-    'django.contrib.auth.hashers.BCryptPasswordHasher',
-]
 
 # Email settings. Account created for testing. Password shouldn't be hardcoded
 # [DEVOPS] this should be set to 'django.core.mail.backends.smtp.EmailBackend' in the > dev local.py.
@@ -169,24 +166,6 @@ TEMPLATES = [
             ],
         }
     }]
-
-# Database
-# https://docs.djangoproject.com/en/1.8/ref/settings/#databases
-# Postgres:
-DATABASES = {
-    'default': {
-        'CONN_MAX_AGE': 0,
-        'ENGINE': 'osf.db.backends.postgresql',  # django.db.backends.postgresql
-        'NAME': os.environ.get('OSF_DB_NAME', 'osf'),
-        'USER': os.environ.get('OSF_DB_USER', 'postgres'),
-        'PASSWORD': os.environ.get('OSF_DB_PASSWORD', ''),
-        'HOST': os.environ.get('OSF_DB_HOST', '127.0.0.1'),
-        'PORT': os.environ.get('OSF_DB_PORT', '5432'),
-        'ATOMIC_REQUESTS': True,
-    }
-}
-
-DATABASE_ROUTERS = ['osf.db.router.PostgreSQLFailoverRouter', ]
 
 ROOT_URLCONF = 'admin.base.urls'
 WSGI_APPLICATION = 'admin.base.wsgi.application'
