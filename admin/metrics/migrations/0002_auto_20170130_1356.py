@@ -40,7 +40,7 @@ def replace_web_stats_model(*args):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('metrics', '0001_initial')
+        ('admin_metrics', '0001_initial')
     ]
 
     operations = [

@@ -11,7 +11,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
-        ('common_auth', '0004_auto_20160622_1254'),
+        ('admin_common_auth', '0004_auto_20160622_1254'),
     ]
 
     operations = [

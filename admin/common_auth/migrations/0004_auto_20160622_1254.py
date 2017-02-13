@@ -8,7 +8,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('common_auth', '0003_auto_20160427_1141'),
+        ('admin_common_auth', '0003_auto_20160427_1141'),
     ]
 
     operations = [

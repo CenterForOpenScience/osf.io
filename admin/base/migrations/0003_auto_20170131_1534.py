@@ -46,15 +46,17 @@ def add_group_permissions(*args):
     # this is to make sure that the permissions created in an earlier migration exist!
     emit_post_migrate_signal(2, False, 'default')
 
-    # Rename nodes_and_users group to read_only which makes more sense
-    try:
-        group = Group.objects.get(name='nodes_and_users')
-        group.name = 'read_only'
-        group.save()
-        logger.info('nodes_and_users renamed to read_only')
-    except Group.DoesNotExist:
-        group = Group.objects.get_or_create(name='read_only')
-        logger.info('read_only group created')
+    group = Group.objects.get(name='read_only')
+    if not group:
+        try:
+            # Rename nodes_and_users group to read_only which makes more sense
+            group = Group.objects.get(name='nodes_and_users')
+            group.name = 'read_only'
+            group.save()
+            logger.info('nodes_and_users renamed to read_only')
+        except Group.DoesNotExist:
+            group = Group.objects.get_or_create(name='read_only')
+            logger.info('read_only group created')
 
     # Read only for nodes, users, meetings, and spam
     [group.permissions.add(perm) for perm in get_read_only_permissions()]
@@ -70,15 +72,17 @@ def add_group_permissions(*args):
     group.save()
     logger.info('Administrator permissions for Node, user, spam and meeting permissions added to admin group')
 
-    # rename prereg group to prereg_admin
-    try:
-        prereg_group = Group.objects.get(name='prereg')
-        prereg_group.name = 'prereg_admin'
-        prereg_group.save()
-        logger.info('prereg renamed to prereg_admin')
-    except Group.DoesNotExist:
-        prereg_group = Group.objects.create(name='prereg_admin')
-        logger.info('read_only group created')
+    prereg_group = Group.objects.get(name='prereg_admin')
+    if not prereg_group:
+        try:
+            # rename prereg group to prereg_admin
+            prereg_group = Group.objects.get(name='prereg')
+            prereg_group.name = 'prereg_admin'
+            prereg_group.save()
+            logger.info('prereg renamed to prereg_admin')
+        except Group.DoesNotExist:
+            prereg_group = Group.objects.create(name='prereg_admin')
+            logger.info('read_only group created')
 
     [prereg_group.permissions.add(perm) for perm in get_prereg_admin_permissions()]
     prereg_group.save()
@@ -92,13 +96,13 @@ def add_group_permissions(*args):
 
     # Add a metrics_only Group for ease in the user registration form
     metrics_group, created = Group.objects.get_or_create(name='metrics_only')
-    metrics_permission = Permission.objects.get(codename='view_metrics')
+    metrics_permission = Permission.objects.get(codename='view_metrics', content_type__app_label='admin_common_auth')
     metrics_group.permissions.add(metrics_permission)
     metrics_group.save()
 
     # Add a view_prereg Group for ease in the user registration form
     prereg_view_group, created = Group.objects.get_or_create(name='prereg_view')
-    prereg_view_permission = Permission.objects.get(codename='view_prereg')
+    prereg_view_permission = Permission.objects.get(codename='view_prereg', content_type__app_label='admin_common_auth')
     prereg_view_group.permissions.add(prereg_view_permission)
     prereg_view_group.save()
 
@@ -138,8 +142,8 @@ def remove_group_permissions(*args):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('base', '0002_groups'),
-        ('common_auth', '0006_auto_20170130_1611')
+        ('admin_base', '0002_groups'),
+        ('admin_common_auth', '0006_auto_20170130_1611')
     ]
 
     operations = [

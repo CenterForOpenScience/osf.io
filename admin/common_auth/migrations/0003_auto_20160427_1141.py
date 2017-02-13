@@ -9,7 +9,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('common_auth', '0002_osflogentry'),
+        ('admin_common_auth', '0002_osflogentry'),
     ]
 
     operations = [

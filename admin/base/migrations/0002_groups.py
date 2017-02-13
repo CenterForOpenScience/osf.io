@@ -35,7 +35,7 @@ def remove_groups(*args):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('base', '0001_groups'),
+        ('admin_base', '0001_groups'),
     ]
 
     operations = [
