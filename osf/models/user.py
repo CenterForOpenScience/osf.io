@@ -151,7 +151,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
     is_claimed = models.BooleanField(default=False, db_index=True)
 
     # a list of strings - for internal use
-    tags = models.ManyToManyField('Tag')
+    tags = models.ManyToManyField('Tag', blank=True)
 
     # security emails that have been sent
     # TODO: This should be removed and/or merged with system_tags

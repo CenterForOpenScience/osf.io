@@ -7,6 +7,7 @@ from dateutil.parser import parse as parse_date
 from django.utils import timezone
 from flask import request
 import markupsafe
+import mailchimp
 from modularodm.exceptions import ValidationError, NoResultsFound, MultipleResultsFound
 from modularodm import Q
 from osf.models import Node
@@ -524,16 +525,16 @@ def update_mailchimp_subscription(user, list_name, subscription, send_goodbye=Tr
     :param boolean subscription: true if user is subscribed
     """
     if subscription:
-        mailchimp_utils.subscribe_mailchimp(list_name, user._id)
+        try:
+            mailchimp_utils.subscribe_mailchimp(list_name, user._id)
+        except mailchimp.Error:
+            pass
     else:
         try:
             mailchimp_utils.unsubscribe_mailchimp_async(list_name, user._id, username=user.username, send_goodbye=send_goodbye)
-        except mailchimp_utils.mailchimp.ListNotSubscribedError:
-            raise HTTPError(http.BAD_REQUEST,
-                data=dict(message_short='ListNotSubscribedError',
-                        message_long='The user is already unsubscribed from this mailing list.',
-                        error_type='not_subscribed')
-            )
+        except mailchimp.Error:
+            # User has already unsubscribed, so nothing to do
+            pass
 
 
 def mailchimp_get_endpoint(**kwargs):

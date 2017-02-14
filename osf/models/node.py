@@ -686,10 +686,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         )
 
     def get_aggregate_logs_query(self, auth):
-        ids = [self._id] + [n._id
-                            for n in self.get_descendants_recursive(primary_only=True)
-                            if n.can_view(auth)]
-        query = Q('node', 'in', ids) & Q('should_hide', 'ne', True)
+        ids = [self._id] + [n._id for n in Node.objects.get_children(self) if n.can_view(auth)]
+        query = Q('node', 'in', ids) & Q('should_hide', 'eq', False)
         return query
 
     def get_aggregate_logs_queryset(self, auth):
