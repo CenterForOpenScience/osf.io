@@ -15,14 +15,12 @@ logger = logging.getLogger(__name__)
 def migrate(dry_run):
     assert settings.SHARE_URL, 'SHARE_URL must be set to migrate.'
     assert settings.SHARE_API_TOKEN, 'SHARE_API_TOKEN must be set to migrate.'
-    registrations = Registration.objects.all()
+    registrations = Registration.objects.filter(is_deleted=False, is_public=True)
     registrations_count = registrations.count()
     count = 0
 
     logger.info('Preparing to migrate {} registrations.'.format(registrations_count))
     for registration in registrations.iterator():
-        if not registration.is_public or registration.is_deleted:
-            continue
         count += 1
         logger.info('{}/{} - {}'.format(count, registrations_count, registration._id))
         if not dry_run:
