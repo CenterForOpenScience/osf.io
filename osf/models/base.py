@@ -404,7 +404,6 @@ class GuidMixinQuerySet(QuerySet):
 
 
 class GuidMixinManager(MODMCompatibilityManager):
-
     def get_queryset(self):
         queryset = GuidMixinQuerySet(model=self.model, using=self._db, hints=self._hints)
 

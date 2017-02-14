@@ -15,6 +15,8 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.core.urlresolvers import reverse
 from django.db import models, transaction, connection
+from django.db.models import F
+from django.db.models import QuerySet
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils import timezone
@@ -61,16 +63,17 @@ from website.util.permissions import (ADMIN, CREATOR_PERMISSIONS,
                                       DEFAULT_CONTRIBUTOR_PERMISSIONS, READ,
                                       WRITE, expand_permissions,
                                       reduce_permissions)
-from .base import BaseModel, Guid, GuidMixin, GuidMixinManager
+from .base import BaseModel, Guid, GuidMixin, GuidMixinManager, GuidMixinQuerySet, GUID_FIELDS
 
 logger = logging.getLogger(__name__)
 
 
-class AbstractNodeManager(GuidMixinManager):
+class AbstractNodeQuerySet(GuidMixinQuerySet):
     def get_roots(self):
         return self.extra(
             where=['"osf_abstractnode".id in (SELECT id FROM osf_abstractnode WHERE id NOT IN (SELECT child_id FROM '
                    'osf_noderelation WHERE is_node_link IS false))'])
+
 
     def get_children(self, root, primary_keys=False):
         sql = """
@@ -102,6 +105,17 @@ class AbstractNodeManager(GuidMixinManager):
                 return row or []
             else:
                 return AbstractNode.objects.filter(id__in=row)
+
+
+class AbstractNodeManager(GuidMixinManager):
+    def get_queryset(self):
+        queryset = AbstractNodeQuerySet(model=self.model, using=self._db, hints=self._hints)
+
+        for field in GUID_FIELDS:
+            queryset.query.add_annotation(
+                F(field), field, is_summary=False
+            )
+        return queryset
 
 
 class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixin,
