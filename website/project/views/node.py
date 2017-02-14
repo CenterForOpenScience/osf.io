@@ -35,7 +35,7 @@ from website.util.rubeus import collect_addon_js
 from website.project.model import has_anonymous_link, NodeUpdateError, validate_title
 from website.project.forms import NewNodeForm
 from website.project.metadata.utils import serialize_meta_schemas
-from website.models import Node, Pointer, WatchConfig, PrivateLink, Comment
+from website.models import Node, WatchConfig, PrivateLink, Comment
 from website import settings
 from website.views import _render_nodes, find_bookmark_collection, validate_page_num
 from website.profile import utils
@@ -1256,7 +1256,7 @@ def remove_pointer(auth, node, **kwargs):
     if pointer_id is None:
         raise HTTPError(http.BAD_REQUEST)
 
-    pointer = Pointer.load(pointer_id)
+    pointer = Node.load(pointer_id)
     if pointer is None:
         raise HTTPError(http.BAD_REQUEST)
 
@@ -1281,7 +1281,7 @@ def remove_pointer_from_folder(auth, node, pointer_id, **kwargs):
 
     pointer_id = node.pointing_at(pointer_id)
 
-    pointer = Pointer.load(pointer_id)
+    pointer = Node.load(pointer_id)
 
     if pointer is None:
         raise HTTPError(http.BAD_REQUEST)
