@@ -1020,7 +1020,6 @@ class User(GuidStoredObject, AddonModelMixin):
         if unregistered_user:
             self.merge_user(unregistered_user)
             self.save()
-            unregistered_user.username = None
 
         if email not in self.emails:
             self.emails.append(email)
@@ -1580,9 +1579,8 @@ class User(GuidStoredObject, AddonModelMixin):
 
         remove_sessions_for_user(user)
 
-        # - username is set to None so the resultant user can set it primary
-        #   in the future.
-        user.username = None
+        # - username is set to _id to ensure uniqueness
+        user.username = user._id
         user.password = None
         user.verification_key = None
         user.osf_mailing_lists = {}
