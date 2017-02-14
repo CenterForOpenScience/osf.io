@@ -516,6 +516,7 @@ def requirements(ctx, base=False, addons=False, release=False, dev=False, quick=
 def test_module(ctx, module=None):
     """Helper for running tests.
     """
+    os.environ['DJANGO_SETTINGS_MODULE'] = 'osf_tests.settings'
     import pytest
     args = ['-s']
     modules = [module] if isinstance(module, basestring) else module
