@@ -266,4 +266,4 @@ Delete a persistent storage volume:
   **WARNING: All postgres data will be destroyed.**
   - `$ docker-compose stop -t 0 postgres`
   - `$ docker-compose rm postgres`
-  - `$ docker volume rm osf_postgres_data_vol`
+  - `$ docker volume rm osfio_postgres_data_vol`
