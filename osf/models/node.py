@@ -16,7 +16,6 @@ from django.core.exceptions import ValidationError
 from django.core.urlresolvers import reverse
 from django.db import models, transaction, connection
 from django.db.models import F
-from django.db.models import QuerySet
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils import timezone
@@ -74,7 +73,6 @@ class AbstractNodeQuerySet(GuidMixinQuerySet):
             where=['"osf_abstractnode".id in (SELECT id FROM osf_abstractnode WHERE id NOT IN (SELECT child_id FROM '
                    'osf_noderelation WHERE is_node_link IS false))'])
 
-
     def get_children(self, root, primary_keys=False):
         sql = """
             WITH RECURSIVE descendants AS (
@@ -116,6 +114,12 @@ class AbstractNodeManager(GuidMixinManager):
                 F(field), field, is_summary=False
             )
         return queryset
+
+    def get_roots(self, *args, **kwargs):
+        return self.get_queryset().get_roots(*args, **kwargs)
+
+    def get_children(self, *args, **kwargs):
+        return self.get_queryset().get_children(*args, **kwargs)
 
 
 class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixin,

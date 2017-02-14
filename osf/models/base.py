@@ -421,6 +421,9 @@ class OptionalGuidMixin(BaseIDMixin):
     """
     __guid_min_length__ = 5
 
+    objects = GuidMixinManager()
+    subselect = MODMCompatibilityManager()
+
     guids = GenericRelation(Guid, related_name='referent', related_query_name='referents')
     guid_string = ArrayField(models.CharField(max_length=255, null=True, blank=True), null=True, blank=True)
     content_type_pk = models.PositiveIntegerField(null=True, blank=True)
@@ -460,6 +463,7 @@ class GuidMixin(BaseIDMixin):
     primary_identifier_name = 'guid_string'
 
     objects = GuidMixinManager()
+    subselect = MODMCompatibilityManager()
 
     guids = GenericRelation(Guid, related_name='referent', related_query_name='referents')
     guid_string = ArrayField(models.CharField(max_length=255, null=True, blank=True), null=True, blank=True)
