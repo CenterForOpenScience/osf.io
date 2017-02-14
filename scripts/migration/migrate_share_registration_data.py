@@ -22,7 +22,7 @@ def migrate(dry_run):
     logger.info('Preparing to migrate {} registrations.'.format(registrations_count))
     for registration in registrations.iterator():
         if not registration.is_public or registration.is_deleted:
-            pass
+            continue
         count += 1
         logger.info('{}/{} - {}'.format(count, registrations_count, registration._id))
         if not dry_run:
