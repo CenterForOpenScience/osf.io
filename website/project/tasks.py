@@ -36,29 +36,30 @@ def on_node_updated(node_id, user_id, first_save, saved_fields, request_headers=
             if not settings.SHARE_API_TOKEN:
                 return logger.warning('SHARE_API_TOKEN not set. Could not send %s to SHARE.'.format(node))
 
-            resp = requests.post('{}api/normalizeddata/'.format(settings.SHARE_URL), json={
-                'data': {
-                    'type': 'NormalizedData',
-                    'attributes': {
-                        'tasks': [],
-                        'raw': None,
-                        'data': {'@graph': [{
-                            '@id': '_:123',
-                            '@type': 'workidentifier',
-                            'creative_work': {'@id': '_:789', '@type': 'project'},
-                            'uri': '{}{}/'.format(settings.DOMAIN, node._id),
-                        }, {
-                            '@id': '_:789',
-                            '@type': 'project',
-                            'is_deleted': not node.is_public or node.is_deleted or node.is_spammy,
-                        }]}
-                    }
-                }
-            }, headers={'Authorization': 'Bearer {}'.format(settings.SHARE_API_TOKEN), 'Content-Type': 'application/vnd.api+json'})
-            logger.debug(resp.content)
-            resp.raise_for_status()
             if node.is_registration:
                 on_registration_updated(node)
+            else:
+                resp = requests.post('{}api/normalizeddata/'.format(settings.SHARE_URL), json={
+                    'data': {
+                        'type': 'NormalizedData',
+                        'attributes': {
+                            'tasks': [],
+                            'raw': None,
+                            'data': {'@graph': [{
+                                '@id': '_:123',
+                                '@type': 'workidentifier',
+                                'creative_work': {'@id': '_:789', '@type': 'project'},
+                                'uri': '{}{}/'.format(settings.DOMAIN, node._id),
+                            }, {
+                                '@id': '_:789',
+                                '@type': 'project',
+                                'is_deleted': not node.is_public or node.is_deleted or node.is_spammy,
+                            }]}
+                        }
+                    }
+                }, headers={'Authorization': 'Bearer {}'.format(settings.SHARE_API_TOKEN), 'Content-Type': 'application/vnd.api+json'})
+                logger.debug(resp.content)
+                resp.raise_for_status()
 
 def on_registration_updated(node):
     resp = requests.post('{}api/v2/normalizeddata/'.format(settings.SHARE_URL), json={
@@ -78,7 +79,7 @@ def format_registration(node):
     registration_graph = GraphNode('registration', **{
         'title': node.title,
         'description': node.description or '',
-        'is_deleted': node.retraction or not node.is_public or node.is_preprint_orphan or 'qatest' in (node.tags.all() or []) or node.is_deleted,
+        'is_deleted': node.retraction or not node.is_public or 'qatest' in (node.tags.all() or []) or node.is_deleted,
         'date_published': node.registered_date.isoformat() if node.registered_date else None,
         'registration_type': node.registered_schema.first().name if node.registered_schema else None,
         'withdrawn': True if node.retraction else False,

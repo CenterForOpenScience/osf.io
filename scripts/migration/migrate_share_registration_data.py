@@ -12,33 +12,22 @@ from website.project.tasks import on_registration_updated
 
 logger = logging.getLogger(__name__)
 
-def migrate():
+def migrate(dry_run):
     assert settings.SHARE_URL, 'SHARE_URL must be set to migrate.'
     assert settings.SHARE_API_TOKEN, 'SHARE_API_TOKEN must be set to migrate.'
     registrations = Registration.objects.all()
-    registrations_count = len(registrations)
-    successes = []
-    failures = []
+    registrations_count = registrations.count()
     count = 0
 
     logger.info('Preparing to migrate {} registrations.'.format(registrations_count))
-    for registration in registrations:
+    for registration in registrations.iterator():
         if not registration.is_public or registration.is_deleted:
             pass
         count += 1
         logger.info('{}/{} - {}'.format(count, registrations_count, registration._id))
-        try:
+        if not dry_run:
             on_registration_updated(registration)
-        except Exception as e:
-            # TODO: This reliably fails for certain nodes with
-            # IncompleteRead(0 bytes read)
-            failures.append(registration._id)
-            logger.warn('Encountered exception {} while posting to SHARE for registration {}'.format(e, registration._id))
-        else:
-            successes.append(registration._id)
-
-    logger.info('Successes: {}'.format(successes))
-    logger.info('Failures: {}'.format(failures))
+        logger.info('Registration {} was sent to SHARE.'.format(registration._id))
 
 
 def main():
@@ -47,9 +36,7 @@ def main():
         script_utils.add_file_logger(logger, __file__)
     init_app(set_backends=True, routes=False)
     with transaction.atomic():
-        migrate()
-        if dry_run:
-            transaction.rollback()
+        migrate(dry_run)
 
 if __name__ == '__main__':
     main()
