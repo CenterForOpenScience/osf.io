@@ -1134,7 +1134,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
             self.set_password(raw_password, notify=False)
             # Password hash upgrades shouldn't be considered password changes.
             self._password = None
-            self.save(update_fields=["password"])
+            self.save(update_fields=['password'])
         return check_password(raw_password, self.password, setter)
 
     def change_password(self, raw_old_password, raw_new_password, raw_confirm_password):
