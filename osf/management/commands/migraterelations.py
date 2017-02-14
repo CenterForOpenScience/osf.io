@@ -299,6 +299,7 @@ def save_page_of_fk_relationships(self, django_model, fk_relations, offset, limi
 
                     # with ipdb.launch_ipdb_on_exception():
                 for field in fk_relations:
+                    value = None
                     if isinstance(field, GenericForeignKey):
                         field_name = field.name
                         ct_field_name = field.ct_field
