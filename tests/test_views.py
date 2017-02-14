@@ -3076,7 +3076,7 @@ class TestPointerViews(OsfTestCase):
         pointer = self.project.add_pointer(node, auth=self.consolidate_auth)
         self.app.delete_json(
             url,
-            {'pointerId': pointer._id},
+            {'pointerId': pointer.node._id},
             auth=self.user.auth,
         )
         self.project.reload()
