@@ -258,11 +258,7 @@ def save_page_of_fk_relationships(self, django_model, fk_relations, offset, limi
                 except KeyError as ex:
                     logger.error('modm key {} not found in lookup table'.format(format_lookup_key(modm_obj._id, ContentType.objects.get_for_model(django_model).pk)))
                     continue
-                # always save OSFUser to mark them active
-                if django_model is OSFUser:
-                    dirty = True
-                else:
-                    dirty = False
+                dirty = False
 
                 # TODO This is doing a mongo query for each Node, could probably be more performant
                 # if an institution has a file, it doesn't
@@ -386,12 +382,15 @@ def save_page_of_fk_relationships(self, django_model, fk_relations, offset, limi
                                                       django_model._meta.model.__name__,
                                                       fk_count))
             if django_objects_to_update:
-                n_objects_to_update = len(django_objects_to_update)
-                if n_objects_to_update > 1000:
-                    batch_size = n_objects_to_update // 5
+                if django_model is OSFUser:
+                    winning = [u.save() for u in django_objects_to_update]
                 else:
-                    batch_size = None
-                bulk_update(django_objects_to_update, batch_size=batch_size)
+                    n_objects_to_update = len(django_objects_to_update)
+                    if n_objects_to_update > 1000:
+                        batch_size = n_objects_to_update // 5
+                    else:
+                        batch_size = None
+                    bulk_update(django_objects_to_update, batch_size=batch_size)
 
             modm_obj._cache.clear()
             modm_obj._object_cache.clear()
