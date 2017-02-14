@@ -72,7 +72,7 @@ class AbstractNodeQueryset(GuidMODMCompatibilityQuerySet):
             where=['"osf_abstractnode".id in (SELECT id FROM osf_abstractnode WHERE id NOT IN (SELECT child_id FROM '
                    'osf_noderelation WHERE is_node_link IS false))'])
 
-    def get_children(self, root, primary_keys=False):
+    def get_children(self, root, primary_keys=False, active=False):
         sql = """
             WITH RECURSIVE descendants AS (
               SELECT
@@ -80,7 +80,8 @@ class AbstractNodeQueryset(GuidMODMCompatibilityQuerySet):
                 child_id,
                 1 AS LEVEL
               FROM %s
-              WHERE is_node_link IS FALSE
+              %s
+              WHERE is_node_link IS FALSE %s
               UNION ALL
               SELECT
                 s.parent_id,
@@ -96,7 +97,12 @@ class AbstractNodeQueryset(GuidMODMCompatibilityQuerySet):
         """
         with connection.cursor() as cursor:
             node_relation_table = AsIs(NodeRelation._meta.db_table)
-            cursor.execute(sql, [node_relation_table, node_relation_table, root.pk])
+            cursor.execute(sql, [
+                node_relation_table,
+                AsIs('LEFT JOIN osf_abstractnode ON {}.child_id = osf_abstractnode.id'.format(node_relation_table) if active else ''),
+                AsIs('AND osf_abstractnode.is_deleted IS FALSE' if active else ''),
+                node_relation_table,
+                root.pk])
             row = cursor.fetchone()[0]
             if row is None or primary_keys:
                 return row or []
@@ -2475,7 +2481,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 '{0!r} does not have permission to modify this {1}'.format(auth.user, self.category or 'node')
             )
 
-        if self.nodes_primary.filter(is_deleted=False).exists():
+        if Node.objects.get_children(self, active=True):
             raise NodeStateError('Any child components must be deleted prior to deleting this project.')
 
         # After delete callback

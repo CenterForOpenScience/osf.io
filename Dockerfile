@@ -101,6 +101,9 @@ RUN pip install --no-cache-dir -c /code/requirements/constraints.txt -r /code/ad
 RUN (pip uninstall uritemplate.py --yes || true) \
     && pip install --no-cache-dir uritemplate.py==0.3.0
 
+# Fix: https://github.com/CenterForOpenScience/osf.io/pull/6783
+RUN python -m compileall /usr/local/lib/python2.7 || true
+
 # OSF: Assets
 COPY ./.bowerrc /code/
 COPY ./bower.json /code/

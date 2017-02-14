@@ -18,6 +18,7 @@ SITE_ID = 1
 # SECRET_KEY = 'not very secret in tests'
 PASSWORD_HASHERS = (
     'django.contrib.auth.hashers.MD5PasswordHasher',
+    'django.contrib.auth.hashers.SHA1PasswordHasher',
 )
 
 REST_FRAMEWORK['ALLOWED_VERSIONS'] = (

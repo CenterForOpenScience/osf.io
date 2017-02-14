@@ -13,8 +13,10 @@ import framework.mongo
 import itsdangerous
 import pytz
 from dirtyfields import DirtyFieldsMixin
+
 from django.conf import settings
 from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
+from django.contrib.auth.hashers import check_password
 from django.contrib.auth.models import PermissionsMixin
 from django.contrib.postgres import fields
 from django.db import models
@@ -151,7 +153,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
     is_claimed = models.BooleanField(default=False, db_index=True)
 
     # a list of strings - for internal use
-    tags = models.ManyToManyField('Tag')
+    tags = models.ManyToManyField('Tag', blank=True)
 
     # security emails that have been sent
     # TODO: This should be removed and/or merged with system_tags
@@ -1120,6 +1122,20 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
             'user_display_name': name_formatters[formatter](self),
             'user_is_claimed': self.is_claimed
         }
+
+    def check_password(self, raw_password):
+        """
+        Return a boolean of whether the raw_password was correct. Handles
+        hashing formats behind the scenes.
+
+        Source: https://github.com/django/django/blob/master/django/contrib/auth/base_user.py#L104
+        """
+        def setter(raw_password):
+            self.set_password(raw_password, notify=False)
+            # Password hash upgrades shouldn't be considered password changes.
+            self._password = None
+            self.save(update_fields=['password'])
+        return check_password(raw_password, self.password, setter)
 
     def change_password(self, raw_old_password, raw_new_password, raw_confirm_password):
         """Change the password for this user to the hash of ``raw_new_password``."""
