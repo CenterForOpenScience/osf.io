@@ -107,6 +107,18 @@
         sync_excludes: ['.DS_Store', '*.pyc', '*.tmp', '.git', '.idea']
         watch_excludes: ['.*\.DS_Store', '.*\.pyc', '.*\.tmp', '.*/\.git', '.*/\.idea']
     ```
+  
+  Modifying these files will show up as changes in git. To avoid committing these files, run:
+  
+  ```bash
+  git update-index --skip-worktree docker-compose.override.yml docker-sync.yml
+  ```
+  
+  To be able to commit changes to these files again, run:
+  
+  ```bash
+  git update-index --no-skip-worktree docker-compose.override.yml docker-sync.yml
+  ```
 
 ## Docker Sync
 
