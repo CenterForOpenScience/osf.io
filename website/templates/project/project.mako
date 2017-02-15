@@ -220,8 +220,22 @@
                         </div>
                         % if node['is_registration']:
                             <div class="col-xs-6">
-                                ##  Note - this will only show *one* registered_schema, even though its technically possible for there to be multiple
-                                <a class="btn btn-primary pull-right" href="${node['url']}register/${node['registered_schemas'][0]['id']}">View Registration Form</a>
+                                % if len(node['registered_schemas']) == 1:
+                                    <a class="btn btn-primary pull-right" href="${node['url']}register/${node['registered_schemas'][0]['id']}">View Registration Form</a>
+                                % else:
+                                    ## This is a special case that is right now only possible on 12 Nodes in production
+                                    <div class="dropdown">
+                                        <button class="btn btn-primary dropdown-toggle pull-right" type="button" id="RegFormMenu" data-toggle="dropdown">
+                                            View Registration Forms
+                                            <span class="caret"></span>
+                                        </button>
+                                        <ul class="dropdown-menu pull-right">
+                                            % for meta_schema in node['registered_schemas']:
+                                                <li><a href="${node['url']}register/${meta_schema['id']}">${meta_schema['schema_name']}</a></li>
+                                            % endfor
+                                        </ul>
+                                    </div>
+                                % endif
                             </div>
                     % endif
                 </div>
