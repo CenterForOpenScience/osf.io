@@ -289,7 +289,7 @@ def get_auth(auth, **kwargs):
             'callback_url': node.api_url_for(
                 ('create_waterbutler_log' if not node.is_registration else 'registration_callbacks'),
                 _absolute=True,
-                _internal=settings.DEV_MODE,
+                _internal=True
             ),
         }
     }, settings.WATERBUTLER_JWT_SECRET, algorithm=settings.WATERBUTLER_JWT_ALGORITHM), WATERBUTLER_JWE_KEY)}
