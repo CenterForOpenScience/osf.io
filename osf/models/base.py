@@ -46,8 +46,8 @@ def generate_guid(length=5):
 def generate_object_id():
     return str(bson.ObjectId())
 
-class MODMCompatibilityQuerySet(models.QuerySet):
 
+class MODMCompatibilityQuerySet(models.QuerySet):
     def __getitem__(self, k):
         item = super(MODMCompatibilityQuerySet, self).__getitem__(k)
         if hasattr(item, 'wrapped'):
@@ -83,25 +83,15 @@ class MODMCompatibilityQuerySet(models.QuerySet):
         return self[:n]
 
 
-class GuidMODMCompatibilityQuerySet(MODMCompatibilityQuerySet):
-    """ Hijacks Django internals, adding annotations to read queries
-        to limit the number of DB calls when serializing objects with Guids.
-    """
+class MODMCompatibilityManager(models.Manager):
+    def get_queryset(self):
+        return MODMCompatibilityQuerySet(model=self.model, using=self._db, hints=self._hints)
 
-    def __init__(self, model=None, query=None, using=None, hints=None):
-        self.__for_write = False
-        return super(GuidMODMCompatibilityQuerySet, self).__init__(model=model, query=query, using=using, hints=hints)
+    def sort(self, *args, **kwargs):
+        return self.get_queryset().sort(*args, **kwargs)
 
-    @property
-    def _for_write(self):
-        return self.__for_write
-
-    @_for_write.setter
-    def _for_write(self, value):
-        self.query.annotations.pop('guids___id', None)
-        if not value:
-            self.query.add_annotation(F('guids___id'), 'guids___id', is_summary=False)
-        self.__for_write = value
+    def limit(self, *args, **kwargs):
+        return self.get_queryset().limit(*args, **kwargs)
 
 
 class BaseModel(models.Model):
@@ -111,7 +101,8 @@ class BaseModel(models.Model):
 
     migration_page_size = 20000
 
-    objects = MODMCompatibilityQuerySet.as_manager()
+    _default_manager = MODMCompatibilityManager
+    objects = MODMCompatibilityManager()
 
     class Meta:
         abstract = True
@@ -400,8 +391,36 @@ class ObjectIDMixin(BaseIDMixin):
             pass
         return copy
 
+
 class InvalidGuid(Exception):
     pass
+
+GUID_FIELDS = [
+    'guids__id',
+    'guids___id',
+    'guids__content_type',
+    'guids__object_id',
+    'guids__created',
+]
+
+
+class GuidMixinQuerySet(MODMCompatibilityQuerySet):
+    def update(self, **kwargs):
+        for k, v in self.query.annotations.iteritems():
+            if k in GUID_FIELDS:
+                del self.query.annotations[k]
+        super(GuidMixinQuerySet, self).update(**kwargs)
+
+
+class GuidMixinManager(MODMCompatibilityManager):
+    def get_queryset(self):
+        queryset = GuidMixinQuerySet(model=self.model, using=self._db, hints=self._hints)
+
+        for field in GUID_FIELDS:
+            queryset.query.add_annotation(
+                F(field), field, is_summary=False
+            )
+        return queryset
 
 
 class OptionalGuidMixin(BaseIDMixin):
@@ -411,8 +430,9 @@ class OptionalGuidMixin(BaseIDMixin):
     """
     __guid_min_length__ = 5
 
-    objects = GuidMODMCompatibilityQuerySet.as_manager()
-    subselect = MODMCompatibilityQuerySet.as_manager()
+    _default_manager = GuidMixinManager
+    objects = GuidMixinManager()
+    subselect = MODMCompatibilityManager()
 
     guids = GenericRelation(Guid, related_name='referent', related_query_name='referents')
     guid_string = ArrayField(models.CharField(max_length=255, null=True, blank=True), null=True, blank=True)
@@ -450,10 +470,11 @@ class OptionalGuidMixin(BaseIDMixin):
 class GuidMixin(BaseIDMixin):
     __guid_min_length__ = 5
 
-    objects = GuidMODMCompatibilityQuerySet.as_manager()
-    subselect = MODMCompatibilityQuerySet.as_manager()
-
     primary_identifier_name = 'guid_string'
+
+    _default_manager = GuidMixinManager
+    objects = GuidMixinManager()
+    subselect = MODMCompatibilityManager()
 
     guids = GenericRelation(Guid, related_name='referent', related_query_name='referents')
     guid_string = ArrayField(models.CharField(max_length=255, null=True, blank=True), null=True, blank=True)

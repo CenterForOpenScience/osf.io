@@ -15,6 +15,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.core.urlresolvers import reverse
 from django.db import models, transaction, connection
+from django.db.models import F
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils import timezone
@@ -61,12 +62,12 @@ from website.util.permissions import (ADMIN, CREATOR_PERMISSIONS,
                                       DEFAULT_CONTRIBUTOR_PERMISSIONS, READ,
                                       WRITE, expand_permissions,
                                       reduce_permissions)
-from .base import BaseModel, Guid, GuidMixin, GuidMODMCompatibilityQuerySet
+from .base import BaseModel, Guid, GuidMixin, GuidMixinManager, GuidMixinQuerySet, GUID_FIELDS
 
 logger = logging.getLogger(__name__)
 
 
-class AbstractNodeQueryset(GuidMODMCompatibilityQuerySet):
+class AbstractNodeQuerySet(GuidMixinQuerySet):
     def get_roots(self):
         return self.extra(
             where=['"osf_abstractnode".id in (SELECT id FROM osf_abstractnode WHERE id NOT IN (SELECT child_id FROM '
@@ -108,6 +109,23 @@ class AbstractNodeQueryset(GuidMODMCompatibilityQuerySet):
                 return row or []
             else:
                 return AbstractNode.objects.filter(id__in=row)
+
+
+class AbstractNodeManager(GuidMixinManager):
+    def get_queryset(self):
+        queryset = AbstractNodeQuerySet(model=self.model, using=self._db, hints=self._hints)
+
+        for field in GUID_FIELDS:
+            queryset.query.add_annotation(
+                F(field), field, is_summary=False
+            )
+        return queryset
+
+    def get_roots(self, *args, **kwargs):
+        return self.get_queryset().get_roots(*args, **kwargs)
+
+    def get_children(self, *args, **kwargs):
+        return self.get_queryset().get_children(*args, **kwargs)
 
 
 class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixin,
@@ -233,7 +251,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                                     through_fields=('parent', 'child'),
                                     related_name='parent_nodes')
 
-    objects = AbstractNodeQueryset.as_manager()
+    objects = AbstractNodeManager()
 
     @property
     def parent_node(self):
