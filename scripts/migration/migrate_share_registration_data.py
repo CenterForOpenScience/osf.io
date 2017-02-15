@@ -13,37 +13,23 @@ logger = logging.getLogger(__name__)
 
 
 def get_targets():
-    return [p['_id'] for p in db['node'].find({'is_registration': True})]
+    return [p['_id'] for p in db['node'].find({'is_registration': True, 'is_deleted': False, 'is_public': True})]
 
-def migrate():
+def migrate(dry_run):
     assert settings.SHARE_URL, 'SHARE_URL must be set to migrate.'
     assert settings.SHARE_API_TOKEN, 'SHARE_API_TOKEN must be set to migrate.'
     targets = get_targets()
     target_count = len(targets)
-    successes = []
-    failures = []
     count = 0
 
     logger.info('Preparing to migrate {} registrations.'.format(target_count))
     for registration_id in targets:
         node = Node.load(registration_id)
-        if not node.is_public or node.is_deleted:
-            pass
         count += 1
-        logger.info('{}/{} - {}'.format(count, target_count, registration_id))
-        try:
+        logger.info('{}/{} - {}'.format(count, target_count, node._id))
+        if not dry_run:
             on_registration_updated(node)
-        except Exception as e:
-            # TODO: This reliably fails for certain nodes with
-            # IncompleteRead(0 bytes read)
-            failures.append(registration_id)
-            logger.warn('Encountered exception {} while posting to SHARE for registration {}'.format(e, registration_id))
-        else:
-            successes.append(registration_id)
-
-    logger.info('Successes: {}'.format(successes))
-    logger.info('Failures: {}'.format(failures))
-
+        logger.info('Registration {} was sent to SHARE.'.format(node._id))
 
 def main():
     dry_run = '--dry' in sys.argv
@@ -51,9 +37,7 @@ def main():
         script_utils.add_file_logger(logger, __file__)
     init_app(set_backends=True, routes=False)
     with TokuTransaction():
-        migrate()
-        if dry_run:
-            raise RuntimeError('Dry run, transaction rolled back.')
+        migrate(dry_run)
 
 if __name__ == "__main__":
     main()
