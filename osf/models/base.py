@@ -14,8 +14,6 @@ from django.core.exceptions import MultipleObjectsReturned
 from django.db import models
 from django.db.models import F
 from django.db.models import ForeignKey
-from django.db.models import QuerySet
-from django.db.models.manager import Manager
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils import timezone
@@ -45,21 +43,20 @@ def generate_guid(length=5):
                 # valid and unique guid
                 return guid_id
 
-
 def generate_object_id():
     return str(bson.ObjectId())
 
 
-class MODMCompatibilityManager(Manager):
+class MODMCompatibilityQuerySet(models.QuerySet):
     def __getitem__(self, k):
-        item = super(MODMCompatibilityManager, self).__getitem__(k)
+        item = super(MODMCompatibilityQuerySet, self).__getitem__(k)
         if hasattr(item, 'wrapped'):
             return item.wrapped()
         else:
             return item
 
     def __iter__(self):
-        items = super(MODMCompatibilityManager, self).__iter__()
+        items = super(MODMCompatibilityQuerySet, self).__iter__()
         for item in items:
             if hasattr(item, 'wrapped'):
                 yield item.wrapped()
@@ -86,6 +83,17 @@ class MODMCompatibilityManager(Manager):
         return self[:n]
 
 
+class MODMCompatibilityManager(models.Manager):
+    def get_queryset(self):
+        return MODMCompatibilityQuerySet(model=self.model, using=self._db, hints=self._hints)
+
+    def sort(self, *args, **kwargs):
+        return self.get_queryset().sort(*args, **kwargs)
+
+    def limit(self, *args, **kwargs):
+        return self.get_queryset().limit(*args, **kwargs)
+
+
 class BaseModel(models.Model):
     """Base model that acts makes subclasses mostly compatible with the
     modular-odm ``StoredObject`` interface.
@@ -93,6 +101,7 @@ class BaseModel(models.Model):
 
     migration_page_size = 20000
 
+    _default_manager = MODMCompatibilityManager
     objects = MODMCompatibilityManager()
 
     class Meta:
@@ -395,7 +404,7 @@ GUID_FIELDS = [
 ]
 
 
-class GuidMixinQuerySet(QuerySet):
+class GuidMixinQuerySet(MODMCompatibilityQuerySet):
     def update(self, **kwargs):
         for k, v in self.query.annotations.iteritems():
             if k in GUID_FIELDS:
@@ -421,6 +430,7 @@ class OptionalGuidMixin(BaseIDMixin):
     """
     __guid_min_length__ = 5
 
+    _default_manager = GuidMixinManager
     objects = GuidMixinManager()
     subselect = MODMCompatibilityManager()
 
@@ -462,6 +472,7 @@ class GuidMixin(BaseIDMixin):
 
     primary_identifier_name = 'guid_string'
 
+    _default_manager = GuidMixinManager
     objects = GuidMixinManager()
     subselect = MODMCompatibilityManager()
 
