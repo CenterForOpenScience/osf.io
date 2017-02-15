@@ -371,23 +371,24 @@ def main(env):
                 (['Social and Behavioral Sciences'], True),
             ],
         },
-        'scielo' : {
+        'scielo': {
             '_id': 'scielo',
             'name': 'SciELO',
             'logo_name': 'scielo-logo.png',
             'description': 'Placeholder description',
             'banner_name': 'scielo-logo.png',
+            'domain': 'scielo.org',
             'external_url': 'http://scielo.org',
-            'example': '', # An example guid for this provider (Will have to be updated after the provider is up)
+            'example': '',  # An example guid for this provider (Will have to be updated after the provider is up)
             # Advisory board should be valid html string in triple quotes
             'advisory_board': '',
             'email_contact': 'contact+scielo@osf.io',
             'email_support': 'support+scielo@osf.io',
-            'social_twitter': 'RedeSciELO', # optional
+            'social_twitter': 'RedeSciELO',  # optional
             'social_facebook': 'SciELONetwork',
             'header_text': '',
             'licenses_acceptable': ['CC0 1.0 Universal'],
-            'subjects_acceptable':[]
+            'subjects_acceptable': []
         },
         'agrixiv': {
             '_id': 'agrixiv',
@@ -395,6 +396,7 @@ def main(env):
             'logo_name': 'agrixiv-logo.svg',
             'description': 'Preprints for Agriculture and Allied Sciences',
             'banner_name': 'agrixiv-banner.svg',
+            'domain': 'agrixiv.org',
             'example': '',
             'advisory_board': '''
                 <div class="col-xs-6">
@@ -1017,6 +1019,7 @@ def main(env):
             'logo_name': 'bitss-logo.png',
             'description': 'An interdisciplinary archive of articles focused on improving research transparency and reproducibility',
             'banner_name': 'bitss-banner.png',
+            'domain': 'bitss.org',
             'external_url': 'http://www.bitss.org',
             'example': '',
             'advisory_board': '''
@@ -1193,6 +1196,6 @@ if __name__ == '__main__':
     if not env:
         env = 'prod'
     elif env not in ENVS:
-        print 'A specified environment must be one of: {}'.format(ENVS)
+        print('A specified environment must be one of: {}'.format(ENVS))
         sys.exit(1)
     main(env)
