@@ -90,12 +90,10 @@ def format_registration(node):
         GraphNode('workidentifier', creative_work=registration_graph, uri=urlparse.urljoin(settings.DOMAIN, node.url))
     ]
 
-
     registration_graph.attrs['tags'] = [
         GraphNode('throughtags', creative_work=registration_graph, tag=GraphNode('tag', name=tag._id))
         for tag in node.tags or [] if tag._id
     ]
-
 
     to_visit.extend(format_contributor(registration_graph, user, bool(user._id in node.visible_contributor_ids), i) for i, user in enumerate(node.contributors))
     to_visit.extend(GraphNode('AgentWorkRelation', creative_work=registration_graph, agent=GraphNode('institution', name=institution.name)) for institution in node.affiliated_institutions)
