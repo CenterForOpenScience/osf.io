@@ -40,7 +40,7 @@ class TrashedFileNode(CommentableMixin, OptionalGuidMixin, ObjectIDMixin, BaseMo
     # TODO DELETE ME POST MIGRATION
     modm_model_path = 'website.files.models.TrashedFileNode'
     modm_query = None
-    migration_page_size = 80000
+    migration_page_size = 100000
     # /TODO DELETE ME POST MIGRATION
 
     last_touched = models.DateTimeField(null=True, blank=True)
@@ -186,7 +186,7 @@ class StoredFileNode(CommentableMixin, OptionalGuidMixin, Taggable, ObjectIDMixi
     # TODO DELETE ME POST MIGRATION
     modm_model_path = 'website.files.models.base.StoredFileNode'
     modm_query = None
-    migration_page_size = 80000
+    migration_page_size = 10000
     # /TODO DELETE ME POST MIGRATION
 
     # The last time the touch method was called on this FileNode
@@ -857,7 +857,7 @@ class FileVersion(ObjectIDMixin, BaseModel):
     # TODO DELETE ME POST MIGRATION
     modm_model_path = 'website.files.models.base.FileVersion'
     modm_query = None
-    migration_page_size = 40000
+    migration_page_size = 100000
     # /TODO DELETE ME POST MIGRATION
 
     creator = models.ForeignKey('OSFUser', null=True, blank=True)
@@ -875,8 +875,8 @@ class FileVersion(ObjectIDMixin, BaseModel):
     # exists on the backend
     date_modified = models.DateTimeField(null=True, blank=True)
 
-    location = DateTimeAwareJSONField(default=dict, db_index=True, blank=True, null=True, validators=[validate_location])
-    metadata = DateTimeAwareJSONField(blank=True, default=dict, db_index=True)
+    metadata = DateTimeAwareJSONField(blank=True, default=dict)
+    location = DateTimeAwareJSONField(default=None, blank=True, null=True, validators=[validate_location])
 
     @property
     def location_hash(self):
@@ -933,5 +933,4 @@ class FileVersion(ObjectIDMixin, BaseModel):
         return True
 
     class Meta:
-        index_together = [('_id', 'metadata')]
         ordering = ('date_created',)

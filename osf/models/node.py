@@ -121,6 +121,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     primary_identifier_name = 'guid_string'
     modm_model_path = 'website.models.Node'
     modm_query = None
+    migration_page_size = 10000
 
     #: Whether this is a pointer or not
     primary = True
@@ -2829,10 +2830,13 @@ class Node(AbstractNode):
         from website.models import Guid as MODMGuid
         from modularodm import Q as MODMQ
 
-        guids = MODMGuid.find(MODMQ('referent', 'eq', modm_obj._id))
+        guids = MODMGuid.find(MODMQ('referent', 'eq', modm_obj._id)).get_keys()
+        guids.append(modm_obj._id)
+        g_set = set(guids)
 
-        setattr(django_obj, 'guid_string', guids.get_keys())
+        setattr(django_obj, 'guid_string', list(g_set))
         setattr(django_obj, 'content_type_pk', content_type_pk)
+        django_obj.title = django_obj.title[:200]
         return django_obj
 
     # /TODO DELETE ME POST MIGRATION
