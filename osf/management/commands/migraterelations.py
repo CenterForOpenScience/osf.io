@@ -403,6 +403,10 @@ def save_page_of_fk_relationships(self, django_model, fk_relations, offset, limi
     except Exception as ex:
         logger.error('Retrying: Failed to save page model: {} offset:{} limit:{} of foreign keys with exception {}'.format(django_model, offset, limit, ex.message))
         self.retry(countdown=60)  # retry in 1m
+    finally:
+        # Disable typedmodel auto-recasting to prevent migration from missing fields h/t @chrisseto
+        AbstractNode._auto_recast = True
+
 
 
 @app.task()
