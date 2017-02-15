@@ -151,8 +151,6 @@ services:
     restart: unless-stopped
     ports:
       - 7777:7777
-    environment:
-      RABBITMQ_PORT_5672_TCP_ADDR: 192.168.168.167
     env_file:
       - .docker-compose.wb.env
     volumes:
@@ -170,7 +168,6 @@ services:
       - wb
       - rabbitmq
     environment:
-      RABBITMQ_PORT_5672_TCP_ADDR: 192.168.168.167
       C_FORCE_ROOT: 1
     env_file:
       - .docker-compose.wb.env
