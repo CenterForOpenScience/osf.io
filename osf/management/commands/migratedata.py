@@ -48,8 +48,6 @@ encryption.decrypt = lambda x: x
 
 
 def set_backend():
-    # Disable typedmodel auto-recasting to prevent migration from missing fields h/t @chrisseto
-    AbstractNode._auto_recast = False
     set_up_storage([ApiOAuth2Scope], storage.MongoStorage)
 
 

@@ -219,6 +219,8 @@ def save_page_of_fk_relationships(self, django_model, fk_relations, offset, limi
     init_app(routes=False, attach_request_handlers=False, fixtures=False)
     set_backend()
     register_nonexistent_models_with_modm()
+    # Disable typedmodel auto-recasting to prevent migration from missing fields h/t @chrisseto
+    AbstractNode._auto_recast = False
     try:
         with transaction.atomic():  # one transaction per page
             bad_fields = []
