@@ -2612,8 +2612,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         new_page.save()
 
         if has_comments:
-            Comment.objects.filter(root_target=current).update(root_target=Guid.load(new_page._id))
-            Comment.objects.filter(target=current).update(target=Guid.load(new_page._id))
+            Comment.objects.filter(root_target=current.guids.first()).update(root_target=Guid.load(new_page._id))
+            Comment.objects.filter(target=current.guids.first()).update(target=Guid.load(new_page._id))
 
         if current:
             for contrib in self.contributors:
