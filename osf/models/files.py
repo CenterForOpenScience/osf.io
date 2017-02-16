@@ -188,9 +188,6 @@ class StoredFileNode(CommentableMixin, OptionalGuidMixin, Taggable, ObjectIDMixi
     modm_query = None
     migration_page_size = 10000
     # /TODO DELETE ME POST MIGRATION
-    FIELD_ALIASES = {
-        '_materialized_path': 'materialized_path'
-    }
 
     # The last time the touch method was called on this FileNode
     last_touched = models.DateTimeField(null=True, blank=True)
