@@ -92,7 +92,7 @@
                 %elif campaign == "agrixiv-preprints":
                     <table style="border-collapse: separate; border-spacing: 30px 0; margin-top: 20px; margin-bottom: 10px;">
                         <tr>
-                            <td><img src="/static/img/preprint_providers/agrixiv-login.svg" style="width: 150px; background: #85bf9b; padding: 0 10px 0 10px;" /></td>
+                            <td><img src="/static/img/preprint_providers/agrixiv-login.svg" style="width: 150px; padding: 0 10px 0 10px;" /></td>
                             <td><h3>Create a free OSF account to contribute to AgriXiv</h3></td>
                         </tr>
                     </table>
