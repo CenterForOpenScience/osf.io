@@ -580,18 +580,12 @@ def ensure_guid(sender, instance, created, **kwargs):
         return False
     existing_guids = Guid.objects.filter(object_id=instance.pk, content_type=ContentType.objects.get_for_model(instance))
     has_cached_guids = hasattr(instance, '_prefetched_objects_cache') and 'guids' in instance._prefetched_objects_cache
-    if not existing_guids.exists() and instance.guid_string is None:
+    if not existing_guids.exists():
         # Clear query cache of instance.guids
         if has_cached_guids:
             del instance._prefetched_objects_cache['guids']
         Guid.objects.create(object_id=instance.pk, content_type=ContentType.objects.get_for_model(instance),
                             _id=generate_guid(instance.__guid_min_length__))
-    elif not existing_guids.exists() and instance.guid_string is not None:
-        # Clear query cache of instance.guids
-        if has_cached_guids:
-            del instance._prefetched_objects_cache['guids']
-        Guid.objects.create(object_id=instance.pk, content_type_id=instance.content_type_pk,
-                            _id=instance.guid_string)
     if instance._id and existing_guids.exists() and not existing_guids.filter(_id=instance._id).exists():
         # Handle case where _id is old value after a .clone()
         instance._id = existing_guids.first()._id
