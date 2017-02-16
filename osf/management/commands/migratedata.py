@@ -26,6 +26,7 @@ from framework.mongo import set_up_storage
 from framework.mongo import storage
 from framework.transactions.context import transaction as modm_transaction
 from osf.models import Comment
+from osf.models import Institution
 from osf.models import (NodeLog, OSFUser,
                         PageCounter, StoredFileNode, Tag, UserActivityCounter)
 from osf.models.base import Guid, GuidMixin, OptionalGuidMixin
@@ -48,6 +49,21 @@ encryption.decrypt = lambda x: x
 
 
 def set_backend():
+    # monkey patch field aliases for migration
+    Institution.FIELD_ALIASES = {
+        'institution_auth_url': 'login_url',
+        'institution_logout_url': 'logout_url',
+        'title': 'name',
+        '_id': False,
+        'institution_id': '_id',
+        'institution_banner_name': 'banner_name',
+        'institution_domains': 'domains',
+        'institution_email_domains': 'email_domains',
+        'institution_logo_name': 'logo_name',
+    }
+    StoredFileNode.FIELD_ALIASES = {
+        '_materialized_path': 'materialized_path'
+    }
     set_up_storage([ApiOAuth2Scope], storage.MongoStorage)
 
 
