@@ -17,7 +17,7 @@ logging.basicConfig(level=logging.INFO)
 ENVS = ['prod', 'stage']
 SUBJECTS_CACHE = {}
 STAGING_PREPRINT_PROVIDERS = ['osf', 'psyarxiv', 'engrxiv', 'socarxiv', 'scielo', 'agrixiv', 'bitss']
-PROD_PREPRINT_PROVIDERS = ['osf', 'psyarxiv', 'engrxiv', 'socarxiv']
+PROD_PREPRINT_PROVIDERS = ['osf', 'psyarxiv', 'engrxiv', 'socarxiv', 'agrixiv']
 
 
 def get_subject_id(name):
@@ -402,6 +402,7 @@ def main(env):
                     <ul>
                         <li><b>Abeer Elhalwagi</b>, National Gene Bank, Egypt</li>
                         <li><b>Ajit Maru</b>, Global Forum on Agricultural Research</li>
+                        <li><b>Bernard Pochet</b>, University of Liège - Gembloux Agro-Bio Tech</li>
                         <li><b>Dinesh Kumar</b>, Indian Agricultural Statistics Research Institute</li>
                         <li><b>Oya Yildirim Rieger</b>, Cornell University</li>
                         <li><b>Prateek Mahalwar</b>, Ernst & Young GmbH Wirtschaftsprüfungsgesellschaft</li>
