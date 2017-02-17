@@ -12,7 +12,6 @@ from django.contrib.postgres.fields import ArrayField
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.core.exceptions import MultipleObjectsReturned
 from django.db import models
-from django.db.models import F
 from django.db.models import ForeignKey
 from django.db.models.signals import post_save
 from django.dispatch import receiver
@@ -42,6 +41,7 @@ def generate_guid(length=5):
             except Guid.DoesNotExist:
                 # valid and unique guid
                 return guid_id
+
 
 def generate_object_id():
     return str(bson.ObjectId())
@@ -83,26 +83,14 @@ class MODMCompatibilityQuerySet(models.QuerySet):
         return self[:n]
 
 
-class MODMCompatibilityManager(models.Manager):
-    def get_queryset(self):
-        return MODMCompatibilityQuerySet(model=self.model, using=self._db, hints=self._hints)
-
-    def sort(self, *args, **kwargs):
-        return self.get_queryset().sort(*args, **kwargs)
-
-    def limit(self, *args, **kwargs):
-        return self.get_queryset().limit(*args, **kwargs)
-
-
 class BaseModel(models.Model):
     """Base model that acts makes subclasses mostly compatible with the
     modular-odm ``StoredObject`` interface.
     """
 
-    migration_page_size = 20000
+    migration_page_size = 50000
 
-    _default_manager = MODMCompatibilityManager
-    objects = MODMCompatibilityManager()
+    objects = MODMCompatibilityQuerySet.as_manager()
 
     class Meta:
         abstract = True
@@ -233,7 +221,7 @@ class Guid(BaseModel):
     referent = GenericForeignKey()
     content_type = models.ForeignKey(ContentType, null=True, blank=True)
     object_id = models.PositiveIntegerField(null=True, blank=True)
-    created = models.DateTimeField(db_index=True, auto_now_add=True)
+    created = models.DateTimeField(db_index=True, default=timezone.now)  # auto_now_add=True)
 
     # Override load in order to load by GUID
     @classmethod
@@ -283,6 +271,7 @@ class Guid(BaseModel):
 class BlackListGuid(BaseModel):
     # TODO DELETE ME POST MIGRATION
     modm_model_path = 'framework.guid.model.BlacklistGuid'
+    primary_identifier_name = 'guid'
     modm_query = None
     migration_page_size = 500000
     # /TODO DELETE ME POST MIGRATION
@@ -395,33 +384,6 @@ class ObjectIDMixin(BaseIDMixin):
 class InvalidGuid(Exception):
     pass
 
-GUID_FIELDS = [
-    'guids__id',
-    'guids___id',
-    'guids__content_type',
-    'guids__object_id',
-    'guids__created',
-]
-
-
-class GuidMixinQuerySet(MODMCompatibilityQuerySet):
-    def update(self, **kwargs):
-        for k, v in self.query.annotations.iteritems():
-            if k in GUID_FIELDS:
-                del self.query.annotations[k]
-        super(GuidMixinQuerySet, self).update(**kwargs)
-
-
-class GuidMixinManager(MODMCompatibilityManager):
-    def get_queryset(self):
-        queryset = GuidMixinQuerySet(model=self.model, using=self._db, hints=self._hints)
-
-        for field in GUID_FIELDS:
-            queryset.query.add_annotation(
-                F(field), field, is_summary=False
-            )
-        return queryset
-
 
 class OptionalGuidMixin(BaseIDMixin):
     """
@@ -429,10 +391,6 @@ class OptionalGuidMixin(BaseIDMixin):
     Things that inherit from this must also inherit from ObjectIDMixin ... probably
     """
     __guid_min_length__ = 5
-
-    _default_manager = GuidMixinManager
-    objects = GuidMixinManager()
-    subselect = MODMCompatibilityManager()
 
     guids = GenericRelation(Guid, related_name='referent', related_query_name='referents')
     guid_string = ArrayField(models.CharField(max_length=255, null=True, blank=True), null=True, blank=True)
@@ -471,10 +429,6 @@ class GuidMixin(BaseIDMixin):
     __guid_min_length__ = 5
 
     primary_identifier_name = 'guid_string'
-
-    _default_manager = GuidMixinManager
-    objects = GuidMixinManager()
-    subselect = MODMCompatibilityManager()
 
     guids = GenericRelation(Guid, related_name='referent', related_query_name='referents')
     guid_string = ArrayField(models.CharField(max_length=255, null=True, blank=True), null=True, blank=True)

@@ -3,8 +3,8 @@
 function findMax() {
     var max = 0;
 
-    db.storedfilenode.find().forEach(function(doc) {
-        var currentLength = doc.name.length;
+    db.useractivitycounters.find().forEach(function(doc) {
+        var currentLength = doc._id.length;
         if (currentLength > max) {
            max = currentLength;
         }
