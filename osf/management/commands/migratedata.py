@@ -206,9 +206,7 @@ def make_guids():
                     except IntegrityError as ex:
                         ipdb.set_trace()
 
-
-
-            guids = MGuid.find()
+            guids = MGuid.find(MQ('is_orphaned', 'ne', True))
             guid_keys = guids.get_keys()
             orphaned_guids = []
             for g in guids:
@@ -349,8 +347,10 @@ def fix_guids():
     short_missing = [x for x in missing if len(x) < 6]
     long_missing = [x for x in missing if len(x) > 5]
     assert len(short_missing) + len(long_missing) == len(missing), 'It broke'
-    short_missing_guids = MGuid.find(MQ('_id', 'in', short_missing))
-    long_missing_guids = MGuid.find(MQ('_id', 'in', long_missing))
+    # NOTE: is_orphaned will be True for Guids that should not be migrated because they have
+    # invalid/missing referents
+    short_missing_guids = MGuid.find(MQ('_id', 'in', short_missing) & MQ('is_orphaned', 'ne', True))
+    long_missing_guids = MGuid.find(MQ('_id', 'in', long_missing), & MQ('is_orphaned', 'ne', True))
 
     short_missing_guids_with_referents = [x._id for x in short_missing_guids if x.referent is not None]
     short_missing_guids_without_referents = [x._id for x in short_missing_guids if x.referent is None]
