@@ -12,7 +12,6 @@ from django.contrib.postgres.fields import ArrayField
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.core.exceptions import MultipleObjectsReturned
 from django.db import models
-from django.db.models import F
 from django.db.models import ForeignKey
 from django.db.models.signals import post_save
 from django.dispatch import receiver
