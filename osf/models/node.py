@@ -15,8 +15,6 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.core.urlresolvers import reverse
 from django.db import models, transaction, connection
-from django.db.models import Manager
-from django.db.models import QuerySet
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils import timezone
@@ -63,12 +61,12 @@ from website.util.permissions import (ADMIN, CREATOR_PERMISSIONS,
                                       DEFAULT_CONTRIBUTOR_PERMISSIONS, READ,
                                       WRITE, expand_permissions,
                                       reduce_permissions)
-from .base import BaseModel, Guid, GuidMixin
+from .base import BaseModel, Guid, GuidMixin, MODMCompatibilityQuerySet
 
 logger = logging.getLogger(__name__)
 
 
-class AbstractNodeQuerySet(QuerySet):
+class AbstractNodeQuerySet(MODMCompatibilityQuerySet):
     def get_roots(self):
         return self.extra(
             where=['"osf_abstractnode".id in (SELECT id FROM osf_abstractnode WHERE id NOT IN (SELECT child_id FROM '
@@ -110,17 +108,6 @@ class AbstractNodeQuerySet(QuerySet):
                 return row or []
             else:
                 return AbstractNode.objects.filter(id__in=row)
-
-
-class AbstractNodeManager(Manager):
-    def get_queryset(self):
-        return AbstractNodeQuerySet(model=self.model, using=self._db, hints=self._hints)
-
-    def get_roots(self, *args, **kwargs):
-        return self.get_queryset().get_roots(*args, **kwargs)
-
-    def get_children(self, *args, **kwargs):
-        return self.get_queryset().get_children(*args, **kwargs)
 
 
 class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixin,
@@ -247,7 +234,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                                     through_fields=('parent', 'child'),
                                     related_name='parent_nodes')
 
-    objects = AbstractNodeManager()
+    objects = AbstractNodeQuerySet.as_manager()
 
     @property
     def parent_node(self):

@@ -794,7 +794,8 @@ def find_duplicate_addon_node_settings():
         'osfstoragenodesettings',
         's3nodesettings',
         'zoteronodesettings',
-        'addonwikinodesettings'
+        'addonwikinodesettings',
+        'forwardnodesettings',
     ]
 
     for collection in COLLECTIONS:

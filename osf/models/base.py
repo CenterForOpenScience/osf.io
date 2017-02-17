@@ -83,17 +83,6 @@ class MODMCompatibilityQuerySet(models.QuerySet):
         return self[:n]
 
 
-class MODMCompatibilityManager(models.Manager):
-    def get_queryset(self):
-        return MODMCompatibilityQuerySet(model=self.model, using=self._db, hints=self._hints)
-
-    def sort(self, *args, **kwargs):
-        return self.get_queryset().sort(*args, **kwargs)
-
-    def limit(self, *args, **kwargs):
-        return self.get_queryset().limit(*args, **kwargs)
-
-
 class BaseModel(models.Model):
     """Base model that acts makes subclasses mostly compatible with the
     modular-odm ``StoredObject`` interface.
@@ -101,8 +90,7 @@ class BaseModel(models.Model):
 
     migration_page_size = 50000
 
-    _default_manager = MODMCompatibilityManager
-    objects = MODMCompatibilityManager()
+    objects = MODMCompatibilityQuerySet.as_manager()
 
     class Meta:
         abstract = True
