@@ -405,14 +405,29 @@ GUID_FIELDS = [
 
 
 class GuidMixinQuerySet(MODMCompatibilityQuerySet):
-    def update(self, **kwargs):
+    def _strip_annotations(self):
         for k, v in self.query.annotations.iteritems():
             if k in GUID_FIELDS:
                 del self.query.annotations[k]
-        super(GuidMixinQuerySet, self).update(**kwargs)
+
+    def update(self, *args, **kwargs):
+        self._strip_annotations()
+        return super(GuidMixinQuerySet, self).update(*args, **kwargs)
+
+#    def create(self, *args, **kwargs):
+#        # AttributeError: 'int' object has no attribute 'username'
+#        self._strip_annotations()
+#        return super(GuidMixinQuerySet, self).update(*args, **kwargs)
+
+    def count(self, *args, **kwargs):
+        self._strip_annotations()
+        return super(GuidMixinQuerySet, self).count(*args, **kwargs)
 
 
 class GuidMixinManager(MODMCompatibilityManager):
+    # use_for_related_fields = True
+    # Causes `ProgrammingError: subquery has too many columns`
+
     def get_queryset(self):
         queryset = GuidMixinQuerySet(model=self.model, using=self._db, hints=self._hints)
 
