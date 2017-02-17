@@ -415,7 +415,7 @@ def sharejs(ctx, host=None, port=None, db_url=None, cors_allow_origin=None):
 
 
 @task(aliases=['celery'])
-def celery_worker(ctx, level='debug', hostname=None, beat=False):
+def celery_worker(ctx, level='debug', hostname=None, beat=False, queues=None):
     """Run the Celery process."""
     cmd = 'celery worker -A framework.celery_tasks -l {0}'.format(level)
     if hostname:
@@ -423,6 +423,8 @@ def celery_worker(ctx, level='debug', hostname=None, beat=False):
     # beat sets up a cron like scheduler, refer to website/settings
     if beat:
         cmd = cmd + ' --beat'
+    if queues:
+        cmd = cmd + ' --queues={}'.format(queues)
     ctx.run(bin_prefix(cmd), pty=True)
 
 
