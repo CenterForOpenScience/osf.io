@@ -33,7 +33,7 @@ from framework.sessions.utils import remove_sessions_for_user
 from framework.mongo import get_cache_key
 from modularodm.exceptions import NoResultsFound
 from osf.exceptions import reraise_django_validation_errors
-from osf.models.base import BaseModel, GuidMixin, GuidMixinManager
+from osf.models.base import BaseModel, GuidMixin
 from osf.models.contributor import RecentlyAddedContributor
 from osf.models.institution import Institution
 from osf.models.mixins import AddonModelMixin
@@ -49,6 +49,7 @@ from website import filters, mails
 
 logger = logging.getLogger(__name__)
 
+
 def get_default_mailing_lists():
     return {'Open Science Framework Help': True}
 
@@ -61,7 +62,8 @@ name_formatters = {
     ),
 }
 
-class OSFUserManager(BaseUserManager, GuidMixinManager):
+
+class OSFUserManager(BaseUserManager):
     def create_user(self, username, password=None):
         if not username:
             raise ValueError('Users must have a username')
@@ -85,8 +87,7 @@ class OSFUserManager(BaseUserManager, GuidMixinManager):
         return user
 
 
-class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
-              AbstractBaseUser, PermissionsMixin, AddonModelMixin):
+class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, PermissionsMixin, AddonModelMixin):
     # TODO DELETE ME POST MIGRATION
     modm_model_path = 'framework.auth.core.User'
     modm_query = None
@@ -346,7 +347,6 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
 
     notifications_configured = DateTimeAwareJSONField(default=dict, blank=True)
 
-    _default_manager = OSFUserManager
     objects = OSFUserManager()
 
     is_active = models.BooleanField(default=False)
