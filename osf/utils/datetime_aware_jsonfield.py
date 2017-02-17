@@ -10,6 +10,7 @@ import pytz
 from dateutil import parser
 from django.contrib.postgres import lookups
 from django.contrib.postgres.fields.jsonb import JSONField
+from django.contrib.postgres.forms.jsonb import JSONField as JSONFormField
 from django.core.serializers.json import DjangoJSONEncoder
 from osf.exceptions import NaiveDatetimeException, ValidationError
 from psycopg2.extras import Json
@@ -77,6 +78,11 @@ def decode_datetime_objects(nested_value):
 
 
 class DateTimeAwareJSONField(JSONField):
+    def formfield(self, **kwargs):
+        defaults = {'form_class': DateTimeAwareJSONFormField}
+        defaults.update(kwargs)
+        return super(DateTimeAwareJSONField, self).formfield(**defaults)
+
     def get_prep_value(self, value):
         if value is not None:
             return Json(value, dumps=partial(json.dumps, cls=DateTimeAwareJSONEncoder))
@@ -105,6 +111,26 @@ class DateTimeAwareJSONField(JSONField):
                 params={'value': value},
             )
 
+class DateTimeAwareJSONFormField(JSONFormField):
+    def to_python(self, value):
+        try:
+            return decode_datetime_objects(json.loads(value))
+        except TypeError:
+            raise ValidationError(
+                self.error_messages['invalid'],
+                code='invalid',
+                params={'value': value},
+            )
+
+    def prepare_value(self, value):
+        try:
+            return json.dumps(value, cls=DateTimeAwareJSONEncoder)
+        except TypeError:
+            raise ValidationError(
+                self.error_messages['invalid'],
+                code='invalid',
+                params={'value': value},
+            )
 
 JSONField.register_lookup(lookups.DataContains)
 JSONField.register_lookup(lookups.ContainedBy)

@@ -15,6 +15,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.core.urlresolvers import reverse
 from django.db import models, transaction, connection
+from django.db.models import F
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils import timezone
@@ -61,18 +62,18 @@ from website.util.permissions import (ADMIN, CREATOR_PERMISSIONS,
                                       DEFAULT_CONTRIBUTOR_PERMISSIONS, READ,
                                       WRITE, expand_permissions,
                                       reduce_permissions)
-from .base import BaseModel, Guid, GuidMixin, GuidMODMCompatibilityQuerySet
+from .base import BaseModel, Guid, GuidMixin, GuidMixinManager, GuidMixinQuerySet, GUID_FIELDS
 
 logger = logging.getLogger(__name__)
 
 
-class AbstractNodeQueryset(GuidMODMCompatibilityQuerySet):
+class AbstractNodeQuerySet(GuidMixinQuerySet):
     def get_roots(self):
         return self.extra(
             where=['"osf_abstractnode".id in (SELECT id FROM osf_abstractnode WHERE id NOT IN (SELECT child_id FROM '
                    'osf_noderelation WHERE is_node_link IS false))'])
 
-    def get_children(self, root, primary_keys=False):
+    def get_children(self, root, primary_keys=False, active=False):
         sql = """
             WITH RECURSIVE descendants AS (
               SELECT
@@ -80,7 +81,8 @@ class AbstractNodeQueryset(GuidMODMCompatibilityQuerySet):
                 child_id,
                 1 AS LEVEL
               FROM %s
-              WHERE is_node_link IS FALSE
+              %s
+              WHERE is_node_link IS FALSE %s
               UNION ALL
               SELECT
                 s.parent_id,
@@ -96,12 +98,34 @@ class AbstractNodeQueryset(GuidMODMCompatibilityQuerySet):
         """
         with connection.cursor() as cursor:
             node_relation_table = AsIs(NodeRelation._meta.db_table)
-            cursor.execute(sql, [node_relation_table, node_relation_table, root.pk])
+            cursor.execute(sql, [
+                node_relation_table,
+                AsIs('LEFT JOIN osf_abstractnode ON {}.child_id = osf_abstractnode.id'.format(node_relation_table) if active else ''),
+                AsIs('AND osf_abstractnode.is_deleted IS FALSE' if active else ''),
+                node_relation_table,
+                root.pk])
             row = cursor.fetchone()[0]
             if row is None or primary_keys:
                 return row or []
             else:
                 return AbstractNode.objects.filter(id__in=row)
+
+
+class AbstractNodeManager(GuidMixinManager):
+    def get_queryset(self):
+        queryset = AbstractNodeQuerySet(model=self.model, using=self._db, hints=self._hints)
+
+        for field in GUID_FIELDS:
+            queryset.query.add_annotation(
+                F(field), field, is_summary=False
+            )
+        return queryset
+
+    def get_roots(self, *args, **kwargs):
+        return self.get_queryset().get_roots(*args, **kwargs)
+
+    def get_children(self, *args, **kwargs):
+        return self.get_queryset().get_children(*args, **kwargs)
 
 
 class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixin,
@@ -227,7 +251,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                                     through_fields=('parent', 'child'),
                                     related_name='parent_nodes')
 
-    objects = AbstractNodeQueryset.as_manager()
+    objects = AbstractNodeManager()
 
     @property
     def parent_node(self):
@@ -686,10 +710,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         )
 
     def get_aggregate_logs_query(self, auth):
-        ids = [self._id] + [n._id
-                            for n in self.get_descendants_recursive(primary_only=True)
-                            if n.can_view(auth)]
-        query = Q('node', 'in', ids) & Q('should_hide', 'ne', True)
+        ids = [self._id] + [n._id for n in Node.objects.get_children(self) if n.can_view(auth)]
+        query = Q('node', 'in', ids) & Q('should_hide', 'eq', False)
         return query
 
     def get_aggregate_logs_queryset(self, auth):
@@ -2477,7 +2499,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 '{0!r} does not have permission to modify this {1}'.format(auth.user, self.category or 'node')
             )
 
-        if self.nodes_primary.filter(is_deleted=False).exists():
+        if Node.objects.get_children(self, active=True):
             raise NodeStateError('Any child components must be deleted prior to deleting this project.')
 
         # After delete callback
@@ -2590,8 +2612,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         new_page.save()
 
         if has_comments:
-            Comment.update(Q('root_target', 'eq', current), data={'root_target': Guid.load(new_page._id)})
-            Comment.update(Q('target', 'eq', current), data={'target': Guid.load(new_page._id)})
+            Comment.objects.filter(root_target=current.guids.first()).update(root_target=Guid.load(new_page._id))
+            Comment.objects.filter(target=current.guids.first()).update(target=Guid.load(new_page._id))
 
         if current:
             for contrib in self.contributors:

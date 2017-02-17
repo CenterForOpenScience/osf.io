@@ -8,16 +8,13 @@ total usage is defined as the sum of the size of all verions associated with X v
 
 import os
 import gc
-import sys
 import json
 import logging
 import functools
 
 from collections import defaultdict
 
-from django.db.models import F
 import progressbar
-from modularodm import Q
 
 from framework.celery_tasks import app as celery_app
 
@@ -25,12 +22,13 @@ from website import mails
 from website.models import User
 from website.app import init_app
 from website.project.model import Node
-from website.files.models import FileVersion
-from website.files.models import OsfStorageFile
-from website.files.models import TrashedFileNode
 
 from scripts import utils as scripts_utils
 
+# App must be init'd before django models are imported
+init_app(set_backends=True, routes=False)
+
+from osf.models import StoredFileNode, TrashedFileNode, FileVersion
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -61,24 +59,12 @@ def add_to_white_list(gtg):
 
 
 def get_usage(node):
-    vids = sum([
-        file_node.to_storage().get('versions', [])
-        for file_node in
-        OsfStorageFile.find(Q('node', 'eq', node))
-    ], [])
+    vids = [each for each in StoredFileNode.objects.filter(provider='osfstorage', node=node).values_list('versions', flat=True) if each]
 
-    t_vids = sum([
-        file_node.to_storage().get('versions', [])
-        for file_node in
-        TrashedFileNode.find(
-            Q('node', 'eq', node) &
-            Q('is_file', 'eq', True) &
-            Q('provider', 'eq', 'osfstorage')
-        )
-    ], [])
+    t_vids = [each for eac in TrashedFileNode.objects.filter(provider='osfstorage', node=node, is_file=True).values_list('versions', flat=True) if each]
 
-    usage = sum([v.size or 0 for v in FileVersion.find(Q('_id', 'in', vids))])
-    trashed_usage = sum([v.size or 0 for v in FileVersion.find(Q('_id', 'in', t_vids))])
+    usage = sum([v.size or 0 for v in FileVersion.objects.filter(id__in=vids)])
+    trashed_usage = sum([v.size or 0 for v in FileVersion.objects.filter(id__in=t_vids)])
 
     return map(sum, zip(*([(usage, trashed_usage)] + [get_usage(child) for child in node.nodes_primary])))  # Adds tuples together, map(sum, zip((a, b), (c, d))) -> (a+c, b+d)
 
@@ -89,7 +75,6 @@ def limit_filter(limit, (item, usage)):
 
 def main(send_email=False):
     logger.info('Starting Project storage audit')
-    init_app(set_backends=True, routes=False)
 
     lines = []
     projects = {}
