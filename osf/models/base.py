@@ -395,33 +395,6 @@ class ObjectIDMixin(BaseIDMixin):
 class InvalidGuid(Exception):
     pass
 
-GUID_FIELDS = [
-    'guids__id',
-    'guids___id',
-    'guids__content_type',
-    'guids__object_id',
-    'guids__created',
-]
-
-
-class GuidMixinQuerySet(MODMCompatibilityQuerySet):
-    def update(self, **kwargs):
-        for k, v in self.query.annotations.iteritems():
-            if k in GUID_FIELDS:
-                del self.query.annotations[k]
-        super(GuidMixinQuerySet, self).update(**kwargs)
-
-
-class GuidMixinManager(MODMCompatibilityManager):
-    def get_queryset(self):
-        queryset = GuidMixinQuerySet(model=self.model, using=self._db, hints=self._hints)
-
-        for field in GUID_FIELDS:
-            queryset.query.add_annotation(
-                F(field), field, is_summary=False
-            )
-        return queryset
-
 
 class OptionalGuidMixin(BaseIDMixin):
     """
@@ -429,10 +402,6 @@ class OptionalGuidMixin(BaseIDMixin):
     Things that inherit from this must also inherit from ObjectIDMixin ... probably
     """
     __guid_min_length__ = 5
-
-    _default_manager = GuidMixinManager
-    objects = GuidMixinManager()
-    subselect = MODMCompatibilityManager()
 
     guids = GenericRelation(Guid, related_name='referent', related_query_name='referents')
     guid_string = ArrayField(models.CharField(max_length=255, null=True, blank=True), null=True, blank=True)
@@ -471,10 +440,6 @@ class GuidMixin(BaseIDMixin):
     __guid_min_length__ = 5
 
     primary_identifier_name = 'guid_string'
-
-    _default_manager = GuidMixinManager
-    objects = GuidMixinManager()
-    subselect = MODMCompatibilityManager()
 
     guids = GenericRelation(Guid, related_name='referent', related_query_name='referents')
     guid_string = ArrayField(models.CharField(max_length=255, null=True, blank=True), null=True, blank=True)
