@@ -349,7 +349,7 @@ def fix_guids():
     # NOTE: is_orphaned will be True for Guids that should not be migrated because they have
     # invalid/missing referents
     short_missing_guids = MGuid.find(MQ('_id', 'in', short_missing) & MQ('is_orphaned', 'ne', True))
-    long_missing_guids = MGuid.find(MQ('_id', 'in', long_missing), & MQ('is_orphaned', 'ne', True))
+    long_missing_guids = MGuid.find(MQ('_id', 'in', long_missing) & MQ('is_orphaned', 'ne', True))
 
     short_missing_guids_with_referents = [x._id for x in short_missing_guids if x.referent is not None]
     short_missing_guids_without_referents = [x._id for x in short_missing_guids if x.referent is None]
