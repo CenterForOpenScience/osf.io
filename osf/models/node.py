@@ -16,7 +16,6 @@ from django.core.exceptions import ValidationError
 from django.core.urlresolvers import reverse
 from django.db import models, transaction, connection
 from django.db.models import Manager
-from django.db.models import F
 from django.db.models import QuerySet
 from django.db.models.signals import post_save
 from django.dispatch import receiver
