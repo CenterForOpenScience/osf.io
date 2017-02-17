@@ -76,13 +76,15 @@ def on_registration_updated(node):
     resp.raise_for_status()
 
 def format_registration(node):
+    # TODO: Add parent and root info?
     registration_graph = GraphNode('registration', **{
         'title': node.title,
         'description': node.description or '',
-        'is_deleted': node.retraction or not node.is_public or 'qatest' in (node.tags or []) or node.is_deleted,
+        'is_deleted': not node.is_public or 'qatest' in (node.tags or []) or node.is_deleted,
         'date_published': node.registered_date.isoformat() if node.registered_date else None,
         'registration_type': node.registered_schema[0].name if node.registered_schema else None,
-        'withdrawn': True if node.retraction else False,
+        'withdrawn': node.is_retracted,
+        # TODO: Should this recurse up to the node's root or nah?
         'justification': node.retraction.justification if node.retraction else None,
     })
 
