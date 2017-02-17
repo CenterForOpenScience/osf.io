@@ -388,7 +388,7 @@ def main(env):
             'description': 'Preprints for Agriculture and Allied Sciences',
             'banner_name': 'agrixiv-banner.svg',
             'external_url': '',
-            'example': '',
+            'example': '8whkp',
             'advisory_board': '''
                 <div class="col-xs-6">
                     <h3>Advisory Board</h3>
