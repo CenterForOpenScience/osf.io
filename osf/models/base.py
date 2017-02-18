@@ -46,8 +46,12 @@ def generate_guid(length=5):
 def generate_object_id():
     return str(bson.ObjectId())
 
-
 class MODMCompatibilityQuerySet(models.QuerySet):
+    def __init__(self, model=None, query=None, using=None, hints=None):
+        super(MODMCompatibilityQuerySet, self).__init__(model=model, query=query, using=using, hints=hints)
+        if issubclass(self.model, (GuidMixin, OptionalGuidMixin)):
+            self._prefetch_related_lookups = ['guids']
+
     def __getitem__(self, k):
         item = super(MODMCompatibilityQuerySet, self).__getitem__(k)
         if hasattr(item, 'wrapped'):
@@ -170,6 +174,12 @@ class BaseModel(models.Model):
     def _primary_name(self):
         return '_id'
 
+    def reload(self):
+        return self.refresh_from_db()
+
+    def _natural_key(self):
+        return self.pk
+
     def clone(self):
         """Create a new, unsaved copy of this object."""
         copy = self.__class__.objects.get(pk=self.pk)
@@ -180,18 +190,11 @@ class BaseModel(models.Model):
         for field_name in fk_field_names:
             setattr(copy, field_name, None)
 
-        return self._on_clone(copy)
-
-    def _on_clone(self, copy):
-        """ Override hook to add subclass-specific clone behavior
-        """
+        try:
+            copy._id = bson.ObjectId()
+        except AttributeError:
+            pass
         return copy
-
-    def reload(self):
-        return self.refresh_from_db()
-
-    def _natural_key(self):
-        return self.pk
 
     def save(self, *args, **kwargs):
         # Make Django validate on save (like modm)
@@ -373,13 +376,6 @@ class ObjectIDMixin(BaseIDMixin):
     def _natural_key(self):
         return self._id
 
-    def _on_clone(self, copy):
-        try:
-            copy._id = bson.ObjectId()
-        except AttributeError:
-            pass
-        return copy
-
 
 class InvalidGuid(Exception):
     pass
@@ -441,29 +437,22 @@ class GuidMixin(BaseIDMixin):
 
     @property
     def _id(self):
-        if hasattr(self, 'guids___id'):
-            return self.guids___id
         guid = self.guids.order_by('-created').first()
         if guid:
-            setattr(self, 'guids___id', guid._id)
             return guid._id
         return None
 
     @_id.setter
     def _id(self, value):
         # TODO do we really want to allow this?
-        if not value:
-            value = generate_guid(length=self.__guid_min_length__)
         guid, created = Guid.objects.get_or_create(_id=value)
         if created:
             guid.object_id = self.pk
             guid.content_type = ContentType.objects.get_for_model(self)
             guid.save()
-            setattr(self, 'guids___id', guid._id)
         elif guid.content_type == ContentType.objects.get_for_model(self) and guid.object_id == self.pk:
             # TODO should this up the created for the guid until now so that it appears as the first guid
             # for this object?
-            setattr(self, 'guids___id', guid._id)
             return
         else:
             raise InvalidGuid('Cannot indirectly repoint an existing guid, please use the Guid model')
@@ -540,6 +529,9 @@ def ensure_guid(sender, instance, created, **kwargs):
             del instance._prefetched_objects_cache['guids']
         Guid.objects.create(object_id=instance.pk, content_type=ContentType.objects.get_for_model(instance),
                             _id=generate_guid(instance.__guid_min_length__))
-    if instance._id and existing_guids.exists() and not existing_guids.filter(_id=instance._id).exists():
-        # Handle case where _id is old value after a .clone()
-        instance._id = existing_guids.first()._id
+    elif not existing_guids.exists() and instance.guid_string is not None:
+        # Clear query cache of instance.guids
+        if has_cached_guids:
+            del instance._prefetched_objects_cache['guids']
+        Guid.objects.create(object_id=instance.pk, content_type_id=instance.content_type_pk,
+                            _id=instance.guid_string)

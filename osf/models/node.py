@@ -1899,7 +1899,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         new.template_node = self
         # Need to save in order to access contributors m2m table
         new.save(suppress_log=True)
-
         new.add_contributor(contributor=auth.user, permissions=CREATOR_PERMISSIONS, log=False, save=False)
         new.is_fork = False
         new.node_license = self.license.copy() if self.license else None
