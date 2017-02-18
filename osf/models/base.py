@@ -47,6 +47,13 @@ def generate_object_id():
     return str(bson.ObjectId())
 
 class MODMCompatibilityQuerySet(models.QuerySet):
+    def __init__(self, model=None, query=None, using=None, hints=None):
+        super(MODMCompatibilityQuerySet, self).__init__(model=model, query=query, using=using, hints=hints)
+        if issubclass(self.model, (GuidMixin)):
+            # import ipdb; ipdb.set_trace()
+            if not self._for_write:
+                # automatically include guids___id for models that have a guid
+                self.query.add_annotation(F('guids___id'), 'guids___id', is_summary=False)
 
     def __getitem__(self, k):
         item = super(MODMCompatibilityQuerySet, self).__getitem__(k)
@@ -81,27 +88,6 @@ class MODMCompatibilityQuerySet(models.QuerySet):
 
     def limit(self, n):
         return self[:n]
-
-
-class GuidMODMCompatibilityQuerySet(MODMCompatibilityQuerySet):
-    """ Hijacks Django internals, adding annotations to read queries
-        to limit the number of DB calls when serializing objects with Guids.
-    """
-
-    def __init__(self, model=None, query=None, using=None, hints=None):
-        self.__for_write = False
-        return super(GuidMODMCompatibilityQuerySet, self).__init__(model=model, query=query, using=using, hints=hints)
-
-    @property
-    def _for_write(self):
-        return self.__for_write
-
-    @_for_write.setter
-    def _for_write(self, value):
-        self.query.annotations.pop('guids___id', None)
-        if not value:
-            self.query.add_annotation(F('guids___id'), 'guids___id', is_summary=False)
-        self.__for_write = value
 
 
 class BaseModel(models.Model):
@@ -191,6 +177,12 @@ class BaseModel(models.Model):
     def _primary_name(self):
         return '_id'
 
+    def reload(self):
+        return self.refresh_from_db()
+
+    def _natural_key(self):
+        return self.pk
+
     def clone(self):
         """Create a new, unsaved copy of this object."""
         copy = self.__class__.objects.get(pk=self.pk)
@@ -201,18 +193,11 @@ class BaseModel(models.Model):
         for field_name in fk_field_names:
             setattr(copy, field_name, None)
 
-        return self._on_clone(copy)
-
-    def _on_clone(self, copy):
-        """ Override hook to add subclass-specific clone behavior
-        """
+        try:
+            copy._id = bson.ObjectId()
+        except AttributeError:
+            pass
         return copy
-
-    def reload(self):
-        return self.refresh_from_db()
-
-    def _natural_key(self):
-        return self.pk
 
     def save(self, *args, **kwargs):
         # Make Django validate on save (like modm)
@@ -393,12 +378,6 @@ class ObjectIDMixin(BaseIDMixin):
     def _natural_key(self):
         return self._id
 
-    def _on_clone(self, copy):
-        try:
-            copy._id = bson.ObjectId()
-        except AttributeError:
-            pass
-        return copy
 
 class InvalidGuid(Exception):
     pass
@@ -410,9 +389,6 @@ class OptionalGuidMixin(BaseIDMixin):
     Things that inherit from this must also inherit from ObjectIDMixin ... probably
     """
     __guid_min_length__ = 5
-
-    objects = GuidMODMCompatibilityQuerySet.as_manager()
-    subselect = MODMCompatibilityQuerySet.as_manager()
 
     guids = GenericRelation(Guid, related_name='referent', related_query_name='referents')
     guid_string = ArrayField(models.CharField(max_length=255, null=True, blank=True), null=True, blank=True)
@@ -450,9 +426,6 @@ class OptionalGuidMixin(BaseIDMixin):
 class GuidMixin(BaseIDMixin):
     __guid_min_length__ = 5
 
-    objects = GuidMODMCompatibilityQuerySet.as_manager()
-    subselect = MODMCompatibilityQuerySet.as_manager()
-
     primary_identifier_name = 'guid_string'
 
     guids = GenericRelation(Guid, related_name='referent', related_query_name='referents')
@@ -477,8 +450,6 @@ class GuidMixin(BaseIDMixin):
     @_id.setter
     def _id(self, value):
         # TODO do we really want to allow this?
-        if not value:
-            value = generate_guid(length=self.__guid_min_length__)
         guid, created = Guid.objects.get_or_create(_id=value)
         if created:
             guid.object_id = self.pk
@@ -565,6 +536,9 @@ def ensure_guid(sender, instance, created, **kwargs):
             del instance._prefetched_objects_cache['guids']
         Guid.objects.create(object_id=instance.pk, content_type=ContentType.objects.get_for_model(instance),
                             _id=generate_guid(instance.__guid_min_length__))
-    if instance._id and existing_guids.exists() and not existing_guids.filter(_id=instance._id).exists():
-        # Handle case where _id is old value after a .clone()
-        instance._id = existing_guids.first()._id
+    elif not existing_guids.exists() and instance.guid_string is not None:
+        # Clear query cache of instance.guids
+        if has_cached_guids:
+            del instance._prefetched_objects_cache['guids']
+        Guid.objects.create(object_id=instance.pk, content_type_id=instance.content_type_pk,
+                            _id=instance.guid_string)
