@@ -12,7 +12,6 @@ from django.contrib.postgres.fields import ArrayField
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.core.exceptions import MultipleObjectsReturned
 from django.db import models
-from django.db.models import F
 from django.db.models import ForeignKey
 from django.db.models.signals import post_save
 from django.dispatch import receiver
@@ -49,11 +48,8 @@ def generate_object_id():
 class MODMCompatibilityQuerySet(models.QuerySet):
     def __init__(self, model=None, query=None, using=None, hints=None):
         super(MODMCompatibilityQuerySet, self).__init__(model=model, query=query, using=using, hints=hints)
-        if issubclass(self.model, (GuidMixin)):
-            # import ipdb; ipdb.set_trace()
-            if not self._for_write:
-                # automatically include guids___id for models that have a guid
-                self.query.add_annotation(F('guids___id'), 'guids___id', is_summary=False)
+        if issubclass(self.model, (GuidMixin, OptionalGuidMixin)):
+            self._prefetch_related_lookups = ['guids']
 
     def __getitem__(self, k):
         item = super(MODMCompatibilityQuerySet, self).__getitem__(k)
@@ -439,11 +435,8 @@ class GuidMixin(BaseIDMixin):
 
     @property
     def _id(self):
-        if hasattr(self, 'guids___id'):
-            return self.guids___id
         guid = self.guids.order_by('-created').first()
         if guid:
-            setattr(self, 'guids___id', guid._id)
             return guid._id
         return None
 
@@ -455,11 +448,9 @@ class GuidMixin(BaseIDMixin):
             guid.object_id = self.pk
             guid.content_type = ContentType.objects.get_for_model(self)
             guid.save()
-            setattr(self, 'guids___id', guid._id)
         elif guid.content_type == ContentType.objects.get_for_model(self) and guid.object_id == self.pk:
             # TODO should this up the created for the guid until now so that it appears as the first guid
             # for this object?
-            setattr(self, 'guids___id', guid._id)
             return
         else:
             raise InvalidGuid('Cannot indirectly repoint an existing guid, please use the Guid model')
