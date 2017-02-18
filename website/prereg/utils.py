@@ -14,7 +14,7 @@ def drafts_for_user(user, campaign):
         registration_schema=PREREG_CHALLENGE_METASCHEMA,
         approval=None,
         registered_node=None,
-        branched_from__in=models.AbstractNode.subselect.filter(
+        branched_from__in=models.AbstractNode.objects.filter(
             is_deleted=False,
             contributor__admin=True,
             contributor__user=user).values_list('id', flat=True))
