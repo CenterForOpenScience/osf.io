@@ -597,7 +597,7 @@ def save_bare_models(django_model):
     count = 0
     modm_model = get_modm_model(django_model)
     page_size = django_model.migration_page_size
-    page_size = 10000
+
     if isinstance(django_model.modm_query, dict):
         modm_queryset = modm_model.find(**django_model.modm_query)
     else:

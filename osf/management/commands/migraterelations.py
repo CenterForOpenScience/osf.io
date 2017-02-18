@@ -129,7 +129,8 @@ def fix_bad_data(django_obj, dirty):
     This fixes a bunch of validation errors that happen during the migration.
     Encapsulating it in one place. Bulk_create doesn't run validation so we
     get to clean it up here.
-    :param django_obj:
+    :param django_obj: The django object in question
+    :param dirty: Whether or not the model instance was dirty on entry
     :return:
     """
     if isinstance(django_obj, models.Node):
@@ -156,7 +157,7 @@ def fix_bad_data(django_obj, dirty):
             django_obj.state = 'unapproved'
             dirty = True
 
-    return (django_obj, dirty)
+    return django_obj, dirty
 
 
 def format_lookup_key(guid, content_type_id=None, model=None, template=None):
@@ -199,7 +200,7 @@ def do_model(django_model, *args, **options):
         return
 
     page_size = django_model.migration_page_size
-    page_size = 10000
+
 # with ipdb.launch_ipdb_on_exception():
     try:
         if options['fk']:
@@ -214,7 +215,7 @@ def do_model(django_model, *args, **options):
         raise ex
 
 
-@app.task(bind=True)
+@app.task(bind=True, max_retries=None)  # retry forever because of deadlocks
 def save_page_of_fk_relationships(self, django_model, fk_relations, offset, limit):
     init_app(routes=False, attach_request_handlers=False, fixtures=False)
     set_backend()
@@ -406,7 +407,6 @@ def save_page_of_fk_relationships(self, django_model, fk_relations, offset, limi
     finally:
         # Disable typedmodel auto-recasting to prevent migration from missing fields h/t @chrisseto
         AbstractNode._auto_recast = True
-
 
 
 @app.task()
