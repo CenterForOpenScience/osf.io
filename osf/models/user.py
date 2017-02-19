@@ -42,7 +42,7 @@ from osf.models.tag import Tag
 from osf.models.validators import validate_email, validate_social
 from osf.modm_compat import Q
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
-from osf.utils.fields import NonNaiveDatetimeField
+from osf.utils.fields import NonNaiveDateTimeField
 from osf.utils.names import impute_names
 from website import settings as website_settings
 from website import filters, mails
@@ -206,7 +206,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     #   'expires': <verification expiration time>
     # }
 
-    email_last_sent = NonNaiveDatetimeField(null=True, blank=True)
+    email_last_sent = NonNaiveDateTimeField(null=True, blank=True)
 
     # confirmed emails
     #   emails should be stripped of whitespace and lower-cased before appending
@@ -245,7 +245,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     # }
 
     # the date this user was registered
-    date_registered = NonNaiveDatetimeField(db_index=True, default=timezone.now)  # auto_now_add=True)
+    date_registered = NonNaiveDateTimeField(db_index=True, default=timezone.now)  # auto_now_add=True)
 
     # list of collaborators that this user recently added to nodes as a contributor
     # recently_added = fields.ForeignField("user", list=True)
@@ -319,13 +319,13 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     piwik_token = models.CharField(max_length=255, blank=True)
 
     # date the user last sent a request
-    date_last_login = NonNaiveDatetimeField(null=True, blank=True)
+    date_last_login = NonNaiveDateTimeField(null=True, blank=True)
 
     # date the user first successfully confirmed an email address
-    date_confirmed = NonNaiveDatetimeField(db_index=True, null=True, blank=True)
+    date_confirmed = NonNaiveDateTimeField(db_index=True, null=True, blank=True)
 
     # When the user was disabled.
-    date_disabled = NonNaiveDatetimeField(db_index=True, null=True, blank=True)
+    date_disabled = NonNaiveDateTimeField(db_index=True, null=True, blank=True)
 
     # when comments were last viewed
     comments_viewed_timestamp = DateTimeAwareJSONField(default=dict, blank=True)

@@ -63,26 +63,26 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='draftregistrationapproval',
             name='initiation_date',
-            field=osf.utils.fields.NonNaiveDatetimeField(blank=True, default=django.utils.timezone.now, null=True),
+            field=osf.utils.fields.NonNaiveDateTimeField(blank=True, default=django.utils.timezone.now, null=True),
         ),
         migrations.AlterField(
             model_name='embargo',
             name='initiation_date',
-            field=osf.utils.fields.NonNaiveDatetimeField(blank=True, default=django.utils.timezone.now, null=True),
+            field=osf.utils.fields.NonNaiveDateTimeField(blank=True, default=django.utils.timezone.now, null=True),
         ),
         migrations.AlterField(
             model_name='embargoterminationapproval',
             name='initiation_date',
-            field=osf.utils.fields.NonNaiveDatetimeField(blank=True, default=django.utils.timezone.now, null=True),
+            field=osf.utils.fields.NonNaiveDateTimeField(blank=True, default=django.utils.timezone.now, null=True),
         ),
         migrations.AlterField(
             model_name='registrationapproval',
             name='initiation_date',
-            field=osf.utils.fields.NonNaiveDatetimeField(blank=True, default=django.utils.timezone.now, null=True),
+            field=osf.utils.fields.NonNaiveDateTimeField(blank=True, default=django.utils.timezone.now, null=True),
         ),
         migrations.AlterField(
             model_name='retraction',
             name='initiation_date',
-            field=osf.utils.fields.NonNaiveDatetimeField(blank=True, default=django.utils.timezone.now, null=True),
+            field=osf.utils.fields.NonNaiveDateTimeField(blank=True, default=django.utils.timezone.now, null=True),
         ),
     ]
