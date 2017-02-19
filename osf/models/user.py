@@ -49,6 +49,7 @@ from website import filters, mails
 
 logger = logging.getLogger(__name__)
 
+
 def get_default_mailing_lists():
     return {'Open Science Framework Help': True}
 
@@ -60,6 +61,7 @@ name_formatters = {
         initial=user.given_name_initial,
     ),
 }
+
 
 class OSFUserManager(BaseUserManager):
     def create_user(self, username, password=None):
@@ -85,8 +87,7 @@ class OSFUserManager(BaseUserManager):
         return user
 
 
-class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
-              AbstractBaseUser, PermissionsMixin, AddonModelMixin):
+class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, PermissionsMixin, AddonModelMixin):
     # TODO DELETE ME POST MIGRATION
     modm_model_path = 'framework.auth.core.User'
     modm_query = None

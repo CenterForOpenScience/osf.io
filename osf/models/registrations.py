@@ -382,7 +382,7 @@ class DraftRegistration(ObjectIDMixin, BaseModel):
     URL_TEMPLATE = settings.DOMAIN + 'project/{node_id}/drafts/{draft_id}'
 
     datetime_initiated = NonNaiveDatetimeField(default=timezone.now)  # auto_now_add=True)
-    datetime_updated = NonNaiveDatetimeField(auto_now=True)
+    datetime_updated = NonNaiveDatetimeField(default=timezone.now)  # auto_now=True)
     # Original Node a draft registration is associated with
     branched_from = models.ForeignKey('Node', null=True, related_name='registered_draft')
 

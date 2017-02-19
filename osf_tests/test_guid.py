@@ -1,4 +1,5 @@
 import pytest
+from django.core.exceptions import MultipleObjectsReturned
 
 from osf.models import Guid, NodeLicenseRecord, OSFUser
 from osf.modm_compat import Q
@@ -107,3 +108,22 @@ class TestReferent:
         assert obj.guid != guid
 
         assert guid.guid != obj.guid.guid
+
+
+    @pytest.mark.parametrize('Factory',
+    [
+        UserFactory,
+        NodeFactory,
+    ])
+    def test_querying_with_multiple_guids(self, Factory):
+
+        obj = Factory()
+        guids = [obj.guids.first()]
+
+        for i in range(0, 16):
+            guids.append(Guid.objects.create(referent=obj))
+
+        try:
+            things = Factory._meta.model.objects.get(id=obj.id)
+        except MultipleObjectsReturned as ex:
+            pytest.fail('Multiple objects returned for {} with multiple guids. {}'.format(Factory._meta.model, ex))

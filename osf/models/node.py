@@ -66,7 +66,7 @@ from .base import BaseModel, Guid, GuidMixin, MODMCompatibilityQuerySet
 logger = logging.getLogger(__name__)
 
 
-class AbstractNodeQueryset(MODMCompatibilityQuerySet):
+class AbstractNodeQuerySet(MODMCompatibilityQuerySet):
     def get_roots(self):
         return self.extra(
             where=['"osf_abstractnode".id in (SELECT id FROM osf_abstractnode WHERE id NOT IN (SELECT child_id FROM '
@@ -121,6 +121,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     primary_identifier_name = 'guid_string'
     modm_model_path = 'website.models.Node'
     modm_query = None
+    migration_page_size = 10000
 
     #: Whether this is a pointer or not
     primary = True
@@ -233,7 +234,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                                     through_fields=('parent', 'child'),
                                     related_name='parent_nodes')
 
-    objects = AbstractNodeQueryset.as_manager()
+    objects = AbstractNodeQuerySet.as_manager()
 
     @property
     def parent_node(self):
@@ -2828,10 +2829,13 @@ class Node(AbstractNode):
         from website.models import Guid as MODMGuid
         from modularodm import Q as MODMQ
 
-        guids = MODMGuid.find(MODMQ('referent', 'eq', modm_obj._id))
+        guids = MODMGuid.find(MODMQ('referent', 'eq', modm_obj._id)).get_keys()
+        guids.append(modm_obj._id)
+        g_set = set(guids)
 
-        setattr(django_obj, 'guid_string', guids.get_keys())
+        setattr(django_obj, 'guid_string', list(g_set))
         setattr(django_obj, 'content_type_pk', content_type_pk)
+        django_obj.title = django_obj.title[:200]
         return django_obj
 
     # /TODO DELETE ME POST MIGRATION

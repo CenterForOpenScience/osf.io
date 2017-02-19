@@ -42,6 +42,7 @@ def generate_guid(length=5):
                 # valid and unique guid
                 return guid_id
 
+
 def generate_object_id():
     return str(bson.ObjectId())
 
@@ -91,7 +92,7 @@ class BaseModel(models.Model):
     modular-odm ``StoredObject`` interface.
     """
 
-    migration_page_size = 20000
+    migration_page_size = 50000
 
     objects = MODMCompatibilityQuerySet.as_manager()
 
@@ -223,7 +224,7 @@ class Guid(BaseModel):
     referent = GenericForeignKey()
     content_type = models.ForeignKey(ContentType, null=True, blank=True)
     object_id = models.PositiveIntegerField(null=True, blank=True)
-    created = models.DateTimeField(db_index=True, auto_now_add=True)
+    created = models.DateTimeField(db_index=True, default=timezone.now)  # auto_now_add=True)
 
     # Override load in order to load by GUID
     @classmethod
@@ -273,6 +274,7 @@ class Guid(BaseModel):
 class BlackListGuid(BaseModel):
     # TODO DELETE ME POST MIGRATION
     modm_model_path = 'framework.guid.model.BlacklistGuid'
+    primary_identifier_name = 'guid'
     modm_query = None
     migration_page_size = 500000
     # /TODO DELETE ME POST MIGRATION

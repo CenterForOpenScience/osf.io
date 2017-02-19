@@ -29,12 +29,15 @@ def is_active(collection_name, document):
             document['user_settings'],
             document['folder_id'],
         ])
+    elif collection_name == 'forwardnodesettings':
+        return document.get('url', False)
     else:
         return bool(document['external_account'])
 
 
 def fix_duplicate_addon_node_settings():
     COLLECTIONS = [
+        'forwardnodesettings',
         'addondataversenodesettings',
         'addonfigsharenodesettings',
         # 'addongithubnodesettings',  # old, unused
@@ -49,7 +52,7 @@ def fix_duplicate_addon_node_settings():
         'osfstoragenodesettings',
         's3nodesettings',
         'zoteronodesettings',
-        'addonwikinodesettings'
+        'addonwikinodesettings',
     ]
 
     for collection in COLLECTIONS:
