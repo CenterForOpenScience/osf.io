@@ -785,17 +785,13 @@ def migrate_node_through_models():
                 clean_node_guid = unicode(modm_obj._id).lower()
                 for modm_contributor in modm_obj.contributors:
                     clean_user_guid = unicode(modm_contributor._id).lower()
-                    if clean_node_guid == 'jyznd':
-                        # this one is case sensitive because reasons.
-                        read = 'read' in modm_obj.permissions['JYznd']
-                        write = 'write' in modm_obj.permissions['JYznd']
-                        admin = 'admin' in modm_obj.permissions['JYznd']
-                        visible = 'JYznd' in modm_obj.visible_contributor_ids
-                    else:
-                        read = 'read' in modm_obj.permissions[clean_user_guid]
-                        write = 'write' in modm_obj.permissions[clean_user_guid]
-                        admin = 'admin' in modm_obj.permissions[clean_user_guid]
-                        visible = clean_user_guid in modm_obj.visible_contributor_ids
+                    perms = modm_obj.permissions
+                    lower_case_perms = {unicode(k).lower(): v for k, v in perms.iteritems()}
+                    lower_visible_contributor_ids = [unicode(i).lower() for i in modm_obj.visible_contributor_ids]
+                    read = 'read' in lower_case_perms[clean_user_guid]
+                    write = 'write' in lower_case_perms[clean_user_guid]
+                    admin = 'admin' in lower_case_perms[clean_user_guid]
+                    visible = clean_user_guid in lower_visible_contributor_ids
 
                     if (
                             modm_to_django[format_lookup_key(clean_user_guid, model=OSFUser)],
