@@ -283,11 +283,13 @@ def save_page_of_fk_relationships(self, django_model, fk_relations, offset, limi
                         django_obj.user_id = modm_to_django[format_lookup_key(modm_obj.owner._id, model=OSFUser)]
                         django_obj.node_id = None
                         dirty = True
+                        fk_count += 1
                     elif isinstance(modm_obj.owner, MODMNode):
                         # TODO this is also doing a mongo query for each owner
                         django_obj.user_id = None
                         django_obj.node_id = modm_to_django[format_lookup_key(modm_obj.owner._id, model=AbstractNode)]
                         dirty = True
+                        fk_count += 1
                     elif modm_obj.owner is None:
                         django_obj.node_id = None
                         django_obj.user_id = None
