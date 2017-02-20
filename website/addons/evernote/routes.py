@@ -65,15 +65,15 @@ api_routes = {
             json_renderer,
         ),
 
-        Rule(
-            [
-                '/project/<pid>/evernote/widget/',
-                '/project/<pid>/node/<nid>/evernote/widget/',
-            ],
-            'get',
-            views.evernote_widget,
-            json_renderer,
-        ),
+        # Rule(
+        #     [
+        #         '/project/<pid>/evernote/widget/',
+        #         '/project/<pid>/node/<nid>/evernote/widget/',
+        #     ],
+        #     'get',
+        #     views.evernote_widget,
+        #     json_renderer,
+        # ),
 
         Rule(
             [
@@ -85,15 +85,15 @@ api_routes = {
             json_renderer,
         ),
 
-        Rule(
-            [
-                '/project/<pid>/evernote/note/',
-                '/project/<pid>/evernote/note/<noteid>/',
-            ],
-            'get',
-            views.evernote_note,
-            json_renderer,
-        ),
+        # Rule(
+        #     [
+        #         '/project/<pid>/evernote/note/',
+        #         '/project/<pid>/evernote/note/<noteid>/',
+        #     ],
+        #     'get',
+        #     views.evernote_note,
+        #     json_renderer,
+        # ),
 
 
 

@@ -1,3 +1,4 @@
+<%doc>
 <%inherit file="project/addon/widget.mako"/>
 <div id="evernoteWidget">
   <div class="evernote-test">Notebook: ${folder_name}</div>
@@ -10,3 +11,4 @@
     <div id="evernote-notedisplay"></div>
   </div>
 </div>
+</%doc>
