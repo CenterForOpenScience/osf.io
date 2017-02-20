@@ -30,9 +30,6 @@ logging.basicConfig(level=logging.INFO)
 class Sitemap(object):
     def __init__(self):
         self.sitemap_count = 0
-        # ajs: This url_max was chosen to be sufficiently lower than the 5mb per file limit given in spec. 
-        # It was not clear whether 5mb was pre or post gzip. This could be revisited if limits are reached.
-        self.url_max = 24999
         self.new_doc()
         self.sitemap_dir = os.path.join(settings.STATIC_FOLDER, 'sitemaps')
         if not os.path.exists(self.sitemap_dir):
@@ -43,6 +40,7 @@ class Sitemap(object):
         """Creates new sitemap document and resets the url_count."""
         self.doc = xml.dom.minidom.Document()
         self.urlset = self.doc.createElement('urlset')
+        self.urlset.setAttribute('xmlns', 'http://www.sitemaps.org/schemas/sitemap/0.9')
         self.doc.appendChild(self.urlset)
         self.url_count = 0
 
@@ -53,15 +51,15 @@ class Sitemap(object):
         tag_text = self.doc.createTextNode(text)
         tag.appendChild(tag_text)
 
-    def add_url(self, **kwargs):
+    def add_url(self, config):
         """Adds a url to the current urlset"""
-        if self.url_count > self.url_max:
+        if self.url_count >= settings.SITEMAP_URL_MAX:
             self.write_doc()
             self.new_doc()
         self.url = self.doc.createElement('url')
         self.urlset.appendChild(self.url)
 
-        for k, v in kwargs.iteritems():
+        for k, v in config.iteritems():
             self.add_tag(k, v)
         self.url_count += 1
 
@@ -82,6 +80,7 @@ class Sitemap(object):
         """Writes the index file for all of the sitemap files"""
         doc = xml.dom.minidom.Document()
         sitemap_index = self.doc.createElement('sitemapindex')
+        sitemap_index.setAttribute('xmlns', 'http://www.sitemaps.org/schemas/sitemap/0.9')
         doc.appendChild(sitemap_index)
 
         for f in range(self.sitemap_count):
@@ -104,72 +103,53 @@ class Sitemap(object):
             f.write(xml_str)
 
     def generate(self):
-
+        print('Generating Sitemap')
         # Static urls
-        static_urls = [
-            ['', 'yearly'],
-            ['preprints', 'yearly'],
-            ['prereg', 'yearly'],
-            ['meetings', 'yearly'],
-            ['registries', 'yearly'],
-            ['explore/activity', 'weekly'],
-            ['support', 'yearly'],
-            ['faq', 'yearly'],
-        ]
-
-        for url, freq in static_urls:
-            self.add_url(**{
-                'loc': urlparse.urljoin(settings.DOMAIN, url),
-                'changefreq': freq,
-            })
+        for config in settings.SITEMAP_STATIC_URLS:
+            config['loc'] = urlparse.urljoin(settings.DOMAIN, config['loc'])
+            self.add_url(config)
 
         # User urls
-        for obj in OSFUser.objects.filter(is_active=True):
-            self.add_url(**{
-                'loc': urlparse.urljoin(settings.DOMAIN, obj.url),
-                'changefreq': 'yearly',
-            })
+        for obj in OSFUser.objects.filter(is_active=True).iterator():
+            config = settings.SITEMAP_USER_CONFIG
+            config['loc'] = urlparse.urljoin(settings.DOMAIN, obj.url)
+            self.add_url(config)
 
         # Node urls
-        for obj in Node.objects.filter(is_public=True, is_deleted=False):
-            self.add_url(**{
-                'loc': urlparse.urljoin(settings.DOMAIN, obj.url),
-                'lastmod': obj.date_modified.isoformat(),
-                'changefreq': 'monthly',
-            })
+        for obj in Node.objects.filter(is_public=True, is_deleted=False).iterator():
+            config = settings.SITEMAP_NODE_CONFIG
+            config['loc'] = urlparse.urljoin(settings.DOMAIN, obj.url)
+            config['lastmod'] = obj.date_modified.isoformat()
+            self.add_url(config)
 
         # Registration urls
-        for obj in Registration.objects.filter(retraction=False, is_deleted=False, is_public=True):
-            self.add_url(**{
-                'loc': urlparse.urljoin(settings.DOMAIN, obj.url),
-                'lastmod': obj.date_modified.isoformat(),
-                'changefreq': 'never',
-            })
+        for obj in Registration.objects.filter(retraction=False, is_deleted=False, is_public=True).iterator():
+            config = settings.SITEMAP_REGISTRATION_CONFIG
+            config['loc'] = urlparse.urljoin(settings.DOMAIN, obj.url)
+            config['lastmod'] = obj.date_modified.isoformat()
+            self.add_url(config)
 
         # Preprint urls
-        for obj in PreprintService.objects.filter(node__isnull=False, node__is_deleted=False, node__is_public=True, is_published=True):
+        for obj in PreprintService.objects.filter(node__isnull=False, node__is_deleted=False, node__is_public=True, is_published=True).iterator():
             preprint_date = obj.date_modified.isoformat()
-            self.add_url(**{
-                'loc': urlparse.urljoin(settings.DOMAIN, obj.url),
-                'lastmod': preprint_date,
-                'changefreq': 'monthly',
-            })
+            config = settings.SITEMAP_PREPRINT_CONFIG
+            config['loc'] = urlparse.urljoin(settings.DOMAIN, obj.url)
+            config['lastmod'] = preprint_date
+            self.add_url(config)
 
             # Preprint file urls
-            self.add_url(**{
-                'loc': urlparse.urljoin(settings.DOMAIN, 
-                    os.path.join(
-                        'project', 
-                        obj.primary_file.node._id, # Parent node id
-                        'files',
-                        'osfstorage',
-                        obj.primary_file._id, # Preprint file deep_url
-                        '?action=download'
-                    )
-                ),
-                'lastmod': preprint_date,
-                'changefreq': 'yearly',
-            })
+            file_config = settings.SITEMAP_PREPRINT_FILE_CONFIG
+            file_config['loc'] = urlparse.urljoin(settings.DOMAIN, 
+                os.path.join('project', 
+                    obj.primary_file.node._id, # Parent node id
+                    'files',
+                    'osfstorage',
+                    obj.primary_file._id, # Preprint file deep_url
+                    '?action=download'
+                )
+            )
+            file_config['lastmod'] = preprint_date
+            self.add_url(file_config)
 
         # Final write
         self.write_doc()
@@ -177,12 +157,12 @@ class Sitemap(object):
         self.write_sitemap_index()
 
         # TODO: once the sitemap is validated add a ping to google with sitemap index file location
-
-        # Sitemap indexable limit check (#osflifegoals)
-        if self.sitemap_count > 49500:
+        # TODO: server side cursor query wrapper might be useful as the index gets larger.
+        # Sitemap indexable limit check
+        if self.sitemap_count > settings.SITEMAP_INDEX_MAX * .90: # 10% of urls remaining
             logger.exception('WARNING: Max sitemaps nearly reached: {} of 50000 max sitemaps for index file'.format(str(self.sitemap_count)))
             log_exception()
-        print('Total url_count = {}'.format((self.sitemap_count - 1) * (self.url_max + 1) + self.url_count))
+        print('Total url_count = {}'.format((self.sitemap_count - 1) * settings.SITEMAP_URL_MAX + self.url_count))
         print('Total sitemap_count = {}'.format(str(self.sitemap_count)))
 
 @celery_app.task(name='scripts.generate_sitemap')

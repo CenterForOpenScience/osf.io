@@ -1786,3 +1786,26 @@ INSTITUTION_DISPLAY_NODE_THRESHOLD = 5
 
 # refresh campaign every 5 minutes
 CAMPAIGN_REFRESH_THRESHOLD = 5 * 60  # 5 minutes in seconds
+
+
+# sitemap default settings
+
+SITEMAP_URL_MAX = 25000
+SITEMAP_INDEX_MAX = 50000
+SITEMAP_STATIC_URLS = [
+    OrderedDict([('loc', ''), ('changefreq', 'yearly'), ('priority', '0.5')]),
+    OrderedDict([('loc', 'preprints'), ('changefreq', 'yearly'), ('priority', '0.5')]),
+    OrderedDict([('loc', 'prereg'), ('changefreq', 'yearly'), ('priority', '0.5')]),
+    OrderedDict([('loc', 'meetings'), ('changefreq', 'yearly'), ('priority', '0.5')]),
+    OrderedDict([('loc', 'registries'), ('changefreq', 'yearly'), ('priority', '0.5')]),
+    OrderedDict([('loc', 'explore/activity'), ('changefreq', 'weekly'), ('priority', '0.5')]),
+    OrderedDict([('loc', 'support'), ('changefreq', 'yearly'), ('priority', '0.5')]),
+    OrderedDict([('loc', 'faq'), ('changefreq', 'yearly'), ('priority', '0.5')]),
+
+]
+
+SITEMAP_USER_CONFIG = OrderedDict([('loc', ''), ('changefreq', 'yearly'), ('priority', '0.5')])
+SITEMAP_NODE_CONFIG = OrderedDict([('loc', ''), ('lastmod', ''), ('changefreq', 'monthly'), ('priority', '0.5')])
+SITEMAP_REGISTRATION_CONFIG = OrderedDict([('loc', ''), ('lastmod', ''), ('changefreq', 'never'), ('priority', '0.5')])
+SITEMAP_PREPRINT_CONFIG = OrderedDict([('loc', ''), ('lastmod', ''), ('changefreq', 'yearly'), ('priority', '0.5')])
+SITEMAP_PREPRINT_FILE_CONFIG = OrderedDict([('loc', ''), ('lastmod', ''), ('changefreq', 'yearly'), ('priority', '0.5')])
