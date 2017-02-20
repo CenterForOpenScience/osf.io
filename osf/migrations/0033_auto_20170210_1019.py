@@ -19,7 +19,7 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='draftregistration',
             name='datetime_updated',
-            field=osf.utils.fields.NonNaiveDatetimeField(default=django.utils.timezone.now),
+            field=osf.utils.fields.NonNaiveDateTimeField(default=django.utils.timezone.now),
         ),
         migrations.AlterField(
             model_name='fileversion',
@@ -34,6 +34,6 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='recentlyaddedcontributor',
             name='date_added',
-            field=osf.utils.fields.NonNaiveDatetimeField(default=django.utils.timezone.now),
+            field=osf.utils.fields.NonNaiveDateTimeField(default=django.utils.timezone.now),
         ),
     ]

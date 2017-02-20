@@ -53,9 +53,9 @@ class EncryptedTextField(models.TextField):
         return self.to_python(value)
 
 
-class NonNaiveDatetimeField(models.DateTimeField):
+class NonNaiveDateTimeField(models.DateTimeField):
     def get_prep_value(self, value):
-        value = super(NonNaiveDatetimeField, self).get_prep_value(value)
+        value = super(NonNaiveDateTimeField, self).get_prep_value(value)
         if value is not None and (value.tzinfo is None or value.tzinfo.utcoffset(value) is None):
             raise NaiveDatetimeException('Tried to encode a naive datetime.')
         return value

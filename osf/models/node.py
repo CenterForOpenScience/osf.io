@@ -46,6 +46,7 @@ from osf.models.validators import validate_doi, validate_title
 from osf.modm_compat import Q
 from osf.utils.auth import Auth, get_user
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
+from osf.utils.fields import NonNaiveDateTimeField
 from website import language, settings
 from website.citations.utils import datetime_to_csl
 from website.exceptions import (InvalidTagError, NodeStateError,
@@ -213,12 +214,12 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                                 on_delete=models.SET_NULL,
                                 null=True, blank=True)
     # TODO: Uncomment auto_* attributes after migration is complete
-    date_created = models.DateTimeField(default=timezone.now)  # auto_now_add=True)
-    date_modified = models.DateTimeField(db_index=True, null=True, blank=True)  # auto_now=True)
-    deleted_date = models.DateTimeField(null=True, blank=True)
+    date_created = NonNaiveDateTimeField(default=timezone.now)  # auto_now_add=True)
+    date_modified = NonNaiveDateTimeField(db_index=True, null=True, blank=True)  # auto_now=True)
+    deleted_date = NonNaiveDateTimeField(null=True, blank=True)
     description = models.TextField(blank=True, default='')
     file_guid_to_share_uuids = DateTimeAwareJSONField(default=dict, blank=True)
-    forked_date = models.DateTimeField(db_index=True, null=True, blank=True)
+    forked_date = NonNaiveDateTimeField(db_index=True, null=True, blank=True)
     forked_from = models.ForeignKey('self',
                                     related_name='forks',
                                     on_delete=models.SET_NULL,
