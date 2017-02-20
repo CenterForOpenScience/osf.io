@@ -59,11 +59,14 @@ from website.addons.wiki.exceptions import (
     PageConflictError,
     PageNotFoundError,
 )
+from website.project.model import ensure_schemas
+from website.project.sanctions import Sanction, DraftRegistrationApproval
+from website.prereg.utils import get_prereg_schema
 
 from tests.base import OsfTestCase, Guid, fake, capture_signals, get_default_metaschema
 from tests.factories import (
     UserFactory, ApiOAuth2ApplicationFactory, NodeFactory, PointerFactory,
-    ProjectFactory, NodeLogFactory, WatchConfigFactory,
+    ProjectFactory, NodeLogFactory, WatchConfigFactory, DraftRegistrationFactory,
     NodeWikiFactory, RegistrationFactory, UnregUserFactory,
     ProjectWithAddonFactory, UnconfirmedUserFactory, PrivateLinkFactory,
     AuthUserFactory, BookmarkCollectionFactory, CollectionFactory,
@@ -2258,6 +2261,22 @@ class TestNodeTraversals(OsfTestCase):
         reg_ids = [reg._id] + [r._id for r in reg.get_descendants_recursive()]
         reg.delete_registration_tree(save=True)
         assert_false(Node.find(Q('_id', 'in', reg_ids) & Q('is_deleted', 'eq', False)).count())
+
+    def test_delete_registration_tree_sets_draft_registration_approvals_to_none(self):
+        ensure_schemas()
+        reg = RegistrationFactory()
+
+        dr = DraftRegistrationFactory(initiator=self.user)
+        approval = DraftRegistrationApproval(state=Sanction.APPROVED)
+        approval.save()
+        dr.approval = approval
+        dr.registered_node = reg
+        dr.save()
+
+        reg.delete_registration_tree(save=True)
+
+        dr.reload()
+        assert_is_none(dr.approval)
 
     def test_delete_registration_tree_deletes_backrefs(self):
         proj = NodeFactory()
