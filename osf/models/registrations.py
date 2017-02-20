@@ -6,7 +6,7 @@ from django.db import models
 
 from framework.auth import Auth
 from framework.exceptions import PermissionsError
-from osf.utils.fields import NonNaiveDatetimeField
+from osf.utils.fields import NonNaiveDateTimeField
 from website.exceptions import NodeStateError
 from website.util import api_v2_url
 from website import settings
@@ -33,7 +33,7 @@ class Registration(AbstractNode):
     modm_query = MQ('is_registration', 'eq', True)
     # /TODO DELETE ME POST MIGRATION
 
-    registered_date = NonNaiveDatetimeField(db_index=True, null=True, blank=True)
+    registered_date = NonNaiveDateTimeField(db_index=True, null=True, blank=True)
     registered_user = models.ForeignKey(OSFUser,
                                         related_name='related_to',
                                         on_delete=models.SET_NULL,
@@ -358,7 +358,7 @@ class DraftRegistrationLog(ObjectIDMixin, BaseModel):
     modm_model_path = 'website.project.model.DraftRegistrationLog'
     modm_query = None
     # /TODO DELETE ME POST MIGRATION
-    date = NonNaiveDatetimeField(default=timezone.now)
+    date = NonNaiveDateTimeField(default=timezone.now)
     action = models.CharField(max_length=255)
     draft = models.ForeignKey('DraftRegistration', related_name='logs', null=True, blank=True)
     user = models.ForeignKey('OSFUser', null=True)
@@ -381,8 +381,8 @@ class DraftRegistration(ObjectIDMixin, BaseModel):
     # /TODO DELETE ME POST MIGRATION
     URL_TEMPLATE = settings.DOMAIN + 'project/{node_id}/drafts/{draft_id}'
 
-    datetime_initiated = NonNaiveDatetimeField(default=timezone.now)  # auto_now_add=True)
-    datetime_updated = NonNaiveDatetimeField(auto_now=True)
+    datetime_initiated = NonNaiveDateTimeField(default=timezone.now)  # auto_now_add=True)
+    datetime_updated = NonNaiveDateTimeField(default=timezone.now)  # auto_now=True)
     # Original Node a draft registration is associated with
     branched_from = models.ForeignKey('Node', null=True, related_name='registered_draft')
 

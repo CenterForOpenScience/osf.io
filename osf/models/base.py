@@ -12,7 +12,6 @@ from django.contrib.postgres.fields import ArrayField
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.core.exceptions import MultipleObjectsReturned
 from django.db import models
-from django.db.models import F
 from django.db.models import ForeignKey
 from django.db.models.signals import post_save
 from django.dispatch import receiver
@@ -21,7 +20,7 @@ from osf.exceptions import ValidationError
 from osf.modm_compat import to_django_query
 from osf.utils.datetime_aware_jsonfield import (DateTimeAwareJSONField,
                                                 coerce_nonnaive_datetimes)
-from osf.utils.fields import LowercaseCharField
+from osf.utils.fields import LowercaseCharField, NonNaiveDateTimeField
 
 ALPHABET = '23456789abcdefghjkmnpqrstuvwxyz'
 
@@ -43,10 +42,15 @@ def generate_guid(length=5):
                 # valid and unique guid
                 return guid_id
 
+
 def generate_object_id():
     return str(bson.ObjectId())
 
 class MODMCompatibilityQuerySet(models.QuerySet):
+    def __init__(self, model=None, query=None, using=None, hints=None):
+        super(MODMCompatibilityQuerySet, self).__init__(model=model, query=query, using=using, hints=hints)
+        if issubclass(self.model, (GuidMixin, OptionalGuidMixin)):
+            self._prefetch_related_lookups = ['guids']
 
     def __getitem__(self, k):
         item = super(MODMCompatibilityQuerySet, self).__getitem__(k)
@@ -83,33 +87,12 @@ class MODMCompatibilityQuerySet(models.QuerySet):
         return self[:n]
 
 
-class GuidMODMCompatibilityQuerySet(MODMCompatibilityQuerySet):
-    """ Hijacks Django internals, adding annotations to read queries
-        to limit the number of DB calls when serializing objects with Guids.
-    """
-
-    def __init__(self, model=None, query=None, using=None, hints=None):
-        self.__for_write = False
-        return super(GuidMODMCompatibilityQuerySet, self).__init__(model=model, query=query, using=using, hints=hints)
-
-    @property
-    def _for_write(self):
-        return self.__for_write
-
-    @_for_write.setter
-    def _for_write(self, value):
-        self.query.annotations.pop('guids___id', None)
-        if not value:
-            self.query.add_annotation(F('guids___id'), 'guids___id', is_summary=False)
-        self.__for_write = value
-
-
 class BaseModel(models.Model):
     """Base model that acts makes subclasses mostly compatible with the
     modular-odm ``StoredObject`` interface.
     """
 
-    migration_page_size = 20000
+    migration_page_size = 50000
 
     objects = MODMCompatibilityQuerySet.as_manager()
 
@@ -191,6 +174,12 @@ class BaseModel(models.Model):
     def _primary_name(self):
         return '_id'
 
+    def reload(self):
+        return self.refresh_from_db()
+
+    def _natural_key(self):
+        return self.pk
+
     def clone(self):
         """Create a new, unsaved copy of this object."""
         copy = self.__class__.objects.get(pk=self.pk)
@@ -201,18 +190,11 @@ class BaseModel(models.Model):
         for field_name in fk_field_names:
             setattr(copy, field_name, None)
 
-        return self._on_clone(copy)
-
-    def _on_clone(self, copy):
-        """ Override hook to add subclass-specific clone behavior
-        """
+        try:
+            copy._id = bson.ObjectId()
+        except AttributeError:
+            pass
         return copy
-
-    def reload(self):
-        return self.refresh_from_db()
-
-    def _natural_key(self):
-        return self.pk
 
     def save(self, *args, **kwargs):
         # Make Django validate on save (like modm)
@@ -242,7 +224,7 @@ class Guid(BaseModel):
     referent = GenericForeignKey()
     content_type = models.ForeignKey(ContentType, null=True, blank=True)
     object_id = models.PositiveIntegerField(null=True, blank=True)
-    created = models.DateTimeField(db_index=True, auto_now_add=True)
+    created = NonNaiveDateTimeField(db_index=True, default=timezone.now)  # auto_now_add=True)
 
     # Override load in order to load by GUID
     @classmethod
@@ -292,6 +274,7 @@ class Guid(BaseModel):
 class BlackListGuid(BaseModel):
     # TODO DELETE ME POST MIGRATION
     modm_model_path = 'framework.guid.model.BlacklistGuid'
+    primary_identifier_name = 'guid'
     modm_query = None
     migration_page_size = 500000
     # /TODO DELETE ME POST MIGRATION
@@ -393,12 +376,6 @@ class ObjectIDMixin(BaseIDMixin):
     def _natural_key(self):
         return self._id
 
-    def _on_clone(self, copy):
-        try:
-            copy._id = bson.ObjectId()
-        except AttributeError:
-            pass
-        return copy
 
 class InvalidGuid(Exception):
     pass
@@ -410,9 +387,6 @@ class OptionalGuidMixin(BaseIDMixin):
     Things that inherit from this must also inherit from ObjectIDMixin ... probably
     """
     __guid_min_length__ = 5
-
-    objects = GuidMODMCompatibilityQuerySet.as_manager()
-    subselect = MODMCompatibilityQuerySet.as_manager()
 
     guids = GenericRelation(Guid, related_name='referent', related_query_name='referents')
     guid_string = ArrayField(models.CharField(max_length=255, null=True, blank=True), null=True, blank=True)
@@ -450,9 +424,6 @@ class OptionalGuidMixin(BaseIDMixin):
 class GuidMixin(BaseIDMixin):
     __guid_min_length__ = 5
 
-    objects = GuidMODMCompatibilityQuerySet.as_manager()
-    subselect = MODMCompatibilityQuerySet.as_manager()
-
     primary_identifier_name = 'guid_string'
 
     guids = GenericRelation(Guid, related_name='referent', related_query_name='referents')
@@ -466,29 +437,22 @@ class GuidMixin(BaseIDMixin):
 
     @property
     def _id(self):
-        if hasattr(self, 'guids___id'):
-            return self.guids___id
         guid = self.guids.order_by('-created').first()
         if guid:
-            setattr(self, 'guids___id', guid._id)
             return guid._id
         return None
 
     @_id.setter
     def _id(self, value):
         # TODO do we really want to allow this?
-        if not value:
-            value = generate_guid(length=self.__guid_min_length__)
         guid, created = Guid.objects.get_or_create(_id=value)
         if created:
             guid.object_id = self.pk
             guid.content_type = ContentType.objects.get_for_model(self)
             guid.save()
-            setattr(self, 'guids___id', guid._id)
         elif guid.content_type == ContentType.objects.get_for_model(self) and guid.object_id == self.pk:
             # TODO should this up the created for the guid until now so that it appears as the first guid
             # for this object?
-            setattr(self, 'guids___id', guid._id)
             return
         else:
             raise InvalidGuid('Cannot indirectly repoint an existing guid, please use the Guid model')
@@ -559,7 +523,7 @@ def ensure_guid(sender, instance, created, **kwargs):
         return False
     existing_guids = Guid.objects.filter(object_id=instance.pk, content_type=ContentType.objects.get_for_model(instance))
     has_cached_guids = hasattr(instance, '_prefetched_objects_cache') and 'guids' in instance._prefetched_objects_cache
-    if not existing_guids.exists() and instance.guid_string is None:
+    if not existing_guids.exists():
         # Clear query cache of instance.guids
         if has_cached_guids:
             del instance._prefetched_objects_cache['guids']
@@ -571,6 +535,3 @@ def ensure_guid(sender, instance, created, **kwargs):
             del instance._prefetched_objects_cache['guids']
         Guid.objects.create(object_id=instance.pk, content_type_id=instance.content_type_pk,
                             _id=instance.guid_string)
-    if instance._id and existing_guids.exists() and not existing_guids.filter(_id=instance._id).exists():
-        # Handle case where _id is old value after a .clone()
-        instance._id = existing_guids.first()._id

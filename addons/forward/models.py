@@ -15,7 +15,7 @@ class NodeSettings(DirtyFieldsMixin, BaseNodeSettings):
     complete = True
     has_auth = True
 
-    url = models.URLField(blank=True, null=True)
+    url = models.URLField(blank=True, null=True, max_length=255)  # 242 on prod
     label = models.TextField(blank=True, null=True, validators=[validate_no_html])
 
     @property

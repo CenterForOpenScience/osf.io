@@ -14,6 +14,7 @@ from framework.forms.utils import sanitize
 from markdown.extensions import codehilite, fenced_code, wikilinks
 from osf.models import AbstractNode, NodeLog
 from osf.models.base import BaseModel, GuidMixin
+from osf.utils.fields import NonNaiveDateTimeField
 from website import settings
 from addons.wiki import utils as wiki_utils
 from website.exceptions import NodeStateError
@@ -104,7 +105,7 @@ class NodeWikiPage(GuidMixin, BaseModel):
 
     page_name = models.CharField(max_length=200, validators=[validate_page_name, ])
     version = models.IntegerField(default=1)
-    date = models.DateTimeField(default=timezone.now)  # auto_now_add=True)
+    date = NonNaiveDateTimeField(default=timezone.now)  # auto_now_add=True)
     content = models.TextField(default='', blank=True)
     user = models.ForeignKey('osf.OSFUser', null=True, blank=True)
     node = models.ForeignKey('osf.AbstractNode', null=True, blank=True)

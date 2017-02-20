@@ -12,6 +12,7 @@ from website.project.tasks import on_registration_updated
 
 logger = logging.getLogger(__name__)
 
+
 def migrate(dry_run):
     assert settings.SHARE_URL, 'SHARE_URL must be set to migrate.'
     assert settings.SHARE_API_TOKEN, 'SHARE_API_TOKEN must be set to migrate.'

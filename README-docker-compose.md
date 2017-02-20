@@ -107,6 +107,18 @@
         sync_excludes: ['.DS_Store', '*.pyc', '*.tmp', '.git', '.idea']
         watch_excludes: ['.*\.DS_Store', '.*\.pyc', '.*\.tmp', '.*/\.git', '.*/\.idea']
     ```
+  
+  Modifying these files will show up as changes in git. To avoid committing these files, run:
+  
+  ```bash
+  git update-index --skip-worktree docker-compose.override.yml docker-sync.yml
+  ```
+  
+  To be able to commit changes to these files again, run:
+  
+  ```bash
+  git update-index --no-skip-worktree docker-compose.override.yml docker-sync.yml
+  ```
 
 ## Docker Sync
 
@@ -231,13 +243,13 @@ Ubuntu: Skip install of docker-sync, fswatch, and unison. instead...
   - `$ docker-compose run --rm web invoke test_osf`
 
 - Test a Specific Module
-  - `$ docker-compose run --rm web python -m py.test tests/test_conferences.py`
+  - `$ docker-compose run --rm web invoke test_module -m tests/test_conferences.py`
 
 - Test a Specific Class
-  - `docker-compose run --rm web python -m py.test tests/test_conferences.py::TestProvisionNode`
+  - `docker-compose run --rm web invoke test_module -m tests/test_conferences.py::TestProvisionNode`
 
 - Test a Specific Method
-  - `$ docker-compose run --rm web python -m py.test tests/test_conferences.py::TestProvisionNode::test_upload`
+  - `$ docker-compose run --rm web invoke test_module -m tests/test_conferences.py::TestProvisionNode::test_upload`
 
 ## Managing Container State
 
@@ -266,4 +278,4 @@ Delete a persistent storage volume:
   **WARNING: All postgres data will be destroyed.**
   - `$ docker-compose stop -t 0 postgres`
   - `$ docker-compose rm postgres`
-  - `$ docker volume rm osf_postgres_data_vol`
+  - `$ docker volume rm osfio_postgres_data_vol`

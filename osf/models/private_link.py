@@ -2,7 +2,7 @@ from django.utils import timezone
 from django.db import models
 
 from framework.utils import iso8601format
-from osf.utils.fields import NonNaiveDatetimeField
+from osf.utils.fields import NonNaiveDateTimeField
 from website.util import sanitize
 
 from osf.models.base import BaseModel, ObjectIDMixin
@@ -13,7 +13,7 @@ class PrivateLink(ObjectIDMixin, BaseModel):
     modm_model_path = 'website.project.model.PrivateLink'
     modm_query = None
     # /TODO DELETE ME POST MIGRATION
-    date_created = NonNaiveDatetimeField(default=timezone.now)
+    date_created = NonNaiveDateTimeField(default=timezone.now)
     key = models.CharField(max_length=512, null=False, unique=True, blank=False)
     name = models.CharField(max_length=255, blank=True, null=True)
     is_deleted = models.BooleanField(default=False)

@@ -36,6 +36,6 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='session',
             name='date_created',
-            field=osf.utils.fields.NonNaiveDatetimeField(default=django.utils.timezone.now),
+            field=osf.utils.fields.NonNaiveDateTimeField(default=django.utils.timezone.now),
         ),
     ]

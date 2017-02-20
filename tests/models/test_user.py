@@ -482,7 +482,6 @@ class TestUserMerging(base.OsfTestCase):
         # TODO: test external_accounts
 
         assert_equal(self.unconfirmed.email_verifications, {})
-        assert_is_none(self.unconfirmed.username)
         assert_is_none(self.unconfirmed.password)
         assert_is_none(self.unconfirmed.verification_key)
         # The mergee's email no longer needs to be confirmed by merger

@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""Populate development database with PreprintProvider fixtures"""
+"""Populate development database with Preprint Provicer elements"""
+
 import logging
 import sys
 
@@ -15,8 +16,8 @@ logging.basicConfig(level=logging.INFO)
 
 ENVS = ['prod', 'stage']
 SUBJECTS_CACHE = {}
-STAGING_PREPRINT_PROVIDERS = ['osf', 'psyarxiv', 'engrxiv', 'socarxiv', 'scielo', 'agrixiv']
-PROD_PREPRINT_PROVIDERS = ['osf', 'psyarxiv', 'engrxiv', 'socarxiv']
+STAGING_PREPRINT_PROVIDERS = ['osf', 'psyarxiv', 'engrxiv', 'socarxiv', 'scielo', 'agrixiv', 'bitss']
+PROD_PREPRINT_PROVIDERS = ['osf', 'psyarxiv', 'engrxiv', 'socarxiv', 'agrixiv']
 
 
 def get_subject_id(name):
@@ -378,8 +379,8 @@ def main(env):
             'advisory_board': '',
             'email_contact': 'contact+scielo@osf.io',
             'email_support': 'support+scielo@osf.io',
-            'social_twitter': ' https://twitter.com/RedeSciELO', # optional
-            'social_facebook': 'https://www.facebook.com/SciELONetwork',
+            'social_twitter': 'RedeSciELO', # optional
+            'social_facebook': 'SciELONetwork',
             'header_text': '',
             'licenses_acceptable': ['CC0 1.0 Universal'],
             'subjects_acceptable':[]
@@ -391,47 +392,48 @@ def main(env):
             'description': 'Preprints for Agriculture and Allied Sciences',
             'banner_name': 'agrixiv-banner.svg',
             'external_url': '',
-            'example': '',
+            'example': '8whkp',
             'advisory_board': '''
                 <div class="col-xs-6">
                     <h3>Advisory Board</h3>
                     <p class="m-b-lg"></p>
                 </div>
                 <div class="col-xs-6">
-                    <h3>Team</h3>
+                    <h3>Working Group</h3>
                     <p class="m-b-lg"></p>
                 </div>
                 <div class="col-xs-6">
                     <ul>
-                    <li><b>Abeer Elhalwagi</b>, National Gene Bank, Egypt</li>
-                    <li><b>Ajit Maru</b>, Global Forum on Agricultural Research</li>
-                    <li><b>Oya Yildirim Rieger</b>, Cornell University</li>
-                    <li><b>Prateek Mahalwar</b>, Formerly, Max Planck Institute for Developmental Biology</li>
-                    <li><b>Satendra Kumar Singh</b>, Indian Council of Agricultural Research</li>
-                    <li><b>Vassilis Protonotarios</b>, Neuropublic</li>
-                    <li><b>Vinodh Ilangovan</b>, Max Planck Institute for Biophysical Chemistry</li>
-                    <li><b>Kuldeep Singh Jadon</b>, Central Arid Zone Research Institute</li>
+                        <li><b>Abeer Elhalwagi</b>, National Gene Bank, Egypt</li>
+                        <li><b>Ajit Maru</b>, Global Forum on Agricultural Research</li>
+                        <li><b>Bernard Pochet</b>, University of Liège - Gembloux Agro-Bio Tech</li>
+                        <li><b>Dinesh Kumar</b>, Indian Agricultural Statistics Research Institute</li>
+                        <li><b>Oya Yildirim Rieger</b>, Cornell University</li>
+                        <li><b>Prateek Mahalwar</b>, Ernst & Young GmbH Wirtschaftsprüfungsgesellschaft</li>
+                        <li><b>Satendra Kumar Singh</b>, Indian Council of Agricultural Research</li>
+                        <li><b>Vassilis Protonotarios</b>, Neuropublic</li>
+                        <li><b>Vinodh Ilangovan</b>, Max Planck Institute for Biophysical Chemistry</li>
                     </ul>
                 </div>
                 <div class="col-xs-6">
                     <ul>
-                    <li><b>Chandni Singh</b>, Indian Institute for Human Settlements</li>
-                    <li><b>Dinesh Kumar</b>, Indian Agricultural Statistics Research Institute</li>
-                    <li><b>Gopinath KA</b>, Central Research Institute for Dryland Agriculture</li>
-                    <li><b>Ivonne Lujano</b>, University of the State of Mexico</li>
-                    <li><b>Khelif Karima</b>, 'Institut National de la Recherche Agronomique d'Algérie</li>
-                    <li><b>Paraj Shukla</b>, King Saud University</li>
-                    <li><b>Sridhar Gutam</b>,  ICAR RCER Research Centre/Open Access India</li>
-                    <li><b>Sumant Vyas</b>, National Research Centre on Camel</li>
-                    <li><b>Susmita Das</b>, Bangladesh Agricultural Research Council</li>
+                        <li><b>Chandni Singh</b>, Indian Institute for Human Settlements</li>
+                        <li><b>Gopinath KA</b>, Central Research Institute for Dryland Agriculture</li>
+                        <li><b>Ivonne Lujano</b>, University of the State of Mexico</li>
+                        <li><b>Khelif Karima</b>, Institut National de la Recherche Agronomique d'Algérie</li>
+                        <li><b>Kuldeep Singh Jadon</b>, Central Arid Zone Research Institute</li>
+                        <li><b>Paraj Shukla</b>, King Saud University</li>
+                        <li><b>Sridhar Gutam</b>,  ICAR RCER Research Centre/Open Access India</li>
+                        <li><b>Sumant Vyas</b>, National Research Centre on Camel</li>
+                        <li><b>Susmita Das</b>, Bangladesh Agricultural Research Council</li>
                     </ul>
                 </div>
             ''',
             'email_contact': 'contact+agrixiv@osf.io',
             'email_support': 'support+agrixiv@osf.io',
-            'social_twitter': 'https://twitter.com/AgriXiv',
-            'social_facebook': 'http://facebook.com/agrixiv',
-            'social_instagram': 'http://instagram.com/agrixiv',
+            'social_twitter': 'AgriXiv',
+            'social_facebook': 'agrixiv',
+            'social_instagram': 'agrixiv',
             'licenses_acceptable': ['CC0 1.0 Universal', 'CC-By Attribution 4.0 International'],
             'header_text': '',
             'subjects_acceptable': [
@@ -1005,11 +1007,178 @@ def main(env):
                 (['Social and Behavioral Sciences', 'Science and Technology Studies', 'Other Sociology'], False),
                 (['Social and Behavioral Sciences', 'Other Social and Behavioral Sciences'], False)
             ]
+        },
+        'bitss': {
+            '_id': 'bitss',
+            'name': 'BITSS',
+            'logo_name': 'bitss-logo.png',
+            'description': 'An interdisciplinary archive of articles focused on improving research transparency and reproducibility',
+            'banner_name': 'bitss-banner.png',
+            'external_url': 'http://www.bitss.org',
+            'example': '',
+            'advisory_board': '''
+                <div class="col-xs-12">
+                    <h2>Steering Committee</h2>
+                </div>
+                <div class="col-xs-6">
+                    <ul>
+                        <li>Edward Miguel (UC Berkeley)</li>
+                        <li>Garret Christensen</li>
+                        <li>Kelsey Mulcahy</li>
+                    </ul>
+                </div>
+                <div class="col-xs-6">
+                    <ul>
+                        <li>Temina Madon</li>
+                        <li>Jennifer Sturdy (BITSS)</li>
+                    </ul>
+                </div>
+            ''',
+            'email_contact': 'contact+bitss@osf.io',
+            'email_support': 'support+bitss@osf.io',
+            'social_twitter': 'http://twitter.com/UCBITSS',
+            'licenses_acceptable': ['CC-By Attribution 4.0 International', 'CC0 1.0 Universal'],
+            'header_text': '',
+            'subjects_acceptable': [
+                (['Medicine and Health Sciences', 'Health Information Technology'], False),
+                (['Medicine and Health Sciences', 'Mental and Social Health'], False),
+                (['Medicine and Health Sciences', 'Bioethics and Medical Ethics', 'Animal-Assisted Therapy'], False),
+                (['Medicine and Health Sciences', 'Bioethics and Medical Ethics', 'Art Therapy'], False),
+                (['Medicine and Health Sciences', 'Bioethics and Medical Ethics', 'Clinical and Medical Social Work'], False),
+                (['Medicine and Health Sciences', 'Bioethics and Medical Ethics', 'Cognitive Behavioral Therapy'], False),
+                (['Medicine and Health Sciences', 'Bioethics and Medical Ethics', 'Community Health'], False),
+                (['Medicine and Health Sciences', 'Bioethics and Medical Ethics', 'Marriage and Family Therapy and Counseling'], False),
+                (['Medicine and Health Sciences', 'Bioethics and Medical Ethics', 'Psychiatric and Mental Health'], False),
+                (['Medicine and Health Sciences', 'Bioethics and Medical Ethics', 'Psychoanalysis and Psychotherapy'], False),
+                (['Medicine and Health Sciences', 'Bioethics and Medical Ethics', 'Substance Abuse and Addiction'], False),
+                (['Medicine and Health Sciences', 'Bioethics and Medical Ethics', 'Other Mental and Social Health'], False),
+                (['Medicine and Health Sciences', 'Psychiatry and Psychology', 'Behavior and Behavior Mechanisms'], False),
+                (['Medicine and Health Sciences', 'Psychiatry and Psychology', 'Behavioral Disciplines and Activities'], False),
+                (['Medicine and Health Sciences', 'Psychiatry and Psychology', 'Dance Movement Therapy'], False),
+                (['Medicine and Health Sciences', 'Psychiatry and Psychology', 'Mental Disorders'], False),
+                (['Medicine and Health Sciences', 'Psychiatry and Psychology', 'Psychological Phenomena and Processes'], False),
+                (['Medicine and Health Sciences', 'Psychiatry and Psychology', 'Other Psychiatry and Psychology'], False),
+                (['Medicine and Health Sciences', 'Public Health', 'Clinical Epidemiology'], False),
+                (['Medicine and Health Sciences', 'Public Health', 'Community Health and Preventive Medicine'], False),
+                (['Medicine and Health Sciences', 'Public Health', 'Environmental Public Health'], False),
+                (['Medicine and Health Sciences', 'Public Health', 'Epidemiology'], False),
+                (['Medicine and Health Sciences', 'Public Health', 'Health and Medical Physics'], False),
+                (['Medicine and Health Sciences', 'Public Health', 'Health Services Administration'], False),
+                (['Medicine and Health Sciences', 'Public Health', 'Health Services Research'], False),
+                (['Medicine and Health Sciences', 'Public Health', 'Influenza Humans'], False),
+                (['Medicine and Health Sciences', 'Public Health', 'Influenza Virus Vaccines'], False),
+                (['Medicine and Health Sciences', 'Public Health', 'International Public Health'], False),
+                (['Medicine and Health Sciences', 'Public Health', 'Maternal and Child Health'], False),
+                (['Medicine and Health Sciences', 'Public Health', 'Occupational Health and Industrial Hygiene'], False),
+                (['Medicine and Health Sciences', 'Public Health', 'Public Health Education and Promotion'], False),
+                (['Medicine and Health Sciences', 'Public Health', "Women's Health"], False),
+                (['Medicine and Health Sciences', 'Public Health', 'Other Public Health'], False),
+                (['Physical Sciences and Mathematics', 'Statistics and Probability', 'Applied Statistics'], False),
+                (['Physical Sciences and Mathematics', 'Statistics and Probability', 'Biometry'], False),
+                (['Physical Sciences and Mathematics', 'Statistics and Probability', 'Biostatistics'], False),
+                (['Physical Sciences and Mathematics', 'Statistics and Probability', 'Categorical Data Analysis'], False),
+                (['Physical Sciences and Mathematics', 'Statistics and Probability', 'Clinical Trials'], False),
+                (['Physical Sciences and Mathematics', 'Statistics and Probability', 'Design of Experiments and Sample Surveys'], False),
+                (['Physical Sciences and Mathematics', 'Statistics and Probability', 'Institutional and Historical'], False),
+                (['Physical Sciences and Mathematics', 'Statistics and Probability', 'Longitudinal Data Analysis and Time Series'], False),
+                (['Physical Sciences and Mathematics', 'Statistics and Probability', 'Microarrays'], False),
+                (['Physical Sciences and Mathematics', 'Statistics and Probability', 'Multivariate Analysis'], False),
+                (['Physical Sciences and Mathematics', 'Statistics and Probability', 'Probability'], False),
+                (['Physical Sciences and Mathematics', 'Statistics and Probability', 'Statistical Methodology'], False),
+                (['Physical Sciences and Mathematics', 'Statistics and Probability', 'Statistical Models'], False),
+                (['Physical Sciences and Mathematics', 'Statistics and Probability', 'Statistical Theory'], False),
+                (['Physical Sciences and Mathematics', 'Statistics and Probability', 'Survival Analysis'], False),
+                (['Physical Sciences and Mathematics', 'Statistics and Probability', 'Vital and Health Statistics'], False),
+                (['Physical Sciences and Mathematics', 'Statistics and Probability', 'Other Statistics and Probability'], False),
+                (['Social and Behavioral Sciences', 'Economics', 'Behavioral Economics'], False),
+                (['Social and Behavioral Sciences', 'Economics', 'Econometrics'], False),
+                (['Social and Behavioral Sciences', 'Economics', 'Economic History'], False),
+                (['Social and Behavioral Sciences', 'Economics', 'Economic Theory'], False),
+                (['Social and Behavioral Sciences', 'Economics', 'Finance'], False),
+                (['Social and Behavioral Sciences', 'Economics', 'Growth and Development'], False),
+                (['Social and Behavioral Sciences', 'Economics', 'Health Economics'], False),
+                (['Social and Behavioral Sciences', 'Economics', 'Income Distribution'], False),
+                (['Social and Behavioral Sciences', 'Economics', 'Industrial Organization'], False),
+                (['Social and Behavioral Sciences', 'Economics', 'International Economics'], False),
+                (['Social and Behavioral Sciences', 'Economics', 'Labor Economics'], False),
+                (['Social and Behavioral Sciences', 'Economics', 'Macroeconomics'], False),
+                (['Social and Behavioral Sciences', 'Economics', 'Political Economy'], False),
+                (['Social and Behavioral Sciences', 'Economics', 'Public Economics'], False),
+                (['Social and Behavioral Sciences', 'Economics', 'Regional Economics'], False),
+                (['Social and Behavioral Sciences', 'Economics', 'Other Economics'], False),
+                (['Social and Behavioral Sciences', 'Legal Studies', 'Criminology and Criminal Justice'], False),
+                (['Social and Behavioral Sciences', 'Legal Studies', 'Forensic Science and Technology'], False),
+                (['Social and Behavioral Sciences', 'Legal Studies', 'Legal Theory'], False),
+                (['Social and Behavioral Sciences', 'Legal Studies', 'Other Legal Studies'], False),
+                (['Social and Behavioral Sciences', 'Library and Information Science', 'Archival Science'], False),
+                (['Social and Behavioral Sciences', 'Library and Information Science', 'Cataloging and Metadata'], False),
+                (['Social and Behavioral Sciences', 'Library and Information Science', 'Collection Development and Management'], False),
+                (['Social and Behavioral Sciences', 'Library and Information Science', 'Information Literacy'], False),
+                (['Social and Behavioral Sciences', 'Library and Information Science', 'Scholarly Communication'], False),
+                (['Social and Behavioral Sciences', 'Library and Information Science', 'Scholarly Publishing'], False),
+                (['Social and Behavioral Sciences', 'Political Science', 'American Politics'], False),
+                (['Social and Behavioral Sciences', 'Political Science', 'Comparative Politics'], False),
+                (['Social and Behavioral Sciences', 'Political Science', 'International Relations'], False),
+                (['Social and Behavioral Sciences', 'Political Science', 'Models and Methods'], False),
+                (['Social and Behavioral Sciences', 'Political Science', 'Political Theory'], False),
+                (['Social and Behavioral Sciences', 'Political Science', 'Other Political Science'], False),
+                (['Social and Behavioral Sciences', 'Psychology', 'Applied Behavior Analysis'], False),
+                (['Social and Behavioral Sciences', 'Psychology', 'Biological Psychology'], False),
+                (['Social and Behavioral Sciences', 'Psychology', 'Child Psychology'], False),
+                (['Social and Behavioral Sciences', 'Psychology', 'Clinical Psychology'], False),
+                (['Social and Behavioral Sciences', 'Psychology', 'Cognition and Perception'], False),
+                (['Social and Behavioral Sciences', 'Psychology', 'Cognitive Psychology'], False),
+                (['Social and Behavioral Sciences', 'Psychology', 'Community Psychology'], False),
+                (['Social and Behavioral Sciences', 'Psychology', 'Counseling Psychology'], False),
+                (['Social and Behavioral Sciences', 'Psychology', 'Developmental Psychology'], False),
+                (['Social and Behavioral Sciences', 'Psychology', 'Experimental Analysis of Behavior'], False),
+                (['Social and Behavioral Sciences', 'Psychology', 'Health Psychology'], False),
+                (['Social and Behavioral Sciences', 'Psychology', 'Industrial and Organizational Psychology'], False),
+                (['Social and Behavioral Sciences', 'Psychology', 'Multicultural Psychology'], False),
+                (['Social and Behavioral Sciences', 'Psychology', 'Pain Management'], False),
+                (['Social and Behavioral Sciences', 'Psychology', 'Personality and Social Contexts'], False),
+                (['Social and Behavioral Sciences', 'Psychology', 'Quantitative Psychology'], False),
+                (['Social and Behavioral Sciences', 'Psychology', 'School Psychology'], False),
+                (['Social and Behavioral Sciences', 'Psychology', 'Social Psychology'], False),
+                (['Social and Behavioral Sciences', 'Psychology', 'Theory and Philosophy'], False),
+                (['Social and Behavioral Sciences', 'Psychology', 'Other Psychology'], False),
+                (['Social and Behavioral Sciences', 'Sociology'], False),
+                (['Social and Behavioral Sciences', 'Social Statistics', 'Civic and Community Engagement'], False),
+                (['Social and Behavioral Sciences', 'Social Statistics', 'Community-based Learning'], False),
+                (['Social and Behavioral Sciences', 'Social Statistics', 'Community-based Research'], False),
+                (['Social and Behavioral Sciences', 'Social Statistics', 'Criminology'], False),
+                (['Social and Behavioral Sciences', 'Social Statistics', 'Demography, Population, and Ecology'], False),
+                (['Social and Behavioral Sciences', 'Social Statistics', 'Domestic and Intimate Partner Violence'], False),
+                (['Social and Behavioral Sciences', 'Social Statistics', 'Educational Sociology'], False),
+                (['Social and Behavioral Sciences', 'Social Statistics', 'Family, Life Course, and Society'], False),
+                (['Social and Behavioral Sciences', 'Social Statistics', 'Gender and Sexuality'], False),
+                (['Social and Behavioral Sciences', 'Social Statistics', 'Gerontology'], False),
+                (['Social and Behavioral Sciences', 'Social Statistics', 'Human Ecology'], False),
+                (['Social and Behavioral Sciences', 'Social Statistics', 'Inequality and Stratification'], False),
+                (['Social and Behavioral Sciences', 'Social Statistics', 'Medicine and Health'], False),
+                (['Social and Behavioral Sciences', 'Social Statistics', 'Place and Environment'], False),
+                (['Social and Behavioral Sciences', 'Social Statistics', 'Politics and Social Change'], False),
+                (['Social and Behavioral Sciences', 'Social Statistics', 'Quantitative, Qualitative, Comparative, and Historical Methodologies'], False),
+                (['Social and Behavioral Sciences', 'Social Statistics', 'Race and Ethnicity'], False),
+                (['Social and Behavioral Sciences', 'Social Statistics', 'Regional Sociology'], False),
+                (['Social and Behavioral Sciences', 'Social Statistics', 'Rural Sociology'], False),
+                (['Social and Behavioral Sciences', 'Social Statistics', 'Service Learning'], False),
+                (['Social and Behavioral Sciences', 'Social Statistics', 'Social Control, Law, Crime, and Deviance'], False),
+                (['Social and Behavioral Sciences', 'Social Statistics', 'Social Psychology and Interaction'], False),
+                (['Social and Behavioral Sciences', 'Social Statistics', 'Sociology of Culture'], False),
+                (['Social and Behavioral Sciences', 'Social Statistics', 'Sociology of Religion'], False),
+                (['Social and Behavioral Sciences', 'Social Statistics', 'Theory, Knowledge and Science'], False),
+                (['Social and Behavioral Sciences', 'Social Statistics', 'Tourism'], False),
+                (['Social and Behavioral Sciences', 'Social Statistics', 'Work, Economy and Organizations'], False),
+                (['Social and Behavioral Sciences', 'Social Statistics', 'Other Sociology'], False),
+                (['Physical Sciences and Mathematics', 'Other Physical Sciences and Mathematics'], False),
+                (['Medicine and Health Sciences', 'Other Medicine and Health Sciences'], False),
+                (['Social and Behavioral Sciences', 'Other Social and Behavioral Sciences'], False)
+            ]
         }
     }
 
     preprint_providers_to_add = STAGING_PREPRINT_PROVIDERS if env == 'stage' else PROD_PREPRINT_PROVIDERS
-
     with transaction.atomic():
         for provider_id in preprint_providers_to_add:
             update_or_create(PREPRINT_PROVIDERS[provider_id])
