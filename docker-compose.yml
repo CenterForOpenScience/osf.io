@@ -13,6 +13,8 @@ volumes:
     external: false
   preprints_dist_vol:
     external: false
+  # registries_dist_vol:
+  #   external: false
   mfr_requirements_vol:
     external: false
   wb_requirements_vol:
@@ -195,6 +197,26 @@ services:
     stdin_open: true
     tty: true
 
+  ##############
+  # Registries #
+  ##############
+
+  # registries:
+  #   # image: quay.io/centerforopenscience/ember-preprints:develop-development-local
+  #   build: ../ember-osf-registries
+  #   command: /bin/bash -c "yarn --pure-lockfile --no-progress --no-emoji && ./node_modules/bower/bin/bower install --allow-root --config.interactive=false && ./node_modules/ember-cli/bin/ember serve --host 0.0.0.0 --port 4300"
+  #   restart: unless-stopped
+  #   environment:
+  #     - BACKEND=local
+  #   expose:
+  #     - 4300
+  #   ports:
+  #     - 4300:4300
+  #   volumes:
+  #     - registries_dist_vol:/code/dist
+  #   stdin_open: true
+  #   tty: true
+
 
   #######
   # OSF #
@@ -361,5 +383,6 @@ services:
       - osf_bower_components_vol:/code/website/static/vendor/bower_components
       - osf_node_modules_vol:/code/node_modules
       - preprints_dist_vol:/preprints
+      # - registries_dist_vol:/registries
     stdin_open: true
     tty: true
