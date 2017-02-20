@@ -418,6 +418,7 @@ CELERY_IMPORTS = (
     'scripts.analytics.run_keen_summaries',
     'scripts.analytics.run_keen_snapshots',
     'scripts.analytics.run_keen_events',
+    'scripts.generate_sitemap',
 )
 
 # Modules that need metrics and release requirements
@@ -510,6 +511,10 @@ else:
             'task': 'scripts.analytics.run_keen_events',
             'schedule': crontab(minute=0, hour=4),  # Daily 4:00 a.m.
             'kwargs': {'yesterday': True}
+        },
+        'generate_sitemap': {
+            'task': 'scripts.generate_sitemap',
+            'schedule': crontab(minute=0, hour=0),  # Daily 12:00 a.m.
         }
     }
 
@@ -1781,3 +1786,26 @@ INSTITUTION_DISPLAY_NODE_THRESHOLD = 5
 
 # refresh campaign every 5 minutes
 CAMPAIGN_REFRESH_THRESHOLD = 5 * 60  # 5 minutes in seconds
+
+
+# sitemap default settings
+
+SITEMAP_URL_MAX = 25000
+SITEMAP_INDEX_MAX = 50000
+SITEMAP_STATIC_URLS = [
+    OrderedDict([('loc', ''), ('changefreq', 'yearly'), ('priority', '0.5')]),
+    OrderedDict([('loc', 'preprints'), ('changefreq', 'yearly'), ('priority', '0.5')]),
+    OrderedDict([('loc', 'prereg'), ('changefreq', 'yearly'), ('priority', '0.5')]),
+    OrderedDict([('loc', 'meetings'), ('changefreq', 'yearly'), ('priority', '0.5')]),
+    OrderedDict([('loc', 'registries'), ('changefreq', 'yearly'), ('priority', '0.5')]),
+    OrderedDict([('loc', 'explore/activity'), ('changefreq', 'weekly'), ('priority', '0.5')]),
+    OrderedDict([('loc', 'support'), ('changefreq', 'yearly'), ('priority', '0.5')]),
+    OrderedDict([('loc', 'faq'), ('changefreq', 'yearly'), ('priority', '0.5')]),
+
+]
+
+SITEMAP_USER_CONFIG = OrderedDict([('loc', ''), ('changefreq', 'yearly'), ('priority', '0.5')])
+SITEMAP_NODE_CONFIG = OrderedDict([('loc', ''), ('lastmod', ''), ('changefreq', 'monthly'), ('priority', '0.5')])
+SITEMAP_REGISTRATION_CONFIG = OrderedDict([('loc', ''), ('lastmod', ''), ('changefreq', 'never'), ('priority', '0.5')])
+SITEMAP_PREPRINT_CONFIG = OrderedDict([('loc', ''), ('lastmod', ''), ('changefreq', 'yearly'), ('priority', '0.5')])
+SITEMAP_PREPRINT_FILE_CONFIG = OrderedDict([('loc', ''), ('lastmod', ''), ('changefreq', 'yearly'), ('priority', '0.5')])
