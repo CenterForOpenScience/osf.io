@@ -2,7 +2,7 @@ import pytest
 from bulk_update.helper import bulk_update
 from django.db.models import CharField, Max
 
-from osf_tests.factories import RegistrationFactory, NodeFactory, UserFactory
+from osf_tests.factories import RegistrationFactory, NodeFactory, UserFactory, PreprintFactory
 
 
 @pytest.mark.django_db
@@ -25,7 +25,10 @@ class TestGuidAnnotations:
         for id in ids:
             objects.append(Factory())
         new_ids = [o.id for o in objects]
-        charfield = [x.name for x in objects[0]._meta.get_fields() if isinstance(x, CharField)][0]
+        try:
+            charfield = [x.name for x in objects[0]._meta.get_fields() if isinstance(x, CharField)][0]
+        except IndexError:
+            pytest.skip('Thing doesn\'t have a CharField')
         qs = objects[0]._meta.model.objects.filter(id__in=new_ids)
         assert len(qs) > 0, 'No results returned'
         try:
@@ -33,16 +36,38 @@ class TestGuidAnnotations:
         except Exception as ex:
             pytest.fail('Queryset update failed for {} with exception {}'.format(Factory._meta.model.__name__, ex))
 
-
     @pytest.mark.parametrize('Factory', guid_factories)
     def test_related_manager(self, Factory):
         thing_with_logs = Factory()
-        assert hasattr(thing_with_logs, 'logs'), 'Thing must have logs.'
+        if not hasattr(thing_with_logs, 'logs'):
+            pytest.skip('Thing must have logs')
 
         try:
             thing_with_logs.logs.all()
         except Exception as ex:
             pytest.fail('Related manager failed for {} with exception {}'.format(Factory._meta.model.__name__, ex))
+
+    @pytest.mark.parametrize('Factory', guid_factories)
+    def test_related_manager_values_list(self, Factory):
+        thing_with_logs = Factory()
+        if not hasattr(thing_with_logs, 'contributors'):
+            pytest.skip('Thing must have contributors')
+
+        try:
+            thing_with_logs.contributors.values_list('guids___id')
+        except Exception as ex:
+            pytest.fail('Values list failed for {} with exception {}'.format(Factory._meta.model.__name__, ex))
+
+    @pytest.mark.parametrize('Factory', guid_factories)
+    def test_related_manager_values(self, Factory):
+        thing_with_logs = Factory()
+        if not hasattr(thing_with_logs, 'contributors'):
+            pytest.skip('Thing must have contributors')
+
+        try:
+            thing_with_logs.contributors.values('guids___id')
+        except Exception as ex:
+            pytest.fail('Values list failed for {} with exception {}'.format(Factory._meta.model.__name__, ex))
 
     @pytest.mark.parametrize('Factory', guid_factories)
     def test_count_objects(self, Factory):

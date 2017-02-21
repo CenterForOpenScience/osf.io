@@ -437,23 +437,24 @@ class GuidMixinQuerySet(MODMCompatibilityQuerySet):
     def annotate_query_with_guids(self):
         for field in GUID_FIELDS:
             self.query.add_annotation(
-                F(field), field, is_summary=False
+                F(field), '_{}'.format(field), is_summary=False
             )
         tables = ['osf_guid', 'django_content_type']
         for table in tables:
             if table not in self.query.tables:
                 self.query.tables.append(table)
 
-    def remove_guid_annotations(self, fields=list()):
-        if 'guids__' in [field[0:7] for field in fields]:
-            return
+    def remove_guid_annotations(self):
+        dirty = False
         for k, v in self.query.annotations.iteritems():
-            if k in GUID_FIELDS:
+            if k[1:] in GUID_FIELDS:
+                dirty = True
                 del self.query.annotations[k]
-        if 'osf_guid' in self.query.tables:
-            del self.query.tables[self.query.tables.index('osf_guid')]
-        if 'django_content_type' in self.query.tables:
-            del self.query.tables[self.query.tables.index('django_content_type')]
+        if dirty:
+            if 'osf_guid' in self.query.tables:
+                del self.query.tables[self.query.tables.index('osf_guid')]
+            if 'django_content_type' in self.query.tables:
+                del self.query.tables[self.query.tables.index('django_content_type')]
 
     def filter(self, *args, **kwargs):
         self.annotate_query_with_guids()
@@ -493,7 +494,7 @@ class GuidMixinQuerySet(MODMCompatibilityQuerySet):
         return super(MODMCompatibilityQuerySet, self)._batched_insert(objs, fields, batch_size)
 
     def _values(self, *fields):
-        self.remove_guid_annotations(fields)
+        self.remove_guid_annotations()
         return super(MODMCompatibilityQuerySet, self)._values(*fields)
 
     def create(self, **kwargs):
@@ -540,7 +541,7 @@ class GuidMixinQuerySet(MODMCompatibilityQuerySet):
         item = list(qs)[0]
         guid_dict = {}
         for field in GUID_FIELDS:
-            guid_dict[field] = getattr(item, field, None)
+            guid_dict[field] = getattr(item, '_'.format(field), None)
         if not hasattr(item, '_prefetched_objects_cache'):
             item._prefetched_objects_cache = {}
         if 'guids' not in item._prefetched_objects_cache:
@@ -555,7 +556,7 @@ class GuidMixinQuerySet(MODMCompatibilityQuerySet):
         if self._result_cache is None:
             self._result_cache = list(self._iterable_class(self))
         if self._prefetch_related_lookups and not self._prefetch_done:
-            if 'guids' in self._prefetch_related_lookups and len(self._result_cache) and hasattr(self._result_cache[0], 'guids__id'):
+            if 'guids' in self._prefetch_related_lookups and len(self._result_cache) and hasattr(self._result_cache[0], '_guids__id'):
                 del self._prefetch_related_lookups[self._prefetch_related_lookups.index('guids')]
             self._prefetch_related_objects()
 
