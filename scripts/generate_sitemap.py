@@ -16,10 +16,11 @@ django.setup()
 from django.db import transaction
 import logging
 
+from framework import sentry
 from framework.celery_tasks import app as celery_app
-from framework.sentry import log_exception
 from osf.models import OSFUser, Node, Registration
 from osf.models.preprint_service import PreprintService
+from scripts import utils as script_utils
 from website import settings
 from website.app import init_app
 
@@ -30,6 +31,7 @@ logging.basicConfig(level=logging.INFO)
 class Sitemap(object):
     def __init__(self):
         self.sitemap_count = 0
+        self.errors = 0
         self.new_doc()
         self.sitemap_dir = os.path.join(settings.STATIC_FOLDER, 'sitemaps')
         if not os.path.exists(self.sitemap_dir):
@@ -102,6 +104,16 @@ class Sitemap(object):
         with open(os.path.join(self.sitemap_dir, 'sitemap_index.xml'), 'w') as f:
             f.write(xml_str)
 
+    def log_errors(self, obj, obj_id, error):
+        if not self.errors:
+            script_utils.add_file_logger(logger, __file__)
+        self.errors += 1
+        logger.info('Error on {}, {}:'.format(obj, obj_id))
+        logger.exception(error)
+        if self.errors == 1000:
+            sentry.log_message('WARNING: generate_sitemap stopped execution after reaching 1000 errors.')
+            raise Exception('Too many errors generating sitemap.')
+
     def generate(self):
         print('Generating Sitemap')
         # Static urls
@@ -111,45 +123,60 @@ class Sitemap(object):
 
         # User urls
         for obj in OSFUser.objects.filter(is_active=True).iterator():
-            config = settings.SITEMAP_USER_CONFIG
-            config['loc'] = urlparse.urljoin(settings.DOMAIN, obj.url)
-            self.add_url(config)
+            try:
+                config = settings.SITEMAP_USER_CONFIG
+                config['loc'] = urlparse.urljoin(settings.DOMAIN, obj.url)
+                self.add_url(config)
+            except Exception as e:
+                self.log_errors(obj, obj._id, e)
 
         # Node urls
         for obj in Node.objects.filter(is_public=True, is_deleted=False).iterator():
-            config = settings.SITEMAP_NODE_CONFIG
-            config['loc'] = urlparse.urljoin(settings.DOMAIN, obj.url)
-            config['lastmod'] = obj.date_modified.isoformat()
-            self.add_url(config)
+            try:
+                config = settings.SITEMAP_NODE_CONFIG
+                config['loc'] = urlparse.urljoin(settings.DOMAIN, obj.url)
+                config['lastmod'] = obj.date_modified.isoformat()
+                self.add_url(config)
+            except Exception as e:
+                self.log_errors(obj, obj._id, e)
 
         # Registration urls
         for obj in Registration.objects.filter(retraction=False, is_deleted=False, is_public=True).iterator():
-            config = settings.SITEMAP_REGISTRATION_CONFIG
-            config['loc'] = urlparse.urljoin(settings.DOMAIN, obj.url)
-            config['lastmod'] = obj.date_modified.isoformat()
-            self.add_url(config)
+            try:
+                config = settings.SITEMAP_REGISTRATION_CONFIG
+                config['loc'] = urlparse.urljoin(settings.DOMAIN, obj.url)
+                config['lastmod'] = obj.date_modified.isoformat()
+                self.add_url(config)
+            except Exception as e:
+                self.log_errors(obj, obj._id, e)
 
         # Preprint urls
         for obj in PreprintService.objects.filter(node__isnull=False, node__is_deleted=False, node__is_public=True, is_published=True).iterator():
-            preprint_date = obj.date_modified.isoformat()
-            config = settings.SITEMAP_PREPRINT_CONFIG
-            config['loc'] = urlparse.urljoin(settings.DOMAIN, obj.url)
-            config['lastmod'] = preprint_date
-            self.add_url(config)
+            try:
+                preprint_date = obj.date_modified.isoformat()
+                config = settings.SITEMAP_PREPRINT_CONFIG
+                config['loc'] = urlparse.urljoin(settings.DOMAIN, obj.url)
+                config['lastmod'] = preprint_date
+                self.add_url(config)
 
-            # Preprint file urls
-            file_config = settings.SITEMAP_PREPRINT_FILE_CONFIG
-            file_config['loc'] = urlparse.urljoin(settings.DOMAIN, 
-                os.path.join('project', 
-                    obj.primary_file.node._id, # Parent node id
-                    'files',
-                    'osfstorage',
-                    obj.primary_file._id, # Preprint file deep_url
-                    '?action=download'
-                )
-            )
-            file_config['lastmod'] = preprint_date
-            self.add_url(file_config)
+                # Preprint file urls
+                try:
+                    file_config = settings.SITEMAP_PREPRINT_FILE_CONFIG
+                    file_config['loc'] = urlparse.urljoin(settings.DOMAIN, 
+                        os.path.join('project', 
+                            obj.primary_file.node._id, # Parent node id
+                            'files',
+                            'osfstorage',
+                            obj.primary_file._id, # Preprint file deep_url
+                            '?action=download'
+                        )
+                    )
+                    file_config['lastmod'] = preprint_date
+                    self.add_url(file_config)
+                except Exception as e:
+                    self.log_errors(obj.primary_file, obj.primary_file._id, e)
+            except Exception as e:
+                self.log_errors(obj, obj._id, e)
 
         # Final write
         self.write_doc()
@@ -160,10 +187,14 @@ class Sitemap(object):
         # TODO: server side cursor query wrapper might be useful as the index gets larger.
         # Sitemap indexable limit check
         if self.sitemap_count > settings.SITEMAP_INDEX_MAX * .90: # 10% of urls remaining
-            logger.exception('WARNING: Max sitemaps nearly reached: {} of 50000 max sitemaps for index file'.format(str(self.sitemap_count)))
-            log_exception()
+            sentry.log_message('WARNING: Max sitemaps nearly reached: {} of 50000 max sitemaps for index file'.format(str(self.sitemap_count)))
         print('Total url_count = {}'.format((self.sitemap_count - 1) * settings.SITEMAP_URL_MAX + self.url_count))
         print('Total sitemap_count = {}'.format(str(self.sitemap_count)))
+        if self.errors:
+            sentry.log_message('WARNING: Generate sitemap encountered {} error(s). See logs for details.'.format(self.errors))
+            print('Total errors = {}'.format(str(self.errors)))
+        else:
+            print('No errors')
 
 @celery_app.task(name='scripts.generate_sitemap')
 def main():
