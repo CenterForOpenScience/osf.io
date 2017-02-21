@@ -111,7 +111,7 @@ class Sitemap(object):
         logger.info('Error on {}, {}:'.format(obj, obj_id))
         logger.exception(error)
         if self.errors == 1000:
-            sentry.log_message('WARNING: generate_sitemap stopped execution after reaching 1000 errors.')
+            sentry.log_message('ERROR: generate_sitemap stopped execution after reaching 1000 errors. See logs for details.')
             raise Exception('Too many errors generating sitemap.')
 
     def generate(self):
@@ -187,11 +187,11 @@ class Sitemap(object):
         # TODO: server side cursor query wrapper might be useful as the index gets larger.
         # Sitemap indexable limit check
         if self.sitemap_count > settings.SITEMAP_INDEX_MAX * .90: # 10% of urls remaining
-            sentry.log_message('WARNING: Max sitemaps nearly reached: {} of 50000 max sitemaps for index file'.format(str(self.sitemap_count)))
+            sentry.log_message('WARNING: Max sitemaps nearly reached.')
         print('Total url_count = {}'.format((self.sitemap_count - 1) * settings.SITEMAP_URL_MAX + self.url_count))
         print('Total sitemap_count = {}'.format(str(self.sitemap_count)))
         if self.errors:
-            sentry.log_message('WARNING: Generate sitemap encountered {} error(s). See logs for details.'.format(self.errors))
+            sentry.log_message('WARNING: Generate sitemap encountered errors. See logs for details.')
             print('Total errors = {}'.format(str(self.errors)))
         else:
             print('No errors')
