@@ -11,7 +11,7 @@ from django.core.urlresolvers import reverse
 from django.http import JsonResponse, Http404, HttpResponse
 from django.shortcuts import redirect
 
-from admin.common_auth.logs import (
+from osf.models.admin_log_entry import (
     update_admin_log,
     ACCEPT_PREREG,
     REJECT_PREREG,

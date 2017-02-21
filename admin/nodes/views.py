@@ -13,7 +13,7 @@ from osf.models.user import OSFUser
 from osf.models.node import Node
 from osf.models.registrations import Registration
 from admin.base.views import GuidFormView, GuidView
-from admin.common_auth.logs import (
+from osf.models.admin_log_entry import (
     update_admin_log,
     NODE_REMOVED,
     NODE_RESTORED,

@@ -8,7 +8,7 @@ from osf.models.comment import Comment
 from osf.models.user import OSFUser
 from website.project.spam.model import SpamStatus
 
-from admin.common_auth.logs import (
+from osf.models.admin_log_entry import (
     update_admin_log,
     CONFIRM_HAM,
     CONFIRM_SPAM,

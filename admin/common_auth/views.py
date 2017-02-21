@@ -15,7 +15,7 @@ from django.contrib.auth import login, REDIRECT_FIELD_NAME, authenticate, logout
 from website.settings import PREREG_ADMIN_TAG
 
 from osf.models.user import OSFUser
-from admin.common_auth.models import AdminProfile
+from osf.models import AdminProfile
 from admin.common_auth.forms import LoginForm, UserRegistrationForm, DeskUserForm
 
 
