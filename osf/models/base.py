@@ -9,15 +9,15 @@ from django.contrib.contenttypes.fields import (GenericForeignKey,
                                                 GenericRelation)
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.postgres.fields import ArrayField
-from django.core.exceptions import ValidationError as DjangoValidationError
 from django.core.exceptions import MultipleObjectsReturned
+from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import models
 from django.db.models import F
 from django.db.models import ForeignKey
-from django.db.models import QuerySet
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils import timezone, six
+
 from osf.exceptions import ValidationError
 from osf.modm_compat import to_django_query
 from osf.utils.datetime_aware_jsonfield import (DateTimeAwareJSONField,
@@ -516,7 +516,7 @@ class GuidMixinQuerySet(MODMCompatibilityQuerySet):
         assert ((not isinstance(k, slice) and (k >= 0)) or
                 (isinstance(k, slice) and (k.start is None or k.start >= 0) and
                  (k.stop is None or k.stop >= 0))), \
-            "Negative indexing is not supported."
+            'Negative indexing is not supported.'
 
         if self._result_cache is not None:
             return self._result_cache[k]
