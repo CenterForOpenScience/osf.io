@@ -70,8 +70,7 @@ var LogFeed = {
                 }, function(xhr, textStatus, error) {
                     self.failed = true;
                     self.logRequestPending(false);
-                    var message = 'Error retrieving logs for ' + self.node.id;
-                    Raven.captureMessage(message, {extra: {url: url, textStatus: textStatus, error: error}});
+                    Raven.captureMessage('Error retrieving logs', {extra: {url: url, textStatus: textStatus, error: error}});
                 }
             );
         };
