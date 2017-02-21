@@ -59,6 +59,8 @@ def migrate(targets):
     node.reload()
     node._id = new_guid._id
     node.save()
+    new_guid.referent = node
+    new_guid.save()
 
     for collection, _id_list in collections.iteritems():
         assert type(_id_list) == list, 'Expected type list for collection {} ids, got {}'.format(collection, type(_id_list))
