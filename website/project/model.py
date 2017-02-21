@@ -2196,6 +2196,11 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
 
     def delete_registration_tree(self, save=False):
         self.is_deleted = True
+        for draft_registration in DraftRegistration.find(Q('registered_node', 'eq', self)):
+            # Allow draft registration to be submitted
+            if draft_registration.approval:
+                draft_registration.approval = None
+                draft_registration.save()
         if not getattr(self.embargo, 'for_existing_registration', False):
             self.registered_from = None
         if save:
