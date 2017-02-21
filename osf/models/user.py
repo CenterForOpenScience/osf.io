@@ -1382,7 +1382,13 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         """ Returns the timestamp for when comments were last viewed on a node, file or wiki.
         """
         default_timestamp = dt.datetime(1970, 1, 1, 12, 0, 0, tzinfo=pytz.utc)
-        return self.comments_viewed_timestamp.get(target_id, default_timestamp)
+        timestamp = self.comments_viewed_timestamp.get(target_id, default_timestamp)
+        if isinstance(timestamp, dict):
+            if 'node' in timestamp:
+                timestamp = timestamp.get('node', default_timestamp)
+            elif 'file' in timestamp:
+                timestamp = timestamp.get('file', default_timestamp)
+        return timestamp
 
     class Meta:
         # custom permissions for use in the OSF Admin App

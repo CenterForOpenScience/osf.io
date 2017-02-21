@@ -448,6 +448,7 @@ class User(GuidStoredObject, AddonModelMixin):
     # When the user was disabled.
     date_disabled = fields.DateTimeField(index=True)
 
+    # TODO (Phase2): This should be a M2M through-table with a timestamp
     # when comments were last viewed
     comments_viewed_timestamp = fields.DictionaryField()
     # Format: {
