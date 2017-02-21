@@ -82,6 +82,9 @@ class MODMCompatibilityQuerySet(models.QuerySet):
         sort_keys = [sort_key(each) for each in fields]
         return self.order_by(*sort_keys)
 
+    def limit(self, n):
+        return self[:n]
+
 
 class BaseModel(models.Model):
     """Base model that acts makes subclasses mostly compatible with the
@@ -441,7 +444,9 @@ class GuidMixinQuerySet(MODMCompatibilityQuerySet):
             if table not in self.query.tables:
                 self.query.tables.append(table)
 
-    def remove_guid_annotations(self):
+    def remove_guid_annotations(self, fields=list()):
+        if 'guids__' in [field[0:7] for field in fields]:
+            return
         for k, v in self.query.annotations.iteritems():
             if k in GUID_FIELDS:
                 del self.query.annotations[k]
@@ -464,9 +469,6 @@ class GuidMixinQuerySet(MODMCompatibilityQuerySet):
         self.query.add_distinct_fields('id')
         return super(MODMCompatibilityQuerySet, self).get(*args, **kwargs)
 
-    def limit(self, n):
-        return self[:n]
-
     def count(self):
         return super(MODMCompatibilityQuerySet, self).count()
 
@@ -483,8 +485,7 @@ class GuidMixinQuerySet(MODMCompatibilityQuerySet):
         return super(MODMCompatibilityQuerySet, self)._update(values)
 
     def values_list(self, *fields, **kwargs):
-        # if 'guids___id' not in fields:
-        #     self.remove_guid_annotations()
+        # calls values, implicitly removes guid annotations
         return super(GuidMixinQuerySet, self).values_list(*fields, **kwargs)
 
     def _batched_insert(self, objs, fields, batch_size):
@@ -492,7 +493,7 @@ class GuidMixinQuerySet(MODMCompatibilityQuerySet):
         return super(MODMCompatibilityQuerySet, self)._batched_insert(objs, fields, batch_size)
 
     def _values(self, *fields):
-        self.remove_guid_annotations()
+        self.remove_guid_annotations(fields)
         return super(MODMCompatibilityQuerySet, self)._values(*fields)
 
     def create(self, **kwargs):
