@@ -721,10 +721,10 @@ class User(GuidStoredObject, AddonModelMixin):
             record = self.get_unclaimed_record(project_id)
         except ValueError:  # No unclaimed record for given pid
             return False
-        valid = record['token'] == token
-        if 'expires' in record:
-            valid = valid and record['expires'] > dt.datetime.utcnow()
-        return valid
+        # Legacy records may not have an 'expires' key
+        expires = record.get('expires')
+        is_expired = (expires > dt.datetime.utcnow()) if expires else True
+        return record['token'] == token and is_expired
 
     def get_claim_url(self, project_id, external=False):
         """
