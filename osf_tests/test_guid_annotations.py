@@ -19,7 +19,8 @@ class TestGuidAnnotations:
         assert 'guids__' in str(obj._meta.model.objects.filter(id=obj.id).query), 'Guid annotations did not exist in filter query for {}'.format(obj._meta.model.__name__)
 
     @pytest.mark.parametrize('Factory', guid_factories)
-    def test_update_objects(self, Factory):
+    @pytest.mark.django_assert_num_queries
+    def test_update_objects(self, Factory, django_assert_num_queries):
         objects = []
         ids = range(0, 5)
         for id in ids:
@@ -32,56 +33,79 @@ class TestGuidAnnotations:
         qs = objects[0]._meta.model.objects.filter(id__in=new_ids)
         assert len(qs) > 0, 'No results returned'
         try:
-            count = qs.update(**{charfield: 'things'})
+            with django_assert_num_queries(1):
+                count = qs.update(**{charfield: 'things'})
         except Exception as ex:
             pytest.fail('Queryset update failed for {} with exception {}'.format(Factory._meta.model.__name__, ex))
 
     @pytest.mark.parametrize('Factory', guid_factories)
-    def test_related_manager(self, Factory):
+    @pytest.mark.django_assert_num_queries
+    def test_related_manager(self, Factory, django_assert_num_queries):
         thing_with_logs = Factory()
         if not hasattr(thing_with_logs, 'logs'):
             pytest.skip('Thing must have logs')
 
         try:
-            thing_with_logs.logs.all()
+            with django_assert_num_queries(1):
+                wow = list(thing_with_logs.logs.all())
         except Exception as ex:
             pytest.fail('Related manager failed for {} with exception {}'.format(Factory._meta.model.__name__, ex))
 
     @pytest.mark.parametrize('Factory', guid_factories)
-    def test_related_manager_values_list(self, Factory):
+    @pytest.mark.django_assert_num_queries
+    def test_related_manager_values_list(self, Factory, django_assert_num_queries):
         thing_with_logs = Factory()
         if not hasattr(thing_with_logs, 'contributors'):
             pytest.skip('Thing must have contributors')
 
         try:
-            thing_with_logs.contributors.values_list('guids___id')
+            with django_assert_num_queries(1):
+                stuff = list(thing_with_logs.contributors.values_list('guids___id'))
         except Exception as ex:
             pytest.fail('Values list failed for {} with exception {}'.format(Factory._meta.model.__name__, ex))
 
     @pytest.mark.parametrize('Factory', guid_factories)
-    def test_related_manager_values(self, Factory):
+    @pytest.mark.django_assert_num_queries
+    def test_related_manager_values_list_flat(self, Factory, django_assert_num_queries):
         thing_with_logs = Factory()
         if not hasattr(thing_with_logs, 'contributors'):
             pytest.skip('Thing must have contributors')
 
         try:
-            thing_with_logs.contributors.values('guids___id')
+            with django_assert_num_queries(1):
+                alot = list(thing_with_logs.contributors.values_list('guids___id', flat=True))
         except Exception as ex:
             pytest.fail('Values list failed for {} with exception {}'.format(Factory._meta.model.__name__, ex))
 
     @pytest.mark.parametrize('Factory', guid_factories)
-    def test_count_objects(self, Factory):
+    @pytest.mark.django_assert_num_queries
+    def test_related_manager_values(self, Factory, django_assert_num_queries):
+        thing_with_logs = Factory()
+        if not hasattr(thing_with_logs, 'contributors'):
+            pytest.skip('Thing must have contributors')
+
+        try:
+            with django_assert_num_queries(1):
+                ohmai = list(thing_with_logs.contributors.values('guids___id'))
+        except Exception as ex:
+            pytest.fail('Values list failed for {} with exception {}'.format(Factory._meta.model.__name__, ex))
+
+    @pytest.mark.parametrize('Factory', guid_factories)
+    @pytest.mark.django_assert_num_queries
+    def test_count_objects(self, Factory, django_assert_num_queries):
         objects = []
         things = range(0, 5)
         for thing in things:
             objects.append(Factory())
         new_ids = [o.id for o in objects]
-        qs = objects[0]._meta.model.objects.filter(id__in=new_ids)
-        count = qs.count()
+        with django_assert_num_queries(1):
+            qs = objects[0]._meta.model.objects.filter(id__in=new_ids)
+            count = qs.count()
         assert count == len(objects)
 
     @pytest.mark.parametrize('Factory', guid_factories)
-    def test_bulk_create_objects(self, Factory):
+    @pytest.mark.django_assert_num_queries
+    def test_bulk_create_objects(self, Factory, django_assert_num_queries):
         if Factory is RegistrationFactory:
             raise pytest.skip('Registrations cannot be created without saving')
         objects = []
@@ -89,11 +113,13 @@ class TestGuidAnnotations:
         Model = Factory._meta.model
         for id in ids:
             objects.append(Factory.build(id=id))
-        things = Model.objects.bulk_create(objects)
+        with django_assert_num_queries(1):
+            things = Model.objects.bulk_create(objects)
         assert len(things) == len(objects)
 
     @pytest.mark.parametrize('Factory', guid_factories)
-    def test_bulk_update_objects(self, Factory):
+    @pytest.mark.django_assert_num_queries
+    def test_bulk_update_objects(self, Factory, django_assert_num_queries):
         objects = []
         ids = range(0, 5)
         for id in ids:
@@ -101,15 +127,17 @@ class TestGuidAnnotations:
         charfield = [x.name for x in objects[0]._meta.get_fields() if isinstance(x, CharField)][0]
         for obj in objects:
             setattr(obj, charfield, 'things')
-        bulk_update(objects)
+        with django_assert_num_queries(1):
+            bulk_update(objects)
 
     @pytest.mark.parametrize('Factory', guid_factories)
-    def test_annotate(self, Factory):
+    @pytest.mark.django_assert_num_queries
+    def test_annotate(self, Factory, django_assert_num_queries):
         objects = []
         ids = range(0, 5)
         for id in ids:
             objects.append(Factory())
-
-        things = Factory._meta.model.objects.all().annotate(highest_id=Max('id'))
+        with django_assert_num_queries(1):
+            things = Factory._meta.model.objects.all().annotate(highest_id=Max('id'))
         for thing in things:
             assert hasattr(thing, 'highest_id'), 'Annotation failed'

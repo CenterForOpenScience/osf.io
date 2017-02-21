@@ -434,81 +434,6 @@ class GuidMixinQuerySet(MODMCompatibilityQuerySet):
         super(GuidMixinQuerySet, self).__init__(model=model, query=query, using=using, hints=hints)
         self._prefetch_related_lookups = ['guids']
 
-    def annotate_query_with_guids(self):
-        for field in GUID_FIELDS:
-            self.query.add_annotation(
-                F(field), '_{}'.format(field), is_summary=False
-            )
-        tables = ['osf_guid', 'django_content_type']
-        for table in tables:
-            if table not in self.query.tables:
-                self.query.tables.append(table)
-
-    def remove_guid_annotations(self):
-        dirty = False
-        for k, v in self.query.annotations.iteritems():
-            if k[1:] in GUID_FIELDS:
-                dirty = True
-                del self.query.annotations[k]
-        if dirty:
-            if 'osf_guid' in self.query.tables:
-                del self.query.tables[self.query.tables.index('osf_guid')]
-            if 'django_content_type' in self.query.tables:
-                del self.query.tables[self.query.tables.index('django_content_type')]
-
-    def filter(self, *args, **kwargs):
-        self.annotate_query_with_guids()
-        return super(MODMCompatibilityQuerySet, self).filter(*args, **kwargs)
-
-    def all(self):
-        self.annotate_query_with_guids()
-        return super(MODMCompatibilityQuerySet, self).all()
-
-    # does implicit filter
-    def get(self, *args, **kwargs):
-        self.remove_guid_annotations()
-        self.query.add_distinct_fields('id')
-        return super(MODMCompatibilityQuerySet, self).get(*args, **kwargs)
-
-    def count(self):
-        return super(MODMCompatibilityQuerySet, self).count()
-
-    def update(self, **kwargs):
-        self.remove_guid_annotations()
-        return super(MODMCompatibilityQuerySet, self).update(**kwargs)
-
-    def update_or_create(self, defaults=None, **kwargs):
-        self.remove_guid_annotations()
-        return super(MODMCompatibilityQuerySet, self).update_or_create(defaults=defaults, **kwargs)
-
-    def _update(self, values):
-        self.remove_guid_annotations()
-        return super(MODMCompatibilityQuerySet, self)._update(values)
-
-    def values_list(self, *fields, **kwargs):
-        # calls values, implicitly removes guid annotations
-        return super(GuidMixinQuerySet, self).values_list(*fields, **kwargs)
-
-    def _batched_insert(self, objs, fields, batch_size):
-        self.remove_guid_annotations()
-        return super(MODMCompatibilityQuerySet, self)._batched_insert(objs, fields, batch_size)
-
-    def _values(self, *fields):
-        self.remove_guid_annotations()
-        return super(MODMCompatibilityQuerySet, self)._values(*fields)
-
-    def create(self, **kwargs):
-        self.remove_guid_annotations()
-        return super(MODMCompatibilityQuerySet, self).create(**kwargs)
-
-    def bulk_create(self, objs, batch_size=None):
-        self.remove_guid_annotations()
-        return super(MODMCompatibilityQuerySet, self).bulk_create(objs, batch_size)
-
-    def get_or_create(self, defaults=None, **kwargs):
-        self.remove_guid_annotations()
-        return super(MODMCompatibilityQuerySet, self).get_or_create(defaults, **kwargs)
-
     def __getitem__(self, k):
         """
         Retrieves an item or slice from the set of results.
@@ -551,6 +476,77 @@ class GuidMixinQuerySet(MODMCompatibilityQuerySet):
         item._prefetched_objects_cache['guids'].append(guid)
 
         return item
+
+    def annotate_query_with_guids(self):
+        for field in GUID_FIELDS:
+            self.query.add_annotation(
+                F(field), '_{}'.format(field), is_summary=False
+            )
+        tables = ['osf_guid', 'django_content_type']
+        for table in tables:
+            if table not in self.query.tables:
+                # self.query.tables.append(table)
+                self.query.table_alias(table)
+
+    def remove_guid_annotations(self, fields=list()):
+        if 'guids__' in [field[0:7] for field in fields]:
+            return
+        for k, v in self.query.annotations.iteritems():
+            if k[1:] in GUID_FIELDS:
+                del self.query.annotations[k]
+
+    def filter(self, *args, **kwargs):
+        self.annotate_query_with_guids()
+        return super(MODMCompatibilityQuerySet, self).filter(*args, **kwargs)
+
+    def all(self):
+        self.annotate_query_with_guids()
+        return super(MODMCompatibilityQuerySet, self).all()
+
+    # does implicit filter
+    def get(self, *args, **kwargs):
+        self.remove_guid_annotations()
+        self.query.add_distinct_fields('id')
+        return super(MODMCompatibilityQuerySet, self).get(*args, **kwargs)
+
+    def count(self):
+        return super(MODMCompatibilityQuerySet, self).count()
+
+    def update(self, **kwargs):
+        self.remove_guid_annotations()
+        return super(MODMCompatibilityQuerySet, self).update(**kwargs)
+
+    def update_or_create(self, defaults=None, **kwargs):
+        self.remove_guid_annotations()
+        return super(MODMCompatibilityQuerySet, self).update_or_create(defaults=defaults, **kwargs)
+
+    def _update(self, values):
+        self.remove_guid_annotations()
+        return super(MODMCompatibilityQuerySet, self)._update(values)
+
+    def _batched_insert(self, objs, fields, batch_size):
+        self.remove_guid_annotations()
+        return super(MODMCompatibilityQuerySet, self)._batched_insert(objs, fields, batch_size)
+
+    def _values(self, *fields):
+        self.remove_guid_annotations()
+        return super(MODMCompatibilityQuerySet, self)._values(*fields)
+
+    def create(self, **kwargs):
+        self.remove_guid_annotations()
+        return super(MODMCompatibilityQuerySet, self).create(**kwargs)
+
+    def bulk_create(self, objs, batch_size=None):
+        self.remove_guid_annotations()
+        return super(MODMCompatibilityQuerySet, self).bulk_create(objs, batch_size)
+
+    def get_or_create(self, defaults=None, **kwargs):
+        self.remove_guid_annotations()
+        return super(MODMCompatibilityQuerySet, self).get_or_create(defaults, **kwargs)
+
+    def values_list(self, *fields, **kwargs):
+        # calls values, implicitly removes guid annotations
+        return super(GuidMixinQuerySet, self).values_list(*fields, **kwargs)
 
     def _fetch_all(self):
         if self._result_cache is None:
