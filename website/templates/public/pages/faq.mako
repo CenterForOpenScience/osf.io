@@ -46,18 +46,17 @@
                         </div>
                         <div class="support-item">
                             <h5 class="support-head f-w-xl"><i class="fa fa-angle-right"></i> What is coming to the OSF?</h5>
-                            <div class="support-body">For updates on new features, you can join our <a href="https://groups.google.com/forum/#!forum/openscienceframework">Google
-                            Group</a>, find us on <a href="https://twitter.com/osframework">Twitter</a> and on <a href="https://www.facebook.com/OpenScienceFramework">Facebook</a>, or follow the COS <a href="https://github.com/centerforopenscience">GitHub</a> page.</div>
+                            <div class="support-body">For updates on new features, you can join our <a href="https://groups.google.com/forum/#!forum/openscienceframework">Google Group</a>, find us on <a href="https://twitter.com/osframework">Twitter</a> and on <a href="https://www.facebook.com/OpenScienceFramework">Facebook</a>, or follow the COS <a href="https://github.com/centerforopenscience">GitHub</a> page.</div>
                         </div>
                         <div class="support-item">
-                            <h5 class="support-head f-w-xl"><i class="fa fa-angle-right"></i> How can I contact the OSF team if I have a question that the FAQ or Getting Started pages don’t answer?</h5>
+                            <h5 class="support-head f-w-xl"><i class="fa fa-angle-right"></i> How can I contact the OSF team if I have a question that the FAQ or Guides pages don’t answer?</h5>
                             <div class="support-body">Send us an <a href="mailto:support@osf.io">email</a> and we'll be happy to help you.</div>
                         </div>
                         <div class="support-item">
                             <h5 class="support-head f-w-xl"><i class="fa fa-angle-right"></i> How can I get started on using the OSF?</h5>
                             <div class="support-body">OSF membership is open and free, so you can
                                 just register and check out our <a href="http://help.osf.io" target="_blank" rel="noreferrer">Guides</a>
-                                for a thorough run-down of how it works. This FAQ page will only cover a few of the most basic questions about the OSF, so it’s highly recommended that you read through Getting Started if you have any issues.</div>
+                                for a thorough run-down of how it works. This FAQ page will only cover a few of the most basic questions about the OSF, so it’s highly recommended that you read through Guides if you have any issues.</div>
                         </div>
                         <div class="support-item">
                             <h5 class="support-head f-w-xl"><i class="fa fa-angle-right"></i> How do I create a lab group/organizational group?</h5>
@@ -85,7 +84,7 @@
                         </div>
                         <div class="support-item">
                             <h5 class="support-head f-w-xl"><i class="fa fa-angle-right"></i> How do I get a DOI or ARK for my project?</h5>
-                            <div class="support-body">DOIs and ARKs are available for <b>public registrations</b> of projects. To get a DOI or ARK for your project, first create a registration of your project, and make sure the registration is public. Then click the "Create DOI / ARK" link, located in the block of text below the project title. A DOI and ARK will be automatically created. </div>
+                            <div class="support-body">DOIs and ARKs are available for <b>public</b> projects and registrations. To get a DOI or ARK for your project, first make it public. Then click the "Create DOI / ARK" link, located in the block of text below the project title. A DOI and ARK will be automatically created. DOIs for projects on the OSF follow the format: 10.17605/OSF.IO/GUID where GUID is the unique 5 character string assigned to the project (found in the URL).</div>
                         </div>
                         <div class="support-item">
                             <h5 class="support-head f-w-xl"><i class="fa fa-angle-right"></i> What if I don't want to make anything available publicly in the OSF?</h5>
@@ -137,13 +136,13 @@
                                     via an open source sponsorship, and has backups on
                                     <a href="http://aws.amazon.com/glacier/">Amazon's Glacier platform</a>.
                                     The OSF maintains several backup schemes, including off-site backups and
-                                    automated backups performed by our host every day, week, and fortnight.</p>1
+                                    automated backups performed by our host every day, week, and fortnight.</p>
                                 <p>Rackspace and Amazon Glacier have their own methods to support data integrity (e.g., redundancy across 5+ locations), but the Open Science Framework takes the extra step of calculating multiple <a href="https://en.wikipedia.org/wiki/Checksum">checksums</a> and <a href="https://en.wikipedia.org/wiki/Parchive">parity archives</a> to account for even the most improbable errors.</p>
                             </div>
                         </div>
                         <div class="support-item">
                             <h5 class="support-head f-w-xl"><i class="fa fa-angle-right"></i> What do I do if I lost my email confirmation for OSF registration, or I never received it?</h5>
-                            <div class="support-body">Log into the OSF with the email address and password of the account you created, and there will be a link to resend the confirmation email.</div>
+                            <div class="support-body">First, check your spam folder to make sure the email isn't hung up there. If that doesn't solve the issue, attempt to log into the OSF with the email address and password of the account you created, and there will be a link to click to resend your confirmation email. If you still don't receive the email, it could be hung up in an institutional spam filter before it gets to you - send us an email at support@osf.io and we'll help you out.</div>
                         </div>
                         <div class="support-item">
                             <h5 class="support-head f-w-xl"><i class="fa fa-angle-right"></i> My email address has changed. How do I change my login email?</h5>
