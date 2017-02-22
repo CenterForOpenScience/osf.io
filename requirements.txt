@@ -90,3 +90,4 @@ django-dirtyfields==1.2
 django-extensions==1.6.1
 psycopg2==2.6.2
 psycogreen==1.0
+django-bulk-update==1.1.10

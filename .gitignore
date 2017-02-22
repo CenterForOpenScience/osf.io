@@ -54,6 +54,7 @@ website/static/vendor/bower_components/
 node_modules
 # Allow robots.txt to be deployment-specific
 website/static/robots.local.txt
+website/static/sitemaps/
 
 # OSF-specific
 ##############
@@ -137,3 +138,4 @@ scripts/image_maniplation/test_rounded_corners.html
 .docker-compose.*.env
 docker-compose.override.yml
 .unison*
+.docker-sync/

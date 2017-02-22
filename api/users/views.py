@@ -571,7 +571,7 @@ class UserInstitutions(JSONAPIBaseView, generics.ListAPIView, UserMixin):
 
     def get_queryset(self):
         user = self.get_user()
-        return user.affiliated_institutions
+        return user.affiliated_institutions.all()
 
 
 class UserRegistrations(UserNodes):

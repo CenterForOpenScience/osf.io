@@ -4,6 +4,7 @@ from .base import BaseModel
 
 class Tag(BaseModel):
     # TODO DELETE ME POST MIGRATION
+    primary_identifier_name = 'name'
     modm_model_path = 'website.project.model.Tag'
     modm_query = None
     # /TODO DELETE ME POST MIGRATION

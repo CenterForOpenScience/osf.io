@@ -46,6 +46,7 @@ from osf.models.validators import validate_doi, validate_title
 from osf.modm_compat import Q
 from osf.utils.auth import Auth, get_user
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
+from osf.utils.fields import NonNaiveDateTimeField
 from website import language, settings
 from website.citations.utils import datetime_to_csl
 from website.exceptions import (InvalidTagError, NodeStateError,
@@ -61,18 +62,18 @@ from website.util.permissions import (ADMIN, CREATOR_PERMISSIONS,
                                       DEFAULT_CONTRIBUTOR_PERMISSIONS, READ,
                                       WRITE, expand_permissions,
                                       reduce_permissions)
-from .base import BaseModel, Guid, GuidMixin, GuidMODMCompatibilityQuerySet
+from .base import BaseModel, Guid, GuidMixin, MODMCompatibilityQuerySet
 
 logger = logging.getLogger(__name__)
 
 
-class AbstractNodeQueryset(GuidMODMCompatibilityQuerySet):
+class AbstractNodeQuerySet(MODMCompatibilityQuerySet):
     def get_roots(self):
         return self.extra(
             where=['"osf_abstractnode".id in (SELECT id FROM osf_abstractnode WHERE id NOT IN (SELECT child_id FROM '
                    'osf_noderelation WHERE is_node_link IS false))'])
 
-    def get_children(self, root, primary_keys=False):
+    def get_children(self, root, primary_keys=False, active=False):
         sql = """
             WITH RECURSIVE descendants AS (
               SELECT
@@ -80,7 +81,8 @@ class AbstractNodeQueryset(GuidMODMCompatibilityQuerySet):
                 child_id,
                 1 AS LEVEL
               FROM %s
-              WHERE is_node_link IS FALSE
+              %s
+              WHERE is_node_link IS FALSE %s
               UNION ALL
               SELECT
                 s.parent_id,
@@ -96,7 +98,12 @@ class AbstractNodeQueryset(GuidMODMCompatibilityQuerySet):
         """
         with connection.cursor() as cursor:
             node_relation_table = AsIs(NodeRelation._meta.db_table)
-            cursor.execute(sql, [node_relation_table, node_relation_table, root.pk])
+            cursor.execute(sql, [
+                node_relation_table,
+                AsIs('LEFT JOIN osf_abstractnode ON {}.child_id = osf_abstractnode.id'.format(node_relation_table) if active else ''),
+                AsIs('AND osf_abstractnode.is_deleted IS FALSE' if active else ''),
+                node_relation_table,
+                root.pk])
             row = cursor.fetchone()[0]
             if row is None or primary_keys:
                 return row or []
@@ -115,6 +122,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     primary_identifier_name = 'guid_string'
     modm_model_path = 'website.models.Node'
     modm_query = None
+    migration_page_size = 10000
 
     #: Whether this is a pointer or not
     primary = True
@@ -206,12 +214,12 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                                 on_delete=models.SET_NULL,
                                 null=True, blank=True)
     # TODO: Uncomment auto_* attributes after migration is complete
-    date_created = models.DateTimeField(default=timezone.now)  # auto_now_add=True)
-    date_modified = models.DateTimeField(db_index=True, null=True, blank=True)  # auto_now=True)
-    deleted_date = models.DateTimeField(null=True, blank=True)
+    date_created = NonNaiveDateTimeField(default=timezone.now)  # auto_now_add=True)
+    date_modified = NonNaiveDateTimeField(db_index=True, null=True, blank=True)  # auto_now=True)
+    deleted_date = NonNaiveDateTimeField(null=True, blank=True)
     description = models.TextField(blank=True, default='')
     file_guid_to_share_uuids = DateTimeAwareJSONField(default=dict, blank=True)
-    forked_date = models.DateTimeField(db_index=True, null=True, blank=True)
+    forked_date = NonNaiveDateTimeField(db_index=True, null=True, blank=True)
     forked_from = models.ForeignKey('self',
                                     related_name='forks',
                                     on_delete=models.SET_NULL,
@@ -227,7 +235,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                                     through_fields=('parent', 'child'),
                                     related_name='parent_nodes')
 
-    objects = AbstractNodeQueryset.as_manager()
+    objects = AbstractNodeQuerySet.as_manager()
 
     @property
     def parent_node(self):
@@ -1892,7 +1900,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         new.template_node = self
         # Need to save in order to access contributors m2m table
         new.save(suppress_log=True)
-
         new.add_contributor(contributor=auth.user, permissions=CREATOR_PERMISSIONS, log=False, save=False)
         new.is_fork = False
         new.node_license = self.license.copy() if self.license else None
@@ -2475,7 +2482,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 '{0!r} does not have permission to modify this {1}'.format(auth.user, self.category or 'node')
             )
 
-        if self.nodes_primary.filter(is_deleted=False).exists():
+        if Node.objects.get_children(self, active=True):
             raise NodeStateError('Any child components must be deleted prior to deleting this project.')
 
         # After delete callback
@@ -2588,8 +2595,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         new_page.save()
 
         if has_comments:
-            Comment.update(Q('root_target', 'eq', current), data={'root_target': Guid.load(new_page._id)})
-            Comment.update(Q('target', 'eq', current), data={'target': Guid.load(new_page._id)})
+            Comment.objects.filter(root_target=current.guids.first()).update(root_target=Guid.load(new_page._id))
+            Comment.objects.filter(target=current.guids.first()).update(target=Guid.load(new_page._id))
 
         if current:
             for contrib in self.contributors:
@@ -2823,10 +2830,13 @@ class Node(AbstractNode):
         from website.models import Guid as MODMGuid
         from modularodm import Q as MODMQ
 
-        guids = MODMGuid.find(MODMQ('referent', 'eq', modm_obj._id))
+        guids = MODMGuid.find(MODMQ('referent', 'eq', modm_obj._id)).get_keys()
+        guids.append(modm_obj._id)
+        g_set = set(guids)
 
-        setattr(django_obj, 'guid_string', guids.get_keys())
+        setattr(django_obj, 'guid_string', list(g_set))
         setattr(django_obj, 'content_type_pk', content_type_pk)
+        django_obj.title = django_obj.title[:200]
         return django_obj
 
     # /TODO DELETE ME POST MIGRATION

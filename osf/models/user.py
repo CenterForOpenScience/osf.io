@@ -13,8 +13,10 @@ import framework.mongo
 import itsdangerous
 import pytz
 from dirtyfields import DirtyFieldsMixin
+
 from django.conf import settings
 from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
+from django.contrib.auth.hashers import check_password
 from django.contrib.auth.models import PermissionsMixin
 from django.contrib.postgres import fields
 from django.db import models
@@ -40,12 +42,13 @@ from osf.models.tag import Tag
 from osf.models.validators import validate_email, validate_social
 from osf.modm_compat import Q
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
-from osf.utils.fields import NonNaiveDatetimeField
+from osf.utils.fields import NonNaiveDateTimeField
 from osf.utils.names import impute_names
 from website import settings as website_settings
 from website import filters, mails
 
 logger = logging.getLogger(__name__)
+
 
 def get_default_mailing_lists():
     return {'Open Science Framework Help': True}
@@ -58,6 +61,7 @@ name_formatters = {
         initial=user.given_name_initial,
     ),
 }
+
 
 class OSFUserManager(BaseUserManager):
     def create_user(self, username, password=None):
@@ -83,8 +87,7 @@ class OSFUserManager(BaseUserManager):
         return user
 
 
-class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
-              AbstractBaseUser, PermissionsMixin, AddonModelMixin):
+class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, PermissionsMixin, AddonModelMixin):
     # TODO DELETE ME POST MIGRATION
     modm_model_path = 'framework.auth.core.User'
     modm_query = None
@@ -151,7 +154,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
     is_claimed = models.BooleanField(default=False, db_index=True)
 
     # a list of strings - for internal use
-    tags = models.ManyToManyField('Tag')
+    tags = models.ManyToManyField('Tag', blank=True)
 
     # security emails that have been sent
     # TODO: This should be removed and/or merged with system_tags
@@ -203,7 +206,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
     #   'expires': <verification expiration time>
     # }
 
-    email_last_sent = NonNaiveDatetimeField(null=True, blank=True)
+    email_last_sent = NonNaiveDateTimeField(null=True, blank=True)
 
     # confirmed emails
     #   emails should be stripped of whitespace and lower-cased before appending
@@ -242,7 +245,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
     # }
 
     # the date this user was registered
-    date_registered = NonNaiveDatetimeField(db_index=True, default=timezone.now)  # auto_now_add=True)
+    date_registered = NonNaiveDateTimeField(db_index=True, default=timezone.now)  # auto_now_add=True)
 
     # list of collaborators that this user recently added to nodes as a contributor
     # recently_added = fields.ForeignField("user", list=True)
@@ -316,13 +319,13 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
     piwik_token = models.CharField(max_length=255, blank=True)
 
     # date the user last sent a request
-    date_last_login = NonNaiveDatetimeField(null=True, blank=True)
+    date_last_login = NonNaiveDateTimeField(null=True, blank=True)
 
     # date the user first successfully confirmed an email address
-    date_confirmed = NonNaiveDatetimeField(db_index=True, null=True, blank=True)
+    date_confirmed = NonNaiveDateTimeField(db_index=True, null=True, blank=True)
 
     # When the user was disabled.
-    date_disabled = NonNaiveDatetimeField(db_index=True, null=True, blank=True)
+    date_disabled = NonNaiveDateTimeField(db_index=True, null=True, blank=True)
 
     # when comments were last viewed
     comments_viewed_timestamp = DateTimeAwareJSONField(default=dict, blank=True)
@@ -1120,6 +1123,20 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
             'user_display_name': name_formatters[formatter](self),
             'user_is_claimed': self.is_claimed
         }
+
+    def check_password(self, raw_password):
+        """
+        Return a boolean of whether the raw_password was correct. Handles
+        hashing formats behind the scenes.
+
+        Source: https://github.com/django/django/blob/master/django/contrib/auth/base_user.py#L104
+        """
+        def setter(raw_password):
+            self.set_password(raw_password, notify=False)
+            # Password hash upgrades shouldn't be considered password changes.
+            self._password = None
+            self.save(update_fields=['password'])
+        return check_password(raw_password, self.password, setter)
 
     def change_password(self, raw_old_password, raw_new_password, raw_confirm_password):
         """Change the password for this user to the hash of ``raw_new_password``."""
