@@ -1,14 +1,14 @@
 from __future__ import unicode_literals
 
 from django.views.generic import FormView, ListView, DetailView
+from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.http import Http404
 
 from osf.models.comment import Comment
 from osf.models.user import OSFUser
 from website.project.spam.model import SpamStatus
 
-from admin.base.utils import NodesAndUsers
-from admin.common_auth.logs import (
+from osf.models.admin_log_entry import (
     update_admin_log,
     CONFIRM_HAM,
     CONFIRM_SPAM,
@@ -18,9 +18,10 @@ from admin.spam.forms import ConfirmForm
 from admin.spam.templatetags.spam_extras import reverse_spam_detail
 
 
-class EmailView(NodesAndUsers, DetailView):
+class EmailView(PermissionRequiredMixin, DetailView):
     template_name = 'spam/email.html'
     context_object_name = 'spam'
+    permission_required = 'common_auth.view_spam'
 
     def get_object(self, queryset=None):
         spam_id = self.kwargs.get('spam_id')
@@ -30,7 +31,7 @@ class EmailView(NodesAndUsers, DetailView):
             raise Http404('Spam with id {} not found.'.format(spam_id))
 
 
-class SpamList(NodesAndUsers, ListView):
+class SpamList(PermissionRequiredMixin, ListView):
     """ Allow authorized admin user to see the things people have marked as spam
 
     Interface with OSF database. No admin models.
@@ -40,6 +41,8 @@ class SpamList(NodesAndUsers, ListView):
     paginate_orphans = 1
     ordering = '-date_last_reported'
     context_object_name = 'spam'
+    permission_required = 'common_auth.view_spam'
+    raise_exception = True
 
     def get_queryset(self):
         return Comment.objects.filter(
@@ -79,13 +82,15 @@ class UserSpamList(SpamList):
         return super(UserSpamList, self).get_context_data(**kwargs)
 
 
-class SpamDetail(NodesAndUsers, FormView):
+class SpamDetail(PermissionRequiredMixin, FormView):
     """ Allow authorized admin user to see details of reported spam.
 
     Interface with OSF database. Logs action (confirming spam) on admin db.
     """
     form_class = ConfirmForm
     template_name = 'spam/detail.html'
+    permission_required = 'common_auth.view_spam'
+    raise_exception = True
 
     def get_context_data(self, **kwargs):
         spam_id = self.kwargs.get('spam_id')

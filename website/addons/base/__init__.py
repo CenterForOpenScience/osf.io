@@ -75,17 +75,25 @@ class AddonConfig(object):
         self.models = models
         self.settings_models = {}
 
-        from django.apps import apps
-        try:
-            app = apps.get_app_config('addons_{}'.format(short_name))
-        except LookupError:
-            app = None
+        if settings.USE_POSTGRES:
+            from django.apps import apps
+            try:
+                app = apps.get_app_config('addons_{}'.format(short_name))
+            except LookupError:
+                app = None
 
-        if app and app.node_settings:
-            self.settings_models['node'] = app.node_settings
+            if app and app.node_settings:
+                self.settings_models['node'] = app.node_settings
 
-        if app and app.user_settings:
-            self.settings_models['user'] = app.user_settings
+            if app and app.user_settings:
+                self.settings_models['user'] = app.user_settings
+        else:
+            if node_settings_model:
+                node_settings_model.config = self
+                self.settings_models['node'] = node_settings_model
+            if user_settings_model:
+                user_settings_model.config = self
+                self.settings_models['user'] = user_settings_model
 
         self.short_name = short_name
         self.full_name = full_name

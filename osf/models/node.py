@@ -46,6 +46,7 @@ from osf.models.validators import validate_doi, validate_title
 from osf.modm_compat import Q
 from osf.utils.auth import Auth, get_user
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
+from osf.utils.fields import NonNaiveDateTimeField
 from website import language, settings
 from website.citations.utils import datetime_to_csl
 from website.exceptions import (InvalidTagError, NodeStateError,
@@ -61,18 +62,18 @@ from website.util.permissions import (ADMIN, CREATOR_PERMISSIONS,
                                       DEFAULT_CONTRIBUTOR_PERMISSIONS, READ,
                                       WRITE, expand_permissions,
                                       reduce_permissions)
-from .base import BaseModel, Guid, GuidMixin, MODMCompatibilityQuerySet
+from .base import BaseModel, Guid, GuidMixin, GuidMixinQuerySet
 
 logger = logging.getLogger(__name__)
 
 
-class AbstractNodeQueryset(MODMCompatibilityQuerySet):
+class AbstractNodeQuerySet(GuidMixinQuerySet):
     def get_roots(self):
         return self.extra(
             where=['"osf_abstractnode".id in (SELECT id FROM osf_abstractnode WHERE id NOT IN (SELECT child_id FROM '
                    'osf_noderelation WHERE is_node_link IS false))'])
 
-    def get_children(self, root, primary_keys=False):
+    def get_children(self, root, primary_keys=False, active=False):
         sql = """
             WITH RECURSIVE descendants AS (
               SELECT
@@ -80,7 +81,8 @@ class AbstractNodeQueryset(MODMCompatibilityQuerySet):
                 child_id,
                 1 AS LEVEL
               FROM %s
-              WHERE is_node_link IS FALSE
+              %s
+              WHERE is_node_link IS FALSE %s
               UNION ALL
               SELECT
                 s.parent_id,
@@ -96,7 +98,12 @@ class AbstractNodeQueryset(MODMCompatibilityQuerySet):
         """
         with connection.cursor() as cursor:
             node_relation_table = AsIs(NodeRelation._meta.db_table)
-            cursor.execute(sql, [node_relation_table, node_relation_table, root.pk])
+            cursor.execute(sql, [
+                node_relation_table,
+                AsIs('LEFT JOIN osf_abstractnode ON {}.child_id = osf_abstractnode.id'.format(node_relation_table) if active else ''),
+                AsIs('AND osf_abstractnode.is_deleted IS FALSE' if active else ''),
+                node_relation_table,
+                root.pk])
             row = cursor.fetchone()[0]
             if row is None or primary_keys:
                 return row or []
@@ -115,6 +122,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     primary_identifier_name = 'guid_string'
     modm_model_path = 'website.models.Node'
     modm_query = None
+    migration_page_size = 10000
 
     #: Whether this is a pointer or not
     primary = True
@@ -206,12 +214,12 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                                 on_delete=models.SET_NULL,
                                 null=True, blank=True)
     # TODO: Uncomment auto_* attributes after migration is complete
-    date_created = models.DateTimeField(default=timezone.now)  # auto_now_add=True)
-    date_modified = models.DateTimeField(db_index=True, null=True, blank=True)  # auto_now=True)
-    deleted_date = models.DateTimeField(null=True, blank=True)
+    date_created = NonNaiveDateTimeField(default=timezone.now)  # auto_now_add=True)
+    date_modified = NonNaiveDateTimeField(db_index=True, null=True, blank=True)  # auto_now=True)
+    deleted_date = NonNaiveDateTimeField(null=True, blank=True)
     description = models.TextField(blank=True, default='')
     file_guid_to_share_uuids = DateTimeAwareJSONField(default=dict, blank=True)
-    forked_date = models.DateTimeField(db_index=True, null=True, blank=True)
+    forked_date = NonNaiveDateTimeField(db_index=True, null=True, blank=True)
     forked_from = models.ForeignKey('self',
                                     related_name='forks',
                                     on_delete=models.SET_NULL,
@@ -227,7 +235,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                                     through_fields=('parent', 'child'),
                                     related_name='parent_nodes')
 
-    objects = AbstractNodeQueryset.as_manager()
+    objects = AbstractNodeQuerySet.as_manager()
 
     @property
     def parent_node(self):
@@ -271,26 +279,19 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     def get_nodes(self, **kwargs):
         """Return list of children nodes. ``kwargs`` are used to filter against
-        children.
+        children. In addition `is_node_link=<bool>` can be passed to filter against
+        node links.
         """
         # Prepend 'child__' to kwargs for filtering
-        filter_kwargs = {'child__{}'.format(key): val for key, val in kwargs.items()}
-        child_ids = (NodeRelation.objects.filter(parent=self, **filter_kwargs)
-                     .select_related('child')
-                     .values_list('child', flat=True))
-        query = (AbstractNode.objects.filter(id__in=child_ids)
-                .order_by('noderelation___order')
-                .distinct())
-        # NOTE: The query may return duplicate nodes when child nodes have
-        # multiple parents (i.e. when they are linked to). Unfortunately,
-        # we cannot both (1) remove duplicates and (2) ordering NodeRelation._order
-        # in the same query. The following lines are done to return unique nodes
-        # while maintaining order.
-        ret = []
-        for node in query:
-            if node not in ret:
-                ret.append(node)
-        return ret
+        filter_kwargs = {}
+        if 'is_node_link' in kwargs:
+            filter_kwargs['is_node_link'] = kwargs.pop('is_node_link')
+        for key, val in kwargs.items():
+            filter_kwargs['child__{}'.format(key)] = val
+        node_relations = (NodeRelation.objects.filter(parent=self, **filter_kwargs)
+                        .select_related('child')
+                        .order_by('_order'))
+        return [each.child for each in node_relations]
 
     @property
     def linked_nodes(self):
@@ -337,6 +338,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     def __init__(self, *args, **kwargs):
         self._parent = kwargs.pop('parent', None)
+        self._is_templated_clone = False
         super(AbstractNode, self).__init__(*args, **kwargs)
 
     def __unicode__(self):
@@ -692,10 +694,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         )
 
     def get_aggregate_logs_query(self, auth):
-        ids = [self._id] + [n._id
-                            for n in self.get_descendants_recursive(primary_only=True)
-                            if n.can_view(auth)]
-        query = Q('node', 'in', ids) & Q('should_hide', 'ne', True)
+        ids = [self._id] + [n._id for n in Node.objects.get_children(self) if n.can_view(auth)]
+        query = Q('node', 'in', ids) & Q('should_hide', 'eq', False)
         return query
 
     def get_aggregate_logs_queryset(self, auth):
@@ -1879,6 +1879,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             attributes = dict()
 
         new = self.clone()
+        new._is_templated_clone = True  # This attribute may be read in post_save handlers
 
         # Clear quasi-foreign fields
         new.wiki_pages_current.clear()
@@ -1930,13 +1931,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             log_date=new.date_created,
             save=False,
         )
-
-        # add mandatory addons
-        # TODO: This logic also exists in self.save()
-        for addon in settings.ADDONS_AVAILABLE:
-            if 'node' in addon.added_default:
-                new.add_addon(addon.short_name, auth=None, log=False)
-
         new.save()
         # deal with the children of the node, if any
         for node_relation in self.node_relations.select_related('child').filter(child__is_deleted=False):
@@ -2083,9 +2077,11 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 )
 
             if to_retain != users:
-                # TODO: Can we prevent n queries?
-                sorted_contribs = [self.contributor_set.get(user=user).pk for user in users]
-                self.set_contributor_order(sorted_contribs)
+                # Ordered Contributor PKs, sorted according to the passed list of user IDs
+                sorted_contrib_ids = [
+                    each.id for each in sorted(self.contributor_set.all(), key=lambda c: user_ids.index(c.user._id))
+                ]
+                self.set_contributor_order(sorted_contrib_ids)
                 self.add_log(
                     action=NodeLog.CONTRIB_REORDERED,
                     params={
@@ -2486,7 +2482,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 '{0!r} does not have permission to modify this {1}'.format(auth.user, self.category or 'node')
             )
 
-        if self.nodes_primary.filter(is_deleted=False).exists():
+        if Node.objects.get_children(self, active=True):
             raise NodeStateError('Any child components must be deleted prior to deleting this project.')
 
         # After delete callback
@@ -2599,8 +2595,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         new_page.save()
 
         if has_comments:
-            Comment.update(Q('root_target', 'eq', current), data={'root_target': Guid.load(new_page._id)})
-            Comment.update(Q('target', 'eq', current), data={'target': Guid.load(new_page._id)})
+            Comment.objects.filter(root_target=current.guids.first()).update(root_target=Guid.load(new_page._id))
+            Comment.objects.filter(target=current.guids.first()).update(target=Guid.load(new_page._id))
 
         if current:
             for contrib in self.contributors:
@@ -2834,10 +2830,13 @@ class Node(AbstractNode):
         from website.models import Guid as MODMGuid
         from modularodm import Q as MODMQ
 
-        guids = MODMGuid.find(MODMQ('referent', 'eq', modm_obj._id))
+        guids = MODMGuid.find(MODMQ('referent', 'eq', modm_obj._id)).get_keys()
+        guids.append(modm_obj._id)
+        g_set = set(guids)
 
-        setattr(django_obj, 'guid_string', guids.get_keys())
+        setattr(django_obj, 'guid_string', list(g_set))
         setattr(django_obj, 'content_type_pk', content_type_pk)
+        django_obj.title = django_obj.title[:200]
         return django_obj
 
     # /TODO DELETE ME POST MIGRATION
@@ -2850,6 +2849,12 @@ class Node(AbstractNode):
     def is_bookmark_collection(self):
         """For v1 compat"""
         return False
+
+    class Meta:
+        # custom permissions for use in the OSF Admin App
+        permissions = (
+            ('view_node', 'Can view node details'),
+        )
 
 
 class Collection(AbstractNode):
@@ -2940,8 +2945,7 @@ def send_osf_signal(sender, instance, created, **kwargs):
 @receiver(post_save, sender=Collection)
 @receiver(post_save, sender=Node)
 def add_default_node_addons(sender, instance, created, **kwargs):
-    if created and instance.is_original and not instance._suppress_log:
-        # TODO: This logic also exists in self.use_as_template()
+    if (created or instance._is_templated_clone) and instance.is_original and not instance._suppress_log:
         for addon in settings.ADDONS_AVAILABLE:
             if 'node' in addon.added_default:
                 instance.add_addon(addon.short_name, auth=None, log=False)

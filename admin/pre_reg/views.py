@@ -6,11 +6,12 @@ from modularodm import Q
 
 from django.views.generic import ListView, DetailView, FormView, UpdateView
 from django.views.defaults import permission_denied, bad_request
+from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.core.urlresolvers import reverse
 from django.http import JsonResponse, Http404, HttpResponse
 from django.shortcuts import redirect
 
-from admin.common_auth.logs import (
+from osf.models.admin_log_entry import (
     update_admin_log,
     ACCEPT_PREREG,
     REJECT_PREREG,
@@ -27,13 +28,13 @@ from osf.models.registrations import DraftRegistration
 from website.prereg.utils import get_prereg_schema
 from website.project.metadata.schemas import from_json
 
-from admin.base.utils import Prereg
 
-
-class DraftListView(Prereg, ListView):
+class DraftListView(PermissionRequiredMixin, ListView):
     template_name = 'pre_reg/draft_list.html'
     ordering = '-date'
     context_object_name = 'draft'
+    permission_required = 'common_auth.view_prereg'
+    raise_exception = True
 
     def get_queryset(self):
         query = (
@@ -102,9 +103,11 @@ class DraftDownloadListView(DraftListView):
         return response
 
 
-class DraftDetailView(Prereg, DetailView):
+class DraftDetailView(PermissionRequiredMixin, DetailView):
     template_name = 'pre_reg/draft_detail.html'
     context_object_name = 'draft'
+    permission_required = 'common_auth.view_prereg'
+    raise_exception = True
 
     def get_object(self, queryset=None):
         draft = DraftRegistration.load(self.kwargs.get('draft_pk'))
@@ -124,10 +127,12 @@ class DraftDetailView(Prereg, DetailView):
             item.save()
 
 
-class DraftFormView(Prereg, FormView):
+class DraftFormView(PermissionRequiredMixin, FormView):
     template_name = 'pre_reg/draft_form.html'
     form_class = DraftRegistrationForm
     context_object_name = 'draft'
+    permission_required = 'common_auth.view_prereg'
+    raise_exception = True
 
     def dispatch(self, request, *args, **kwargs):
         self.draft = DraftRegistration.load(self.kwargs.get('draft_pk'))
@@ -191,8 +196,10 @@ class DraftFormView(Prereg, FormView):
                                    self.request.POST.get('page', 1))
 
 
-class CommentUpdateView(Prereg, UpdateView):
+class CommentUpdateView(PermissionRequiredMixin, UpdateView):
     context_object_name = 'draft'
+    permission_required = ('common_auth.view_prereg', 'common_auth.administer_prereg')
+    raise_exception = True
 
     def post(self, request, *args, **kwargs):
         try:

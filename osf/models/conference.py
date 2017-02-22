@@ -5,6 +5,7 @@ import re
 from django.db import models
 from osf.models.base import BaseModel, ObjectIDMixin
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
+from osf.utils.fields import NonNaiveDateTimeField
 
 from website.conferences.exceptions import ConferenceError
 
@@ -52,8 +53,8 @@ class Conference(ObjectIDMixin, BaseModel):
     info_url = models.URLField(blank=True)
     logo_url = models.URLField(blank=True)
     location = models.CharField(max_length=2048, null=True, blank=True)
-    start_date = models.DateTimeField(blank=True, null=True)
-    end_date = models.DateTimeField(blank=True, null=True)
+    start_date = NonNaiveDateTimeField(blank=True, null=True)
+    end_date = NonNaiveDateTimeField(blank=True, null=True)
     is_meeting = models.BooleanField(default=True)
     active = models.BooleanField()
     admins = models.ManyToManyField('OSFUser')
@@ -78,6 +79,12 @@ class Conference(ObjectIDMixin, BaseModel):
     @classmethod
     def get_by_endpoint(cls, endpoint, active):
         return cls.objects.get_by_endpoint(endpoint, active)
+
+    class Meta:
+        # custom permissions for use in the OSF Admin App
+        permissions = (
+            ('view_conference', 'Can view conference details in the admin app.'),
+        )
 
 
 class MailRecord(ObjectIDMixin, BaseModel):

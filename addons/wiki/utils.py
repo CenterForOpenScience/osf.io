@@ -155,32 +155,28 @@ def format_wiki_version(version, num_versions, allow_preview):
 
     return version
 
-def serialize_wiki_settings(user, node_ids):
+def serialize_wiki_settings(user, nodes):
     """ Format wiki data for project settings page
 
     :param user: modular odm User object
-    :param node_ids: list of parent project ids
+    :param nodes: list of parent project nodes
     :return: treebeard-formatted data
     """
     items = []
 
-    for node_id in node_ids:
-        node = Node.load(node_id)
-        assert node, '{} is not a valid Node.'.format(node_id)
+    for node in nodes:
+        assert node, '{} is not a valid Node.'.format(node._id)
 
         can_read = node.has_permission(user, 'read')
         include_wiki_settings = node.include_wiki_settings(user)
 
         if not include_wiki_settings:
             continue
-
-        node_children = Node.objects.get_children(node)
-        if node_children:
-            node_children = node_children.exclude(is_deleted=True).values_list('guids___id', flat=True)
-        children = []
+        children = node.get_nodes(**{'is_deleted': False, 'is_node_link': False})
+        children_tree = []
 
         if node.admin_public_wiki(user):
-            children.append({
+            children_tree.append({
                 'select': {
                     'title': 'permission',
                     'permission':
@@ -190,15 +186,15 @@ def serialize_wiki_settings(user, node_ids):
                 },
             })
 
-        children.extend(serialize_wiki_settings(user, node_children))
+        children_tree.extend(serialize_wiki_settings(user, children))
 
         item = {
             'node': {
-                'id': node_id,
+                'id': node._id,
                 'url': node.url if can_read else '',
                 'title': node.title if can_read else 'Private Project',
             },
-            'children': children,
+            'children': children_tree,
             'kind': 'folder' if not node.parent_node or not node.parent_node.has_permission(user, 'read') else 'node',
             'nodeType': node.project_or_component,
             'category': node.category,

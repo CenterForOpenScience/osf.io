@@ -7,7 +7,7 @@ from datetime import timedelta
 
 from website.project.model import Comment
 
-from admin.common_auth.logs import OSFLogEntry
+from osf.models.admin_log_entry import AdminLogEntry
 from admin.spam.forms import ConfirmForm
 from tests.base import AdminTestCase
 from tests.factories import AuthUserFactory, ProjectFactory
@@ -119,7 +119,7 @@ class TestSpamDetail(AdminTestCase):
             view, self.request, form, spam_id=self.comment._id)
         with transaction.atomic():
             view.form_valid(form)
-        obj = OSFLogEntry.objects.latest(field_name='action_time')
+        obj = AdminLogEntry.objects.latest(field_name='action_time')
         nt.assert_equal(obj.object_id, self.comment._id)
         nt.assert_in('Confirmed SPAM:', obj.message())
 
@@ -132,7 +132,7 @@ class TestSpamDetail(AdminTestCase):
             view, self.request, form, spam_id=self.comment._id)
         with transaction.atomic():
             view.form_valid(form)
-        obj = OSFLogEntry.objects.latest(field_name='action_time')
+        obj = AdminLogEntry.objects.latest(field_name='action_time')
         nt.assert_equal(obj.object_id, self.comment._id)
         nt.assert_in('Confirmed HAM:', obj.message())
 
