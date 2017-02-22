@@ -15,6 +15,7 @@ from website.exceptions import NodeStateError
 from website.util import permissions, disconnected_from_listeners
 from website.citations.utils import datetime_to_csl
 from website import language
+from website.project.model import ensure_schemas
 
 from osf.models import (
     AbstractNode,
@@ -25,6 +26,7 @@ from osf.models import (
     Sanction,
     NodeRelation,
     Registration,
+    DraftRegistrationApproval,
 )
 from addons.wiki.models import NodeWikiPage
 from osf.exceptions import ValidationError
@@ -36,6 +38,7 @@ from .factories import (
     UserFactory,
     UnregUserFactory,
     RegistrationFactory,
+    DraftRegistrationFactory,
     NodeLicenseRecordFactory,
     PrivateLinkFactory,
     CollectionFactory,
@@ -1456,6 +1459,22 @@ class TestNodeTraversals:
         reg.delete_registration_tree(save=True)
         assert Node.find(Q('_id', 'in', reg_ids) & Q('is_deleted', 'eq', False)).count() == 0
         assert mock_update_search.call_count == orig_call_count + len(reg_ids)
+
+    def test_delete_registration_tree_sets_draft_registration_approvals_to_none(self, user):
+        ensure_schemas()
+        reg = RegistrationFactory()
+
+        dr = DraftRegistrationFactory(initiator=user)
+        approval = DraftRegistrationApproval(state=Sanction.APPROVED)
+        approval.save()
+        dr.approval = approval
+        dr.registered_node = reg
+        dr.save()
+
+        reg.delete_registration_tree(save=True)
+
+        dr.reload()
+        assert dr.approval is None
 
     @mock.patch('osf.models.node.AbstractNode.update_search')
     def test_delete_registration_tree_deletes_backrefs(self, mock_update_search):

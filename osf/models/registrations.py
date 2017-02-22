@@ -332,6 +332,11 @@ class Registration(AbstractNode):
 
     def delete_registration_tree(self, save=False):
         self.is_deleted = True
+        for draft_registration in DraftRegistration.objects.filter(registered_node=self):
+            # Allow draft registration to be submitted
+            if draft_registration.approval:
+                draft_registration.approval = None
+                draft_registration.save()
         if not getattr(self.embargo, 'for_existing_registration', False):
             self.registered_from = None
         if save:
