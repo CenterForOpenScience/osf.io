@@ -33,7 +33,7 @@ from framework.sessions.utils import remove_sessions_for_user
 from framework.mongo import get_cache_key
 from modularodm.exceptions import NoResultsFound
 from osf.exceptions import reraise_django_validation_errors
-from osf.models.base import BaseModel, GuidMixin
+from osf.models.base import BaseModel, GuidMixin, GuidMixinQuerySet
 from osf.models.contributor import RecentlyAddedContributor
 from osf.models.institution import Institution
 from osf.models.mixins import AddonModelMixin
@@ -64,6 +64,10 @@ name_formatters = {
 
 
 class OSFUserManager(BaseUserManager):
+
+    def get_queryset(self):
+        return GuidMixinQuerySet(model=self.model, query=None, using=self._db, hints=self._hints)
+
     def create_user(self, username, password=None):
         if not username:
             raise ValueError('Users must have a username')

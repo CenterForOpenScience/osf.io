@@ -22,7 +22,7 @@ from .migratedata import set_backend
 logger = logging.getLogger('migrations')
 
 
-class NotGonnaDoItException(BaseException):
+class NotGonnaDoItException(Exception):
     pass
 
 
