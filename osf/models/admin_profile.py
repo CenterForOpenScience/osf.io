@@ -2,6 +2,7 @@ from django.db import models
 
 
 class AdminProfile(models.Model):
+    primary_identifier_name = 'id'
 
     user = models.OneToOneField('osf.OSFUser', related_name='admin_profile')
 
