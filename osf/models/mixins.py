@@ -127,8 +127,8 @@ class AddonModelMixin(models.Model):
 
     # from addons.base.apps import BaseAddonConfig
     settings_type = None
-    ADDONS_AVAILABLE = [config for config in apps.get_app_configs() if config.name.startswith('addons.') and
-        config.label != 'base']
+    ADDONS_AVAILABLE = sorted([config for config in apps.get_app_configs() if config.name.startswith('addons.') and
+        config.label != 'base'])
 
     class Meta:
         abstract = True
