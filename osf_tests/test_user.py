@@ -436,7 +436,12 @@ class TestOSFUser:
         user = UserFactory(username=user_email)
         user.update_affiliated_institutions_by_email_domain()
 
+        assert user.affiliated_institutions.count() == 1
         assert user.is_affiliated_with_institution(institution) is True
+
+        user.update_affiliated_institutions_by_email_domain()
+
+        assert user.affiliated_institutions.count() == 1
 
     def test_is_affiliated_with_institution(self, user):
         institution1, institution2 = InstitutionFactory(), InstitutionFactory()
