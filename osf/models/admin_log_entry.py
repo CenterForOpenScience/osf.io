@@ -35,6 +35,7 @@ class AdminLogEntryManager(LogEntryManager):
 
 
 class AdminLogEntry(LogEntry):
+    primary_identifier_name = 'id'
     def message(self):
         return self.change_message
     message.allow_tags = True
