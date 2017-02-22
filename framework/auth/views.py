@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 import furl
 import httplib as http
-import re
 import urllib
 
 import markupsafe
