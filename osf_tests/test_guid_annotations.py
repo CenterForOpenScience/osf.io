@@ -19,8 +19,7 @@ class TestGuidAnnotations:
         assert 'guids__' in str(obj._meta.model.objects.filter(id=obj.id).query), 'Guid annotations did not exist in filter query for {}'.format(obj._meta.model.__name__)
 
     @pytest.mark.parametrize('Factory', guid_factories)
-    @pytest.mark.django_assert_num_queries
-    def test_update_objects(self, Factory, django_assert_num_queries):
+    def test_update_objects(self, Factory):
         objects = []
         ids = range(0, 5)
         for id in ids:
@@ -33,8 +32,7 @@ class TestGuidAnnotations:
         qs = objects[0]._meta.model.objects.filter(id__in=new_ids)
         assert len(qs) > 0, 'No results returned'
         try:
-            with django_assert_num_queries(2):
-                count = qs.update(**{charfield: 'things'})
+            count = qs.update(**{charfield: 'things'})
         except Exception as ex:
             pytest.fail('Queryset update failed for {} with exception {}'.format(Factory._meta.model.__name__, ex))
 
