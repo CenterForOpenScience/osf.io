@@ -467,6 +467,9 @@ class GuidMixinQuerySet(MODMCompatibilityQuerySet):
         guid_dict = {}
         for field in GUID_FIELDS:
             guid_dict[field] = getattr(item, '_'.format(field), None)
+        if None in guid_dict.values():
+            logger.warning('Annotated guids came back will None values for {}, resorting to extra query'.format(item))
+            return item
         if not hasattr(item, '_prefetched_objects_cache'):
             item._prefetched_objects_cache = {}
         if 'guids' not in item._prefetched_objects_cache:
