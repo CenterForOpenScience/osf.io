@@ -918,6 +918,7 @@ def external_login_email_post():
     fullname = session.data['auth_user_fullname']
     service_url = session.data['service_url']
 
+    # TODO: @cslzchen use user tags instead of destination
     destination = 'dashboard'
     for campaign in campaigns.get_campaigns():
         if campaign != 'institution':
@@ -928,7 +929,7 @@ def external_login_email_post():
             campaign_url = furl.furl(campaigns.campaign_url_for(campaign)).url
             if campaigns.is_proxy_login(campaign):
                 # proxy campaigns: OSF Preprints and branded ones
-                if check_service_url_with_proxy_campaign(service_url, campaign_url):
+                if check_service_url_with_proxy_campaign(str(service_url), campaign_url):
                     destination = campaign
                     # continue to check branded preprints even service url matches osf preprints
                     if campaign != 'osf-preprints':
@@ -1057,5 +1058,8 @@ def check_service_url_with_proxy_campaign(service_url, campaign_url):
     :param campaign_url: the `furl` formatted campaign url
     :return: the matched object or None
     """
-    regex = '^' + settings.DOMAIN + 'login/?\\?next=' + campaign_url
-    return re.match(regex, service_url)
+
+    prefix_1 = settings.DOMAIN + 'login/?next=' + campaign_url
+    prefix_2 = settings.DOMAIN + 'login?next=' + campaign_url
+    if service_url.startswith(prefix_1) or service_url.startswith(prefix_2):
+        return True
