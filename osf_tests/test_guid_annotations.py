@@ -33,7 +33,7 @@ class TestGuidAnnotations:
         qs = objects[0]._meta.model.objects.filter(id__in=new_ids)
         assert len(qs) > 0, 'No results returned'
         try:
-            with django_assert_num_queries(1):
+            with django_assert_num_queries(2):
                 count = qs.update(**{charfield: 'things'})
         except Exception as ex:
             pytest.fail('Queryset update failed for {} with exception {}'.format(Factory._meta.model.__name__, ex))
@@ -135,9 +135,9 @@ class TestGuidAnnotations:
     def test_annotate(self, Factory, django_assert_num_queries):
         objects = []
         ids = range(0, 5)
-        for id in ids:
+        for the_id in ids:
             objects.append(Factory())
+        things = Factory._meta.model.objects.all().annotate(highest_id=Max('id'))
         with django_assert_num_queries(1):
-            things = Factory._meta.model.objects.all().annotate(highest_id=Max('id'))
-        for thing in things:
-            assert hasattr(thing, 'highest_id'), 'Annotation failed'
+            for thing in things:
+                assert hasattr(thing, 'highest_id'), 'Annotation failed'

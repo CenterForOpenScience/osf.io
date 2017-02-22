@@ -495,6 +495,10 @@ class GuidMixinQuerySet(MODMCompatibilityQuerySet):
             if k[1:] in GUID_FIELDS:
                 del self.query.annotations[k]
 
+    def annotate(self, *args, **kwargs):
+        self.annotate_query_with_guids()
+        return super(GuidMixinQuerySet, self).annotate(*args, **kwargs)
+
     def filter(self, *args, **kwargs):
         self.annotate_query_with_guids()
         return super(MODMCompatibilityQuerySet, self).filter(*args, **kwargs)
