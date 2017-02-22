@@ -8,7 +8,6 @@ import urllib
 
 from django.apps import apps
 from modularodm import Q
-from modularodm.exceptions import NoResultsFound
 from flask import request, send_from_directory
 
 from framework import utils, sentry
@@ -18,7 +17,7 @@ from framework.exceptions import HTTPError
 from framework.flask import redirect  # VOL-aware redirect
 from framework.forms import utils as form_utils
 from framework.routing import proxy_url
-from website.institutions.views import view_institution
+from website.institutions.views import serialize_institution
 
 from website.models import Guid
 from website.models import Institution, PreprintService
@@ -90,8 +89,8 @@ def _render_nodes(nodes, auth=None, show_path=False, parent_node=None):
 def index():
     try:
         #TODO : make this way more robust
-        institution = Institution.find_one(Q('domains', 'eq', request.host.lower()))
-        inst_dict = view_institution(institution._id)
+        institution = Institution.objects.get(domains__contains=[request.host.lower()], is_deleted=False)
+        inst_dict = serialize_institution(institution)
         inst_dict.update({
             'home': False,
             'institution': True,
@@ -99,10 +98,10 @@ def index():
         })
 
         return inst_dict
-    except NoResultsFound:
+    except Institution.DoesNotExist:
         pass
 
-    all_institutions = Institution.find().sort('name')
+    all_institutions = Institution.objects.filter(is_deleted=False).order_by('name').only('_id', 'name', 'logo_name')
     dashboard_institutions = [
         {'id': inst._id, 'name': inst.name, 'logo_path': inst.logo_path_rounded_corners}
         for inst in all_institutions
