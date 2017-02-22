@@ -554,7 +554,8 @@ function doItemOp(operation, to, from, rename, conflict) {
             var mithrilButtons = m('div', [
                 m('span.tb-modal-btn', { 'class' : 'text-default', onclick : function() { tb.modal.dismiss(); }}, 'Close')
             ]);
-            tb.modal.update(mithrilContent, mithrilButtons);
+            var header =  m('h3.modal-title.break-word', "Operation Information')
+            tb.modal.update(mithrilContent, mithrilButtons, header);
             return;
         }
         from.data = tb.options.lazyLoadPreprocess.call(this, resp).data;
