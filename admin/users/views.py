@@ -20,7 +20,7 @@ from framework.auth.core import generate_verification_key
 from website.mailchimp_utils import subscribe_on_confirm
 
 from admin.base.views import GuidFormView, GuidView
-from admin.common_auth.logs import (
+from osf.models.admin_log_entry import (
     update_admin_log,
     USER_2_FACTOR,
     USER_EMAILED,
