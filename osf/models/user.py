@@ -64,9 +64,7 @@ name_formatters = {
 
 
 class OSFUserManager(BaseUserManager):
-
-    def get_queryset(self):
-        return GuidMixinQuerySet(model=self.model, query=None, using=self._db, hints=self._hints)
+    _queryset_class = GuidMixinQuerySet
 
     def create_user(self, username, password=None):
         if not username:

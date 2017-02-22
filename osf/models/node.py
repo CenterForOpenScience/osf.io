@@ -68,6 +68,7 @@ logger = logging.getLogger(__name__)
 
 
 class AbstractNodeQuerySet(GuidMixinQuerySet):
+
     def get_roots(self):
         return self.extra(
             where=['"osf_abstractnode".id in (SELECT id FROM osf_abstractnode WHERE id NOT IN (SELECT child_id FROM '
