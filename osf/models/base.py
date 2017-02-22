@@ -488,7 +488,6 @@ class GuidMixinQuerySet(MODMCompatibilityQuerySet):
         tables = ['osf_guid', 'django_content_type']
         for table in tables:
             if table not in self.query.tables:
-                # self.query.tables.append(table)
                 self.query.table_alias(table)
 
     def remove_guid_annotations(self, fields=list()):
