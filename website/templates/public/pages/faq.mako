@@ -32,7 +32,7 @@
                         </div>
                         <div class="support-item">
                             <h5 class="support-head f-w-xl"><i class="fa fa-angle-right"></i> What if you run out of funding? What happens to my data?</h5>
-                            <div class="support-body">Data stored on the OSF is backed by a $250,000 preservation fund that will provide for persistence of your data, even if the Center for Open Science runs out of funding. The code base for the OSF is entirely <a href="https://github.com/CenterForOpenScience/osf.io">open source</a>, which enables other groups to continue maintaining and expanding it if we aren’t able to.</div>
+                            <div class="support-body">COS established a $250,000 preservation fund for hosted data in the event that COS had to curtail or close its offices. If activated, the preservation fund will preserve and maintain read access to hosted data. This fund is sufficient for 50+ years of read access hosting at present costs. COS will incorporate growth of the preservation fund as part of its funding model as data storage scales. For information about OSF backups and technical preservation details, see the OSF Backup and Preservation Policy.</div>
                         </div>
                         <div class="support-item">
                             <h5 class="support-head f-w-xl"><i class="fa fa-angle-right"></i> How will the OSF be useful to my research?</h5>
@@ -157,12 +157,10 @@
                         <div class="support-item">
                             <h5 class="support-head f-w-xl"><i class="fa fa-angle-right"></i> How does the OSF store and backup files that I upload to the site?</h5>
                             <div class="support-body">
-                                <p> The OSF stores files with <a href="http://www.rackspace.com/">Rackspace</a>
-                                    via an open source sponsorship, and has backups on
-                                    <a href="http://aws.amazon.com/glacier/">Amazon's Glacier platform</a>.
-                                    The OSF maintains several backup schemes, including off-site backups and
-                                    automated backups performed by our host every day, week, and fortnight.</p>1
-                                <p>Rackspace and Amazon Glacier have their own methods to support data integrity (e.g., redundancy across 5+ locations), but the Open Science Framework takes the extra step of calculating multiple <a href="https://en.wikipedia.org/wiki/Checksum">checksums</a> and <a href="https://en.wikipedia.org/wiki/Parchive">parity archives</a> to account for even the most improbable errors.</p>
+                                <p>For OSF Storage, files are stored in multiple locations and on multiple media types. We keep three types of hashes (MD5, SHA-1, SHA-256) for files. We keep parity archive files to recover from up to 5% bit error. We use <a href="http://www.rackspace.com/">Rackspace</a> for active storage and <a href="http://aws.amazon.com/glacier/">Amazon Glacier</a> as a backup location. Full backups are hosted at Glacier (including parity files), and there are daily backups on Rackspace Backups for 60 days. Please refer to <a href="http://www.rackspace.com/">Rackspace</a> and <a href="http://aws.amazon.com/glacier/">Glacier</a> documentation for details about the other robustness features they provide.</p>
+                                <p>The OSF database is backed up daily in encrypted form by Rackspace Backups for 60 days. Further, the OSF database are backed up incrementally twice a day and in full weekly; these backups are encrypted and kept indefinitely on Amazon S3. Database backups are verified monthly.</p>
+                                <p>Operational data (e.g., config files) for other OSF services is backed up in primary cloud file storage for 60 days.</p>
+                                <p>Logs are stored in a third party aggregation service for 90 days and are then backed up to Amazon S3 indefinitely.</p>
                             </div>
                         </div>
                         <div class="support-item">
