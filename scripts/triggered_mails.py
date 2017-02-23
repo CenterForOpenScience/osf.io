@@ -1,13 +1,11 @@
 import logging
 
-from datetime import datetime
-
+from django.db import transaction
 from django.utils import timezone
 from modularodm import Q
 
 from framework.auth import User
 from framework.celery_tasks import app as celery_app
-from framework.transactions.context import TokuTransaction
 
 from website.app import init_app
 from website import mails, settings
@@ -24,7 +22,7 @@ def main(dry_run=True):
             logger.warn('Dry run mode')
         logger.warn('Email of type no_login queued to {0}'.format(user.username))
         if not dry_run:
-            with TokuTransaction():
+            with transaction.atomic():
                 mails.queue_mail(
                     to_addr=user.username,
                     mail=mails.NO_LOGIN,
