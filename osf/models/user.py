@@ -1310,11 +1310,10 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         """
         try:
             email_domains = [email.split('@')[1].lower() for email in self.emails]
-            insts = Institution.find(Q('email_domains', 'overlap', email_domains))
-            affiliated = self.affiliated_institutions.all()
-            self.affiliated_institutions.add(*[each for each in insts
-                                                if each not in affiliated])
-        except (IndexError, NoResultsFound):
+            insts = Institution.objects.filter(email_domains__overlap=email_domains)
+            if insts.exists():
+                self.affiliated_institutions.add(*insts)
+        except IndexError:
             pass
 
     def remove_institution(self, inst_id):
