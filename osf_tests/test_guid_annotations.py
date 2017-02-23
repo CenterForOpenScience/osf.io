@@ -45,6 +45,20 @@ class TestGuidAnnotations:
 
     @pytest.mark.parametrize('Factory', guid_factories)
     @pytest.mark.django_assert_num_queries
+    def test_filter_order_by(self, Factory, django_assert_num_queries):
+        objects = []
+        ids = range(0, 5)
+        for id in ids:
+            objects.append(Factory())
+        new_ids = [o.id for o in objects]
+        with django_assert_num_queries(1):
+
+            wut = Factory._meta.model.objects.filter(id__in=new_ids).order_by('id')
+            for x in wut:
+                assert x._id is not None, 'Guid was None'
+
+    @pytest.mark.parametrize('Factory', guid_factories)
+    @pytest.mark.django_assert_num_queries
     def test_values(self, Factory, django_assert_num_queries):
         objects = []
         ids = range(0, 5)
@@ -114,6 +128,8 @@ class TestGuidAnnotations:
         try:
             with django_assert_num_queries(1):
                 stuff = list(thing_with_logs.contributors.values_list('guids___id'))
+                for thing in stuff:
+                    assert len(thing) == 1, 'More than one field was returned'
         except Exception as ex:
             pytest.fail('Values list failed for {} with exception {}'.format(Factory._meta.model.__name__, ex))
 
@@ -127,6 +143,8 @@ class TestGuidAnnotations:
         try:
             with django_assert_num_queries(1):
                 alot = list(thing_with_logs.contributors.values_list('guids___id', flat=True))
+            with django_assert_num_queries(1):
+                assert len(alot) == thing_with_logs.contributors.count()
         except Exception as ex:
             pytest.fail('Values list failed for {} with exception {}'.format(Factory._meta.model.__name__, ex))
 

@@ -1,3 +1,4 @@
+
 import logging
 import random
 from datetime import datetime
@@ -14,6 +15,7 @@ from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import models
 from django.db.models import F
 from django.db.models import ForeignKey
+from django.db.models import Q
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils import timezone
@@ -420,56 +422,80 @@ class OptionalGuidMixin(BaseIDMixin):
         abstract = True
 
 
-GUID_FIELDS = [
-    'guids__id',
-    'guids___id',
-    'guids__content_type_id',
-    'guids__object_id',
-    'guids__created'
-]
 
 
 class GuidMixinQuerySet(MODMCompatibilityQuerySet):
     tables = ['osf_guid', 'django_content_type']
 
-    def __init__(self, model=None, query=None, using=None, hints=None):
-        super(GuidMixinQuerySet, self).__init__(model=model, query=query, using=using, hints=hints)
-        self.annotate_query_with_guids()
-        self._prefetch_related_lookups = ['guids']
+    GUID_FIELDS = [
+        'guids__id',
+        'guids___id',
+        'guids__content_type_id',
+        'guids__object_id',
+        'guids__created'
+    ]
 
     def annotate_query_with_guids(self):
-        for field in GUID_FIELDS:
+        self._prefetch_related_lookups = ['guids']
+        for field in self.GUID_FIELDS:
             self.query.add_annotation(
                 F(field), '_{}'.format(field), is_summary=False
             )
         for table in self.tables:
             if table not in self.query.tables:
-                self.query.table_alias(table)
+                ret = self.query.table_alias(table)
 
-    def remove_guid_annotations(self, fields=list()):
-        for field in fields:
-            if field.startswith('guids__'):
-                return
-        dirty = False
+    def remove_guid_annotations(self):
         for k, v in self.query.annotations.iteritems():
-            if k[1:] in GUID_FIELDS:
+            if k[1:] in self.GUID_FIELDS:
                 del self.query.annotations[k]
-                dirty = True
-        if dirty:
-            for table in self.tables:
-                self.query.unref_alias(table)
+        for table_name in ['osf_guid', 'django_content_type']:
+            if table_name in self.query.alias_map:
+                del self.query.alias_map[table_name]
+            if table_name in self.query.alias_refcount:
+                del self.query.alias_refcount[table_name]
+            if table_name in self.query.table_map:
+                del self.query.table_map[table_name]
+            if table_name in self.query.tables:
+                del self.query.tables[self.query.tables.index(table_name)]
+
+    def _clone(self, annotate=False, **kwargs):
+        query = self.query.clone()
+        if self._sticky_filter:
+            query.filter_is_sticky = True
+        if annotate:
+            self.annotate_query_with_guids()
+        clone = self.__class__(model=self.model, query=query, using=self._db, hints=self._hints)
+        # this method was copied from the default django queryset except for the below two lines
+        if annotate:
+            clone.annotate_query_with_guids()
+        clone._for_write = self._for_write
+        clone._prefetch_related_lookups = self._prefetch_related_lookups[:]
+        clone._known_related_objects = self._known_related_objects
+        clone._iterable_class = self._iterable_class
+        clone._fields = self._fields
+
+        clone.__dict__.update(kwargs)
+        return clone
 
     def annotate(self, *args, **kwargs):
         self.annotate_query_with_guids()
         return super(GuidMixinQuerySet, self).annotate(*args, **kwargs)
 
-    def filter(self, *args, **kwargs):
-        self.annotate_query_with_guids()
-        return super(GuidMixinQuerySet, self).filter(*args, **kwargs)
+    def _filter_or_exclude(self, negate, *args, **kwargs):
+        if args or kwargs:
+            assert self.query.can_filter(), \
+                "Cannot filter a query once a slice has been taken."
+
+        clone = self._clone(annotate=True)
+        if negate:
+            clone.query.add_q(~Q(*args, **kwargs))
+        else:
+            clone.query.add_q(Q(*args, **kwargs))
+        return clone
 
     def all(self):
-        self.annotate_query_with_guids()
-        return super(GuidMixinQuerySet, self).all()
+        return self._clone(annotate=True)
 
     # does implicit filter
     def get(self, *args, **kwargs):
@@ -478,11 +504,13 @@ class GuidMixinQuerySet(MODMCompatibilityQuerySet):
         return super(GuidMixinQuerySet, self).get(*args, **kwargs)
 
     def __getitem__(self, item):
+        # for qs = Model.objects.filter(user='steve') # filter adds annotation
+        # qs.count() # removes annotation
+        # qs[0] # getitem adds annotation
         self.annotate_query_with_guids()
         return super(GuidMixinQuerySet, self).__getitem__(item)
 
     def count(self):
-        # no guid for count pls
         self.remove_guid_annotations()
         return super(GuidMixinQuerySet, self).count()
 
@@ -494,12 +522,8 @@ class GuidMixinQuerySet(MODMCompatibilityQuerySet):
         self.remove_guid_annotations()
         return super(GuidMixinQuerySet, self).update_or_create(defaults=defaults, **kwargs)
 
-    def order_by(self, *field_names):
-        self.annotate_query_with_guids()
-        return super(GuidMixinQuerySet, self).order_by(*field_names)
-
     def values(self, *fields):
-        self.remove_guid_annotations(fields=list(fields))
+        self.remove_guid_annotations()
         return super(GuidMixinQuerySet, self).values(*fields)
 
     def create(self, **kwargs):
@@ -518,30 +542,43 @@ class GuidMixinQuerySet(MODMCompatibilityQuerySet):
         self.remove_guid_annotations()
         return super(GuidMixinQuerySet, self).values_list(*fields, **kwargs)
 
+    def exists(self):
+        self.remove_guid_annotations()
+        return super(GuidMixinQuerySet, self).exists()
+
     def _fetch_all(self):
         if self._result_cache is None:
             self._result_cache = list(self._iterable_class(self))
         if self._prefetch_related_lookups and not self._prefetch_done:
             if 'guids' in self._prefetch_related_lookups and self._result_cache and hasattr(self._result_cache[0], '_guids__id'):
+                # if guids is requested for prefetch and there are things in the result cache and the first one has
+                # the annotated guid fields then remove guids from prefetch_related_lookups
                 del self._prefetch_related_lookups[self._prefetch_related_lookups.index('guids')]
                 results = []
                 for result in self._result_cache:
+                    # loop through the result cache
                     guid_dict = {}
-                    for field in GUID_FIELDS:
+                    for field in self.GUID_FIELDS:
+                        # pull the fields off of the result object and put them in a dictionary without prefixed names
                         guid_dict[field] = getattr(result, '_{}'.format(field), None)
                     if None in guid_dict.values():
+                        # if we get an invalid result field value, stop
                         logger.warning(
                             'Annotated guids came back will None values for {}, resorting to extra query'.format(result))
-                        return result
+                        return
                     if not hasattr(result, '_prefetched_objects_cache'):
+                        # initialize _prefetched_objects_cache
                         result._prefetched_objects_cache = {}
                     if 'guids' not in result._prefetched_objects_cache:
+                        # intialize guids in _prefetched_objects_cache
                         result._prefetched_objects_cache['guids'] = []
+                    # build a result dictionary of even more proper fields
                     result_dict = {key.replace('guids__', ''): value for key, value in guid_dict.iteritems()}
+                    # make an unsaved guid instance
                     guid = Guid(**result_dict)
                     result._prefetched_objects_cache['guids'].append(guid)
                     results.append(result)
-
+                # replace the result cache with the new set of results
                 self._result_cache = results
             self._prefetch_related_objects()
 
