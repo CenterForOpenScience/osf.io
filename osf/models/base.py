@@ -457,8 +457,7 @@ class GuidMixinQuerySet(MODMCompatibilityQuerySet):
                 dirty = True
         if dirty:
             for table in self.tables:
-                if table in self.query.tables:
-                    self.query.unref_alias(table)
+                self.query.unref_alias(table)
 
     def annotate(self, *args, **kwargs):
         self.annotate_query_with_guids()
@@ -516,7 +515,7 @@ class GuidMixinQuerySet(MODMCompatibilityQuerySet):
         return super(GuidMixinQuerySet, self).get_or_create(defaults, **kwargs)
 
     def values_list(self, *fields, **kwargs):
-        # calls values, implicitly removes guid annotations
+        self.remove_guid_annotations()
         return super(GuidMixinQuerySet, self).values_list(*fields, **kwargs)
 
     def _fetch_all(self):
