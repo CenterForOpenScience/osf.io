@@ -76,12 +76,13 @@ class CasAuthentication(BaseAuthentication):
 
         # login request
         if data.get('type') == 'LOGIN':
-            user, error_message = handle_login(data.get('user'))
+            user, error_message, user_status = handle_login(data.get('user'))
             if user and not error_message:
-                error_message = util.get_user_status(user)
-                if error_message != util.USER_ACTIVE:
-                    raise AuthenticationFailed(detail=error_message)
+                if user_status != util.USER_ACTIVE:
+                    # authentication fails due to invalid user status
+                    raise AuthenticationFailed(detail=user_status)
                 return user, None
+            # authentication fails due to login exceptions
             raise AuthenticationFailed(detail=error_message)
 
         if data.get('type') == 'REGISTER':
@@ -96,17 +97,120 @@ class CasAuthentication(BaseAuthentication):
         return AuthenticationFailed
 
 
+def handle_login(data_user):
+    """
+    Handle non-institution authentication.
+    1. verify that required credentials are provided
+        1.1 if fails, return (None, util.MISSING_CREDENTIALS, None)
+    2. load the user
+        2.1 if fails, return (None, None, util.ACCOUNT_NOT_FOUND, None)
+    3. get user status
+        3.1 if user is not claimed, it won't pass the initial verification due to the unusable password
+            return (None, None, util.USER_NOT_CLAIMED)
+    4. initial verification using password, verification key or a flag for remote authentication
+        4.1 if initial verification fails, return (None, <the error message>, None)
+            note: for security reasons do not reveal user status if initial verification fails
+        4.2 if initial verification passes, perform two factor verification,
+            return (user, <the error message returned from two factor verification>, <user's status>)
+
+    :param data_user: the user object in decrypted data payload
+    :return: a verified user or None, an error message or None, the user's status or None
+    """
+
+    email = data_user.get('email')
+    remote_authenticated = data_user.get('remoteAuthenticated')
+    verification_key = data_user.get('verificationKey')
+    password = data_user.get('password')
+    one_time_password = data_user.get('oneTimePassword')
+
+    # check if credentials are provided
+    if not email or not (remote_authenticated or verification_key or password):
+        return None, util.MISSING_CREDENTIALS, None
+
+    # retrieve the user
+    user = OSFUser.objects.filter(Q(username=email) | Q(emails__icontains=email)).first()
+    if not user:
+        return None, util.ACCOUNT_NOT_FOUND, None
+
+    # verify user status
+    user_status = util.get_user_status(user)
+    if user_status == util.USER_NOT_CLAIMED:
+        return user, None, util.USER_NOT_CLAIMED
+
+    # by remote authentication
+    if remote_authenticated:
+        return user, util.verify_two_factor(user, one_time_password), user_status
+
+    # by verification key
+    if verification_key:
+        if verification_key == user.verification_key:
+            return user, util.verify_two_factor(user, one_time_password), user_status
+        return None, util.INVALID_VERIFICATION_KEY, None
+
+    # by password
+    if password:
+        if user.check_password(password):
+            return user, util.verify_two_factor(user, one_time_password), user_status
+        return None, util.INVALID_PASSWORD, None
+
+
+def handle_register(data_user):
+    """
+    Handle new user registration.
+
+    :param data_user: the user object in decrypted data payload
+    :return: if registration suceed, return the newly created unconfirmed user with `None` error message
+             otherwise, return a `None` user with respective error message
+    """
+
+    fullname = data_user.get('fullname')
+    email = data_user.get('email')
+    password = data_user.get('password')
+
+    # check if all required credentials are provided
+    if not (fullname and email and password):
+        return None, util.MISSING_CREDENTIALS
+
+    # check campaign
+    campaign = data_user.get('campaign')
+    if campaign and campaign not in campaigns.get_campaigns():
+        campaign = None
+
+    # create an unconfirmed user
+    try:
+        user = register_unconfirmed(
+            email,
+            password,
+            fullname,
+            campaign=campaign,
+        )
+    except DuplicateEmailError:
+        return None, util.ALREADY_REGISTERED
+
+    # send confirmation email
+    send_confirm_email(user, email=user.username)
+
+    return user, None
+
+
 def handle_institution_authenticate(provider):
+    """
+    Handle institution authentication.
+
+    :param provider: the provider object in decrypted data payload
+    :return: the user and a `None` error message
+    :raises: AuthenticationFailed
+    """
     institution = Institution.load(provider['id'])
     if not institution:
         raise AuthenticationFailed('Invalid institution id specified "{}"'.format(provider['id']))
 
-    username = provider['user']['username']
-    fullname = provider['user']['fullname']
+    username = provider['user'].get('username')
+    fullname = provider['user'].get('fullname')
     given_name = provider['user'].get('givenName')
     family_name = provider['user'].get('familyName')
 
-    # use given name an family name to build full name if not provided
+    # use given name and family name to build full name if not provided
     if given_name and family_name and not fullname:
         fullname = given_name + ' ' + family_name
 
@@ -117,6 +221,8 @@ def handle_institution_authenticate(provider):
     user, created = get_or_create_user(fullname, username, reset_password=False)
 
     if created:
+        # `get_or_create_user()` guesses given name and family name from fullname
+        # update them if they are provided from the authentication request
         if given_name:
             user.given_name = given_name
         if family_name:
@@ -124,10 +230,13 @@ def handle_institution_authenticate(provider):
         user.middle_names = provider['user'].get('middleNames')
         user.suffix = provider['user'].get('suffix')
         user.date_last_login = timezone.now()
-        user.save()
 
-        # User must be saved in order to have a valid _id
+        # save and register user
+        # a user must be saved in order to have a valid `guid___id`
+        user.save()
         user.register(username)
+
+        # send confirmation email
         send_mail(
             to_addr=user.username,
             mail=WELCOME_OSF4I,
@@ -139,67 +248,4 @@ def handle_institution_authenticate(provider):
         user.affiliated_institutions.add(institution)
         user.save()
 
-    return user, None
-
-
-def handle_login(data_user):
-
-    email = data_user.get('email')
-    remote_authenticated = data_user.get('remoteAuthenticated')
-    verification_key = data_user.get('verificationKey')
-    password = data_user.get('password')
-    one_time_password = data_user.get('oneTimePassword')
-
-    # check if credentials are provided
-    if not email or not (remote_authenticated or verification_key or password):
-        return None, util.MISSING_CREDENTIALS
-
-    # retrieve the user
-    user = OSFUser.objects.filter(Q(username=email) | Q(emails__icontains=email)).first()
-    if not user:
-        return None, util.ACCOUNT_NOT_FOUND
-
-    # verify user status
-    if util.get_user_status(user) == util.USER_NOT_CLAIMED:
-        return None, util.USER_NOT_CLAIMED
-
-    # by remote authentication
-    if remote_authenticated:
-        return user, util.verify_two_factor(user, one_time_password)
-
-    # by verification key
-    if verification_key:
-        if verification_key == user.verification_key:
-            return user, util.verify_two_factor(user, one_time_password)
-        return None, util.INVALID_VERIFICATION_KEY
-
-    # by password
-    if password:
-        if user.check_password(password):
-            return user, util.verify_two_factor(user, one_time_password)
-        return None, util.INVALID_PASSWORD
-
-
-def handle_register(user):
-
-    fullname = user.get('fullname')
-    email = user.get('email')
-    password = user.get('password')
-    if not (fullname and email and password):
-        return None, 'MISSING_CREDENTIALS'
-
-    campaign = user.get('campaign')
-    if campaign and campaign not in campaigns.get_campaigns():
-        campaign = None
-    try:
-        user = register_unconfirmed(
-            email,
-            password,
-            fullname,
-            campaign=campaign,
-        )
-    except DuplicateEmailError:
-        return None, 'ALREADY_REGISTERED'
-
-    send_confirm_email(user, email=user.username)
     return user, None
