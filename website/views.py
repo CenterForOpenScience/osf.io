@@ -88,22 +88,22 @@ def _render_nodes(nodes, auth=None, show_path=False, parent_node=None):
 
 
 def index():
+    try:  # Check if we're on an institution landing page
+        #TODO : make this way more robust
+        institution = Institution.objects.get(domains__contains=[request.host.lower()], is_deleted=False)
+        inst_dict = serialize_institution(institution)
+        inst_dict.update({
+            'home': False,
+            'institution': True,
+            'redirect_url': '/institutions/{}/'.format(institution._id),
+        })
+
+        return inst_dict
+    except Institution.DoesNotExist:
+        pass
+
     user_id = get_current_user_id()
-    if user_id:  # Logged in: return either institution page or user home page
-        try:
-            #TODO : make this way more robust
-            institution = Institution.objects.get(domains__contains=[request.host.lower()], is_deleted=False)
-            inst_dict = serialize_institution(institution)
-            inst_dict.update({
-                'home': False,
-                'institution': True,
-                'redirect_url': '/institutions/{}/'.format(institution._id)
-            })
-
-            return inst_dict
-        except Institution.DoesNotExist:
-            pass
-
+    if user_id:  # Logged in: return either landing page or user home page
         all_institutions = Institution.objects.filter(is_deleted=False).order_by('name').only('_id', 'name', 'logo_name')
         dashboard_institutions = [
             {'id': inst._id, 'name': inst.name, 'logo_path': inst.logo_path_rounded_corners}
@@ -112,7 +112,7 @@ def index():
 
         return {
             'home': True,
-            'dashboard_institutions': dashboard_institutions
+            'dashboard_institutions': dashboard_institutions,
         }
     else:  # Logged out: return landing page
         return {
