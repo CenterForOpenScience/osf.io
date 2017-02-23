@@ -1,18 +1,12 @@
 import json
 
-import jwe
-import jwt
-
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.authentication import BaseAuthentication
 
-from django.contrib.auth import hashers
 from django.db.models import Q
 from django.utils import timezone
 
-from addons.twofactor.models import UserSettings
-
-from api.base import settings
+from api.cas import util
 
 from framework.auth import register_unconfirmed, get_or_create_user
 from framework.auth import campaigns
@@ -23,105 +17,79 @@ from osf.models import Institution, OSFUser
 
 from website.mails import send_mail, WELCOME_OSF4I
 
-UNUSABLE_PASSWORD_PREFIX = hashers.UNUSABLE_PASSWORD_PREFIX
-
-# user status
-USER_ACTIVE = 'USER_ACTIVE'
-USER_NOT_CLAIMED = 'USER_NOT_CLAIMED'
-USER_NOT_CONFIRMED = 'USER_NOT_CONFIRMED'
-USER_DISABLED = 'USER_DISABLED'
-USER_STATUS_INVALID = 'USER_STATUS_INVALID'
-
-# login exception
-MISSING_CREDENTIALS = 'MISSING_CREDENTIALS'
-ACCOUNT_NOT_FOUND = 'ACCOUNT_NOT_FOUND'
-INVALID_PASSWORD = 'INVALID_PASSWORD'
-INVALID_VERIFICATION_KEY = 'INVALID_VERIFICATION_KEY'
-INVALID_ONE_TIME_PASSWORD = 'INVALID_ONE_TIME_PASSWORD'
-TWO_FACTOR_AUTHENTICATION_REQUIRED = 'TWO_FACTOR_AUTHENTICATION_REQUIRED'
-
-# register exception
-ALREADY_REGISTERED = 'ALREADY_REGISTERED'
-
 
 class CasAuthentication(BaseAuthentication):
 
     media_type = 'text/plain'
 
     def authenticate(self, request):
+        """
+        Handle CAS authentication request.
+        1. The POST request payload is encrypted using a secret only known by CAS and OSF.
+        2. There are three types of authentication with respective payload structure and handling:
+            1.1 "LOGIN"
+                "data": {
+                    "type": "LOGIN",
+                    "user": {
+                        "email": "",
+                        "password": "",
+                        "verificationKey": "",
+                        "oneTimePasscode": "",
+                        "remoteAuthenticated": "",
+                    },
+                }
+            1.2 "REGISTER"
+                "data": {
+                    "type": "REGISTER",
+                    "user": {
+                        "fullname": "",
+                        "email": "",
+                        "password": "",
+                        "campaign": "",
+                    },
+                },
+            1.3 "INSTITUTION_AUTHENTICATE"
+                "data", {
+                    "type": "INSTITUTION_AUTHENTICATE"
+                    "provider": {
+                        "idp": "",
+                        "id": "",
+                        "user": {
+                            "middleNames": "",
+                            "familyName": "",
+                            "givenName": "",
+                            "fullname": "",
+                            "suffix": "",
+                            "username": ""
+                        },
+                    },
+                }
+        3. If authentication succeed, return (user, None); otherwise, return return (None, error_message).
 
-        payload = decrypt_payload(request.body)
+        :param request: the POST request
+        :return: (user, None) or (None, error_message)
+        """
+
+        # decrypt the payload and load data
+        payload = util.decrypt_payload(request.body)
         data = json.loads(payload['data'])
-        # The `data` payload structure for type "LOGIN"
-        # {
-        #     "type": "LOGIN",
-        #     "user": {
-        #         "email": "testuser@fakecos.io",
-        #         "password": "f@kePa$$w0rd",
-        #         "verificationKey": "ga67ptH4AF4HtMlFxVKP4do7HAaAPC",
-        #         "oneTimePassword": "123456",
-        #         "remoteAuthenticated": False,
-        #     },
-        # }
+
+        # login request
         if data.get('type') == 'LOGIN':
-            # initial verification:
             user, error_message = handle_login(data.get('user'))
             if user and not error_message:
-                # initial verification success, check two-factor
-                if not get_user_with_two_factor(user):
-                    # two-factor not required, check user status
-                    error_message = verify_user_status(user)
-                    if error_message != USER_ACTIVE:
-                        # invalid user status
-                        raise AuthenticationFailed(detail=error_message)
-                    # valid user status
-                    return user, None
-                # two-factor required
-                error_message = verify_two_factor(user, data.get('user').get('oneTimePassword'))
-                if error_message:
-                    # two-factor verification failed
+                error_message = util.get_user_status(user)
+                if error_message != util.USER_ACTIVE:
                     raise AuthenticationFailed(detail=error_message)
-                # two-factor success, check user status
-                error_message = verify_user_status(user)
-                if error_message != USER_ACTIVE:
-                    # invalid user status
-                    raise AuthenticationFailed(detail=error_message)
-                # valid user status
                 return user, None
-            # initial verification fails
             raise AuthenticationFailed(detail=error_message)
 
-        # The `data` payload structure for type "REGISTER"
-        # {
-        #     "type": "REGISTER",
-        #     "user": {
-        #         "fullname": "User Test",
-        #         "email": "testuser@fakecos.io",
-        #         "password": "f@kePa$$w0rd",
-        #         "campaign": None,
-        #     },
-        # },
         if data.get('type') == 'REGISTER':
             user, error_message = handle_register(data.get('user'))
             if user and not error_message:
                 return user, None
             raise AuthenticationFailed(detail=error_message)
 
-        # The `data` payload structure for type "INSTITUTION_AUTHENTICATE":
-        # {
-        #     "type": "INSTITUTION_AUTHENTICATE"
-        #     "provider": {
-        #         "idp": "",
-        #         "id": "",
-        #         "user": {
-        #             "middleNames": "",
-        #             "familyName": "",
-        #             "givenName": "",
-        #             "fullname": "",
-        #             "suffix": "",
-        #             "username": ""
-        #     }
-        # }
         if data.get('type') == 'INSTITUTION_AUTHENTICATE':
             return handle_institution_authenticate(data.get('provider'))
 
@@ -174,41 +142,42 @@ def handle_institution_authenticate(provider):
     return user, None
 
 
-def handle_login(user):
+def handle_login(data_user):
 
-    email = user.get('email')
-    remote_authenticated = user.get('remoteAuthenticated')
-    verification_key = user.get('verificationKey')
-    password = user.get('password')
+    email = data_user.get('email')
+    remote_authenticated = data_user.get('remoteAuthenticated')
+    verification_key = data_user.get('verificationKey')
+    password = data_user.get('password')
+    one_time_password = data_user.get('oneTimePassword')
 
     # check if credentials are provided
     if not email or not (remote_authenticated or verification_key or password):
-        return None, MISSING_CREDENTIALS
+        return None, util.MISSING_CREDENTIALS
 
     # retrieve the user
     user = OSFUser.objects.filter(Q(username=email) | Q(emails__icontains=email)).first()
     if not user:
-        return None, ACCOUNT_NOT_FOUND
+        return None, util.ACCOUNT_NOT_FOUND
 
     # verify user status
-    if verify_user_status(user) == USER_NOT_CLAIMED:
-        return None, USER_NOT_CLAIMED
+    if util.get_user_status(user) == util.USER_NOT_CLAIMED:
+        return None, util.USER_NOT_CLAIMED
 
     # by remote authentication
     if remote_authenticated:
-        return user, None
+        return user, util.verify_two_factor(user, one_time_password)
 
     # by verification key
     if verification_key:
         if verification_key == user.verification_key:
-            return user, None
-        return None, INVALID_VERIFICATION_KEY
+            return user, util.verify_two_factor(user, one_time_password)
+        return None, util.INVALID_VERIFICATION_KEY
 
     # by password
     if password:
         if user.check_password(password):
-            return user, None
-        return None, INVALID_PASSWORD
+            return user, util.verify_two_factor(user, one_time_password)
+        return None, util.INVALID_PASSWORD
 
 
 def handle_register(user):
@@ -234,70 +203,3 @@ def handle_register(user):
 
     send_confirm_email(user, email=user.username)
     return user, None
-
-
-def get_user_with_two_factor(user):
-    return UserSettings.objects.filter(owner_id=user.pk).first()
-
-
-def verify_two_factor(user, one_time_password):
-    if not one_time_password:
-        return TWO_FACTOR_AUTHENTICATION_REQUIRED
-
-    two_factor = get_user_with_two_factor(user)
-    if two_factor and two_factor.verify_code(one_time_password):
-        return None
-    return INVALID_ONE_TIME_PASSWORD
-
-
-def verify_user_status(user):
-    """
-    Verify users' status.
-
-    Possible User Status during authentication:
-
-                        registered      confirmed       disabled        merged      usable password     claimed
-    USER_ACTIVE:        x               x               o               o           x                   ?
-    USER_NOT_CONFIRMED: o               o               o               o           x                   ?
-    USER_NOT_CLAIMED:   o               o               o               o           o                   ?
-    USER_DISABLE:       o               ?               x               o           ?                   ?
-
-    Unreachable User Status (or something is horribly wrong)
-    USER_STATUS_INVALID
-        USER_MERGED:    ?               ?               ?               x           o                   ?
-        !USER_ACTIVE, but does not fall into any of the above category
-
-    :param user: the user
-    :return: USER_ACTIVE, USER_NOT_CLAIMED, USER_NOT_CONFIRMED, USER_DISABLED, USER_STATUS_INVALID
-    """
-    if user.is_active:
-        return USER_ACTIVE
-
-    if not user.is_claimed and not user.is_registered and not user.is_confirmed:
-        if user.password is None or user.password.startswith(UNUSABLE_PASSWORD_PREFIX):
-            return USER_NOT_CLAIMED
-        if user.has_usable_password():
-            return USER_NOT_CONFIRMED
-
-    if user.is_disabled and not user.is_registered and user.is_claimed:
-        return USER_DISABLED
-
-    return USER_STATUS_INVALID
-
-
-def decrypt_payload(body):
-    if not settings.API_CAS_ENCRYPTION:
-        try:
-            return json.loads(body)
-        except TypeError:
-            raise AuthenticationFailed
-    try:
-        payload = jwt.decode(
-            jwe.decrypt(body, settings.JWE_SECRET),
-            settings.JWT_SECRET,
-            options={'verify_exp': False},
-            algorithm='HS256'
-        )
-    except (jwt.InvalidTokenError, TypeError):
-        raise AuthenticationFailed
-    return payload
