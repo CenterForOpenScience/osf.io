@@ -422,8 +422,6 @@ class OptionalGuidMixin(BaseIDMixin):
         abstract = True
 
 
-
-
 class GuidMixinQuerySet(MODMCompatibilityQuerySet):
     tables = ['osf_guid', 'django_content_type']
 
@@ -443,7 +441,7 @@ class GuidMixinQuerySet(MODMCompatibilityQuerySet):
             )
         for table in self.tables:
             if table not in self.query.tables:
-                ret = self.query.table_alias(table)
+                self.query.table_alias(table)
 
     def remove_guid_annotations(self):
         for k, v in self.query.annotations.iteritems():
@@ -485,7 +483,7 @@ class GuidMixinQuerySet(MODMCompatibilityQuerySet):
     def _filter_or_exclude(self, negate, *args, **kwargs):
         if args or kwargs:
             assert self.query.can_filter(), \
-                "Cannot filter a query once a slice has been taken."
+                'Cannot filter a query once a slice has been taken.'
 
         clone = self._clone(annotate=True)
         if negate:
