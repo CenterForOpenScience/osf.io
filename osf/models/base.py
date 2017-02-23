@@ -497,7 +497,7 @@ class GuidMixinQuerySet(MODMCompatibilityQuerySet):
 
     def order_by(self, *field_names):
         self.annotate_query_with_guids()
-        return super(GuidMixinQuerySet, self).order_by()
+        return super(GuidMixinQuerySet, self).order_by(*field_names)
 
     def values(self, *fields):
         self.remove_guid_annotations(fields=list(fields))
