@@ -107,6 +107,24 @@ class TestGuidAnnotations:
             pytest.fail('Queryset update failed for {} with exception {}'.format(Factory._meta.model.__name__, ex))
 
     @pytest.mark.parametrize('Factory', guid_factories)
+    def test_update_on_objects_filtered_by_guids(self, Factory):
+        objects = []
+        ids = range(0, 5)
+        for id in ids:
+            objects.append(Factory())
+        new__ids = [o._id for o in objects]
+        try:
+            charfield = [x.name for x in objects[0]._meta.get_fields() if isinstance(x, CharField)][0]
+        except IndexError:
+            pytest.skip('Thing doesn\'t have a CharField')
+        qs = objects[0]._meta.model.objects.filter(guids___id__in=new__ids)
+        assert len(qs) > 0, 'No results returned'
+        try:
+            count = qs.update(**{charfield: 'things'})
+        except Exception as ex:
+            pytest.fail('Queryset update failed for {} with exception {}'.format(Factory._meta.model.__name__, ex))
+
+    @pytest.mark.parametrize('Factory', guid_factories)
     @pytest.mark.django_assert_num_queries
     def test_related_manager(self, Factory, django_assert_num_queries):
         thing_with_contributors = Factory()

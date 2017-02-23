@@ -433,6 +433,35 @@ class GuidMixinQuerySet(MODMCompatibilityQuerySet):
         'guids__created'
     ]
 
+    def safe_table_alias(self, table_name, create=False):
+        """
+        Returns a table alias for the given table_name and whether this is a
+        new alias or not.
+
+        If 'create' is true, a new alias is always created. Otherwise, the
+        most recently created alias for the table (if one exists) is reused.
+        """
+        alias_list = self.query.table_map.get(table_name)
+        if not create and alias_list:
+            alias = alias_list[0]
+            if alias in self.query.alias_refcount:
+                self.query.alias_refcount[alias] += 1
+            else:
+                self.query.alias_refcount[alias] = 1
+            return alias, False
+
+        # Create a new alias for this table.
+        if alias_list:
+            alias = '%s%d' % (self.query.alias_prefix, len(self.query.alias_map) + 1)
+            alias_list.append(alias)
+        else:
+            # The first occurrence of a table uses the table name directly.
+            alias = table_name
+            self.query.table_map[alias] = [alias]
+        self.query.alias_refcount[alias] = 1
+        self.tables.append(alias)
+        return alias, True
+
     def annotate_query_with_guids(self):
         self._prefetch_related_lookups = ['guids']
         for field in self.GUID_FIELDS:
@@ -441,7 +470,7 @@ class GuidMixinQuerySet(MODMCompatibilityQuerySet):
             )
         for table in self.tables:
             if table not in self.query.tables:
-                self.query.table_alias(table)
+                self.safe_table_alias(table)
 
     def remove_guid_annotations(self):
         for k, v in self.query.annotations.iteritems():
@@ -452,8 +481,6 @@ class GuidMixinQuerySet(MODMCompatibilityQuerySet):
                 del self.query.alias_map[table_name]
             if table_name in self.query.alias_refcount:
                 del self.query.alias_refcount[table_name]
-            if table_name in self.query.table_map:
-                del self.query.table_map[table_name]
             if table_name in self.query.tables:
                 del self.query.tables[self.query.tables.index(table_name)]
 
@@ -484,7 +511,6 @@ class GuidMixinQuerySet(MODMCompatibilityQuerySet):
         if args or kwargs:
             assert self.query.can_filter(), \
                 'Cannot filter a query once a slice has been taken.'
-
         clone = self._clone(annotate=True)
         if negate:
             clone.query.add_q(~Q(*args, **kwargs))
@@ -500,13 +526,6 @@ class GuidMixinQuerySet(MODMCompatibilityQuerySet):
         # add this to make sure we don't get dupes
         self.query.add_distinct_fields('id')
         return super(GuidMixinQuerySet, self).get(*args, **kwargs)
-
-    def __getitem__(self, item):
-        # for qs = Model.objects.filter(user='steve') # filter adds annotation
-        # qs.count() # removes annotation
-        # qs[0] # getitem adds annotation
-        self.annotate_query_with_guids()
-        return super(GuidMixinQuerySet, self).__getitem__(item)
 
     def count(self):
         self.remove_guid_annotations()
