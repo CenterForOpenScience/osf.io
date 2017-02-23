@@ -419,6 +419,7 @@ class OptionalGuidMixin(BaseIDMixin):
     class Meta:
         abstract = True
 
+
 GUID_FIELDS = [
     'guids__id',
     'guids___id',
@@ -457,7 +458,7 @@ class GuidMixinQuerySet(MODMCompatibilityQuerySet):
         if dirty:
             for table in self.tables:
                 if table in self.query.tables:
-                    del self.query.tables[self.query.tables.index(table)]
+                    self.query.unref_alias(table)
 
     def annotate(self, *args, **kwargs):
         self.annotate_query_with_guids()
@@ -476,6 +477,10 @@ class GuidMixinQuerySet(MODMCompatibilityQuerySet):
         # add this to make sure we don't get dupes
         self.query.add_distinct_fields('id')
         return super(GuidMixinQuerySet, self).get(*args, **kwargs)
+
+    def __getitem__(self, item):
+        self.annotate_query_with_guids()
+        return super(GuidMixinQuerySet, self).__getitem__(item)
 
     def count(self):
         # no guid for count pls
