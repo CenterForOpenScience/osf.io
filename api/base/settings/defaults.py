@@ -282,3 +282,7 @@ ADDONS_FOLDER_CONFIGURABLE = ['box', 'dropbox', 's3', 'googledrive', 'figshare',
 ADDONS_OAUTH = ADDONS_FOLDER_CONFIGURABLE + ['dataverse', 'github', 'mendeley', 'zotero', 'forward']
 
 BYPASS_THROTTLE_TOKEN = 'test-token'
+
+SHELL_PLUS_PRE_IMPORTS = (
+    ('osf.management.utils', ('print_sql', )),
+)
