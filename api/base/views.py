@@ -1,39 +1,35 @@
 import weakref
+
 from django.conf import settings as django_settings
-from django.db.models import F
-from django.db.models.expressions import RawSQL
-from django.http import JsonResponse
 from django.db import transaction
-from rest_framework.decorators import api_view, throttle_classes
-from rest_framework.response import Response
+from django.db.models import F
+from django.http import JsonResponse
 from rest_framework import generics
-from rest_framework import status
 from rest_framework import permissions as drf_permissions
+from rest_framework import status
+from rest_framework.decorators import api_view, throttle_classes
 from rest_framework.exceptions import ValidationError, NotFound
-
-from framework.auth.oauth_scopes import CoreScopes
-
 from rest_framework.mixins import ListModelMixin
+from rest_framework.response import Response
+
 from api.base import permissions as base_permissions
+from api.base import utils
 from api.base.exceptions import RelationshipPostMakesNoChanges
 from api.base.filters import ListFilterMixin
-
-from api.users.serializers import UserSerializer
 from api.base.parsers import JSONAPIRelationshipParser
 from api.base.parsers import JSONAPIRelationshipParserForRegularJSON
 from api.base.requests import EmbeddedRequest
 from api.base.serializers import LinkedNodesRelationshipSerializer
 from api.base.serializers import LinkedRegistrationsRelationshipSerializer
 from api.base.throttling import RootAnonThrottle, UserRateThrottle
-from api.base import utils
-from api.nodes.permissions import ReadOnlyIfRegistration
+from api.base.utils import is_bulk_request, get_user_auth
 from api.nodes.permissions import ContributorOrPublic
 from api.nodes.permissions import ContributorOrPublicForRelationshipPointers
-from api.base.utils import is_bulk_request, get_user_auth
-from website.models import Pointer
-
+from api.nodes.permissions import ReadOnlyIfRegistration
+from api.users.serializers import UserSerializer
+from framework.auth.oauth_scopes import CoreScopes
 from osf.models.contributor import Contributor, get_contributor_permissions
-
+from website.models import Pointer
 
 CACHE = weakref.WeakKeyDictionary()
 
@@ -786,10 +782,10 @@ class BaseContributorList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin
 
         return node._contributors.filter(contributor__visible=True) \
             .annotate(
-                index=F('contributor___order'),
-                bibliographic=F('contributor__visible'),
-                node_id=F('contributor__node__guids___id')
-            ).order_by('contributor___order')
+            index=F('contributor___order'),
+            bibliographic=F('contributor__visible'),
+            node_id=F('contributor__node__guids___id')
+        ).order_by('contributor___order')
 
     def get_queryset(self):
         queryset = self.get_queryset_from_request()
