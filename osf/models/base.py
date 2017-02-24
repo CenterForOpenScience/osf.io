@@ -527,9 +527,18 @@ class GuidMixinQuerySet(MODMCompatibilityQuerySet):
         self.query.add_distinct_fields('id')
         return super(GuidMixinQuerySet, self).get(*args, **kwargs)
 
-    def count(self):
-        self.remove_guid_annotations()
-        return super(GuidMixinQuerySet, self).count()
+    # TODO: Below lines are commented out to ensure that
+    # the annotations are used after running .count()
+    # e.g.
+    #    queryset.count()
+    #    queryset[0]
+    # This is more efficient when doing chained operations
+    # on a queryset, but less efficient when only getting a count.
+    # Figure out a way to get the best of both worlds
+
+    # def count(self):
+    #     self.remove_guid_annotations()
+    #     return super(GuidMixinQuerySet, self).count()
 
     def update(self, **kwargs):
         self.remove_guid_annotations()
