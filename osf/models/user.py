@@ -65,8 +65,12 @@ name_formatters = {
 
 class OSFUserManager(BaseUserManager):
 
-    def get_queryset(self):
-        return GuidMixinQuerySet(model=self.model, query=None, using=self._db, hints=self._hints)
+    _queryset_class = GuidMixinQuerySet
+
+    def all(self):
+        qs = super(OSFUserManager, self).all()
+        qs.annotate_query_with_guids()
+        return qs
 
     def create_user(self, username, password=None):
         if not username:
@@ -1227,15 +1231,12 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
                  .filter(_contributors=other_user)
                  .distinct())
 
-    def get_projects_in_common(self, other_user, primary_keys=True):
+    def get_projects_in_common(self, other_user):
         """Returns either a collection of "shared projects" (projects that both users are contributors for)
         or just their primary keys
         """
         query = self._projects_in_common_query(other_user)
-        if primary_keys:
-            return set(query.values_list('guids___id', flat=True))
-        else:
-            return set(query.all())
+        return set(query.all())
 
     def n_projects_in_common(self, other_user):
         """Returns number of "shared projects" (projects that both users are contributors for)"""
