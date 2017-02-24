@@ -28,6 +28,14 @@ INVALID_ONE_TIME_PASSWORD = 'INVALID_ONE_TIME_PASSWORD'
 TWO_FACTOR_AUTHENTICATION_REQUIRED = 'TWO_FACTOR_AUTHENTICATION_REQUIRED'
 ALREADY_REGISTERED = 'ALREADY_REGISTERED'
 
+# personal access token exceptions
+TOKEN_NOT_FOUND = 'TOKEN_NOT_FOUND'
+TOKEN_OWNER_NOT_FOUND = 'TOKEN_OWNER_NOT_FOUND'
+
+# general
+INVALID_REQUEST_BODY = 'INVALID REQUEST BODY'
+API_NOT_IMPLEMENTED = 'API NOT IMPLEMENTED'
+
 
 def decrypt_payload(body):
     """
@@ -41,7 +49,7 @@ def decrypt_payload(body):
         try:
             return json.loads(body)
         except TypeError:
-            raise AuthenticationFailed
+            raise AuthenticationFailed(detail=INVALID_REQUEST_BODY)
     try:
         payload = jwt.decode(
             jwe.decrypt(body, settings.JWE_SECRET),
@@ -50,7 +58,7 @@ def decrypt_payload(body):
             algorithm='HS256'
         )
     except (jwt.InvalidTokenError, TypeError):
-        raise AuthenticationFailed
+        raise AuthenticationFailed(detail=INVALID_REQUEST_BODY)
     return payload
 
 
