@@ -472,7 +472,6 @@ class ListFilterMixin(FilterMixin):
             operation['value'] = operation['value'] == 'file'
         if field_name == 'bibliographic':
             operation['op'] = 'exact'
-            operation['source_field_name'] = 'contributor__visible'
 
     def get_filtered_queryset(self, field_name, params, default_queryset):
         """filters default queryset based on the serializer field type"""
