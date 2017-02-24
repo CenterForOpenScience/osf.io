@@ -1,5 +1,7 @@
 import weakref
 from django.conf import settings as django_settings
+from django.db.models import F
+from django.db.models.expressions import RawSQL
 from django.http import JsonResponse
 from django.db import transaction
 from rest_framework.decorators import api_view, throttle_classes
@@ -781,17 +783,13 @@ class BaseContributorList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin
 
     def get_default_queryset(self):
         node = self.get_node()
-        visible_contributors = set(node.visible_contributor_ids)
-        contributors = []
-        index = 0
-        for contributor in node.contributors:
-            contributor.index = index
-            contributor.bibliographic = contributor._id in visible_contributors
-            contributor.permission = node.get_permissions(contributor)[-1]
-            contributor.node_id = node._id
-            contributors.append(contributor)
-            index += 1
-        return contributors
+
+        return node._contributors.filter(contributor__visible=True) \
+            .annotate(
+                index=F('contributor___order'),
+                bibliographic=F('contributor__visible'),
+                node_id=F('contributor__node__guids___id')
+            ).order_by('contributor___order')
 
     def get_queryset(self):
         queryset = self.get_queryset_from_request()
