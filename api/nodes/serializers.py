@@ -754,7 +754,7 @@ class NodeContributorsSerializer(JSONAPISerializer):
 
     def to_representation(self, obj, envelope='data'):
         node = self.context['view'].get_node()
-        obj.permission = node.get_permissions(obj)
+        obj.permission = node.get_permissions(obj)[-1]
         return super(NodeContributorsSerializer, self).to_representation(obj, envelope)
 
 class NodeContributorsCreateSerializer(NodeContributorsSerializer):
