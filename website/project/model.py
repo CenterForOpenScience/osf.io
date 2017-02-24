@@ -762,6 +762,8 @@ def validate_doi(value):
     return True
 
 
+# TODO: uncomment after migrating
+# @unique_on(['creator', 'is_bookmark_collection', 'is_deleted'])
 class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, SpamMixin):
 
     #: Whether this is a pointer or not
@@ -2611,7 +2613,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
 
         if save:
             self.save()
-        if user:
+        if user and not self.is_collection:
             increment_user_activity_counters(user._primary_key, action, log.date.isoformat())
         return log
 
