@@ -775,6 +775,7 @@ class BaseContributorDetail(JSONAPIBaseView, generics.RetrieveAPIView):
         user.index = list(node.get_contributor_order()).index(contributor.id)
         return user
 
+
 class BaseContributorList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
 
     def get_default_queryset(self):
