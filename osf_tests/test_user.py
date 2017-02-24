@@ -460,9 +460,7 @@ class TestProjectsInCommon:
         projects = set(user.contributed)
         user2_project_keys = set([node._id for node in user2.contributed])
 
-        assert(user.get_projects_in_common(user2, primary_keys=True) ==
-                     project_keys.intersection(user2_project_keys))
-        assert(user.get_projects_in_common(user2, primary_keys=False) ==
+        assert(user.get_projects_in_common(user2) ==
                      projects.intersection(user2.contributed))
 
     def test_n_projects_in_common(self, user, auth):
