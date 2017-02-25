@@ -782,7 +782,7 @@ class BaseContributorList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin
     def get_default_queryset(self):
         node = self.get_node()
 
-        qs = node._contributors.filter(contributor__visible=True) \
+        qs = node._contributors.all() \
             .annotate(
             index=F('contributor___order'),
             bibliographic=F('contributor__visible'),
