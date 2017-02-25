@@ -3,6 +3,7 @@ import weakref
 from django.conf import settings as django_settings
 from django.db import transaction
 from django.db.models import F
+from django.db.models.expressions import RawSQL
 from django.http import JsonResponse
 from rest_framework import generics
 from rest_framework import permissions as drf_permissions
@@ -785,7 +786,18 @@ class BaseContributorList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin
             .annotate(
             index=F('contributor___order'),
             bibliographic=F('contributor__visible'),
-            node_id=F('contributor__node__guids___id')
+            node_id=F('contributor__node__guids___id'),
+            permission=RawSQL("""
+                SELECT DISTINCT
+                  CASE WHEN c.admin IS TRUE
+                    THEN 'admin'
+                    WHEN c.admin IS FALSE and c.write IS TRUE
+                    THEN 'write'
+                    WHEN c.admin IS FALSE and c.write is FALSE and c.read IS TRUE
+                    THEN 'read'
+                  END as permission
+                FROM osf_contributor AS c WHERE c.user_id = osf_osfuser.id AND c.node_id = node_id
+            """, ())
         ).order_by('contributor___order')
 
     def get_queryset(self):

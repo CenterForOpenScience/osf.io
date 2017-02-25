@@ -752,10 +752,6 @@ class NodeContributorsSerializer(JSONAPISerializer):
         if unclaimed_records:
             return unclaimed_records.get('name', None)
 
-    def to_representation(self, obj, envelope='data'):
-        node = self.context['view'].get_node(check_object_permissions=False)
-        obj.permission = node.get_permissions(obj)[-1]
-        return super(NodeContributorsSerializer, self).to_representation(obj, envelope)
 
 class NodeContributorsCreateSerializer(NodeContributorsSerializer):
     """
