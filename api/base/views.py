@@ -782,13 +782,13 @@ class BaseContributorList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin
     def get_default_queryset(self):
         node = self.get_node()
 
-        return node._contributors.filter(contributor__visible=True) \
+        qs = node._contributors.filter(contributor__visible=True) \
             .annotate(
             index=F('contributor___order'),
             bibliographic=F('contributor__visible'),
             node_id=F('contributor__node__guids___id'),
             permission=RawSQL("""
-                SELECT DISTINCT
+                SELECT
                   CASE WHEN c.admin IS TRUE
                     THEN 'admin'
                     WHEN c.admin IS FALSE and c.write IS TRUE
@@ -796,9 +796,11 @@ class BaseContributorList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin
                     WHEN c.admin IS FALSE and c.write is FALSE and c.read IS TRUE
                     THEN 'read'
                   END as permission
-                FROM osf_contributor AS c WHERE c.user_id = osf_osfuser.id AND c.node_id = node_id
+                FROM osf_contributor AS c WHERE c.user_id = osf_osfuser.id AND c.node_id = node_id LIMIT 1
             """, ())
         ).order_by('contributor___order')
+        # import ipdb;ipdb.set_trace()
+        return qs
 
     def get_queryset(self):
         queryset = self.get_queryset_from_request()
