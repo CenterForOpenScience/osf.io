@@ -799,7 +799,6 @@ class BaseContributorList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin
                 FROM osf_contributor AS c WHERE c.user_id = osf_osfuser.id AND c.node_id = node_id LIMIT 1
             """, ())
         ).order_by('contributor___order')
-        # import ipdb;ipdb.set_trace()
         return qs
 
     def get_queryset(self):
