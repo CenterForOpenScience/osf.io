@@ -15,7 +15,7 @@ from api.cas.permissions import IsCasAuthentication
 
 from framework.auth.oauth_scopes import CoreScopes
 
-from osf.models import ApiOAuth2PersonalToken, OSFUser
+from osf.models import ApiOAuth2PersonalToken, ApiOAuth2Scope, OSFUser
 
 
 class CasLogin(JSONAPIBaseView, generics.CreateAPIView):
@@ -113,14 +113,17 @@ class CasPersonalAccessToken(JSONAPIBaseView, generics.CreateAPIView):
 
     view_category = 'cas'
     view_name = 'cas-personal-access-token'
+
     serializer_class = JSONAPISerializer
+    permission_classes = ()
+    authentication_classes = ()
 
     def post(self, request, *args, **kwargs):
 
         payload = util.decrypt_payload(request.body)
         data = json.loads(payload['data'])
 
-        token_id = data.get('token_id')
+        token_id = data.get('tokenId')
         if not token_id:
             raise AuthenticationFailed(detail=util.INVALID_REQUEST_BODY)
 
@@ -136,24 +139,48 @@ class CasPersonalAccessToken(JSONAPIBaseView, generics.CreateAPIView):
 
         content = {
             'tokenId': token.token_id,
-            'userId': user._id,
-            'scopes': token.scopes,
+            'ownerId': user._id,
+            'tokenScopes': token.scopes,
         }
 
         return Response(content)
 
 
 class CasOAuthScopes(JSONAPIBaseView, generics.CreateAPIView):
+
     view_category = 'cas'
     view_name = 'cas-oauth-scopes'
 
+    serializer_class = JSONAPISerializer
+    permission_classes = ()
+    authentication_classes = ()
+
     def post(self, request, *args, **kwargs):
-        raise AuthenticationFailed(detail=util.API_NOT_IMPLEMENTED)
+
+        payload = util.decrypt_payload(request.body)
+        data = json.loads(payload['data'])
+
+        scope_name = data.get('scopeName')
+        if not scope_name:
+            raise AuthenticationFailed(detail=util.INVALID_REQUEST_BODY)
+
+        try:
+            scope = ApiOAuth2Scope.objects.get(name=scope_name)
+            if not scope.is_active:
+                raise AuthenticationFailed(detail=util.SCOPE_NOT_ACTIVE)
+        except ApiOAuth2Scope.DoesNotExist:
+            raise AuthenticationFailed(detail=util.SCOPE_NOT_FOUND)
+
+        content = {
+            'scopeDescription': scope.description,
+        }
+
+        return Response(content)
 
 
-class CasOAuthApplications(JSONAPIBaseView, generics.CreateAPIView):
+class CasDeveloperApplications(JSONAPIBaseView, generics.CreateAPIView):
     view_category = 'cas'
-    view_name = 'cas-oauth-applications'
+    view_name = 'cas-developer-applications'
 
     def post(self, request, *args, **kwargs):
         raise AuthenticationFailed(detail=util.API_NOT_IMPLEMENTED)

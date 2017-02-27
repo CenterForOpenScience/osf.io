@@ -7,7 +7,7 @@ urlpatterns = [
     url(r'^auth/register/$', views.CasRegister.as_view(), name=views.CasRegister.view_name),
     url(r'^auth/institution/', views.CasInstitutionAuthenticate.as_view(), name=views.CasInstitutionAuthenticate.view_name),
     url(r'^service/personalAccessToken/$', views.CasPersonalAccessToken.as_view(), name=views.CasPersonalAccessToken.view_name),
-    url(r'^service/oAuthScopes/$', views.CasOAuthScopes.as_view(), name=views.CasOAuthScopes.view_name),
-    url(r'^service/getInstitutions/$', views.CasInstitutions.as_view(), name=views.CasInstitutions.view_name),
-    url(r'^service/getOAuthApplications/$', views.CasOAuthApplications.as_view(), name=views.CasOAuthApplications.view_name),
+    url(r'^service/oauthScopes/$', views.CasOAuthScopes.as_view(), name=views.CasOAuthScopes.view_name),
+    url(r'^service/institutions/$', views.CasInstitutions.as_view(), name=views.CasInstitutions.view_name),
+    url(r'^service/developerApps/$', views.CasDeveloperApplications.as_view(), name=views.CasDeveloperApplications.view_name),
 ]
