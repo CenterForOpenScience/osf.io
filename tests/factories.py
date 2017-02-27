@@ -57,9 +57,8 @@ from website.identifiers.model import Identifier
 from website.archiver import ARCHIVER_SUCCESS
 from website.project.licenses import NodeLicense, NodeLicenseRecord, ensure_licenses
 from website.util import permissions
-from website.files.models.osfstorage import OsfStorageFile, FileVersion
+from website.files.models.osfstorage import OsfStorageFile
 from website.exceptions import InvalidSanctionApprovalToken
-
 
 ensure_licenses = functools.partial(ensure_licenses, warn=False)
 
