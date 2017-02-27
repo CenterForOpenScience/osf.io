@@ -812,6 +812,36 @@ class TestProjectViews(OsfTestCase):
         link.reload()
         assert_true(link.is_deleted)
 
+    def test_remove_private_link_log(self):
+        link = PrivateLinkFactory()
+        link.nodes.add(self.project)
+        link.save()
+        url = self.project.api_url_for('remove_private_link')
+        self.app.delete_json(
+            url,
+            {'private_link_id': link._id},
+            auth=self.auth,
+        ).maybe_follow()
+
+        last_log = self.project.logs.latest()
+        assert last_log.action == NodeLog.VIEW_ONLY_LINK_REMOVED
+        assert not last_log.params.get('anonymous_link')
+
+    def test_remove_private_link_anonymous_log(self):
+        link = PrivateLinkFactory(anonymous=True)
+        link.nodes.add(self.project)
+        link.save()
+        url = self.project.api_url_for('remove_private_link')
+        self.app.delete_json(
+            url,
+            {'private_link_id': link._id},
+            auth=self.auth,
+        ).maybe_follow()
+
+        last_log = self.project.logs.latest()
+        assert last_log.action == NodeLog.VIEW_ONLY_LINK_REMOVED
+        assert last_log.params.get('anonymous_link')
+
     def test_remove_component(self):
         node = NodeFactory(parent=self.project, creator=self.user1)
         url = node.api_url
