@@ -2891,11 +2891,6 @@ class Collection(AbstractNode):
         # Bookmark collections are always named 'Bookmarks'
         if self.is_bookmark_collection and self.title != 'Bookmarks':
             self.title = 'Bookmarks'
-        # On creation, ensure there isn't an existing Bookmark collection for the given user
-        if not self.pk:
-            # TODO: Use a partial index to enforce this constraint in the db
-            if self.is_bookmark_collection and Collection.objects.filter(is_bookmark_collection=True, creator=self.creator).exists():
-                raise NodeStateError('Only one bookmark collection allowed per user.')
         return super(Collection, self).save(*args, **kwargs)
 
 
