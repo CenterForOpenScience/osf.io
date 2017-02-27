@@ -120,7 +120,7 @@ def index():
 
 def find_bookmark_collection(user):
     Collection = apps.get_model('osf.Collection')
-    return Collection.get(creator=user, is_deleted=False)
+    return Collection.objects.get(creator=user, is_deleted=False)
 
 @must_be_logged_in
 def dashboard(auth):
