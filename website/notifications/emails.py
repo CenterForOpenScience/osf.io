@@ -15,32 +15,41 @@ def notify(event, user, node, timestamp, **context):
     :param user: user who triggered notification
     :param node: instance of Node
     :param timestamp: time event happened
+    :param exclude: list of guids to exclude or None
     :param context: optional variables specific to templates
         target_user: used with comment_replies
     :return: List of user ids notifications were sent to
     """
-    event_type = utils.find_subscription_type(event)
-    subscriptions = compile_subscriptions(node, event_type, event)
     sent_users = []
+    # The user who the current comment is a reply to
     target_user = context.get('target_user', None)
-    if target_user:
-        target_user_id = target_user._id
-        if event_type in constants.USER_SUBSCRIPTIONS_AVAILABLE:
-            subscriptions = get_user_subscriptions(target_user, event_type)
+    exclude = context.get('exclude', [])
+    # do not notify user who initiated the emails
+    exclude.append(user._id)
+
+    event_type = utils.find_subscription_type(event)
+    if target_user and event_type in constants.USER_SUBSCRIPTIONS_AVAILABLE:
+        # global user
+        subscriptions = get_user_subscriptions(target_user, event_type)
+    else:
+        # local project user
+        subscriptions = compile_subscriptions(node, event_type, event)
+
     for notification_type in subscriptions:
-        if notification_type != 'none' and subscriptions[notification_type]:
-            if user in subscriptions[notification_type]:
-                subscriptions[notification_type].pop(subscriptions[notification_type].index(user))
-            if target_user and target_user_id in subscriptions[notification_type]:
-                subscriptions[notification_type].pop(subscriptions[notification_type].index(target_user_id))
-                if target_user_id != user._id:
-                    store_emails([target_user_id], notification_type, 'comment_replies', user, node,
-                                 timestamp, **context)
-                    sent_users.append(target_user_id)
-            if subscriptions[notification_type]:
-                store_emails(subscriptions[notification_type], notification_type, event_type, user, node,
-                             timestamp, **context)
-                sent_users.extend(subscriptions[notification_type])
+        if notification_type == 'none' or not subscriptions[notification_type]:
+            continue
+        # Remove excluded ids from each notification type
+        subscriptions[notification_type] = [guid for guid in subscriptions[notification_type] if guid not in exclude]
+
+        # If target, they get a reply email and are removed from the general email
+        if target_user and target_user._id in subscriptions[notification_type]:
+            subscriptions[notification_type].remove(target_user._id)
+            store_emails([target_user._id], notification_type, 'comment_replies', user, node, timestamp, **context)
+            sent_users.append(target_user._id)
+
+        if subscriptions[notification_type]:
+            store_emails(subscriptions[notification_type], notification_type, event_type, user, node, timestamp, **context)
+            sent_users.extend(subscriptions[notification_type])
     return sent_users
 
 def notify_mentions(event, user, node, timestamp, **context):
@@ -80,13 +89,14 @@ def store_emails(recipient_ids, notification_type, event, user, node, timestamp,
         return
 
     template = event + '.html.mako'
+    # user whose action triggered email sending
     context['user'] = user
     node_lineage_ids = get_node_lineage(node) if node else []
 
-    for user_id in recipient_ids:
-        if user_id == user._id:
+    for recipient_id in recipient_ids:
+        if recipient_id == user._id:
             continue
-        recipient = OSFUser.load(user_id)
+        recipient = OSFUser.load(recipient_id)
         context['localized_timestamp'] = localize_timestamp(timestamp, recipient)
         message = mails.render_message(template, **context)
 

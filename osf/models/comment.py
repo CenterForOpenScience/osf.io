@@ -162,6 +162,7 @@ class Comment(GuidMixin, SpamMixin, CommentableMixin, BaseModel):
 
         log_dict.update(comment.root_target.referent.get_extra_log_params(comment))
 
+        new_mentions = []
         if comment.content:
             new_mentions = get_valid_mentioned_users_guids(comment, comment.node.contributors)
             if new_mentions:
@@ -178,7 +179,7 @@ class Comment(GuidMixin, SpamMixin, CommentableMixin, BaseModel):
         )
 
         comment.node.save()
-        project_signals.comment_added.send(comment, auth=auth)
+        project_signals.comment_added.send(comment, auth=auth, new_mentions=new_mentions)
 
         return comment
 

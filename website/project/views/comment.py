@@ -107,7 +107,7 @@ def render_email_markdown(content):
 
 
 @comment_added.connect
-def send_comment_added_notification(comment, auth):
+def send_comment_added_notification(comment, auth, new_mentions):
     node = comment.node
     target = comment.target
 
@@ -119,7 +119,8 @@ def send_comment_added_notification(comment, auth):
         provider=PROVIDERS[comment.root_target.referent.provider] if comment.page == Comment.FILES else '',
         target_user=target.referent.user if is_reply(target) else None,
         parent_comment=target.referent.content if is_reply(target) else '',
-        url=comment.get_comment_page_url()
+        url=comment.get_comment_page_url(),
+        exclude=new_mentions
     )
     time_now = timezone.now()
     sent_subscribers = notify(
