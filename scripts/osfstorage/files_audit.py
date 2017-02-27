@@ -132,7 +132,6 @@ def glacier_targets():
 def parity_targets():
     # TODO: Add metadata.parity information from wb so we do not need to check remote services
     return models.FileVersion.find(
-        Q('status', 'ne', 'cached') &
         Q('location.object', 'exists', True)
         # & Q('metadata.parity', 'eq', None)
     )
