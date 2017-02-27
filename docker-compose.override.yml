@@ -15,9 +15,9 @@ services:
 #    volumes_from:
 #      - container:mfr-sync
 
-  preprints:
-    volumes_from:
-      - container:preprints-sync
+#  preprints:
+#    volumes_from:
+#      - container:preprints-sync
 
   requirements:
     volumes_from:
