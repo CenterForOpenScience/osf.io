@@ -270,6 +270,9 @@ class Guid(BaseModel):
     class Meta:
         ordering = ['-created']
         get_latest_by = 'created'
+        index_together = (
+            ('content_type', 'object_id', 'created'),
+        )
 
 
 class BlackListGuid(BaseModel):

@@ -243,7 +243,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         node_rel = NodeRelation.objects.filter(
             child=self,
             is_node_link=False
-        ).first()
+        ).select_related('parent').first()
         if node_rel:
             parent = node_rel.parent
             if parent:
