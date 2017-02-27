@@ -21,7 +21,6 @@ from website.institutions.views import view_institution
 
 from website.models import Guid
 from website.models import Node, Institution, PreprintService
-from website.project import new_bookmark_collection
 from website.settings import EXTERNAL_EMBER_APPS
 from website.util import permissions
 
@@ -101,11 +100,7 @@ def index():
 
 
 def find_bookmark_collection(user):
-    bookmark_collection = Node.find(Q('is_bookmark_collection', 'eq', True) & Q('contributors', 'eq', user._id))
-    if bookmark_collection.count() == 0:
-        new_bookmark_collection(user)
-    return bookmark_collection[0]
-
+    return Node.find_one(Q('is_bookmark_collection', 'eq', True) & Q('contributors', 'eq', user._id) & Q('is_deleted', 'eq', False))
 
 @must_be_logged_in
 def dashboard(auth):

@@ -59,9 +59,8 @@ from website.addons.wiki.exceptions import (
     PageConflictError,
     PageNotFoundError,
 )
-from website.project.model import ensure_schemas
 from website.project.sanctions import Sanction, DraftRegistrationApproval
-from website.prereg.utils import get_prereg_schema
+from website.views import find_bookmark_collection
 
 from tests.base import OsfTestCase, Guid, fake, capture_signals, get_default_metaschema
 from tests.factories import (
@@ -777,6 +776,7 @@ class TestUser(OsfTestCase):
             if node.category == 'project'
             and not node.is_registration
             and not node.is_deleted
+            and not node.is_collection
         ]
         public_projects = [p for p in projects if p.is_public]
         assert_equal(d['number_projects'], len(projects))
@@ -1035,7 +1035,7 @@ class TestMergingUsers(OsfTestCase):
         self.master.save()
 
     def test_bookmark_collection_nodes_arent_merged(self):
-        dashnode = ProjectFactory(creator=self.dupe, is_bookmark_collection=True)
+        dashnode = find_bookmark_collection(self.dupe)
 
         self._merge_dupe()
 
@@ -2473,7 +2473,7 @@ class TestBookmarkCollection(OsfTestCase):
         # Create project with component
         self.user = UserFactory()
         self.auth = Auth(user=self.user)
-        self.project = BookmarkCollectionFactory(creator=self.user)
+        self.project = find_bookmark_collection(self.user)
 
     def test_bookmark_collection_is_bookmark_collection(self):
         assert_equal(self.project.is_bookmark_collection, True)
