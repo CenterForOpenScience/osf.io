@@ -709,7 +709,7 @@ class NodeContributorsList(BaseContributorList, bulk_views.BulkUpdateJSONAPIView
                     raise ValidationError('Contributor identifier not provided.')
                 except IndexError:
                     raise ValidationError('Contributor identifier incorrectly formatted.')
-            queryset[:] = [contrib for contrib in queryset if contrib._id in contrib_ids]
+            queryset = queryset.filter(guids___id__in=contrib_ids)
         return queryset
 
     # Overrides BulkDestroyJSONAPIView
