@@ -2963,4 +2963,7 @@ def set_parent(sender, instance, created, *args, **kwargs):
             is_node_link=False
         )
         # remove cached copy of parent_node
-        del instance.__dict__['parent_node']
+        try:
+            del instance.__dict__['parent_node']
+        except KeyError:
+            pass
