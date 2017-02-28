@@ -1,20 +1,23 @@
 import argparse
 import logging
 
-from modularodm import Q
+import django
+from django.db import transaction
 
-from framework.auth.core import User
-from framework.transactions.context import TokuTransaction
+django.setup()
+
+from osf.models import OSFUser, Collection
+from osf.modm_compat import Q
 from scripts import utils as script_utils
 from website.app import init_app
-from website.project import Node, new_bookmark_collection
+from website.project import new_bookmark_collection
 
 
 logger = logging.getLogger(__name__)
 
 def get_targets():
     logger.info('Acquiring targets...')
-    targets = [u for u in User.find() if Node.find(Q('is_bookmark_collection', 'eq', True) & Q('is_deleted', 'eq', False) & Q('contributors', 'eq', u._id)).count() == 0]
+    targets = [u for u in OSFUser.find() if Collection.find(Q('is_bookmark_collection', 'eq', True) & Q('is_deleted', 'eq', False) & Q('creator', 'eq', u)).count() == 0]
     logger.info('Found {} target users.'.format(len(targets)))
     return targets
 
@@ -42,7 +45,7 @@ def main():
     if not pargs.dry_run:
         script_utils.add_file_logger(logger, __file__)
     init_app(set_backends=True, routes=False)
-    with TokuTransaction():
+    with transaction.atomic():
         migrate()
         if pargs.dry_run:
             raise Exception('Dry Run -- Transaction aborted.')
