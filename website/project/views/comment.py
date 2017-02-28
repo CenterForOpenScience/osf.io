@@ -120,7 +120,7 @@ def send_comment_added_notification(comment, auth, new_mentions):
         target_user=target.referent.user if is_reply(target) else None,
         parent_comment=target.referent.content if is_reply(target) else '',
         url=comment.get_comment_page_url(),
-        exclude=new_mentions
+        exclude=new_mentions,
     )
     time_now = timezone.now()
     sent_subscribers = notify(

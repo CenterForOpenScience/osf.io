@@ -15,7 +15,6 @@ def notify(event, user, node, timestamp, **context):
     :param user: user who triggered notification
     :param node: instance of Node
     :param timestamp: time event happened
-    :param exclude: list of guids to exclude or None
     :param context: optional variables specific to templates
         target_user: used with comment_replies
     :return: List of user ids notifications were sent to

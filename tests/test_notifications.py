@@ -1412,6 +1412,13 @@ class TestSendEmails(NotificationTestCase):
                                       self.node, time_now)
 
     @mock.patch('website.notifications.emails.store_emails')
+    def test_notify_does_not_send_to_exclude(self, mock_store):
+        time_now = timezone.now()
+        context = {'exclude':[self.project.creator._id]}
+        emails.notify('comments', user=self.user, node=self.node, timestamp=time_now, **context)
+        assert_equal(mock_store.call_count, 0)
+
+    @mock.patch('website.notifications.emails.store_emails')
     def test_notify_does_not_send_to_users_subscribed_to_none(self, mock_store):
         node = factories.NodeFactory()
         user = factories.UserFactory()
@@ -1535,6 +1542,37 @@ class TestSendEmails(NotificationTestCase):
         )
         assert_true(mock_notify.called)
         assert_equal(mock_notify.call_count, 2)
+
+    @mock.patch('website.project.views.comment.notify')
+    def test_check_user_comment_reply_only_calls_once(self, mock_notify):
+        # user subscribed to comment replies
+        user = factories.UserFactory()
+        user_subscription = factories.NotificationSubscriptionFactory(
+            _id=user._id + '_comments',
+            user=user,
+            event_name='comment_replies'
+        )
+        user_subscription.email_transactional.add(user)
+        user_subscription.save()
+
+        project = factories.ProjectFactory()
+
+        # user comments on project
+        target = factories.CommentFactory(node=project, user=user)
+        content = 'P-Hacking: A user guide'
+
+        mock_notify.return_value = [user._id]
+        # reply to user (note: notify is called from Comment.create)
+        reply = Comment.create(
+            auth=Auth(project.creator),
+            user=project.creator,
+            node=project,
+            content=content,
+            target=Guid.load(target._id),
+            root_target=Guid.load(project._id),
+        )
+        assert_true(mock_notify.called)
+        assert_equal(mock_notify.call_count, 1)
 
     def test_get_settings_url_for_node(self):
         url = emails.get_settings_url(self.project._id, self.user)
