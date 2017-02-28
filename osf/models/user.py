@@ -671,7 +671,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             node.save()
 
         # - projects where the user was the creator
-        user.created.update(creator=self)
+        user.created.filter(is_bookmark_collection=False).update(creator=self)
 
         # - file that the user has checked_out, import done here to prevent import error
         from osf.models import FileNode
@@ -1401,5 +1401,3 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 def create_bookmark_collection(sender, instance, created, **kwargs):
     if created:
         new_bookmark_collection(instance)
-
-

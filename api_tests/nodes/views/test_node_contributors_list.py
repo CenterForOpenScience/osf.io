@@ -112,7 +112,7 @@ class TestNodeContributorList(NodeCRUDTestCase):
         for user in data:
             api_perm = user['attributes']['permission']
             user_id = user['id'].split('-')[1]
-            assert user_id in users[api_perm], 'Permissions incorrect for {}. Should have {} permission.'.format(user, api_perm)
+            assert user_id in users[api_perm], 'Permissions incorrect for {}. Should not have {} permission.'.format(user_id, api_perm)
 
     def test_return_public_contributor_list_logged_out(self):
         self.public_project.add_contributor(self.user_two, save=True)
