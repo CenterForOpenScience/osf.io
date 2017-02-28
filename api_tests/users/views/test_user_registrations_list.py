@@ -8,7 +8,6 @@ from osf_tests.factories import (
 )
 
 from api.base.settings.defaults import API_BASE
-from website.views import find_bookmark_collection
 
 
 class TestUserRegistrations(ApiTestCase):
@@ -41,7 +40,7 @@ class TestUserRegistrations(ApiTestCase):
                                                 is_public=False,
                                                 creator=self.user_one,
                                                 is_deleted=True)
-        self.bookmark_collection = find_bookmark_collection(self.user_one)
+        self.bookmark_collection = BookmarkCollectionFactory()
 
         self.reg_public_project_user_one = RegistrationFactory(project=self.public_project_user_one,
                                                       creator=self.user_one, is_public=True)

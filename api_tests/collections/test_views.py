@@ -18,7 +18,6 @@ from osf_tests.factories import (
 )
 from tests.utils import assert_logs
 from framework.auth.core import Auth
-from website.views import find_bookmark_collection
 
 
 def node_url_for(node_id):
@@ -74,15 +73,6 @@ class TestCollectionCreate(ApiTestCase):
                     }
             }
         }
-
-        # Pretend these aren't created when the user is
-        user_one_bookmark = find_bookmark_collection(self.user_one)
-        user_two_bookmark = find_bookmark_collection(self.user_two)
-        user_one_bookmark.is_deleted = True
-        user_two_bookmark.is_deleted = True
-        user_one_bookmark.save()
-        user_two_bookmark.save()
-
 
     def test_collection_create_invalid_data(self):
         res = self.app.post_json_api(self.url, "Incorrect data", auth=self.user_one.auth, expect_errors=True)
@@ -207,7 +197,7 @@ class TestCollectionCreate(ApiTestCase):
                 }
             }
         }
-        res = self.app.post_json_api(self.url, collection, auth=self.user_one.auth, expect_errors=True)
+        res = self.app.post_json_api(self.url, collection, auth=self.user_one.auth)
         assert_equal(res.status_code, 201)
         res = self.app.post_json_api(self.url, collection, auth=self.user_one.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
@@ -1187,14 +1177,6 @@ class TestCollectionBulkCreate(ApiTestCase):
         }
 
         self.empty_collection = {'type': 'collections', 'attributes': {'title': "",}}
-
-        # Pretend these aren't created when the user is
-        user_one_bookmark = find_bookmark_collection(self.user_one)
-        user_two_bookmark = find_bookmark_collection(self.user_two)
-        user_one_bookmark.is_deleted = True
-        user_two_bookmark.is_deleted = True
-        user_one_bookmark.save()
-        user_two_bookmark.save()
 
     def test_bulk_create_collections_blank_request(self):
         res = self.app.post_json_api(self.url, auth=self.user_one.auth, expect_errors=True, bulk=True)
