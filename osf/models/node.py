@@ -2265,7 +2265,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
             # Suspend the flagged user for spam.
             if 'spam_flagged' not in user.system_tags:
-                user.system_tags.append('spam_flagged')
+                user.add_system_tag('spam_flagged')
             if not user.is_disabled:
                 user.disable_account()
                 user.is_registered = False
