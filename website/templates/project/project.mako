@@ -49,7 +49,24 @@
                         <button class="btn btn-default disabled">Public</button>
                     % endif
                     </div>
-
+                    <!-- /ko -->
+                    <div class="btn-group"
+                        % if not user_name:
+                            data-bind="tooltip: {title: 'Log in or create an account to duplicate this project', placement: 'top'}"
+                        % endif
+                        >
+                            <a
+                            % if user_name:
+                                class="btn btn-default"
+                                data-bind="tooltip: {title: 'Duplicate', placement: 'bottom', container : 'body'}"
+                                data-target="#duplicateModal" data-toggle="modal"
+                            % else:
+                                class="btn btn-default disabled"
+                            % endif
+                                href="#">
+                                <i class="fa fa-code-fork"></i>&nbsp; ${ node['templated_count'] + node['fork_count'] + node['points'] }
+                            </a>
+                    </div>
                     <!-- ko if: canBeOrganized -->
                     <div class="btn-group" style="display: none;" data-bind="visible: true">
 
@@ -69,24 +86,6 @@
                         <!-- /ko -->
 
                     </div>
-                    <!-- /ko -->
-                    <div class="btn-group"
-                        % if not user_name:
-                            data-bind="tooltip: {title: 'Log in or create an account to duplicate this project', placement: 'top'}"
-                        % endif
-                        >
-                            <a
-                            % if user_name:
-                                class="btn btn-default"
-                                data-bind="tooltip: {title: 'Duplicate', placement: 'bottom', container : 'body'}"
-                                data-target="#duplicateModal" data-toggle="modal"
-                            % else:
-                                class="btn btn-default disabled"
-                            % endif
-                                href="#">
-                                <span class="glyphicon glyphicon-share"></span>&nbsp; ${ node['templated_count'] + node['fork_count'] + node['points'] }
-                            </a>
-                    </div>
                     % if 'badges' in addons_enabled and badges and badges['can_award']:
                         <div class="btn-group">
                             <button class="btn btn-primary" id="awardBadge" style="border-bottom-right-radius: 4px;border-top-right-radius: 4px;">
@@ -95,7 +94,7 @@
                         </div>
                     % endif
                     % if node["is_public"]:
-                    <div class="btn-group" id="shareButtonsPopover"></div>
+                        <div class="btn-group" id="shareButtonsPopover"></div>
                     % endif
                 </div>
             </div>
