@@ -796,8 +796,8 @@ class BaseContributorList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin
                     WHEN c.admin IS FALSE and c.write is FALSE and c.read IS TRUE
                     THEN 'read'
                   END as permission
-                FROM osf_contributor AS c WHERE c.user_id = osf_osfuser.id AND c.node_id = node_id LIMIT 1
-            """, ())
+                FROM osf_contributor AS c WHERE c.user_id = osf_osfuser.id AND c.node_id = %s LIMIT 1
+            """, (node.id, ))
         ).order_by('contributor___order')
         return qs
 

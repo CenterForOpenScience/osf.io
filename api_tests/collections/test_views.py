@@ -207,7 +207,7 @@ class TestCollectionCreate(ApiTestCase):
                 }
             }
         }
-        res = self.app.post_json_api(self.url, collection, auth=self.user_one.auth, expect_errors=True)
+        res = self.app.post_json_api(self.url, collection, auth=self.user_one.auth)
         assert_equal(res.status_code, 201)
         res = self.app.post_json_api(self.url, collection, auth=self.user_one.auth, expect_errors=True)
         assert_equal(res.status_code, 400)

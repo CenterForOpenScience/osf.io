@@ -53,7 +53,6 @@ class TestUserSerializers(OsfTestCase):
         NodeFactory(creator=user)
         ProjectFactory(creator=user, is_public=True)
         CollectionFactory(creator=user)
-        BookmarkCollectionFactory(creator=user)
         d = utils.serialize_user(user, full=True)
         gravatar = filters.gravatar(
             user,

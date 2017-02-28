@@ -19,6 +19,8 @@ from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
 from django.contrib.auth.hashers import check_password
 from django.contrib.auth.models import PermissionsMixin
 from django.contrib.postgres import fields
+from django.dispatch import receiver
+from django.db.models.signals import post_save
 from django.db import models
 from django.utils import timezone
 from framework.auth import Auth, signals
@@ -46,6 +48,7 @@ from osf.utils.fields import NonNaiveDateTimeField
 from osf.utils.names import impute_names
 from website import settings as website_settings
 from website import filters, mails
+from website.project import new_bookmark_collection
 
 logger = logging.getLogger(__name__)
 
@@ -668,7 +671,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             node.save()
 
         # - projects where the user was the creator
-        user.created.update(creator=self)
+        user.created.filter(is_bookmark_collection=False).update(creator=self)
 
         # - file that the user has checked_out, import done here to prevent import error
         from osf.models import FileNode
@@ -1393,3 +1396,8 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         permissions = (
             ('view_user', 'Can view user details'),
         )
+
+@receiver(post_save, sender=OSFUser)
+def create_bookmark_collection(sender, instance, created, **kwargs):
+    if created:
+        new_bookmark_collection(instance)
