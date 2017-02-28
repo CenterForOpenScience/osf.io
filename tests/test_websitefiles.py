@@ -10,7 +10,6 @@ from website.files import utils
 from website.files import models
 from website.files import exceptions
 from website.models import Guid
-from website.views import find_bookmark_collection
 
 from tests.base import OsfTestCase
 from tests.factories import AuthUserFactory, ProjectFactory
@@ -183,7 +182,6 @@ class TestFileNodeObj(FilesTestCase):
         )
 
     def test_find(self):
-        models.StoredFileNode.remove_one(find_bookmark_collection(self.user).get_addon('osfstorage').root_node)
         models.StoredFileNode.remove_one(self.node.get_addon('osfstorage').root_node)
         models.StoredFileNode(
             path='afile',

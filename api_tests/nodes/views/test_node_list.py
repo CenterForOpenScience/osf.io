@@ -9,7 +9,6 @@ from framework.auth.core import Auth
 from website.models import Node, NodeLog
 from website.util import permissions
 from website.util.sanitize import strip_html
-from website.views import find_bookmark_collection
 
 from api.base.settings.defaults import API_BASE, MAX_PAGE_SIZE
 
@@ -131,7 +130,7 @@ class TestNodeFiltering(ApiTestCase):
                                                        is_public=False,
                                                        creator=self.user_two)
         self.folder = CollectionFactory()
-        self.bookmark_collection = find_bookmark_collection(self.user_one)
+        self.bookmark_collection = BookmarkCollectionFactory()
 
         self.url = "/{}nodes/".format(API_BASE)
 
