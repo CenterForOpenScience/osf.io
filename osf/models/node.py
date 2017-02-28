@@ -1233,10 +1233,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             return False
 
         # Node must have at least one registered admin user
-        admin_query = Contributor.objects.select_related('user').filter(
-            user__is_active=True,
-            admin=True
-        ).exclude(user=contributor)
+        admin_query = self._get_admin_contributors_query(self._contributors.all()).exclude(user=contributor)
         if not admin_query.exists():
             return False
 
@@ -1990,6 +1987,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     def _get_admin_contributors_query(self, users):
         return Contributor.objects.select_related('user').filter(
+            node=self,
             user__in=users,
             user__is_active=True,
             admin=True
