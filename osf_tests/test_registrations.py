@@ -191,21 +191,25 @@ class TestRegisterNode:
         # Create some nodes
         # component
         comp1 = factories.NodeFactory(  # noqa
+            title='Comp1',
             creator=user,
             parent=project,
         )
         # subproject
         comp2 = factories.ProjectFactory(  # noqa
+            title='Comp1',
             creator=user,
             parent=project,
         )
 
         # Create some nodes to share
         shared_component = factories.NodeFactory(
+            title='Shared Component',
             creator=user,
             parent=project,
         )
         shared_subproject = factories.ProjectFactory(
+            title='Shared Subproject',
             creator=user,
             parent=project,
         )
