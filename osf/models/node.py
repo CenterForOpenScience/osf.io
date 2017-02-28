@@ -18,6 +18,7 @@ from django.db import models, transaction, connection
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils import timezone
+from django.utils.functional import cached_property
 from keen import scoped_keys
 from modularodm import Q as MQ
 from psycopg2._psycopg import AsIs
@@ -238,7 +239,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     objects = AbstractNodeQuerySet.as_manager()
 
-    @property
+    @cached_property
     def parent_node(self):
         node_rel = NodeRelation.objects.filter(
             child=self,
@@ -2962,3 +2963,8 @@ def set_parent(sender, instance, created, *args, **kwargs):
             child=instance,
             is_node_link=False
         )
+        # remove cached copy of parent_node
+        try:
+            del instance.__dict__['parent_node']
+        except KeyError:
+            pass
