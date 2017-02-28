@@ -15,7 +15,7 @@ from api.cas.permissions import IsCasAuthentication
 
 from framework.auth.oauth_scopes import CoreScopes
 
-from osf.models import ApiOAuth2PersonalToken, ApiOAuth2Scope, OSFUser
+from osf.models import ApiOAuth2Application, ApiOAuth2PersonalToken, ApiOAuth2Scope, OSFUser
 
 
 class CasLogin(JSONAPIBaseView, generics.CreateAPIView):
@@ -179,11 +179,38 @@ class CasOAuthScopes(JSONAPIBaseView, generics.CreateAPIView):
 
 
 class CasDeveloperApplications(JSONAPIBaseView, generics.CreateAPIView):
+
     view_category = 'cas'
     view_name = 'cas-developer-applications'
 
+    serializer_class = JSONAPISerializer
+    permission_classes = ()
+    authentication_classes = ()
+
     def post(self, request, *args, **kwargs):
-        raise AuthenticationFailed(detail=util.API_NOT_IMPLEMENTED)
+
+        payload = util.decrypt_payload(request.body)
+        data = json.loads(payload['data'])
+
+        service_type = data.get('serviceType')
+        if not service_type or service_type != 'oAuthApplications':
+            raise AuthenticationFailed(detail=util.INVALID_REQUEST_BODY)
+
+        oauth_applications = ApiOAuth2Application.objects.filter(is_active=True)
+
+        content = {}
+        for oauth_app in oauth_applications:
+            key = oauth_app._id
+            value = {
+                'name': oauth_app.name,
+                'description': oauth_app.description,
+                'callbackUrl': oauth_app.callback_url,
+                'clientId': oauth_app.client_id,
+                'clientSecret': oauth_app.client_secret,
+            }
+            content.update({key: value})
+
+        return Response(content)
 
 
 class CasInstitutions(JSONAPIBaseView, generics.CreateAPIView):
