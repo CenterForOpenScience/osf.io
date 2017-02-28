@@ -243,7 +243,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         node_rel = NodeRelation.objects.filter(
             child=self,
             is_node_link=False
-        ).first()
+        ).select_related('parent').first()
         if node_rel:
             parent = node_rel.parent
             if parent:
@@ -2962,3 +2962,5 @@ def set_parent(sender, instance, created, *args, **kwargs):
             child=instance,
             is_node_link=False
         )
+        # remove cached copy of parent_node
+        del instance.__dict__['parent_node']
