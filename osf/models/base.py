@@ -19,6 +19,7 @@ from django.db.models import Q
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils import timezone
+from osf.utils.caching import cached_property
 
 from osf.exceptions import ValidationError
 from osf.modm_compat import to_django_query
@@ -628,7 +629,7 @@ class GuidMixin(BaseIDMixin):
     def _natural_key(self):
         return self.guid_string
 
-    @property
+    @cached_property
     def _id(self):
         try:
             guid = self.guids.all()[0]
