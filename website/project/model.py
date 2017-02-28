@@ -752,8 +752,6 @@ def validate_doi(value):
     return True
 
 
-# TODO: uncomment after migrating
-# @unique_on(['creator', 'is_bookmark_collection', 'is_deleted'])
 class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, SpamMixin):
 
     #: Whether this is a pointer or not
