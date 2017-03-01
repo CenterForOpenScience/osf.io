@@ -106,7 +106,7 @@ var ProjectViewModel = function(data, options) {
         $('#nodeDescriptionEditable').editable($.extend({}, editableOptions, {
             name: 'description',
             title: 'Edit Description',
-            emptytext: 'Add a brief description of your ' + self.categoryValue(),
+            emptytext: 'Add a brief description',
             emptyclass: 'text-muted',
             value: self.description(),
             success: function(response, newValue) {
