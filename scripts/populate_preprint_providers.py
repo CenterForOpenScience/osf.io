@@ -371,7 +371,7 @@ def main(env):
             '_id': 'scielo',
             'name': 'SciELO',
             'logo_name': 'scielo-logo.png',
-            'description': 'Placeholder description',
+            'description': 'Advancing Research Communication',
             'banner_name': 'scielo-logo.png',
             'external_url': 'http://scielo.org',
             'example': '', # An example guid for this provider (Will have to be updated after the provider is up)
@@ -382,7 +382,7 @@ def main(env):
             'social_twitter': 'RedeSciELO', # optional
             'social_facebook': 'SciELONetwork',
             'header_text': '',
-            'licenses_acceptable': ['CC0 1.0 Universal'],
+            'licenses_acceptable': ['CC-By Attribution 4.0 International'],
             'subjects_acceptable':[]
         },
         'agrixiv': {
