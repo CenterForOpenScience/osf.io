@@ -362,6 +362,12 @@ var mapByProperty = function(list, attr) {
 };
 
 
+/** 
+ * Replaces encoded & with decoded values
+ */
+var decodeText = function(text){
+    return text.replace(/&amp;/g, '&');
+};
 
 /**
   * Return whether or not a value is an email address.
@@ -1068,5 +1074,6 @@ module.exports = window.$.osf = {
     getDomain: getDomain,
     toRelativeUrl: toRelativeUrl,
     linkifyText: linkifyText,
-    getConfirmationString: getConfirmationString
+    getConfirmationString: getConfirmationString,
+    decodeText: decodeText,
 };
