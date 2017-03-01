@@ -98,7 +98,7 @@ class DeskUserCreateFormView(PermissionRequiredMixin, CreateView):
     form_class = DeskUserForm
     template_name = 'desk/settings.html'
     success_url = reverse_lazy('auth:desk')
-    permissions_required = 'admin.view_desk'
+    permission_required = 'osf.view_desk'
     raise_exception = True
 
     def form_valid(self, form):
@@ -110,7 +110,7 @@ class DeskUserUpdateFormView(PermissionRequiredMixin, UpdateView):
     form_class = DeskUserForm
     template_name = 'desk/settings.html'
     success_url = reverse_lazy('auth:desk')
-    permissions_required = 'admin.view_desk'
+    permission_required = 'osf.view_desk'
     raise_exception = True
 
     def get_object(self, queryset=None):

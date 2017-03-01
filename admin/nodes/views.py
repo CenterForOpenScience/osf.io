@@ -228,7 +228,7 @@ class NodeSpamList(PermissionRequiredMixin, ListView):
     paginate_orphans = 1
     ordering = 'date_created'
     context_object_name = '-node'
-    permission_required = 'common_auth.view_spam'
+    permission_required = 'osf.view_spam'
     raise_exception = True
 
     def get_queryset(self):
@@ -281,7 +281,7 @@ class NodeKnownHamList(NodeSpamList):
 
 class NodeConfirmSpamView(PermissionRequiredMixin, NodeDeleteBase):
     template_name = 'nodes/confirm_spam.html'
-    permission_required = 'common_auth.mark_spam'
+    permission_required = 'osf.mark_spam'
     raise_exception = True
 
     def delete(self, request, *args, **kwargs):
@@ -298,7 +298,7 @@ class NodeConfirmSpamView(PermissionRequiredMixin, NodeDeleteBase):
 
 class NodeConfirmHamView(PermissionRequiredMixin, NodeDeleteBase):
     template_name = 'nodes/confirm_ham.html'
-    permission_required = 'common_auth.mark_spam'
+    permission_required = 'osf.mark_spam'
     raise_exception = True
 
     def delete(self, request, *args, **kwargs):

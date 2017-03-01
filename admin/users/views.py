@@ -175,7 +175,7 @@ class UserSpamList(PermissionRequiredMixin, ListView):
     paginate_orphans = 1
     ordering = ('date_disabled')
     context_object_name = '-user'
-    permission_required = ('common_auth.view_spam', 'osf.view_user')
+    permission_required = ('osf.view_spam', 'osf.view_user')
     raise_exception = True
 
     def get_queryset(self):
@@ -197,7 +197,7 @@ class UserFlaggedSpamList(UserSpamList, DeleteView):
     template_name = 'users/flagged_spam_list.html'
 
     def delete(self, request, *args, **kwargs):
-        if not request.user.get_perms('admin.mark_spam'):
+        if not request.user.get_perms('osf.mark_spam'):
             raise PermissionDenied("You don't have permission to update this user's spam status.")
         user_ids = [
             uid for uid in request.POST.keys()
