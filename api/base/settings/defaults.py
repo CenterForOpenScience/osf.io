@@ -113,9 +113,6 @@ INSTALLED_APPS = (
 if osf_settings.SECURE_MODE and DEBUG:
     INSTALLED_APPS += ('sslserver',)
 
-if DEBUG:
-    INSTALLED_APPS += ('debug_toolbar', )
-
 # TODO: Are there more granular ways to configure reporting specifically related to the API?
 RAVEN_CONFIG = {
     'tags': {'App': 'api'},
@@ -211,6 +208,13 @@ MIDDLEWARE_CLASSES = (
     'django.middleware.security.SecurityMiddleware',
 
 )
+
+if DEBUG:
+    INSTALLED_APPS += ('debug_toolbar',)
+    MIDDLEWARE_CLASSES += ('debug_toolbar.middleware.DebugToolbarMiddleware', )
+    DEBUG_TOOLBAR_CONFIG = {
+        'SHOW_TOOLBAR_CALLBACK': lambda(_): True
+    }
 
 TEMPLATES = [
     {
