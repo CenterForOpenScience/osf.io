@@ -107,6 +107,7 @@ INSTALLED_APPS = (
     'admin.users',
     'admin.desk',
     'admin.meetings',
+    'admin.institutions',
 
 )
 
@@ -188,13 +189,10 @@ LOGIN_URL = 'account/login/'
 LOGIN_REDIRECT_URL = ADMIN_BASE
 
 STATIC_ROOT = os.path.join(os.path.dirname(BASE_DIR), 'static_root')
-STATICFILES_DIRS = (
-    os.path.join(BASE_DIR, 'static'),
-)
-
 
 STATICFILES_DIRS = (
     os.path.join(BASE_DIR, 'static'),
+    os.path.join(BASE_DIR, '../website/static'),
 )
 
 LANGUAGE_CODE = 'en-us'

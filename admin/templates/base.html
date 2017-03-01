@@ -123,6 +123,7 @@
           {% if perms.osf.view_spam %}
             <li><a href="{% url 'spam:spam' %}"><i class='fa fa-link'></i> <span>OSF Spam</span></a></li>
             <li><a href="{% url 'nodes:registrations' %}"><i class='fa fa-link'></i> <span>OSF Registrations</span></a></li>
+            <li><a href="{% url 'institutions:list' %}"><i class='fa fa-link'></i> <span>OSF Institutions</span></a></li>
             <li><a href="{% url 'meetings:list' %}"><i class='fa fa-link'></i> <span>OSF Meetings</span></a></li>
           {% endif %}
           {% if perms.osf.view_prereg %}

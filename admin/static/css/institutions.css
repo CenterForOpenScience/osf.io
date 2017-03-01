@@ -1,0 +1,35 @@
+.institution-logo {
+    max-width: 75px;
+}
+
+.institution-banner {
+    max-width: 300px;
+}
+
+
+p input {
+    padding: 5px 5px 5px 5px;
+    margin-left: 10px;
+    width: 500px;
+}
+
+p select {
+    padding: 5px 5px 5px 5px;
+    margin-left: 10px;
+    width: 500px;
+}
+
+p textarea {
+    padding: 5px 5px 5px 5px;
+    margin-left: 10px;
+    width: 500px;
+}
+
+form p label {
+    width: 100px;
+}
+
+.form-button {
+    height: 35px;
+    width: 100px;
+}
