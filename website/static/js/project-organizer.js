@@ -41,7 +41,7 @@ function _poTitleColumn(item) {
     if (item.data.archiving) { // TODO check if this variable will be available
         return m('span', {'class': 'registration-archiving'}, title + ' [Archiving]');
     } else if (node.attributes.preprint && isMypreprintsCollection){
-        return [ m('a.fg-file-links', { 'class' : css, href : preprintLinkPre + node.id, 'data-nodeID' : node.id, 'data-nodeTitle': title,'data-nodeType': node.type, onclick : function(event) {
+        return [ m('a.fg-file-links', { 'class' : css, href : node.embeds.preprints.data[0].links.html, 'data-nodeID' : node.id, 'data-nodeTitle': title,'data-nodeType': node.type, onclick : function(event) {
             preventSelect.call(this, event);
             $osf.trackClick('myProjects', 'projectOrganizer', 'navigate-to-preprint');
         }}, title) ];
