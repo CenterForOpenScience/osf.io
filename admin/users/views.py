@@ -13,6 +13,7 @@ from django.shortcuts import redirect
 from osf.models.user import OSFUser
 from osf.models.node import Node, NodeLog
 from osf.models.spam import SpamStatus
+from osf.models.tag import Tag
 from framework.auth import get_user
 from framework.auth.utils import impute_names
 from framework.auth.core import generate_verification_key
@@ -53,11 +54,13 @@ class UserDeleteView(PermissionRequiredMixin, DeleteView):
                 user.is_registered = False
                 if 'spam_flagged' in user.system_tags or 'ham_confirmed' in user.system_tags:
                     if 'spam_flagged' in user.system_tags:
-                        user.system_tags.remove('spam_flagged')
+                        t = Tag.objects.get(name='spam_flagged', system=True)
+                        user.tags.remove(t)
                     if 'ham_confirmed' in user.system_tags:
-                        user.system_tags.remove('ham_confirmed')
+                        t = Tag.objects.get(name='ham_confirmed', system=True)
+                        user.tags.remove(t)
                     if 'spam_confirmed' not in user.system_tags:
-                        user.system_tags.append('spam_confirmed')
+                        user.add_system_tag('spam_confirmed')
                 flag = USER_REMOVED
                 message = 'User account {} disabled'.format(user.pk)
             else:
@@ -66,11 +69,13 @@ class UserDeleteView(PermissionRequiredMixin, DeleteView):
                 user.is_registered = True
                 if 'spam_flagged' in user.system_tags or 'spam_confirmed' in user.system_tags:
                     if 'spam_flagged' in user.system_tags:
-                        user.system_tags.remove('spam_flagged')
+                        t = Tag.objects.get(name='spam_flagged', system=True)
+                        user.tags.remove(t)
                     if 'spam_confirmed' in user.system_tags:
-                        user.system_tags.remove('spam_confirmed')
+                        t = Tag.objects.get(name='spam_confirmed', system=True)
+                        user.tags.remove('spam_confirmed')
                     if 'ham_confirmed' not in user.system_tags:
-                        user.system_tags.append('ham_confirmed')
+                        user.add_system_tag('ham_confirmed')
                 flag = USER_RESTORED
                 message = 'User account {} reenabled'.format(user.pk)
             user.save()
@@ -202,7 +207,7 @@ class UserFlaggedSpamList(UserSpamList, DeleteView):
             user = OSFUser.load(uid)
             if 'spam_flagged' in user.system_tags:
                 user.system_tags.remove('spam_flagged')
-            user.system_tags.append('spam_confirmed')
+            user.add_system_tag('spam_confirmed')
             user.save()
             update_admin_log(
                 user_id=self.request.user.id,

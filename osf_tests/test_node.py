@@ -1361,7 +1361,7 @@ class TestManageContributors:
                 [], auth=auth, save=True,
             )
 
-    def test_manage_contributors_no_admins(self, node):
+    def test_manage_contributors_no_admins(self, node, auth):
         user = UserFactory()
         node.add_contributor(
             user,

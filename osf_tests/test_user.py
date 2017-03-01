@@ -17,8 +17,9 @@ from framework.celery_tasks import handlers
 from website import settings
 from website import filters
 from website import mailchimp_utils
+from website.views import find_bookmark_collection
 
-from osf.models import OSFUser as User, Tag, Node, Contributor, Session
+from osf.models import AbstractNode, OSFUser as User, Tag, Contributor, Session
 from osf.utils.auth import Auth
 from osf.utils.names import impute_names_model
 from osf.exceptions import ValidationError
@@ -28,7 +29,6 @@ from .utils import capture_signals
 from .factories import (
     fake,
     ProjectFactory,
-    CollectionFactory,
     NodeFactory,
     InstitutionFactory,
     UserFactory,
@@ -389,7 +389,7 @@ class TestOSFUser:
         node2 = NodeFactory()
         # TODO: Use Node.add_contributor when it's implemented
         Contributor.objects.create(user=user, node=node)
-        projects_contributed_to = Node.objects.filter(_contributors=user)
+        projects_contributed_to = AbstractNode.objects.filter(_contributors=user)
         assert list(user.contributed) == list(projects_contributed_to)
         assert node2 not in user.contributed
 
@@ -919,7 +919,7 @@ class TestMergingUsers:
         return f
 
     def test_bookmark_collection_nodes_arent_merged(self, dupe, master, merge_dupe):
-        dashnode = CollectionFactory(creator=dupe, is_bookmark_collection=True)
+        dashnode = find_bookmark_collection(dupe)
         assert dashnode in dupe.contributed
         merge_dupe()
         assert dashnode not in master.contributed

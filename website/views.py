@@ -7,7 +7,6 @@ import os
 import urllib
 
 from django.apps import apps
-from modularodm import Q
 from flask import request, send_from_directory
 
 from framework import utils, sentry
@@ -22,7 +21,6 @@ from website.institutions.views import serialize_institution
 
 from website.models import Guid
 from website.models import Institution, PreprintService
-from website.project import new_bookmark_collection
 from website.settings import EXTERNAL_EMBER_APPS
 from website.util import permissions
 
@@ -122,11 +120,7 @@ def index():
 
 def find_bookmark_collection(user):
     Collection = apps.get_model('osf.Collection')
-    bookmark_collection = Collection.find(Q('is_bookmark_collection', 'eq', True) & Q('creator', 'eq', user))
-    if not bookmark_collection.exists():
-        return new_bookmark_collection(user)
-    return bookmark_collection.get()
-
+    return Collection.objects.get(creator=user, is_deleted=False, is_bookmark_collection=True)
 
 @must_be_logged_in
 def dashboard(auth):
