@@ -81,7 +81,7 @@ class GoogleDriveProvider(ExternalProvider):
         return self.account.oauth_key
 
 
-class UserSettings(BaseStorageAddon, BaseOAuthUserSettings):
+class UserSettings(BaseOAuthUserSettings):
     # TODO DELETE ME POST MIGRATION
     modm_model_path = 'website.addons.googledrive.model.GoogleDriveUserSettings'
     modm_query = None
