@@ -68,7 +68,7 @@
                                     <i class="fa fa-code-fork"></i>&nbsp; ${ node['templated_count'] + node['fork_count'] + node['points'] }
                                 </a>
                                 <ul class="duplicate-menu dropdown-menu" role="menu">
-                                    <div class="arrow-up"></div>
+                                    <div class="arrow-up m-b-xs"></div>
                                     % if not disk_saving_mode:
                                     <li class="p-h-md">
                                         <a class="btn btn-primary btn-block m-t-sm form-control${ '' if user_name and (user['is_contributor'] or node['is_public']) else ' disabled'}"
