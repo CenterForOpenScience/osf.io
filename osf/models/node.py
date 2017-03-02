@@ -748,16 +748,11 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         """
         if not user:
             return False
-        try:
-            contrib = user.contributor_set.get(node=self)
-        except Contributor.DoesNotExist:
-            if permission == 'read' and check_parent:
-                return self.is_admin_parent(user)
-            return False
-        else:
-            if getattr(contrib, permission, False):
-                return True
-        return False
+        query = {'node': self, permission: True}
+        has_permission = user.contributor_set.filter(**query).exists()
+        if not has_permission and permission == 'read' and check_parent:
+            return self.is_admin_parent(user)
+        return has_permission
 
     def has_permission_on_children(self, user, permission):
         """Checks if the given user has a given permission on any child nodes
