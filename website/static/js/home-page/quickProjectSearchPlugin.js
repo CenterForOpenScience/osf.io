@@ -550,7 +550,7 @@ var QuickSearchProject = {
 
 function getAncestorDescriptor(node, nodeID, ancestor, ancestorID) {
     var ancestorDescriptor;
-    var ancestorTitleRequest = lodashGet(node, 'embeds.' + ancestor + '.data.attributes.title', '');
+    var ancestorTitleRequest = $osf.decodeText(lodashGet(node, 'embeds.' + ancestor + '.data.attributes.title', ''));
     var errorRequest = lodashGet(node, 'embeds.' + ancestor + '.errors[0].detail', '');
     switch(errorRequest) {
         case '':
@@ -578,7 +578,7 @@ function getAncestorDescriptor(node, nodeID, ancestor, ancestorID) {
         default:
             ancestorDescriptor = 'Name Unavailable / ';
     }
-    return $osf.decodeText(ancestorDescriptor);
+    return ancestorDescriptor;
 }
 
 var QuickSearchNodeDisplay = {

@@ -365,8 +365,11 @@ var mapByProperty = function(list, attr) {
 /** 
  * Replaces encoded & with decoded values
  */
-var decodeText = function(text){
-    return text.replace(/&amp;/g, '&');
+var decodeText = function(text) {
+    if(typeof text === 'string') {
+        return text.replace(/&amp;/g, '&');
+    }
+    return text;
 };
 
 /**
