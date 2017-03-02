@@ -232,7 +232,6 @@ def format_data(user, node_ids):
     """
     items = []
 
-    node_sub_available = list(constants.NODE_SUBSCRIPTIONS_AVAILABLE.keys())
     user_subscriptions = get_all_user_subscriptions(user)
     for node_id in node_ids:
         node = Node.load(node_id)
@@ -249,6 +248,7 @@ def format_data(user, node_ids):
         # user is contributor on a component of the project/node
 
         if can_read:
+            node_sub_available = list(constants.NODE_SUBSCRIPTIONS_AVAILABLE.keys())
             subscriptions = [subscription for subscription in get_all_node_subscriptions(user, node, user_subscriptions=user_subscriptions)
                              if getattr(subscription, 'event_name') in node_sub_available]
             for subscription in subscriptions:
