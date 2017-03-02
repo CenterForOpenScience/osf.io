@@ -149,6 +149,8 @@ var FileViewPage = {
                 return ((!self.file.checkoutUser) || (self.file.checkoutUser === self.context.currentUser.id)) ? self.context.currentUser.canEdit : false;
             };
             self.isCheckoutUser();
+        } else if (self.file.provider === 'onedrive') {
+            self.canEdit = function() { return false; };  // OneDrive is read-only
         } else {
             self.requestDone = true;
             self.canEdit = function() {
