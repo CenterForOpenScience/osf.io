@@ -35,23 +35,22 @@ function _poTitleColumn(item) {
         e.stopImmediatePropagation();
     };
     var node = item.data; // Where actual data of the node is
-    var title = $osf.decodeText(node.attributes.title);
     var css = ''; // Keep for future expandability -- Remove: item.data.isSmartFolder ? 'project-smart-folder smart-folder' : '';
     var isMypreprintsCollection = tb.options.currentView().collection.data.nodeType === 'preprints';
     if (item.data.archiving) { // TODO check if this variable will be available
-        return m('span', {'class': 'registration-archiving'}, title + ' [Archiving]');
+        return  m('span', {'class': 'registration-archiving'}, node.attributes.title + ' [Archiving]');
     } else if (node.attributes.preprint && isMypreprintsCollection){
-        return [ m('a.fg-file-links', { 'class' : css, href : node.embeds.preprints.data[0].links.html, 'data-nodeID' : node.id, 'data-nodeTitle': title,'data-nodeType': node.type, onclick : function(event) {
+        return [ m('a.fg-file-links', { 'class' : css, href : node.embeds.preprints.data[0].links.html, 'data-nodeID' : node.id, 'data-nodeTitle': node.attributes.title,'data-nodeType': node.type, onclick : function(event) {
             preventSelect.call(this, event);
             $osf.trackClick('myProjects', 'projectOrganizer', 'navigate-to-preprint');
-        }}, title) ];
+        }}, node.attributes.title) ];
     } else if(node.links.html){
-        return [ m('a.fg-file-links', { 'class' : css, href : node.links.html, 'data-nodeID' : node.id, 'data-nodeTitle': title, 'data-nodeType': node.type, onclick : function(event) {
+        return [ m('a.fg-file-links', { 'class' : css, href : node.links.html, 'data-nodeID' : node.id, 'data-nodeTitle': node.attributes.title, 'data-nodeType': node.type, onclick : function(event) {
             preventSelect.call(this, event);
             $osf.trackClick('myProjects', 'projectOrganizer', 'navigate-to-specific-project');
-        }}, title) ];
+        }}, node.attributes.title) ];
     } else {
-        return m('span', { 'class' : css, 'data-nodeID' : node.id, 'data-nodeTitle': title, 'data-nodeType': node.type}, title);
+        return  m('span', { 'class' : css, 'data-nodeID' : node.id, 'data-nodeTitle': node.attributes.title, 'data-nodeType': node.type}, node.attributes.title);
     }
 }
 

@@ -52,7 +52,6 @@ var QuickSearchProject = {
         promise.then(function(result) {
             self.countDisplayed(result.data.length);
             result.data.forEach(function (node) {
-                node.attributes.title = $osf.decodeText(node.attributes.title);
                 self.nodes().push(node);
                 self.retrieveContributors(node);
             });
@@ -88,7 +87,6 @@ var QuickSearchProject = {
                     // This redraw allows the "load more" button to be displayed
                     m.redraw();
                     result.data.forEach(function(node){
-                        node.attributes.title = $osf.decodeText(node.attributes.title);
                         self.nodes().push(node);
                         self.retrieveContributors(node);
                     });
@@ -578,7 +576,7 @@ function getAncestorDescriptor(node, nodeID, ancestor, ancestorID) {
         default:
             ancestorDescriptor = 'Name Unavailable / ';
     }
-    return $osf.decodeText(ancestorDescriptor);
+    return ancestorDescriptor;
 }
 
 var QuickSearchNodeDisplay = {
