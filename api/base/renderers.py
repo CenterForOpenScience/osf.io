@@ -1,8 +1,8 @@
 import re
 
+import yajl as yajl
 from django.utils import six
 from rest_framework.renderers import JSONRenderer, BrowsableAPIRenderer, StaticHTMLRenderer
-import ujson
 
 class JSONRendererWithESISupport(JSONRenderer):
     format = 'json'
@@ -35,11 +35,12 @@ class JSONAPIRenderer(JSONRendererWithESISupport):
         # else:
         #     separators = INDENT_SEPARATORS
 
-        ret = ujson.dumps(  # UJSON is faster
+        ret = yajl.dumps(  # YAJL is faster
             data,
             # , cls=self.encoder_class,
-            escape_forward_slashes=False,
-            indent=indent, ensure_ascii=self.ensure_ascii,
+            # escape_forward_slashes=False,
+            indent=indent,
+            # ensure_ascii=self.ensure_ascii,
             # separators=separators
         )
 
