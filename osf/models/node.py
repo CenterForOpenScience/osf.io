@@ -232,6 +232,11 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     node_license = models.ForeignKey('NodeLicenseRecord', related_name='nodes',
                                      on_delete=models.SET_NULL, null=True, blank=True)
 
+    root = models.ForeignKey('AbstractNode',
+                                default=None,
+                                related_name='descendants',
+                                on_delete=models.SET_NULL, null=True, blank=True)
+
     _nodes = models.ManyToManyField('AbstractNode',
                                     through=NodeRelation,
                                     through_fields=('parent', 'child'),
@@ -255,10 +260,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         if self.is_fork:
             return self.forked_from.parent_node
         return None
-
-    @property
-    def root_id(self):
-        return self.root.id
 
     @property
     def nodes(self):
@@ -571,7 +572,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         if doi:
             csl['DOI'] = doi
 
-        if self.logs:
+        if self.logs.exists():
             csl['issued'] = datetime_to_csl(self.logs.latest().date)
 
         return csl
@@ -747,16 +748,11 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         """
         if not user:
             return False
-        try:
-            contrib = user.contributor_set.get(node=self)
-        except Contributor.DoesNotExist:
-            if permission == 'read' and check_parent:
-                return self.is_admin_parent(user)
-            return False
-        else:
-            if getattr(contrib, permission, False):
-                return True
-        return False
+        query = {'node': self, permission: True}
+        has_permission = user.contributor_set.filter(**query).exists()
+        if not has_permission and permission == 'read' and check_parent:
+            return self.is_admin_parent(user)
+        return has_permission
 
     def has_permission_on_children(self, user, permission):
         """Checks if the given user has a given permission on any child nodes
@@ -1432,8 +1428,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     def private_link_keys_deleted(self):
         return self.private_links.filter(is_deleted=True).values_list('key', flat=True)
 
-    @property
-    def root(self):
+    def get_root(self):
         sql = """
             WITH RECURSIVE ascendants AS (
               SELECT
@@ -1569,6 +1564,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                     parent=registered,
                     child=node_contained
                 )
+
+        registered.root = None  # Recompute root on save
 
         registered.save()
 
@@ -1826,6 +1823,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             log=False,
             save=False
         )
+
+        forked.root = None  # Recompute root on save
 
         forked.save()
 
@@ -2949,7 +2948,7 @@ def add_default_node_addons(sender, instance, created, **kwargs):
 @receiver(post_save, sender=Collection)
 @receiver(post_save, sender=Node)
 @receiver(post_save, sender='osf.Registration')
-def set_parent(sender, instance, created, *args, **kwargs):
+def set_parent_and_root(sender, instance, created, *args, **kwargs):
     if getattr(instance, '_parent', None):
         NodeRelation.objects.get_or_create(
             parent=instance._parent,
@@ -2961,3 +2960,6 @@ def set_parent(sender, instance, created, *args, **kwargs):
             del instance.__dict__['parent_node']
         except KeyError:
             pass
+    if not instance.root:
+        instance.root = instance.get_root()
+        instance.save()
