@@ -10,7 +10,7 @@ from api.base.utils import (default_node_list_query,
                             default_node_permission_query, get_object_or_error)
 from api.base.views import JSONAPIBaseView
 from api.institutions.serializers import InstitutionSerializer
-from api.nodes.filters import NodePreprintsFilterMixin
+from api.nodes.filters import NodePreprintsFilterMixin, NodesListFilterMixin
 from api.nodes.serializers import NodeSerializer
 from api.preprints.serializers import PreprintSerializer
 from api.registrations.serializers import RegistrationSerializer
@@ -426,7 +426,7 @@ class UserAddonAccountDetail(JSONAPIBaseView, generics.RetrieveAPIView, UserMixi
         return account
 
 
-class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, NodePreprintsFilterMixin):
+class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, NodePreprintsFilterMixin, NodesListFilterMixin):
     """List of nodes that the user contributes to. *Read-only*.
 
     Paginated list of nodes that the user contributes to ordered by `date_modified`.  User registrations are not available

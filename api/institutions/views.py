@@ -24,6 +24,7 @@ from api.base.parsers import (
 )
 from api.base.exceptions import RelationshipPostMakesNoChanges
 from api.nodes.serializers import NodeSerializer
+from api.nodes.filters import NodesListFilterMixin
 from api.users.serializers import UserSerializer
 
 from api.institutions.authentication import InstitutionAuthentication
@@ -133,7 +134,7 @@ class InstitutionDetail(JSONAPIBaseView, generics.RetrieveAPIView, InstitutionMi
         return self.get_institution()
 
 
-class InstitutionNodeList(JSONAPIBaseView, ODMFilterMixin, generics.ListAPIView, InstitutionMixin):
+class InstitutionNodeList(JSONAPIBaseView, NodesListFilterMixin, generics.ListAPIView, InstitutionMixin):
     """Nodes that have selected an institution as their primary institution.
 
     ##Permissions

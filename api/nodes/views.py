@@ -41,7 +41,7 @@ from api.identifiers.serializers import NodeIdentifierSerializer
 from api.identifiers.views import IdentifierList
 from api.institutions.serializers import InstitutionSerializer
 from api.logs.serializers import NodeLogSerializer
-from api.nodes.filters import NodePreprintsFilterMixin
+from api.nodes.filters import NodePreprintsFilterMixin, NodesListFilterMixin
 from api.nodes.permissions import (
     IsAdmin,
     IsPublic,
@@ -178,7 +178,7 @@ class WaterButlerMixin(object):
         return obj
 
 
-class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.BulkDestroyJSONAPIView, bulk_views.ListBulkCreateJSONAPIView, NodePreprintsFilterMixin, WaterButlerMixin):
+class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.BulkDestroyJSONAPIView, bulk_views.ListBulkCreateJSONAPIView, NodePreprintsFilterMixin, NodesListFilterMixin, WaterButlerMixin):
     """Nodes that represent projects and components. *Writeable*.
 
     Paginated list of nodes ordered by their `date_modified`.  Each resource contains the full representation of the
@@ -282,26 +282,6 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
     view_name = 'node-list'
 
     ordering = ('-date_modified', )  # default ordering
-
-    # overrides ODMFilterMixin
-    def _operation_to_query(self, operation):
-        # We special case filters on root because root isn't a field; to get the children
-        # of a root, we use a custom manager method, Node.objects.get_children, and build
-        # a query from that
-        if operation['source_field_name'] == 'root':
-            child_pks = []
-            for root_guid in operation['value']:
-                root = get_object_or_error(Node, root_guid, display_name='root')
-                child_pks.extend(Node.objects.get_children(root=root, primary_keys=True))
-            return Q('id', 'in', child_pks)
-        elif operation['source_field_name'] == 'parent_node':
-            if operation['value']:
-                parent = get_object_or_error(Node, operation['value'], display_name='parent')
-                return Q('parent_nodes', 'eq', parent.id)
-            else:
-                return Q('parent_nodes', 'isnull', True)
-        else:
-            return super(NodeList, self)._operation_to_query(operation)
 
     # overrides FilterMixin
     def postprocess_query_param(self, key, field_name, operation):

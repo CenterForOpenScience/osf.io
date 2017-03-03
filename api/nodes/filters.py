@@ -7,6 +7,31 @@ from api.base.exceptions import InvalidFilterError
 from api.base.filters import ODMFilterMixin
 from api.base import utils
 
+from osf.models import Node
+
+
+class NodesListFilterMixin(ODMFilterMixin):
+
+    def _operation_to_query(self, operation):
+        # We special case filters on root because root isn't a field; to get the children
+        # of a root, we use a custom manager method, Node.objects.get_children, and build
+        # a query from that
+        if operation['source_field_name'] == 'root':
+            child_pks = []
+            for root_guid in operation['value']:
+                root = utils.get_object_or_error(Node, root_guid, display_name='root')
+                child_pks.extend(Node.objects.get_children(root=root, primary_keys=True))
+            return Q('id', 'in', child_pks)
+        elif operation['source_field_name'] == 'parent_node':
+            if operation['value']:
+                parent = utils.get_object_or_error(Node, operation['value'], display_name='parent')
+                return Q('parent_nodes', 'eq', parent.id)
+            else:
+                return Q('parent_nodes', 'isnull', True)
+        else:
+            return super(NodesListFilterMixin, self)._operation_to_query(operation)
+
+
 
 class NodePreprintsFilterMixin(ODMFilterMixin):
 
