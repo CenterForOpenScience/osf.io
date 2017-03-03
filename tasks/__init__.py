@@ -558,6 +558,10 @@ CORE_TESTS = [
     'tests/test_tokens.py',
     'tests/test_webtests.py',
     'tests/test_utils.py',
+    'tests/test_registrations/test_retractions.py',
+    'tests/test_registrations/test_embargoes.py',
+    'tests/test_registrations/test_registration_approvals.py',
+    'tests/test_registrations/test_views.py',
 ]
 @task
 def test_osf(ctx):
