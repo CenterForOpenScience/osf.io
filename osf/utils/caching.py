@@ -36,7 +36,8 @@ class _CachedProperty(property):
                 return getattr(obj, self._cache_name)
             # Generate the value to cache.
             value = fget(obj)
-            setattr(obj, self._cache_name, value)
+            if value:
+                setattr(obj, self._cache_name, value)
             return value
 
         return do_fget
