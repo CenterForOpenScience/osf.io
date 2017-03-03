@@ -76,41 +76,12 @@ class AbstractNodeQuerySet(GuidMixinQuerySet):
                    'osf_noderelation WHERE is_node_link IS false))'])
 
     def get_children(self, root, primary_keys=False, active=False):
-        sql = """
-            WITH RECURSIVE descendants AS (
-              SELECT
-                parent_id,
-                child_id,
-                1 AS LEVEL
-              FROM %s
-              %s
-              WHERE is_node_link IS FALSE %s
-              UNION ALL
-              SELECT
-                s.parent_id,
-                d.child_id,
-                d.level + 1
-              FROM descendants AS d
-                JOIN %s AS s
-                  ON d.parent_id = s.child_id
-              WHERE s.is_node_link IS FALSE
-            ) SELECT array_agg(DISTINCT child_id)
-              FROM descendants
-              WHERE parent_id = %s;
-        """
-        with connection.cursor() as cursor:
-            node_relation_table = AsIs(NodeRelation._meta.db_table)
-            cursor.execute(sql, [
-                node_relation_table,
-                AsIs('LEFT JOIN osf_abstractnode ON {}.child_id = osf_abstractnode.id'.format(node_relation_table) if active else ''),
-                AsIs('AND osf_abstractnode.is_deleted IS FALSE' if active else ''),
-                node_relation_table,
-                root.pk])
-            row = cursor.fetchone()[0]
-            if row is None or primary_keys:
-                return row or []
-            else:
-                return AbstractNode.objects.filter(id__in=row)
+        query = root.descendants.exclude(id=root.id)
+        if active:
+            query = query.filter(is_deleted=False)
+        if primary_keys:
+            query = query.values_list('id', flat=True)
+        return query
 
 
 class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixin,
