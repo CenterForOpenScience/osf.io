@@ -100,7 +100,7 @@ def node_registration_retraction_post(auth, node, **kwargs):
             'message_long': 'Withdrawal of non-registrations is not permitted.'
         })
 
-    if node.root is not node:
+    if node.root_id != node.id:
         raise HTTPError(http.BAD_REQUEST, data={
             'message_short': 'Invalid Request',
             'message_long': 'Withdrawal of non-parent registrations is not permitted.'
