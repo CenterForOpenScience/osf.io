@@ -1032,7 +1032,7 @@ def main(env):
             ''',
             'email_contact': 'contact+bitss@osf.io',
             'email_support': 'support+bitss@osf.io',
-            'social_twitter': 'http://twitter.com/UCBITSS',
+            'social_twitter': 'UCBITSS',
             'licenses_acceptable': ['CC-By Attribution 4.0 International', 'CC0 1.0 Universal'],
             'header_text': '',
             'subjects_acceptable': [
