@@ -17,7 +17,7 @@ class _CachedProperty(property):
 
     def __init__(self, fget, fset=None, fdel=None, doc=None):
         """Initializes the cached property."""
-        self._cache_name = "_{name}_cache".format(
+        self._cache_name = '_{name}_cache'.format(
             name=fget.__name__,
         )
         # Wrap the accessors.
@@ -58,5 +58,5 @@ class _CachedProperty(property):
         return do_fdel
 
 
-# Public name for the cached property decorator. Using a class as a decorator just looks plain ugly. :P            
+# Public name for the cached property decorator. Using a class as a decorator just looks plain ugly. :P
 cached_property = _CachedProperty
