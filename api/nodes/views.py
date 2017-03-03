@@ -2601,7 +2601,7 @@ class NodeLogList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, ODMFilterMix
         return query
 
     def get_queryset(self):
-        queryset = NodeLog.find(self.get_query_from_request())
+        queryset = NodeLog.find(self.get_query_from_request()).select_related('node', 'original_node', 'user')
         return queryset
 
 
