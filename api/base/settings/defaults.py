@@ -285,7 +285,6 @@ SHELL_PLUS_PRE_IMPORTS = (
     ('osf.management.utils', ('print_sql', )),
 )
 # cacheops
-
 CACHEOPS_REDIS = {
     'host': 'localhost',
     'port': 6379,
