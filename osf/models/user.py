@@ -659,12 +659,12 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
                 node.contributor_set.filter(user=user).delete()
             else:
-                node.contributor_set.filter(user=user).update(user=self)
+                node.contributor_set.filter(user=user).invalidated_update(user=self)
 
             node.save()
 
         # - projects where the user was the creator
-        user.created.filter(is_bookmark_collection=False).update(creator=self)
+        user.created.filter(is_bookmark_collection=False).invalidated_update(creator=self)
 
         # - file that the user has checked_out, import done here to prevent import error
         from osf.models import FileNode
