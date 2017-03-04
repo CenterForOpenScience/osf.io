@@ -285,13 +285,14 @@ SHELL_PLUS_PRE_IMPORTS = (
     ('osf.management.utils', ('print_sql', )),
 )
 # cacheops
+
 CACHEOPS_REDIS = {
     'host': 'localhost',
     'port': 6379,
     'db': 1,
 }
 # fail gracefully if redis is not running
-CACHEOPS_DEGRADE_ON_FAILURE = True
+CACHEOPS_DEGRADE_ON_FAILURE = False
 CACHEOPS = {
     # all the models in all the apps ever except admin
     'osf.*': {'ops': 'all', 'timeout': 60 * 60},  # expire cache after 1hr unless it's been invalidated already
@@ -312,3 +313,4 @@ CACHEOPS = {
     'addons_wiki.*': {'ops': 'all', 'timeout': 60 * 60},
     'addons_zotero.*': {'ops': 'all', 'timeout': 60 * 60},
 }
+CACHEOPS_ENABLED = False
