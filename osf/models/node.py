@@ -933,11 +933,11 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         if not self.is_contributor(user):
             raise ValueError(u'User {0} not in contributors'.format(user))
         if visible and not Contributor.objects.filter(node=self, user=user, visible=True).exists():
-            Contributor.objects.filter(node=self, user=user, visible=False).update(visible=True)
+            Contributor.objects.filter(node=self, user=user, visible=False).invalidated_update(visible=True)
         elif not visible and Contributor.objects.filter(node=self, user=user, visible=True).exists():
             if Contributor.objects.filter(node=self, visible=True).count() == 1:
                 raise ValueError('Must have at least one visible contributor')
-            Contributor.objects.filter(node=self, user=user, visible=True).update(visible=False)
+            Contributor.objects.filter(node=self, user=user, visible=True).invalidated_update(visible=False)
         else:
             return
         message = (
@@ -2567,8 +2567,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         new_page.save()
 
         if has_comments:
-            Comment.objects.filter(root_target=current.guids.first()).update(root_target=Guid.load(new_page._id))
-            Comment.objects.filter(target=current.guids.first()).update(target=Guid.load(new_page._id))
+            Comment.objects.filter(root_target=current.guids.first()).invalidated_update(root_target=Guid.load(new_page._id))
+            Comment.objects.filter(target=current.guids.first()).invalidated_update(target=Guid.load(new_page._id))
 
         if current:
             for contrib in self.contributors:
