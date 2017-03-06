@@ -1,5 +1,4 @@
 import abc
-import datetime
 
 import mock
 import pytest
@@ -13,6 +12,7 @@ from nose.tools import (assert_equal, assert_false, assert_in, assert_is,
 from osf_tests.factories import ProjectFactory, UserFactory
 from tests.utils import mock_auth
 from addons.base import exceptions
+from osf_tests.conftest import request_context
 
 pytestmark = pytest.mark.django_db
 
@@ -200,6 +200,26 @@ class OAuthAddonNodeSettingsTestSuiteMixin(OAuthAddonModelTestSuiteMixinBase):
         self.node_settings.reload()
         assert_false(self.node_settings.has_auth)
         assert_false(self.node_settings.complete)
+        assert_equal(
+            self.user_settings.oauth_grants,
+            {self.node._id: {}}
+        )
+
+    def test_revoke_remote_access_called(self):
+
+        with mock.patch.object(self.user_settings, 'revoke_remote_oauth_access') as mock_revoke:
+            with mock_auth(self.user):
+                self.user_settings.revoke_oauth_access(self.external_account)
+        assert_equal(mock_revoke.call_count, 1)
+
+    def test_revoke_remote_access_not_called(self):
+        user2 = UserFactory()
+        user2.external_accounts.add(self.external_account)
+        user2.save()
+        with mock.patch.object(self.user_settings, 'revoke_remote_oauth_access') as mock_revoke:
+            with mock_auth(self.user):
+                self.user_settings.revoke_oauth_access(self.external_account)
+        assert_equal(mock_revoke.call_count, 0)
 
     def test_complete_auth_false(self):
         self.node_settings.user_settings = None
@@ -269,6 +289,16 @@ class OAuthAddonNodeSettingsTestSuiteMixin(OAuthAddonModelTestSuiteMixinBase):
         assert_is(self.node_settings.folder_id, None)
         assert_true(self.node_settings.deleted)
         assert_equal(list(self.node.logs.all()), list(old_logs))
+
+    def test_on_delete(self):
+        self.user.delete_addon(
+            self.user_settings.oauth_provider.short_name
+        )
+
+        self.node_settings.reload()
+
+        assert_is_none(self.node_settings.external_account)
+        assert_is_none(self.node_settings.user_settings)
 
     def test_deauthorize(self):
         assert_true(self.node_settings.user_settings)
