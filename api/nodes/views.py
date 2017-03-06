@@ -3084,9 +3084,8 @@ class LinkedNodesList(BaseLinkedList, NodeMixin):
     view_name = 'linked-nodes'
 
     def get_queryset(self):
-        return [node for node in
-            super(LinkedNodesList, self).get_queryset()
-            if not node.is_registration]
+        queryset = super(LinkedNodesList, self).get_queryset()
+        return queryset.exclude(type='osf.registration')
 
     # overrides APIView
     def get_parser_context(self, http_request):

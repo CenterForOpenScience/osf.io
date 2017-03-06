@@ -512,7 +512,7 @@ class NodeLinksList(JSONAPIBaseView, bulk_views.BulkDestroyJSONAPIView, bulk_vie
     model_class = NodeRelation
 
     def get_queryset(self):
-        return self.get_node().node_relations.filter(child__is_deleted=False).exclude(child__type='osf.collection')
+        return self.get_node().node_relations.select_related('child').filter(child__is_deleted=False).exclude(child__type='osf.collection')
 
     # Overrides BulkDestroyJSONAPIView
     def perform_destroy(self, instance):
