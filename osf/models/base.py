@@ -118,7 +118,6 @@ class BaseModel(models.Model):
                      cls._meta.get_fields() if
                      field.is_relation and field.many_to_many and not hasattr(field, 'field')]
 
-
     @classmethod
     def load(cls, data):
         try:

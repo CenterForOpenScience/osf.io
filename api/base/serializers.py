@@ -275,8 +275,7 @@ class IDField(ser.CharField):
             if request.method in utils.UPDATE_METHODS and not utils.is_bulk_request(request):
                 id_field = self.get_id(self.root.instance)
                 if id_field != data:
-                    raise Conflict(detail=(
-                    'The id you used in the URL, "{}", does not match the id you used in the json body\'s id field, "{}". The object "{}" exists, otherwise you\'d get a 404, so most likely you need to change the id field to match.'.format(
+                    raise Conflict(detail=('The id you used in the URL, "{}", does not match the id you used in the json body\'s id field, "{}". The object "{}" exists, otherwise you\'d get a 404, so most likely you need to change the id field to match.'.format(
                         id_field, data, id_field)))
         return super(IDField, self).to_internal_value(data)
 
@@ -304,8 +303,7 @@ class TypeField(ser.CharField):
             type_ = self.root.Meta.type_
 
         if type_ != data:
-            raise Conflict(detail=(
-            'This resource has a type of "{}", but you set the json body\'s type field to "{}". You probably need to change the type field to match the resource\'s type.'.format(
+            raise Conflict(detail=('This resource has a type of "{}", but you set the json body\'s type field to "{}". You probably need to change the type field to match the resource\'s type.'.format(
                 type_, data)))
         return super(TypeField, self).to_internal_value(data)
 
@@ -323,8 +321,7 @@ class TargetTypeField(ser.CharField):
 
     def to_internal_value(self, data):
         if self.target_type != data:
-            raise Conflict(detail=(
-            'The target resource has a type of "{}", but you set the json body\'s type field to "{}".  You probably need to change the type field to match the target resource\'s type.'.format(
+            raise Conflict(detail=('The target resource has a type of "{}", but you set the json body\'s type field to "{}".  You probably need to change the type field to match the target resource\'s type.'.format(
                 self.target_type, data)))
         return super(TargetTypeField, self).to_internal_value(data)
 
@@ -938,13 +935,9 @@ class JSONAPIListSerializer(ser.ListSerializer):
             errors = data.get('errors', None)
             data = data.get('data', None)
         if enable_esi:
-            ret = [
-                self.child.to_esi_representation(item, envelope=None) for item in data
-                ]
+            ret = [self.child.to_esi_representation(item, envelope=None) for item in data]
         else:
-            ret = [
-                self.child.to_representation(item, envelope=envelope) for item in data
-                ]
+            ret = [self.child.to_representation(item, envelope=envelope) for item in data]
 
         if errors and bulk_skip_uneditable:
             ret.append({'errors': errors})
@@ -1345,8 +1338,7 @@ class LinkedNodesRelationshipSerializer(ser.Serializer):
         # Convenience method to format instance based on view's get_object
         return {'data': [
             pointer for pointer in
-            obj.linked_nodes.filter(is_deleted=False, type='osf.node')
-            ], 'self': obj}
+            obj.linked_nodes.filter(is_deleted=False, type='osf.node')], 'self': obj}
 
     def update(self, instance, validated_data):
         collection = instance['self']
@@ -1410,8 +1402,7 @@ class LinkedRegistrationsRelationshipSerializer(ser.Serializer):
         # Convenience method to format instance based on view's get_object
         return {'data': [
             pointer for pointer in
-            obj.linked_nodes.filter(is_deleted=False, type='osf.registration')
-            ], 'self': obj}
+            obj.linked_nodes.filter(is_deleted=False, type='osf.registration')], 'self': obj}
 
     def update(self, instance, validated_data):
         collection = instance['self']
