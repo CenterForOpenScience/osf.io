@@ -53,6 +53,7 @@ class JSONAPIBaseView(generics.GenericAPIView):
         """
         if getattr(field, 'field', None):
             field = field.field
+
         def partial(item):
             # resolve must be implemented on the field
             v, view_args, view_kwargs = field.resolve(item, field_name, self.request)
@@ -92,7 +93,7 @@ class JSONAPIBaseView(generics.GenericAPIView):
                 ser._context = view.get_serializer_context()
 
                 if not isinstance(view, ListModelMixin):
-                    ret = ser.to_representation(view.get_object())
+                    ret = ser.to_representation(item)
                 else:
                     queryset = view.filter_queryset(view.get_queryset())
                     page = view.paginate_queryset(queryset)
