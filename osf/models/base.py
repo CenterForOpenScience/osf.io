@@ -101,6 +101,18 @@ class BaseModel(models.Model):
         abstract = True
 
     @classmethod
+    def get_fk_field_names(cls):
+        return [field.name for field in cls._meta.get_fields() if
+                    field.is_relation and not field.auto_created and (field.many_to_one or field.one_to_one)]
+
+    @classmethod
+    def get_m2m_field_names(cls):
+        return [field.attname or field.name for field in
+                     cls._meta.get_fields() if
+                     field.is_relation and field.many_to_many and not hasattr(field, 'field')]
+
+
+    @classmethod
     def load(cls, data):
         try:
             if issubclass(cls, GuidMixin):
