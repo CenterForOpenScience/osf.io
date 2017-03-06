@@ -3,7 +3,7 @@ import operator
 
 from modularodm import Q
 
-from api.base.exceptions import InvalidFilterError
+from api.base.exceptions import InvalidFilterError, InvalidFilterValue
 from api.base.filters import ODMFilterMixin
 from api.base import utils
 
@@ -19,6 +19,8 @@ class NodesListFilterMixin(ODMFilterMixin):
         if operation['source_field_name'] == 'root':
             child_pks = []
             for root_guid in operation['value']:
+                if not root_guid:
+                    raise InvalidFilterValue(value=root_guid)
                 root = utils.get_object_or_error(Node, root_guid, display_name='root')
                 child_pks.extend(Node.objects.get_children(root=root, primary_keys=True))
             return Q('id', 'in', child_pks)
@@ -30,7 +32,6 @@ class NodesListFilterMixin(ODMFilterMixin):
                 return Q('parent_nodes', 'isnull', True)
         else:
             return super(NodesListFilterMixin, self)._operation_to_query(operation)
-
 
 
 class NodePreprintsFilterMixin(ODMFilterMixin):

@@ -2,9 +2,20 @@
 from nose.tools import *  # flake8: noqa
 
 from tests.base import ApiTestCase
-from osf_tests.factories import AuthUserFactory, BookmarkCollectionFactory, CollectionFactory, ProjectFactory, RegistrationFactory, PreprintFactory
+from osf_tests.factories import (
+    AuthUserFactory,
+    BookmarkCollectionFactory,
+    CollectionFactory,
+    NodeFactory,
+    PreprintFactory,
+    ProjectFactory,
+    RegistrationFactory,
+)
 
+from api.base.exceptions import InvalidFilterValue
 from api.base.settings.defaults import API_BASE
+from api_tests.nodes.filters.test_filters import NodesListFilteringMixin
+
 from website.views import find_bookmark_collection
 
 
@@ -133,3 +144,18 @@ class TestUserNodesPreprintsFiltering(ApiTestCase):
         actual_ids = [n['id'] for n in res.json['data']]
 
         assert_equal(set(expected_ids), set(actual_ids))
+
+
+class TestUserNodeListFiltering(NodesListFilteringMixin, ApiTestCase):
+
+    def _setUp(self):
+        self.user = AuthUserFactory()
+
+        self.node_A = ProjectFactory(creator=self.user)
+        self.node_B1 = NodeFactory(parent=self.node_A, creator=self.user)
+        self.node_B2 = NodeFactory(parent=self.node_A, creator=self.user)
+        self.node_C1 = NodeFactory(parent=self.node_B1, creator=self.user)
+        self.node_C2 = NodeFactory(parent=self.node_B2, creator=self.user)
+        self.node_D2 = NodeFactory(parent=self.node_C2, creator=self.user)
+
+        self.url = '/{}users/me/nodes/?'.format(API_BASE)

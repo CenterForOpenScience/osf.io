@@ -12,6 +12,7 @@ from website.util.sanitize import strip_html
 from website.views import find_bookmark_collection
 
 from api.base.settings.defaults import API_BASE, MAX_PAGE_SIZE
+from api_tests.nodes.filters.test_filters import NodesListFilteringMixin
 
 from tests.base import ApiTestCase
 from osf_tests.factories import (
@@ -2120,3 +2121,18 @@ class TestNodeListPagination(ApiTestCase):
 
         assert_not_in('{}-{}'.format(res.json['data'][0]['id'], self.users[10]._id), uids)
         assert_equal(res.json['data'][0]['embeds']['contributors']['links']['meta']['per_page'], 10)
+
+
+class TestNodeListFiltering(NodesListFilteringMixin, ApiTestCase):
+
+    def _setUp(self):
+        self.user = AuthUserFactory()
+
+        self.node_A = ProjectFactory(creator=self.user)
+        self.node_B1 = NodeFactory(parent=self.node_A, creator=self.user)
+        self.node_B2 = NodeFactory(parent=self.node_A, creator=self.user)
+        self.node_C1 = NodeFactory(parent=self.node_B1, creator=self.user)
+        self.node_C2 = NodeFactory(parent=self.node_B2, creator=self.user)
+        self.node_D2 = NodeFactory(parent=self.node_C2, creator=self.user)
+
+        self.url = '/{}nodes/?'.format(API_BASE)
