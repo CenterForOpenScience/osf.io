@@ -68,6 +68,13 @@ class MODMCompatibilityQuerySet(models.QuerySet):
             else:
                 yield item
 
+    def eager(self, fields):
+        qs = self._clone()
+        field_set = set(fields)
+        fk_fields = set(qs.model.get_fk_field_names()) & field_set
+        m2m_fields = set(qs.model.get_m2m_field_names()) & field_set
+        return qs.select_related(*fk_fields).prefetch_related(*m2m_fields)
+
     def sort(self, *fields):
         # Fields are passed in as e.g. [('title', 1), ('date_created', -1)]
         if isinstance(fields[0], list):
