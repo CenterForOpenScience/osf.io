@@ -560,7 +560,6 @@ class RelationshipField(ser.HyperlinkedIdentityField):
         """
         if callable(kwargs_dict):
             kwargs_dict = kwargs_dict(obj)
-
         kwargs_retrieval = {}
         for lookup_url_kwarg, lookup_field in kwargs_dict.items():
             try:

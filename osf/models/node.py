@@ -18,7 +18,7 @@ from django.db import models, transaction, connection
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils import timezone
-from django.utils.functional import cached_property
+from osf.utils.caching import cached_property
 from keen import scoped_keys
 from modularodm import Q as MQ
 from psycopg2._psycopg import AsIs
@@ -63,12 +63,12 @@ from website.util.permissions import (ADMIN, CREATOR_PERMISSIONS,
                                       DEFAULT_CONTRIBUTOR_PERMISSIONS, READ,
                                       WRITE, expand_permissions,
                                       reduce_permissions)
-from .base import BaseModel, Guid, GuidMixin, GuidMixinQuerySet
+from .base import BaseModel, Guid, GuidMixin, MODMCompatibilityQuerySet
 
 logger = logging.getLogger(__name__)
 
 
-class AbstractNodeQuerySet(GuidMixinQuerySet):
+class AbstractNodeQuerySet(MODMCompatibilityQuerySet):
 
     def get_roots(self):
         return self.extra(
@@ -76,41 +76,12 @@ class AbstractNodeQuerySet(GuidMixinQuerySet):
                    'osf_noderelation WHERE is_node_link IS false))'])
 
     def get_children(self, root, primary_keys=False, active=False):
-        sql = """
-            WITH RECURSIVE descendants AS (
-              SELECT
-                parent_id,
-                child_id,
-                1 AS LEVEL
-              FROM %s
-              %s
-              WHERE is_node_link IS FALSE %s
-              UNION ALL
-              SELECT
-                s.parent_id,
-                d.child_id,
-                d.level + 1
-              FROM descendants AS d
-                JOIN %s AS s
-                  ON d.parent_id = s.child_id
-              WHERE s.is_node_link IS FALSE
-            ) SELECT array_agg(DISTINCT child_id)
-              FROM descendants
-              WHERE parent_id = %s;
-        """
-        with connection.cursor() as cursor:
-            node_relation_table = AsIs(NodeRelation._meta.db_table)
-            cursor.execute(sql, [
-                node_relation_table,
-                AsIs('LEFT JOIN osf_abstractnode ON {}.child_id = osf_abstractnode.id'.format(node_relation_table) if active else ''),
-                AsIs('AND osf_abstractnode.is_deleted IS FALSE' if active else ''),
-                node_relation_table,
-                root.pk])
-            row = cursor.fetchone()[0]
-            if row is None or primary_keys:
-                return row or []
-            else:
-                return AbstractNode.objects.filter(id__in=row)
+        query = root.descendants.exclude(id=root.id)
+        if active:
+            query = query.filter(is_deleted=False)
+        if primary_keys:
+            query = query.values_list('id', flat=True)
+        return query
 
 
 class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixin,
@@ -962,11 +933,11 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         if not self.is_contributor(user):
             raise ValueError(u'User {0} not in contributors'.format(user))
         if visible and not Contributor.objects.filter(node=self, user=user, visible=True).exists():
-            Contributor.objects.filter(node=self, user=user, visible=False).update(visible=True)
+            Contributor.objects.filter(node=self, user=user, visible=False).invalidated_update(visible=True)
         elif not visible and Contributor.objects.filter(node=self, user=user, visible=True).exists():
             if Contributor.objects.filter(node=self, visible=True).count() == 1:
                 raise ValueError('Must have at least one visible contributor')
-            Contributor.objects.filter(node=self, user=user, visible=True).update(visible=False)
+            Contributor.objects.filter(node=self, user=user, visible=True).invalidated_update(visible=False)
         else:
             return
         message = (
@@ -1791,6 +1762,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                         parent=forked,
                         child=forked_node
                     )
+                    forked_node.root = None
+                    forked_node.save()  # Recompute root on save()
             else:
                 # Copy linked nodes
                 NodeRelation.objects.get_or_create(
@@ -2594,8 +2567,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         new_page.save()
 
         if has_comments:
-            Comment.objects.filter(root_target=current.guids.first()).update(root_target=Guid.load(new_page._id))
-            Comment.objects.filter(target=current.guids.first()).update(target=Guid.load(new_page._id))
+            Comment.objects.filter(root_target=current.guids.first()).invalidated_update(root_target=Guid.load(new_page._id))
+            Comment.objects.filter(target=current.guids.first()).invalidated_update(target=Guid.load(new_page._id))
 
         if current:
             for contrib in self.contributors:

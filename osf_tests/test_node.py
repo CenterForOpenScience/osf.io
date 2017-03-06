@@ -148,15 +148,20 @@ def test_get_children():
     greatgrandchild1 = NodeFactory(parent=grandchild1)
     greatgrandchild2 = NodeFactory(parent=grandchild2)
     greatgrandchild3 = NodeFactory(parent=grandchild3)
-    greatgrandchild_1 = NodeFactory(parent=grandchild_1)
+    greatgrandchild_1 = NodeFactory(parent=grandchild_1, is_deleted=True)
 
-    assert 20 == len(Node.objects.get_children(root))
+    assert 20 == Node.objects.get_children(root).count()
+    pks = Node.objects.get_children(root, primary_keys=True)
+    assert 20 == len(pks)
+    assert set(pks) == set(Node.objects.exclude(id=root.id).values_list('id', flat=True))
+
+    assert greatgrandchild_1 in Node.objects.get_children(root).all()
+    assert greatgrandchild_1 not in Node.objects.get_children(root, active=True).all()
 
 def test_get_children_with_barren_parent():
     root = ProjectFactory()
 
     assert 0 == len(Node.objects.get_children(root))
-
 
 def test_get_children_with_links():
     root = ProjectFactory()
