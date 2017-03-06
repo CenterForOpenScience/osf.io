@@ -5,6 +5,8 @@ from rest_framework.exceptions import NotFound
 from rest_framework.reverse import reverse
 import furl
 
+from osf.models.base import GuidMixin
+from osf.modm_compat import to_django_query
 from website import util as website_util  # noqa
 from website import settings as website_settings
 from framework.auth import Auth, User
@@ -70,16 +72,22 @@ def absolute_reverse(view_name, query_kwargs=None, args=None, kwargs=None):
     return url
 
 
-def get_object_or_error(model_cls, query_or_pk, display_name=None, **kwargs):
+def get_object_or_error(model_cls, query_or_pk, display_name=None, prefetch_fields=list()):
     if isinstance(query_or_pk, basestring):
-        obj = model_cls.load(query_or_pk)
-        if obj is None:
-            raise NotFound
+        if issubclass(model_cls, GuidMixin):
+            query = {'guids___id': query_or_pk}
+        else:
+            query = {model_cls.primary_identifier_name: query_or_pk}
     else:
-        try:
-            obj = model_cls.find_one(query_or_pk, **kwargs)
-        except NoResultsFound:
-            raise NotFound
+        query = to_django_query(query_or_pk, model_cls=model_cls)
+
+    prefetch_fk_fields = [field for field in model_cls.get_fk_field_names() if field in prefetch_fields]
+    prefetch_m2m_fields = [field for field in model_cls.get_m2m_field_names() if field in prefetch_fields]
+
+    try:
+        obj = model_cls.objects.select_related(*prefetch_fk_fields).prefetch_related(*prefetch_m2m_fields).get(**query)
+    except model_cls.DoesNotExist:
+        raise NotFound
 
     # For objects that have been disabled (is_active is False), return a 410.
     # The User model is an exception because we still want to allow
