@@ -1,20 +1,18 @@
 # -*- coding: utf-8 -*-
+import furl
 from modularodm import Q
-from modularodm.exceptions import NoResultsFound
 from rest_framework.exceptions import NotFound
 from rest_framework.reverse import reverse
-import furl
 
-from osf.models.base import GuidMixin
-from osf.modm_compat import to_django_query
-from website import util as website_util  # noqa
-from website import settings as website_settings
-from framework.auth import Auth, User
 from api.base.authentication.drf import get_session_from_cookie
 from api.base.exceptions import Gone
-
-from framework.auth.oauth_scopes import ComposedScopes, normalize_scopes
+from framework.auth import Auth, User
 from framework.auth.cas import CasResponse
+from framework.auth.oauth_scopes import ComposedScopes, normalize_scopes
+from osf.models.base import GuidMixin
+from osf.modm_compat import to_django_query
+from website import settings as website_settings
+from website import util as website_util  # noqa
 
 # These values are copied from rest_framework.fields.BooleanField
 # BooleanField cannot be imported here without raising an
