@@ -4,7 +4,8 @@
 
 # Testing
 pytest==3.0.3
-pytest-django==3.0.0
+# pulling from github because master has django_assert_num_queries context mgr
+git+https://github.com/pytest-dev/pytest-django.git@master
 nose
 factory-boy==2.7.0
 webtest-plus==0.3.3

@@ -49,6 +49,18 @@
         </div>
     %endif
 
+    %if campaign == "bitss-preprints":
+        <div class="text-center m-t-lg">
+            <h3>BITSS Preprints</h3><hr>
+        </div>
+    %endif
+
+    %if campaign == "scielo-preprints":
+        <div class="text-center m-t-lg">
+            <h3>SciELO Preprints</h3><hr>
+        </div>
+    %endif
+
     <div class="row m-t-xl">
     %if campaign != "institution" or not enable_institutions:
         <div id="signUpScope" class="col-sm-10 col-sm-offset-1 col-md-9 col-md-offset-2 col-lg-8 signup-form p-b-md m-b-m bg-color-light">

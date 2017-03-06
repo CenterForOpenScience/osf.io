@@ -99,7 +99,7 @@
         <a data-bind="click: nextPage" class="btn btn-primary">Next Page</a>
     </div>
 </div>
-    {% if perms.common_auth.administer_prereg %}
+    {% if perms.osf.administer_prereg %}
         {% include "pre_reg/comment_editor.html" %}
     {% endif %}
 {% endblock %}

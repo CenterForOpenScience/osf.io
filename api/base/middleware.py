@@ -24,11 +24,6 @@ from framework.celery_tasks.handlers import (
     celery_after_request,
     celery_teardown_request
 )
-from framework.transactions.handlers import (
-    transaction_before_request,
-    transaction_after_request,
-    transaction_teardown_request
-)
 from .api_globals import api_globals
 from api.base import settings as api_settings
 
@@ -59,29 +54,6 @@ class CeleryTaskMiddleware(object):
         """Clear the celery task queue if the response status code is 400 or above"""
         celery_after_request(response, base_status_code_error=400)
         celery_teardown_request()
-        return response
-
-
-class TokuTransactionMiddleware(object):
-    """TokuMX Transaction middleware."""
-
-    def process_request(self, request):
-        """Begin a transaction if one doesn't already exist."""
-        transaction_before_request()
-
-    def process_exception(self, request, exception):
-        """If an exception occurs, rollback the current transaction
-        if it exists.
-        """
-        sentry_exception_handler(request=request)
-        transaction_teardown_request(error=True)
-        return None
-
-    def process_response(self, request, response):
-        """Commit transaction if it exists, rolling back in an
-        exception occurs.
-        """
-        transaction_after_request(response, base_status_code_error=400)
         return response
 
 

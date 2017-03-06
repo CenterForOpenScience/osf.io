@@ -1,14 +1,13 @@
 """Script for retracting pending retractions that are more than 48 hours old."""
 
-import datetime
 import logging
 
+from django.db import transaction
 from django.utils import timezone
 from modularodm import Q
 
 from framework.auth import Auth
 from framework.celery_tasks import app as celery_app
-from framework.transactions.context import TokuTransaction
 
 from website.app import init_app
 from website import models, settings
@@ -39,7 +38,7 @@ def main(dry_run=True):
                 .format(retraction._id, parent_registration._id)
             )
             if not dry_run:
-                with TokuTransaction():
+                with transaction.atomic():
                     retraction.state = models.Retraction.APPROVED
                     try:
                         parent_registration.registered_from.add_log(

@@ -1651,7 +1651,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
 
         if first_save and self.is_bookmark_collection:
             existing_bookmark_collections = Node.find(
-                Q('is_bookmark_collection', 'eq', True) & Q('contributors', 'eq', self.creator._id)
+                Q('is_bookmark_collection', 'eq', True) & Q('contributors', 'eq', self.creator._id) & Q('is_deleted', 'eq', False)
             )
             if existing_bookmark_collections.count() > 0:
                 raise NodeStateError('Only one bookmark collection allowed per user.')
@@ -2196,6 +2196,11 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
 
     def delete_registration_tree(self, save=False):
         self.is_deleted = True
+        for draft_registration in DraftRegistration.find(Q('registered_node', 'eq', self)):
+            # Allow draft registration to be submitted
+            if draft_registration.approval:
+                draft_registration.approval = None
+                draft_registration.save()
         if not getattr(self.embargo, 'for_existing_registration', False):
             self.registered_from = None
         if save:
@@ -2597,7 +2602,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
 
         if save:
             self.save()
-        if user:
+        if user and not self.is_collection:
             increment_user_activity_counters(user._primary_key, action, log.date.isoformat())
         return log
 
@@ -3735,7 +3740,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
         if not self.is_registration or (not self.is_public and not (self.embargo_end_date or self.is_pending_embargo)):
             raise NodeStateError('Only public or embargoed registrations may be withdrawn.')
 
-        if self.root is not self:
+        if self.root_id != self.id:
             raise NodeStateError('Withdrawal of non-parent registrations is not permitted.')
 
         retraction = self._initiate_retraction(user, justification)
