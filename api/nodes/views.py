@@ -3357,6 +3357,13 @@ class NodePreprintsList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, NodePr
     view_category = 'nodes'
     view_name = 'node-preprints'
 
+    def postprocess_query_param(self, key, field_name, operation):
+        if field_name == 'provider':
+            operation['source_field_name'] = 'provider___id'
+
+        if field_name == 'id':
+            operation['source_field_name'] = '_guids___id'
+
     # overrides ODMFilterMixin
     def get_default_odm_query(self):
         return (
