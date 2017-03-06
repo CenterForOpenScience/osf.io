@@ -81,11 +81,8 @@ def get_object_or_error(model_cls, query_or_pk, display_name=None, prefetch_fiel
     else:
         query = to_django_query(query_or_pk, model_cls=model_cls)
 
-    prefetch_fk_fields = [field for field in model_cls.get_fk_field_names() if field in prefetch_fields]
-    prefetch_m2m_fields = [field for field in model_cls.get_m2m_field_names() if field in prefetch_fields]
-
     try:
-        obj = model_cls.objects.select_related(*prefetch_fk_fields).prefetch_related(*prefetch_m2m_fields).get(**query)
+        obj = model_cls.objects.eager(prefetch_fields).get(**query)
     except model_cls.DoesNotExist:
         raise NotFound
 
