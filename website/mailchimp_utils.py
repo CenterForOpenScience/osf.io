@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+from django.db import transaction
 import mailchimp
 
 from framework import sentry
@@ -7,9 +8,6 @@ from framework.celery_tasks import app
 from framework.celery_tasks.handlers import queued_task
 from framework.auth.signals import user_confirmed
 from osf.models import OSFUser as User
-
-from framework.transactions.context import transaction
-
 from website import settings
 
 
@@ -35,7 +33,7 @@ def get_list_name_from_id(list_id):
 
 @queued_task
 @app.task
-@transaction()
+@transaction.atomic
 def subscribe_mailchimp(list_name, user_id):
     user = User.load(user_id)
     m = get_mailchimp_api()
@@ -90,7 +88,7 @@ def unsubscribe_mailchimp(list_name, user_id, username=None, send_goodbye=True):
 
 @queued_task
 @app.task
-@transaction()
+@transaction.atomic
 def unsubscribe_mailchimp_async(list_name, user_id, username=None, send_goodbye=True):
     """ Same args as unsubscribe_mailchimp, used to have the task be run asynchronously
     """

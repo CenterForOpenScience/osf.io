@@ -20,7 +20,7 @@ USER_EMAILED = 43
 
 
 def update_admin_log(user_id, object_id, object_repr, message, action_flag=UNKNOWN):
-    OSFLogEntry.objects.log_action(
+    AdminLogEntry.objects.log_action(
         user_id=user_id,
         content_type_id=None,
         object_id=object_id,
@@ -30,13 +30,14 @@ def update_admin_log(user_id, object_id, object_repr, message, action_flag=UNKNO
     )
 
 
-class OSFLogEntryManager(LogEntryManager):
+class AdminLogEntryManager(LogEntryManager):
     pass
 
 
-class OSFLogEntry(LogEntry):
+class AdminLogEntry(LogEntry):
+    primary_identifier_name = 'id'
     def message(self):
         return self.change_message
     message.allow_tags = True
 
-    objects = OSFLogEntryManager()
+    objects = AdminLogEntryManager()

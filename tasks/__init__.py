@@ -361,7 +361,7 @@ def sharejs(ctx, host=None, port=None, db_url=None, cors_allow_origin=None):
 
 
 @task(aliases=['celery'])
-def celery_worker(ctx, level='debug', hostname=None, beat=False):
+def celery_worker(ctx, level='debug', hostname=None, beat=False, queues=None):
     """Run the Celery process."""
     os.environ['DJANGO_SETTINGS_MODULE'] = 'api.base.settings'
     cmd = 'celery worker -A framework.celery_tasks -l {0}'.format(level)
@@ -370,6 +370,8 @@ def celery_worker(ctx, level='debug', hostname=None, beat=False):
     # beat sets up a cron like scheduler, refer to website/settings
     if beat:
         cmd = cmd + ' --beat'
+    if queues:
+        cmd = cmd + ' --queues={}'.format(queues)
     ctx.run(bin_prefix(cmd), pty=True)
 
 
@@ -556,6 +558,10 @@ CORE_TESTS = [
     'tests/test_tokens.py',
     'tests/test_webtests.py',
     'tests/test_utils.py',
+    'tests/test_registrations/test_retractions.py',
+    'tests/test_registrations/test_embargoes.py',
+    'tests/test_registrations/test_registration_approvals.py',
+    'tests/test_registrations/test_views.py',
 ]
 @task
 def test_osf(ctx):

@@ -23,6 +23,9 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__fil
 SECRET_KEY = osf_settings.SECRET_KEY
 
 
+# Don't allow migrations
+DATABASE_ROUTERS = ['admin.base.db.router.NoMigrationRouter']
+
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = osf_settings.DEBUG_MODE
 DEBUG_PROPAGATE_EXCEPTIONS = True
@@ -79,15 +82,6 @@ INSTALLED_APPS = (
     'django.contrib.messages',
     'django.contrib.sessions',
     'django.contrib.staticfiles',
-    'admin.common_auth',
-    'admin.base',
-    'admin.pre_reg',
-    'admin.spam',
-    'admin.metrics',
-    'admin.nodes',
-    'admin.users',
-    'admin.desk',
-    'admin.meetings',
 
     # 3rd party
     'raven.contrib.django.raven_compat',
@@ -102,7 +96,26 @@ INSTALLED_APPS = (
     'addons.osfstorage',
     'addons.wiki',
     'addons.twofactor',
+
+    # Internal apps
+    'admin.common_auth',
+    'admin.base',
+    'admin.pre_reg',
+    'admin.spam',
+    'admin.metrics',
+    'admin.nodes',
+    'admin.users',
+    'admin.desk',
+    'admin.meetings',
+
 )
+
+MIGRATION_MODULES = {
+    'osf': None,
+    'addons_osfstorage': None,
+    'addons_wiki': None,
+    'addons_twofactor': None,
+}
 
 USE_TZ = True
 

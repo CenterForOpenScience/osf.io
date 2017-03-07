@@ -32,6 +32,7 @@ from tests.base import (Guid, OsfTestCase, capture_signals, fake,
                         get_default_metaschema)
 from tests.factories import (ApiOAuth2ApplicationFactory, AuthUserFactory,
                              BookmarkCollectionFactory, CollectionFactory,
+                             DraftRegistrationFactory,
                              CommentFactory, InstitutionFactory, NodeFactory,
                              NodeLicenseRecordFactory, NodeLogFactory,
                              NodeWikiFactory, PointerFactory,
@@ -58,6 +59,8 @@ from website.util import api_url_for, web_url_for
 from website.util.permissions import (ADMIN, CREATOR_PERMISSIONS,
                                       DEFAULT_CONTRIBUTOR_PERMISSIONS, READ,
                                       WRITE, expand_permissions)
+from website.project.sanctions import Sanction, DraftRegistrationApproval
+from website.views import find_bookmark_collection
 
 GUID_FACTORIES = UserFactory, NodeFactory, ProjectFactory
 
@@ -503,7 +506,6 @@ class TestUser(OsfTestCase):
         u = UnconfirmedUserFactory()
         assert_equal(u.get_confirmation_url(u.username, external_id_provider='service', destination='dashboard'),
                 '{0}confirm/external/{1}/{2}/?destination={3}'.format(settings.DOMAIN, u._id, 'abcde', 'dashboard'))
-
 
     def test_get_confirmation_url_when_token_is_expired_raises_error(self):
         u = UserFactory()
@@ -974,7 +976,7 @@ class TestMergingUsers(OsfTestCase):
         self.master.save()
 
     def test_bookmark_collection_nodes_arent_merged(self):
-        dashnode = ProjectFactory(creator=self.dupe, is_bookmark_collection=True)
+        dashnode = find_bookmark_collection(self.dupe)
 
         self._merge_dupe()
 
@@ -2201,6 +2203,22 @@ class TestNodeTraversals(OsfTestCase):
         reg.delete_registration_tree(save=True)
         assert_false(Node.find(Q('_id', 'in', reg_ids) & Q('is_deleted', 'eq', False)).count())
 
+    def test_delete_registration_tree_sets_draft_registration_approvals_to_none(self):
+        ensure_schemas()
+        reg = RegistrationFactory()
+
+        dr = DraftRegistrationFactory(initiator=self.user)
+        approval = DraftRegistrationApproval(state=Sanction.APPROVED)
+        approval.save()
+        dr.approval = approval
+        dr.registered_node = reg
+        dr.save()
+
+        reg.delete_registration_tree(save=True)
+
+        dr.reload()
+        assert_is_none(dr.approval)
+
     def test_delete_registration_tree_deletes_backrefs(self):
         proj = NodeFactory()
         NodeFactory(parent=proj)
@@ -2396,7 +2414,7 @@ class TestBookmarkCollection(OsfTestCase):
         # Create project with component
         self.user = UserFactory()
         self.auth = Auth(user=self.user)
-        self.project = BookmarkCollectionFactory(creator=self.user)
+        self.project = find_bookmark_collection(self.user)
 
     def test_bookmark_collection_is_bookmark_collection(self):
         assert_equal(self.project.is_bookmark_collection, True)

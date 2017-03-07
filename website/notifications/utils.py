@@ -246,6 +246,7 @@ def format_data(user, nodes):
     """
     items = []
 
+    user_subscriptions = get_all_user_subscriptions(user)
     for node in nodes:
         assert node, '{} is not a valid Node.'.format(node._id)
 
@@ -262,14 +263,14 @@ def format_data(user, nodes):
 
         if can_read:
             node_sub_available = list(constants.NODE_SUBSCRIPTIONS_AVAILABLE.keys())
-            subscriptions = [subscription for subscription in get_all_node_subscriptions(user, node)
+            subscriptions = [subscription for subscription in get_all_node_subscriptions(user, node, user_subscriptions=user_subscriptions)
                              if getattr(subscription, 'event_name') in node_sub_available]
             for subscription in subscriptions:
                 index = node_sub_available.index(getattr(subscription, 'event_name'))
                 children_tree.append(serialize_event(user, subscription=subscription,
                                                 node=node, event_description=node_sub_available.pop(index)))
             for node_sub in node_sub_available:
-                    children_tree.append(serialize_event(user, node=node, event_description=node_sub))
+                children_tree.append(serialize_event(user, node=node, event_description=node_sub))
             children_tree.sort(key=lambda s: s['event']['title'])
 
         children_tree.extend(format_data(user, children))
@@ -320,6 +321,9 @@ def format_file_subscription(user, node_id, path, provider):
     return serialize_event(user, node=node, event_description='file_updated')
 
 
+all_subs = constants.NODE_SUBSCRIPTIONS_AVAILABLE.copy()
+all_subs.update(constants.USER_SUBSCRIPTIONS_AVAILABLE)
+
 def serialize_event(user, subscription=None, node=None, event_description=None):
     """
     :param user: modular odm User object
@@ -328,8 +332,6 @@ def serialize_event(user, subscription=None, node=None, event_description=None):
     :param event_description: use if specific subscription is known
     :return: treebeard-formatted subscription event
     """
-    all_subs = constants.NODE_SUBSCRIPTIONS_AVAILABLE.copy()
-    all_subs.update(constants.USER_SUBSCRIPTIONS_AVAILABLE)
     if not event_description:
         event_description = getattr(subscription, 'event_name')
     # Looks at only the types available. Deals with pre-pending file names.

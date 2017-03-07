@@ -1,7 +1,7 @@
 from django.db import models
 from django.utils import timezone
 
-from osf.utils.fields import NonNaiveDatetimeField
+from osf.utils.fields import NonNaiveDateTimeField
 from website.mails import Mail, send_mail
 from website.mails import presends
 from website import settings as osf_settings
@@ -18,7 +18,7 @@ class QueuedMail(ObjectIDMixin, BaseModel):
     # /TODO DELETE ME POST MIGRATION
     user = models.ForeignKey('OSFUser', db_index=True, null=True)
     to_addr = models.CharField(max_length=255)
-    send_at = NonNaiveDatetimeField(db_index=True, null=False)
+    send_at = NonNaiveDateTimeField(db_index=True, null=False)
 
     # string denoting the template, presend to be used. Has to be an index of queue_mail types
     email_type = models.CharField(max_length=255, db_index=True, null=False)
@@ -30,7 +30,7 @@ class QueuedMail(ObjectIDMixin, BaseModel):
     #    'fullname': 'Florence Welch',
     #}
     data = DateTimeAwareJSONField(default=dict, blank=True)
-    sent_at = NonNaiveDatetimeField(db_index=True, null=True, blank=True)
+    sent_at = NonNaiveDateTimeField(db_index=True, null=True, blank=True)
 
     def __repr__(self):
         if self.sent_at is not None:

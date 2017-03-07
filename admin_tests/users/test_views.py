@@ -32,7 +32,7 @@ from admin.users.views import (
     UserWorkshopFormView,
 )
 from admin.users.forms import WorkshopForm
-from admin.common_auth.logs import OSFLogEntry
+from osf.models.admin_log_entry import AdminLogEntry
 
 
 class TestUserView(AdminTestCase):
@@ -94,20 +94,20 @@ class TestDisableUser(AdminTestCase):
 
     def test_disable_user(self):
         settings.ENABLE_EMAIL_SUBSCRIPTIONS = False
-        count = OSFLogEntry.objects.count()
+        count = AdminLogEntry.objects.count()
         self.view.delete(self.request)
         self.user.reload()
         nt.assert_true(self.user.is_disabled)
-        nt.assert_equal(OSFLogEntry.objects.count(), count + 1)
+        nt.assert_equal(AdminLogEntry.objects.count(), count + 1)
 
     def test_reactivate_user(self):
         settings.ENABLE_EMAIL_SUBSCRIPTIONS = False
         self.view.delete(self.request)
-        count = OSFLogEntry.objects.count()
+        count = AdminLogEntry.objects.count()
         self.view.delete(self.request)
         self.user.reload()
         nt.assert_false(self.user.is_disabled)
-        nt.assert_equal(OSFLogEntry.objects.count(), count + 1)
+        nt.assert_equal(AdminLogEntry.objects.count(), count + 1)
 
     def test_no_user(self):
         view = setup_view(UserDeleteView(), self.request, guid='meh')
@@ -135,13 +135,13 @@ class TestDisableSpamUser(AdminTestCase):
 
     def test_disable_spam_user(self):
         settings.ENABLE_EMAIL_SUBSCRIPTIONS = False
-        count = OSFLogEntry.objects.count()
+        count = AdminLogEntry.objects.count()
         self.view.delete(self.request)
         self.user.reload()
         self.public_node.reload()
         nt.assert_true(self.user.is_disabled)
         nt.assert_false(self.public_node.is_public)
-        nt.assert_equal(OSFLogEntry.objects.count(), count + 3)
+        nt.assert_equal(AdminLogEntry.objects.count(), count + 3)
 
     def test_no_user(self):
         view = setup_view(UserDeleteView(), self.request, guid='meh')
@@ -225,11 +225,11 @@ class TestRemove2Factor(AdminTestCase):
         nt.assert_not_equal(user_addon, None)
         user_settings = self.user.get_addon('twofactor')
         nt.assert_not_equal(user_settings, None)
-        count = OSFLogEntry.objects.count()
+        count = AdminLogEntry.objects.count()
         self.view.delete(self.request)
         post_addon = self.user.get_addon('twofactor')
         nt.assert_equal(post_addon, None)
-        nt.assert_equal(OSFLogEntry.objects.count(), count + 1)
+        nt.assert_equal(AdminLogEntry.objects.count(), count + 1)
 
 
 class TestUserWorkshopFormView(AdminTestCase):

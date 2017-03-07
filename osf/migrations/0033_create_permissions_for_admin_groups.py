@@ -106,7 +106,8 @@ def remove_group_permissions(*args):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('admin_common_auth', '0001_initial')
+        ('auth', '0007_alter_validators_add_error_messages'),
+        ('osf', '0001_initial'),
     ]
 
     operations = [
