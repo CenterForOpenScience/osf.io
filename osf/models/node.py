@@ -330,9 +330,9 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     @property
     def is_preprint(self):
         # TODO: This is a temporary implementation.
-        if not self.preprint_file or not self.is_public:
+        if not self.preprint_file_id or not self.is_public:
             return False
-        if self.preprint_file.node == self:
+        if self.preprint_file.node_id == self.id:
             return True
         else:
             self._is_preprint_orphan = True
