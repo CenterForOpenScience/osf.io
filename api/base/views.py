@@ -93,7 +93,7 @@ class JSONAPIBaseView(generics.GenericAPIView):
                 ser._context = view.get_serializer_context()
 
                 if not isinstance(view, ListModelMixin):
-                    ret = ser.to_representation(item)
+                    ret = ser.to_representation(view.get_object())
                 else:
                     queryset = view.filter_queryset(view.get_queryset())
                     page = view.paginate_queryset(queryset)

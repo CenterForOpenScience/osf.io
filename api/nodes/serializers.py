@@ -9,7 +9,7 @@ from api.base.serializers import (DateByVersion, HideIfRegistration, IDField,
                                   JSONAPISerializer, LinksField,
                                   NodeFileHyperLinkField, RelationshipField,
                                   ShowIfVersion, TargetTypeField, TypeField,
-                                  WaterbutlerLink, relationship_diff)
+                                  WaterbutlerLink, relationship_diff, PrefetchRelationshipsSerializer)
 from api.base.settings import ADDONS_FOLDER_CONFIGURABLE
 from api.base.utils import (absolute_reverse, get_object_or_error,
                             get_user_auth, is_truthy)
@@ -46,7 +46,7 @@ class NodeTagField(ser.Field):
         return data
 
 
-class NodeLicenseSerializer(ser.Serializer):
+class NodeLicenseSerializer(PrefetchRelationshipsSerializer):
 
     copyright_holders = ser.ListField(allow_empty=True)
     year = ser.CharField(allow_blank=True)
@@ -985,7 +985,7 @@ class InstitutionRelated(JSONAPIRelationshipSerializer):
     class Meta:
         type_ = 'institutions'
 
-class NodeInstitutionsRelationshipSerializer(ser.Serializer):
+class NodeInstitutionsRelationshipSerializer(PrefetchRelationshipsSerializer):
     data = ser.ListField(child=InstitutionRelated())
     links = LinksField({'self': 'get_self_url',
                         'html': 'get_related_url'})
