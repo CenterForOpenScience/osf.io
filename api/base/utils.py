@@ -80,7 +80,10 @@ def get_object_or_error(model_cls, query_or_pk, display_name=None, prefetch_fiel
         query = to_django_query(query_or_pk, model_cls=model_cls)
 
     try:
-        obj = model_cls.objects.eager(prefetch_fields).get(**query)
+        if isinstance(query, dict):
+            obj = model_cls.objects.eager(prefetch_fields).get(**query)
+        else:
+            obj = model_cls.objects.eager(prefetch_fields).get(query)
     except model_cls.DoesNotExist:
         raise NotFound
 
