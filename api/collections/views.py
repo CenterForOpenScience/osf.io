@@ -42,7 +42,7 @@ class CollectionMixin(object):
 
     def get_node(self, check_object_permissions=True):
         node = get_object_or_error(
-            Node,
+            Collection,
             self.kwargs[self.node_lookup_url_kwarg],
             display_name='collection',
             prefetch_fields=self.serializer_class().relationship_field_names

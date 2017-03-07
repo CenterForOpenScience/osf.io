@@ -2554,7 +2554,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             current = NodeWikiPage.load(self.wiki_pages_current[key])
             version = current.version + 1
             current.save()
-            if Comment.find(Q('root_target', 'eq', current.guids.first())).count() > 0:
+            if Comment.objects.filter(root_target=current.guids.all()[0]).exists():
                 has_comments = True
 
         new_page = NodeWikiPage(

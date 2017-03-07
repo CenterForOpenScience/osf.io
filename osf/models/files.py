@@ -344,6 +344,7 @@ class FileNode(object):
     FOLDER, FILE, ANY = 0, 1, 2
 
     __metaclass__ = FileNodeMeta
+    primary_identifier_name = StoredFileNode.primary_identifier_name
 
     @classmethod
     def create(cls, **kwargs):
