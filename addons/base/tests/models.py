@@ -47,6 +47,35 @@ class OAuthAddonUserSettingTestSuiteMixin(OAuthAddonModelTestSuiteMixinBase):
 
         self.user_settings = self.user.get_or_add_addon(self.short_name)
 
+    def test_mergability(self):
+        assert self.user_settings.can_be_merged
+
+    def test_merge_user_settings(self):
+        other_node = ProjectFactory()
+        other_user = other_node.creator
+        other_account = self.ExternalAccountFactory()
+        other_user.external_accounts.add(other_account)
+        other_user_settings = other_user.get_or_add_addon(self.short_name)
+        other_node_settings = other_node.get_or_add_addon(self.short_name, auth=Auth(other_user))
+        other_node_settings.set_auth(
+            user=other_user,
+            external_account=other_account
+        )
+
+        assert other_node_settings.has_auth
+        assert other_node._id not in self.user_settings.oauth_grants
+        assert other_node_settings.user_settings == other_user_settings
+
+        self.user.merge_user(other_user)
+        self.user.save()
+
+        other_node_settings.reload()
+        self.user_settings.reload()
+
+        assert other_node_settings.has_auth
+        assert other_node._id in self.user_settings.oauth_grants
+        assert other_node_settings.user_settings == self.user_settings
+
     def test_grant_oauth_access_no_metadata(self):
         self.user_settings.grant_oauth_access(
             node=self.node,
