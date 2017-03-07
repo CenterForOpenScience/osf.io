@@ -16,7 +16,7 @@ from osf.models.user import OSFUser
 from osf.modm_compat import Q
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from website import settings
-from website.addons.base import logger, serializer
+from addons.base import logger, serializer
 from website.oauth.signals import oauth_complete
 from website.util import waterbutler_url_for
 
@@ -216,12 +216,10 @@ class BaseOAuthUserSettings(BaseUserSettings):
         """
         for node in self.get_nodes_with_oauth_grants(external_account):
             try:
-                addon_settings = node.get_addon(external_account.provider, deleted=True)
+                addon_settings = node.get_addon(external_account.provider, deleted=True).deauthorize(auth=auth)
             except AttributeError:
                 # No associated addon settings despite oauth grant
                 pass
-            else:
-                addon_settings.deauthorize(auth=auth)
 
         if external_account.osfuser_set.count() == 1 and \
                 external_account.osfuser_set.filter(osfuser=auth.user).count() == 1:
@@ -317,7 +315,7 @@ class BaseOAuthUserSettings(BaseUserSettings):
             config = settings.ADDONS_AVAILABLE_DICT[
                 self.oauth_provider.short_name
             ]
-            Model = config.settings_models['node']
+            Model = config.models['nodesettings']
         except KeyError:
             pass
         else:
@@ -587,7 +585,7 @@ class BaseStorageAddon(BaseModel):
             kwargs['cookie'] = cookie
         if version:
             kwargs['version'] = version
-        metadata_url = waterbutler_url_for('metadata', **kwargs)
+        metadata_url = waterbutler_url_for('metadata', _internal=True, **kwargs)
 
         res = requests.get(metadata_url)
         if res.status_code != 200:

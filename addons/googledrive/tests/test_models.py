@@ -9,7 +9,7 @@ from addons.base.tests.models import (OAuthAddonNodeSettingsTestSuiteMixin,
                                       OAuthAddonUserSettingTestSuiteMixin)
 
 from addons.googledrive.models import NodeSettings, GoogleDriveProvider
-from website.addons.googledrive.client import GoogleAuthClient
+from addons.googledrive.client import GoogleAuthClient
 from addons.googledrive.tests.factories import (
     GoogleDriveAccountFactory,
     GoogleDriveNodeSettingsFactory,
@@ -83,7 +83,7 @@ class TestNodeSettings(OAuthAddonNodeSettingsTestSuiteMixin, unittest.TestCase):
 
         assert_equal(
             self.node_settings.selected_folder_name,
-            "Full Google Drive"
+            'Full Google Drive'
         )
 
     def test_selected_folder_name_empty(self):

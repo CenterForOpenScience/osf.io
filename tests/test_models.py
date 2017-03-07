@@ -32,6 +32,7 @@ from tests.base import (Guid, OsfTestCase, capture_signals, fake,
                         get_default_metaschema)
 from tests.factories import (ApiOAuth2ApplicationFactory, AuthUserFactory,
                              BookmarkCollectionFactory, CollectionFactory,
+                             DraftRegistrationFactory,
                              CommentFactory, InstitutionFactory, NodeFactory,
                              NodeLicenseRecordFactory, NodeLogFactory,
                              NodeWikiFactory, PointerFactory,
@@ -41,12 +42,12 @@ from tests.factories import (ApiOAuth2ApplicationFactory, AuthUserFactory,
                              UnregUserFactory, UserFactory, WatchConfigFactory)
 from tests.utils import mock_archive
 from website import filters, language, mailchimp_utils, settings
-from website.addons.wiki.exceptions import (NameEmptyError, NameInvalidError,
+from addons.wiki.exceptions import (NameEmptyError, NameInvalidError,
                                             NameMaximumLengthError,
                                             PageCannotRenameError,
                                             PageConflictError,
                                             PageNotFoundError)
-from website.addons.wiki.model import NodeWikiPage
+from addons.wiki.models import NodeWikiPage
 from website.exceptions import NodeStateError, TagNotFoundError
 from website.project.model import (DraftRegistration, MetaSchema, Node,
                                    NodeLog, Pointer, ensure_schemas,
@@ -58,6 +59,8 @@ from website.util import api_url_for, web_url_for
 from website.util.permissions import (ADMIN, CREATOR_PERMISSIONS,
                                       DEFAULT_CONTRIBUTOR_PERMISSIONS, READ,
                                       WRITE, expand_permissions)
+from website.project.sanctions import Sanction, DraftRegistrationApproval
+from website.views import find_bookmark_collection
 
 GUID_FACTORIES = UserFactory, NodeFactory, ProjectFactory
 
@@ -503,7 +506,6 @@ class TestUser(OsfTestCase):
         u = UnconfirmedUserFactory()
         assert_equal(u.get_confirmation_url(u.username, external_id_provider='service', destination='dashboard'),
                 '{0}confirm/external/{1}/{2}/?destination={3}'.format(settings.DOMAIN, u._id, 'abcde', 'dashboard'))
-
 
     def test_get_confirmation_url_when_token_is_expired_raises_error(self):
         u = UserFactory()
@@ -974,7 +976,7 @@ class TestMergingUsers(OsfTestCase):
         self.master.save()
 
     def test_bookmark_collection_nodes_arent_merged(self):
-        dashnode = ProjectFactory(creator=self.dupe, is_bookmark_collection=True)
+        dashnode = find_bookmark_collection(self.dupe)
 
         self._merge_dupe()
 
@@ -2201,6 +2203,22 @@ class TestNodeTraversals(OsfTestCase):
         reg.delete_registration_tree(save=True)
         assert_false(Node.find(Q('_id', 'in', reg_ids) & Q('is_deleted', 'eq', False)).count())
 
+    def test_delete_registration_tree_sets_draft_registration_approvals_to_none(self):
+        ensure_schemas()
+        reg = RegistrationFactory()
+
+        dr = DraftRegistrationFactory(initiator=self.user)
+        approval = DraftRegistrationApproval(state=Sanction.APPROVED)
+        approval.save()
+        dr.approval = approval
+        dr.registered_node = reg
+        dr.save()
+
+        reg.delete_registration_tree(save=True)
+
+        dr.reload()
+        assert_is_none(dr.approval)
+
     def test_delete_registration_tree_deletes_backrefs(self):
         proj = NodeFactory()
         NodeFactory(parent=proj)
@@ -2396,7 +2414,7 @@ class TestBookmarkCollection(OsfTestCase):
         # Create project with component
         self.user = UserFactory()
         self.auth = Auth(user=self.user)
-        self.project = BookmarkCollectionFactory(creator=self.user)
+        self.project = find_bookmark_collection(self.user)
 
     def test_bookmark_collection_is_bookmark_collection(self):
         assert_equal(self.project.is_bookmark_collection, True)
@@ -4837,21 +4855,17 @@ class TestOnNodeUpdate(OsfTestCase):
         assert_equals(task.args[2], False)
         assert_equals(task.args[3], {'title'})
 
+    @mock.patch('website.project.tasks.settings.SHARE_URL', None)
+    @mock.patch('website.project.tasks.settings.SHARE_API_TOKEN', None)
     @mock.patch('website.project.tasks.requests')
     def test_skips_no_settings(self, requests):
-        from website.project.tasks import settings
-        settings.SHARE_URL = None
-        settings.SHARE_API_TOKEN = None
-
         on_node_updated(self.node._id, self.user._id, False, {'is_public'})
         assert_false(requests.post.called)
 
+    @mock.patch('website.project.tasks.settings.SHARE_URL', 'https://share.osf.io')
+    @mock.patch('website.project.tasks.settings.SHARE_API_TOKEN', 'Token')
     @mock.patch('website.project.tasks.requests')
     def test_updates_share(self, requests):
-        from website.project.tasks import settings
-        settings.SHARE_URL = 'https://share.osf.io'
-        settings.SHARE_API_TOKEN = 'Token'
-
         on_node_updated(self.node._id, self.user._id, False, {'is_public'})
 
         kwargs = requests.post.call_args[1]
@@ -4861,12 +4875,10 @@ class TestOnNodeUpdate(OsfTestCase):
         assert_equals(kwargs['headers']['Authorization'], 'Bearer Token')
         assert_equals(graph[0]['uri'], '{}{}/'.format(settings.DOMAIN, self.node._id))
 
+    @mock.patch('website.project.tasks.settings.SHARE_URL', 'https://share.osf.io')
+    @mock.patch('website.project.tasks.settings.SHARE_API_TOKEN', 'Token')
     @mock.patch('website.project.tasks.requests')
     def test_update_share_correctly(self, requests):
-        from website.project.tasks import settings
-        settings.SHARE_URL = 'https://share.osf.io'
-        settings.SHARE_API_TOKEN = 'Token'
-
         cases = [{
             'is_deleted': False,
             'attrs': {'is_public': True, 'is_deleted': False, 'spam_status': SpamStatus.HAM}

@@ -75,44 +75,42 @@ RUN pip install -U pip
 COPY ./requirements.txt /code/
 COPY ./requirements/ /code/requirements/
 
-COPY ./website/addons/badges/requirements.txt /code/website/addons/badges/
-COPY ./website/addons/box/requirements.txt /code/website/addons/box/
-COPY ./website/addons/dataverse/requirements.txt /code/website/addons/dataverse/
-COPY ./website/addons/dropbox/requirements.txt /code/website/addons/dropbox/
-COPY ./website/addons/github/requirements.txt /code/website/addons/github/
-COPY ./website/addons/mendeley/requirements.txt /code/website/addons/mendeley/
-COPY ./website/addons/owncloud/requirements.txt /code/website/addons/owncloud/
-COPY ./website/addons/s3/requirements.txt /code/website/addons/s3/
-COPY ./website/addons/twofactor/requirements.txt /code/website/addons/twofactor/
-COPY ./website/addons/zotero/requirements.txt /code/website/addons/zotero/
+COPY ./addons/box/requirements.txt /code/addons/box/
+COPY ./addons/dataverse/requirements.txt /code/addons/dataverse/
+COPY ./addons/dropbox/requirements.txt /code/addons/dropbox/
+COPY ./addons/github/requirements.txt /code/addons/github/
+COPY ./addons/mendeley/requirements.txt /code/addons/mendeley/
+COPY ./addons/owncloud/requirements.txt /code/addons/owncloud/
+COPY ./addons/s3/requirements.txt /code/addons/s3/
+COPY ./addons/twofactor/requirements.txt /code/addons/twofactor/
+COPY ./addons/zotero/requirements.txt /code/addons/zotero/
 
 RUN pip install --no-cache-dir -c /code/requirements/constraints.txt -r /code/requirements.txt \
-    && pip install --no-cache-dir -c /code/requirements/constraints.txt -r /code/requirements/metrics.txt \
     && pip install --no-cache-dir -c /code/requirements/constraints.txt -r /code/requirements/release.txt
 
-RUN pip install --no-cache-dir -c /code/requirements/constraints.txt -r /code/website/addons/badges/requirements.txt \
-    && pip install --no-cache-dir -c /code/requirements/constraints.txt -r /code/website/addons/box/requirements.txt \
-    && pip install --no-cache-dir -c /code/requirements/constraints.txt -r /code/website/addons/dataverse/requirements.txt \
-    && pip install --no-cache-dir -c /code/requirements/constraints.txt -r /code/website/addons/dropbox/requirements.txt \
-    && pip install --no-cache-dir -c /code/requirements/constraints.txt -r /code/website/addons/github/requirements.txt \
-    && pip install --no-cache-dir -c /code/requirements/constraints.txt -r /code/website/addons/mendeley/requirements.txt \
-    && pip install --no-cache-dir -c /code/requirements/constraints.txt -r /code/website/addons/owncloud/requirements.txt \
-    && pip install --no-cache-dir -c /code/requirements/constraints.txt -r /code/website/addons/s3/requirements.txt \
-    && pip install --no-cache-dir -c /code/requirements/constraints.txt -r /code/website/addons/twofactor/requirements.txt \
-    && pip install --no-cache-dir -c /code/requirements/constraints.txt -r /code/website/addons/zotero/requirements.txt
+RUN pip install --no-cache-dir -c /code/requirements/constraints.txt -r /code/addons/box/requirements.txt \
+    && pip install --no-cache-dir -c /code/requirements/constraints.txt -r /code/addons/dataverse/requirements.txt \
+    && pip install --no-cache-dir -c /code/requirements/constraints.txt -r /code/addons/dropbox/requirements.txt \
+    && pip install --no-cache-dir -c /code/requirements/constraints.txt -r /code/addons/github/requirements.txt \
+    && pip install --no-cache-dir -c /code/requirements/constraints.txt -r /code/addons/mendeley/requirements.txt \
+    && pip install --no-cache-dir -c /code/requirements/constraints.txt -r /code/addons/owncloud/requirements.txt \
+    && pip install --no-cache-dir -c /code/requirements/constraints.txt -r /code/addons/s3/requirements.txt \
+    && pip install --no-cache-dir -c /code/requirements/constraints.txt -r /code/addons/twofactor/requirements.txt \
+    && pip install --no-cache-dir -c /code/requirements/constraints.txt -r /code/addons/zotero/requirements.txt
 
 RUN (pip uninstall uritemplate.py --yes || true) \
     && pip install --no-cache-dir uritemplate.py==0.3.0
 
-# Bower setup and clean up
+# Fix: https://github.com/CenterForOpenScience/osf.io/pull/6783
+RUN python -m compileall /usr/local/lib/python2.7 || true
+
+# OSF: Assets
 COPY ./.bowerrc /code/
 COPY ./bower.json /code/
 RUN npm install bower \
     && ./node_modules/bower/bin/bower install --allow-root \
     && ./node_modules/bower/bin/bower cache clean --allow-root
-# /Bower
 
-# NPM/webpack
 COPY ./package.json /code/
 RUN npm install --production
 
@@ -127,30 +125,53 @@ RUN mv /code/website/settings/local-dist.py /code/website/settings/local.py \
 
 COPY ./webpack* /code/
 COPY ./website/static /code/website/static/
-COPY ./website/addons/badges/static/ /code/website/addons/badges/static/
-COPY ./website/addons/box/static/ /code/website/addons/box/static/
-COPY ./website/addons/citations/static/ /code/website/addons/citations/static/
-COPY ./website/addons/dataverse/static/ /code/website/addons/dataverse/static/
-COPY ./website/addons/dropbox/static/ /code/website/addons/dropbox/static/
-COPY ./website/addons/figshare/static/ /code/website/addons/figshare/static/
-COPY ./website/addons/forward/static/ /code/website/addons/forward/static/
-COPY ./website/addons/github/static/ /code/website/addons/github/static/
-COPY ./website/addons/googledrive/static/ /code/website/addons/googledrive/static/
-COPY ./website/addons/mendeley/static/ /code/website/addons/mendeley/static/
-COPY ./website/addons/osfstorage/static/ /code/website/addons/osfstorage/static/
-COPY ./website/addons/owncloud/static/ /code/website/addons/owncloud/static/
-COPY ./website/addons/s3/static/ /code/website/addons/s3/static/
-COPY ./website/addons/twofactor/static/ /code/website/addons/twofactor/static/
-COPY ./website/addons/wiki/static/ /code/website/addons/wiki/static/
-COPY ./website/addons/zotero/static/ /code/website/addons/zotero/static/
+COPY ./addons/box/static/ /code/addons/box/static/
+COPY ./addons/citations/static/ /code/addons/citations/static/
+COPY ./addons/dataverse/static/ /code/addons/dataverse/static/
+COPY ./addons/dropbox/static/ /code/addons/dropbox/static/
+COPY ./addons/figshare/static/ /code/addons/figshare/static/
+COPY ./addons/forward/static/ /code/addons/forward/static/
+COPY ./addons/github/static/ /code/addons/github/static/
+COPY ./addons/googledrive/static/ /code/addons/googledrive/static/
+COPY ./addons/mendeley/static/ /code/addons/mendeley/static/
+COPY ./addons/osfstorage/static/ /code/addons/osfstorage/static/
+COPY ./addons/owncloud/static/ /code/addons/owncloud/static/
+COPY ./addons/s3/static/ /code/addons/s3/static/
+COPY ./addons/twofactor/static/ /code/addons/twofactor/static/
+COPY ./addons/wiki/static/ /code/addons/wiki/static/
+COPY ./addons/zotero/static/ /code/addons/zotero/static/
 RUN mkdir -p /code/website/static/built/ \
     && invoke build_js_config_files \
     && node ./node_modules/webpack/bin/webpack.js --config webpack.prod.config.js \
     # && rm -rf /code/node_modules \ (needed for sharejs)
     && npm install list-of-licenses \
     && rm -rf /root/.npm \
-    npm cache clean
-    # /NPM/webpack
+    && npm cache clean
+# /OSF: Assets
+
+# Admin: Assets
+WORKDIR /code/admin
+
+COPY ./admin/.bowerrc /code/admin/
+COPY ./admin/bower.json /code/admin/
+RUN mkdir node_modules \
+    && npm install bower \
+    && ./node_modules/bower/bin/bower install --allow-root \
+    && ./node_modules/bower/bin/bower cache clean --allow-root
+
+COPY ./admin/package.json /code/admin/
+RUN npm install --production
+
+COPY ./admin/webpack* /code/admin/
+COPY ./admin/static /code/admin/static/
+
+RUN node ./node_modules/webpack/bin/webpack.js --config webpack.prod.config.js \
+    && rm -rf /root/.npm \
+    && npm cache clean
+
+WORKDIR /code
+# /Admin: Assets
+
 
 # Copy the rest of the code over
 COPY ./ /code/

@@ -1,7 +1,7 @@
+from django.db import IntegrityError
 from rest_framework import serializers as ser
 from rest_framework import exceptions
 from framework.exceptions import PermissionsError
-from website.exceptions import NodeStateError
 
 from website.models import Node
 from osf.models import Collection
@@ -85,7 +85,7 @@ class CollectionSerializer(JSONAPISerializer):
             node.save()
         except ValidationError as e:
             raise InvalidModelValueError(detail=e.messages[0])
-        except NodeStateError:
+        except IntegrityError:
             raise ser.ValidationError('Each user cannot have more than one Bookmark collection.')
         return node
 

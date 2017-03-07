@@ -6,7 +6,7 @@ import pytest
 from addons.base.tests.serializers import StorageAddonSerializerTestSuiteMixin
 from addons.figshare.tests.factories import FigshareAccountFactory
 from tests.base import OsfTestCase
-from website.addons.figshare.serializer import FigshareSerializer
+from addons.figshare.serializer import FigshareSerializer
 
 
 pytestmark = pytest.mark.django_db

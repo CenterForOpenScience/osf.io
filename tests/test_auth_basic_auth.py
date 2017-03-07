@@ -8,7 +8,7 @@ from django.utils import timezone
 from nose.tools import *  # noqa PEP8 asserts
 from datetime import timedelta
 
-from website.addons.twofactor.tests import _valid_code
+from addons.twofactor.tests import _valid_code
 from website import settings
 
 from tests.base import OsfTestCase

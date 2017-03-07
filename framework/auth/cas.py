@@ -5,7 +5,6 @@ import httplib as http
 import json
 import urllib
 
-from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
 from lxml import etree
 import requests
 
@@ -314,16 +313,15 @@ def make_response_from_ticket(ticket, service_url):
 def get_user_from_cas_resp(cas_resp):
     """
     Given a CAS service validation response, attempt to retrieve user information and next action.
+    The `user` in `cas_resp` is the unique GUID of the user. Please do not use the primary key `id`
+    or the email `username`. This holds except for the first step of ORCiD login.
 
     :param cas_resp: the cas service validation response
     :return: the user, the external_credential, and the next action
     """
 
     if cas_resp.user:
-        try:
-            user = User.objects.get(pk=cas_resp.user)
-        except(ObjectDoesNotExist, MultipleObjectsReturned, ValueError):
-            user = None
+        user = User.objects.filter(guids___id=cas_resp.user).first()
         # cas returns a valid OSF user id
         if user:
             return user, None, 'authenticate'

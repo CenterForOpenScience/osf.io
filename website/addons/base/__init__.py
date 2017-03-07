@@ -20,7 +20,6 @@ from framework.exceptions import (
     HTTPError,
 )
 from framework.mongo import StoredObject
-from framework.routing import process_rules
 
 from website import settings
 from website.addons.base import serializer, logger
@@ -76,13 +75,25 @@ class AddonConfig(object):
         self.models = models
         self.settings_models = {}
 
-        if node_settings_model:
-            node_settings_model.config = self
-            self.settings_models['node'] = node_settings_model
+        if settings.USE_POSTGRES:
+            from django.apps import apps
+            try:
+                app = apps.get_app_config('addons_{}'.format(short_name))
+            except LookupError:
+                app = None
 
-        if user_settings_model:
-            user_settings_model.config = self
-            self.settings_models['user'] = user_settings_model
+            if app and app.node_settings:
+                self.settings_models['node'] = app.node_settings
+
+            if app and app.user_settings:
+                self.settings_models['user'] = app.user_settings
+        else:
+            if node_settings_model:
+                node_settings_model.config = self
+                self.settings_models['node'] = node_settings_model
+            if user_settings_model:
+                user_settings_model.config = self
+                self.settings_models['user'] = user_settings_model
 
         self.short_name = short_name
         self.full_name = full_name
@@ -218,6 +229,38 @@ class AddonConfig(object):
     def path(self):
         return os.path.join(settings.BASE_PATH, self.short_name)
 
+# NOTE: This only exists for the modm -> django migration
+# TODO: Delete this after the migration
+def init_addon(app, addon_name, routes=True):
+    """Load addon module return its create configuration object.
+
+    If `log_fp` is provided, the addon's log templates will be appended
+    to the file.
+
+    :param app: Flask app object
+    :param addon_name: Name of addon directory
+    :param file log_fp: File pointer for the built logs file.
+    :param bool routes: Add routes
+    :return AddonConfig: AddonConfig configuration object if module found,
+        else None
+
+    """
+    import_path = 'website.addons.{0}'.format(addon_name)
+
+    # Import addon module
+    addon_module = importlib.import_module(import_path)
+
+    data = vars(addon_module)
+    data['description'] = settings.ADDONS_DESCRIPTION.get(addon_name, '')
+    data['url'] = settings.ADDONS_URL.get(addon_name, None)
+
+    # Build AddonConfig object
+    return AddonConfig(
+        **{
+            key.lower(): value
+            for key, value in data.iteritems()
+        }
+    )
 
 class AddonSettingsBase(StoredObject):
 
@@ -769,6 +812,7 @@ class StorageAddonBase(object):
             kwargs['version'] = version
         metadata_url = waterbutler_url_for(
             'metadata',
+            _internal=True,
             **kwargs
         )
         res = requests.get(metadata_url)
@@ -1042,41 +1086,3 @@ class AddonOAuthNodeSettingsBase(AddonNodeSettingsBase):
         raise NotImplementedError(
             "AddonOAuthNodeSettingsBase subclasses must implement a 'serialize_waterbutler_settings' method."
         )
-
-
-# TODO: No more magicks
-def init_addon(app, addon_name, routes=True):
-    """Load addon module return its create configuration object.
-
-    If `log_fp` is provided, the addon's log templates will be appended
-    to the file.
-
-    :param app: Flask app object
-    :param addon_name: Name of addon directory
-    :param file log_fp: File pointer for the built logs file.
-    :param bool routes: Add routes
-    :return AddonConfig: AddonConfig configuration object if module found,
-        else None
-
-    """
-    import_path = 'website.addons.{0}'.format(addon_name)
-
-    # Import addon module
-    addon_module = importlib.import_module(import_path)
-
-    data = vars(addon_module)
-    data['description'] = settings.ADDONS_DESCRIPTION.get(addon_name, '')
-    data['url'] = settings.ADDONS_URL.get(addon_name, None)
-
-    # Add routes
-    if routes:
-        for route_group in getattr(addon_module, 'ROUTES', []):
-            process_rules(app, **route_group)
-
-    # Build AddonConfig object
-    return AddonConfig(
-        **{
-            key.lower(): value
-            for key, value in data.iteritems()
-        }
-    )

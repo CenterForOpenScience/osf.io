@@ -7,7 +7,7 @@ from addons.base.tests.serializers import StorageAddonSerializerTestSuiteMixin
 from addons.box.tests.utils import MockBox
 from addons.box.tests.factories import BoxAccountFactory
 from tests.base import OsfTestCase
-from website.addons.box.serializer import BoxSerializer
+from addons.box.serializer import BoxSerializer
 
 mock_client = MockBox()
 pytestmark = pytest.mark.django_db

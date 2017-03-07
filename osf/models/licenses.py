@@ -3,8 +3,8 @@ import functools
 
 from django.contrib.postgres.fields import ArrayField
 from django.db import models
+from osf.models.base import BaseModel, ObjectIDMixin
 
-from osf.models.base import ObjectIDMixin, BaseModel
 
 def _serialize(fields, instance):
     return {
@@ -12,7 +12,7 @@ def _serialize(fields, instance):
         for field in fields
     }
 
-serialize_node_license = functools.partial(_serialize, ('id', 'name', 'text'))
+serialize_node_license = functools.partial(_serialize, ('_id', 'name', 'text'))
 
 def serialize_node_license_record(node_license_record):
     if node_license_record is None:
@@ -26,6 +26,9 @@ class NodeLicense(ObjectIDMixin, BaseModel):
     # TODO DELETE ME POST MIGRATION
     modm_model_path = 'website.project.licenses.NodeLicense'
     modm_query = None
+    FIELD_ALIASES = {
+        'id': 'license_id'
+    }
     # /TODO DELETE ME POST MIGRATION
     license_id = models.CharField(max_length=128, null=False, unique=True)
     name = models.CharField(max_length=256, null=False, unique=True)

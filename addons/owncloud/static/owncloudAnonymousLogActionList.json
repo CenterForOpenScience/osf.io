@@ -1,0 +1,10 @@
+{
+    "owncloud_file_added" : "A user added a file to ownCloud in a project",
+    "owncloud_file_removed" : "A user removed a file from ownCloud in a project",
+    "owncloud_file_updated" : "A user updated a file in ownCloud in a project",
+    "owncloud_folder_created" : "A user created a folder in ownCloud in a project",
+    "owncloud_folder_selected" : "A user linked a ownCloud folder in a project",
+    "owncloud_node_authorized" : "A user authorized the ownCloud addon for a project",
+    "owncloud_node_deauthorized" : "A user deauthorized the ownCloud addon for a project",
+    "owncloud_node_deauthorized_no_user" : "ownCloud addon for a project deauthorized"
+}

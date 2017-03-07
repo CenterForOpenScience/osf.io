@@ -9,7 +9,7 @@ from website.notifications.events.files import (
     AddonFileCopied, AddonFileMoved, AddonFileRenamed,
 )
 from website.notifications.events import utils
-from website.addons.base import signals
+from addons.base import signals
 from framework.auth import Auth
 from osf_tests import factories
 from tests.base import OsfTestCase, NotificationTestCase

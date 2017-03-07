@@ -1,24 +1,24 @@
 import os
-from addons.base.apps import BaseAddonConfig
+from addons.base.apps import BaseAddonAppConfig
 
-from website.addons.github.views import github_hgrid_data
-from website import settings
+from addons.github.views import github_hgrid_data
 
+HERE = os.path.dirname(os.path.abspath(__file__))
 NODE_SETTINGS_TEMPLATE = os.path.join(
-    settings.BASE_PATH,
-    'addons',
-    'github',
+    HERE,
     'templates',
     'github_node_settings.mako',
 )
 
-class GitHubAddonConfig(BaseAddonConfig):
+class GitHubAddonConfig(BaseAddonAppConfig):
 
     name = 'addons.github'
     label = 'addons_github'
     full_name = 'GitHub'
     short_name = 'github'
     configs = ['accounts', 'node']
+    categories = ['storage']
+    owners = ['user', 'node']
     has_hgrid_files = True
     max_file_size = 100  # MB
     node_settings_template = NODE_SETTINGS_TEMPLATE
@@ -45,6 +45,11 @@ class GitHubAddonConfig(BaseAddonConfig):
         NODE_DEAUTHORIZED,
         NODE_DEAUTHORIZED_NO_USER,
         REPO_LINKED)
+
+    @property
+    def routes(self):
+        from . import routes
+        return [routes.api_routes]
 
     @property
     def user_settings(self):
