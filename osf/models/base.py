@@ -111,7 +111,7 @@ class BaseModel(models.Model):
     @classmethod
     def get_fk_field_names(cls):
         return [field.name for field in cls._meta.get_fields() if
-                    field.is_relation and not field.auto_created and (field.many_to_one or field.one_to_one)]
+                    field.is_relation and not field.auto_created and (field.many_to_one or field.one_to_one) and not isinstance(field, GenericForeignKey)]
 
     @classmethod
     def get_m2m_field_names(cls):
