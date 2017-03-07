@@ -15,7 +15,7 @@ from api.cas.permissions import IsCasAuthentication
 
 from framework.auth.oauth_scopes import CoreScopes
 
-from osf.models import ApiOAuth2Application, ApiOAuth2PersonalToken, ApiOAuth2Scope, OSFUser
+from osf.models import ApiOAuth2Application, ApiOAuth2PersonalToken, ApiOAuth2Scope, Institution, OSFUser
 
 
 class CasLogin(JSONAPIBaseView, generics.CreateAPIView):
@@ -193,7 +193,7 @@ class CasDeveloperApplications(JSONAPIBaseView, generics.CreateAPIView):
         data = json.loads(payload['data'])
 
         service_type = data.get('serviceType')
-        if not service_type or service_type != 'oAuthApplications':
+        if not service_type or service_type != 'OAUTH_APPLICATIONS':
             raise AuthenticationFailed(detail=util.INVALID_REQUEST_BODY)
 
         oauth_applications = ApiOAuth2Application.objects.filter(is_active=True)
@@ -217,5 +217,33 @@ class CasInstitutions(JSONAPIBaseView, generics.CreateAPIView):
     view_category = 'cas'
     view_name = 'cas-institutions'
 
+    serializer_class = JSONAPISerializer
+    permission_classes = ()
+    authentication_classes = ()
+
     def post(self, request, *args, **kwargs):
-        raise AuthenticationFailed(detail=util.API_NOT_IMPLEMENTED)
+
+        payload = util.decrypt_payload(request.body)
+        data = json.loads(payload['data'])
+
+        service_type = data.get('serviceType')
+        if not service_type or service_type != 'INSTITUTIONS':
+            raise AuthenticationFailed(detail=util.INVALID_REQUEST_BODY)
+
+        institutions = Institution.objects\
+            .exclude(delegation_protocol__isnull=True)\
+            .exclude(delegation_protocol__exact='')
+
+        content = {}
+        for institution in institutions:
+            key = institution._id
+            value = {
+                'institutionName': institution.name,
+                'institutionLoginUrl': institution.login_url if institution.login_url else '',
+                'institutionLogoutUrl': institution.logout_url,
+                # delegation protocol not supported yet
+                # 'delegationProtocol': institution.delegation_protocol,
+            }
+            content.update({key: value})
+
+        return Response(content)
