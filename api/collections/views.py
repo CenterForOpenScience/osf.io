@@ -28,7 +28,7 @@ from api.nodes.permissions import (
 )
 
 from website.exceptions import NodeStateError
-from osf.models import Collection, Node, NodeRelation
+from osf.models import Collection, NodeRelation
 from website.util.permissions import ADMIN
 
 
