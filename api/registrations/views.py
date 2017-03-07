@@ -32,6 +32,8 @@ from api.registrations.serializers import (
     RegistrationProviderSerializer
 )
 
+from api.nodes.filters import NodesListFilterMixin
+
 from api.nodes.views import (
     NodeMixin, ODMFilterMixin, NodeRegistrationsList,
     NodeCommentsList, NodeProvidersList, NodeFilesList, NodeFileDetail,
@@ -70,7 +72,7 @@ class RegistrationMixin(NodeMixin):
         return node
 
 
-class RegistrationList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
+class RegistrationList(JSONAPIBaseView, generics.ListAPIView, NodesListFilterMixin):
     """Node Registrations.
 
     Registrations are read-only snapshots of a project. This view is a list of all current registrations for which a user

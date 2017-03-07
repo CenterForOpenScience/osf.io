@@ -1,10 +1,18 @@
 from nose.tools import *  # flake8: noqa
 
 from tests.base import ApiTestCase
-from osf_tests.factories import InstitutionFactory, AuthUserFactory, RegistrationFactory, WithdrawnRegistrationFactory
+from osf_tests.factories import (
+    AuthUserFactory,
+    InstitutionFactory,
+    NodeFactory,
+    ProjectFactory,
+    RegistrationFactory,
+    WithdrawnRegistrationFactory
+)
 
 from framework.auth import Auth
 from api.base.settings.defaults import API_BASE
+from api_tests.registrations.filters.test_filters import RegistrationListFilteringMixin
 
 class TestInstitutionRegistrationList(ApiTestCase):
     def setUp(self):
@@ -69,3 +77,36 @@ class TestInstitutionRegistrationList(ApiTestCase):
         ids = [each['id'] for each in res.json['data']]
 
         assert_not_in(self.registration2._id, ids)
+
+
+class TestRegistrationListFiltering(RegistrationListFilteringMixin, ApiTestCase):
+
+    def _setUp(self):
+        self.user = AuthUserFactory()
+        self.institution = InstitutionFactory()
+
+        self.A = ProjectFactory(creator=self.user)
+        self.B1 = NodeFactory(parent=self.A, creator=self.user)
+        self.B2 = NodeFactory(parent=self.A, creator=self.user)
+        self.C1 = NodeFactory(parent=self.B1, creator=self.user)
+        self.C2 = NodeFactory(parent=self.B2, creator=self.user)
+        self.D2 = NodeFactory(parent=self.C2, creator=self.user)
+
+        self.A.affiliated_institutions.add(self.institution)
+        self.B1.affiliated_institutions.add(self.institution)
+        self.B2.affiliated_institutions.add(self.institution)
+        self.C1.affiliated_institutions.add(self.institution)
+        self.C2.affiliated_institutions.add(self.institution)
+        self.D2.affiliated_institutions.add(self.institution)
+
+        self.A.save()
+        self.B1.save()
+        self.B2.save()
+        self.C1.save()
+        self.C2.save()
+        self.D2.save()
+
+        self.node_A = RegistrationFactory(project=self.A, creator=self.user)
+        self.node_B2 = RegistrationFactory(project=self.B2, creator=self.user)
+
+        self.url = '/{}registrations/?'.format(API_BASE)

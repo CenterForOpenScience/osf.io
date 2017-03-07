@@ -13,8 +13,8 @@ from website.views import find_bookmark_collection
 from framework.auth.core import Auth, Q
 from api.base.settings.defaults import API_BASE
 
+from api_tests.registrations.filters.test_filters import RegistrationListFilteringMixin
 from api_tests.nodes.views.test_node_draft_registration_list import DraftRegistrationTestCase
-
 
 from tests.base import ApiTestCase
 from osf_tests.factories import (
@@ -23,7 +23,8 @@ from osf_tests.factories import (
     AuthUserFactory,
     CollectionFactory,
     BookmarkCollectionFactory,
-    DraftRegistrationFactory
+    DraftRegistrationFactory,
+    NodeFactory
 )
 
 
@@ -833,3 +834,21 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
             res = self.app.post_json_api(self.url, self.payload, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
         assert_equal(res.json['errors'][0]['detail'], 'This draft has already been approved and cannot be modified.')
+
+
+class TestRegistrationListFiltering(RegistrationListFilteringMixin, ApiTestCase):
+
+    def _setUp(self):
+        self.user = AuthUserFactory()
+
+        self.A = ProjectFactory(creator=self.user)
+        self.B1 = NodeFactory(parent=self.A, creator=self.user)
+        self.B2 = NodeFactory(parent=self.A, creator=self.user)
+        self.C1 = NodeFactory(parent=self.B1, creator=self.user)
+        self.C2 = NodeFactory(parent=self.B2, creator=self.user)
+        self.D2 = NodeFactory(parent=self.C2, creator=self.user)
+
+        self.node_A = RegistrationFactory(project=self.A, creator=self.user)
+        self.node_B2 = RegistrationFactory(project=self.B2, creator=self.user)
+
+        self.url = '/{}registrations/?'.format(API_BASE)
