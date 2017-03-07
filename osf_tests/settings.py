@@ -1,4 +1,5 @@
 # Use API defaults. This allows these settings to work with API tests
+import uuid
 from api.base.settings.defaults import *  # noqa
 
 DEBUG_PROPAGATE_EXCEPTIONS = True
@@ -30,3 +31,5 @@ REST_FRAMEWORK['ALLOWED_VERSIONS'] = (
         '3.0',
         '3.0.1',
     )
+
+ELASTIC_INDEX = 'website-{}'.format(uuid.uuid4().hex)
