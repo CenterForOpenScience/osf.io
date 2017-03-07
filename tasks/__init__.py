@@ -515,7 +515,7 @@ def requirements(ctx, base=False, addons=False, release=False, dev=False, quick=
     ctx.run('pip install --no-cache-dir uritemplate.py==0.3.0')
 
 @task
-def test_module(ctx, module=None, numprocesses=None):
+def test_module(ctx, module=None, numprocesses=None, params=None):
     """Helper for running tests.
     """
     os.environ['DJANGO_SETTINGS_MODULE'] = 'osf_tests.settings'
@@ -530,8 +530,10 @@ def test_module(ctx, module=None, numprocesses=None):
         args += ['-n {}'.format(numprocesses)]
     modules = [module] if isinstance(module, basestring) else module
     args.extend(modules)
+    if params:
+        params = [params] if isinstance(params, basestring) else params
+        args.extend(params)
     retcode = pytest.main(args)
-    sys.exit(retcode)
 
 # TODO: Add to this list when more modules are ported for djangosf compat
 OSF_TESTS = [
@@ -615,6 +617,10 @@ def test_osf(ctx, numprocesses=None):
     """Run the OSF test suite."""
     test_module(ctx, module=OSF_TESTS, numprocesses=numprocesses)
 
+
+def test_else(ctx, numprocesses=None):
+    """Run the API test suite."""
+    test_module(ctx, module=ELSE_TESTS, numprocesses=numprocesses, params=['--ignore=tests/test_registrations/test_archiver.py'])
 
 @task
 def test_api1(ctx, numprocesses=None):
