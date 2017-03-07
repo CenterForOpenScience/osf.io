@@ -12,7 +12,6 @@ from osf_tests.factories import (
     RegistrationFactory,
 )
 
-from api.base.exceptions import InvalidFilterValue
 from api.base.settings.defaults import API_BASE
 from api_tests.nodes.filters.test_filters import NodesListFilteringMixin
 
