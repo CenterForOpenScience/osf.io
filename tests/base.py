@@ -7,6 +7,7 @@ import logging
 import os
 import re
 import shutil
+import tempfile
 import unittest
 
 import blinker
@@ -205,30 +206,6 @@ class ApiAppTestCase(unittest.TestCase):
         self.app = JSONAPITestApp()
 
 
-class UploadTestCase(unittest.TestCase):
-
-    @classmethod
-    def setUpClass(cls):
-        """Store uploads in temp directory.
-        """
-        super(UploadTestCase, cls).setUpClass()
-        cls._old_uploads_path = settings.UPLOADS_PATH
-        cls._uploads_path = os.path.join('/tmp', 'osf', 'uploads')
-        try:
-            os.makedirs(cls._uploads_path)
-        except OSError:  # Path already exists
-            pass
-        settings.UPLOADS_PATH = cls._uploads_path
-
-    @classmethod
-    def tearDownClass(cls):
-        """Restore uploads path.
-        """
-        super(UploadTestCase, cls).tearDownClass()
-        shutil.rmtree(cls._uploads_path)
-        settings.UPLOADS_PATH = cls._old_uploads_path
-
-
 methods = [
     httpretty.GET,
     httpretty.PUT,
@@ -269,7 +246,7 @@ class MockRequestTestCase(unittest.TestCase):
         httpretty.disable()
 
 
-class OsfTestCase(DbTestCase, AppTestCase, UploadTestCase, MockRequestTestCase):
+class OsfTestCase(DbTestCase, AppTestCase, MockRequestTestCase):
     """Base `TestCase` for tests that require both scratch databases and the OSF
     application. Note: superclasses must call `super` in order for all setup and
     teardown methods to be called correctly.
@@ -277,7 +254,7 @@ class OsfTestCase(DbTestCase, AppTestCase, UploadTestCase, MockRequestTestCase):
     pass
 
 
-class ApiTestCase(DbTestCase, ApiAppTestCase, UploadTestCase, MockRequestTestCase):
+class ApiTestCase(DbTestCase, ApiAppTestCase, MockRequestTestCase):
     """Base `TestCase` for tests that require both scratch databases and the OSF
     API application. Note: superclasses must call `super` in order for all setup and
     teardown methods to be called correctly.
@@ -367,7 +344,7 @@ class ApiAddonTestCase(ApiTestCase):
             self.account.remove()
 
 
-class AdminTestCase(DbTestCase, DjangoTestCase, UploadTestCase, MockRequestTestCase):
+class AdminTestCase(DbTestCase, DjangoTestCase, MockRequestTestCase):
     pass
 
 
