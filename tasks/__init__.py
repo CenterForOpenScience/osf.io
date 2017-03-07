@@ -515,12 +515,15 @@ def requirements(ctx, base=False, addons=False, release=False, dev=False, quick=
     ctx.run('pip install --no-cache-dir uritemplate.py==0.3.0')
 
 @task
-def test_module(ctx, module=None):
+def test_module(ctx, module=None, numprocesses=None):
     """Helper for running tests.
     """
     os.environ['DJANGO_SETTINGS_MODULE'] = 'osf_tests.settings'
     import pytest
-    args = ['-s']
+    if not numprocesses:
+        from multiprocessing import cpu_count
+        numprocesses = cpu_count()
+    args = ['-s', '-n {}'.format(numprocesses)]
     modules = [module] if isinstance(module, basestring) else module
     args.extend(modules)
     retcode = pytest.main(args)
@@ -564,9 +567,9 @@ CORE_TESTS = [
     'tests/test_registrations/test_views.py',
 ]
 @task
-def test_osf(ctx):
+def test_osf(ctx, numprocesses=None):
     """Run the OSF test suite."""
-    test_module(ctx, module=CORE_TESTS)
+    test_module(ctx, module=CORE_TESTS, numprocesses=numprocesses)
 
 
 ELSE_TESTS = [
@@ -603,21 +606,21 @@ API_TESTS3 = [
 ]
 
 @task
-def test_else(ctx):
+def test_else(ctx, numprocesses=None):
     """Run the API test suite."""
-    test_module(ctx, module=ELSE_TESTS)
+    test_module(ctx, module=ELSE_TESTS, numprocesses=numprocesses)
 @task
-def test_api1(ctx):
+def test_api1(ctx, numprocesses=None):
     """Run the API test suite."""
-    test_module(ctx, module=API_TESTS1)
+    test_module(ctx, module=API_TESTS1, numprocesses=numprocesses)
 @task
-def test_api2(ctx):
+def test_api2(ctx, numprocesses=None):
     """Run the API test suite."""
-    test_module(ctx, module=API_TESTS2)
+    test_module(ctx, module=API_TESTS2, numprocesses=numprocesses)
 @task
-def test_api3(ctx):
+def test_api3(ctx, numprocesses=None):
     """Run the API test suite."""
-    test_module(ctx, module=API_TESTS3)
+    test_module(ctx, module=API_TESTS3, numprocesses=numprocesses)
 
 
 @task
@@ -661,6 +664,9 @@ def test(ctx, all=False, syntax=False):
 
     test_osf(ctx)
     test_else(ctx)
+    # test_api1(ctx)
+    # test_api2(ctx)
+    # test_api3(ctx)
     # TODO: Enable admin tests
     # test_admin(ctx)
 
@@ -682,38 +688,38 @@ def test_js(ctx):
 
 
 @task
-def test_travis_osf(ctx):
+def test_travis_osf(ctx, numprocesses=None):
     """
     Run half of the tests to help travis go faster. Lints and Flakes happen everywhere to keep from wasting test time.
     """
     flake(ctx)
     jshint(ctx)
-    test_osf(ctx)
-    test_addons(ctx)
-    test_osf_models(ctx)
+    test_osf(ctx, numprocesses=numprocesses)
+    test_addons(ctx, numprocesses=numprocesses)
+    test_osf_models(ctx, numprocesses=numprocesses)
 
 @task
-def test_travis_else(ctx):
+def test_travis_else(ctx, numprocesses=None):
     """
     Run other half of the tests to help travis go faster. Lints and Flakes happen everywhere to keep from
     wasting test time.
     """
     flake(ctx)
     jshint(ctx)
-    test_else(ctx)
-    test_admin(ctx)
+    test_else(ctx, numprocesses=numprocesses)
+    test_admin(ctx, numprocesses=numprocesses)
 
 @task
-def test_travis_api1(ctx):
-    test_api1(ctx)
+def test_travis_api1(ctx, numprocesses=None):
+    test_api1(ctx, numprocesses=numprocesses)
 
 @task
-def test_travis_api2(ctx):
-    test_api2(ctx)
+def test_travis_api2(ctx, numprocesses=None):
+    test_api2(ctx, numprocesses=numprocesses)
 
 @task
-def test_travis_api3(ctx):
-    test_api3(ctx)
+def test_travis_api3(ctx, numprocesses=None):
+    test_api3(ctx, numprocesses=numprocesses)
 
 @task
 def test_travis_varnish(ctx):
