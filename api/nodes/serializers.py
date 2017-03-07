@@ -368,7 +368,6 @@ class NodeSerializer(JSONAPISerializer):
 
             return int(cursor.fetchone()[0])
 
-
     def get_contrib_count(self, obj):
         return len(obj.contributors)
 
