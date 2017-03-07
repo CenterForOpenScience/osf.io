@@ -3,7 +3,6 @@
 import httplib as http
 
 from flask import request
-from modularodm import Q
 from modularodm.exceptions import ValidationError, ValidationValueError
 
 from framework import forms, status
@@ -567,7 +566,7 @@ def find_preprint_provider(node):
     """
 
     try:
-        preprint = PreprintService.find_one(Q('node', 'eq', node._id))
+        preprint = PreprintService.objects.get(node=node)
         provider = preprint.provider
         if provider._id == 'osf':
             return 'osf', provider.name

@@ -169,7 +169,7 @@ class BaseRegistrationSerializer(NodeSerializer):
 
     preprints = HideIfWithdrawal(HideIfRegistration(RelationshipField(
         related_view='nodes:node-preprints',
-        related_view_kwargs={'node_id': '<pk>'}
+        related_view_kwargs={'node_id': '<_id>'}
     )))
 
     identifiers = HideIfWithdrawal(RelationshipField(
@@ -210,8 +210,8 @@ class BaseRegistrationSerializer(NodeSerializer):
     def get_node_links_count(self, obj):
         count = 0
         auth = get_user_auth(self.context['request'])
-        for pointer in obj.nodes_pointer:
-            if not pointer.node.is_deleted and not pointer.node.is_collection and pointer.node.can_view(auth):
+        for node in obj.nodes_pointer:
+            if not node.is_deleted and not node.is_collection and node.can_view(auth):
                 count += 1
         return count
 
@@ -280,6 +280,8 @@ class BaseRegistrationSerializer(NodeSerializer):
                 registration.update(validated_data)
             except NodeUpdateError as err:
                 raise exceptions.ValidationError(err.reason)
+            except NodeStateError as err:
+                raise exceptions.ValidationError(err.message)
         else:
             raise exceptions.ValidationError('Registrations can only be turned from private to public.')
         return registration

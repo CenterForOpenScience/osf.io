@@ -9,6 +9,7 @@ from framework.auth.core import Auth
 from website.models import Node, NodeLog
 from website.util import permissions
 from website.util.sanitize import strip_html
+from website.views import find_bookmark_collection
 
 from api.base.settings.defaults import API_BASE, MAX_PAGE_SIZE
 
@@ -114,7 +115,6 @@ class TestNodeList(ApiTestCase):
             assert_equal(project_json['embeds']['root']['data']['id'], project.root._id)
 
 
-
 class TestNodeFiltering(ApiTestCase):
 
     def setUp(self):
@@ -131,7 +131,7 @@ class TestNodeFiltering(ApiTestCase):
                                                        is_public=False,
                                                        creator=self.user_two)
         self.folder = CollectionFactory()
-        self.bookmark_collection = BookmarkCollectionFactory()
+        self.bookmark_collection = find_bookmark_collection(self.user_one)
 
         self.url = "/{}nodes/".format(API_BASE)
 
@@ -259,6 +259,91 @@ class TestNodeFiltering(ApiTestCase):
         assert_not_in(self.project_one._id, ids)
         assert_not_in(self.project_two._id, ids)
         assert_in(project_no_tag._id, ids)
+
+    def test_filtering_tags_exact(self):
+        self.project_one.add_tag('cats', Auth(self.user_one))
+        self.project_two.add_tag('cats', Auth(self.user_one))
+        self.project_one.add_tag('cat', Auth(self.user_one))
+        res = self.app.get(
+            '/{}nodes/?filter[tags]=cat'.format(
+                API_BASE
+            ),
+            auth=self.user_one.auth
+        )
+        assert_equal(len(res.json.get('data')), 1)
+
+    def test_filtering_tags_capitalized_query(self):
+        self.project_one.add_tag('cat', Auth(self.user_one))
+        res = self.app.get(
+            '/{}nodes/?filter[tags]=CAT'.format(
+                API_BASE
+            ),
+            auth=self.user_one.auth
+        )
+        assert_equal(len(res.json.get('data')), 1)
+
+    def test_filtering_tags_capitalized_tag(self):
+        self.project_one.add_tag('CAT', Auth(self.user_one))
+        res = self.app.get(
+            '/{}nodes/?filter[tags]=cat'.format(
+                API_BASE
+            ),
+            auth=self.user_one.auth
+        )
+        assert_equal(len(res.json.get('data')), 1)
+
+    def test_filtering_on_multiple_tags(self):
+        self.project_one.add_tag('cat', Auth(self.user_one))
+        self.project_one.add_tag('sand', Auth(self.user_one))
+        res = self.app.get(
+            '/{}nodes/?filter[tags]=cat&filter[tags]=sand'.format(
+                API_BASE
+            ),
+            auth=self.user_one.auth
+        )
+        assert_equal(len(res.json.get('data')), 1)
+
+    def test_filtering_on_multiple_tags_must_match_both(self):
+        self.project_one.add_tag('cat', Auth(self.user_one))
+        res = self.app.get(
+            '/{}nodes/?filter[tags]=cat&filter[tags]=sand'.format(
+                API_BASE
+            ),
+            auth=self.user_one.auth
+        )
+        assert_equal(len(res.json.get('data')), 0)
+
+    def test_filtering_tags_returns_distinct(self):
+       # regression test for returning multiple of the same file
+        self.project_one.add_tag('cat', Auth(self.user_one))
+        self.project_one.add_tag('cAt', Auth(self.user_one))
+        self.project_one.add_tag('caT', Auth(self.user_one))
+        self.project_one.add_tag('CAT', Auth(self.user_one))
+        res = self.app.get(
+            '/{}nodes/?filter[tags]=cat'.format(
+                API_BASE
+            ),
+            auth=self.user_one.auth
+        )
+        assert_equal(len(res.json.get('data')), 1)
+
+    def test_filtering_contributors(self):
+        res = self.app.get(
+            '/{}nodes/?filter[contributors]={}'.format(
+                API_BASE, self.user_one._id
+            ),
+            auth=self.user_one.auth
+        )
+        assert_equal(len(res.json.get('data')), 2)
+
+    def test_filtering_contributors_bad_id(self):
+        res = self.app.get(
+            '/{}nodes/?filter[contributors]=acatdresseduplikeahuman'.format(
+                API_BASE
+            ),
+            auth=self.user_one.auth
+        )
+        assert_equal(len(res.json.get('data')), 0)
 
     def test_get_all_projects_with_no_filter_logged_in(self):
         res = self.app.get(self.url, auth=self.user_one.auth)
@@ -546,6 +631,67 @@ class TestNodeFiltering(ApiTestCase):
         assert_not_in(self.project_two._id, ids)
         assert_not_in(self.project_three._id, ids)
 
+    def test_deleted_preprint_file_not_in_filtered_results(self):
+        orphan = PreprintFactory(creator=self.preprint.node.creator)
+
+        # orphan the preprint by deleting the file
+        orphan.primary_file.delete()
+        orphan.save()
+
+        url = '/{}nodes/?filter[preprint]=true'.format(API_BASE)
+        res = self.app.get(url, auth=self.user_one.auth)
+        assert_equal(res.status_code, 200)
+        data = res.json['data']
+
+        ids = [each['id'] for each in data]
+
+        assert_in(self.preprint.node._id, ids)
+        assert_not_in(orphan.node._id, ids)
+
+    def test_deleted_preprint_file_in_preprint_false_filtered_results(self):
+        orphan = PreprintFactory(creator=self.preprint.node.creator)
+
+        # orphan the preprint by deleting the file
+        orphan.primary_file.delete()
+        orphan.save()
+        orphan.refresh_from_db()
+
+        url = '/{}nodes/?filter[preprint]=false'.format(API_BASE)
+        res = self.app.get(url, auth=self.user_one.auth)
+        assert_equal(res.status_code, 200)
+        data = res.json['data']
+
+        ids = [each['id'] for each in data]
+
+        assert_not_in(self.preprint.node._id, ids)
+        assert_in(orphan.node._id, ids)
+
+    def test_unpublished_preprint_not_in_preprint_true_filter_results(self):
+        unpublished = PreprintFactory(creator=self.preprint.node.creator, is_published=False)
+        assert_false(unpublished.is_published)
+
+        url = '/{}nodes/?filter[preprint]=true'.format(API_BASE)
+        res = self.app.get(url, auth=self.user_one.auth)
+        assert_equal(res.status_code, 200)
+        data = res.json['data']
+        ids = [each['id'] for each in data]
+
+        assert_in(self.preprint.node._id, ids)
+        assert_not_in(unpublished.node._id, ids)
+
+    def test_unpublished_preprint_in_preprint_false_filter_results(self):
+        unpublished = PreprintFactory(creator=self.preprint.node.creator, is_published=False)
+        assert_false(unpublished.is_published)
+
+        url = '/{}nodes/?filter[preprint]=false'.format(API_BASE)
+        res = self.app.get(url, auth=self.user_one.auth)
+        assert_equal(res.status_code, 200)
+        data = res.json['data']
+        ids = [each['id'] for each in data]
+
+        assert_not_in(self.preprint.node._id, ids)
+        assert_in(unpublished.node._id, ids)
+
 
 class TestNodeCreate(ApiTestCase):
 
@@ -649,8 +795,8 @@ class TestNodeCreate(ApiTestCase):
         assert_equal(new_project.title, templated_project_title)
         assert_equal(new_project.description, '')
         assert_false(new_project.is_public)
-        assert_equal(new_project.nodes.count(), template_from.nodes.count())
-        assert_equal(new_project.nodes.first().title, template_component.title)
+        assert_equal(len(new_project.nodes), len(template_from.nodes))
+        assert_equal(new_project.nodes[0].title, template_component.title)
 
     def test_404_on_create_from_template_of_nonexistent_project(self):
         template_from_id = 'thisisnotavalidguid'

@@ -210,7 +210,7 @@ def archive_addon(addon_short_name, job_pk, stat_result):
     src_provider = src.get_addon(addon_name)
     folder_name = src_provider.archive_folder_name
     cookie = user.get_or_create_cookie()
-    copy_url = settings.WATERBUTLER_URL + '/ops/copy'
+    copy_url = settings.WATERBUTLER_INTERNAL_URL + '/ops/copy'
     if addon_name == 'dataverse':
         # The dataverse API will not differentiate between published and draft files
         # unless expcicitly asked. We need to create seperate folders for published and

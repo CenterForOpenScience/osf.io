@@ -174,7 +174,7 @@ class RegistrationList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
     def get_queryset(self):
         query = self.get_query_from_request()
         blacklisted = self.is_blacklisted(query)
-        nodes = Node.find(query)
+        nodes = Node.find(query).distinct()
         # If attempting to filter on a blacklisted field, exclude withdrawals.
         if blacklisted:
             non_withdrawn_list = [node._id for node in nodes if not node.is_retracted]
@@ -192,7 +192,11 @@ class RegistrationList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
         if field_name == 'tags':
             if operation['value'] not in (list(), tuple()):
                 operation['source_field_name'] = 'tags__name'
-
+                operation['op'] = 'iexact'
+        if field_name == 'contributors':
+            if operation['value'] not in (list(), tuple()):
+                operation['source_field_name'] = '_contributors__guids___id'
+                operation['op'] = 'iexact'
 
 class RegistrationDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, RegistrationMixin, WaterButlerMixin):
     """Node Registrations.

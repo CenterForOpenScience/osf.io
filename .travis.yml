@@ -18,7 +18,7 @@ env:
     - PROJECT_DIR="$PWD"
     - WHEELHOUSE="$HOME/.cache/wheelhouse"
     - LIBXML2_DEB="libxml2_2.7.8.dfsg-5.1ubuntu4.15_amd64.deb"
-    - POSTGRES_DEB="postgresql-9.5_9.5.5-1.pgdg12.4+1_amd64.deb"
+    - POSTGRES_DEB="postgresql-9.6_9.6.2-1.pgdg12.4+1_amd64.deb"
     - ELASTICSEARCH_ARCHIVE="elasticsearch-1.5.0.tar.gz"
     - LIBJEMALLOC_DEB="libjemalloc1_3.5.1-2_amd64.deb"
     - LIBPCRE_DEB="libpcre3_8.31-2ubuntu2.3_amd64.deb"
@@ -47,18 +47,18 @@ before_install:
       fi
 
       if [ ! -f "$POSTGRES_DEB" ]; then
-        curl -SLO http://apt.postgresql.org/pub/repos/apt/pool/main/p/postgresql-9.5/$POSTGRES_DEB
+        curl -SLO http://apt.postgresql.org/pub/repos/apt/pool/main/p/postgresql-9.6/$POSTGRES_DEB
       fi
 
       dpkg -x $LIBXML2_DEB /tmp/libxml2
       dpkg -x $POSTGRES_DEB /tmp/postgres
     - |
       export LD_LIBRARY_PATH=/tmp/libxml2/usr/lib/x86_64-linux-gnu
-      /tmp/postgres/usr/lib/postgresql/9.5/bin/initdb /tmp/postgres/data --nosync -U postgres
+      /tmp/postgres/usr/lib/postgresql/9.6/bin/initdb /tmp/postgres/data --nosync -U postgres
       sed -i -e 's/#fsync.*/fsync = off/' /tmp/postgres/data/postgresql.conf
       sed -i -e 's/#synchronous_commit.*/synchronous_commit = off/' /tmp/postgres/data/postgresql.conf
       sed -i -e 's/#full_page_writes.*/full_page_writes = off/' /tmp/postgres/data/postgresql.conf
-      /tmp/postgres/usr/lib/postgresql/9.5/bin/postgres -k /tmp -D /tmp/postgres/data -p 54321 > /dev/null &
+      /tmp/postgres/usr/lib/postgresql/9.6/bin/postgres -k /tmp -D /tmp/postgres/data -p 54321 > /dev/null &
     # elasticsearch
     - |
       cd $HOME/.cache/downloads

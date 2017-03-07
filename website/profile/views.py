@@ -7,8 +7,10 @@ from dateutil.parser import parse as parse_date
 from django.utils import timezone
 from flask import request
 import markupsafe
+import mailchimp
 from modularodm.exceptions import ValidationError, NoResultsFound, MultipleResultsFound
 from modularodm import Q
+from osf.models import Node
 
 from framework import sentry
 from framework.auth import utils as auth_utils
@@ -25,7 +27,6 @@ from framework.status import push_status_message
 from website import mails
 from website import mailchimp_utils
 from website import settings
-from website.project.model import Node
 from website.project.utils import PROJECT_QUERY
 from website.models import ApiOAuth2Application, ApiOAuth2PersonalToken, User
 from website.oauth.utils import get_available_scopes
@@ -35,7 +36,7 @@ from website.util import api_v2_url, web_url_for, paths
 from website.util.sanitize import escape_html
 from website.util.sanitize import strip_html
 from website.views import _render_nodes
-from website.addons.base import utils as addon_utils
+from addons.base import utils as addon_utils
 
 logger = logging.getLogger(__name__)
 
@@ -43,7 +44,7 @@ logger = logging.getLogger(__name__)
 def get_public_projects(uid=None, user=None):
     user = user or User.load(uid)
     # In future redesign, should be limited for users with many projects / components
-    nodes = Node.find_for_user(user, PROJECT_QUERY).filter(is_public=True).get_roots()
+    nodes = Node.find_for_user(user, PROJECT_QUERY).filter(is_public=True).get_roots().distinct()
     return _render_nodes(list(nodes))
 
 
@@ -59,7 +60,7 @@ def get_public_components(uid=None, user=None):
                 Q('parent_nodes', 'isnull', False) &
                 Q('is_public', 'eq', True)
             )
-        ) if not node.parent_nodes.filter(type='osf.collection').exists()
+        ).distinct() if not node.parent_nodes.filter(type='osf.collection').exists()
         # Exclude top-level projects that are part of a collection
     )
     return _render_nodes(nodes, show_path=True)
@@ -247,20 +248,12 @@ def update_user(auth):
 
 
 def _profile_view(profile, is_profile=False):
-    # TODO: Fix circular import
-    from website.addons.badges.util import get_sorted_user_badges
-
     if profile and profile.is_disabled:
         raise HTTPError(http.GONE)
-
-    if 'badges' in settings.ADDONS_REQUESTED:
-        badge_assertions = get_sorted_user_badges(profile),
-        badges = _get_user_created_badges(profile)
-    else:
-        # NOTE: While badges, are unused, 'assertions' and 'badges' can be
-        # empty lists.
-        badge_assertions = []
-        badges = []
+    # NOTE: While badges, are unused, 'assertions' and 'badges' can be
+    # empty lists.
+    badge_assertions = []
+    badges = []
 
     if profile:
         profile_user_data = profile_utils.serialize_user(profile, full=True, is_profile=is_profile)
@@ -276,14 +269,6 @@ def _profile_view(profile, is_profile=False):
         }
 
     raise HTTPError(http.NOT_FOUND)
-
-
-def _get_user_created_badges(user):
-    from website.addons.badges.model import Badge
-    addon = user.get_addon('badges')
-    if addon:
-        return [badge for badge in Badge.find(Q('creator', 'eq', addon._id)) if not badge.is_system_badge]
-    return []
 
 
 @must_be_logged_in
@@ -540,16 +525,16 @@ def update_mailchimp_subscription(user, list_name, subscription, send_goodbye=Tr
     :param boolean subscription: true if user is subscribed
     """
     if subscription:
-        mailchimp_utils.subscribe_mailchimp(list_name, user._id)
+        try:
+            mailchimp_utils.subscribe_mailchimp(list_name, user._id)
+        except mailchimp.Error:
+            pass
     else:
         try:
             mailchimp_utils.unsubscribe_mailchimp_async(list_name, user._id, username=user.username, send_goodbye=send_goodbye)
-        except mailchimp_utils.mailchimp.ListNotSubscribedError:
-            raise HTTPError(http.BAD_REQUEST,
-                data=dict(message_short='ListNotSubscribedError',
-                        message_long='The user is already unsubscribed from this mailing list.',
-                        error_type='not_subscribed')
-            )
+        except mailchimp.Error:
+            # User has already unsubscribed, so nothing to do
+            pass
 
 
 def mailchimp_get_endpoint(**kwargs):

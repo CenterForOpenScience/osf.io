@@ -7,9 +7,10 @@ from decimal import Decimal
 from functools import partial
 
 import pytz
-from dateutil import parser
+import ciso8601
 from django.contrib.postgres import lookups
 from django.contrib.postgres.fields.jsonb import JSONField
+from django.contrib.postgres.forms.jsonb import JSONField as JSONFormField
 from django.core.serializers.json import DjangoJSONEncoder
 from osf.exceptions import NaiveDatetimeException, ValidationError
 from psycopg2.extras import Json
@@ -28,7 +29,6 @@ def coerce_nonnaive_datetimes(json_data):
             worked = json_data.astimezone(pytz.utc)  # aware object can be in any timezone # noqa
         except ValueError:  # naive
             coerced_data = json_data.replace(tzinfo=pytz.utc)  # json_data must be in UTC
-            logger.warn('Coerced naive datetime to aware for {}'.format(json_data))
         else:
             coerced_data = json_data  # it's already aware
     else:
@@ -44,8 +44,6 @@ class DateTimeAwareJSONEncoder(DjangoJSONEncoder):
                 raise NaiveDatetimeException('Tried to encode a naive datetime.')
             return dict(type='encoded_datetime', value=o.isoformat())
         elif isinstance(o, dt.date):
-            if o.tzinfo is None or o.tzinfo.utcoffset(o) is None:
-                raise NaiveDatetimeException('Tried to encode a naive date.')
             return dict(type='encoded_date', value=o.isoformat())
         elif isinstance(o, dt.time):
             if o.tzinfo is None or o.tzinfo.utcoffset(o) is None:
@@ -63,11 +61,11 @@ def decode_datetime_objects(nested_value):
         for key, value in nested_value.iteritems():
             if isinstance(value, dict) and 'type' in value.keys():
                 if value['type'] == 'encoded_datetime':
-                    nested_value[key] = parser.parse(value['value'])
+                    nested_value[key] = ciso8601.parse_datetime(value['value'])
                 if value['type'] == 'encoded_date':
-                    nested_value[key] = parser.parse(value['value']).date()
+                    nested_value[key] = ciso8601.parse_datetime(value['value']).date()
                 if value['type'] == 'encoded_time':
-                    nested_value[key] = parser.parse(value['value']).time()
+                    nested_value[key] = ciso8601.parse_datetime(value['value']).time()
                 if value['type'] == 'encoded_decimal':
                     nested_value[key] = Decimal(value['value'])
             elif isinstance(value, dict):
@@ -79,12 +77,17 @@ def decode_datetime_objects(nested_value):
 
 
 class DateTimeAwareJSONField(JSONField):
+    def formfield(self, **kwargs):
+        defaults = {'form_class': DateTimeAwareJSONFormField}
+        defaults.update(kwargs)
+        return super(DateTimeAwareJSONField, self).formfield(**defaults)
+
     def get_prep_value(self, value):
         if value is not None:
             return Json(value, dumps=partial(json.dumps, cls=DateTimeAwareJSONEncoder))
         return value
 
-    def to_python(self, value):
+    def from_db_value(self, value, expression, connection, context):
         if value is None:
             return None
         return super(DateTimeAwareJSONField, self).to_python(decode_datetime_objects(value))
@@ -107,6 +110,26 @@ class DateTimeAwareJSONField(JSONField):
                 params={'value': value},
             )
 
+class DateTimeAwareJSONFormField(JSONFormField):
+    def to_python(self, value):
+        try:
+            return decode_datetime_objects(json.loads(value))
+        except TypeError:
+            raise ValidationError(
+                self.error_messages['invalid'],
+                code='invalid',
+                params={'value': value},
+            )
+
+    def prepare_value(self, value):
+        try:
+            return json.dumps(value, cls=DateTimeAwareJSONEncoder)
+        except TypeError:
+            raise ValidationError(
+                self.error_messages['invalid'],
+                code='invalid',
+                params={'value': value},
+            )
 
 JSONField.register_lookup(lookups.DataContains)
 JSONField.register_lookup(lookups.ContainedBy)

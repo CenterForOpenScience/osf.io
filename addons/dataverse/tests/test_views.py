@@ -15,7 +15,7 @@ from addons.dataverse.tests.utils import (
 from framework.auth.decorators import Auth
 from tests.factories import AuthUserFactory
 from tests.base import OsfTestCase
-from website.addons.dataverse.serializer import DataverseSerializer
+from addons.dataverse.serializer import DataverseSerializer
 from website.util import api_url_for
 
 pytestmark = pytest.mark.django_db
@@ -67,7 +67,7 @@ class TestConfigViews(DataverseAddonTestCase, OAuthAddonConfigViewsTestCaseMixin
 
     def setUp(self):
         super(TestConfigViews, self).setUp()
-        self.mock_ser_api = mock.patch('website.addons.dataverse.serializer.client.connect_from_settings')
+        self.mock_ser_api = mock.patch('addons.dataverse.serializer.client.connect_from_settings')
         self.mock_ser_api.return_value = create_mock_connection()
         self.mock_ser_api.start()
 
@@ -75,7 +75,7 @@ class TestConfigViews(DataverseAddonTestCase, OAuthAddonConfigViewsTestCaseMixin
         self.mock_ser_api.stop()
         super(TestConfigViews, self).tearDown()
 
-    @mock.patch('website.addons.dataverse.views.client.connect_from_settings')
+    @mock.patch('addons.dataverse.views.client.connect_from_settings')
     def test_folder_list(self, mock_connection):
         #test_get_datasets
         mock_connection.return_value = self.connection
@@ -89,7 +89,7 @@ class TestConfigViews(DataverseAddonTestCase, OAuthAddonConfigViewsTestCaseMixin
         assert_equal(first['title'], 'Example (DVN/00001)')
         assert_equal(first['doi'], 'doi:12.3456/DVN/00001')
 
-    @mock.patch('website.addons.dataverse.views.client.connect_from_settings')
+    @mock.patch('addons.dataverse.views.client.connect_from_settings')
     def test_set_config(self, mock_connection):
         mock_connection.return_value = self.connection
 
@@ -119,7 +119,7 @@ class TestConfigViews(DataverseAddonTestCase, OAuthAddonConfigViewsTestCaseMixin
         )
         assert_equal(serialized, res.json['result'])
 
-    @mock.patch('website.addons.dataverse.views.client.connect_from_settings')
+    @mock.patch('addons.dataverse.views.client.connect_from_settings')
     def test_set_config_no_dataset(self, mock_connection):
         mock_connection.return_value = self.connection
         num_old_logs = self.project.logs.count()
@@ -149,8 +149,8 @@ class TestConfigViews(DataverseAddonTestCase, OAuthAddonConfigViewsTestCaseMixin
 
 class TestHgridViews(DataverseAddonTestCase, OsfTestCase, unittest.TestCase):
 
-    @mock.patch('website.addons.dataverse.views.client.connect_from_settings')
-    @mock.patch('website.addons.dataverse.views.client.get_files')
+    @mock.patch('addons.dataverse.views.client.connect_from_settings')
+    @mock.patch('addons.dataverse.views.client.get_files')
     def test_dataverse_root_published(self, mock_files, mock_connection):
         mock_connection.return_value = create_mock_connection()
         mock_files.return_value = ['mock_file']
@@ -184,8 +184,8 @@ class TestHgridViews(DataverseAddonTestCase, OsfTestCase, unittest.TestCase):
         assert_true(res.json[0]['hasPublishedFiles'])
         assert_equal(res.json[0]['version'], 'latest-published')
 
-    @mock.patch('website.addons.dataverse.views.client.connect_from_settings')
-    @mock.patch('website.addons.dataverse.views.client.get_files')
+    @mock.patch('addons.dataverse.views.client.connect_from_settings')
+    @mock.patch('addons.dataverse.views.client.get_files')
     def test_dataverse_root_not_published(self, mock_files, mock_connection):
         mock_connection.return_value = create_mock_connection()
         mock_files.return_value = []
@@ -217,8 +217,8 @@ class TestHgridViews(DataverseAddonTestCase, OsfTestCase, unittest.TestCase):
         res = self.app.get(url, auth=user2.auth)
         assert_equal(res.json, [])
 
-    @mock.patch('website.addons.dataverse.views.client.connect_from_settings')
-    @mock.patch('website.addons.dataverse.views.client.get_files')
+    @mock.patch('addons.dataverse.views.client.connect_from_settings')
+    @mock.patch('addons.dataverse.views.client.get_files')
     def test_dataverse_root_no_connection(self, mock_files, mock_connection):
         mock_connection.return_value = create_mock_connection()
         mock_files.return_value = ['mock_file']
@@ -243,9 +243,9 @@ class TestHgridViews(DataverseAddonTestCase, OsfTestCase, unittest.TestCase):
 
 class TestCrudViews(DataverseAddonTestCase, OsfTestCase, unittest.TestCase):
 
-    @mock.patch('website.addons.dataverse.views.client.connect_from_settings_or_401')
-    @mock.patch('website.addons.dataverse.views.client.publish_dataset')
-    @mock.patch('website.addons.dataverse.views.client.publish_dataverse')
+    @mock.patch('addons.dataverse.views.client.connect_from_settings_or_401')
+    @mock.patch('addons.dataverse.views.client.publish_dataset')
+    @mock.patch('addons.dataverse.views.client.publish_dataverse')
     def test_dataverse_publish_dataset(self, mock_publish_dv, mock_publish_ds, mock_connection):
         mock_connection.return_value = create_mock_connection()
 
@@ -257,9 +257,9 @@ class TestCrudViews(DataverseAddonTestCase, OsfTestCase, unittest.TestCase):
         assert_false(mock_publish_dv.called)
         assert_true(mock_publish_ds.called)
 
-    @mock.patch('website.addons.dataverse.views.client.connect_from_settings_or_401')
-    @mock.patch('website.addons.dataverse.views.client.publish_dataset')
-    @mock.patch('website.addons.dataverse.views.client.publish_dataverse')
+    @mock.patch('addons.dataverse.views.client.connect_from_settings_or_401')
+    @mock.patch('addons.dataverse.views.client.publish_dataset')
+    @mock.patch('addons.dataverse.views.client.publish_dataverse')
     def test_dataverse_publish_both(self, mock_publish_dv, mock_publish_ds, mock_connection):
         mock_connection.return_value = create_mock_connection()
 
@@ -284,7 +284,7 @@ class TestDataverseRestrictions(DataverseAddonTestCase, OsfTestCase):
         self.project.add_contributor(self.contrib, auth=Auth(self.user))
         self.project.save()
 
-    @mock.patch('website.addons.dataverse.views.client.connect_from_settings')
+    @mock.patch('addons.dataverse.views.client.connect_from_settings')
     def test_restricted_set_dataset_not_owner(self, mock_connection):
         mock_connection.return_value = create_mock_connection()
 

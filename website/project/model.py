@@ -1651,7 +1651,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
 
         if first_save and self.is_bookmark_collection:
             existing_bookmark_collections = Node.find(
-                Q('is_bookmark_collection', 'eq', True) & Q('contributors', 'eq', self.creator._id)
+                Q('is_bookmark_collection', 'eq', True) & Q('contributors', 'eq', self.creator._id) & Q('is_deleted', 'eq', False)
             )
             if existing_bookmark_collections.count() > 0:
                 raise NodeStateError('Only one bookmark collection allowed per user.')
@@ -1982,7 +1982,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
         """Recursively checks whether the current node or any of its nodes
         contains a pointer.
         """
-        if self.nodes_pointer:
+        if self.nodes_pointer.exists():
             return True
         for node in self.nodes_primary:
             if node.has_pointers_recursive:
@@ -2196,6 +2196,11 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
 
     def delete_registration_tree(self, save=False):
         self.is_deleted = True
+        for draft_registration in DraftRegistration.find(Q('registered_node', 'eq', self)):
+            # Allow draft registration to be submitted
+            if draft_registration.approval:
+                draft_registration.approval = None
+                draft_registration.save()
         if not getattr(self.embargo, 'for_existing_registration', False):
             self.registered_from = None
         if save:
@@ -2597,7 +2602,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
 
         if save:
             self.save()
-        if user:
+        if user and not self.is_collection:
             increment_user_activity_counters(user._primary_key, action, log.date.isoformat())
         return log
 
@@ -3327,7 +3332,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
         return contributor
 
     def _get_spam_content(self, saved_fields):
-        from website.addons.wiki.model import NodeWikiPage
+        from addons.wiki.models import NodeWikiPage
         spam_fields = self.SPAM_CHECK_FIELDS if self.is_public and 'is_public' in saved_fields else self.SPAM_CHECK_FIELDS.intersection(saved_fields)
         content = []
         for field in spam_fields:
@@ -3508,7 +3513,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
 
     # TODO: Move to wiki add-on
     def get_wiki_page(self, name=None, version=None, id=None):
-        from website.addons.wiki.model import NodeWikiPage
+        from addons.wiki.models import NodeWikiPage
 
         if name:
             name = (name or '').strip()
@@ -3534,7 +3539,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
         :param content: A string, the posted content.
         :param auth: All the auth information including user, API key.
         """
-        from website.addons.wiki.model import NodeWikiPage
+        from addons.wiki.models import NodeWikiPage
 
         name = (name or '').strip()
         key = to_mongo_key(name)
@@ -3604,7 +3609,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
 
         """
         # TODO: Fix circular imports
-        from website.addons.wiki.exceptions import (
+        from addons.wiki.exceptions import (
             PageCannotRenameError,
             PageConflictError,
             PageNotFoundError,
@@ -3735,7 +3740,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
         if not self.is_registration or (not self.is_public and not (self.embargo_end_date or self.is_pending_embargo)):
             raise NodeStateError('Only public or embargoed registrations may be withdrawn.')
 
-        if self.root is not self:
+        if self.root_id != self.id:
             raise NodeStateError('Withdrawal of non-parent registrations is not permitted.')
 
         retraction = self._initiate_retraction(user, justification)

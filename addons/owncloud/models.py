@@ -7,10 +7,10 @@ from django.db import models
 from framework.auth import Auth
 from osf.models.files import File, FileNode, Folder
 from owncloud import Client as OwnCloudClient
-from website.addons.base import exceptions
-from website.addons.owncloud import settings
-from website.addons.owncloud.serializer import OwnCloudSerializer
-from website.addons.owncloud.settings import DEFAULT_HOSTS, USE_SSL
+from addons.base import exceptions
+from addons.owncloud import settings
+from addons.owncloud.serializer import OwnCloudSerializer
+from addons.owncloud.settings import DEFAULT_HOSTS, USE_SSL
 from website.oauth.models import BasicAuthProviderMixin
 from website.util import api_v2_url
 

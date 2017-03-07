@@ -505,7 +505,7 @@ class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, NodePreprintsF
 
     # overrides ListAPIView
     def get_queryset(self):
-        return Node.find(self.get_query_from_request())
+        return Node.find(self.get_query_from_request()).select_related('root')
 
 
 class UserPreprints(UserNodes):
@@ -571,7 +571,7 @@ class UserInstitutions(JSONAPIBaseView, generics.ListAPIView, UserMixin):
 
     def get_queryset(self):
         user = self.get_user()
-        return user.affiliated_institutions
+        return user.affiliated_institutions.all()
 
 
 class UserRegistrations(UserNodes):

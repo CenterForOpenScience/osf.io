@@ -15,6 +15,7 @@ from website.exceptions import NodeStateError
 from website.util import permissions, disconnected_from_listeners
 from website.citations.utils import datetime_to_csl
 from website import language
+from website.project.model import ensure_schemas
 
 from osf.models import (
     AbstractNode,
@@ -25,6 +26,7 @@ from osf.models import (
     Sanction,
     NodeRelation,
     Registration,
+    DraftRegistrationApproval,
 )
 from addons.wiki.models import NodeWikiPage
 from osf.exceptions import ValidationError
@@ -36,6 +38,7 @@ from .factories import (
     UserFactory,
     UnregUserFactory,
     RegistrationFactory,
+    DraftRegistrationFactory,
     NodeLicenseRecordFactory,
     PrivateLinkFactory,
     CollectionFactory,
@@ -114,7 +117,53 @@ def test_components_have_root():
     assert greatgrandchild3.root == root
     assert greatgrandchild_1.root == root
 
+# https://openscience.atlassian.net/browse/OSF-7378
+def test_root_for_linked_node_does_not_return_linking_parent():
+    project = ProjectFactory(title='Project')
+    root = ProjectFactory(title='Root')
+    child = NodeFactory(title='Child', parent=root)
+
+    project.add_node_link(root, auth=Auth(project.creator), save=True)
+    assert root.root == root
+    assert child.root == root
+
 def test_get_children():
+    root = ProjectFactory()
+    child = NodeFactory(parent=root)
+    child1 = NodeFactory(parent=root)
+    child2 = NodeFactory(parent=root)
+    grandchild = NodeFactory(parent=child)
+    grandchild1 = NodeFactory(parent=child)
+    grandchild2 = NodeFactory(parent=child)
+    grandchild3 = NodeFactory(parent=child)
+    grandchild_1 = NodeFactory(parent=child1)
+    grandchild1_1 = NodeFactory(parent=child1)
+    grandchild2_1 = NodeFactory(parent=child1)
+    grandchild3_1 = NodeFactory(parent=child1)
+    grandchild_2 = NodeFactory(parent=child2)
+    grandchild1_2 = NodeFactory(parent=child2)
+    grandchild2_2 = NodeFactory(parent=child2)
+    grandchild3_2 = NodeFactory(parent=child2)
+    greatgrandchild = NodeFactory(parent=grandchild)
+    greatgrandchild1 = NodeFactory(parent=grandchild1)
+    greatgrandchild2 = NodeFactory(parent=grandchild2)
+    greatgrandchild3 = NodeFactory(parent=grandchild3)
+    greatgrandchild_1 = NodeFactory(parent=grandchild_1, is_deleted=True)
+
+    assert 20 == Node.objects.get_children(root).count()
+    pks = Node.objects.get_children(root, primary_keys=True)
+    assert 20 == len(pks)
+    assert set(pks) == set(Node.objects.exclude(id=root.id).values_list('id', flat=True))
+
+    assert greatgrandchild_1 in Node.objects.get_children(root).all()
+    assert greatgrandchild_1 not in Node.objects.get_children(root, active=True).all()
+
+def test_get_children_with_barren_parent():
+    root = ProjectFactory()
+
+    assert 0 == len(Node.objects.get_children(root))
+
+def test_get_children_with_links():
     root = ProjectFactory()
     child = NodeFactory(parent=root)
     child1 = NodeFactory(parent=root)
@@ -137,7 +186,11 @@ def test_get_children():
     greatgrandchild3 = NodeFactory(parent=grandchild3)
     greatgrandchild_1 = NodeFactory(parent=grandchild_1)
 
-    assert 20 == Node.objects.get_children(root).count()
+    child.add_node_link(root, auth=Auth(root.creator))
+    child.add_node_link(greatgrandchild_1, auth=Auth(greatgrandchild_1.creator))
+    greatgrandchild_1.add_node_link(child, auth=Auth(child.creator))
+
+    assert 20 == len(Node.objects.get_children(root))
 
 def test_get_roots():
     top_level1 = ProjectFactory(is_public=True)
@@ -558,6 +611,41 @@ class TestContributorMethods:
             node._id not in
             contrib.unclaimed_records.keys()
         )
+
+# Copied from tests/test_models.py
+class TestNodeAddContributorRegisteredOrNot:
+
+    def test_add_contributor_user_id(self, user, node):
+        registered_user = UserFactory()
+        contributor = node.add_contributor_registered_or_not(auth=Auth(user), user_id=registered_user._id, save=True)
+        assert contributor in node.contributors
+        assert contributor.is_registered is True
+
+    def test_add_contributor_user_id_already_contributor(self, user, node):
+        with pytest.raises(MODMValidationError) as excinfo:
+            node.add_contributor_registered_or_not(auth=Auth(user), user_id=user._id, save=True)
+        assert 'is already a contributor' in excinfo.value.message
+
+    def test_add_contributor_invalid_user_id(self, user, node):
+        with pytest.raises(ValueError) as excinfo:
+            node.add_contributor_registered_or_not(auth=Auth(user), user_id='abcde', save=True)
+        assert 'was not found' in excinfo.value.message
+
+    def test_add_contributor_fullname_email(self, user, node):
+        contributor = node.add_contributor_registered_or_not(auth=Auth(user), full_name='Jane Doe', email='jane@doe.com')
+        assert contributor in node.contributors
+        assert contributor.is_registered is False
+
+    def test_add_contributor_fullname(self, user, node):
+        contributor = node.add_contributor_registered_or_not(auth=Auth(user), full_name='Jane Doe')
+        assert contributor in node.contributors
+        assert contributor.is_registered is False
+
+    def test_add_contributor_fullname_email_already_exists(self, user, node):
+        registered_user = UserFactory()
+        contributor = node.add_contributor_registered_or_not(auth=Auth(user), full_name='F Mercury', email=registered_user.username)
+        assert contributor in node.contributors
+        assert contributor.is_registered is True
 
 class TestContributorProperties:
 
@@ -1278,7 +1366,7 @@ class TestManageContributors:
                 [], auth=auth, save=True,
             )
 
-    def test_manage_contributors_no_admins(self, node):
+    def test_manage_contributors_no_admins(self, node, auth):
         user = UserFactory()
         node.add_contributor(
             user,
@@ -1376,6 +1464,22 @@ class TestNodeTraversals:
         reg.delete_registration_tree(save=True)
         assert Node.find(Q('_id', 'in', reg_ids) & Q('is_deleted', 'eq', False)).count() == 0
         assert mock_update_search.call_count == orig_call_count + len(reg_ids)
+
+    def test_delete_registration_tree_sets_draft_registration_approvals_to_none(self, user):
+        ensure_schemas()
+        reg = RegistrationFactory()
+
+        dr = DraftRegistrationFactory(initiator=user)
+        approval = DraftRegistrationApproval(state=Sanction.APPROVED)
+        approval.save()
+        dr.approval = approval
+        dr.registered_node = reg
+        dr.save()
+
+        reg.delete_registration_tree(save=True)
+
+        dr.reload()
+        assert dr.approval is None
 
     @mock.patch('osf.models.node.AbstractNode.update_search')
     def test_delete_registration_tree_deletes_backrefs(self, mock_update_search):
@@ -1710,9 +1814,9 @@ class TestForkNode:
 
         fork_user_auth = Auth(user=fork_user)
         # Recursively compare children
-        for idx, child in enumerate(original._nodes.all()):
+        for idx, child in enumerate(original.get_nodes()):
             if child.can_view(fork_user_auth):
-                self._cmp_fork_original(fork_user, fork_date, fork._nodes.all()[idx],
+                self._cmp_fork_original(fork_user, fork_date, fork.get_nodes()[idx],
                                         child, title_prepend='')
 
     @mock.patch('framework.status.push_status_message')
@@ -1991,6 +2095,21 @@ class TestNodeOrdering:
         private_nodes = list(project.get_nodes(is_public=False))
         assert private_nodes == [children[1], children[0]]
 
+    def test_get_nodes_does_not_return_duplicates(self):
+        parent = ProjectFactory(title='Parent')
+        child = NodeFactory(parent=parent, title='Child', is_public=True)
+        linker = ProjectFactory(title='Linker', is_public=True)
+        unrelated = ProjectFactory(title='Unrelated', is_public=True)
+
+        linker.add_node_link(child, auth=Auth(linker.creator), save=True)
+        linker.add_node_link(unrelated, auth=Auth(linker.creator), save=True)
+
+        rel1 = NodeRelation.objects.get(parent=linker, child=child)
+        rel2 = NodeRelation.objects.get(parent=linker, child=unrelated)
+        linker.set_noderelation_order([rel2.pk, rel1.pk])
+
+        assert len(parent.get_nodes()) == 1  # child
+        assert len(linker.get_nodes()) == 2  # child and unrelated
 
 def test_node_ids(node):
     child1, child2 = NodeFactory(parent=node), NodeFactory(parent=node)
@@ -2399,6 +2518,14 @@ class TestTemplateNode:
         assert new.title == changed_title
         assert new.date_created != project.date_created
         self._verify_log(new)
+
+    def test_use_as_template_adds_default_addons(self, project, auth):
+        new = project.use_as_template(
+            auth=auth
+        )
+
+        assert new.has_addon('wiki')
+        assert new.has_addon('osfstorage')
 
     def test_use_as_template_preserves_license(self, project, auth):
         license = NodeLicenseRecordFactory()

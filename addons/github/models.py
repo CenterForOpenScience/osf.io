@@ -14,12 +14,12 @@ from osf.models.external import ExternalProvider
 from osf.models.files import File, FileNode, Folder
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from website import settings
-from website.addons.base import exceptions
-from website.addons.github import settings as github_settings
-from website.addons.github import utils
-from website.addons.github.api import GitHubClient
-from website.addons.github.exceptions import ApiError, NotFoundError
-from website.addons.github.serializer import GitHubSerializer
+from addons.base import exceptions
+from addons.github import settings as github_settings
+from addons.github import utils
+from addons.github.api import GitHubClient
+from addons.github.exceptions import ApiError, NotFoundError
+from addons.github.serializer import GitHubSerializer
 from website.util import web_url_for
 
 hook_domain = github_settings.HOOK_DOMAIN or settings.DOMAIN
@@ -139,10 +139,6 @@ class NodeSettings(BaseStorageAddon, BaseOAuthNodeSettings):
     @property
     def folder_path(self):
         return self.repo or None
-
-    @property
-    def has_auth(self):
-        return bool(self.user_settings and self.user_settings.has_auth)
 
     @property
     def complete(self):

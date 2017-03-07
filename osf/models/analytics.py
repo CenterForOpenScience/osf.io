@@ -14,8 +14,8 @@ logger = logging.getLogger(__name__)
 class UserActivityCounter(BaseModel):
     primary_identifier_name = '_id'
 
-    _id = models.CharField(max_length=255, null=False, blank=False, db_index=True,
-                           unique=True)
+    _id = models.CharField(max_length=5, null=False, blank=False, db_index=True,
+                           unique=True)  # 5 in prod
     action = DateTimeAwareJSONField(default=dict)
     date = DateTimeAwareJSONField(default=dict)
     total = models.PositiveIntegerField(default=0)
@@ -56,8 +56,8 @@ class UserActivityCounter(BaseModel):
 class PageCounter(BaseModel):
     primary_identifier_name = '_id'
 
-    _id = models.CharField(max_length=255, null=False, blank=False, db_index=True,
-                           unique=True)
+    _id = models.CharField(max_length=300, null=False, blank=False, db_index=True,
+                           unique=True)  # 272 in prod
     date = DateTimeAwareJSONField(default=dict)
 
     total = models.PositiveIntegerField(default=0)
@@ -125,9 +125,7 @@ class PageCounter(BaseModel):
             # if the user who is downloading isn't a contributor to the project
             page_type = cleaned_page.split(':')[0]
             if page_type == 'download' and node_info:
-                contributors = node_info['contributors']
-                current_user = session.data.get('auth_user_id')
-                if current_user and current_user in contributors:
+                if node_info['contributors'].filter(guids___id=session.data.get('auth_user_id')).exists():
                     model_instance.save()
                     return
 

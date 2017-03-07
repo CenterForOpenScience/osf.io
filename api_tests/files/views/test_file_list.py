@@ -50,32 +50,67 @@ class TestFileFiltering(ApiTestCase):
         nt.assert_in('file1', names)
         nt.assert_in('file2', names)
 
-    def test_exclusive_tags(self):
-        self.file1.add_tag('news', Auth(self.user))
-        self.file2.add_tag('news', Auth(self.user))
-        self.file1.add_tag('new', Auth(self.user))
+    def test_filtering_tags_exact(self):
+        self.file1.add_tag('cats', Auth(self.user))
+        self.file2.add_tag('cats', Auth(self.user))
+        self.file1.add_tag('cat', Auth(self.user))
         res = self.app.get(
-            '/{}nodes/{}/files/osfstorage/?filter[tags]=new'.format(
+            '/{}nodes/{}/files/osfstorage/?filter[tags]=cat'.format(
                 API_BASE, self.node._id
             ),
             auth=self.user.auth
         )
         nt.assert_equal(len(res.json.get('data')), 1)
 
-    def test_query_capitalized(self):
-        self.file1.add_tag('new', Auth(self.user))
+    def test_filtering_tags_capitalized_query(self):
+        self.file1.add_tag('cat', Auth(self.user))
         res = self.app.get(
-            '/{}nodes/{}/files/osfstorage/?filter[tags]=New'.format(
+            '/{}nodes/{}/files/osfstorage/?filter[tags]=CAT'.format(
                 API_BASE, self.node._id
             ),
             auth=self.user.auth
         )
         nt.assert_equal(len(res.json.get('data')), 1)
 
-    def test_query_non_capitalized(self):
-        self.file1.add_tag('New', Auth(self.user))
+    def test_filtering_tags_capitalized_tag(self):
+        self.file1.add_tag('CAT', Auth(self.user))
         res = self.app.get(
-            '/{}nodes/{}/files/osfstorage/?filter[tags]=new'.format(
+            '/{}nodes/{}/files/osfstorage/?filter[tags]=cat'.format(
+                API_BASE, self.node._id
+            ),
+            auth=self.user.auth
+        )
+        nt.assert_equal(len(res.json.get('data')), 1)
+
+    def test_filtering_on_multiple_tags(self):
+        self.file1.add_tag('cat', Auth(self.user))
+        self.file1.add_tag('sand', Auth(self.user))
+        res = self.app.get(
+            '/{}nodes/{}/files/osfstorage/?filter[tags]=cat&filter[tags]=sand'.format(
+                API_BASE, self.node._id
+            ),
+            auth=self.user.auth
+        )
+        nt.assert_equal(len(res.json.get('data')), 1)
+
+    def test_filtering_on_multiple_tags_must_match_both(self):
+        self.file1.add_tag('cat', Auth(self.user))
+        res = self.app.get(
+            '/{}nodes/{}/files/osfstorage/?filter[tags]=cat&filter[tags]=sand'.format(
+                API_BASE, self.node._id
+            ),
+            auth=self.user.auth
+        )
+        nt.assert_equal(len(res.json.get('data')), 0)
+
+    def test_filtering_by_tags_returns_distinct(self):
+        # regression test for returning multiple of the same file
+        self.file1.add_tag('cat', Auth(self.user))
+        self.file1.add_tag('cAt', Auth(self.user))
+        self.file1.add_tag('caT', Auth(self.user))
+        self.file1.add_tag('CAT', Auth(self.user))
+        res = self.app.get(
+            '/{}nodes/{}/files/osfstorage/?filter[tags]=cat'.format(
                 API_BASE, self.node._id
             ),
             auth=self.user.auth

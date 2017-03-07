@@ -7,7 +7,7 @@ from django.utils import timezone
 from django.conf import settings
 from django.db import models
 
-from osf.utils.fields import NonNaiveDatetimeField
+from osf.utils.fields import NonNaiveDateTimeField
 from website.prereg import utils as prereg_utils
 
 from framework.auth import Auth
@@ -78,8 +78,8 @@ class Sanction(ObjectIDMixin, BaseModel):
     # Expiration date-- Sanctions in the UNAPPROVED state that are older than their end_date
     # are automatically made ACTIVE by a daily cron job
     # Use end_date=None for a non-expiring Sanction
-    end_date = NonNaiveDatetimeField(null=True, blank=True, default=None)
-    initiation_date = NonNaiveDatetimeField(default=timezone.now, null=True, blank=True)
+    end_date = NonNaiveDateTimeField(null=True, blank=True, default=None)
+    initiation_date = NonNaiveDateTimeField(default=timezone.now, null=True, blank=True)
 
     state = models.CharField(choices=STATE_CHOICES,
                              default=UNAPPROVED,
@@ -363,10 +363,9 @@ class PreregCallbackMixin(object):
 
         registration = self._get_registration()
         prereg_schema = MetaSchema.get_prereg_schema()
-
         draft = DraftRegistration.objects.get(registered_node=registration)
 
-        if prereg_schema in registration.registered_schema:
+        if registration.registered_schema.filter(id=prereg_schema.id).exists():
             mails.send_mail(draft.initiator.username,
                             mails.PREREG_CHALLENGE_ACCEPTED,
                             user=draft.initiator,
@@ -808,7 +807,7 @@ class RegistrationApproval(PreregCallbackMixin, EmailApprovableSanction):
         # an admin on components (component admins had the opportunity
         # to disapprove the registration by this point)
         register.set_privacy('public', auth=None, log=False)
-        for child in register.get_descendants_recursive(lambda n: n.primary):
+        for child in register.get_descendants_recursive(primary_only=True):
             child.set_privacy('public', auth=None, log=False)
         # Accounts for system actions where no `User` performs the final approval
         auth = Auth(user) if user else None

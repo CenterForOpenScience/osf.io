@@ -1,1 +1,1 @@
-default_app_config = 'addons.figshare.apps.FigshareAddonConfig'
+default_app_config = 'addons.figshare.apps.FigshareAddonAppConfig'

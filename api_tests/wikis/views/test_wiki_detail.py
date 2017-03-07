@@ -8,7 +8,7 @@ from api.base.settings.defaults import API_BASE
 
 from framework.guid.model import Guid
 
-from website.addons.wiki.model import NodeWikiPage
+from addons.wiki.models import NodeWikiPage
 
 from tests.base import ApiWikiTestCase
 from osf_tests.factories import (ProjectFactory, RegistrationFactory,
