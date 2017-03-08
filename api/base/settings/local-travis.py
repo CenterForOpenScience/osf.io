@@ -47,7 +47,7 @@ REST_FRAMEWORK = {
     'DEFAULT_THROTTLE_RATES': {
         'user': '1000000/hour',
         'non-cookie-auth': '1000000/hour',
-        'add-contributor': '10/second',
+        'add-contributor': '1000/second',
         'create-guid': '1000/hour',
         'root-anon-throttle': '1000/hour',
         'test-user': '2/hour',
