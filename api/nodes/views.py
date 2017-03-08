@@ -105,7 +105,7 @@ class NodeMixin(object):
             Node,
             self.kwargs[self.node_lookup_url_kwarg],
             display_name='node',
-            prefetch_fields=self.serializer_class().relationship_field_names
+            prefetch_fields=self.serializer_class().model_field_names
         )
         # Nodes that are folders/collections are treated as a separate resource, so if the client
         # requests a collection through a node endpoint, we return a 404
@@ -125,7 +125,7 @@ class DraftMixin(object):
         node_id = self.kwargs['node_id']
         if draft_id is None:
             draft_id = self.kwargs['draft_id']
-        draft = get_object_or_error(DraftRegistration, draft_id, prefetch_fields=self.serializer_class().relationship_field_names)
+        draft = get_object_or_error(DraftRegistration, draft_id, prefetch_fields=self.serializer_class().model_field_names)
 
         if not draft.branched_from._id == node_id:
             raise ValidationError('This draft registration is not created from the given node.')
@@ -292,12 +292,12 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
         if operation['source_field_name'] == 'root':
             child_pks = []
             for root_guid in operation['value']:
-                root = get_object_or_error(Node, root_guid, display_name='root', prefetch_fields=self.serializer_class().relationship_field_names)
+                root = get_object_or_error(Node, root_guid, display_name='root', prefetch_fields=self.serializer_class().model_field_names)
                 child_pks.extend(Node.objects.get_children(root=root, primary_keys=True))
             return Q('id', 'in', child_pks)
         elif operation['source_field_name'] == 'parent_node':
             if operation['value']:
-                parent = get_object_or_error(Node, operation['value'], display_name='parent', prefetch_fields=self.serializer_class().relationship_field_names)
+                parent = get_object_or_error(Node, operation['value'], display_name='parent', prefetch_fields=self.serializer_class().model_field_names)
                 return Q('parent_nodes', 'eq', parent.id)
             else:
                 return Q('parent_nodes', 'isnull', True)
@@ -1532,7 +1532,7 @@ class NodeLinksDetail(BaseNodeLinksDetail, generics.RetrieveDestroyAPIView, Node
             NodeRelation,
             self.kwargs[self.node_link_lookup_url_kwarg],
             'node link',
-            prefetch_fields=self.serializer_class().relationship_field_names
+            prefetch_fields=self.serializer_class().model_field_names
         )
         self.check_object_permissions(self.request, node_link)
         return node_link

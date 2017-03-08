@@ -39,7 +39,7 @@ class PreprintMixin(NodeMixin):
             PreprintService,
             self.kwargs[self.preprint_lookup_url_kwarg],
             display_name='preprint',
-            prefetch_fields=self.serializer_class().relationship_field_names
+            prefetch_fields=self.serializer_class().model_field_names
         )
         if not preprint:
             raise NotFound

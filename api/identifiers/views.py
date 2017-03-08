@@ -76,7 +76,7 @@ class IdentifierList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
             Node,
             self.kwargs[self.node_lookup_url_kwarg],
             display_name='node',
-            prefetch_fields=self.serializer_class().relationship_field_names
+            prefetch_fields=self.serializer_class().model_field_names
         )
         # Nodes that are folders/collections are treated as a separate resource, so if the client
         # requests a collection through a node endpoint, we return a 404

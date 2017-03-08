@@ -53,7 +53,7 @@ class GuidDetail(JSONAPIBaseView, generics.RetrieveAPIView):
             Guid,
             self.kwargs['guids'],
             display_name='guid',
-            prefetch_fields=self.serializer_class().relationship_field_names
+            prefetch_fields=self.serializer_class().model_field_names
         )
 
     def get(self, request, **kwargs):

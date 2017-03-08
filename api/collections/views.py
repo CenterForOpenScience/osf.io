@@ -45,7 +45,7 @@ class CollectionMixin(object):
             Collection,
             self.kwargs[self.node_lookup_url_kwarg],
             display_name='collection',
-            prefetch_fields=self.serializer_class().relationship_field_names
+            prefetch_fields=self.serializer_class().model_field_names
         )
         # Nodes that are folders/collections are treated as a separate resource, so if the client
         # requests a non-collection through a collection endpoint, we return a 404
@@ -590,7 +590,7 @@ class NodeLinksDetail(JSONAPIBaseView, generics.RetrieveDestroyAPIView, Collecti
             NodeRelation,
             self.kwargs[node_link_lookup_url_kwarg],
             'node link',
-            prefetch_fields=self.serializer_class().relationship_field_names
+            prefetch_fields=self.serializer_class().model_field_names
         )
         # May raise a permission denied
         self.kwargs['node_id'] = self.kwargs['collection_id']

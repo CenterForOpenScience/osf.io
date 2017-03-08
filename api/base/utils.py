@@ -74,23 +74,31 @@ def absolute_reverse(view_name, query_kwargs=None, args=None, kwargs=None):
 def get_object_or_error(model_cls, query_or_pk, display_name=None, prefetch_fields=()):
     obj = query = None
     if isinstance(query_or_pk, basestring):
+        # they passed a 5-char guid as a string
         if issubclass(model_cls, GuidMixin):
+            # if it's a subclass of GuidMixin we know it's primary_identifier_name
             query = {'guids___id': query_or_pk}
         else:
             if hasattr(model_cls, 'primary_identifier_name'):
+                # primary_identifier_name gives us the natural key for the model
                 query = {model_cls.primary_identifier_name: query_or_pk}
             else:
+                # fall back to modmcompatiblity's load method since we don't know their PIN
                 obj = model_cls.load(query_or_pk)
     else:
+        # they passed a query
         if hasattr(model_cls, 'primary_identifier_name'):
             query = to_django_query(query_or_pk, model_cls=model_cls)
         else:
+            # fall back to modmcompatibility's find_one
             obj = model_cls.find_one(query_or_pk)
 
     if not obj:
         if not query:
+            # if we don't have a query or an object throw 404
             raise NotFound
         try:
+            # eagerly prefetch/select_related fields that are on the serializer
             if isinstance(query, dict):
                 obj = model_cls.objects.eager(*prefetch_fields).get(**query)
             else:

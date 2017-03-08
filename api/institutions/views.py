@@ -41,7 +41,7 @@ class InstitutionMixin(object):
             Institution,
             self.kwargs[self.institution_lookup_url_kwarg],
             display_name='institution',
-            prefetch_fields=self.serializer_class().relationship_field_names
+            prefetch_fields=self.serializer_class().model_field_names
         )
         return inst
 
