@@ -523,7 +523,11 @@ def test_module(ctx, module=None, numprocesses=None):
     if not numprocesses:
         from multiprocessing import cpu_count
         numprocesses = cpu_count()
-    args = ['-s', '-n {}'.format(numprocesses)]
+    # NOTE: Subprocess to compensate for lack of thread safety in the httpretty module.
+    # https://github.com/gabrielfalcao/HTTPretty/issues/209#issue-54090252
+    args = ['-v', '-s']
+    if numprocesses > 1:
+        args += ['-n {}'.format(numprocesses)]
     modules = [module] if isinstance(module, basestring) else module
     args.extend(modules)
     retcode = pytest.main(args)
