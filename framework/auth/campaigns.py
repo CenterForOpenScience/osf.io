@@ -19,7 +19,7 @@ def get_campaigns():
     global CAMPAIGNS
     global CAMPAIGNS_LAST_REFRESHED
 
-    if not mutex.locked() and not CAMPAIGNS or throttle_period_expired(CAMPAIGNS_LAST_REFRESHED, CAMPAIGN_REFRESH_THRESHOLD):
+    if not CAMPAIGNS or (not mutex.locked() and throttle_period_expired(CAMPAIGNS_LAST_REFRESHED, CAMPAIGN_REFRESH_THRESHOLD)):
         with mutex:
             # Native campaigns: PREREG and ERPC
             newest_campaigns = {
