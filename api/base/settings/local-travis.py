@@ -43,7 +43,7 @@ REST_FRAMEWORK = {
         'api.base.authentication.drf.OSFSessionAuthentication',
         'api.base.authentication.drf.OSFCASAuthentication'
     ),
-    'DEFAULT_THROTTLE_CLASSES': [],
+    'DEFAULT_THROTTLE_CLASSES': (),
     'DEFAULT_THROTTLE_RATES': {
         'user': '1000000/second',
         'non-cookie-auth': '1000000/second',
