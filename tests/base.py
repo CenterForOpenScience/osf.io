@@ -239,7 +239,8 @@ methods = [
     httpretty.DELETE,
 ]
 def kill(*args, **kwargs):
-    raise httpretty.errors.UnmockedError
+    print('httppretty.kill', args, kwargs)
+    raise httpretty.errors.UnmockedError()
 
 
 class MockRequestTestCase(unittest.TestCase):
