@@ -748,7 +748,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     def save(self, *args, **kwargs):
         self.update_is_active()
         self.username = self.username.lower().strip() if self.username else None
-        dirty_fields = set(self.get_dirty_fields())
+        dirty_fields = set(self.get_dirty_fields(check_relationship=True))
         ret = super(OSFUser, self).save(*args, **kwargs)
         if self.SEARCH_UPDATE_FIELDS.intersection(dirty_fields) and self.is_confirmed:
             self.update_search()
