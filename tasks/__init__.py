@@ -575,14 +575,14 @@ API_TESTS1 = [
     'api_tests/institutions',
     'api_tests/licenses',
     'api_tests/logs',
-    'api_tests/users',
-]
-API_TESTS2 = [
-    'api_tests/nodes',
     'api_tests/metaschemas',
     'api_tests/preprint_providers',
     'api_tests/preprints',
     'api_tests/registrations',
+    'api_tests/users',
+]
+API_TESTS2 = [
+    'api_tests/nodes',
 ]
 API_TESTS3 = [
     'api_tests/addons_tests',
