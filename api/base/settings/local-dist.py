@@ -18,6 +18,15 @@ if DEBUG:
         'SHOW_TOOLBAR_CALLBACK': lambda(_): True
     }
 
+REST_FRAMEWORK['ALLOWED_VERSIONS'] = (
+    '2.0',
+    '2.0.1',
+    '2.1',
+    '2.2',
+    '2.3',
+    '3.0',
+    '3.0.1',
+)
 REST_FRAMEWORK['DEFAULT_THROTTLE_RATES'] = {
     'user': '1000000/second',
     'non-cookie-auth': '1000000/second',
