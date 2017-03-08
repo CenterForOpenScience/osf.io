@@ -172,6 +172,10 @@ span#nodeDescriptionEditable{
     z-index: 1;
 }
 
+.duplicate-menu li span{
+    border-radius: 4px;
+}
+
 div.arrow-up {
 	width: 0;
     border-left: 10px solid transparent;
@@ -180,3 +184,4 @@ div.arrow-up {
     margin-left: 175px;
     margin-top: -14px;
 }
+

@@ -71,26 +71,26 @@
                                     <div class="arrow-up m-b-xs"></div>
                                     % if not disk_saving_mode:
                                     <li class="p-h-md">
-                                        <a class="btn btn-primary btn-block m-t-sm form-control${ '' if user_name and (user['is_contributor'] or node['is_public']) else ' disabled'}"
+                                        <span class="btn btn-primary btn-block m-t-sm form-control${ '' if user_name and (user['is_contributor'] or node['is_public']) else ' disabled'}"
                                            data-dismiss="modal"
                                            onclick="NodeActions.forkNode();"
                                         >
                                             ${ language.FORK_ACTION | n }
-                                        </a>
+                                        </span>
                                     </li>
                                     %endif
                                     <li class="p-h-md">
-                                        <a class="btn btn-primary btn-block m-t-sm form-control${'' if user_name and (user['is_contributor'] or node['is_public']) else ' disabled'}"
+                                        <span class="btn btn-primary btn-block m-t-sm form-control${'' if user_name and (user['is_contributor'] or node['is_public']) else ' disabled'}"
                                            onclick="NodeActions.useAsTemplate();"
                                         >
                                             ${ language.TEMPLATE_ACTION | n }
-                                        </a>
+                                        </span>
                                     </li>
                                     % if not disk_saving_mode:
                                     <li class="p-h-md">
-                                        <a class="btn btn-primary btn-block m-v-sm" href="${ node['url'] }forks/">
+                                        <span class="btn btn-primary btn-block m-v-sm" href="${ node['url'] }forks/">
                                             View Forks(${ node['fork_count']})
-                                        </a>
+                                        </span>
                                     </li>
                                     %endif
                                 </ul>
