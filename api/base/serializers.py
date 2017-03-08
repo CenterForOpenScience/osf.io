@@ -275,8 +275,7 @@ class IDField(ser.CharField):
             if request.method in utils.UPDATE_METHODS and not utils.is_bulk_request(request):
                 id_field = self.get_id(self.root.instance)
                 if id_field != data:
-                    raise Conflict(detail=('The id you used in the URL, "{}", does not match the id you used in the json body\'s id field, "{}". The object "{}" exists, otherwise you\'d get a 404, so most likely you need to change the id field to match.'.format(
-                        id_field, data, id_field)))
+                    raise Conflict(detail=('The id you used in the URL, "{}", does not match the id you used in the json body\'s id field, "{}". The object "{}" exists, otherwise you\'d get a 404, so most likely you need to change the id field to match.'.format(id_field, data, id_field)))
         return super(IDField, self).to_internal_value(data)
 
     def get_id(self, obj):
@@ -303,8 +302,7 @@ class TypeField(ser.CharField):
             type_ = self.root.Meta.type_
 
         if type_ != data:
-            raise Conflict(detail=('This resource has a type of "{}", but you set the json body\'s type field to "{}". You probably need to change the type field to match the resource\'s type.'.format(
-                type_, data)))
+            raise Conflict(detail=('This resource has a type of "{}", but you set the json body\'s type field to "{}". You probably need to change the type field to match the resource\'s type.'.format(type_, data)))
         return super(TypeField, self).to_internal_value(data)
 
 
@@ -321,8 +319,7 @@ class TargetTypeField(ser.CharField):
 
     def to_internal_value(self, data):
         if self.target_type != data:
-            raise Conflict(detail=('The target resource has a type of "{}", but you set the json body\'s type field to "{}".  You probably need to change the type field to match the target resource\'s type.'.format(
-                self.target_type, data)))
+            raise Conflict(detail=('The target resource has a type of "{}", but you set the json body\'s type field to "{}".  You probably need to change the type field to match the target resource\'s type.'.format(self.target_type, data)))
         return super(TargetTypeField, self).to_internal_value(data)
 
 
@@ -488,8 +485,7 @@ class RelationshipField(ser.HyperlinkedIdentityField):
             # Ignore related_counts for these fields
             fetched_field = self.parent.fields.get(count_field)
 
-            hidden = fetched_field and isinstance(fetched_field, HideIfWithdrawal) and getattr(value, 'is_retracted',
-                                                                                               False)
+            hidden = fetched_field and isinstance(fetched_field, HideIfWithdrawal) and getattr(value, 'is_retracted', False)
 
             if not hidden and count_field not in countable_fields:
                 raise InvalidQueryStringError(
@@ -513,13 +509,11 @@ class RelationshipField(ser.HyperlinkedIdentityField):
                 field_counts_requested = self.process_related_counts_parameters(show_related_counts, value)
 
                 if utils.is_truthy(show_related_counts):
-                    meta[key] = website_utils.rapply(meta_data[key], _url_val, obj=value, serializer=self.parent,
-                                                     request=self.context['request'])
+                    meta[key] = website_utils.rapply(meta_data[key], _url_val, obj=value, serializer=self.parent, request=self.context['request'])
                 elif utils.is_falsy(show_related_counts):
                     continue
                 elif self.field_name in field_counts_requested:
-                    meta[key] = website_utils.rapply(meta_data[key], _url_val, obj=value, serializer=self.parent,
-                                                     request=self.context['request'])
+                    meta[key] = website_utils.rapply(meta_data[key], _url_val, obj=value, serializer=self.parent, request=self.context['request'])
                 else:
                     continue
             elif key == 'projects_in_common':
@@ -527,11 +521,9 @@ class RelationshipField(ser.HyperlinkedIdentityField):
                     continue
                 if not self.context['request'].query_params.get('show_projects_in_common', False):
                     continue
-                meta[key] = website_utils.rapply(meta_data[key], _url_val, obj=value, serializer=self.parent,
-                                                 request=self.context['request'])
+                meta[key] = website_utils.rapply(meta_data[key], _url_val, obj=value, serializer=self.parent, request=self.context['request'])
             else:
-                meta[key] = website_utils.rapply(meta_data[key], _url_val, obj=value, serializer=self.parent,
-                                                 request=self.context['request'])
+                meta[key] = website_utils.rapply(meta_data[key], _url_val, obj=value, serializer=self.parent, request=self.context['request'])
         return meta
 
     def lookup_attribute(self, obj, lookup_field):
@@ -560,6 +552,7 @@ class RelationshipField(ser.HyperlinkedIdentityField):
         """
         if callable(kwargs_dict):
             kwargs_dict = kwargs_dict(obj)
+
         kwargs_retrieval = {}
         for lookup_url_kwarg, lookup_field in kwargs_dict.items():
             try:
@@ -769,8 +762,7 @@ class TargetField(ser.Field):
         If no meta information, self.link_type is equal to a string containing link's URL.  Otherwise,
         the link is represented as a links object with 'href' and 'meta' members.
         """
-        meta = website_utils.rapply(self.meta, _url_val, obj=value, serializer=self.parent,
-                                    request=self.context['request'])
+        meta = website_utils.rapply(self.meta, _url_val, obj=value, serializer=self.parent, request=self.context['request'])
         return {'links': {self.link_type: {'href': value.referent.get_absolute_url(), 'meta': meta}}}
 
 
@@ -934,9 +926,13 @@ class JSONAPIListSerializer(ser.ListSerializer):
             errors = data.get('errors', None)
             data = data.get('data', None)
         if enable_esi:
-            ret = [self.child.to_esi_representation(item, envelope=None) for item in data]
+            ret = [
+                self.child.to_esi_representation(item, envelope=None) for item in data
+            ]
         else:
-            ret = [self.child.to_representation(item, envelope=envelope) for item in data]
+            ret = [
+                self.child.to_representation(item, envelope=envelope) for item in data
+            ]
 
         if errors and bulk_skip_uneditable:
             ret.append({'errors': errors})
@@ -1339,7 +1335,8 @@ class LinkedNodesRelationshipSerializer(PrefetchRelationshipsSerializer):
         # Convenience method to format instance based on view's get_object
         return {'data': [
             pointer for pointer in
-            obj.linked_nodes.filter(is_deleted=False, type='osf.node')], 'self': obj}
+            obj.linked_nodes.filter(is_deleted=False, type='osf.node')
+        ], 'self': obj}
 
     def update(self, instance, validated_data):
         collection = instance['self']
@@ -1403,7 +1400,8 @@ class LinkedRegistrationsRelationshipSerializer(PrefetchRelationshipsSerializer)
         # Convenience method to format instance based on view's get_object
         return {'data': [
             pointer for pointer in
-            obj.linked_nodes.filter(is_deleted=False, type='osf.registration')], 'self': obj}
+            obj.linked_nodes.filter(is_deleted=False, type='osf.registration')
+        ], 'self': obj}
 
     def update(self, instance, validated_data):
         collection = instance['self']
