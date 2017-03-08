@@ -1,9 +1,7 @@
-from website.addons.base.serializer import StorageAddonSerializer
+from oauthlib.oauth2 import InvalidGrantError
 
 from website.util import api_url_for
-
-from website.addons.bitbucket.api import BitbucketClient
-from website.addons.bitbucket.exceptions import BitbucketError
+from website.addons.base.serializer import StorageAddonSerializer
 
 
 class BitbucketSerializer(StorageAddonSerializer):
@@ -11,12 +9,10 @@ class BitbucketSerializer(StorageAddonSerializer):
     addon_short_name = 'bitbucket'
 
     def credentials_are_valid(self, user_settings, client):
-        if user_settings:
-            client = client or BitbucketClient(external_account=user_settings.external_accounts[0])
-            try:
-                client.user()
-            except (BitbucketError, IndexError):
-                return False
+        try:
+            self.node_settings.fetch_access_token()
+        except (InvalidGrantError, AttributeError):
+            return False
         return True
 
     def serialized_folder(self, node_settings):
@@ -28,10 +24,8 @@ class BitbucketSerializer(StorageAddonSerializer):
     @property
     def addon_serialized_urls(self):
         node = self.node_settings.owner
-
         return {
-            'auth': api_url_for('oauth_connect',
-                                service_name='bitbucket'),
+            'auth': api_url_for('oauth_connect', service_name='bitbucket'),
             'importAuth': node.api_url_for('bitbucket_import_auth'),
             'files': node.web_url_for('collect_file_trees'),
             'folders': node.api_url_for('bitbucket_root_folder'),

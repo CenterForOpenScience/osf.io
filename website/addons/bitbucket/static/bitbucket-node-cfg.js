@@ -36,46 +36,6 @@ var BitbucketConfigHelper = (function() {
             .fadeOut(100).fadeIn();
     };
 
-    var createRepo = function() {
-
-        var $elm = $('#addonSettingsBitbucket');
-        var $select = $elm.find('select');
-
-        bootbox.prompt({
-            title: 'Name your new repo',
-            placeholder: 'Repo name',
-            callback: function (repoName) {
-                // Return if cancelled
-                if (repoName === null) {
-                    return;
-                }
-
-                if (repoName === '') {
-                    displayError('Your repo must have a name');
-                    return;
-                }
-
-                $osf.postJSON(
-                    nodeApiUrl + 'bitbucket/repo/create/',
-                    {name: repoName}
-                ).done(function (response) {
-                        var repoName = response.user + ' / ' + response.repo;
-                        $select.append('<option value="' + repoName + '">' + $osf.htmlEscape(repoName) + '</option>');
-                        $select.val(repoName);
-                        updateHidden(repoName);
-                    }).fail(function () {
-                        displayError('Could not create repository');
-                    });
-            },
-            buttons:{
-                confirm:{
-                    label: 'Save',
-                    className:'btn-success'
-                }
-            }
-        });
-    };
-
     var askImport = function() {
         $.get('/api/v1/settings/bitbucket/accounts/'
         ).done(function(data){
@@ -135,10 +95,6 @@ var BitbucketConfigHelper = (function() {
             if (value) {
                 updateHidden(value);
             }
-        });
-
-        $('#bitbucketCreateRepo').on('click', function() {
-            createRepo();
         });
 
         $('#bitbucketImportToken').on('click', function() {

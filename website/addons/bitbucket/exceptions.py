@@ -1,6 +1,3 @@
-from bitbucket3 import BitbucketError  # noqa
-
-
 class ApiError(Exception):
     pass
 

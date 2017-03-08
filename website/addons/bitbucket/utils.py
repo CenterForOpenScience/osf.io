@@ -3,21 +3,11 @@ import uuid
 import urllib
 import hashlib
 import httplib as http
-from bitbucket3.repos.branch import Branch
 
 from framework.exceptions import HTTPError
 from website.addons.base.exceptions import HookError
 
 from website.addons.bitbucket.api import BitbucketClient
-
-MESSAGE_BASE = 'via the Open Science Framework'
-MESSAGES = {
-    'add': 'Added {0}'.format(MESSAGE_BASE),
-    'move': 'Moved {0}'.format(MESSAGE_BASE),
-    'copy': 'Copied {0}'.format(MESSAGE_BASE),
-    'update': 'Updated {0}'.format(MESSAGE_BASE),
-    'delete': 'Deleted {0}'.format(MESSAGE_BASE),
-}
 
 
 def make_hook_secret():
@@ -61,75 +51,27 @@ def get_refs(addon, branch=None, sha=None, connection=None):
     :param Bitbucket connection: Bitbucket API object. If None, one will be created
         from the addon's user settings.
     """
-    connection = connection or BitbucketClient(external_account=addon.external_account)
+    connection = connection or BitbucketClient(access_token=addon.external_account.oauth_key)
 
     if sha and not branch:
         raise HTTPError(http.BAD_REQUEST)
 
     # Get default branch if not provided
     if not branch:
-        repo = connection.repo(addon.user, addon.repo)
-        if repo is None:
+        branch = connection.get_repo_default_branch(addon.user, addon.repo)
+        if branch is None:
             return None, None, None
-        branch = repo.default_branch
-    # Get registered branches if provided
-    registered_branches = (
-        [Branch.from_json(b) for b in addon.registration_data.get('branches', [])]
-        if addon.owner.is_registration
-        else []
-    )
 
-    registered_branch_names = [
-        each.name
-        for each in registered_branches
-    ]
-    # Fail if registered and branch not in registration data
-    if registered_branches and branch not in registered_branch_names:
-        raise HTTPError(http.BAD_REQUEST)
+    # Get branch list from Bitbucket API
+    branches = connection.branches(addon.user, addon.repo)
 
-    # Get data from Bitbucket API if not registered
-    branches = registered_branches or connection.branches(addon.user, addon.repo)
-
-    # Use registered SHA if provided
+    # identify commit sha for requested branch
     for each in branches:
-        if branch == each.name:
-            sha = each.commit.sha
+        if branch == each['name']:
+            sha = each['target']['hash']
             break
-    return branch, sha, branches
 
-
-def check_permissions(node_settings, auth, connection, branch, sha=None, repo=None):
-
-    user_settings = node_settings.user_settings
-    has_access = False
-
-    has_auth = bool(user_settings and user_settings.has_auth)
-    if has_auth:
-        repo = repo or connection.repo(
-            node_settings.user, node_settings.repo
-        )
-
-        has_access = (
-            repo is not None and (
-                'permissions' not in repo.to_json() or
-                repo.to_json()['permissions']['push']
-            )
-        )
-
-    if sha:
-        branches = connection.branches(
-            node_settings.user, node_settings.repo, branch
-        )
-        # TODO Will I ever return false?
-        is_head = next((True for branch in branches if sha == branch.commit.sha), None)
-    else:
-        is_head = True
-
-    can_edit = (
-        node_settings.owner.can_edit(auth) and
-        not node_settings.owner.is_registration and
-        has_access and
-        is_head
-    )
-
-    return can_edit
+    return branch, sha, [
+        {'name': x['name'], 'sha': x['target']['hash']}
+        for x in branches
+    ]

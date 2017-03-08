@@ -1,10 +1,8 @@
 # -*- coding: utf-8 -*-
 
-import itertools
-import os
-import urlparse
+# import os
+# import urlparse
 
-from bitbucket3 import BitbucketError
 import markupsafe
 from modularodm import fields
 
@@ -16,7 +14,7 @@ from website.addons.base import exceptions
 from website.addons.base import AddonOAuthUserSettingsBase, AddonOAuthNodeSettingsBase
 from website.addons.base import StorageAddonBase
 
-from website.addons.bitbucket import utils
+# from website.addons.bitbucket import utils
 from website.addons.bitbucket.api import BitbucketClient
 from website.addons.bitbucket.serializer import BitbucketSerializer
 from website.addons.bitbucket import settings as bitbucket_settings
@@ -28,6 +26,16 @@ hook_domain = bitbucket_settings.HOOK_DOMAIN or settings.DOMAIN
 
 
 class BitbucketProvider(ExternalProvider):
+    """Provider to handler Bitbucket OAuth workflow
+
+    API Docs::
+
+    * https://developer.atlassian.com/bitbucket/api/2/reference/meta/authentication
+
+    * https://confluence.atlassian.com/bitbucket/oauth-on-bitbucket-cloud-238027431.html
+
+    """
+
     name = 'Bitbucket'
     short_name = 'bitbucket'
 
@@ -38,50 +46,50 @@ class BitbucketProvider(ExternalProvider):
     callback_url = bitbucket_settings.OAUTH_ACCESS_TOKEN_URL
     default_scopes = bitbucket_settings.SCOPE
 
+    auto_refresh_url = callback_url
+    refresh_time = bitbucket_settings.REFRESH_TIME
+    expiry_time = bitbucket_settings.EXPIRY_TIME
+
     def handle_callback(self, response):
         """View called when the OAuth flow is completed. Adds a new BitbucketUserSettings
         record to the user and saves the account info.
         """
-        client = BitbucketClient(
-            access_token=response['access_token']
-        )
 
-        user_info = client.user()
+        client = BitbucketClient(access_token=response['access_token'])
+        user_info = client.get_user()
 
         return {
-            'provider_id': str(user_info.id),
-            'profile_url': user_info.html_url,
-            'display_name': user_info.login
+            'provider_id': user_info['uuid'],
+            'profile_url': user_info['links']['html']['href'],
+            'display_name': user_info['username']
         }
+
+    def fetch_access_token(self, force_refresh=False):
+        self.refresh_oauth_key(force=force_refresh)
+        return self.account.oauth_key
 
 
 class BitbucketUserSettings(AddonOAuthUserSettingsBase):
     """Stores user-specific bitbucket information
+
+    Quirks::
+
+    * Bitbucket does not support remote revocation of access tokens.
+
     """
     oauth_provider = BitbucketProvider
     serializer = BitbucketSerializer
-
-    def revoke_remote_oauth_access(self, external_account):
-        """Overrides default behavior during external_account deactivation.
-
-        Tells Bitbucket to remove the grant for the OSF associated with this account.
-        """
-        connection = BitbucketClient(external_account=external_account)
-        try:
-            connection.revoke_token()
-        except BitbucketError:
-            pass
 
     # Required for importing username from social profile configuration page
     # Assumes oldest connected account is primary.
     @property
     def public_id(self):
-        gh_accounts = [
+        bitbucket_accounts = [
             a for a in self.owner.external_accounts
             if a.provider == self.oauth_provider.short_name
         ]
-        if gh_accounts:
-            return gh_accounts[0].display_name
+        if bitbucket_accounts:
+            return bitbucket_accounts[0].display_name
         return None
 
 
@@ -93,7 +101,15 @@ class BitbucketNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
     repo = fields.StringField()
     hook_id = fields.StringField()
     hook_secret = fields.StringField()
-    registration_data = fields.DictionaryField()
+
+    _api = None
+
+    @property
+    def api(self):
+        """Authenticated ExternalProvider instance"""
+        if self._api is None:
+            self._api = BitbucketProvider(self.external_account)
+        return self._api
 
     @property
     def folder_id(self):
@@ -108,10 +124,6 @@ class BitbucketNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
     @property
     def folder_path(self):
         return self.repo or None
-
-    @property
-    def has_auth(self):
-        return bool(self.user_settings and self.user_settings.has_auth)
 
     @property
     def complete(self):
@@ -135,10 +147,9 @@ class BitbucketNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         self.repo = None
         self.hook_id = None
         self.hook_secret = None
-        self.registration_data = None
 
     def deauthorize(self, auth=None, log=True):
-        self.delete_hook(save=False)
+        # self.delete_hook(save=False)
         self.clear_settings()
         if log:
             self.owner.add_log(
@@ -161,7 +172,7 @@ class BitbucketNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
     @property
     def repo_url(self):
         if self.user and self.repo:
-            return 'https://bitbucket.com/{0}/{1}/'.format(
+            return 'https://bitbucket.org/{0}/{1}/'.format(
                 self.user, self.repo
             )
 
@@ -172,8 +183,11 @@ class BitbucketNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
 
     @property
     def is_private(self):
-        connection = BitbucketClient(external_account=self.external_account)
-        return connection.repo(user=self.user, repo=self.repo).private
+        connection = BitbucketClient(access_token=self.external_account.oauth_key)
+        return connection.repo(user=self.user, repo=self.repo)['is_private']
+
+    def fetch_access_token(self):
+        return self.api.fetch_access_token()
 
     # TODO: Delete me and replace with serialize_settings / Knockout
     def to_json(self, user):
@@ -186,21 +200,24 @@ class BitbucketNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         if self.user_settings and self.user_settings.has_auth:
             valid_credentials = False
             owner = self.user_settings.owner
-            connection = BitbucketClient(external_account=self.external_account)
+            connection = BitbucketClient(access_token=self.external_account.oauth_key)
+
             # TODO: Fetch repo list client-side
             # Since /user/repos excludes organization repos to which the
             # current user has push access, we have to make extra requests to
             # find them
             valid_credentials = True
             try:
-                repos = itertools.chain.from_iterable((connection.repos(), connection.my_org_repos()))
+                mine = connection.repos()
+                ours = connection.team_repos()
                 repo_names = [
-                    '{0} / {1}'.format(repo.owner.login, repo.name)
-                    for repo in repos
+                    '{0} / {1}'.format(repo['owner']['username'], repo['name'])
+                    for repo in mine + ours
                 ]
-            except BitbucketError:
+            except Exception:
                 repo_names = []
                 valid_credentials = False
+
             if owner == user:
                 ret.update({'repo_names': repo_names})
             ret.update({
@@ -218,6 +235,7 @@ class BitbucketNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
                 'addons_url': web_url_for('user_addons'),
                 'files_url': self.owner.web_url_for('collect_file_trees')
             })
+
         return ret
 
     def serialize_waterbutler_credentials(self):
@@ -240,10 +258,10 @@ class BitbucketNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
 
         sha, urls = None, {}
         try:
-            sha = metadata['extra']['commit']['sha']
+            sha = metadata['extra']['commitSha']
             urls = {
-                'view': '{0}?ref={1}'.format(url, sha),
-                'download': '{0}?action=download&ref={1}'.format(url, sha)
+                'view': '{0}?commitSha={1}'.format(url, sha),
+                'download': '{0}?action=download&commitSha={1}'.format(url, sha)
             }
         except KeyError:
             pass
@@ -259,7 +277,7 @@ class BitbucketNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
                 'bitbucket': {
                     'user': self.user,
                     'repo': self.repo,
-                    'sha': sha,
+                    'commitSha': sha,
                 },
             },
         )
@@ -289,15 +307,15 @@ class BitbucketNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         if self.user_settings is None:
             return messages
 
-        connect = BitbucketClient(external_account=self.external_account)
+        connection = BitbucketClient(access_token=self.external_account.oauth_key)
 
         try:
-            repo = connect.repo(self.user, self.repo)
-        except (ApiError, BitbucketError):
+            repo = connection.repo()
+        except (ApiError, Exception):
             return
 
         node_permissions = 'public' if node.is_public else 'private'
-        repo_permissions = 'private' if repo.private else 'public'
+        repo_permissions = 'private' if repo.get('is_private', True) else 'public'
         if repo_permissions != node_permissions:
             message = (
                 'Warning: This OSF {category} is {node_perm}, but the Bitbucket '
@@ -317,7 +335,7 @@ class BitbucketNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
             else:
                 message += (
                     ' The files in this Bitbucket repo can be viewed on Bitbucket '
-                    '<u><a href="https://bitbucket.com/{user}/{repo}/">here</a></u>.'
+                    '<u><a href="https://bitbucket.org/{user}/{repo}/">here</a></u>.'
                 ).format(
                     user=self.user,
                     repo=self.repo,
@@ -432,48 +450,48 @@ class BitbucketNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
     # Hooks #
     #########
 
-    # TODO: Should Events be added here?
-    # TODO: Move hook logic to service
-    def add_hook(self, save=True):
+    # # TODO: Should Events be added here?
+    # # TODO: Move hook logic to service
+    # def add_hook(self, save=True):
 
-        if self.user_settings:
-            connect = BitbucketClient(external_account=self.external_account)
-            secret = utils.make_hook_secret()
-            hook = connect.add_hook(
-                self.user, self.repo,
-                'web',
-                {
-                    'url': urlparse.urljoin(
-                        hook_domain,
-                        os.path.join(
-                            self.owner.api_url, 'bitbucket', 'hook/'
-                        )
-                    ),
-                    'content_type': bitbucket_settings.HOOK_CONTENT_TYPE,
-                    'secret': secret,
-                },
-                events=bitbucket_settings.HOOK_EVENTS,
-            )
+    #     if self.user_settings:
+    #         connect = BitbucketClient(access_token=self.external_account.oauth_key)
+    #         secret = utils.make_hook_secret()
+    #         hook = connect.add_hook(
+    #             self.user, self.repo,
+    #             'web',
+    #             {
+    #                 'url': urlparse.urljoin(
+    #                     hook_domain,
+    #                     os.path.join(
+    #                         self.owner.api_url, 'bitbucket', 'hook/'
+    #                     )
+    #                 ),
+    #                 'content_type': bitbucket_settings.HOOK_CONTENT_TYPE,
+    #                 'secret': secret,
+    #             },
+    #             events=bitbucket_settings.HOOK_EVENTS,
+    #         )
 
-            if hook:
-                self.hook_id = hook.id
-                self.hook_secret = secret
-                if save:
-                    self.save()
+    #         if hook:
+    #             self.hook_id = hook.id
+    #             self.hook_secret = secret
+    #             if save:
+    #                 self.save()
 
-    def delete_hook(self, save=True):
-        """
-        :return bool: Hook was deleted
-        """
-        if self.user_settings and self.hook_id:
-            connection = BitbucketClient(external_account=self.external_account)
-            try:
-                response = connection.delete_hook(self.user, self.repo, self.hook_id)
-            except (BitbucketError, NotFoundError):
-                return False
-            if response:
-                self.hook_id = None
-                if save:
-                    self.save()
-                return True
-        return False
+    # def delete_hook(self, save=True):
+    #     """
+    #     :return bool: Hook was deleted
+    #     """
+    #     if self.user_settings and self.hook_id:
+    #         connection = BitbucketClient(access_token=self.external_account.oauth_key)
+    #         try:
+    #             response = connection.delete_hook(self.user, self.repo, self.hook_id)
+    #         except (BitbucketError, NotFoundError):
+    #             return False
+    #         if response:
+    #             self.hook_id = None
+    #             if save:
+    #                 self.save()
+    #             return True
+    #     return False

@@ -9,8 +9,6 @@ from nose.tools import *  # noqa (PEP8 asserts)
 from tests.base import OsfTestCase, get_default_metaschema
 from tests.factories import ProjectFactory, UserFactory, AuthUserFactory
 
-from bitbucket3.repos.branch import Branch
-
 from framework.exceptions import HTTPError
 from framework.auth import Auth
 
@@ -22,9 +20,12 @@ from website.addons.bitbucket import views, utils
 from website.addons.bitbucket.api import BitbucketClient
 from website.addons.bitbucket.model import BitbucketProvider
 from website.addons.bitbucket.serializer import BitbucketSerializer
-from website.addons.bitbucket.utils import check_permissions
-from website.addons.bitbucket.tests.utils import create_mock_bitbucket, BitbucketAddonTestCase
+from website.addons.bitbucket.tests.utils import BitbucketAddonTestCase
 from website.addons.bitbucket.tests.factories import BitbucketAccountFactory
+
+
+def create_mock_bitbucket(*args, **kwargs):
+    return {}
 
 
 class TestBitbucketAuthViews(BitbucketAddonTestCase, OAuthAddonAuthViewsTestCaseMixin):
@@ -184,71 +185,6 @@ class TestBitbucketViews(OsfTestCase):
     def test_get_refs_sha_no_branch(self):
         with assert_raises(HTTPError):
             utils.get_refs(self.node_settings, sha='12345')
-
-    def test_get_refs_registered_missing_branch(self):
-        bitbucket_mock = self.bitbucket
-        self.node_settings.registration_data = {
-            'branches': [
-                branch.to_json()
-                for branch in bitbucket_mock.branches.return_value
-            ]
-        }
-        self.node_settings.owner.is_registration = True
-        with assert_raises(HTTPError):
-            utils.get_refs(self.node_settings, branch='nothere')
-
-    # Tests for _check_permissions
-    # make a user with no authorization; make sure check_permissions returns false
-    def test_permissions_no_auth(self):
-        bitbucket_mock = self.bitbucket
-        # project is set to private right now
-        connection = bitbucket_mock
-        non_authenticated_user = UserFactory()
-        non_authenticated_auth = Auth(user=non_authenticated_user)
-        branch = 'master'
-        assert_false(check_permissions(self.node_settings, non_authenticated_auth, connection, branch))
-
-    # make a repository that doesn't allow push access for this user;
-    # make sure check_permissions returns false
-    @mock.patch('website.addons.bitbucket.model.BitbucketUserSettings.has_auth')
-    @mock.patch('website.addons.bitbucket.api.BitbucketClient.repo')
-    def test_permissions_no_access(self, mock_repo, mock_has_auth):
-        bitbucket_mock = self.bitbucket
-        mock_has_auth.return_value = True
-        connection = bitbucket_mock
-        branch = 'master'
-        mock_repository = mock.NonCallableMock()
-        mock_repository.user = 'fred'
-        mock_repository.repo = 'mock-repo'
-        mock_repository.to_json.return_value = {
-            'user': 'fred',
-            'repo': 'mock-repo',
-            'permissions': {
-                'push': False,  # this is key
-            },
-        }
-        mock_repo.return_value = mock_repository
-        assert_false(check_permissions(self.node_settings, self.consolidated_auth, connection, branch, repo=mock_repository))
-
-    # make a branch with a different commit than the commit being passed into check_permissions
-    @mock.patch('website.addons.bitbucket.model.BitbucketUserSettings.has_auth')
-    def test_permissions_not_head(self, mock_has_auth):
-        bitbucket_mock = self.bitbucket
-        mock_has_auth.return_value = True
-        connection = bitbucket_mock
-        mock_branch = mock.NonCallableMock()
-        mock_branch.commit.sha = '67890'
-        sha = '12345'
-        assert_false(check_permissions(self.node_settings, self.consolidated_auth, connection, mock_branch, sha=sha))
-
-    # make sure permissions are not granted for editing a registration
-    @mock.patch('website.addons.bitbucket.model.BitbucketUserSettings.has_auth')
-    def test_permissions(self, mock_has_auth):
-        bitbucket_mock = self.bitbucket
-        mock_has_auth.return_value = True
-        connection = bitbucket_mock
-        self.node_settings.owner.is_registration = True
-        assert_false(check_permissions(self.node_settings, self.consolidated_auth, connection, 'master'))
 
     def check_hook_urls(self, urls, node, path, sha):
         url = node.web_url_for('addon_view_or_download_file', path=path, provider='bitbucket')

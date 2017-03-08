@@ -1,14 +1,15 @@
 # -*- coding: utf-8 -*-
 """Serializer tests for the Bitbucket addon."""
+
 import mock
 from nose.tools import *  # noqa (PEP8 asserts)
 
-from website.addons.base.testing.serializers import StorageAddonSerializerTestSuiteMixin
+from tests.base import OsfTestCase
 from website.addons.bitbucket.api import BitbucketClient
 from website.addons.bitbucket.tests.factories import BitbucketAccountFactory
 from website.addons.bitbucket.serializer import BitbucketSerializer
+from website.addons.base.testing.serializers import StorageAddonSerializerTestSuiteMixin
 
-from tests.base import OsfTestCase
 
 class TestBitbucketSerializer(StorageAddonSerializerTestSuiteMixin, OsfTestCase):
 

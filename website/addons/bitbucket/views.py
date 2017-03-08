@@ -10,11 +10,10 @@ from framework.exceptions import HTTPError
 
 from website.addons.base import generic_views
 from website.addons.bitbucket.api import BitbucketClient, ref_to_params
-from website.addons.bitbucket.exceptions import NotFoundError, BitbucketError
+from website.addons.bitbucket.exceptions import NotFoundError
 from website.addons.bitbucket.serializer import BitbucketSerializer
 from website.addons.bitbucket.utils import (
-    get_refs, check_permissions,
-    verify_hook_signature, MESSAGES
+    get_refs, verify_hook_signature
 )
 
 from website.models import NodeLog
@@ -27,8 +26,6 @@ from website.util import rubeus
 
 logger = logging.getLogger(__name__)
 
-logging.getLogger('bitbucket3').setLevel(logging.WARNING)
-logging.getLogger('requests.packages.urllib3.connectionpool').setLevel(logging.WARNING)
 
 SHORT_NAME = 'bitbucket'
 FULL_NAME = 'Bitbucket'
@@ -99,7 +96,7 @@ def bitbucket_set_config(auth, **kwargs):
         raise HTTPError(http.BAD_REQUEST)
 
     # Verify that repo exists and that user can access
-    connection = BitbucketClient(external_account=node_settings.external_account)
+    connection = BitbucketClient(access_token=node_settings.external_account.oauth_key)
     repo = connection.repo(bitbucket_user_name, bitbucket_repo_name)
     if repo is None:
         if user_settings:
@@ -121,8 +118,8 @@ def bitbucket_set_config(auth, **kwargs):
     # Update hooks
     if changed:
 
-        # Delete existing hook, if any
-        node_settings.delete_hook()
+        # # Delete existing hook, if any
+        # node_settings.delete_hook()
 
         # Update node settings
         node_settings.user = bitbucket_user_name
@@ -142,9 +139,9 @@ def bitbucket_set_config(auth, **kwargs):
             auth=auth,
         )
 
-        # Add new hook
-        if node_settings.user and node_settings.repo:
-            node_settings.add_hook(save=False)
+        # # Add new hook
+        # if node_settings.user and node_settings.repo:
+        #     node_settings.add_hook(save=False)
 
         node_settings.save()
 
@@ -157,7 +154,7 @@ def bitbucket_download_starball(node_addon, **kwargs):
     archive = kwargs.get('archive', 'tar')
     ref = request.args.get('sha', 'master')
 
-    connection = BitbucketClient(external_account=node_addon.external_account)
+    connection = BitbucketClient(access_token=node_addon.external_account.oauth_key)
     headers, data = connection.starball(
         node_addon.user, node_addon.repo, archive, ref
     )
@@ -192,11 +189,7 @@ def bitbucket_hgrid_data(node_settings, auth, **kwargs):
     if not node_settings.complete:
         return
 
-    connection = BitbucketClient(external_account=node_settings.external_account)
-
-    # Initialize repo here in the event that it is set in the privacy check
-    # below. This potentially saves an API call in _check_permissions, below.
-    repo = None
+    connection = BitbucketClient(access_token=node_settings.external_account.oauth_key)
 
     # Quit if privacy mismatch and not contributor
     node = node_settings.owner
@@ -218,38 +211,31 @@ def bitbucket_hgrid_data(node_settings, auth, **kwargs):
             sha=kwargs.get('sha'),
             connection=connection,
         )
-    except (NotFoundError, BitbucketError):
+    except (NotFoundError, Exception):
         # TODO: Show an alert or change Bitbucket configuration?
         logger.error('Bitbucket repo not found')
         return
 
-    if branch is not None:
-        ref = ref_to_params(branch, sha)
-        can_edit = check_permissions(
-            node_settings, auth, connection, branch, sha, repo=repo,
-        )
-    else:
-        ref = None
-        can_edit = False
+    ref = None if branch is None else ref_to_params(branch, sha)
 
     name_tpl = '{user}/{repo}'.format(
         user=node_settings.user, repo=node_settings.repo
     )
 
     permissions = {
-        'edit': can_edit,
+        'edit': False,
         'view': True,
         'private': node_settings.is_private
     }
     urls = {
-        'upload': node_settings.owner.api_url + 'bitbucket/file/' + (ref or ''),
+        'upload': None,
         'fetch': node_settings.owner.api_url + 'bitbucket/hgrid/' + (ref or ''),
         'branch': node_settings.owner.api_url + 'bitbucket/hgrid/root/',
         'zip': node_settings.owner.api_url + 'bitbucket/zipball/' + (ref or ''),
         'repo': 'https://bitbucket.com/{0}/{1}/tree/{2}'.format(node_settings.user, node_settings.repo, branch)
     }
 
-    branch_names = [each.name for each in branches]
+    branch_names = [each['name'] for each in branches]
     if not branch_names:
         branch_names = [branch]  # if repo un-init-ed then still add default branch to list of branches
 
@@ -262,33 +248,6 @@ def bitbucket_hgrid_data(node_settings, auth, **kwargs):
         defaultBranch=branch,
         private_key=kwargs.get('view_only', None),
     )]
-
-#########
-# Repos #
-#########
-
-@must_have_addon(SHORT_NAME, 'user')
-@must_have_addon(SHORT_NAME, 'node')
-@must_be_addon_authorizer(SHORT_NAME)
-@must_have_permission('write')
-def bitbucket_create_repo(**kwargs):
-    repo_name = request.json.get('name')
-    if not repo_name:
-        raise HTTPError(http.BAD_REQUEST)
-
-    node_settings = kwargs['node_addon']
-    connection = BitbucketClient(external_account=node_settings.external_account)
-
-    try:
-        repo = connection.create_repo(repo_name, auto_init=True)
-    except BitbucketError:
-        # TODO: Check status code
-        raise HTTPError(http.BAD_REQUEST)
-
-    return {
-        'user': repo.owner.login,
-        'repo': repo.name,
-    }
 
 #########
 # Hooks #
@@ -365,11 +324,6 @@ def bitbucket_hook_callback(node_addon, **kwargs):
     for commit in payload.get('commits', []):
 
         # TODO: Look up OSF user by commit
-
-        # Skip if pushed by OSF
-        if commit['message'] and commit['message'] in MESSAGES.values():
-            continue
-
         _id = commit['id']
         date = dateparse(commit['timestamp'])
         committer = commit['committer']['name']

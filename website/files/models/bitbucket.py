@@ -13,8 +13,8 @@ class BitbucketFolder(BitbucketFileNode, Folder):
 
 
 class BitbucketFile(BitbucketFileNode, File):
-    version_identifier = 'ref'
+    version_identifier = 'commitSha'
 
-    def touch(self, auth_header, revision=None, ref=None, branch=None, **kwargs):
-        revision = revision or ref or branch
+    def touch(self, auth_header, revision=None, commitSha=None, branch=None, **kwargs):
+        revision = revision or commitSha or branch
         return super(BitbucketFile, self).touch(auth_header, revision=revision, **kwargs)

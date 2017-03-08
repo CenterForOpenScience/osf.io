@@ -57,7 +57,6 @@
                 <button class="btn btn-success addon-settings-submit">
                     Save
                 </button>
-                <a id="bitbucketCreateRepo" class="btn btn-success pull-right">Create Repo</a>
             </div>
         </div>
         % elif bitbucket_repo_full_name:

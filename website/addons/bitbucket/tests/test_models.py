@@ -4,9 +4,6 @@ import mock
 import unittest
 from nose.tools import *  # noqa
 
-from bitbucket3 import BitbucketError
-from bitbucket3.repos import Repository
-
 from tests.base import OsfTestCase, get_default_metaschema
 from tests.factories import ExternalAccountFactory, ProjectFactory, UserFactory
 
@@ -22,9 +19,6 @@ from website.addons.bitbucket.tests.factories import (
     BitbucketUserSettingsFactory
 )
 from website.addons.base.testing import models
-
-from .utils import create_mock_bitbucket
-mock_bitbucket = create_mock_bitbucket()
 
 
 class TestNodeSettings(models.OAuthAddonNodeSettingsTestSuiteMixin, OsfTestCase):
@@ -67,17 +61,19 @@ class TestNodeSettings(models.OAuthAddonNodeSettingsTestSuiteMixin, OsfTestCase)
         super(TestNodeSettings, self).test_complete_has_auth_not_verified()
 
     @mock.patch('website.addons.bitbucket.api.BitbucketClient.repos')
-    @mock.patch('website.addons.bitbucket.api.BitbucketClient.my_org_repos')
-    def test_to_json(self, mock_org, mock_repos):
+    # @mock.patch('website.addons.bitbucket.api.BitbucketClient.my_org_repos')
+    # def test_to_json(self, mock_org, mock_repos):
+    def test_to_json(self, mock_repos):
         mock_repos.return_value = {}
-        mock_org.return_value = {}
+        # mock_org.return_value = {}
         super(TestNodeSettings, self).test_to_json()
 
     @mock.patch('website.addons.bitbucket.api.BitbucketClient.repos')
-    @mock.patch('website.addons.bitbucket.api.BitbucketClient.my_org_repos')
-    def test_to_json_user_is_owner(self, mock_org, mock_repos):
+    # @mock.patch('website.addons.bitbucket.api.BitbucketClient.my_org_repos')
+    # def test_to_json_user_is_owner(self, mock_org, mock_repos):
+    def test_to_json_user_is_owner(self, mock_repos):
         mock_repos.return_value = {}
-        mock_org.return_value = {}
+        # mock_org.return_value = {}
         result = self.node_settings.to_json(self.user)
         assert_true(result['user_has_auth'])
         assert_equal(result['bitbucket_user'], 'abc')
@@ -86,10 +82,11 @@ class TestNodeSettings(models.OAuthAddonNodeSettingsTestSuiteMixin, OsfTestCase)
         assert_equal(result.get('repo_names', None), [])
 
     @mock.patch('website.addons.bitbucket.api.BitbucketClient.repos')
-    @mock.patch('website.addons.bitbucket.api.BitbucketClient.my_org_repos')
-    def test_to_json_user_is_not_owner(self, mock_org, mock_repos):
+    # @mock.patch('website.addons.bitbucket.api.BitbucketClient.my_org_repos')
+    # def test_to_json_user_is_not_owner(self, mock_org, mock_repos):
+    def test_to_json_user_is_not_owner(self, mock_repos):
         mock_repos.return_value = {}
-        mock_org.return_value = {}
+        # mock_org.return_value = {}
         not_owner = UserFactory()
         result = self.node_settings.to_json(not_owner)
         assert_false(result['user_has_auth'])
@@ -147,10 +144,10 @@ class TestCallbacks(OsfTestCase):
         assert_is(result, None)
 
     @mock.patch('website.addons.bitbucket.api.BitbucketClient.repo')
-    def test_before_page_load_osf_public_gh_public(self, mock_repo):
+    def test_before_page_load_osf_public_bb_public(self, mock_repo):
         self.project.is_public = True
         self.project.save()
-        mock_repo.return_value = Repository.from_json({'private': False})
+        mock_repo.return_value = {'is_private': False}
         message = self.node_settings.before_page_load(self.project, self.project.creator)
         mock_repo.assert_called_with(
             self.node_settings.user,
@@ -159,10 +156,10 @@ class TestCallbacks(OsfTestCase):
         assert_false(message)
 
     @mock.patch('website.addons.bitbucket.api.BitbucketClient.repo')
-    def test_before_page_load_osf_public_gh_private(self, mock_repo):
+    def test_before_page_load_osf_public_bb_private(self, mock_repo):
         self.project.is_public = True
         self.project.save()
-        mock_repo.return_value = Repository.from_json({'private': True})
+        mock_repo.return_value = {'is_private': True}
         message = self.node_settings.before_page_load(self.project, self.project.creator)
         mock_repo.assert_called_with(
             self.node_settings.user,
@@ -171,8 +168,8 @@ class TestCallbacks(OsfTestCase):
         assert_true(message)
 
     @mock.patch('website.addons.bitbucket.api.BitbucketClient.repo')
-    def test_before_page_load_osf_private_gh_public(self, mock_repo):
-        mock_repo.return_value = Repository.from_json({'private': False})
+    def test_before_page_load_osf_private_bb_public(self, mock_repo):
+        mock_repo.return_value = {'is_private': False}
         message = self.node_settings.before_page_load(self.project, self.project.creator)
         mock_repo.assert_called_with(
             self.node_settings.user,
@@ -181,8 +178,8 @@ class TestCallbacks(OsfTestCase):
         assert_true(message)
 
     @mock.patch('website.addons.bitbucket.api.BitbucketClient.repo')
-    def test_before_page_load_osf_private_gh_private(self, mock_repo):
-        mock_repo.return_value = Repository.from_json({'private': True})
+    def test_before_page_load_osf_private_bb_private(self, mock_repo):
+        mock_repo.return_value = {'is_private': True}
         message = self.node_settings.before_page_load(self.project, self.project.creator)
         mock_repo.assert_called_with(
             self.node_settings.user,
@@ -291,49 +288,49 @@ class TestBitbucketNodeSettings(OsfTestCase):
         self.user_settings.owner.save()
         self.node_settings = BitbucketNodeSettingsFactory(user_settings=self.user_settings)
 
-    @mock.patch('website.addons.bitbucket.api.BitbucketClient.delete_hook')
-    def test_delete_hook(self, mock_delete_hook):
-        self.node_settings.hook_id = 'hook'
-        self.node_settings.save()
-        args = (
-            self.node_settings.user,
-            self.node_settings.repo,
-            self.node_settings.hook_id,
-        )
-        res = self.node_settings.delete_hook()
-        assert_true(res)
-        mock_delete_hook.assert_called_with(*args)
+    # @mock.patch('website.addons.bitbucket.api.BitbucketClient.delete_hook')
+    # def test_delete_hook(self, mock_delete_hook):
+    #     self.node_settings.hook_id = 'hook'
+    #     self.node_settings.save()
+    #     args = (
+    #         self.node_settings.user,
+    #         self.node_settings.repo,
+    #         self.node_settings.hook_id,
+    #     )
+    #     res = self.node_settings.delete_hook()
+    #     assert_true(res)
+    #     mock_delete_hook.assert_called_with(*args)
 
-    @mock.patch('website.addons.bitbucket.api.BitbucketClient.delete_hook')
-    def test_delete_hook_no_hook(self, mock_delete_hook):
-        res = self.node_settings.delete_hook()
-        assert_false(res)
-        assert_false(mock_delete_hook.called)
+    # @mock.patch('website.addons.bitbucket.api.BitbucketClient.delete_hook')
+    # def test_delete_hook_no_hook(self, mock_delete_hook):
+    #     res = self.node_settings.delete_hook()
+    #     assert_false(res)
+    #     assert_false(mock_delete_hook.called)
 
-    @mock.patch('website.addons.bitbucket.api.BitbucketClient.delete_hook')
-    def test_delete_hook_not_found(self, mock_delete_hook):
-        self.node_settings.hook_id = 'hook'
-        self.node_settings.save()
-        mock_delete_hook.side_effect = NotFoundError
-        args = (
-            self.node_settings.user,
-            self.node_settings.repo,
-            self.node_settings.hook_id,
-        )
-        res = self.node_settings.delete_hook()
-        assert_false(res)
-        mock_delete_hook.assert_called_with(*args)
+    # @mock.patch('website.addons.bitbucket.api.BitbucketClient.delete_hook')
+    # def test_delete_hook_not_found(self, mock_delete_hook):
+    #     self.node_settings.hook_id = 'hook'
+    #     self.node_settings.save()
+    #     mock_delete_hook.side_effect = NotFoundError
+    #     args = (
+    #         self.node_settings.user,
+    #         self.node_settings.repo,
+    #         self.node_settings.hook_id,
+    #     )
+    #     res = self.node_settings.delete_hook()
+    #     assert_false(res)
+    #     mock_delete_hook.assert_called_with(*args)
 
-    @mock.patch('website.addons.bitbucket.api.BitbucketClient.delete_hook')
-    def test_delete_hook_error(self, mock_delete_hook):
-        self.node_settings.hook_id = 'hook'
-        self.node_settings.save()
-        mock_delete_hook.side_effect = BitbucketError(mock.Mock())
-        args = (
-            self.node_settings.user,
-            self.node_settings.repo,
-            self.node_settings.hook_id,
-        )
-        res = self.node_settings.delete_hook()
-        assert_false(res)
-        mock_delete_hook.assert_called_with(*args)
+    # @mock.patch('website.addons.bitbucket.api.BitbucketClient.delete_hook')
+    # def test_delete_hook_error(self, mock_delete_hook):
+    #     self.node_settings.hook_id = 'hook'
+    #     self.node_settings.save()
+    #     mock_delete_hook.side_effect = BitbucketError(mock.Mock())
+    #     args = (
+    #         self.node_settings.user,
+    #         self.node_settings.repo,
+    #         self.node_settings.hook_id,
+    #     )
+    #     res = self.node_settings.delete_hook()
+    #     assert_false(res)
+    #     mock_delete_hook.assert_called_with(*args)

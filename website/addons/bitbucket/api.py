@@ -1,173 +1,242 @@
 import urllib
-import itertools
+# import itertools
 
-import bitbucket3
-import cachecontrol
-from requests.adapters import HTTPAdapter
-from requests.exceptions import ConnectionError
+from framework.exceptions import HTTPError
 
-from website.addons.bitbucket import settings as bitbucket_settings
-from website.addons.bitbucket.exceptions import NotFoundError
+from website.util.client import BaseClient
+from website.addons.bitbucket import settings
 
 
-# Initialize caches
-https_cache = cachecontrol.CacheControlAdapter()
-default_adapter = HTTPAdapter()
+class BitbucketClient(BaseClient):
 
+    def __init__(self, access_token=None):
+        self.access_token = access_token
+        self.username = None
 
-class BitbucketClient(object):
-
-    def __init__(self, external_account=None, access_token=None):
-
-        self.access_token = getattr(external_account, 'oauth_key', None) or access_token
+    @property
+    def _default_headers(self):
         if self.access_token:
-            self.gh3 = bitbucket3.login(token=self.access_token)
-            self.gh3.set_client_id(
-                bitbucket_settings.CLIENT_ID, bitbucket_settings.CLIENT_SECRET
-            )
-        else:
-            self.gh3 = bitbucket3.Bitbucket()
+            return {'Authorization': 'Bearer {}'.format(self.access_token)}
+        return {}
 
-        # Caching libary
-        if bitbucket_settings.CACHE:
-            self.gh3._session.mount('https://api.bitbucket.com/user', default_adapter)
-            self.gh3._session.mount('https://', https_cache)
+    def get_username(self):
+        if not self.username:
+            self.username = self.get_user()['username']
+        return self.username
 
-    def user(self, user=None):
+    def get_user(self):
+        """Fetch the user identified by ``self.access_token``.
+
+        API docs::
+
+        * https://developer.atlassian.com/bitbucket/api/2/reference/resource/user
+
+        :rtype: dict
+        :return: a metadata object representing the user
+        """
+        res = self._make_request(
+            'GET',
+            self._build_url(settings.BITBUCKET_V2_API_URL, 'user'),
+            expects=(200, ),
+            throws=HTTPError(401)
+        )
+        return res.json()
+
+    def user(self, username=None):
         """Fetch a user or the authenticated user.
+
+        API docs::
+
+        * https://developer.atlassian.com/bitbucket/api/2/reference/resource/users
 
         :param user: Optional Bitbucket user name; will fetch authenticated
             user if omitted
-        :return dict: Bitbucket API response
+        :rtype: dict
+        :return: user metadata object
         """
-        return self.gh3.user(user)
+        if username is None:
+            username = self.get_username
+
+        res = self._make_request(
+            'GET',
+            self._build_url(settings.BITBUCKET_V2_API_URL, 'users', username),
+            expects=(200, ),
+            throws=HTTPError(401)
+        )
+        return res.json()
 
     def repo(self, user, repo):
         """Get a single Bitbucket repo's info.
+
+        API docs::
+
+        * https://developer.atlassian.com/bitbucket/api/2/reference/resource/repositories/%7Busername%7D/%7Brepo_slug%7D
 
         :param str user: Bitbucket user name
         :param str repo: Bitbucket repo name
         :return: Dict of repo information
             See http://developer.bitbucket.com/v3/repos/#get
         """
-        try:
-            rv = self.gh3.repository(user, repo)
-        except ConnectionError:
-            raise NotFoundError
-
-        if rv:
-            return rv
-        raise NotFoundError
+        res = self._make_request(
+            'GET',
+            self._build_url(settings.BITBUCKET_V2_API_URL, 'repositories', user, repo),
+            expects=(200, ),
+            throws=HTTPError(401)
+        )
+        return res.json()
 
     def repos(self):
-        return self.gh3.iter_repos(type='all', sort='full_name')
+        """Return a list of repository objects owned by the user
 
-    def user_repos(self, user):
-        return self.gh3.iter_user_repos(user, type='all', sort='full_name')
+        API docs::
 
-    def my_org_repos(self, permissions=None):
-        permissions = permissions or ['push']
-        return itertools.chain.from_iterable(
-            team.iter_repos()
-            for team in self.gh3.iter_user_teams()
-            if team.permission in permissions
+        * https://developer.atlassian.com/bitbucket/api/2/reference/resource/repositories/%7Busername%7D
+
+        :rtype:
+        :return: list of repository objects
+        """
+        res = self._make_request(
+            'GET',
+            self._build_url(settings.BITBUCKET_V2_API_URL, 'repositories', self.get_username()),
+            expects=(200, ),
+            throws=HTTPError(401)
         )
+        return res.json()['values']
 
-    def create_repo(self, repo, **kwargs):
-        return self.gh3.create_repo(repo, **kwargs)
+    def team_repos(self):
+        """Return a list of repositories owned by teams the user is a member of.
 
-    def branches(self, user, repo, branch=None):
-        """List a repo's branches or get a single branch (in a list).
+        API docs::
+
+        * https://developer.atlassian.com/bitbucket/api/2/reference/resource/teams
+
+        * https://developer.atlassian.com/bitbucket/api/2/reference/resource/teams/%7Busername%7D/repositories
+
+        :rtype: list
+        :return: a list of repository objects
+        """
+
+        res = self._make_request(
+            'GET',
+            self._build_url(settings.BITBUCKET_V2_API_URL, 'teams') + '?role=member',
+            expects=(200, ),
+            throws=HTTPError(401)
+        )
+        teams = [x['username'] for x in res.json()['values']]
+
+        team_repos = []
+        for team in teams:
+            res = self._make_request(
+                'GET',
+                self._build_url(settings.BITBUCKET_V2_API_URL, 'teams', team, 'repositories'),
+                expects=(200, ),
+                throws=HTTPError(401)
+            )
+            team_repos.extend(res.json()['values'])
+
+        return team_repos
+
+    def get_repo_default_branch(self, user, repo):
+        """Return the default branch for a BB repository (what they call the
+        "main branch").  They do not provide this via their v2 API,
+        but there is a v1 endpoint that will return it.
+
+        API doc:
+        https://confluence.atlassian.com/bitbucket/repository-resource-1-0-296095202.html#repositoryResource1.0-GETtherepository%27smainbranch
 
         :param str user: Bitbucket user name
         :param str repo: Bitbucket repo name
-        :param str branch: Branch name if getting a single branch
+        :rtype str:
+        :return: name of the main branch
+
+        """
+        res = self._make_request(
+            'GET',
+            self._build_url(settings.BITBUCKET_V1_API_URL, 'repositories', user, repo, 'main-branch'),
+            expects=(200, ),
+            throws=HTTPError(401)
+        )
+        return res.json()['name']
+
+    def branches(self, user, repo):
+        """List a repo's branches.  This endpoint is paginated and may require
+        multiple requests.
+
+        API docs::
+
+        * https://developer.atlassian.com/bitbucket/api/2/reference/resource/repositories/%7Busername%7D/%7Brepo_slug%7D/refs/branches
+
+        :param str user: Bitbucket user name
+        :param str repo: Bitbucket repo name
         :return: List of branch dicts
-            http://developer.bitbucket.com/v3/repos/#list-branches
         """
-        if branch:
-            return [self.repo(user, repo).branch(branch)]
-        return self.repo(user, repo).iter_branches() or []
-
-    # TODO: Test
-    def starball(self, user, repo, archive='tar', ref='master'):
-        """Get link for archive download.
-
-        :param str user: Bitbucket user name
-        :param str repo: Bitbucket repo name
-        :param str archive: Archive format [tar|zip]
-        :param str ref: Git reference
-        :returns: tuple: Tuple of headers and file location
-        """
-
-        # bitbucket3 archive method writes file to disk
-        repository = self.repo(user, repo)
-        url = repository._build_url(archive + 'ball', ref, base_url=repository._api)
-        resp = repository._get(url, allow_redirects=True, stream=True)
-
-        return resp.headers, resp.content
+        branches, page_nbr = [], 1
+        while True:
+            url = self._build_url(settings.BITBUCKET_V2_API_URL, 'repositories', user, repo,
+                                  'refs', 'branches')
+            url = '{}?page={}'.format(url, page_nbr)
+            res = self._make_request(
+                'GET',
+                url,
+                expects=(200, ),
+                throws=HTTPError(401)
+            )
+            res_data = res.json()
+            branches.extend(res_data['values'])
+            page_nbr += 1
+            if not res_data.get('next', None):
+                break
+        return branches
 
     #########
     # Hooks #
     #########
 
-    def hooks(self, user, repo):
-        """List webhooks
+    # def hooks(self, user, repo):
+    #     """List webhooks
 
-        :param str user: Bitbucket user name
-        :param str repo: Bitbucket repo name
-        :return list: List of commit dicts from Bitbucket; see
-            http://developer.bitbucket.com/v3/repos/hooks/#json-http
-        """
-        return self.repo(user, repo).iter_hooks()
+    #     :param str user: Bitbucket user name
+    #     :param str repo: Bitbucket repo name
+    #     :return list: List of commit dicts from Bitbucket; see
+    #         http://developer.bitbucket.com/v3/repos/hooks/#json-http
+    #     """
+    #     return self.repo(user, repo).iter_hooks()
 
-    def add_hook(self, user, repo, name, config, events=None, active=True):
-        """Create a webhook.
+    # def add_hook(self, user, repo, name, config, events=None, active=True):
+    #     """Create a webhook.
 
-        :param str user: Bitbucket user name
-        :param str repo: Bitbucket repo name
-        :return dict: Hook info from Bitbucket: see see
-            http://developer.bitbucket.com/v3/repos/hooks/#json-http
-        """
-        try:
-            hook = self.repo(user, repo).create_hook(name, config, events, active)
-        except bitbucket3.BitbucketError:
-            # TODO Handle this case - if '20 hooks' in e.errors[0].get('message'):
-            return None
-        else:
-            return hook
+    #     :param str user: Bitbucket user name
+    #     :param str repo: Bitbucket repo name
+    #     :return dict: Hook info from Bitbucket: see see
+    #         http://developer.bitbucket.com/v3/repos/hooks/#json-http
+    #     """
+    #     try:
+    #         hook = self.repo(user, repo).create_hook(name, config, events, active)
+    #     except bitbucket3.BitbucketError:
+    #         # TODO Handle this case - if '20 hooks' in e.errors[0].get('message'):
+    #         return None
+    #     else:
+    #         return hook
 
-    def delete_hook(self, user, repo, _id):
-        """Delete a webhook.
+    # def delete_hook(self, user, repo, _id):
+    #     """Delete a webhook.
 
-        :param str user: Bitbucket user name
-        :param str repo: Bitbucket repo name
-        :return bool: True if successful, False otherwise
-        :raises: NotFoundError if repo or hook cannot be located
-        """
-        repo = self.repo(user, repo)
-        hook = repo.hook(_id)
-        if hook is None:
-            raise NotFoundError
-        return repo.hook(_id).delete()
-
-    ########
-    # Auth #
-    ########
-
-    def revoke_token(self):
-        if self.access_token:
-            return self.gh3.revoke_authorization(self.access_token)
-
+    #     :param str user: Bitbucket user name
+    #     :param str repo: Bitbucket repo name
+    #     :return bool: True if successful, False otherwise
+    #     :raises: NotFoundError if repo or hook cannot be located
+    #     """
+    #     repo = self.repo(user, repo)
+    #     hook = repo.hook(_id)
+    #     if hook is None:
+    #         raise NotFoundError
+    #     return repo.hook(_id).delete()
 
 def ref_to_params(branch=None, sha=None):
 
     params = urllib.urlencode({
         key: value
-        for key, value in {
-            'branch': branch,
-            'sha': sha,
-        }.iteritems()
+        for key, value in {'branch': branch, 'sha': sha}.iteritems()
         if value
     })
     if params:
