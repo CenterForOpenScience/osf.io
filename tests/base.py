@@ -243,10 +243,9 @@ class MockRequestTestCase(unittest.TestCase):
 
     DISABLE_OUTGOING_CONNECTIONS = False
 
-    @classmethod
-    def setUpClass(cls):
-        super(MockRequestTestCase, cls).setUpClass()
-        if cls.DISABLE_OUTGOING_CONNECTIONS:
+    def setUp(self):
+        super(MockRequestTestCase, self).setUp()
+        if self.DISABLE_OUTGOING_CONNECTIONS:
             httpretty.enable()
             for method in methods:
                 httpretty.register_uri(
@@ -258,11 +257,6 @@ class MockRequestTestCase(unittest.TestCase):
 
     def tearDown(self):
         super(MockRequestTestCase, self).tearDown()
-        httpretty.reset()
-
-    @classmethod
-    def tearDownClass(cls):
-        super(MockRequestTestCase, cls).tearDownClass()
         httpretty.reset()
         httpretty.disable()
 
