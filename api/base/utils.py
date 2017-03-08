@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import furl
+from django.core.exceptions import ObjectDoesNotExist
 from modularodm import Q
 from rest_framework.exceptions import NotFound
 from rest_framework.reverse import reverse
@@ -71,21 +72,31 @@ def absolute_reverse(view_name, query_kwargs=None, args=None, kwargs=None):
 
 
 def get_object_or_error(model_cls, query_or_pk, display_name=None, prefetch_fields=list()):
+    obj = query = None
     if isinstance(query_or_pk, basestring):
         if issubclass(model_cls, GuidMixin):
             query = {'guids___id': query_or_pk}
         else:
-            query = {model_cls.primary_identifier_name: query_or_pk}
+            if hasattr(model_cls, 'primary_identifier_name'):
+                query = {model_cls.primary_identifier_name: query_or_pk}
+            else:
+                obj = model_cls.load(query_or_pk)
     else:
-        query = to_django_query(query_or_pk, model_cls=model_cls)
-
-    try:
-        if isinstance(query, dict):
-            obj = model_cls.objects.eager(prefetch_fields).get(**query)
+        if hasattr(model_cls, 'primary_identifier_name'):
+            query = to_django_query(query_or_pk, model_cls=model_cls)
         else:
-            obj = model_cls.objects.eager(prefetch_fields).get(query)
-    except model_cls.DoesNotExist:
-        raise NotFound
+            obj = model_cls.find(query_or_pk)
+
+    if not obj:
+        if not query:
+            raise NotFound
+        try:
+            if isinstance(query, dict):
+                obj = model_cls.objects.eager(prefetch_fields).get(**query)
+            else:
+                obj = model_cls.objects.eager(prefetch_fields).get(query)
+        except ObjectDoesNotExist:
+            raise NotFound
 
     # For objects that have been disabled (is_active is False), return a 410.
     # The User model is an exception because we still want to allow
