@@ -63,12 +63,12 @@ from website.util.permissions import (ADMIN, CREATOR_PERMISSIONS,
                                       DEFAULT_CONTRIBUTOR_PERMISSIONS, READ,
                                       WRITE, expand_permissions,
                                       reduce_permissions)
-from .base import BaseModel, Guid, GuidMixin, GuidMixinQuerySet
+from .base import BaseModel, Guid, GuidMixin, MODMCompatibilityQuerySet
 
 logger = logging.getLogger(__name__)
 
 
-class AbstractNodeQuerySet(GuidMixinQuerySet):
+class AbstractNodeQuerySet(MODMCompatibilityQuerySet):
 
     def get_roots(self):
         return self.extra(
@@ -330,9 +330,9 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     @property
     def is_preprint(self):
         # TODO: This is a temporary implementation.
-        if not self.preprint_file or not self.is_public:
+        if not self.preprint_file_id or not self.is_public:
             return False
-        if self.preprint_file.node == self:
+        if self.preprint_file.node_id == self.id:
             return True
         else:
             self._is_preprint_orphan = True
@@ -933,11 +933,11 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         if not self.is_contributor(user):
             raise ValueError(u'User {0} not in contributors'.format(user))
         if visible and not Contributor.objects.filter(node=self, user=user, visible=True).exists():
-            Contributor.objects.filter(node=self, user=user, visible=False).update(visible=True)
+            Contributor.objects.filter(node=self, user=user, visible=False).invalidated_update(visible=True)
         elif not visible and Contributor.objects.filter(node=self, user=user, visible=True).exists():
             if Contributor.objects.filter(node=self, visible=True).count() == 1:
                 raise ValueError('Must have at least one visible contributor')
-            Contributor.objects.filter(node=self, user=user, visible=True).update(visible=False)
+            Contributor.objects.filter(node=self, user=user, visible=True).invalidated_update(visible=False)
         else:
             return
         message = (
@@ -2567,8 +2567,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         new_page.save()
 
         if has_comments:
-            Comment.objects.filter(root_target=current.guids.first()).update(root_target=Guid.load(new_page._id))
-            Comment.objects.filter(target=current.guids.first()).update(target=Guid.load(new_page._id))
+            Comment.objects.filter(root_target=current.guids.first()).invalidated_update(root_target=Guid.load(new_page._id))
+            Comment.objects.filter(target=current.guids.first()).invalidated_update(target=Guid.load(new_page._id))
 
         if current:
             for contrib in self.contributors:

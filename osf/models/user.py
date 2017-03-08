@@ -35,7 +35,7 @@ from framework.sessions.utils import remove_sessions_for_user
 from framework.mongo import get_cache_key
 from modularodm.exceptions import NoResultsFound
 from osf.exceptions import reraise_django_validation_errors
-from osf.models.base import BaseModel, GuidMixin, GuidMixinQuerySet
+from osf.models.base import BaseModel, GuidMixin
 from osf.models.contributor import RecentlyAddedContributor
 from osf.models.institution import Institution
 from osf.models.mixins import AddonModelMixin
@@ -68,13 +68,6 @@ name_formatters = {
 
 class OSFUserManager(BaseUserManager):
 
-    _queryset_class = GuidMixinQuerySet
-
-    def all(self):
-        qs = super(OSFUserManager, self).all()
-        qs.annotate_query_with_guids()
-        return qs
-
     def create_user(self, username, password=None):
         if not username:
             raise ValueError('Users must have a username')
@@ -88,6 +81,11 @@ class OSFUserManager(BaseUserManager):
         user.set_password(password)
         user.save(using=self._db)
         return user
+
+    def eager(self, fields):
+        fk_fields = set(self.model.get_fk_field_names()) & set(fields)
+        m2m_fields = set(self.model.get_m2m_field_names()) & set(fields)
+        return self.select_related(*fk_fields).prefetch_related(*m2m_fields)
 
     def create_superuser(self, username, password):
         user = self.create_user(username, password=password)
@@ -666,12 +664,12 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
                 node.contributor_set.filter(user=user).delete()
             else:
-                node.contributor_set.filter(user=user).update(user=self)
+                node.contributor_set.filter(user=user).invalidated_update(user=self)
 
             node.save()
 
         # - projects where the user was the creator
-        user.created.filter(is_bookmark_collection=False).update(creator=self)
+        user.created.filter(is_bookmark_collection=False).invalidated_update(creator=self)
 
         # - file that the user has checked_out, import done here to prevent import error
         from osf.models import FileNode
