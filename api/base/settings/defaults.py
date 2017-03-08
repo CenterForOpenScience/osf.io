@@ -113,9 +113,6 @@ INSTALLED_APPS = (
 if osf_settings.SECURE_MODE and DEBUG:
     INSTALLED_APPS += ('sslserver',)
 
-if DEBUG:
-    INSTALLED_APPS += ('debug_toolbar', )
-
 # TODO: Are there more granular ways to configure reporting specifically related to the API?
 RAVEN_CONFIG = {
     'tags': {'App': 'api'},
@@ -283,3 +280,7 @@ ADDONS_FOLDER_CONFIGURABLE = ['box', 'dropbox', 's3', 'googledrive', 'figshare',
 ADDONS_OAUTH = ADDONS_FOLDER_CONFIGURABLE + ['dataverse', 'github', 'mendeley', 'zotero', 'forward']
 
 BYPASS_THROTTLE_TOKEN = 'test-token'
+
+SHELL_PLUS_PRE_IMPORTS = (
+    ('osf.management.utils', ('print_sql', )),
+)

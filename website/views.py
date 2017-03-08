@@ -7,8 +7,6 @@ import os
 import urllib
 
 from django.apps import apps
-from modularodm import Q
-from modularodm.exceptions import NoResultsFound
 from flask import request, send_from_directory
 
 from framework import utils, sentry
@@ -18,11 +16,11 @@ from framework.exceptions import HTTPError
 from framework.flask import redirect  # VOL-aware redirect
 from framework.forms import utils as form_utils
 from framework.routing import proxy_url
-from website.institutions.views import view_institution
+from framework.auth.core import get_current_user_id
+from website.institutions.views import serialize_institution
 
 from website.models import Guid
 from website.models import Institution, PreprintService
-from website.project import new_bookmark_collection
 from website.settings import EXTERNAL_EMBER_APPS
 from website.util import permissions
 
@@ -88,39 +86,41 @@ def _render_nodes(nodes, auth=None, show_path=False, parent_node=None):
 
 
 def index():
-    try:
+    try:  # Check if we're on an institution landing page
         #TODO : make this way more robust
-        institution = Institution.find_one(Q('domains', 'eq', request.host.lower()))
-        inst_dict = view_institution(institution._id)
+        institution = Institution.objects.get(domains__contains=[request.host.lower()], is_deleted=False)
+        inst_dict = serialize_institution(institution)
         inst_dict.update({
             'home': False,
             'institution': True,
-            'redirect_url': '/institutions/{}/'.format(institution._id)
+            'redirect_url': '/institutions/{}/'.format(institution._id),
         })
 
         return inst_dict
-    except NoResultsFound:
+    except Institution.DoesNotExist:
         pass
 
-    all_institutions = Institution.find().sort('name')
-    dashboard_institutions = [
-        {'id': inst._id, 'name': inst.name, 'logo_path': inst.logo_path_rounded_corners}
-        for inst in all_institutions
-    ]
+    user_id = get_current_user_id()
+    if user_id:  # Logged in: return either landing page or user home page
+        all_institutions = Institution.objects.filter(is_deleted=False).order_by('name').only('_id', 'name', 'logo_name')
+        dashboard_institutions = [
+            {'id': inst._id, 'name': inst.name, 'logo_path': inst.logo_path_rounded_corners}
+            for inst in all_institutions
+        ]
 
-    return {
-        'home': True,
-        'dashboard_institutions': dashboard_institutions
-    }
+        return {
+            'home': True,
+            'dashboard_institutions': dashboard_institutions,
+        }
+    else:  # Logged out: return landing page
+        return {
+            'home': True,
+        }
 
 
 def find_bookmark_collection(user):
     Collection = apps.get_model('osf.Collection')
-    bookmark_collection = Collection.find(Q('is_bookmark_collection', 'eq', True) & Q('creator', 'eq', user))
-    if bookmark_collection.count() == 0:
-        new_bookmark_collection(user)
-    return bookmark_collection[0]
-
+    return Collection.objects.get(creator=user, is_deleted=False, is_bookmark_collection=True)
 
 @must_be_logged_in
 def dashboard(auth):

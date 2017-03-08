@@ -653,7 +653,10 @@ class Pointer(StoredObject):
     #: Whether this is a pointer or not
     primary = False
 
-    _id = fields.StringField()
+    _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
+    # Previous 5-character ID. Unused in application code.
+    # These were migrated to ObjectIds to prevent clashes with GUIDs.
+    _legacy_id = fields.StringField()
     node = fields.ForeignField('node')
 
     _meta = {'optimistic': True}
@@ -1651,7 +1654,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
 
         if first_save and self.is_bookmark_collection:
             existing_bookmark_collections = Node.find(
-                Q('is_bookmark_collection', 'eq', True) & Q('contributors', 'eq', self.creator._id)
+                Q('is_bookmark_collection', 'eq', True) & Q('contributors', 'eq', self.creator._id) & Q('is_deleted', 'eq', False)
             )
             if existing_bookmark_collections.count() > 0:
                 raise NodeStateError('Only one bookmark collection allowed per user.')
@@ -2602,7 +2605,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
 
         if save:
             self.save()
-        if user:
+        if user and not self.is_collection:
             increment_user_activity_counters(user._primary_key, action, log.date.isoformat())
         return log
 
@@ -3740,7 +3743,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
         if not self.is_registration or (not self.is_public and not (self.embargo_end_date or self.is_pending_embargo)):
             raise NodeStateError('Only public or embargoed registrations may be withdrawn.')
 
-        if self.root is not self:
+        if self.root_id != self.id:
             raise NodeStateError('Withdrawal of non-parent registrations is not permitted.')
 
         retraction = self._initiate_retraction(user, justification)

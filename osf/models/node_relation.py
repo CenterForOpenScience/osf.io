@@ -16,3 +16,6 @@ class NodeRelation(ObjectIDMixin, BaseModel):
     class Meta:
         order_with_respect_to = 'parent'
         unique_together = ('parent', 'child')
+        index_together = (
+            ('is_node_link', 'child', 'parent'),
+        )

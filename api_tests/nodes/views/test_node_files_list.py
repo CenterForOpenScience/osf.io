@@ -112,8 +112,11 @@ class TestNodeFilesList(ApiTestCase):
         self.user.external_accounts.add(oauth_settings)
         self.user.save()
         addon.user_settings = self.user.get_addon('github')
+        addon.external_account = oauth_settings
         addon.save()
         self.project.save()
+        addon.user_settings.oauth_grants[self.project._id] = {oauth_settings._id: []}
+        addon.user_settings.save()
 
     def _prepare_mock_wb_response(self, node=None, **kwargs):
         prepare_mock_wb_response(node=node or self.project, **kwargs)
@@ -206,8 +209,11 @@ class TestNodeFilesList(ApiTestCase):
         self.user.external_accounts.add(oauth_settings)
         self.user.save()
         addon.user_settings = self.user.get_addon('github')
+        addon.external_account = oauth_settings
         addon.save()
         self.project.save()
+        addon.user_settings.oauth_grants[self.project._id] = {oauth_settings._id: []}
+        addon.user_settings.save()
         res = self.app.get(self.private_url, auth=self.user.auth)
         data = res.json['data']
         providers = [item['attributes']['provider'] for item in data]
@@ -351,8 +357,11 @@ class TestNodeFilesListFiltering(ApiTestCase):
         self.user.external_accounts.add(oauth_settings)
         self.user.save()
         addon.user_settings = self.user.get_addon('github')
+        addon.external_account = oauth_settings
         addon.save()
         self.project.save()
+        addon.user_settings.oauth_grants[self.project._id] = {oauth_settings._id: []}
+        addon.user_settings.save()
 
     def test_node_files_are_filterable_by_name(self):
         url = '/{}nodes/{}/files/github/?filter[name]=xyz'.format(API_BASE, self.project._id)
@@ -432,14 +441,17 @@ class TestNodeFilesListPagination(ApiTestCase):
         self.user.external_accounts.add(oauth_settings)
         self.user.save()
         addon.user_settings = self.user.get_addon('github')
+        addon.external_account = oauth_settings
         addon.save()
         self.project.save()
+        addon.user_settings.oauth_grants[self.project._id] = {oauth_settings._id: []}
+        addon.user_settings.save()
 
     def check_file_order(self, resp):
         previous_file_name = 0
         for file in resp.json['data']:
             int_file_name = int(file['attributes']['name'])
-            assert(int_file_name > previous_file_name, 'Files were not in order')
+            assert int_file_name > previous_file_name, 'Files were not in order'
             previous_file_name = int_file_name
 
     def test_node_files_are_sorted_correctly(self):

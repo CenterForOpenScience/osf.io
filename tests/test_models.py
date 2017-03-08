@@ -59,9 +59,8 @@ from website.util import api_url_for, web_url_for
 from website.util.permissions import (ADMIN, CREATOR_PERMISSIONS,
                                       DEFAULT_CONTRIBUTOR_PERMISSIONS, READ,
                                       WRITE, expand_permissions)
-from website.project.model import ensure_schemas
 from website.project.sanctions import Sanction, DraftRegistrationApproval
-from website.prereg.utils import get_prereg_schema
+from website.views import find_bookmark_collection
 
 GUID_FACTORIES = UserFactory, NodeFactory, ProjectFactory
 
@@ -507,7 +506,6 @@ class TestUser(OsfTestCase):
         u = UnconfirmedUserFactory()
         assert_equal(u.get_confirmation_url(u.username, external_id_provider='service', destination='dashboard'),
                 '{0}confirm/external/{1}/{2}/?destination={3}'.format(settings.DOMAIN, u._id, 'abcde', 'dashboard'))
-
 
     def test_get_confirmation_url_when_token_is_expired_raises_error(self):
         u = UserFactory()
@@ -978,7 +976,7 @@ class TestMergingUsers(OsfTestCase):
         self.master.save()
 
     def test_bookmark_collection_nodes_arent_merged(self):
-        dashnode = ProjectFactory(creator=self.dupe, is_bookmark_collection=True)
+        dashnode = find_bookmark_collection(self.dupe)
 
         self._merge_dupe()
 
@@ -2416,7 +2414,7 @@ class TestBookmarkCollection(OsfTestCase):
         # Create project with component
         self.user = UserFactory()
         self.auth = Auth(user=self.user)
-        self.project = BookmarkCollectionFactory(creator=self.user)
+        self.project = find_bookmark_collection(self.user)
 
     def test_bookmark_collection_is_bookmark_collection(self):
         assert_equal(self.project.is_bookmark_collection, True)

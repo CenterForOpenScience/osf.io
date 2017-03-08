@@ -19,6 +19,8 @@ from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
 from django.contrib.auth.hashers import check_password
 from django.contrib.auth.models import PermissionsMixin
 from django.contrib.postgres import fields
+from django.dispatch import receiver
+from django.db.models.signals import post_save
 from django.db import models
 from django.utils import timezone
 from framework.auth import Auth, signals
@@ -46,6 +48,7 @@ from osf.utils.fields import NonNaiveDateTimeField
 from osf.utils.names import impute_names
 from website import settings as website_settings
 from website import filters, mails
+from website.project import new_bookmark_collection
 
 logger = logging.getLogger(__name__)
 
@@ -65,8 +68,12 @@ name_formatters = {
 
 class OSFUserManager(BaseUserManager):
 
-    def get_queryset(self):
-        return GuidMixinQuerySet(model=self.model, query=None, using=self._db, hints=self._hints)
+    _queryset_class = GuidMixinQuerySet
+
+    def all(self):
+        qs = super(OSFUserManager, self).all()
+        qs.annotate_query_with_guids()
+        return qs
 
     def create_user(self, username, password=None):
         if not username:
@@ -664,7 +671,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             node.save()
 
         # - projects where the user was the creator
-        user.created.update(creator=self)
+        user.created.filter(is_bookmark_collection=False).update(creator=self)
 
         # - file that the user has checked_out, import done here to prevent import error
         from osf.models import FileNode
@@ -1227,15 +1234,12 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
                  .filter(_contributors=other_user)
                  .distinct())
 
-    def get_projects_in_common(self, other_user, primary_keys=True):
+    def get_projects_in_common(self, other_user):
         """Returns either a collection of "shared projects" (projects that both users are contributors for)
         or just their primary keys
         """
         query = self._projects_in_common_query(other_user)
-        if primary_keys:
-            return set(query.values_list('guids___id', flat=True))
-        else:
-            return set(query.all())
+        return set(query.all())
 
     def n_projects_in_common(self, other_user):
         """Returns number of "shared projects" (projects that both users are contributors for)"""
@@ -1310,11 +1314,10 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         """
         try:
             email_domains = [email.split('@')[1].lower() for email in self.emails]
-            insts = Institution.find(Q('email_domains', 'overlap', email_domains))
-            affiliated = self.affiliated_institutions.all()
-            self.affiliated_institutions.add(*[each for each in insts
-                                                if each not in affiliated])
-        except (IndexError, NoResultsFound):
+            insts = Institution.objects.filter(email_domains__overlap=email_domains)
+            if insts.exists():
+                self.affiliated_institutions.add(*insts)
+        except IndexError:
             pass
 
     def remove_institution(self, inst_id):
@@ -1393,3 +1396,8 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         permissions = (
             ('view_user', 'Can view user details'),
         )
+
+@receiver(post_save, sender=OSFUser)
+def create_bookmark_collection(sender, instance, created, **kwargs):
+    if created:
+        new_bookmark_collection(instance)
