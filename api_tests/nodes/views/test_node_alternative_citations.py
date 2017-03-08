@@ -3,6 +3,7 @@ from nose.tools import *  # flake8: noqa
 from website.util import permissions
 
 from api.base.settings.defaults import API_BASE
+from api.citations import utils as citation_utils
 
 from tests.base import ApiTestCase
 
@@ -1676,3 +1677,30 @@ class TestGetAlternativeCitations(ApiTestCase):
         assert_equal(res.status_code, 401)
         assert_equal(len(res.json['errors']), 1)
         assert_equal(res.json['errors'][0]['detail'], 'Authentication credentials were not provided.')
+
+
+class TestManualCitationCorrections(ApiTestCase):
+    def setUp(self):
+        super(TestManualCitationCorrections, self).setUp()
+        self.user = AuthUserFactory()
+        self.project = ProjectFactory(creator=self.user, is_public=True, title="My Project")
+
+    def test_apa_citation(self):
+        citation = citation_utils.render_citation(self.project, 'apa')
+        expected_citation = self.user.family_name + ', ' + self.user.given_name_initial + '. (' + \
+                            self.project.date_created.strftime("%Y, %B %-d") + '). ' + self.project.title + \
+                            '. Retrieved from ' + self.project.display_absolute_url
+        assert_equal(citation, expected_citation)
+
+    def test_mla_citation(self):
+        csl = self.project.csl
+        citation = citation_utils.render_citation(self.project, 'modern-language-association')
+        expected_citation = csl['author'][0]['family'] + ', ' + csl['author'][0]['given'] + '. ' + u"\u201c" + csl['title'] + '.' + u"\u201d" + ' ' +\
+                            csl['publisher'] + ', ' + self.project.date_created.strftime("%-d %b. %Y. Web.")
+        assert_equal(citation, expected_citation)
+
+    def test_chicago_citation(self):
+        csl = self.project.csl
+        citation = citation_utils.render_citation(self.project, 'chicago-author-date')
+        expected_citation = csl['author'][0]['family'] + ', ' + csl['author'][0]['given'] + '. ' + str(csl['issued']['date-parts'][0][0]) + '. ' + u"\u201c" + csl['title'] + '.' + u"\u201d" + ' ' +  csl['publisher'] +'. ' + self.project.date_created.strftime("%B %-d") + '. ' + csl['URL'] + '.'
+        assert_equal(citation, expected_citation)

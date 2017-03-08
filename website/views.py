@@ -172,8 +172,14 @@ def resolve_guid(guid, suffix=None):
     :param str suffix: Remainder of URL after the GUID
     :return: Return value of proxied view function
     """
-    # Look up GUID
-    guid_object = Guid.load(guid)
+    try:
+        # Look up
+        guid_object = Guid.load(guid)
+    except KeyError as e:
+        if e.message == 'osfstorageguidfile':  # Used when an old detached OsfStorageGuidFile object is accessed
+            raise HTTPError(http.NOT_FOUND)
+        else:
+            raise e
     if guid_object:
 
         # verify that the object implements a GuidStoredObject-like interface. If a model

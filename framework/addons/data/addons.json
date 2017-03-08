@@ -67,15 +67,15 @@
             },
             "View / download file versions": {
                 "status": "partial",
-                "text": "figshare content can be viewed and downloaded via OSF provided it is \"published\" on figshare."
+                "text": "figshare files can be viewed/downloaded via OSF, but version history is not supported."
             },
             "Add / update files": {
                 "status": "partial",
                 "text": "Files can be added but not updated."
             },
             "Delete files": {
-                "status": "none",
-                "text": "figshare files cannot be deleted via OSF."
+                "status": "partial",
+                "text": "Private files and filesets can be deleted via OSF."
             },
             "Logs": {
                 "status": "partial",

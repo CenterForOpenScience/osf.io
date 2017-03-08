@@ -458,7 +458,7 @@ var ViewModel = function(params) {
                 self.pushState();
             }
 
-            $osf.postJSON(window.contextVars.shareUrl + 'api/v2/search/abstractcreativework/_count', shareQuery).success(function(data) {
+            $osf.postJSON(window.contextVars.shareUrl + 'api/v2/search/creativeworks/_count', shareQuery).success(function(data) {
                 self.shareCategory(new Category('SHARE', data.count, 'SHARE'));
             });
 

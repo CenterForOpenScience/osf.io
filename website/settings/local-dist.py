@@ -20,12 +20,17 @@ EXTERNAL_EMBER_APPS = {
     'preprints': {
         'url': '/preprints/',
         'server': 'http://localhost:4200',
-        'path': '../ember-preprints/dist/'
+        'path': '/preprints/'
     },
     # 'meetings': {
     #     'url': '/meetings/',
     #     'server': 'http://localhost:4201',
     #     'path': '../osf-meetings/dist/'
+    # },
+    # 'registries': {
+    #     'url': '/registries/',
+    #     'server': 'http://localhost:4200',
+    #     'path': '../ember-osf-registries/dist/'
     # }
 }
 

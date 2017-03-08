@@ -1197,6 +1197,21 @@ class TestNodeUpdateLicense(ApiTestCase):
     def make_request(self, url, data, auth=None, expect_errors=False):
         return self.app.patch_json_api(url, data, auth=auth, expect_errors=expect_errors)
 
+    def test_admin_update_license_with_invalid_id(self):
+        data = self.make_payload(
+            node_id=self.node._id,
+            license_id='thisisafakelicenseid'
+        )
+
+        assert_equal(self.node.node_license, None)
+
+        res = self.make_request(self.url, data, auth=self.admin_contributor.auth, expect_errors=True)
+        assert_equal(res.status_code, 404)
+        assert_equal(res.json['errors'][0]['detail'], 'Unable to find specified license.')
+
+        self.node.reload()
+        assert_equal(self.node.node_license, None)
+
     def test_admin_can_update_license(self):
         data = self.make_payload(
             node_id=self.node._id,
@@ -1421,3 +1436,33 @@ class TestNodeUpdateLicense(ApiTestCase):
 
         assert_not_equal(logs_before_update, logs_after_update)
         assert_equal(self.node.logs[-1].action, 'license_changed')
+
+    def test_update_node_license_without_change_does_not_add_log(self):
+        self.node.set_node_license(
+            {
+                'id': self.no_license.id,
+                'year': '2015',
+                'copyrightHolders': ['Kim', 'Kanye']
+            },
+            auth=Auth(self.admin_contributor),
+            save=True
+        )
+
+        before_num_logs = len(self.node.logs)
+        before_update_log = self.node.logs[-1]
+
+        data = self.make_payload(
+            node_id=self.node._id,
+            license_id=self.no_license._id,
+            license_year='2015',
+            copyright_holders=['Kanye', 'Kim']
+        )
+        res = self.make_request(self.url, data, auth=self.admin_contributor.auth)
+        self.node.reload()
+
+        after_num_logs = len(self.node.logs)
+        after_update_log = self.node.logs[-1]
+
+        assert_equal(res.status_code, 200)
+        assert_equal(before_num_logs, after_num_logs)
+        assert_equal(before_update_log._id, after_update_log._id)

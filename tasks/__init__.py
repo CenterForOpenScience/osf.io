@@ -56,59 +56,12 @@ def task(*args, **kwargs):
     return decorator
 
 
-def _monkey_patch_werkzeug_reloader_for_docker():
-    from werkzeug import _reloader
-    from werkzeug._reloader import _find_observable_paths
-
-    def _find_common_roots(paths):
-        """Out of some paths it finds the common roots that need monitoring."""
-        # rv = orig_docker_find_common_roots(paths)
-        rv = set()
-        root = os.getcwd()
-        rv.add(root)
-        for path in paths:
-            if path.startswith(root):
-                rv.add(path)
-        return rv
-    _reloader._find_common_roots = _find_common_roots
-
-    def run(self):
-        watches = {}
-        observer = self.observer_class()
-        observer.start()
-
-        while not self.should_reload:
-            to_delete = set(watches)
-            paths = _find_observable_paths(self.extra_files)
-            for path in paths:
-                if path not in watches:
-                    try:
-                        watches[path] = observer.schedule(
-                            self.event_handler, path, recursive=False)  # FIX: docker-compose performance issue
-                    except OSError:
-                        # "Path is not a directory". We could filter out
-                        # those paths beforehand, but that would cause
-                        # additional stat calls.
-                        watches[path] = None
-                to_delete.discard(path)
-            for path in to_delete:
-                watch = watches.pop(path, None)
-                if watch is not None:
-                    observer.unschedule(watch)
-            self.observable_paths = paths
-            self._sleep(self.interval)
-
-        sys.exit(3)
-    _reloader.WatchdogReloaderLoop.run = run
-
-
 @task
 def server(ctx, host=None, port=5000, debug=True, gitlogs=False):
     """Run the app server."""
     if os.environ.get('WERKZEUG_RUN_MAIN') == 'true' or not debug:
         if os.environ.get('WEB_REMOTE_DEBUG', None):
             import pydevd
-            _monkey_patch_werkzeug_reloader_for_docker()
             # e.g. '127.0.0.1:5678'
             remote_parts = os.environ.get('WEB_REMOTE_DEBUG').split(':')
             pydevd.settrace(remote_parts[0], port=int(remote_parts[1]), suspend=False, stdoutToServer=True, stderrToServer=True)
@@ -415,7 +368,7 @@ def sharejs(ctx, host=None, port=None, db_url=None, cors_allow_origin=None):
 
 
 @task(aliases=['celery'])
-def celery_worker(ctx, level='debug', hostname=None, beat=False):
+def celery_worker(ctx, level='debug', hostname=None, beat=False, queues=None):
     """Run the Celery process."""
     cmd = 'celery worker -A framework.celery_tasks -l {0}'.format(level)
     if hostname:
@@ -423,6 +376,8 @@ def celery_worker(ctx, level='debug', hostname=None, beat=False):
     # beat sets up a cron like scheduler, refer to website/settings
     if beat:
         cmd = cmd + ' --beat'
+    if queues:
+        cmd = cmd + ' --queues={}'.format(queues)
     ctx.run(bin_prefix(cmd), pty=True)
 
 
@@ -773,11 +728,11 @@ def packages(ctx):
         'upgrade',
         'install libxml2',
         'install libxslt',
-        'install elasticsearch',
+        'install elasticsearch@1.7',
         'install rabbitmq',
         'install node',
         'tap tokutek/tokumx',
-        'install tokumx-bin',
+        'install chrisseto/homebrew-tokumx/tokumx-bin',
     ]
     if platform.system() == 'Darwin':
         print('Running brew commands')

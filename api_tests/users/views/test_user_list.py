@@ -54,6 +54,26 @@ class TestUsers(ApiTestCase):
         assert_in(self.user_one._id, ids)
         assert_in(self.user_two._id, ids)
 
+    def test_merged_user_is_not_in_user_list_after_2point3(self):
+        self.user_two.merge_user(self.user_one)
+        res = self.app.get('/{}users/?version=2.3'.format(API_BASE))
+        user_son = res.json['data']
+
+        ids = [each['id'] for each in user_son]
+        assert_equal(res.status_code, 200)
+        assert_in(self.user_two._id, ids)
+        assert_not_in(self.user_one._id, ids)
+
+    def test_merged_user_is_returned_before_2point3(self):
+        self.user_two.merge_user(self.user_one)
+        res = self.app.get('/{}users/'.format(API_BASE))
+        user_son = res.json['data']
+
+        ids = [each['id'] for each in user_son]
+        assert_equal(res.status_code, 200)
+        assert_in(self.user_two._id, ids)
+        assert_in(self.user_one._id, ids)
+
     def test_find_multiple_in_users(self):
         url = "/{}users/?filter[full_name]=fred".format(API_BASE)
 

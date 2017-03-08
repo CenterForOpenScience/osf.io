@@ -65,7 +65,7 @@
     "node_created":     "${user} created ${node}",
     "node_forked":  "${user} created fork from ${forked_from}",
     "node_removed":  "${user} removed ${node}",
-    "license_changed" : "${user} updated the license of ${node}",
+    "license_changed" : "${user} updated the license of ${node} ${license}",
     "file_tag_added": "${user} added tag ${tag} to ${path} in OSF Storage in ${node}",
     "file_tag_removed": "${user} removed tag ${tag} from ${path} in OSF Storage in ${node}",
     "osf_storage_file_added" : "${user} added file ${path} to OSF Storage in ${node}",
@@ -75,6 +75,6 @@
     "affiliated_institution_added": "${user} added ${institution} affiliation to ${node}",
     "affiliated_institution_removed": "${user} removed ${institution} affiliation from ${node}",
     "preprint_initiated": "${user} made ${node} a ${preprint} on ${preprint_provider} Preprints",
-    "preprint_file_updated": "${user} updated the primary file of this ${preprint} on {preprint_provider} Preprints",
-    "preprint_license_updated": "${user} updated the license of the primary file of this {preprint} on {preprint_provider} Preprints"
+    "preprint_file_updated": "${user} updated the primary file of this ${preprint} on ${preprint_provider} Preprints",
+    "preprint_license_updated": "${user} updated the license of this ${preprint} on ${preprint_provider} Preprints ${license}"
 }

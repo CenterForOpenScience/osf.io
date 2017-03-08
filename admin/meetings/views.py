@@ -1,6 +1,7 @@
 from __future__ import unicode_literals
 from copy import deepcopy
 
+from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.views.generic import ListView, FormView
 from django.core.urlresolvers import reverse
 from django.http import Http404
@@ -9,12 +10,12 @@ from framework.auth.core import get_user
 from website.conferences.model import Conference, DEFAULT_FIELD_NAMES
 from website.conferences.exceptions import ConferenceError
 
-from admin.base.utils import OSFAdmin
+from admin.base.utils import NodesAndUsers
 from admin.meetings.forms import MeetingForm
 from admin.meetings.serializers import serialize_meeting
 
 
-class MeetingListView(OSFAdmin, ListView):
+class MeetingListView(NodesAndUsers, ListView):
     template_name = 'meetings/list.html'
     paginate_by = 10
     paginate_orphans = 1
@@ -34,9 +35,10 @@ class MeetingListView(OSFAdmin, ListView):
         return super(MeetingListView, self).get_context_data(**kwargs)
 
 
-class MeetingFormView(OSFAdmin, FormView):
+class MeetingFormView(NodesAndUsers, FormView, PermissionRequiredMixin):
     template_name = 'meetings/detail.html'
     form_class = MeetingForm
+    permission_required = 'auth.admin'
 
     def dispatch(self, request, *args, **kwargs):
         endpoint = self.kwargs.get('endpoint')
@@ -83,9 +85,10 @@ class MeetingFormView(OSFAdmin, FormView):
                        kwargs={'endpoint': self.kwargs.get('endpoint')})
 
 
-class MeetingCreateFormView(OSFAdmin, FormView):
+class MeetingCreateFormView(NodesAndUsers, FormView, PermissionRequiredMixin):
     template_name = 'meetings/create.html'
     form_class = MeetingForm
+    permission_required = 'auth.admin'
 
     def get_initial(self):
         self.initial.update(DEFAULT_FIELD_NAMES)
