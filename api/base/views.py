@@ -53,6 +53,7 @@ class JSONAPIBaseView(generics.GenericAPIView):
         """
         if getattr(field, 'field', None):
             field = field.field
+
         def partial(item):
             # resolve must be implemented on the field
             v, view_args, view_kwargs = field.resolve(item, field_name, self.request)

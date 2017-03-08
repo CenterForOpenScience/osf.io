@@ -69,6 +69,13 @@ class MODMCompatibilityQuerySet(models.QuerySet):
             else:
                 yield item
 
+    def eager(self, *fields):
+        qs = self._clone()
+        field_set = set(fields)
+        fk_fields = set(qs.model.get_fk_field_names()) & field_set
+        m2m_fields = set(qs.model.get_m2m_field_names()) & field_set
+        return qs.select_related(*fk_fields).prefetch_related(*m2m_fields)
+
     def sort(self, *fields):
         # Fields are passed in as e.g. [('title', 1), ('date_created', -1)]
         if isinstance(fields[0], list):
@@ -100,6 +107,17 @@ class BaseModel(models.Model):
 
     class Meta:
         abstract = True
+
+    @classmethod
+    def get_fk_field_names(cls):
+        return [field.name for field in cls._meta.get_fields() if
+                    field.is_relation and not field.auto_created and (field.many_to_one or field.one_to_one) and not isinstance(field, GenericForeignKey)]
+
+    @classmethod
+    def get_m2m_field_names(cls):
+        return [field.attname or field.name for field in
+                     cls._meta.get_fields() if
+                     field.is_relation and field.many_to_many and not hasattr(field, 'field')]
 
     @classmethod
     def load(cls, data):
@@ -659,10 +677,8 @@ class GuidMixin(BaseIDMixin):
     @classmethod
     def load(cls, q):
         try:
-            content_type = ContentType.objects.get_for_model(cls)
-            # if referent doesn't exist it will return None
-            return Guid.objects.get(_id=q, content_type=content_type).referent
-        except Guid.DoesNotExist:
+            return cls.objects.filter(guids___id=q)[0]
+        except IndexError:
             # modm doesn't throw exceptions when loading things that don't exist
             return None
 
