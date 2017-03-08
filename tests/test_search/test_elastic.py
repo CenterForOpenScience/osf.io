@@ -279,6 +279,7 @@ class TestRegistrationRetractions(SearchTestCase):
         ) as registration:
             self.registration = registration
 
+    @mock.patch('website.project.tasks.on_registration_updated')
     def test_retraction_is_searchable(self):
         self.registration.retract_registration(self.user)
         self.registration.retraction.state = Retraction.APPROVED
