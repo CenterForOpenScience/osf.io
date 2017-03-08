@@ -2,51 +2,69 @@ from __future__ import unicode_literals
 
 import gc
 import importlib
+import logging
+import pstats
 import sys
-
-import itertools
-from box import BoxClient
-from box import BoxClientException
-from bson import ObjectId
-from dropbox.client import DropboxClient
-from dropbox.rest import ErrorResponse
-from github3 import GitHubError
-from oauthlib.oauth2 import InvalidGrantError
-
-from addons.base.models import BaseOAuthNodeSettings
-from framework import encryption
-from osf.models import ExternalAccount
-from osf.models import OSFUser
-from addons.s3 import utils
-
+from cProfile import Profile
 
 import ipdb
 from django.contrib.contenttypes.models import ContentType
 from django.core.management import BaseCommand
 from django.db import IntegrityError, connection, transaction
 from django.utils import timezone
+from modularodm import Q as MQ
+from psycopg2._psycopg import AsIs
+from typedmodels.models import TypedModel
+
+from addons.wiki.models import NodeWikiPage
+from api.base.celery import app
+from framework import encryption
 from framework.auth.core import User as MODMUser
 from framework.mongo import database
+from framework.mongo import set_up_storage
+from framework.mongo import storage
 from framework.transactions.context import transaction as modm_transaction
-from modularodm import Q as MQ
-from osf.models import NodeLog, PageCounter, Tag, UserActivityCounter
+from osf.models import Comment
+from osf.models import Institution
+from osf.models import (NodeLog, OSFUser,
+                        PageCounter, StoredFileNode, Tag, UserActivityCounter)
 from osf.models.base import Guid, GuidMixin, OptionalGuidMixin
 from osf.models.node import AbstractNode
 from osf.utils.order_apps import get_ordered_models
-from psycopg2._psycopg import AsIs
-from scripts.register_oauth_scopes import set_backend
-from typedmodels.models import TypedModel
-
-from addons.github.api import GitHubClient
+from website.addons.osfstorage.model import OsfStorageNodeSettings
+from website.addons.wiki.model import NodeWikiPage as MODMNodeWikiPage, AddonWikiNodeSettings
+from website.app import init_app
 from website.files.models import StoredFileNode as MODMStoredFileNode
-from website.models import Guid as MODMGuid
+from website.models import Comment as MODMComment
+from website.models import Guid as MGuid
 from website.models import Node as MODMNode
-import logging
+from website.models import User as MUser
+from website.oauth.models import ApiOAuth2Scope
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('migrations')
 
 encryption.encrypt = lambda x: x
 encryption.decrypt = lambda x: x
+
+
+def set_backend():
+    # monkey patch field aliases for migration
+    Institution.FIELD_ALIASES = {
+        'institution_auth_url': 'login_url',
+        'institution_logout_url': 'logout_url',
+        'title': 'name',
+        '_id': False,
+        'institution_id': '_id',
+        'institution_banner_name': 'banner_name',
+        'institution_domains': 'domains',
+        'institution_email_domains': 'email_domains',
+        'institution_logo_name': 'logo_name',
+    }
+    StoredFileNode.FIELD_ALIASES = {
+        '_materialized_path': 'materialized_path'
+    }
+    set_up_storage([ApiOAuth2Scope], storage.MongoStorage)
+
 
 def get_modm_model(django_model):
     module_path, model_name = django_model.modm_model_path.rsplit('.', 1)
@@ -54,8 +72,9 @@ def get_modm_model(django_model):
     return getattr(modm_module, model_name)
 
 
+@app.task()
 def migrate_page_counters(page_size=20000):
-    print('Starting {}...'.format(sys._getframe().f_code.co_name))
+    logger.info('Starting {}...'.format(sys._getframe().f_code.co_name))
     collection = database['pagecounters']
 
     total = collection.count()
@@ -78,21 +97,20 @@ def migrate_page_counters(page_size=20000):
                         start = 0
                     else:
                         start = count - page_size
-                    print('Saving {} {} through {}...'.format(PageCounter._meta.model.__name__, start, count))
+                    logger.info('Saving {} {} through {}...'.format(PageCounter._meta.model.__module__, start, count))
 
                     saved_django_objects = PageCounter.objects.bulk_create(django_objects)
 
-                    print('Done with {} {} in {} seconds...'.format(len(saved_django_objects), PageCounter._meta.model.__name__, (timezone.now()-page_finish_time).total_seconds()))
+                    logger.info('Done with {} {} in {} seconds...'.format(len(saved_django_objects), PageCounter._meta.model.__module__, (timezone.now()-page_finish_time).total_seconds()))
                     saved_django_objects = []
-                    print('Took out {} trashes'.format(gc.collect()))
     total = None
     count = None
-    print('Took out {} trashes'.format(gc.collect()))
-    print('Finished {} in {} seconds...'.format(sys._getframe().f_code.co_name, (timezone.now()-start_time).total_seconds()))
+    logger.info('Finished {} in {} seconds...'.format(sys._getframe().f_code.co_name, (timezone.now()-start_time).total_seconds()))
 
 
+@app.task()
 def migrate_user_activity_counters(page_size=20000):
-    print('Starting {}...'.format(sys._getframe().f_code.co_name))
+    logger.info('Starting {}...'.format(sys._getframe().f_code.co_name))
     collection = database['useractivitycounters']
 
     total = collection.count()
@@ -115,21 +133,20 @@ def migrate_user_activity_counters(page_size=20000):
                         start = 0
                     else:
                         start = count - page_size
-                    print('Saving {} {} through {}...'.format(UserActivityCounter._meta.model.__name__, start, count))
+                    logger.info('Saving {} {} through {}...'.format(UserActivityCounter._meta.model.__module__, start, count))
 
                     saved_django_objects = UserActivityCounter.objects.bulk_create(django_objects)
 
-                    print('Done with {} {} in {} seconds...'.format(len(saved_django_objects), UserActivityCounter._meta.model.__name__, (timezone.now()-page_finish_time).total_seconds()))
+                    logger.info('Done with {} {} in {} seconds...'.format(len(saved_django_objects), UserActivityCounter._meta.model.__module__, (timezone.now()-page_finish_time).total_seconds()))
                     saved_django_objects = []
-                    print('Took out {} trashes'.format(gc.collect()))
     total = None
     count = None
-    print('Took out {} trashes'.format(gc.collect()))
-    print('Finished {} in {} seconds...'.format(sys._getframe().f_code.co_name, (timezone.now()-start_time).total_seconds()))
+    logger.info('Finished {} in {} seconds...'.format(sys._getframe().f_code.co_name, (timezone.now()-start_time).total_seconds()))
 
 
+@app.task()
 def make_guids():
-    print('Starting {}...'.format(sys._getframe().f_code.co_name))
+    logger.info('Starting {}...'.format(sys._getframe().f_code.co_name))
 
     guid_models = [model for model in get_ordered_models() if (issubclass(model, GuidMixin) or issubclass(model, OptionalGuidMixin)) and (not issubclass(model, AbstractNode) or model is AbstractNode)]
 
@@ -182,15 +199,13 @@ def make_guids():
                                   t.guid_string IS NOT NULL AND
                                   t.content_type_pk IS NOT NULL;
                               """.format(content_type.app_label, content_type.model)
-                    print('Making guids for {}'.format(model._meta.model.__name__))
+                    logger.info('Making guids for {}'.format(model._meta.model.__module__))
                     try:
                         cursor.execute(sql)
                     except IntegrityError as ex:
                         ipdb.set_trace()
 
-
-
-            guids = MODMGuid.find()
+            guids = MGuid.find(MQ('is_orphaned', 'ne', True))
             guid_keys = guids.get_keys()
             orphaned_guids = []
             for g in guids:
@@ -208,18 +223,18 @@ def make_guids():
             # subtract the orphaned guids from the guids in modm and from that subtract existing guids
             # that should give us the guids that are missing
             guids_to_make = (set(guid_keys) - set(orphaned_guids)) - set(existing_guids)
-            print('{} MODM Guids, {} Orphaned Guids, {} Guids to Make, {} Existing guids'.format(len(guid_keys), len(orphaned_guids), len(guids_to_make), len(existing_guids)))
+            logger.info('{} MODM Guids, {} Orphaned Guids, {} Guids to Make, {} Existing guids'.format(len(guid_keys), len(orphaned_guids), len(guids_to_make), len(existing_guids)))
             from django.apps import apps
-            model_names = {m._meta.model.__name__.lower(): m._meta.model for m in apps.get_models()}
+            model_names = {m._meta.model.__module__.lower(): m._meta.model for m in apps.get_models()}
 
             with ipdb.launch_ipdb_on_exception():
                 # loop through missing guids
                 for guid in guids_to_make:
                     # load them from modm
-                    guid_dict = MODMGuid.load(guid).to_storage()
+                    guid_dict = MGuid.load(guid).to_storage()
                     # if they don't have a referent toss them
                     if guid_dict['referent'] is None:
-                        print('{} has no referent.'.format(guid))
+                        logger.info('{} has no referent.'.format(guid))
                         continue
                     # get the model string from the referent
                     modm_model_string = guid_dict['referent'][1]
@@ -231,7 +246,7 @@ def make_guids():
                     else:
                         # this filters out bad models, like osfstorageguidfile
                         # but these should already be gone
-                        print('Couldn\'t find model for {}'.format(modm_model_string))
+                        logger.info('Couldn\'t find model for {}'.format(modm_model_string))
                         continue
                     # get the id from the to_storage dictionary
                     modm_model_id = guid_dict['_id']
@@ -241,225 +256,367 @@ def make_guids():
                             # find it's referent
                             referent_instance = referent_model.objects.get(guid_string__contains=[modm_model_id.lower()])
                         except referent_model.DoesNotExist:
-                            print('Couldn\'t find referent for {}:{}'.format(referent_model._meta.model.__name__, modm_model_id))
+                            logger.info('Couldn\'t find referent for {}:{}'.format(referent_model._meta.model.__module__, modm_model_id))
                             continue
                     else:
                         # we shouldn't ever get here, bad data
-                        print('Found guid pointing at {} type, dropping it on the floor.'.format(modm_model_string))
+                        logger.info('Found guid pointing at {} type, dropping it on the floor.'.format(modm_model_string))
                         continue
 
                     # if we got a referent instance create the guid
                     if referent_instance:
                         Guid.objects.create(referent=referent_instance)
                     else:
-                        print('{} {} didn\'t create a Guid'.format(referent_model._meta.model.__name__, modm_model_id))
+                        logger.info('{} {} didn\'t create a Guid'.format(referent_model._meta.model.__module__, modm_model_id))
+            # TODO think about this for prod
+            if orphaned_guids:
+                logger.info('Started creating blacklist orphaned guids.')
+                with connection.cursor() as cursor:
+                    sql = """
+                        INSERT INTO
+                          osf_blacklistguid
+                          (guid)
+                        VALUES %(guids)s ON CONFLICT DO NOTHING;
+                    """
+                    params = ''.join(['(\'{}\'), '.format(og) for og in orphaned_guids])[0:-2]
+                    cursor.execute(sql, {'guids': AsIs(params)})
 
-            print('Started creating blacklist orphaned guids.')
-            with connection.cursor() as cursor:
-                sql = """
-                    INSERT INTO
-                      osf_blacklistguid
-                      (guid)
-                    VALUES %(guids)s ON CONFLICT DO NOTHING;
-                """
-                params = ''.join(['(\'{}\'), '.format(og) for og in orphaned_guids])[0:-2]
-                cursor.execute(sql, {'guids': AsIs(params)})
 
+def validate_guid_referents_against_ids():
+    import ipdb
+    init_app(routes=False, attach_request_handlers=False, fixtures=False)
+    set_backend()
+    register_nonexistent_models_with_modm()
+    with ipdb.launch_ipdb_on_exception():
+        for django_model in [model for model in get_ordered_models() if (issubclass(model, GuidMixin) or issubclass(model, OptionalGuidMixin)) and (not issubclass(model, AbstractNode) or model is AbstractNode)]:
+            if not hasattr(django_model, 'modm_model_path'):
+                logger.info('################################################\n'
+                            '{} doesn\'t have a modm_model_path\n'
+                            '################################################'.format(
+                    django_model._meta.model.__module__))
+                continue
+            modm_model = get_modm_model(django_model)
+            model_name = django_model._meta.model.__module__.lower()
+            if model_name == 'osfuser':
+                model_name = 'user'
 
-def save_bare_models(modm_queryset, django_model, page_size=20000):
-    print('Starting {} on {}...'.format(sys._getframe().f_code.co_name, django_model._meta.model.__name__))
-    count = 0
-    total = modm_queryset.count()
-    hashes = set()
-
-    while count < total:
-        with transaction.atomic():
-            django_objects = list()
-
-            offset = count
-            limit = (count + page_size) if (count + page_size) < total else total
-
-            page_of_modm_objects = modm_queryset.sort('-_id')[offset:limit]
-
-            if not hasattr(django_model, '_natural_key'):
-                print('{} is missing a natural key!'.format(django_model._meta.model.__name__))
-
-            for modm_obj in page_of_modm_objects:
-                django_instance = django_model.migrate_from_modm(modm_obj)
-                if django_instance is None:
-                    count += 1
+            logger.info('Starting {}...'.format(model_name))
+            guids = modm_model.find().get_keys()
+            for guid in guids:
+                guid_instance = MGuid.load(guid)
+                if not guid_instance:
+                    # There is no guid instance for this guid string
+                    if len(guid) > 5:
+                        continue
+                    logger.info('{}:{}\'s guid doesn\'t exist.'.format(model_name, guid))
+                    import ipdb; ipdb.set_trace()
                     continue
-                if django_instance._natural_key() is not None:
-                    # if there's a natural key
-                    if isinstance(django_instance._natural_key(), list):
-                        found = []
-                        for nk in django_instance._natural_key():
-                            if nk not in hashes:
-                                hashes.add(nk)
-                            else:
-                                found.append(nk)
-                        if not found:
-                            django_objects.append(django_instance)
-                        else:
-                            count += 1
-                            print('{} with guids {} was already in hashes'.format(django_instance._meta.model.__name__, found))
-                            continue
-                    else:
-                        if django_instance._natural_key() not in hashes:
-                            # and that natural key doesn't exist in hashes
-                            # add it to hashes and append the object
-                            hashes.add(django_instance._natural_key())
-                            django_objects.append(django_instance)
-                        else:
-                            count += 1
-                            continue
+                if not guid_instance.referent:
+                    # the referent is not set
+                    logger.info('{}:{}\'s referent is None.'.format(model_name, guid_instance._id))
+                    # find the referent with the same _id and model_name
+                    referent = modm_model.load(guid_instance._id)
+                    if referent is not None:
+                        guid.referent = referent
+                        guid.save()
+                        continue
+                    print('Could not find referent for {}:{}'.format(referent_model_name, guid_instance._id))
+                    continue
+                referent_model_name = guid_instance.to_storage()['referent'][1]
+                if referent_model_name != model_name:
+                    # the referent isn't pointing at the correct type of object. Try and find the object it should be pointing to.
+                    if referent_model_name == 'node' and model_name in ['node', 'abstractnode', 'registration', 'collection']:
+                        # nodes have been broken out into separate models, treat these differently
+                        continue
+
+                    logger.info('{}:{}\'s referent doesn\'t match {}:{}'.format(referent_model_name, guid_instance.to_storage()['referent'][0], model_name, guid_instance._id))
+
+            logger.info('Finished {}...'.format(model_name))
+            modm_model._cache.clear()
+            modm_model._object_cache.clear()
+            gc.collect()
+
+@app.task()
+def fix_guids():
+    modm_guids = MGuid.find().get_keys()
+    dj_guids = Guid.objects.all().values_list('_id', flat=True)
+    set_of_modm_guids = set(modm_guids)
+    set_of_django_guids = set(dj_guids)
+    missing = set_of_modm_guids - set_of_django_guids
+    short_missing = [x for x in missing if len(x) < 6]
+    long_missing = [x for x in missing if len(x) > 5]
+    assert len(short_missing) + len(long_missing) == len(missing), 'It broke'
+    # NOTE: is_orphaned will be True for Guids that should not be migrated because they have
+    # invalid/missing referents
+    short_missing_guids = MGuid.find(MQ('_id', 'in', short_missing) & MQ('is_orphaned', 'ne', True))
+    long_missing_guids = MGuid.find(MQ('_id', 'in', long_missing) & MQ('is_orphaned', 'ne', True))
+
+    short_missing_guids_with_referents = [x._id for x in short_missing_guids if x.referent is not None]
+    short_missing_guids_without_referents = [x._id for x in short_missing_guids if x.referent is None]
+
+    nodes = 0
+    users = 0
+    files = 0
+    comments = 0
+    wiki = 0
+    missing = 0
+    for guid in short_missing_guids.get_keys():
+        user = MUser.load(guid)
+        guid_instance = MGuid.load(guid)
+        if user is not None:
+            logger.info('Guid {} is a user.'.format(guid))
+            guid_instance.referent = user
+            guid_instance.save()
+
+            try:
+                # see if the existing guid exists
+                existing_django_guid = Guid.objects.get(_id=unicode(guid).lower())
+            except Guid.DoesNotExist:
+                # try and get a user that has n+1 guids pointing at them
+                try:
+                    existing_django_guid = OSFUser.objects.get(guids___id=unicode(guid).lower())
+                except OSFUser.DoesNotExist:
+                    # create a new guid
+                    existing_django_guid = Guid.migrate_from_modm(guid_instance)
+                    existing_django_guid.save()
+
+            users += 1
+        else:
+            node = MODMNode.load(guid)
+            if node is not None:
+                logger.info('Guid {} is a node.'.format(guid))
+                guid_instance.referent = node
+                guid_instance.save()
+                try:
+                    # see if the existing guid exists
+                    existing_django_guid = Guid.objects.get(_id=unicode(guid).lower())
+                except Guid.DoesNotExist:
+                    # try and get a user that has n+1 guids pointing at them
+                    try:
+                        existing_django_guid = AbstractNode.objects.get(guids___id=unicode(guid).lower())
+                    except AbstractNode.DoesNotExist:
+                        # create a new guid
+                        existing_django_guid = Guid.migrate_from_modm(guid_instance)
+                        existing_django_guid.save()
+
+                nodes += 1
+            else:
+                comment = MODMComment.load(guid)
+                if comment is not None:
+                    logger.info('Guid {} is a node.'.format(guid))
+                    guid_instance.referent = comment
+                    guid_instance.save()
+                    try:
+                        # see if the existing guid exists
+                        existing_django_guid = Guid.objects.get(_id=unicode(guid).lower())
+                    except Guid.DoesNotExist:
+                        # try and get a user that has n+1 guids pointing at them
+                        try:
+                            existing_django_guid = Comment.objects.get(guids___id=unicode(guid).lower())
+                        except AbstractNode.DoesNotExist:
+                            # create a new guid
+                            existing_django_guid = Guid.migrate_from_modm(guid_instance)
+                            existing_django_guid.save()
+
+                    comments += 1
                 else:
-                    django_objects.append(django_instance)
+                    sfn = MODMStoredFileNode.load(guid)
+                    if sfn is not None:
+                        logger.info('Guid {} is a file.'.format(guid))
+                        guid_instance.referent = sfn
+                        guid_instance.save()
+                        try:
+                            # see if the existing guid exists
+                            existing_django_guid = Guid.objects.get(_id=unicode(guid).lower())
+                        except Guid.DoesNotExist:
+                            # try and get a user that has n+1 guids pointing at them
+                            try:
+                                existing_django_guid = StoredFileNode.objects.get(guids___id=unicode(guid).lower())
+                            except StoredFileNode.DoesNotExist:
+                                # create a new guid
+                                existing_django_guid = Guid.migrate_from_modm(guid_instance)
+                                existing_django_guid.save()
 
-                count += 1
-                if count % page_size == 0 or count == total:
-                    page_finish_time = timezone.now()
-                    if (count - page_size) < 0:
-                        start = 0
+                        files += 1
                     else:
-                        start = count - page_size
-                    print(
-                        'Saving {} {} through {}...'.format(django_model._meta.model.__name__,
-                                                            start,
-                                                            count))
-                    saved_django_objects = django_model.objects.bulk_create(django_objects)
+                        wiki = MODMNodeWikiPage.load(guid)
+                        if wiki is not None:
+                            logger.info('Guid {} is a file.'.format(guid))
+                            guid_instance.referent = wiki
+                            guid_instance.save()
+                            try:
+                                # see if the existing guid exists
+                                existing_django_guid = Guid.objects.get(_id=unicode(guid).lower())
+                            except Guid.DoesNotExist:
+                                # try and get a user that has n+1 guids pointing at them
+                                try:
+                                    existing_django_guid = NodeWikiPage.objects.get(guids___id=unicode(guid).lower())
+                                except StoredFileNode.DoesNotExist:
+                                    # create a new guid
+                                    existing_django_guid = Guid.migrate_from_modm(guid_instance)
+                                    existing_django_guid.save()
 
-                    print('Done with {} {} in {} seconds...'.format(len(saved_django_objects),
-                                                                    django_model._meta.model.__name__, (
-                                                                        timezone.now() -
-                                                                        page_finish_time).total_seconds()))
-                    modm_obj._cache.clear()
-                    modm_obj._object_cache.clear()
-                    saved_django_objects = []
-                    page_of_modm_objects = []
-                    print('Took out {} trashes'.format(gc.collect()))
+                            wiki += 1
+                        else:
+
+                            if guid_instance.to_storage()['referent'] is not None:
+                                logger.info('Guid {} does not match it\'s referent was a {}.'.format(guid,
+                                                                                                     guid_instance.to_storage()[
+                                                                                                         'referent'][
+                                                                                                         1]))
+                            else:
+                                logger.info('Guid {} does not match it\'s referent was a {}.'.format(guid, None))
+                            missing += 1
+                            continue
+
+    logger.info('Users: {}'.format(users))
+    logger.info('Nodes: {}'.format(nodes))
+    logger.info('Comments: {}'.format(comments))
+    logger.info('Wiki: {}'.format(wiki))
+    logger.info('Files: {}'.format(files))
+    logger.info('Missing: {}'.format(missing))
+    logger.info('Total: {}'.format(len(short_missing_guids)))
+
+    guids_by_type = {}
+    missing_referents = 0
+    updated_referents = 0
+    for guid in long_missing:
+        guid_instance = MGuid.load(guid)
+        if guid_instance is None:
+            logger.info('Guid {} does not exist'.format(guid))
+        elif guid_instance.referent is None:
+            logger.info('Couldn\'t find referent for {}'.format(guid_instance._id))
+            missing_referents += 1
+        else:
+            to_delete = ['nodelog', ]
+            referent_type = guid_instance.to_storage()['referent'][1]
+            if referent_type in to_delete:
+                deleted = MGuid.remove(MQ('_id', 'eq', guid_instance._id))
+                logger.info('Deleted guid {} of type {}'.format(guid, referent_type))
+            if referent_type in guids_by_type:
+                guids_by_type[guid_instance.to_storage()['referent'][1]] += 1
+            else:
+                guids_by_type[guid_instance.to_storage()['referent'][1]] = 1
+    logger.info(guids_by_type)
+    logger.info('Missing referents: {}'.format(missing_referents))
+    logger.info('Updated referents: {}'.format(updated_referents))
+
+
+@app.task()
+def save_page_of_bare_models(django_model, offset, limit):
+    init_app(routes=False, attach_request_handlers=False, fixtures=False)
+    set_backend()
+    register_nonexistent_models_with_modm()
+
+    hashes = set()
+    count = 0
+
+    modm_model = get_modm_model(django_model)
+    if isinstance(django_model.modm_query, dict):
+        modm_queryset = modm_model.find(**django_model.modm_query)
+    else:
+        modm_queryset = modm_model.find(django_model.modm_query)
+
+    modm_page = modm_queryset.sort('-_id')[offset: limit]
+
+    with transaction.atomic():
+        django_objects = list()
+        if not hasattr(django_model, '_natural_key'):
+            logger.info('{}.{} is missing a natural key!'.format(django_model._meta.model.__module__,
+                                                                 django_model._meta.model.__name__))
+
+        for modm_obj in modm_page:
+            # TODO should we do the same for files relating to an institution?
+            # If we're migrating a NodeSetting pointing at an institution continue
+            if isinstance(modm_obj, (AddonWikiNodeSettings,
+                                     OsfStorageNodeSettings)) and modm_obj.owner is not None and modm_obj.owner.institution_id is not None:
+                continue
+            django_instance = django_model.migrate_from_modm(modm_obj)
+            if django_instance is None:
+                continue
+            if django_instance._natural_key() is not None:
+                # if there's a natural key
+                if isinstance(django_instance._natural_key(), list):
+                    found = []
+                    for nk in django_instance._natural_key():
+                        if nk not in hashes:
+                            hashes.add(nk)
+                        else:
+                            found.append(nk)
+                    if not found:
+                        django_objects.append(django_instance)
+                    else:
+                        count += 1
+                        logger.info(
+                            '{}.{} with guids {} was already in hashes'.format(django_instance._meta.model.__module__,
+                                                                               django_instance._meta.model.__name__,
+                                                                               found))
+                        continue
+                else:
+                    if django_instance._natural_key() not in hashes:
+                        # and that natural key doesn't exist in hashes
+                        # add it to hashes and append the object
+                        hashes.add(django_instance._natural_key())
+                        django_objects.append(django_instance)
+                    else:
+                        count += 1
+                        continue
+            else:
+                django_objects.append(django_instance)
+
+            count += 1
+        page_finish_time = timezone.now()
+        logger.info(
+            'Saving {} of {}.{}...'.format(count, django_model._meta.model.__module__, django_model._meta.model.__name__))
+        if len(django_objects) > 1000:
+            batch_size = len(django_objects) // 5
+        else:
+            batch_size = len(django_objects)
+        saved_django_objects = django_model.objects.bulk_create(django_objects, batch_size=batch_size)
+
+        logger.info('Done with {} {}.{} in {} seconds...'.format(len(saved_django_objects),
+                                                                 django_model._meta.model.__module__,
+                                                                 django_model._meta.model.__name__, (
+                                                                     timezone.now() -
+                                                                     page_finish_time).total_seconds()))
+        modm_obj._cache.clear()
+        modm_obj._object_cache.clear()
+        saved_django_objects = []
+        page_of_modm_objects = []
     total = None
     count = None
     hashes = None
-    print('Took out {} trashes'.format(gc.collect()))
+
+
+@app.task()
+def save_bare_models(django_model):
+    logger.info('Starting {} on {}.{}...'.format(sys._getframe().f_code.co_name, django_model._meta.model.__module__, django_model._meta.model.__name__))
+    init_app(routes=False, attach_request_handlers=False, fixtures=False)
+    set_backend()
+    register_nonexistent_models_with_modm()
+    count = 0
+    modm_model = get_modm_model(django_model)
+    page_size = django_model.migration_page_size
+
+    if isinstance(django_model.modm_query, dict):
+        modm_queryset = modm_model.find(**django_model.modm_query)
+    else:
+        modm_queryset = modm_model.find(django_model.modm_query)
+    total = modm_queryset.count()
+
+    while count < total:
+        logger.info('{}.{} starting'.format(django_model._meta.model.__module__, django_model._meta.model.__name__))
+        save_page_of_bare_models.delay(django_model, count, count+page_size)
+        count += page_size
 
 
 class DuplicateExternalAccounts(Exception):
     pass
 
 
-def save_bare_external_accounts(page_size=100000):
-    from website.models import ExternalAccount as MODMExternalAccount
-
-    def validate_box(external_account):
-        client = BoxClient(external_account.oauth_key)
-        try:
-            client.get_user_info()
-        except (BoxClientException, IndexError):
-            return False
-        return True
-
-    def validate_dropbox(external_account):
-        client = DropboxClient(external_account.oauth_key)
-        try:
-            client.account_info()
-        except (ValueError, IndexError, ErrorResponse):
-            return False
-        return True
-
-    def validate_github(external_account):
-        client = GitHubClient(external_account=external_account)
-        try:
-            client.user()
-        except (GitHubError, IndexError):
-            return False
-        return True
-
-    def validate_googledrive(external_account):
-        try:
-            external_account.node_settings.fetch_access_token()
-        except (InvalidGrantError, AttributeError):
-            return False
-        return True
-
-    def validate_s3(external_account):
-        if utils.can_list(external_account.oauth_key, external_account.oauth_secret):
-            return True
-        return False
-
-    account_validators = dict(
-        box=validate_box,
-        dropbox=validate_dropbox,
-        github=validate_github,
-        googledrive=validate_googledrive,
-        s3=validate_s3
-    )
-
-    django_model_classes_with_fk_to_external_account = BaseOAuthNodeSettings.__subclasses__()
-    django_model_classes_with_m2m_to_external_account = [OSFUser]
-
-
-    print('Starting save_bare_external_accounts...')
-    start = timezone.now()
-
-    external_accounts = MODMExternalAccount.find()
-    accounts_by_provider = dict()
-
-    for ea in external_accounts:
-        provider_tuple = (ea.provider, str(ea.provider_id))
-        if provider_tuple in accounts_by_provider.keys():
-            accounts_by_provider[provider_tuple].append(ea)
-        else:
-            accounts_by_provider[provider_tuple] = [ea, ]
-
-    bad_accounts = {k:v for k, v in accounts_by_provider.iteritems() if len(v) > 1}
-    good_accounts = [v[0] for k, v in accounts_by_provider.iteritems() if len(v) == 1]
-
-    for (provider, provider_id), providers_accounts in bad_accounts.iteritems():
-        good_provider_accounts = []
-        for modm_external_acct in providers_accounts:
-            if account_validators[provider](modm_external_acct):
-                logger.info('Account {} checks out as valid.'.format(modm_external_acct))
-                good_provider_accounts.append(modm_external_acct)
-        if len(good_provider_accounts) > 1:
-            raise DuplicateExternalAccounts('{} {} had {} good accounts.'.format(provider, provider_id, len(good_provider_accounts)))
-        else:
-            itertools.chain(good_accounts, good_provider_accounts)
-
-    with transaction.atomic():
-        good_django_accounts = ExternalAccount.objects.bulk_create([ExternalAccount.migrate_from_modm(x) for x in good_accounts])
-
-        external_account_mapping = dict(ExternalAccount.objects.all().values_list('_id', 'id'))
-
-        for (provider, provider_id), providers_accounts in bad_accounts.iteritems():
-            newest_modm_external_account_id = str(ObjectId.from_datetime(timezone.datetime(1970, 1, 1, tzinfo=timezone.UTC())))
-            modm_external_account_ids_to_replace = []
-            for modm_external_acct in providers_accounts:
-                if ObjectId(modm_external_acct._id).generation_time > ObjectId(newest_modm_external_account_id).generation_time:
-                    modm_external_account_ids_to_replace.append(newest_modm_external_account_id)
-                    newest_modm_external_account_id = modm_external_acct._id
-
-            ext = ExternalAccount.migrate_from_modm(MODMExternalAccount.load(newest_modm_external_account_id))
-            ext.save()
-            external_account_mapping[newest_modm_external_account_id] = ext.id
-
-            for modm_external_account_to_replace in modm_external_account_ids_to_replace:
-                for django_model_class in django_model_classes_with_fk_to_external_account:
-                    if hasattr(django_model_class, 'modm_model_path'):
-                        modm_model_class = get_modm_model(django_model_class)
-                        matching_models = modm_model_class.find(MQ('external_account', 'eq', modm_external_account_to_replace))
-                        django_model_class.objects.filter(_id__in=matching_models.get_keys()).update(external_account_id=external_account_mapping[newest_modm_external_account_id])
-
-                for django_model_class in django_model_classes_with_m2m_to_external_account:
-                    if hasattr(django_model_class, 'modm_model_path'):
-                        modm_model_class = get_modm_model(django_model_class)
-                        for model_guid in modm_model_class.find(MQ('external_accounts', 'eq', modm_external_account_to_replace)).get_keys():
-                            django_model = django_model_class.objects.get(guids___id=model_guid)
-                            django_model.external_accounts.add(external_account_mapping[newest_modm_external_account_id])
-
-
+@app.task()
 def save_bare_system_tags(page_size=10000):
-    print('Starting save_bare_system_tags...')
+    logger.info('Starting save_bare_system_tags...')
     start = timezone.now()
 
     things = list(MODMNode.find(MQ('system_tags', 'ne', [])).sort(
@@ -480,11 +637,11 @@ def save_bare_system_tags(page_size=10000):
         system_tags.append(Tag(name=system_tag_id,
                                system=True))
 
-    created_system_tags = Tag.objects.bulk_create(system_tags)
+    Tag.objects.bulk_create(system_tags)
 
-    print('MODM System Tags: {}'.format(total))
-    print('django system tags: {}'.format(Tag.objects.filter(system=True).count()))
-    print('Done with {} in {} seconds...'.format(
+    logger.info('MODM System Tags: {}'.format(total))
+    logger.info('django system tags: {}'.format(Tag.objects.filter(system=True).count()))
+    logger.info('Done with {} in {} seconds...'.format(
         sys._getframe().f_code.co_name,
         (timezone.now() - start).total_seconds()))
 
@@ -545,8 +702,8 @@ def register_nonexistent_models_with_modm():
 
 
 @modm_transaction()
-def merge_duplicate_users():
-    print('Starting {}...'.format(sys._getframe().f_code.co_name))
+def ensure_no_duplicate_users():
+    logger.info('Starting {}...'.format(sys._getframe().f_code.co_name))
     start = timezone.now()
 
     from framework.mongo.handlers import database
@@ -570,60 +727,152 @@ def merge_duplicate_users():
             }
         }
     ]).get('result')
-    # [
-    #   {
-    #       'count': 5,
-    #       '_id': 'duplicated@username.com',
-    #       'ids': [
-    #           'listo','fidst','hatma','tchth','euser','name!'
-    #       ]
-    #   }
-    # ]
-    print('Found {} duplicate usernames.'.format(len(duplicates)))
-    for duplicate in duplicates:
-        print('Found {} copies of {}'.format(len(duplicate.get('ids')), duplicate.get('_id')))
-        if duplicate.get('_id'):
-            # _id is an email address, merge users keeping the one that was logged into last
-            users = list(MODMUser.find(MQ('_id', 'in', duplicate.get('ids'))).sort('-last_login'))
-            best_match = users.pop()
-            for user in users:
-                print('Merging user {} into user {}'.format(user._id, best_match._id))
-                best_match.merge_user(user)
-        else:
-            # _id is null, set all usernames to their guid
-            users = MODMUser.find(MQ('_id', 'in', duplicate.get('ids')))
-            for user in users:
-                print('Setting username for {}'.format(user._id))
-                user.username = user._id
-                user.save()
-    print('Done with {} in {} seconds...'.format(
-        sys._getframe().f_code.co_name,
-        (timezone.now() - start).total_seconds()))
+    if duplicates:
+        raise AssertionError('Duplicate usernames found: {}. '
+                             'Use the scripts.merge_duplicate_users and '
+                             'scripts.set_null_usernames_to_guid scripts '
+                             'to ensure uniqueness.'.format(duplicates))
+
+def find_duplicate_addon_user_settings():
+    COLLECTIONS = [
+        'addondataverseusersettings',
+        'addonfigshareusersettings',
+        # 'addongithubusersettings',  # old, unused
+        'addonowncloudusersettings',
+        # 'addons3usersettings',  # old, unused
+        'boxusersettings',
+        'dropboxusersettings',
+        'githubusersettings',
+        'googledriveusersettings',
+        'mendeleyusersettings',
+        'osfstorageusersettings',
+        's3usersettings',
+        'zoterousersettings',
+        'addonwikiusersettings'
+    ]
+    for collection in COLLECTIONS:
+        targets = database[collection].aggregate([
+            {
+                '$group': {
+                    '_id': '$owner',
+                    'ids': {'$addToSet': '$_id'},
+                    'count': {'$sum': 1}
+                }
+            },
+            {
+                '$match': {
+                    'count': {'$gt': 1}
+                }
+            },
+            {
+                '$sort': {
+                    'count': -1
+                }
+            }
+        ]).get('result')
+        if targets:
+            raise AssertionError(
+                'Multiple {} records associated with users: {}. '
+                'Use scripts.clean_invalid_addon_settings to fix this issue.'.format(
+                    collection, ', '.join([each['_id'] for each in targets])
+                )
+            )
+
+def find_duplicate_addon_node_settings():
+    COLLECTIONS = [
+        'addondataversenodesettings',
+        'addonfigsharenodesettings',
+        # 'addongithubnodesettings',  # old, unused
+        'addonowncloudnodesettings',
+        # 'addons3nodesettings',  # old, unused
+        'boxnodesettings',
+        'figsharenodesettings',
+        'dropboxnodesettings',
+        'githubnodesettings',
+        'googledrivenodesettings',
+        'mendeleynodesettings',
+        'osfstoragenodesettings',
+        's3nodesettings',
+        'zoteronodesettings',
+        'addonwikinodesettings',
+        'forwardnodesettings',
+    ]
+
+    for collection in COLLECTIONS:
+        targets = database[collection].aggregate([
+            {
+                '$group': {
+                    '_id': '$owner',
+                    'ids': {'$addToSet': '$_id'},
+                    "count": {"$sum": 1}
+                }
+            },
+            {
+                '$match': {
+                    'count': {'$gt': 1}
+                }
+            },
+            {
+                '$sort': {
+                    'count': -1
+                }
+            }
+        ]).get('result')
+        if targets:
+            raise AssertionError(
+                'Multiple {} records associated with nodes: {}. '
+                'Use scripts.clean_invalid_addon_settings to fix this issue.'.format(
+                    collection, ', '.join([each['_id'] for each in targets])
+                )
+            )
 
 
 class Command(BaseCommand):
     help = 'Migrates data from tokumx to postgres'
-    threads = 5
 
     def add_arguments(self, parser):
         parser.add_argument('--nodelogs', action='store_true', help='Run nodelog migrations')
         parser.add_argument('--nodelogsguids', action='store_true', help='Run nodelog guid migrations')
+        parser.add_argument('--profile', action='store', help='Filename to dump profiling information')
+        parser.add_argument('--dependents', action='store_true', help='Migrate things that are dependent on other things.')
+
+    def do_model(self, django_model, options):
+        with ipdb.launch_ipdb_on_exception():
+            if not options['nodelogsguids']:
+                save_bare_models.delay(django_model)
 
     def handle(self, *args, **options):
-        set_backend()
+        if options['profile']:
+            profiler = Profile()
+            profiler.runcall(self._handle, *args, **options)
+            stats = pstats.Stats(profiler).sort_stats('cumulative')
+            stats.print_stats()
+            stats.dump_stats(options['profile'])
+        else:
+            self._handle(*args, **options)
+
+    def _handle(self, *args, **options):
         # it's either this or catch the exception and put them in the blacklistguid table
+        init_app(routes=False, attach_request_handlers=False, fixtures=False)
+        set_backend()
         register_nonexistent_models_with_modm()
+
+        if options['dependents']:
+            make_guids()
+            fix_guids()
+            return
 
         models = get_ordered_models()
         # guids never, pls
         models.pop(models.index(Guid))
-        models.pop(models.index(ExternalAccount))
 
         if not options['nodelogs'] and not options['nodelogsguids']:
-            merge_duplicate_users()
-            # merged users get blank usernames, running it twice fixes it.
-            merge_duplicate_users()
-
+            ensure_no_duplicate_users()
+        if not options['nodelogs']:
+            logger.info('Removing duplicate addon node settings...')
+            find_duplicate_addon_node_settings()
+            logger.info('Removing duplicate addon user settings...')
+            find_duplicate_addon_user_settings()
         for django_model in models:
             if not options['nodelogs'] and not options['nodelogsguids'] and django_model is NodeLog:
                 continue
@@ -633,30 +882,16 @@ class Command(BaseCommand):
                 continue
 
             if not hasattr(django_model, 'modm_model_path'):
-                print('################################################\n'
-                      '{} doesn\'t have a modm_model_path\n'
+                logger.info('################################################\n'
+                      '{}.{} doesn\'t have a modm_model_path\n'
                       '################################################'.format(
-                    django_model._meta.model.__name__))
+                    django_model._meta.model.__module__, django_model._meta.model.__name__,))
                 continue
-            modm_model = get_modm_model(django_model)
-            if isinstance(django_model.modm_query, dict):
-                modm_queryset = modm_model.find(**django_model.modm_query)
-            else:
-                modm_queryset = modm_model.find(django_model.modm_query)
-
-            with ipdb.launch_ipdb_on_exception():
-                if not options['nodelogsguids']:
-                    save_bare_models(modm_queryset, django_model,
-                                     page_size=django_model.migration_page_size)
-            modm_model._cache.clear()
-            modm_model._object_cache.clear()
-            print('Took out {} trashes'.format(gc.collect()))
+            self.do_model(django_model, options)
 
         # Handle system tags, they're on nodes, they need a special migration
         if not options['nodelogs'] and not options['nodelogsguids']:
             with ipdb.launch_ipdb_on_exception():
-                save_bare_system_tags()
-                make_guids()
-                save_bare_external_accounts()
-                migrate_page_counters()
-                migrate_user_activity_counters()
+                save_bare_system_tags.delay()
+                migrate_page_counters.delay()
+                migrate_user_activity_counters.delay()

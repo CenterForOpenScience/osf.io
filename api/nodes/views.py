@@ -709,7 +709,7 @@ class NodeContributorsList(BaseContributorList, bulk_views.BulkUpdateJSONAPIView
                     raise ValidationError('Contributor identifier not provided.')
                 except IndexError:
                     raise ValidationError('Contributor identifier incorrectly formatted.')
-            queryset[:] = [contrib for contrib in queryset if contrib._id in contrib_ids]
+            queryset = queryset.filter(guids___id__in=contrib_ids)
         return queryset
 
     # Overrides BulkDestroyJSONAPIView
@@ -2601,7 +2601,7 @@ class NodeLogList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, ODMFilterMix
         return query
 
     def get_queryset(self):
-        queryset = NodeLog.find(self.get_query_from_request())
+        queryset = NodeLog.find(self.get_query_from_request()).select_related('node', 'original_node', 'user')
         return queryset
 
 

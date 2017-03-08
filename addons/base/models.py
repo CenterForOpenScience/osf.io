@@ -216,12 +216,10 @@ class BaseOAuthUserSettings(BaseUserSettings):
         """
         for node in self.get_nodes_with_oauth_grants(external_account):
             try:
-                addon_settings = node.get_addon(external_account.provider, deleted=True)
+                addon_settings = node.get_addon(external_account.provider, deleted=True).deauthorize(auth=auth)
             except AttributeError:
                 # No associated addon settings despite oauth grant
                 pass
-            else:
-                addon_settings.deauthorize(auth=auth)
 
         if external_account.osfuser_set.count() == 1 and \
                 external_account.osfuser_set.filter(osfuser=auth.user).count() == 1:

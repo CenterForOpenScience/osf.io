@@ -2869,7 +2869,7 @@ class TestPointerViews(OsfTestCase):
         res = self.app.get(url, auth=self.user.auth).maybe_follow()
         assert_equal(res.status_code, 200)
 
-        has_controls = res.lxml.xpath('//li[@node_reference]/p[starts-with(normalize-space(text()), "Private Link")]//i[contains(@class, "remove-pointer")]')
+        has_controls = res.lxml.xpath('//li[@node_id]/p[starts-with(normalize-space(text()), "Private Link")]//i[contains(@class, "remove-pointer")]')
         assert_true(has_controls)
 
     def test_pointer_list_write_contributor_can_remove_public_component_entry(self):
@@ -2884,7 +2884,7 @@ class TestPointerViews(OsfTestCase):
         assert_equal(res.status_code, 200)
 
         has_controls = res.lxml.xpath(
-            '//li[@node_reference]//i[contains(@class, "remove-pointer")]')
+            '//li[@node_id]//i[contains(@class, "remove-pointer")]')
         assert_equal(len(has_controls), 3)
 
     def test_pointer_list_read_contributor_cannot_remove_private_component_entry(self):
@@ -2900,8 +2900,8 @@ class TestPointerViews(OsfTestCase):
         res = self.app.get(url, auth=user2.auth).maybe_follow()
         assert_equal(res.status_code, 200)
 
-        pointer_nodes = res.lxml.xpath('//li[@node_reference]')
-        has_controls = res.lxml.xpath('//li[@node_reference]/p[starts-with(normalize-space(text()), "Private Link")]//i[contains(@class, "remove-pointer")]')
+        pointer_nodes = res.lxml.xpath('//li[@node_id]')
+        has_controls = res.lxml.xpath('//li[@node_id]/p[starts-with(normalize-space(text()), "Private Link")]//i[contains(@class, "remove-pointer")]')
         assert_equal(len(pointer_nodes), 1)
         assert_false(has_controls)
 
@@ -2921,9 +2921,9 @@ class TestPointerViews(OsfTestCase):
         res = self.app.get(url, auth=user2.auth).maybe_follow()
         assert_equal(res.status_code, 200)
 
-        pointer_nodes = res.lxml.xpath('//li[@node_reference]')
+        pointer_nodes = res.lxml.xpath('//li[@node_id]')
         has_controls = res.lxml.xpath(
-            '//li[@node_reference]//i[contains(@class, "remove-pointer")]')
+            '//li[@node_id]//i[contains(@class, "remove-pointer")]')
         assert_equal(len(pointer_nodes), 1)
         assert_equal(len(has_controls), 0)
 
@@ -3076,7 +3076,7 @@ class TestPointerViews(OsfTestCase):
         pointer = self.project.add_pointer(node, auth=self.consolidate_auth)
         self.app.delete_json(
             url,
-            {'pointerId': pointer._id},
+            {'pointerId': pointer.node._id},
             auth=self.user.auth,
         )
         self.project.reload()
@@ -3937,6 +3937,7 @@ class TestExternalAuthViews(OsfTestCase):
         self.user.reload()
         assert_equal(self.user.external_identity['service'][self.provider_id], 'VERIFIED')
         assert_true(self.user.is_registered)
+        assert_true(self.user.has_usable_password())
 
     @mock.patch('website.mails.send_mail')
     def test_external_login_confirm_email_get_link(self, mock_link_confirm):
@@ -3954,6 +3955,7 @@ class TestExternalAuthViews(OsfTestCase):
         self.user.reload()
         assert_equal(self.user.external_identity['service'][self.provider_id], 'VERIFIED')
         assert_true(self.user.is_registered)
+        assert_true(self.user.has_usable_password())
 
     @mock.patch('website.mails.send_mail')
     def test_external_login_confirm_email_get_duped_id(self, mock_confirm):
@@ -4320,8 +4322,8 @@ class TestReorderComponents(OsfTestCase):
         # contrib tries to reorder components
         payload = {
             'new_list': [
-                '{0}:node'.format(self.private_component._primary_key),
-                '{0}:node'.format(self.public_component._primary_key),
+                '{0}'.format(self.private_component._id),
+                '{0}'.format(self.public_component._id),
             ]
         }
         url = self.project.api_url_for('project_reorder_components')

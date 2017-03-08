@@ -53,7 +53,6 @@ class TestUserSerializers(OsfTestCase):
         NodeFactory(creator=user)
         ProjectFactory(creator=user, is_public=True)
         CollectionFactory(creator=user)
-        BookmarkCollectionFactory(creator=user)
         d = utils.serialize_user(user, full=True)
         gravatar = filters.gravatar(
             user,
@@ -91,7 +90,6 @@ class TestNodeSerializers(OsfTestCase):
         result = _get_summary(
             node, auth=Auth(user),
             primary=True,
-            link_id=None
         )
 
         # serialized result should have id and primary
@@ -182,7 +180,6 @@ class TestNodeSerializers(OsfTestCase):
         res = _get_summary(
             fork, auth=Auth(user),
             primary=True,
-            link_id=None
         )
         # serialized result should have is_fork
         assert_true(res['summary']['is_fork'])
@@ -200,7 +197,6 @@ class TestNodeSerializers(OsfTestCase):
         res = _get_summary(
             fork, auth=Auth(user),
             primary=True,
-            link_id=None
         )
         # serialized result should have is_fork
         assert_false(res['summary']['can_view'])

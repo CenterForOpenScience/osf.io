@@ -15,6 +15,7 @@ from website.exceptions import NodeStateError
 from website.util import permissions, disconnected_from_listeners
 from website.citations.utils import datetime_to_csl
 from website import language
+from website.project.model import ensure_schemas
 
 from osf.models import (
     AbstractNode,
@@ -25,6 +26,7 @@ from osf.models import (
     Sanction,
     NodeRelation,
     Registration,
+    DraftRegistrationApproval,
 )
 from addons.wiki.models import NodeWikiPage
 from osf.exceptions import ValidationError
@@ -36,6 +38,7 @@ from .factories import (
     UserFactory,
     UnregUserFactory,
     RegistrationFactory,
+    DraftRegistrationFactory,
     NodeLicenseRecordFactory,
     PrivateLinkFactory,
     CollectionFactory,
@@ -145,15 +148,20 @@ def test_get_children():
     greatgrandchild1 = NodeFactory(parent=grandchild1)
     greatgrandchild2 = NodeFactory(parent=grandchild2)
     greatgrandchild3 = NodeFactory(parent=grandchild3)
-    greatgrandchild_1 = NodeFactory(parent=grandchild_1)
+    greatgrandchild_1 = NodeFactory(parent=grandchild_1, is_deleted=True)
 
-    assert 20 == len(Node.objects.get_children(root))
+    assert 20 == Node.objects.get_children(root).count()
+    pks = Node.objects.get_children(root, primary_keys=True)
+    assert 20 == len(pks)
+    assert set(pks) == set(Node.objects.exclude(id=root.id).values_list('id', flat=True))
+
+    assert greatgrandchild_1 in Node.objects.get_children(root).all()
+    assert greatgrandchild_1 not in Node.objects.get_children(root, active=True).all()
 
 def test_get_children_with_barren_parent():
     root = ProjectFactory()
 
     assert 0 == len(Node.objects.get_children(root))
-
 
 def test_get_children_with_links():
     root = ProjectFactory()
@@ -1358,7 +1366,7 @@ class TestManageContributors:
                 [], auth=auth, save=True,
             )
 
-    def test_manage_contributors_no_admins(self, node):
+    def test_manage_contributors_no_admins(self, node, auth):
         user = UserFactory()
         node.add_contributor(
             user,
@@ -1456,6 +1464,22 @@ class TestNodeTraversals:
         reg.delete_registration_tree(save=True)
         assert Node.find(Q('_id', 'in', reg_ids) & Q('is_deleted', 'eq', False)).count() == 0
         assert mock_update_search.call_count == orig_call_count + len(reg_ids)
+
+    def test_delete_registration_tree_sets_draft_registration_approvals_to_none(self, user):
+        ensure_schemas()
+        reg = RegistrationFactory()
+
+        dr = DraftRegistrationFactory(initiator=user)
+        approval = DraftRegistrationApproval(state=Sanction.APPROVED)
+        approval.save()
+        dr.approval = approval
+        dr.registered_node = reg
+        dr.save()
+
+        reg.delete_registration_tree(save=True)
+
+        dr.reload()
+        assert dr.approval is None
 
     @mock.patch('osf.models.node.AbstractNode.update_search')
     def test_delete_registration_tree_deletes_backrefs(self, mock_update_search):
@@ -1790,9 +1814,9 @@ class TestForkNode:
 
         fork_user_auth = Auth(user=fork_user)
         # Recursively compare children
-        for idx, child in enumerate(original._nodes.all()):
+        for idx, child in enumerate(original.get_nodes()):
             if child.can_view(fork_user_auth):
-                self._cmp_fork_original(fork_user, fork_date, fork._nodes.all()[idx],
+                self._cmp_fork_original(fork_user, fork_date, fork.get_nodes()[idx],
                                         child, title_prepend='')
 
     @mock.patch('framework.status.push_status_message')
@@ -2494,6 +2518,14 @@ class TestTemplateNode:
         assert new.title == changed_title
         assert new.date_created != project.date_created
         self._verify_log(new)
+
+    def test_use_as_template_adds_default_addons(self, project, auth):
+        new = project.use_as_template(
+            auth=auth
+        )
+
+        assert new.has_addon('wiki')
+        assert new.has_addon('osfstorage')
 
     def test_use_as_template_preserves_license(self, project, auth):
         license = NodeLicenseRecordFactory()
