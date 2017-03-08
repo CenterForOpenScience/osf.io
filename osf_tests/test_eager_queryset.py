@@ -19,7 +19,7 @@ class TestEagerQuerySet:
         node = NodeFactory()
         node_id = node.id
         with django_assert_num_queries(1):
-            fresh_node = Node.objects.eager(['creator']).get(id=node_id)
+            fresh_node = Node.objects.eager('creator').get(id=node_id)
             cr = fresh_node.creator
 
     @pytest.mark.django_assert_num_queries

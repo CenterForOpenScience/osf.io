@@ -89,7 +89,7 @@ class OSFUserManager(BaseUserManager):
         user.save(using=self._db)
         return user
 
-    def eager(self, fields):
+    def eager(self, *fields):
         fk_fields = set(self.model.get_fk_field_names()) & set(fields)
         m2m_fields = set(self.model.get_m2m_field_names()) & set(fields)
         return self.select_related(*fk_fields).prefetch_related(*m2m_fields)

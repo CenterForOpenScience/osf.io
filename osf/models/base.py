@@ -69,7 +69,7 @@ class MODMCompatibilityQuerySet(models.QuerySet):
             else:
                 yield item
 
-    def eager(self, fields):
+    def eager(self, *fields):
         qs = self._clone()
         field_set = set(fields)
         fk_fields = set(qs.model.get_fk_field_names()) & field_set
@@ -678,7 +678,7 @@ class GuidMixin(BaseIDMixin):
     def load(cls, q):
         try:
             return cls.objects.filter(guids___id=q)[0]
-        except (IndexError, cls.DoesNotExist):
+        except IndexError:
             # modm doesn't throw exceptions when loading things that don't exist
             return None
 

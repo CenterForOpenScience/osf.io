@@ -71,7 +71,7 @@ def absolute_reverse(view_name, query_kwargs=None, args=None, kwargs=None):
     return url
 
 
-def get_object_or_error(model_cls, query_or_pk, display_name=None, prefetch_fields=list()):
+def get_object_or_error(model_cls, query_or_pk, display_name=None, prefetch_fields=()):
     obj = query = None
     if isinstance(query_or_pk, basestring):
         if issubclass(model_cls, GuidMixin):
@@ -92,9 +92,9 @@ def get_object_or_error(model_cls, query_or_pk, display_name=None, prefetch_fiel
             raise NotFound
         try:
             if isinstance(query, dict):
-                obj = model_cls.objects.eager(prefetch_fields).get(**query)
+                obj = model_cls.objects.eager(*prefetch_fields).get(**query)
             else:
-                obj = model_cls.objects.eager(prefetch_fields).get(query)
+                obj = model_cls.objects.eager(*prefetch_fields).get(query)
         except ObjectDoesNotExist:
             raise NotFound
 

@@ -1006,15 +1006,11 @@ class JSONAPIListSerializer(ser.ListSerializer):
 
 
 class PrefetchRelationshipsSerializer(ser.Serializer):
-    relationship_field_names = list()
 
     def __init__(self, *args, **kwargs):
         super(PrefetchRelationshipsSerializer, self).__init__(*args, **kwargs)
-        for field_name, field in self.fields.iteritems():
-            if field.source == '*':
-                self.relationship_field_names.append(field_name)
-            else:
-                self.relationship_field_names.append(field.source)
+        self.model_field_names = [name if field.source == '*' else field.source
+                                  for name, field in self.fields.iteritems()]
 
 
 class JSONAPISerializer(PrefetchRelationshipsSerializer):
