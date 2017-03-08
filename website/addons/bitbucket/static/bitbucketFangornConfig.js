@@ -23,8 +23,9 @@ var _bitbucketItemButtons = {
             event.stopPropagation();
             window.location = waterbutler.buildTreeBeardDownload(item, {commitSha: item.data.extra.commitSha});
         }
-        // Download Zip File
-        if (item.kind === 'folder') {
+
+        if (item.kind === 'folder' && item.data.addonFullname) { // Repository root
+
             var branchArray = [];
             if (item.data.branches) {
                 item.data.branch = item.data.branch || item.data.defaultBranch;
@@ -36,65 +37,78 @@ var _bitbucketItemButtons = {
                     }, item.data.branches[i]));
                 }
             }
-            if (item.data.addonFullname) {
+
+            buttons.push(
+                m.component(Fangorn.Components.dropdown, {
+                    'label': 'Branch: ',
+                    onchange: function (event) {
+                        changeBranch.call(tb, item, event.target.value);
+                    },
+                    icon: 'fa fa-external-link',
+                    className: 'text-info'
+                }, branchArray)
+            );
+        }
+
+        if (tb.options.placement !== 'fileview') {
+            if (item.kind === 'folder' && item.data.addonFullname) { // Storage root
                 buttons.push(
-                    m.component(Fangorn.Components.dropdown, {
-                        'label': 'Branch: ',
-                        onchange: function (event) {
-                            changeBranch.call(tb, item, event.target.value);
+                    m.component(Fangorn.Components.button, {
+                        onclick: function (event) {
+                            window.location = waterbutler.buildTreeBeardDownloadZip(item, {'branch': item.data.branch});
+                        },
+                        icon: 'fa fa-download',
+                        className: 'text-primary'
+                    }, 'Download'),
+                    m.component(Fangorn.Components.button, {
+                        onclick: function (event) {
+                            window.open(item.data.urls.repo + item.data.branch, '_blank');
                         },
                         icon: 'fa fa-external-link',
                         className: 'text-info'
-                    }, branchArray)
+                    }, 'Open')
                 );
             }
-            if (tb.options.placement !== 'fileview') {
-                if (item.data.addonFullname) {
-                    buttons.push(
-                        m.component(Fangorn.Components.button, {
-                            onclick: function (event) {
-                                window.location = waterbutler.buildTreeBeardDownloadZip(item, {'branch': item.data.branch});
-                            },
-                            icon: 'fa fa-download',
-                            className: 'text-primary'
-                        }, 'Download'),
-                        m.component(Fangorn.Components.button, {
-                            onclick: function (event) {
-                                window.open(item.data.urls.repo, '_blank');
-                            },
-                            icon: 'fa fa-external-link',
-                            className: 'text-info'
-                        }, 'Open')
-                    );
-                }
-            }
-        } else if (item.kind === 'file' && tb.options.placement !== 'fileview') {
-            buttons.push(
-                m.component(Fangorn.Components.button, {
-                    onclick: function (event) {
-                        _downloadEvent.call(tb, event, item);
-                    },
-                    icon: 'fa fa-download',
-                    className: 'text-primary'
-                }, 'Download')
-            );
-            if (item.data.permissions && item.data.permissions.view) {
+            else if (item.kind === 'folder'  && !item.data.addonFullname) { // Subfolder
                 buttons.push(
                     m.component(Fangorn.Components.button, {
-                        onclick: function(event) {
-                            gotoFile.call(tb, item);
+                        onclick: function (event) {
+                            window.location = waterbutler.buildTreeBeardDownloadZip(item, {'branch': item.data.branch});
                         },
-                        icon: 'fa fa-file-o',
-                        className : 'text-info'
-                    }, 'View'));
-            }
-            if (item.data.permissions && item.data.permissions.view && !item.data.permissions.private) {
-                buttons.push(
-                    m('a.text-info.fangorn-toolbar-icon', {href: item.data.extra.webView}, [
-                        m('i.fa.fa-external-link'),
-                        m('span', 'View on Bitbucket')
-                    ])
+                        icon: 'fa fa-download',
+                        className: 'text-primary'
+                    }, 'Download as zip')
                 );
+            }
+            else if (item.kind === 'file') { // File
+                buttons.push(
+                    m.component(Fangorn.Components.button, {
+                        onclick: function (event) {
+                            _downloadEvent.call(tb, event, item);
+                        },
+                        icon: 'fa fa-download',
+                        className: 'text-primary'
+                    }, 'Download')
+                );
+                if (item.data.permissions && item.data.permissions.view) {
+                    buttons.push(
+                        m.component(Fangorn.Components.button, {
+                            onclick: function(event) {
+                                gotoFile.call(tb, item);
+                            },
+                            icon: 'fa fa-file-o',
+                            className : 'text-info'
+                        }, 'View')
+                    );
+                    if (!item.data.permissions.private) {
+                        buttons.push(
+                            m('a.text-info.fangorn-toolbar-icon', {href: item.data.extra.webView}, [
+                                m('i.fa.fa-external-link'),
+                                m('span', 'View on Bitbucket')
+                            ])
+                        );
+                    }
+                }
             }
         }
 
