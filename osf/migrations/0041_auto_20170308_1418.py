@@ -8,7 +8,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0029_externalaccount_date_last_refreshed'),
+        ('osf', '0040_ensure_root_field'),
     ]
 
     operations = [
