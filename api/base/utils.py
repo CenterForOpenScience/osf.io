@@ -85,7 +85,7 @@ def get_object_or_error(model_cls, query_or_pk, display_name=None, prefetch_fiel
         if hasattr(model_cls, 'primary_identifier_name'):
             query = to_django_query(query_or_pk, model_cls=model_cls)
         else:
-            obj = model_cls.find(query_or_pk)
+            obj = model_cls.find_one(query_or_pk)
 
     if not obj:
         if not query:
