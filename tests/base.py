@@ -212,13 +212,16 @@ class ApiAppTestCase(unittest.TestCase):
 class SearchTestCase(unittest.TestCase):
 
     def setUp(self):
-        super(SearchTestCase, self).setUp()
-
         settings.ELASTIC_INDEX = uuid.uuid4().hex
+        settings.ELASTIC_TIMEOUT = 60
 
         from website.search import elastic_search
         elastic_search.INDEX = settings.ELASTIC_INDEX
         elastic_search.create_index(settings.ELASTIC_INDEX)
+
+        # NOTE: Super is called last to ensure the ES connection can be established before
+        #       the httpretty module patches the socket.
+        super(SearchTestCase, self).setUp()
 
     def tearDown(self):
         super(SearchTestCase, self).tearDown()
