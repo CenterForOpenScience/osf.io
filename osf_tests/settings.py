@@ -31,5 +31,3 @@ REST_FRAMEWORK['ALLOWED_VERSIONS'] = (
     '3.0',
     '3.0.1',
 )
-
-ELASTIC_INDEX = 'website-{}'.format(uuid.uuid4().hex)

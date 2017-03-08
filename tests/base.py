@@ -9,6 +9,7 @@ import re
 import shutil
 import tempfile
 import unittest
+import uuid
 
 import blinker
 import httpretty
@@ -208,6 +209,24 @@ class ApiAppTestCase(unittest.TestCase):
         self.app = JSONAPITestApp()
 
 
+class SearchTestCase(unittest.TestCase):
+
+    def setUp(self):
+        super(SearchTestCase, self).setUp()
+
+        settings.ELASTIC_INDEX = uuid.uuid4().hex
+
+        from website.search import elastic_search
+        elastic_search.INDEX = settings.ELASTIC_INDEX
+        elastic_search.create_index(settings.ELASTIC_INDEX)
+
+    def tearDown(self):
+        super(SearchTestCase, self).tearDown()
+
+        from website.search import elastic_search
+        elastic_search.delete_index(settings.ELASTIC_INDEX)
+
+
 methods = [
     httpretty.GET,
     httpretty.PUT,
@@ -248,7 +267,7 @@ class MockRequestTestCase(unittest.TestCase):
         httpretty.disable()
 
 
-class OsfTestCase(DbTestCase, AppTestCase, MockRequestTestCase):
+class OsfTestCase(DbTestCase, AppTestCase, SearchTestCase, MockRequestTestCase):
     """Base `TestCase` for tests that require both scratch databases and the OSF
     application. Note: superclasses must call `super` in order for all setup and
     teardown methods to be called correctly.
@@ -256,7 +275,7 @@ class OsfTestCase(DbTestCase, AppTestCase, MockRequestTestCase):
     pass
 
 
-class ApiTestCase(DbTestCase, ApiAppTestCase, MockRequestTestCase):
+class ApiTestCase(DbTestCase, ApiAppTestCase, SearchTestCase, MockRequestTestCase):
     """Base `TestCase` for tests that require both scratch databases and the OSF
     API application. Note: superclasses must call `super` in order for all setup and
     teardown methods to be called correctly.
@@ -346,7 +365,7 @@ class ApiAddonTestCase(ApiTestCase):
             self.account.remove()
 
 
-class AdminTestCase(DbTestCase, DjangoTestCase, MockRequestTestCase):
+class AdminTestCase(DbTestCase, DjangoTestCase, SearchTestCase, MockRequestTestCase):
     pass
 
 
