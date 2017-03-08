@@ -653,7 +653,10 @@ class Pointer(StoredObject):
     #: Whether this is a pointer or not
     primary = False
 
-    _id = fields.StringField()
+    _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
+    # Previous 5-character ID. Unused in application code.
+    # These were migrated to ObjectIds to prevent clashes with GUIDs.
+    _legacy_id = fields.StringField()
     node = fields.ForeignField('node')
 
     _meta = {'optimistic': True}
