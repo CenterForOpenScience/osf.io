@@ -66,7 +66,6 @@ def client():
     global CLIENT
     if CLIENT is None:
         try:
-            logger.info('!!!!!!!!! NEW ES CONNECTION !!!!!!!!!!!!')
             CLIENT = Elasticsearch(
                 settings.ELASTIC_URI,
                 request_timeout=settings.ELASTIC_TIMEOUT,

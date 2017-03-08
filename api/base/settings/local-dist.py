@@ -1,4 +1,4 @@
-from . import defaults
+from .defaults import *  # noqa
 from website import settings as osf_settings
 
 
@@ -12,8 +12,18 @@ CORS_ORIGIN_ALLOW_ALL = True
 # DEBUG_PROPAGATE_EXCEPTIONS = True
 
 if DEBUG:
-    INSTALLED_APPS = defaults.INSTALLED_APPS + ('debug_toolbar', )
-    MIDDLEWARE_CLASSES = defaults.MIDDLEWARE_CLASSES + ('debug_toolbar.middleware.DebugToolbarMiddleware', )
+    INSTALLED_APPS += ('debug_toolbar', )
+    MIDDLEWARE_CLASSES += ('debug_toolbar.middleware.DebugToolbarMiddleware', )
     DEBUG_TOOLBAR_CONFIG = {
         'SHOW_TOOLBAR_CALLBACK': lambda(_): True
     }
+
+REST_FRAMEWORK['DEFAULT_THROTTLE_RATES'] = {
+    'user': '1000000/second',
+    'non-cookie-auth': '1000000/second',
+    'add-contributor': '1000000/second',
+    'create-guid': '1000000/second',
+    'root-anon-throttle': '1000000/second',
+    'test-user': '2/hour',
+    'test-anon': '1/hour',
+}

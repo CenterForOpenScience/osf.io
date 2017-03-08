@@ -46,6 +46,7 @@ from .json_api_test_app import JSONAPITestApp
 
 from nose.tools import *  # noqa (PEP8 asserts); noqa (PEP8 asserts)
 
+logger = logging.getLogger(__name__)
 
 
 def get_default_metaschema():
@@ -239,7 +240,7 @@ methods = [
     httpretty.DELETE,
 ]
 def kill(*args, **kwargs):
-    print('httppretty.kill', args, kwargs)
+    logger.error('httppretty.kill: %s - %s', args, kwargs)
     raise httpretty.errors.UnmockedError()
 
 
