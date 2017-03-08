@@ -727,6 +727,7 @@ def root(request, format=None, **kwargs):
 
         value        description
         ==========================================
+        bitbucket    Bitbucket
         box          Box.com
         dataverse    Dataverse
         dropbox      Dropbox

@@ -76,6 +76,7 @@ COPY ./requirements.txt /code/
 COPY ./requirements/ /code/requirements/
 
 COPY ./addons/box/requirements.txt /code/addons/box/
+COPY ./website/addons/bitbucket/requirements.txt /code/website/addons/bitbucket/
 COPY ./addons/dataverse/requirements.txt /code/addons/dataverse/
 COPY ./addons/dropbox/requirements.txt /code/addons/dropbox/
 COPY ./addons/github/requirements.txt /code/addons/github/
@@ -89,6 +90,7 @@ RUN pip install --no-cache-dir -c /code/requirements/constraints.txt -r /code/re
     && pip install --no-cache-dir -c /code/requirements/constraints.txt -r /code/requirements/release.txt
 
 RUN pip install --no-cache-dir -c /code/requirements/constraints.txt -r /code/addons/box/requirements.txt \
+    && pip install --no-cache-dir -c /code/requirements/constraints.txt -r /code/website/addons/bitbucket/requirements.txt \
     && pip install --no-cache-dir -c /code/requirements/constraints.txt -r /code/addons/dataverse/requirements.txt \
     && pip install --no-cache-dir -c /code/requirements/constraints.txt -r /code/addons/dropbox/requirements.txt \
     && pip install --no-cache-dir -c /code/requirements/constraints.txt -r /code/addons/github/requirements.txt \
@@ -125,6 +127,7 @@ RUN mv /code/website/settings/local-dist.py /code/website/settings/local.py \
 
 COPY ./webpack* /code/
 COPY ./website/static /code/website/static/
+COPY ./website/addons/bitbucket/static/ /code/website/addons/bitbucket/static/
 COPY ./addons/box/static/ /code/addons/box/static/
 COPY ./addons/citations/static/ /code/addons/citations/static/
 COPY ./addons/dataverse/static/ /code/addons/dataverse/static/

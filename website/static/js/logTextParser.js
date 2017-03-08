@@ -495,6 +495,17 @@ var LogPieces = {
         }
     },
 
+    bitbucket_repo: {
+        view: function(ctrl, logObject) {
+            var bitbucket_user = logObject.attributes.params.bitbucket_user;
+            var bitbucket_repo = logObject.attributes.params.bitbucket_repo;
+            if (paramIsReturned(bitbucket_repo, logObject) && paramIsReturned(bitbucket_user, logObject)){
+                return m('span', bitbucket_user + '/' + bitbucket_repo);
+            }
+            return m('span', '');
+        }
+    },
+
     folder_name: {
         view: function(ctrl, logObject) {
             return returnTextParams('folder_name', 'a folder', logObject);
