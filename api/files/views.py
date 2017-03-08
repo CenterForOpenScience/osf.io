@@ -361,10 +361,11 @@ class FileVersionsList(JSONAPIBaseView, generics.ListAPIView, FileMixin):
 
     For an OSF FileVersion entity the API `type` is "file_versions".
 
-        name          type     description
-        =================================================================================
-        size          integer  size of file in bytes
-        content_type  string   MIME content-type for the file. May be null if unavailable.
+        name          type       description
+        ====================================================================================
+        size          integer    size of file in bytes
+        date_created  timestamp  date that the version was created
+        content_type  string     MIME content-type for the file. May be null if unavailable.
 
     ##Links
 
@@ -420,10 +421,11 @@ class FileVersionDetail(JSONAPIBaseView, generics.RetrieveAPIView, FileMixin):
 
     For an OSF FileVersion entity the API `type` is "file_versions".
 
-        name          type     description
-        =================================================================================
-        size          integer  size of file in bytes
-        content_type  string   MIME content-type for the file. May be null if unavailable.
+        name          type       description
+        ====================================================================================
+        size          integer    size of file in bytes
+        date_created  timestamp  date that the version was created
+        content_type  string     MIME content-type for the file. May be null if unavailable.
 
     ##Relationships
 
