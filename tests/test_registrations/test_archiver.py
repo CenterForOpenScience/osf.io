@@ -52,6 +52,8 @@ from tests.utils import unique as _unique
 
 SILENT_LOGGERS = (
     'framework.celery_tasks.utils',
+    'framework.celery_tasks.signals',
+    'website.app',
     'website.archiver.tasks',
 )
 for each in SILENT_LOGGERS:

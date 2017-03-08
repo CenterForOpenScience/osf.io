@@ -515,19 +515,26 @@ def requirements(ctx, base=False, addons=False, release=False, dev=False, quick=
     ctx.run('pip install --no-cache-dir uritemplate.py==0.3.0')
 
 @task
-def test_module(ctx, module=None):
+def test_module(ctx, module=None, numprocesses=None):
     """Helper for running tests.
     """
     os.environ['DJANGO_SETTINGS_MODULE'] = 'osf_tests.settings'
     import pytest
+    if not numprocesses:
+        from multiprocessing import cpu_count
+        numprocesses = cpu_count()
+    # NOTE: Subprocess to compensate for lack of thread safety in the httpretty module.
+    # https://github.com/gabrielfalcao/HTTPretty/issues/209#issue-54090252
     args = ['-s']
+    if numprocesses > 1:
+        args += ['-n {}'.format(numprocesses)]
     modules = [module] if isinstance(module, basestring) else module
     args.extend(modules)
     retcode = pytest.main(args)
     sys.exit(retcode)
 
 # TODO: Add to this list when more modules are ported for djangosf compat
-CORE_TESTS = [
+OSF_TESTS = [
     'osf_tests',
     'tests/test_views.py',
     'tests/test_addons.py',
@@ -563,15 +570,6 @@ CORE_TESTS = [
     'tests/test_registrations/test_registration_approvals.py',
     'tests/test_registrations/test_views.py',
 ]
-@task
-def test_osf(ctx):
-    """Run the OSF test suite."""
-    test_module(ctx, module=CORE_TESTS)
-
-
-ELSE_TESTS = [
-    'addons',
-]
 API_TESTS1 = [
     'api_tests/identifiers',
     'api_tests/institutions',
@@ -581,10 +579,10 @@ API_TESTS1 = [
     'api_tests/preprint_providers',
     'api_tests/preprints',
     'api_tests/registrations',
+    'api_tests/users',
 ]
 API_TESTS2 = [
     'api_tests/nodes',
-    'api_tests/users',
 ]
 API_TESTS3 = [
     'api_tests/addons_tests',
@@ -601,23 +599,33 @@ API_TESTS3 = [
     'api_tests/view_only_links',
     'api_tests/wikis',
 ]
+ADDON_TESTS = [
+    'addons/',
+]
+
 
 @task
-def test_else(ctx):
-    """Run the API test suite."""
-    test_module(ctx, module=ELSE_TESTS)
+def test_osf(ctx, numprocesses=None):
+    """Run the OSF test suite."""
+    test_module(ctx, module=OSF_TESTS, numprocesses=numprocesses)
+
+
 @task
-def test_api1(ctx):
+def test_api1(ctx, numprocesses=None):
     """Run the API test suite."""
-    test_module(ctx, module=API_TESTS1)
+    test_module(ctx, module=API_TESTS1, numprocesses=numprocesses)
+
+
 @task
-def test_api2(ctx):
+def test_api2(ctx, numprocesses=None):
     """Run the API test suite."""
-    test_module(ctx, module=API_TESTS2)
+    test_module(ctx, module=API_TESTS2, numprocesses=numprocesses)
+
+
 @task
-def test_api3(ctx):
+def test_api3(ctx, numprocesses=None):
     """Run the API test suite."""
-    test_module(ctx, module=API_TESTS3)
+    test_module(ctx, module=API_TESTS3, numprocesses=numprocesses)
 
 
 @task
@@ -627,6 +635,13 @@ def test_admin(ctx):
     module = 'admin_tests/'
     module_fmt = ' '.join(module) if isinstance(module, list) else module
     admin_tasks.manage(ctx, 'test {}'.format(module_fmt))
+
+
+@task
+def test_addons(ctx, numprocesses=None):
+    """Run all the tests in the addons directory.
+    """
+    test_module(ctx, module=ADDON_TESTS, numprocesses=numprocesses)
 
 
 @task
@@ -640,16 +655,6 @@ def test_varnish(ctx):
         proc.kill()
 
 
-ADDON_TESTS = [
-    'addons/',
-]
-@task
-def test_addons(ctx):
-    """Run all the tests in the addons directory.
-    """
-    test_module(ctx, module=ADDON_TESTS)
-
-
 @task
 def test(ctx, all=False, syntax=False):
     """
@@ -660,20 +665,16 @@ def test(ctx, all=False, syntax=False):
         jshint(ctx)
 
     test_osf(ctx)
-    test_else(ctx)
-    # TODO: Enable admin tests
-    # test_admin(ctx)
+    test_api1(ctx)
+    test_api2(ctx)
+    test_api3(ctx)
 
     if all:
         test_addons(ctx)
+        # TODO: Enable admin tests
+        test_admin(ctx)
         karma(ctx, single=True, browsers='PhantomJS')
 
-OSF_MODELS_TESTS = [
-    'osf_tests',
-]
-@task
-def test_osf_models(ctx):
-    test_module(ctx, OSF_MODELS_TESTS)
 
 @task
 def test_js(ctx):
@@ -682,44 +683,55 @@ def test_js(ctx):
 
 
 @task
-def test_travis_osf(ctx):
+def test_travis_osf(ctx, numprocesses=None):
     """
     Run half of the tests to help travis go faster. Lints and Flakes happen everywhere to keep from wasting test time.
     """
     flake(ctx)
     jshint(ctx)
-    test_osf(ctx)
-    test_addons(ctx)
-    test_osf_models(ctx)
+    test_osf(ctx, numprocesses=numprocesses)
+
 
 @task
-def test_travis_else(ctx):
+def test_travis_else(ctx, numprocesses=None):
     """
     Run other half of the tests to help travis go faster. Lints and Flakes happen everywhere to keep from
     wasting test time.
     """
     flake(ctx)
     jshint(ctx)
-    test_else(ctx)
-    test_admin(ctx)
+    test_addons(ctx, numprocesses=numprocesses)
+    test_admin(ctx, numprocesses=numprocesses)
+
 
 @task
-def test_travis_api1(ctx):
-    test_api1(ctx)
+def test_travis_api1(ctx, numprocesses=None):
+    flake(ctx)
+    jshint(ctx)
+    test_api1(ctx, numprocesses=numprocesses)
+
 
 @task
-def test_travis_api2(ctx):
-    test_api2(ctx)
+def test_travis_api2(ctx, numprocesses=None):
+    flake(ctx)
+    jshint(ctx)
+    test_api2(ctx, numprocesses=numprocesses)
+
 
 @task
-def test_travis_api3(ctx):
-    test_api3(ctx)
+def test_travis_api3(ctx, numprocesses=None):
+    flake(ctx)
+    jshint(ctx)
+    test_api3(ctx, numprocesses=numprocesses)
+
 
 @task
 def test_travis_varnish(ctx):
     """
     Run the fast and quirky JS tests and varnish tests in isolation
     """
+    flake(ctx)
+    jshint(ctx)
     test_js(ctx)
     test_varnish(ctx)
 
