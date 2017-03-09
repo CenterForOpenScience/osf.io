@@ -487,6 +487,10 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     def contributor_to(self):
         return self.nodes.filter(is_deleted=False).exclude(type='osf.collection')
 
+    @property
+    def visible_contributor_to(self):
+        return self.nodes.filter(is_deleted=False, contributor__visible=True).exclude(type='osf.collection')
+
     def set_unusable_username(self):
         """Sets username to an unusable value. Used for, e.g. for invited contributors
         and merged users.
@@ -752,8 +756,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         ret = super(OSFUser, self).save(*args, **kwargs)
         if self.SEARCH_UPDATE_FIELDS.intersection(dirty_fields) and self.is_confirmed:
             self.update_search()
-            # TODO
-            # self.update_search_nodes_contributors()
+            self.update_search_nodes_contributors()
         return ret
 
     # Legacy methods
@@ -1122,6 +1125,15 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         except SearchUnavailableError as e:
             logger.exception(e)
             log_exception()
+
+    def update_search_nodes_contributors(self):
+        """
+        Bulk update contributor name on all nodes on which the user is
+        a contributor.
+        :return:
+        """
+        from website.search import search
+        search.update_contributors(self.visible_contributor_to)
 
     def update_search_nodes(self):
         """Call `update_search` on all nodes on which the user is a
