@@ -6,6 +6,7 @@ from django.utils import timezone
 
 from framework.celery_tasks.handlers import enqueue_task
 from framework.exceptions import PermissionsError
+from osf.utils.fields import NonNaiveDateTimeField
 from website.files.models import StoredFileNode
 from website.preprints.tasks import on_preprint_updated
 from website.project.model import NodeLog
@@ -25,8 +26,8 @@ class PreprintService(GuidMixin, BaseModel):
     modm_query = None
     # /TODO REMOVE AFTER MIGRATION
 
-    date_created = models.DateTimeField(default=timezone.now)
-    date_modified = models.DateTimeField(auto_now=True)
+    date_created = NonNaiveDateTimeField(default=timezone.now)
+    date_modified = NonNaiveDateTimeField(auto_now=True)
     provider = models.ForeignKey('osf.PreprintProvider',
                                  on_delete=models.SET_NULL,
                                  related_name='preprint_services',
@@ -35,7 +36,7 @@ class PreprintService(GuidMixin, BaseModel):
                              related_name='preprints',
                              null=True, blank=True, db_index=True)
     is_published = models.BooleanField(default=False, db_index=True)
-    date_published = models.DateTimeField(null=True, blank=True)
+    date_published = NonNaiveDateTimeField(null=True, blank=True)
     license = models.ForeignKey('osf.NodeLicenseRecord',
                                 on_delete=models.SET_NULL, null=True, blank=True)
 

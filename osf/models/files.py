@@ -15,6 +15,7 @@ from osf.models.comment import CommentableMixin
 from osf.models.mixins import Taggable
 from osf.models.validators import validate_location
 from osf.modm_compat import Q
+from osf.utils.fields import NonNaiveDateTimeField
 from website.util import api_v2_url
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from psycopg2._psycopg import AsIs
@@ -40,10 +41,10 @@ class TrashedFileNode(CommentableMixin, OptionalGuidMixin, ObjectIDMixin, BaseMo
     # TODO DELETE ME POST MIGRATION
     modm_model_path = 'website.files.models.TrashedFileNode'
     modm_query = None
-    migration_page_size = 80000
+    migration_page_size = 100000
     # /TODO DELETE ME POST MIGRATION
 
-    last_touched = models.DateTimeField(null=True, blank=True)
+    last_touched = NonNaiveDateTimeField(null=True, blank=True)
     history = DateTimeAwareJSONField(default=list, blank=True)
     versions = models.ManyToManyField('FileVersion')
 
@@ -63,7 +64,7 @@ class TrashedFileNode(CommentableMixin, OptionalGuidMixin, ObjectIDMixin, BaseMo
     _materialized_path = models.CharField(max_length=300, blank=True, null=True)
     checkout = models.ForeignKey('osf.OSFUser', related_name='trashed_files_checked_out', null=True, blank=True)
     deleted_by = models.ForeignKey('osf.OSFUser', related_name='files_deleted_by', null=True, blank=True)
-    deleted_on = models.DateTimeField(default=timezone.now)  # auto_now_add=True)
+    deleted_on = NonNaiveDateTimeField(default=timezone.now)  # auto_now_add=True)
     tags = models.ManyToManyField('osf.Tag')
     suspended = models.BooleanField(default=False)
 
@@ -186,11 +187,11 @@ class StoredFileNode(CommentableMixin, OptionalGuidMixin, Taggable, ObjectIDMixi
     # TODO DELETE ME POST MIGRATION
     modm_model_path = 'website.files.models.base.StoredFileNode'
     modm_query = None
-    migration_page_size = 80000
+    migration_page_size = 10000
     # /TODO DELETE ME POST MIGRATION
 
     # The last time the touch method was called on this FileNode
-    last_touched = models.DateTimeField(null=True, blank=True)
+    last_touched = NonNaiveDateTimeField(null=True, blank=True)
     # A list of dictionaries sorted by the 'modified' key
     # The raw output of the metadata request deduped by etag
     # Add regardless it can be pinned to a version or not
@@ -857,7 +858,7 @@ class FileVersion(ObjectIDMixin, BaseModel):
     # TODO DELETE ME POST MIGRATION
     modm_model_path = 'website.files.models.base.FileVersion'
     modm_query = None
-    migration_page_size = 40000
+    migration_page_size = 100000
     # /TODO DELETE ME POST MIGRATION
 
     creator = models.ForeignKey('OSFUser', null=True, blank=True)
@@ -865,7 +866,7 @@ class FileVersion(ObjectIDMixin, BaseModel):
     identifier = models.CharField(max_length=100, blank=False, null=False)  # max length on staging was 51
 
     # Date version record was created. This is the date displayed to the user.
-    date_created = models.DateTimeField(default=timezone.now)  # auto_now_add=True)
+    date_created = NonNaiveDateTimeField(default=timezone.now)  # auto_now_add=True)
 
     size = models.BigIntegerField(default=-1, blank=True)
 
@@ -873,10 +874,10 @@ class FileVersion(ObjectIDMixin, BaseModel):
     # Date file modified on third-party backend. Not displayed to user, since
     # this date may be earlier than the date of upload if the file already
     # exists on the backend
-    date_modified = models.DateTimeField(null=True, blank=True)
+    date_modified = NonNaiveDateTimeField(null=True, blank=True)
 
-    location = DateTimeAwareJSONField(default=dict, db_index=True, blank=True, null=True, validators=[validate_location])
-    metadata = DateTimeAwareJSONField(blank=True, default=dict, db_index=True)
+    metadata = DateTimeAwareJSONField(blank=True, default=dict)
+    location = DateTimeAwareJSONField(default=None, blank=True, null=True, validators=[validate_location])
 
     @property
     def location_hash(self):
@@ -933,5 +934,4 @@ class FileVersion(ObjectIDMixin, BaseModel):
         return True
 
     class Meta:
-        index_together = [('_id', 'metadata')]
         ordering = ('date_created',)

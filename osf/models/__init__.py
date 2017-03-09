@@ -29,3 +29,5 @@ from osf.models.files import (  # noqa
 )  # noqa
 from osf.models.node_relation import NodeRelation  # noqa
 from osf.models.analytics import UserActivityCounter, PageCounter  # noqa
+from osf.models.admin_profile import AdminProfile  # noqa
+from osf.models.admin_log_entry import AdminLogEntry  # noqa

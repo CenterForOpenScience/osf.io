@@ -3,7 +3,8 @@ from rest_framework import serializers as ser
 from modularodm.exceptions import ValidationValueError
 
 from api.base.exceptions import InvalidModelValueError, JSONAPIException, Conflict
-from api.base.serializers import AllowMissing, JSONAPIRelationshipSerializer, HideIfDisabled
+from api.base.serializers import AllowMissing, JSONAPIRelationshipSerializer, HideIfDisabled, \
+    PrefetchRelationshipsSerializer
 from website.models import User
 
 from api.base.serializers import (
@@ -209,7 +210,7 @@ class RelatedInstitution(JSONAPIRelationshipSerializer):
         return obj.absolute_api_v2_url
 
 
-class UserInstitutionsRelationshipSerializer(ser.Serializer):
+class UserInstitutionsRelationshipSerializer(PrefetchRelationshipsSerializer):
 
     data = ser.ListField(child=RelatedInstitution())
     links = LinksField({'self': 'get_self_url',

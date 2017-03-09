@@ -17,7 +17,7 @@ logging.basicConfig(level=logging.INFO)
 ENVS = ['prod', 'stage']
 SUBJECTS_CACHE = {}
 STAGING_PREPRINT_PROVIDERS = ['osf', 'psyarxiv', 'engrxiv', 'socarxiv', 'scielo', 'agrixiv', 'bitss']
-PROD_PREPRINT_PROVIDERS = ['osf', 'psyarxiv', 'engrxiv', 'socarxiv', 'agrixiv']
+PROD_PREPRINT_PROVIDERS = ['osf', 'psyarxiv', 'engrxiv', 'socarxiv', 'agrixiv', 'bitss']
 
 
 def get_subject_id(name):
@@ -375,7 +375,7 @@ def main(env):
             '_id': 'scielo',
             'name': 'SciELO',
             'logo_name': 'scielo-logo.png',
-            'description': 'Placeholder description',
+            'description': 'Advancing Research Communication',
             'banner_name': 'scielo-logo.png',
             'domain': 'scielo.org',
             'external_url': 'http://scielo.org',
@@ -387,8 +387,8 @@ def main(env):
             'social_twitter': 'RedeSciELO',  # optional
             'social_facebook': 'SciELONetwork',
             'header_text': '',
-            'licenses_acceptable': ['CC0 1.0 Universal'],
-            'subjects_acceptable': []
+            'licenses_acceptable': ['CC-By Attribution 4.0 International'],
+            'subjects_acceptable':[]
         },
         'agrixiv': {
             '_id': 'agrixiv',
@@ -397,7 +397,8 @@ def main(env):
             'description': 'Preprints for Agriculture and Allied Sciences',
             'banner_name': 'agrixiv-banner.svg',
             'domain': 'agrixiv.org',
-            'example': '',
+            'external_url': '',
+            'example': '8whkp',
             'advisory_board': '''
                 <div class="col-xs-6">
                     <h3>Advisory Board</h3>
@@ -1042,7 +1043,7 @@ def main(env):
             ''',
             'email_contact': 'contact+bitss@osf.io',
             'email_support': 'support+bitss@osf.io',
-            'social_twitter': 'http://twitter.com/UCBITSS',
+            'social_twitter': 'UCBITSS',
             'licenses_acceptable': ['CC-By Attribution 4.0 International', 'CC0 1.0 Universal'],
             'header_text': '',
             'subjects_acceptable': [

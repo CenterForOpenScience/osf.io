@@ -1,12 +1,10 @@
 import logging
 
-from datetime import datetime
-
+from django.db import transaction
 from django.utils import timezone
 from modularodm import Q
 
 from framework.celery_tasks import app as celery_app
-from framework.transactions.context import TokuTransaction
 
 from website.app import init_app
 from website import mails, settings
@@ -33,7 +31,7 @@ def main(dry_run=True):
 
     for mail in emails_to_be_sent:
         if not dry_run:
-            with TokuTransaction():
+            with transaction.atomic():
                 try:
                     sent_ = mail.send_mail()
                     message = 'Email of type {0} sent to {1}'.format(mail.email_type, mail.to_addr) if sent_ else \

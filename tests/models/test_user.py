@@ -13,6 +13,7 @@ from tests import base
 from tests.base import fake
 from tests import factories
 from framework.celery_tasks import handlers
+from website.views import find_bookmark_collection
 
 
 class TestUser(base.OsfTestCase):
@@ -137,7 +138,7 @@ class TestUser(base.OsfTestCase):
         normal_contributed_node.add_contributor(self.user)
         normal_contributed_node.save()
         deleted_node = factories.ProjectFactory(creator=self.user, is_deleted=True)
-        bookmark_collection_node = factories.BookmarkCollectionFactory(creator=self.user)
+        bookmark_collection_node = find_bookmark_collection(self.user)
         collection_node = factories.CollectionFactory(creator=self.user)
         project_to_be_invisible_on = factories.ProjectFactory()
         project_to_be_invisible_on.add_contributor(self.user, visible=False)
@@ -155,7 +156,7 @@ class TestUser(base.OsfTestCase):
         invisible_contributor = factories.UserFactory()
         normal_node = factories.ProjectFactory(creator=invisible_contributor)
         deleted_node = factories.ProjectFactory(creator=invisible_contributor, is_deleted=True)
-        bookmark_collection_node = factories.BookmarkCollectionFactory(creator=invisible_contributor)
+        bookmark_collection_node = find_bookmark_collection(invisible_contributor)
         collection_node = factories.CollectionFactory(creator=invisible_contributor)
         project_to_be_invisible_on = factories.ProjectFactory()
         project_to_be_invisible_on.add_contributor(invisible_contributor, visible=False)

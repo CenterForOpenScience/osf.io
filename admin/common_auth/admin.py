@@ -6,8 +6,8 @@ from django.contrib.auth.models import Permission
 from django.core.urlresolvers import reverse
 from django.utils.html import escape
 
-from admin.common_auth.logs import OSFLogEntry
-from admin.common_auth.models import AdminProfile
+from osf.models import AdminLogEntry
+from osf.models import AdminProfile
 
 
 class PermissionAdmin(admin.ModelAdmin):
@@ -22,7 +22,7 @@ class LogEntryAdmin(admin.ModelAdmin):
 
     date_hierarchy = 'action_time'
 
-    readonly_fields = [f.name for f in OSFLogEntry._meta.get_fields()]
+    readonly_fields = [f.name for f in AdminLogEntry._meta.get_fields()]
 
     list_filter = [
         'user',
@@ -72,4 +72,4 @@ class LogEntryAdmin(admin.ModelAdmin):
             .prefetch_related('content_type')
 
 
-admin.site.register(OSFLogEntry, LogEntryAdmin)
+# admin.site.register(AdminLogEntry, LogEntryAdmin)
