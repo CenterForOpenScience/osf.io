@@ -108,6 +108,7 @@ INSTALLED_APPS = (
     'admin.desk',
     'admin.meetings',
     'admin.institutions',
+    'admin.preprint_providers',
 
 )
 

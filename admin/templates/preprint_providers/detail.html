@@ -1,0 +1,263 @@
+{% extends "base.html" %}
+{% load static %}
+{% block top_includes %}
+    <link rel="stylesheet" type="text/css" href="/static/css/institutions.css" />
+    <link href="//cdnjs.cloudflare.com/ajax/libs/select2/4.0.0/css/select2.min.css" rel="stylesheet" />
+    <script src="//cdnjs.cloudflare.com/ajax/libs/select2/4.0.0/js/select2.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.1.1.min.js" integrity="sha256-hVVnYaiADRTO2PzUGmuLJr8BLUSjGIZsDYGmIJLv2b8=" crossorigin="anonymous"></script>
+{% endblock %}
+{% load user_extras %}
+{% load spam_extras %}
+{% block title %}
+    <title>Preprint Provider</title>
+{% endblock title %}
+{% block content %}
+    <div class="container-fluid">
+
+        <div class="row">
+            <div class="col-md-12 text-center">
+                <h2>{{ preprint_provider.name }}</h2>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-2">
+                <h4>Logo:</h4>
+            </div>
+            <div class="col-md-2">
+                <img class="institution-logo" src="{{ logohost }}/static/img/preprint_providers/{{ preprint_provider.logo_name }}">
+            </div>
+            <div class="col-md-2">
+                <h4>Header Text:</h4>
+                <p>{{ preprint_provider.header_text }}</p>
+            </div>
+
+        </div>
+
+        <div class="row">
+            <div class="col-md-12">
+                <h4>Description</h4>
+                <p>{{ preprint_provider.description | safe }}</p>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-12">
+                <h4>Other Attributes</h4>
+                <table class="table table-striped">
+                    {% for field, value in preprint_provider.items %}
+                        <tr>
+                            <th>{{ field }}</th>
+                            <td>{{ value | safe }}</td>
+                        </tr>
+                    {% endfor %}
+                </table>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-12">
+                <form action={% url 'preprint_providers:export' preprint_provider.id %} method="post">
+                    {% csrf_token %}
+                    <input class="btn btn-primary" type="submit" value="Export Preprint Provider Metadata" />
+                </form>
+            </div>
+        </div>
+        <hr/>
+        {% if perms.osf.change_preprint_provider %}
+        <div class="row">
+            <div class="col-md-12">
+                <button class="btn btn-primary" type="button" data-toggle="collapse" data-target="#modifyCollapse">
+                    Modify Preprint Provider
+                </button>
+            </div>
+        </div>
+        <div class="collapse" id="modifyCollapse">
+            <div class="well">
+                <div class="row">
+                    <div class="col-md-12">
+                        <form action= {% url 'preprint_providers:detail' preprint_provider.id %} method="post">
+                            {% csrf_token %}
+                            {{ change_form.as_p }}
+                            <input class="form-button" type="submit" value="Submit" />
+                        </form>
+                    </div>
+                </div>
+                <div class="row">
+                    <h3>Modify Provider Subjects</h3>
+                    <div id="subjects_selected">
+                    </div>
+                    <form action= {% url 'preprint_providers:process_subjects' preprint_provider.id %} method="post">
+                        {% csrf_token %}
+                        <div>{{ subject_form.subjects_chosen }}</div>
+                        <div class="col-md-4">
+                            <div class="firstlevel_subjects">
+                                <ul style="list-style-type:none">
+                                {% for subject in subject_form.toplevel_subjects %}
+                                    <li>{{ subject }} <i class="subject-icon first-level glyphicon glyphicon-menu-right"></i></li>
+                                {% endfor %}
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div id="secondlevel_subjects">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div id="thirdlevel_subjects">
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-12">
+                                <input class="form-button" type="submit" value="Submit" />
+                            </div>
+                        </div>
+                    </form>
+                <ul class="nav nav-tabs" role="tablist">
+                    <li role="presentation" class="active"><a href="#provider_attributes" data-toggle="tab">Attributes</a></li>
+                    <li role="presentation"><a href="#provider_subjects" data-toggle="tab">Subjects</a></li>
+                </ul>
+                <div class="tab-content">
+                    <div role="tabpanel" class="tab-pane active" id="provider_attributes">
+                        <div class="row">
+                            <div class="col-md-12">
+                                <form action= {% url 'preprint_providers:detail' preprint_provider.id %} method="post">
+                                    {% csrf_token %}
+                                    {{ change_form.as_p }}
+                                    <input class="form-button" type="submit" value="Submit" />
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    <div role="tabpanel" class="tab-pane" id="provider_subjects">
+                        <form action= {% url 'preprint_providers:process_subjects' preprint_provider.id %} method="post">
+                            {% csrf_token %}
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <h3>Modify Provider Subjects</h3>
+                                    <div>{{ subject_form.subjects_chosen }}</div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="firstlevel_subjects">
+                                        <ul style="list-style-type:none">
+                                            {% for subject in subject_form.toplevel_subjects %}
+                                                <li>{{ subject }} <i class="subject-icon first-level glyphicon glyphicon-menu-right"></i></li>
+                                            {% endfor %}
+                                        </ul>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div id="secondlevel_subjects">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div id="thirdlevel_subjects">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <input class="form-button" type="submit" value="Submit" />
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+{% endblock content %}
+{% block bottom_js %}
+    <script>
+        var originalsubjects = {{ subject_ids|escapejs }};
+        var selected_subjects = originalsubjects.slice();
+        $(document).ready(function() {
+
+            var addSubject = function(subject) {
+                var subject = parseInt(subject);
+                if ($('#id_subjects_chosen').val() !== "") {
+                    $('#id_subjects_chosen').val($('#id_subjects_chosen').val() + ", " + subject);
+                } else {
+                    $('#id_subjects_chosen').val(subject);
+                }
+
+                if (selected_subjects.indexOf(subject) === -1) {
+                    selected_subjects.push(subject);
+                }
+            };
+
+            var removeSubject = function(subject) {
+                var subject = parseInt(subject);
+                var re = new RegExp('\\b' + subject + '\\b', 'g');
+                $('#id_subjects_chosen').val($('#id_subjects_chosen').val().replace(re, ''));
+
+                selected_subjects = selected_subjects.filter(function(element) {
+                    return element !== subject;
+                });
+            };
+
+            // Section and selectors for expanding lists
+            $('body').on("click", '.subject-icon', function() {
+                var elem = $(this)[0].previousElementSibling.firstChild;
+                var nextlevel;
+
+                if ($(this)[0].classList.contains("first-level")) {
+                    $('.other-levels').hide();
+                }
+
+                if (selected_subjects.indexOf(parseInt(elem.value)) === -1) {
+                    addSubject(elem.value);
+                    elem.checked = true;
+                }
+
+                if (elem.name === 'toplevel_subjects') {
+                    nextlevel = '#secondlevel_subjects'
+                } else if (elem.name === 'secondlevel_subjects') {
+                    nextlevel = '#thirdlevel_subjects'
+                }
+                $.get("{% url 'preprint_providers:get_subjects' preprint_provider.id %}", {'parent_id': elem.value}, function (data) {
+                    $(nextlevel).html(data['html']);
+                }).then(function(data) {
+                    for (i = 0; i < data['subject_ids'].length; i++) {
+                        if (selected_subjects.indexOf(data['subject_ids'][i]) !== -1) {
+                            $("input[value=" + data['subject_ids'][i] + "]").prop('checked', true);
+                        }
+                    }
+                });
+            });
+
+            // Section for adding and removing checked items
+            $('body').on("click", 'input[type="checkbox"]', function() {
+                var subjectsToRemove = [];
+                var elem = $(this)[0];
+                if (elem.checked) {
+                    addSubject(elem.value);
+                } else {
+                    $.get(
+                        "{% url 'preprint_providers:get_descendants' preprint_provider.id %}",
+                        {'parent_id': elem.value}
+                    ).then(function(data) {
+                        var descendants = data['all_descendants'];
+                        for (j=0; j < descendants.length; j++) {
+                            $("input[value=" + descendants[j] + "]").prop('checked', false);
+                            var descendant_index = selected_subjects.indexOf(parseInt(descendants[j]));
+                            if (descendant_index > -1) {
+                                subjectsToRemove.push(descendants[j]);
+                            }
+                        }
+                    }).then(function() {
+                        subjectsToRemove.push(elem.value);
+
+                        for (i=0; i<subjectsToRemove.length; i++) {
+                            removeSubject(subjectsToRemove[i]);
+                        }
+
+                    });
+                }
+            });
+        });
+    </script>
+
+{% endblock %}

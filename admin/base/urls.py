@@ -16,6 +16,7 @@ urlpatterns = [
             url(r'^admin/', include(admin.site.urls)),
             url(r'^spam/', include('admin.spam.urls', namespace='spam')),
             url(r'^institutions/', include('admin.institutions.urls', namespace='institutions')),
+            url(r'^preprint_providers/', include('admin.preprint_providers.urls', namespace='preprint_providers')),
             url(r'^account/', include('admin.common_auth.urls', namespace='auth')),
             url(r'^password/', include('password_reset.urls')),
             url(r'^nodes/', include('admin.nodes.urls', namespace='nodes')),

@@ -33,3 +33,7 @@ form p label {
     height: 35px;
     width: 100px;
 }
+
+.subject-icon {
+    cursor:pointer;
+}
