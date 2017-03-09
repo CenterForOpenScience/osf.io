@@ -416,6 +416,9 @@ class OptionalGuidMixin(BaseIDMixin):
     content_type_pk = models.PositiveIntegerField(null=True, blank=True)
 
     def get_guid(self, create=False):
+        if not self.pk:
+            logger.warn('Implicitly saving object before creating guid')
+            self.save()
         if create:
             try:
                 guid, created = Guid.objects.get_or_create(
