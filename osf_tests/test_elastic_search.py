@@ -24,26 +24,11 @@ from scripts.populate_institutions import main as populate_institutions
 
 from osf_tests import factories
 from tests.base import OsfTestCase
-from tests.test_search import SearchTestCase
 from tests.test_features import requires_search
 from tests.utils import mock_archive, run_celery_tasks
 
 
 TEST_INDEX = 'test'
-
-@requires_search
-class SearchTestCase(OsfTestCase):
-
-    def tearDown(self):
-        super(SearchTestCase, self).tearDown()
-        search.delete_index(elastic_search.INDEX)
-        search.create_index(elastic_search.INDEX)
-    def setUp(self):
-        super(SearchTestCase, self).setUp()
-        elastic_search.INDEX = TEST_INDEX
-        settings.ELASTIC_INDEX = TEST_INDEX
-        search.delete_index(elastic_search.INDEX)
-        search.create_index(elastic_search.INDEX)
 
 def query(term):
     results = search.search(build_query(term), index=elastic_search.INDEX)
@@ -79,7 +64,7 @@ def retry_assertion(interval=0.3, retries=3):
     return test_wrapper
 
 
-class TestUserUpdate(SearchTestCase):
+class TestUserUpdate(OsfTestCase):
 
     def setUp(self):
         super(TestUserUpdate, self).setUp()
@@ -191,7 +176,7 @@ class TestUserUpdate(SearchTestCase):
         assert_true(all([user._id == doc[0]['id'] for doc in docs]))
 
 
-class TestProject(SearchTestCase):
+class TestProject(OsfTestCase):
 
     def setUp(self):
         super(TestProject, self).setUp()
@@ -214,7 +199,7 @@ class TestProject(SearchTestCase):
         assert_equal(len(docs), 1)
 
 
-class TestNodeSearch(SearchTestCase):
+class TestNodeSearch(OsfTestCase):
 
     def setUp(self):
         super(TestNodeSearch, self).setUp()
@@ -260,7 +245,7 @@ class TestNodeSearch(SearchTestCase):
             assert_equal(doc['license'].get('id'), new_license.license_id)
 
 
-class TestRegistrationRetractions(SearchTestCase):
+class TestRegistrationRetractions(OsfTestCase):
 
     def setUp(self):
         super(TestRegistrationRetractions, self).setUp()
@@ -353,7 +338,7 @@ class TestRegistrationRetractions(SearchTestCase):
         assert_equal(len(docs), 1)
 
 
-class TestPublicNodes(SearchTestCase):
+class TestPublicNodes(OsfTestCase):
 
     def setUp(self):
         with run_celery_tasks():
@@ -571,7 +556,7 @@ class TestPublicNodes(SearchTestCase):
             assert doc['key'] in tags
 
 
-class TestAddContributor(SearchTestCase):
+class TestAddContributor(OsfTestCase):
     # Tests of the search.search_contributor method
 
     def setUp(self):
@@ -656,7 +641,7 @@ class TestAddContributor(SearchTestCase):
         assert_equal(len(contribs['users']), 0)
 
 
-class TestProjectSearchResults(SearchTestCase):
+class TestProjectSearchResults(OsfTestCase):
     def setUp(self):
         self.singular = 'Spanish Inquisition'
         self.plural = 'Spanish Inquisitions'
@@ -734,7 +719,7 @@ def job(**kwargs):
     return job
 
 
-class TestUserSearchResults(SearchTestCase):
+class TestUserSearchResults(OsfTestCase):
     def setUp(self):
         with run_celery_tasks():
             super(TestUserSearchResults, self).setUp()
@@ -820,7 +805,7 @@ class TestSearchExceptions(OsfTestCase):
         self.project.save()
 
 
-class TestSearchMigration(SearchTestCase):
+class TestSearchMigration(OsfTestCase):
     # Verify that the correct indices are created/deleted during migration
 
     @classmethod
@@ -886,7 +871,7 @@ class TestSearchMigration(SearchTestCase):
 
         assert_equal(institution_bucket_found, True)
 
-class TestSearchFiles(SearchTestCase):
+class TestSearchFiles(OsfTestCase):
 
     def setUp(self):
         super(TestSearchFiles, self).setUp()
