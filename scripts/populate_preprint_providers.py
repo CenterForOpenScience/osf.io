@@ -65,9 +65,6 @@ def update_or_create(provider_data):
         return new_provider, True
 
 def main(env):
-    use_plos = '--plos' in sys.argv
-
-
     PREPRINT_PROVIDERS = {
         'osf': {
             '_id': 'osf',
@@ -94,7 +91,7 @@ def main(env):
             'logo_name': 'engrxiv-logo.png',
             'description': 'The open archive of engineering.',
             'banner_name': 'engrxiv-banner.png',
-            'domain': 'engrxiv.com',
+            'domain': 'engrxiv.org',
             'external_url': 'http://engrxiv.com',
             'example': 'k7fgk',
             'advisory_board': '''
@@ -127,9 +124,6 @@ def main(env):
             'licenses_acceptable': ['CC0 1.0 Universal', 'CC-By Attribution 4.0 International', 'No license'],
             'header_text': '',
             'subjects_acceptable': [
-                (['Computer and information sciences', 'Software engineering'], True),
-                (['Engineering and technology'], True),
-            ] if use_plos else [
                 (['Architecture', 'Architectural Engineering'], True),
                 (['Engineering', 'Aerospace Engineering', 'Aerodynamics and Fluid Mechanics'], False),
                 (['Engineering', 'Aerospace Engineering', 'Aeronautical Vehicles'], False),
@@ -237,7 +231,7 @@ def main(env):
             'logo_name': 'psyarxiv-logo.png',
             'description': 'A free preprint service for the psychological sciences.',
             'banner_name': 'psyarxiv-banner.png',
-            'domain': 'psyarxiv.org',
+            # 'domain': 'psyarxiv.org', # Temporarily disabling until ready
             'external_url': 'http://psyarxiv.org',
             'example': 'k9mn3',
             'advisory_board': '''
@@ -273,9 +267,6 @@ def main(env):
             'licenses_acceptable': ['CC0 1.0 Universal', 'CC-By Attribution 4.0 International', 'No license'],
             'header_text': '',
             'subjects_acceptable': [
-                (['Social and behavioral sciences'], True),
-                (['Arts and Humanities'], True),
-            ] if use_plos else [
                 (['Engineering', 'Operations Research, Systems Engineering and Industrial Engineering', 'Ergonomics'], False),
                 (['Life Sciences', 'Neuroscience and Neurobiology', 'Behavioral Neurobiology'], False),
                 (['Life Sciences', 'Neuroscience and Neurobiology', 'Cognitive Neuroscience'], False),
@@ -363,11 +354,6 @@ def main(env):
                 (['Arts and Humanities'], True),
                 (['Education'], True),
                 (['Law'], True),
-                (['Social and behavioral sciences'], True),
-            ] if use_plos else [
-                (['Arts and Humanities'], True),
-                (['Education'], True),
-                (['Law'], True),
                 (['Social and Behavioral Sciences'], True),
             ],
         },
@@ -377,7 +363,7 @@ def main(env):
             'logo_name': 'scielo-logo.png',
             'description': 'Advancing Research Communication',
             'banner_name': 'scielo-logo.png',
-            'domain': 'scielo.org',
+            # 'domain': 'scielo.org', # Temporarily disabling until ready
             'external_url': 'http://scielo.org',
             'example': '',  # An example guid for this provider (Will have to be updated after the provider is up)
             # Advisory board should be valid html string in triple quotes
@@ -388,7 +374,7 @@ def main(env):
             'social_facebook': 'SciELONetwork',
             'header_text': '',
             'licenses_acceptable': ['CC-By Attribution 4.0 International'],
-            'subjects_acceptable':[]
+            'subjects_acceptable': []
         },
         'agrixiv': {
             '_id': 'agrixiv',
@@ -396,7 +382,7 @@ def main(env):
             'logo_name': 'agrixiv-logo.svg',
             'description': 'Preprints for Agriculture and Allied Sciences',
             'banner_name': 'agrixiv-banner.svg',
-            'domain': 'agrixiv.org',
+            # 'domain': 'agrixiv.org', # Temporarily disabling until ready
             'external_url': '',
             'example': '8whkp',
             'advisory_board': '''
@@ -1020,7 +1006,7 @@ def main(env):
             'logo_name': 'bitss-logo.png',
             'description': 'An interdisciplinary archive of articles focused on improving research transparency and reproducibility',
             'banner_name': 'bitss-banner.png',
-            'domain': 'bitss.org',
+            #'domain': 'bitss.org', Not using domain
             'external_url': 'http://www.bitss.org',
             'example': '',
             'advisory_board': '''
