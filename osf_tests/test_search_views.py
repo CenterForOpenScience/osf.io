@@ -3,7 +3,7 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 
 from nose.tools import *  # noqa PEP8 asserts
 
-from tests import factories
+from osf_tests import factories
 from tests.test_search import SearchTestCase
 from website.util import api_url_for
 from website.views import find_bookmark_collection
@@ -118,8 +118,10 @@ class TestODMTitleSearch(SearchTestCase):
         self.project_two = factories.ProjectFactory(creator=self.user_two, title="bar")
         self.public_project = factories.ProjectFactory(creator=self.user_two, is_public=True, title="baz")
         self.registration_project = factories.RegistrationFactory(creator=self.user, title="qux")
-        self.folder = factories.CollectionFactory(creator=self.user, title="quux")
+        self.folder = factories.CollectionFactory(creator=self.user, title="quux", category='project')
         self.dashboard = find_bookmark_collection(self.user)
+        self.dashboard.category = 'project'
+        self.dashboard.save()
         self.url = api_url_for('search_projects_by_title')
 
     def test_search_projects_by_title(self):
