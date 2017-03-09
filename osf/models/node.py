@@ -213,6 +213,9 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                                     through_fields=('parent', 'child'),
                                     related_name='parent_nodes')
 
+    class Meta:
+        index_together = (('is_public', 'is_deleted', 'type'))
+
     objects = AbstractNodeQuerySet.as_manager()
 
     @cached_property
