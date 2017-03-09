@@ -22,7 +22,7 @@ from website.files.models.osfstorage import OsfStorageFile
 
 from scripts.populate_institutions import main as populate_institutions
 
-from tests import factories
+from osf_tests import factories
 from tests.base import OsfTestCase
 from tests.test_search import SearchTestCase
 from tests.test_features import requires_search
@@ -233,7 +233,7 @@ class TestNodeSearch(SearchTestCase):
         docs = query(self.query)['results']
         node = [d for d in docs if d['title'] == self.node.title][0]
         assert_in('license', node)
-        assert_equal(node['license']['id'], self.node.node_license.id)
+        assert_equal(node['license']['id'], self.node.node_license.license_id)
 
     @unittest.skip("Elasticsearch latency seems to be causing theses tests to fail randomly.")
     @retry_assertion(retries=10)
@@ -241,10 +241,10 @@ class TestNodeSearch(SearchTestCase):
         docs = query(self.query)['results']
         child = [d for d in docs if d['title'] == self.public_child.title][0]
         assert_in('license', child)
-        assert_equal(child['license'].get('id'), self.node.node_license.id)
+        assert_equal(child['license'].get('id'), self.node.node_license.license_id)
         child = [d for d in docs if d['title'] == self.public_subchild.title][0]
         assert_in('license', child)
-        assert_equal(child['license'].get('id'), self.node.node_license.id)
+        assert_equal(child['license'].get('id'), self.node.node_license.license_id)
 
     @unittest.skip("Elasticsearch latency seems to be causing theses tests to fail randomly.")
     @retry_assertion(retries=10)
@@ -257,14 +257,14 @@ class TestNodeSearch(SearchTestCase):
         self.node.save()
         docs = query(self.query)['results']
         for doc in docs:
-            assert_equal(doc['license'].get('id'), new_license.id)
+            assert_equal(doc['license'].get('id'), new_license.license_id)
 
 
 class TestRegistrationRetractions(SearchTestCase):
 
     def setUp(self):
         super(TestRegistrationRetractions, self).setUp()
-        self.user = factories.UserFactory(usename='Doug Bogie')
+        self.user = factories.UserFactory(fullname='Doug Bogie')
         self.title = 'Red Special'
         self.consolidate_auth = Auth(user=self.user)
         self.project = factories.ProjectFactory(
@@ -272,13 +272,9 @@ class TestRegistrationRetractions(SearchTestCase):
             creator=self.user,
             is_public=True,
         )
-        with mock_archive(
-                self.project,
-                autocomplete=True,
-                autoapprove=True
-        ) as registration:
-            self.registration = registration
+        self.registration = factories.RegistrationFactory(project=self.project, is_public=True)
 
+    @mock.patch('osf.models.registrations.Registration.archiving', mock.PropertyMock(return_value=False))
     def test_retraction_is_searchable(self):
         self.registration.retract_registration(self.user)
         self.registration.retraction.state = Retraction.APPROVED
@@ -288,7 +284,7 @@ class TestRegistrationRetractions(SearchTestCase):
         docs = query('category:registration AND ' + self.title)['results']
         assert_equal(len(docs), 1)
 
-    @mock.patch('website.project.model.Node.archiving', mock.PropertyMock(return_value=False))
+    @mock.patch('osf.models.registrations.Registration.archiving', mock.PropertyMock(return_value=False))
     def test_pending_retraction_wiki_content_is_searchable(self):
         # Add unique string to wiki
         wiki_content = {'home': 'public retraction test'}
@@ -321,7 +317,7 @@ class TestRegistrationRetractions(SearchTestCase):
         docs = query('category:registration AND ' + self.title)['results']
         assert_equal(len(docs), 1)
 
-    @mock.patch('website.project.model.Node.archiving', mock.PropertyMock(return_value=False))
+    @mock.patch('osf.models.registrations.Registration.archiving', mock.PropertyMock(return_value=False))
     def test_retraction_wiki_content_is_not_searchable(self):
         # Add unique string to wiki
         wiki_content = {'home': 'public retraction test'}
@@ -362,7 +358,7 @@ class TestPublicNodes(SearchTestCase):
     def setUp(self):
         with run_celery_tasks():
             super(TestPublicNodes, self).setUp()
-            self.user = factories.UserFactory(usename='Doug Bogie')
+            self.user = factories.UserFactory(fullname='Doug Bogie')
             self.title = 'Red Special'
             self.consolidate_auth = Auth(user=self.user)
             self.project = factories.ProjectFactory(
@@ -376,12 +372,14 @@ class TestPublicNodes(SearchTestCase):
                 creator=self.user,
                 is_public=True
             )
-            self.registration = factories.ProjectFactory(
+            self.registration = factories.RegistrationFactory(
                 title=self.title,
                 creator=self.user,
                 is_public=True,
-                is_registration=True
             )
+            self.registration.archive_job.target_addons = []
+            self.registration.archive_job.status = 'SUCCESS'
+            self.registration.archive_job.save()
 
     def test_make_private(self):
         # Make project public, then private, and verify that it is not present
@@ -401,19 +399,19 @@ class TestPublicNodes(SearchTestCase):
         with run_celery_tasks():
             self.project.save()
         find = query('Blue')['results']
-        assert_equal(len(find), 1)      
+        assert_equal(len(find), 1)
 
     def test_search_node_partial_with_sep(self):
         self.project.set_title('Blue Rider-Express', self.consolidate_auth)
         with run_celery_tasks():
-            self.project.save()        
+            self.project.save()
         find = query('Express')['results']
         assert_equal(len(find), 1)
 
     def test_search_node_not_name(self):
         self.project.set_title('Blue Rider-Express', self.consolidate_auth)
         with run_celery_tasks():
-            self.project.save()        
+            self.project.save()
         find = query('Green Flyer-Slow')['results']
         assert_equal(len(find), 0)
 
@@ -666,7 +664,7 @@ class TestProjectSearchResults(SearchTestCase):
 
         with run_celery_tasks():
             super(TestProjectSearchResults, self).setUp()
-            self.user = factories.UserFactory(usename='Doug Bogie')
+            self.user = factories.UserFactory(fullname='Doug Bogie')
 
 
             self.project_singular = factories.ProjectFactory(
@@ -800,19 +798,19 @@ class TestSearchExceptions(OsfTestCase):
         logging.getLogger('website.project.model').setLevel(logging.CRITICAL)
         super(TestSearchExceptions, cls).setUpClass()
         if settings.SEARCH_ENGINE == 'elastic':
-            cls._es = search.search_engine.es
-            search.search_engine.es = None
+            cls._client = search.search_engine.CLIENT
+            search.search_engine.CLIENT = None
 
     @classmethod
     def tearDownClass(cls):
         super(TestSearchExceptions, cls).tearDownClass()
         if settings.SEARCH_ENGINE == 'elastic':
-            search.search_engine.es = cls._es
+            search.search_engine.CLIENT = cls._client
 
     @requires_search
     def test_connection_error(self):
         # Ensures that saving projects/users doesn't break as a result of connection errors
-        self.user = factories.UserFactory(usename='Doug Bogie')
+        self.user = factories.UserFactory(fullname='Doug Bogie')
         self.project = factories.ProjectFactory(
             title="Tom Sawyer",
             creator=self.user,
@@ -833,7 +831,7 @@ class TestSearchMigration(SearchTestCase):
     def setUp(self):
         super(TestSearchMigration, self).setUp()
         populate_institutions('test')
-        self.es = search.search_engine.es
+        self.es = search.search_engine.CLIENT
         search.delete_index(settings.ELASTIC_INDEX)
         search.create_index(settings.ELASTIC_INDEX)
         self.user = factories.UserFactory(fullname='David Bowie')
@@ -916,22 +914,22 @@ class TestSearchFiles(SearchTestCase):
 
     def test_add_tag(self):
         file_ = self.root.append_file('That\'s How Strong My Love Is.mp3')
-        tag = Tag(_id='Redding')
+        tag = Tag(_id='Redding', name='Redding')
         tag.save()
-        file_.tags.append(tag)
+        file_.tags.add(tag)
         file_.save()
         find = query_tag_file('Redding')['results']
         assert_equal(len(find), 1)
 
     def test_remove_tag(self):
         file_ = self.root.append_file('I\'ve Been Loving You Too Long.mp3')
-        tag = Tag(_id='Blue')
+        tag = Tag(_id='Blue', name='Blue')
         tag.save()
-        file_.tags.append(tag)
+        file_.tags.add(tag)
         file_.save()
         find = query_tag_file('Blue')['results']
         assert_equal(len(find), 1)
-        file_.tags.remove('Blue')
+        file_.tags.remove(tag)
         file_.save()
         find = query_tag_file('Blue')['results']
         assert_equal(len(find), 0)
