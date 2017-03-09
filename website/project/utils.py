@@ -14,15 +14,12 @@ def serialize_node(*args, **kwargs):
     from website.project.views.node import _view_project
     return _view_project(*args, **kwargs)  # Not recommended practice
 
-CONTENT_NODE_QUERY = (
+PROJECT_QUERY = (
     # Can encompass accessible projects, registrations, or forks
     # Note: is_bookmark collection(s) are implicitly assumed to also be collections; that flag intentionally omitted
     Q('is_deleted', 'eq', False) &
     Q('type', 'ne', 'osf.collection')
 )
-
-PROJECT_QUERY = CONTENT_NODE_QUERY
-
 
 def recent_public_registrations(n=10):
     from django.db.models import Q as DQ
