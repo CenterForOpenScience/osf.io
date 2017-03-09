@@ -534,6 +534,7 @@ def test_module(ctx, module=None, numprocesses=None, params=None):
         params = [params] if isinstance(params, basestring) else params
         args.extend(params)
     retcode = pytest.main(args)
+    sys.exit(retcode)
 
 # TODO: Add to this list when more modules are ported for djangosf compat
 OSF_TESTS = [
@@ -712,6 +713,7 @@ def test_travis_else(ctx, numprocesses=None):
     """
     flake(ctx)
     jshint(ctx)
+    test_else(ctx, numprocesses=numprocesses)
     test_addons(ctx, numprocesses=numprocesses)
     test_admin(ctx, numprocesses=numprocesses)
 
