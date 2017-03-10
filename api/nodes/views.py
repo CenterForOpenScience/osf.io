@@ -698,8 +698,8 @@ class NodeContributorsList(BaseContributorList, bulk_views.BulkUpdateJSONAPIView
             return NodeContributorsSerializer
 
     # overrides ListBulkCreateJSONAPIView, BulkUpdateJSONAPIView
-    def get_queryset(self):
-        queryset = self.get_queryset_from_request()
+    def get_queryset(self, parent=None):
+        queryset = self.get_queryset_from_request(parent)
         # If bulk request, queryset only contains contributors in request
         if is_bulk_request(self.request):
             contrib_ids = []

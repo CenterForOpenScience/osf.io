@@ -91,11 +91,10 @@ class JSONAPIBaseView(generics.GenericAPIView):
 
             try:
                 ser._context = view.get_serializer_context()
-
                 if not isinstance(view, ListModelMixin):
                     ret = ser.to_representation(view.get_object())
                 else:
-                    queryset = view.filter_queryset(view.get_queryset())
+                    queryset = view.filter_queryset(view.get_queryset(item))
                     page = view.paginate_queryset(queryset)
 
                     ret = ser.to_representation(page or queryset)
@@ -780,8 +779,11 @@ class BaseContributorDetail(JSONAPIBaseView, generics.RetrieveAPIView):
 
 class BaseContributorList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
 
-    def get_default_queryset(self):
-        node = self.get_node()
+    def get_default_queryset(self, parent=None):
+        if not parent:
+            node = self.get_node()
+        else:
+            node = parent
 
         qs = node._contributors.all() \
             .annotate(
@@ -802,8 +804,8 @@ class BaseContributorList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin
         ).order_by('contributor___order')
         return qs
 
-    def get_queryset(self):
-        queryset = self.get_queryset_from_request()
+    def get_queryset(self, parent=None):
+        queryset = self.get_queryset_from_request(parent)
         # If bulk request, queryset only contains contributors in request
         if is_bulk_request(self.request):
             contrib_ids = []

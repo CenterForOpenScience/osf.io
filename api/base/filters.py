@@ -424,8 +424,8 @@ class ListFilterMixin(FilterMixin):
     def get_default_queryset(self):
         raise NotImplementedError('Must define get_default_queryset')
 
-    def get_queryset_from_request(self):
-        default_queryset = self.get_default_queryset()
+    def get_queryset_from_request(self, parent):
+        default_queryset = self.get_default_queryset(parent)
         if not self.kwargs.get('is_embedded') and self.request.query_params:
             param_queryset = self.param_queryset(self.request.query_params, default_queryset)
             return param_queryset
