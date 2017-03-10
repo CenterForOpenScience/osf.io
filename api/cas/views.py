@@ -214,6 +214,7 @@ class CasDeveloperApplications(JSONAPIBaseView, generics.CreateAPIView):
 
 
 class CasInstitutions(JSONAPIBaseView, generics.CreateAPIView):
+
     view_category = 'cas'
     view_name = 'cas-institutions'
 
@@ -241,8 +242,7 @@ class CasInstitutions(JSONAPIBaseView, generics.CreateAPIView):
                 'institutionName': institution.name,
                 'institutionLoginUrl': institution.login_url if institution.login_url else '',
                 'institutionLogoutUrl': institution.logout_url,
-                # delegation protocol not supported yet
-                # 'delegationProtocol': institution.delegation_protocol,
+                'delegationProtocol': institution.delegation_protocol,
             }
             content.update({key: value})
 
