@@ -105,26 +105,24 @@ class Addon2(MockAddonNodeSettings):
     def archive_errors(self):
         return 'Error'
 
+@mock_app.route('/errorexc')
+def error_exc():
+    UserFactory()
+    raise RuntimeError
+
+@mock_app.route('/error500')
+def error500():
+    UserFactory()
+    return 'error', 500
+
+@mock_app.route('/noautotransact')
+@no_auto_transaction
+def no_auto_transact():
+    UserFactory()
+    return 'error', 500
 
 class TestViewsAreAtomic(OsfTestCase):
-
     def test_error_response_rolls_back_transaction(self):
-        @mock_app.route('/errorexc')
-        def error_exc():
-            u = UserFactory()
-            raise RuntimeError
-
-        @mock_app.route('/error500')
-        def error500():
-            u = UserFactory()
-            return 'error', 500
-
-        @mock_app.route('/noautotransact')
-        @no_auto_transaction
-        def no_auto_transact():
-            u = UserFactory()
-            return 'error', 500
-
         assert_equal(User.objects.count(), 0)
         self.app.get('/error500', expect_errors=True)
         assert_equal(User.objects.count(), 0)

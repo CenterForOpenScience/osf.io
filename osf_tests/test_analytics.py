@@ -62,11 +62,14 @@ class TestUpdateCounters(UpdateCountersTestCase):
     def setUp(self):
         super(TestUpdateCounters, self).setUp()
         self.node = ProjectFactory()
+        self.user = self.node.creator
+        self.user2 = UserFactory()
+        self.node.add_contributor(self.user2, save=True)
         self.fid = 'foo'
         self.vid = 1
-        self.userid = 'test123'
+        self.userid = self.user._id
         self.node_info = {
-            'contributors': ['test123', 'test234']
+            'contributors': self.node.contributors
         }
 
     def test_update_counters_file(self):
