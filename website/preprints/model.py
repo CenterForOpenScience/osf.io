@@ -62,6 +62,10 @@ class PreprintService(GuidStoredObject):
         return '/preprints/{}/'.format(self._primary_key)
 
     @property
+    def deep_api_v2_url(self):
+        return '/v2/preprints/{}/'.format(self._primary_key)
+
+    @property
     def url(self):
         if self.provider._id != 'osf':
             # Note that this will change with Phase 2 of branded preprints.

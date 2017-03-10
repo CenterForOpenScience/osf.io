@@ -2671,6 +2671,11 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
         return '/project/{}/'.format(self._primary_key)
 
     @property
+    def deep_api_v2_url(self):
+        # TODO: Make more generic for different types and consolidate with absolute url generation
+        return '/v2/nodes/{}/'.format(self._id)
+
+    @property
     def linked_nodes_self_url(self):
         return self.absolute_api_v2_url + 'relationships/linked_nodes/'
 

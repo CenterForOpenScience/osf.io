@@ -1155,6 +1155,10 @@ class User(GuidStoredObject, AddonModelMixin):
         return '/profile/{}/'.format(self._primary_key)
 
     @property
+    def deep_api_v2_url(self):
+        return '/v2/users/{}/'.format(self._primary_key)
+
+    @property
     def unconfirmed_email_info(self):
         """Return a list of dictionaries containing information about each of this
         user's unconfirmed emails.

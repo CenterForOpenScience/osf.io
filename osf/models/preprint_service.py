@@ -74,6 +74,10 @@ class PreprintService(GuidMixin, BaseModel):
         return '/preprints/{}/'.format(self._primary_key)
 
     @property
+    def deep_api_v2_url(self):
+        return '/v2/preprints/{}/'.format(self._primary_key)
+
+    @property
     def url(self):
         return '/{}/'.format(self._id)
 

@@ -374,6 +374,11 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         return api_v2_url(path)
 
     @property
+    def deep_api_v2_url(self):
+        # TODO: Make more generic for different types and consolidate with absolute url generation
+        return '/v2/nodes/{}/'.format(self._id)
+
+    @property
     def absolute_url(self):
         if not self.url:
             return None

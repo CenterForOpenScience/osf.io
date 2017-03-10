@@ -61,6 +61,12 @@ class GuidStoredObject(StoredObject):
 
     @property
     def deep_url(self):
+        """The canonical web page URL for the GUID resource"""
+        return None
+
+    @property
+    def deep_api_v2_url(self):
+        """The canonical APIv2 URL for the GUID resource"""
         return None
 
     def _ensure_guid(self):

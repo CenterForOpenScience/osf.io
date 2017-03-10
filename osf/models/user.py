@@ -374,6 +374,11 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         return '/profile/{}/'.format(self._primary_key)
 
     @property
+    def deep_api_v2_url(self):
+        # TODO: Make more generic for different types and consolidate with absolute url generation
+        return '/v2/users/{}/'.format(self._id)
+
+    @property
     def url(self):
         return '/{}/'.format(self._id)
 
