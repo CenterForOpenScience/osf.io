@@ -442,43 +442,48 @@ class OptionalGuidMixin(BaseIDMixin):
         abstract = True
 
 
-class GuidMixinQuerySet(MODMCompatibilityQuerySet):
-    tables = ['osf_guid', 'django_content_type']
-
-    GUID_FIELDS = [
-        'guids__id',
-        'guids___id',
-        'guids__content_type_id',
-        'guids__object_id',
-        'guids__created'
-    ]
-    def annotate_query_with_guids(self):
-        if settings.CACHEOPS_ENABLED:
+# NOTE: Define only a stub mixin when using Redis caching. It is faster to lookup the individual cached objects
+#       than build the entire SQL query w/ Django.
+if settings.CACHEOPS_ENABLED:
+    class GuidMixinQuerySet(MODMCompatibilityQuerySet):
+        def annotate_query_with_guids(self):
             return self
-        self._prefetch_related_lookups = ['guids']
-        for field in self.GUID_FIELDS:
-            self.query.add_annotation(
-                F(field), '_{}'.format(field), is_summary=False
-            )
-        for table in self.tables:
-            if table not in self.query.tables:
-                self.safe_table_alias(table)
 
-    def remove_guid_annotations(self):
-        if settings.CACHEOPS_ENABLED:
+        def remove_guid_annotations(self):
             return self
-        for k, v in self.query.annotations.iteritems():
-            if k[1:] in self.GUID_FIELDS:
-                del self.query.annotations[k]
-        for table_name in ['osf_guid', 'django_content_type']:
-            if table_name in self.query.alias_map:
-                del self.query.alias_map[table_name]
-            if table_name in self.query.alias_refcount:
-                del self.query.alias_refcount[table_name]
-            if table_name in self.query.tables:
-                del self.query.tables[self.query.tables.index(table_name)]
+else:
+    class GuidMixinQuerySet(MODMCompatibilityQuerySet):
+        tables = ['osf_guid', 'django_content_type']
 
-    if not settings.CACHEOPS_ENABLED:
+        GUID_FIELDS = [
+            'guids__id',
+            'guids___id',
+            'guids__content_type_id',
+            'guids__object_id',
+            'guids__created'
+        ]
+        def annotate_query_with_guids(self):
+            self._prefetch_related_lookups = ['guids']
+            for field in self.GUID_FIELDS:
+                self.query.add_annotation(
+                    F(field), '_{}'.format(field), is_summary=False
+                )
+            for table in self.tables:
+                if table not in self.query.tables:
+                    self.safe_table_alias(table)
+
+        def remove_guid_annotations(self):
+            for k, v in self.query.annotations.iteritems():
+                if k[1:] in self.GUID_FIELDS:
+                    del self.query.annotations[k]
+            for table_name in ['osf_guid', 'django_content_type']:
+                if table_name in self.query.alias_map:
+                    del self.query.alias_map[table_name]
+                if table_name in self.query.alias_refcount:
+                    del self.query.alias_refcount[table_name]
+                if table_name in self.query.tables:
+                    del self.query.tables[self.query.tables.index(table_name)]
+
         def safe_table_alias(self, table_name, create=False):
             """
             Returns a table alias for the given table_name and whether this is a
