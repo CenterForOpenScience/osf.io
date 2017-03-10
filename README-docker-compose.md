@@ -168,8 +168,8 @@ Ubuntu: Skip install of docker-sync, fswatch, and unison. instead...
   - `$ docker-compose up -d mfr wb fakecas sharejs`
 5. Run migrations and create preprint providers
   - When starting with an empty database you will need to run migrations and populate preprint providers. See the [Running arbitrary commands](#running-arbitrary-commands) section below for instructions.
-6. Start the OSF Web, API Server, and Preprints (Detached)
-  - `$ docker-compose up -d worker web api admin preprints`
+6. Start the OSF Web, API Server, Preprints, and Registries (Detached)
+  - `$ docker-compose up -d worker web api admin preprints registries`
 7. View the OSF at [http://localhost:5000](http://localhost:5000).
 
 
@@ -180,7 +180,7 @@ Ubuntu: Skip install of docker-sync, fswatch, and unison. instead...
   ```
   $ docker-sync start
   # Wait until you see "Nothing to do: replicas have not changed since last sync."
-  $ docker-compose up -d assets admin_assets mfr wb fakecas sharejs worker web api admin preprints
+  $ docker-compose up -d assets admin_assets mfr wb fakecas sharejs worker web api admin preprints registries
   ```
 
 - To view the logs for a given container: 
