@@ -1,8 +1,4 @@
-<div class="project-authors">
-  ${render_contributors(contributors, others_count)}
-</div>
-
-<%def name="render_user(contributor)">
+<%def name="render_contributor_dict(contributor)">
   % if contributor['user_is_claimed']:
       <a class="overflow"
               rel="tooltip"
@@ -16,10 +12,9 @@
 
 <%def name="render_contributors(contributors, others_count)">
   % for i, contributor in enumerate(contributors):
-      ${render_user(contributor)}
+    ${render_contributor_dict(contributor) if isinstance(contributor, dict) else render_user_obj(contributor)}
   % endfor
   % if others_count:
       <a href="${node_url}">${others_count} more</a>
   % endif
 </%def>
-
