@@ -4,8 +4,9 @@ from urlparse import urlparse
 from nose.tools import *  # flake8: noqa
 import unittest
 
-from framework.auth import Auth
+from modularodm import Q
 
+from framework.auth import Auth
 from website.models import Node, NodeLog
 
 from tests.base import DbIsolationMixin, OsfTestCase
@@ -22,14 +23,14 @@ class TestUtilsTests(OsfTestCase):
         self.auth = Auth(self.user)
 
     def test_assert_logs(self):
-        
+
         def add_log(self):
             self.node.add_log(NodeLog.UPDATED_FIELDS, {}, auth=self.auth)
         wrapped = test_utils.assert_logs(NodeLog.UPDATED_FIELDS, 'node')(add_log)
         wrapped(self)
 
     def test_assert_logs_fail(self):
-        
+
         def dont_add_log(self):
             pass
         wrapped = test_utils.assert_logs(NodeLog.UPDATED_FIELDS, 'node')(dont_add_log)
@@ -43,7 +44,7 @@ class TestUtilsTests(OsfTestCase):
         def add_two_logs(self):
             add_log(self)
             self.node.add_log(NodeLog.CONTRIB_ADDED, {}, auth=self.auth)
-            
+
         wrapped = test_utils.assert_logs(NodeLog.UPDATED_FIELDS, 'node', -2)(
             test_utils.assert_logs(NodeLog.CONTRIB_ADDED, 'node')(add_two_logs)
         )
@@ -78,7 +79,7 @@ class DbIsolationMixinTests(object):
         ProjectFactory()
         self.__class__.ntest_calls += 1  # a little goofy, yes; each test gets its own instance
         nexpected = self.__class__.ntest_calls if self.nexpected == 'ntest_calls' else 1
-        assert_equal(nexpected, len(Node.find()))
+        assert_equal(nexpected, len(Node.find(Q('is_bookmark_collection', 'eq', False))))
 
     def test_1(self): self.check()
     def test_2(self): self.check()
