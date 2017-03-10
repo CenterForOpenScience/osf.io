@@ -145,11 +145,11 @@
             <div class="panel-heading clearfix">
               <h3 class="panel-title" >Public projects</h3>
             </div>
-            <div class="panel-body">
-              ${ render_nodes.render_nodes(nodes=public_projects,
-                                           sortable=False, user=user,
-                                           pluralized_node_type='projects',
-                                           show_path=False, include_js=False) }
+            <div class="panel-body" id="publicProjects">
+              <div class="spinner-loading-wrapper">
+                  <div class="logo-spin logo-lg"></div>
+                   <p class="m-t-sm fg-load-message"> Loading projects...  </p>
+              </div>
             </div>
         </div>
     </div>
@@ -158,9 +158,15 @@
             <div class="panel-heading clearfix">
                 <h3 class="panel-title">Public components</h3>
             </div>
-            <div class="panel-body">
-              ${ render_nodes.render_nodes(nodes=public_components, sortable=False, user=user, pluralized_node_type='components', show_path=True, include_js=True) }
+            <div class="panel-body" id="publicComponents">
+              <div class="spinner-loading-wrapper">
+                  <div class="logo-spin logo-lg"></div>
+                   <p class="m-t-sm fg-load-message"> Loading components...  </p>
+              </div>
             </div>
+            ## <div class="panel-body">
+            ##   ${ render_nodes.render_nodes(nodes=public_components, sortable=False, user=user, pluralized_node_type='components', show_path=True, include_js=True) }
+            ## </div>
         </div>
     </div>
 </div><!-- end row -->
@@ -183,7 +189,8 @@
       window.contextVars = $.extend(true, {}, window.contextVars, {
           socialUrls: socialUrls,
           jobsUrls: jobsUrls,
-          schoolsUrls: schoolsUrls
+          schoolsUrls: schoolsUrls,
+          user: ${ user | sjson, n },
       });
   })();
 </script>

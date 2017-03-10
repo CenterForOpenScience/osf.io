@@ -994,6 +994,7 @@ class TestForgotPassword(OsfTestCase):
         assert_not_in_html('If there is an OSF account', res)
 
 
+@unittest.skip('Public projects/components are dynamically loaded now.')
 class TestAUserProfile(OsfTestCase):
 
     def setUp(self):

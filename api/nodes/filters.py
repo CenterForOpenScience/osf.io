@@ -21,7 +21,7 @@ class NodesListFilterMixin(ODMFilterMixin):
                 parent = utils.get_object_or_error(AbstractNode, operation['value'], display_name='parent')
                 return Q('_id', 'in', [node._id for node in parent.get_nodes(is_node_link=False)])
             else:
-                return Q('parent_nodes__guids___id', 'eq', None)
+                return Q('parent_nodes__guids___id', operation['op'], None)
         return super(NodesListFilterMixin, self)._operation_to_query(operation)
 
 
