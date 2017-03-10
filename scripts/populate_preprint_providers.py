@@ -382,7 +382,7 @@ def main(env):
             'logo_name': 'agrixiv-logo.svg',
             'description': 'Preprints for Agriculture and Allied Sciences',
             'banner_name': 'agrixiv-banner.svg',
-            # 'domain': 'agrixiv.org', # Temporarily disabling until ready
+            'domain': 'agrixiv.org',
             'external_url': '',
             'example': '8whkp',
             'advisory_board': '''
