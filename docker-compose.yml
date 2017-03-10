@@ -90,6 +90,13 @@ services:
     stdin_open: true
     tty: true
 
+  redis:
+    image: redis
+    ports:
+      - 6379:6379
+    stdin_open: true
+    tty: true
+
 #  flower:
 #    image: quay.io/centerforopenscience/osf:develop
 #    command: python manage.py celery flower
@@ -303,6 +310,7 @@ services:
     restart: unless-stopped
     depends_on:
       - postgres
+      - redis
       - rabbitmq
       - elasticsearch
     environment:
@@ -327,6 +335,7 @@ services:
       - 8001:8001
     depends_on:
       - postgres
+      - redis
       - tokumx
       - rabbitmq
       - elasticsearch
@@ -350,6 +359,7 @@ services:
     depends_on:
       - postgres
       - tokumx
+      - redis
       - rabbitmq
       - elasticsearch
     environment:
@@ -372,6 +382,7 @@ services:
     depends_on:
       - postgres
       - tokumx
+      - redis
       - rabbitmq
       - elasticsearch
     environment:
