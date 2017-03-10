@@ -1701,15 +1701,13 @@ var FGInput = {
         var placeholder = args.placeholder || '';
         var id = args.id || '';
         var helpTextId = args.helpTextId || '';
-        var oninput = args.oninput || noop;
         var onkeypress = args.onkeypress || noop;
+        var value = args.value ? '[value="' + args.value + '"]' : '';
         return m('span', [
-            m('input', {
+            m('input' + value, {
                 'id' : id,
                 className: 'pull-right form-control' + extraCSS,
-                oninput: oninput,
                 onkeypress: onkeypress,
-                'value': args.value || '',
                 'data-toggle': tooltipText ? 'tooltip' : '',
                 'title': tooltipText,
                 'data-placement' : 'bottom',
@@ -1924,8 +1922,6 @@ var FGToolbar = {
         self.createFolder = function(event){
             _createFolder.call(self.tb, event, self.dismissToolbar, self.helpText);
         };
-        self.renameId = m.prop('');
-        self.renameData = m.prop('');
     },
     view : function(ctrl) {
         var templates = {};
@@ -1975,23 +1971,15 @@ var FGToolbar = {
                     )
                 )
             ];
-
-            if(typeof item !== 'undefined' && item.id !== ctrl.renameId()){
-                ctrl.renameData(item.data.name);
-                ctrl.renameId(item.id);
-            }
-    
             templates[toolbarModes.RENAME] = [
                 m('.col-xs-9',
                     m.component(FGInput, {
-                        oninput: m.withAttr('value', ctrl.renameData),
                         onkeypress: function (event) {
                             if (ctrl.tb.pressedKey === ENTER_KEY) {
                                 _renameEvent.call(ctrl.tb);
                             }
                         },
                         id: 'renameInput',
-                        value: ctrl.renameData(),
                         helpTextId: 'renameHelpText',
                         placeholder: 'Enter name',
                     }, ctrl.helpText())
