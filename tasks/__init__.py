@@ -618,10 +618,11 @@ def test_osf(ctx, numprocesses=None):
     """Run the OSF test suite."""
     test_module(ctx, module=OSF_TESTS, numprocesses=numprocesses)
 
-
+@task
 def test_else(ctx, numprocesses=None):
     """Run the API test suite."""
-    test_module(ctx, module=ELSE_TESTS, numprocesses=numprocesses, params=['--ignore=tests/test_registrations/test_archiver.py'])
+    # TODO (@cwisecarver, @mfraezz, @sloria): Fix ignored tests
+    test_module(ctx, module=ELSE_TESTS, numprocesses=numprocesses, params=['--ignore=tests/ignore'])
 
 @task
 def test_api1(ctx, numprocesses=None):
