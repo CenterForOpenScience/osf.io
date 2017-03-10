@@ -92,6 +92,14 @@ services:
 
   redis:
     image: redis
+    command: |-
+      /bin/bash -c "
+        mkdir -p /usr/local/etc/redis &&
+        echo \"maxmemory 100mb\" > /usr/local/etc/redis/redis.conf &&
+        echo \"maxmemory-policy allkeys-lru\" >> /usr/local/etc/redis/redis.conf &&
+        echo \"tcp-backlog 128\" >> /usr/local/etc/redis/redis.conf &&
+        /usr/local/bin/docker-entrypoint.sh redis-server /usr/local/etc/redis/redis.conf
+      "
     ports:
       - 6379:6379
     stdin_open: true
