@@ -5,6 +5,7 @@ import httplib as http  # TODO: Inconsistent usage of aliased import
 from dateutil.parser import parse as parse_date
 
 from django.utils import timezone
+from django.db.models import Count
 from flask import request
 import markupsafe
 import mailchimp
@@ -13,6 +14,7 @@ from modularodm import Q
 from osf.models import Node
 
 from framework import sentry
+from framework.auth import Auth
 from framework.auth import utils as auth_utils
 from framework.auth.decorators import collect_auth
 from framework.auth.decorators import must_be_logged_in
@@ -35,7 +37,7 @@ from website.util.time import throttle_period_expired
 from website.util import api_v2_url, web_url_for, paths
 from website.util.sanitize import escape_html
 from website.util.sanitize import strip_html
-from website.views import _render_nodes
+from website.views import serialize_node_summary
 from addons.base import utils as addon_utils
 
 logger = logging.getLogger(__name__)
@@ -44,26 +46,39 @@ logger = logging.getLogger(__name__)
 def get_public_projects(uid=None, user=None):
     user = user or User.load(uid)
     # In future redesign, should be limited for users with many projects / components
-    nodes = Node.find_for_user(user, PROJECT_QUERY).filter(is_public=True).get_roots().distinct()
-    return _render_nodes(list(nodes))
+    nodes = (
+        Node.find_for_user(user, PROJECT_QUERY)
+        .filter(is_public=True)
+        .get_roots()
+        .distinct()
+        .annotate(nlogs=Count('logs'))
+        .eager('parent_nodes', '_contributors')
+    )
+    return [
+        # TODO: Remove 'summary' envelope from serialize_node_summary
+        serialize_node_summary(node=node, auth=Auth(user), show_path=False)['summary']
+        for node in nodes
+    ]
 
 
 def get_public_components(uid=None, user=None):
     user = user or User.load(uid)
-    # TODO: This should use User.visible_contributor_to?
     # In future redesign, should be limited for users with many projects / components
-    nodes = list(
-        node for node in Node.find_for_user(
-            user,
-            subquery=(
-                PROJECT_QUERY &
-                Q('parent_nodes', 'isnull', False) &
-                Q('is_public', 'eq', True)
-            )
-        ).distinct() if not node.parent_nodes.filter(type='osf.collection').exists()
-        # Exclude top-level projects that are part of a collection
-    )
-    return _render_nodes(nodes, show_path=True)
+    # TODO: Optimize me
+    nodes = Node.find_for_user(
+        user,
+        subquery=(
+            PROJECT_QUERY &
+            Q('parent_nodes', 'isnull', False) &
+            Q('parent_nodes__type', 'ne', 'osf.collection') &
+            Q('is_public', 'eq', True)
+        )
+    ).distinct().annotate(nlogs=Count('logs')).eager('parent_nodes', '_contributors')
+
+    return [
+        serialize_node_summary(node=node, auth=Auth(user), show_path=True)['summary']
+        for node in nodes
+    ]
 
 
 @must_be_logged_in
@@ -262,10 +277,13 @@ def _profile_view(profile, is_profile=False):
             'assertions': badge_assertions,
             'badges': badges,
             'user': {
+                '_id': profile._id,
                 'is_profile': is_profile,
                 'can_edit': None,  # necessary for rendering nodes
                 'permissions': [],  # necessary for rendering nodes
             },
+            'public_projects': get_public_projects(user=profile),
+            'public_components': get_public_components(user=profile),
         }
 
     raise HTTPError(http.NOT_FOUND)

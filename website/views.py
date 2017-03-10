@@ -23,6 +23,7 @@ from website.models import Guid
 from website.models import Institution, PreprintService
 from website.settings import EXTERNAL_EMBER_APPS
 from website.util import permissions
+from website.project.model import has_anonymous_link
 
 logger = logging.getLogger(__name__)
 
@@ -34,37 +35,38 @@ def _render_node(node, auth=None, parent_node=None):
     :return:
 
     """
-    NodeRelation = apps.get_model('osf.NodeRelation')
+    # NodeRelation = apps.get_model('osf.NodeRelation')
     perm = None
     # NOTE: auth.user may be None if viewing public project while not
     # logged in
-    if auth and auth.user and node.get_permissions(auth.user):
-        perm_list = node.get_permissions(auth.user)
-        perm = permissions.reduce_permissions(perm_list)
+    # if auth and auth.user and node.get_permissions(auth.user):
+    #     perm_list = node.get_permissions(auth.user)
+    #     perm = permissions.reduce_permissions(perm_list)
 
-    if parent_node:
-        try:
-            node_relation = parent_node.node_relations.get(child__id=node.id)
-        except NodeRelation.DoesNotExist:
-            primary = False
-            _id = node._id
-        else:
-            primary = not node_relation.is_node_link
-            _id = node._id if primary else node_relation._id
-    else:
-        _id = node._id
-        primary = True
+    # if parent_node:
+    #     try:
+    #         node_relation = parent_node.node_relations.get(child__id=node.id)
+    #     except NodeRelation.DoesNotExist:
+    #         primary = False
+    #         _id = node._id
+    #     else:
+    #         primary = not node_relation.is_node_link
+    #         _id = node._id if primary else node_relation._id
+    # else:
+    #     _id = node._id
+    #     primary = True
+    _id = node._id
     return {
         'title': node.title,
         'id': _id,
         'url': node.url,
         'api_url': node.api_url,
-        'primary': primary,
+        'primary': True,
         'date_modified': utils.iso8601format(node.date_modified),
         'category': node.category,
-        'permissions': perm,  # A string, e.g. 'admin', or None,
-        'archiving': node.archiving,
-        'is_retracted': node.is_retracted,
+        'permissions': 'admin',  # A string, e.g. 'admin', or None,
+        'archiving': False,
+        'is_retracted': False,
         'is_registration': node.is_registration,
     }
 
@@ -83,6 +85,93 @@ def _render_nodes(nodes, auth=None, show_path=False, parent_node=None):
         'show_path': show_path
     }
     return ret
+
+def serialize_contributors_for_summary(node, max_count=3):
+    # Evaluate queryset eagerly, to avoid re-querying in the for loop below
+    users = list(node.visible_contributors)
+    contributors = []
+
+    n_contributors = len(users)
+    others_count = ''
+
+    for index, user in enumerate(users[:max_count]):
+
+        if index == max_count - 1 and len(users) > max_count:
+            separator = ' &'
+            others_count = str(n_contributors - 3)
+        elif index == len(users) - 1:
+            separator = ''
+        elif index == len(users) - 2:
+            separator = ' &'
+        else:
+            separator = ','
+        contributor = user.get_summary(formatter='surname')
+        contributor['user_id'] = user._primary_key
+        contributor['separator'] = separator
+
+        contributors.append(contributor)
+
+    return {
+        'contributors': contributors,
+        'others_count': others_count,
+    }
+
+
+# TODO(sloria): Refactor this or remove (lots of duplication with _view_project)
+def serialize_node_summary(node, auth, primary=True, show_path=False):
+    summary = {
+        'id': node._id,
+        'primary': primary,
+        'is_registration': node.is_registration,
+        'is_fork': node.is_fork,
+        'is_pending_registration': node.is_pending_registration,
+        'is_retracted': node.is_retracted,
+        'is_pending_retraction': node.is_pending_retraction,
+        'embargo_end_date': node.embargo_end_date.strftime('%A, %b. %d, %Y') if node.embargo_end_date else False,
+        'is_pending_embargo': node.is_pending_embargo,
+        'is_embargoed': node.is_embargoed,
+        'archiving': node.archiving,
+    }
+    contributor_data = serialize_contributors_for_summary(node)
+    parent_node = node.parent_node
+    if node.can_view(auth):
+        summary.update({
+            'can_view': True,
+            'can_edit': node.can_edit(auth),
+            'primary_id': node._id,
+            'url': node.url,
+            'primary': primary,
+            'api_url': node.api_url,
+            'title': node.title,
+            'category': node.category,
+            'node_type': node.project_or_component,
+            'is_fork': node.is_fork,
+            'is_registration': node.is_registration,
+            'anonymous': has_anonymous_link(node, auth),
+            'registered_date': node.registered_date.strftime('%Y-%m-%d %H:%M UTC')
+            if node.is_registration
+            else None,
+            'forked_date': node.forked_date.strftime('%Y-%m-%d %H:%M UTC')
+            if node.is_fork
+            else None,
+            'ua_count': None,
+            'ua': None,
+            'non_ua': None,
+            'is_public': node.is_public,
+            'parent_title': parent_node.title if parent_node else None,
+            'parent_is_public': parent_node.is_public if parent_node else False,
+            'show_path': show_path,
+            'nlogs': node.nlogs,  # comes from .annotate(nlogs=Count('logs'))
+            'contributors': contributor_data['contributors'],
+            'others_count': contributor_data['others_count'],
+        })
+    else:
+        summary['can_view'] = False
+
+    # TODO: Make output format consistent with _view_project
+    return {
+        'summary': summary,
+    }
 
 
 def index():

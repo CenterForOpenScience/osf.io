@@ -38,6 +38,7 @@ from website.project.metadata.utils import serialize_meta_schemas
 from website.models import Node, WatchConfig, PrivateLink, Comment
 from website import settings
 from website.views import _render_nodes, find_bookmark_collection, validate_page_num
+from website.views import serialize_node_summary
 from website.profile import utils
 from website.project.licenses import serialize_node_license_record
 from website.util.sanitize import strip_html
@@ -850,68 +851,13 @@ def get_recent_logs(node, **kwargs):
     return {'logs': logs}
 
 
-def _get_summary(node, auth, primary=True, show_path=False):
-    # TODO(sloria): Refactor this or remove (lots of duplication with _view_project)
-    summary = {
-        'id': node._id,
-        'primary': primary,
-        'is_registration': node.is_registration,
-        'is_fork': node.is_fork,
-        'is_pending_registration': node.is_pending_registration,
-        'is_retracted': node.is_retracted,
-        'is_pending_retraction': node.is_pending_retraction,
-        'embargo_end_date': node.embargo_end_date.strftime('%A, %b. %d, %Y') if node.embargo_end_date else False,
-        'is_pending_embargo': node.is_pending_embargo,
-        'is_embargoed': node.is_embargoed,
-        'archiving': node.archiving,
-    }
-
-    if node.can_view(auth):
-        summary.update({
-            'can_view': True,
-            'can_edit': node.can_edit(auth),
-            'primary_id': node._id,
-            'url': node.url,
-            'primary': primary,
-            'api_url': node.api_url,
-            'title': node.title,
-            'category': node.category,
-            'node_type': node.project_or_component,
-            'is_fork': node.is_fork,
-            'is_registration': node.is_registration,
-            'anonymous': has_anonymous_link(node, auth),
-            'registered_date': node.registered_date.strftime('%Y-%m-%d %H:%M UTC')
-            if node.is_registration
-            else None,
-            'forked_date': node.forked_date.strftime('%Y-%m-%d %H:%M UTC')
-            if node.is_fork
-            else None,
-            'ua_count': None,
-            'ua': None,
-            'non_ua': None,
-            'addons_enabled': node.get_addon_names(),
-            'is_public': node.is_public,
-            'parent_title': node.parent_node.title if node.parent_node else None,
-            'parent_is_public': node.parent_node.is_public if node.parent_node else False,
-            'show_path': show_path,
-            'nlogs': node.logs.count(),
-        })
-    else:
-        summary['can_view'] = False
-
-    # TODO: Make output format consistent with _view_project
-    return {
-        'summary': summary,
-    }
-
-
 @collect_auth
 @must_be_valid_project(retractions_valid=True)
 def get_summary(auth, node, **kwargs):
     primary = kwargs.get('primary')
     show_path = kwargs.get('show_path', False)
 
-    return _get_summary(
+    return serialize_node_summary(
         node, auth, primary=primary, show_path=show_path
     )
 
