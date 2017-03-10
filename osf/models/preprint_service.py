@@ -47,6 +47,8 @@ class PreprintService(GuidMixin, BaseModel):
     # Format: [[root_subject._id, ..., child_subject._id], ...]
     subjects = DateTimeAwareJSONField(default=list, null=True, blank=True)
 
+    domains_disabled = not settings.PREPRINT_PROVIDER_DOMAINS['enabled']
+
     class Meta:
         unique_together = ('node', 'provider')
 
@@ -90,7 +92,7 @@ class PreprintService(GuidMixin, BaseModel):
 
     @property
     def absolute_url(self):
-        use_osf_domain = self.provider._id == 'osf' or not self.provider.domain
+        use_osf_domain = self.domains_disabled or self.provider._id == 'osf' or not self.provider.domain
         host = settings.DOMAIN if use_osf_domain else self.get_provider_domain()
 
         return urlparse.urljoin(host, self.url)

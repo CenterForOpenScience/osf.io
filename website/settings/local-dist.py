@@ -24,6 +24,7 @@ API_DOMAIN = PROTOCOL + 'localhost:8000/'
 
 LIVE_RELOAD_DOMAIN = 'http://localhost:4200'
 PREPRINT_PROVIDER_DOMAINS = {
+    'enabled': False,
     'prefix': 'http://local.',
     'suffix': ':4200'
 }

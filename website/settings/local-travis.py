@@ -22,6 +22,7 @@ ENABLE_INSTITUTIONS = True
 
 USE_EXTERNAL_EMBER = True
 PREPRINT_PROVIDER_DOMAINS = {
+    'enabled': False,
     'prefix': 'http://local.',
     'suffix': ':4200'
 }

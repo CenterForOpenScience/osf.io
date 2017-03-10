@@ -18,6 +18,8 @@ services:
 #  preprints:
 #    volumes_from:
 #      - container:preprints-sync
+##     environment:
+##       - ENABLE_PROVIDER_DOMAINS=true
 
 #  registries:
 #    volumes_from:

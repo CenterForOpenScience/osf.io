@@ -21,12 +21,12 @@ from website.institutions.views import serialize_institution
 
 from website.models import Guid
 from website.models import Institution, PreprintService
-from website.settings import EXTERNAL_EMBER_APPS
+from website.settings import EXTERNAL_EMBER_APPS, PREPRINT_PROVIDER_DOMAINS
 from website.util import permissions
 
 logger = logging.getLogger(__name__)
 preprints_dir = os.path.abspath(os.path.join(os.getcwd(), EXTERNAL_EMBER_APPS['preprints']['path']))
-
+domains_disabled = not PREPRINT_PROVIDER_DOMAINS['enabled']
 
 def _render_node(node, auth=None, parent_node=None):
     """
@@ -215,7 +215,7 @@ def resolve_guid(guid, suffix=None):
         if not referent.deep_url:
             raise HTTPError(http.NOT_FOUND)
         if isinstance(referent, PreprintService):
-            if referent.provider._id == 'osf' or not referent.provider.domain:
+            if domains_disabled or referent.provider._id == 'osf' or not referent.provider.domain:
                 return send_from_directory(preprints_dir, 'index.html')
 
             return redirect(referent.absolute_url, 301)

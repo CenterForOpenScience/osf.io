@@ -37,6 +37,8 @@ class PreprintService(GuidStoredObject):
     # Format: [[root_subject._id, ..., child_subject._id], ...]
     subjects = fields.DictionaryField(list=True)
 
+    domains_disabled = not settings.PREPRINT_PROVIDER_DOMAINS['enabled']
+
     @property
     def primary_file(self):
         if not self.node:
@@ -77,7 +79,7 @@ class PreprintService(GuidStoredObject):
 
     @property
     def absolute_url(self):
-        use_osf_domain = self.provider._id == 'osf' or not self.provider.domain
+        use_osf_domain = self.domains_disabled or self.provider._id == 'osf' or not self.provider.domain
         host = settings.DOMAIN if use_osf_domain else self.get_provider_domain()
 
         return urlparse.urljoin(host, self.url)
