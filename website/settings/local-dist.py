@@ -36,8 +36,8 @@ EXTERNAL_EMBER_APPS = {
     # },
     # 'registries': {
     #     'url': '/registries/',
-    #     'server': 'http://localhost:4200',
-    #     'path': '../ember-osf-registries/dist/'
+    #     'server': 'http://localhost:4300',
+    #     'path': '/registries/'
     # }
 }
 
