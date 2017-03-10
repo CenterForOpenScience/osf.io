@@ -370,7 +370,11 @@ def configure_comments(node, **kwargs):
 @process_token_or_pass
 def view_project(auth, node, **kwargs):
     primary = '/api/v1' not in request.path
-    ret = _view_project(node, auth, primary=primary)
+    ret = _view_project(node, auth,
+                        primary=primary,
+                        embed_contributors=True,
+                        embed_descendants=True
+                        )
 
     ret['addon_capabilities'] = settings.ADDON_CAPABILITIES
     # Collect the URIs to the static assets for addons that have widgets
@@ -639,7 +643,7 @@ def _should_show_wiki_widget(node, user):
         return has_wiki
 
 
-def _view_project(node, auth, primary=False):
+def _view_project(node, auth, primary=False, embed_contributors=False, embed_descendants=False):
     """Build a JSON object containing everything needed to render
     project.view.mako.
     """
@@ -779,6 +783,14 @@ def _view_project(node, auth, primary=False):
             for key, value in settings.NODE_CATEGORY_MAP.iteritems()
         ]
     }
+    if embed_contributors and not anonymous:
+        data['node']['contributors'] = utils.serialize_contributors(node.visible_contributors, node=node)
+    if embed_descendants:
+        descendants = _get_readable_descendants(auth=auth, node=node)
+        data['node']['descendants'] = [
+            serialize_node_summary(node=each, auth=auth, show_path=False)['summary']
+            for each in descendants
+        ]
     return data
 
 def get_affiliated_institutions(obj):
@@ -861,13 +873,12 @@ def get_summary(auth, node, **kwargs):
         node, auth, primary=primary, show_path=show_path
     )
 
-@must_be_contributor_or_public
-def get_readable_descendants(auth, node, **kwargs):
+def _get_readable_descendants(auth, node, permission=None):
     descendants = []
     for child in node.get_nodes(is_deleted=False):
-        if request.args.get('permissions'):
-            perm = request.args['permissions'].lower().strip()
-            if perm not in child.get_permissions(auth.user):
+        if permission:
+            perm = permission.lower().strip()
+            if not child.has_permission(auth.user, perm):
                 continue
         # User can view child
         if child.can_view(auth):
@@ -879,6 +890,11 @@ def get_readable_descendants(auth, node, **kwargs):
         else:
             for descendant in child.find_readable_descendants(auth):
                 descendants.append(descendant)
+    return descendants
+
+@must_be_contributor_or_public
+def get_readable_descendants(auth, node, **kwargs):
+    descendants = _get_readable_descendants(auth, node, permission=request.args.get('permissions'))
     return _render_nodes(descendants, auth=auth, parent_node=node)
 
 def node_child_tree(user, nodes):

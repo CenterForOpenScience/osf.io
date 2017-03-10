@@ -161,7 +161,8 @@ def serialize_node_summary(node, auth, primary=True, show_path=False):
             'parent_title': parent_node.title if parent_node else None,
             'parent_is_public': parent_node.is_public if parent_node else False,
             'show_path': show_path,
-            'nlogs': node.nlogs,  # comes from .annotate(nlogs=Count('logs'))
+            # Read nlogs annotation if possible
+            'nlogs': node.nlogs if hasattr(node, 'nlogs') else node.logs.count(),
             'contributors': contributor_data['contributors'],
             'others_count': contributor_data['others_count'],
         })
