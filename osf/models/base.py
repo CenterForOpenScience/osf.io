@@ -194,6 +194,10 @@ class BaseModel(models.Model):
     def _primary_name(self):
         return '_id'
 
+    @property
+    def _is_loaded(self):
+        return bool(self.pk)
+
     def reload(self):
         return self.refresh_from_db()
 
@@ -253,10 +257,6 @@ class Guid(BaseModel):
             return cls.objects.get(_id=data)
         except cls.DoesNotExist:
             return None
-
-    def reload(self):
-        del self._referent_cache
-        return super(Guid, self).reload()
 
     @classmethod
     def migrate_from_modm(cls, modm_obj, object_id=None, content_type=None):
