@@ -4,12 +4,12 @@ import datetime
 from django.utils import timezone
 from nose.tools import *  # noqa
 import mock
-from modularodm import Q
+from osf.modm_compat import Q
 
 from website.files import utils
-from website.files import models
+from osf.models import files as models
 from website.files import exceptions
-from website.models import Guid
+from osf.models import Guid
 from website.views import find_bookmark_collection
 
 from tests.base import OsfTestCase
@@ -34,11 +34,6 @@ class FilesTestCase(OsfTestCase):
         super(FilesTestCase, self).setUp()
         self.user = AuthUserFactory()
         self.node = ProjectFactory(creator=self.user)
-
-    def tearDown(self):
-        super(FilesTestCase, self).setUp()
-        models.StoredFileNode.remove()
-        models.TrashedFileNode.remove()
 
 
 class TestFileNodeMeta(FilesTestCase):
@@ -164,7 +159,7 @@ class TestFileNodeObj(FilesTestCase):
 
     def test_filter_build(self):
         qs = TestFile._filter(Q('test', 'eq', 'test'))
-        _, is_file, provider = qs.nodes
+        provider, _, is_file = qs.nodes
         assert_equal(is_file.__dict__, Q('is_file', 'eq', True).__dict__)
         assert_equal(provider.__dict__, Q('provider', 'eq', 'test').__dict__)
 
@@ -288,16 +283,18 @@ class TestFileNodeObj(FilesTestCase):
         assert_true(child.stored_object._is_loaded)
 
     def test_delete(self):
-        models.StoredFileNode(
+        fn = models.StoredFileNode(
             path='afile',
             name='name',
             is_file=True,
             node=self.node,
             provider='test',
             materialized_path='/long/path/to/name',
-        ).wrapped().delete()
+        ).wrapped()
+        fn.save()
+        fn.delete()
 
-        trashed = models.TrashedFileNode.find_one()
+        trashed = models.TrashedFileNode.objects.all()[0]
         assert_equal(trashed.path, 'afile')
         assert_equal(trashed.node, self.node)
         assert_equal(trashed.materialized_path, '/long/path/to/name')
@@ -311,10 +308,11 @@ class TestFileNodeObj(FilesTestCase):
             provider='test',
             materialized_path='/long/path/to/name',
         ).wrapped()
+        fn.save()
         guid = fn.get_guid(create=True)
         fn.delete()
 
-        trashed = models.TrashedFileNode.find_one()
+        trashed = models.TrashedFileNode.objects.all()[0]
 
         guid.reload()
 
@@ -333,9 +331,10 @@ class TestFileNodeObj(FilesTestCase):
             provider='test',
             materialized_path='/long/path/to/name',
         ).wrapped()
+        fn.save()
         fn.delete(user=self.user)
 
-        trashed = models.TrashedFileNode.find_one()
+        trashed = models.TrashedFileNode.objects.all()[0]
         assert_equal(trashed.deleted_by, self.user)
         assert_equal(models.StoredFileNode.load(fn._id), None)
 
@@ -351,7 +350,7 @@ class TestFileNodeObj(FilesTestCase):
         root.save()
 
         fn = models.StoredFileNode(
-            parent=root._id,
+            parent_id=root.id,
             path='afile',
             name='name',
             is_file=True,
@@ -359,16 +358,18 @@ class TestFileNodeObj(FilesTestCase):
             provider='test',
             materialized_path='/long/path/to/name',
         ).wrapped()
+        fn.save()
 
-        guid = Guid.generate(fn)
+        guid = fn.get_guid(create=True)
 
-        before = fn.to_storage()
+        before = fn.__dict__
         trashed = fn.delete(user=self.user)
 
         restored = trashed.restore()
+        # for field in StoredFileNode._meta.get_all_field_names():
         assert_equal(
-            restored.to_storage(),
-            before
+            restored.__dict__,
+            before['stored_object'].__dict__
         )
 
         assert_equal(models.TrashedFileNode.load(trashed._id), None)
@@ -389,7 +390,7 @@ class TestFileNodeObj(FilesTestCase):
         root.save()
 
         fn = models.StoredFileNode(
-            parent=root._id,
+            parent=root,
             path='afolder',
             name='folder_name',
             is_file=False,
@@ -420,7 +421,7 @@ class TestFileNodeObj(FilesTestCase):
                     name='name{}'.format(i),
                     is_file=not is_folder,
                     node=self.node,
-                    parent=parent._id,
+                    parent=parent,
                     provider='test',
                     materialized_path='{}/{}'.format(parent.materialized_path, 'name{}'.format(i)),
                 ).wrapped()
@@ -439,19 +440,19 @@ class TestFileNodeObj(FilesTestCase):
             node=self.node,
             provider='test',
             materialized_path='/long/path/to/',
-        ).wrapped()
-        root.save()
+        )
+        root.wrapped().save()
 
         parent = models.StoredFileNode(
-            parent=root._id,
+            parent=root,
             path='afolder',
             name='folder_name',
             is_file=False,
             node=self.node,
             provider='test',
             materialized_path='/long/path/to/folder_name',
-        ).wrapped()
-        parent.save()
+        )
+        parent.wrapped().save()
 
         branch = models.StoredFileNode(
             path='afolder',
@@ -459,10 +460,10 @@ class TestFileNodeObj(FilesTestCase):
             is_file=False,
             node=self.node,
             provider='test',
-            parent=parent._id,
+            parent=parent,
             materialized_path='/long/path/to/folder_name',
-        ).wrapped()
-        branch.save()
+        )
+        branch.wrapped().save()
 
         round1 = build_tree(parent=branch, atleastone=True)
         round2 = build_tree(parent=parent, atleastone=True)
@@ -687,7 +688,7 @@ class TestFolderObj(FilesTestCase):
             name='child',
             is_file=True,
             node=self.node,
-            parent=self.parent._id,
+            parent=self.parent,
             provider='test',
             materialized_path='/long/path/to/name',
         ).save()
@@ -699,7 +700,7 @@ class TestFolderObj(FilesTestCase):
             name='child2',
             is_file=True,
             node=self.node,
-            parent=self.parent._id,
+            parent=self.parent,
             provider='test',
             materialized_path='/long/path/to/name',
         ).save()
@@ -712,7 +713,7 @@ class TestFolderObj(FilesTestCase):
             name='child',
             is_file=True,
             node=self.node,
-            parent=self.parent._id,
+            parent=self.parent,
             provider='test',
             materialized_path='/long/path/to/name',
         ).wrapped()

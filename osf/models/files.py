@@ -152,24 +152,31 @@ class TrashedFileNode(CommentableMixin, OptionalGuidMixin, ObjectIDMixin, BaseMo
         Will re-point all guids and finally remove itself
         :raises KeyExistsException:
         """
-        local_field_names = self._meta.get_all_field_names()
-        intersecting_field_names = set(
-            local_field_names
-        ).intersection(set(
-            FileNode._meta.get_all_field_names()
-        ))
+        restored = StoredFileNode.objects.create(
+            _id=self._id,
+            name=self.name,
+            path=self.path,
+            node=self.node,
+            parent=parent or self.parent,
+            history=self.history,
+            is_file=self.is_file,
+            checkout=self.checkout,
+            provider=self.provider,
+            last_touched=self.last_touched,
+            _materialized_path=self.materialized_path
+        )
+        if self.versions.exists():
+            restored.versions.add(*self.versions.all())
 
-        data = {key: getattr(self, key) for key in intersecting_field_names if
-                getattr(self, key, None) is not None}
-        if parent:
-            data['parent_id'] = parent.pk
-
-        restored = FileNode.resolve_class(self.provider, int(self.is_file))(**data)
         if not restored.parent:
             raise ValueError('No parent to restore to')
-        restored.save()
 
-        if recursive:
+        # # repoint guid
+        # for guid in Guid.find(Q('referent', 'eq', self)):
+        #     guid.referent = restored
+        #     guid.save()
+
+        if recursive and hasattr(self, 'children'):
             for child in self.children:
                 child.restore(recursive=recursive, parent=restored)
         TrashedFileNode.remove_one(self)
