@@ -795,11 +795,6 @@ def make_url_map(app):
 
         # Used by profile.html
         Rule('/profile/<uid>/edit/', 'post', profile_views.edit_profile, json_renderer),
-        Rule('/profile/<uid>/public_projects/', 'get',
-             profile_views.get_public_projects, json_renderer),
-        Rule('/profile/<uid>/public_components/', 'get',
-             profile_views.get_public_components, json_renderer),
-
         Rule('/profile/<user_id>/summary/', 'get',
              profile_views.get_profile_summary, json_renderer),
         Rule('/user/<uid>/<pid>/claim/email/', 'post',
