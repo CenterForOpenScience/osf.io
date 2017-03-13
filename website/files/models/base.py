@@ -620,7 +620,7 @@ class File(FileNode):
         :returns: FileVersion or None
         :raises: VersionNotFoundError if required is True
         """
-        for version in reversed(self.versions):
+        for version in reversed(self.versions.all()):
             if version.identifier == revision:
                 break
         else:
@@ -630,7 +630,7 @@ class File(FileNode):
         return version
 
     def update_version_metadata(self, location, metadata):
-        for version in reversed(self.versions):
+        for version in reversed(self.versions.all()):
             if version.location == location:
                 version.update_metadata(metadata)
                 return

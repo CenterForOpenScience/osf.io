@@ -4,13 +4,12 @@ import os
 
 import requests
 from dateutil.parser import parse as parse_date
-from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import models, connection
 from django.utils import timezone
 from framework.analytics import get_basic_counters
 from modularodm.exceptions import NoResultsFound
-from osf.models.base import BaseModel, Guid, OptionalGuidMixin, ObjectIDMixin
+from osf.models.base import BaseModel, Guid, OptionalGuidMixin, ObjectIDMixin, MODMCompatibilityQuerySet
 from osf.models.comment import CommentableMixin
 from osf.models.mixins import Taggable
 from osf.models.validators import validate_location
@@ -30,160 +29,14 @@ __all__ = (
     'FileVersion',
     'StoredFileNode',
     'TrashedFileNode',
+    'BaseStoredFileNode',
 )
 
 PROVIDER_MAP = {}
 logger = logging.getLogger(__name__)
 
 
-class TrashedFileNode(CommentableMixin, OptionalGuidMixin, ObjectIDMixin, BaseModel):
-    """The graveyard for all deleted FileNodes"""
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.files.models.TrashedFileNode'
-    modm_query = None
-    migration_page_size = 100000
-    # /TODO DELETE ME POST MIGRATION
-
-    last_touched = NonNaiveDateTimeField(null=True, blank=True)
-    history = DateTimeAwareJSONField(default=list, blank=True)
-    versions = models.ManyToManyField('FileVersion')
-
-    node = models.ForeignKey('osf.AbstractNode', null=True, blank=True)
-    object_id = models.PositiveIntegerField(null=True, blank=True)
-    content_type = models.ForeignKey('contenttypes.ContentType', null=True, blank=True)
-    parent = GenericForeignKey()
-
-    trashed_children = GenericRelation('self')
-
-    is_file = models.BooleanField(default=True)
-    provider = models.CharField(max_length=25, blank=True, null=True)  # max_length in staging was 11
-
-    name = models.CharField(max_length=1000, blank=True, null=True)  # max_length in staging was 858
-    path = models.CharField(max_length=200, blank=True, null=True)  # max_length in staging was 140
-    # max_length in staging was 265
-    _materialized_path = models.CharField(max_length=300, blank=True, null=True)
-    checkout = models.ForeignKey('osf.OSFUser', related_name='trashed_files_checked_out', null=True, blank=True)
-    deleted_by = models.ForeignKey('osf.OSFUser', related_name='files_deleted_by', null=True, blank=True)
-    deleted_on = NonNaiveDateTimeField(default=timezone.now)  # auto_now_add=True)
-    tags = models.ManyToManyField('osf.Tag')
-    suspended = models.BooleanField(default=False)
-
-    copied_from = models.ForeignKey('osf.StoredFileNode', default=None, null=True, blank=True)
-
-    @property
-    def materialized_path(self):
-        if self.provider == 'osfstorage':
-            # TODO Optimize this.
-            sql = """
-                WITH RECURSIVE
-                    materialized_path_cte(id, object_id, provider, GEN_DEPTH, GEN_PATH) AS (
-                    SELECT
-                      sfn.id,
-                      sfn.object_id,
-                      sfn.provider,
-                      1 :: INT         AS depth,
-                      sfn.name :: TEXT AS GEN_PATH
-                    FROM "%s" AS sfn
-                    WHERE
-                      sfn.provider = 'osfstorage' AND
-                      sfn.object_id IS NULL
-                    UNION ALL
-                    SELECT
-                      c.id,
-                      c.object_id,
-                      c.provider,
-                      p.GEN_DEPTH + 1                       AS GEN_DEPTH,
-                      (p.GEN_PATH || '/' || c.name :: TEXT) AS GEN_PATH
-                    FROM materialized_path_cte AS p, "%s" AS c
-                    WHERE c.object_id = p.id
-                  )
-                SELECT gen_path
-                FROM materialized_path_cte AS n
-                WHERE
-                  GEN_DEPTH > 1
-                  AND
-                  n.id = %s
-                LIMIT 1;
-            """
-            with connection.cursor() as cursor:
-                cursor.execute(sql, [AsIs(self._meta.db_table), AsIs(self._meta.db_table), self.pk])
-                row = cursor.fetchone()
-                if not row:
-                    return row
-                return row[0]
-        else:
-            return self._materialized_path
-
-    @materialized_path.setter
-    def materialized_path(self, val):
-        self._materialized_path = val
-
-    @property
-    def deep_url(self):
-        """Allows deleted files to resolve to a view
-        that will provide a nice error message and http.GONE
-        """
-        return self.node.web_url_for('addon_deleted_file', trashed_id=self._id)
-
-    # For Comment API compatibility
-    @property
-    def target_type(self):
-        """The object "type" used in the OSF v2 API."""
-        return 'files'
-
-    @property
-    def root_target_page(self):
-        """The comment page type associated with TrashedFileNodes."""
-        return 'files'
-
-    @property
-    def is_deleted(self):
-        return True
-
-    def belongs_to_node(self, node_id):
-        """Check whether the file is attached to the specified node."""
-        return self.node._id == node_id
-
-    def get_extra_log_params(self, comment):
-        return {'file': {'name': self.name, 'url': comment.get_comment_page_url()}}
-
-    def restore(self, recursive=True, parent=None):
-        """Recreate a StoredFileNode from the data in this object
-        Will re-point all guids and finally remove itself
-        :raises KeyExistsException:
-        """
-        restored = StoredFileNode.objects.create(
-            _id=self._id,
-            name=self.name,
-            path=self.path,
-            node=self.node,
-            parent=parent or self.parent,
-            history=self.history,
-            is_file=self.is_file,
-            checkout=self.checkout,
-            provider=self.provider,
-            last_touched=self.last_touched,
-            _materialized_path=self.materialized_path
-        )
-        if self.versions.exists():
-            restored.versions.add(*self.versions.all())
-
-        if not restored.parent:
-            raise ValueError('No parent to restore to')
-
-        # # repoint guid
-        # for guid in Guid.find(Q('referent', 'eq', self)):
-        #     guid.referent = restored
-        #     guid.save()
-
-        if recursive and hasattr(self, 'children'):
-            for child in self.children:
-                child.restore(recursive=recursive, parent=restored)
-        TrashedFileNode.remove_one(self)
-        return restored
-
-
-class StoredFileNode(CommentableMixin, OptionalGuidMixin, Taggable, ObjectIDMixin, BaseModel):
+class BaseStoredFileNode(CommentableMixin, OptionalGuidMixin, Taggable, ObjectIDMixin, BaseModel):
     """
         The storage backend for FileNode objects.
         This class should generally not be used or created manually as FileNode
@@ -206,12 +59,13 @@ class StoredFileNode(CommentableMixin, OptionalGuidMixin, Taggable, ObjectIDMixi
     # A concrete version of a FileNode, must have an identifier
     versions = models.ManyToManyField('FileVersion')
 
+    is_deleted = models.BooleanField(default=False)
     node = models.ForeignKey('AbstractNode', blank=True, null=True)
-    parent = models.ForeignKey('StoredFileNode', blank=True, null=True, default=None, related_name='child')
-    copied_from = models.ForeignKey('StoredFileNode', blank=True, null=True, default=None,
-                                    related_name='copy_of')
+    parent = models.ForeignKey('BaseStoredFileNode', blank=True, null=True, default=None, related_name='child')
+    copied_from = models.ForeignKey('StoredFileNode', blank=True, null=True, default=None, related_name='copy_of')
 
-    trashed_children = GenericRelation('TrashedFileNode')
+    deleted_on = NonNaiveDateTimeField(blank=True, null=True)
+    deleted_by = models.ForeignKey('osf.OSFUser', related_name='files_deleted_by', null=True, blank=True)
 
     is_file = models.BooleanField(default=True)
     provider = models.CharField(max_length=25, blank=False, null=False, db_index=True)
@@ -223,6 +77,14 @@ class StoredFileNode(CommentableMixin, OptionalGuidMixin, Taggable, ObjectIDMixi
     # The User that has this file "checked out"
     # Should only be used for OsfStorage
     checkout = models.ForeignKey('OSFUser', blank=True, null=True)
+
+    suspended = models.BooleanField(default=False)
+
+    class Meta:
+        index_together = (
+            ('path', 'node', 'is_file', 'provider'),
+            ('node', 'is_file', 'provider'),
+        )
 
     @property
     def materialized_path(self):
@@ -292,10 +154,10 @@ class StoredFileNode(CommentableMixin, OptionalGuidMixin, Taggable, ObjectIDMixi
         """The comment page type associated with StoredFileNodes."""
         return 'files'
 
-    @property
-    def is_deleted(self):
-        if self.provider == 'osfstorage':
-            return False
+    # @property
+    # def is_deleted(self):
+    #     if self.provider == 'osfstorage':
+    #         return False
 
     def belongs_to_node(self, node_id):
         """Check whether the file is attached to the specified node."""
@@ -313,14 +175,36 @@ class StoredFileNode(CommentableMixin, OptionalGuidMixin, Taggable, ObjectIDMixi
         """
         return FileNode.resolve_class(self.provider, int(self.is_file))(self)
 
+    def delete(self):
+        raise Exception('Dangerzone! Only call delete on wrapped StoredFileNodes')
+
+
+class StoredFileNodeManager(models.Manager.from_queryset(MODMCompatibilityQuerySet)):
+
+    def get_queryset(self):
+        return super(StoredFileNodeManager, self).get_queryset().filter(is_deleted=False)
+
+
+class TrashedFileNodeManager(models.Manager.from_queryset(MODMCompatibilityQuerySet)):
+
+    def get_queryset(self):
+        return super(TrashedFileNodeManager, self).get_queryset().filter(is_deleted=True)
+
+
+class StoredFileNode(BaseStoredFileNode):
+
+    objects = StoredFileNodeManager()
+
     class Meta:
-        unique_together = [
-            ('node', 'name', 'parent', 'is_file', 'provider', 'path',)
-        ]
-        index_together = [
-            ('path', 'node', 'is_file', 'provider'),
-            ('node', 'is_file', 'provider'),
-        ]
+        proxy = True
+
+
+class TrashedFileNode(BaseStoredFileNode):
+
+    objects = TrashedFileNodeManager()
+
+    class Meta:
+        proxy = True
 
 
 class FileNodeMeta(type):
@@ -532,7 +416,7 @@ class FileNode(object):
         Creates a new StoredFileNode with kwargs, not saved.
         Then attaches stored_object to self
         """
-        if args and isinstance(args[0], StoredFileNode):
+        if args and isinstance(args[0], BaseStoredFileNode):
             assert len(args) == 1
             assert len(kwargs) == 0
             self.stored_object = args[0]
@@ -566,16 +450,42 @@ class FileNode(object):
             **kwargs
         )
 
-    def delete(self, user=None, parent=None):
+    def delete(self, user=None, parent=None, save=True, deleted_on=None):
         """Move self into the TrashedFileNode collection
         and remove it from StoredFileNode
         :param user User or None: The user that deleted this FileNode
         """
-        trashed = self._create_trashed(user=user, parent=parent)
-        self._repoint_guids(trashed)
-        self.node.save()
-        StoredFileNode.remove_one(self.stored_object)
-        return trashed
+        self.is_deleted = True
+        self.deleted_by = user
+        self.deleted_on = deleted_on = deleted_on or timezone.now()
+
+        if save:
+            self.save()
+
+        if not self.is_file:
+            for child in StoredFileNode.objects.filter(parent=self.id):
+                child.delete(user=user, save=save, deleted_on=deleted_on)
+
+        return self
+
+    def restore(self, recursive=True, parent=None, save=True, deleted_on=None):
+        """Recreate a StoredFileNode from the data in this object
+        Will re-point all guids and finally remove itself
+        :raises KeyExistsException:
+        """
+        self.is_deleted = False
+        if save:
+            self.save()
+
+        if self.parent and self.parent.is_deleted:
+            raise ValueError('No parent to restore to')
+
+        if not self.is_file and recursive:
+            deleted_on = deleted_on or self.deleted_on
+            for child in TrashedFileNode.objects.filter(parent=self.id, deleted_on=deleted_on):
+                child.restore(recursive=True, save=save, deleted_on=deleted_on)
+
+        return self
 
     def copy_under(self, destination_parent, name=None):
         return utils.copy_files(self, destination_parent.node, destination_parent, name=name)
@@ -687,7 +597,7 @@ class File(FileNode):
             return version
 
     def update_version_metadata(self, location, metadata):
-        for version in reversed(self.versions):
+        for version in reversed(self.versions.all()):
             if version.location == location:
                 version.update_metadata(metadata)
                 return
@@ -819,15 +729,6 @@ class Folder(FileNode):
         :rtype: GenWrapper<MongoQuerySet<cls>>
         """
         return FileNode.find(Q('parent_id', 'eq', self.id))
-
-    def delete(self, recurse=True, user=None, parent=None):
-        trashed = self._create_trashed(user=user, parent=parent)
-        if recurse:
-            for child in self.children:
-                child.delete(user=user, parent=trashed)
-        self._repoint_guids(trashed)
-        StoredFileNode.remove_one(self.stored_object)
-        return trashed
 
     def append_file(self, name, path=None, materialized_path=None, save=True):
         return self._create_child(name, FileNode.FILE, path=path, materialized_path=materialized_path,
