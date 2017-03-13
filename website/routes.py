@@ -1324,11 +1324,6 @@ def make_url_map(app):
             project_views.node.remove_pointer_from_folder,
             json_renderer,
         ),
-        Rule([
-            '/project/<pid>/get_summary/',
-            '/project/<pid>/node/<nid>/get_summary/',
-        ], 'get', project_views.node.get_summary, json_renderer),
-
 
         # Draft Registrations
         Rule([

@@ -55,8 +55,7 @@ def get_public_projects(uid=None, user=None):
         .eager('parent_nodes', '_contributors')
     )
     return [
-        # TODO: Remove 'summary' envelope from serialize_node_summary
-        serialize_node_summary(node=node, auth=Auth(user), show_path=False)['summary']
+        serialize_node_summary(node=node, auth=Auth(user), show_path=False)
         for node in nodes
     ]
 
@@ -74,7 +73,7 @@ def get_public_components(uid=None, user=None):
         .select_related('child')
     )
     return [
-        serialize_node_summary(node=each.child, auth=Auth(user), show_path=True)['summary']
+        serialize_node_summary(node=each.child, auth=Auth(user), show_path=True)
         for each in node_relations
     ]
 

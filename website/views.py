@@ -58,7 +58,6 @@ def serialize_contributors_for_summary(node, max_count=3):
     }
 
 
-# TODO(sloria): Refactor this or remove (lots of duplication with _view_project)
 def serialize_node_summary(node, auth, primary=True, show_path=False):
     summary = {
         'id': node._id,
@@ -110,10 +109,7 @@ def serialize_node_summary(node, auth, primary=True, show_path=False):
     else:
         summary['can_view'] = False
 
-    # TODO: Make output format consistent with _view_project
-    return {
-        'summary': summary,
-    }
+    return summary
 
 
 def index():

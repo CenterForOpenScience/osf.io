@@ -791,17 +791,17 @@ def _view_project(node, auth, primary=False,
     if embed_descendants:
         descendants = _get_readable_descendants(auth=auth, node=node)
         data['node']['descendants'] = [
-            serialize_node_summary(node=each, auth=auth, primary=not node.has_node_link_to(each), show_path=False)['summary']
+            serialize_node_summary(node=each, auth=auth, primary=not node.has_node_link_to(each), show_path=False)
             for each in descendants
         ]
     if embed_registrations:
         data['node']['registrations'] = [
-            serialize_node_summary(node=each, auth=auth, show_path=False)['summary']
+            serialize_node_summary(node=each, auth=auth, show_path=False)
             for each in node.registrations_all.sort('-registered_date').exclude(is_deleted=True).annotate(nlogs=Count('logs'))
         ]
     if embed_forks:
         data['node']['forks'] = [
-            serialize_node_summary(node=each, auth=auth, show_path=False)['summary']
+            serialize_node_summary(node=each, auth=auth, show_path=False)
             for each in node.forks.exclude(type='osf.registration').exclude(is_deleted=True).sort('-forked_date').annotate(nlogs=Count('logs'))
         ]
     return data
@@ -875,16 +875,6 @@ def get_recent_logs(node, **kwargs):
     logs = list(reversed(node.logs._to_primary_keys()))[:3]
     return {'logs': logs}
 
-
-@collect_auth
-@must_be_valid_project(retractions_valid=True)
-def get_summary(auth, node, **kwargs):
-    primary = kwargs.get('primary')
-    show_path = kwargs.get('show_path', False)
-
-    return serialize_node_summary(
-        node, auth, primary=primary, show_path=show_path
-    )
 
 def _get_readable_descendants(auth, node, permission=None):
     descendants = []
