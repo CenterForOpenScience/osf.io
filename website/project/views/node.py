@@ -257,13 +257,13 @@ def node_fork_page(auth, node, **kwargs):
 @must_be_valid_project
 @must_be_contributor_or_public_but_not_anonymized
 def node_registrations(auth, node, **kwargs):
-    return _view_project(node, auth, primary=True)
+    return _view_project(node, auth, primary=True, embed_registrations=True)
 
 
 @must_be_valid_project
 @must_be_contributor_or_public_but_not_anonymized
 def node_forks(auth, node, **kwargs):
-    return _view_project(node, auth, primary=True)
+    return _view_project(node, auth, primary=True, embed_forks=True)
 
 
 @must_be_valid_project
@@ -643,7 +643,9 @@ def _should_show_wiki_widget(node, user):
         return has_wiki
 
 
-def _view_project(node, auth, primary=False, embed_contributors=False, embed_descendants=False):
+def _view_project(node, auth, primary=False,
+                  embed_contributors=False, embed_descendants=False,
+                  embed_registrations=False, embed_forks=False):
     """Build a JSON object containing everything needed to render
     project.view.mako.
     """
@@ -790,6 +792,16 @@ def _view_project(node, auth, primary=False, embed_contributors=False, embed_des
         data['node']['descendants'] = [
             serialize_node_summary(node=each, auth=auth, show_path=False)['summary']
             for each in descendants
+        ]
+    if embed_registrations:
+        data['node']['registrations'] = [
+            serialize_node_summary(node=each, auth=auth, show_path=False)['summary']
+            for each in node.registrations_all.sort('-registered_date').exclude(is_deleted=True)
+        ]
+    if embed_forks:
+        data['node']['forks'] = [
+            serialize_node_summary(node=each, auth=auth, show_path=False)['summary']
+            for each in node.forks.exclude(type='osf.registration', is_deleted=True).sort('-forked_date')
         ]
     return data
 
