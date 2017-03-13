@@ -1,8 +1,5 @@
 # -*- coding: utf-8 -*-
 
-import os
-import urlparse
-
 import markupsafe
 from modularodm import fields
 
@@ -435,52 +432,3 @@ class BitbucketNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
 
     def after_delete(self, node, user):
         self.deauthorize(Auth(user=user), log=True)
-
-    #########
-    # Hooks #
-    #########
-
-    # TODO: Should Events be added here?
-    # TODO: Move hook logic to service
-    def add_hook(self, save=True):
-
-        if self.user_settings:
-            connect = BitbucketClient(access_token=self.external_account.oauth_key)
-            hook = connect.add_hook(
-                self.user, self.repo,
-                {
-                    'description': 'OSF Webhook for project {}'.format(self.owner),
-                    'url': urlparse.urljoin(
-                        hook_domain,
-                        os.path.join(
-                            self.owner.api_url, 'bitbucket', 'hook/'
-                        )
-                    ),
-                    'active': True,
-                    'events': bitbucket_settings.HOOK_EVENTS,
-                }
-            )
-
-            if hook:
-                self.hook_id = hook.id
-                if save:
-                    self.save()
-
-    def delete_hook(self, save=True):
-        """Delete a webhook for this repository.
-
-        :param bool save: whether or not to save the node settings after hook deletion
-        :return bool: Hook was deleted
-        """
-        if self.user_settings and self.hook_id:
-            connection = BitbucketClient(access_token=self.external_account.oauth_key)
-            try:
-                response = connection.delete_hook(self.user, self.repo, self.hook_id)
-            except (Exception, NotFoundError):
-                return False
-            if response:
-                self.hook_id = None
-                if save:
-                    self.save()
-                return True
-        return False

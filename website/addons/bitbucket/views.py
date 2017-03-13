@@ -1,6 +1,5 @@
 """Views for the node settings page."""
 # -*- coding: utf-8 -*-
-from dateutil.parser import parse as dateparse
 import httplib as http
 import logging
 
@@ -14,11 +13,10 @@ from website.addons.bitbucket.exceptions import NotFoundError
 from website.addons.bitbucket.serializer import BitbucketSerializer
 from website.addons.bitbucket.utils import get_refs
 
-from website.models import NodeLog
 from website.project.decorators import (
     must_have_addon, must_be_addon_authorizer,
     must_have_permission, must_not_be_registration,
-    must_be_contributor_or_public, must_be_valid_project,
+    must_be_contributor_or_public
 )
 from website.util import rubeus
 
@@ -246,99 +244,3 @@ def bitbucket_hgrid_data(node_settings, auth, **kwargs):
         defaultBranch=branch,
         private_key=kwargs.get('view_only', None),
     )]
-
-#########
-# Hooks #
-#########
-
-# TODO: Refactor using NodeLogger
-def add_hook_log(node, bitbucket, action, path, date, committer, include_urls=False,
-                 sha=None, save=False):
-    """Add log event for commit from webhook payload.
-
-    :param node: Node to add logs to
-    :param bitbucket: Bitbucket node settings record
-    :param path: Path to file
-    :param date: Date of commit
-    :param committer: Committer name
-    :param include_urls: Include URLs in `params`
-    :param sha: SHA of updated file
-    :param save: Save changes
-
-    """
-    bitbucket_data = {
-        'user': bitbucket.user,
-        'repo': bitbucket.repo,
-    }
-
-    urls = {}
-
-    if include_urls:
-        # TODO: Move to helper function
-        url = node.web_url_for('addon_view_or_download_file', path=path, provider=SHORT_NAME)
-
-        urls = {
-            'view': '{0}?ref={1}'.format(url, sha),
-            'download': '{0}?action=download&ref={1}'.format(url, sha)
-        }
-
-    node.add_log(
-        action=action,
-        params={
-            'project': node.parent_id,
-            'node': node._id,
-            'path': path,
-            'bitbucket': bitbucket_data,
-            'urls': urls,
-        },
-        auth=None,
-        foreign_user=committer,
-        log_date=date,
-        save=save,
-    )
-
-
-@must_be_valid_project
-@must_not_be_registration
-@must_have_addon('bitbucket', 'node')
-def bitbucket_hook_callback(node_addon, **kwargs):
-    """Add logs for commits from outside OSF.
-
-    Push event docs::
-
-    * https://confluence.atlassian.com/bitbucket/event-payloads-740262817.html#EventPayloads-Push
-
-    """
-    if request.json is None:
-        return {}
-
-    node = kwargs['node'] or kwargs['project']
-
-    payload = request.json
-
-    for change in payload['push'].get('changes', []):
-        for commit in change.get('commits', []):
-
-            # TODO: Look up OSF user by commit
-            _id = commit['hash']
-            date = dateparse(change['new']['target']['date'])
-            committer = commit['author']
-
-            # Add logs
-            for path in commit.get('added', []):
-                add_hook_log(
-                    node, node_addon, 'bitbucket_' + NodeLog.FILE_ADDED,
-                    path, date, committer, include_urls=True, sha=_id,
-                )
-            for path in commit.get('modified', []):
-                add_hook_log(
-                    node, node_addon, 'bitbucket_' + NodeLog.FILE_UPDATED,
-                    path, date, committer, include_urls=True, sha=_id,
-                )
-            for path in commit.get('removed', []):
-                add_hook_log(
-                    node, node_addon, 'bitbucket_' + NodeLog.FILE_REMOVED,
-                    path, date, committer,
-                )
-
-    node.save()

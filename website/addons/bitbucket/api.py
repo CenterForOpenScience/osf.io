@@ -1,5 +1,4 @@
 import urllib
-# import itertools
 
 from framework.exceptions import HTTPError
 
@@ -188,82 +187,6 @@ class BitbucketClient(BaseClient):
                 break
         return branches
 
-    #########
-    # Hooks #
-    #########
-
-    def hooks(self, username, repo):
-        """List webhooks on a repo
-
-        API docs::
-
-        * https://developer.atlassian.com/bitbucket/api/2/reference/resource/repositories/%7Busername%7D/%7Brepo_slug%7D/hooks
-
-        :param str username: Bitbucket user name
-        :param str repo: Bitbucket repo name
-        :return list: List of commit dicts from Bitbucket; see
-            http://developer.bitbucket.com/v3/repos/hooks/#json-http
-        """
-        if username is None:
-            username = self.get_username
-
-        res = self._make_request(
-            'GET',
-            self._build_url(settings.BITBUCKET_V2_API_URL, 'repositories', username, repo, 'hooks'),
-            expects=(200, ),
-            throws=HTTPError(401)
-        )
-        return res.json()
-
-    def add_hook(self, username, repo, config):
-        """Create a webhook.
-
-        API docs::
-
-        * https://developer.atlassian.com/bitbucket/api/2/reference/resource/repositories/%7Busername%7D/%7Brepo_slug%7D/hooks#post
-
-        :param str username: Bitbucket user name
-        :param str repo: Bitbucket repo name
-        :param dict config: a dictionary describing the hook configuration. See api docs.
-        :return dict: Hook info from Bitbucket. See docs.
-        """
-        if username is None:
-            username = self.get_username
-
-        res = self._make_request(
-            'POST',
-            self._build_url(settings.BITBUCKET_V2_API_URL, 'repositories', username,
-                            repo, 'hooks'),
-            config,
-            expects=(201, ),
-            throws=HTTPError(401)
-        )
-        return res.json()
-
-    def delete_hook(self, username, repo, _id):
-        """Delete a webhook.
-
-        API Docs::
-
-        * https://developer.atlassian.com/bitbucket/api/2/reference/resource/repositories/%7Busername%7D/%7Brepo_slug%7D/hooks/%7Buid%7D#delete
-
-        :param str username: Bitbucket user name
-        :param str repo: Bitbucket repo name
-        :param str _id: id of webhook to delete
-        :return bool: True if successful, False otherwise
-        :raises: NotFoundError if repo or hook cannot be located
-        """
-        if username is None:
-            username = self.get_username
-
-        res = self._make_request(
-            'DELETE',
-            self._build_url(settings.BITBUCKET_V2_API_URL, 'repositories', username,
-                            repo, 'hooks', _id),
-            expects=(200, 404, ),
-            throws=HTTPError(401)
-        )
-        return res.status == 200
 
 def ref_to_params(branch=None, sha=None):
 

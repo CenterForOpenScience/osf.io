@@ -81,16 +81,6 @@ api_routes = {
 
         Rule(
             [
-                '/project/<pid>/bitbucket/hook/',
-                '/project/<pid>/node/<nid>/bitbucket/hook/',
-            ],
-            'post',
-            views.bitbucket_hook_callback,
-            json_renderer,
-        ),
-
-        Rule(
-            [
                 '/project/<pid>/bitbucket/hgrid/root/',
                 '/project/<pid>/node/<nid>/bitbucket/hgrid/root/',
             ],
