@@ -1066,3 +1066,5 @@ def check_service_url_with_proxy_campaign(service_url, campaign_url):
     prefix_2 = settings.DOMAIN + 'login?next=' + campaign_url
     if service_url.startswith(prefix_1) or service_url.startswith(prefix_2):
         return True
+    return False
+
