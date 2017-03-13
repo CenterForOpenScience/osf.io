@@ -231,7 +231,7 @@ def main(env):
             'logo_name': 'psyarxiv-logo.png',
             'description': 'A free preprint service for the psychological sciences.',
             'banner_name': 'psyarxiv-banner.png',
-            # 'domain': 'psyarxiv.org', # Temporarily disabling until ready
+            'domain': 'psyarxiv.com',
             'external_url': 'http://psyarxiv.org',
             'example': 'k9mn3',
             'advisory_board': '''
