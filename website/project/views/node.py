@@ -8,6 +8,7 @@ from flask import request
 from modularodm import Q
 from modularodm.exceptions import ModularOdmException, ValidationError
 from django.apps import apps
+from django.db.models import Count
 
 from framework import status
 from framework.utils import iso8601format
@@ -37,7 +38,7 @@ from website.project.forms import NewNodeForm
 from website.project.metadata.utils import serialize_meta_schemas
 from website.models import Node, WatchConfig, PrivateLink, Comment
 from website import settings
-from website.views import _render_nodes, find_bookmark_collection, validate_page_num
+from website.views import find_bookmark_collection, validate_page_num
 from website.views import serialize_node_summary
 from website.profile import utils
 from website.project.licenses import serialize_node_license_record
@@ -790,18 +791,18 @@ def _view_project(node, auth, primary=False,
     if embed_descendants:
         descendants = _get_readable_descendants(auth=auth, node=node)
         data['node']['descendants'] = [
-            serialize_node_summary(node=each, auth=auth, show_path=False)['summary']
+            serialize_node_summary(node=each, auth=auth, primary=not node.has_node_link_to(each), show_path=False)['summary']
             for each in descendants
         ]
     if embed_registrations:
         data['node']['registrations'] = [
             serialize_node_summary(node=each, auth=auth, show_path=False)['summary']
-            for each in node.registrations_all.sort('-registered_date').exclude(is_deleted=True)
+            for each in node.registrations_all.sort('-registered_date').exclude(is_deleted=True).annotate(nlogs=Count('logs'))
         ]
     if embed_forks:
         data['node']['forks'] = [
             serialize_node_summary(node=each, auth=auth, show_path=False)['summary']
-            for each in node.forks.exclude(type='osf.registration', is_deleted=True).sort('-forked_date')
+            for each in node.forks.exclude(type='osf.registration').exclude(is_deleted=True).sort('-forked_date').annotate(nlogs=Count('logs'))
         ]
     return data
 
@@ -904,11 +905,6 @@ def _get_readable_descendants(auth, node, permission=None):
                 descendants.append(descendant)
     return descendants
 
-@must_be_contributor_or_public
-def get_readable_descendants(auth, node, **kwargs):
-    descendants = _get_readable_descendants(auth, node, permission=request.args.get('permissions'))
-    return _render_nodes(descendants, auth=auth, parent_node=node)
-
 def node_child_tree(user, nodes):
     """ Format data to test for node privacy settings for use in treebeard.
     :param user: modular odm User object
@@ -977,20 +973,6 @@ def get_node_tree(auth, **kwargs):
     node = kwargs.get('node') or kwargs['project']
     tree = node_child_tree(auth.user, [node])
     return tree
-
-@must_be_contributor_or_public
-def get_forks(auth, node, **kwargs):
-    fork_list = node.forks.filter(is_deleted=False).exclude(type='osf.registration').sort('-forked_date')
-    return _render_nodes(nodes=fork_list, auth=auth)
-
-
-@must_be_contributor_or_public
-def get_registrations(auth, node, **kwargs):
-    # get all undeleted registrations, including archiving
-    sorted_registrations = node.registrations_all.sort('-registered_date')
-    undeleted_registrations = [n for n in sorted_registrations if not n.is_deleted]
-    return _render_nodes(undeleted_registrations, auth)
-
 
 @must_be_valid_project
 @must_have_permission(ADMIN)

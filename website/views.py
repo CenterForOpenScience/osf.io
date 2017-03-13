@@ -9,7 +9,7 @@ import urllib
 from django.apps import apps
 from flask import request, send_from_directory
 
-from framework import utils, sentry
+from framework import sentry
 from framework.auth.decorators import must_be_logged_in
 from framework.auth.forms import SignInForm, ForgotPasswordForm
 from framework.exceptions import HTTPError
@@ -22,69 +22,10 @@ from website.institutions.views import serialize_institution
 from website.models import Guid
 from website.models import Institution, PreprintService
 from website.settings import EXTERNAL_EMBER_APPS
-from website.util import permissions
 from website.project.model import has_anonymous_link
 
 logger = logging.getLogger(__name__)
 
-
-def _render_node(node, auth=None, parent_node=None):
-    """
-
-    :param node:
-    :return:
-
-    """
-    # NodeRelation = apps.get_model('osf.NodeRelation')
-    perm = None
-    # NOTE: auth.user may be None if viewing public project while not
-    # logged in
-    # if auth and auth.user and node.get_permissions(auth.user):
-    #     perm_list = node.get_permissions(auth.user)
-    #     perm = permissions.reduce_permissions(perm_list)
-
-    # if parent_node:
-    #     try:
-    #         node_relation = parent_node.node_relations.get(child__id=node.id)
-    #     except NodeRelation.DoesNotExist:
-    #         primary = False
-    #         _id = node._id
-    #     else:
-    #         primary = not node_relation.is_node_link
-    #         _id = node._id if primary else node_relation._id
-    # else:
-    #     _id = node._id
-    #     primary = True
-    _id = node._id
-    return {
-        'title': node.title,
-        'id': _id,
-        'url': node.url,
-        'api_url': node.api_url,
-        'primary': True,
-        'date_modified': utils.iso8601format(node.date_modified),
-        'category': node.category,
-        'permissions': 'admin',  # A string, e.g. 'admin', or None,
-        'archiving': False,
-        'is_retracted': False,
-        'is_registration': node.is_registration,
-    }
-
-
-def _render_nodes(nodes, auth=None, show_path=False, parent_node=None):
-    """
-
-    :param nodes:
-    :return:
-    """
-    ret = {
-        'nodes': [
-            _render_node(node, auth=auth, parent_node=parent_node)
-            for node in nodes
-        ],
-        'show_path': show_path
-    }
-    return ret
 
 def serialize_contributors_for_summary(node, max_count=3):
     # Evaluate queryset eagerly, to avoid re-querying in the for loop below

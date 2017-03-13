@@ -1333,21 +1333,7 @@ def make_url_map(app):
             '/project/<pid>/get_summary/',
             '/project/<pid>/node/<nid>/get_summary/',
         ], 'get', project_views.node.get_summary, json_renderer),
-        # TODO: [#OSF-6557] Route "get_children" is deprecated. Use get_readable_descendants.
-        Rule([
-            '/project/<pid>/get_children/',
-            '/project/<pid>/node/<nid>/get_children/',
-            '/project/<pid>/get_readable_descendants/',
-            '/project/<pid>/node/<nid>/get_readable_descendants/',
-        ], 'get', project_views.node.get_readable_descendants, json_renderer),
-        Rule([
-            '/project/<pid>/get_forks/',
-            '/project/<pid>/node/<nid>/get_forks/',
-        ], 'get', project_views.node.get_forks, json_renderer),
-        Rule([
-            '/project/<pid>/get_registrations/',
-            '/project/<pid>/node/<nid>/get_registrations/',
-        ], 'get', project_views.node.get_registrations, json_renderer),
+
 
         # Draft Registrations
         Rule([

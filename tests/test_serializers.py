@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+import mock
+import datetime as dt
 from nose.tools import *  # noqa (PEP8 asserts)
 
 import pytest
@@ -11,12 +13,13 @@ from osf_tests.factories import (
     CollectionFactory,
     BookmarkCollectionFactory,
 )
-from tests.base import OsfTestCase
+from osf.models import NodeRelation
+from tests.base import OsfTestCase, get_default_metaschema
 
 from framework.auth import Auth
 from framework import utils as framework_utils
-from website.project.views.node import _view_project, _serialize_node_search, _get_children
-from website.views import _render_node, serialize_node_summary
+from website.project.views.node import _view_project, _serialize_node_search, _get_children, _get_readable_descendants
+from website.views import serialize_node_summary
 from website.profile import utils
 from website import filters, settings
 from website.util import permissions
@@ -115,34 +118,6 @@ class TestNodeSerializers(OsfTestCase):
 
         # serialized result should have is_registration
         assert_true(res['summary']['is_registration'])
-
-    def test_render_node(self):
-        node = ProjectFactory()
-        res = _render_node(node)
-        assert_equal(res['title'], node.title)
-        assert_equal(res['id'], node._primary_key)
-        assert_equal(res['url'], node.url)
-        assert_equal(res['api_url'], node.api_url)
-        assert_equal(res['primary'], node.primary)
-        assert_equal(res['date_modified'], framework_utils.iso8601format(node.date_modified))
-        assert_equal(res['category'], 'project')
-        assert_false(res['is_registration'])
-        assert_false(res['is_retracted'])
-
-    def test_render_node_returns_permissions(self):
-        node = ProjectFactory()
-        admin = UserFactory()
-        node.add_contributor(admin, auth=Auth(node.creator),
-            permissions=permissions.expand_permissions(permissions.ADMIN))
-        writer = UserFactory()
-        node.add_contributor(writer, auth=Auth(node.creator),
-            permissions=permissions.expand_permissions(permissions.WRITE))
-        node.save()
-
-        res_admin = _render_node(node, Auth(admin))
-        assert_equal(res_admin['permissions'], 'admin')
-        res_writer = _render_node(node, Auth(writer))
-        assert_equal(res_writer['permissions'], 'write')
 
     # https://openscience.atlassian.net/browse/OSF-4618
     def test_get_children_only_returns_child_nodes_with_admin_permissions(self):
@@ -253,6 +228,155 @@ class TestViewProject(OsfTestCase):
 
         assert_equal(result['node']['disapproval_link'], '')
         pending_reg.remove()
+
+
+class TestViewProjectEmbeds(OsfTestCase):
+
+    def setUp(self):
+        super(TestViewProjectEmbeds, self).setUp()
+        self.user = UserFactory()
+        self.project = ProjectFactory(creator=self.user)
+
+    def test_view_project_embed_forks_excludes_registrations(self):
+        project = ProjectFactory()
+        fork = project.fork_node(Auth(project.creator))
+        reg = RegistrationFactory(project=fork)
+
+        res = _view_project(project, auth=Auth(project.creator), embed_forks=True)
+
+        assert_in('forks', res['node'])
+        assert_equal(len(res['node']['forks']), 1)
+
+        assert_equal(res['node']['forks'][0]['id'], fork._id)
+
+    # Regression test for https://github.com/CenterForOpenScience/osf.io/issues/1478
+    @mock.patch('website.archiver.tasks.archive')
+    def test_view_project_embed_registrations_includes_contribution_count(self, mock_archive):
+        self.project.register_node(get_default_metaschema(), Auth(user=self.project.creator), '', None)
+        data = _view_project(node=self.project, auth=Auth(self.project.creator), embed_registrations=True)
+        assert_is_not_none(data['node']['registrations'][0]['nlogs'])
+
+    # Regression test
+    def test_view_project_embed_registrations_sorted_by_registered_date_descending(self):
+        # register a project several times, with various registered_dates
+        registrations = []
+        for days_ago in (21, 3, 2, 8, 13, 5, 1):
+            registration = RegistrationFactory(project=self.project)
+            reg_date = registration.registered_date - dt.timedelta(days_ago)
+            registration.registered_date = reg_date
+            registration.save()
+            registrations.append(registration)
+
+        registrations.sort(key=lambda r: r.registered_date, reverse=True)
+        expected = [r._id for r in registrations]
+
+        data = _view_project(node=self.project, auth=Auth(self.project.creator), embed_registrations=True)
+        actual = [n['id'] for n in data['node']['registrations']]
+        assert_equal(actual, expected)
+
+    def test_view_project_embed_descendants(self):
+        child = NodeFactory(parent=self.project, creator=self.user)
+        res = _view_project(self.project, auth=Auth(self.project.creator), embed_descendants=True)
+        assert_in('descendants', res['node'])
+        assert_equal(len(res['node']['descendants']), 1)
+        assert_equal(res['node']['descendants'][0]['id'], child._id)
+
+
+class TestGetReadableDescendants(OsfTestCase):
+
+    def setUp(self):
+        OsfTestCase.setUp(self)
+        self.user = UserFactory()
+
+    def test__get_readable_descendants(self):
+        project = ProjectFactory(creator=self.user)
+        child = NodeFactory(parent=project, creator=self.user)
+        nodes = _get_readable_descendants(auth=Auth(project.creator), node=project)
+        assert_equal(nodes[0]._id, child._id)
+
+    def test__get_readable_descendants_includes_pointers(self):
+        project = ProjectFactory(creator=self.user)
+        pointed = ProjectFactory()
+        node_relation = project.add_pointer(pointed, auth=Auth(self.user))
+        project.save()
+
+        nodes = _get_readable_descendants(auth=Auth(project.creator), node=project)
+
+        assert_equal(len(nodes), 1)
+        assert_equal(nodes[0].title, pointed.title)
+        assert_equal(nodes[0]._id, pointed._id)
+
+    def test__get_readable_descendants_masked_by_permissions(self):
+        # Users should be able to see through components they do not have
+        # permissions to.
+        # Users should not be able to see through links to nodes they do not
+        # have permissions to.
+        #
+        #                   1(AB)
+        #                  /  |  \
+        #                 *   |   \
+        #                /    |    \
+        #             2(A)  4(B)    7(A)
+        #               |     |     |    \
+        #               |     |     |     \
+        #             3(AB) 5(B)    8(AB) 9(B)
+        #                     |
+        #                     |
+        #                   6(A)
+        #
+        #
+        userA = UserFactory(fullname='User A')
+        userB = UserFactory(fullname='User B')
+
+        project1 = ProjectFactory(creator=self.user, title='One')
+        project1.add_contributor(userA, auth=Auth(self.user), permissions=['read'])
+        project1.add_contributor(userB, auth=Auth(self.user), permissions=['read'])
+
+        component2 = ProjectFactory(creator=self.user, title='Two')
+        component2.add_contributor(userA, auth=Auth(self.user), permissions=['read'])
+
+        component3 = ProjectFactory(creator=self.user, title='Three')
+        component3.add_contributor(userA, auth=Auth(self.user), permissions=['read'])
+        component3.add_contributor(userB, auth=Auth(self.user), permissions=['read'])
+
+        component4 = ProjectFactory(creator=self.user, title='Four')
+        component4.add_contributor(userB, auth=Auth(self.user), permissions=['read'])
+
+        component5 = ProjectFactory(creator=self.user, title='Five')
+        component5.add_contributor(userB, auth=Auth(self.user), permissions=['read'])
+
+        component6 = ProjectFactory(creator=self.user, title='Six')
+        component6.add_contributor(userA, auth=Auth(self.user), permissions=['read'])
+
+        component7 = ProjectFactory(creator=self.user, title='Seven')
+        component7.add_contributor(userA, auth=Auth(self.user), permissions=['read'])
+
+        component8 = ProjectFactory(creator=self.user, title='Eight')
+        component8.add_contributor(userA, auth=Auth(self.user), permissions=['read'])
+        component8.add_contributor(userB, auth=Auth(self.user), permissions=['read'])
+
+        component9 = ProjectFactory(creator=self.user, title='Nine')
+        component9.add_contributor(userB, auth=Auth(self.user), permissions=['read'])
+
+        project1.add_pointer(component2, Auth(self.user))
+        NodeRelation.objects.create(parent=project1, child=component4)
+        NodeRelation.objects.create(parent=project1, child=component7)
+        NodeRelation.objects.create(parent=component2, child=component3)
+        NodeRelation.objects.create(parent=component4, child=component5)
+        NodeRelation.objects.create(parent=component5, child=component6)
+        NodeRelation.objects.create(parent=component7, child=component8)
+        NodeRelation.objects.create(parent=component7, child=component9)
+
+        nodes = _get_readable_descendants(auth=Auth(userA), node=project1)
+        assert_equal(len(nodes), 3)
+
+        for node in nodes:
+            assert_in(node.title, ['Two', 'Six', 'Seven'])
+
+        nodes = _get_readable_descendants(auth=Auth(userB), node=project1)
+        assert_equal(len(nodes), 3)
+        for node in nodes:
+            assert_in(node.title, ['Four', 'Eight', 'Nine'])
 
 
 class TestNodeLogSerializers(OsfTestCase):
