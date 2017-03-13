@@ -51,21 +51,6 @@ def generate_object_id():
 
 class MODMCompatibilityQuerySet(models.QuerySet):
 
-    def __getitem__(self, k):
-        item = super(MODMCompatibilityQuerySet, self).__getitem__(k)
-        if hasattr(item, 'wrapped'):
-            return item.wrapped()
-        else:
-            return item
-
-    def __iter__(self):
-        items = super(MODMCompatibilityQuerySet, self).__iter__()
-        for item in items:
-            if hasattr(item, 'wrapped'):
-                yield item.wrapped()
-            else:
-                yield item
-
     def eager(self, *fields):
         qs = self._clone()
         field_set = set(fields)

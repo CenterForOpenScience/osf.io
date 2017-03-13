@@ -1,17 +1,20 @@
 from __future__ import unicode_literals
+
 import logging
 import os
 
-from addons.base.models import BaseNodeSettings, BaseStorageAddon
 from django.apps import apps
 from django.db import models
 from modularodm import Q
+from typedmodels.models import TypedModel
+
+from addons.base.models import BaseNodeSettings, BaseStorageAddon
 from osf.exceptions import InvalidTagError, NodeStateError, TagNotFoundError
-from osf.models import (File, FileNode, FileVersion, Folder, Guid,
-                        TrashedFileNode)
+from osf.models import (File, FileVersion, Folder, Guid,
+                        TrashedFileNode, ProviderMixin)
 from osf.utils.auth import Auth
-from website.files import utils as files_utils
 from website.files import exceptions
+from website.files import utils as files_utils
 from website.util import permissions
 
 settings = apps.get_app_config('addons_osfstorage')
@@ -19,12 +22,12 @@ settings = apps.get_app_config('addons_osfstorage')
 logger = logging.getLogger(__name__)
 
 
-class OsfStorageFileNode(FileNode):
+class OsfStorageFileNode(ProviderMixin):
     # TODO DELETE ME POST MIGRATION
     modm_model_path = 'website.files.models.osfstorage.OsfStorageFileNode'
     modm_query = None
     # /TODO DELETE ME POST MIGRATION
-    provider = 'osfstorage'
+    __provider = 'osfstorage'
 
     @classmethod
     def get(cls, _id, node):
@@ -40,7 +43,6 @@ class OsfStorageFileNode(FileNode):
             node=self.node,
             parent=parent or self.parent,
             history=self.history,
-            is_file=self.is_file,
             checkout=self.checkout,
             provider=self.provider,
             last_touched=self.last_touched,
@@ -196,8 +198,9 @@ class OsfStorageFileNode(FileNode):
                 self.save()
 
     def save(self):
-        self.path = ''
-        self.materialized_path = ''
+        self._path = ''
+        self._materialized_path = ''
+        self.provider = self.__provider
         return super(OsfStorageFileNode, self).save()
 
 
@@ -206,6 +209,7 @@ class OsfStorageFile(OsfStorageFileNode, File):
     modm_model_path = 'website.files.models.osfstorage.OsfStorageFile'
     modm_query = None
     # /TODO DELETE ME POST MIGRATION
+
     def touch(self, bearer, version=None, revision=None, **kwargs):
         try:
             return self.get_version(revision or version)
@@ -333,6 +337,7 @@ class OsfStorageFolder(OsfStorageFileNode, Folder):
     modm_model_path = 'website.files.models.osfstorage.OsfStorageFolder'
     modm_query = None
     # /TODO DELETE ME POST MIGRATION
+
     @property
     def is_checked_out(self):
         try:
@@ -373,7 +378,7 @@ class NodeSettings(BaseStorageAddon, BaseNodeSettings):
         return self.root_node.name
 
     def get_root(self):
-        return self.root_node.wrapped()
+        return self.root_node
 
     def on_add(self):
         if self.root_node:
@@ -386,7 +391,7 @@ class NodeSettings(BaseStorageAddon, BaseNodeSettings):
         # Note: The "root" node will always be "named" empty string
         root = OsfStorageFolder(name='', node=self.owner)
         root.save()
-        self.root_node = root.stored_object
+        self.root_node = root
         self.save()
 
     def after_fork(self, node, fork, user, save=True):
@@ -396,7 +401,7 @@ class NodeSettings(BaseStorageAddon, BaseNodeSettings):
         if not self.root_node:
             self.on_add()
 
-        clone.root_node = files_utils.copy_files(self.get_root(), clone.owner).stored_object
+        clone.root_node = files_utils.copy_files(self.get_root(), clone.owner)
         clone.save()
 
         return clone, None

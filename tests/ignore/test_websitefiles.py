@@ -1,19 +1,20 @@
 # -*- coding: utf-8 -*-
-import datetime
 
-from django.utils import timezone
-from nose.tools import *  # noqa
 import mock
+from django.utils import timezone
 from modularodm import Q
+from nose.tools import *  # noqa
 
-from website.files import utils
-from website.files import models
-from website.files import exceptions
-from website.models import Guid
-from website.views import find_bookmark_collection
-
+from osf.models import File
+from osf.models import FileNode
+from osf.models import Folder
 from tests.base import OsfTestCase
 from tests.factories import AuthUserFactory, ProjectFactory
+from website.files import exceptions
+from website.files import models
+from website.files import utils
+from website.models import Guid
+from website.views import find_bookmark_collection
 
 
 class TestFileNode(models.FileNode):
@@ -84,14 +85,6 @@ class TestStoredFileNode(FilesTestCase):
         # assert_in(self.sfn.path, url)
         assert_in(self.sfn.provider, url)
 
-    def test_wrapped(self):
-        assert_true(isinstance(self.sfn.wrapped(), TestFile))
-
-    def test_wrapped_invalid_provider(self):
-        with assert_raises(exceptions.SubclassNotFound):
-            self.sfn.provider = 'the ocean'
-            self.sfn.wrapped()
-
     def test_get_guid_no_create(self):
         assert_is(self.sfn.get_guid(), None)
 
@@ -99,6 +92,7 @@ class TestStoredFileNode(FilesTestCase):
         guid = self.sfn.get_guid(create=True)
         assert_equal(guid.referent, self.sfn)
         assert_equal(self.sfn.get_guid(), guid)
+
 
 class TestFileNodeObj(FilesTestCase):
 
@@ -183,35 +177,28 @@ class TestFileNodeObj(FilesTestCase):
         )
 
     def test_find(self):
-        models.StoredFileNode.remove_one(find_bookmark_collection(self.user).get_addon('osfstorage').root_node)
-        models.StoredFileNode.remove_one(self.node.get_addon('osfstorage').root_node)
-        models.StoredFileNode(
+        TestFile.objects.create(
             path='afile',
             name='name',
             is_file=True,
             node=self.node,
-            provider='test',
             materialized_path='/long/path/to/name',
-        ).save()
+        )
 
-        models.StoredFileNode(
+        TestFolder.objects.create(
             path='afolder',
             name='name',
             is_file=False,
             node=self.node,
-            provider='test',
             materialized_path='/long/path/to/name2/',
-        ).save()
+        )
 
-        expected = ['afile', 'afolder']
-        select = lambda y: [x.path for x in y.find()]
-
-        assert_equal(expected, select(models.FileNode))
-        assert_equal(expected, select(TestFileNode))
-        assert_equal(['afile'], select(TestFile))
-        assert_equal(['afile'], select(models.File))
-        assert_equal(['afolder'], select(TestFolder))
-        assert_equal(['afolder'], select(models.Folder))
+        assert_equal(TestFile.objects.count(), 1)
+        assert_equal(TestFolder.objects.count(), 1)
+        assert_equal(TestFileNode.objects.count(), 2)
+        assert_equal(File.objects.count(), 1)
+        assert_equal(Folder.objects.count(), 3)  # other peoples stuffs
+        assert_equal(FileNode.objects.count(), 4)  # roots of things
 
     def test_find_one(self):
         models.StoredFileNode(
@@ -251,7 +238,7 @@ class TestFileNodeObj(FilesTestCase):
             node=self.node,
             provider='test',
             materialized_path='/long/path/to/name2/',
-        ).wrapped()
+        )
         parent.save()
 
         child = models.StoredFileNode(
@@ -261,7 +248,7 @@ class TestFileNodeObj(FilesTestCase):
             node=self.node,
             provider='test',
             materialized_path='/long/path/to/name',
-        ).wrapped()
+        )
         child.save()
 
         assert_is(child.parent, None)
@@ -279,7 +266,7 @@ class TestFileNodeObj(FilesTestCase):
             node=self.node,
             provider='test',
             materialized_path='/long/path/to/name',
-        ).wrapped()
+        )
 
         assert_false(child._is_loaded)
         assert_false(child.stored_object._is_loaded)
@@ -288,14 +275,14 @@ class TestFileNodeObj(FilesTestCase):
         assert_true(child.stored_object._is_loaded)
 
     def test_delete(self):
-        models.StoredFileNode(
+        TestFileNode(
             path='afile',
             name='name',
             is_file=True,
             node=self.node,
             provider='test',
-            materialized_path='/long/path/to/name',
-        ).wrapped().delete()
+            _materialized_path='/long/path/to/name',
+        ).delete()
 
         trashed = models.TrashedFileNode.find_one()
         assert_equal(trashed.path, 'afile')
@@ -310,7 +297,7 @@ class TestFileNodeObj(FilesTestCase):
             node=self.node,
             provider='test',
             materialized_path='/long/path/to/name',
-        ).wrapped()
+        )
         guid = fn.get_guid(create=True)
         fn.delete()
 
@@ -332,7 +319,7 @@ class TestFileNodeObj(FilesTestCase):
             node=self.node,
             provider='test',
             materialized_path='/long/path/to/name',
-        ).wrapped()
+        )
         fn.delete(user=self.user)
 
         trashed = models.TrashedFileNode.find_one()
@@ -347,7 +334,7 @@ class TestFileNodeObj(FilesTestCase):
             node=self.node,
             provider='test',
             materialized_path='/long/path/to',
-        ).wrapped()
+        )
         root.save()
 
         fn = models.StoredFileNode(
@@ -358,7 +345,7 @@ class TestFileNodeObj(FilesTestCase):
             node=self.node,
             provider='test',
             materialized_path='/long/path/to/name',
-        ).wrapped()
+        )
 
         guid = Guid.generate(fn)
 
@@ -385,7 +372,7 @@ class TestFileNodeObj(FilesTestCase):
             node=self.node,
             provider='test',
             materialized_path='/long/path/to/',
-        ).wrapped()
+        )
         root.save()
 
         fn = models.StoredFileNode(
@@ -396,7 +383,7 @@ class TestFileNodeObj(FilesTestCase):
             node=self.node,
             provider='test',
             materialized_path='/long/path/to/folder_name',
-        ).wrapped()
+        )
 
         before = fn.to_storage()
         trashed = fn.delete(user=self.user)
@@ -423,7 +410,7 @@ class TestFileNodeObj(FilesTestCase):
                     parent=parent._id,
                     provider='test',
                     materialized_path='{}/{}'.format(parent.materialized_path, 'name{}'.format(i)),
-                ).wrapped()
+                )
                 fn.save()
                 random.randint(0, 5) == 1
                 if is_folder:
@@ -439,7 +426,7 @@ class TestFileNodeObj(FilesTestCase):
             node=self.node,
             provider='test',
             materialized_path='/long/path/to/',
-        ).wrapped()
+        )
         root.save()
 
         parent = models.StoredFileNode(
@@ -450,7 +437,7 @@ class TestFileNodeObj(FilesTestCase):
             node=self.node,
             provider='test',
             materialized_path='/long/path/to/folder_name',
-        ).wrapped()
+        )
         parent.save()
 
         branch = models.StoredFileNode(
@@ -461,7 +448,7 @@ class TestFileNodeObj(FilesTestCase):
             provider='test',
             parent=parent._id,
             materialized_path='/long/path/to/folder_name',
-        ).wrapped()
+        )
         branch.save()
 
         round1 = build_tree(parent=branch, atleastone=True)
@@ -512,7 +499,7 @@ class TestFileNodeObj(FilesTestCase):
         )
         stored.test = 'Foo'
         stored.bar = ['wat']
-        wrapped = stored.wrapped()
+        wrapped = stored
         wrapped.bar.append('wat')
 
         assert_equal(stored.bar, wrapped.bar)
@@ -526,7 +513,7 @@ class TestFileNodeObj(FilesTestCase):
             node=self.node,
             provider='test',
             materialized_path='/long/path/to/name',
-        ).wrapped()
+        )
 
         assert_true(isinstance(child.__repr__(), basestring))
 
@@ -546,7 +533,7 @@ class TestFileObj(FilesTestCase):
             node=self.node,
             provider='test',
             materialized_path='/long/path/to/name',
-        ).wrapped()
+        )
 
         file.versions.extend([v1, v2])
 
@@ -569,7 +556,7 @@ class TestFileObj(FilesTestCase):
             node=self.node,
             provider='test',
             materialized_path='/long/path/to/name',
-        ).wrapped()
+        )
 
         file.versions.append(v1)
         file.update_version_metadata(None, {'size': 1337})
@@ -588,7 +575,7 @@ class TestFileObj(FilesTestCase):
             node=self.node,
             provider='test',
             materialized_path='/long/path/to/name',
-        ).wrapped()
+        )
 
         mock_requests.return_value = mock.Mock(status_code=400)
         assert_is(file.touch(None), None)
@@ -619,7 +606,7 @@ class TestFileObj(FilesTestCase):
             node=self.node,
             provider='test',
             materialized_path='/long/path/to/name',
-        ).wrapped()
+        )
 
         mock_response = mock.Mock(status_code=200)
         mock_response.json.return_value = {
@@ -647,7 +634,7 @@ class TestFileObj(FilesTestCase):
             node=self.node,
             provider='test',
             materialized_path='/long/path/to/name',
-        ).wrapped()
+        )
 
         mock_response = mock.Mock(status_code=404)
         mock_requests.return_value = mock_response
@@ -678,7 +665,7 @@ class TestFolderObj(FilesTestCase):
             node=self.node,
             provider='test',
             materialized_path='/long/path/to/name',
-        ).wrapped()
+        )
         self.parent.save()
 
     def test_children(self):
@@ -715,7 +702,7 @@ class TestFolderObj(FilesTestCase):
             parent=self.parent._id,
             provider='test',
             materialized_path='/long/path/to/name',
-        ).wrapped()
+        )
         child.save()
 
         guid = self.parent.get_guid(create=True)

@@ -5,7 +5,7 @@ from addons.base.models import (BaseOAuthNodeSettings, BaseOAuthUserSettings,
                                 BaseStorageAddon)
 from django.db import models
 from framework.auth import Auth
-from osf.models.files import File, FileNode, Folder
+from osf.models.files import File, Folder, ProviderMixin
 from owncloud import Client as OwnCloudClient
 from addons.base import exceptions
 from addons.owncloud import settings
@@ -16,12 +16,14 @@ from website.util import api_v2_url
 
 logger = logging.getLogger(__name__)
 
-class OwncloudFileNode(FileNode):
+
+class OwncloudFileNode(ProviderMixin):
     # TODO DELETE ME POST MIGRATION
     modm_model_path = 'website.files.models.owncloud.OwncloudFileNode'
     modm_query = None
     # /TODO DELETE ME POST MIGRATION
     provider = 'owncloud'
+
 
 class OwncloudFolder(OwncloudFileNode, Folder):
     # TODO DELETE ME POST MIGRATION
@@ -30,12 +32,14 @@ class OwncloudFolder(OwncloudFileNode, Folder):
     # /TODO DELETE ME POST MIGRATION
     pass
 
+
 class OwncloudFile(OwncloudFileNode, File):
     # TODO DELETE ME POST MIGRATION
     modm_model_path = 'website.files.models.owncloud.OwncloudFile'
     modm_query = None
     # /TODO DELETE ME POST MIGRATION
     pass
+
 
 class OwnCloudProvider(BasicAuthProviderMixin):
     """An alternative to `ExternalProvider` not tied to OAuth"""
@@ -54,6 +58,7 @@ class OwnCloudProvider(BasicAuthProviderMixin):
             status=self.account.display_name if self.account else 'anonymous'
         )
 
+
 class UserSettings(BaseOAuthUserSettings):
     # TODO DELETE ME POST MIGRATION
     modm_model_path = 'website.addons.owncloud.model.AddonOwnCloudUserSettings'
@@ -66,6 +71,7 @@ class UserSettings(BaseOAuthUserSettings):
         ret = super(UserSettings, self).to_json(user)
         ret['hosts'] = DEFAULT_HOSTS
         return ret
+
 
 class NodeSettings(BaseStorageAddon, BaseOAuthNodeSettings):
     # TODO DELETE ME POST MIGRATION
