@@ -1,35 +1,23 @@
-import functools
 import logging
-import os
 
-import requests
 from dateutil.parser import parse as parse_date
-from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
-from django.core.exceptions import ObjectDoesNotExist
 from django.db import models, connection
 from django.db.models import Manager
 from django.utils import timezone
+from psycopg2._psycopg import AsIs
 from typedmodels.models import TypedModel
 
-from framework.analytics import get_basic_counters
-from modularodm.exceptions import NoResultsFound
-from osf.models.base import BaseModel, Guid, OptionalGuidMixin, ObjectIDMixin
+from osf.models.base import BaseModel, OptionalGuidMixin, ObjectIDMixin
 from osf.models.comment import CommentableMixin
-from osf.models.mixins import Taggable
 from osf.models.validators import validate_location
 from osf.modm_compat import Q
+from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import NonNaiveDateTimeField
 from website.util import api_v2_url
-from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
-from psycopg2._psycopg import AsIs, ProgrammingError
-from website import util
-from website.files import exceptions
-from website.files import utils
 
 __all__ = (
     'File',
     'Folder',
-    'FileNode',
     'FileVersion',
     'StoredFileNode',
     'TrashedFileNode',
@@ -179,7 +167,7 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, ObjectIDMixi
     def wrapped(self):
         """Wrap self in a FileNode subclass
         """
-        raise ProgrammingError('Just no.')
+        raise Exception('Wrapped is deprecated.')
 
     def delete(self, **kwargs):
         raise Exception('Dangerzone! Only call delete on wrapped StoredFileNodes')
@@ -192,7 +180,7 @@ class StoredFileNode(BaseFileNode):
     migration_page_size = 10000
     # /TODO DELETE ME POST MIGRATION]
 
-# I'm sorry
+# TODO Refactor code pointing at FileNode to point to StoredFileNode
 FileNode = StoredFileNode
 
 
