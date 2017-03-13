@@ -439,7 +439,9 @@
         </div><!-- end addon-widget-header -->
         <div class="panel-body">
             % if node['children']:
-                ${render_nodes.render_nodes(nodes=node['descendants'], sortable=True, user=user, pluralized_node_type='components', show_path=False, include_js=True)}
+                <div id="containment">
+                    ${render_nodes.render_nodes(nodes=node['descendants'], sortable=True, user=user, pluralized_node_type='components', show_path=False, include_js=True)}
+                </div>
             % else:
               <p>No components have been added to this ${node['node_type']}.</p>
             % endif
