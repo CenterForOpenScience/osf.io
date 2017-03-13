@@ -146,7 +146,10 @@
               <h3 class="panel-title" >Public projects</h3>
             </div>
             <div class="panel-body">
-              ${ render_nodes.render_nodes(nodes=public_projects, sortable=False, user=user, pluralized_node_type='project', show_path=False, include_js=False) }
+              ${ render_nodes.render_nodes(nodes=public_projects,
+                                           sortable=False, user=user,
+                                           pluralized_node_type='projects',
+                                           show_path=False, include_js=False) }
             </div>
         </div>
     </div>

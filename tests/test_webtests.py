@@ -1020,9 +1020,18 @@ class TestAUserProfile(OsfTestCase):
         assert_in_html(self.component.title, res)
         assert_in_html(self.project.title, res)
 
+    def test_has_no_public_projects_or_components_on_own_profile(self):
+        # User goes to their profile
+        url = web_url_for('profile_view_id', uid=self.user._id)
+        res = self.app.get(url, auth=self.user.auth)
+
+        # user has no public components/projects
+        assert_in('You have no public projects', res)
+        assert_in('You have no public components', res)
+
     def test_user_no_public_projects_or_components(self):
         # I go to other user's profile
-        url = web_url_for('profile_view_id', uid=self.user._primary_key)
+        url = web_url_for('profile_view_id', uid=self.user._id)
         # User has no public components/projects
         res = self.app.get(url, auth=self.me.auth)
         assert_in('This user has no public projects', res)
