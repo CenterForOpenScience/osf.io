@@ -382,7 +382,10 @@ class BitbucketNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
             return message
 
     def after_fork(self, node, fork, user, save=True):
-        """
+        """Hook to run after forking a project.  If the forking user is not
+        the same as the original authorizing user, the Bitbucket
+        credentials will *not* be copied over.
+
         :param Node node: Original node
         :param Node fork: Forked node
         :param User user: User creating fork

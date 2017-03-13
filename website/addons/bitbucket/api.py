@@ -74,7 +74,6 @@ class BitbucketClient(BaseClient):
         :param str user: Bitbucket user name
         :param str repo: Bitbucket repo name
         :return: Dict of repo information
-            See http://developer.bitbucket.com/v3/repos/#get
         """
         res = self._make_request(
             'GET',
