@@ -4,7 +4,7 @@ import threading
 from django.utils import timezone
 
 from website import mails
-from website.models import PreprintProvider
+from osf.models import PreprintProvider
 from website.settings import DOMAIN, CAMPAIGN_REFRESH_THRESHOLD
 from website.util.time import throttle_period_expired
 
@@ -53,16 +53,19 @@ def get_campaigns():
                     template = 'osf'
                     name = 'OSF'
                     url_path = 'preprints/'
+                    external_url = None
                 else:
                     template = 'branded'
                     name = provider.name
                     url_path = 'preprints/{}'.format(provider._id)
+                    external_url = provider.get_provider_external_domain()
                 campaign = '{}-preprints'.format(provider._id)
                 system_tag = '{}_preprints'.format(provider._id)
                 newest_campaigns.update({
                     campaign: {
                         'system_tag': system_tag,
                         'redirect_url': furl.furl(DOMAIN).add(path=url_path).url,
+                        'external_url': external_url,
                         'confirmation_email_template': mails.CONFIRM_EMAIL_PREPRINTS(template, name),
                         'login_type': 'proxy',
                         'provider': name,
@@ -126,7 +129,42 @@ def get_service_provider(campaign):
 
 
 def campaign_url_for(campaign):
+    """
+    Return the campaign's URL on OSF domain.
+
+    :param campaign: the campaign
+    :return: the url
+    """
+
     campaigns = get_campaigns()
     if campaign in campaigns:
         return campaigns.get(campaign).get('redirect_url')
     return None
+
+
+def external_campaign_url_for(campaign):
+    """
+    Return the campaign's URL on Non-OSF domain, which is available for phase 2 branded preprints only.
+
+    :param campaign: the campaign
+    :return: the external url if the campaign is hosted on Non-OSF domain, None otherwise
+    """
+
+    campaigns = get_campaigns()
+    if campaign in campaigns:
+        return campaigns.get(campaign).get('external_url')
+    return None
+
+
+def get_external_domains():
+    """
+    Return a list of trusted external domains for all eligible campaigns.
+    """
+
+    campaigns = get_campaigns()
+    external_domains = []
+    for campaign, config in campaigns.items():
+        external_url = config.get('external_url', None)
+        if external_url:
+            external_domains.append(external_url)
+    return external_domains
