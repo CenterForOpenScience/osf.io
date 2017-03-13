@@ -90,6 +90,21 @@ services:
     stdin_open: true
     tty: true
 
+  redis:
+    image: redis
+    command: |-
+      /bin/bash -c "
+        mkdir -p /usr/local/etc/redis &&
+        echo \"maxmemory 100mb\" > /usr/local/etc/redis/redis.conf &&
+        echo \"maxmemory-policy allkeys-lru\" >> /usr/local/etc/redis/redis.conf &&
+        echo \"tcp-backlog 128\" >> /usr/local/etc/redis/redis.conf &&
+        /usr/local/bin/docker-entrypoint.sh redis-server /usr/local/etc/redis/redis.conf
+      "
+    ports:
+      - 6379:6379
+    stdin_open: true
+    tty: true
+
 #  flower:
 #    image: quay.io/centerforopenscience/osf:develop
 #    command: python manage.py celery flower
@@ -305,6 +320,7 @@ services:
     restart: unless-stopped
     depends_on:
       - postgres
+      - redis
       - rabbitmq
       - elasticsearch
     environment:
@@ -329,6 +345,7 @@ services:
       - 8001:8001
     depends_on:
       - postgres
+      - redis
       - tokumx
       - rabbitmq
       - elasticsearch
@@ -352,6 +369,7 @@ services:
     depends_on:
       - postgres
       - tokumx
+      - redis
       - rabbitmq
       - elasticsearch
     environment:
@@ -374,6 +392,7 @@ services:
     depends_on:
       - postgres
       - tokumx
+      - redis
       - rabbitmq
       - elasticsearch
     environment:

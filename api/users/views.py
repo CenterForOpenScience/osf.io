@@ -17,7 +17,7 @@ from api.registrations.serializers import RegistrationSerializer
 from api.users.permissions import (CurrentUser, ReadOnlyOrCurrentUser,
                                    ReadOnlyOrCurrentUserRelationship)
 from api.users.serializers import (UserAddonSettingsSerializer,
-                                   UserCreateSerializer, UserDetailSerializer,
+                                   UserDetailSerializer,
                                    UserInstitutionsRelationshipSerializer,
                                    UserSerializer)
 from django.contrib.auth.models import AnonymousUser
@@ -132,13 +132,6 @@ class UserList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
         # TODO: sort
         query = self.get_query_from_request()
         return User.find(query)
-
-    # overrides ListCreateAPIView
-    def get_serializer_class(self):
-        if self.request.method == 'POST':
-            return UserCreateSerializer
-        else:
-            return UserSerializer
 
 
 class UserDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, UserMixin):

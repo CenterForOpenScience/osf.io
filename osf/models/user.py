@@ -68,13 +68,6 @@ name_formatters = {
 
 class OSFUserManager(BaseUserManager):
 
-    _queryset_class = GuidMixinQuerySet
-
-    def all(self):
-        qs = super(OSFUserManager, self).all()
-        qs.annotate_query_with_guids()
-        return qs
-
     def create_user(self, username, password=None):
         if not username:
             raise ValueError('Users must have a username')
@@ -88,6 +81,13 @@ class OSFUserManager(BaseUserManager):
         user.set_password(password)
         user.save(using=self._db)
         return user
+
+    _queryset_class = GuidMixinQuerySet
+
+    def all(self):
+        qs = super(OSFUserManager, self).all()
+        qs.annotate_query_with_guids()
+        return qs
 
     def eager(self, *fields):
         fk_fields = set(self.model.get_fk_field_names()) & set(fields)
@@ -487,6 +487,10 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     def contributor_to(self):
         return self.nodes.filter(is_deleted=False).exclude(type='osf.collection')
 
+    @property
+    def visible_contributor_to(self):
+        return self.nodes.filter(is_deleted=False, contributor__visible=True).exclude(type='osf.collection')
+
     def set_unusable_username(self):
         """Sets username to an unusable value. Used for, e.g. for invited contributors
         and merged users.
@@ -671,12 +675,12 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
                 node.contributor_set.filter(user=user).delete()
             else:
-                node.contributor_set.filter(user=user).update(user=self)
+                node.contributor_set.filter(user=user).invalidated_update(user=self)
 
             node.save()
 
         # - projects where the user was the creator
-        user.created.filter(is_bookmark_collection=False).update(creator=self)
+        user.created.filter(is_bookmark_collection=False).invalidated_update(creator=self)
 
         # - file that the user has checked_out, import done here to prevent import error
         from osf.models import FileNode
@@ -748,12 +752,11 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     def save(self, *args, **kwargs):
         self.update_is_active()
         self.username = self.username.lower().strip() if self.username else None
-        dirty_fields = set(self.get_dirty_fields())
+        dirty_fields = set(self.get_dirty_fields(check_relationship=True))
         ret = super(OSFUser, self).save(*args, **kwargs)
         if self.SEARCH_UPDATE_FIELDS.intersection(dirty_fields) and self.is_confirmed:
             self.update_search()
-            # TODO
-            # self.update_search_nodes_contributors()
+            self.update_search_nodes_contributors()
         return ret
 
     # Legacy methods
@@ -1122,6 +1125,15 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         except SearchUnavailableError as e:
             logger.exception(e)
             log_exception()
+
+    def update_search_nodes_contributors(self):
+        """
+        Bulk update contributor name on all nodes on which the user is
+        a contributor.
+        :return:
+        """
+        from website.search import search
+        search.update_contributors(self.visible_contributor_to)
 
     def update_search_nodes(self):
         """Call `update_search` on all nodes on which the user is a

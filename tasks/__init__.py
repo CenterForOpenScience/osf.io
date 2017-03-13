@@ -515,7 +515,7 @@ def requirements(ctx, base=False, addons=False, release=False, dev=False, quick=
     ctx.run('pip install --no-cache-dir uritemplate.py==0.3.0')
 
 @task
-def test_module(ctx, module=None, numprocesses=None):
+def test_module(ctx, module=None, numprocesses=None, params=None):
     """Helper for running tests.
     """
     os.environ['DJANGO_SETTINGS_MODULE'] = 'osf_tests.settings'
@@ -530,46 +530,55 @@ def test_module(ctx, module=None, numprocesses=None):
         args += ['-n {}'.format(numprocesses)]
     modules = [module] if isinstance(module, basestring) else module
     args.extend(modules)
+    if params:
+        params = [params] if isinstance(params, basestring) else params
+        args.extend(params)
     retcode = pytest.main(args)
     sys.exit(retcode)
 
 # TODO: Add to this list when more modules are ported for djangosf compat
 OSF_TESTS = [
     'osf_tests',
-    'tests/test_views.py',
-    'tests/test_addons.py',
-    'tests/test_alternative_citations.py',
-    'tests/test_auth.py',
-    'tests/test_auth_basic_auth.py',
-    'tests/test_auth_forms.py',
-    'tests/test_campaigns.py',
-    'tests/test_cas_authentication.py',
-    'tests/test_citations.py',
-    'tests/test_conferences.py',
-    'tests/test_contributors_views.py',
-    'tests/test_events.py',
-    'tests/test_identifiers.py',
-    'tests/test_mailchimp.py',
-    'tests/test_metadata.py',
-    'tests/test_node_licenses.py',
-    'tests/test_notifications.py',
-    'tests/test_oauth.py',
-    'tests/test_permissions.py',
-    'tests/test_preprints.py',
-    'tests/test_rubeus.py',
-    'tests/test_sanitize.py',
-    'tests/test_security.py',
-    'tests/test_serializers.py',
-    'tests/test_spam_mixin.py',
-    'tests/test_subjects.py',
-    'tests/test_tokens.py',
-    'tests/test_webtests.py',
-    'tests/test_utils.py',
-    'tests/test_registrations/test_retractions.py',
-    'tests/test_registrations/test_embargoes.py',
-    'tests/test_registrations/test_registration_approvals.py',
-    'tests/test_registrations/test_views.py',
+    'addons',
+    # 'tests/test_views.py',
+    # 'tests/test_addons.py',
+    # 'tests/test_alternative_citations.py',
+    # 'tests/test_auth.py',
+    # 'tests/test_auth_basic_auth.py',
+    # 'tests/test_auth_forms.py',
+    # 'tests/test_campaigns.py',
+    # 'tests/test_cas_authentication.py',
+    # 'tests/test_citations.py',
+    # 'tests/test_conferences.py',
+    # 'tests/test_contributors_views.py',
+    # 'tests/test_events.py',
+    # 'tests/test_identifiers.py',
+    # 'tests/test_mailchimp.py',
+    # 'tests/test_metadata.py',
+    # 'tests/test_node_licenses.py',
+    # 'tests/test_notifications.py',
+    # 'tests/test_oauth.py',
+    # 'tests/test_permissions.py',
+    # 'tests/test_preprints.py',
+    # 'tests/test_rubeus.py',
+    # 'tests/test_sanitize.py',
+    # 'tests/test_security.py',
+    # 'tests/test_serializers.py',
+    # 'tests/test_spam_mixin.py',
+    # 'tests/test_subjects.py',
+    # 'tests/test_tokens.py',
+    # 'tests/test_webtests.py',
+    # 'tests/test_utils.py',
+    # 'tests/test_registrations/test_retractions.py',
+    # 'tests/test_registrations/test_embargoes.py',
+    # 'tests/test_registrations/test_registration_approvals.py',
+    # 'tests/test_registrations/test_views.py',
 ]
+
+ELSE_TESTS = [
+    'tests',
+]
+
 API_TESTS1 = [
     'api_tests/identifiers',
     'api_tests/institutions',
@@ -609,6 +618,11 @@ def test_osf(ctx, numprocesses=None):
     """Run the OSF test suite."""
     test_module(ctx, module=OSF_TESTS, numprocesses=numprocesses)
 
+@task
+def test_else(ctx, numprocesses=None):
+    """Run the old test suite."""
+    # TODO (@cwisecarver, @mfraezz, @sloria): Fix ignored tests
+    test_module(ctx, module=ELSE_TESTS, numprocesses=numprocesses, params=['--ignore=tests/ignore'])
 
 @task
 def test_api1(ctx, numprocesses=None):
@@ -700,6 +714,7 @@ def test_travis_else(ctx, numprocesses=None):
     """
     flake(ctx)
     jshint(ctx)
+    test_else(ctx, numprocesses=numprocesses)
     test_addons(ctx, numprocesses=numprocesses)
     test_admin(ctx, numprocesses=numprocesses)
 

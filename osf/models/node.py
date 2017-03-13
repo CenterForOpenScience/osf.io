@@ -936,11 +936,11 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         if not self.is_contributor(user):
             raise ValueError(u'User {0} not in contributors'.format(user))
         if visible and not Contributor.objects.filter(node=self, user=user, visible=True).exists():
-            Contributor.objects.filter(node=self, user=user, visible=False).update(visible=True)
+            Contributor.objects.filter(node=self, user=user, visible=False).invalidated_update(visible=True)
         elif not visible and Contributor.objects.filter(node=self, user=user, visible=True).exists():
             if Contributor.objects.filter(node=self, visible=True).count() == 1:
                 raise ValueError('Must have at least one visible contributor')
-            Contributor.objects.filter(node=self, user=user, visible=True).update(visible=False)
+            Contributor.objects.filter(node=self, user=user, visible=True).invalidated_update(visible=False)
         else:
             return
         message = (
@@ -2143,16 +2143,13 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             del kwargs['suppress_log']
         else:
             self._suppress_log = False
-        saved_fields = self.get_dirty_fields() or []
+        saved_fields = self.get_dirty_fields(check_relationship=True) or []
         ret = super(AbstractNode, self).save(*args, **kwargs)
         if saved_fields:
             self.on_update(first_save, saved_fields)
 
         if 'node_license' in saved_fields:
-            children = [c for c in self.get_descendants_recursive(
-                include=lambda n: n.node_license is None
-            ) if c.is_public and not c.is_deleted]
-            # this returns generator, that would get unspooled anyways
+            children = list(self.descendants.filter(node_license=None, is_public=True, is_deleted=False))
             while len(children):
                 batch = children[:99]
                 self.bulk_update_search(batch)
@@ -2570,8 +2567,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         new_page.save()
 
         if has_comments:
-            Comment.objects.filter(root_target=current.guids.first()).update(root_target=Guid.load(new_page._id))
-            Comment.objects.filter(target=current.guids.first()).update(target=Guid.load(new_page._id))
+            Comment.objects.filter(root_target=current.guids.first()).invalidated_update(root_target=Guid.load(new_page._id))
+            Comment.objects.filter(target=current.guids.first()).invalidated_update(target=Guid.load(new_page._id))
 
         if current:
             for contrib in self.contributors:
