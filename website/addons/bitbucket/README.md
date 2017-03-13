@@ -8,6 +8,7 @@
 4. In the URL field, enter "http://localhost:5000/"
 5. For Permissions, select:
  * Account: Email, Read
+ * Team Memberships: Read
  * Projects: Read
  * Repositories: Read
 5. Submit the form.
