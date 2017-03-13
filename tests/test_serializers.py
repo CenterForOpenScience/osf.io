@@ -19,6 +19,7 @@ from tests.base import OsfTestCase, get_default_metaschema
 from framework.auth import Auth
 from framework import utils as framework_utils
 from website.project.views.node import _view_project, _serialize_node_search, _get_children, _get_readable_descendants
+from website.profile.views import get_public_projects, get_public_components
 from website.views import serialize_node_summary
 from website.profile import utils
 from website import filters, settings
@@ -377,6 +378,55 @@ class TestGetReadableDescendants(OsfTestCase):
         assert_equal(len(nodes), 3)
         for node in nodes:
             assert_in(node.title, ['Four', 'Eight', 'Nine'])
+
+
+class TestProfileNodeList(OsfTestCase):
+
+    def setUp(self):
+        OsfTestCase.setUp(self)
+        self.user = UserFactory()
+
+        self.public = ProjectFactory(is_public=True)
+        self.public_component = NodeFactory(parent=self.public, is_public=True)
+        self.private = ProjectFactory(is_public=False)
+        self.deleted = ProjectFactory(is_public=True, is_deleted=True)
+
+        for node in (self.public, self.public_component, self.private, self.deleted):
+            node.add_contributor(self.user, auth=Auth(node.creator))
+            node.save()
+
+    def test_get_public_projects(self):
+        res = get_public_projects(uid=self.user._id)
+        node_ids = [each['id'] for each in res]
+        assert_in(self.public._id, node_ids)
+        assert_not_in(self.private._id, node_ids)
+        assert_not_in(self.deleted._id, node_ids)
+        assert_not_in(self.public_component._id, node_ids)
+
+    def test_get_public_components(self):
+        res = get_public_components(uid=self.user._id)
+        node_ids = [each['id'] for each in res]
+        assert_in(self.public_component._id, node_ids)
+        assert_not_in(self.public._id, node_ids)
+        assert_not_in(self.private._id, node_ids)
+        assert_not_in(self.deleted._id, node_ids)
+
+    def test_get_public_components_excludes_linked_noncontributor_projects(self):
+        # self.user is not a contributor to linked project
+        pointee = ProjectFactory(is_public=True)
+        self.public.add_node_link(pointee, auth=Auth(self.public.creator), save=True)
+        res = get_public_components(uid=self.user._id)
+        node_ids = [each['id'] for each in res]
+        assert_not_in(pointee._id, node_ids)
+
+    def test_get_public_components_excludes_linked_contributor_projects(self):
+        # self.user is a contributor to linked project
+        pointee = ProjectFactory(is_public=True)
+        pointee.add_contributor(self.user, auth=Auth(pointee.creator))
+        self.public.add_node_link(pointee, auth=Auth(self.public.creator), save=True)
+        res = get_public_components(uid=self.user._id)
+        node_ids = [each['id'] for each in res]
+        assert_not_in(pointee._id, node_ids)
 
 
 class TestNodeLogSerializers(OsfTestCase):

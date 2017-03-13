@@ -11,7 +11,7 @@ import markupsafe
 import mailchimp
 from modularodm.exceptions import ValidationError, NoResultsFound, MultipleResultsFound
 from modularodm import Q
-from osf.models import Node
+from osf.models import Node, NodeRelation
 
 from framework import sentry
 from framework.auth import Auth
@@ -63,21 +63,19 @@ def get_public_projects(uid=None, user=None):
 
 def get_public_components(uid=None, user=None):
     user = user or User.load(uid)
-    # In future redesign, should be limited for users with many projects / components
-    # TODO: Optimize me
-    nodes = Node.find_for_user(
-        user,
-        subquery=(
-            PROJECT_QUERY &
-            Q('parent_nodes', 'isnull', False) &
-            Q('parent_nodes__type', 'ne', 'osf.collection') &
-            Q('is_public', 'eq', True)
+    node_relations = (
+        NodeRelation.objects.filter(
+            parent___contributors=user,
+            child__is_public=True,
+            is_node_link=False
         )
-    ).distinct().annotate(nlogs=Count('logs')).eager('parent_nodes', '_contributors')
-
+        .exclude(parent__type='osf.collection')
+        .exclude(child__is_deleted=True)
+        .select_related('child')
+    )
     return [
-        serialize_node_summary(node=node, auth=Auth(user), show_path=True)['summary']
-        for node in nodes
+        serialize_node_summary(node=each.child, auth=Auth(user), show_path=True)['summary']
+        for each in node_relations
     ]
 
 
