@@ -20,6 +20,8 @@ from framework.addons.utils import render_addon_capabilities
 from framework.celery_tasks import handlers as celery_task_handlers
 from framework.django import handlers as django_handlers
 from framework.flask import add_handlers, app
+# Import necessary to initialize the root logger
+from framework.logging import logger as root_logger  # noqa
 from framework.mongo import handlers as mongo_handlers
 from framework.mongo import set_up_storage, storage
 from framework.postcommit_tasks import handlers as postcommit_handlers
