@@ -1,7 +1,7 @@
 {
   "_comment": "These tests adapted from https://mathiasbynens.be/demo/url-regex",
   "testsPositive": {
-    "definitelyawebsite.com":"should accept simple valid website",
+    "http://definitelyawebsite.com":"should accept simple valid website",
     "https://Definitelyawebsite.com":"should accept valid website with protocol",
     "http://foo.com/blah_blah":"should accept valid website with path",
     "http://foo.com/blah_blah:5000/pathhere":"should accept valid website with port and path",
@@ -34,7 +34,7 @@
     "http://उदाहरण.परीक्षा":"should accept valid unicode heavy website test 3",
     "http://-.~_!$&()*+,;=:%40:80%2f::::::@example.com":"should accept valid website with user but crazy username",
     "http://1337.net":"should accept valid website with just numbers in domain",
-    "definitelyawebsite.com?real=yes&page=definitely":"should accept valid website with query",
+    "http://definitelyawebsite.com?real=yes&page=definitely":"should accept valid website with query",
     "http://a.b-c.de":"should accept valid website with dash",
     "http://website.com:3000/?q=400":"should accept valid website with port and query",
     "http://asd/asd@asd.com/":"should accept valid website with unusual username"
