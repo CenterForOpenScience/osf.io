@@ -307,15 +307,8 @@ class BitbucketNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         if self.user_settings is None:
             return messages
 
-        connection = BitbucketClient(access_token=self.external_account.oauth_key)
-
-        try:
-            repo = connection.repo()
-        except (ApiError, Exception):
-            return
-
         node_permissions = 'public' if node.is_public else 'private'
-        repo_permissions = 'private' if repo.get('is_private', True) else 'public'
+        repo_permissions = 'private' if self.is_private else 'public'
         if repo_permissions != node_permissions:
             message = (
                 'Warning: This OSF {category} is {node_perm}, but the Bitbucket '

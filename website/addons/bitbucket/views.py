@@ -201,7 +201,7 @@ def bitbucket_hgrid_data(node_settings, auth, **kwargs):
             # TODO: Add warning message
             logger.error('Could not access Bitbucket repo')
             return None
-        if repo.private:
+        if repo['is_private']:
             return None
 
     try:
