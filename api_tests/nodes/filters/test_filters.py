@@ -40,10 +40,10 @@ class NodesListFilteringMixin(object):
         assert_equal(res.json['errors'][0]['source']['parameter'], 'filter')
 
     def test_root_filter_equals_returns_branch(self):
-        expected = [self.node_C2._id, self.node_D2._id]
+        expected = []
         res = self.app.get('{}{}'.format(self.root_url, self.node_B2._id), auth=self.user.auth)
         actual = [node['id'] for node in res.json['data']]
-        assert_equal(set(expected), set(actual))
+        assert_equal(expected, actual)
 
     def test_root_filter_equals_returns_tree(self):
         expected = [self.node_B1._id, self.node_B2._id, self.node_C1._id, self.node_C2._id, self.node_D2._id]
