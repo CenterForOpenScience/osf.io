@@ -21,7 +21,7 @@ def get_file_object(node, path, provider, request):
                 OsfStorageFileNode,
                 Q('node', 'eq', node.pk) &
                 Q('_id', 'eq', path.strip('/')) &
-                Q('is_file', 'eq', not path.endswith('/'))
+                Q('is_file', 'eq', not path.endswith('/')),
             )
         return obj
 

@@ -104,7 +104,8 @@ class NodeMixin(object):
         node = get_object_or_error(
             Node,
             self.kwargs[self.node_lookup_url_kwarg],
-            display_name='node'
+            display_name='node',
+            prefetch_fields=self.serializer_class().model_field_names
         )
         # Nodes that are folders/collections are treated as a separate resource, so if the client
         # requests a collection through a node endpoint, we return a 404
@@ -124,7 +125,7 @@ class DraftMixin(object):
         node_id = self.kwargs['node_id']
         if draft_id is None:
             draft_id = self.kwargs['draft_id']
-        draft = get_object_or_error(DraftRegistration, draft_id)
+        draft = get_object_or_error(DraftRegistration, draft_id, prefetch_fields=self.serializer_class().model_field_names)
 
         if not draft.branched_from._id == node_id:
             raise ValidationError('This draft registration is not created from the given node.')
@@ -1510,7 +1511,8 @@ class NodeLinksDetail(BaseNodeLinksDetail, generics.RetrieveDestroyAPIView, Node
         node_link = get_object_or_error(
             NodeRelation,
             self.kwargs[self.node_link_lookup_url_kwarg],
-            'node link'
+            'node link',
+            prefetch_fields=self.serializer_class().model_field_names
         )
         self.check_object_permissions(self.request, node_link)
         return node_link
@@ -2581,7 +2583,7 @@ class NodeLogList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, ODMFilterMix
         return query
 
     def get_queryset(self):
-        queryset = NodeLog.find(self.get_query_from_request())
+        queryset = NodeLog.find(self.get_query_from_request()).select_related('node', 'original_node', 'user')
         return queryset
 
 
@@ -3064,9 +3066,8 @@ class LinkedNodesList(BaseLinkedList, NodeMixin):
     view_name = 'linked-nodes'
 
     def get_queryset(self):
-        return [node for node in
-            super(LinkedNodesList, self).get_queryset()
-            if not node.is_registration]
+        queryset = super(LinkedNodesList, self).get_queryset()
+        return queryset.exclude(type='osf.registration')
 
     # overrides APIView
     def get_parser_context(self, http_request):

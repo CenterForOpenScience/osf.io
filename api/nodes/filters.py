@@ -21,12 +21,12 @@ class NodesListFilterMixin(ODMFilterMixin):
             for root_guid in operation['value']:
                 if not root_guid:
                     raise InvalidFilterValue(value=root_guid)
-                root = utils.get_object_or_error(Node, root_guid, display_name='root')
+                root = utils.get_object_or_error(Node, root_guid, display_name='root', prefetch_fields=self.serializer_class().model_field_names)
                 child_pks.extend(Node.objects.get_children(root=root, primary_keys=True))
             return Q('id', 'in', child_pks)
         elif operation['source_field_name'] == 'parent_node':
             if operation['value']:
-                parent = utils.get_object_or_error(Node, operation['value'], display_name='parent')
+                parent = utils.get_object_or_error(Node, operation['value'], display_name='parent', prefetch_fields=self.serializer_class().model_field_names)
                 return Q('parent_nodes', 'eq', parent.id)
             else:
                 return Q('parent_nodes', 'isnull', True)

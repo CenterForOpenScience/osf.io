@@ -196,7 +196,6 @@ Ubuntu: Skip install of docker-sync, fswatch, and unison. instead...
 - Run migrations:
   - After creating migrations, resetting your database, or starting on a fresh install you will need to run migrations to make the needed changes to database. This command looks at the migrations on disk and compares them to the list of migrations in the `django_migrations` database table and runs any migrations that have not been run.
     - `docker-compose run --rm web python manage.py migrate`
-    - `docker-compose run --rm admin python manage.py migrate`
 - Populate institutions:
   - After resetting your database or with a new install you will need to populate the table of institutions. **You must have run migrations first.**
     - `docker-compose run --rm web python -m scripts.populate_institutions test`
