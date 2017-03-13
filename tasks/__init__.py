@@ -417,6 +417,12 @@ def migrate_search(ctx, delete=False, index=settings.ELASTIC_INDEX):
     init_app(routes=False, set_backends=False)
     from website.search_migration.migrate import migrate
 
+    # NOTE: Silence the warning:
+    # "InsecureRequestWarning: Unverified HTTPS request is being made. Adding certificate verification is strongly advised."
+    SILENT_LOGGERS = ['py.warnings',]
+    for logger in SILENT_LOGGERS:
+        logging.getLogger(logger).setLevel(logging.ERROR)
+
     migrate(delete, index=index)
 
 
