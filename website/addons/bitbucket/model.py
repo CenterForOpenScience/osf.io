@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-# import os
-# import urlparse
+import os
+import urlparse
 
 import markupsafe
 from modularodm import fields
@@ -14,11 +14,10 @@ from website.addons.base import exceptions
 from website.addons.base import AddonOAuthUserSettingsBase, AddonOAuthNodeSettingsBase
 from website.addons.base import StorageAddonBase
 
-# from website.addons.bitbucket import utils
 from website.addons.bitbucket.api import BitbucketClient
 from website.addons.bitbucket.serializer import BitbucketSerializer
 from website.addons.bitbucket import settings as bitbucket_settings
-from website.addons.bitbucket.exceptions import ApiError, NotFoundError
+from website.addons.bitbucket.exceptions import NotFoundError
 from website.oauth.models import ExternalProvider
 
 
@@ -100,7 +99,6 @@ class BitbucketNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
     user = fields.StringField()
     repo = fields.StringField()
     hook_id = fields.StringField()
-    hook_secret = fields.StringField()
 
     _api = None
 
@@ -146,7 +144,6 @@ class BitbucketNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         self.user = None
         self.repo = None
         self.hook_id = None
-        self.hook_secret = None
 
     def deauthorize(self, auth=None, log=True):
         # self.delete_hook(save=False)
@@ -443,48 +440,47 @@ class BitbucketNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
     # Hooks #
     #########
 
-    # # TODO: Should Events be added here?
-    # # TODO: Move hook logic to service
-    # def add_hook(self, save=True):
+    # TODO: Should Events be added here?
+    # TODO: Move hook logic to service
+    def add_hook(self, save=True):
 
-    #     if self.user_settings:
-    #         connect = BitbucketClient(access_token=self.external_account.oauth_key)
-    #         secret = utils.make_hook_secret()
-    #         hook = connect.add_hook(
-    #             self.user, self.repo,
-    #             'web',
-    #             {
-    #                 'url': urlparse.urljoin(
-    #                     hook_domain,
-    #                     os.path.join(
-    #                         self.owner.api_url, 'bitbucket', 'hook/'
-    #                     )
-    #                 ),
-    #                 'content_type': bitbucket_settings.HOOK_CONTENT_TYPE,
-    #                 'secret': secret,
-    #             },
-    #             events=bitbucket_settings.HOOK_EVENTS,
-    #         )
+        if self.user_settings:
+            connect = BitbucketClient(access_token=self.external_account.oauth_key)
+            hook = connect.add_hook(
+                self.user, self.repo,
+                {
+                    'description': 'OSF Webhook for project {}'.format(self.owner),
+                    'url': urlparse.urljoin(
+                        hook_domain,
+                        os.path.join(
+                            self.owner.api_url, 'bitbucket', 'hook/'
+                        )
+                    ),
+                    'active': True,
+                    'events': bitbucket_settings.HOOK_EVENTS,
+                }
+            )
 
-    #         if hook:
-    #             self.hook_id = hook.id
-    #             self.hook_secret = secret
-    #             if save:
-    #                 self.save()
+            if hook:
+                self.hook_id = hook.id
+                if save:
+                    self.save()
 
-    # def delete_hook(self, save=True):
-    #     """
-    #     :return bool: Hook was deleted
-    #     """
-    #     if self.user_settings and self.hook_id:
-    #         connection = BitbucketClient(access_token=self.external_account.oauth_key)
-    #         try:
-    #             response = connection.delete_hook(self.user, self.repo, self.hook_id)
-    #         except (BitbucketError, NotFoundError):
-    #             return False
-    #         if response:
-    #             self.hook_id = None
-    #             if save:
-    #                 self.save()
-    #             return True
-    #     return False
+    def delete_hook(self, save=True):
+        """Delete a webhook for this repository.
+
+        :param bool save: whether or not to save the node settings after hook deletion
+        :return bool: Hook was deleted
+        """
+        if self.user_settings and self.hook_id:
+            connection = BitbucketClient(access_token=self.external_account.oauth_key)
+            try:
+                response = connection.delete_hook(self.user, self.repo, self.hook_id)
+            except (Exception, NotFoundError):
+                return False
+            if response:
+                self.hook_id = None
+                if save:
+                    self.save()
+                return True
+        return False

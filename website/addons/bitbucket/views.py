@@ -12,9 +12,7 @@ from website.addons.base import generic_views
 from website.addons.bitbucket.api import BitbucketClient, ref_to_params
 from website.addons.bitbucket.exceptions import NotFoundError
 from website.addons.bitbucket.serializer import BitbucketSerializer
-from website.addons.bitbucket.utils import (
-    get_refs, verify_hook_signature
-)
+from website.addons.bitbucket.utils import get_refs
 
 from website.models import NodeLog
 from website.project.decorators import (
@@ -306,43 +304,41 @@ def add_hook_log(node, bitbucket, action, path, date, committer, include_urls=Fa
 def bitbucket_hook_callback(node_addon, **kwargs):
     """Add logs for commits from outside OSF.
 
+    Push event docs::
+
+    * https://confluence.atlassian.com/bitbucket/event-payloads-740262817.html#EventPayloads-Push
+
     """
     if request.json is None:
         return {}
-
-    # Fail if hook signature is invalid
-    verify_hook_signature(
-        node_addon,
-        request.data,
-        request.headers,
-    )
 
     node = kwargs['node'] or kwargs['project']
 
     payload = request.json
 
-    for commit in payload.get('commits', []):
+    for change in payload['push'].get('changes', []):
+        for commit in change.get('commits', []):
 
-        # TODO: Look up OSF user by commit
-        _id = commit['id']
-        date = dateparse(commit['timestamp'])
-        committer = commit['committer']['name']
+            # TODO: Look up OSF user by commit
+            _id = commit['hash']
+            date = dateparse(change['new']['target']['date'])
+            committer = commit['author']
 
-        # Add logs
-        for path in commit.get('added', []):
-            add_hook_log(
-                node, node_addon, 'bitbucket_' + NodeLog.FILE_ADDED,
-                path, date, committer, include_urls=True, sha=_id,
-            )
-        for path in commit.get('modified', []):
-            add_hook_log(
-                node, node_addon, 'bitbucket_' + NodeLog.FILE_UPDATED,
-                path, date, committer, include_urls=True, sha=_id,
-            )
-        for path in commit.get('removed', []):
-            add_hook_log(
-                node, node_addon, 'bitbucket_' + NodeLog.FILE_REMOVED,
-                path, date, committer,
-            )
+            # Add logs
+            for path in commit.get('added', []):
+                add_hook_log(
+                    node, node_addon, 'bitbucket_' + NodeLog.FILE_ADDED,
+                    path, date, committer, include_urls=True, sha=_id,
+                )
+            for path in commit.get('modified', []):
+                add_hook_log(
+                    node, node_addon, 'bitbucket_' + NodeLog.FILE_UPDATED,
+                    path, date, committer, include_urls=True, sha=_id,
+                )
+            for path in commit.get('removed', []):
+                add_hook_log(
+                    node, node_addon, 'bitbucket_' + NodeLog.FILE_REMOVED,
+                    path, date, committer,
+                )
 
     node.save()

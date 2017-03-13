@@ -192,45 +192,78 @@ class BitbucketClient(BaseClient):
     # Hooks #
     #########
 
-    # def hooks(self, user, repo):
-    #     """List webhooks
+    def hooks(self, username, repo):
+        """List webhooks on a repo
 
-    #     :param str user: Bitbucket user name
-    #     :param str repo: Bitbucket repo name
-    #     :return list: List of commit dicts from Bitbucket; see
-    #         http://developer.bitbucket.com/v3/repos/hooks/#json-http
-    #     """
-    #     return self.repo(user, repo).iter_hooks()
+        API docs::
 
-    # def add_hook(self, user, repo, name, config, events=None, active=True):
-    #     """Create a webhook.
+        * https://developer.atlassian.com/bitbucket/api/2/reference/resource/repositories/%7Busername%7D/%7Brepo_slug%7D/hooks
 
-    #     :param str user: Bitbucket user name
-    #     :param str repo: Bitbucket repo name
-    #     :return dict: Hook info from Bitbucket: see see
-    #         http://developer.bitbucket.com/v3/repos/hooks/#json-http
-    #     """
-    #     try:
-    #         hook = self.repo(user, repo).create_hook(name, config, events, active)
-    #     except bitbucket3.BitbucketError:
-    #         # TODO Handle this case - if '20 hooks' in e.errors[0].get('message'):
-    #         return None
-    #     else:
-    #         return hook
+        :param str username: Bitbucket user name
+        :param str repo: Bitbucket repo name
+        :return list: List of commit dicts from Bitbucket; see
+            http://developer.bitbucket.com/v3/repos/hooks/#json-http
+        """
+        if username is None:
+            username = self.get_username
 
-    # def delete_hook(self, user, repo, _id):
-    #     """Delete a webhook.
+        res = self._make_request(
+            'GET',
+            self._build_url(settings.BITBUCKET_V2_API_URL, 'repositories', username, repo, 'hooks'),
+            expects=(200, ),
+            throws=HTTPError(401)
+        )
+        return res.json()
 
-    #     :param str user: Bitbucket user name
-    #     :param str repo: Bitbucket repo name
-    #     :return bool: True if successful, False otherwise
-    #     :raises: NotFoundError if repo or hook cannot be located
-    #     """
-    #     repo = self.repo(user, repo)
-    #     hook = repo.hook(_id)
-    #     if hook is None:
-    #         raise NotFoundError
-    #     return repo.hook(_id).delete()
+    def add_hook(self, username, repo, config):
+        """Create a webhook.
+
+        API docs::
+
+        * https://developer.atlassian.com/bitbucket/api/2/reference/resource/repositories/%7Busername%7D/%7Brepo_slug%7D/hooks#post
+
+        :param str username: Bitbucket user name
+        :param str repo: Bitbucket repo name
+        :param dict config: a dictionary describing the hook configuration. See api docs.
+        :return dict: Hook info from Bitbucket. See docs.
+        """
+        if username is None:
+            username = self.get_username
+
+        res = self._make_request(
+            'POST',
+            self._build_url(settings.BITBUCKET_V2_API_URL, 'repositories', username,
+                            repo, 'hooks'),
+            config,
+            expects=(201, ),
+            throws=HTTPError(401)
+        )
+        return res.json()
+
+    def delete_hook(self, username, repo, _id):
+        """Delete a webhook.
+
+        API Docs::
+
+        * https://developer.atlassian.com/bitbucket/api/2/reference/resource/repositories/%7Busername%7D/%7Brepo_slug%7D/hooks/%7Buid%7D#delete
+
+        :param str username: Bitbucket user name
+        :param str repo: Bitbucket repo name
+        :param str _id: id of webhook to delete
+        :return bool: True if successful, False otherwise
+        :raises: NotFoundError if repo or hook cannot be located
+        """
+        if username is None:
+            username = self.get_username
+
+        res = self._make_request(
+            'DELETE',
+            self._build_url(settings.BITBUCKET_V2_API_URL, 'repositories', username,
+                            repo, 'hooks', _id),
+            expects=(200, 404, ),
+            throws=HTTPError(401)
+        )
+        return res.status == 200
 
 def ref_to_params(branch=None, sha=None):
 
