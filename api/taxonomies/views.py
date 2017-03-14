@@ -95,4 +95,4 @@ class TaxonomyDetail(JSONAPIBaseView, generics.RetrieveAPIView):
     view_name = 'taxonomy-detail'
 
     def get_object(self):
-        return get_object_or_error(Subject, self.kwargs['taxonomy_id'])
+        return get_object_or_error(Subject, self.kwargs['taxonomy_id'], prefetch_fields=self.serializer_class().model_field_names)

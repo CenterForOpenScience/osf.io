@@ -7,7 +7,7 @@ from website.prereg.utils import drafts_for_user, get_prereg_schema
 from website.project.model import ensure_schemas, MetaSchema
 
 from tests.base import OsfTestCase
-from tests import factories
+from osf_tests import factories
 
 
 class TestPreregLandingPage(OsfTestCase):
@@ -77,7 +77,7 @@ class TestPreregLandingPage(OsfTestCase):
             initiator=self.user,
             registration_schema=prereg_schema
         )
-        d1.registered_node = factories.ProjectFactory()
+        d1.registered_node = factories.RegistrationFactory()
         d1.save()
         drafts = drafts_for_user(self.user, 'prereg')
         for d in drafts:

@@ -89,7 +89,7 @@ class MetaSchemaDetail(JSONAPIBaseView, generics.RetrieveAPIView):
     # overrides RetrieveAPIView
     def get_object(self):
         schema_id = self.kwargs['metaschema_id']
-        schema = get_object_or_error(MetaSchema, schema_id)
+        schema = get_object_or_error(MetaSchema, schema_id, prefetch_fields=self.serializer_class().model_field_names)
         if schema.schema_version != LATEST_SCHEMA_VERSION or schema.name not in ACTIVE_META_SCHEMAS:
             raise NotFound
         return schema

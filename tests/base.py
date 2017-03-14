@@ -7,7 +7,9 @@ import logging
 import os
 import re
 import shutil
+import tempfile
 import unittest
+import uuid
 
 import blinker
 import httpretty
@@ -44,6 +46,7 @@ from .json_api_test_app import JSONAPITestApp
 
 from nose.tools import *  # noqa (PEP8 asserts); noqa (PEP8 asserts)
 
+logger = logging.getLogger(__name__)
 
 
 def get_default_metaschema():
@@ -66,16 +69,18 @@ test_app.testing = True
 
 # Silence some 3rd-party logging and some "loud" internal loggers
 SILENT_LOGGERS = [
+    'api.caching.tasks',
     'factory.generate',
     'factory.containers',
-    'website.search.elastic_search',
     'framework.analytics',
     'framework.auth.core',
+    'framework.celery_tasks.signals',
+    'website.app',
     'website.mails',
+    'website.notifications.listeners',
+    'website.search.elastic_search',
     'website.search_migration.migrate',
     'website.util.paths',
-    'api.caching.tasks',
-    'website.notifications.listeners',
 ]
 for logger_name in SILENT_LOGGERS:
     logging.getLogger(logger_name).setLevel(logging.CRITICAL)
@@ -205,28 +210,25 @@ class ApiAppTestCase(unittest.TestCase):
         self.app = JSONAPITestApp()
 
 
-class UploadTestCase(unittest.TestCase):
+class SearchTestCase(unittest.TestCase):
 
-    @classmethod
-    def setUpClass(cls):
-        """Store uploads in temp directory.
-        """
-        super(UploadTestCase, cls).setUpClass()
-        cls._old_uploads_path = settings.UPLOADS_PATH
-        cls._uploads_path = os.path.join('/tmp', 'osf', 'uploads')
-        try:
-            os.makedirs(cls._uploads_path)
-        except OSError:  # Path already exists
-            pass
-        settings.UPLOADS_PATH = cls._uploads_path
+    def setUp(self):
+        settings.ELASTIC_INDEX = uuid.uuid4().hex
+        settings.ELASTIC_TIMEOUT = 60
 
-    @classmethod
-    def tearDownClass(cls):
-        """Restore uploads path.
-        """
-        super(UploadTestCase, cls).tearDownClass()
-        shutil.rmtree(cls._uploads_path)
-        settings.UPLOADS_PATH = cls._old_uploads_path
+        from website.search import elastic_search
+        elastic_search.INDEX = settings.ELASTIC_INDEX
+        elastic_search.create_index(settings.ELASTIC_INDEX)
+
+        # NOTE: Super is called last to ensure the ES connection can be established before
+        #       the httpretty module patches the socket.
+        super(SearchTestCase, self).setUp()
+
+    def tearDown(self):
+        super(SearchTestCase, self).tearDown()
+
+        from website.search import elastic_search
+        elastic_search.delete_index(settings.ELASTIC_INDEX)
 
 
 methods = [
@@ -238,17 +240,17 @@ methods = [
     httpretty.DELETE,
 ]
 def kill(*args, **kwargs):
-    raise httpretty.errors.UnmockedError
+    logger.error('httppretty.kill: %s - %s', args, kwargs)
+    raise httpretty.errors.UnmockedError()
 
 
 class MockRequestTestCase(unittest.TestCase):
 
     DISABLE_OUTGOING_CONNECTIONS = False
 
-    @classmethod
-    def setUpClass(cls):
-        super(MockRequestTestCase, cls).setUpClass()
-        if cls.DISABLE_OUTGOING_CONNECTIONS:
+    def setUp(self):
+        super(MockRequestTestCase, self).setUp()
+        if self.DISABLE_OUTGOING_CONNECTIONS:
             httpretty.enable()
             for method in methods:
                 httpretty.register_uri(
@@ -261,15 +263,10 @@ class MockRequestTestCase(unittest.TestCase):
     def tearDown(self):
         super(MockRequestTestCase, self).tearDown()
         httpretty.reset()
-
-    @classmethod
-    def tearDownClass(cls):
-        super(MockRequestTestCase, cls).tearDownClass()
-        httpretty.reset()
         httpretty.disable()
 
 
-class OsfTestCase(DbTestCase, AppTestCase, UploadTestCase, MockRequestTestCase):
+class OsfTestCase(DbTestCase, AppTestCase, SearchTestCase, MockRequestTestCase):
     """Base `TestCase` for tests that require both scratch databases and the OSF
     application. Note: superclasses must call `super` in order for all setup and
     teardown methods to be called correctly.
@@ -277,7 +274,7 @@ class OsfTestCase(DbTestCase, AppTestCase, UploadTestCase, MockRequestTestCase):
     pass
 
 
-class ApiTestCase(DbTestCase, ApiAppTestCase, UploadTestCase, MockRequestTestCase):
+class ApiTestCase(DbTestCase, ApiAppTestCase, SearchTestCase, MockRequestTestCase):
     """Base `TestCase` for tests that require both scratch databases and the OSF
     API application. Note: superclasses must call `super` in order for all setup and
     teardown methods to be called correctly.
@@ -367,7 +364,7 @@ class ApiAddonTestCase(ApiTestCase):
             self.account.remove()
 
 
-class AdminTestCase(DbTestCase, DjangoTestCase, UploadTestCase, MockRequestTestCase):
+class AdminTestCase(DbTestCase, DjangoTestCase, SearchTestCase, MockRequestTestCase):
     pass
 
 

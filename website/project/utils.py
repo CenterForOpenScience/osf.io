@@ -14,32 +14,24 @@ def serialize_node(*args, **kwargs):
     from website.project.views.node import _view_project
     return _view_project(*args, **kwargs)  # Not recommended practice
 
-CONTENT_NODE_QUERY = (
+PROJECT_QUERY = (
     # Can encompass accessible projects, registrations, or forks
     # Note: is_bookmark collection(s) are implicitly assumed to also be collections; that flag intentionally omitted
     Q('is_deleted', 'eq', False) &
     Q('type', 'ne', 'osf.collection')
 )
 
-PROJECT_QUERY = CONTENT_NODE_QUERY
-
-
 def recent_public_registrations(n=10):
+    from django.db.models import Q as DQ
     Registration = apps.get_model('osf.Registration')
-    registrations = Registration.find(
-        CONTENT_NODE_QUERY &
-        Q('is_public', 'eq', True)
-    ).get_roots().sort(
-        '-registered_date'
-    )
-    for reg in registrations:
-        if not n:
-            break
-        if reg.is_retracted or reg.is_pending_embargo:
-            # Filter based on calculated properties
-            continue
-        n -= 1
-        yield reg
+
+    return Registration.objects.filter(
+        is_public=True,
+        is_deleted=False,
+    ).filter(
+        DQ(DQ(embargo__isnull=True) | ~DQ(embargo__state='unapproved')) &
+        DQ(DQ(retraction__isnull=True) | ~DQ(retraction__state='approved'))
+    ).get_roots().order_by('-registered_date').limit(n)
 
 
 def get_keen_activity():
