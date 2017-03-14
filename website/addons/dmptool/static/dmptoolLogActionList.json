@@ -1,0 +1,6 @@
+{
+  "dmptool_folder_selected" : "${user} linked dmptool folder ${folder} in ${node}",
+  "dmptool_node_authorized" : "${user} authorized the dmptool addon for ${node}",
+  "dmptool_node_deauthorized" : "${user} deauthorized the dmptool addon for ${node}",
+  "dmptool_node_deauthorized_no_user" : "dmptool addon for ${node} deauthorized"
+}

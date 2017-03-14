@@ -1,0 +1,10 @@
+{
+    "evernote_file_added" : "A user added a file to Evernote in a project",
+    "evernote_file_removed" : "A user removed a file from Evernote in a project",
+    "evernote_file_updated" : "A user updated a file in Evernote in a project",
+    "evernote_folder_created" : "A user created a folder in Evernote in a project",
+    "evernote_folder_selected" : "A user linked a Evernote folder to a project",
+    "evernote_node_authorized" : "A user authorized the Evernote addon for a project",
+    "evernote_node_deauthorized" : "A user deauthorized the Evernote addon for a project",
+    "evernote_node_deauthorized_no_user": "Evernote addon for a project deauthorized"
+}
