@@ -87,7 +87,7 @@ class TokenDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView):
     def get_object(self):
         obj = get_object_or_error(ApiOAuth2PersonalToken,
                                   Q('_id', 'eq', self.kwargs['_id']) &
-                                  Q('is_active', 'eq', True))
+                                  Q('is_active', 'eq', True), prefetch_fields=self.serializer_class().model_field_names)
 
         self.check_object_permissions(self.request, obj)
         return obj

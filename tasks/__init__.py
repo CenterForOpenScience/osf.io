@@ -103,7 +103,7 @@ def apiserver(ctx, port=8000, wait=True, autoreload=True, host='127.0.0.1', pty=
 def adminserver(ctx, port=8001, host='127.0.0.1', pty=True):
     """Run the Admin server."""
     env = 'DJANGO_SETTINGS_MODULE="admin.base.settings"'
-    cmd = '{} python manage.py runserver {}:{} --no-init-app --nothreading'.format(env, host, port)
+    cmd = '{} python manage.py runserver {}:{} --nothreading'.format(env, host, port)
     if settings.SECURE_MODE:
         cmd = cmd.replace('runserver', 'runsslserver')
         cmd += ' --certificate {} --key {}'.format(settings.OSF_SERVER_CERT, settings.OSF_SERVER_KEY)
@@ -361,7 +361,7 @@ def sharejs(ctx, host=None, port=None, db_url=None, cors_allow_origin=None):
 
 
 @task(aliases=['celery'])
-def celery_worker(ctx, level='debug', hostname=None, beat=False):
+def celery_worker(ctx, level='debug', hostname=None, beat=False, queues=None):
     """Run the Celery process."""
     os.environ['DJANGO_SETTINGS_MODULE'] = 'api.base.settings'
     cmd = 'celery worker -A framework.celery_tasks -l {0}'.format(level)
@@ -370,6 +370,8 @@ def celery_worker(ctx, level='debug', hostname=None, beat=False):
     # beat sets up a cron like scheduler, refer to website/settings
     if beat:
         cmd = cmd + ' --beat'
+    if queues:
+        cmd = cmd + ' --queues={}'.format(queues)
     ctx.run(bin_prefix(cmd), pty=True)
 
 
@@ -414,6 +416,12 @@ def migrate_search(ctx, delete=False, index=settings.ELASTIC_INDEX):
     from website.app import init_app
     init_app(routes=False, set_backends=False)
     from website.search_migration.migrate import migrate
+
+    # NOTE: Silence the warning:
+    # "InsecureRequestWarning: Unverified HTTPS request is being made. Adding certificate verification is strongly advised."
+    SILENT_LOGGERS = ['py.warnings']
+    for logger in SILENT_LOGGERS:
+        logging.getLogger(logger).setLevel(logging.ERROR)
 
     migrate(delete, index=index)
 
@@ -513,58 +521,70 @@ def requirements(ctx, base=False, addons=False, release=False, dev=False, quick=
     ctx.run('pip install --no-cache-dir uritemplate.py==0.3.0')
 
 @task
-def test_module(ctx, module=None):
+def test_module(ctx, module=None, numprocesses=None, params=None):
     """Helper for running tests.
     """
+    os.environ['DJANGO_SETTINGS_MODULE'] = 'osf_tests.settings'
     import pytest
+    if not numprocesses:
+        from multiprocessing import cpu_count
+        numprocesses = cpu_count()
+    # NOTE: Subprocess to compensate for lack of thread safety in the httpretty module.
+    # https://github.com/gabrielfalcao/HTTPretty/issues/209#issue-54090252
     args = ['-s']
+    if numprocesses > 1:
+        args += ['-n {}'.format(numprocesses)]
     modules = [module] if isinstance(module, basestring) else module
     args.extend(modules)
+    if params:
+        params = [params] if isinstance(params, basestring) else params
+        args.extend(params)
     retcode = pytest.main(args)
     sys.exit(retcode)
 
 # TODO: Add to this list when more modules are ported for djangosf compat
-CORE_TESTS = [
+OSF_TESTS = [
     'osf_tests',
-    'tests/test_views.py',
-    'tests/test_addons.py',
-    'tests/test_alternative_citations.py',
-    'tests/test_auth.py',
-    'tests/test_auth_basic_auth.py',
-    'tests/test_auth_forms.py',
-    'tests/test_campaigns.py',
-    'tests/test_cas_authentication.py',
-    'tests/test_citations.py',
-    'tests/test_conferences.py',
-    'tests/test_contributors_views.py',
-    'tests/test_events.py',
-    'tests/test_identifiers.py',
-    'tests/test_mailchimp.py',
-    'tests/test_metadata.py',
-    'tests/test_node_licenses.py',
-    'tests/test_notifications.py',
-    'tests/test_oauth.py',
-    'tests/test_permissions.py',
-    'tests/test_preprints.py',
-    'tests/test_rubeus.py',
-    'tests/test_sanitize.py',
-    'tests/test_security.py',
-    'tests/test_serializers.py',
-    'tests/test_spam_mixin.py',
-    'tests/test_subjects.py',
-    'tests/test_tokens.py',
-    'tests/test_webtests.py',
-    'tests/test_utils.py',
+    'addons',
+    # 'tests/test_views.py',
+    # 'tests/test_addons.py',
+    # 'tests/test_alternative_citations.py',
+    # 'tests/test_auth.py',
+    # 'tests/test_auth_basic_auth.py',
+    # 'tests/test_auth_forms.py',
+    # 'tests/test_campaigns.py',
+    # 'tests/test_cas_authentication.py',
+    # 'tests/test_citations.py',
+    # 'tests/test_conferences.py',
+    # 'tests/test_contributors_views.py',
+    # 'tests/test_events.py',
+    # 'tests/test_identifiers.py',
+    # 'tests/test_mailchimp.py',
+    # 'tests/test_metadata.py',
+    # 'tests/test_node_licenses.py',
+    # 'tests/test_notifications.py',
+    # 'tests/test_oauth.py',
+    # 'tests/test_permissions.py',
+    # 'tests/test_preprints.py',
+    # 'tests/test_rubeus.py',
+    # 'tests/test_sanitize.py',
+    # 'tests/test_security.py',
+    # 'tests/test_serializers.py',
+    # 'tests/test_spam_mixin.py',
+    # 'tests/test_subjects.py',
+    # 'tests/test_tokens.py',
+    # 'tests/test_webtests.py',
+    # 'tests/test_utils.py',
+    # 'tests/test_registrations/test_retractions.py',
+    # 'tests/test_registrations/test_embargoes.py',
+    # 'tests/test_registrations/test_registration_approvals.py',
+    # 'tests/test_registrations/test_views.py',
 ]
-@task
-def test_osf(ctx):
-    """Run the OSF test suite."""
-    test_module(ctx, module=CORE_TESTS)
-
 
 ELSE_TESTS = [
-    'addons',
+    'tests',
 ]
+
 API_TESTS1 = [
     'api_tests/identifiers',
     'api_tests/institutions',
@@ -574,10 +594,10 @@ API_TESTS1 = [
     'api_tests/preprint_providers',
     'api_tests/preprints',
     'api_tests/registrations',
+    'api_tests/users',
 ]
 API_TESTS2 = [
     'api_tests/nodes',
-    'api_tests/users',
 ]
 API_TESTS3 = [
     'api_tests/addons_tests',
@@ -594,23 +614,38 @@ API_TESTS3 = [
     'api_tests/view_only_links',
     'api_tests/wikis',
 ]
+ADDON_TESTS = [
+    'addons/',
+]
+
 
 @task
-def test_else(ctx):
-    """Run the API test suite."""
-    test_module(ctx, module=ELSE_TESTS)
+def test_osf(ctx, numprocesses=None):
+    """Run the OSF test suite."""
+    test_module(ctx, module=OSF_TESTS, numprocesses=numprocesses)
+
 @task
-def test_api1(ctx):
-    """Run the API test suite."""
-    test_module(ctx, module=API_TESTS1)
+def test_else(ctx, numprocesses=None):
+    """Run the old test suite."""
+    # TODO (@cwisecarver, @mfraezz, @sloria): Fix ignored tests
+    test_module(ctx, module=ELSE_TESTS, numprocesses=numprocesses, params=['--ignore=tests/ignore'])
+
 @task
-def test_api2(ctx):
+def test_api1(ctx, numprocesses=None):
     """Run the API test suite."""
-    test_module(ctx, module=API_TESTS2)
+    test_module(ctx, module=API_TESTS1, numprocesses=numprocesses)
+
+
 @task
-def test_api3(ctx):
+def test_api2(ctx, numprocesses=None):
     """Run the API test suite."""
-    test_module(ctx, module=API_TESTS3)
+    test_module(ctx, module=API_TESTS2, numprocesses=numprocesses)
+
+
+@task
+def test_api3(ctx, numprocesses=None):
+    """Run the API test suite."""
+    test_module(ctx, module=API_TESTS3, numprocesses=numprocesses)
 
 
 @task
@@ -620,6 +655,13 @@ def test_admin(ctx):
     module = 'admin_tests/'
     module_fmt = ' '.join(module) if isinstance(module, list) else module
     admin_tasks.manage(ctx, 'test {}'.format(module_fmt))
+
+
+@task
+def test_addons(ctx, numprocesses=None):
+    """Run all the tests in the addons directory.
+    """
+    test_module(ctx, module=ADDON_TESTS, numprocesses=numprocesses)
 
 
 @task
@@ -633,16 +675,6 @@ def test_varnish(ctx):
         proc.kill()
 
 
-ADDON_TESTS = [
-    'addons/',
-]
-@task
-def test_addons(ctx):
-    """Run all the tests in the addons directory.
-    """
-    test_module(ctx, module=ADDON_TESTS)
-
-
 @task
 def test(ctx, all=False, syntax=False):
     """
@@ -653,20 +685,16 @@ def test(ctx, all=False, syntax=False):
         jshint(ctx)
 
     test_osf(ctx)
-    test_else(ctx)
-    # TODO: Enable admin tests
-    # test_admin(ctx)
+    test_api1(ctx)
+    test_api2(ctx)
+    test_api3(ctx)
 
     if all:
         test_addons(ctx)
+        # TODO: Enable admin tests
+        test_admin(ctx)
         karma(ctx, single=True, browsers='PhantomJS')
 
-OSF_MODELS_TESTS = [
-    'osf_tests',
-]
-@task
-def test_osf_models(ctx):
-    test_module(ctx, OSF_MODELS_TESTS)
 
 @task
 def test_js(ctx):
@@ -675,45 +703,56 @@ def test_js(ctx):
 
 
 @task
-def test_travis_osf(ctx):
+def test_travis_osf(ctx, numprocesses=None):
     """
     Run half of the tests to help travis go faster. Lints and Flakes happen everywhere to keep from wasting test time.
     """
     flake(ctx)
     jshint(ctx)
-    test_osf(ctx)
-    test_addons(ctx)
-    test_osf_models(ctx)
+    test_osf(ctx, numprocesses=numprocesses)
+
 
 @task
-def test_travis_else(ctx):
+def test_travis_else(ctx, numprocesses=None):
     """
     Run other half of the tests to help travis go faster. Lints and Flakes happen everywhere to keep from
     wasting test time.
     """
     flake(ctx)
     jshint(ctx)
-    test_else(ctx)
-    # TODO: Enable admin tests
-    # test_admin(ctx)
+    test_else(ctx, numprocesses=numprocesses)
+    test_addons(ctx, numprocesses=numprocesses)
+    test_admin(ctx, numprocesses=numprocesses)
+
 
 @task
-def test_travis_api1(ctx):
-    test_api1(ctx)
+def test_travis_api1(ctx, numprocesses=None):
+    flake(ctx)
+    jshint(ctx)
+    test_api1(ctx, numprocesses=numprocesses)
+
 
 @task
-def test_travis_api2(ctx):
-    test_api2(ctx)
+def test_travis_api2(ctx, numprocesses=None):
+    flake(ctx)
+    jshint(ctx)
+    test_api2(ctx, numprocesses=numprocesses)
+
 
 @task
-def test_travis_api3(ctx):
-    test_api3(ctx)
+def test_travis_api3(ctx, numprocesses=None):
+    flake(ctx)
+    jshint(ctx)
+    test_api3(ctx, numprocesses=numprocesses)
+
 
 @task
 def test_travis_varnish(ctx):
     """
     Run the fast and quirky JS tests and varnish tests in isolation
     """
+    flake(ctx)
+    jshint(ctx)
     test_js(ctx)
     test_varnish(ctx)
 

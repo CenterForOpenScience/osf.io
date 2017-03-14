@@ -805,13 +805,10 @@
         "password": "pbkdf2_sha256$24000$pZxXuBPPAI5O$bP9lY92WzoaWRY6t6hglCrp6fOMnwXCLZM8BCyMqMwI=",
         "last_login": null,
         "is_superuser": true,
-        "username": "admin",
-        "first_name": "",
-        "last_name": "",
+        "username": "admin@cos.io",
         "email": "admin@cos.io",
         "is_staff": true,
         "is_active": true,
-        "date_joined": "2016-06-10T19:45:22.435Z",
         "groups": [],
         "user_permissions": []
     }

@@ -28,7 +28,7 @@ from api.nodes.permissions import (
 )
 
 from website.exceptions import NodeStateError
-from osf.models import Collection, Node, NodeRelation
+from osf.models import Collection, NodeRelation
 from website.util.permissions import ADMIN
 
 
@@ -42,9 +42,10 @@ class CollectionMixin(object):
 
     def get_node(self, check_object_permissions=True):
         node = get_object_or_error(
-            Node,
+            Collection,
             self.kwargs[self.node_lookup_url_kwarg],
-            display_name='collection'
+            display_name='collection',
+            prefetch_fields=self.serializer_class().model_field_names
         )
         # Nodes that are folders/collections are treated as a separate resource, so if the client
         # requests a non-collection through a collection endpoint, we return a 404
@@ -512,7 +513,7 @@ class NodeLinksList(JSONAPIBaseView, bulk_views.BulkDestroyJSONAPIView, bulk_vie
     model_class = NodeRelation
 
     def get_queryset(self):
-        return self.get_node().node_relations.filter(child__is_deleted=False).exclude(child__type='osf.collection')
+        return self.get_node().node_relations.select_related('child').filter(child__is_deleted=False).exclude(child__type='osf.collection')
 
     # Overrides BulkDestroyJSONAPIView
     def perform_destroy(self, instance):
@@ -588,7 +589,8 @@ class NodeLinksDetail(JSONAPIBaseView, generics.RetrieveDestroyAPIView, Collecti
         node_link = get_object_or_error(
             NodeRelation,
             self.kwargs[node_link_lookup_url_kwarg],
-            'node link'
+            'node link',
+            prefetch_fields=self.serializer_class().model_field_names
         )
         # May raise a permission denied
         self.kwargs['node_id'] = self.kwargs['collection_id']

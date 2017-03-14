@@ -227,7 +227,6 @@ class TestAddonCount(OsfTestCase):
         assert_equal(storage_res['nodes']['connected'], 0)
 
     def test_bookmark_collection_not_counted(self):
-        BookmarkCollectionFactory(creator=self.user)
         all_node_count = Node.find().count()
 
         results = AddonSnapshot().get_events()

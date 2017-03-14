@@ -17,7 +17,7 @@ from framework.exceptions import HTTPError, PermissionsError
 from framework.sessions import session
 from osf.models import base
 from osf.modm_compat import Q
-from osf.utils.fields import EncryptedTextField
+from osf.utils.fields import EncryptedTextField, NonNaiveDateTimeField
 from website.oauth.utils import PROVIDER_LOOKUP
 from website.security import random_string
 from website.util import web_url_for
@@ -57,8 +57,8 @@ class ExternalAccount(base.ObjectIDMixin, base.BaseModel):
 
     # Used for OAuth2 only
     refresh_token = EncryptedTextField(blank=True, null=True)
-    date_last_refreshed = models.DateTimeField(blank=True, null=True)
-    expires_at = models.DateTimeField(blank=True, null=True)
+    date_last_refreshed = NonNaiveDateTimeField(blank=True, null=True)
+    expires_at = NonNaiveDateTimeField(blank=True, null=True)
     scopes = ArrayField(models.CharField(max_length=128), default=list, blank=True)
 
     # The `name` of the service

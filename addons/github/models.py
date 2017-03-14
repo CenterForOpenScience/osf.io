@@ -141,10 +141,6 @@ class NodeSettings(BaseStorageAddon, BaseOAuthNodeSettings):
         return self.repo or None
 
     @property
-    def has_auth(self):
-        return bool(self.user_settings and self.user_settings.has_auth)
-
-    @property
     def complete(self):
         return self.has_auth and self.repo is not None and self.user is not None
 

@@ -17,7 +17,7 @@ from api.registrations.serializers import RegistrationSerializer
 from api.users.permissions import (CurrentUser, ReadOnlyOrCurrentUser,
                                    ReadOnlyOrCurrentUserRelationship)
 from api.users.serializers import (UserAddonSettingsSerializer,
-                                   UserCreateSerializer, UserDetailSerializer,
+                                   UserDetailSerializer,
                                    UserInstitutionsRelationshipSerializer,
                                    UserSerializer)
 from django.contrib.auth.models import AnonymousUser
@@ -47,7 +47,7 @@ class UserMixin(object):
             else:
                 return self.request.user
 
-        obj = get_object_or_error(User, key, 'user')
+        obj = get_object_or_error(User, key, 'user', prefetch_fields=self.serializer_class().model_field_names)
         if check_permissions:
             # May raise a permission denied
             self.check_object_permissions(self.request, obj)
@@ -132,13 +132,6 @@ class UserList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
         # TODO: sort
         query = self.get_query_from_request()
         return User.find(query)
-
-    # overrides ListCreateAPIView
-    def get_serializer_class(self):
-        if self.request.method == 'POST':
-            return UserCreateSerializer
-        else:
-            return UserSerializer
 
 
 class UserDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, UserMixin):
@@ -505,7 +498,7 @@ class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, NodePreprintsF
 
     # overrides ListAPIView
     def get_queryset(self):
-        return Node.find(self.get_query_from_request())
+        return Node.find(self.get_query_from_request()).select_related('root')
 
 
 class UserPreprints(UserNodes):
@@ -571,7 +564,7 @@ class UserInstitutions(JSONAPIBaseView, generics.ListAPIView, UserMixin):
 
     def get_queryset(self):
         user = self.get_user()
-        return user.affiliated_institutions
+        return user.affiliated_institutions.all()
 
 
 class UserRegistrations(UserNodes):

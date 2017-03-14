@@ -52,7 +52,8 @@ class GuidDetail(JSONAPIBaseView, generics.RetrieveAPIView):
         return get_object_or_error(
             Guid,
             self.kwargs['guids'],
-            display_name='guid'
+            display_name='guid',
+            prefetch_fields=self.serializer_class().model_field_names
         )
 
     def get(self, request, **kwargs):
