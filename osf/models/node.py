@@ -18,7 +18,7 @@ from django.db import models, transaction, connection
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils import timezone
-from django.utils.functional import cached_property
+from osf.utils.caching import cached_property
 from keen import scoped_keys
 from modularodm import Q as MQ
 from psycopg2._psycopg import AsIs
@@ -76,41 +76,12 @@ class AbstractNodeQuerySet(GuidMixinQuerySet):
                    'osf_noderelation WHERE is_node_link IS false))'])
 
     def get_children(self, root, primary_keys=False, active=False):
-        sql = """
-            WITH RECURSIVE descendants AS (
-              SELECT
-                parent_id,
-                child_id,
-                1 AS LEVEL
-              FROM %s
-              %s
-              WHERE is_node_link IS FALSE %s
-              UNION ALL
-              SELECT
-                s.parent_id,
-                d.child_id,
-                d.level + 1
-              FROM descendants AS d
-                JOIN %s AS s
-                  ON d.parent_id = s.child_id
-              WHERE s.is_node_link IS FALSE
-            ) SELECT array_agg(DISTINCT child_id)
-              FROM descendants
-              WHERE parent_id = %s;
-        """
-        with connection.cursor() as cursor:
-            node_relation_table = AsIs(NodeRelation._meta.db_table)
-            cursor.execute(sql, [
-                node_relation_table,
-                AsIs('LEFT JOIN osf_abstractnode ON {}.child_id = osf_abstractnode.id'.format(node_relation_table) if active else ''),
-                AsIs('AND osf_abstractnode.is_deleted IS FALSE' if active else ''),
-                node_relation_table,
-                root.pk])
-            row = cursor.fetchone()[0]
-            if row is None or primary_keys:
-                return row or []
-            else:
-                return AbstractNode.objects.filter(id__in=row)
+        query = root.descendants.exclude(id=root.id)
+        if active:
+            query = query.filter(is_deleted=False)
+        if primary_keys:
+            query = query.values_list('id', flat=True)
+        return query
 
 
 class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixin,
@@ -232,10 +203,18 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     node_license = models.ForeignKey('NodeLicenseRecord', related_name='nodes',
                                      on_delete=models.SET_NULL, null=True, blank=True)
 
+    root = models.ForeignKey('AbstractNode',
+                                default=None,
+                                related_name='descendants',
+                                on_delete=models.SET_NULL, null=True, blank=True)
+
     _nodes = models.ManyToManyField('AbstractNode',
                                     through=NodeRelation,
                                     through_fields=('parent', 'child'),
                                     related_name='parent_nodes')
+
+    class Meta:
+        index_together = (('is_public', 'is_deleted', 'type'))
 
     objects = AbstractNodeQuerySet.as_manager()
 
@@ -255,10 +234,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         if self.is_fork:
             return self.forked_from.parent_node
         return None
-
-    @property
-    def root_id(self):
-        return self.root.id
 
     @property
     def nodes(self):
@@ -358,9 +333,9 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     @property
     def is_preprint(self):
         # TODO: This is a temporary implementation.
-        if not self.preprint_file or not self.is_public:
+        if not self.preprint_file_id or not self.is_public:
             return False
-        if self.preprint_file.node == self:
+        if self.preprint_file.node_id == self.id:
             return True
         else:
             self._is_preprint_orphan = True
@@ -571,7 +546,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         if doi:
             csl['DOI'] = doi
 
-        if self.logs:
+        if self.logs.exists():
             csl['issued'] = datetime_to_csl(self.logs.latest().date)
 
         return csl
@@ -747,16 +722,11 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         """
         if not user:
             return False
-        try:
-            contrib = user.contributor_set.get(node=self)
-        except Contributor.DoesNotExist:
-            if permission == 'read' and check_parent:
-                return self.is_admin_parent(user)
-            return False
-        else:
-            if getattr(contrib, permission, False):
-                return True
-        return False
+        query = {'node': self, permission: True}
+        has_permission = user.contributor_set.filter(**query).exists()
+        if not has_permission and permission == 'read' and check_parent:
+            return self.is_admin_parent(user)
+        return has_permission
 
     def has_permission_on_children(self, user, permission):
         """Checks if the given user has a given permission on any child nodes
@@ -966,11 +936,11 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         if not self.is_contributor(user):
             raise ValueError(u'User {0} not in contributors'.format(user))
         if visible and not Contributor.objects.filter(node=self, user=user, visible=True).exists():
-            Contributor.objects.filter(node=self, user=user, visible=False).update(visible=True)
+            Contributor.objects.filter(node=self, user=user, visible=False).invalidated_update(visible=True)
         elif not visible and Contributor.objects.filter(node=self, user=user, visible=True).exists():
             if Contributor.objects.filter(node=self, visible=True).count() == 1:
                 raise ValueError('Must have at least one visible contributor')
-            Contributor.objects.filter(node=self, user=user, visible=True).update(visible=False)
+            Contributor.objects.filter(node=self, user=user, visible=True).invalidated_update(visible=False)
         else:
             return
         message = (
@@ -1432,8 +1402,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     def private_link_keys_deleted(self):
         return self.private_links.filter(is_deleted=True).values_list('key', flat=True)
 
-    @property
-    def root(self):
+    def get_root(self):
         sql = """
             WITH RECURSIVE ascendants AS (
               SELECT
@@ -1569,6 +1538,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                     parent=registered,
                     child=node_contained
                 )
+
+        registered.root = None  # Recompute root on save
 
         registered.save()
 
@@ -1794,6 +1765,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                         parent=forked,
                         child=forked_node
                     )
+                    forked_node.root = None
+                    forked_node.save()  # Recompute root on save()
             else:
                 # Copy linked nodes
                 NodeRelation.objects.get_or_create(
@@ -1826,6 +1799,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             log=False,
             save=False
         )
+
+        forked.root = None  # Recompute root on save
 
         forked.save()
 
@@ -2168,16 +2143,13 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             del kwargs['suppress_log']
         else:
             self._suppress_log = False
-        saved_fields = self.get_dirty_fields() or []
+        saved_fields = self.get_dirty_fields(check_relationship=True) or []
         ret = super(AbstractNode, self).save(*args, **kwargs)
         if saved_fields:
             self.on_update(first_save, saved_fields)
 
         if 'node_license' in saved_fields:
-            children = [c for c in self.get_descendants_recursive(
-                include=lambda n: n.node_license is None
-            ) if c.is_public and not c.is_deleted]
-            # this returns generator, that would get unspooled anyways
+            children = list(self.descendants.filter(node_license=None, is_public=True, is_deleted=False))
             while len(children):
                 batch = children[:99]
                 self.bulk_update_search(batch)
@@ -2582,7 +2554,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             current = NodeWikiPage.load(self.wiki_pages_current[key])
             version = current.version + 1
             current.save()
-            if Comment.find(Q('root_target', 'eq', current.guids.first())).count() > 0:
+            if Comment.objects.filter(root_target=current.guids.all()[0]).exists():
                 has_comments = True
 
         new_page = NodeWikiPage(
@@ -2595,8 +2567,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         new_page.save()
 
         if has_comments:
-            Comment.objects.filter(root_target=current.guids.first()).update(root_target=Guid.load(new_page._id))
-            Comment.objects.filter(target=current.guids.first()).update(target=Guid.load(new_page._id))
+            Comment.objects.filter(root_target=current.guids.first()).invalidated_update(root_target=Guid.load(new_page._id))
+            Comment.objects.filter(target=current.guids.first()).invalidated_update(target=Guid.load(new_page._id))
 
         if current:
             for contrib in self.contributors:
@@ -2949,7 +2921,7 @@ def add_default_node_addons(sender, instance, created, **kwargs):
 @receiver(post_save, sender=Collection)
 @receiver(post_save, sender=Node)
 @receiver(post_save, sender='osf.Registration')
-def set_parent(sender, instance, created, *args, **kwargs):
+def set_parent_and_root(sender, instance, created, *args, **kwargs):
     if getattr(instance, '_parent', None):
         NodeRelation.objects.get_or_create(
             parent=instance._parent,
@@ -2961,3 +2933,6 @@ def set_parent(sender, instance, created, *args, **kwargs):
             del instance.__dict__['parent_node']
         except KeyError:
             pass
+    if not instance.root:
+        instance.root = instance.get_root()
+        instance.save()

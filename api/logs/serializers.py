@@ -99,15 +99,15 @@ class NodeLogParamsSerializer(RestrictedDictSerializer):
     def get_params_node(self, obj):
         node_id = obj.get('node', None)
         if node_id:
-            node = Node.load(node_id)
-            return {'id': node_id, 'title': node.title}
+            node = Node.objects.filter(guids___id=node_id).values('title').get()
+            return {'id': node_id, 'title': node['title']}
         return None
 
     def get_params_project(self, obj):
         project_id = obj.get('project', None)
         if project_id:
-            node = Node.load(project_id)
-            return {'id': project_id, 'title': node.title}
+            node = Node.objects.filter(guids___id=project_id).values('title').get()
+            return {'id': project_id, 'title': node['title']}
         return None
 
     def get_contributors(self, obj):

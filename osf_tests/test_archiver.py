@@ -35,23 +35,25 @@ from website.archiver import utils as archiver_utils
 from website.app import *  # noqa
 from website.archiver import listeners
 from website.archiver.tasks import *   # noqa
-from website.archiver.model import ArchiveTarget, ArchiveJob
+from osf.models.archive import ArchiveTarget, ArchiveJob
 from website.archiver.decorators import fail_archive_on_error
 
 from website import mails
 from website import settings
 from website.util import waterbutler_url_for
 from website.project.model import MetaSchema
-from addons.base import StorageAddonBase
 from addons.base.models import BaseStorageAddon
 
 from osf_tests import factories
+from tests.factories import MockOAuthAddonNodeSettings
 from tests.base import OsfTestCase, fake
 from tests import utils as test_utils
 from tests.utils import unique as _unique
 
 SILENT_LOGGERS = (
     'framework.celery_tasks.utils',
+    'framework.celery_tasks.signals',
+    'website.app',
     'website.archiver.tasks',
 )
 for each in SILENT_LOGGERS:
@@ -146,9 +148,10 @@ FILE_TREE = {
     ],
 }
 
-class MockAddon(mock.MagicMock, StorageAddonBase):
+class MockAddon(MockOAuthAddonNodeSettings):
 
     complete = True
+    config = mock.MagicMock()
 
     def _get_file_tree(self, user, version):
         return FILE_TREE
@@ -458,8 +461,9 @@ class TestArchiverTasks(ArchiverTestCase):
                 pass
         assert_true(isinstance(mock_fail.call_args[0][0], ArchiverSizeExceeded))
 
+    @mock.patch('website.project.signals.archive_callback.send')
     @mock.patch('website.archiver.tasks.archive_addon.delay')
-    def test_archive_node_does_not_archive_empty_addons(self, mock_archive_addon):
+    def test_archive_node_does_not_archive_empty_addons(self, mock_archive_addon, mock_send):
         with mock.patch('osf.models.mixins.AddonModelMixin.get_addon') as mock_get_addon:
             mock_addon = MockAddon()
             def empty_file_tree(user, version):
@@ -474,6 +478,7 @@ class TestArchiverTasks(ArchiverTestCase):
             results = [stat_addon(addon, self.archive_job._id) for addon in ['osfstorage']]
             archive_node(results, job_pk=self.archive_job._id)
         assert_false(mock_archive_addon.called)
+        assert_true(mock_send.called)
 
     @use_fake_addons
     @mock.patch('website.archiver.tasks.archive_addon.delay')
@@ -481,7 +486,7 @@ class TestArchiverTasks(ArchiverTestCase):
         settings.MAX_ARCHIVE_SIZE = 100
         self.archive_job.initiator.add_system_tag(NO_ARCHIVE_LIMIT)
         self.archive_job.initiator.save()
-        with mock.patch.object(StorageAddonBase, '_get_file_tree') as mock_file_tree:
+        with mock.patch.object(BaseStorageAddon, '_get_file_tree') as mock_file_tree:
             mock_file_tree.return_value = FILE_TREE
             results = [stat_addon(addon, self.archive_job._id) for addon in ['osfstorage', 'dropbox']]
         with mock.patch.object(celery, 'group') as mock_group:
@@ -898,7 +903,8 @@ class TestArchiverListeners(ArchiverTestCase):
         for kwargs in [dict(job_pk=n.archive_job._id,) for n in [reg, r1]]:
             mock_archive.assert_any_call(**kwargs)
 
-    def test_archive_callback_pending(self):
+    @mock.patch('website.archiver.tasks.archive_success.delay')
+    def test_archive_callback_pending(self, mock_delay):
         self.archive_job.update_target(
             'osfstorage',
             ARCHIVER_INITIATED
@@ -913,6 +919,7 @@ class TestArchiverListeners(ArchiverTestCase):
                 listeners.archive_callback(self.dst)
         assert_false(mock_send.called)
         assert_false(mock_fail.called)
+        assert_true(mock_delay.called)
 
     @mock.patch('website.mails.send_mail')
     @mock.patch('website.archiver.tasks.archive_success.delay')

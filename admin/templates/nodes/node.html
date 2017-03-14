@@ -44,7 +44,7 @@
                     {% endif %}
                 {% endif %}
                 {% endif %}
-            {% if perms.common_auth.mark_spam %}
+            {% if perms.osf.mark_spam %}
             <span class="col-md-2">
                 <a href="{% url 'nodes:confirm-spam' guid=node.id %}"
                    data-toggle="modal" data-target="#confirmSpamModal"

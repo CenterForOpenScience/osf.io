@@ -13,7 +13,7 @@ class DeskCaseList(PermissionRequiredMixin, ListView):
     context_object_name = 'cases'
     paginate_by = 100
     paginate_orphans = 5
-    permission_required = 'common_auth.view_desk'
+    permission_required = 'osf.view_desk'
     raise_exception = True
 
     def dispatch(self, request, *args, **kwargs):
@@ -50,7 +50,7 @@ class DeskCaseList(PermissionRequiredMixin, ListView):
 class DeskCustomer(PermissionRequiredMixin, DetailView):
     template_name = 'desk/customer.html'
     context_object_name = 'customer'
-    permission_required = 'common_auth.view_desk'
+    permission_required = 'osf.view_desk'
     raise_exception = True
 
     def dispatch(self, request, *args, **kwargs):
