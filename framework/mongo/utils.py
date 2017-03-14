@@ -150,6 +150,8 @@ def paginated(model, query=None, increment=200, each=True):
         are yielded.
     """
     queryset = model.find(query)
+    if not queryset.ordered:
+        queryset = queryset.order_by('id')
     paginator = Paginator(queryset.all(), increment)
     for page_num in paginator.page_range:
         page = paginator.page(page_num)
