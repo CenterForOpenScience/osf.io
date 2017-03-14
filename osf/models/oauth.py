@@ -62,12 +62,14 @@ class ApiOAuth2Application(base.ObjectIDMixin, base.BaseModel):
     is_active = models.BooleanField(default=True,  # Set to False if application is deactivated
                                     db_index=True)
 
+    # TODO: remove null/blank after migration
     owner = models.ForeignKey('OSFUser', null=True, blank=True, on_delete=models.SET_NULL)
 
     # User-specified application descriptors
     name = models.CharField(db_index=True, blank=False, null=False, max_length=200)
     description = models.CharField(blank=True, null=True, max_length=1000)
 
+    # TODO: `auto_now_add` after migration
     date_created = NonNaiveDateTimeField(default=timezone.now)
 
     home_url = models.URLField(blank=False, null=False)
