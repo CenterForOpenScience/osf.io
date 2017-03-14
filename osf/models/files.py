@@ -1,6 +1,7 @@
 import logging
 
 from dateutil.parser import parse as parse_date
+from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
 from django.db.models import Manager
 from django.utils import timezone
@@ -13,6 +14,7 @@ from osf.models.validators import validate_location
 from osf.modm_compat import Q
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import NonNaiveDateTimeField
+from website.files.exceptions import VersionNotFoundError
 from website.util import api_v2_url
 
 __all__ = (
@@ -44,23 +46,15 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, ObjectIDMixi
     # A concrete version of a FileNode, must have an identifier
     versions = models.ManyToManyField('FileVersion')
 
-    is_deleted = models.BooleanField(default=False)
     node = models.ForeignKey('osf.AbstractNode', blank=True, null=True)
     parent = models.ForeignKey('self', blank=True, null=True, default=None, related_name='child')
     copied_from = models.ForeignKey('osf.StoredFileNode', blank=True, null=True, default=None, related_name='copy_of')
-
-    deleted_on = NonNaiveDateTimeField(blank=True, null=True)
-    deleted_by = models.ForeignKey('osf.OSFUser', related_name='files_deleted_by', null=True, blank=True)
 
     provider = models.CharField(max_length=25, blank=False, null=False, db_index=True)
 
     name = models.TextField(blank=True, null=True)
     _path = models.TextField(blank=True, null=True)  # 1950 on prod
     _materialized_path = models.TextField(blank=True, null=True)  # 482 on staging
-
-    # The User that has this file "checked out"
-    # Should only be used for OsfStorage
-    checkout = models.ForeignKey('osf.OSFUser', blank=True, null=True)
 
     class Meta:
         index_together = (
@@ -71,7 +65,7 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, ObjectIDMixi
     @property
     def is_file(self):
         # TODO split is file logic into subclasses
-        return issubclass(self.__class__, File)
+        return issubclass(self.__class__, (File, TrashedFile))
 
     @property
     def path(self):
@@ -131,7 +125,7 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, ObjectIDMixi
 
     @classmethod
     def create(cls, **kwargs):
-        kwargs.update(provider=cls.provider)
+        kwargs.update(provider=cls._provider)
         return cls(**kwargs)
 
     @classmethod
@@ -173,6 +167,145 @@ class StoredFileNode(BaseFileNode):
     modm_query = None
     migration_page_size = 10000
     # /TODO DELETE ME POST MIGRATION]
+    version_identifier = 'revision'  # For backwards compatibility
+
+    # The User that has this file "checked out"
+    # Should only be used for OsfStorage
+    checkout = models.ForeignKey('osf.OSFUser', blank=True, null=True)
+
+    def get_version(self, revision, required=False):
+        """Find a version with identifier revision
+        :returns: FileVersion or None
+        :raises: VersionNotFoundError if required is True
+        """
+        try:
+            return self.versions.get(identifier=revision)
+        except ObjectDoesNotExist:
+            if required:
+                raise VersionNotFoundError(revision)
+            return None
+
+    def update_version_metadata(self, location, metadata):
+        try:
+            self.versions.get(location=location).update_metadata(metadata)
+            return
+        except ObjectDoesNotExist:
+            raise VersionNotFoundError(location)
+    # TODO IMPLEMENT THESE
+    #
+    # def touch(self, auth_header, revision=None, **kwargs):
+    #     """The bread and butter of File, collects metadata about self
+    #     and creates versions and updates self when required.
+    #     If revisions is None the created version is NOT and should NOT be saved
+    #     as there is no identifing information to tell if it needs to be updated or not.
+    #     Hits Waterbutler's metadata endpoint and saves the returned data.
+    #     If a file cannot be rendered IE figshare private files a tuple of the FileVersion and
+    #     renderable HTML will be returned.
+    #         >>>isinstance(file_node.touch(), tuple) # This file cannot be rendered
+    #     :param str or None auth_header: If truthy it will set as the Authorization header
+    #     :returns: None if the file is not found otherwise FileVersion or (version, Error HTML)
+    #     """
+    #     # Resvolve primary key on first touch
+    #     self.save()
+    #     # For backwards compatability
+    #     revision = revision or kwargs.get(self.version_identifier)
+    #
+    #     version = self.get_version(revision)
+    #     # Versions do not change. No need to refetch what we already know
+    #     if version is not None:
+    #         return version
+    #
+    #     headers = {}
+    #     if auth_header:
+    #         headers['Authorization'] = auth_header
+    #
+    #     resp = requests.get(
+    #         self.generate_waterbutler_url(revision=revision, meta=True, **kwargs),
+    #         headers=headers,
+    #     )
+    #     if resp.status_code != 200:
+    #         logger.warning('Unable to find {} got status code {}'.format(self, resp.status_code))
+    #         return None
+    #     return self.update(revision, resp.json()['data']['attributes'])
+    #     # TODO Switch back to head requests
+    #     # return self.update(revision, json.loads(resp.headers['x-waterbutler-metadata']))
+    #
+    # def update(self, revision, data, user=None):
+    #     """Using revision and data update all data pretaining to self
+    #     :param str or None revision: The revision that data points to
+    #     :param dict data: Metadata recieved from waterbutler
+    #     :returns: FileVersion
+    #     """
+    #     self.name = data['name']
+    #     self.materialized_path = data['materialized']
+    #
+    #     version = FileVersion(identifier=revision)
+    #     version.update_metadata(data, save=False)
+    #
+    #     # Transform here so it can be sortted on later
+    #     if data['modified'] is not None and data['modified'] != '':
+    #         data['modified'] = parse_date(
+    #             data['modified'],
+    #             ignoretz=True,
+    #             default=timezone.now()  # Just incase nothing can be parsed
+    #         )
+    #
+    #     # if revision is none then version is the latest version
+    #     # Dont save the latest information
+    #     if revision is not None:
+    #         version.save()
+    #         self.versions.add(version)
+    #     for entry in self.history:
+    #         if ('etag' in entry and 'etag' in data) and (entry['etag'] == data['etag']):
+    #             break
+    #     else:
+    #         # Insert into history if there is no matching etag
+    #         utils.insort(self.history, data, lambda x: x['modified'])
+    #
+    #     # Finally update last touched
+    #     self.last_touched = timezone.now()
+    #
+    #     self.save()
+    #     return version
+    #
+    # def get_download_count(self, version=None):
+    #     """Pull the download count from the pagecounter collection
+    #     Limit to version if specified.
+    #     Currently only useful for OsfStorage
+    #     """
+    #     parts = ['download', self.node._id, self._id]
+    #     if version is not None:
+    #         parts.append(version)
+    #     page = ':'.join([format(part) for part in parts])
+    #     _, count = get_basic_counters(page)
+    #
+    #     return count or 0
+    #
+    # def serialize(self):
+    #     if not self.versions:
+    #         return dict(
+    #             super(File, self).serialize(),
+    #             size=None,
+    #             version=None,
+    #             modified=None,
+    #             created=None,
+    #             contentType=None,
+    #             downloads=self.get_download_count(),
+    #             checkout=self.checkout._id if self.checkout else None,
+    #         )
+    #
+    #     version = self.versions[-1]
+    #     return dict(
+    #         super(File, self).serialize(),
+    #         size=version.size,
+    #         downloads=self.get_download_count(),
+    #         checkout=self.checkout._id if self.checkout else None,
+    #         version=version.identifier if self.versions else None,
+    #         contentType=version.content_type if self.versions else None,
+    #         modified=version.date_modified.isoformat() if version.date_modified else None,
+    #         created=self.versions[0].date_modified.isoformat() if self.versions[0].date_modified else None,
+    #     )
+
 
     def restore(self, recursive=True, parent=None, save=True, deleted_on=None):
         raise Exception('You cannot restore something that is not deleted.')
@@ -200,6 +333,10 @@ class File(StoredFileNode):
 
         return self
 
+    @property
+    def kind(self):
+        return 'file'
+
 
 class Folder(StoredFileNode):
     def delete(self, user=None, parent=None, save=True, deleted_on=None):
@@ -224,8 +361,16 @@ class Folder(StoredFileNode):
                 child.delete(user=user, save=save, deleted_on=deleted_on)
         return self
 
+    @property
+    def kind(self):
+        return 'folder'
+
 
 class TrashedFileNode(BaseFileNode):
+    is_deleted = models.BooleanField(default=False)
+    deleted_on = NonNaiveDateTimeField(blank=True, null=True)
+    deleted_by = models.ForeignKey('osf.OSFUser', related_name='files_deleted_by', null=True, blank=True)
+
     def delete(self, user=None, parent=None, save=True, deleted_on=None):
         if isinstance(self, TrashedFileNode):
             raise Exception('You cannot delete things that are deleted.')
@@ -243,7 +388,7 @@ class TrashedFileNode(BaseFileNode):
 
         for subclass in ProviderMixin.__subclasses__():
             for subsubclass in subclass.__subclasses__():
-                if issubclass(subsubclass, type_cls) and subsubclass.provider == self.provider:
+                if issubclass(subsubclass, type_cls) and subsubclass._provider == self.provider:
                     self.recast(subsubclass._typedmodels_type)
 
         if save:
@@ -256,10 +401,16 @@ class TrashedFileNode(BaseFileNode):
 
 
 class TrashedFile(TrashedFileNode):
-    pass
+    @property
+    def kind(self):
+        return 'file'
 
 
 class TrashedFolder(TrashedFileNode):
+    @property
+    def kind(self):
+        return 'folder'
+
     def restore(self, recursive=True, parent=None, save=True, deleted_on=None):
         """
         Restore a folder
