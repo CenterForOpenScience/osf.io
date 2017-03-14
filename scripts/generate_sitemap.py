@@ -3,22 +3,17 @@
 """Generate a sitemap for osf.io"""
 import datetime
 import gzip
-import math
 import os
 import shutil
 import sys
-import urllib
 import urlparse
 import xml
-#
-# import django
-# django.setup()
-# from django.db import transaction
 import logging
 
 from modularodm import Q
 from framework import sentry
 from framework.celery_tasks import app as celery_app
+from framework.mongo.utils import paginated
 from website.models import PreprintService
 from scripts import utils as script_utils
 from website import settings
@@ -26,6 +21,7 @@ from website.app import init_app
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
+
 
 class Progress(object):
     def __init__(self, bar_len=50):
@@ -47,6 +43,14 @@ class Progress(object):
     def stop(self):
         # To preserve line, there is probably a better way to do this
         print('')
+
+    def restart(self):
+        self.stop()
+        self.count = 0
+
+    def finish(self):
+        while self.count < self.total:
+            self.increment()
 
 class Sitemap(object):
     def __init__(self):
@@ -141,11 +145,13 @@ class Sitemap(object):
         progress = Progress()
 
         # Preprint urls
-        objs = PreprintService.find(Q('is_published', 'eq', True))
-        # objs = PreprintService.objects.filter(node__isnull=False, node__is_deleted=False, node__is_public=True, is_published=True)
-        progress.start(objs.count() * 2, 'PREP: ')
+        objs = paginated(PreprintService, Q('is_published', 'eq', True))
+        # Can't do a proper percentage bar, as can't count total ahead
+        progress.start(100, 'PREP: ')
         for obj in objs:
-            progress.increment(2)
+            progress.increment()
+            if progress.count >= 100:
+                progress.restart()
             if not obj.node or not obj.primary_file or obj.node.is_deleted or not obj.node.is_public:
                 continue
             try:
@@ -173,6 +179,7 @@ class Sitemap(object):
                     self.log_errors(obj.primary_file, obj.primary_file._id, e)
             except Exception as e:
                 self.log_errors(obj, obj._id, e)
+        progress.finish()
         progress.stop()
 
         # Final write
