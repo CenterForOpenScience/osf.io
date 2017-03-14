@@ -55,39 +55,6 @@ from website.views import find_bookmark_collection
 GUID_FACTORIES = UserFactory, NodeFactory, ProjectFactory
 
 
-class TestNodeWikiPage(OsfTestCase):
-
-    def setUp(self):
-        super(TestNodeWikiPage, self).setUp()
-        self.user = UserFactory()
-        self.project = ProjectFactory(creator=self.user)
-        self.wiki = NodeWikiFactory(user=self.user, node=self.project)
-
-    def test_factory(self):
-        wiki = NodeWikiFactory()
-        assert_equal(wiki.page_name, 'home')
-        assert_equal(wiki.version, 1)
-        assert_equal(wiki.content, 'Some content')
-        assert_true(wiki.user)
-        assert_true(wiki.node)
-
-    def test_url(self):
-        assert_equal(self.wiki.url, '{project_url}wiki/home/'
-                                    .format(project_url=self.project.url))
-
-    def test_url_for_wiki_page_name_with_spaces(self):
-        wiki = NodeWikiFactory(user=self.user, node=self.project, page_name='Test Wiki')
-        url = '{}wiki/{}/'.format(self.project.url, urllib.quote(wiki.page_name))
-        assert_equal(wiki.url, url)
-
-    def test_url_for_wiki_page_name_with_special_characters(self):
-        wiki = NodeWikiFactory(user=self.user, node=self.project)
-        wiki.page_name = 'Wiki!@#$%^&*()+'
-        wiki.save()
-        url = '{}wiki/{}/'.format(self.project.url, urllib.quote(wiki.page_name))
-        assert_equal(wiki.url, url)
-
-
 class TestUpdateNodeWiki(OsfTestCase):
 
     def setUp(self):
