@@ -192,6 +192,10 @@ class BaseModel(models.Model):
     def _primary_name(self):
         return '_id'
 
+    @property
+    def _is_loaded(self):
+        return bool(self.pk)
+
     def reload(self):
         return self.refresh_from_db()
 

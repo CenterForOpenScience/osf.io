@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 import furl
 import httplib as http
-import re
 import urllib
 
 import markupsafe
@@ -380,7 +379,7 @@ def auth_register(auth):
     raise HTTPError(http.BAD_REQUEST)
 
 @collect_auth
-def auth_logout(auth=None, redirect_url=None, next_url=None):
+def auth_logout(auth, redirect_url=None, next_url=None):
     """
     Log out, delete current session and remove OSF cookie.
     If next url is valid and auth is logged in, redirect to CAS logout endpoint with the current request url as service.
@@ -389,16 +388,17 @@ def auth_logout(auth=None, redirect_url=None, next_url=None):
     The CAS logout endpoint which clears sessions and cookies for CAS and Shibboleth.
     HTTP Method: GET
 
-    Note: OSF tells CAS where it wants to be redirected back after successful logout. However, CAS logout flow may not
+    Note 1: OSF tells CAS where it wants to be redirected back after successful logout. However, CAS logout flow may not
     respect this url if user is authenticated through remote identity provider.
+    Note 2: The name of the query parameter is `next`, `next_url` is used to avoid python reserved word.
 
-    :param the auth context
+    :param auth: the authentication context
     :param redirect_url: url to DIRECTLY redirect after CAS logout, default is `OSF/goodbye`
     :param next_url: url to redirect after OSF logout, which is after CAS logout
     :return: the response
     """
 
-    # For `?next_url=`:
+    # For `?next=`:
     #   takes priority
     #   the url must be a valid OSF next url,
     #   the full request url is set to CAS service url,
@@ -409,7 +409,7 @@ def auth_logout(auth=None, redirect_url=None, next_url=None):
     #   support `reauth`
 
     # logout/?next=<an OSF verified next url>
-    next_url = next_url or request.args.get('next_url')
+    next_url = next_url or request.args.get('next', None)
     if next_url and validate_next_url(next_url):
         cas_logout_endpoint = cas.get_logout_url(request.url)
         if auth.logged_in:
@@ -925,6 +925,7 @@ def external_login_email_post():
     fullname = session.data['auth_user_fullname']
     service_url = session.data['service_url']
 
+    # TODO: @cslzchen use user tags instead of destination
     destination = 'dashboard'
     for campaign in campaigns.get_campaigns():
         if campaign != 'institution':
@@ -936,7 +937,7 @@ def external_login_email_post():
             external_campaign_url = furl.furl(campaigns.external_campaign_url_for(campaign)).url
             if campaigns.is_proxy_login(campaign):
                 # proxy campaigns: OSF Preprints and branded ones
-                if check_service_url_with_proxy_campaign(service_url, campaign_url, external_campaign_url):
+                if check_service_url_with_proxy_campaign(str(service_url), campaign_url, external_campaign_url):
                     destination = campaign
                     # continue to check branded preprints even service url matches osf preprints
                     if campaign != 'osf-preprints':
@@ -1057,7 +1058,7 @@ def validate_next_url(next_url):
         return True
     for url in campaigns.get_external_domains():
         # Branded Preprints Phase 2
-        if url.startswith(url):
+        if next_url.startswith(url):
             return True
 
     return False
@@ -1073,10 +1074,16 @@ def check_service_url_with_proxy_campaign(service_url, campaign_url, external_ca
     :param external_campaign_url: the `furl` formatted external campaign url
     :return: the matched object or None
     """
-    regex_prefix = '^' + settings.DOMAIN + 'login/?\\?next='
+
+    prefix_1 = settings.DOMAIN + 'login/?next=' + campaign_url
+    prefix_2 = settings.DOMAIN + 'login?next=' + campaign_url
+
+    valid = service_url.startswith(prefix_1) or service_url.startswith(prefix_2)
+    valid_external = False
+
     if external_campaign_url:
-        regex_suffix = '((' + campaign_url + ')|(' + external_campaign_url + '))'
-    else:
-        regex_suffix = campaign_url
-    regex = regex_prefix + regex_suffix
-    return re.match(regex, service_url)
+        prefix_3 = settings.DOMAIN + 'login/?next=' + external_campaign_url
+        prefix_4 = settings.DOMAIN + 'login?next=' + external_campaign_url
+        valid_external = service_url.startswith(prefix_3) or service_url.startswith(prefix_4)
+
+    return valid or valid_external
