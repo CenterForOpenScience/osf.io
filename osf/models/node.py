@@ -2567,16 +2567,16 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         new_page.save()
 
         if has_comments:
-            Comment.objects.filter(root_target=current.guids.first()).invalidated_update(root_target=Guid.load(new_page._id))
-            Comment.objects.filter(target=current.guids.first()).invalidated_update(target=Guid.load(new_page._id))
+            Comment.objects.filter(root_target=current.guids.all()[0]).invalidated_update(root_target=Guid.load(new_page._id))
+            Comment.objects.filter(target=current.guids.all()[0]).invalidated_update(target=Guid.load(new_page._id))
 
         if current:
             for contrib in self.contributors:
                 if contrib.comments_viewed_timestamp.get(current._id, None):
                     timestamp = contrib.comments_viewed_timestamp[current._id]
                     contrib.comments_viewed_timestamp[new_page._id] = timestamp
-                    contrib.save()
                     del contrib.comments_viewed_timestamp[current._id]
+                    contrib.save()
 
         # check if the wiki page already exists in versions (existed once and is now deleted)
         if key not in self.wiki_pages_versions:
