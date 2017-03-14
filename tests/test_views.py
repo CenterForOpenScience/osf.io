@@ -3894,6 +3894,11 @@ class TestAuthLogout(OsfTestCase):
         self.invalid_next_url = 'http://localhost:1234/abcde'
         self.auth_user = AuthUserFactory()
 
+    def tearDown(self):
+        super(TestAuthLogout, self).tearDown()
+        User.objects.all().delete()
+        assert_equal(User.objects.count(), 0)
+
     def test_logout_with_valid_next_url_logged_in(self):
         logout_url = web_url_for('auth_logout', _absolute=True, next=self.valid_next_url)
         resp = self.app.get(logout_url, auth=self.auth_user.auth)
