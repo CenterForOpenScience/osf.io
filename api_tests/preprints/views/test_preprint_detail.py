@@ -10,6 +10,9 @@ from api.base.settings.defaults import API_BASE
 from website.project.licenses import NodeLicense, ensure_licenses
 from tests.factories import PreprintFactory, AuthUserFactory, ProjectFactory, SubjectFactory, PreprintProviderFactory
 from api_tests import utils as test_utils
+from website.project.signals import contributor_added
+
+from tests.base import fake, capture_signals
 
 ensure_licenses = functools.partial(ensure_licenses, warn=False)
 
@@ -49,7 +52,7 @@ class TestPreprintDelete(ApiTestCase):
         self.unpublished_preprint = PreprintFactory(creator=self.user, is_published=False)
         self.published_preprint = PreprintFactory(creator=self.user)
         self.url = '/{}preprints/{{}}/'.format(API_BASE)
-    
+
     def test_can_delete_unpublished(self):
         previous_ids = [doc['_id'] for doc in db['preprintservice'].find({}, {'_id':1})]
         self.app.delete(self.url.format(self.unpublished_preprint._id), auth=self.user.auth)
@@ -194,10 +197,10 @@ class TestPreprintUpdate(ApiTestCase):
                             'id': new_file._id
                         }
                     }
-                }    
+                }
             }
         }
- 
+
         res = self.app.patch_json_api(self.url, data, auth=user_two.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
 
@@ -217,17 +220,17 @@ class TestPreprintUpdate(ApiTestCase):
                             'id': new_file._id
                         }
                     }
-                }    
+                }
             }
         }
- 
+
         res = self.app.patch_json_api(self.url, data, auth=user_two.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
 
     def test_write_contrib_cannot_set_subjects(self):
         user_two = AuthUserFactory()
         self.preprint.node.add_contributor(user_two, permissions=['read', 'write'], auth=Auth(self.user), save=True)
-        
+
         assert_not_equal(self.preprint.subjects[0], self.subject._id)
         update_subjects_payload = build_preprint_update_payload(self.preprint._id, attributes={"subjects": [[self.subject._id]]})
 
@@ -239,7 +242,7 @@ class TestPreprintUpdate(ApiTestCase):
     def test_noncontrib_cannot_set_subjects(self):
         user_two = AuthUserFactory()
         self.preprint.node.add_contributor(user_two, permissions=['read', 'write'], auth=Auth(self.user), save=True)
-        
+
         assert_not_equal(self.preprint.subjects[0], self.subject._id)
         update_subjects_payload = build_preprint_update_payload(self.preprint._id, attributes={"subjects": [[self.subject._id]]})
 
@@ -247,6 +250,30 @@ class TestPreprintUpdate(ApiTestCase):
         assert_equal(res.status_code, 403)
 
         assert_not_equal(self.preprint.subjects[0], self.subject._id)
+
+    def test_update_published(self):
+        unpublished = PreprintFactory(creator=self.user, is_published=False)
+        url = '/{}preprints/{}/'.format(API_BASE, unpublished._id)
+        payload = build_preprint_update_payload(unpublished._id, attributes={'is_published': True})
+        res = self.app.patch_json_api(url, payload, auth=self.user.auth)
+        unpublished.reload()
+        assert_true(unpublished.is_published)
+
+    # Regression test for https://openscience.atlassian.net/browse/OSF-7630
+    def test_update_published_does_not_send_contributor_added_for_inactive_users(self):
+        unpublished = PreprintFactory(creator=self.user, is_published=False)
+        unpublished.node.add_unregistered_contributor(
+            fullname=fake.name(),
+            email=fake.email(),
+            auth=Auth(self.user),
+            save=True
+        )
+        url = '/{}preprints/{}/'.format(API_BASE, unpublished._id)
+        payload = build_preprint_update_payload(unpublished._id, attributes={'is_published': True})
+        with capture_signals() as captured:
+            res = self.app.patch_json_api(url, payload, auth=self.user.auth)
+            # Signal not sent, because contributor is not registered
+            assert_false(captured[contributor_added])
 
 
 class TestPreprintUpdateLicense(ApiTestCase):
