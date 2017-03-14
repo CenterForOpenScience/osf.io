@@ -24,7 +24,7 @@ class MetaSchema(ObjectIDMixin, BaseModel):
     # Version of the schema to use (e.g. if questions, responses change)
     schema_version = models.IntegerField()
 
-    class Meta:
+    class Meta(BaseModel.Meta):
         unique_together = ('name', 'schema_version')
 
     @property

@@ -306,7 +306,7 @@ class StoredFileNode(CommentableMixin, OptionalGuidMixin, Taggable, ObjectIDMixi
         """
         return FileNode.resolve_class(self.provider, int(self.is_file))(self)
 
-    class Meta:
+    class Meta(BaseModel.Meta):
         unique_together = [
             ('node', 'name', 'parent', 'is_file', 'provider', 'path',)
         ]
@@ -933,5 +933,5 @@ class FileVersion(ObjectIDMixin, BaseModel):
             self.save()
         return True
 
-    class Meta:
+    class Meta(BaseModel.Meta):
         ordering = ('date_created',)

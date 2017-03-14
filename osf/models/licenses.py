@@ -42,7 +42,7 @@ class NodeLicense(ObjectIDMixin, BaseModel):
         django_obj.id = None
         return django_obj
 
-    class Meta:
+    class Meta(BaseModel.Meta):
         unique_together = ['_id', 'license_id']
 
 

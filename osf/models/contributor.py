@@ -30,7 +30,7 @@ class AbstractBaseContributor(models.Model):
 class Contributor(AbstractBaseContributor):
     node = models.ForeignKey('AbstractNode')
 
-    class Meta:
+    class Meta(AbstractBaseContributor.Meta):
         unique_together = ('user', 'node')
         # Make contributors orderable
         # NOTE: Adds an _order column
@@ -39,7 +39,7 @@ class Contributor(AbstractBaseContributor):
 class InstitutionalContributor(AbstractBaseContributor):
     institution = models.ForeignKey('Institution')
 
-    class Meta:
+    class Meta(AbstractBaseContributor.Meta):
         unique_together = ('user', 'institution')
 
 class RecentlyAddedContributor(models.Model):

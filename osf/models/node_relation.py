@@ -13,7 +13,7 @@ class NodeRelation(ObjectIDMixin, BaseModel):
         """For v1 compat."""
         return self.child
 
-    class Meta:
+    class Meta(BaseModel.Meta):
         order_with_respect_to = 'parent'
         unique_together = ('parent', 'child')
         index_together = (

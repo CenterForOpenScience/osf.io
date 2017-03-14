@@ -80,7 +80,7 @@ class Conference(ObjectIDMixin, BaseModel):
     def get_by_endpoint(cls, endpoint, active):
         return cls.objects.get_by_endpoint(endpoint, active)
 
-    class Meta:
+    class Meta(BaseModel.Meta):
         # custom permissions for use in the OSF Admin App
         permissions = (
             ('view_conference', 'Can view conference details in the admin app.'),

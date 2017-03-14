@@ -47,5 +47,5 @@ class Tag(BaseModel):
 
         return django_obj
 
-    class Meta:
+    class Meta(BaseModel.Meta):
         unique_together = ('name', 'system')

@@ -289,7 +289,7 @@ class Guid(BaseModel):
 
         return django_obj
 
-    class Meta:
+    class Meta(BaseModel.Meta):
         ordering = ['-created']
         get_latest_by = 'created'
         index_together = (

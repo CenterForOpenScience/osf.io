@@ -345,7 +345,7 @@ class Registration(AbstractNode):
         for child in self.nodes_primary:
             child.delete_registration_tree(save=save)
 
-    class Meta:
+    class Meta(AbstractNode.Meta):
         # custom permissions for use in the OSF Admin App
         permissions = (
             ('view_registration', 'Can view registration details'),
