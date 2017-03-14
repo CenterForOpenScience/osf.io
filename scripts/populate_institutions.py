@@ -60,6 +60,7 @@ def main(env):
                 'logout_url': None,
                 'domains': [],
                 'email_domains': ['busaracenter.org'],
+                'delegation_protocol': '',
             },
             {
                 '_id': 'colorado',
@@ -71,6 +72,7 @@ def main(env):
                 'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://osf.io/goodbye')),
                 'domains': [],
                 'email_domains': [],
+                'delegation_protocol': 'saml-shib',
             },
             {
                 '_id': 'cos',
@@ -82,6 +84,7 @@ def main(env):
                 'logout_url': None,
                 'domains': ['osf.cos.io'],
                 'email_domains': ['cos.io'],
+                'delegation_protocol': '',
             },
             {
                 '_id': 'esip',
@@ -93,6 +96,7 @@ def main(env):
                 'logout_url': None,
                 'domains': [],
                 'email_domains': ['esipfed.org'],
+                'delegation_protocol': '',
             },
             {
                 '_id': 'jhu',
@@ -104,6 +108,7 @@ def main(env):
                 'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://osf.io/goodbye')),
                 'domains': ['osf.data.jhu.edu'],
                 'email_domains': [],
+                'delegation_protocol': 'saml-shib',
             },
             {
                 '_id': 'ljaf',
@@ -115,6 +120,7 @@ def main(env):
                 'logout_url': None,
                 'domains': [],
                 'email_domains': ['arnoldfoundation.org'],
+                'delegation_protocol': '',
             },
             {
                 '_id': 'mli',
@@ -137,6 +143,7 @@ def main(env):
                 'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://osf.io/goodbye')),
                 'domains': ['osf.nd.edu'],
                 'email_domains': [],
+                'delegation_protocol': 'saml-shib',
             },
             {
                 '_id': 'nyu',
@@ -148,6 +155,7 @@ def main(env):
                 'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://shibboleth.nyu.edu/idp/profile/Logout')),
                 'domains': ['osf.nyu.edu'],
                 'email_domains': [],
+                'delegation_protocol': 'saml-shib',
             },
             {
                 '_id': 'okstate',
@@ -159,6 +167,7 @@ def main(env):
                 'logout_url': None,
                 'domains': ['osf.library.okstate.edu'],
                 'email_domains': [],
+                'delegation_protocol': 'cas-pac4j',
             },
             {
                 '_id': 'thelabatdc',
@@ -181,6 +190,7 @@ def main(env):
                 'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://osf.io/goodbye')),
                 'domains': ['osf.ucsd.edu'],
                 'email_domains': [],
+                'delegation_protocol': 'saml-shib',
             },
             {
                 '_id': 'ucr',
@@ -192,6 +202,7 @@ def main(env):
                 'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://osf.io/goodbye')),
                 'domains': ['osf.ucr.edu'],
                 'email_domains': [],
+                'delegation_protocol': 'saml-shib',
             },
             {
                 '_id': 'uct',
@@ -214,6 +225,7 @@ def main(env):
                 'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://osf.io/goodbye')),
                 'domains': ['osf.ugent.be'],
                 'email_domains': [],
+                'delegation_protocol': 'saml-shib',
             },
             {
                 '_id': 'usc',
@@ -225,6 +237,7 @@ def main(env):
                 'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://osf.io/goodbye')),
                 'domains': ['osf.usc.edu'],
                 'email_domains': [],
+                'delegation_protocol': 'saml-shib',
             },
             {
                 '_id': 'uva',
@@ -236,6 +249,7 @@ def main(env):
                 'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://osf.io/goodbye')),
                 'domains': ['osf.virginia.edu'],
                 'email_domains': [],
+                'delegation_protocol': 'saml-shib',
             },
             {
                 '_id': 'uw',
@@ -258,6 +272,7 @@ def main(env):
                 'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://osf.io/goodbye')),
                 'domains': ['osf.research.vcu.edu'],
                 'email_domains': [],
+                'delegation_protocol': 'saml-shib',
             },
             {
                 '_id': 'vt',
@@ -269,6 +284,7 @@ def main(env):
                 'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://osf.io/goodbye')),
                 'domains': ['osf.vt.edu'],
                 'email_domains': [],
+                'delegation_protocol': 'saml-shib',
             },
         ]
     if env == 'stage':
@@ -283,6 +299,7 @@ def main(env):
                 'logout_url': None,
                 'domains': ['staging-osf.cos.io'],
                 'email_domains': ['cos.io'],
+                'delegation_protocol': '',
             },
             {
                 '_id': 'nd',
@@ -294,6 +311,7 @@ def main(env):
                 'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://staging.osf.io/goodbye')),
                 'domains': ['staging-osf-nd.cos.io'],
                 'email_domains': [],
+                'delegation_protocol': 'saml-shib',
             },
             {
                 '_id': 'google',
@@ -305,6 +323,7 @@ def main(env):
                 'logout_url': None,
                 'domains': [],
                 'email_domains': ['gmail.com'],
+                'delegation_protocol': '',
             },
             {
                 '_id': 'yahoo',
@@ -315,6 +334,7 @@ def main(env):
                 'login_url': None,
                 'domains': [],
                 'email_domains': ['yahoo.com'],
+                'delegation_protocol': '',
             },
         ]
     if env == 'stage2':
@@ -329,6 +349,7 @@ def main(env):
                 'logout_url': None,
                 'domains': ['staging2-osf.cos.io'],
                 'email_domains': ['cos.io'],
+                'delegation_protocol': '',
             },
         ]
     elif env == 'test':
@@ -343,6 +364,7 @@ def main(env):
                 'logout_url': None,
                 'domains': [],
                 'email_domains': ['busaracenter.org'],
+                'delegation_protocol': '',
             },
             {
                 '_id': 'colorado',
@@ -354,6 +376,7 @@ def main(env):
                 'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://test.osf.io/goodbye')),
                 'domains': [],
                 'email_domains': [],
+                'delegation_protocol': 'saml-shib',
             },
             {
                 '_id': 'cos',
@@ -365,6 +388,7 @@ def main(env):
                 'logout_url': None,
                 'domains': ['test-osf.cos.io'],
                 'email_domains': ['cos.io'],
+                'delegation_protocol': '',
             },
             {
                 '_id': 'esip',
@@ -376,6 +400,7 @@ def main(env):
                 'logout_url': None,
                 'domains': [],
                 'email_domains': ['esipfed.org'],
+                'delegation_protocol': '',
             },
             {
                 '_id': 'jhu',
@@ -387,6 +412,7 @@ def main(env):
                 'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://test.osf.io/goodbye')),
                 'domains': ['osf.data.jhu.edu'],
                 'email_domains': [],
+                'delegation_protocol': 'saml-shib',
             },
             {
                 '_id': 'ljaf',
@@ -398,6 +424,7 @@ def main(env):
                 'logout_url': None,
                 'domains': [],
                 'email_domains': ['arnoldfoundation.org'],
+                'delegation_protocol': '',
             },
             {
                 '_id': 'mli',
@@ -420,6 +447,7 @@ def main(env):
                 'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://test.osf.io/goodbye')),
                 'domains': ['test-osf-nd.cos.io'],
                 'email_domains': [],
+                'delegation_protocol': 'saml-shib',
             },
             {
                 '_id': 'nyu',
@@ -431,6 +459,7 @@ def main(env):
                 'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://shibbolethqa.es.its.nyu.edu/idp/profile/Logout')),
                 'domains': ['test-osf-nyu.cos.io'],
                 'email_domains': [],
+                'delegation_protocol': 'saml-shib',
             },
             {
                 '_id': 'okstate',
@@ -442,6 +471,7 @@ def main(env):
                 'logout_url': None,
                 'domains': ['test-osf-library-okstate.cos.io'],
                 'email_domains': [],
+                'delegation_protocol': 'cas-pac4j',
             },
             {
                 '_id': 'thelabatdc',
@@ -464,6 +494,7 @@ def main(env):
                 'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://test.osf.io/goodbye')),
                 'domains': ['test-osf-ucsd.cos.io'],
                 'email_domains': [],
+                'delegation_protocol': 'saml-shib',
             },
             {
                 '_id': 'ucr',
@@ -475,6 +506,7 @@ def main(env):
                 'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://test.osf.io/goodbye')),
                 'domains': ['test-osf-ucr.cos.io'],
                 'email_domains': [],
+                'delegation_protocol': 'saml-shib',
             },
             {
                 '_id': 'uct',
@@ -497,6 +529,7 @@ def main(env):
                 'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://test.osf.io/goodbye')),
                 'domains': ['test-osf-ugent.cos.io'],
                 'email_domains': [],
+                'delegation_protocol': 'saml-shib',
             },
             {
                 '_id': 'usc',
@@ -508,6 +541,7 @@ def main(env):
                 'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://test.osf.io/goodbye')),
                 'domains': ['test-osf-usc.cos.io'],
                 'email_domains': [],
+                'delegation_protocol': 'saml-shib',
             },
             {
                 '_id': 'uva',
@@ -519,6 +553,7 @@ def main(env):
                 'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://test.osf.io/goodbye')),
                 'domains': ['test-osf-virginia.cos.io'],
                 'email_domains': [],
+                'delegation_protocol': 'saml-shib',
             },
             {
                 '_id': 'uw',
@@ -541,6 +576,7 @@ def main(env):
                 'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://test.osf.io/goodbye')),
                 'domains': ['test-osf-research-vcu.cos.io'],
                 'email_domains': [],
+                'delegation_protocol': 'saml-shib',
             },
             {
                 '_id': 'vt',
@@ -552,6 +588,7 @@ def main(env):
                 'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://test.osf.io/goodbye')),
                 'domains': ['osf.vt.edu'],
                 'email_domains': [],
+                'delegation_protocol': 'saml-shib',
             },
         ]
 
