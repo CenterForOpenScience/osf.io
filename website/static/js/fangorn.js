@@ -1952,7 +1952,7 @@ var FGToolbar = {
 
         if (ctrl.tb.toolbarMode() === toolbarModes.DEFAULT) {
             ctrl.nameData('');
-            ctrl.renameId('')
+            ctrl.renameId('');
         }
         if(typeof item !== 'undefined' && item.id !== ctrl.renameId()){
             ctrl.renameData(item.data.name);
