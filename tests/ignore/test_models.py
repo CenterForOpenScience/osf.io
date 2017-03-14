@@ -10,7 +10,7 @@ import mock
 import pytz
 from dateutil import parser
 from django.utils import timezone
-from framework.auth import Auth, User, cas
+from framework.auth import Auth, User
 from framework.celery_tasks import handlers
 from framework.exceptions import PermissionsError
 from framework.sessions import set_session
@@ -18,12 +18,12 @@ from modularodm import Q
 #from modularodm.exceptions import ValidationError, ValidationValueError
 from osf.exceptions import ValidationError, ValidationValueError
 from nose.tools import *  # noqa (PEP8 asserts)
-from tests.base import (Guid, OsfTestCase, capture_signals, fake,
+from tests.base import (OsfTestCase, capture_signals, fake,
                         get_default_metaschema)
-from tests.factories import (ApiOAuth2ApplicationFactory, AuthUserFactory,
+from tests.factories import (AuthUserFactory,
                              BookmarkCollectionFactory, CollectionFactory,
                              DraftRegistrationFactory,
-                             CommentFactory, InstitutionFactory, NodeFactory,
+                             InstitutionFactory, NodeFactory,
                              NodeLicenseRecordFactory, NodeLogFactory,
                              NodeWikiFactory, PointerFactory,
                              PrivateLinkFactory, ProjectFactory,
@@ -53,149 +53,6 @@ from website.project.sanctions import Sanction, DraftRegistrationApproval
 from website.views import find_bookmark_collection
 
 GUID_FACTORIES = UserFactory, NodeFactory, ProjectFactory
-
-
-class TestUpdateNodeWiki(OsfTestCase):
-
-    def setUp(self):
-        super(TestUpdateNodeWiki, self).setUp()
-        # Create project with component
-        self.user = AuthUserFactory()
-        self.auth = Auth(user=self.user)
-        self.project = ProjectFactory()
-        self.node = NodeFactory(creator=self.user, parent=self.project)
-        # user updates the wiki
-        self.project.update_node_wiki('home', 'Hello world', self.auth)
-        self.versions = self.project.wiki_pages_versions
-
-    def test_default_wiki(self):
-        # There is no default wiki
-        project1 = ProjectFactory()
-        assert_equal(project1.get_wiki_page('home'), None)
-
-    def test_default_is_current(self):
-        assert_true(self.project.get_wiki_page('home').is_current)
-        self.project.update_node_wiki('home', 'Hello world 2', self.auth)
-        assert_true(self.project.get_wiki_page('home').is_current)
-        self.project.update_node_wiki('home', 'Hello world 3', self.auth)
-
-    def test_wiki_content(self):
-        # Wiki has correct content
-        assert_equal(self.project.get_wiki_page('home').content, 'Hello world')
-        # user updates the wiki a second time
-        self.project.update_node_wiki('home', 'Hola mundo', self.auth)
-        # Both versions have the expected content
-        assert_equal(self.project.get_wiki_page('home', 2).content, 'Hola mundo')
-        assert_equal(self.project.get_wiki_page('home', 1).content, 'Hello world')
-
-    def test_current(self):
-        # Wiki is current
-        assert_true(self.project.get_wiki_page('home', 1).is_current)
-        # user updates the wiki a second time
-        self.project.update_node_wiki('home', 'Hola mundo', self.auth)
-        # New version is current, old version is not
-        assert_true(self.project.get_wiki_page('home', 2).is_current)
-        assert_false(self.project.get_wiki_page('home', 1).is_current)
-
-    def test_update_log(self):
-        # Updates are logged
-        assert_equal(self.project.logs.latest().action, 'wiki_updated')
-        # user updates the wiki a second time
-        self.project.update_node_wiki('home', 'Hola mundo', self.auth)
-        # There are two update logs
-        assert_equal([log.action for log in self.project.logs.all()].count('wiki_updated'), 2)
-
-    def test_update_log_specifics(self):
-        page = self.project.get_wiki_page('home')
-        log = self.project.logs.latest()
-        assert_equal('wiki_updated', log.action)
-        assert_equal(page._primary_key, log.params['page_id'])
-
-    def test_wiki_versions(self):
-        # Number of versions is correct
-        assert_equal(len(self.versions['home']), 1)
-        # Update wiki
-        self.project.update_node_wiki('home', 'Hello world', self.auth)
-        # Number of versions is correct
-        assert_equal(len(self.versions['home']), 2)
-        # Versions are different
-        assert_not_equal(self.versions['home'][0], self.versions['home'][1])
-
-    def test_update_two_node_wikis(self):
-        # user updates a second wiki for the same node
-        self.project.update_node_wiki('second', 'Hola mundo', self.auth)
-        # each wiki only has one version
-        assert_equal(len(self.versions['home']), 1)
-        assert_equal(len(self.versions['second']), 1)
-        # There are 2 logs saved
-        assert_equal([log.action for log in self.project.logs].count('wiki_updated'), 2)
-        # Each wiki has the expected content
-        assert_equal(self.project.get_wiki_page('home').content, 'Hello world')
-        assert_equal(self.project.get_wiki_page('second').content, 'Hola mundo')
-
-    def test_update_name_invalid(self):
-        # forward slashes are not allowed
-        invalid_name = 'invalid/name'
-        with assert_raises(NameInvalidError):
-            self.project.update_node_wiki(invalid_name, 'more valid content', self.auth)
-
-    def test_update_wiki_updates_comments_and_user_comments_viewed_timestamp(self):
-        project = ProjectFactory(creator=self.user, is_public=True)
-        wiki = NodeWikiFactory(node=project, page_name='test')
-        comment = CommentFactory(node=project, target=Guid.load(wiki._id), user=UserFactory())
-
-        # user views comments -- sets user.comments_viewed_timestamp
-        url = project.api_url_for('update_comments_timestamp')
-        res = self.app.put_json(url, {
-            'page': 'wiki',
-            'rootId': wiki._id
-        }, auth=self.user.auth)
-        self.user.reload()
-        assert_in(wiki._id, self.user.comments_viewed_timestamp)
-
-        # user updates the wiki
-        project.update_node_wiki('test', 'Updating wiki', self.auth)
-        comment.reload()
-
-        new_version_id = project.wiki_pages_current['test']
-        assert_in(new_version_id, self.user.comments_viewed_timestamp)
-        assert_not_in(wiki._id, self.user.comments_viewed_timestamp)
-        assert_equal(comment.target.referent._id, new_version_id)
-
-    # Regression test for https://openscience.atlassian.net/browse/OSF-6138
-    def test_update_wiki_updates_contributor_comments_viewed_timestamp(self):
-        contributor = AuthUserFactory()
-        project = ProjectFactory(creator=self.user, is_public=True)
-        project.add_contributor(contributor)
-        project.save()
-        wiki = NodeWikiFactory(node=project, page_name='test')
-        comment = CommentFactory(node=project, target=Guid.load(wiki._id), user=self.user)
-
-        # user views comments -- sets user.comments_viewed_timestamp
-        url = project.api_url_for('update_comments_timestamp')
-        res = self.app.put_json(url, {
-            'page': 'wiki',
-            'rootId': wiki._id
-        }, auth=self.user.auth)
-        self.user.reload()
-        assert_in(wiki._id, self.user.comments_viewed_timestamp)
-
-        # contributor views comments -- sets contributor.comments_viewed_timestamp
-        res = self.app.put_json(url, {
-            'page': 'wiki',
-            'rootId': wiki._id
-        }, auth=contributor.auth)
-        contributor.reload()
-        assert_in(wiki._id, contributor.comments_viewed_timestamp)
-
-        # user updates the wiki
-        project.update_node_wiki('test', 'Updating wiki', self.auth)
-        comment.reload()
-
-        new_version_id = project.wiki_pages_current['test']
-        assert_in(new_version_id, contributor.comments_viewed_timestamp)
-        assert_not_in(wiki._id, contributor.comments_viewed_timestamp)
-        assert_equal(comment.target.referent._id, new_version_id)
 
 
 class TestRenameNodeWiki(OsfTestCase):
