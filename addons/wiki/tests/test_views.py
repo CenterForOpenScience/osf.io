@@ -274,3 +274,62 @@ class TestRenameNodeWiki(OsfTestCase):
         log = self.project.logs.latest()
         assert 'wiki_renamed' == log.action
         assert page._primary_key == log.params['page_id']
+
+
+class TestDeleteNodeWiki(OsfTestCase):
+
+    def setUp(self):
+        super(TestDeleteNodeWiki, self).setUp()
+        # Create project with component
+        self.user = UserFactory()
+        self.auth = Auth(user=self.user)
+        self.project = ProjectFactory()
+        self.node = NodeFactory(creator=self.user, parent=self.project)
+        # user updates the wiki
+        self.project.update_node_wiki('home', 'Hello world', self.auth)
+        self.versions = self.project.wiki_pages_versions
+
+    def test_delete_log(self):
+        # Delete wiki
+        self.project.delete_node_wiki('home', self.auth)
+        # Deletion is logged
+        assert self.project.logs.latest().action == 'wiki_deleted'
+
+    def test_delete_log_specifics(self):
+        page = self.project.get_wiki_page('home')
+        self.project.delete_node_wiki('home', self.auth)
+        log = self.project.logs.latest()
+        assert 'wiki_deleted' == log.action
+        assert page._primary_key == log.params['page_id']
+
+    def test_wiki_versions(self):
+        # Number of versions is correct
+        assert len(self.versions['home']) == 1
+        # Delete wiki
+        self.project.delete_node_wiki('home', self.auth)
+        # Number of versions is still correct
+        assert len(self.versions['home']) == 1
+
+    def test_wiki_delete(self):
+        page = self.project.get_wiki_page('home')
+        self.project.delete_node_wiki('home', self.auth)
+
+        # page was deleted
+        assert self.project.get_wiki_page('home') is None
+
+        log = self.project.logs.latest()
+
+        # deletion was logged
+        assert log.action == 'wiki_deleted'
+        # log date is not set to the page's creation date
+        assert log.date > page.date
+
+    def test_deleted_versions(self):
+        # Update wiki a second time
+        self.project.update_node_wiki('home', 'Hola mundo', self.auth)
+        assert self.project.get_wiki_page('home', 2).content == 'Hola mundo'
+        # Delete wiki
+        self.project.delete_node_wiki('home', self.auth)
+        # Check versions
+        assert self.project.get_wiki_page('home',2).content == 'Hola mundo'
+        assert self.project.get_wiki_page('home', 1).content == 'Hello world'

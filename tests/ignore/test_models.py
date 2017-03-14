@@ -4,7 +4,6 @@ import datetime
 import random
 import string
 import unittest
-import urllib
 
 import mock
 import pytz
@@ -32,11 +31,6 @@ from tests.factories import (AuthUserFactory,
                              UnregUserFactory, UserFactory, WatchConfigFactory)
 from tests.utils import mock_archive
 from website import language, settings
-from addons.wiki.exceptions import (NameEmptyError, NameInvalidError,
-                                            NameMaximumLengthError,
-                                            PageCannotRenameError,
-                                            PageConflictError,
-                                            PageNotFoundError)
 from addons.wiki.models import NodeWikiPage
 from website.exceptions import NodeStateError, TagNotFoundError
 from website.project.model import (DraftRegistration, MetaSchema, Node,
@@ -53,69 +47,6 @@ from website.project.sanctions import Sanction, DraftRegistrationApproval
 from website.views import find_bookmark_collection
 
 GUID_FACTORIES = UserFactory, NodeFactory, ProjectFactory
-
-
-class TestDeleteNodeWiki(OsfTestCase):
-
-    def setUp(self):
-        super(TestDeleteNodeWiki, self).setUp()
-        # Create project with component
-        self.user = UserFactory()
-        self.auth = Auth(user=self.user)
-        self.project = ProjectFactory()
-        self.node = NodeFactory(creator=self.user, parent=self.project)
-        # user updates the wiki
-        self.project.update_node_wiki('home', 'Hello world', self.auth)
-        self.versions = self.project.wiki_pages_versions
-
-    def test_delete_log(self):
-        # Delete wiki
-        self.project.delete_node_wiki('home', self.auth)
-        # Deletion is logged
-        assert_equal(self.project.logs.latest().action, 'wiki_deleted')
-
-    def test_delete_log_specifics(self):
-        page = self.project.get_wiki_page('home')
-        self.project.delete_node_wiki('home', self.auth)
-        log = self.project.logs.latest()
-        assert_equal('wiki_deleted', log.action)
-        assert_equal(page._primary_key, log.params['page_id'])
-
-    def test_wiki_versions(self):
-        # Number of versions is correct
-        assert_equal(len(self.versions['home']), 1)
-        # Delete wiki
-        self.project.delete_node_wiki('home', self.auth)
-        # Number of versions is still correct
-        assert_equal(len(self.versions['home']), 1)
-
-    def test_wiki_delete(self):
-        page = self.project.get_wiki_page('home')
-        self.project.delete_node_wiki('home', self.auth)
-
-        # page was deleted
-        assert_false(self.project.get_wiki_page('home'))
-
-        log = self.project.logs.latest()
-
-        # deletion was logged
-        assert_equal(
-            NodeLog.WIKI_DELETED,
-            log.action,
-        )
-        # log date is not set to the page's creation date
-        assert_true(log.date > page.date)
-
-    def test_deleted_versions(self):
-        # Update wiki a second time
-        self.project.update_node_wiki('home', 'Hola mundo', self.auth)
-        assert_equal(self.project.get_wiki_page('home', 2).content, 'Hola mundo')
-        # Delete wiki
-        self.project.delete_node_wiki('home', self.auth)
-        # Check versions
-        assert_equal(self.project.get_wiki_page('home',2).content, 'Hola mundo')
-        assert_equal(self.project.get_wiki_page('home', 1).content, 'Hello world')
-
 
 class TestNode(OsfTestCase):
 
@@ -3519,7 +3450,6 @@ class TestOnNodeUpdate(OsfTestCase):
             kwargs = requests.post.call_args[1]
             graph = kwargs['json']['data']['attributes']['data']['@graph']
             assert_equals(graph[1]['is_deleted'], case['is_deleted'])
-
 
 
 if __name__ == '__main__':
