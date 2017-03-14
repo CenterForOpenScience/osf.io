@@ -359,7 +359,7 @@ def get_metaschemas(*args, **kwargs):
 
     meta_schemas = []
     if include == 'latest':
-        schema_names = list(MetaSchema.objects.all().values_list('name', flat=True).distinct())
+        schema_names = list(MetaSchema.objects.all().values_list('name', flat=True).order_by().distinct())
         for name in schema_names:
             meta_schema_set = MetaSchema.find(
                 Q('name', 'eq', name) &
