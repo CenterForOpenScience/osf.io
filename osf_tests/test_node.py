@@ -7,14 +7,13 @@ from modularodm.exceptions import ValidationError as MODMValidationError
 import mock
 import pytest
 import pytz
-
 from framework.exceptions import PermissionsError
-from website.util.permissions import READ, WRITE, ADMIN, expand_permissions
+from website.util.permissions import READ, WRITE, ADMIN, expand_permissions, DEFAULT_CONTRIBUTOR_PERMISSIONS
 from website.project.signals import contributor_added, contributor_removed, after_create_registration
 from website.exceptions import NodeStateError
-from website.util import permissions, disconnected_from_listeners
+from website.util import permissions, disconnected_from_listeners, api_url_for, web_url_for
 from website.citations.utils import datetime_to_csl
-from website import language
+from website import language, settings
 from website.project.model import ensure_schemas
 
 from osf.models import (
@@ -23,6 +22,7 @@ from osf.models import (
     Tag,
     NodeLog,
     Contributor,
+    MetaSchema,
     Sanction,
     NodeRelation,
     Registration,
@@ -32,7 +32,8 @@ from addons.wiki.models import NodeWikiPage
 from osf.exceptions import ValidationError
 from osf.utils.auth import Auth
 
-from .factories import (
+from osf_tests.factories import (
+    AuthUserFactory,
     ProjectFactory,
     NodeFactory,
     UserFactory,
@@ -294,6 +295,10 @@ class TestProject:
     def project(self, user):
         return ProjectFactory(creator=user, description='foobar')
 
+    @pytest.fixture()
+    def child(self, user, project):
+        return ProjectFactory(creator=user, description='barbaz', parent=project)
+
     def test_repr(self, project):
         assert project.title in repr(project)
         assert project._id in repr(project)
@@ -304,12 +309,62 @@ class TestProject:
             '/{0}/'.format(project._primary_key)
         )
 
+    def test_web_url_for(self, node, request_context):
+        result = node.web_url_for('view_project')
+        assert result == web_url_for(
+            'view_project',
+            pid=node._id,
+        )
+
+    def test_web_url_for_absolute(self, node, request_context):
+        result = node.web_url_for('view_project', _absolute=True)
+        assert settings.DOMAIN in result
+
+    def test_api_url_for(self, node, request_context):
+        result = node.api_url_for('view_project')
+        assert result == api_url_for(
+            'view_project',
+            pid=node._id
+        )
+
+    def test_api_url_for_absolute(self, node, request_context):
+        result = node.api_url_for('view_project', _absolute=True)
+        assert settings.DOMAIN in result
+
+    def test_get_absolute_url(self, node):
+        assert node.get_absolute_url() == '{}v2/nodes/{}/'.format(settings.API_DOMAIN, node._id)
+
+    def test_node_factory(self):
+        node = NodeFactory()
+        assert node.category == 'hypothesis'
+        assert bool(node.parents)
+        assert node.logs.first().action == 'project_created'
+        assert set(node.get_addon_names()) == set([
+            addon_config.short_name
+            for addon_config in settings.ADDONS_AVAILABLE
+            if 'node' in addon_config.added_default
+        ])
+        for addon_config in settings.ADDONS_AVAILABLE:
+            if 'node' in addon_config.added_default:
+                assert addon_config.short_name in node.get_addon_names()
+                assert len([
+                    addon
+                    for addon in node.addons
+                    if addon.config.short_name == addon_config.short_name
+                ])
+
     def test_api_url(self, project):
         api_url = project.api_url
         assert api_url == '/api/v1/project/{0}/'.format(project._primary_key)
 
-    def test_parent_id(self, project):
-        assert not project.parent_id
+    def test_parent_id(self, project, child):
+        assert child.parent_id == project._id
+
+    def test_parent(self, project, child):
+        assert child.parent_node == project
+
+    def test_in_parent_nodes(self, project, child):
+        assert child in project.nodes
 
     def test_root_id_is_same_as_own_id_for_top_level_nodes(self, project):
         project.reload()
@@ -620,6 +675,57 @@ class TestContributorMethods:
             node._id not in
             contrib.unclaimed_records.keys()
         )
+
+    def test_update_contributor(self, node, auth):
+        new_contrib = AuthUserFactory()
+        node.add_contributor(new_contrib, permissions=DEFAULT_CONTRIBUTOR_PERMISSIONS, auth=auth)
+
+        assert node.get_permissions(new_contrib) == DEFAULT_CONTRIBUTOR_PERMISSIONS
+        assert node.get_visible(new_contrib) is True
+
+        node.update_contributor(
+            new_contrib,
+            READ,
+            False,
+            auth=auth
+        )
+        assert node.get_permissions(new_contrib) == [READ]
+        assert node.get_visible(new_contrib) is False
+
+    def test_update_contributor_non_admin_raises_error(self, node, auth):
+        non_admin = AuthUserFactory()
+        node.add_contributor(
+            non_admin,
+            permissions=DEFAULT_CONTRIBUTOR_PERMISSIONS,
+            auth=auth
+        )
+        with pytest.raises(PermissionsError):
+            node.update_contributor(
+                non_admin,
+                None,
+                False,
+                auth=Auth(non_admin)
+            )
+
+    def test_update_contributor_only_admin_raises_error(self, node, auth):
+        with pytest.raises(NodeStateError):
+            node.update_contributor(
+                auth.user,
+                WRITE,
+                True,
+                auth=auth
+            )
+
+    def test_update_contributor_non_contrib_raises_error(self, node, auth):
+        non_contrib = AuthUserFactory()
+        with pytest.raises(ValueError):
+            node.update_contributor(
+                non_contrib,
+                ADMIN,
+                True,
+                auth=auth
+            )
+
 
 # Copied from tests/test_models.py
 class TestNodeAddContributorRegisteredOrNot:
@@ -1045,6 +1151,66 @@ class TestRegisterNode:
             assert type(registration) is Registration
             assert node._id != registration._id
 
+    def test_cannot_register_deleted_node(self, node, auth):
+        node.is_deleted = True
+        node.save()
+        with pytest.raises(NodeStateError) as err:
+            node.register_node(
+                schema=None,
+                auth=auth,
+                data=None
+            )
+        assert err.value.message == 'Cannot register deleted node.'
+
+    @mock.patch('website.project.signals.after_create_registration')
+    def test_register_node_makes_private_registration(self, mock_signal):
+        user = UserFactory()
+        node = NodeFactory(creator=user)
+        node.is_public = True
+        node.save()
+        registration = node.register_node(get_default_metaschema(), Auth(user), '', None)
+        assert registration.is_public is False
+
+    @mock.patch('website.project.signals.after_create_registration')
+    def test_register_node_makes_private_child_registrations(self, mock_signal):
+        user = UserFactory()
+        node = NodeFactory(creator=user)
+        node.is_public = True
+        node.save()
+        child = NodeFactory(parent=node)
+        child.is_public = True
+        child.save()
+        childchild = NodeFactory(parent=child)
+        childchild.is_public = True
+        childchild.save()
+        registration = node.register_node(get_default_metaschema(), Auth(user), '', None)
+        for node in registration.node_and_primary_descendants():
+            assert node.is_public is False
+
+    @mock.patch('website.project.signals.after_create_registration')
+    def test_register_node_propagates_schema_and_data_to_children(self, mock_signal, user, auth):
+        root = ProjectFactory(creator=user)
+        c1 = ProjectFactory(creator=user, parent=root)
+        ProjectFactory(creator=user, parent=c1)
+
+        ensure_schemas()
+        meta_schema = MetaSchema.find_one(
+            Q('name', 'eq', 'Open-Ended Registration') &
+            Q('schema_version', 'eq', 1)
+        )
+        data = {'some': 'data'}
+        reg = root.register_node(
+            schema=meta_schema,
+            auth=auth,
+            data=data,
+        )
+        r1 = reg.nodes[0]
+        r1a = r1.nodes[0]
+        for r in [reg, r1, r1a]:
+            assert r.registered_meta[meta_schema._id] == data
+            assert r.registered_schema.first() == meta_schema
+
+
 # Copied from tests/test_models.py
 class TestAddUnregisteredContributor:
 
@@ -1262,6 +1428,22 @@ class TestManageContributors:
 
         assert len(node.visible_contributor_ids) == 1
 
+    def test_contributor_set_visibility_validation(self, node, user, auth):
+        reg_user1, reg_user2 = UserFactory(), UserFactory()
+        node.add_contributors(
+            [
+                {'user': reg_user1, 'permissions': [
+                    'read', 'write', 'admin'], 'visible': True},
+                {'user': reg_user2, 'permissions': [
+                    'read', 'write', 'admin'], 'visible': False},
+            ]
+        )
+        print(node.visible_contributor_ids)
+        with pytest.raises(ValueError) as e:
+            node.set_visible(user=reg_user1, visible=False, auth=None)
+            node.set_visible(user=user, visible=False, auth=None)
+            assert e.value.message == 'Must have at least one visible contributor'
+
     def test_manage_contributors_cannot_remove_last_admin_contributor(self, auth, node):
         user2 = UserFactory()
         node.add_contributor(contributor=user2, permissions=[READ, WRITE], auth=auth)
@@ -1407,29 +1589,29 @@ class TestManageContributors:
                 users, auth=auth, save=True,
             )
 
-def test_get_admin_contributors(user, auth):
-    read, write, admin = UserFactory(), UserFactory(), UserFactory()
-    nonactive_admin = UserFactory()
-    noncontrib = UserFactory()
-    project = ProjectFactory(creator=user)
-    project.add_contributor(read, auth=auth, permissions=[READ])
-    project.add_contributor(write, auth=auth, permissions=expand_permissions(WRITE))
-    project.add_contributor(admin, auth=auth, permissions=expand_permissions(ADMIN))
-    project.add_contributor(nonactive_admin, auth=auth, permissions=expand_permissions(ADMIN))
-    project.save()
+    def test_get_admin_contributors(self, user, auth):
+        read, write, admin = UserFactory(), UserFactory(), UserFactory()
+        nonactive_admin = UserFactory()
+        noncontrib = UserFactory()
+        project = ProjectFactory(creator=user)
+        project.add_contributor(read, auth=auth, permissions=[READ])
+        project.add_contributor(write, auth=auth, permissions=expand_permissions(WRITE))
+        project.add_contributor(admin, auth=auth, permissions=expand_permissions(ADMIN))
+        project.add_contributor(nonactive_admin, auth=auth, permissions=expand_permissions(ADMIN))
+        project.save()
 
-    nonactive_admin.is_disabled = True
-    nonactive_admin.save()
+        nonactive_admin.is_disabled = True
+        nonactive_admin.save()
 
-    result = list(project.get_admin_contributors([
-        read, write, admin, noncontrib, nonactive_admin
-    ]))
+        result = list(project.get_admin_contributors([
+            read, write, admin, noncontrib, nonactive_admin
+        ]))
 
-    assert admin in result
-    assert read not in result
-    assert write not in result
-    assert noncontrib not in result
-    assert nonactive_admin not in result
+        assert admin in result
+        assert read not in result
+        assert write not in result
+        assert noncontrib not in result
+        assert nonactive_admin not in result
 
 # copied from tests/test_models.py
 class TestNodeTraversals:
@@ -1606,16 +1788,16 @@ class TestNodeTraversals:
         descendants = list(point1.get_descendants_recursive())
         assert len(descendants) == 1
 
-def test_linked_from(node, auth):
-    registration_to_link = RegistrationFactory()
-    node_to_link = NodeFactory()
+    def test_linked_from(self, node, auth):
+        registration_to_link = RegistrationFactory()
+        node_to_link = NodeFactory()
 
-    node.add_pointer(node_to_link, auth=auth)
-    node.add_pointer(registration_to_link, auth=auth)
-    node.save()
+        node.add_pointer(node_to_link, auth=auth)
+        node.add_pointer(registration_to_link, auth=auth)
+        node.save()
 
-    assert node in node_to_link.linked_from.all()
-    assert node in registration_to_link.linked_from.all()
+        assert node in node_to_link.linked_from.all()
+        assert node in registration_to_link.linked_from.all()
 
 
 # Copied from tests/test_models.py
@@ -1738,6 +1920,12 @@ class TestPointerMethods:
         node_relation = NodeRelationFactory()
         with pytest.raises(ValueError):
             node.fork_pointer(node_relation, auth=auth)
+
+    def test_cannot_fork_deleted_node(self, node, auth):
+        child = NodeFactory(parent=node, is_deleted=True)
+        child.save()
+        fork = node.fork_node(auth=auth)
+        assert not fork.nodes
 
     def _fork_pointer(self, node, content, auth):
         pointer = node.add_pointer(content, auth=auth)
@@ -2150,6 +2338,23 @@ def test_querying_on_contributors(node, user, auth):
     assert deleted not in result2
 
 
+class TestDOIValidation:
+
+    def test_validate_bad_doi(self):
+        with pytest.raises(ValidationError):
+            Node(preprint_article_doi='nope').save()
+        with pytest.raises(ValidationError):
+            Node(preprint_article_doi='https://dx.doi.org/10.123.456').save()  # should save the bare DOI, not a URL
+        with pytest.raises(ValidationError):
+            Node(preprint_article_doi='doi:10.10.1038/nwooo1170').save()  # should save without doi: prefix
+
+    def test_validate_good_doi(self, node):
+        doi = '10.11038/nwooo1170'
+        node.preprint_article_doi = doi
+        node.save()
+        assert node.preprint_article_doi == doi
+
+
 class TestLogMethods:
 
     @pytest.fixture()
@@ -2368,6 +2573,16 @@ class TestNodeUpdate:
         last_log, penultimate_log = logs[:2]
         assert penultimate_log.action == NodeLog.EDITED_TITLE
         assert last_log.action == NodeLog.UPDATED_FIELDS
+
+    def test_validate_categories(self):
+        with pytest.raises(ValidationError):
+            Node(category='invalid').save()  # an invalid category
+
+    def test_category_display(self):
+        node = NodeFactory(category='hypothesis')
+        assert node.category_display == 'Hypothesis'
+        node2 = NodeFactory(category='methods and measures')
+        assert node2.category_display == 'Methods and Measures'
 
     def test_update_is_public(self, node, user, auth):
         node.update({'is_public': True}, auth=auth, save=True)
