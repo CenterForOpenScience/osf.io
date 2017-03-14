@@ -59,8 +59,6 @@
                                 <a
                                 % if user_name:
                                     class="btn btn-default dropdown-toggle" data-toggle="dropdown" type="button" aria-expanded="false"
-##                                     data-bind="tooltip: {title: 'Duplicate', placement: 'bottom', container : 'body'}"
-##                                     data-target="#duplicateModal" data-toggle="modal"
                                 % else:
                                     class="btn btn-default disabled"
                                 % endif
