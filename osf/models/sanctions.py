@@ -640,6 +640,9 @@ class Retraction(EmailApprovableSanction):
         Registration = apps.get_model('osf.Registration')
         NodeLog = apps.get_model('osf.NodeLog')
 
+        self.date_retracted = timezone.now()
+        self.save()
+
         parent_registration = Registration.find_one(Q('retraction', 'eq', self))
         parent_registration.registered_from.add_log(
             action=NodeLog.RETRACTION_APPROVED,

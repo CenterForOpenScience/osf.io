@@ -288,7 +288,6 @@ class Registration(AbstractNode):
         self.retraction = Retraction.objects.create(
             initiated_by=user,
             justification=justification or None,  # make empty strings None
-            date_retracted=timezone.now(),
             state=Retraction.UNAPPROVED
         )
         self.save()
