@@ -79,7 +79,7 @@
         % if not summary['anonymous']:
         <!-- Show abbreviated contributors list -->
         <div class="project-authors">
-            ${contributor_list.render_contributors(contributors=summary['contributors'], others_count=summary['others_count'])}
+            ${contributor_list.render_contributors(contributors=summary['contributors'], others_count=summary['others_count'], node_url=summary['url'])}
         </div>
         % else:
             <div>Anonymous Contributors</div>

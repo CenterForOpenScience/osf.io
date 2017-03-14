@@ -98,7 +98,7 @@
                     others_count = contributors_dict['others_count']
                 %>
 
-                ${ contributor_list.render_contributors(contributors=contributors, others_count=others_count) }
+                ${ contributor_list.render_contributors(contributors=contributors, others_count=others_count, node_url=node.url) }
 
             </div>
         % endfor

@@ -1020,6 +1020,21 @@ class TestAUserProfile(OsfTestCase):
         assert_in_html(self.component.title, res)
         assert_in_html(self.project.title, res)
 
+    def test_shows_projects_with_many_contributors(self):
+        # My project has many contributors
+        for _ in range(5):
+            user = UserFactory()
+            self.project.add_contributor(user, auth=Auth(self.project.creator), save=True)
+
+        # I go to my own profile
+        url = web_url_for('profile_view_id', uid=self.me._primary_key)
+        res = self.app.get(url, auth=self.me.auth)
+        # I see '3 more' as a link
+        assert_in('3 more', res)
+
+        res = res.click('3 more')
+        assert_equal(res.request.path, self.project.url)
+
     def test_has_no_public_projects_or_components_on_own_profile(self):
         # User goes to their profile
         url = web_url_for('profile_view_id', uid=self.user._id)

@@ -10,7 +10,7 @@
   % endif
 </%def>
 
-<%def name="render_contributors(contributors, others_count)">
+<%def name="render_contributors(contributors, others_count, node_url)">
   % for i, contributor in enumerate(contributors):
     ${render_contributor_dict(contributor) if isinstance(contributor, dict) else render_user_obj(contributor)}
   % endfor
