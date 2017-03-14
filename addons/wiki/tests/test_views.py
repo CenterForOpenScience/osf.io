@@ -1,13 +1,12 @@
+# -*- coding: utf-8 -*-
 """Views tests for the wiki addon."""
 import pytest
 
-from addons.wiki.exceptions import (NameEmptyError, NameInvalidError,
-                                            NameMaximumLengthError,
-                                            PageCannotRenameError,
-                                            PageConflictError,
-                                            PageNotFoundError)
+from addons.wiki.exceptions import (NameInvalidError, NameMaximumLengthError,
+     PageCannotRenameError, PageConflictError, PageNotFoundError)
 from addons.wiki.tests.factories import NodeWikiFactory
 from framework.auth import Auth
+from osf.exceptions import ValidationError
 from osf.models import Guid
 from osf_tests.factories import AuthUserFactory, UserFactory, ProjectFactory, NodeFactory, CommentFactory
 from tests.base import OsfTestCase
@@ -160,3 +159,118 @@ class TestUpdateNodeWiki(OsfTestCase):
         assert new_version_id in contributor.comments_viewed_timestamp
         assert wiki._id not in contributor.comments_viewed_timestamp
         assert comment.target.referent._id == new_version_id
+
+
+class TestRenameNodeWiki(OsfTestCase):
+
+    def setUp(self):
+        super(TestRenameNodeWiki, self).setUp()
+        # Create project with component
+        self.user = UserFactory()
+        self.auth = Auth(user=self.user)
+        self.project = ProjectFactory()
+        self.node = NodeFactory(creator=self.user, parent=self.project)
+        # user updates the wiki
+        self.project.update_node_wiki('home', 'Hello world', self.auth)
+        self.versions = self.project.wiki_pages_versions
+
+    def test_rename_name_not_found(self):
+        for invalid_name in [None, '', '   ', 'Unknown Name']:
+            with pytest.raises(PageNotFoundError):
+                self.project.rename_node_wiki(invalid_name, None, auth=self.auth)
+
+    def test_rename_new_name_invalid_none_or_blank(self):
+        name = 'New Page'
+        self.project.update_node_wiki(name, 'new content', self.auth)
+        for invalid_name in [None, '', '   ']:
+            with pytest.raises(ValidationError):
+                self.project.rename_node_wiki(name, invalid_name, auth=self.auth)
+
+    def test_rename_new_name_invalid_special_characters(self):
+        old_name = 'old name'
+        # forward slashes are not allowed
+        invalid_name = 'invalid/name'
+        self.project.update_node_wiki(old_name, 'some content', self.auth)
+        with pytest.raises(NameInvalidError):
+            self.project.rename_node_wiki(old_name, invalid_name, self.auth)
+
+    def test_rename_name_maximum_length(self):
+        old_name = 'short name'
+        new_name = 'a' * 101
+        self.project.update_node_wiki(old_name, 'some content', self.auth)
+        with pytest.raises(NameMaximumLengthError):
+            self.project.rename_node_wiki(old_name, new_name, self.auth)
+
+    def test_rename_cannot_rename(self):
+        for args in [('home', 'New Home'), ('HOME', 'New Home')]:
+            with pytest.raises(PageCannotRenameError):
+                self.project.rename_node_wiki(*args, auth=self.auth)
+
+    def test_rename_page_not_found(self):
+        for args in [('abc123', 'New Home'), (u'ˆ•¶£˙˙®¬™∆˙', 'New Home')]:
+            with pytest.raises(PageNotFoundError):
+                self.project.rename_node_wiki(*args, auth=self.auth)
+
+    def test_rename_page(self):
+        old_name = 'new page'
+        new_name = 'New pAGE'
+        self.project.update_node_wiki(old_name, 'new content', self.auth)
+        self.project.rename_node_wiki(old_name, new_name, self.auth)
+        page = self.project.get_wiki_page(new_name)
+        assert old_name != page.page_name
+        assert new_name == page.page_name
+        assert self.project.logs.latest().action == 'wiki_renamed'
+
+    def test_rename_page_case_sensitive(self):
+        old_name = 'new page'
+        new_name = 'New pAGE'
+        self.project.update_node_wiki(old_name, 'new content', self.auth)
+        self.project.rename_node_wiki(old_name, new_name, self.auth)
+        new_page = self.project.get_wiki_page(new_name)
+        assert new_name == new_page.page_name
+        assert self.project.logs.latest().action == 'wiki_renamed'
+
+    def test_rename_existing_deleted_page(self):
+        old_name = 'old page'
+        new_name = 'new page'
+        old_content = 'old content'
+        new_content = 'new content'
+        # create the old page and delete it
+        self.project.update_node_wiki(old_name, old_content, self.auth)
+        assert old_name in self.project.wiki_pages_current
+        self.project.delete_node_wiki(old_name, self.auth)
+        assert old_name not in self.project.wiki_pages_current
+        # create the new page and rename it
+        self.project.update_node_wiki(new_name, new_content, self.auth)
+        self.project.rename_node_wiki(new_name, old_name, self.auth)
+        new_page = self.project.get_wiki_page(old_name)
+        old_page = self.project.get_wiki_page(old_name, version=1)
+        # renaming over an existing deleted page replaces it.
+        assert new_content == old_page.content
+        assert new_content == new_page.content
+        assert self.project.logs.latest().action == 'wiki_renamed'
+
+    def test_rename_page_conflict(self):
+        existing_name = 'existing page'
+        new_name = 'new page'
+        self.project.update_node_wiki(existing_name, 'old content', self.auth)
+        assert existing_name in self.project.wiki_pages_current
+        self.project.update_node_wiki(new_name, 'new content', self.auth)
+        assert new_name in self.project.wiki_pages_current
+        with pytest.raises(PageConflictError):
+            self.project.rename_node_wiki(new_name, existing_name, self.auth)
+
+    def test_rename_log(self):
+        # Rename wiki
+        self.project.update_node_wiki('wiki', 'content', self.auth)
+        self.project.rename_node_wiki('wiki', 'renamed wiki', self.auth)
+        # Rename is logged
+        assert self.project.logs.latest().action == 'wiki_renamed'
+
+    def test_rename_log_specifics(self):
+        self.project.update_node_wiki('wiki', 'content', self.auth)
+        self.project.rename_node_wiki('wiki', 'renamed wiki', self.auth)
+        page = self.project.get_wiki_page('renamed wiki')
+        log = self.project.logs.latest()
+        assert 'wiki_renamed' == log.action
+        assert page._primary_key == log.params['page_id']
