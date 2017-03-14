@@ -1404,7 +1404,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         default_timestamp = dt.datetime(1970, 1, 1, 12, 0, 0, tzinfo=pytz.utc)
         return self.comments_viewed_timestamp.get(target_id, default_timestamp)
 
-    class Meta:
+    class Meta(BaseModel.Meta):
         # custom permissions for use in the OSF Admin App
         permissions = (
             ('view_user', 'Can view user details'),

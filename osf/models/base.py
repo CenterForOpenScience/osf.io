@@ -105,6 +105,7 @@ class BaseModel(models.Model):
 
     class Meta:
         abstract = True
+        ordering = ['id']
 
     @classmethod
     def get_fk_field_names(cls):
