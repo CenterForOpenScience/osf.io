@@ -1058,7 +1058,7 @@ def validate_next_url(next_url):
         return True
     for url in campaigns.get_external_domains():
         # Branded Preprints Phase 2
-        if url.startswith(url):
+        if next_url.startswith(url):
             return True
 
     return False
