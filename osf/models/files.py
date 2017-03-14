@@ -1,5 +1,6 @@
 import logging
 
+import itertools
 from dateutil.parser import parse as parse_date
 from django.db import models, connection
 from django.db.models import Manager
@@ -71,7 +72,7 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, ObjectIDMixi
     @property
     def is_file(self):
         # TODO split is file logic into subclasses
-        return issubclass(self, File)
+        return issubclass(self.__class__, File)
 
     @property
     def path(self):
@@ -83,47 +84,7 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, ObjectIDMixi
 
     @property
     def materialized_path(self):
-        if self.provider == 'osfstorage':
-            # TODO Optimize this.
-            sql = """
-                WITH RECURSIVE
-                    materialized_path_cte(id, parent_id, provider, GEN_DEPTH, GEN_PATH) AS (
-                    SELECT
-                      sfn.id,
-                      sfn.parent_id,
-                      sfn.provider,
-                      1 :: INT         AS depth,
-                      sfn.name :: TEXT AS GEN_PATH
-                    FROM "%s" AS sfn
-                    WHERE
-                      sfn.provider = 'osfstorage' AND
-                      sfn.parent_id IS NULL
-                    UNION ALL
-                    SELECT
-                      c.id,
-                      c.parent_id,
-                      c.provider,
-                      p.GEN_DEPTH + 1                       AS GEN_DEPTH,
-                      (p.GEN_PATH || '/' || c.name :: TEXT) AS GEN_PATH
-                    FROM materialized_path_cte AS p, "%s" AS c
-                    WHERE c.parent_id = p.id
-                  )
-                SELECT gen_path
-                FROM materialized_path_cte AS n
-                WHERE
-                  GEN_DEPTH > 1
-                  AND
-                  n.id = %s
-                LIMIT 1;
-            """
-            with connection.cursor() as cursor:
-                cursor.execute(sql, [AsIs(self._meta.db_table), AsIs(self._meta.db_table), self.pk])
-                row = cursor.fetchone()
-                if not row:
-                    return row
-                return row[0]
-        else:
-            return self._materialized_path
+        return self._materialized_path
 
     @materialized_path.setter
     def materialized_path(self, val):
@@ -169,9 +130,6 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, ObjectIDMixi
         """
         raise Exception('Wrapped is deprecated.')
 
-    def delete(self, **kwargs):
-        raise Exception('Dangerzone! Only call delete on wrapped StoredFileNodes')
-
 
 class StoredFileNode(BaseFileNode):
     # TODO DELETE ME POST MIGRATION
@@ -180,20 +138,85 @@ class StoredFileNode(BaseFileNode):
     migration_page_size = 10000
     # /TODO DELETE ME POST MIGRATION]
 
+    def restore(self, recursive=True, parent=None, save=True, deleted_on=None):
+        raise Exception('You cannot restore something that is not deleted.')
+
 # TODO Refactor code pointing at FileNode to point to StoredFileNode
 FileNode = StoredFileNode
 
 
 class File(StoredFileNode):
-    pass
+    def delete(self, user=None, parent=None, save=True, deleted_on=None):
+        """
+        Recast a File into TrashedFile and set fields related to deleting.
+        :param user:
+        :param parent:
+        :param save:
+        :param deleted_on:
+        :return:
+        """
+        self.recast(TrashedFile._typedmodels_type)
+        self.deleted_by = user
+        self.deleted_on = deleted_on = deleted_on or timezone.now()
+
+        if save:
+            self.save()
+
+        return self
 
 
 class Folder(StoredFileNode):
-    pass
+    def delete(self, user=None, parent=None, save=True, deleted_on=None):
+        """
+        Recast a Folder to TrashedFolder, set fields related to deleting,
+        and recast children.
+        :param user:
+        :param parent:
+        :param save:
+        :param deleted_on:
+        :return:
+        """
+        self.recast(TrashedFolder._typedmodels_type)
+        self.deleted_by = user
+        self.deleted_on = deleted_on = deleted_on or timezone.now()
+
+        if save:
+            self.save()
+
+        if not self.is_file:
+            for child in StoredFileNode.objects.filter(parent=self.id):
+                child.delete(user=user, save=save, deleted_on=deleted_on)
+        return self
 
 
 class TrashedFileNode(BaseFileNode):
-    pass
+    def delete(self, user=None, parent=None, save=True, deleted_on=None):
+        if isinstance(self, TrashedFileNode):
+            raise Exception('You cannot delete things that are deleted.')
+
+    def restore(self, recursive=True, parent=None, save=True, deleted_on=None):
+        """
+        Restore a file or folder
+        :param recursive:
+        :param parent:
+        :param save:
+        :param deleted_on:
+        :return:
+        """
+        type_cls = File if self.is_file else Folder
+
+        for subclass in ProviderMixin.__subclasses__():
+            for subsubclass in subclass.__subclasses__():
+                if issubclass(subsubclass, type_cls) and subsubclass.provider == self.provider:
+                    self.recast(subsubclass._typedmodels_type)
+
+        if save:
+            self.save()
+
+        if self.parent and self.parent.is_deleted:
+            raise ValueError('No parent to restore to')
+
+        return self
 
 
 class TrashedFile(TrashedFileNode):
@@ -201,7 +224,22 @@ class TrashedFile(TrashedFileNode):
 
 
 class TrashedFolder(TrashedFileNode):
-    pass
+    def restore(self, recursive=True, parent=None, save=True, deleted_on=None):
+        """
+        Restore a folder
+        :param recursive:
+        :param parent:
+        :param save:
+        :param deleted_on:
+        :return:
+        """
+        tf = super(TrashedFolder, self).restore(recursive=True, parent=None, save=True, deleted_on=None)
+
+        if not self.is_file and recursive:
+            deleted_on = deleted_on or self.deleted_on
+            for child in TrashedFileNode.objects.filter(parent=self.id, deleted_on=deleted_on):
+                child.restore(recursive=True, save=save, deleted_on=deleted_on)
+        return tf
 
 
 class ProviderMixinManager(Manager):

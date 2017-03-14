@@ -4,14 +4,16 @@ import logging
 import os
 
 from django.apps import apps
-from django.db import models
+from django.db import models, connection
 from modularodm import Q
+from psycopg2._psycopg import AsIs
 from typedmodels.models import TypedModel
 
 from addons.base.models import BaseNodeSettings, BaseStorageAddon
 from osf.exceptions import InvalidTagError, NodeStateError, TagNotFoundError
 from osf.models import (File, FileVersion, Folder, Guid,
                         TrashedFileNode, ProviderMixin)
+from osf.models.files import TrashedFile, TrashedFolder
 from osf.utils.auth import Auth
 from website.files import exceptions
 from website.files import utils as files_utils
@@ -29,29 +31,54 @@ class OsfStorageFileNode(ProviderMixin):
     # /TODO DELETE ME POST MIGRATION
     __provider = 'osfstorage'
 
+    @property
+    def materialized_path(self):
+        # TODO Optimize this.
+        sql = """
+            WITH RECURSIVE
+                materialized_path_cte(id, parent_id, provider, GEN_DEPTH, GEN_PATH) AS (
+                SELECT
+                  sfn.id,
+                  sfn.parent_id,
+                  sfn.provider,
+                  1 :: INT         AS depth,
+                  sfn.name :: TEXT AS GEN_PATH
+                FROM "%s" AS sfn
+                WHERE
+                  sfn.provider = 'osfstorage' AND
+                  sfn.parent_id IS NULL
+                UNION ALL
+                SELECT
+                  c.id,
+                  c.parent_id,
+                  c.provider,
+                  p.GEN_DEPTH + 1                       AS GEN_DEPTH,
+                  (p.GEN_PATH || '/' || c.name :: TEXT) AS GEN_PATH
+                FROM materialized_path_cte AS p, "%s" AS c
+                WHERE c.parent_id = p.id
+              )
+            SELECT gen_path
+            FROM materialized_path_cte AS n
+            WHERE
+              GEN_DEPTH > 1
+              AND
+              n.id = %s
+            LIMIT 1;
+        """
+        with connection.cursor() as cursor:
+            cursor.execute(sql, [AsIs(self._meta.db_table), AsIs(self._meta.db_table), self.pk])
+            row = cursor.fetchone()
+            if not row:
+                return row
+            return row[0]
+
+    @materialized_path.setter
+    def materialized_path(self, val):
+        raise Exception('Cannot set materialized path on OSFStorage as it is computed.')
+
     @classmethod
     def get(cls, _id, node):
         return cls.find_one(Q('_id', 'eq', _id) & Q('node', 'eq', node))
-
-    def _create_trashed(self, save=True, user=None, parent=None):
-        if save is False:
-            logger.warning('Asked to create a TrashedFileNode without saving.')
-        trashed = TrashedFileNode.objects.create(
-            _id=self._id,
-            name=self.name,
-            path=self.path,
-            node=self.node,
-            parent=parent or self.parent,
-            history=self.history,
-            checkout=self.checkout,
-            provider=self.provider,
-            last_touched=self.last_touched,
-            materialized_path=self.materialized_path,
-            deleted_by=user
-        )
-        if self.versions.exists():
-            trashed.versions.add(*self.versions.all())
-        return trashed
 
     @classmethod
     def get_or_create(cls, node, path):

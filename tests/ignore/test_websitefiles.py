@@ -11,21 +11,19 @@ from osf.models import Folder
 from tests.base import OsfTestCase
 from tests.factories import AuthUserFactory, ProjectFactory
 from website.files import exceptions
-from website.files import models
 from website.files import utils
-from website.models import Guid
-from website.views import find_bookmark_collection
+from osf import models
 
 
-class TestFileNode(models.FileNode):
+class TestFileNode(models.ProviderMixin):
     provider = 'test'
 
 
-class TestFile(models.File, TestFileNode):
+class TestFile(TestFileNode, File):
     pass
 
 
-class TestFolder(models.Folder, TestFileNode):
+class TestFolder(TestFileNode, Folder):
     pass
 
 
@@ -38,8 +36,8 @@ class FilesTestCase(OsfTestCase):
 
     def tearDown(self):
         super(FilesTestCase, self).setUp()
-        models.StoredFileNode.remove()
-        models.TrashedFileNode.remove()
+        # models.StoredFileNode.remove()
+        # models.TrashedFileNode.remove()
 
 
 class TestFileNodeMeta(FilesTestCase):
@@ -275,14 +273,18 @@ class TestFileNodeObj(FilesTestCase):
         assert_true(child.stored_object._is_loaded)
 
     def test_delete(self):
-        TestFileNode(
+        tf = TestFileNode(
             path='afile',
             name='name',
             is_file=True,
             node=self.node,
             provider='test',
             _materialized_path='/long/path/to/name',
-        ).delete()
+        )
+
+        tf.save()
+
+        tf.delete()
 
         trashed = models.TrashedFileNode.find_one()
         assert_equal(trashed.path, 'afile')
@@ -290,7 +292,7 @@ class TestFileNodeObj(FilesTestCase):
         assert_equal(trashed.materialized_path, '/long/path/to/name')
 
     def test_delete_with_guid(self):
-        fn = models.StoredFileNode(
+        tf = TestFile(
             path='afile',
             name='name',
             is_file=True,
@@ -298,10 +300,10 @@ class TestFileNodeObj(FilesTestCase):
             provider='test',
             materialized_path='/long/path/to/name',
         )
-        guid = fn.get_guid(create=True)
-        fn.delete()
+        guid = tf.get_guid(create=True)
+        tf.delete()
 
-        trashed = models.TrashedFileNode.find_one()
+        trashed = models.TrashedFile.find_one()
 
         guid.reload()
 
@@ -327,7 +329,8 @@ class TestFileNodeObj(FilesTestCase):
         assert_equal(models.StoredFileNode.load(fn._id), None)
 
     def test_restore_file(self):
-        root = models.StoredFileNode(
+        import ipdb;ipdb.set_trace()
+        root = TestFolder(
             path='root',
             name='rootfolder',
             is_file=False,
@@ -337,8 +340,8 @@ class TestFileNodeObj(FilesTestCase):
         )
         root.save()
 
-        fn = models.StoredFileNode(
-            parent=root._id,
+        fn = TestFile(
+            parent_id=root.id,
             path='afile',
             name='name',
             is_file=True,
@@ -347,16 +350,19 @@ class TestFileNodeObj(FilesTestCase):
             materialized_path='/long/path/to/name',
         )
 
-        guid = Guid.generate(fn)
+        guid = fn.get_guid(create=True)
 
-        before = fn.to_storage()
         trashed = fn.delete(user=self.user)
 
         restored = trashed.restore()
-        assert_equal(
-            restored.to_storage(),
-            before
-        )
+
+        local_django_fields = set([x.name for x in restored._meta.get_fields() if not x.is_relation])
+
+        for field_name in local_django_fields:
+            assert_equal(
+                getattr(restored, field_name),
+                getattr(fn, field_name)
+            )
 
         assert_equal(models.TrashedFileNode.load(trashed._id), None)
 
