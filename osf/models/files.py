@@ -306,7 +306,6 @@ class StoredFileNode(BaseFileNode):
     #         created=self.versions[0].date_modified.isoformat() if self.versions[0].date_modified else None,
     #     )
 
-
     def restore(self, recursive=True, parent=None, save=True, deleted_on=None):
         raise Exception('You cannot restore something that is not deleted.')
 
