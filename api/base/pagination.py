@@ -134,6 +134,11 @@ class JSONAPIPagination(pagination.PageNumberPagination):
         If this is an embedded resource, returns first page, ignoring query params.
         """
         if request.parser_context['kwargs'].get('is_embedded'):
+            # Pagination requires an order by clause, especially when using Postgres.
+            # see: https://docs.djangoproject.com/en/1.10/topics/pagination/#required-arguments
+            if not queryset.ordered:
+                queryset = queryset.order_by(queryset.model._meta.pk.name)
+
             paginator = DjangoPaginator(queryset, self.page_size)
             page_number = 1
             try:
@@ -260,6 +265,11 @@ class SearchPagination(JSONAPIPagination):
         page_size = self.get_page_size(request)
         if not page_size:
             return None
+
+        # Pagination requires an order by clause, especially when using Postgres.
+        # see: https://docs.djangoproject.com/en/1.10/topics/pagination/#required-arguments
+        if not queryset.ordered:
+            queryset = queryset.order_by(queryset.model._meta.pk.name)
 
         self.paginator = SearchPaginator(queryset, page_size)
         model = getattr(request.parser_context['view'], 'model_class', None)
