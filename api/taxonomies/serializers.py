@@ -28,7 +28,7 @@ class TaxonomySerializer(JSONAPISerializer):
 
     def get_child_num(self, obj):
         if hasattr(obj, 'child_count_provider'):
-            return getattr(obj,'child_count_provider')
+            return getattr(obj, 'child_count_provider')
         else:
             return len(obj.children.all())
 

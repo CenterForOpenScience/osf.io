@@ -215,7 +215,7 @@ class PreprintProviderSubjectList(JSONAPIBaseView, generics.ListAPIView):
     def check_child_count(self, sub, final_form):
         num_children = 0
         for child in sub.children.all():
-            if  child._id in final_form:
+            if child._id in final_form:
                 num_children += 1
         setattr(sub, 'child_count_provider', num_children)
 
@@ -244,7 +244,6 @@ class PreprintProviderSubjectList(JSONAPIBaseView, generics.ListAPIView):
             [self.check_child_count(sub=sub, final_form=final_form) for sub in subjects]
             return subjects
         return provider.all_subjects
-
 
 
 class PreprintProviderLicenseList(LicenseList):
