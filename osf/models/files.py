@@ -1,11 +1,9 @@
 import logging
 
-import itertools
 from dateutil.parser import parse as parse_date
-from django.db import models, connection
+from django.db import models
 from django.db.models import Manager
 from django.utils import timezone
-from psycopg2._psycopg import AsIs
 from typedmodels.models import TypedModel
 
 from osf.models.base import BaseModel, OptionalGuidMixin, ObjectIDMixin
