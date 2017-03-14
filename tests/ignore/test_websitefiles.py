@@ -16,7 +16,7 @@ from osf import models
 
 
 class TestFileNode(models.ProviderMixin):
-    provider = 'test'
+    _provider = 'test'
 
 
 class TestFile(TestFileNode, File):
@@ -34,73 +34,49 @@ class FilesTestCase(OsfTestCase):
         self.user = AuthUserFactory()
         self.node = ProjectFactory(creator=self.user)
 
-    def tearDown(self):
-        super(FilesTestCase, self).setUp()
-        # models.StoredFileNode.remove()
-        # models.TrashedFileNode.remove()
-
-
-class TestFileNodeMeta(FilesTestCase):
-
-    def test_conflicting_providers(self):
-
-        with assert_raises(ValueError) as e:
-            class Two(models.FileNode):
-                is_file = True
-                provider = 'test'
-
-        assert_equal(e.exception.message, 'Conflicting providers')
-
 
 class TestStoredFileNode(FilesTestCase):
 
     def setUp(self):
         super(TestStoredFileNode, self).setUp()
-        self.sfn = models.StoredFileNode(
+        self.test_file = TestFile(
             path='anid',
             name='name',
-            is_file=True,
             node=self.node,
             provider='test',
             materialized_path='/long/path/to/name',
         )
-        self.sfn.save()
+        self.test_file.save()
 
     def test_deep_url(self):
-        url = self.sfn.deep_url
+        url = self.test_file.deep_url
         assert_true(isinstance(url, basestring))
         assert_in(self.node._id, url)
-        assert_in(self.sfn.path, url)
-        assert_in(self.sfn.provider, url)
+        assert_in(self.test_file.path, url)
+        assert_in(self.test_file.provider, url)
 
     def test_deep_url_unicode(self):
-        self.sfn.path = u'༼ つ ͠° ͟ ͟ʖ ͡° ༽つ'
-        self.sfn.save()
-        url = self.sfn.deep_url
+        self.test_file.path = u'༼ つ ͠° ͟ ͟ʖ ͡° ༽つ'
+        self.test_file.save()
+        url = self.test_file.deep_url
         assert_true(isinstance(url, basestring))
         assert_in(self.node._id, url)
         # Path is url encode
         # assert_in(self.sfn.path, url)
-        assert_in(self.sfn.provider, url)
+        assert_in(self.test_file.provider, url)
 
     def test_get_guid_no_create(self):
-        assert_is(self.sfn.get_guid(), None)
+        assert_is(self.test_file.get_guid(), None)
 
     def test_get_guid_create(self):
-        guid = self.sfn.get_guid(create=True)
-        assert_equal(guid.referent, self.sfn)
-        assert_equal(self.sfn.get_guid(), guid)
+        guid = self.test_file.get_guid(create=True)
+        assert_equal(guid.referent, self.test_file)
+        assert_equal(self.test_file.get_guid(), guid)
 
 
 class TestFileNodeObj(FilesTestCase):
 
     def test_create(self):
-        with assert_raises(AssertionError):
-            TestFileNode.create()
-
-        with assert_raises(AssertionError):
-            models.File.create()
-
         working = TestFile.create(name='myname')
         assert_equals(working.is_file, True)
         assert_equals(working.name, 'myname')
@@ -155,7 +131,7 @@ class TestFileNodeObj(FilesTestCase):
         assert_equals(TestFolder().kind, 'folder')
 
     def test_filter_build(self):
-        qs = TestFile._filter(Q('test', 'eq', 'test'))
+        qs = TestFile.find(Q('test', 'eq', 'test'))
         _, is_file, provider = qs.nodes
         assert_equal(is_file.__dict__, Q('is_file', 'eq', True).__dict__)
         assert_equal(provider.__dict__, Q('provider', 'eq', 'test').__dict__)
@@ -273,7 +249,7 @@ class TestFileNodeObj(FilesTestCase):
         assert_true(child.stored_object._is_loaded)
 
     def test_delete(self):
-        tf = TestFileNode(
+        tf = TestFile(
             path='afile',
             name='name',
             is_file=True,
@@ -286,7 +262,7 @@ class TestFileNodeObj(FilesTestCase):
 
         tf.delete()
 
-        trashed = models.TrashedFileNode.find_one()
+        trashed = models.TrashedFile.objects.all()[0]
         assert_equal(trashed.path, 'afile')
         assert_equal(trashed.node, self.node)
         assert_equal(trashed.materialized_path, '/long/path/to/name')
@@ -303,7 +279,7 @@ class TestFileNodeObj(FilesTestCase):
         guid = tf.get_guid(create=True)
         tf.delete()
 
-        trashed = models.TrashedFile.find_one()
+        trashed = models.TrashedFile.objects.all()[0]
 
         guid.reload()
 
@@ -314,17 +290,16 @@ class TestFileNodeObj(FilesTestCase):
         assert_less((trashed.deleted_on - timezone.now()).total_seconds(), 5)
 
     def test_delete_with_user(self):
-        fn = models.StoredFileNode(
+        fn = TestFile(
             path='afile',
             name='name',
-            is_file=True,
             node=self.node,
             provider='test',
             materialized_path='/long/path/to/name',
         )
         fn.delete(user=self.user)
 
-        trashed = models.TrashedFileNode.find_one()
+        trashed = models.TrashedFileNode.objects.all()[0]
         assert_equal(trashed.deleted_by, self.user)
         assert_equal(models.StoredFileNode.load(fn._id), None)
 

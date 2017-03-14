@@ -25,7 +25,7 @@ from osf.models.preprint_service import PreprintService  # noqa
 from osf.models.identifiers import Identifier  # noqa
 from osf.models.files import (  # noqa
     File, Folder, FileNode,  # noqa
-    FileVersion, StoredFileNode, TrashedFileNode,  # noqa
+    FileVersion, StoredFileNode, TrashedFile, TrashedFileNode, TrashedFolder,  # noqa
     BaseFileNode, ProviderMixin
 )  # noqa
 from osf.models.node_relation import NodeRelation  # noqa

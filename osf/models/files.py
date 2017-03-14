@@ -4,6 +4,7 @@ from dateutil.parser import parse as parse_date
 from django.db import models
 from django.db.models import Manager
 from django.utils import timezone
+from modularodm.exceptions import NoResultsFound
 from typedmodels.models import TypedModel
 
 from osf.models.base import BaseModel, OptionalGuidMixin, ObjectIDMixin
@@ -128,6 +129,43 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, ObjectIDMixi
         """
         raise Exception('Wrapped is deprecated.')
 
+    @classmethod
+    def create(cls, **kwargs):
+        kwargs.update(provider=cls.provider)
+        return cls(**kwargs)
+
+    @classmethod
+    def get_or_create(cls, node, path):
+        obj, _ = cls.objects.get_or_create(node=node, path='/' + path.lstrip('/'))
+        return obj
+
+    @classmethod
+    def get_file_guids(cls, materialized_path, provider, node):
+        guids = []
+        materialized_path = '/' + materialized_path.lstrip('/')
+        if materialized_path.endswith('/'):
+            # it's a folder
+            folder_children = cls.find(Q('provider', 'eq', provider) &
+                                       Q('node', 'eq', node) &
+                                       Q('_materialized_path', 'startswith', materialized_path))
+            for item in folder_children:
+                if item.kind == 'file':
+                    guid = item.get_guid()
+                    if guid:
+                        guids.append(guid._id)
+        else:
+            # it's a file
+            try:
+                file_obj = cls.find_one(
+                    Q('node', 'eq', node) & Q('_materialized_path', 'eq', materialized_path))
+            except NoResultsFound:
+                return guids
+            guid = file_obj.get_guid()
+            if guid:
+                guids.append(guid._id)
+
+        return guids
+
 
 class StoredFileNode(BaseFileNode):
     # TODO DELETE ME POST MIGRATION
@@ -249,8 +287,12 @@ class ProviderMixinManager(Manager):
 
 
 class ProviderMixin(object):
-    provider = None
+    _provider = None
     objects = ProviderMixinManager()
+
+    def save(self):
+        self.provider = self._provider
+        return super(ProviderMixin, self).save()
 
 
 class FileVersion(ObjectIDMixin, BaseModel):

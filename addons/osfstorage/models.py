@@ -29,7 +29,7 @@ class OsfStorageFileNode(ProviderMixin):
     modm_model_path = 'website.files.models.osfstorage.OsfStorageFileNode'
     modm_query = None
     # /TODO DELETE ME POST MIGRATION
-    __provider = 'osfstorage'
+    _provider = 'osfstorage'
 
     @property
     def materialized_path(self):
@@ -227,7 +227,7 @@ class OsfStorageFileNode(ProviderMixin):
     def save(self):
         self._path = ''
         self._materialized_path = ''
-        self.provider = self.__provider
+        self.provider = self._provider
         return super(OsfStorageFileNode, self).save()
 
 
