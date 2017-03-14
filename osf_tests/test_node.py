@@ -9,6 +9,7 @@ import pytest
 import pytz
 from framework.exceptions import PermissionsError
 from website.util.permissions import READ, WRITE, ADMIN, expand_permissions, DEFAULT_CONTRIBUTOR_PERMISSIONS
+from website.project.model import has_anonymous_link
 from website.project.signals import contributor_added, contributor_removed, after_create_registration
 from website.exceptions import NodeStateError
 from website.util import permissions, disconnected_from_listeners, api_url_for, web_url_for
@@ -29,7 +30,7 @@ from osf.models import (
     DraftRegistrationApproval,
 )
 from addons.wiki.models import NodeWikiPage
-from osf.exceptions import ValidationError
+from osf.exceptions import ValidationError, ValidationValueError
 from osf.utils.auth import Auth
 
 from osf_tests.factories import (
@@ -309,6 +310,10 @@ class TestProject:
             '/{0}/'.format(project._primary_key)
         )
 
+    def test_api_url(self):
+        api_url = self.project.api_url
+        assert api_url == '/api/v1/project/{0}/'.format(self.project._primary_key)
+
     def test_web_url_for(self, node, request_context):
         result = node.web_url_for('view_project')
         assert result == web_url_for(
@@ -334,6 +339,18 @@ class TestProject:
     def test_get_absolute_url(self, node):
         assert node.get_absolute_url() == '{}v2/nodes/{}/'.format(settings.API_DOMAIN, node._id)
 
+    def test_parents(self):
+        node = ProjectFactory()
+        child1 = ProjectFactory(parent=node)
+        child2 = ProjectFactory(parent=child1)
+        assert node.parents == []
+        assert child1.parents == [node]
+        assert child2.parents == [child1, node]
+
+    def test_no_parent(self):
+        node = ProjectFactory()
+        assert node.parent_node is None
+
     def test_node_factory(self):
         node = NodeFactory()
         assert node.category == 'hypothesis'
@@ -353,9 +370,34 @@ class TestProject:
                     if addon.config.short_name == addon_config.short_name
                 ])
 
-    def test_api_url(self, project):
-        api_url = project.api_url
-        assert api_url == '/api/v1/project/{0}/'.format(project._primary_key)
+    def test_project_factory(self):
+        node = ProjectFactory()
+        assert node.category == 'project'
+        assert bool(node._id)
+        # assert_almost_equal(
+        #     node.date_created, timezone.now(),
+        #     delta=datetime.timedelta(seconds=5),
+        # )
+        assert node.is_public is False
+        assert node.is_deleted is False
+        assert hasattr(node, 'deleted_date')
+        assert node.is_registration is False
+        assert hasattr(node, 'registered_date')
+        assert node.is_fork is False
+        assert hasattr(node, 'forked_date')
+        assert bool(node.title)
+        assert hasattr(node, 'description')
+        assert hasattr(node, 'registered_meta')
+        assert hasattr(node, 'registered_user')
+        assert hasattr(node, 'registered_schema')
+        assert bool(node.creator)
+        assert bool(node.contributors)
+        assert len(node.logs) == 1
+        assert hasattr(node, 'tags')
+        assert hasattr(node, 'nodes')
+        assert hasattr(node, 'forked_from')
+        assert hasattr(node, 'registered_from')
+        assert node.logs.latest().action == 'project_created'
 
     def test_parent_id(self, project, child):
         assert child.parent_id == project._id
@@ -384,6 +426,27 @@ class TestProject:
 
         assert linked_node in project.nodes_active
         assert deleted_linked_node not in project.nodes_active
+
+    def test_date_modified(self, node, auth):
+        contrib = UserFactory()
+        node.add_contributor(contrib, auth=auth)
+        node.save()
+
+        assert node.date_modified == node.logs.latest().date
+        assert node.date_modified != node.date_created
+
+    def test_date_modified_create_registration(self, node):
+        RegistrationFactory(project=node)
+        node.reload()
+
+        assert node.date_modified == node.logs.latest().date
+        assert node.date_modified != node.date_created
+
+    def test_date_modified_create_component(self, node, user):
+        NodeFactory(creator=user, parent=node)
+        node.save()
+
+        assert node.date_modified == node.date_created
 
 
 class TestLogging:
@@ -517,12 +580,39 @@ class TestContributorMethods:
             [user1._id, user2._id]
         )
 
+    def test_cant_add_creator_as_contributor_twice(self, node, user):
+        node.add_contributor(contributor=user)
+        node.save()
+        assert len(node.contributors) == 1
+
+    def test_cant_add_same_contributor_twice(self, node):
+        contrib = UserFactory()
+        node.add_contributor(contributor=contrib)
+        node.save()
+        node.add_contributor(contributor=contrib)
+        node.save()
+        assert len(node.contributors) == 2
+
+    def test_remove_unregistered_conributor_removes_unclaimed_record(self, node, auth):
+        new_user = node.add_unregistered_contributor(fullname='David Davidson',
+            email='david@davidson.com', auth=auth)
+        node.save()
+        assert node.is_contributor(new_user)  # sanity check
+        assert node._primary_key in new_user.unclaimed_records
+        node.remove_contributor(
+            auth=auth,
+            contributor=new_user
+        )
+        node.save()
+        assert node._primary_key not in new_user.unclaimed_records
+
     def test_is_contributor(self, node):
         contrib, noncontrib = UserFactory(), UserFactory()
         Contributor.objects.create(user=contrib, node=node)
 
         assert node.is_contributor(contrib) is True
         assert node.is_contributor(noncontrib) is False
+        assert node.is_contributor(None) is False
 
     def test_visible_contributor_ids(self, node, user):
         visible_contrib = UserFactory()
@@ -675,6 +765,27 @@ class TestContributorMethods:
             node._id not in
             contrib.unclaimed_records.keys()
         )
+
+    def test_permission_override_on_readded_contributor(self, node, user):
+
+        # A child node created
+        child_node = NodeFactory(parent=node, creator=user)
+
+        # A user is added as with read permission
+        user2 = UserFactory()
+        child_node.add_contributor(user2, permissions=['read'])
+
+        # user is readded with permission admin
+        child_node.add_contributor(user2, permissions=['read', 'write', 'admin'])
+        child_node.save()
+
+        assert child_node.has_permission(user2, 'admin') is True
+
+    def test_permission_override_fails_if_no_admins(self, node, user):
+        # User has admin permissions because they are the creator
+        # Cannot lower permissions
+        with pytest.raises(NodeStateError):
+            node.add_contributor(user, permissions=['read', 'write'])
 
     def test_update_contributor(self, node, auth):
         new_contrib = AuthUserFactory()
@@ -1058,90 +1169,83 @@ class TestPermissionMethods:
         assert project.can_view(Auth(user=creator)) is False
         assert project.can_edit(Auth(user=creator)) is False
         assert project.is_contributor(creator) is False
-    #
-    # def test_can_view_public(self):
-    #     # Create contributor and noncontributor
-    #     contributor = UserFactory()
-    #     contributor_auth = Auth(user=contributor)
-    #     other_guy = UserFactory()
-    #     other_guy_auth = Auth(user=other_guy)
-    #     self.project.add_contributor(
-    #         contributor=contributor, auth=self.auth)
-    #     # Change project to public
-    #     self.project.set_privacy('public')
-    #     self.project.save()
-    #     # Creator, contributor, and noncontributor can view
-    #     assert self.project.can_view(self.auth)
-    #     assert self.project.can_view(contributor_auth)
-    #     assert self.project.can_view(other_guy_auth)
-    #
-    # def test_is_fork_of(self):
-    #     project = ProjectFactory()
-    #     fork1 = project.fork_node(auth=Auth(user=project.creator))
-    #     fork2 = fork1.fork_node(auth=Auth(user=project.creator))
-    #     assert_true(fork1.is_fork_of(project))
-    #     assert_true(fork2.is_fork_of(project))
-    #
-    # def test_is_fork_of_false(self):
-    #     project = ProjectFactory()
-    #     to_fork = ProjectFactory()
-    #     fork = to_fork.fork_node(auth=Auth(user=to_fork.creator))
-    #     assert_false(fork.is_fork_of(project))
-    #
-    # def test_is_fork_of_no_forked_from(self):
-    #     project = ProjectFactory()
-    #     assert_false(project.is_fork_of(self.project))
-    #
-    # def test_is_registration_of(self):
-    #     project = ProjectFactory()
-    #     with mock_archive(project) as reg1:
-    #         with mock_archive(reg1) as reg2:
-    #             assert_true(reg1.is_registration_of(project))
-    #             assert_true(reg2.is_registration_of(project))
-    #
-    # def test_is_registration_of_false(self):
-    #     project = ProjectFactory()
-    #     to_reg = ProjectFactory()
-    #     with mock_archive(to_reg) as reg:
-    #         assert_false(reg.is_registration_of(project))
-    #
-    # def test_raises_permissions_error_if_not_a_contributor(self):
-    #     project = ProjectFactory()
-    #     user = UserFactory()
-    #     with assert_raises(PermissionsError):
-    #         project.register_node(None, Auth(user=user), '', None)
-    #
-    # def test_admin_can_register_private_children(self):
-    #     user = UserFactory()
-    #     project = ProjectFactory(creator=user)
-    #     project.set_permissions(user, ['admin', 'write', 'read'])
-    #     child = NodeFactory(parent=project, is_public=False)
-    #     assert_false(child.can_edit(auth=Auth(user=user)))  # sanity check
-    #     with mock_archive(project, None, Auth(user=user), '', None) as registration:
-    #         # child was registered
-    #         child_registration = registration.nodes[0]
-    #         assert_equal(child_registration.registered_from, child)
-    #
-    # def test_is_registration_of_no_registered_from(self):
-    #     project = ProjectFactory()
-    #     assert_false(project.is_registration_of(self.project))
-    #
-    # def test_registration_preserves_license(self):
-    #     license = NodeLicenseRecordFactory()
-    #     self.project.node_license = license
-    #     self.project.save()
-    #     with mock_archive(self.project, autocomplete=True) as registration:
-    #         assert_equal(registration.node_license.id, license.id)
-    #
-    # def test_is_contributor_unregistered(self):
-    #     unreg = UnregUserFactory()
-    #     self.project.add_unregistered_contributor(
-    #         fullname=fake.name(),
-    #         email=unreg.username,
-    #         auth=self.auth
-    #     )
-    #     self.project.save()
-    #     assert_true(self.project.is_contributor(unreg))
+
+    def test_can_view_public(self, project, auth):
+        # Create contributor and noncontributor
+        contributor = UserFactory()
+        contributor_auth = Auth(user=contributor)
+        other_guy = UserFactory()
+        other_guy_auth = Auth(user=other_guy)
+        project.add_contributor(
+            contributor=contributor, auth=auth)
+        # Change project to public
+        project.set_privacy('public')
+        project.save()
+        # Creator, contributor, and noncontributor can view
+        assert project.can_view(auth)
+        assert project.can_view(contributor_auth)
+        assert project.can_view(other_guy_auth)
+
+    def test_is_fork_of(self, project):
+        fork1 = project.fork_node(auth=Auth(user=project.creator))
+        fork2 = fork1.fork_node(auth=Auth(user=project.creator))
+        assert fork1.is_fork_of(project) is True
+        assert fork2.is_fork_of(project) is True
+
+    def test_is_fork_of_false(self, project):
+        to_fork = ProjectFactory()
+        fork = to_fork.fork_node(auth=Auth(user=to_fork.creator))
+        assert fork.is_fork_of(project) is False
+
+    def test_is_fork_of_no_forked_from(self, project):
+        project2 = ProjectFactory()
+        assert project2.is_fork_of(project) is False
+
+    def test_is_registration_of(self, project):
+        with mock_archive(project) as reg1:
+            with mock_archive(reg1) as reg2:
+                assert reg1.is_registration_of(project) is True
+                assert reg2.is_registration_of(project) is True
+
+    def test_is_registration_of_false(self, project):
+        to_reg = ProjectFactory()
+        with mock_archive(to_reg) as reg:
+            assert reg.is_registration_of(project) is False
+
+    def test_raises_permissions_error_if_not_a_contributor(self, project):
+        user = UserFactory()
+        with pytest.raises(PermissionsError):
+            project.register_node(None, Auth(user=user), '', None)
+
+    def test_admin_can_register_private_children(self, project, user, auth):
+        project.set_permissions(user, ['admin', 'write', 'read'])
+        child = NodeFactory(parent=project, is_public=False)
+        assert child.can_edit(auth=auth) is False  # sanity check
+        with mock_archive(project, None, auth, '', None) as registration:
+            # child was registered
+            child_registration = registration.nodes[0]
+            assert child_registration.registered_from == child
+
+    def test_is_registration_of_no_registered_from(self, project):
+        project2 = ProjectFactory()
+        assert project2.is_registration_of(project) is False
+
+    def test_registration_preserves_license(self, project):
+        license = NodeLicenseRecordFactory()
+        project.node_license = license
+        project.save()
+        with mock_archive(project, autocomplete=True) as registration:
+            assert registration.node_license.id == license.id
+
+    def test_is_contributor_unregistered(self, project, auth):
+        unreg = UnregUserFactory()
+        project.add_unregistered_contributor(
+            fullname='David Davidson',
+            email=unreg.username,
+            auth=auth
+        )
+        project.save()
+        assert project.is_contributor(unreg) is True
 
 class TestRegisterNode:
 
@@ -1398,6 +1502,153 @@ class TestSetPrivacy:
         with mock.patch('osf.models.Registration.request_embargo_termination') as mock_request_embargo_termination:
             registration.set_privacy('public', auth=auth)
             assert mock_request_embargo_termination.call_count == 1
+
+# copied from tests/test_models.py
+class TestNodeSpam:
+
+    @pytest.fixture()
+    def project(self):
+        return ProjectFactory(is_public=True)
+
+    @mock.patch.object(settings, 'SPAM_FLAGGED_MAKE_NODE_PRIVATE', True)
+    def test_set_privacy_on_spammy_node(self, project):
+        project.is_public = False
+        project.save()
+        with mock.patch.object(Node, 'is_spammy', mock.PropertyMock(return_value=True)):
+            with pytest.raises(NodeStateError):
+                project.set_privacy('public')
+
+    def test_check_spam_disabled_by_default(self, project, user):
+        # SPAM_CHECK_ENABLED is False by default
+        with mock.patch('osf.models.node.Node._get_spam_content', mock.Mock(return_value='some content!')):
+            with mock.patch('osf.models.node.Node.do_check_spam', mock.Mock(side_effect=Exception('should not get here'))):
+                project.set_privacy('public')
+                assert project.check_spam(user, None, None) is False
+
+    @mock.patch.object(settings, 'SPAM_CHECK_ENABLED', True)
+    def test_check_spam_only_public_node_by_default(self, project, user):
+        # SPAM_CHECK_PUBLIC_ONLY is True by default
+        with mock.patch('osf.models.node.Node._get_spam_content', mock.Mock(return_value='some content!')):
+            with mock.patch('osf.models.node.Node.do_check_spam', mock.Mock(side_effect=Exception('should not get here'))):
+                project.set_privacy('private')
+                assert project.check_spam(user, None, None) is False
+
+    @mock.patch.object(settings, 'SPAM_CHECK_ENABLED', True)
+    def test_check_spam_skips_ham_user(self, project, user):
+        with mock.patch('website.project.model.Node._get_spam_content', mock.Mock(return_value='some content!')):
+            with mock.patch('website.project.model.Node.do_check_spam', mock.Mock(side_effect=Exception('should not get here'))):
+                user.add_system_tag('ham_confirmed')
+                project.set_privacy('public')
+                assert project.check_spam(user, None, None) is False
+
+    @mock.patch.object(settings, 'SPAM_CHECK_ENABLED', True)
+    @mock.patch.object(settings, 'SPAM_CHECK_PUBLIC_ONLY', False)
+    def test_check_spam_on_private_node(self, project, user):
+        project.is_public = False
+        project.save()
+        with mock.patch('osf.models.node.Node._get_spam_content', mock.Mock(return_value='some content!')):
+            with mock.patch('osf.models.node.Node.do_check_spam', mock.Mock(return_value=True)):
+                project.set_privacy('private')
+                assert project.check_spam(user, None, None) is True
+
+    @mock.patch('website.project.model.mails.send_mail')
+    @mock.patch.object(settings, 'SPAM_CHECK_ENABLED', True)
+    @mock.patch.object(settings, 'SPAM_ACCOUNT_SUSPENSION_ENABLED', True)
+    def test_check_spam_on_private_node_bans_new_spam_user(self, mock_send_mail, project, user):
+        project.is_public = False
+        project.save()
+        with mock.patch('website.project.model.Node._get_spam_content', mock.Mock(return_value='some content!')):
+            with mock.patch('website.project.model.Node.do_check_spam', mock.Mock(return_value=True)):
+                user.date_confirmed = timezone.now()
+                project.set_privacy('public')
+                user2 = UserFactory()
+                # project w/ one contributor
+                project2 = ProjectFactory(creator=user, description='foobar2', is_public=True)
+                project2.save()
+                # project with more than one contributor
+                project3 = ProjectFactory(creator=user, description='foobar3', is_public=True)
+                project3.add_contributor(user2)
+                project3.save()
+
+                assert project.check_spam(user, None, None) is True
+
+                assert user.is_disabled is True
+                assert project.is_public is False
+                project2.reload()
+                assert project2.is_public is False
+                project3.reload()
+                assert project3.is_public is True
+
+    @mock.patch('website.project.model.mails.send_mail')
+    @mock.patch.object(settings, 'SPAM_CHECK_ENABLED', True)
+    @mock.patch.object(settings, 'SPAM_ACCOUNT_SUSPENSION_ENABLED', True)
+    def test_check_spam_on_private_node_does_not_ban_existing_user(self, mock_send_mail, project, user):
+        project.is_public = False
+        project.save()
+        with mock.patch('website.project.model.Node._get_spam_content', mock.Mock(return_value='some content!')):
+            with mock.patch('website.project.model.Node.do_check_spam', mock.Mock(return_value=True)):
+                project.creator.date_confirmed = timezone.now() - datetime.timedelta(days=9001)
+                project.set_privacy('public')
+                assert project.check_spam(user, None, None) is True
+                assert project.is_public is True
+
+    def test_flag_spam_make_node_private(self, project):
+        assert project.is_public
+        with mock.patch.object(settings, 'SPAM_FLAGGED_MAKE_NODE_PRIVATE', True):
+            project.flag_spam()
+        assert project.is_spammy
+        assert project.is_public is False
+
+    def test_flag_spam_do_not_make_node_private(self, project):
+        assert project.is_public
+        with mock.patch.object(settings, 'SPAM_FLAGGED_MAKE_NODE_PRIVATE', False):
+            project.flag_spam()
+        assert project.is_spammy
+        assert project.is_public
+
+    def test_confirm_spam_makes_node_private(self, project):
+        assert project.is_public
+        project.confirm_spam()
+        assert project.is_spammy
+        assert project.is_public is False
+
+
+# copied from tests/test_models.py
+class TestPrivateLinks:
+    def test_add_private_link(self, node):
+        link = PrivateLinkFactory()
+        link.nodes.add(node)
+        link.save()
+        assert link in node.private_links.all()
+
+    @mock.patch('osf.utils.auth.Auth.private_link')
+    def test_has_anonymous_link(self, mock_property, node):
+        mock_property.return_value(mock.MagicMock())
+        mock_property.anonymous = True
+
+        link1 = PrivateLinkFactory(key="link1")
+        link1.nodes.add(node)
+        link1.save()
+
+        user2 = UserFactory()
+        auth2 = Auth(user=user2, private_key="link1")
+
+        assert has_anonymous_link(node, auth2) is True
+
+    @mock.patch('osf.utils.auth.Auth.private_link')
+    def test_has_no_anonymous_link(self, mock_property, node):
+        mock_property.return_value(mock.MagicMock())
+        mock_property.anonymous = False
+
+        link2 = PrivateLinkFactory(key='link2')
+        link2.nodes.add(node)
+        link2.save()
+
+        user3 = UserFactory()
+        auth3 = Auth(user=user3, private_key='link2')
+
+        assert has_anonymous_link(node, auth3) is False
+
 
 # copied from tests/test_models.py
 class TestManageContributors:
@@ -2573,6 +2824,42 @@ class TestNodeUpdate:
         last_log, penultimate_log = logs[:2]
         assert penultimate_log.action == NodeLog.EDITED_TITLE
         assert last_log.action == NodeLog.UPDATED_FIELDS
+
+    def test_set_title_works_with_valid_title(self, user, auth):
+        proj = ProjectFactory(title='That Was Then', creator=user)
+        proj.set_title('This is now', auth=auth)
+        proj.save()
+        # Title was changed
+        assert proj.title == 'This is now'
+        # A log event was saved
+        latest_log = proj.logs.latest()
+        assert latest_log.action == 'edit_title'
+        assert latest_log.params['title_original'] == 'That Was Then'
+
+    def test_set_title_fails_if_empty_or_whitespace(self, user, auth):
+        proj = ProjectFactory(title='That Was Then', creator=user)
+        with pytest.raises(ValidationValueError):
+            proj.set_title(' ', auth=auth)
+        with pytest.raises(ValidationValueError):
+            proj.set_title('', auth=auth)
+        assert proj.title == 'That Was Then'
+
+    def test_set_title_fails_if_too_long(self, user, auth):
+        proj = ProjectFactory(title='That Was Then', creator=user)
+        long_title = ''.join('a' for _ in range(201))
+        with pytest.raises(ValidationValueError):
+            proj.set_title(long_title, auth=auth)
+
+    def test_set_description(self, node, auth):
+        old_desc = node.description
+        node.set_description(
+            'new description', auth=auth)
+        node.save()
+        assert node.description, 'new description'
+        latest_log = node.logs.latest()
+        assert latest_log.action, NodeLog.EDITED_DESCRIPTION
+        assert latest_log.params['description_original'], old_desc
+        assert latest_log.params['description_new'], 'new description'
 
     def test_validate_categories(self):
         with pytest.raises(ValidationError):
