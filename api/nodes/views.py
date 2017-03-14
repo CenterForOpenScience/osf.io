@@ -181,7 +181,7 @@ class WaterButlerMixin(object):
 
 class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.BulkDestroyJSONAPIView, bulk_views.ListBulkCreateJSONAPIView, NodePreprintsFilterMixin, WaterButlerMixin):
     """
-    The documentation for this endpoint can be found here: https://developer.osf.io/#Nodes_nodes_list
+    The documentation for this endpoint can be found [here](https://developer.osf.io/#Nodes_nodes_list).
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
