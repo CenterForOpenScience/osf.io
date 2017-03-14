@@ -246,7 +246,9 @@ class DropboxNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         )
 
     def __repr__(self):
-        return u'<DropboxNodeSettings(node_id={self.owner._primary_key!r})>'.format(self=self)
+        if self.owner:
+            return u'<DropboxNodeSettings(node_id={self.owner._primary_key!r})>'.format(self=self)
+        return u'<DropboxNodeSettings(node_id=None})>'.format(self=self)
 
     ##### Callback overrides #####
     def after_delete(self, node, user):

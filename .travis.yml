@@ -18,7 +18,7 @@ env:
     - PROJECT_DIR="$PWD"
     - WHEELHOUSE="$HOME/.cache/wheelhouse"
     - LIBXML2_DEB="libxml2_2.7.8.dfsg-5.1ubuntu4.15_amd64.deb"
-    - POSTGRES_DEB="postgresql-9.5_9.5.5-1.pgdg12.4+1_amd64.deb"
+    - POSTGRES_DEB="postgresql-9.6_9.6.2-1.pgdg12.4+1_amd64.deb"
     - ELASTICSEARCH_ARCHIVE="elasticsearch-1.5.0.tar.gz"
     - LIBJEMALLOC_DEB="libjemalloc1_3.5.1-2_amd64.deb"
     - LIBPCRE_DEB="libpcre3_8.31-2ubuntu2.3_amd64.deb"
@@ -47,18 +47,18 @@ before_install:
       fi
 
       if [ ! -f "$POSTGRES_DEB" ]; then
-        curl -SLO http://apt.postgresql.org/pub/repos/apt/pool/main/p/postgresql-9.5/$POSTGRES_DEB
+        curl -SLO http://apt.postgresql.org/pub/repos/apt/pool/main/p/postgresql-9.6/$POSTGRES_DEB
       fi
 
       dpkg -x $LIBXML2_DEB /tmp/libxml2
       dpkg -x $POSTGRES_DEB /tmp/postgres
     - |
       export LD_LIBRARY_PATH=/tmp/libxml2/usr/lib/x86_64-linux-gnu
-      /tmp/postgres/usr/lib/postgresql/9.5/bin/initdb /tmp/postgres/data --nosync -U postgres
+      /tmp/postgres/usr/lib/postgresql/9.6/bin/initdb /tmp/postgres/data --nosync -U postgres
       sed -i -e 's/#fsync.*/fsync = off/' /tmp/postgres/data/postgresql.conf
       sed -i -e 's/#synchronous_commit.*/synchronous_commit = off/' /tmp/postgres/data/postgresql.conf
       sed -i -e 's/#full_page_writes.*/full_page_writes = off/' /tmp/postgres/data/postgresql.conf
-      /tmp/postgres/usr/lib/postgresql/9.5/bin/postgres -k /tmp -D /tmp/postgres/data -p 54321 > /dev/null &
+      /tmp/postgres/usr/lib/postgresql/9.6/bin/postgres -k /tmp -D /tmp/postgres/data -p 54321 > /dev/null & export POSTGRES_PID=$!
     # elasticsearch
     - |
       cd $HOME/.cache/downloads
@@ -75,7 +75,7 @@ before_install:
 
       mkdir -p /tmp/elasticsearch
       tar xzf $ELASTICSEARCH_ARCHIVE -C /tmp/elasticsearch --strip-components=1
-    - /tmp/elasticsearch/bin/elasticsearch > /dev/null &
+    - /tmp/elasticsearch/bin/elasticsearch > /dev/null & export ELASTICSEARCH_PID=$!
     # varnish
     - |
       cd $HOME/.cache/downloads
@@ -96,11 +96,10 @@ before_install:
       dpkg -x $LIBPCRE_DEB /tmp/libpcre
       dpkg -x $VARNISH_DEB /tmp/varnish
     - |
-      export LD_LIBRARY_PATH=/tmp/libpcre/lib/x86_64-linux-gnu:/tmp/libjemalloc/usr/lib/x86_64-linux-gnu:/tmp/varnish/usr/lib/varnish
-      /tmp/varnish/usr/sbin/varnishd -n /tmp -p feature=+esi_disable_xml_check -p vmod_dir=/tmp/varnish/usr/lib/varnish/vmods -F -f $PROJECT_DIR/tests/test_files/varnish.vcl -a *:8080 > /dev/null &
-    - |
       if [ "$TEST_BUILD" = "varnish" ]; then
         export ENABLE_VARNISH=True
+        export LD_LIBRARY_PATH=/tmp/libpcre/lib/x86_64-linux-gnu:/tmp/libjemalloc/usr/lib/x86_64-linux-gnu:/tmp/varnish/usr/lib/varnish
+        /tmp/varnish/usr/sbin/varnishd -n /tmp -p feature=+esi_disable_xml_check -p vmod_dir=/tmp/varnish/usr/lib/varnish/vmods -F -f $PROJECT_DIR/tests/test_files/varnish.vcl -a *:8080 > /dev/null & export VARNISH_PID=$!
       fi
 install:
     - cd $PROJECT_DIR
@@ -121,7 +120,7 @@ install:
 
 # Run Python tests (core and addon) and JS tests
 script:
-    - invoke test_travis_$TEST_BUILD
+    - invoke test_travis_$TEST_BUILD -n 6
 
 before_cache:
   - rm -Rf $HOME/.cache/pip/http
@@ -135,6 +134,10 @@ before_cache:
   # exclude npm from github repo's
   - rm -Rf node_modules/dropzone
   - rm -Rf node_modules/treebeard
+  # kill any running processes
+  - kill -9 $POSTGRES_PID
+  - kill -9 $ELASTICSEARCH_PID
+  - kill -9 $VARNISH_PID
 
 notifications:
   flowdock: 0221882cdda034c0e9ac2a0e766053dd

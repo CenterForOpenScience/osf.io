@@ -1,6 +1,8 @@
 from django.contrib.postgres.fields import ArrayField
 from django.utils import timezone
 from django.db import models
+
+from osf.utils.fields import NonNaiveDateTimeField
 from website import settings
 from osf.models.base import BaseModel, ObjectIDMixin
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
@@ -59,7 +61,7 @@ class ArchiveJob(ObjectIDMixin, BaseModel):
     # whether or not emails have been sent for this ArchiveJob
     sent = models.BooleanField(default=False, verbose_name='emails sent')
     status = models.CharField(max_length=40, default=ARCHIVER_INITIATED)
-    datetime_initiated = models.DateTimeField(default=timezone.now, verbose_name='initiated at')
+    datetime_initiated = NonNaiveDateTimeField(default=timezone.now, verbose_name='initiated at')
 
     dst_node = models.ForeignKey('Registration', related_name='archive_jobs',
                                  verbose_name='destination node', null=True, blank=True)

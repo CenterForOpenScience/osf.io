@@ -1,3 +1,4 @@
+version: "2"
 options:
 
 #  verbose: true
@@ -27,6 +28,15 @@ syncs:
 
 #  preprints-sync:
 #    src: '../ember-preprints'
+#    dest: '/code'
+#    sync_strategy: 'unison'
+#    sync_args: [ '-prefer newer' ]
+#    sync_excludes_type: 'Name'
+#    sync_excludes: ['.DS_Store', '*.map', '*.pyc', '*.tmp', '.git', '.idea', 'bower_components', 'node_modules', 'tmp', 'dist']
+#    watch_excludes: ['.*\.DS_Store', '.*\.map', '.*\.pyc', '.*\.tmp', '.*/\.git', '.*/\.idea', '.*/bower_components', '.*/node_modules', '.*/tmp', '.*/dist']
+
+#  registries-sync:
+#    src: '../ember-osf-registries'
 #    dest: '/code'
 #    sync_strategy: 'unison'
 #    sync_args: [ '-prefer newer' ]

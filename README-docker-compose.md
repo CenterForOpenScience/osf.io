@@ -107,6 +107,18 @@
         sync_excludes: ['.DS_Store', '*.pyc', '*.tmp', '.git', '.idea']
         watch_excludes: ['.*\.DS_Store', '.*\.pyc', '.*\.tmp', '.*/\.git', '.*/\.idea']
     ```
+  
+  Modifying these files will show up as changes in git. To avoid committing these files, run:
+  
+  ```bash
+  git update-index --skip-worktree docker-compose.override.yml docker-sync.yml
+  ```
+  
+  To be able to commit changes to these files again, run:
+  
+  ```bash
+  git update-index --no-skip-worktree docker-compose.override.yml docker-sync.yml
+  ```
 
 ## Docker Sync
 
@@ -184,7 +196,6 @@ Ubuntu: Skip install of docker-sync, fswatch, and unison. instead...
 - Run migrations:
   - After creating migrations, resetting your database, or starting on a fresh install you will need to run migrations to make the needed changes to database. This command looks at the migrations on disk and compares them to the list of migrations in the `django_migrations` database table and runs any migrations that have not been run.
     - `docker-compose run --rm web python manage.py migrate`
-    - `docker-compose run --rm admin python manage.py migrate`
 - Populate institutions:
   - After resetting your database or with a new install you will need to populate the table of institutions. **You must have run migrations first.**
     - `docker-compose run --rm web python -m scripts.populate_institutions test`
@@ -231,13 +242,13 @@ Ubuntu: Skip install of docker-sync, fswatch, and unison. instead...
   - `$ docker-compose run --rm web invoke test_osf`
 
 - Test a Specific Module
-  - `$ docker-compose run --rm web python -m py.test tests/test_conferences.py`
+  - `$ docker-compose run --rm web invoke test_module -m tests/test_conferences.py`
 
 - Test a Specific Class
-  - `docker-compose run --rm web python -m py.test tests/test_conferences.py::TestProvisionNode`
+  - `docker-compose run --rm web invoke test_module -m tests/test_conferences.py::TestProvisionNode`
 
 - Test a Specific Method
-  - `$ docker-compose run --rm web python -m py.test tests/test_conferences.py::TestProvisionNode::test_upload`
+  - `$ docker-compose run --rm web invoke test_module -m tests/test_conferences.py::TestProvisionNode::test_upload`
 
 ## Managing Container State
 
@@ -266,4 +277,21 @@ Delete a persistent storage volume:
   **WARNING: All postgres data will be destroyed.**
   - `$ docker-compose stop -t 0 postgres`
   - `$ docker-compose rm postgres`
-  - `$ docker volume rm osf_postgres_data_vol`
+  - `$ docker volume rm osfio_postgres_data_vol`
+
+## Updating
+
+```bash
+git stash # if you have any changes that need to be stashed
+git pull upstream develop # (replace upstream with the name of your remote)
+git stash pop # unstash changes
+docker-compose pull # pull the latest images
+
+# If you get an out of space error
+docker rmi $(docker images -q --filter "dangling=true") \
+  && docker-compose pull
+
+docker-compose up requirements mfr_requirements wb_requirements
+docker-compose run --rm web python manage.py migrate # run migrations
+
+```

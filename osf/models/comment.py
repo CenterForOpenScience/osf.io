@@ -12,6 +12,7 @@ from osf.models.spam import SpamMixin
 from osf.models import validators
 
 from framework.exceptions import PermissionsError
+from osf.utils.fields import NonNaiveDateTimeField
 from website import settings
 from website.util import api_v2_url
 from website.project import signals as project_signals
@@ -42,8 +43,8 @@ class Comment(GuidMixin, SpamMixin, CommentableMixin, BaseModel):
                                     related_name='child_comments',
                                     null=True, blank=True)
 
-    date_created = models.DateTimeField(default=timezone.now)  # auto_now_add=True)
-    date_modified = models.DateTimeField(default=timezone.now)  # auto_now=True)
+    date_created = NonNaiveDateTimeField(default=timezone.now)  # auto_now_add=True)
+    date_modified = NonNaiveDateTimeField(default=timezone.now)  # auto_now=True)
     modified = models.BooleanField(default=False)
     is_deleted = models.BooleanField(default=False)
     # The type of root_target: node/files

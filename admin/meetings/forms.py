@@ -69,7 +69,7 @@ class MeetingForm(forms.Form):
         required=False,
         label='End date (e.g. Nov 9 2016 or 11/9/2016)'
     )
-    logo_url = forms.CharField(
+    logo_url = forms.URLField(
         label='Logo url',
         required=False,
         widget=forms.TextInput(attrs={'size': '60'}),

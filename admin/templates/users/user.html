@@ -13,7 +13,7 @@
                 <i class="fa fa-search"></i>
             </a>
             </span>
-            {%  if perms.common_auth.view_spam %}
+            {%  if perms.osf.view_spam %}
             <span class="col-md-2">
             <a href="{% url 'spam:user_spam' user.id %}"
                class="btn btn-primary">
@@ -21,7 +21,7 @@
             </a>
             </span>
             {% endif %}
-            {%  if perms.common_auth.view_desk %}
+            {%  if perms.osf.view_desk %}
             <div class="btn-group" role="group">
                 <a href="{% url 'desk:customer' user.id %}"
                    data-toggle="modal" data-target="#deskModal"

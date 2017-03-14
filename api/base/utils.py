@@ -1,18 +1,19 @@
 # -*- coding: utf-8 -*-
+import furl
+from django.core.exceptions import ObjectDoesNotExist
 from modularodm import Q
-from modularodm.exceptions import NoResultsFound
 from rest_framework.exceptions import NotFound
 from rest_framework.reverse import reverse
-import furl
 
-from website import util as website_util  # noqa
-from website import settings as website_settings
-from framework.auth import Auth, User
 from api.base.authentication.drf import get_session_from_cookie
 from api.base.exceptions import Gone
-
-from framework.auth.oauth_scopes import ComposedScopes, normalize_scopes
+from framework.auth import Auth, User
 from framework.auth.cas import CasResponse
+from framework.auth.oauth_scopes import ComposedScopes, normalize_scopes
+from osf.models.base import GuidMixin
+from osf.modm_compat import to_django_query
+from website import settings as website_settings
+from website import util as website_util  # noqa
 
 # These values are copied from rest_framework.fields.BooleanField
 # BooleanField cannot be imported here without raising an
@@ -70,15 +71,39 @@ def absolute_reverse(view_name, query_kwargs=None, args=None, kwargs=None):
     return url
 
 
-def get_object_or_error(model_cls, query_or_pk, display_name=None, **kwargs):
+def get_object_or_error(model_cls, query_or_pk, display_name=None, prefetch_fields=()):
+    obj = query = None
     if isinstance(query_or_pk, basestring):
-        obj = model_cls.load(query_or_pk)
-        if obj is None:
-            raise NotFound
+        # they passed a 5-char guid as a string
+        if issubclass(model_cls, GuidMixin):
+            # if it's a subclass of GuidMixin we know it's primary_identifier_name
+            query = {'guids___id': query_or_pk}
+        else:
+            if hasattr(model_cls, 'primary_identifier_name'):
+                # primary_identifier_name gives us the natural key for the model
+                query = {model_cls.primary_identifier_name: query_or_pk}
+            else:
+                # fall back to modmcompatiblity's load method since we don't know their PIN
+                obj = model_cls.load(query_or_pk)
     else:
+        # they passed a query
+        if hasattr(model_cls, 'primary_identifier_name'):
+            query = to_django_query(query_or_pk, model_cls=model_cls)
+        else:
+            # fall back to modmcompatibility's find_one
+            obj = model_cls.find_one(query_or_pk)
+
+    if not obj:
+        if not query:
+            # if we don't have a query or an object throw 404
+            raise NotFound
         try:
-            obj = model_cls.find_one(query_or_pk, **kwargs)
-        except NoResultsFound:
+            # eagerly prefetch/select_related fields that are on the serializer
+            if isinstance(query, dict):
+                obj = model_cls.objects.eager(*prefetch_fields).get(**query)
+            else:
+                obj = model_cls.objects.eager(*prefetch_fields).get(query)
+        except ObjectDoesNotExist:
             raise NotFound
 
     # For objects that have been disabled (is_active is False), return a 410.

@@ -32,6 +32,11 @@ DATABASES = {
 }
 
 DATABASE_ROUTERS = ['osf.db.router.PostgreSQLFailoverRouter', ]
+CELERY_IMPORTS = [
+    'osf.management.commands.migratedata',
+    'osf.management.commands.migraterelations',
+    'osf.management.commands.verify',
+]
 
 PASSWORD_HASHERS = [
     'django.contrib.auth.hashers.BCryptSHA256PasswordHasher',
@@ -83,6 +88,7 @@ INSTALLED_APPS = (
     'corsheaders',
     'raven.contrib.django.raven_compat',
     'django_extensions',
+    'cacheops',
 
     # OSF
     'osf',
@@ -107,9 +113,6 @@ INSTALLED_APPS = (
 # local development using https
 if osf_settings.SECURE_MODE and DEBUG:
     INSTALLED_APPS += ('sslserver',)
-
-if DEBUG:
-    INSTALLED_APPS += ('debug_toolbar', )
 
 # TODO: Are there more granular ways to configure reporting specifically related to the API?
 RAVEN_CONFIG = {
@@ -277,3 +280,37 @@ ADDONS_FOLDER_CONFIGURABLE = ['box', 'dropbox', 's3', 'googledrive', 'figshare',
 ADDONS_OAUTH = ADDONS_FOLDER_CONFIGURABLE + ['dataverse', 'github', 'mendeley', 'zotero', 'forward']
 
 BYPASS_THROTTLE_TOKEN = 'test-token'
+
+SHELL_PLUS_PRE_IMPORTS = (
+    ('osf.management.utils', ('print_sql', )),
+)
+# cacheops
+
+CACHEOPS_REDIS = {
+    'host': 'localhost',
+    'port': 6379,
+    'db': 1,
+}
+# fail gracefully if redis is not running
+CACHEOPS_DEGRADE_ON_FAILURE = False
+CACHEOPS = {
+    # all the models in all the apps ever except admin
+    'osf.*': {'ops': 'all', 'timeout': 60 * 60},  # expire cache after 1hr unless it's been invalidated already
+    'addons_base.*': {'ops': 'all', 'timeout': 60 * 60},
+    'addons_box.*': {'ops': 'all', 'timeout': 60 * 60},
+    'addons_citations.*': {'ops': 'all', 'timeout': 60 * 60},
+    'addons_dataverse.*': {'ops': 'all', 'timeout': 60 * 60},
+    'addons_dropbox.*': {'ops': 'all', 'timeout': 60 * 60},
+    'addons_figshare.*': {'ops': 'all', 'timeout': 60 * 60},
+    'addons_forward.*': {'ops': 'all', 'timeout': 60 * 60},
+    'addons_github.*': {'ops': 'all', 'timeout': 60 * 60},
+    'addons_googledrive.*': {'ops': 'all', 'timeout': 60 * 60},
+    'addons_mendeley.*': {'ops': 'all', 'timeout': 60 * 60},
+    'addons_osfstorage.*': {'ops': 'all', 'timeout': 60 * 60},
+    'addons_owncloud.*': {'ops': 'all', 'timeout': 60 * 60},
+    'addons_s3.*': {'ops': 'all', 'timeout': 60 * 60},
+    'addons_twofactor.*': {'ops': 'all', 'timeout': 60 * 60},
+    'addons_wiki.*': {'ops': 'all', 'timeout': 60 * 60},
+    'addons_zotero.*': {'ops': 'all', 'timeout': 60 * 60},
+}
+CACHEOPS_ENABLED = False

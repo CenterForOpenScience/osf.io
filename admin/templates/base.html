@@ -117,15 +117,15 @@
               </ul>
             </li>
               {% endif %}
-          {% if perms.common_auth.view_spam %}
+          {% if perms.osf.view_spam %}
             <li><a href="{% url 'spam:spam' %}"><i class='fa fa-link'></i> <span>OSF Spam</span></a></li>
             <li><a href="{% url 'nodes:registrations' %}"><i class='fa fa-link'></i> <span>OSF Registrations</span></a></li>
             <li><a href="{% url 'meetings:list' %}"><i class='fa fa-link'></i> <span>OSF Meetings</span></a></li>
           {% endif %}
-          {% if perms.common_auth.view_prereg %}
+          {% if perms.osf.view_prereg %}
             <li><a href="{% url 'pre_reg:prereg' %}"><i class='fa fa-link'></i> <span>OSF Prereg</span></a></li>
             {% endif %}
-          {% if perms.common_auth.view_metrics %}
+          {% if perms.osf.view_metrics %}
             <li><a href="{% url 'metrics:metrics' %}"><i class='fa fa-link'></i> <span>OSF Metrics</span></a></li>
           {% endif %}
           </ul><!-- /.sidebar-menu -->
