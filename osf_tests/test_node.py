@@ -66,181 +66,250 @@ def auth(user):
     return Auth(user)
 
 
-def test_top_level_node_has_parent_node_none():
-    project = ProjectFactory()
-    assert project.parent_node is None
+class TestParentNode:
 
-def test_component_has_parent_node():
-    project = ProjectFactory()
-    node = NodeFactory(parent=project)
-    assert node.parent_node == project
+    @pytest.fixture()
+    def project(self, user):
+        return ProjectFactory(creator=user)
 
-@pytest.mark.django_assert_num_queries
-def test_parent_node_is_cached_for_top_level_nodes(django_assert_num_queries):
-    root = ProjectFactory()
-    # Expect 0 queries because parent_node was already
-    # accessed when creating the project_created log
-    with django_assert_num_queries(0):
-        root.parent_node
-        root.parent_node
+    @pytest.fixture()
+    def child(self, project):
+        return NodeFactory(parent=project, creator=project.creator)
 
-def test_components_have_root():
-    root = ProjectFactory()
-    child = NodeFactory(parent=root)
-    child1 = NodeFactory(parent=root)
-    child2 = NodeFactory(parent=root)
-    grandchild = NodeFactory(parent=child)
-    grandchild1 = NodeFactory(parent=child)
-    grandchild2 = NodeFactory(parent=child)
-    grandchild3 = NodeFactory(parent=child)
-    grandchild_1 = NodeFactory(parent=child1)
-    grandchild1_1 = NodeFactory(parent=child1)
-    grandchild2_1 = NodeFactory(parent=child1)
-    grandchild3_1 = NodeFactory(parent=child1)
-    grandchild_2 = NodeFactory(parent=child2)
-    grandchild1_2 = NodeFactory(parent=child2)
-    grandchild2_2 = NodeFactory(parent=child2)
-    grandchild3_2 = NodeFactory(parent=child2)
-    greatgrandchild = NodeFactory(parent=grandchild)
-    greatgrandchild1 = NodeFactory(parent=grandchild1)
-    greatgrandchild2 = NodeFactory(parent=grandchild2)
-    greatgrandchild3 = NodeFactory(parent=grandchild3)
-    greatgrandchild_1 = NodeFactory(parent=grandchild_1)
+    @pytest.fixture()
+    def deleted_child(self, project):
+        return NodeFactory(parent=project, creator=project.creator, is_deleted=True)
 
-    assert child.root == root
-    assert child1.root == root
-    assert child2.root == root
-    assert grandchild.root == root
-    assert grandchild1.root == root
-    assert grandchild2.root == root
-    assert grandchild3.root == root
-    assert grandchild_1.root == root
-    assert grandchild1_1.root == root
-    assert grandchild2_1.root == root
-    assert grandchild3_1.root == root
-    assert grandchild_2.root == root
-    assert grandchild1_2.root == root
-    assert grandchild2_2.root == root
-    assert grandchild3_2.root == root
-    assert greatgrandchild.root == root
-    assert greatgrandchild1.root == root
-    assert greatgrandchild2.root == root
-    assert greatgrandchild3.root == root
-    assert greatgrandchild_1.root == root
+    @pytest.fixture()
+    def registration(self, project):
+        return RegistrationFactory(project=project)
 
-# https://openscience.atlassian.net/browse/OSF-7378
-def test_root_for_linked_node_does_not_return_linking_parent():
-    project = ProjectFactory(title='Project')
-    root = ProjectFactory(title='Root')
-    child = NodeFactory(title='Child', parent=root)
+    @pytest.fixture()
+    def template(self, project, auth):
+        return project.use_as_template(auth=auth)
 
-    project.add_node_link(root, auth=Auth(project.creator), save=True)
-    assert root.root == root
-    assert child.root == root
+    def test_top_level_node_has_parent_node_none(self):
+        project = ProjectFactory()
+        assert project.parent_node is None
 
-def test_get_children():
-    root = ProjectFactory()
-    child = NodeFactory(parent=root)
-    child1 = NodeFactory(parent=root)
-    child2 = NodeFactory(parent=root)
-    grandchild = NodeFactory(parent=child)
-    grandchild1 = NodeFactory(parent=child)
-    grandchild2 = NodeFactory(parent=child)
-    grandchild3 = NodeFactory(parent=child)
-    grandchild_1 = NodeFactory(parent=child1)
-    grandchild1_1 = NodeFactory(parent=child1)
-    grandchild2_1 = NodeFactory(parent=child1)
-    grandchild3_1 = NodeFactory(parent=child1)
-    grandchild_2 = NodeFactory(parent=child2)
-    grandchild1_2 = NodeFactory(parent=child2)
-    grandchild2_2 = NodeFactory(parent=child2)
-    grandchild3_2 = NodeFactory(parent=child2)
-    greatgrandchild = NodeFactory(parent=grandchild)
-    greatgrandchild1 = NodeFactory(parent=grandchild1)
-    greatgrandchild2 = NodeFactory(parent=grandchild2)
-    greatgrandchild3 = NodeFactory(parent=grandchild3)
-    greatgrandchild_1 = NodeFactory(parent=grandchild_1, is_deleted=True)
+    def test_component_has_parent_node(self):
+        project = ProjectFactory()
+        node = NodeFactory(parent=project)
+        assert node.parent_node == project
 
-    assert 20 == Node.objects.get_children(root).count()
-    pks = Node.objects.get_children(root, primary_keys=True)
-    assert 20 == len(pks)
-    assert set(pks) == set(Node.objects.exclude(id=root.id).values_list('id', flat=True))
+    def test_components_have_root(self):
+        root = ProjectFactory()
+        child = NodeFactory(parent=root)
+        child1 = NodeFactory(parent=root)
+        child2 = NodeFactory(parent=root)
+        grandchild = NodeFactory(parent=child)
+        grandchild1 = NodeFactory(parent=child)
+        grandchild2 = NodeFactory(parent=child)
+        grandchild3 = NodeFactory(parent=child)
+        grandchild_1 = NodeFactory(parent=child1)
+        grandchild1_1 = NodeFactory(parent=child1)
+        grandchild2_1 = NodeFactory(parent=child1)
+        grandchild3_1 = NodeFactory(parent=child1)
+        grandchild_2 = NodeFactory(parent=child2)
+        grandchild1_2 = NodeFactory(parent=child2)
+        grandchild2_2 = NodeFactory(parent=child2)
+        grandchild3_2 = NodeFactory(parent=child2)
+        greatgrandchild = NodeFactory(parent=grandchild)
+        greatgrandchild1 = NodeFactory(parent=grandchild1)
+        greatgrandchild2 = NodeFactory(parent=grandchild2)
+        greatgrandchild3 = NodeFactory(parent=grandchild3)
+        greatgrandchild_1 = NodeFactory(parent=grandchild_1)
 
-    assert greatgrandchild_1 in Node.objects.get_children(root).all()
-    assert greatgrandchild_1 not in Node.objects.get_children(root, active=True).all()
+        assert child.root == root
+        assert child1.root == root
+        assert child2.root == root
+        assert grandchild.root == root
+        assert grandchild1.root == root
+        assert grandchild2.root == root
+        assert grandchild3.root == root
+        assert grandchild_1.root == root
+        assert grandchild1_1.root == root
+        assert grandchild2_1.root == root
+        assert grandchild3_1.root == root
+        assert grandchild_2.root == root
+        assert grandchild1_2.root == root
+        assert grandchild2_2.root == root
+        assert grandchild3_2.root == root
+        assert greatgrandchild.root == root
+        assert greatgrandchild1.root == root
+        assert greatgrandchild2.root == root
+        assert greatgrandchild3.root == root
+        assert greatgrandchild_1.root == root
 
-def test_get_children_with_barren_parent():
-    root = ProjectFactory()
+    # https://openscience.atlassian.net/browse/OSF-7378
+    def test_root_for_linked_node_does_not_return_linking_parent(self):
+        project = ProjectFactory(title='Project')
+        root = ProjectFactory(title='Root')
+        child = NodeFactory(title='Child', parent=root)
 
-    assert 0 == len(Node.objects.get_children(root))
+        project.add_node_link(root, auth=Auth(project.creator), save=True)
+        assert root.root == root
+        assert child.root == root
 
-def test_get_children_with_links():
-    root = ProjectFactory()
-    child = NodeFactory(parent=root)
-    child1 = NodeFactory(parent=root)
-    child2 = NodeFactory(parent=root)
-    grandchild = NodeFactory(parent=child)
-    grandchild1 = NodeFactory(parent=child)
-    grandchild2 = NodeFactory(parent=child)
-    grandchild3 = NodeFactory(parent=child)
-    grandchild_1 = NodeFactory(parent=child1)
-    grandchild1_1 = NodeFactory(parent=child1)
-    grandchild2_1 = NodeFactory(parent=child1)
-    grandchild3_1 = NodeFactory(parent=child1)
-    grandchild_2 = NodeFactory(parent=child2)
-    grandchild1_2 = NodeFactory(parent=child2)
-    grandchild2_2 = NodeFactory(parent=child2)
-    grandchild3_2 = NodeFactory(parent=child2)
-    greatgrandchild = NodeFactory(parent=grandchild)
-    greatgrandchild1 = NodeFactory(parent=grandchild1)
-    greatgrandchild2 = NodeFactory(parent=grandchild2)
-    greatgrandchild3 = NodeFactory(parent=grandchild3)
-    greatgrandchild_1 = NodeFactory(parent=grandchild_1)
+    def test_get_children(self):
+        root = ProjectFactory()
+        child = NodeFactory(parent=root)
+        child1 = NodeFactory(parent=root)
+        child2 = NodeFactory(parent=root)
+        grandchild = NodeFactory(parent=child)
+        grandchild1 = NodeFactory(parent=child)
+        grandchild2 = NodeFactory(parent=child)
+        grandchild3 = NodeFactory(parent=child)
+        grandchild_1 = NodeFactory(parent=child1)
+        grandchild1_1 = NodeFactory(parent=child1)
+        grandchild2_1 = NodeFactory(parent=child1)
+        grandchild3_1 = NodeFactory(parent=child1)
+        grandchild_2 = NodeFactory(parent=child2)
+        grandchild1_2 = NodeFactory(parent=child2)
+        grandchild2_2 = NodeFactory(parent=child2)
+        grandchild3_2 = NodeFactory(parent=child2)
+        greatgrandchild = NodeFactory(parent=grandchild)
+        greatgrandchild1 = NodeFactory(parent=grandchild1)
+        greatgrandchild2 = NodeFactory(parent=grandchild2)
+        greatgrandchild3 = NodeFactory(parent=grandchild3)
+        greatgrandchild_1 = NodeFactory(parent=grandchild_1, is_deleted=True)
 
-    child.add_node_link(root, auth=Auth(root.creator))
-    child.add_node_link(greatgrandchild_1, auth=Auth(greatgrandchild_1.creator))
-    greatgrandchild_1.add_node_link(child, auth=Auth(child.creator))
+        assert 20 == Node.objects.get_children(root).count()
+        pks = Node.objects.get_children(root, primary_keys=True)
+        assert 20 == len(pks)
+        assert set(pks) == set(Node.objects.exclude(id=root.id).values_list('id', flat=True))
 
-    assert 20 == len(Node.objects.get_children(root))
+        assert greatgrandchild_1 in Node.objects.get_children(root).all()
+        assert greatgrandchild_1 not in Node.objects.get_children(root, active=True).all()
 
-def test_get_roots():
-    top_level1 = ProjectFactory(is_public=True)
-    top_level2 = ProjectFactory(is_public=True)
-    top_level_private = ProjectFactory(is_public=False)
-    child1 = NodeFactory(parent=top_level1)
-    child2 = NodeFactory(parent=top_level2)
+    def test_get_children_with_barren_parent(self):
+        root = ProjectFactory()
 
-    # top_level2 is linked to by another node
-    node = NodeFactory(is_public=True)
-    node.add_node_link(top_level2, auth=Auth(node.creator))
+        assert 0 == len(Node.objects.get_children(root))
 
-    results = AbstractNode.objects.get_roots()
-    assert top_level1 in results
-    assert top_level2 in results
-    assert top_level_private in results
-    assert child1 not in results
-    assert child2 not in results
+    def test_get_children_with_links(self):
+        root = ProjectFactory()
+        child = NodeFactory(parent=root)
+        child1 = NodeFactory(parent=root)
+        child2 = NodeFactory(parent=root)
+        grandchild = NodeFactory(parent=child)
+        grandchild1 = NodeFactory(parent=child)
+        grandchild2 = NodeFactory(parent=child)
+        grandchild3 = NodeFactory(parent=child)
+        grandchild_1 = NodeFactory(parent=child1)
+        grandchild1_1 = NodeFactory(parent=child1)
+        grandchild2_1 = NodeFactory(parent=child1)
+        grandchild3_1 = NodeFactory(parent=child1)
+        grandchild_2 = NodeFactory(parent=child2)
+        grandchild1_2 = NodeFactory(parent=child2)
+        grandchild2_2 = NodeFactory(parent=child2)
+        grandchild3_2 = NodeFactory(parent=child2)
+        greatgrandchild = NodeFactory(parent=grandchild)
+        greatgrandchild1 = NodeFactory(parent=grandchild1)
+        greatgrandchild2 = NodeFactory(parent=grandchild2)
+        greatgrandchild3 = NodeFactory(parent=grandchild3)
+        greatgrandchild_1 = NodeFactory(parent=grandchild_1)
 
-    public_results = AbstractNode.objects.filter(is_public=True).get_roots()
-    assert top_level1 in public_results
-    assert top_level2 in public_results
-    assert top_level_private not in public_results
-    assert child1 not in public_results
-    assert child2 not in public_results
+        child.add_node_link(root, auth=Auth(root.creator))
+        child.add_node_link(greatgrandchild_1, auth=Auth(greatgrandchild_1.creator))
+        greatgrandchild_1.add_node_link(child, auth=Auth(child.creator))
 
-    public_results2 = AbstractNode.objects.get_roots().filter(is_public=True)
-    assert top_level1 in public_results2
-    assert top_level2 in public_results2
-    assert top_level_private not in public_results2
-    assert child1 not in public_results2
-    assert child2 not in public_results2
+        assert 20 == len(Node.objects.get_children(root))
 
-def test_license_searches_parent_nodes():
-    license_record = NodeLicenseRecordFactory()
-    project = ProjectFactory(node_license=license_record)
-    node = NodeFactory(parent=project)
-    assert project.license == license_record
-    assert node.license == license_record
+    def test_get_roots(self):
+        top_level1 = ProjectFactory(is_public=True)
+        top_level2 = ProjectFactory(is_public=True)
+        top_level_private = ProjectFactory(is_public=False)
+        child1 = NodeFactory(parent=top_level1)
+        child2 = NodeFactory(parent=top_level2)
+
+        # top_level2 is linked to by another node
+        node = NodeFactory(is_public=True)
+        node.add_node_link(top_level2, auth=Auth(node.creator))
+
+        results = AbstractNode.objects.get_roots()
+        assert top_level1 in results
+        assert top_level2 in results
+        assert top_level_private in results
+        assert child1 not in results
+        assert child2 not in results
+
+        public_results = AbstractNode.objects.filter(is_public=True).get_roots()
+        assert top_level1 in public_results
+        assert top_level2 in public_results
+        assert top_level_private not in public_results
+        assert child1 not in public_results
+        assert child2 not in public_results
+
+        public_results2 = AbstractNode.objects.get_roots().filter(is_public=True)
+        assert top_level1 in public_results2
+        assert top_level2 in public_results2
+        assert top_level_private not in public_results2
+        assert child1 not in public_results2
+        assert child2 not in public_results2
+
+    def test_license_searches_parent_nodes(self):
+        license_record = NodeLicenseRecordFactory()
+        project = ProjectFactory(node_license=license_record)
+        node = NodeFactory(parent=project)
+        assert project.license == license_record
+        assert node.license == license_record
+
+    def test_top_level_project_has_no_parent(self, project):
+        assert project.parent_node is None
+
+    def test_child_project_has_correct_parent(self, child, project):
+        assert child.parent_node._id == project._id
+
+    def test_grandchild_has_parent_of_child(self, child):
+        grandchild = NodeFactory(parent=child, description="Spike")
+        assert grandchild.parent_node._id == child._id
+
+    def test_registration_has_no_parent(self, registration):
+        assert registration.parent_node is None
+
+    def test_registration_child_has_correct_parent(self, registration):
+        registration_child = NodeFactory(parent=registration)
+        assert registration._id == registration_child.parent_node._id
+
+    def test_registration_grandchild_has_correct_parent(self, registration):
+        registration_child = NodeFactory(parent=registration)
+        registration_grandchild = NodeFactory(parent=registration_child)
+        assert registration_grandchild.parent_node._id == registration_child._id
+
+    def test_fork_has_no_parent(self, project, auth):
+        fork = project.fork_node(auth=auth)
+        assert fork.parent_node is None
+
+    def test_fork_child_has_parent(self, project, auth):
+        fork = project.fork_node(auth=auth)
+        fork_child = NodeFactory(parent=fork)
+        assert fork_child.parent_node._id == fork._id
+
+    def test_fork_grandchild_has_child_id(self, project, auth):
+        fork = project.fork_node(auth=auth)
+        fork_child = NodeFactory(parent=fork)
+        fork_grandchild = NodeFactory(parent=fork_child)
+        assert fork_grandchild.parent_node._id == fork_child._id
+
+    def test_template_has_no_parent(self, template):
+        assert template.parent_node is None
+
+    def test_teplate_project_child_has_correct_parent(self, template):
+        template_child = NodeFactory(parent=template)
+        assert template_child.parent_node._id == template._id
+
+    def test_template_project_grandchild_has_correct_root(self, template):
+        template_child = NodeFactory(parent=template)
+        new_project_grandchild = NodeFactory(parent=template_child)
+        assert new_project_grandchild.parent_node._id == template_child._id
+
+    def test_template_project_does_not_copy_deleted_components(self, project, child, deleted_child, template):
+        """Regression test for https://openscience.atlassian.net/browse/OSF-5942. """
+        new_nodes = [node.title for node in template.nodes]
+        assert len(template.nodes) == 1
+        assert deleted_child.title not in new_nodes
+
 
 class TestNodeMODMCompat:
 
