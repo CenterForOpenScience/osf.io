@@ -122,7 +122,7 @@ class OwnerOnly(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
         """Not applied to all members of a queryset"""
         assert isinstance(obj, (ApiOAuth2Application, ApiOAuth2PersonalToken)), 'obj must be an ApiOAuth2Application or ApiOAuth2PersonalToken, got {}'.format(obj)
-        return (obj.owner._id == request.user._id)
+        return (obj.owner.id == request.user.id)
 
 
 def PermissionWithGetter(Base, getter):

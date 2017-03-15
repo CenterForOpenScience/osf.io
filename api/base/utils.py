@@ -98,11 +98,11 @@ def get_object_or_error(model_cls, query_or_pk, display_name=None, prefetch_fiel
             # if we don't have a query or an object throw 404
             raise NotFound
         try:
-            # eagerly prefetch/select_related fields that are on the serializer
+            # TODO This could be added onto with eager on the queryset and the embedded fields of the api
             if isinstance(query, dict):
-                obj = model_cls.objects.eager(*prefetch_fields).get(**query)
+                obj = model_cls.objects.get(**query)
             else:
-                obj = model_cls.objects.eager(*prefetch_fields).get(query)
+                obj = model_cls.objects.get(query)
         except ObjectDoesNotExist:
             raise NotFound
 
