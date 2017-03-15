@@ -2,6 +2,7 @@ from django.utils import six
 from collections import OrderedDict
 from django.core.urlresolvers import reverse
 from django.core.paginator import InvalidPage, Paginator as DjangoPaginator
+from django.db.models import QuerySet
 
 from rest_framework import pagination
 from rest_framework.exceptions import NotFound
@@ -136,7 +137,7 @@ class JSONAPIPagination(pagination.PageNumberPagination):
         if request.parser_context['kwargs'].get('is_embedded'):
             # Pagination requires an order by clause, especially when using Postgres.
             # see: https://docs.djangoproject.com/en/1.10/topics/pagination/#required-arguments
-            if not queryset.ordered:
+            if isinstance(queryset, QuerySet) and not queryset.ordered:
                 queryset = queryset.order_by(queryset.model._meta.pk.name)
 
             paginator = DjangoPaginator(queryset, self.page_size)
@@ -268,7 +269,7 @@ class SearchPagination(JSONAPIPagination):
 
         # Pagination requires an order by clause, especially when using Postgres.
         # see: https://docs.djangoproject.com/en/1.10/topics/pagination/#required-arguments
-        if not queryset.ordered:
+        if isinstance(queryset, QuerySet) and not queryset.ordered:
             queryset = queryset.order_by(queryset.model._meta.pk.name)
 
         self.paginator = SearchPaginator(queryset, page_size)
