@@ -73,6 +73,15 @@ def test_component_has_parent_node():
     node = NodeFactory(parent=project)
     assert node.parent_node == project
 
+@pytest.mark.django_assert_num_queries
+def test_parent_node_is_cached_for_top_level_nodes(django_assert_num_queries):
+    root = ProjectFactory()
+    # Expect 0 queries because parent_node was already
+    # accessed when creating the project_created log
+    with django_assert_num_queries(0):
+        root.parent_node
+        root.parent_node
+
 def test_components_have_root():
     root = ProjectFactory()
     child = NodeFactory(parent=root)
