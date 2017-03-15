@@ -74,33 +74,7 @@ class InstitutionList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
 
 
 class InstitutionDetail(JSONAPIBaseView, generics.RetrieveAPIView, InstitutionMixin):
-    """ Details about a given institution.
-
-    ##Attributes
-
-    OSF Institutions have the "institutions" `type`.
-
-        name           type               description
-        =========================================================================
-        name           string             title of the institution
-        id             string             unique identifier in the OSF
-        logo_path      string             a path to the institution's static logo
-
-    ##Relationships
-
-    ###Nodes
-    List of nodes that have this institution as its primary institution.
-
-    ###Users
-    List of users that are affiliated with this institution.
-
-    ##Links
-
-        self:  the canonical api endpoint of this institution
-        html:  this institution's page on the OSF website
-
-    #This Request/Response
-
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#Institutions_institutions_detail).
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -121,10 +95,7 @@ class InstitutionDetail(JSONAPIBaseView, generics.RetrieveAPIView, InstitutionMi
 
 
 class InstitutionNodeList(JSONAPIBaseView, ODMFilterMixin, generics.ListAPIView, InstitutionMixin):
-    """Nodes that have selected an institution as their primary institution.
-
-    ##Permissions
-    Only public nodes or ones in which current user is a contributor.
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#Institutions_institutions_node_list).
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -160,7 +131,7 @@ class InstitutionNodeList(JSONAPIBaseView, ODMFilterMixin, generics.ListAPIView,
 
 
 class InstitutionUserList(JSONAPIBaseView, ODMFilterMixin, generics.ListAPIView, InstitutionMixin):
-    """Users that have been authenticated with the institution.
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#Institutions_institutions_users_list).
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -206,7 +177,7 @@ class InstitutionAuth(JSONAPIBaseView, generics.CreateAPIView):
 
 
 class InstitutionRegistrationList(InstitutionNodeList):
-    """Registrations have selected an institution as their primary institution.
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#Institutions_institutions_registration_list).
     """
 
     view_name = 'institution-registrations'

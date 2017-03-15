@@ -11,7 +11,8 @@ from website.project.licenses import NodeLicense
 
 
 class LicenseDetail(JSONAPIBaseView, generics.RetrieveAPIView):
-
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#Licenses_licenses_read).
+    """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,

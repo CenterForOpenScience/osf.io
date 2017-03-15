@@ -102,66 +102,7 @@ class PreprintList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMixin):
         return PreprintService.find(self.get_query_from_request())
 
 class PreprintDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, PreprintMixin, WaterButlerMixin):
-    """Preprint Detail  *Writeable*.
-
-    ##Preprint Attributes
-
-    OSF Preprint entities have the "preprints" `type`.
-
-        name                            type                                description
-        ====================================================================================
-        date_created                    iso8601 timestamp                   timestamp that the preprint was created
-        date_modified                   iso8601 timestamp                   timestamp that the preprint was last modified
-        date_published                  iso8601 timestamp                   timestamp when the preprint was published
-        is_published                    boolean                             whether or not this preprint is published
-        is_preprint_orphan              boolean                             whether or not this preprint is orphaned
-        subjects                        array of tuples of dictionaries     ids of Subject in the PLOS taxonomy. Dictionary, containing the subject text and subject ID
-        doi                             string                              bare DOI for the manuscript, as entered by the user
-
-    ##Relationships
-
-    ###Node
-    The node that this preprint was created for
-
-    ###Primary File
-    The file that is designated as the preprint's primary file, or the manuscript of the preprint.
-
-    ###Provider
-    Link to preprint_provider detail for this preprint
-
-    ##Links
-    - `self` -- Preprint detail page for the current preprint
-    - `html` -- Project on the OSF corresponding to the current preprint
-    - `doi` -- URL representation of the DOI entered by the user for the preprint manuscript
-
-    ##Updating Preprints
-
-    Update a preprint by sending a patch request to the guid of the existing preprint node that you'd like to update.
-
-        Method:        PATCH
-        URL:           /preprints/{node_id}/
-        Query Params:  <none>
-        Body (JSON):   {
-                        "data": {
-                            "id": node_id,
-                            "attributes": {
-                                "subjects":     [({root_subject_id}, {child_subject_id}), ...]  # optional
-                                "is_published": true,                                           # optional
-                                "doi":          {valid_doi}                                     # optional
-                            },
-                            "relationships": {
-                                "primary_file": {                                               # optional
-                                    "data": {
-                                        "type": "primary_files",
-                                        "id": {file_id}
-                                    }
-                                }
-                            }
-                        }
-                    }
-        Success:       200 OK + preprint representation
-
-    #This Request/Response
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#Preprints_preprints_read).
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -188,19 +129,7 @@ class PreprintDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, Pre
 
 
 class PreprintCitationDetail(JSONAPIBaseView, generics.RetrieveAPIView, PreprintMixin):
-    """ The citation details for a preprint, in CSL format *Read Only*
-
-    ##PreprintCitationDetail Attributes
-
-        name                     type                description
-        =================================================================================
-        id                       string               unique ID for the citation
-        title                    string               title of project or component
-        author                   list                 list of authors for the preprint
-        publisher                string               publisher - the preprint provider
-        type                     string               type of citation - web
-        doi                      string               doi of the resource
-
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#Preprints_preprints_citation_list).
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -225,14 +154,7 @@ class PreprintCitationDetail(JSONAPIBaseView, generics.RetrieveAPIView, Preprint
 
 
 class PreprintCitationStyleDetail(JSONAPIBaseView, generics.RetrieveAPIView, PreprintMixin):
-    """ The citation for a preprint in a specific style's format. *Read Only*
-
-    ##NodeCitationDetail Attributes
-
-        name                     type                description
-        =================================================================================
-        citation                string               complete citation for a preprint in the given style
-
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#Preprints_preprints_citation_read).
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,

@@ -84,49 +84,7 @@ class FileDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, FileMixin):
         return self.get_file()
 
 class FileVersionsList(JSONAPIBaseView, generics.ListAPIView, FileMixin):
-    """List of versions for the requested file. *Read-only*.
-
-    Paginated list of file versions, ordered by the date each version was created/modified.
-
-    <!--- Copied Spiel from FileVersionDetail -->
-
-    A specific version of an uploaded file.  Note that the version is tied to the id/path, so two versions of the same
-    file could have completely different contents and formats.  That's on you, though.  Don't do that.
-
-    Unlike the OSF File entity which can represent files and folders, FileVersions only ever represent files. When a
-    file is first uploaded to the "osfstorage" provider through the API it is assigned version 1.  Each time it is
-    updated through the API, the version number is incremented.  Files stored on other providers will follow that
-    provider's versioning semantics.
-
-    ##FileVersion Attributes
-
-    <!--- Copied Attributes from FileVersionDetail -->
-
-    For an OSF FileVersion entity the API `type` is "file_versions".
-
-        name          type     description
-        =================================================================================
-        size          integer  size of file in bytes
-        content_type  string   MIME content-type for the file. May be null if unavailable.
-
-    ##Links
-
-    See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
-
-    ##Actions
-
-    *None*.
-
-    ##Query Params
-
-    + `page=<Int>` -- page number of results to view, default 1
-
-    + `filter[<fieldname>]=<Str>` -- fields and values to filter the search results on.
-
-    File versions may be filtered by their `id`, `size`, or `content_type`.
-
-    #This Request/Response
-
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#Files_files_versions).
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -150,42 +108,7 @@ def node_from_version(request, view, obj):
 
 
 class FileVersionDetail(JSONAPIBaseView, generics.RetrieveAPIView, FileMixin):
-    """Details about a specific file version. *Read-only*.
-
-    A specific version of an uploaded file.  Note that the version is tied to the id/path, so two versions of the same
-    file could have completely different contents and formats.  That's on you, though.  Don't do that.
-
-    Unlike the OSF File entity which can represent files and folders, FileVersions only ever represent files. When a
-    file is first uploaded through the API it is assigned version 1.  Each time it is updated through the API, the
-    version number is incremented.
-
-    ##Attributes
-
-    For an OSF FileVersion entity the API `type` is "file_versions".
-
-        name          type     description
-        =================================================================================
-        size          integer  size of file in bytes
-        content_type  string   MIME content-type for the file. May be null if unavailable.
-
-    ##Relationships
-
-    *None*.
-
-    ##Links
-
-        self:  the canonical api endpoint for this version of the file
-        html:  the OSF webpage for this file version
-
-    ##Actions
-
-    *None*.
-
-    ##Query Params
-
-    *None*.
-
-    #This Request/Response
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#Files_files_version_detail).
     """
     version_lookup_url_kwarg = 'version_id'
     permission_classes = (
