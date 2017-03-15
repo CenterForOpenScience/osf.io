@@ -19,34 +19,7 @@ from api.preprints.serializers import PreprintSerializer
 
 
 class PreprintProviderList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
-    """
-    Paginated list of verified PreprintProviders available. *Read-only*
-
-    Assume undocumented fields are unstable.
-
-    ##PreprintProvider Attributes
-
-    OSF Preprint Providers have the "preprint_providers" `type`.
-
-        name           type               description
-        =========================================================================
-        name           string             name of the preprint provider
-        logo_path      string             a path to the preprint provider's static logo
-        banner_path    string             a path to the preprint provider's banner
-        description    string             description of the preprint provider
-
-    ##Relationships
-
-    ###Preprints
-    Link to the list of preprints from this given preprint provider.
-
-    ##Links
-
-        self: the canonical api endpoint of this preprint provider
-        preprints: link to the provider's preprints
-        external_url: link to the preprint provider's external URL (e.g. https://socarxiv.org)
-
-    #This Request/Response
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#Preprint_Providers_preprint_provider_list).
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,

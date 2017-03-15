@@ -47,21 +47,7 @@ class InstitutionMixin(object):
 
 
 class InstitutionList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
-    """
-    Paginated list of verified Institutions affiliated with COS
-
-    ##Institution Attributes
-
-    OSF Institutions have the "institutions" `type`.
-
-        name           type               description
-        =========================================================================
-        name           string             title of the institution
-        id             string             unique identifier in the OSF
-        logo_path      string             a path to the institution's static logo
-
-    #This Request/Response
-
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#Institutions_institutions_list).
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,

@@ -55,52 +55,7 @@ class UserMixin(object):
 
 
 class UserList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
-    """List of users registered on the OSF.
-
-    Paginated list of users ordered by the date they registered.  Each resource contains the full representation of the
-    user, meaning additional requests to an individual user's detail view are not necessary.
-
-    Note that if an anonymous view_only key is being used, user information will not be serialized, and the id will be
-    an empty string. Relationships to a user object will not show in this case, either.
-
-    The subroute [`/me/`](me/) is a special endpoint that always points to the currently logged-in user.
-
-    ##User Attributes
-
-    <!--- Copied Attributes From UserDetail -->
-
-    OSF User entities have the "users" `type`.
-
-        name               type               description
-        ========================================================================================
-        full_name          string             full name of the user; used for display
-        given_name         string             given name of the user; for bibliographic citations
-        middle_names       string             middle name of user; for bibliographic citations
-        family_name        string             family name of user; for bibliographic citations
-        suffix             string             suffix of user's name for bibliographic citations
-        date_registered    iso8601 timestamp  timestamp when the user's account was created
-
-    ##Links
-
-    See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
-
-    ##Actions
-
-    *None*.
-
-    ##Query Params
-
-    + `page=<Int>` -- page number of results to view, default 1
-
-    + `filter[<fieldname>]=<Str>` -- fields and values to filter the search results on.
-
-    Users may be filtered by their `id`, `full_name`, `given_name`, `middle_names`, or `family_name`.
-
-    + `profile_image_size=<Int>` -- Modifies `/links/profile_image_url` of the user entities so that it points to
-    the user's profile image scaled to the given size in pixels.  If left blank, the size depends on the image provider.
-
-    #This Request/Response
-
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#Users_users_list).
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
