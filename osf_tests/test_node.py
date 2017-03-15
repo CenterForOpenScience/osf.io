@@ -27,6 +27,7 @@ from osf.models import (
     Sanction,
     NodeRelation,
     Registration,
+    DraftRegistration,
     DraftRegistrationApproval,
 )
 from addons.wiki.models import NodeWikiPage
@@ -36,6 +37,7 @@ from osf.utils.auth import Auth
 from osf_tests.factories import (
     AuthUserFactory,
     ProjectFactory,
+    ProjectWithAddonFactory,
     NodeFactory,
     NodeLogFactory,
     UserFactory,
@@ -1939,6 +1941,55 @@ class TestPrivateLinks:
 
         assert has_anonymous_link(node, auth3) is False
 
+    def test_node_scale(self):
+        link = PrivateLinkFactory()
+        project = ProjectFactory()
+        comp = NodeFactory(parent=project)
+        link.nodes.add(project)
+        link.save()
+        assert link.node_scale(project) == -40
+        assert link.node_scale(comp) == -20
+
+    # Regression test for https://sentry.osf.io/osf/production/group/1119/
+    def test_to_json_nodes_with_deleted_parent(self):
+        link = PrivateLinkFactory()
+        project = ProjectFactory(is_deleted=True)
+        node = NodeFactory(parent=project)
+        link.nodes.add(project)
+        link.nodes.add(node)
+        link.save()
+        result = link.to_json()
+        # result doesn't include deleted parent
+        assert len(result['nodes']) == 1
+
+    # Regression test for https://sentry.osf.io/osf/production/group/1119/
+    def test_node_scale_with_deleted_parent(self):
+        link = PrivateLinkFactory()
+        project = ProjectFactory(is_deleted=True)
+        node = NodeFactory(parent=project)
+        link.nodes.add(project)
+        link.nodes.add(node)
+        link.save()
+        assert link.node_scale(node) == -40
+
+    # TODO: This seems like it should go elsewhere, but was in tests/test_models.py::TestPrivateLink
+    def test_create_from_node(self):
+        ensure_schemas()
+        proj = ProjectFactory()
+        user = proj.creator
+        schema = MetaSchema.find()[0]
+        data = {'some': 'data'}
+        draft = DraftRegistration.create_from_node(
+            proj,
+            user=user,
+            schema=schema,
+            data=data,
+        )
+        assert user == draft.initiator
+        assert schema == draft.registration_schema
+        assert data == draft.registration_metadata
+        assert proj == draft.branched_from
+
 
 # copied from tests/test_models.py
 class TestManageContributors:
@@ -3531,6 +3582,14 @@ class TestNodeLog:
         assert project._id == log_node_forked.original_node._id
         assert fork._id == log_project_created_fork.node._id
         assert fork._id == log_node_forked.node._id
+
+
+class TestProjectWithAddons:
+
+    def test_factory(self):
+        p = ProjectWithAddonFactory(addon='s3')
+        assert bool(p.get_addon('s3')) is True
+        assert bool(p.creator.get_addon('s3')) is True
 
 
 # copied from tests/test_models.py

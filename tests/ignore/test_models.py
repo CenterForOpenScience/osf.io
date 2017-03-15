@@ -11,15 +11,12 @@ from osf.exceptions import ValidationValueError
 from nose.tools import *  # noqa (PEP8 asserts)
 from tests.base import OsfTestCase
 from tests.factories import (AuthUserFactory, NodeFactory,
-                             PointerFactory,
-                             PrivateLinkFactory, ProjectFactory,
-                             ProjectWithAddonFactory, RegistrationFactory,
+                             PointerFactory, ProjectFactory,
+                             RegistrationFactory,
                              SessionFactory, UserFactory)
 from tests.utils import mock_archive
 from website import settings
-from website.project.model import (DraftRegistration, MetaSchema,
-                                   Pointer, ensure_schemas,
-                                   get_pointer_parent)
+from website.project.model import Pointer, get_pointer_parent
 from website.project.spam.model import SpamStatus
 from website.project.tasks import on_node_updated
 
@@ -98,63 +95,6 @@ class TestPointer(OsfTestCase):
         node.nodes.append(self.pointer)
         assert_true(node.has_pointers_recursive)
         assert_true(project.has_pointers_recursive)
-
-
-class TestProjectWithAddons(OsfTestCase):
-
-    def test_factory(self):
-        p = ProjectWithAddonFactory(addon='s3')
-        assert_true(p.get_addon('s3'))
-        assert_true(p.creator.get_addon('s3'))
-
-
-class TestPrivateLink(OsfTestCase):
-
-    def test_node_scale(self):
-        link = PrivateLinkFactory()
-        project = ProjectFactory()
-        comp = NodeFactory(parent=project)
-        link.nodes.append(project)
-        link.save()
-        assert_equal(link.node_scale(project), -40)
-        assert_equal(link.node_scale(comp), -20)
-
-    # Regression test for https://sentry.osf.io/osf/production/group/1119/
-    def test_to_json_nodes_with_deleted_parent(self):
-        link = PrivateLinkFactory()
-        project = ProjectFactory(is_deleted=True)
-        node = NodeFactory(project=project)
-        link.nodes.extend([project, node])
-        link.save()
-        result = link.to_json()
-        # result doesn't include deleted parent
-        assert_equal(len(result['nodes']), 1)
-
-    # Regression test for https://sentry.osf.io/osf/production/group/1119/
-    def test_node_scale_with_deleted_parent(self):
-        link = PrivateLinkFactory()
-        project = ProjectFactory(is_deleted=True)
-        node = NodeFactory(project=project)
-        link.nodes.extend([project, node])
-        link.save()
-        assert_equal(link.node_scale(node), -40)
-
-    def test_create_from_node(self):
-        ensure_schemas()
-        proj = ProjectFactory()
-        user = proj.creator
-        schema = MetaSchema.find()[0]
-        data = {'some': 'data'}
-        draft = DraftRegistration.create_from_node(
-            proj,
-            user=user,
-            schema=schema,
-            data=data,
-        )
-        assert_equal(user, draft.initiator)
-        assert_equal(schema, draft.registration_schema)
-        assert_equal(data, draft.registration_metadata)
-        assert_equal(proj, draft.branched_from)
 
 
 class TestNodeAddContributorRegisteredOrNot(OsfTestCase):
