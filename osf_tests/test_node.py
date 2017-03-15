@@ -1,6 +1,5 @@
 import datetime
 
-from dateutil import parser
 from django.utils import timezone
 from django.core.exceptions import ValidationError as DjangoValidationError
 from modularodm import Q
@@ -577,7 +576,7 @@ class TestProject:
         assert hasattr(node, 'registered_schema')
         assert bool(node.creator)
         assert bool(node.contributors)
-        assert len(node.logs) == 1
+        assert node.logs.count() == 1
         assert hasattr(node, 'tags')
         assert hasattr(node, 'nodes')
         assert hasattr(node, 'forked_from')
@@ -1388,9 +1387,7 @@ class TestPermissionMethods:
 
     def test_is_registration_of(self, project):
         with mock_archive(project) as reg1:
-            with mock_archive(reg1) as reg2:
-                assert reg1.is_registration_of(project) is True
-                assert reg2.is_registration_of(project) is True
+            assert reg1.is_registration_of(project) is True
 
     def test_is_registration_of_false(self, project):
         to_reg = ProjectFactory()
@@ -1420,7 +1417,7 @@ class TestPermissionMethods:
         project.node_license = license
         project.save()
         with mock_archive(project, autocomplete=True) as registration:
-            assert registration.node_license.id == license.id
+            assert registration.node_license.license_id == license.license_id
 
     def test_is_contributor_unregistered(self, project, auth):
         unreg = UnregUserFactory()
@@ -1431,6 +1428,61 @@ class TestPermissionMethods:
         )
         project.save()
         assert project.is_contributor(unreg) is True
+
+# Copied from tests/test_models
+# Permissions are now on the Contributor model, and are well-defined (i.e. not 'dance')
+# Consider removing this class
+@pytest.mark.skip
+class TestPermissions:
+
+    @pytest.fixture()
+    def project(self):
+        return ProjectFactory()
+
+    def test_default_creator_permissions(self, project):
+        assert set(permissions.CREATOR_PERMISSIONS) == set(project.permissions[project.creator._id])
+
+    def test_default_contributor_permissions(self, project):
+        user = UserFactory()
+        project.add_contributor(user, permissions=['read'], auth=Auth(user=project.creator))
+        project.save()
+        assert set(['read']) == set(self.project.get_permissions(user))
+
+    def test_adjust_permissions(self, project):
+        project.permissions[42] = ['dance']
+        project.save()
+        assert 42 not in self.project.permissions
+
+    def test_add_permission(self, project):
+        project.add_permission(project.creator, 'dance')
+        assert project.creator._id in project.permissions
+        assert 'dance' in project.permissions[project.creator._id]
+
+    def test_add_permission_already_granted(self, project):
+        project.add_permission(project.creator, 'dance')
+        with pytest.raises(ValueError):
+            project.add_permission(project.creator, 'dance')
+
+    def test_remove_permission(self, project):
+        project.add_permission(project.creator, 'dance')
+        project.remove_permission(project.creator, 'dance')
+        assert 'dance' not in project.permissions[project.creator._id]
+
+    def test_remove_permission_not_granted(self, project):
+        with pytest.raises(ValueError):
+            project.remove_permission(project.creator, 'dance')
+
+    def test_has_permission_true(self, project):
+        project.add_permission(project.creator, 'dance')
+        assert project.has_permission(project.creator, 'dance') is True
+
+    def test_has_permission_false(self, project):
+        project.add_permission(project.creator, 'dance')
+        assert project.has_permission(self.project.creator, 'sing') is False
+
+    def test_has_permission_not_in_dict(self, project):
+        assert project.has_permission(project.creator, 'dance') is False
+
 
 class TestRegisterNode:
 

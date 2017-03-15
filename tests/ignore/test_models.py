@@ -25,7 +25,6 @@ from website.project.model import (DraftRegistration, MetaSchema, Node,
                                    get_pointer_parent)
 from website.project.spam.model import SpamStatus
 from website.project.tasks import on_node_updated
-from website.util.permissions import CREATOR_PERMISSIONS
 
 GUID_FACTORIES = UserFactory, NodeFactory, ProjectFactory
 
@@ -124,63 +123,6 @@ class TestAddonCallbacks(OsfTestCase):
                 callback.assert_called_once_with(
                     self.node, registration, self.user
                 )
-
-
-class TestPermissions(OsfTestCase):
-
-    def setUp(self):
-        super(TestPermissions, self).setUp()
-        self.project = ProjectFactory()
-
-    def test_default_creator_permissions(self):
-        assert_equal(
-            set(CREATOR_PERMISSIONS),
-            set(self.project.permissions[self.project.creator._id])
-        )
-
-    def test_default_contributor_permissions(self):
-        user = UserFactory()
-        self.project.add_contributor(user, permissions=['read'], auth=Auth(user=self.project.creator))
-        self.project.save()
-        assert_equal(
-            set(['read']),
-            set(self.project.get_permissions(user))
-        )
-
-    def test_adjust_permissions(self):
-        self.project.permissions[42] = ['dance']
-        self.project.save()
-        assert_not_in(42, self.project.permissions)
-
-    def test_add_permission(self):
-        self.project.add_permission(self.project.creator, 'dance')
-        assert_in(self.project.creator._id, self.project.permissions)
-        assert_in('dance', self.project.permissions[self.project.creator._id])
-
-    def test_add_permission_already_granted(self):
-        self.project.add_permission(self.project.creator, 'dance')
-        with assert_raises(ValueError):
-            self.project.add_permission(self.project.creator, 'dance')
-
-    def test_remove_permission(self):
-        self.project.add_permission(self.project.creator, 'dance')
-        self.project.remove_permission(self.project.creator, 'dance')
-        assert_not_in('dance', self.project.permissions[self.project.creator._id])
-
-    def test_remove_permission_not_granted(self):
-        with assert_raises(ValueError):
-            self.project.remove_permission(self.project.creator, 'dance')
-
-    def test_has_permission_true(self):
-        self.project.add_permission(self.project.creator, 'dance')
-        assert_true(self.project.has_permission(self.project.creator, 'dance'))
-
-    def test_has_permission_false(self):
-        self.project.add_permission(self.project.creator, 'dance')
-        assert_false(self.project.has_permission(self.project.creator, 'sing'))
-
-    def test_has_permission_not_in_dict(self):
-        assert_false(self.project.has_permission(self.project.creator, 'dance'))
 
 
 class TestPointer(OsfTestCase):
