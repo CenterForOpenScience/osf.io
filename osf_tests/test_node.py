@@ -7,7 +7,9 @@ from modularodm.exceptions import ValidationError as MODMValidationError
 import mock
 import pytest
 import pytz
+from framework.celery_tasks import handlers
 from framework.exceptions import PermissionsError
+from framework.sessions import set_session
 from website.util.permissions import READ, WRITE, ADMIN, expand_permissions, DEFAULT_CONTRIBUTOR_PERMISSIONS
 from website.project.model import has_anonymous_link
 from website.project.signals import contributor_added, contributor_removed, after_create_registration
@@ -16,6 +18,7 @@ from website.util import permissions, disconnected_from_listeners, api_url_for, 
 from website.citations.utils import datetime_to_csl
 from website import language, settings
 from website.project.model import ensure_schemas
+from website.project.tasks import on_node_updated
 
 from osf.models import (
     AbstractNode,
@@ -30,6 +33,7 @@ from osf.models import (
     DraftRegistration,
     DraftRegistrationApproval,
 )
+from osf.models.spam import SpamStatus
 from addons.wiki.models import NodeWikiPage
 from osf.exceptions import ValidationError, ValidationValueError
 from osf.utils.auth import Auth
@@ -49,6 +53,7 @@ from osf_tests.factories import (
     CollectionFactory,
     NodeRelationFactory,
     InstitutionFactory,
+    SessionFactory,
 )
 from .factories import get_default_metaschema
 from addons.wiki.tests.factories import NodeWikiFactory
@@ -3272,6 +3277,85 @@ class TestNodeUpdate:
         assert node.category == new_category
 
     # TODO: test permissions, non-writable fields
+
+
+class TestOnNodeUpdate:
+
+    @pytest.fixture(autouse=True)
+    def session(self, user, request_context):
+        s = SessionFactory(user=user)
+        set_session(s)
+        return s
+
+    @pytest.fixture()
+    def node(self):
+        return ProjectFactory(is_public=True)
+
+    def teardown_method(self, method):
+        handlers.celery_before_request()
+
+    @mock.patch('osf.models.node.enqueue_task')
+    def test_enqueue_called(self, enqueue_task, node, user, request_context):
+        node.title = 'A new title'
+        node.save()
+
+        (task, ) = enqueue_task.call_args[0]
+
+        assert task.task == 'website.project.tasks.on_node_updated'
+        assert task.args[0] == node._id
+        assert task.args[1] == user._id
+        assert task.args[2] is False
+        assert 'title' in task.args[3]
+
+    @mock.patch('website.project.tasks.settings.SHARE_URL', None)
+    @mock.patch('website.project.tasks.settings.SHARE_API_TOKEN', None)
+    @mock.patch('website.project.tasks.requests')
+    def test_skips_no_settings(self, requests, node, user, request_context):
+        on_node_updated(node._id, user._id, False, {'is_public'})
+        assert requests.post.called is False
+
+    @mock.patch('website.project.tasks.settings.SHARE_URL', 'https://share.osf.io')
+    @mock.patch('website.project.tasks.settings.SHARE_API_TOKEN', 'Token')
+    @mock.patch('website.project.tasks.requests')
+    def test_updates_share(self, requests, node, user):
+        on_node_updated(node._id, user._id, False, {'is_public'})
+
+        kwargs = requests.post.call_args[1]
+        graph = kwargs['json']['data']['attributes']['data']['@graph']
+
+        assert requests.post.called
+        assert kwargs['headers']['Authorization'] == 'Bearer Token'
+        assert graph[0]['uri'] == '{}{}/'.format(settings.DOMAIN, node._id)
+
+    @mock.patch('website.project.tasks.settings.SHARE_URL', 'https://share.osf.io')
+    @mock.patch('website.project.tasks.settings.SHARE_API_TOKEN', 'Token')
+    @mock.patch('website.project.tasks.requests')
+    def test_update_share_correctly(self, requests, node, user, request_context):
+        cases = [{
+            'is_deleted': False,
+            'attrs': {'is_public': True, 'is_deleted': False, 'spam_status': SpamStatus.HAM}
+        }, {
+            'is_deleted': True,
+            'attrs': {'is_public': False, 'is_deleted': False, 'spam_status': SpamStatus.HAM}
+        }, {
+            'is_deleted': True,
+            'attrs': {'is_public': True, 'is_deleted': True, 'spam_status': SpamStatus.HAM}
+        }, {
+            'is_deleted': True,
+            'attrs': {'is_public': True, 'is_deleted': False, 'spam_status': SpamStatus.SPAM}
+        }]
+
+        for case in cases:
+            for attr, value in case['attrs'].items():
+                setattr(node, attr, value)
+            node.save()
+
+            on_node_updated(node._id, user._id, False, {'is_public'})
+
+            kwargs = requests.post.call_args[1]
+            graph = kwargs['json']['data']['attributes']['data']['@graph']
+            assert graph[1]['is_deleted'] == case['is_deleted']
+
 
 # copied from tests/test_models.py
 class TestRemoveNode:
