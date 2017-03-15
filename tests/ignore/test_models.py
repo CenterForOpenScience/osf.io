@@ -14,11 +14,11 @@ from tests.factories import (AuthUserFactory, NodeFactory,
                              PointerFactory,
                              PrivateLinkFactory, ProjectFactory,
                              ProjectWithAddonFactory, RegistrationFactory,
-                             SessionFactory, UnregUserFactory, UserFactory)
+                             SessionFactory, UserFactory)
 from tests.utils import mock_archive
 from website import settings
 from website.project.model import (DraftRegistration, MetaSchema,
-                                   NodeLog, Pointer, ensure_schemas,
+                                   Pointer, ensure_schemas,
                                    get_pointer_parent)
 from website.project.spam.model import SpamStatus
 from website.project.tasks import on_node_updated
@@ -98,65 +98,6 @@ class TestPointer(OsfTestCase):
         node.nodes.append(self.pointer)
         assert_true(node.has_pointers_recursive)
         assert_true(project.has_pointers_recursive)
-
-
-class TestContributorVisibility(OsfTestCase):
-
-    def setUp(self):
-        super(TestContributorVisibility, self).setUp()
-        self.project = ProjectFactory()
-        self.user2 = UserFactory()
-        self.project.add_contributor(self.user2)
-
-    def test_get_visible_true(self):
-        assert_true(self.project.get_visible(self.project.creator))
-
-    def test_get_visible_false(self):
-        self.project.set_visible(self.project.creator, False)
-        assert_false(self.project.get_visible(self.project.creator))
-
-    def test_make_invisible(self):
-        self.project.set_visible(self.project.creator, False, save=True)
-        self.project.reload()
-        assert_not_in(
-            self.project.creator._id,
-            self.project.visible_contributor_ids
-        )
-        assert_not_in(
-            self.project.creator,
-            self.project.visible_contributors
-        )
-        assert_equal(
-            self.project.logs.latest().action,
-            NodeLog.MADE_CONTRIBUTOR_INVISIBLE
-        )
-
-    def test_make_visible(self):
-        self.project.set_visible(self.project.creator, False, save=True)
-        self.project.set_visible(self.project.creator, True, save=True)
-        self.project.reload()
-        assert_in(
-            self.project.creator._id,
-            self.project.visible_contributor_ids
-        )
-        assert_in(
-            self.project.creator,
-            self.project.visible_contributors
-        )
-        assert_equal(
-            self.project.logs.latest().action,
-            NodeLog.MADE_CONTRIBUTOR_VISIBLE
-        )
-        # Regression test: Ensure that hiding and showing the first contributor
-        # does not change the visible contributor order
-        assert_equal(
-            self.project.visible_contributors,
-            [self.project.creator, self.user2]
-        )
-
-    def test_set_visible_missing(self):
-        with assert_raises(ValueError):
-            self.project.set_visible(UserFactory(), True)
 
 
 class TestProjectWithAddons(OsfTestCase):

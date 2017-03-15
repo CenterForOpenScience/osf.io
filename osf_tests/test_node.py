@@ -1121,6 +1121,50 @@ class TestContributorAddedSignal:
             assert node.is_contributor(user)
             assert mock_signals.signals_sent() == set([contributor_added])
 
+
+class TestContributorVisibility:
+
+    @pytest.fixture()
+    def user2(self):
+        return UserFactory()
+
+    @pytest.fixture()
+    def project(self, user, user2):
+        p = ProjectFactory(creator=user)
+        p.add_contributor(user2)
+        #p.save()
+        return p
+
+    def test_get_visible_true(self, project):
+        assert project.get_visible(project.creator) is True
+
+    def test_get_visible_false(self, project):
+        project.set_visible(project.creator, False)
+        assert project.get_visible(project.creator) is False
+
+    def test_make_invisible(self, project):
+        project.set_visible(project.creator, False, save=True)
+        project.reload()
+        assert project.creator._id not in project.visible_contributor_ids
+        assert project.creator not in project.visible_contributors
+        assert project.logs.latest().action == NodeLog.MADE_CONTRIBUTOR_INVISIBLE
+
+    def test_make_visible(self, project, user2):
+        project.set_visible(project.creator, False, save=True)
+        project.set_visible(project.creator, True, save=True)
+        project.reload()
+        assert project.creator._id in project.visible_contributor_ids
+        assert project.creator in project.visible_contributors
+        assert project.logs.latest().action == NodeLog.MADE_CONTRIBUTOR_VISIBLE
+        # Regression test: Ensure that hiding and showing the first contributor
+        # does not change the visible contributor order
+        assert list(project.visible_contributors) == [project.creator, user2]
+
+    def test_set_visible_missing(self, project):
+        with pytest.raises(ValueError):
+            project.set_visible(UserFactory(), True)
+
+
 class TestPermissionMethods:
 
     @pytest.fixture()
