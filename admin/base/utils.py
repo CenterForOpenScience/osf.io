@@ -13,3 +13,75 @@ def reverse_qs(view, urlconf=None, args=None, kwargs=None, current_app=None, que
 
 def osf_staff_check(user):
     return user.is_authenticated and user.is_staff
+
+
+def get_subject_rules(subjects_selected):
+    """
+    Take a list of subjects, and parse them into rules consistent with preprpint provider
+    rules and subjects. A "rule" consists of a hierarchy of Subject _ids, and a boolean value
+    describing if the rest of the descendants of the last subject in the list are included or not.
+
+    Example:
+    rules = [
+        [
+            [u'58bdd0bfb081dc0811b9e0ae', u'58bdd099b081dc0811b9de09'],
+            True
+        ]
+    ]
+
+    :param subjects_selected: list of ids of subjects selected from the form
+    :return: subject "rules" properly formatted
+    """
+    new_rules = []
+    subjects_done = []
+    while len(subjects_done) < len(subjects_selected):
+        parents_left = [sub for sub in subjects_selected if sub.parents.count() == 0 and sub not in subjects_done]
+        subjects_left = [sub for sub in subjects_selected if sub not in subjects_done]
+        for parent in parents_left:
+            parent_has_no_descendants_in_rules = True
+            grandchildren_used = 0
+            children_used = 0
+            all_grandchildren = False
+            potential_children_rules = []
+            for child in parent.children.all():
+                child_has_no_descendants_in_rules = True
+                if child in subjects_selected:
+                    children_used += 1
+                    used_grandchildren = []
+                    potential_grandchildren_rules = []
+                    parent_has_no_descendants_in_rules = False
+
+                    if child in subjects_left:
+                        for grandchild in child.children.all():
+                            if grandchild in subjects_selected:
+                                grandchildren_used += 1
+                                child_has_no_descendants_in_rules = False
+
+                                if grandchild in subjects_left:
+                                    potential_grandchildren_rules.append([[parent._id, child._id, grandchild._id], False])
+                                subjects_done.append(grandchild)
+                                used_grandchildren.append(grandchild)
+
+                        if len(used_grandchildren) == child.children.count():
+                            all_grandchildren = True
+                            subjects_done += used_grandchildren
+                            subjects_done.append(child)
+                            potential_children_rules.append([[parent._id, child._id], True])
+                        else:
+                            new_rules += potential_grandchildren_rules
+
+                        if child_has_no_descendants_in_rules:
+                            potential_children_rules.append([[parent._id, child._id], False])
+                        subjects_done.append(child)
+
+            if parent_has_no_descendants_in_rules:
+                new_rules.append([[parent._id], False])
+
+            if parent.children.count() == children_used and all_grandchildren:
+                new_rules.append([[parent._id], True])
+            else:
+                new_rules += potential_children_rules
+
+            subjects_done.append(parent)
+
+    return new_rules
