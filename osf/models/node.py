@@ -1323,7 +1323,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         if save:
             self.save()
 
-    def set_privacy(self, permissions, auth=None, log=True, save=True, meeting_creation=False):
+    def set_privacy(self, permissions, auth=None, log=True, save=True, meeting_creation=False, check_addons=True):
         """Set the permissions for this node. Also, based on meeting_creation, queues
         an email to user about abilities of public projects.
 
@@ -1331,10 +1331,14 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         :param auth: All the auth information including user, API key.
         :param bool log: Whether to add a NodeLog for the privacy change.
         :param bool meeting_creation: Whether this was created due to a meetings email.
+        :param bool check_addons: Check and collect messages for addons?
         """
         if auth and not self.has_permission(auth.user, ADMIN):
             raise PermissionsError('Must be an admin to change privacy settings.')
         if permissions == 'public' and not self.is_public:
+            if self.is_spam or (settings.SPAM_FLAGGED_MAKE_NODE_PRIVATE and self.is_spammy):
+                # TODO: Should say will review within a certain agreed upon time period.
+                raise NodeStateError('This project has been marked as spam. Please contact the help desk if you think this is in error.')
             if self.is_registration:
                 if self.is_pending_embargo:
                     raise NodeStateError('A registration with an unapproved embargo cannot be made public.')
@@ -1362,6 +1366,13 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             message = addon.after_set_privacy(self, permissions)
             if message:
                 status.push_status_message(message, kind='info', trust=False)
+
+        # After set permissions callback
+        if check_addons:
+            for addon in self.get_addons():
+                message = addon.after_set_privacy(self, permissions)
+                if message:
+                    status.push_status_message(message, kind='info', trust=False)
 
         if log:
             action = NodeLog.MADE_PUBLIC if permissions == 'public' else NodeLog.MADE_PRIVATE
@@ -1470,7 +1481,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             )
         if self.is_collection:
             raise NodeStateError('Folders may not be registered')
-        original = self.load(self._primary_key)
+        original = self
 
         # Note: Cloning a node will clone each node wiki page version and add it to
         # `registered.wiki_pages_current` and `registered.wiki_pages_versions`.
@@ -1725,7 +1736,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
         when = timezone.now()
 
-        original = self.load(self._id)
+        original = self
 
         if original.is_deleted:
             raise NodeStateError('Cannot fork deleted node.')
@@ -2567,16 +2578,16 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         new_page.save()
 
         if has_comments:
-            Comment.objects.filter(root_target=current.guids.first()).invalidated_update(root_target=Guid.load(new_page._id))
-            Comment.objects.filter(target=current.guids.first()).invalidated_update(target=Guid.load(new_page._id))
+            Comment.objects.filter(root_target=current.guids.all()[0]).invalidated_update(root_target=Guid.load(new_page._id))
+            Comment.objects.filter(target=current.guids.all()[0]).invalidated_update(target=Guid.load(new_page._id))
 
         if current:
             for contrib in self.contributors:
                 if contrib.comments_viewed_timestamp.get(current._id, None):
                     timestamp = contrib.comments_viewed_timestamp[current._id]
                     contrib.comments_viewed_timestamp[new_page._id] = timestamp
-                    contrib.save()
                     del contrib.comments_viewed_timestamp[current._id]
+                    contrib.save()
 
         # check if the wiki page already exists in versions (existed once and is now deleted)
         if key not in self.wiki_pages_versions:

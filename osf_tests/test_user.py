@@ -868,6 +868,16 @@ class TestUnregisteredUser:
         assert bool(unreg_user.verify_claim_token(valid, project_id=project._primary_key)) is True
         assert bool(unreg_user.verify_claim_token('invalidtoken', project_id=project._primary_key)) is False
 
+    def test_verify_claim_token_with_no_expiration_date(self, unreg_user, project):
+        # Legacy records may not have an 'expires' key
+        #self.add_unclaimed_record()
+        record = unreg_user.get_unclaimed_record(project._primary_key)
+        del record['expires']
+        unreg_user.save()
+        token = record['token']
+        assert unreg_user.verify_claim_token(token, project_id=project._primary_key) is True
+
+
 # Copied from tests/test_models.py
 class TestRecentlyAdded:
 
