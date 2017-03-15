@@ -18,7 +18,7 @@ def test_attach_handlers():
     teardown_funcs = app.teardown_request_funcs[None]
 
     assert_before_funcs = {
-        framework.mongo.handlers.connection_before_request,
+        framework.django.handlers.reset_django_db_queries_and_close_connections,
         framework.celery_tasks.handlers.celery_before_request,
         framework.transactions.handlers.transaction_before_request,
         framework.postcommit_tasks.handlers.postcommit_before_request,
@@ -27,6 +27,7 @@ def test_attach_handlers():
     }
 
     assert_after_funcs = {
+        framework.django.handlers.close_old_django_db_connections,
         framework.postcommit_tasks.handlers.postcommit_after_request,
         framework.celery_tasks.handlers.celery_after_request,
         framework.transactions.handlers.transaction_after_request,
@@ -34,7 +35,7 @@ def test_attach_handlers():
     }
 
     assert_teardown_funcs = {
-        framework.mongo.handlers.connection_teardown_request,
+        framework.django.handlers.close_old_django_db_connections,
         framework.celery_tasks.handlers.celery_teardown_request,
         framework.transactions.handlers.transaction_teardown_request,
     }
