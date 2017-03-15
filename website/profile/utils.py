@@ -10,6 +10,7 @@ from website.project.model import Node
 from website.util.permissions import reduce_permissions
 
 
+# TODO: make this a method in `OSFUser` model after Django-OSF is released and update tests
 def get_unconfirmed_emails_exclude_external_identity(user):
     """
     Obtain a list of unconfirmed emails that are not related to external identity.

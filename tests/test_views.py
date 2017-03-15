@@ -47,7 +47,7 @@ from website import mailchimp_utils
 from website import mails, settings
 from website.addons.github.tests.factories import GitHubAccountFactory
 from website.models import Node, NodeLog, Pointer
-from website.profile.utils import add_contributor_json, serialize_unregistered
+from website.profile.utils import add_contributor_json, get_unconfirmed_emails_exclude_external_identity, serialize_unregistered
 from website.profile.views import fmt_date_or_none, update_osf_help_mails_subscription
 from website.project.decorators import check_can_access
 from website.project.model import has_anonymous_link
@@ -1811,6 +1811,19 @@ class TestUserAccount(OsfTestCase):
         res = self.app.post(url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
         assert_equal(send_mail.call_count, 1)
+
+    def test_get_unconfirmed_emails_exclude_external_identity(self):
+        external_identity = {
+            'service': {
+                'AFI': 'LINK'
+            }
+        }
+        self.user.add_unconfirmed_email("james@steward.com")
+        self.user.add_unconfirmed_email("stweard@james.com", external_identity=external_identity)
+        self.user.save()
+        unconfirmed_emails = get_unconfirmed_emails_exclude_external_identity(self.user)
+        assert_in("james@steward.com", unconfirmed_emails)
+        assert_not_in("stweard@james.com", unconfirmed_emails)
 
 
 class TestAddingContributorViews(OsfTestCase):
