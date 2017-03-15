@@ -74,7 +74,7 @@ class MODMCompatibilityQuerySet(models.QuerySet):
         m2m_fields = set(qs.model.get_m2m_field_names()) & field_set
         if 'contributors' in field_set:
             m2m_fields.add('_contributors')
-        qs = qs.select_related(*fk_fields)
+        qs = qs.select_related(*fk_fields).prefetch_related(*m2m_fields)
         return qs
 
     def sort(self, *fields):
