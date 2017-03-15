@@ -10,6 +10,23 @@ from website.project.model import Node
 from website.util.permissions import reduce_permissions
 
 
+def get_unconfirmed_emails_exclude_external_identity(user):
+    """
+    Obtain a list of unconfirmed emails that are not related to external identity.
+
+    :param user: the user
+    :return: a list of unconfirmed emails
+    """
+
+    unconfirmed_emails = []
+    email_verifications = user.email_verifications
+    if email_verifications:
+        for token, value in email_verifications.iteritems():
+            if not value.get('external_identity'):
+                unconfirmed_emails.append(value.get('email'))
+    return unconfirmed_emails
+
+
 def get_projects(user):
     """Return a list of user's projects, excluding registrations and folders."""
     # Note: If the user is a contributor to a child (but does not have access to the parent), it will be
@@ -18,6 +35,7 @@ def get_projects(user):
     from website.project.utils import TOP_LEVEL_PROJECT_QUERY
 
     return Node.find_for_user(user, subquery=TOP_LEVEL_PROJECT_QUERY)
+
 
 def get_public_projects(user):
     """Return a list of a user's public projects."""
@@ -97,7 +115,7 @@ def serialize_user(user, node=None, admin=False, full=False, is_profile=False):
                     'primary': each.strip().lower() == user.username.strip().lower(),
                     'confirmed': False
                 }
-                for each in user.unconfirmed_emails
+                for each in get_unconfirmed_emails_exclude_external_identity(user)
             ]
 
         if user.is_merged:
@@ -169,6 +187,7 @@ def add_contributor_json(user, current_user=None):
         ),
         'profile_url': user.profile_url
     }
+
 
 def serialize_unregistered(fullname, email):
     """Serializes an unregistered user."""
