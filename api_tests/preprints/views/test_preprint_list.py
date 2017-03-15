@@ -2,6 +2,7 @@ from nose.tools import *  # flake8: noqa
 
 from framework.auth.core import Auth
 from api.base.settings.defaults import API_BASE
+from api_tests.preprints.filters.test_filters import PreprintsListFilteringMixin
 from website.util import permissions
 from website.models import Node
 from website.preprints.model import PreprintService
@@ -74,30 +75,31 @@ class TestPreprintList(ApiTestCase):
         assert_in(self.preprint._id, ids)
         assert_not_in(self.project._id, ids)
 
+class TestPreprintsListFiltering(PreprintsListFilteringMixin, ApiTestCase):
 
-class TestPreprintFiltering(ApiTestCase):
-
-    def setUp(self):
-        super(TestPreprintFiltering, self).setUp()
+    def _setUp(self):
         self.user = AuthUserFactory()
-        self.provider = PreprintProviderFactory(name='wwe')
-        self.provider_two = PreprintProviderFactory(name='wcw')
+        self.provider = PreprintProviderFactory(name='Sockarxiv')
+        self.provider_two = PreprintProviderFactory(name='Piratearxiv')
 
         self.subject = SubjectFactory()
         self.subject_two = SubjectFactory()
 
         self.preprint = PreprintFactory(creator=self.user, provider=self.provider, subjects=[[self.subject._id]])
-        self.preprint_two = PreprintFactory(creator=self.user, filename='woo.txt', provider=self.provider_two, subjects=[[self.subject_two._id]])
-        self.preprint_three = PreprintFactory(creator=self.user, filename='stonecold.txt', provider=self.provider, subjects=[[self.subject._id], [self.subject_two._id]])
+        self.preprint_two = PreprintFactory(creator=self.user, filename='tough.txt', provider=self.provider_two, subjects=[[self.subject_two._id]])
 
-    def test_filter_by_provider(self):
-        url = '/{}preprints/?filter[provider]={}'.format(API_BASE, self.provider._id)
-        res = self.app.get(url, auth=self.user.auth)
-        ids = [datum['id'] for datum in res.json['data']]
+        self.preprint_two.date_created = '2013-12-11 10:09:08.070605+00:00'
+        self.preprint_two.date_published = '2013-12-11 10:09:08.070605+00:00'
+        self.preprint_two.save()
 
-        assert_in(self.preprint._id, ids)
-        assert_not_in(self.preprint_two._id, ids)
-        assert_in(self.preprint_three._id, ids)
+        self.preprint_three = PreprintFactory(creator=self.user, filename='darn.txt', provider=self.provider, subjects=[[self.subject._id], [self.subject_two._id]])
+        self.preprint_three.date_created = '2013-12-11 10:09:08.070605+00:00'
+        self.preprint_three.date_published = '2013-12-11 10:09:08.070605+00:00'
+        self.preprint_three.is_published = False
+        self.preprint_three.save()
+
+        self.url = '/{}preprints/?version=2.2&'.format(API_BASE)
+
 
 class TestPreprintCreate(ApiTestCase):
     def setUp(self):
