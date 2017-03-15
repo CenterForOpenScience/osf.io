@@ -1490,27 +1490,27 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
         registered = original.clone()
         registered.recast('osf.registration')
-        # Need to save here in order to set many-to-many fields
-        registered.save()
 
         registered.registered_date = timezone.now()
         registered.registered_user = auth.user
-        registered.registered_schema.add(schema)
         registered.registered_from = original
         if not registered.registered_meta:
             registered.registered_meta = {}
         registered.registered_meta[schema._id] = data
 
-        registered.copy_contributors_from(self)
         registered.forked_from = self.forked_from
         registered.creator = self.creator
-        registered.tags.add(*self.tags.values_list('pk', flat=True))
-        registered.affiliated_institutions.add(*self.affiliated_institutions.values_list('pk', flat=True))
-        registered.alternative_citations.add(*self.alternative_citations.values_list('pk', flat=True))
         registered.node_license = original.license.copy() if original.license else None
         registered.wiki_private_uuids = {}
 
-        # registered.save()
+        # Need to save here in order to set many-to-many fields
+        registered.save()
+
+        registered.registered_schema.add(schema)
+        registered.copy_contributors_from(self)
+        registered.tags.add(*self.tags.values_list('pk', flat=True))
+        registered.affiliated_institutions.add(*self.affiliated_institutions.values_list('pk', flat=True))
+        registered.alternative_citations.add(*self.alternative_citations.values_list('pk', flat=True))
 
         # Clone each log from the original node for this registration.
         logs = original.logs.all()
