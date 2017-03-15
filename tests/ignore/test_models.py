@@ -20,109 +20,13 @@ from tests.factories import (AuthUserFactory, NodeFactory,
 from tests.utils import mock_archive
 from website import settings
 from website.exceptions import TagNotFoundError
-from website.project.model import (DraftRegistration, MetaSchema, Node,
+from website.project.model import (DraftRegistration, MetaSchema,
                                    NodeLog, Pointer, ensure_schemas,
                                    get_pointer_parent)
 from website.project.spam.model import SpamStatus
 from website.project.tasks import on_node_updated
 
 GUID_FACTORIES = UserFactory, NodeFactory, ProjectFactory
-
-
-class TestAddonCallbacks(OsfTestCase):
-    """Verify that callback functions are called at the right times, with the
-    right arguments.
-    """
-    callbacks = {
-        'after_remove_contributor': None,
-        'after_set_privacy': None,
-        'after_fork': (None, None),
-        'after_register': (None, None),
-    }
-
-    def setUp(self):
-        def mock_get_addon(addon_name, deleted=False):
-            # Overrides AddonModelMixin.get_addon -- without backrefs,
-            # no longer guaranteed to return the same set of objects-in-memory
-            return self.patched_addons.get(addon_name, None)
-
-        super(TestAddonCallbacks, self).setUp()
-        # Create project with component
-        self.user = UserFactory()
-        self.auth = Auth(user=self.user)
-        self.parent = ProjectFactory()
-        self.node = NodeFactory(creator=self.user, project=self.parent)
-        self.patches = []
-        self.patched_addons = {}
-        self.original_get_addon = Node.get_addon
-
-        # Mock addon callbacks
-        for addon in self.node.addons:
-            mock_settings = mock.create_autospec(addon.__class__)
-            for callback, return_value in self.callbacks.iteritems():
-                mock_callback = getattr(mock_settings, callback)
-                mock_callback.return_value = return_value
-                patch = mock.patch.object(
-                    addon,
-                    callback,
-                    getattr(mock_settings, callback)
-                )
-                patch.start()
-                self.patches.append(patch)
-            self.patched_addons[addon.config.short_name] = addon
-        n_patch = mock.patch.object(
-            self.node,
-            'get_addon',
-            mock_get_addon
-        )
-        n_patch.start()
-        self.patches.append(n_patch)
-
-    def tearDown(self):
-        super(TestAddonCallbacks, self).tearDown()
-        for patcher in self.patches:
-            patcher.stop()
-
-    def test_remove_contributor_callback(self):
-        user2 = UserFactory()
-        self.node.add_contributor(contributor=user2, auth=self.auth)
-        self.node.remove_contributor(contributor=user2, auth=self.auth)
-        for addon in self.node.addons:
-            callback = addon.after_remove_contributor
-            callback.assert_called_once_with(
-                self.node, user2, self.auth
-            )
-
-    def test_set_privacy_callback(self):
-        self.node.set_privacy('public', self.auth)
-        for addon in self.node.addons:
-            callback = addon.after_set_privacy
-            callback.assert_called_with(
-                self.node, 'public',
-            )
-
-        self.node.set_privacy('private', self.auth)
-        for addon in self.node.addons:
-            callback = addon.after_set_privacy
-            callback.assert_called_with(
-                self.node, 'private'
-            )
-
-    def test_fork_callback(self):
-        fork = self.node.fork_node(auth=self.auth)
-        for addon in self.node.addons:
-            callback = addon.after_fork
-            callback.assert_called_once_with(
-                self.node, fork, self.user
-            )
-
-    def test_register_callback(self):
-        with mock_archive(self.node) as registration:
-            for addon in self.node.addons:
-                callback = addon.after_register
-                callback.assert_called_once_with(
-                    self.node, registration, self.user
-                )
 
 
 class TestPointer(OsfTestCase):

@@ -1481,7 +1481,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             )
         if self.is_collection:
             raise NodeStateError('Folders may not be registered')
-        original = self.load(self._primary_key)
+        original = self
 
         # Note: Cloning a node will clone each node wiki page version and add it to
         # `registered.wiki_pages_current` and `registered.wiki_pages_versions`.
@@ -1736,7 +1736,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
         when = timezone.now()
 
-        original = self.load(self._id)
+        original = self
 
         if original.is_deleted:
             raise NodeStateError('Cannot fork deleted node.')

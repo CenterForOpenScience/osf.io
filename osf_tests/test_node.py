@@ -3544,3 +3544,103 @@ class TestAddonMethods:
             len(node.get_addon_names()) ==
             addon_count
         )
+
+# copied from tests/test_models.py
+class TestAddonCallbacks:
+    """Verify that callback functions are called at the right times, with the
+    right arguments.
+    """
+
+    callbacks = {
+        'after_remove_contributor': None,
+        'after_set_privacy': None,
+        'after_fork': (None, None),
+        'after_register': (None, None),
+    }
+
+    @pytest.fixture()
+    def parent(self):
+        return ProjectFactory()
+
+    @pytest.fixture()
+    def node(self, user, parent):
+        return NodeFactory(creator=user, parent=parent)
+
+    @pytest.fixture(autouse=True)
+    def mock_addons(self, node):
+        def mock_get_addon(addon_name, deleted=False):
+            # Overrides AddonModelMixin.get_addon -- without backrefs,
+            # no longer guaranteed to return the same set of objects-in-memory
+            return self.patched_addons.get(addon_name, None)
+
+        self.patches = []
+        self.patched_addons = {}
+        self.original_get_addon = Node.get_addon
+
+        # Mock addon callbacks
+        for addon in node.addons:
+            mock_settings = mock.create_autospec(addon.__class__)
+            for callback, return_value in self.callbacks.iteritems():
+                mock_callback = getattr(mock_settings, callback)
+                mock_callback.return_value = return_value
+                patch = mock.patch.object(
+                    addon,
+                    callback,
+                    getattr(mock_settings, callback)
+                )
+                patch.start()
+                self.patches.append(patch)
+            self.patched_addons[addon.config.short_name] = addon
+        n_patch = mock.patch.object(
+            node,
+            'get_addon',
+            mock_get_addon
+        )
+        n_patch.start()
+        self.patches.append(n_patch)
+
+    def teardown_method(self, method):
+        for patcher in self.patches:
+            patcher.stop()
+
+    def test_remove_contributor_callback(self, node, auth):
+        user2 = UserFactory()
+        node.add_contributor(contributor=user2, auth=auth)
+        node.remove_contributor(contributor=user2, auth=auth)
+        for addon in node.addons:
+            callback = addon.after_remove_contributor
+            callback.assert_called_once_with(
+                node, user2, auth
+            )
+
+    def test_set_privacy_callback(self, node, auth):
+        node.set_privacy('public', auth)
+        for addon in node.addons:
+            callback = addon.after_set_privacy
+            callback.assert_called_with(
+                node, 'public',
+            )
+
+        node.set_privacy('private', auth)
+        for addon in node.addons:
+            callback = addon.after_set_privacy
+            callback.assert_called_with(
+                node, 'private'
+            )
+
+    def test_fork_callback(self, node, auth):
+        fork = node.fork_node(auth=auth)
+        for addon in node.addons:
+            callback = addon.after_fork
+            callback.assert_called_once_with(
+                node, fork, auth.user
+            )
+
+    def test_register_callback(self, node, auth):
+        with mock_archive(node) as registration:
+            for addon in node.addons:
+                callback = addon.after_register
+                callback.assert_called_once_with(
+                    node, registration, auth.user
+                )
+
