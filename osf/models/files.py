@@ -1,5 +1,6 @@
 import logging
 
+import requests
 from dateutil.parser import parse as parse_date
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
@@ -8,14 +9,16 @@ from django.utils import timezone
 from modularodm.exceptions import NoResultsFound
 from typedmodels.models import TypedModel
 
+from framework.analytics import get_basic_counters
 from osf.models.base import BaseModel, OptionalGuidMixin, ObjectIDMixin
 from osf.models.comment import CommentableMixin
 from osf.models.validators import validate_location
 from osf.modm_compat import Q
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import NonNaiveDateTimeField
+from website.files import utils
 from website.files.exceptions import VersionNotFoundError
-from website.util import api_v2_url
+from website.util import api_v2_url, waterbutler_api_url_for
 
 __all__ = (
     'File',
@@ -185,135 +188,146 @@ class StoredFileNode(BaseFileNode):
                 raise VersionNotFoundError(revision)
             return None
 
+    def generate_waterbutler_url(self, **kwargs):
+        return waterbutler_api_url_for(
+            self.node._id,
+            self.provider,
+            self.path,
+            **kwargs
+        )
+
     def update_version_metadata(self, location, metadata):
         try:
             self.versions.get(location=location).update_metadata(metadata)
             return
         except ObjectDoesNotExist:
             raise VersionNotFoundError(location)
-    # TODO IMPLEMENT THESE
-    #
-    # def touch(self, auth_header, revision=None, **kwargs):
-    #     """The bread and butter of File, collects metadata about self
-    #     and creates versions and updates self when required.
-    #     If revisions is None the created version is NOT and should NOT be saved
-    #     as there is no identifing information to tell if it needs to be updated or not.
-    #     Hits Waterbutler's metadata endpoint and saves the returned data.
-    #     If a file cannot be rendered IE figshare private files a tuple of the FileVersion and
-    #     renderable HTML will be returned.
-    #         >>>isinstance(file_node.touch(), tuple) # This file cannot be rendered
-    #     :param str or None auth_header: If truthy it will set as the Authorization header
-    #     :returns: None if the file is not found otherwise FileVersion or (version, Error HTML)
-    #     """
-    #     # Resvolve primary key on first touch
-    #     self.save()
-    #     # For backwards compatability
-    #     revision = revision or kwargs.get(self.version_identifier)
-    #
-    #     version = self.get_version(revision)
-    #     # Versions do not change. No need to refetch what we already know
-    #     if version is not None:
-    #         return version
-    #
-    #     headers = {}
-    #     if auth_header:
-    #         headers['Authorization'] = auth_header
-    #
-    #     resp = requests.get(
-    #         self.generate_waterbutler_url(revision=revision, meta=True, **kwargs),
-    #         headers=headers,
-    #     )
-    #     if resp.status_code != 200:
-    #         logger.warning('Unable to find {} got status code {}'.format(self, resp.status_code))
-    #         return None
-    #     return self.update(revision, resp.json()['data']['attributes'])
-    #     # TODO Switch back to head requests
-    #     # return self.update(revision, json.loads(resp.headers['x-waterbutler-metadata']))
-    #
-    # def update(self, revision, data, user=None):
-    #     """Using revision and data update all data pretaining to self
-    #     :param str or None revision: The revision that data points to
-    #     :param dict data: Metadata recieved from waterbutler
-    #     :returns: FileVersion
-    #     """
-    #     self.name = data['name']
-    #     self.materialized_path = data['materialized']
-    #
-    #     version = FileVersion(identifier=revision)
-    #     version.update_metadata(data, save=False)
-    #
-    #     # Transform here so it can be sortted on later
-    #     if data['modified'] is not None and data['modified'] != '':
-    #         data['modified'] = parse_date(
-    #             data['modified'],
-    #             ignoretz=True,
-    #             default=timezone.now()  # Just incase nothing can be parsed
-    #         )
-    #
-    #     # if revision is none then version is the latest version
-    #     # Dont save the latest information
-    #     if revision is not None:
-    #         version.save()
-    #         self.versions.add(version)
-    #     for entry in self.history:
-    #         if ('etag' in entry and 'etag' in data) and (entry['etag'] == data['etag']):
-    #             break
-    #     else:
-    #         # Insert into history if there is no matching etag
-    #         utils.insort(self.history, data, lambda x: x['modified'])
-    #
-    #     # Finally update last touched
-    #     self.last_touched = timezone.now()
-    #
-    #     self.save()
-    #     return version
-    #
-    # def get_download_count(self, version=None):
-    #     """Pull the download count from the pagecounter collection
-    #     Limit to version if specified.
-    #     Currently only useful for OsfStorage
-    #     """
-    #     parts = ['download', self.node._id, self._id]
-    #     if version is not None:
-    #         parts.append(version)
-    #     page = ':'.join([format(part) for part in parts])
-    #     _, count = get_basic_counters(page)
-    #
-    #     return count or 0
-    #
-    # def serialize(self):
-    #     if not self.versions:
-    #         return dict(
-    #             super(File, self).serialize(),
-    #             size=None,
-    #             version=None,
-    #             modified=None,
-    #             created=None,
-    #             contentType=None,
-    #             downloads=self.get_download_count(),
-    #             checkout=self.checkout._id if self.checkout else None,
-    #         )
-    #
-    #     version = self.versions[-1]
-    #     return dict(
-    #         super(File, self).serialize(),
-    #         size=version.size,
-    #         downloads=self.get_download_count(),
-    #         checkout=self.checkout._id if self.checkout else None,
-    #         version=version.identifier if self.versions else None,
-    #         contentType=version.content_type if self.versions else None,
-    #         modified=version.date_modified.isoformat() if version.date_modified else None,
-    #         created=self.versions[0].date_modified.isoformat() if self.versions[0].date_modified else None,
-    #     )
 
-    def restore(self, recursive=True, parent=None, save=True, deleted_on=None):
-        raise Exception('You cannot restore something that is not deleted.')
+    def touch(self, auth_header, revision=None, **kwargs):
+        """The bread and butter of File, collects metadata about self
+        and creates versions and updates self when required.
+        If revisions is None the created version is NOT and should NOT be saved
+        as there is no identifing information to tell if it needs to be updated or not.
+        Hits Waterbutler's metadata endpoint and saves the returned data.
+        If a file cannot be rendered IE figshare private files a tuple of the FileVersion and
+        renderable HTML will be returned.
+            >>>isinstance(file_node.touch(), tuple) # This file cannot be rendered
+        :param str or None auth_header: If truthy it will set as the Authorization header
+        :returns: None if the file is not found otherwise FileVersion or (version, Error HTML)
+        """
+        # Resvolve primary key on first touch
+        self.save()
+        # For backwards compatibility
+        revision = revision or kwargs.get(self.version_identifier)
+
+        version = self.get_version(revision)
+        # Versions do not change. No need to refetch what we already know
+        if version is not None:
+            return version
+
+        headers = {}
+        if auth_header:
+            headers['Authorization'] = auth_header
+
+        resp = requests.get(
+            self.generate_waterbutler_url(revision=revision, meta=True, **kwargs),
+            headers=headers,
+        )
+        if resp.status_code != 200:
+            logger.warning('Unable to find {} got status code {}'.format(self, resp.status_code))
+            return None
+        return self.update(revision, resp.json()['data']['attributes'])
+        # TODO Switch back to head requests
+        # return self.update(revision, json.loads(resp.headers['x-waterbutler-metadata']))
+
+    def update(self, revision, data, user=None):
+        """Using revision and data update all data pretaining to self
+        :param str or None revision: The revision that data points to
+        :param dict data: Metadata recieved from waterbutler
+        :returns: FileVersion
+        """
+        self.name = data['name']
+        self.materialized_path = data['materialized']
+
+        version = FileVersion.objects.create(identifier=revision)
+        version.update_metadata(data, save=False)
+
+        # Transform here so it can be sortted on later
+        if data['modified'] is not None and data['modified'] != '':
+            data['modified'] = parse_date(
+                data['modified'],
+                ignoretz=True,
+                default=timezone.now()  # Just incase nothing can be parsed
+            )
+
+        # if revision is none then version is the latest version
+        # Dont save the latest information
+        if revision is not None:
+            version.save()
+            self.versions.add(version)
+        for entry in self.history:
+            if ('etag' in entry and 'etag' in data) and (entry['etag'] == data['etag']):
+                break
+        else:
+            # Insert into history if there is no matching etag
+            utils.insort(self.history, data, lambda x: x['modified'])
+
+        # Finally update last touched
+        self.last_touched = timezone.now()
+
+        self.save()
+        return version
+
+    def get_download_count(self, version=None):
+        """Pull the download count from the pagecounter collection
+        Limit to version if specified.
+        Currently only useful for OsfStorage
+        """
+        parts = ['download', self.node._id, self._id]
+        if version is not None:
+            parts.append(version)
+        page = ':'.join([format(part) for part in parts])
+        _, count = get_basic_counters(page)
+
+        return count or 0
 
 # TODO Refactor code pointing at FileNode to point to StoredFileNode
 FileNode = StoredFileNode
 
 
 class File(StoredFileNode):
+    @property
+    def kind(self):
+        return 'file'
+
+    def serialize(self):
+        if not self.versions.exists():
+            return dict(
+                super(File, self).serialize(),
+                size=None,
+                version=None,
+                modified=None,
+                created=None,
+                contentType=None,
+                downloads=self.get_download_count(),
+                checkout=self.checkout._id if self.checkout else None,
+            )
+
+        version = self.versions.all()[-1]
+        return dict(
+            super(File, self).serialize(),
+            size=version.size,
+            downloads=self.get_download_count(),
+            checkout=self.checkout._id if self.checkout else None,
+            version=version.identifier if self.versions else None,
+            contentType=version.content_type if self.versions else None,
+            modified=version.date_modified.isoformat() if version.date_modified else None,
+            created=self.versions[0].date_modified.isoformat() if self.versions[0].date_modified else None,
+        )
+
+    def restore(self, recursive=True, parent=None, save=True, deleted_on=None):
+        raise Exception('You cannot restore something that is not deleted.')
+
     def delete(self, user=None, parent=None, save=True, deleted_on=None):
         """
         Recast a File into TrashedFile and set fields related to deleting.
@@ -332,9 +346,13 @@ class File(StoredFileNode):
 
         return self
 
-    @property
-    def kind(self):
-        return 'file'
+    def serialize(self, **kwargs):
+        return {
+            'id': self._id,
+            'path': self.path,
+            'name': self.name,
+            'kind': self.kind,
+        }
 
 
 class Folder(StoredFileNode):
