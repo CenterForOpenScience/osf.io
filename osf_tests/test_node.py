@@ -311,6 +311,120 @@ class TestParentNode:
         assert deleted_child.title not in new_nodes
 
 
+class TestRoot:
+    @pytest.fixture()
+    def project(self, user):
+        return ProjectFactory(creator=user)
+
+    @pytest.fixture()
+    def registration(self, project):
+        return RegistrationFactory(project=project)
+
+    def test_top_level_project_has_own_root(self, project):
+        assert project.root._id == project._id
+
+    def test_child_project_has_root_of_parent(self, project):
+        child = NodeFactory(parent=project)
+        assert child.root._id == project._id
+        assert child.root._id == project.root._id
+
+    def test_grandchild_root_relationships(self, project):
+        child_node_one = NodeFactory(parent=project)
+        child_node_two = NodeFactory(parent=project)
+        grandchild_from_one = NodeFactory(parent=child_node_one)
+        grandchild_from_two = NodeFactory(parent=child_node_two)
+
+        assert child_node_one.root._id == child_node_two.root._id
+        assert grandchild_from_one.root._id == grandchild_from_two.root._id
+        assert grandchild_from_two.root._id == project.root._id
+
+    def test_grandchild_has_root_of_immediate_parent(self, project):
+        child_node = NodeFactory(parent=project)
+        grandchild_node = NodeFactory(parent=child_node)
+        assert child_node.root._id == grandchild_node.root._id
+
+    def test_registration_has_own_root(self, registration):
+        assert registration.root._id == registration._id
+
+    def test_registration_children_have_correct_root(self, registration):
+        registration_child = NodeFactory(parent=registration)
+        assert registration_child.root._id == registration._id
+
+    def test_registration_grandchildren_have_correct_root(self, registration):
+        registration_child = NodeFactory(parent=registration)
+        registration_grandchild = NodeFactory(parent=registration_child)
+
+        assert registration_grandchild.root._id == registration._id
+
+    def test_fork_has_own_root(self, project, auth):
+        fork = project.fork_node(auth=auth)
+        fork.save()
+        assert fork.root._id == fork._id
+
+    def test_fork_children_have_correct_root(self, project, auth):
+        fork = project.fork_node(auth=auth)
+        fork_child = NodeFactory(parent=fork)
+        assert fork_child.root._id == fork._id
+
+    def test_fork_grandchildren_have_correct_root(self, project, auth):
+        fork = project.fork_node(auth=auth)
+        fork_child = NodeFactory(parent=fork)
+        fork_grandchild = NodeFactory(parent=fork_child)
+        assert fork_grandchild.root._id == fork._id
+
+    def test_template_project_has_own_root(self, project, auth):
+        new_project = project.use_as_template(auth=auth)
+        assert new_project.root._id == new_project._id
+
+    def test_template_project_child_has_correct_root(self, project, auth):
+        new_project = project.use_as_template(auth=auth)
+        new_project_child = NodeFactory(parent=new_project)
+        assert new_project_child.root._id == new_project._id
+
+    def test_template_project_grandchild_has_correct_root(self, project, auth):
+        new_project = project.use_as_template(auth=auth)
+        new_project_child = NodeFactory(parent=new_project)
+        new_project_grandchild = NodeFactory(parent=new_project_child)
+        assert new_project_grandchild.root._id == new_project._id
+
+    def test_node_find_returns_correct_nodes(self, project):
+        # Build up a family of nodes
+        child_node_one = NodeFactory(parent=project)
+        child_node_two = NodeFactory(parent=project)
+        NodeFactory(parent=child_node_one)
+        NodeFactory(parent=child_node_two)
+        # Create a rogue node that's not related at all
+        NodeFactory()
+
+        family_ids = [project._id] + [r._id for r in project.get_descendants_recursive()]
+        family_nodes = Node.find(Q('root', 'eq', project))
+        number_of_nodes = family_nodes.count()
+
+        assert number_of_nodes == 5
+        found_ids = []
+        for node in family_nodes:
+            assert node._id in family_ids
+            found_ids.append(node._id)
+        for node_id in family_ids:
+            assert node_id in found_ids
+
+    def test_get_descendants_recursive_returns_in_depth_order(self, project):
+        """Test the get_descendants_recursive function to make sure its
+        not returning any new nodes that we're not expecting
+        """
+        child_node_one = NodeFactory(parent=project)
+        child_node_two = NodeFactory(parent=project)
+        NodeFactory(parent=child_node_one)
+        NodeFactory(parent=child_node_two)
+
+        parent_list = [project._id]
+        # Verifies, for every node in the list, that parent, we've seen before, in order.
+        for p in project.get_descendants_recursive():
+            parent_list.append(p._id)
+            if p.parent_node:
+                assert p.parent_node._id in parent_list
+
+
 class TestNodeMODMCompat:
 
     def test_basic_querying(self):
@@ -379,9 +493,9 @@ class TestProject:
             '/{0}/'.format(project._primary_key)
         )
 
-    def test_api_url(self):
-        api_url = self.project.api_url
-        assert api_url == '/api/v1/project/{0}/'.format(self.project._primary_key)
+    def test_api_url(self, project):
+        api_url = project.api_url
+        assert api_url == '/api/v1/project/{0}/'.format(project._primary_key)
 
     def test_web_url_for(self, node, request_context):
         result = node.web_url_for('view_project')
