@@ -72,7 +72,10 @@ class MODMCompatibilityQuerySet(models.QuerySet):
         field_set = set(fields)
         fk_fields = set(qs.model.get_fk_field_names()) & field_set
         m2m_fields = set(qs.model.get_m2m_field_names()) & field_set
-        return qs.select_related(*fk_fields).prefetch_related(*m2m_fields)
+        if 'contributors' in field_set:
+            m2m_fields.add('_contributors')
+        qs = qs.select_related(*fk_fields).prefetch_related(*m2m_fields)
+        return qs
 
     def sort(self, *fields):
         # Fields are passed in as e.g. [('title', 1), ('date_created', -1)]
@@ -633,12 +636,12 @@ else:
                             result._prefetched_objects_cache = {}
                         if 'guids' not in result._prefetched_objects_cache:
                             # intialize guids in _prefetched_objects_cache
-                            result._prefetched_objects_cache['guids'] = []
+                            result._prefetched_objects_cache['guids'] = Guid.objects.none()
                         # build a result dictionary of even more proper fields
                         result_dict = {key.replace('guids__', ''): value for key, value in guid_dict.iteritems()}
                         # make an unsaved guid instance
                         guid = Guid(**result_dict)
-                        result._prefetched_objects_cache['guids'].append(guid)
+                        result._prefetched_objects_cache['guids']._result_cache = [guid, ]
                         results.append(result)
                     # replace the result cache with the new set of results
                     self._result_cache = results
