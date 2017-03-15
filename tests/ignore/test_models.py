@@ -5,21 +5,18 @@ import unittest
 import mock
 from framework.auth import Auth
 from framework.celery_tasks import handlers
-from framework.exceptions import PermissionsError
 from framework.sessions import set_session
 #from modularodm.exceptions import ValidationError, ValidationValueError
-from osf.exceptions import ValidationError, ValidationValueError
+from osf.exceptions import ValidationValueError
 from nose.tools import *  # noqa (PEP8 asserts)
-from tests.base import OsfTestCase, fake
+from tests.base import OsfTestCase
 from tests.factories import (AuthUserFactory, NodeFactory,
                              PointerFactory,
                              PrivateLinkFactory, ProjectFactory,
                              ProjectWithAddonFactory, RegistrationFactory,
-                             SessionFactory, UnconfirmedUserFactory,
-                             UnregUserFactory, UserFactory)
+                             SessionFactory, UnregUserFactory, UserFactory)
 from tests.utils import mock_archive
 from website import settings
-from website.exceptions import TagNotFoundError
 from website.project.model import (DraftRegistration, MetaSchema,
                                    NodeLog, Pointer, ensure_schemas,
                                    get_pointer_parent)
@@ -101,39 +98,6 @@ class TestPointer(OsfTestCase):
         node.nodes.append(self.pointer)
         assert_true(node.has_pointers_recursive)
         assert_true(project.has_pointers_recursive)
-
-
-class TestTags(OsfTestCase):
-
-    def setUp(self):
-        super(TestTags, self).setUp()
-        self.project = ProjectFactory()
-        self.auth = Auth(self.project.creator)
-
-    def test_add_tag(self):
-        self.project.add_tag('scientific', auth=self.auth)
-        assert_in('scientific', self.project.tags)
-        assert_equal(
-            self.project.logs.latest().action,
-            NodeLog.TAG_ADDED
-        )
-
-    def test_add_tag_too_long(self):
-        with assert_raises(ValidationError):
-            self.project.add_tag('q' * 129, auth=self.auth)
-
-    def test_remove_tag(self):
-        self.project.add_tag('scientific', auth=self.auth)
-        self.project.remove_tag('scientific', auth=self.auth)
-        assert_not_in('scientific', self.project.tags)
-        assert_equal(
-            self.project.logs.latest().action,
-            NodeLog.TAG_REMOVED
-        )
-
-    def test_remove_tag_not_present(self):
-        with assert_raises(TagNotFoundError):
-            self.project.remove_tag('scientific', auth=self.auth)
 
 
 class TestContributorVisibility(OsfTestCase):
