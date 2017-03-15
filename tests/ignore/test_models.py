@@ -1,12 +1,8 @@
 # -*- coding: utf-8 -*-
 '''Unit tests for models and their factories.'''
-import datetime
 import unittest
 
 import mock
-import pytz
-from dateutil import parser
-from django.utils import timezone
 from framework.auth import Auth
 from framework.celery_tasks import handlers
 from framework.exceptions import PermissionsError
@@ -14,24 +10,22 @@ from framework.sessions import set_session
 #from modularodm.exceptions import ValidationError, ValidationValueError
 from osf.exceptions import ValidationError, ValidationValueError
 from nose.tools import *  # noqa (PEP8 asserts)
-from tests.base import (OsfTestCase, fake,
-                        get_default_metaschema)
-from tests.factories import (AuthUserFactory, InstitutionFactory, NodeFactory,
-                             NodeLogFactory, NodeWikiFactory, PointerFactory,
+from tests.base import OsfTestCase, fake
+from tests.factories import (AuthUserFactory, NodeFactory,
+                             PointerFactory,
                              PrivateLinkFactory, ProjectFactory,
                              ProjectWithAddonFactory, RegistrationFactory,
                              SessionFactory, UnconfirmedUserFactory,
                              UnregUserFactory, UserFactory)
 from tests.utils import mock_archive
 from website import settings
-from addons.wiki.models import NodeWikiPage
 from website.exceptions import TagNotFoundError
 from website.project.model import (DraftRegistration, MetaSchema, Node,
                                    NodeLog, Pointer, ensure_schemas,
                                    get_pointer_parent)
 from website.project.spam.model import SpamStatus
 from website.project.tasks import on_node_updated
-from website.util.permissions import ADMIN, CREATOR_PERMISSIONS, READ, WRITE
+from website.util.permissions import CREATOR_PERMISSIONS
 
 GUID_FACTORIES = UserFactory, NodeFactory, ProjectFactory
 
@@ -130,98 +124,6 @@ class TestAddonCallbacks(OsfTestCase):
                 callback.assert_called_once_with(
                     self.node, registration, self.user
                 )
-
-
-class TestNodeLog(OsfTestCase):
-
-    def setUp(self):
-        super(TestNodeLog, self).setUp()
-        self.log = NodeLogFactory()
-
-    def test_repr(self):
-        rep = repr(self.log)
-        assert_in(self.log.action, rep)
-        assert_in(self.log._id, rep)
-
-    def test_node_log_factory(self):
-        log = NodeLogFactory()
-        assert_true(log.action)
-
-    def test_render_log_contributor_unregistered(self):
-        node = NodeFactory()
-        name, email = fake.name(), fake.email()
-        unreg = node.add_unregistered_contributor(fullname=name, email=email,
-            auth=Auth(node.creator))
-        node.save()
-
-        log = NodeLogFactory(params={'node': node._primary_key})
-        ret = log._render_log_contributor(unreg._primary_key)
-
-        assert_false(ret['registered'])
-        record = unreg.get_unclaimed_record(node._primary_key)
-        assert_equal(ret['fullname'], record['name'])
-
-    def test_render_log_contributor_none(self):
-        log = NodeLogFactory()
-        assert_equal(log._render_log_contributor(None), None)
-
-    def test_tz_date(self):
-        assert_equal(self.log.tz_date.tzinfo, pytz.UTC)
-
-    def test_formatted_date(self):
-        iso_formatted = self.log.formatted_date  # The string version in iso format
-        # Reparse the date
-        parsed = parser.parse(iso_formatted)
-        unparsed = self.log.tz_date
-        assert_equal(parsed, unparsed)
-
-    def test_can_view(self):
-        project = ProjectFactory(is_public=False)
-
-        non_contrib = UserFactory()
-
-        created_log = project.logs[0]
-        assert_false(created_log.can_view(project, Auth(user=non_contrib)))
-        assert_true(created_log.can_view(project, Auth(user=project.creator)))
-
-    def test_can_view_with_non_related_project_arg(self):
-        project = ProjectFactory()
-        unrelated = ProjectFactory()
-
-        created_log = project.logs[0]
-        assert_false(created_log.can_view(unrelated, Auth(user=project.creator)))
-
-    def test_original_node_and_current_node_for_registration_logs(self):
-        user = UserFactory()
-        project = ProjectFactory(creator=user)
-        registration = RegistrationFactory(project=project)
-
-        log_project_created_original = project.logs[0]
-        log_registration_initiated = project.logs[1]
-        log_project_created_registration = registration.logs[0]
-
-        assert_equal(project._id, log_project_created_original.original_node._id)
-        assert_equal(project._id, log_project_created_original.node._id)
-        assert_equal(project._id, log_registration_initiated.original_node._id)
-        assert_equal(project._id, log_registration_initiated.node._id)
-        assert_equal(project._id, log_project_created_registration.original_node._id)
-        assert_equal(registration._id, log_project_created_registration.node._id)
-
-    def test_original_node_and_current_node_for_fork_logs(self):
-        user = UserFactory()
-        project = ProjectFactory(creator=user)
-        fork = project.fork_node(auth=Auth(user))
-
-        log_project_created_original = project.logs[0]
-        log_project_created_fork = fork.logs[0]
-        log_node_forked = fork.logs[1]
-
-        assert_equal(project._id, log_project_created_original.original_node._id)
-        assert_equal(project._id, log_project_created_original.node._id)
-        assert_equal(project._id, log_project_created_fork.original_node._id)
-        assert_equal(fork._id, log_project_created_fork.node._id)
-        assert_equal(project._id, log_node_forked.original_node._id)
-        assert_equal(fork._id, log_node_forked.node._id)
 
 
 class TestPermissions(OsfTestCase):

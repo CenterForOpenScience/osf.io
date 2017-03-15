@@ -1,5 +1,6 @@
 import datetime
 
+from dateutil import parser
 from django.utils import timezone
 from django.core.exceptions import ValidationError as DjangoValidationError
 from modularodm import Q
@@ -37,6 +38,7 @@ from osf_tests.factories import (
     AuthUserFactory,
     ProjectFactory,
     NodeFactory,
+    NodeLogFactory,
     UserFactory,
     UnregUserFactory,
     RegistrationFactory,
@@ -3373,6 +3375,57 @@ class TestTemplateNode:
                 node.get_permissions(other_user) ==
                 ['read', 'write', 'admin']
             )
+
+# copied from tests/test_models.py
+class TestNodeLog:
+
+    @pytest.fixture()
+    def log(self, node):
+        return NodeLogFactory(node=node)
+
+    def test_repr(self, log):
+        rep = repr(log)
+        assert log.action in rep
+        assert log.user._id in rep
+        assert log.node._id in rep
+
+    def test_node_log_factory(self, log):
+        assert bool(log.action)
+
+    def test_tz_date(self, log):
+        assert log.date.tzinfo == pytz.UTC
+
+    def test_original_node_and_current_node_for_registration_logs(self):
+        user = UserFactory()
+        project = ProjectFactory(creator=user)
+        registration = RegistrationFactory(project=project)
+
+        log_project_created_original = project.logs.last()
+        log_registration_initiated = project.logs.latest()
+        log_project_created_registration = registration.logs.last()
+
+        assert project._id == log_project_created_original.original_node._id
+        assert project._id == log_project_created_original.node._id
+        assert project._id == log_registration_initiated.original_node._id
+        assert project._id == log_registration_initiated.node._id
+        assert project._id == log_project_created_registration.original_node._id
+        assert registration._id == log_project_created_registration.node._id
+
+    def test_original_node_and_current_node_for_fork_logs(self):
+        user = UserFactory()
+        project = ProjectFactory(creator=user)
+        fork = project.fork_node(auth=Auth(user))
+
+        log_project_created_original = project.logs.last()
+        log_project_created_fork = fork.logs.last()
+        log_node_forked = fork.logs.latest()
+
+        assert project._id == log_project_created_original.original_node._id
+        assert project._id == log_project_created_original.node._id
+        assert project._id == log_project_created_fork.original_node._id
+        assert project._id == log_node_forked.original_node._id
+        assert fork._id == log_project_created_fork.node._id
+        assert fork._id == log_node_forked.node._id
 
 
 # copied from tests/test_models.py
