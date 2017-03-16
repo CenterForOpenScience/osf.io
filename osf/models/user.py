@@ -30,7 +30,6 @@ from framework.auth.exceptions import (ChangePasswordError, ExpiredTokenError,
                                        MergeConfirmedRequiredError,
                                        MergeConflictError)
 from framework.exceptions import PermissionsError
-from framework.sentry import log_exception
 from framework.sessions.utils import remove_sessions_for_user
 from framework.mongo import get_cache_key
 from modularodm.exceptions import NoResultsFound
@@ -1115,12 +1114,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
     def update_search(self):
         from website.search.search import update_user
-        from website.search.exceptions import SearchUnavailableError
-        try:
-            update_user(self)
-        except SearchUnavailableError as e:
-            logger.exception(e)
-            log_exception()
+        update_user(self)
 
     def update_search_nodes_contributors(self):
         """
@@ -1129,7 +1123,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         :return:
         """
         from website.search import search
-        search.update_contributors(self.visible_contributor_to)
+        search.update_contributors_async(self.id)
 
     def update_search_nodes(self):
         """Call `update_search` on all nodes on which the user is a

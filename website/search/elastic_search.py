@@ -13,6 +13,7 @@ from framework import sentry
 import six
 
 from django.apps import apps
+from django.core.paginator import Paginator
 from elasticsearch import (ConnectionError, Elasticsearch, NotFoundError,
                            RequestError, TransportError, helpers)
 from framework.celery_tasks import app as celery_app
@@ -311,6 +312,15 @@ def update_node_async(self, node_id, index=None, bulk=False):
     except Exception as exc:
         self.retry(exc=exc)
 
+@celery_app.task(bind=True, max_retries=5, default_retry_delay=60)
+def update_user_async(self, user_id, index=None):
+    OSFUser = apps.get_model('osf.OSFUser')
+    user = OSFUser.objects.get(id=user_id)
+    try:
+        update_user(user, index)
+    except Exception as exc:
+        self.retry(exc)
+
 def serialize_node(node, category):
     NodeWikiPage = apps.get_model('addons_wiki.NodeWikiPage')
 
@@ -418,6 +428,14 @@ def serialize_contributors(node):
 
 bulk_update_contributors = functools.partial(bulk_update_nodes, serialize_contributors)
 
+
+@celery_app.task(bind=True, max_retries=5, default_retry_delay=60)
+def update_contributors_async(self, user_id):
+    OSFUser = apps.get_model('osf.OSFUser')
+    user = OSFUser.objects.get(id=user_id)
+    p = Paginator(user.visible_contributor_to.order_by('id'), 100)
+    for page_num in p.page_range:
+        bulk_update_contributors(p.page(page_num).object_list)
 
 @requires_search
 def update_user(user, index=None):
