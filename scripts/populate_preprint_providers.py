@@ -17,7 +17,7 @@ logging.basicConfig(level=logging.INFO)
 ENVS = ['prod', 'stage']
 SUBJECTS_CACHE = {}
 STAGING_PREPRINT_PROVIDERS = ['osf', 'psyarxiv', 'engrxiv', 'socarxiv', 'scielo', 'agrixiv', 'bitss']
-PROD_PREPRINT_PROVIDERS = ['osf', 'psyarxiv', 'engrxiv', 'socarxiv', 'agrixiv']
+PROD_PREPRINT_PROVIDERS = ['osf', 'psyarxiv', 'engrxiv', 'socarxiv', 'agrixiv', 'bitss']
 
 
 def get_subject_id(name):
@@ -371,7 +371,7 @@ def main(env):
             '_id': 'scielo',
             'name': 'SciELO',
             'logo_name': 'scielo-logo.png',
-            'description': 'Placeholder description',
+            'description': 'Advancing Research Communication',
             'banner_name': 'scielo-logo.png',
             'external_url': 'http://scielo.org',
             'example': '', # An example guid for this provider (Will have to be updated after the provider is up)
@@ -382,7 +382,7 @@ def main(env):
             'social_twitter': 'RedeSciELO', # optional
             'social_facebook': 'SciELONetwork',
             'header_text': '',
-            'licenses_acceptable': ['CC0 1.0 Universal'],
+            'licenses_acceptable': ['CC-By Attribution 4.0 International'],
             'subjects_acceptable':[]
         },
         'agrixiv': {
@@ -1036,7 +1036,7 @@ def main(env):
             ''',
             'email_contact': 'contact+bitss@osf.io',
             'email_support': 'support+bitss@osf.io',
-            'social_twitter': 'http://twitter.com/UCBITSS',
+            'social_twitter': 'UCBITSS',
             'licenses_acceptable': ['CC-By Attribution 4.0 International', 'CC0 1.0 Universal'],
             'header_text': '',
             'subjects_acceptable': [

@@ -7,7 +7,7 @@ from website.project.decorators import must_be_valid_project
 from website.project.sanctions import Sanction
 
 from tests.base import OsfTestCase
-from tests.factories import ProjectFactory, NodeFactory, RetractionFactory, CollectionFactory
+from osf_tests.factories import ProjectFactory, NodeFactory, RetractionFactory, CollectionFactory, RegistrationFactory
 
 from framework.exceptions import HTTPError
 from framework.auth import Auth
@@ -27,8 +27,7 @@ class TestValidProject(OsfTestCase):
     def setUp(self):
         super(TestValidProject, self).setUp()
         self.project = ProjectFactory()
-        self.node = NodeFactory(project=self.project)
-        self.retraction = RetractionFactory()
+        self.node = NodeFactory()
         self.auth = Auth(user=self.project.creator)
 
     def test_populates_kwargs_node(self):
@@ -66,12 +65,12 @@ class TestValidProject(OsfTestCase):
         assert_equal(exc_info.exception.code, 410)
 
     def test_valid_project_as_factory_allow_retractions_is_retracted(self):
-        self.project.is_registration = True
-        self.project.retraction = self.retraction
-        self.retraction.state = Sanction.UNAPPROVED
-        self.retraction.save()
-        res = as_factory_allow_retractions(pid=self.project._id)
-        assert_equal(res['node'], self.project)
+        registration = RegistrationFactory(project=self.project)
+        registration.retraction = RetractionFactory()
+        registration.retraction.state = Sanction.UNAPPROVED
+        registration.retraction.save()
+        res = as_factory_allow_retractions(pid=registration._id)
+        assert_equal(res['node'], registration)
 
     def test_collection_guid_not_found(self):
         collection = CollectionFactory()

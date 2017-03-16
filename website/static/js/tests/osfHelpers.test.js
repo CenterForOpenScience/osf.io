@@ -178,6 +178,14 @@ describe('osfHelpers', () => {
         });
     });
 
+    describe('decodeText', () => {
+        it('returns properly decoded text', () => {
+            var text = '&amp;';
+            var ret = $osf.decodeText(text);
+            assert.equal(ret, '&');
+        });
+    });
+
     describe('isEmail', () => {
         it('returns true for valid emails', () => {
             var emails = [

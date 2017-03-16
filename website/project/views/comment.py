@@ -97,7 +97,7 @@ def find_and_create_file_from_metadata(children, source, destination, destinatio
 
 
 def update_comment_node(root_target_id, source_node, destination_node):
-    Comment.objects.filter(root_target___id=root_target_id).update(node=destination_node)
+    Comment.objects.filter(root_target___id=root_target_id).invalidated_update(node=destination_node)
     source_node.save()
     destination_node.save()
 

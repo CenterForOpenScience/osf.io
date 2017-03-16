@@ -9,6 +9,7 @@ from nose.tools import *  # flake8: noqa
 from website.project.model import ensure_schemas
 from website.project.metadata.schemas import LATEST_SCHEMA_VERSION
 from website.models import Node, MetaSchema, DraftRegistration
+from website.views import find_bookmark_collection
 from framework.auth.core import Auth, Q
 from api.base.settings.defaults import API_BASE
 
@@ -112,7 +113,7 @@ class TestRegistrationFiltering(ApiTestCase):
         self.private_project_user_two_reg = RegistrationFactory(creator=self.user_two, project=self.private_project_user_two, is_public=False)
 
         self.folder = CollectionFactory()
-        self.bookmark_collection = BookmarkCollectionFactory()
+        self.bookmark_collection = find_bookmark_collection(self.user_one)
 
         self.url = "/{}registrations/".format(API_BASE)
 

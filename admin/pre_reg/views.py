@@ -33,7 +33,7 @@ class DraftListView(PermissionRequiredMixin, ListView):
     template_name = 'pre_reg/draft_list.html'
     ordering = '-date'
     context_object_name = 'draft'
-    permission_required = 'common_auth.view_prereg'
+    permission_required = 'osf.view_prereg'
     raise_exception = True
 
     def get_queryset(self):
@@ -106,7 +106,7 @@ class DraftDownloadListView(DraftListView):
 class DraftDetailView(PermissionRequiredMixin, DetailView):
     template_name = 'pre_reg/draft_detail.html'
     context_object_name = 'draft'
-    permission_required = 'common_auth.view_prereg'
+    permission_required = 'osf.view_prereg'
     raise_exception = True
 
     def get_object(self, queryset=None):
@@ -131,7 +131,7 @@ class DraftFormView(PermissionRequiredMixin, FormView):
     template_name = 'pre_reg/draft_form.html'
     form_class = DraftRegistrationForm
     context_object_name = 'draft'
-    permission_required = 'common_auth.view_prereg'
+    permission_required = 'osf.view_prereg'
     raise_exception = True
 
     def dispatch(self, request, *args, **kwargs):
@@ -198,7 +198,7 @@ class DraftFormView(PermissionRequiredMixin, FormView):
 
 class CommentUpdateView(PermissionRequiredMixin, UpdateView):
     context_object_name = 'draft'
-    permission_required = ('common_auth.view_prereg', 'common_auth.administer_prereg')
+    permission_required = ('osf.view_prereg', 'osf.administer_prereg')
     raise_exception = True
 
     def post(self, request, *args, **kwargs):

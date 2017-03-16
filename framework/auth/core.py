@@ -1290,11 +1290,15 @@ class User(GuidStoredObject, AddonModelMixin):
     def save(self, *args, **kwargs):
         # TODO: Update mailchimp subscription on username change
         # Avoid circular import
+        first_save = not self._is_loaded
         self.username = self.username.lower().strip() if self.username else None
         ret = super(User, self).save(*args, **kwargs)
         if self.SEARCH_UPDATE_FIELDS.intersection(ret) and self.is_confirmed:
             self.update_search()
             self.update_search_nodes_contributors()
+        if first_save:
+            from website.project import new_bookmark_collection  # Avoid circular import
+            new_bookmark_collection(self)
         return ret
 
     def update_search(self):

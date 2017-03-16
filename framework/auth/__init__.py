@@ -125,7 +125,7 @@ def get_or_create_user(fullname, address, reset_password=True, is_spam=False):
     else:
         password = str(uuid.uuid4())
         user = User.create_confirmed(address, password, fullname)
-        if password:
+        if reset_password:
             user.verification_key_v2 = generate_verification_key(verification_type='password')
         if is_spam:
             user.save()  # need to save in order to add a tag

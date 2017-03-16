@@ -9,7 +9,7 @@
 
 {% block content %}
     <h2>List of Preregistration Drafts</h2>
-    {% if perms.common_auth.view_prereg %}
+    {% if perms.osf.view_prereg %}
     <div>
         {# Add types here #}
         <a href="{% url 'pre_reg:download' %}" class="btn btn-primary">
@@ -89,7 +89,7 @@
             {{ draft.submitted | date:"N dS Y g:i a"}}
         </td>
         <td>
-            {% if perms.common_auth.administer_prereg %}
+            {% if perms.osf.administer_prereg %}
             <a href="{% url 'pre_reg:update_draft' draft.pk %}"
                class="btn btn-success" data-toggle="modal"
                data-target="#form{{ draft.pk }}">
