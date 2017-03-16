@@ -7,7 +7,7 @@ from django.db import models
 from framework.auth import Auth
 from framework.exceptions import HTTPError
 from osf.models.external import ExternalProvider
-from osf.models.files import File, Folder, FileVersion, ProviderMixin
+from osf.models.files import File, Folder, FileVersion, BaseFileNode
 from addons.base import exceptions
 from addons.figshare import settings as figshare_settings
 from addons.figshare import messages
@@ -15,7 +15,7 @@ from addons.figshare.client import FigshareClient
 from addons.figshare.serializer import FigshareSerializer
 
 
-class FigshareFileNode(ProviderMixin):
+class FigshareFileNode(BaseFileNode):
     # TODO DELETE ME POST MIGRATION
     modm_model_path = 'website.files.models.figshare.FigshareFileNode'
     modm_query = None

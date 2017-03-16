@@ -4,7 +4,7 @@ from addons.base.models import (BaseOAuthNodeSettings, BaseOAuthUserSettings,
                                 BaseStorageAddon)
 from django.db import models
 from framework.auth.core import Auth
-from osf.models.files import File, Folder, ProviderMixin
+from osf.models.files import File, Folder, BaseFileNode
 from addons.base import exceptions
 from addons.s3.provider import S3Provider
 from addons.s3.serializer import S3Serializer
@@ -15,7 +15,7 @@ from addons.s3.utils import (bucket_exists,
                                      get_bucket_names)
 
 
-class S3FileNode(ProviderMixin):
+class S3FileNode(BaseFileNode):
     # TODO DELETE ME POST MIGRATION
     modm_model_path = 'website.files.models.s3.S3FileNode'
     modm_query = None

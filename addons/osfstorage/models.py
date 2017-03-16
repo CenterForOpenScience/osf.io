@@ -12,8 +12,7 @@ from typedmodels.models import TypedModel
 from addons.base.models import BaseNodeSettings, BaseStorageAddon
 from osf.exceptions import InvalidTagError, NodeStateError, TagNotFoundError
 from osf.models import (File, FileVersion, Folder, Guid,
-                        TrashedFileNode, ProviderMixin)
-from osf.models.files import TrashedFile, TrashedFolder
+                        TrashedFileNode, TrashedFile, TrashedFolder, BaseFileNode)
 from osf.utils.auth import Auth
 from website.files import exceptions
 from website.files import utils as files_utils
@@ -24,7 +23,7 @@ settings = apps.get_app_config('addons_osfstorage')
 logger = logging.getLogger(__name__)
 
 
-class OsfStorageFileNode(ProviderMixin):
+class OsfStorageFileNode(BaseFileNode):
     # TODO DELETE ME POST MIGRATION
     modm_model_path = 'website.files.models.osfstorage.OsfStorageFileNode'
     modm_query = None
@@ -398,7 +397,7 @@ class NodeSettings(BaseStorageAddon, BaseNodeSettings):
     complete = True
     has_auth = True
 
-    root_node = models.ForeignKey('osf.StoredFileNode', null=True, blank=True)
+    root_node = models.ForeignKey(OsfStorageFolder, null=True, blank=True)
 
     @property
     def folder_name(self):

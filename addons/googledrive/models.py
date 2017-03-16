@@ -10,7 +10,7 @@ from django.db import models
 from framework.auth import Auth
 from framework.exceptions import HTTPError
 from osf.models.external import ExternalProvider
-from osf.models.files import File, Folder, ProviderMixin
+from osf.models.files import File, Folder, BaseFileNode
 from addons.base import exceptions
 from addons.googledrive import settings as drive_settings
 from addons.googledrive.client import (GoogleAuthClient,
@@ -27,7 +27,7 @@ from website.util import api_v2_url
 # A migration will need to be run that concats
 # folder_path and filenode.path
 # class GoogleDriveFileNode(PathFollowingFileNode):
-class GoogleDriveFileNode(ProviderMixin):
+class GoogleDriveFileNode(BaseFileNode):
     # TODO DELETE ME POST MIGRATION
     modm_model_path = 'website.files.models.googledrive.GoogleDriveFileNode'
     modm_query = None

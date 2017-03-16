@@ -5,7 +5,7 @@ from addons.base.models import (BaseOAuthNodeSettings, BaseOAuthUserSettings,
                                 BaseStorageAddon)
 from django.db import models
 from framework.auth import Auth
-from osf.models.files import File, Folder, ProviderMixin
+from osf.models.files import File, Folder, BaseFileNode
 from owncloud import Client as OwnCloudClient
 from addons.base import exceptions
 from addons.owncloud import settings
@@ -17,7 +17,7 @@ from website.util import api_v2_url
 logger = logging.getLogger(__name__)
 
 
-class OwncloudFileNode(ProviderMixin):
+class OwncloudFileNode(BaseFileNode):
     # TODO DELETE ME POST MIGRATION
     modm_model_path = 'website.files.models.owncloud.OwncloudFileNode'
     modm_query = None

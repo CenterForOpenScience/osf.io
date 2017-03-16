@@ -6,7 +6,7 @@ from addons.base.models import (BaseOAuthNodeSettings, BaseOAuthUserSettings,
 from django.db import models
 from framework.auth.decorators import Auth
 from framework.exceptions import HTTPError
-from osf.models.files import File, Folder, FileVersion, ProviderMixin
+from osf.models.files import File, Folder, FileVersion, BaseFileNode
 from osf.utils.auth import _get_current_user
 from addons.base import exceptions
 from addons.dataverse.client import connect_from_settings_or_401
@@ -14,7 +14,7 @@ from addons.dataverse.serializer import DataverseSerializer
 from addons.dataverse.utils import DataverseNodeLogger
 
 
-class DataverseFileNode(ProviderMixin):
+class DataverseFileNode(BaseFileNode):
     # TODO DELETE ME POST MIGRATION
     modm_model_path = 'website.files.models.dataverse.DataverseFileNode'
     modm_query = None

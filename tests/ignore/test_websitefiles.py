@@ -9,6 +9,7 @@ from nose.tools import *  # noqa
 from osf.models import File
 from osf.models import FileNode
 from osf.models import Folder
+from osf.models.files import BaseFileNode
 from tests.base import OsfTestCase
 from tests.factories import AuthUserFactory, ProjectFactory
 from website.files import exceptions
@@ -16,7 +17,7 @@ from website.files import utils
 from osf import models
 
 
-class TestFileNode(models.ProviderMixin):
+class TestFileNode(BaseFileNode):
     _provider = 'test'
 
 
@@ -83,7 +84,6 @@ class TestFileNodeObj(FilesTestCase):
         assert_equals(working.name, 'myname')
         assert_equals(working.provider, 'test')
 
-    @pytest.mark.skip('Filtering is broken')
     def test_get_or_create(self):
         created = TestFile.get_or_create(self.node, 'Path')
         created.name = 'kerp'
@@ -94,7 +94,6 @@ class TestFileNodeObj(FilesTestCase):
         assert_equals(found.name, 'kerp')
         assert_equals(found.materialized_path, 'crazypath')
 
-    @pytest.mark.skip('Filtering is broken')
     def test_get_file_guids(self):
         created = TestFile.get_or_create(self.node, 'Path')
         created.name = 'kerp'
@@ -106,7 +105,6 @@ class TestFileNodeObj(FilesTestCase):
                                              node=self.node)
         assert_in(created.get_guid()._id, file_guids)
 
-    @pytest.mark.skip('Filtering is broken')
     def test_get_file_guids_with_folder_path(self):
         created = TestFile.get_or_create(self.node, 'folder/Path')
         created.name = 'kerp'
@@ -118,7 +116,6 @@ class TestFileNodeObj(FilesTestCase):
                                              node=self.node)
         assert_in(created.get_guid()._id, file_guids)
 
-    @pytest.mark.skip('Filtering is broken')
     def test_get_file_guids_with_folder_path_does_not_include_deleted_files(self):
         created = TestFile.get_or_create(self.node, 'folder/Path')
         created.name = 'kerp'
@@ -135,19 +132,10 @@ class TestFileNodeObj(FilesTestCase):
         assert_equals(TestFile().kind, 'file')
         assert_equals(TestFolder().kind, 'folder')
 
-    @pytest.mark.skip('Filtering is broken')
-    def test_filter_build(self):
-        qs = TestFile.find(Q('test', 'eq', 'test'))
-        _, is_file, provider = qs.nodes
-        assert_equal(is_file.__dict__, Q('is_file', 'eq', True).__dict__)
-        assert_equal(provider.__dict__, Q('provider', 'eq', 'test').__dict__)
-
-    @pytest.mark.skip('Filtering is broken')
     def test_find(self):
         TestFile.objects.create(
             path='afile',
             name='name',
-            is_file=True,
             node=self.node,
             materialized_path='/long/path/to/name',
         )
@@ -155,7 +143,6 @@ class TestFileNodeObj(FilesTestCase):
         TestFolder.objects.create(
             path='afolder',
             name='name',
-            is_file=False,
             node=self.node,
             materialized_path='/long/path/to/name2/',
         )
@@ -163,11 +150,8 @@ class TestFileNodeObj(FilesTestCase):
         assert_equal(TestFile.objects.count(), 1)
         assert_equal(TestFolder.objects.count(), 1)
         assert_equal(TestFileNode.objects.count(), 2)
-        assert_equal(File.objects.count(), 1)
-        assert_equal(Folder.objects.count(), 3)  # other peoples stuffs
-        assert_equal(FileNode.objects.count(), 4)  # roots of things
+        assert_equal(BaseFileNode.objects.count(), 4)  # roots of things
 
-    @pytest.mark.skip('Filtering is broken')
     def test_find_one(self):
         models.StoredFileNode(
             path='afile',
@@ -181,7 +165,6 @@ class TestFileNodeObj(FilesTestCase):
         assert_true(isinstance(found, TestFile))
         assert_equal(found.materialized_path, '/long/path/to/name')
 
-    @pytest.mark.skip('Filtering is broken')
     def test_load(self):
         item = models.StoredFileNode(
             path='afolder',
@@ -532,29 +515,29 @@ class TestFileObj(FilesTestCase):
         v1 = models.FileVersion(identifier='1')
         v1.save()
 
-        file = models.StoredFileNode(
+        file = TestFile(
             path='afile',
             name='name',
-            is_file=True,
             node=self.node,
             provider='test',
             materialized_path='/long/path/to/name',
         )
 
-        file.versions.append(v1)
+        file.save()
+
+        file.versions.add(v1)
         file.update_version_metadata(None, {'size': 1337})
 
         with assert_raises(exceptions.VersionNotFoundError):
             file.update_version_metadata('3', {})
-
+        v1.refresh_from_db()
         assert_equal(v1.size, 1337)
 
     @mock.patch('website.files.models.base.requests.get')
     def test_touch(self, mock_requests):
-        file = models.StoredFileNode(
+        file = TestFile(
             path='/afile',
             name='name',
-            is_file=True,
             node=self.node,
             provider='test',
             materialized_path='/long/path/to/name',
@@ -575,17 +558,15 @@ class TestFileObj(FilesTestCase):
             }
         }
         mock_requests.return_value = mock_response
-
         v = file.touch(None)
         assert_equals(v.size, 0xDEADBEEF)
-        assert_equals(len(file.versions), 0)
+        assert_equals(file.versions.count(), 0)
 
     @mock.patch('website.files.models.base.requests.get')
     def test_touch_caching(self, mock_requests):
-        file = models.StoredFileNode(
+        file = TestFile(
             path='/afile',
             name='name',
-            is_file=True,
             node=self.node,
             provider='test',
             materialized_path='/long/path/to/name',
@@ -605,8 +586,8 @@ class TestFileObj(FilesTestCase):
         mock_requests.return_value = mock_response
 
         v = file.touch(None, revision='foo')
-        assert_equals(len(file.versions), 1)
-        assert_is(file.touch(None, revision='foo'), v)
+        assert_equals(file.versions.count(), 1)
+        assert_equals(file.touch(None, revision='foo'), v)
 
     @mock.patch('website.files.models.base.requests.get')
     def test_touch_auth(self, mock_requests):
@@ -641,10 +622,9 @@ class TestFolderObj(FilesTestCase):
 
     def setUp(self):
         super(TestFolderObj, self).setUp()
-        self.parent = models.StoredFileNode(
+        self.parent = TestFolder(
             path='aparent',
             name='parent',
-            is_file=False,
             node=self.node,
             provider='test',
             materialized_path='/long/path/to/name',
@@ -652,10 +632,9 @@ class TestFolderObj(FilesTestCase):
         self.parent.save()
 
     def test_children(self):
-        models.StoredFileNode(
+        TestFile(
             path='afile',
             name='child',
-            is_file=True,
             node=self.node,
             parent=self.parent._id,
             provider='test',
@@ -664,10 +643,9 @@ class TestFolderObj(FilesTestCase):
 
         assert_equal(len(list(self.parent.children)), 1)
 
-        models.StoredFileNode(
+        TestFile(
             path='afile2',
             name='child2',
-            is_file=True,
             node=self.node,
             parent=self.parent._id,
             provider='test',
@@ -677,10 +655,9 @@ class TestFolderObj(FilesTestCase):
         assert_equal(len(list(self.parent.children)), 2)
 
     def test_delete(self):
-        child = models.StoredFileNode(
+        child = TestFile(
             path='afile',
             name='child',
-            is_file=True,
             node=self.node,
             parent=self.parent._id,
             provider='test',
