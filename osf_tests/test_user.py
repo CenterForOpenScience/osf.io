@@ -1485,7 +1485,7 @@ class TestUserMerging(OsfTestCase):
                 'other': today,
                 'shared': today,
             },
-            'tags': [Tag.load('user').id, Tag.load('shared').id, Tag.load('other').id],
+            'tags': [Tag.load('user', system=True).id, Tag.load('shared', system=True).id, Tag.load('other', system=True).id],
             'unclaimed_records': {},
         }
 
