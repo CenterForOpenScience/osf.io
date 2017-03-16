@@ -282,7 +282,7 @@ class OsfStorageFile(OsfStorageFileNode, File):
     def add_tag(self, tag, auth, save=True, log=True):
         from osf.models import Tag, NodeLog  # Prevent import error
 
-        if not self.tags.filter(name=tag).exists() and not self.node.is_registration:
+        if not self.tags.filter(system=False, name=tag).exists() and not self.node.is_registration:
             new_tag = Tag.load(tag)
             if not new_tag:
                 new_tag = Tag(name=tag)
@@ -300,7 +300,7 @@ class OsfStorageFile(OsfStorageFileNode, File):
         if self.node.is_registration:
             # Can't perform edits on a registration
             raise NodeStateError
-        tag_instance = Tag.objects.filter(name=tag).first()
+        tag_instance = Tag.objects.filter(system=False, name=tag).first()
         if not tag_instance:
             raise InvalidTagError
         elif not self.tags.filter(id=tag_instance.id).exists():
