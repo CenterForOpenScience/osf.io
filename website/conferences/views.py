@@ -165,7 +165,7 @@ def _render_conference_node(node, idx, conf):
         download_count = 0
 
     author = node.visible_contributors[0]
-    tags = list(node.tags.values_list('name', flat=True))
+    tags = list(node.tags.filter(system=False).values_list('name', flat=True))
 
     return {
         'id': idx,
@@ -261,7 +261,7 @@ def conference_submissions(**kwargs):
         # instead of doing a single Node query
         projects = set()
 
-        tags = Tag.find(Q('name', 'iexact', conf.endpoint.lower())).values_list('pk', flat=True)
+        tags = Tag.find(Q('system', 'eq', False) & Q('name', 'iexact', conf.endpoint.lower())).values_list('pk', flat=True)
         nodes = Node.find(
             Q('tags', 'in', tags) &
             Q('is_public', 'eq', True) &

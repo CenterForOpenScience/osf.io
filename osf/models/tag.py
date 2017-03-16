@@ -24,12 +24,12 @@ class Tag(BaseModel):
         return self.name.lower()
 
     @classmethod
-    def load(cls, data):
+    def load(cls, data, system=False):
         """For compatibility with v1: the tag name used to be the _id,
         so we make Tag.load('tagname') work as if `name` were the primary key.
         """
         try:
-            return cls.objects.get(name=data)
+            return cls.objects.get(system=system, name=data)
         except cls.DoesNotExist:
             return None
 
