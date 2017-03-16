@@ -182,7 +182,7 @@ def search(query, index=None, doc_type='_all', raw=False):
 
     :param query: The substring of the username/project name/tag to search for
     :param index:
-    :param doc_type:
+    :param doc_type: A comma-separated list of document types to search for
 
     :return: List of dictionaries, each containing the results, counts, tags and typeAliases
         results: All results returned by the query, that are within the index and search type
