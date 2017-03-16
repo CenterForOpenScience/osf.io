@@ -7,7 +7,6 @@ from citeproc import formatter
 from citeproc.source.json import CiteProcJSON
 
 from website.preprints.model import PreprintService
-from website.project.model import Node
 from website.settings import CITATION_STYLES_PATH
 
 
@@ -47,7 +46,6 @@ def render_citation(node, style='apa'):
     else:
         data = [node.csl, ]
 
-
     bib_source = CiteProcJSON(data)
 
     bib_style = CitationStylesStyle(os.path.join(CITATION_STYLES_PATH, style), validate=False)
@@ -58,7 +56,7 @@ def render_citation(node, style='apa'):
 
     bibliography.register(citation)
 
-    def warn(arg):
+    def warn(citation_item):
         pass
 
     bibliography.cite(citation, warn)
