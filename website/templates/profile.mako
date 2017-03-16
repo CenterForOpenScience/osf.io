@@ -1,4 +1,5 @@
 <%inherit file="base.mako"/>
+<%namespace name="render_nodes" file="util/render_nodes.mako" />
 <%def name="title()">${profile["fullname"]}</%def>
 <%def name="stylesheets()">
    ${parent.stylesheets()}
@@ -145,12 +146,10 @@
               <h3 class="panel-title" >Public projects</h3>
             </div>
             <div class="panel-body">
-                <div mod-meta='{
-                   "tpl" : "util/render_nodes.mako",
-                   "uri" : "/api/v1/profile/${profile["id"]}/public_projects/",
-                   "replace" : true,
-                   "kwargs" : {"sortable" : true, "user": ${ user | sjson, n }, "pluralized_node_type": "projects", "skipBindings": true}
-                 }'></div>
+              ${ render_nodes.render_nodes(nodes=public_projects,
+                                           sortable=False, user=user,
+                                           pluralized_node_type='projects',
+                                           show_path=False, include_js=False) }
             </div>
         </div>
     </div>
@@ -160,12 +159,7 @@
                 <h3 class="panel-title">Public components</h3>
             </div>
             <div class="panel-body">
-                <div mod-meta='{
-                  "tpl" : "util/render_nodes.mako",
-                  "uri" : "/api/v1/profile/${profile["id"]}/public_components/",
-                  "replace" : true,
-                  "kwargs" : {"sortable" : true,  "user": ${ user | sjson, n }, "pluralized_node_type": "components"}
-              }'></div>
+              ${ render_nodes.render_nodes(nodes=public_components, sortable=False, user=user, pluralized_node_type='components', show_path=True, include_js=True) }
             </div>
         </div>
     </div>
