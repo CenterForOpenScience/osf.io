@@ -1,10 +1,11 @@
 from __future__ import unicode_literals
 
 from django.core import serializers
-from django.core.urlresolvers import reverse
+from django.core.urlresolvers import reverse, reverse_lazy
 from django.http import HttpResponseForbidden, HttpResponse, JsonResponse
-from django.views.generic import ListView, FormView, DetailView, View
+from django.views.generic import ListView, FormView, DetailView, View, CreateView
 from django.views.generic.detail import SingleObjectMixin
+
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.forms.models import model_to_dict
 from django.shortcuts import redirect
@@ -212,3 +213,17 @@ class SubjectDynamicUpdateView(PermissionRequiredMixin, View):
         subject_html += '</ul>'
 
         return JsonResponse({'html': subject_html, 'subject_ids': subject_ids})
+
+
+class CreatePreprintProvider(PermissionRequiredMixin, CreateView):
+    permission_required = 'osf.change_preprint_provider'
+    raise_exception = True
+    template_name = 'preprint_providers/create.html'
+    success_url = reverse_lazy('preprint_providers:list')
+
+    model = PreprintProvider
+    fields = [
+        'name', 'logo_name', 'header_text', 'description', 'banner_name',
+        'external_url', 'email_contact', 'email_support', 'example', 'access_token',
+        'advisory_board', 'social_twitter', 'social_facebook', 'licenses_acceptable'
+    ]
