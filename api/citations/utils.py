@@ -59,6 +59,9 @@ def render_citation(node, style='apa'):
 
     bibliography.register(citation)
 
+    def warn(citation_item):
+        pass
+
     bibliography.cite(citation, warn)
     bib = bibliography.bibliography()
     cit = unicode(bib[0] if len(bib) else '')
