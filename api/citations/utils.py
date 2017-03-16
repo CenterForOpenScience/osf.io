@@ -41,13 +41,12 @@ def preprint_csl(preprint, node):
 def render_citation(node, style='apa'):
     """Given a node, return a citation"""
     csl = None
-    if isinstance(node, Node):
-        data = [node.csl, ]
-    elif isinstance(node, PreprintService):
+    if isinstance(node, PreprintService):
         csl = preprint_csl(node, node.node)
         data = [csl, ]
     else:
-        raise ValueError
+        data = [node.csl, ]
+
 
     bib_source = CiteProcJSON(data)
 
@@ -58,6 +57,9 @@ def render_citation(node, style='apa'):
     citation = Citation([CitationItem(node._id)])
 
     bibliography.register(citation)
+
+    def warn(arg):
+        pass
 
     bibliography.cite(citation, warn)
     bib = bibliography.bibliography()

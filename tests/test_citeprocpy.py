@@ -1,6 +1,6 @@
 import os
 import json
-import pytest
+from nose.tools import *
 
 from api.citations.utils import render_citation
 
