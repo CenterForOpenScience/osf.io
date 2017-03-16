@@ -38,8 +38,7 @@ class PreprintMixin(NodeMixin):
         preprint = get_object_or_error(
             PreprintService,
             self.kwargs[self.preprint_lookup_url_kwarg],
-            display_name='preprint',
-            prefetch_fields=self.serializer_class().model_field_names
+            display_name='preprint'
         )
         if not preprint:
             raise NotFound

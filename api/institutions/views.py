@@ -40,8 +40,7 @@ class InstitutionMixin(object):
         inst = get_object_or_error(
             Institution,
             self.kwargs[self.institution_lookup_url_kwarg],
-            display_name='institution',
-            prefetch_fields=self.serializer_class().model_field_names
+            display_name='institution'
         )
         return inst
 
