@@ -345,7 +345,7 @@ var tbOptions = {
     },
     resolveToggle : _poResolveToggle,
     resolveLazyloadUrl : function(item) {
-    if (item.data.relationships.children.links.related.meta.count === item.children.length)
+    if (item.open || item.data.relationships.children.links.related.meta.count === item.children.length)
         return null;
       var tb = this;
       var deferred = $.Deferred();
