@@ -13,7 +13,9 @@ volumes:
     external: false
   preprints_dist_vol:
     external: false
-  registries_dist_vol:
+  # registries_dist_vol:
+  #   external: false
+  ember-osf_vol:
     external: false
   mfr_requirements_vol:
     external: false
@@ -87,21 +89,6 @@ services:
       - 15672:15672
     volumes:
       - rabbitmq_vol:/var/lib/rabbitmq
-    stdin_open: true
-    tty: true
-
-  redis:
-    image: redis
-    command: |-
-      /bin/bash -c "
-        mkdir -p /usr/local/etc/redis &&
-        echo \"maxmemory 100mb\" > /usr/local/etc/redis/redis.conf &&
-        echo \"maxmemory-policy allkeys-lru\" >> /usr/local/etc/redis/redis.conf &&
-        echo \"tcp-backlog 128\" >> /usr/local/etc/redis/redis.conf &&
-        /usr/local/bin/docker-entrypoint.sh redis-server /usr/local/etc/redis/redis.conf
-      "
-    ports:
-      - 6379:6379
     stdin_open: true
     tty: true
 
@@ -209,28 +196,37 @@ services:
       - 4200:4200
     volumes:
       - preprints_dist_vol:/code/dist
+      - ember-osf_vol:/ember-osf
     stdin_open: true
     tty: true
+
+  ember-osf:
+    build: ../ember-osf
+    command: /bin/bash -c "yarn --pure-lockfile --no-progress --no-emoji && ./node_modules/bower/bin/bower install --allow-root --config.interactive=false && ./node_modules/ember-cli/bin/ember serve --host 0.0.0.0 --port 4200"
+    expose:
+      - 4200
+    ports:
+      - 4200:4200
 
   ##############
   # Registries #
   ##############
 
-  registries:
-    image: quay.io/centerforopenscience/ember-osf-registries:develop-development-local
-    build: ../ember-osf-registries
-    command: /bin/bash -c "yarn --pure-lockfile --no-progress --no-emoji && ./node_modules/bower/bin/bower install --allow-root --config.interactive=false && ./node_modules/ember-cli/bin/ember serve --host 0.0.0.0 --port 4300"
-    restart: unless-stopped
-    environment:
-      - BACKEND=local
-    expose:
-      - 4300
-    ports:
-      - 4300:4300
-    volumes:
-      - registries_dist_vol:/code/dist
-    stdin_open: true
-    tty: true
+  # registries:
+  #   # image: quay.io/centerforopenscience/ember-preprints:develop-development-local
+  #   build: ../ember-osf-registries
+  #   command: /bin/bash -c "yarn --pure-lockfile --no-progress --no-emoji && ./node_modules/bower/bin/bower install --allow-root --config.interactive=false && ./node_modules/ember-cli/bin/ember serve --host 0.0.0.0 --port 4300"
+  #   restart: unless-stopped
+  #   environment:
+  #     - BACKEND=local
+  #   expose:
+  #     - 4300
+  #   ports:
+  #     - 4300:4300
+  #   volumes:
+  #     - registries_dist_vol:/code/dist
+  #   stdin_open: true
+  #   tty: true
 
 
   #######
@@ -318,7 +314,6 @@ services:
     restart: unless-stopped
     depends_on:
       - postgres
-      - redis
       - rabbitmq
       - elasticsearch
     environment:
@@ -343,7 +338,6 @@ services:
       - 8001:8001
     depends_on:
       - postgres
-      - redis
       - tokumx
       - rabbitmq
       - elasticsearch
@@ -367,7 +361,6 @@ services:
     depends_on:
       - postgres
       - tokumx
-      - redis
       - rabbitmq
       - elasticsearch
     environment:
@@ -390,7 +383,6 @@ services:
     depends_on:
       - postgres
       - tokumx
-      - redis
       - rabbitmq
       - elasticsearch
     environment:
@@ -402,6 +394,6 @@ services:
       - osf_bower_components_vol:/code/website/static/vendor/bower_components
       - osf_node_modules_vol:/code/node_modules
       - preprints_dist_vol:/preprints
-      - registries_dist_vol:/registries
+      # - registries_dist_vol:/registries
     stdin_open: true
     tty: true
