@@ -16,6 +16,27 @@ def clean_up_common_errors(cit):
     cit = re.sub(r" +", ' ', cit)
     return cit
 
+def display_absolute_url(node):
+    url = node.absolute_url
+    if url is not None:
+        return re.sub(r'https?:', '', url).strip('/')
+
+
+def preprint_csl(preprint, node):
+    csl = node.csl
+
+    csl['id'] = preprint._id
+    csl['publisher'] = preprint.provider.name
+    csl['URL'] = display_absolute_url(preprint)
+
+    if csl.get('DOI'):
+        csl.pop('DOI')
+
+    doi = preprint.article_doi
+    if doi:
+        csl['DOI'] = doi
+
+    return csl
 
 def render_citation(node, style='apa'):
     """Given a node, return a citation"""
@@ -38,12 +59,8 @@ def render_citation(node, style='apa'):
 
     bibliography.register(citation)
 
-    def warn(citation_item):
-        pass
-
     bibliography.cite(citation, warn)
     bib = bibliography.bibliography()
-
     cit = unicode(bib[0] if len(bib) else '')
 
     title = csl['title'] if csl else node.csl['title']
