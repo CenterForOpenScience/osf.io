@@ -189,11 +189,7 @@ def conference_data(meeting):
     except ModularOdmException:
         raise HTTPError(httplib.NOT_FOUND)
 
-    nodes = Node.find(
-        Q('tags__name', 'iexact', meeting) &
-        Q('is_public', 'eq', True) &
-        Q('is_deleted', 'eq', False)
-    )
+    nodes = Node.objects.filter(tags__id__in=Tag.objects.filter(name__iexact=meeting, system=False).values_list('id', flat=True), is_public=True, is_deleted=False)
 
     ret = [
         _render_conference_node(each, idx, conf)
