@@ -71,7 +71,7 @@ def absolute_reverse(view_name, query_kwargs=None, args=None, kwargs=None):
     return url
 
 
-def get_object_or_error(model_cls, query_or_pk, display_name=None, prefetch_fields=()):
+def get_object_or_error(model_cls, query_or_pk, display_name=None):
     obj = query = None
     if isinstance(query_or_pk, basestring):
         # they passed a 5-char guid as a string
