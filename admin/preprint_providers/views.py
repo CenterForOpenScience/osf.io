@@ -78,7 +78,7 @@ class PreprintProviderDisplay(PermissionRequiredMixin, DetailView):
         ]
         preprint_provider_attributes['licenses_acceptable'] = '; '.join(preprint_licenses)
 
-        subject_html = '<ul>'
+        subject_html = '<ul class="three-cols">'
         for parent in preprint_provider.top_level_subjects:
             subject_html += '<li>{}</li>'.format(parent.text)
             child_html = '<ul>'
