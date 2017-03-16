@@ -1052,5 +1052,22 @@ class TestAUserProfile(OsfTestCase):
         assert_in('This user has no public projects', res)
         assert_in('This user has no public components', res)
 
+    # regression test
+    def test_does_not_show_registrations(self):
+        project = ProjectFactory(creator=self.user)
+        component = NodeFactory(parent=project, creator=self.user, is_public=False)
+        # User has a registration with public components
+        reg = RegistrationFactory(project=component.parent_node, creator=self.user, is_public=True)
+        for each in reg.nodes:
+            each.is_public = True
+            each.save()
+        # I go to other user's profile
+        url = web_url_for('profile_view_id', uid=self.user._id)
+        # Registration does not appear on profile
+        res = self.app.get(url, auth=self.me.auth)
+        assert_in('This user has no public components', res)
+        assert_not_in(reg.title, res)
+        assert_not_in(reg.nodes[0].title, res)
+
 if __name__ == '__main__':
     unittest.main()

@@ -52,7 +52,10 @@ def get_public_projects(uid=None, user=None):
         .get_roots()
         .distinct()
         .annotate(nlogs=Count('logs'))
+        # Defer some fields that we don't use for rendering node lists
+        .defer('child_node_subscriptions', 'date_created', 'deleted_date', 'description', 'file_guid_to_share_uuids')
         .eager('parent_nodes', '_contributors')
+        .order_by('-date_modified')
     )
     return [
         serialize_node_summary(node=node, auth=Auth(user), show_path=False)
@@ -62,15 +65,20 @@ def get_public_projects(uid=None, user=None):
 
 def get_public_components(uid=None, user=None):
     user = user or User.load(uid)
+    # Filtering on noderelations implicitly filters for nodes that have a parent
     node_relations = (
         NodeRelation.objects.filter(
-            parent___contributors=user,
             child__is_public=True,
-            is_node_link=False
+            child__type='osf.node',  # nodes only (not collections or registration)
+            child___contributors=user,  # user is a contributor
+            is_node_link=False  # exclude childs by node linkage
         )
         .exclude(parent__type='osf.collection')
         .exclude(child__is_deleted=True)
         .select_related('child')
+        # Defer some fields that we don't use for rendering node lists
+        .defer('child__child_node_subscriptions', 'child__date_created', 'child__deleted_date', 'child__description', 'child__file_guid_to_share_uuids')
+        .order_by('-child__date_modified')
     )
     return [
         serialize_node_summary(node=each.child, auth=Auth(user), show_path=True)
