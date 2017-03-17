@@ -11,7 +11,7 @@ from modularodm.exceptions import NoResultsFound
 from typedmodels.models import TypedModel
 
 from framework.analytics import get_basic_counters
-from osf.models.base import BaseModel, OptionalGuidMixin, ObjectIDMixin, Guid
+from osf.models.base import BaseModel, OptionalGuidMixin, ObjectIDMixin
 from osf.models.comment import CommentableMixin
 from osf.models.validators import validate_location
 from osf.modm_compat import Q
@@ -64,7 +64,6 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, ObjectIDMixi
     # /TODO DELETE ME POST MIGRATION]
     version_identifier = 'revision'  # For backwards compatibility
     FOLDER, FILE, ANY = 0, 1, 2
-
 
     # The User that has this file "checked out"
     # Should only be used for OsfStorage
@@ -392,8 +391,8 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, ObjectIDMixi
         """
         raise DeprecatedException('Wrapped is deprecated.')
 
-    def save(self, *args, **kwargs):
-        if hasattr(self._meta.model, '_provider'):
+    def save(self, *args, **kwargs):                  # TODO is there a way to do this with inheritance?
+        if hasattr(self._meta.model, '_provider') and self._meta.model._provider is not None:
             self.provider = self._meta.model._provider
         super(BaseFileNode, self).save(*args, **kwargs)
 
@@ -561,6 +560,7 @@ class UnableToDelete(Exception):
 
 class TrashedFileNode(BaseFileNode):
     is_deleted = True
+    _provider = None
 
     def delete(self, user=None, parent=None, save=True, deleted_on=None):
         if isinstance(self, TrashedFileNode):
