@@ -145,16 +145,6 @@ class TestUserNodesPreprintsFiltering(ApiTestCase):
         assert_equal(set(expected_ids), set(actual_ids))
 
 
-class TestUserNodeListFiltering(NodesListFilteringMixin, ApiTestCase):
+class TestNodeListFiltering(NodesListFilteringMixin, ApiTestCase):
 
-    def _setUp(self):
-        self.user = AuthUserFactory()
-
-        self.node_A = ProjectFactory(creator=self.user)
-        self.node_B1 = NodeFactory(parent=self.node_A, creator=self.user)
-        self.node_B2 = NodeFactory(parent=self.node_A, creator=self.user)
-        self.node_C1 = NodeFactory(parent=self.node_B1, creator=self.user)
-        self.node_C2 = NodeFactory(parent=self.node_B2, creator=self.user)
-        self.node_D2 = NodeFactory(parent=self.node_C2, creator=self.user)
-
-        self.url = '/{}users/me/nodes/?'.format(API_BASE)
+    url = '/{}users/me/nodes/?'.format(API_BASE)

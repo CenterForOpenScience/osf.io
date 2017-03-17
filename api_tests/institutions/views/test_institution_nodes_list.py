@@ -93,19 +93,20 @@ class TestInstitutionNodeList(ApiTestCase):
         assert_in(self.component._id, affiliated_node_ids)
 
 
-class TestInstitutionNodeListFiltering(NodesListFilteringMixin, ApiTestCase):
+class TestNodeListFiltering(NodesListFilteringMixin, ApiTestCase):
 
-    def _setUp(self):
-
-        self.user = AuthUserFactory()
+    def setUp(self):
         self.institution = InstitutionFactory()
+        self.url = '/{}institutions/{}/nodes/?version=2.2&'.format(API_BASE, self.institution._id)
 
-        self.node_A = ProjectFactory(is_public=True)
-        self.node_B1 = NodeFactory(parent=self.node_A, is_public=True)
-        self.node_B2 = NodeFactory(parent=self.node_A, is_public=True)
-        self.node_C1 = NodeFactory(parent=self.node_B1, is_public=True)
-        self.node_C2 = NodeFactory(parent=self.node_B2, is_public=True)
-        self.node_D2 = NodeFactory(parent=self.node_C2, is_public=True)
+        super(TestNodeListFiltering, self).setUp()
+
+        self.node_A.is_public = True
+        self.node_B1.is_public = True
+        self.node_B2.is_public = True
+        self.node_C1.is_public = True
+        self.node_C2.is_public = True
+        self.node_D2.is_public = True
 
         self.node_A.affiliated_institutions.add(self.institution)
         self.node_B1.affiliated_institutions.add(self.institution)
@@ -120,5 +121,3 @@ class TestInstitutionNodeListFiltering(NodesListFilteringMixin, ApiTestCase):
         self.node_C1.save()
         self.node_C2.save()
         self.node_D2.save()
-
-        self.url = '/{}institutions/{}/nodes/?version=2.2&'.format(API_BASE, self.institution._id)

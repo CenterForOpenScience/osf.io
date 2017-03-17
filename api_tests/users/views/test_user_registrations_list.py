@@ -113,17 +113,4 @@ class TestUserRegistrations(ApiTestCase):
 
 class TestRegistrationListFiltering(RegistrationListFilteringMixin, ApiTestCase):
 
-    def _setUp(self):
-        self.user = AuthUserFactory()
-
-        self.A = ProjectFactory(creator=self.user)
-        self.B1 = NodeFactory(parent=self.A, creator=self.user)
-        self.B2 = NodeFactory(parent=self.A, creator=self.user)
-        self.C1 = NodeFactory(parent=self.B1, creator=self.user)
-        self.C2 = NodeFactory(parent=self.B2, creator=self.user)
-        self.D2 = NodeFactory(parent=self.C2, creator=self.user)
-
-        self.node_A = RegistrationFactory(project=self.A, creator=self.user)
-        self.node_B2 = RegistrationFactory(project=self.B2, creator=self.user)
-
-        self.url = '/{}registrations/?'.format(API_BASE)
+    url = '/{}users/me/registrations/?'.format(API_BASE)

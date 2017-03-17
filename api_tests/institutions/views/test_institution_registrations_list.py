@@ -13,6 +13,7 @@ from osf_tests.factories import (
 from framework.auth import Auth
 from api.base.settings.defaults import API_BASE
 from api_tests.registrations.filters.test_filters import RegistrationListFilteringMixin
+from osf.models import Node
 
 class TestInstitutionRegistrationList(ApiTestCase):
     def setUp(self):
@@ -81,32 +82,26 @@ class TestInstitutionRegistrationList(ApiTestCase):
 
 class TestRegistrationListFiltering(RegistrationListFilteringMixin, ApiTestCase):
 
-    def _setUp(self):
-        self.user = AuthUserFactory()
+    def setUp(self):
         self.institution = InstitutionFactory()
+        self.url = '/{}institutions/{}/registrations/?version=2.2&'.format(API_BASE, self.institution._id)
 
-        self.A = ProjectFactory(creator=self.user)
-        self.B1 = NodeFactory(parent=self.A, creator=self.user)
-        self.B2 = NodeFactory(parent=self.A, creator=self.user)
-        self.C1 = NodeFactory(parent=self.B1, creator=self.user)
-        self.C2 = NodeFactory(parent=self.B2, creator=self.user)
-        self.D2 = NodeFactory(parent=self.C2, creator=self.user)
+        super(TestRegistrationListFiltering, self).setUp()
 
-        self.A.affiliated_institutions.add(self.institution)
-        self.B1.affiliated_institutions.add(self.institution)
-        self.B2.affiliated_institutions.add(self.institution)
-        self.C1.affiliated_institutions.add(self.institution)
-        self.C2.affiliated_institutions.add(self.institution)
-        self.D2.affiliated_institutions.add(self.institution)
+        A_children = [child for child in Node.objects.get_children(self.node_A)]
+        B2_children = [child for child in Node.objects.get_children(self.node_B2)]
 
-        self.A.save()
-        self.B1.save()
-        self.B2.save()
-        self.C1.save()
-        self.C2.save()
-        self.D2.save()
+        for child in (A_children + B2_children):
+            child.affiliated_institutions.add(self.institution)
+            child.is_public = True
+            child.save()
 
-        self.node_A = RegistrationFactory(project=self.A, creator=self.user)
-        self.node_B2 = RegistrationFactory(project=self.B2, creator=self.user)
+        self.node_A.is_public = True
+        self.node_B2.is_public = True
+        self.node_A.affiliated_institutions.add(self.institution)
+        self.node_B2.affiliated_institutions.add(self.institution)
 
-        self.url = '/{}registrations/?'.format(API_BASE)
+        self.node_A.save()
+        self.node_B2.save()
+
+

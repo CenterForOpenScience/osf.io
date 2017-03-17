@@ -2125,14 +2125,6 @@ class TestNodeListPagination(ApiTestCase):
 
 class TestNodeListFiltering(NodesListFilteringMixin, ApiTestCase):
 
-    def _setUp(self):
-        self.user = AuthUserFactory()
+    url = '/{}nodes/?'.format(API_BASE)
 
-        self.node_A = ProjectFactory(creator=self.user)
-        self.node_B1 = NodeFactory(parent=self.node_A, creator=self.user)
-        self.node_B2 = NodeFactory(parent=self.node_A, creator=self.user)
-        self.node_C1 = NodeFactory(parent=self.node_B1, creator=self.user)
-        self.node_C2 = NodeFactory(parent=self.node_B2, creator=self.user)
-        self.node_D2 = NodeFactory(parent=self.node_C2, creator=self.user)
 
-        self.url = '/{}nodes/?'.format(API_BASE)
