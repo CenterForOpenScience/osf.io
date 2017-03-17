@@ -249,6 +249,10 @@ class OsfStorageFile(OsfStorageFileNode, File):
             metadata.append(meta)
         return metadata
 
+    @history.setter
+    def history(self, value):
+        logger.warn('Tried to set history on OsfStorageFile/Folder')
+
     def serialize(self, include_full=None, version=None):
         ret = super(OsfStorageFile, self).serialize()
         if include_full:

@@ -64,7 +64,7 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, ObjectIDMixi
     # A list of dictionaries sorted by the 'modified' key
     # The raw output of the metadata request deduped by etag
     # Add regardless it can be pinned to a version or not
-    history = DateTimeAwareJSONField(default=[], blank=True)
+    _history = DateTimeAwareJSONField(default=[], blank=True)
     # A concrete version of a FileNode, must have an identifier
     versions = models.ManyToManyField('FileVersion')
 
@@ -222,6 +222,14 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, ObjectIDMixi
         _, count = get_basic_counters(page)
 
         return count or 0
+
+    @property
+    def history(self):
+        return self._history
+
+    @history.setter
+    def history(self, value):
+        setattr(self, '_history', value)
 
     @property
     def is_file(self):
@@ -436,15 +444,6 @@ class Folder(models.Model):
         """
         return FileNode.find(Q('parent_id', 'eq', self.id))
 
-    # def delete(self, recurse=True, user=None, parent=None):
-    #     trashed = self._create_trashed(user=user, parent=parent)
-    #     if recurse:
-    #         for child in self.children:
-    #             child.delete(user=user, parent=trashed)
-    #     self._repoint_guids(trashed)
-    #     StoredFileNode.remove_one(self.stored_object)
-    #     return trashed
-
     def append_file(self, name, path=None, materialized_path=None, save=True):
         return self._create_child(name, File, path=path, materialized_path=materialized_path, save=save)
 
@@ -452,6 +451,9 @@ class Folder(models.Model):
         return self._create_child(name, Folder, path=path, materialized_path=materialized_path, save=save)
 
     def _create_child(self, name, kind, path=None, materialized_path=None, save=True):
+        if not self.pk:
+            logger.warn('BaseFileNode._create_child caused an implicit save because you just created a child with an unsaved parent.')
+            self.save()
         child = self._resolve_class(kind)(
             name=name,
             node=self.node,
