@@ -16,7 +16,7 @@ from osf.models import Institution
 
 class InstitutionList(PermissionRequiredMixin, ListView):
     paginate_by = 25
-    template_name = 'institutions/institution_list.html'
+    template_name = 'institutions/list.html'
     ordering = 'name'
     permission_required = 'osf.view_institution'
     raise_exception = True
@@ -38,7 +38,7 @@ class InstitutionList(PermissionRequiredMixin, ListView):
 
 class InstitutionDisplay(PermissionRequiredMixin, DetailView):
     model = Institution
-    template_name = 'institutions/institution.html'
+    template_name = 'institutions/detail.html'
     permission_required = 'osf.view_institution'
     raise_exception = True
 
@@ -70,7 +70,7 @@ class InstitutionDetail(PermissionRequiredMixin, View):
 
 
 class InstitutionChangeForm(PermissionRequiredMixin, SingleObjectMixin, FormView):
-    template_name = 'institutions/institution.html'
+    template_name = 'institutions/detail.html'
     form_class = InstitutionForm
     model = Institution
     permission_required = 'osf.change_institution'
