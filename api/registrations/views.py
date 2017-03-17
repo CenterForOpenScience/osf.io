@@ -60,8 +60,7 @@ class RegistrationMixin(NodeMixin):
         node = get_object_or_error(
             Node,
             self.kwargs[self.node_lookup_url_kwarg],
-            display_name='node',
-            prefetch_fields=self.serializer_class().model_field_names,
+            display_name='node'
 
         )
         # Nodes that are folders/collections are treated as a separate resource, so if the client

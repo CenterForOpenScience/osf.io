@@ -286,11 +286,7 @@ SHELL_PLUS_PRE_IMPORTS = (
 )
 # cacheops
 
-CACHEOPS_REDIS = {
-    'host': 'localhost',
-    'port': 6379,
-    'db': 1,
-}
+CACHEOPS_REDIS = os.environ.get('REDIS_URL', 'redis://localhost:6379/1')
 # fail gracefully if redis is not running
 CACHEOPS_DEGRADE_ON_FAILURE = False
 CACHEOPS = {

@@ -30,7 +30,6 @@ from framework.auth.exceptions import (ChangePasswordError, ExpiredTokenError,
                                        MergeConfirmedRequiredError,
                                        MergeConflictError)
 from framework.exceptions import PermissionsError
-from framework.sentry import log_exception
 from framework.sessions.utils import remove_sessions_for_user
 from framework.mongo import get_cache_key
 from modularodm.exceptions import NoResultsFound
@@ -41,7 +40,7 @@ from osf.models.institution import Institution
 from osf.models.mixins import AddonModelMixin
 from osf.models.session import Session
 from osf.models.tag import Tag
-from osf.models.validators import validate_email, validate_social
+from osf.models.validators import validate_email, validate_social, validate_history_item
 from osf.modm_compat import Q
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import NonNaiveDateTimeField
@@ -158,7 +157,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     # Hashed. Use `User.set_password` and `User.check_password`
     # password = models.CharField(max_length=255)
 
-    fullname = models.CharField(max_length=255, blank=True)
+    fullname = models.CharField(max_length=255)
 
     # user has taken action to register the account
     is_registered = models.BooleanField(db_index=True, default=False)
@@ -291,9 +290,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     # }
 
     # Employment history
-    # jobs = fields.DictionaryField(list=True, validate=validate_history_item)
-    # TODO: Add validation
-    jobs = DateTimeAwareJSONField(default=list, blank=True)
+    jobs = DateTimeAwareJSONField(default=list, blank=True, validators=[validate_history_item])
     # Format: list of {
     #     'title': <position or job title>,
     #     'institution': <institution or organization>,
@@ -307,9 +304,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     # }
 
     # Educational history
-    # schools = fields.DictionaryField(list=True, validate=validate_history_item)
-    # TODO: Add validation
-    schools = DateTimeAwareJSONField(default=list, blank=True)
+    schools = DateTimeAwareJSONField(default=list, blank=True, validators=[validate_history_item])
     # Format: list of {
     #     'degree': <position or job title>,
     #     'institution': <institution or organization>,
@@ -323,8 +318,6 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     # }
 
     # Social links
-    # social = fields.DictionaryField(validate=validate_social)
-    # TODO: Add validation
     social = DateTimeAwareJSONField(default=dict, blank=True, validators=[validate_social])
     # Format: {
     #     'profileWebsites': <list of profile websites>
@@ -727,6 +720,8 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
                 raise
         except mailchimp_utils.mailchimp.EmailNotExistsError:
             pass
+        # Call to `unsubscribe` above saves, and can lead to stale data
+        self.reload()
         self.is_disabled = True
 
         # we must call both methods to ensure the current session is cleared and all existing
@@ -1119,12 +1114,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
     def update_search(self):
         from website.search.search import update_user
-        from website.search.exceptions import SearchUnavailableError
-        try:
-            update_user(self)
-        except SearchUnavailableError as e:
-            logger.exception(e)
-            log_exception()
+        update_user(self)
 
     def update_search_nodes_contributors(self):
         """
@@ -1133,7 +1123,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         :return:
         """
         from website.search import search
-        search.update_contributors(self.visible_contributor_to)
+        search.update_contributors_async(self.id)
 
     def update_search_nodes(self):
         """Call `update_search` on all nodes on which the user is a

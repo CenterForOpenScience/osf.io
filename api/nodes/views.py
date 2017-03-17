@@ -104,8 +104,7 @@ class NodeMixin(object):
         node = get_object_or_error(
             Node,
             self.kwargs[self.node_lookup_url_kwarg],
-            display_name='node',
-            prefetch_fields=self.serializer_class().model_field_names
+            display_name='node'
         )
         # Nodes that are folders/collections are treated as a separate resource, so if the client
         # requests a collection through a node endpoint, we return a 404
@@ -125,7 +124,7 @@ class DraftMixin(object):
         node_id = self.kwargs['node_id']
         if draft_id is None:
             draft_id = self.kwargs['draft_id']
-        draft = get_object_or_error(DraftRegistration, draft_id, prefetch_fields=self.serializer_class().model_field_names)
+        draft = get_object_or_error(DraftRegistration, draft_id)
 
         if not draft.branched_from._id == node_id:
             raise ValidationError('This draft registration is not created from the given node.')
@@ -1511,8 +1510,7 @@ class NodeLinksDetail(BaseNodeLinksDetail, generics.RetrieveDestroyAPIView, Node
         node_link = get_object_or_error(
             NodeRelation,
             self.kwargs[self.node_link_lookup_url_kwarg],
-            'node link',
-            prefetch_fields=self.serializer_class().model_field_names
+            'node link'
         )
         self.check_object_permissions(self.request, node_link)
         return node_link
