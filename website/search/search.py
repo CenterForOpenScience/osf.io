@@ -57,9 +57,6 @@ def delete_node(node, index=None):
         doc_type = 'registration'
     search_engine.delete_doc(node._id, node, index=index, category=doc_type)
 
-def update_contributors(nodes):
-    search_engine.bulk_update_contributors(nodes)
-
 @requires_search
 def update_contributors_async(user_id):
     """Async version of update_contributors above"""
