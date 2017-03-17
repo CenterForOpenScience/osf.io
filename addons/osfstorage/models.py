@@ -73,7 +73,8 @@ class OsfStorageFileNode(BaseFileNode):
 
     @materialized_path.setter
     def materialized_path(self, val):
-        raise Exception('Cannot set materialized path on OSFStorage as it is computed.')
+        # raise Exception('Cannot set materialized path on OSFStorage as it is computed.')
+        logger.warn('Cannot set materialized path on OSFStorage because it\'s computed.')
 
     @classmethod
     def get(cls, _id, node):
@@ -129,31 +130,6 @@ class OsfStorageFileNode(BaseFileNode):
     @property
     def kind(self):
         return 'file' if self.is_file else 'folder'
-
-    @property
-    def materialized_path(self):
-        """creates the full path to a the given filenode
-        Note: Possibly high complexity/ many database calls
-        USE SPARINGLY
-        """
-        if not self.parent:
-            return '/'
-
-        # Note: ODM cache can be abused here
-        # for highly nested folders calling
-        # list(self.__class__.find(Q(nodesetting),Q(folder))
-        # may result in a massive increase in performance
-
-        def lineage():
-            current = self
-            while current:
-                yield current
-                current = current.parent
-
-        path = os.path.join(*reversed([x.name for x in lineage()]))
-        if self.is_file:
-            return '/{}'.format(path)
-        return '/{}/'.format(path)
 
     @property
     def path(self):

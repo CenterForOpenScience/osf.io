@@ -11,7 +11,7 @@ from modularodm.exceptions import NoResultsFound
 from typedmodels.models import TypedModel
 
 from framework.analytics import get_basic_counters
-from osf.models.base import BaseModel, OptionalGuidMixin, ObjectIDMixin
+from osf.models.base import BaseModel, OptionalGuidMixin, ObjectIDMixin, Guid
 from osf.models.comment import CommentableMixin
 from osf.models.validators import validate_location
 from osf.modm_compat import Q
@@ -42,6 +42,14 @@ class BaseFileNodeManager(Manager):
             return qs
 
 
+class UnableToResolveFileClass(Exception):
+    pass
+
+
+class DeprecatedException(Exception):
+    pass
+
+
 class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, ObjectIDMixin, BaseModel):
     """
         The storage backend for FileNode objects.
@@ -55,6 +63,8 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, ObjectIDMixi
     migration_page_size = 10000
     # /TODO DELETE ME POST MIGRATION]
     version_identifier = 'revision'  # For backwards compatibility
+    FOLDER, FILE, ANY = 0, 1, 2
+
 
     # The User that has this file "checked out"
     # Should only be used for OsfStorage
@@ -90,6 +100,109 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, ObjectIDMixi
             ('node', 'type', 'provider'),
         )
 
+    @property
+    def history(self):
+        return self._history
+
+    @history.setter
+    def history(self, value):
+        setattr(self, '_history', value)
+
+    @property
+    def is_file(self):
+        # TODO split is file logic into subclasses
+        return issubclass(self.__class__, (File, TrashedFile))
+
+    @property
+    def path(self):
+        return self._path
+
+    @path.setter
+    def path(self, value):
+        self._path = value
+
+    @property
+    def materialized_path(self):
+        return self._materialized_path
+
+    @materialized_path.setter
+    def materialized_path(self, val):
+        self._materialized_path = val
+
+    @property
+    def deep_url(self):
+        """The url that this filenodes guid should resolve to.
+        Implemented here so that subclasses may override it or path.
+        See OsfStorage or PathFollowingNode.
+        """
+        return self.node.web_url_for('addon_view_or_download_file', provider=self.provider, path=self.path.strip('/'))
+
+    @property
+    def absolute_api_v2_url(self):
+        path = '/files/{}/'.format(self._id)
+        return api_v2_url(path)
+
+    # For Comment API compatibility
+    @property
+    def target_type(self):
+        """The object "type" used in the OSF v2 API."""
+        return 'files'
+
+    @property
+    def root_target_page(self):
+        """The comment page type associated with StoredFileNodes."""
+        return 'files'
+
+    @property
+    def stored_object(self):
+        """
+        DEPRECATED: Returns self after logging.
+        :return:
+        """
+        logger.warn('BaseFileNode.stored_object is deprecated.')
+        return self
+
+    @stored_object.setter
+    def stored_object(self, value):
+        raise DeprecatedException('BaseFileNode.stored_object is deprecated.')
+
+    @classmethod
+    def create(cls, **kwargs):
+        kwargs.update(provider=cls._provider)
+        return cls(**kwargs)
+
+    @classmethod
+    def get_or_create(cls, node, path):
+        obj, _ = cls.objects.get_or_create(node=node, _path='/' + path.lstrip('/'))
+        return obj
+
+    @classmethod
+    def get_file_guids(cls, materialized_path, provider, node):
+        guids = []
+        materialized_path = '/' + materialized_path.lstrip('/')
+        if materialized_path.endswith('/'):
+            # it's a folder
+            folder_children = cls.find(Q('provider', 'eq', provider) &
+                                       Q('node', 'eq', node) &
+                                       Q('_materialized_path', 'startswith', materialized_path))
+            for item in folder_children:
+                if item.kind == 'file':
+                    guid = item.get_guid()
+                    if guid:
+                        guids.append(guid._id)
+        else:
+            # it's a file
+            try:
+                file_obj = cls.find_one(
+                    Q('node', 'eq', node) & Q('_materialized_path', 'eq', materialized_path))
+            except NoResultsFound:
+                return guids
+            guid = file_obj.get_guid()
+            if guid:
+                guids.append(guid._id)
+
+        return guids
+
     def to_storage(self):
         storage = super(BaseFileNode, self).to_storage()
         if 'trashed' not in self.type.lower():
@@ -97,6 +210,21 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, ObjectIDMixi
                 if 'deleted' in key:
                     storage.pop(key)
         return storage
+
+    @classmethod
+    def resolve_class(cls, provider, type_integer):
+        type_mapping = {0: File, 1: Folder, 2: None}
+        type_cls = type_mapping[type_integer]
+
+        for subclass in BaseFileNode.__subclasses__():
+            if type_cls:
+                for subsubclass in subclass.__subclasses__():
+                    if issubclass(subsubclass, type_cls) and subsubclass._provider == provider:
+                        return subsubclass
+            else:
+                if subclass._provider == provider:
+                    return subclass
+        raise UnableToResolveFileClass('Could not resolve class for {} and {}'.format(provider, type_cls))
 
     def _resolve_class(self, type_cls):
         for subclass in BaseFileNode.__subclasses__():
@@ -223,58 +351,15 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, ObjectIDMixi
 
         return count or 0
 
-    @property
-    def history(self):
-        return self._history
+    def copy_under(self, destination_parent, name=None):
+        return utils.copy_files(self, destination_parent.node, destination_parent, name=name)
 
-    @history.setter
-    def history(self, value):
-        setattr(self, '_history', value)
+    def move_under(self, destination_parent, name=None):
+        self.name = name or self.name
+        self.parent = destination_parent.stored_object
+        self._update_node(save=True)  # Trust _update_node to save us
 
-    @property
-    def is_file(self):
-        # TODO split is file logic into subclasses
-        return issubclass(self.__class__, (File, TrashedFile))
-
-    @property
-    def path(self):
-        return self._path
-
-    @path.setter
-    def path(self, value):
-        self._path = value
-
-    @property
-    def materialized_path(self):
-        return self._materialized_path
-
-    @materialized_path.setter
-    def materialized_path(self, val):
-        self._materialized_path = val
-
-    @property
-    def deep_url(self):
-        """The url that this filenodes guid should resolve to.
-        Implemented here so that subclasses may override it or path.
-        See OsfStorage or PathFollowingNode.
-        """
-        return self.node.web_url_for('addon_view_or_download_file', provider=self.provider, path=self.path.strip('/'))
-
-    @property
-    def absolute_api_v2_url(self):
-        path = '/files/{}/'.format(self._id)
-        return api_v2_url(path)
-
-    # For Comment API compatibility
-    @property
-    def target_type(self):
-        """The object "type" used in the OSF v2 API."""
-        return 'files'
-
-    @property
-    def root_target_page(self):
-        """The comment page type associated with StoredFileNodes."""
-        return 'files'
+        return self
 
     def belongs_to_node(self, node_id):
         """Check whether the file is attached to the specified node."""
@@ -287,56 +372,45 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, ObjectIDMixi
     def get_absolute_url(self):
         return self.absolute_api_v2_url
 
+    def _repoint_guids(self, updated):
+        logger.warn('BaseFileNode._repoint_guids is deprecated.')
+        # for guid in Guid.find(Q('referent', 'eq', self)):
+        #     guid.referent = updated
+        #     guid.save()
+
+    def _update_node(self, recursive=True, save=True):
+        if self.parent is not None:
+            self.node = self.parent.node
+        if save:
+            self.save()
+        if recursive and not self.is_file:
+            for child in self.children:
+                child._update_node(save=save)
+
     def wrapped(self):
         """Wrap self in a FileNode subclass
         """
-        raise Exception('Wrapped is deprecated.')
+        raise DeprecatedException('Wrapped is deprecated.')
 
     def save(self, *args, **kwargs):
         if hasattr(self._meta.model, '_provider'):
             self.provider = self._meta.model._provider
         super(BaseFileNode, self).save(*args, **kwargs)
 
-    @classmethod
-    def create(cls, **kwargs):
-        kwargs.update(provider=cls._provider)
-        return cls(**kwargs)
-
-    @classmethod
-    def get_or_create(cls, node, path):
-        obj, _ = cls.objects.get_or_create(node=node, _path='/' + path.lstrip('/'))
-        return obj
-
-    @classmethod
-    def get_file_guids(cls, materialized_path, provider, node):
-        guids = []
-        materialized_path = '/' + materialized_path.lstrip('/')
-        if materialized_path.endswith('/'):
-            # it's a folder
-            folder_children = cls.find(Q('provider', 'eq', provider) &
-                                       Q('node', 'eq', node) &
-                                       Q('_materialized_path', 'startswith', materialized_path))
-            for item in folder_children:
-                if item.kind == 'file':
-                    guid = item.get_guid()
-                    if guid:
-                        guids.append(guid._id)
-        else:
-            # it's a file
-            try:
-                file_obj = cls.find_one(
-                    Q('node', 'eq', node) & Q('_materialized_path', 'eq', materialized_path))
-            except NoResultsFound:
-                return guids
-            guid = file_obj.get_guid()
-            if guid:
-                guids.append(guid._id)
-
-        return guids
+    def __repr__(self):
+        return '<{}(name={!r}, node={!r})>'.format(
+            self.__class__.__name__,
+            self.name,
+            self.node
+        )
 
 
 # TODO Refactor code pointing at FileNode to point to StoredFileNode
 FileNode = StoredFileNode = BaseFileNode
+
+
+class UnableToRestore(Exception):
+    pass
 
 
 class File(models.Model):
@@ -375,7 +449,7 @@ class File(models.Model):
         )
 
     def restore(self, recursive=True, parent=None, save=True, deleted_on=None):
-        raise Exception('You cannot restore something that is not deleted.')
+        raise UnableToRestore('You cannot restore something that is not deleted.')
 
     def delete(self, user=None, parent=None, save=True, deleted_on=None):
         """
@@ -481,12 +555,16 @@ class Folder(models.Model):
         )
 
 
+class UnableToDelete(Exception):
+    pass
+
+
 class TrashedFileNode(BaseFileNode):
     is_deleted = True
 
     def delete(self, user=None, parent=None, save=True, deleted_on=None):
         if isinstance(self, TrashedFileNode):
-            raise Exception('You cannot delete things that are deleted.')
+            raise UnableToDelete('You cannot delete things that are deleted.')
 
     def restore(self, recursive=True, parent=None, save=True, deleted_on=None):
         """
