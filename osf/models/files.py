@@ -6,7 +6,6 @@ from dateutil.parser import parse as parse_date
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
 from django.db.models import Manager
-from django.db.models.options import Options
 from django.utils import timezone
 from modularodm.exceptions import NoResultsFound
 from typedmodels.models import TypedModel
@@ -387,14 +386,14 @@ class File(models.Model):
             self.save()
 
         return self
-
-    def serialize(self, **kwargs):
-        return {
-            'id': self._id,
-            'path': self.path,
-            'name': self.name,
-            'kind': self.kind,
-        }
+    # TODO Which serializer is right?
+    # def serialize(self, **kwargs):
+    #     return {
+    #         'id': self._id,
+    #         'path': self.path,
+    #         'name': self.name,
+    #         'kind': self.kind,
+    #     }
 
 
 class Folder(models.Model):
