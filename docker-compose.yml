@@ -15,8 +15,6 @@ volumes:
     external: false
   # registries_dist_vol:
   #   external: false
-  ember-osf_vol:
-    external: false
   mfr_requirements_vol:
     external: false
   wb_requirements_vol:
@@ -196,17 +194,12 @@ services:
       - 4200:4200
     volumes:
       - preprints_dist_vol:/code/dist
-      - ember-osf_vol:/ember-osf
     stdin_open: true
     tty: true
 
-  ember-osf:
-    build: ../ember-osf
-    command: /bin/bash -c "yarn --pure-lockfile --no-progress --no-emoji && ./node_modules/bower/bin/bower install --allow-root --config.interactive=false && ./node_modules/ember-cli/bin/ember serve --host 0.0.0.0 --port 4200"
-    expose:
-      - 4200
-    ports:
-      - 4200:4200
+
+#  ember-osf:
+#    image: quay.io/centerforopenscience/ember-osf
 
   ##############
   # Registries #
