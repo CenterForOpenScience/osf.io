@@ -36,10 +36,9 @@ logger = logging.getLogger(__name__)
 class BaseFileNodeManager(Manager):
     def get_queryset(self):
         qs = super(BaseFileNodeManager, self).get_queryset()
-        try:
+        if hasattr(self.model, '_provider') and self.model._provider is not None:
             return qs.filter(provider=self.model._provider)
-        except AttributeError:
-            return qs
+        return qs
 
 
 class UnableToResolveFileClass(Exception):
