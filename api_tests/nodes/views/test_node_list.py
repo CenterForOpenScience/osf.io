@@ -514,7 +514,8 @@ class TestNodeFiltering(ApiTestCase):
         res = self.app.get(url, auth=self.user_one.auth)
         assert_equal(res.status_code, 200)
 
-        root_nodes = Node.objects.get_children(root=root).filter(is_public=True)
+        root_nodes = Node.objects.filter(root__guids___id=root._id)
+
         assert_equal(len(res.json['data']), root_nodes.count())
 
     def test_filtering_on_parent(self):
