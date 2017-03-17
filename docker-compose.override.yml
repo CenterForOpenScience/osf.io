@@ -1,6 +1,11 @@
 
 version: '2'
 
+volumes:
+  ember-osf_vol:
+    external: false
+
+
 services:
 
 #  fakecas:
@@ -15,14 +20,21 @@ services:
 #    volumes_from:
 #      - container:mfr-sync
 
-#  preprints:
-#    volumes_from:
-#      - container:preprints-sync
-#    # Use this for ember-osf link development:
-#    command: /bin/bash -c "yarn --pure-lockfile --no-progress --no-emoji && ./node_modules/bower/bin/bower install --allow-root --config.interactive=false && npm link ../ember-osf && ./node_modules/ember-cli/bin/ember serve --host 0.0.0.0 --port 4200"
-#    volumes:
-#      - preprints_dist_vol:/code/dist
-#      - ../ember-osf:/ember-osf
+  preprints:
+    volumes_from:
+      - container:preprints-sync
+    # Use this for ember-osf link development:
+    command: /bin/bash -c "yarn --pure-lockfile --no-progress --no-emoji && ./node_modules/bower/bin/bower install --allow-root --config.interactive=false && npm link ../ember-osf && ./node_modules/ember-cli/bin/ember serve --host 0.0.0.0 --port 4200"
+    volumes:
+      - preprints_dist_vol:/code/dist
+      - ember-osf_vol:/ember-osf
+
+  ember-osf:
+    volumes_from:
+      - container:ember-osf-sync
+    command: /bin/bash -c "yarn --pure-lockfile --no-progress --no-emoji && ./node_modules/bower/bin/bower install --allow-root --config.interactive=false && tail -f /dev/null"
+    volumes:
+      - ember-osf_vol:/code
 
 #  registries:
 #    volumes_from:
