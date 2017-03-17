@@ -32,7 +32,7 @@ class GoogleDriveFileNode(BaseFileNode):
     modm_model_path = 'website.files.models.googledrive.GoogleDriveFileNode'
     modm_query = None
     # /TODO DELETE ME POST MIGRATION
-    provider = 'googledrive'
+    _provider = 'googledrive'
     FOLDER_ATTR_NAME = 'folder_path'
 
 

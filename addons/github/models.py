@@ -30,7 +30,7 @@ class GithubFileNode(BaseFileNode):
     modm_model_path = 'website.files.models.github.GithubFileNode'
     modm_query = None
     # /TODO DELETE ME POST MIGRATION
-    provider = 'github'
+    _provider = 'github'
 
 
 class GithubFolder(GithubFileNode, Folder):

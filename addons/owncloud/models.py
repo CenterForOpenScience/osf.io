@@ -22,7 +22,7 @@ class OwncloudFileNode(BaseFileNode):
     modm_model_path = 'website.files.models.owncloud.OwncloudFileNode'
     modm_query = None
     # /TODO DELETE ME POST MIGRATION
-    provider = 'owncloud'
+    _provider = 'owncloud'
 
 
 class OwncloudFolder(OwncloudFileNode, Folder):

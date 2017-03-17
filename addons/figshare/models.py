@@ -20,7 +20,7 @@ class FigshareFileNode(BaseFileNode):
     modm_model_path = 'website.files.models.figshare.FigshareFileNode'
     modm_query = None
     # /TODO DELETE ME POST MIGRATION
-    provider = 'figshare'
+    _provider = 'figshare'
 
 
 class FigshareFolder(FigshareFileNode, Folder):

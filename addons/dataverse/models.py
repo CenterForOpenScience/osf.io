@@ -19,7 +19,7 @@ class DataverseFileNode(BaseFileNode):
     modm_model_path = 'website.files.models.dataverse.DataverseFileNode'
     modm_query = None
     # /TODO DELETE ME POST MIGRATION
-    provider = 'dataverse'
+    _provider = 'dataverse'
 
 
 class DataverseFolder(DataverseFileNode, Folder):

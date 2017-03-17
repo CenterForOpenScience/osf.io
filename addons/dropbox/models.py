@@ -27,7 +27,7 @@ class DropboxFileNode(BaseFileNode):
     modm_model_path = 'website.files.models.dropbox.DropboxFileNode'
     modm_query = None
     # /TODO DELETE ME POST MIGRATION
-    provider = 'dropbox'
+    _provider = 'dropbox'
 
 
 class DropboxFolder(DropboxFileNode, Folder):

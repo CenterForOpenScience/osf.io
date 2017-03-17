@@ -1,4 +1,5 @@
 import logging
+import os
 
 import requests
 from dateutil.parser import parse as parse_date
@@ -78,7 +79,7 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, ObjectIDMixi
     _path = models.TextField(blank=True, null=True)  # 1950 on prod
     _materialized_path = models.TextField(blank=True, null=True)  # 482 on staging
 
-    is_deleted = models.BooleanField(default=False)
+    is_deleted = False
     deleted_on = NonNaiveDateTimeField(blank=True, null=True)
     deleted_by = models.ForeignKey('osf.OSFUser', related_name='files_deleted_by', null=True, blank=True)
 
@@ -89,6 +90,24 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, ObjectIDMixi
             ('node', 'type', 'provider', '_path'),
             ('node', 'type', 'provider'),
         )
+
+    def to_storage(self):
+        storage = super(BaseFileNode, self).to_storage()
+        if 'trashed' not in self.type.lower():
+            for key in tuple(storage.keys()):
+                if 'deleted' in key:
+                    storage.pop(key)
+        return storage
+
+    def _resolve_class(self, type_cls):
+        for subclass in BaseFileNode.__subclasses__():
+            if type_cls:
+                for subsubclass in subclass.__subclasses__():
+                    if issubclass(subsubclass, type_cls) and subsubclass._provider == self.provider:
+                        return subsubclass
+            else:
+                if subclass._provider == self.provider:
+                    return subclass
 
     def get_version(self, revision, required=False):
         """Find a version with identifier revision
@@ -278,7 +297,7 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, ObjectIDMixi
 
     @classmethod
     def get_or_create(cls, node, path):
-        obj, _ = cls.objects.get_or_create(node=node, path='/' + path.lstrip('/'))
+        obj, _ = cls.objects.get_or_create(node=node, _path='/' + path.lstrip('/'))
         return obj
 
     @classmethod
@@ -402,7 +421,7 @@ class Folder(models.Model):
             self.save()
 
         if not self.is_file:
-            for child in StoredFileNode.objects.filter(parent=self.id):
+            for child in BaseFileNode.objects.filter(parent=self.id).exclude(type__icontains='trashed'):
                 child.delete(user=user, save=save, deleted_on=deleted_on)
         return self
 
@@ -416,7 +435,7 @@ class Folder(models.Model):
         :returns: A GenWrapper for all children
         :rtype: GenWrapper<MongoQuerySet<cls>>
         """
-        return FileNode.find(Q('parent', 'eq', self._id))
+        return FileNode.find(Q('parent_id', 'eq', self.id))
 
     # def delete(self, recurse=True, user=None, parent=None):
     #     trashed = self._create_trashed(user=user, parent=parent)
@@ -426,34 +445,44 @@ class Folder(models.Model):
     #     self._repoint_guids(trashed)
     #     StoredFileNode.remove_one(self.stored_object)
     #     return trashed
-    #
-    # def append_file(self, name, path=None, materialized_path=None, save=True):
-    #     return self._create_child(name, FileNode.FILE, path=path, materialized_path=materialized_path, save=save)
-    #
-    # def append_folder(self, name, path=None, materialized_path=None, save=True):
-    #     return self._create_child(name, FileNode.FOLDER, path=path, materialized_path=materialized_path, save=save)
-    #
-    # def _create_child(self, name, kind, path=None, materialized_path=None, save=True):
-    #     child = FileNode.resolve_class(self.provider, kind)(
-    #         name=name,
-    #         node=self.node,
-    #         path=path or '/' + name,
-    #         parent=self.stored_object,
-    #         materialized_path=materialized_path or
-    #         os.path.join(self.materialized_path, name) + '/' if not kind else ''
-    #     ).wrapped()
-    #     if save:
-    #         child.save()
-    #     return child
-    #
-    # def find_child_by_name(self, name, kind=2):
-    #     return FileNode.resolve_class(self.provider, kind).find_one(
-    #         Q('name', 'eq', name) &
-    #         Q('parent', 'eq', self)
-    #     )
+
+    def append_file(self, name, path=None, materialized_path=None, save=True):
+        return self._create_child(name, File, path=path, materialized_path=materialized_path, save=save)
+
+    def append_folder(self, name, path=None, materialized_path=None, save=True):
+        return self._create_child(name, Folder, path=path, materialized_path=materialized_path, save=save)
+
+    def _create_child(self, name, kind, path=None, materialized_path=None, save=True):
+        child = self._resolve_class(kind)(
+            name=name,
+            node=self.node,
+            path=path or '/' + name,
+            parent=self,
+            materialized_path=materialized_path or
+            os.path.join(self.materialized_path, name) + '/' if kind is Folder else ''
+        )
+        if save:
+            child.save()
+        return child
+
+    def find_child_by_name(self, name, kind=2):
+        # kind == 2
+        type_cls = None
+        if kind == 1:
+            # file
+            type_cls = File
+        elif kind == 0:
+            # folder
+            type_cls = Folder
+        return self._resolve_class(type_cls).find_one(
+            Q('name', 'eq', name) &
+            Q('parent', 'eq', self)
+        )
 
 
 class TrashedFileNode(BaseFileNode):
+    is_deleted = True
+
     def delete(self, user=None, parent=None, save=True, deleted_on=None):
         if isinstance(self, TrashedFileNode):
             raise Exception('You cannot delete things that are deleted.')
@@ -469,10 +498,7 @@ class TrashedFileNode(BaseFileNode):
         """
         type_cls = File if self.is_file else Folder
 
-        for subclass in BaseFileNode.__subclasses__():
-            for subsubclass in subclass.__subclasses__():
-                if issubclass(subsubclass, type_cls) and subsubclass._provider == self.provider:
-                    self.recast(subsubclass._typedmodels_type)
+        self.recast(self._resolve_class(type_cls)._typedmodels_type)
 
         if save:
             self.save()

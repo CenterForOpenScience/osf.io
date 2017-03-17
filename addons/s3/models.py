@@ -20,7 +20,7 @@ class S3FileNode(BaseFileNode):
     modm_model_path = 'website.files.models.s3.S3FileNode'
     modm_query = None
     # /TODO DELETE ME POST MIGRATION
-    provider = 's3'
+    _provider = 's3'
 
 
 class S3Folder(S3FileNode, Folder):

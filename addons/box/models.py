@@ -27,7 +27,7 @@ class BoxFileNode(BaseFileNode):
     modm_model_path = 'website.files.models.box.BoxFileNode'
     modm_query = None
     # /TODO DELETE ME POST MIGRATION
-    provider = 'box'
+    _provider = 'box'
 
 
 class BoxFolder(BoxFileNode, Folder):
