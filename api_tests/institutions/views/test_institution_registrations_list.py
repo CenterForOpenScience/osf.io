@@ -103,5 +103,3 @@ class TestRegistrationListFiltering(RegistrationListFilteringMixin, ApiTestCase)
 
         self.node_A.save()
         self.node_B2.save()
-
-

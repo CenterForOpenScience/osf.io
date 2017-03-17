@@ -2126,5 +2126,3 @@ class TestNodeListPagination(ApiTestCase):
 class TestNodeListFiltering(NodesListFilteringMixin, ApiTestCase):
 
     url = '/{}nodes/?'.format(API_BASE)
-
-

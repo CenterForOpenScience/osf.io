@@ -7,8 +7,6 @@ from api.base.exceptions import InvalidFilterError, InvalidFilterValue
 from api.base.filters import ODMFilterMixin
 from api.base import utils
 
-from osf.models import AbstractNode as Node
-
 
 class NodesListFilterMixin(ODMFilterMixin):
 
