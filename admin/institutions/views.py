@@ -3,9 +3,9 @@ from __future__ import unicode_literals
 import json
 
 from django.core import serializers
-from django.core.urlresolvers import reverse
+from django.core.urlresolvers import reverse, reverse_lazy
 from django.http import HttpResponseForbidden, HttpResponse
-from django.views.generic import ListView, FormView, DetailView, View
+from django.views.generic import ListView, FormView, DetailView, View, CreateView
 from django.views.generic.detail import SingleObjectMixin
 from django.contrib.auth.mixins import PermissionRequiredMixin
 
@@ -110,3 +110,16 @@ class InstitutionExport(PermissionRequiredMixin, View):
         response = HttpResponse(data, content_type='text/json')
         response['Content-Disposition'] = 'attachment; filename={}'.format(filename)
         return response
+
+
+class CreateInstitution(PermissionRequiredMixin, CreateView):
+    permission_required = 'osf.change_institution'
+    raise_exception = True
+    template_name = 'institutions/create.html'
+    success_url = reverse_lazy('institutions:list')
+
+    model = Institution
+    fields = [
+        'banner_name', 'login_url', 'domains', 'email_domains',
+        'logo_name', 'logout_url', 'name', 'description'
+    ]

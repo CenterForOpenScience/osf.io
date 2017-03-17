@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% load static %}
+{% block top_includes %}
+    <link rel="stylesheet" type="text/css" href="/static/css/institutions.css" />
+{% endblock %}
+{% load user_extras %}
+{% load spam_extras %}
+{% block title %}
+    <title>Create Institution</title>
+{% endblock title %}
+{% block content %}
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-12">
+                <h2>Create An Institution</h2>
+
+                <form action="" method="post">
+                    {% csrf_token %}
+                    {{ form.as_p }}
+                    <input type="submit" value="Save" />
+                </form>
+            </div>
+        </div>
+    </div>
+
+{% endblock content %}
