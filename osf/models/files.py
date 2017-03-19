@@ -388,7 +388,8 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, ObjectIDMixi
     def wrapped(self):
         """Wrap self in a FileNode subclass
         """
-        raise DeprecatedException('Wrapped is deprecated.')
+        logger.warn('Wrapped is deprecated.')
+        return self
 
     def save(self, *args, **kwargs):                  # TODO is there a way to do this with inheritance?
         if hasattr(self._meta.model, '_provider') and self._meta.model._provider is not None:
