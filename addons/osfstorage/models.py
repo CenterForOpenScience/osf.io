@@ -68,7 +68,7 @@ class OsfStorageFileNode(BaseFileNode):
             cursor.execute(sql, [AsIs(self._meta.db_table), AsIs(self._meta.db_table), self.pk])
             row = cursor.fetchone()
             if not row:
-                return row
+                return '/'
             return row[0]
 
     @materialized_path.setter
