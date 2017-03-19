@@ -194,6 +194,13 @@ class BaseModel(models.Model):
     def reload(self):
         return self.refresh_from_db()
 
+    def refresh_from_db(self):
+        super(BaseModel, self).refresh_from_db()
+        # Django's refresh_from_db does not uncache GFKs
+        for field in self._meta.virtual_fields:
+            if hasattr(field, 'cache_attr') and field.cache_attr in self.__dict__:
+                del self.__dict__[field.cache_attr]
+
     def _natural_key(self):
         return self.pk
 

@@ -211,7 +211,7 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, ObjectIDMixi
 
     @classmethod
     def resolve_class(cls, provider, type_integer):
-        type_mapping = {0: File, 1: Folder, 2: None}
+        type_mapping = {0: Folder, 1: File, 2: None}
         type_cls = type_mapping[type_integer]
 
         for subclass in BaseFileNode.__subclasses__():
