@@ -3840,3 +3840,81 @@ class TestAddonCallbacks:
                     node, registration, auth.user
                 )
 
+
+class TestAdminImplicitRead(object):
+
+    @pytest.fixture()
+    def jane_doe(self):
+        return UserFactory()
+
+    @pytest.fixture()
+    def creator(self):
+        return UserFactory()
+
+    @pytest.fixture()
+    def admin_user(self, project):
+        user = UserFactory()
+        project.add_contributor(user, permissions=['admin'], save=True)
+        return user
+
+    @pytest.fixture()
+    def project(self, creator):
+        return ProjectFactory(is_public=False, creator=creator)
+
+    @pytest.fixture()
+    def lvl1component(self, project):
+        return ProjectFactory(is_public=False, parent=project)
+
+    @pytest.fixture()
+    def lvl2component(self, lvl1component):
+        return ProjectFactory(is_public=False, parent=lvl1component)
+
+    @pytest.fixture()
+    def lvl3component(self, lvl2component):
+        return ProjectFactory(is_public=False, parent=lvl2component)
+
+    def test_direct_child(self, admin_user, lvl1component):
+        assert AbstractNode.objects.filter(id=lvl1component.pk).can_view(admin_user).count() == 1
+        assert AbstractNode.objects.filter(id=lvl1component.pk).can_view(admin_user)[0] == lvl1component
+
+    def test_rando(self, lvl1component, jane_doe):
+        assert AbstractNode.objects.filter(id=lvl1component.pk).can_view(jane_doe).count() == 0
+
+    def test_includes_parent(self, project, admin_user, lvl1component):
+        assert AbstractNode.objects.filter(
+            id__in=[lvl1component.pk, project.pk]
+        ).can_view(admin_user).count() == 2
+
+    def test_includes_public(self, admin_user, project, lvl1component):
+        proj = ProjectFactory(is_public=True)
+
+        qs = AbstractNode.objects.can_view(admin_user)
+
+        assert proj in qs
+        assert project in qs
+        assert lvl1component in qs
+
+    def test_empty_is_public(self):
+        proj = ProjectFactory(is_public=True)
+
+        qs = AbstractNode.objects.can_view()
+
+        assert proj in qs
+        assert qs.count() == 1
+
+    def test_generations(self, admin_user, project, lvl1component, lvl2component, lvl3component):
+        qs = AbstractNode.objects.can_view(admin_user)
+
+        assert project in qs
+        assert lvl1component in qs
+        assert lvl2component in qs
+        assert lvl3component in qs
+
+    def test_private_link(self, jane_doe, project, lvl1component):
+        pl = PrivateLinkFactory()
+        lvl1component.private_links.add(pl)
+
+        qs = AbstractNode.objects.can_view(user=jane_doe, private_link=pl)
+
+        assert lvl1component in qs
+        assert project not in qs

@@ -40,6 +40,7 @@ from osf.models.mixins import (AddonModelMixin, CommentableMixin, Loggable,
 from osf.models.node_relation import NodeRelation
 from osf.models.nodelog import NodeLog
 from osf.models.sanctions import RegistrationApproval
+from osf.models.private_link import PrivateLink
 from osf.models.spam import SpamMixin
 from osf.models.tag import Tag
 from osf.models.user import OSFUser
@@ -82,6 +83,41 @@ class AbstractNodeQuerySet(GuidMixinQuerySet):
         if primary_keys:
             query = query.values_list('id', flat=True)
         return query
+
+    def can_view(self, user=None, private_link=None):
+        qs = self.filter(is_public=True)
+
+        if private_link is not None:
+            if isinstance(private_link, PrivateLink):
+                private_link = private_link.key
+            if not isinstance(private_link, str):
+                raise TypeError('"private_link" must be either {} or {}. Got {!r}'.format(str, PrivateLink, private_link))
+
+            qs |= self.filter(private_links__is_deleted=False, private_links__key=private_link)
+
+        if user is not None:
+            if isinstance(user, OSFUser):
+                user = user.pk
+            if not isinstance(user, int):
+                raise TypeError('"user" must be either {} or {}. Got {!r}'.format(int, OSFUser, user))
+
+            qs |= self.extra(where=['''
+                "osf_abstractnode".id in (
+                    WITH RECURSIVE implicit_read AS (
+                        SELECT "osf_contributor"."node_id"
+                        FROM "osf_contributor"
+                        WHERE "osf_contributor"."user_id" = %s
+                        AND "osf_contributor"."admin" is TRUE
+                    UNION ALL
+                        SELECT "osf_noderelation"."child_id"
+                        FROM "implicit_read"
+                        LEFT JOIN "osf_noderelation" ON "osf_noderelation"."parent_id" = "implicit_read"."node_id"
+                        WHERE "osf_noderelation"."is_node_link" IS FALSE
+                    ) SELECT * FROM implicit_read
+                )
+            '''], params=(user, ))
+
+        return qs
 
 
 class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixin,
