@@ -534,7 +534,7 @@ def test_module(ctx, module=None, numprocesses=None, params=None):
     # https://github.com/gabrielfalcao/HTTPretty/issues/209#issue-54090252
     args = ['-s']
     if numprocesses > 1:
-        args += ['-n {} --max-slave-restart=0'.format(numprocesses)]
+        args += ['-n {}'.format(numprocesses), '--max-slave-restart=0']
     modules = [module] if isinstance(module, basestring) else module
     args.extend(modules)
     if params:
