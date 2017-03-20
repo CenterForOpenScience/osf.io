@@ -2878,7 +2878,7 @@ class TestContributorOrdering:
         old_order = [user_contrib_id, user1_contrib_id, user2_contrib_id]
         assert list(node.get_contributor_order()) == old_order
 
-        node.move_contributor(user=user2, auth=auth, index=0, save=True)
+        node.move_contributor(user2, auth=auth, index=0, save=True)
 
         new_order = [user2_contrib_id, user_contrib_id, user1_contrib_id]
         assert list(node.get_contributor_order()) == new_order

@@ -102,11 +102,19 @@ class NodeMixin(object):
     node_lookup_url_kwarg = 'node_id'
 
     def get_node(self, check_object_permissions=True):
-        node = get_object_or_error(
-            Node,
-            self.kwargs[self.node_lookup_url_kwarg],
-            display_name='node'
-        )
+        node = None
+
+        if self.kwargs.get('is_embedded') is True:
+            # If this is an embedded request, the node might be cached somewhere
+            node = self.request.parents[Node].get(self.kwargs[self.node_lookup_url_kwarg])
+
+        if node is None:
+            node = get_object_or_error(
+                Node,
+                self.kwargs[self.node_lookup_url_kwarg],
+                display_name='node'
+            )
+
         # Nodes that are folders/collections are treated as a separate resource, so if the client
         # requests a collection through a node endpoint, we return a 404
         if node.is_collection or node.is_registration:
@@ -142,7 +150,7 @@ class DraftMixin(object):
             if draft.requires_approval and draft.is_approved and (not registered_and_deleted):
                 raise PermissionDenied('This draft has already been approved and cannot be modified.')
 
-        self.check_object_permissions(self.request, draft)
+        self.check_object_permissions(self.request, draft.branched_from)
         return draft
 
 
@@ -663,7 +671,7 @@ class NodeContributorsList(BaseContributorList, bulk_views.BulkUpdateJSONAPIView
     serializer_class = NodeContributorsSerializer
     view_category = 'nodes'
     view_name = 'node-contributors'
-    ordering = ('index',)  # default ordering
+    ordering = ('_order',)  # default ordering
 
     # overrides ListBulkCreateJSONAPIView, BulkUpdateJSONAPIView, BulkDeleteJSONAPIView
     def get_serializer_class(self):
@@ -826,7 +834,7 @@ class NodeContributorDetail(BaseContributorDetail, generics.RetrieveUpdateDestro
     def perform_destroy(self, instance):
         node = self.get_node()
         auth = get_user_auth(self.request)
-        if len(node.visible_contributors) == 1 and node.get_visible(instance):
+        if len(node.visible_contributors) == 1 and instance.visible:
             raise ValidationError('Must have at least one visible contributor')
         removed = node.remove_contributor(instance, auth)
         if not removed:
@@ -1513,7 +1521,7 @@ class NodeLinksDetail(BaseNodeLinksDetail, generics.RetrieveDestroyAPIView, Node
             self.kwargs[self.node_link_lookup_url_kwarg],
             'node link'
         )
-        self.check_object_permissions(self.request, node_link)
+        self.check_object_permissions(self.request, node_link.parent)
         return node_link
 
     # overrides DestroyAPIView

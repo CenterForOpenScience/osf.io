@@ -47,6 +47,8 @@ class ODMOrderingFilter(OrderingFilter):
     # override
     def filter_queryset(self, request, queryset, view):
         if isinstance(queryset, DjangoQuerySet):
+            if queryset.ordered:
+                return queryset
             return super(ODMOrderingFilter, self).filter_queryset(request, queryset, view)
         ordering = self.get_ordering(request, queryset, view)
         if ordering:

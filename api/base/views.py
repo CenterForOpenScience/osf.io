@@ -2,8 +2,6 @@ import weakref
 
 from django.conf import settings as django_settings
 from django.db import transaction
-from django.db.models import F
-from django.db.models.expressions import RawSQL
 from django.http import JsonResponse
 from rest_framework import generics
 from rest_framework import permissions as drf_permissions
@@ -29,7 +27,7 @@ from api.nodes.permissions import ContributorOrPublicForRelationshipPointers
 from api.nodes.permissions import ReadOnlyIfRegistration
 from api.users.serializers import UserSerializer
 from framework.auth.oauth_scopes import CoreScopes
-from osf.models.contributor import Contributor, get_contributor_permissions
+from osf.models.contributor import Contributor
 from website.models import Pointer
 
 CACHE = weakref.WeakKeyDictionary()
@@ -64,9 +62,11 @@ class JSONAPIBaseView(generics.GenericAPIView):
             else:
                 request = EmbeddedRequest(self.request)
 
+            request.parents.setdefault(type(item), {})[item._id] = item
+
             view_kwargs.update({
                 'request': request,
-                'is_embedded': True
+                'is_embedded': True,
             })
 
             # Setup a view ourselves to avoid all the junk DRF throws in
@@ -78,7 +78,10 @@ class JSONAPIBaseView(generics.GenericAPIView):
             view.request.parser_context['kwargs'] = view_kwargs
             view.format_kwarg = view.get_format_suffix(**view_kwargs)
 
-            _cache_key = (v.cls, field_name, view.get_serializer_class(), item)
+            if not isinstance(view, ListModelMixin):
+                item = view.get_object()
+
+            _cache_key = (v.cls, field_name, view.get_serializer_class(), (type(item), item.id))
             if _cache_key in CACHE.setdefault(self.request._request, {}):
                 # We already have the result for this embed, return it
                 return CACHE[self.request._request][_cache_key]
@@ -93,10 +96,10 @@ class JSONAPIBaseView(generics.GenericAPIView):
                 ser._context = view.get_serializer_context()
 
                 if not isinstance(view, ListModelMixin):
-                    ret = ser.to_representation(view.get_object())
+                    ret = ser.to_representation(item)
                 else:
                     queryset = view.filter_queryset(view.get_queryset())
-                    page = view.paginate_queryset(queryset)
+                    page = view.paginate_queryset(getattr(queryset, '_results_cache', None) or queryset)
 
                     ret = ser.to_representation(page or queryset)
 
@@ -767,15 +770,9 @@ class BaseContributorDetail(JSONAPIBaseView, generics.RetrieveAPIView):
         # May raise a permission denied
         self.check_object_permissions(self.request, user)
         try:
-            contributor = node.contributor_set.get(user=user)
+            return node.contributor_set.get(user=user)
         except Contributor.DoesNotExist:
             raise NotFound('{} cannot be found in the list of contributors.'.format(user))
-
-        user.permission = get_contributor_permissions(contributor, as_list=False)
-        user.bibliographic = contributor.visible
-        user.node_id = node._id
-        user.index = list(node.get_contributor_order()).index(contributor.id)
-        return user
 
 
 class BaseContributorList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
@@ -783,24 +780,7 @@ class BaseContributorList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin
     def get_default_queryset(self):
         node = self.get_node()
 
-        qs = node._contributors.all() \
-            .annotate(
-            index=F('contributor___order'),
-            bibliographic=F('contributor__visible'),
-            node_id=F('contributor__node__guids___id'),
-            permission=RawSQL("""
-                SELECT
-                  CASE WHEN c.admin IS TRUE
-                    THEN 'admin'
-                    WHEN c.admin IS FALSE and c.write IS TRUE
-                    THEN 'write'
-                    WHEN c.admin IS FALSE and c.write is FALSE and c.read IS TRUE
-                    THEN 'read'
-                  END as permission
-                FROM osf_contributor AS c WHERE c.user_id = osf_osfuser.id AND c.node_id = %s LIMIT 1
-            """, (node.id, ))
-        ).order_by('contributor___order')
-        return qs
+        return node.contributor_set.all()
 
     def get_queryset(self):
         queryset = self.get_queryset_from_request()
