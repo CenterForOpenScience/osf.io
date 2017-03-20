@@ -3,7 +3,6 @@ import httplib as http
 import urllib
 import urlparse
 
-from django.utils import timezone
 from django.apps import apps
 import bson.objectid
 import itsdangerous
@@ -160,7 +159,7 @@ def before_request():
         if not util_time.throttle_period_expired(user_session.date_created, settings.OSF_SESSION_TIMEOUT):
             if user_session.data.get('auth_user_id') and 'api' not in request.url:
                 OSFUser = apps.get_model('osf.OSFUser')
-                OSFUser.objects.filter(guids___id=user_session.data['auth_user_id']).invalidated_update(date_last_login=timezone.now())
+                OSFUser.objects.get(guids___id=user_session.data['auth_user_id']).update_date_last_login(save=True)
             set_session(user_session)
         else:
             remove_session(user_session)

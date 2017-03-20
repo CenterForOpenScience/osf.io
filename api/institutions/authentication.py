@@ -3,7 +3,6 @@ import json
 import jwe
 import jwt
 
-from django.utils import timezone
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.authentication import BaseAuthentication
 
@@ -58,8 +57,7 @@ class InstitutionAuthentication(BaseAuthentication):
             user.middle_names = provider['user'].get('middleNames') or user.middle_names
             user.family_name = provider['user'].get('familyName') or user.family_name
             user.suffix = provider['user'].get('suffix') or user.suffix
-            user.date_last_login = timezone.now()
-            user.save()
+            user.update_date_last_login(save=True)
 
             # User must be saved in order to have a valid _id
             user.register(username)
