@@ -301,7 +301,7 @@ git stash pop # unstash changes
 docker-compose pull # pull the latest images
 
 # If you get an out of space error
-docker rmi $(docker images -q --filter "dangling=true") \
+docker image prune \
   && docker-compose pull
 
 docker-compose up requirements mfr_requirements wb_requirements
