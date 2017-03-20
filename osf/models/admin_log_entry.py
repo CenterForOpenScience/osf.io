@@ -35,6 +35,9 @@ class AdminLogEntryManager(LogEntryManager):
 
 
 class AdminLogEntry(LogEntry):
+    class Meta:
+        proxy = True
+
     primary_identifier_name = 'id'
     def message(self):
         return self.change_message
