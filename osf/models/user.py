@@ -48,7 +48,6 @@ from osf.utils.names import impute_names
 from website import settings as website_settings
 from website import filters, mails
 from website.project import new_bookmark_collection
-from website.util.time import throttle_period_expired
 
 logger = logging.getLogger(__name__)
 
@@ -1135,11 +1134,8 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         for node in self.contributed:
             node.update_search()
 
-    def update_date_last_login(self, save=False):
-        if not self.date_last_login or throttle_period_expired(self.date_last_login, website_settings.DATE_LAST_LOGIN_THROTTLE):
-            self.date_last_login = timezone.now()
-            if save:
-                self.save()
+    def update_date_last_login(self):
+        self.date_last_login = timezone.now()
 
     def get_summary(self, formatter='long'):
         return {

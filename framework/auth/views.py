@@ -581,7 +581,8 @@ def confirm_email_get(token, auth=None, **kwargs):
         })
 
     if is_initial_confirmation:
-        user.update_date_last_login(save=True)
+        user.update_date_last_login()
+        user.save()
 
         # send out our welcome message
         mails.send_mail(
