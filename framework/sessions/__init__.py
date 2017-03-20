@@ -158,9 +158,14 @@ def before_request():
         except itsdangerous.BadData:
             return
         if not util_time.throttle_period_expired(user_session.date_created, settings.OSF_SESSION_TIMEOUT):
+            # Update date last login when making non-api requests
             if user_session.data.get('auth_user_id') and 'api' not in request.url:
                 OSFUser = apps.get_model('osf.OSFUser')
-                OSFUser.objects.filter(guids___id=user_session.data['auth_user_id']).invalidated_update(date_last_login=timezone.now())
+                query = OSFUser.objects.filter(guids___id=user_session.data['auth_user_id']).only('date_last_login')
+                user = query.get()
+                # Throttle updates to date_last_login
+                if util_time.throttle_period_expired(user.date_last_login, settings.DATE_LAST_LOGIN_THROTTLE):
+                    query.invalidated_update(date_last_login=timezone.now())
             set_session(user_session)
         else:
             remove_session(user_session)
