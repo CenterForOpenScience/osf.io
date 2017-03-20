@@ -258,10 +258,6 @@ class Guid(BaseModel):
         except cls.DoesNotExist:
             return None
 
-    def reload(self):
-        del self._referent_cache
-        return super(Guid, self).reload()
-
     @classmethod
     def migrate_from_modm(cls, modm_obj, object_id=None, content_type=None):
         """
