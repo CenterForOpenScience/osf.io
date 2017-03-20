@@ -3,6 +3,9 @@ import logging
 import pytest
 from faker import Factory
 
+from django.db import connections, transaction
+from django.db.models.signals import post_save
+from django.apps import apps
 from framework.django.handlers import handlers as django_handlers
 from framework.flask import rm_handlers
 from website import settings
@@ -77,3 +80,47 @@ def patched_settings():
 @pytest.fixture()
 def fake():
     return Factory.create()
+
+@pytest.fixture()
+def transactional_db_serializer(django_db_blocker, request):
+    # Django's/Pytest Django's handling of this is unrealistic when testing granular transactions.
+    # The database is wiped of initial data and never repopulated so we have to do
+    # all of it ourselves - h/t @chrisseto
+    django_db_blocker.unblock()
+    request.addfinalizer(django_db_blocker.restore)
+
+    from django.test import TransactionTestCase
+    test_case = TransactionTestCase(methodName='__init__')
+    test_case._pre_setup()
+
+    # Dump all initial data into a string :+1:
+    for connection in connections.all():
+        if connection.settings_dict['TEST']['MIRROR']:
+            continue
+        if not hasattr(connection, '_test_serialized_contents'):
+            connection._test_serialized_contents = connection.creation.serialize_db_to_string()
+
+    yield None
+
+    test_case.serialized_rollback = True
+    test_case._post_teardown()
+
+    # Disconnect post save listeners because they screw up deserialization
+    receivers, post_save.receivers = post_save.receivers, []
+
+    if test_case.available_apps is not None:
+        apps.unset_available_apps()
+
+    for connection in connections.all():
+        if connection.settings_dict['TEST']['MIRROR']:
+            connection.close()
+            continue
+        # Everything has to be in a single transaction to avoid violating key constraints
+        # It also makes it run significantly faster
+        with transaction.atomic():
+            connection.creation.deserialize_db_from_string(connection._test_serialized_contents)
+
+    if test_case.available_apps is not None:
+        apps.set_available_apps(test_case.available_apps)
+
+    post_save.receivers = receivers
