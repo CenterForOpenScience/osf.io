@@ -168,7 +168,6 @@ class Migration(migrations.Migration):
     dependencies = [
         ('contenttypes', '0002_remove_content_type_name'),
         ('auth', '0007_alter_validators_add_error_messages'),
-        ('admin', '0002_logentry_remove_auto_add'),
     ]
 
     operations = [
