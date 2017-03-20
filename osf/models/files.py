@@ -13,6 +13,7 @@ from typedmodels.models import TypedModel
 from framework.analytics import get_basic_counters
 from osf.models.base import BaseModel, OptionalGuidMixin, ObjectIDMixin
 from osf.models.comment import CommentableMixin
+from osf.models.mixins import Taggable
 from osf.models.validators import validate_location
 from osf.modm_compat import Q
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
@@ -49,7 +50,7 @@ class DeprecatedException(Exception):
     pass
 
 
-class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, ObjectIDMixin, BaseModel):
+class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, ObjectIDMixin, BaseModel):
     """
         The storage backend for FileNode objects.
         This class should generally not be used or created manually as FileNode
@@ -469,16 +470,16 @@ class File(models.Model):
                 checkout=self.checkout._id if self.checkout else None,
             )
 
-        version = self.versions[-1]
+        newest_version = self.versions.all().last()
         return dict(
             super(File, self).serialize(),
-            size=version.size,
+            size=newest_version.size,
             downloads=self.get_download_count(),
             checkout=self.checkout._id if self.checkout else None,
-            version=version.identifier if self.versions else None,
-            contentType=version.content_type if self.versions else None,
-            modified=version.date_modified.isoformat() if version.date_modified else None,
-            created=self.versions[0].date_modified.isoformat() if self.versions[0].date_modified else None,
+            version=newest_version.identifier if newest_version else None,
+            contentType=newest_version.content_type if newest_version else None,
+            modified=newest_version.date_modified.isoformat() if newest_version.date_modified else None,
+            created=self.versions.all().first().date_modified.isoformat() if self.versions.all().first().date_modified else None,
         )
 
     def restore(self, recursive=True, parent=None, save=True, deleted_on=None):
@@ -545,7 +546,7 @@ class TrashedFileNode(BaseFileNode):
     _provider = None
 
     def delete(self, user=None, parent=None, save=True, deleted_on=None):
-        if isinstance(self, TrashedFileNode):
+        if isinstance(self, TrashedFileNode):  # TODO Why is this needed
             raise UnableToDelete('You cannot delete things that are deleted.')
 
     def restore(self, recursive=True, parent=None, save=True, deleted_on=None):
