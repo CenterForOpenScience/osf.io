@@ -166,6 +166,7 @@ def before_request():
                 (
                     OSFUser.objects
                     .filter(guids___id=user_session.data['auth_user_id'])
+                    # Throttle updates
                     .filter(Q(date_last_login__isnull=True) | Q(date_last_login__lt=timezone.now() - dt.timedelta(seconds=settings.DATE_LAST_LOGIN_THROTTLE)))
                 ).update(date_last_login=timezone.now())
             set_session(user_session)

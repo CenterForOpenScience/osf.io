@@ -43,7 +43,7 @@ CITATION_STYLES_PATH = os.path.join(BASE_PATH, 'static', 'vendor', 'bower_compon
 # Minimum seconds between forgot password email attempts
 SEND_EMAIL_THROTTLE = 30
 
-# Minimum seconds that must elapse before updating a user's date_last_login field
+# Seconds that must elapse before updating a user's date_last_login field
 DATE_LAST_LOGIN_THROTTLE = 60
 
 # Hours before pending embargo/retraction/registration automatically becomes active
