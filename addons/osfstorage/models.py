@@ -1,7 +1,6 @@
 from __future__ import unicode_literals
 
 import logging
-import os
 
 from django.apps import apps
 from django.db import models, connection
@@ -69,7 +68,11 @@ class OsfStorageFileNode(BaseFileNode):
             row = cursor.fetchone()
             if not row:
                 return '/'
-            return row[0]
+
+            path = row[0]
+            if not self.is_file:
+                path = path + '/'
+            return path
 
     @materialized_path.setter
     def materialized_path(self, val):
@@ -142,13 +145,15 @@ class OsfStorageFileNode(BaseFileNode):
     def is_checked_out(self):
         return self.checkout is not None
 
-    def delete(self, user=None, parent=None):
+    def delete(self, user=None, parent=None, **kwargs):
         if self.node.preprint_file and self.node.preprint_file.pk == self.pk:
             self.node._is_preprint_orphan = True
             self.node.save()
         if self.is_checked_out:
             raise exceptions.FileNodeCheckedOutError()
-        return super(OsfStorageFileNode, self).delete(user=user, parent=parent)
+        self._path = self.path
+        self._materialized_path = self.materialized_path
+        return super(OsfStorageFileNode, self).delete(user=user, parent=parent, **kwargs)
 
     def move_under(self, destination_parent, name=None):
         if self.is_checked_out:
@@ -323,11 +328,11 @@ class OsfStorageFile(OsfStorageFileNode, File):
                 self.save()
             return True
 
-    def delete(self, user=None, parent=None):
+    def delete(self, user=None, parent=None, **kwargs):
         from website.search import search
 
         search.update_file(self, delete=True)
-        return super(OsfStorageFile, self).delete(user, parent)
+        return super(OsfStorageFile, self).delete(user, parent, **kwargs)
 
     def save(self, skip_search=False):
         from website.search import search

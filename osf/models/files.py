@@ -77,7 +77,7 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, ObjectIDMixi
     versions = models.ManyToManyField('FileVersion')
 
     node = models.ForeignKey('osf.AbstractNode', blank=True, null=True)
-    parent = models.ForeignKey('self', blank=True, null=True, default=None, related_name='child')
+    parent = models.ForeignKey('self', blank=True, null=True, default=None, related_name='_children')
     copied_from = models.ForeignKey('self', blank=True, null=True, default=None, related_name='copy_of')
 
     provider = models.CharField(max_length=25, blank=False, null=False, db_index=True)
@@ -391,6 +391,40 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, ObjectIDMixi
         logger.warn('Wrapped is deprecated.')
         return self
 
+    def delete(self, user=None, parent=None, save=True, deleted_on=None):
+        """
+        Recast a Folder to TrashedFolder, set fields related to deleting,
+        and recast children.
+        :param user:
+        :param parent:
+        :param save:
+        :param deleted_on:
+        :return:
+        """
+        self.deleted_by = user
+        self.deleted_on = deleted_on = deleted_on or timezone.now()
+
+        if not self.is_file:
+            self.recast(TrashedFolder._typedmodels_type)
+
+            for child in BaseFileNode.objects.filter(parent=self.id).exclude(type__in=TrashedFileNode._typedmodels_subtypes):
+                child.delete(user=user, save=save, deleted_on=deleted_on)
+        else:
+            self.recast(TrashedFile._typedmodels_type)
+
+        if save:
+            self.save()
+
+        return self
+
+    def serialize(self, **kwargs):
+        return {
+            'id': self._id,
+            'path': self.path,
+            'name': self.name,
+            'kind': self.kind,
+        }
+
     def save(self, *args, **kwargs):                  # TODO is there a way to do this with inheritance?
         if hasattr(self._meta.model, '_provider') and self._meta.model._provider is not None:
             self.provider = self._meta.model._provider
@@ -423,7 +457,7 @@ class File(models.Model):
         return 'file'
 
     def serialize(self):
-        if not self.versions.exists():
+        if not self.versions:
             return dict(
                 super(File, self).serialize(),
                 size=None,
@@ -435,7 +469,7 @@ class File(models.Model):
                 checkout=self.checkout._id if self.checkout else None,
             )
 
-        version = self.versions.all()[-1]
+        version = self.versions[-1]
         return dict(
             super(File, self).serialize(),
             size=version.size,
@@ -450,32 +484,6 @@ class File(models.Model):
     def restore(self, recursive=True, parent=None, save=True, deleted_on=None):
         raise UnableToRestore('You cannot restore something that is not deleted.')
 
-    def delete(self, user=None, parent=None, save=True, deleted_on=None):
-        """
-        Recast a File into TrashedFile and set fields related to deleting.
-        :param user:
-        :param parent:
-        :param save:
-        :param deleted_on:
-        :return:
-        """
-        self.recast(TrashedFile._typedmodels_type)
-        self.deleted_by = user
-        self.deleted_on = deleted_on = deleted_on or timezone.now()
-
-        if save:
-            self.save()
-
-        return self
-    # TODO Which serializer is right?
-    # def serialize(self, **kwargs):
-    #     return {
-    #         'id': self._id,
-    #         'path': self.path,
-    #         'name': self.name,
-    #         'kind': self.kind,
-    #     }
-
 
 class Folder(models.Model):
     _is_file = False
@@ -483,39 +491,13 @@ class Folder(models.Model):
     class Meta:
         abstract = True
 
-    def delete(self, user=None, parent=None, save=True, deleted_on=None):
-        """
-        Recast a Folder to TrashedFolder, set fields related to deleting,
-        and recast children.
-        :param user:
-        :param parent:
-        :param save:
-        :param deleted_on:
-        :return:
-        """
-        self.recast(TrashedFolder._typedmodels_type)
-        self.deleted_by = user
-        self.deleted_on = deleted_on = deleted_on or timezone.now()
-
-        if save:
-            self.save()
-
-        if not self.is_file:
-            for child in BaseFileNode.objects.filter(parent=self.id).exclude(type__icontains='trashed'):
-                child.delete(user=user, save=save, deleted_on=deleted_on)
-        return self
-
     @property
     def kind(self):
         return 'folder'
 
     @property
     def children(self):
-        """Finds all Filenodes that view self as a parent
-        :returns: A GenWrapper for all children
-        :rtype: GenWrapper<MongoQuerySet<cls>>
-        """
-        return FileNode.find(Q('parent_id', 'eq', self.id))
+        return self._children.all()
 
     def append_file(self, name, path=None, materialized_path=None, save=True):
         return self._create_child(name, File, path=path, materialized_path=materialized_path, save=save)
@@ -598,6 +580,10 @@ class TrashedFolder(TrashedFileNode):
     @property
     def kind(self):
         return 'folder'
+
+    @property
+    def trashed_children(self):
+        return self._children
 
     def restore(self, recursive=True, parent=None, save=True, deleted_on=None):
         """
