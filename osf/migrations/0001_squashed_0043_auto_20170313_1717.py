@@ -4,6 +4,7 @@ from __future__ import unicode_literals
 
 import dirtyfields.dirtyfields
 from django.conf import settings
+from django.contrib.admin.models import LogEntry
 from django.contrib.auth.models import Group, Permission
 import django.contrib.postgres.fields
 from django.core.management.sql import emit_post_migrate_signal
@@ -133,6 +134,7 @@ def add_partial_uniqueness_index(*args):
     CREATE UNIQUE INDEX one_bookmark_collection_per_user ON osf_abstractnode (creator_id, is_bookmark_collection, is_deleted)
         WHERE is_bookmark_collection=TRUE AND is_deleted=FALSE;
     """
+    logger.info('Adding partial uniqueness index.')
     with connection.cursor() as cursor:
         cursor.execute(sql)
 
@@ -140,6 +142,7 @@ def remove_partial_uniqueness_index(*args):
     sql = """
     DROP INDEX IF EXISTS one_bookmark_collection_per_user
     """
+    logger.info('Removing partial uniqueness index.')
     with connection.cursor() as cursor:
         cursor.execute(sql)
 
@@ -680,23 +683,6 @@ class Migration(migrations.Migration):
             ],
         ),
         migrations.CreateModel(
-            name='NodeWikiPage',
-            fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('guid_string', django.contrib.postgres.fields.ArrayField(base_field=models.CharField(blank=True, max_length=255, null=True), blank=True, null=True, size=None)),
-                ('content_type_pk', models.PositiveIntegerField(blank=True, null=True)),
-                ('page_name', models.CharField(max_length=200, validators=[website.addons.wiki.model.validate_page_name])),
-                ('version', models.IntegerField()),
-                ('date', models.DateTimeField(default=django.utils.timezone.now)),
-                ('content', models.TextField(blank=True, default=b'')),
-                ('node', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='osf.AbstractNode')),
-                ('user', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL)),
-            ],
-            options={
-                'abstract': False,
-            },
-        ),
-        migrations.CreateModel(
             name='NotificationDigest',
             fields=[
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
@@ -1017,16 +1003,6 @@ class Migration(migrations.Migration):
         ),
         migrations.AddField(
             model_name='abstractnode',
-            name='preprint_providers',
-            field=models.ManyToManyField(related_name='preprints', to=b'osf.PreprintProvider'),
-        ),
-        migrations.AddField(
-            model_name='abstractnode',
-            name='preprint_subjects',
-            field=models.ManyToManyField(related_name='preprints', to=b'osf.Subject'),
-        ),
-        migrations.AddField(
-            model_name='abstractnode',
             name='registered_from',
             field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='registrations', to='osf.AbstractNode'),
         ),
@@ -1053,7 +1029,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='abstractnode',
             name='root',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='absolute_parent', to='osf.AbstractNode'),
+            field=models.ForeignKey(blank=True, default=None, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='descendants', to='osf.AbstractNode'),
         ),
         migrations.AddField(
             model_name='abstractnode',
@@ -1439,17 +1415,6 @@ class Migration(migrations.Migration):
             name='logout_url',
             field=models.URLField(blank=True, null=True),
         ),
-        migrations.RemoveField(
-            model_name='nodewikipage',
-            name='node',
-        ),
-        migrations.RemoveField(
-            model_name='nodewikipage',
-            name='user',
-        ),
-        migrations.DeleteModel(
-            name='NodeWikiPage',
-        ),
         migrations.AddField(
             model_name='osfuser',
             name='verification_key_v2',
@@ -1538,10 +1503,6 @@ class Migration(migrations.Migration):
             model_name='externalaccount',
             name='refresh_token',
             field=osf.utils.fields.EncryptedTextField(blank=True, null=True),
-        ),
-        migrations.RemoveField(
-            model_name='abstractnode',
-            name='root',
         ),
         migrations.CreateModel(
             name='PreprintService',
@@ -1708,14 +1669,6 @@ class Migration(migrations.Migration):
         migrations.RemoveField(
             model_name='abstractnode',
             name='preprint_created',
-        ),
-        migrations.RemoveField(
-            model_name='abstractnode',
-            name='preprint_providers',
-        ),
-        migrations.RemoveField(
-            model_name='abstractnode',
-            name='preprint_subjects',
         ),
         migrations.AddField(
             model_name='abstractnode',
@@ -2047,9 +2000,11 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='AdminLogEntry',
             fields=[
-                ('logentry_ptr', models.OneToOneField(auto_created=True, on_delete=django.db.models.deletion.CASCADE, parent_link=True, primary_key=True, serialize=False, to='admin.LogEntry')),
             ],
-            bases=('admin.logentry',),
+            options={
+                'proxy': True,
+            },
+            bases=(LogEntry,),
             managers=[
                 ('objects', osf.models.admin_log_entry.AdminLogEntryManager()),
             ],
@@ -2278,11 +2233,6 @@ class Migration(migrations.Migration):
         migrations.AlterIndexTogether(
             name='noderelation',
             index_together=set([('is_node_link', 'child', 'parent')]),
-        ),
-        migrations.AddField(
-            model_name='abstractnode',
-            name='root',
-            field=models.ForeignKey(blank=True, default=None, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='descendants', to='osf.AbstractNode'),
         ),
         migrations.RunPython(ensure_root, reset_root),
         migrations.AlterIndexTogether(
