@@ -296,9 +296,7 @@ class InstitutionNodesRelationship(JSONAPIBaseView, generics.RetrieveDestroyAPIV
         ConcreteNode = apps.get_model('osf.Node')
         inst = self.get_institution()
         auth = get_user_auth(self.request)
-        nodes = [node for node in
-                 ConcreteNode.find_by_institutions(inst, Q('is_deleted', 'ne', True))
-                 if node.can_view(auth)]
+        nodes = ConcreteNode.find_by_institutions(inst, Q('is_deleted', 'ne', True)).can_view(user=auth.user, private_link=auth.private_link)
         ret = {
             'data': nodes,
             'self': inst
