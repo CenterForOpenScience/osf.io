@@ -165,7 +165,9 @@ class AbstractNodeQuerySet(GuidMixinQuerySet):
         '''.format(', '.join(guid_fields)))
         contributor_fields.append('\'user\', json_build_object({})'.format(', '.join(osfuser_fields)))
 
-        qs = self._clone().extra(
+        qs = self.prefetch_related(None)
+        qs.remove_guid_annotations()
+        qs = qs.extra(
             select={
                 '_scaryprefetch_contributor_set': '''
                     SELECT json_agg(json_build_object({}) ORDER BY "osf_contributor"."_order" ASC)
