@@ -27,7 +27,7 @@ REGISTRATION_UNAVAILABLE = 'Registration currently unavailable.'
 
 ALREADY_REGISTERED = u'The email {email} has already been registered.'
 
-AFTER_SUBMIT_FOR_REVIEW = 'Your submission has been received. You will be notified within ten business days regarding the status of your submission. If you have questions you may contact us at prereg@cos.io.'
+AFTER_SUBMIT_FOR_REVIEW = 'Your submission has been received. You will be notified within two business days regarding the status of your submission. If you have questions you may contact us at prereg@cos.io.'
 
 # Shown if user tries to login with an email that is not yet confirmed
 UNCONFIRMED = ('This login email has been registered but not confirmed. Please check your email (and spam folder).'
