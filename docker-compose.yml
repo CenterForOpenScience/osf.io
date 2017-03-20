@@ -86,19 +86,19 @@ services:
       - rabbitmq_vol:/var/lib/rabbitmq
     stdin_open: true
 
-  redis:
-    image: redis
-    command: |-
-      /bin/bash -c "
-        mkdir -p /usr/local/etc/redis &&
-        echo \"maxmemory 100mb\" > /usr/local/etc/redis/redis.conf &&
-        echo \"maxmemory-policy allkeys-lru\" >> /usr/local/etc/redis/redis.conf &&
-        echo \"tcp-backlog 128\" >> /usr/local/etc/redis/redis.conf &&
-        /usr/local/bin/docker-entrypoint.sh redis-server /usr/local/etc/redis/redis.conf
-      "
-    ports:
-      - 6379:6379
-    stdin_open: true
+#  redis:
+#    image: redis
+#    command: |-
+#      /bin/bash -c "
+#        mkdir -p /usr/local/etc/redis &&
+#        echo \"maxmemory 100mb\" > /usr/local/etc/redis/redis.conf &&
+#        echo \"maxmemory-policy allkeys-lru\" >> /usr/local/etc/redis/redis.conf &&
+#        echo \"tcp-backlog 128\" >> /usr/local/etc/redis/redis.conf &&
+#        /usr/local/bin/docker-entrypoint.sh redis-server /usr/local/etc/redis/redis.conf
+#      "
+#    ports:
+#      - 6379:6379
+#    stdin_open: true
 
 #  flower:
 #    image: quay.io/centerforopenscience/osf:develop
@@ -305,7 +305,7 @@ services:
     restart: unless-stopped
     depends_on:
       - postgres
-      - redis
+#      - redis
       - rabbitmq
       - elasticsearch
     environment:
@@ -329,7 +329,7 @@ services:
       - 8001:8001
     depends_on:
       - postgres
-      - redis
+#      - redis
       - tokumx
       - rabbitmq
       - elasticsearch
@@ -352,7 +352,7 @@ services:
     depends_on:
       - postgres
       - tokumx
-      - redis
+#      - redis
       - rabbitmq
       - elasticsearch
     environment:
@@ -374,7 +374,7 @@ services:
     depends_on:
       - postgres
       - tokumx
-      - redis
+#      - redis
       - rabbitmq
       - elasticsearch
     environment:
