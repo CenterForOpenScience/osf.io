@@ -1134,6 +1134,13 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         for node in self.contributed:
             node.update_search()
 
+    def update_date_last_login(self, save=False):
+        if (not self.date_last_login or
+                timezone.now() - self.date_last_login > website_settings.LAST_LOGIN_THRESHOLD):
+            self.date_last_login = timezone.now()
+            if save:
+                self.save()
+
     def get_summary(self, formatter='long'):
         return {
             'user_fullname': self.fullname,
