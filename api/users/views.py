@@ -38,6 +38,8 @@ class UserMixin(object):
     user_lookup_url_kwarg = 'user_id'
 
     def get_user(self, check_permissions=True):
+        if self.kwargs.get('is_embedded') is True:
+            return self.kwargs.pop('parent_obj').user
         key = self.kwargs[self.user_lookup_url_kwarg]
         current_user = self.request.user
 
@@ -498,7 +500,7 @@ class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, NodePreprintsF
 
     # overrides ListAPIView
     def get_queryset(self):
-        return Node.find(self.get_query_from_request()).select_related('root')
+        return Node.find(self.get_query_from_request()).select_related('root', 'node_license').pls_mak_fast()
 
 
 class UserPreprints(UserNodes):

@@ -2,8 +2,6 @@ import weakref
 
 from django.conf import settings as django_settings
 from django.db import transaction
-from django.db.models import F
-from django.db.models.expressions import RawSQL
 from django.http import JsonResponse
 from rest_framework import generics
 from rest_framework import permissions as drf_permissions
@@ -66,7 +64,8 @@ class JSONAPIBaseView(generics.GenericAPIView):
 
             view_kwargs.update({
                 'request': request,
-                'is_embedded': True
+                'parent_obj': item,
+                'is_embedded': True,
             })
 
             # Setup a view ourselves to avoid all the junk DRF throws in
@@ -96,7 +95,7 @@ class JSONAPIBaseView(generics.GenericAPIView):
                     ret = ser.to_representation(view.get_object())
                 else:
                     queryset = view.filter_queryset(view.get_queryset())
-                    page = view.paginate_queryset(queryset)
+                    page = view.paginate_queryset(getattr(queryset, '_results_cache', None) or queryset)
 
                     ret = ser.to_representation(page or queryset)
 
@@ -783,24 +782,26 @@ class BaseContributorList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin
     def get_default_queryset(self):
         node = self.get_node()
 
-        qs = node._contributors.all() \
-            .annotate(
-            index=F('contributor___order'),
-            bibliographic=F('contributor__visible'),
-            node_id=F('contributor__node__guids___id'),
-            permission=RawSQL("""
-                SELECT
-                  CASE WHEN c.admin IS TRUE
-                    THEN 'admin'
-                    WHEN c.admin IS FALSE and c.write IS TRUE
-                    THEN 'write'
-                    WHEN c.admin IS FALSE and c.write is FALSE and c.read IS TRUE
-                    THEN 'read'
-                  END as permission
-                FROM osf_contributor AS c WHERE c.user_id = osf_osfuser.id AND c.node_id = %s LIMIT 1
-            """, (node.id, ))
-        ).order_by('contributor___order')
-        return qs
+        return node.contributor_set.all()
+
+        # qs = node._contributors.all() \
+        #     .annotate(
+        #     index=F('contributor___order'),
+        #     bibliographic=F('contributor__visible'),
+        #     node_id=F('contributor__node__guids___id'),
+        #     permission=RawSQL("""
+        #         SELECT
+        #           CASE WHEN c.admin IS TRUE
+        #             THEN 'admin'
+        #             WHEN c.admin IS FALSE and c.write IS TRUE
+        #             THEN 'write'
+        #             WHEN c.admin IS FALSE and c.write is FALSE and c.read IS TRUE
+        #             THEN 'read'
+        #           END as permission
+        #         FROM osf_contributor AS c WHERE c.user_id = osf_osfuser.id AND c.node_id = %s LIMIT 1
+        #     """, (node.id, ))
+        # ).order_by('contributor___order')
+        # return qs
 
     def get_queryset(self):
         queryset = self.get_queryset_from_request()

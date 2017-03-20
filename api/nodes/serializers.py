@@ -738,7 +738,8 @@ class NodeContributorsSerializer(JSONAPISerializer):
         'index'
     ])
 
-    id = ContributorIDField(read_only=True, source='_id')
+    id = IDField(source='_id', read_only=True)
+    # id = ContributorIDField(read_only=True, source='_id')
     type = TypeField()
     index = ser.IntegerField(required=False, read_only=True)
 
@@ -753,9 +754,9 @@ class NodeContributorsSerializer(JSONAPISerializer):
         'self': 'get_absolute_url'
     })
 
-    users = RelationshipField(
+    user = RelationshipField(
         related_view='users:user-detail',
-        related_view_kwargs={'user_id': '<_id>'},
+        related_view_kwargs={'user_id': '<user_id>'},
         always_embed=True
     )
 
@@ -771,14 +772,14 @@ class NodeContributorsSerializer(JSONAPISerializer):
         return absolute_reverse(
             'nodes:node-contributor-detail',
             kwargs={
-                'user_id': obj._id,
+                'user_id': obj.user._id,
                 'node_id': self.context['request'].parser_context['kwargs']['node_id'],
                 'version': self.context['request'].parser_context['kwargs']['version']
             }
         )
 
     def get_unregistered_contributor(self, obj):
-        unclaimed_records = obj.unclaimed_records.get(obj.node_id, None)
+        unclaimed_records = obj.user.unclaimed_records.get(obj.node_id, None)
         if unclaimed_records:
             return unclaimed_records.get('name', None)
 
