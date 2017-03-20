@@ -95,7 +95,7 @@ class ScaryModelIterable(ModelIterable):
             for name, field in prefetched.iteritems():
                 if not hasattr(instance, '_prefetched_objects_cache'):
                     instance._prefetched_objects_cache = {}
-                instance._prefetched_objects_cache[name] = getattr(instance, name).all()
+                instance._prefetched_objects_cache[name] = getattr(instance, name).none()
                 instance._prefetched_objects_cache[name]._result_cache = []
 
                 for serial in instance.__dict__.pop(self.PREFIX + name, []):
