@@ -10,12 +10,10 @@ import osf.models.validators
 
 class Migration(migrations.Migration):
 
-    replaces = [(b'addons_forward', '0001_initial'), (b'addons_forward', '0002_auto_20161213_1225')]
-
     initial = True
 
     dependencies = [
-        ('osf', '0015_auto_20161104_1254'),
+        ('osf', '0001_squashed_0043_auto_20170313_1717'),
     ]
 
     operations = [

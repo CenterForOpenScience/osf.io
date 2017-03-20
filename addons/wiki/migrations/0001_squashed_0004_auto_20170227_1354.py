@@ -14,13 +14,11 @@ import osf.utils.fields
 
 class Migration(migrations.Migration):
 
-    replaces = [(b'addons_wiki', '0001_initial'), (b'addons_wiki', '0002_auto_20161019_1116'), (b'addons_wiki', '0003_auto_20170119_0944'), (b'addons_wiki', '0004_auto_20170227_1354')]
-
     initial = True
 
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
-        ('osf', '0007_auto_20161014_1134'),
+        ('osf', '0001_squashed_0043_auto_20170313_1717'),
     ]
 
     operations = [

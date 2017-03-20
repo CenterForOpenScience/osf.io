@@ -9,8 +9,6 @@ import osf.models.base
 
 class Migration(migrations.Migration):
 
-    replaces = [(b'addons_osfstorage', '0001_initial'), (b'addons_osfstorage', '0002_nodesettings_root_node')]
-
     initial = True
 
     dependencies = [

@@ -11,12 +11,10 @@ import osf.utils.datetime_aware_jsonfield
 
 class Migration(migrations.Migration):
 
-    replaces = [(b'addons_box', '0001_initial'), (b'addons_box', '0002_auto_20161028_1500')]
-
     initial = True
 
     dependencies = [
-        ('osf', '0006_merge'),
+        ('osf', '0001_squashed_0043_auto_20170313_1717'),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
