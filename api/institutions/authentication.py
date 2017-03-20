@@ -58,7 +58,7 @@ class InstitutionAuthentication(BaseAuthentication):
             user.middle_names = provider['user'].get('middleNames') or user.middle_names
             user.family_name = provider['user'].get('familyName') or user.family_name
             user.suffix = provider['user'].get('suffix') or user.suffix
-            user.date_last_login = datetime.utcnow()
+            user.date_last_login = timezone.now()
             user.save()
 
             # User must be saved in order to have a valid _id
