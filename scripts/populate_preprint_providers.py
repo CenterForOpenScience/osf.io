@@ -234,6 +234,10 @@ def main(env):
             'name': 'PsyArXiv',
             'logo_name': 'psyarxiv-logo.png',
             'description': 'A free preprint service for the psychological sciences.',
+            'description_link': {
+                'url': 'http://improvingpsych.org',
+                'text': 'The Society for the Improvement of Psychological Science'
+            },
             'banner_name': 'psyarxiv-banner.png',
             'external_url': 'http://psyarxiv.com',
             'example': 'k9mn3',
@@ -1013,6 +1017,10 @@ def main(env):
             'name': 'BITSS',
             'logo_name': 'bitss-logo.png',
             'description': 'An interdisciplinary archive of articles focused on improving research transparency and reproducibility',
+            'description_link': {
+                'url': 'www.bitss.org',
+                'text': 'The Berkeley Initiative for Transparency in the Social Sciences (BITSS)'
+            },
             'banner_name': 'bitss-banner.png',
             'external_url': 'http://www.bitss.org',
             'example': '',
