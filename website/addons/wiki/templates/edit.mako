@@ -83,6 +83,8 @@
 
                             <div class="pull-right">
                                 <!-- Version Picker -->
+                                <span>Wiki Version:</span>
+                                <div style="display: inline-block">
                                 <select class="form-control" data-bind="value:viewVersion" id="viewVersionSelect">
                                     % if user['can_edit_wiki_body']:
                                         <option value="preview" ${'selected' if version_settings['view'] == 'preview' else ''}>Preview</option>
@@ -99,6 +101,7 @@
                                     % endif
                                 </select>
 
+                                </div>
                             </div>
 
                         </div>
