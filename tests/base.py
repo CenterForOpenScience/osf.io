@@ -137,7 +137,7 @@ class DbTestCase(unittest.TestCase):
         settings.ENABLE_EMAIL_SUBSCRIPTIONS = False
 
         cls._original_bcrypt_log_rounds = settings.BCRYPT_LOG_ROUNDS
-        settings.BCRYPT_LOG_ROUNDS = 1
+        settings.BCRYPT_LOG_ROUNDS = 4
 
         # teardown_database(database=database_proxy._get_current_object())
 
