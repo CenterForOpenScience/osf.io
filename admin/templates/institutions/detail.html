@@ -33,32 +33,13 @@
 
         <div class="row">
             <div class="col-md-12">
-                <h4>Description</h4>
-                <p>{{ institution.description | safe }}</p>
-            </div>
-        </div>
-
-        <div class="row">
-            <div class="col-md-12">
-
-                <h4>Other Attributes</h4>
                 <table class="table table-striped">
-                    <tr>
-                        <th>login Url</th>
-                        <td>{{ institution.login_url }}</td>
-                    </tr>
-                    <tr>
-                        <th>logout URL:</th>
-                        <td>{{ institution.logout_url }}</td>
-                    </tr>
-                    <tr>
-                        <th>Domains:</th>
-                        <th>{{ institution.domains }}</th>
-                    </tr>
-                    <tr>
-                        <th>Email domains:</th>
-                        <td>{{ institution.email_domains }}</td>
-                    </tr>
+                    {% for field, value in institution.items %}
+                        <tr>
+                            <th>{{ field }}</th>
+                            <td>{{ value | safe }}</td>
+                        </tr>
+                    {% endfor %}
                 </table>
             </div>
         </div>
@@ -83,6 +64,11 @@
             <div class="col-md-12">
                 <div class="collapse" id="collapseExample">
                     <div class="well">
+                        <form action = {% url 'institutions:upload' institution.id 'True' %} method="post" enctype="multipart/form-data">
+                            {% csrf_token %}
+                            {{ upload_form.as_p }}
+                            <input class="form-button" type="submit" value="upload" />
+                        </form>
                         <form action= {% url 'institutions:detail' institution.id %} method="post">
                             {% csrf_token %}
                             {{ change_form.as_p }}

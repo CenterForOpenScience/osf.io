@@ -3,14 +3,15 @@ from __future__ import unicode_literals
 import json
 
 from django.core import serializers
+from django.forms.models import model_to_dict
 from django.core.urlresolvers import reverse, reverse_lazy
-from django.http import HttpResponseForbidden, HttpResponse
+from django.http import HttpResponseForbidden, HttpResponse, HttpResponseRedirect
 from django.views.generic import ListView, FormView, DetailView, View, CreateView
 from django.views.generic.detail import SingleObjectMixin
 from django.contrib.auth.mixins import PermissionRequiredMixin
 
 from admin.base import settings
-from admin.institutions.forms import InstitutionForm
+from admin.institutions.forms import InstitutionForm, UploadFileForm
 from osf.models import Institution
 
 
@@ -47,11 +48,18 @@ class InstitutionDisplay(PermissionRequiredMixin, DetailView):
 
     def get_context_data(self, *args, **kwargs):
         institution = self.get_object()
+        institution_dict = model_to_dict(institution)
         kwargs.setdefault('page_number', self.request.GET.get('page', '1'))
-        kwargs['institution'] = institution
+        kwargs['institution'] = institution_dict
         kwargs['logohost'] = settings.OSF_URL
-        fields = json.loads(serializers.serialize('json', [institution, ]))[0]['fields']
+
+        if self.request.session.get('parsed_file'):
+            fields = json.loads(self.request.session['parsed_file'])[0]['fields']
+        else:
+            fields = institution_dict
+
         kwargs['change_form'] = InstitutionForm(initial=fields)
+        kwargs['upload_form'] = UploadFileForm()
 
         return kwargs
 
@@ -66,7 +74,20 @@ class InstitutionDetail(PermissionRequiredMixin, View):
 
     def post(self, request, *args, **kwargs):
         view = InstitutionChangeForm.as_view()
+        upload = kwargs.pop('upload')
+        if upload:
+            form = UploadFileForm(request.POST, request.FILES)
+            if form.is_valid():
+                file_str = self.parse_file(request.FILES['file'])
+                request.session['parsed_file'] = file_str
+                return HttpResponseRedirect(reverse('institutions:detail', kwargs=kwargs))
         return view(request, *args, **kwargs)
+
+    def parse_file(self, f):
+        parsed_file = ''
+        for chunk in f.chunks():
+            parsed_file += str(chunk)
+        return parsed_file
 
 
 class InstitutionChangeForm(PermissionRequiredMixin, SingleObjectMixin, FormView):
@@ -103,7 +124,7 @@ class InstitutionExport(PermissionRequiredMixin, View):
 
     def post(self, request, *args, **kwargs):
         institution = Institution.objects.get(id=self.kwargs['institution_id'])
-        data = serializers.serialize("json", [institution])
+        data = serializers.serialize('json', [institution])
 
         filename = '{}_export.json'.format(institution.name)
 

@@ -1,9 +1,8 @@
-from django.forms import ModelForm
-
+from django import forms
 from osf.models import Institution
 
 
-class InstitutionForm(ModelForm):
+class InstitutionForm(forms.ModelForm):
     class Meta:
         model = Institution
 
@@ -11,3 +10,7 @@ class InstitutionForm(ModelForm):
             'modm_model_path', 'modm_query', '_id', 'is_deleted',
             'contributors', 'logo_name', 'banner_name'
         ]
+
+
+class UploadFileForm(forms.Form):
+    file = forms.FileField()
