@@ -520,6 +520,7 @@ def requirements(ctx, base=False, addons=False, release=False, dev=False, quick=
     ctx.run('pip uninstall uritemplate.py --yes || true')
     ctx.run('pip install --no-cache-dir uritemplate.py==0.3.0')
 
+
 @task
 def test_module(ctx, module=None, numprocesses=None, params=None):
     """Helper for running tests.
@@ -533,7 +534,7 @@ def test_module(ctx, module=None, numprocesses=None, params=None):
     # https://github.com/gabrielfalcao/HTTPretty/issues/209#issue-54090252
     args = ['-s']
     if numprocesses > 1:
-        args += ['-n {}'.format(numprocesses)]
+        args += ['-n {} --max-slave-restart=0'.format(numprocesses)]
     modules = [module] if isinstance(module, basestring) else module
     args.extend(modules)
     if params:
