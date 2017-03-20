@@ -54,11 +54,11 @@ class InstitutionAuthentication(BaseAuthentication):
         user, created = get_or_create_user(fullname, username, reset_password=False)
 
         if created:
-            user.given_name = provider['user'].get('givenName')
-            user.middle_names = provider['user'].get('middleNames')
-            user.family_name = provider['user'].get('familyName')
-            user.suffix = provider['user'].get('suffix')
-            user.date_last_login = timezone.now()
+            user.given_name = provider['user'].get('givenName') or user.given_name
+            user.middle_names = provider['user'].get('middleNames') or user.middle_names
+            user.family_name = provider['user'].get('familyName') or user.family_name
+            user.suffix = provider['user'].get('suffix') or user.suffix
+            user.date_last_login = datetime.utcnow()
             user.save()
 
             # User must be saved in order to have a valid _id
