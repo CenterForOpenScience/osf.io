@@ -97,7 +97,7 @@ def api_url_for(view_name, _absolute=False, _xml=False, _internal=False, *args, 
         return urlparse.urljoin(domain, url)
     return url
 
-
+_FURL_API_DOMAIN_CACHE = None
 def api_v2_url(path_str,
                params=None,
                base_route=website_settings.API_DOMAIN,

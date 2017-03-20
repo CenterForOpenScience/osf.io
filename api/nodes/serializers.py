@@ -754,15 +754,15 @@ class NodeContributorsSerializer(JSONAPISerializer):
         'self': 'get_absolute_url'
     })
 
-    user = RelationshipField(
+    users = RelationshipField(
         related_view='users:user-detail',
-        related_view_kwargs={'user_id': '<user_id>'},
+        related_view_kwargs={'user_id': '<user._id>'},
         always_embed=True
     )
 
     node = RelationshipField(
         related_view='nodes:node-detail',
-        related_view_kwargs={'node_id': '<node_id>'}
+        related_view_kwargs={'node_id': '<node._id>'}
     )
 
     class Meta:

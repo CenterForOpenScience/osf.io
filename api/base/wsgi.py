@@ -56,6 +56,10 @@ Field.context = context
 Request.__getattr__ = __getattr__
 Request.__getattribute__ = object.__getattribute__
 
+import ujson
+import psycopg2
+psycopg2.extras.register_default_json(loads=ujson.loads)
+
 ############# /monkeys ####################
 
 init_app(set_backends=True, routes=False, attach_request_handlers=False)

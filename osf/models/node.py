@@ -174,6 +174,7 @@ class AbstractNodeQuerySet(GuidMixinQuerySet):
                     FROM osf_contributor
                     JOIN osf_osfuser ON osf_osfuser.id = osf_contributor.user_id
                     WHERE node_id = osf_abstractnode.id
+                    LIMIT 10
                 '''.format(', '.join(contributor_fields)),
                 '_scaryprefetch_guids': '''
                     SELECT json_agg(json_build_object({}))
@@ -863,8 +864,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         return self.absolute_api_v2_url
 
     def get_permissions(self, user):
-        if hasattr(self, '_prefetched_objects_cache') and '_contributors' in self._prefetched_objects_cache:
-            for contrib in self._prefetched_objects_cache['_contributors']._result_cache:
+        if hasattr(self.contributor_set.all(), '_result_cache'):
+            for contrib in self.contributor_set.all():
                 if contrib.user_id == user.id:
                     return get_contributor_permissions(contrib)
             return []

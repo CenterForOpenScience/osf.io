@@ -501,6 +501,7 @@ class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, NodePreprintsF
     # overrides ListAPIView
     def get_queryset(self):
         return Node.find(self.get_query_from_request()).select_related('root', 'node_license').pls_mak_fast()
+        # return Node.find(self.get_query_from_request()).select_related('root', 'node_license')
 
 
 class UserPreprints(UserNodes):
