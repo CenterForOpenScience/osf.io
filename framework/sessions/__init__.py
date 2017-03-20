@@ -1,9 +1,11 @@
 # -*- coding: utf-8 -*-
+import datetime as dt
 import httplib as http
 import urllib
 import urlparse
 
 from django.utils import timezone
+from django.db.models import Q
 from django.apps import apps
 import bson.objectid
 import itsdangerous
@@ -161,11 +163,11 @@ def before_request():
             # Update date last login when making non-api requests
             if user_session.data.get('auth_user_id') and 'api' not in request.url:
                 OSFUser = apps.get_model('osf.OSFUser')
-                query = OSFUser.objects.filter(guids___id=user_session.data['auth_user_id']).only('date_last_login')
-                user = query.get()
-                # Throttle updates to date_last_login
-                if util_time.throttle_period_expired(user.date_last_login, settings.DATE_LAST_LOGIN_THROTTLE):
-                    query.invalidated_update(date_last_login=timezone.now())
+                (
+                    OSFUser.objects
+                    .filter(guids___id=user_session.data['auth_user_id'])
+                    .filter(Q(date_last_login__isnull=True) | Q(date_last_login__lt=timezone.now() - dt.timedelta(seconds=settings.DATE_LAST_LOGIN_THROTTLE)))
+                ).update(date_last_login=timezone.now())
             set_session(user_session)
         else:
             remove_session(user_session)
