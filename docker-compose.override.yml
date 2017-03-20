@@ -30,6 +30,7 @@ services:
       - ember-osf_vol:/ember-osf
 
   ember-osf:
+    build: ../ember-osf
     volumes_from:
       - container:ember-osf-sync
     command: /bin/bash -c "yarn --pure-lockfile --no-progress --no-emoji && ./node_modules/bower/bin/bower install --allow-root --config.interactive=false && tail -f /dev/null"
