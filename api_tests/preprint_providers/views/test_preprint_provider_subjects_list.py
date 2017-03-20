@@ -6,6 +6,28 @@ from tests.base import ApiTestCase
 from osf_tests.factories import SubjectFactory, PreprintProviderFactory
 
 
+class TestPreprintProviderExists(ApiTestCase):
+
+    # Regression for https://openscience.atlassian.net/browse/OSF-7621
+
+    def setUp(self):
+        super(TestPreprintProviderExists, self).setUp()
+        self.url = '/{}/preprint_proiders/fake/'.format(API_BASE)
+
+    def test_preprint_provider_does_not_exist_returns_404(self):
+        detail_res = self.app.get(self.url, expect_errors=True)
+        assert_equals(detail_res.status_code, 404)
+
+        licenses_res = self.app.get('{}licenses/'.format(self.url), expect_errors=True)
+        assert_equals(licenses_res.status_code, 404)
+
+        preprints_res = self.app.get('{}preprints/'.format(self.url), expect_errors=True)
+        assert_equals(preprints_res.status_code, 404)
+
+        taxonomies_res = self.app.get('{}taxonomies/'.format(self.url), expect_errors=True)
+        assert_equals(taxonomies_res.status_code, 404)
+
+
 class TestPreprintProviderSubjects(ApiTestCase):
     def create_subject_rules(self):
         '''
