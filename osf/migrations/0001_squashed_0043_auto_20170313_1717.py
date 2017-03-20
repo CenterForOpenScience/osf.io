@@ -4,12 +4,15 @@ from __future__ import unicode_literals
 
 import dirtyfields.dirtyfields
 from django.conf import settings
+from django.contrib.auth.models import Group, Permission
 import django.contrib.postgres.fields
-from django.db import migrations, models
+from django.core.management.sql import emit_post_migrate_signal
+from django.db import connection, migrations, models
 import django.db.models.deletion
 import django.db.models.manager
 import django.utils.timezone
 import functools
+from osf.models import AbstractNode
 import osf.models.admin_log_entry
 import osf.models.base
 import osf.models.conference
@@ -24,13 +27,137 @@ import osf.utils.fields
 import website.addons.wiki.model
 import website.security
 
+import logging
 
-# Functions from the following migrations need manual copying.
-# Move them and any dependencies into this file, then update the
-# RunPython operations to refer to the local versions:
+logger = logging.getLogger(__file__)
+
+
+# Functions from the following migrations needed manual copying.
+
 # osf.migrations.0033_create_permissions_for_admin_groups
+def get_read_only_permissions():
+    return Permission.objects.filter(
+        models.Q(codename='view_node') |
+        models.Q(codename='view_registration') |
+        models.Q(codename='view_user') |
+        models.Q(codename='view_conference') |
+        models.Q(codename='view_spam') |
+        models.Q(codename='view_metrics') |
+        models.Q(codename='view_desk')
+    )
+
+
+def get_admin_permissions():
+    return Permission.objects.filter(
+        models.Q(codename='change_node') |
+        models.Q(codename='delete_node') |
+        models.Q(codename='change_user') |
+        models.Q(codename='change_conference') |
+        models.Q(codename='mark_spam')
+    )
+
+
+def get_prereg_admin_permissions():
+    return Permission.objects.filter(
+        models.Q(codename='view_prereg') |
+        models.Q(codename='administer_prereg')
+    )
+
+
+def add_group_permissions(*args):
+    # this is to make sure that the permissions created in an earlier migration exist!
+    emit_post_migrate_signal(2, False, 'default')
+
+    # Create and add permissions for the read only group
+    group, created = Group.objects.get_or_create(name='read_only')
+    if created:
+        logger.info('read_only group created')
+    [group.permissions.add(perm) for perm in get_read_only_permissions()]
+    group.save()
+    logger.info('Node, user, spam and meeting permissions added to read only group')
+
+    # Create  and add permissions for new OSF Admin group - can perform actions
+    admin_group, created = Group.objects.get_or_create(name='osf_admin')
+    if created:
+        logger.info('admin_user Group created')
+    [admin_group.permissions.add(perm) for perm in get_read_only_permissions()]
+    [admin_group.permissions.add(perm) for perm in get_admin_permissions()]
+    group.save()
+    logger.info('Administrator permissions for Node, user, spam and meeting permissions added to admin group')
+
+    # Create and add permissions for Prereg Admin group
+    prereg_group, created = Group.objects.get_or_create(name='prereg_admin')
+    if created:
+        logger.info('Prereg admin group created')
+    [prereg_group.permissions.add(perm) for perm in get_prereg_admin_permissions()]
+    prereg_group.save()
+    logger.info('Prereg read and administer permissions added to the prereg_admin group')
+
+    # Add a metrics_only Group and permissions
+    metrics_group, created = Group.objects.get_or_create(name='metrics_only')
+    if created:
+        logger.info('Metrics only group created')
+    metrics_permission = Permission.objects.get(codename='view_metrics')
+    metrics_group.permissions.add(metrics_permission)
+    metrics_group.save()
+
+    # Add a view_prereg Group and permissions
+    prereg_view_group, created = Group.objects.get_or_create(name='prereg_view')
+    if created:
+        logger.info('Prereg view group created')
+    prereg_view_permission = Permission.objects.get(codename='view_prereg')
+    prereg_view_group.permissions.add(prereg_view_permission)
+    prereg_view_group.save()
+
+
+def remove_group_permissions(*args):
+    # remove the read only group
+    Group.objects.get(name='read_only').delete()
+
+    # remove the prereg admin group
+    Group.objects.get(name='prereg_admin').delete()
+
+    # remove the osf admin group
+    Group.objects.get(name='osf_admin').delete()
+
+    # remove the  metrics group
+    Group.objects.get(name='metrics_only').delete()
+
+    # remove the new prereg view group
+    Group.objects.get(name='prereg_view').delete()
+
+
 # osf.migrations.0037_auto_20170227_1522
+def add_partial_uniqueness_index(*args):
+    sql = """
+    CREATE UNIQUE INDEX one_bookmark_collection_per_user ON osf_abstractnode (creator_id, is_bookmark_collection, is_deleted)
+        WHERE is_bookmark_collection=TRUE AND is_deleted=FALSE;
+    """
+    with connection.cursor() as cursor:
+        cursor.execute(sql)
+
+def remove_partial_uniqueness_index(*args):
+    sql = """
+    DROP INDEX IF EXISTS one_bookmark_collection_per_user
+    """
+    with connection.cursor() as cursor:
+        cursor.execute(sql)
+
+
 # osf.migrations.0040_ensure_root_field
+def ensure_root(*args):
+    nodes = AbstractNode.objects.filter(root=None)
+    total = nodes.count()
+    print('Migrating {} nodes'.format(total))
+    for i, node in enumerate(nodes.iterator()):
+        if not i % 100:
+            print('{}/{} nodes migrated'.format(i, total))
+        node.root = node.get_root()
+        node.save()
+
+def reset_root(*args):
+    AbstractNode.objects.all().invalidated_update(root=None)
+
 
 class Migration(migrations.Migration):
 
@@ -1081,10 +1208,7 @@ class Migration(migrations.Migration):
             name='src_node',
             field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='osf.Node', verbose_name=b'source node'),
         ),
-        migrations.RunPython(
-            code=osf.migrations.0033_create_permissions_for_admin_groups.add_group_permissions,
-            reverse_code=osf.migrations.0033_create_permissions_for_admin_groups.remove_group_permissions,
-        ),
+        migrations.RunPython(add_group_permissions, remove_group_permissions),
         migrations.AlterField(
             model_name='apioauth2application',
             name='client_secret',
@@ -2022,10 +2146,7 @@ class Migration(migrations.Migration):
             name='date_added',
             field=osf.utils.fields.NonNaiveDateTimeField(default=django.utils.timezone.now),
         ),
-        migrations.RunPython(
-            code=osf.migrations.0037_auto_20170227_1522.add_partial_uniqueness_index,
-            reverse_code=osf.migrations.0037_auto_20170227_1522.remove_partial_uniqueness_index,
-        ),
+        migrations.RunPython(add_partial_uniqueness_index, remove_partial_uniqueness_index),
         migrations.AlterModelManagers(
             name='osfuser',
             managers=[
@@ -2164,10 +2285,7 @@ class Migration(migrations.Migration):
             name='root',
             field=models.ForeignKey(blank=True, default=None, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='descendants', to='osf.AbstractNode'),
         ),
-        migrations.RunPython(
-            code=osf.migrations.0040_ensure_root_field.ensure_root,
-            reverse_code=osf.migrations.0040_ensure_root_field.reset_root,
-        ),
+        migrations.RunPython(ensure_root, reset_root),
         migrations.AlterIndexTogether(
             name='abstractnode',
             index_together=set([('is_public', 'is_deleted', 'type')]),
