@@ -7,5 +7,5 @@ urlpatterns = [
     url(r'^create/$', views.CreateInstitution.as_view(), name='create'),
     url(r'^(?P<institution_id>[0-9]+)/$', views.InstitutionDetail.as_view(), name='detail'),
     url(r'^(?P<institution_id>[0-9]+)/export/$', views.InstitutionExport.as_view(), name='export'),
-    url(r'^(?P<institution_id>[0-9]+)/(?P<upload>[a-zA-Z]+)/$', views.InstitutionDetail.as_view(), name='upload'),
+    url(r'^(?P<institution_id>[0-9]+)/import/$', views.ImportInstitution.as_view(), name='import'),
 ]

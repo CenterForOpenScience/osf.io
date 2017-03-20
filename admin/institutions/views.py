@@ -5,7 +5,7 @@ import json
 from django.core import serializers
 from django.forms.models import model_to_dict
 from django.core.urlresolvers import reverse, reverse_lazy
-from django.http import HttpResponseForbidden, HttpResponse, HttpResponseRedirect
+from django.http import HttpResponseForbidden, HttpResponse, JsonResponse
 from django.views.generic import ListView, FormView, DetailView, View, CreateView
 from django.views.generic.detail import SingleObjectMixin
 from django.contrib.auth.mixins import PermissionRequiredMixin
@@ -52,12 +52,7 @@ class InstitutionDisplay(PermissionRequiredMixin, DetailView):
         kwargs.setdefault('page_number', self.request.GET.get('page', '1'))
         kwargs['institution'] = institution_dict
         kwargs['logohost'] = settings.OSF_URL
-
-        if self.request.session.get('parsed_file'):
-            fields = json.loads(self.request.session['parsed_file'])[0]['fields']
-        else:
-            fields = institution_dict
-
+        fields = institution_dict
         kwargs['change_form'] = InstitutionForm(initial=fields)
         kwargs['upload_form'] = UploadFileForm()
 
@@ -74,14 +69,19 @@ class InstitutionDetail(PermissionRequiredMixin, View):
 
     def post(self, request, *args, **kwargs):
         view = InstitutionChangeForm.as_view()
-        upload = kwargs.pop('upload')
-        if upload:
-            form = UploadFileForm(request.POST, request.FILES)
-            if form.is_valid():
-                file_str = self.parse_file(request.FILES['file'])
-                request.session['parsed_file'] = file_str
-                return HttpResponseRedirect(reverse('institutions:detail', kwargs=kwargs))
         return view(request, *args, **kwargs)
+
+
+class ImportInstitution(PermissionRequiredMixin, View):
+    permission_required = 'osf.change_institution'
+    raise_exception = True
+
+    def post(self, request, *args, **kwargs):
+        form = UploadFileForm(request.POST, request.FILES)
+        if form.is_valid():
+            file_str = self.parse_file(request.FILES['file'])
+            file_json = json.loads(file_str)
+            return JsonResponse(file_json[0]['fields'])
 
     def parse_file(self, f):
         parsed_file = ''

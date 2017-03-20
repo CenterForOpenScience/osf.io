@@ -64,7 +64,7 @@
             <div class="col-md-12">
                 <div class="collapse" id="collapseExample">
                     <div class="well">
-                        <form action = {% url 'institutions:upload' institution.id 'True' %} method="post" enctype="multipart/form-data">
+                        <form id="import-form" action = {% url 'institutions:import' institution.id %} method="post" enctype="multipart/form-data">
                             {% csrf_token %}
                             {{ upload_form.as_p }}
                             <input class="form-button" type="submit" value="upload" />
@@ -84,5 +84,27 @@
 {% endblock content %}
 
 {% block bottom_js %}
-
+    <script>
+        $(document).ready(function() {
+            $("#import-form").submit(function(event) {
+                event.preventDefault();
+                $.ajax({
+                    url: '{% url 'institutions:import' institution.id %}',
+                    type: "post",
+                    data: new FormData($(this)[0]),
+                    cache: false,
+                    contentType: false,
+                    processData: false,
+                    success: function(response) {
+                        for (var k in response){
+                            if (response.hasOwnProperty(k)) {
+                                var field = $('#id_' + k);
+                                field.val(response[k]);
+                            }
+                        }
+                    }
+                });
+            });
+        });
+    </script>
 {% endblock %}
