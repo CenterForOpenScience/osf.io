@@ -1,5 +1,7 @@
 from __future__ import unicode_literals
 
+import json
+
 from django.core import serializers
 from django.core.urlresolvers import reverse, reverse_lazy
 from django.http import HttpResponseForbidden, HttpResponse, JsonResponse
@@ -12,6 +14,7 @@ from django.shortcuts import redirect
 
 from admin.base import settings
 from admin.base.utils import get_subject_rules
+from admin.base.forms import ImportFileForm
 from admin.preprint_providers.forms import PreprintProviderForm, PreprintProviderSubjectForm
 from osf.models import PreprintProvider, NodeLicense, Subject
 
@@ -151,8 +154,7 @@ class PreprintProviderChangeForm(PermissionRequiredMixin, SingleObjectMixin, For
         return reverse('preprint_providers:detail', kwargs={'preprint_provider_id': self.object.pk})
 
 
-class PreprintProviderExport(PermissionRequiredMixin, View):
-
+class ExportPreprintProvider(PermissionRequiredMixin, View):
     permission_required = 'osf.change_preprint_provider'
     raise_exception = True
 
@@ -165,6 +167,24 @@ class PreprintProviderExport(PermissionRequiredMixin, View):
         response = HttpResponse(data, content_type='text/json')
         response['Content-Disposition'] = 'attachment; filename={}'.format(filename)
         return response
+
+
+class ImportPreprintProvider(PermissionRequiredMixin, View):
+    permission_required = 'osf.change_preprint_provider'
+    raise_exception = True
+
+    def post(self, request, *args, **kwargs):
+        form = ImportFileForm(request.POST, request.FILES)
+        if form.is_valid():
+            file_str = self.parse_file(request.FILES['file'])
+            file_json = json.loads(file_str)
+            return JsonResponse(file_json[0]['fields'])
+
+    def parse_file(self, f):
+        parsed_file = ''
+        for chunk in f.chunks():
+            parsed_file += str(chunk)
+        return parsed_file
 
 
 class ProcessSubjects(PermissionRequiredMixin, View):
@@ -220,8 +240,12 @@ class CreatePreprintProvider(PermissionRequiredMixin, CreateView):
     raise_exception = True
     template_name = 'preprint_providers/create.html'
     success_url = reverse_lazy('preprint_providers:list')
-
     model = PreprintProvider
+
+    def get_context_data(self, *args, **kwargs):
+        kwargs['import_form'] = ImportFileForm()
+        return super(CreatePreprintProvider, self).get_context_data(*args, **kwargs)
+
     fields = [
         'name', 'logo_name', 'header_text', 'description', 'banner_name',
         'external_url', 'email_contact', 'email_support', 'example', 'access_token',
