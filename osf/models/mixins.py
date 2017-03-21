@@ -97,7 +97,7 @@ class Taggable(models.Model):
             raise ValueError('Must provide auth if adding a non-system tag')
 
         if not isinstance(tag, Tag):
-            tag_instance, created = Tag.objects.get_or_create(name=tag, system=system)
+            tag_instance, created = Tag.all_tags.get_or_create(name=tag, system=system)
         else:
             tag_instance = tag
 

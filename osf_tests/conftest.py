@@ -24,6 +24,8 @@ SILENT_LOGGERS = [
     'website.search.elastic_search',
     'website.search_migration.migrate',
     'website.util.paths',
+    'requests_oauthlib.oauth2_session',
+    'raven.contrib.django.client.DjangoClient',
 ]
 for logger_name in SILENT_LOGGERS:
     logging.getLogger(logger_name).setLevel(logging.CRITICAL)
