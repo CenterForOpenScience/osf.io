@@ -38,8 +38,6 @@ logger = logging.getLogger(__name__)
 class BaseFileNodeManager(Manager):
     def get_queryset(self):
         qs = super(BaseFileNodeManager, self).get_queryset()
-        if not issubclass(self.model, TrashedFileNode):
-            qs = qs.exclude(type__in=TrashedFileNode._typedmodels_subtypes)
         if hasattr(self.model, '_provider') and self.model._provider is not None:
             return qs.filter(provider=self.model._provider)
         return qs
