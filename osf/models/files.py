@@ -37,6 +37,8 @@ logger = logging.getLogger(__name__)
 class BaseFileNodeManager(Manager):
     def get_queryset(self):
         qs = super(BaseFileNodeManager, self).get_queryset()
+        if not issubclass(self.model, TrashedFileNode):
+            qs = qs.exclude(type__in=TrashedFileNode._typedmodels_subtypes)
         if hasattr(self.model, '_provider') and self.model._provider is not None:
             return qs.filter(provider=self.model._provider)
         return qs
@@ -450,22 +452,8 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
         )
 
 
-class StoredFileNode(BaseFileNode):
-
-    @classmethod
-    def load(cls, *args, **kwargs):
-        # exclude trashed things to keep previous behavior
-        try:
-            return BaseFileNode.objects.exclude(type__in=TrashedFileNode._typedmodels_subtypes).filter(_id=args[0]).get()
-        except BaseFileNode.DoesNotExist:
-            return None
-
-    class Meta:
-        proxy = True
-
-
 # TODO Refactor code pointing at FileNode to point to StoredFileNode
-FileNode = BaseFileNode
+FileNode = StoredFileNode = BaseFileNode
 
 
 class UnableToRestore(Exception):
