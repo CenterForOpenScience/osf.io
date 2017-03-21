@@ -194,6 +194,7 @@ def patch_models(settings):
         models.OSFUser: 'User',
         models.AbstractNode: 'Node',
         models.NodeRelation: 'Pointer',
+        models.BaseFileNode: 'StoredFileNode',
     }
     for module in sys.modules.values():
         if not module:
