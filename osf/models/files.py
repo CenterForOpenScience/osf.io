@@ -456,9 +456,12 @@ class StoredFileNode(BaseFileNode):
     def load(cls, *args, **kwargs):
         # exclude trashed things to keep previous behavior
         try:
-            return cls.objects.exclude(type__in=TrashedFileNode._typedmodels_subtypes).filter(_id=args[0]).get()
-        except cls.DoesNotExist:
+            return BaseFileNode.objects.exclude(type__in=TrashedFileNode._typedmodels_subtypes).filter(_id=args[0]).get()
+        except BaseFileNode.DoesNotExist:
             return None
+
+    class Meta:
+        proxy = True
 
 
 # TODO Refactor code pointing at FileNode to point to StoredFileNode
