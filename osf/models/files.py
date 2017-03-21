@@ -303,7 +303,7 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
             headers['Authorization'] = auth_header
 
         resp = requests.get(
-            self.generate_waterbutler_url(revision=revision, meta=True, **kwargs),
+            self.generate_waterbutler_url(revision=revision, meta=True, _internal=True, **kwargs),
             headers=headers,
         )
         if resp.status_code != 200:
