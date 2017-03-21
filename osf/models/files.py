@@ -429,7 +429,7 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
 
         return self
 
-    def serialize(self, **kwargs):
+    def _serialize(self, **kwargs):
         return {
             'id': self._id,
             'path': self.path,
@@ -481,9 +481,11 @@ class File(models.Model):
         return 'file'
 
     def serialize(self):
-        if not self.versions:
+        newest_version = self.versions.all().last()
+
+        if not newest_version:
             return dict(
-                super(File, self).serialize(),
+                self._serialize(),
                 size=None,
                 version=None,
                 modified=None,
@@ -493,9 +495,8 @@ class File(models.Model):
                 checkout=self.checkout._id if self.checkout else None,
             )
 
-        newest_version = self.versions.all().last()
         return dict(
-            super(File, self).serialize(),
+            self._serialize(),
             size=newest_version.size,
             downloads=self.get_download_count(),
             checkout=self.checkout._id if self.checkout else None,
@@ -558,6 +559,9 @@ class Folder(models.Model):
             Q('name', 'eq', name) &
             Q('parent', 'eq', self)
         )
+
+    def serialize(self):
+        return self._serialize()
 
 
 class UnableToDelete(Exception):
