@@ -1179,7 +1179,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
             return False
         if self.preprint_file.node == self:
             self._is_preprint_orphan = False
-            return True
+            return self.has_published_preprint
         else:
             self._is_preprint_orphan = True
             return False
@@ -1196,6 +1196,11 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
         if not self.is_preprint:
             return []
         return PreprintService.find(Q('node', 'eq', self))
+
+    @property
+    def has_published_preprint(self):
+        from website.preprints.model import PreprintService
+        return bool(PreprintService.find(Q('node', 'eq', self) & Q('is_published', 'eq', True)).count())
 
     @property
     def preprint_url(self):
