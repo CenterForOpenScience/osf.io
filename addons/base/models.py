@@ -42,7 +42,7 @@ lookup = TemplateLookup(
 class BaseAddonSettings(ObjectIDMixin, BaseModel):
     deleted = models.BooleanField(default=False)
 
-    class Meta:
+    class Meta(BaseModel.Meta):
         abstract = True
 
     @property
@@ -87,7 +87,7 @@ class BaseAddonSettings(ObjectIDMixin, BaseModel):
 class BaseUserSettings(BaseAddonSettings):
     owner = models.OneToOneField(OSFUser, blank=True, null=True, related_name='%(app_label)s_user_settings')
 
-    class Meta:
+    class Meta(BaseAddonSettings.Meta):
         abstract = True
 
     @property
@@ -167,7 +167,7 @@ class BaseOAuthUserSettings(BaseUserSettings):
 
     serializer = serializer.OAuthAddonSerializer
 
-    class Meta:
+    class Meta(BaseUserSettings.Meta):
         abstract = True
 
     @property
@@ -353,7 +353,7 @@ class BaseOAuthUserSettings(BaseUserSettings):
 class BaseNodeSettings(BaseAddonSettings):
     owner = models.OneToOneField(AbstractNode, null=True, blank=True, related_name='%(app_label)s_node_settings')
 
-    class Meta:
+    class Meta(BaseAddonSettings.Meta):
         abstract = True
 
     @property
@@ -562,7 +562,7 @@ class BaseStorageAddon(BaseModel):
 
     root_node = GenericRootNode()
 
-    class Meta:
+    class Meta(BaseModel.Meta):
         abstract = True
 
     @property
@@ -632,7 +632,7 @@ class BaseOAuthNodeSettings(BaseNodeSettings):
     #   AddonModelMixin.get_oauth_addons().
     oauth_provider = None
 
-    class Meta:
+    class Meta(BaseNodeSettings.Meta):
         abstract = True
 
     @abc.abstractproperty
@@ -859,7 +859,7 @@ class BaseOAuthNodeSettings(BaseNodeSettings):
 
 
 class BaseCitationsNodeSettings(BaseOAuthNodeSettings):
-    class Meta:
+    class Meta(BaseOAuthNodeSettings.Meta):
         abstract = True
 
     def serialize_waterbutler_settings(self, *args, **kwargs):

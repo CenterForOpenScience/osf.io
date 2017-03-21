@@ -126,7 +126,7 @@ class Sanction(ObjectIDMixin, BaseModel):
     def forcibly_reject(self):
         self.state = Sanction.REJECTED
 
-    class Meta:
+    class Meta(BaseModel.Meta):
         abstract = True
 
 
@@ -256,7 +256,7 @@ class TokenApprovableSanction(Sanction):
             else:
                 self._notify_non_authorizer(contrib, node)
 
-    class Meta:
+    class Meta(Sanction.Meta):
         abstract = True
 
 
@@ -353,7 +353,7 @@ class EmailApprovableSanction(TokenApprovableSanction):
         if self.notify_initiator_on_complete:
             self._notify_initiator()
 
-    class Meta:
+    class Meta(TokenApprovableSanction.Meta):
         abstract = True
 
 

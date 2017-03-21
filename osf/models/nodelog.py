@@ -155,7 +155,7 @@ class NodeLog(ObjectIDMixin, BaseModel):
         node_id = getattr(self.node, '_id', None)
         return u'{} on {} by {} at {}'.format(self.action, node_id, user_id, self.date)
 
-    class Meta:
+    class Meta(BaseModel.Meta):
         ordering = ['-date']
         get_latest_by = 'date'
 

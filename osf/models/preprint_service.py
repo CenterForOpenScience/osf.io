@@ -47,7 +47,7 @@ class PreprintService(GuidMixin, BaseModel):
     # Format: [[root_subject._id, ..., child_subject._id], ...]
     subjects = DateTimeAwareJSONField(default=list, null=True, blank=True)
 
-    class Meta:
+    class Meta(BaseModel.Meta):
         unique_together = ('node', 'provider')
 
     @property

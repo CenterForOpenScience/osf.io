@@ -21,7 +21,7 @@ class Identifier(ObjectIDMixin, BaseModel):
     # value: e.g. 'FK424601'
     value = models.CharField(max_length=50)  # longest was 21, 8/19/2016
 
-    class Meta:
+    class Meta(BaseModel.Meta):
         unique_together = ('object_id', 'content_type', 'category')
 
 

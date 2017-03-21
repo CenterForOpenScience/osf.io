@@ -249,7 +249,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                                     through_fields=('parent', 'child'),
                                     related_name='parent_nodes')
 
-    class Meta:
+    class Meta(BaseModel.Meta):
         index_together = (('is_public', 'is_deleted', 'type'))
 
     objects = AbstractNodeQuerySet.as_manager()
@@ -2875,7 +2875,7 @@ class Node(AbstractNode):
         """For v1 compat"""
         return False
 
-    class Meta:
+    class Meta(AbstractNode.Meta):
         # custom permissions for use in the OSF Admin App
         permissions = (
             ('view_node', 'Can view node details'),

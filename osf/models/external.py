@@ -86,7 +86,7 @@ class ExternalAccount(base.ObjectIDMixin, base.BaseModel):
             return self.pk
         return hash(str(self.provider_id) + str(self.provider))
 
-    class Meta:
+    class Meta(base.BaseModel.Meta):
         unique_together = [
             ('provider', 'provider_id',)
         ]

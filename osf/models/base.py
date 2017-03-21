@@ -107,6 +107,7 @@ class BaseModel(models.Model):
 
     class Meta:
         abstract = True
+        ordering = ['id']
 
     @classmethod
     def get_fk_field_names(cls):
@@ -290,7 +291,7 @@ class Guid(BaseModel):
 
         return django_obj
 
-    class Meta:
+    class Meta(BaseModel.Meta):
         ordering = ['-created']
         get_latest_by = 'created'
         index_together = (
