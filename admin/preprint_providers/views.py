@@ -108,6 +108,7 @@ class PreprintProviderDisplay(PermissionRequiredMixin, DetailView):
         kwargs['change_form'] = PreprintProviderForm(initial=fields)
         initial_subjects = {'toplevel_subjects': subject_ids, 'subjects_chosen': ', '.join(str(i) for i in subject_ids)}
         kwargs['subject_form'] = PreprintProviderSubjectForm(initial=initial_subjects)
+        kwargs['import_form'] = ImportFileForm()
 
         return kwargs
 

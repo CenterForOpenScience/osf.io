@@ -13,36 +13,30 @@
 {% endblock title %}
 {% block content %}
     <div class="container-fluid">
-
         <div class="row">
-            <div class="col-md-12 text-center">
+            <div class="col-md-6">
+                <form action={% url 'preprint_providers:export' preprint_provider.id %} method="post">
+                    {% csrf_token %}
+                    <input class="btn btn-primary" type="submit" value="Export Preprint Provider Metadata" />
+                </form>
+            </div>
+            <div class="col-md-6">
+                <img class="institution-logo" src="{{ logohost }}/static/img/preprint_providers/{{ preprint_provider.logo_name }}">
                 <h2>{{ preprint_provider.name }}</h2>
             </div>
         </div>
-        <div class="row">
-            <div class="col-md-2">
-                <h4>Logo:</h4>
-            </div>
-            <div class="col-md-2">
-                <img class="institution-logo" src="{{ logohost }}/static/img/preprint_providers/{{ preprint_provider.logo_name }}">
-            </div>
-            <div class="col-md-2">
-                <h4>Header Text:</h4>
-                <p>{{ preprint_provider.header_text }}</p>
-            </div>
-
-        </div>
-
+            {% if perms.osf.change_preprint_provider %}
         <div class="row">
             <div class="col-md-12">
-                <h4>Description</h4>
-                <p>{{ preprint_provider.description | safe }}</p>
+                <button id="show-modify-form" class="btn btn-link" type="button">
+                    Modify Preprint Provider
+                </button>
             </div>
         </div>
+            {% endif %}
 
-        <div class="row">
+        <div class="row" id="table-view">
             <div class="col-md-12">
-                <h4>Other Attributes</h4>
                 <table class="table table-striped">
                     {% for field, value in preprint_provider.items %}
                         <tr>
@@ -53,64 +47,8 @@
                 </table>
             </div>
         </div>
-        <div class="row">
-            <div class="col-md-12">
-                <form action={% url 'preprint_providers:export' preprint_provider.id %} method="post">
-                    {% csrf_token %}
-                    <input class="btn btn-primary" type="submit" value="Export Preprint Provider Metadata" />
-                </form>
-            </div>
-        </div>
-        <hr/>
-        {% if perms.osf.change_preprint_provider %}
-        <div class="row">
-            <div class="col-md-12">
-                <button class="btn btn-primary" type="button" data-toggle="collapse" data-target="#modifyCollapse">
-                    Modify Preprint Provider
-                </button>
-            </div>
-        </div>
-        <div class="collapse" id="modifyCollapse">
-            <div class="well">
-                <div class="row">
-                    <div class="col-md-12">
-                        <form action= {% url 'preprint_providers:detail' preprint_provider.id %} method="post">
-                            {% csrf_token %}
-                            {{ change_form.as_p }}
-                            <input class="form-button" type="submit" value="Submit" />
-                        </form>
-                    </div>
-                </div>
-                <div class="row">
-                    <h3>Modify Provider Subjects</h3>
-                    <div id="subjects_selected">
-                    </div>
-                    <form action= {% url 'preprint_providers:process_subjects' preprint_provider.id %} method="post">
-                        {% csrf_token %}
-                        <div>{{ subject_form.subjects_chosen }}</div>
-                        <div class="col-md-4">
-                            <div class="firstlevel_subjects">
-                                <ul style="list-style-type:none">
-                                {% for subject in subject_form.toplevel_subjects %}
-                                    <li>{{ subject }} <i class="subject-icon first-level glyphicon glyphicon-menu-right"></i></li>
-                                {% endfor %}
-                                </ul>
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div id="secondlevel_subjects">
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div id="thirdlevel_subjects">
-                            </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-md-12">
-                                <input class="form-button" type="submit" value="Submit" />
-                            </div>
-                        </div>
-                    </form>
+        <div class="row" id="form-view" style="display:none;">
+            <div class="col-md-7">
                 <ul class="nav nav-tabs" role="tablist">
                     <li role="presentation" class="active"><a href="#provider_attributes" data-toggle="tab">Attributes</a></li>
                     <li role="presentation"><a href="#provider_subjects" data-toggle="tab">Subjects</a></li>
@@ -164,8 +102,19 @@
                     </div>
                 </div>
             </div>
+            <div class="col-md-5">
+                <div>
+                    <h4>Import from JSON</h4>
+                    <p>Choose a JSON file that has been previously exported from another Preprint Provider detail page. This will
+                        pre-populate the Preprint Provider change form with those details.</p>
+                    <form id="import-form" action = {% url 'preprint_providers:import' %} method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        {{ import_form.as_p }}
+                        <input class="form-button" type="submit" value="Import" />
+                    </form>
+                </div>
+            </div>
         </div>
-        {% endif %}
     </div>
 
 {% endblock content %}
@@ -256,6 +205,36 @@
 
                     });
                 }
+            });
+
+            $('#show-modify-form').click(function() {
+
+                $('#table-view').toggle();
+                $('#form-view').toggle();
+
+                var text = $('#show-modify-form').text();
+                var new_text = (text.trim() == "Modify Preprint Provider") ? "Hide Form" : "Modify Preprint Provider";
+                $('#show-modify-form').text(new_text);
+            });
+
+            $("#import-form").submit(function(event) {
+                event.preventDefault();
+                $.ajax({
+                    url: '{% url 'institutions:import' %}',
+                    type: "post",
+                    data: new FormData($(this)[0]),
+                    cache: false,
+                    contentType: false,
+                    processData: false,
+                    success: function(response) {
+                        for (var k in response){
+                            if (response.hasOwnProperty(k)) {
+                                var field = $('#id_' + k);
+                                field.val(response[k]);
+                            }
+                        }
+                    }
+                });
             });
         });
     </script>
