@@ -126,9 +126,6 @@ class ScaryModelIterable(ModelIterable):
                         g._state.adding = False
                         g._state.db = 'default'
                         instance._prefetched_objects_cache[name]._result_cache.append(g)
-                # instance._prefetched_objects_cache[name]._known_related_objects = {instance._meta.get_field(name).field: {instance.id: instance}}
-                # import ipdb; ipdb.set_trace()
-            # import ipdb; ipdb.set_trace()
             yield instance
 
 

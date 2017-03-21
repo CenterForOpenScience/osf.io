@@ -119,10 +119,10 @@ class PostcommitTaskMiddleware(object):
         postcommit_after_request(response=response, base_status_error_code=400)
         return response
 
-import cProfile, pstats, StringIO
-# Orignal version taken from http://www.djangosnippets.org/snippets/186/
+# Adapted from http://www.djangosnippets.org/snippets/186/
 # Original author: udfalkso
 # Modified by: Shwagroo Team and Gun.io
+# Modified by: COS
 class ProfileMiddleware(object):
     """
     Displays hotshot profiling for any view.
