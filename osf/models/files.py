@@ -211,6 +211,14 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
         return storage
 
     @classmethod
+    def files_checked_out(cls, user):
+        """
+        :param user: The user with checked out files
+        :return: A queryset of all FileNodes checked out by user
+        """
+        return cls.find(Q('checkout', 'eq', user))
+
+    @classmethod
     def resolve_class(cls, provider, type_integer):
         type_mapping = {0: Folder, 1: File, 2: None}
         type_cls = type_mapping[type_integer]
