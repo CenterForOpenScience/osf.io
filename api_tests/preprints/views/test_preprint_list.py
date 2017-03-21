@@ -1,5 +1,6 @@
 from nose.tools import *  # flake8: noqa
 
+from addons.github.models import GithubFile
 from framework.auth.core import Auth
 from api.base.settings.defaults import API_BASE
 from api_tests.preprints.filters.test_filters import PreprintsListFilteringMixin
@@ -213,7 +214,7 @@ class TestPreprintCreate(ApiTestCase):
 
     def test_file_not_osfstorage(self):
         github_file = self.file_one_public_project
-        github_file.provider = 'github'
+        github_file.recast(GithubFile._typedmodels_type)
         github_file.save()
         public_project_payload = build_preprint_create_payload(self.public_project._id, self.provider._id, github_file._id)
         res = self.app.post_json_api(self.url, public_project_payload, auth=self.user.auth, expect_errors=True)

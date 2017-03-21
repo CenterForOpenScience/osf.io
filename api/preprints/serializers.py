@@ -19,7 +19,7 @@ from framework.exceptions import PermissionsError
 from website.util import permissions
 from website.exceptions import NodeStateError
 from website.project import signals as project_signals
-from website.models import StoredFileNode, PreprintService, PreprintProvider, Node, NodeLicense
+from osf.models import StoredFileNode, PreprintService, PreprintProvider, Node, NodeLicense
 
 
 class PrimaryFileRelationshipField(RelationshipField):
