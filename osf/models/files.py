@@ -450,8 +450,20 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
         )
 
 
+
+class StoredFileNode(BaseFileNode):
+
+    @classmethod
+    def load(cls, *args, **kwargs):
+        # exclude trashed things to keep previous behavior
+        try:
+            return cls.objects.exclude(type__in=TrashedFileNode._typedmodels_subtypes).filter(_id=args[0]).get()
+        except cls.DoesNotExist:
+            return None
+
+
 # TODO Refactor code pointing at FileNode to point to StoredFileNode
-FileNode = StoredFileNode = BaseFileNode
+FileNode = BaseFileNode
 
 
 class UnableToRestore(Exception):
