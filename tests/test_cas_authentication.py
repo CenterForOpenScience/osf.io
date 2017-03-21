@@ -6,6 +6,7 @@ from nose.tools import *  # flake8: noqa (PEP8 asserts)
 import unittest
 
 from framework.auth import cas
+from framework.sessions import session
 
 from tests.base import OsfTestCase, fake
 from osf_tests.factories import UserFactory
@@ -355,3 +356,57 @@ class TestCASExternalLogin(OsfTestCase):
         first_call_args = mock_service_validate.call_args[0]
         assert_equal(first_call_args[0], ticket)
         assert_equal(first_call_args[1], 'http://localhost:5000/')
+
+    @mock.patch('framework.auth.cas.get_user_from_cas_resp')
+    @mock.patch('framework.auth.cas.CasClient.service_validate')
+    def test_make_response_from_ticket_external_login_sets_user_fullname(self, mock_service_validate, mock_get_user_from_cas_resp):
+        mock_response = make_external_response()
+        mock_service_validate.return_value = mock_response
+        validated_creds = cas.validate_external_credential(mock_response.user)
+        mock_get_user_from_cas_resp.return_value = (None, validated_creds, 'external_first_login')
+        ticket = fake.md5()
+        service_url = 'http://localhost:5000/'
+        cas.make_response_from_ticket(ticket, service_url)
+        session_data = session._get_current_object().data
+        user_fullname = session_data['auth_user_fullname']
+        assert_equal(
+            user_fullname,
+            '{} {}'.format(
+                mock_response.attributes['given-names'],
+                mock_response.attributes['family-name']
+            )
+        )
+
+    @mock.patch('framework.auth.cas.get_user_from_cas_resp')
+    @mock.patch('framework.auth.cas.CasClient.service_validate')
+    def test_make_response_from_ticket_sets_user_given_names(self, mock_service_validate, mock_get_user_from_cas_resp):
+        mock_response = make_external_response()
+        mock_service_validate.return_value = mock_response
+        validated_creds = cas.validate_external_credential(mock_response.user)
+        mock_get_user_from_cas_resp.return_value = (None, validated_creds, 'external_first_login')
+        ticket = fake.md5()
+        service_url = 'http://localhost:5000/'
+        cas.make_response_from_ticket(ticket, service_url)
+        session_data = session._get_current_object().data
+        user_given_names = session_data['auth_user_given_names']
+        assert_equal(
+            user_given_names,
+            mock_response.attributes['given-names']
+        )
+
+    @mock.patch('framework.auth.cas.get_user_from_cas_resp')
+    @mock.patch('framework.auth.cas.CasClient.service_validate')
+    def test_make_response_from_ticket_sets_user_family_name(self, mock_service_validate, mock_get_user_from_cas_resp):
+        mock_response = make_external_response()
+        mock_service_validate.return_value = mock_response
+        validated_creds = cas.validate_external_credential(mock_response.user)
+        mock_get_user_from_cas_resp.return_value = (None, validated_creds, 'external_first_login')
+        ticket = fake.md5()
+        service_url = 'http://localhost:5000/'
+        cas.make_response_from_ticket(ticket, service_url)
+        session_data = session._get_current_object().data
+        user_family_name = session_data['auth_user_family_name']
+        assert_equal(
+            user_family_name,
+            mock_response.attributes['family-name']
+        )
