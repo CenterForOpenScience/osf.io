@@ -160,7 +160,7 @@ class PreprintList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMixin):
         if field_name == 'provider':
             operation['source_field_name'] = 'provider___id'
         if field_name == 'id':
-            operation['source_field_name'] = '_guids___id'
+            operation['source_field_name'] = 'guids___id'
 
     def get_serializer_class(self):
         if self.request.method == 'POST':

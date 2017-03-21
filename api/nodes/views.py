@@ -3362,7 +3362,7 @@ class NodePreprintsList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, NodePr
             operation['source_field_name'] = 'provider___id'
 
         if field_name == 'id':
-            operation['source_field_name'] = '_guids___id'
+            operation['source_field_name'] = 'guids___id'
 
     # overrides ODMFilterMixin
     def get_default_odm_query(self):

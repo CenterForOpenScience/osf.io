@@ -56,31 +56,23 @@ class TestNodePreprintList(ApiTestCase):
         assert_equal(res.status_code, 200)
         assert_equal(res.json['data'][0]['id'], self.preprint._id)
 
-class TestPreprintsListFiltering(PreprintsListFilteringMixin, ApiTestCase):
+class TestNodePreprintsListFiltering(PreprintsListFilteringMixin, ApiTestCase):
 
-    def _setUp(self):
+    def setUp(self):
         self.user = AuthUserFactory()
+        # all different providers
         self.provider = PreprintProviderFactory(name='Sockarxiv')
-        self.provider_two = PreprintProviderFactory(name='Dockarxiv')
+        self.provider_two = PreprintProviderFactory(name='Piratearxiv')
         self.provider_three = PreprintProviderFactory(name='Mockarxiv')
+        # all same project
+        self.project = ProjectFactory(creator=self.user)
+        self.project_two = self.project
+        self.project_three = self.project
+        self.url = '/{}nodes/{}/preprints/?version=2.2&'.format(API_BASE, self.project._id)
+        super(TestNodePreprintsListFiltering, self).setUp()
 
-        self.subject = SubjectFactory()
-        self.subject_two = SubjectFactory()
-
-        self.preprint = PreprintFactory(creator=self.user, provider=self.provider, subjects=[[self.subject._id]])
-        self.preprint_two = PreprintFactory(creator=self.user, project=self.preprint.node, filename='tough.txt', provider=self.provider_two, subjects=[[self.subject_two._id]])
-
-        self.preprint_two.date_created = '2013-12-11 10:09:08.070605+00:00'
-        self.preprint_two.date_published = '2013-12-11 10:09:08.070605+00:00'
-        self.preprint_two.save()
-
-        self.preprint_three = PreprintFactory(creator=self.user, project=self.preprint.node, filename='darn.txt', provider=self.provider_three, subjects=[[self.subject._id], [self.subject_two._id]])
-        self.preprint_three.date_created = '2013-12-11 10:09:08.070605+00:00'
-        self.preprint_three.date_published = '2013-12-11 10:09:08.070605+00:00'
-        self.preprint_three.is_published = False
-        self.preprint_three.save()
-
-        self.url = '/{}nodes/{}/preprints/?version=2.2&'.format(API_BASE, self.preprint.node._id)
-
-    def test_provider_filter_equals_returns_multiple(self):
-        pass
+    def test_provider_filter_equals_returns_one(self):
+        expected = [self.preprint_two._id]
+        res = self.app.get('{}{}'.format(self.provider_url, self.provider_two._id), auth=self.user.auth)
+        actual = [preprint['id'] for preprint in res.json['data']]
+        assert_equal(expected, actual)
