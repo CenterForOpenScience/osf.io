@@ -267,7 +267,7 @@ def update_user(auth):
     return _profile_view(user, is_profile=True)
 
 
-def _profile_view(profile, is_profile=False):
+def _profile_view(profile, is_profile=False, embed_nodes=False):
     if profile and profile.is_disabled:
         raise HTTPError(http.GONE)
     # NOTE: While badges, are unused, 'assertions' and 'badges' can be
@@ -277,7 +277,7 @@ def _profile_view(profile, is_profile=False):
 
     if profile:
         profile_user_data = profile_utils.serialize_user(profile, full=True, is_profile=is_profile)
-        return {
+        ret = {
             'profile': profile_user_data,
             'assertions': badge_assertions,
             'badges': badges,
@@ -287,24 +287,41 @@ def _profile_view(profile, is_profile=False):
                 'can_edit': None,  # necessary for rendering nodes
                 'permissions': [],  # necessary for rendering nodes
             },
-            'public_projects': get_public_projects(user=profile),
-            'public_components': get_public_components(user=profile),
         }
-
+        if embed_nodes:
+            ret.update({
+                'public_projects': get_public_projects(user=profile),
+                'public_components': get_public_components(user=profile),
+            })
+        return ret
     raise HTTPError(http.NOT_FOUND)
 
+@must_be_logged_in
+def profile_view_json(auth):
+    # Do NOT embed nodes, they aren't necessary
+    return _profile_view(auth.user, True, embed_nodes=False)
+
+
+@collect_auth
+@must_be_confirmed
+def profile_view_id_json(uid, auth):
+    user = User.load(uid)
+    is_profile = auth and auth.user == user
+    # Do NOT embed nodes, they aren't necessary
+    return _profile_view(user, is_profile, embed_nodes=False)
 
 @must_be_logged_in
 def profile_view(auth):
-    return _profile_view(auth.user, True)
-
+    # Embed node data, so profile node lists can be rendered
+    return _profile_view(auth.user, True, embed_nodes=True)
 
 @collect_auth
 @must_be_confirmed
 def profile_view_id(uid, auth):
     user = User.load(uid)
     is_profile = auth and auth.user == user
-    return _profile_view(user, is_profile)
+    # Embed node data, so profile node lists can be rendered
+    return _profile_view(user, is_profile, embed_nodes=True)
 
 
 @must_be_logged_in
