@@ -11,18 +11,15 @@ from framework.auth import get_or_create_user
 from framework.exceptions import HTTPError
 from framework.flask import redirect
 from framework.transactions.handlers import no_auto_transaction
-
 from website import settings
-from website.models import Node, Tag
-from website.util import web_url_for
-from website.mails import send_mail
-from website.files.models import StoredFileNode, OsfStorageFile
-from website.mails import CONFERENCE_SUBMITTED, CONFERENCE_INACTIVE, CONFERENCE_FAILED
-
 from website.conferences import utils, signals
 from website.conferences.message import ConferenceMessage, ConferenceError
 from website.conferences.model import Conference
-
+from website.files.models import OsfStorageFile
+from website.mails import CONFERENCE_SUBMITTED, CONFERENCE_INACTIVE, CONFERENCE_FAILED
+from website.mails import send_mail
+from website.models import Node, Tag
+from website.util import web_url_for
 
 logger = logging.getLogger(__name__)
 
