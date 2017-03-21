@@ -450,7 +450,6 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
         )
 
 
-
 class StoredFileNode(BaseFileNode):
 
     @classmethod
