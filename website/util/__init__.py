@@ -119,7 +119,13 @@ def api_v2_url(path_str,
     if params or kwargs:
         x = '{}?{}'.format(x, urlencode(dict(params, **kwargs)))
 
+<<<<<<< HEAD
     return x
+=======
+    # base_url.args.update(dict(params, **kwargs))
+    # base_url.args.update(kwargs)
+    return str(base_url)
+>>>>>>> moar fastg
 
 
 def web_url_for(view_name, _absolute=False, _guid=False, *args, **kwargs):

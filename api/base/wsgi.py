@@ -58,7 +58,12 @@ Request.__getattribute__ = object.__getattribute__
 
 import ujson
 import psycopg2
-psycopg2.extras.register_default_json(loads=ujson.loads)
+def _load(s):
+    if s == '{}':
+        return {}
+    return ujson.loads(s)
+psycopg2.extras.register_default_json(globally=True, loads=_load)
+# psycopg2.extras.register_default_json(globally=True, loads=ujson.loads)
 
 ############# /monkeys ####################
 

@@ -741,7 +741,7 @@ class NodeContributorsSerializer(JSONAPISerializer):
     id = IDField(source='_id', read_only=True)
     # id = ContributorIDField(read_only=True, source='_id')
     type = TypeField()
-    index = ser.IntegerField(required=False, read_only=True)
+    index = ser.IntegerField(required=False, read_only=True, source='_order')
 
     bibliographic = ser.BooleanField(help_text='Whether the user will be included in citations for this node or not.',
                                      default=True)

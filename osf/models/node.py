@@ -21,7 +21,7 @@ from django.utils import timezone
 from django.utils.functional import cached_property
 from keen import scoped_keys
 from modularodm import Q as MQ
-from psycopg2._psycopg import AsIs
+from psycopg2cffi.extensions import AsIs
 from typedmodels.models import TypedModel
 
 from framework import status
@@ -148,7 +148,7 @@ class AbstractNodeQuerySet(GuidMixinQuerySet):
         return query
 
     def count(self):
-        return super(GuidMixin, self._clone().extra(select={})).count()
+        return super(AbstractNodeQuerySet, self._clone().extra(select={})).count()
 
     # def all(self):
     #     if self._result_cache:

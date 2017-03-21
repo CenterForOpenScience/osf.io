@@ -77,10 +77,19 @@ class JSONAPIBaseView(generics.GenericAPIView):
             view.request.parser_context['kwargs'] = view_kwargs
             view.format_kwarg = view.get_format_suffix(**view_kwargs)
 
-            _cache_key = (v.cls, field_name, view.get_serializer_class(), item)
+            if not isinstance(view, ListModelMixin):
+                item = view.get_object()
+
+            _cache_key = (v.cls, field_name, view.get_serializer_class(), (type(item), item.id))
             if _cache_key in CACHE.setdefault(self.request._request, {}):
                 # We already have the result for this embed, return it
+                # print('==================== HIT ==================')
+                # print(_cache_key)
+                # print('==================== /HIT ==================')
                 return CACHE[self.request._request][_cache_key]
+            # print('==================== MISS ==================')
+            # print(_cache_key)
+            # print('==================== /MISS ==================')
 
             # Cache serializers. to_representation of a serializer should NOT augment it's fields so resetting the context
             # should be sufficient for reuse
@@ -92,7 +101,7 @@ class JSONAPIBaseView(generics.GenericAPIView):
                 ser._context = view.get_serializer_context()
 
                 if not isinstance(view, ListModelMixin):
-                    ret = ser.to_representation(view.get_object())
+                    ret = ser.to_representation(item)
                 else:
                     queryset = view.filter_queryset(view.get_queryset())
                     page = view.paginate_queryset(getattr(queryset, '_results_cache', None) or queryset)
