@@ -6,6 +6,7 @@ from django.utils import timezone
 from modularodm import Q
 from nose.tools import *  # noqa
 
+from addons.s3.models import S3File
 from osf.models import File
 from osf.models import FileNode
 from osf.models import Folder
@@ -684,10 +685,9 @@ class TestFileVersion(FilesTestCase):
 
 class TestSubclasses(FilesTestCase):
 
-    @pytest.mark.skip('I don\'t know how mocks work but this should be mocking an instance not the class')
-    @mock.patch.object(models.File, 'touch')
+    @mock.patch('osf.models.BaseFileNode.touch')
     def test_s3file(self, mock_touch):
-        file = models.S3File.create(
+        file = S3File.create(
             _path='afile2',
             name='child2',
             node=self.node,
