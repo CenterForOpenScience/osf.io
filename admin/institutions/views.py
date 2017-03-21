@@ -11,7 +11,8 @@ from django.views.generic.detail import SingleObjectMixin
 from django.contrib.auth.mixins import PermissionRequiredMixin
 
 from admin.base import settings
-from admin.institutions.forms import InstitutionForm, ImportFileForm
+from admin.base.forms import ImportFileForm
+from admin.institutions.forms import InstitutionForm
 from osf.models import Institution
 
 
