@@ -2172,7 +2172,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
             from website.preprints.tasks import on_preprint_updated
             from website.preprints.model import PreprintService
             # .preprints wouldn't return a single deleted preprint
-            for preprint in PreprintService.find(Q('node', 'eq', self)):
+            for preprint in PreprintService.find(Q('node', 'eq', self) & Q('is_published', 'eq', True)):
                 enqueue_task(on_preprint_updated.s(preprint._id))
 
         user = User.load(user_id)
