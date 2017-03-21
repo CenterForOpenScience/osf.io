@@ -27,6 +27,7 @@ __all__ = (
     'Folder',
     'FileVersion',
     'StoredFileNode',
+    'BaseFileNode',
     'TrashedFileNode',
 )
 
