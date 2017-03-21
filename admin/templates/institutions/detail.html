@@ -10,6 +10,14 @@
 {% endblock title %}
 {% block content %}
     <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-12">
+                <form action={% url 'institutions:export' institution.id %} method="post">
+                    {% csrf_token %}
+                    <input class="btn btn-primary" type="submit" value="Export institution metadata" />
+                </form>
+            </div>
+        </div>
 
         <div class="row">
             <div class="col-md-12 text-center">
@@ -33,6 +41,15 @@
 
         <div class="row">
             <div class="col-md-12">
+                {% if perms.osf.change_institution %}
+                    <button id="show-modify-form" class="btn btn-link" type="button">
+                        Modify Institution
+                    </button>
+                {% endif %}
+            </div>
+        </div>
+        <div class="row" id="table-view">
+            <div class="col-md-12">
                 <table class="table table-striped">
                     {% for field, value in institution.items %}
                         <tr>
@@ -43,53 +60,49 @@
                 </table>
             </div>
         </div>
-        <div class="row">
-            <div class="col-md-12">
-                <form action={% url 'institutions:export' institution.id %} method="post">
+        <div id="form-view" class="row" style="display:none;">
+            <div class="col-md-7">
+                <form action= {% url 'institutions:detail' institution.id %} method="post">
                     {% csrf_token %}
-                    <input class="btn btn-primary" type="submit" value="Export Institution Metadata" />
+                    {{ change_form.as_p }}
+                    <input class="form-button" type="submit" value="Submit" />
+
                 </form>
             </div>
-        </div>
-        <hr/>
-        {% if perms.osf.change_institution %}
-        <div class="row">
-            <div class="col-md-12">
-                <button class="btn btn-primary" type="button" data-toggle="collapse" data-target="#collapseExample">
-                    Modify Institution
-                </button>
-            </div>
-        </div>
-        <div class="row">
-            <div class="col-md-12">
-                <div class="collapse" id="collapseExample">
-                    <div class="well">
-                        <form id="import-form" action = {% url 'institutions:import' institution.id %} method="post" enctype="multipart/form-data">
-                            {% csrf_token %}
-                            {{ upload_form.as_p }}
-                            <input class="form-button" type="submit" value="upload" />
-                        </form>
-                        <form action= {% url 'institutions:detail' institution.id %} method="post">
-                            {% csrf_token %}
-                            {{ change_form.as_p }}
-                            <input class="form-button" type="submit" value="Submit" />
-                        </form>
-                    </div>
+            <div class="col-md-5">
+                <div>
+                    <h4>Import from JSON</h4>
+                    <p>Choose a JSON file that has been previously exported from another Institution detail page. This will
+                    pre-populate the Institution change form with those details.</p>
+                    <form id="import-form" action = {% url 'institutions:import' %} method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        {{ import_form.as_p }}
+                        <input class="form-button" type="submit" value="Import" />
+                    </form>
                 </div>
             </div>
         </div>
-        {% endif %}
     </div>
-
 {% endblock content %}
 
 {% block bottom_js %}
     <script>
         $(document).ready(function() {
+
+            $('#show-modify-form').click(function() {
+
+                $('#table-view').toggle();
+                $('#form-view').toggle();
+
+                var text = $('#show-modify-form').text();
+                var new_text = (text.trim() == "Modify Institution") ? "Hide Form" : "Modify Institution";
+                $('#show-modify-form').text(new_text);
+            });
+
             $("#import-form").submit(function(event) {
                 event.preventDefault();
                 $.ajax({
-                    url: '{% url 'institutions:import' institution.id %}',
+                    url: '{% url 'institutions:import' %}',
                     type: "post",
                     data: new FormData($(this)[0]),
                     cache: false,

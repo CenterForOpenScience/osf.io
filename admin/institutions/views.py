@@ -11,7 +11,7 @@ from django.views.generic.detail import SingleObjectMixin
 from django.contrib.auth.mixins import PermissionRequiredMixin
 
 from admin.base import settings
-from admin.institutions.forms import InstitutionForm, UploadFileForm
+from admin.institutions.forms import InstitutionForm, ImportFileForm
 from osf.models import Institution
 
 
@@ -54,7 +54,7 @@ class InstitutionDisplay(PermissionRequiredMixin, DetailView):
         kwargs['logohost'] = settings.OSF_URL
         fields = institution_dict
         kwargs['change_form'] = InstitutionForm(initial=fields)
-        kwargs['upload_form'] = UploadFileForm()
+        kwargs['import_form'] = ImportFileForm()
 
         return kwargs
 
@@ -77,7 +77,7 @@ class ImportInstitution(PermissionRequiredMixin, View):
     raise_exception = True
 
     def post(self, request, *args, **kwargs):
-        form = UploadFileForm(request.POST, request.FILES)
+        form = ImportFileForm(request.POST, request.FILES)
         if form.is_valid():
             file_str = self.parse_file(request.FILES['file'])
             file_json = json.loads(file_str)
@@ -138,6 +138,10 @@ class CreateInstitution(PermissionRequiredMixin, CreateView):
     raise_exception = True
     template_name = 'institutions/create.html'
     success_url = reverse_lazy('institutions:list')
+
+    def get_context_data(self, *args, **kwargs):
+        kwargs['import_form'] = ImportFileForm()
+        return super(CreateInstitution, self).get_context_data(*args, **kwargs)
 
     model = Institution
     fields = [

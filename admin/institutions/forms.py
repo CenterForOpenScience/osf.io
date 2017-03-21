@@ -12,5 +12,5 @@ class InstitutionForm(forms.ModelForm):
         ]
 
 
-class UploadFileForm(forms.Form):
+class ImportFileForm(forms.Form):
     file = forms.FileField()
