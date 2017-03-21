@@ -77,7 +77,7 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
     # A concrete version of a FileNode, must have an identifier
     versions = models.ManyToManyField('FileVersion')
 
-    node = models.ForeignKey('osf.AbstractNode', blank=True, null=True)
+    node = models.ForeignKey('osf.AbstractNode', blank=True, null=True, related_name='files')
     parent = models.ForeignKey('self', blank=True, null=True, default=None, related_name='_children')
     copied_from = models.ForeignKey('self', blank=True, null=True, default=None, related_name='copy_of')
 
