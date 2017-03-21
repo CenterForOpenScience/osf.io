@@ -58,7 +58,7 @@ class TestOsfstorageFileNode(StorageTestCase):
 
     #     assert_equal(file, models.OsfStorageFileNode.get_file(_id, self.node_settings))
 
-    def test_serialiuze(self):
+    def test_serialize(self):
         file = OsfStorageFile(name='MOAR PYLONS', node=self.node_settings.owner)
         file.save()
 
@@ -81,25 +81,25 @@ class TestOsfstorageFileNode(StorageTestCase):
         version = file.create_version(
             self.user,
             {
-                'service': 'cloud',
-                settings.WATERBUTLER_RESOURCE: 'osf',
-                'object': '06d80e',
+                u'service': u'cloud',
+                settings.WATERBUTLER_RESOURCE: u'osf',
+                u'object': u'06d80e',
             }, {
-                'size': 1234,
-                'contentType': 'text/plain'
+                u'size': 1234,
+                u'contentType': u'text/plain'
             })
 
         assert_equals(file.serialize(), {
             u'id': file._id,
             u'path': file.path,
             u'created': None,
-            u'name': 'MOAR PYLONS',
-            u'kind': 'file',
+            u'name': u'MOAR PYLONS',
+            u'kind': u'file',
             u'version': 1,
             u'downloads': 0,
             u'size': 1234L,
             u'modified': None,
-            u'contentType': 'text/plain',
+            u'contentType': u'text/plain',
             u'checkout': None,
             u'md5': None,
             u'sha256': None,
@@ -107,20 +107,20 @@ class TestOsfstorageFileNode(StorageTestCase):
 
         date = timezone.now()
         version.update_metadata({
-            'modified': date.isoformat()
+            u'modified': date.isoformat()
         })
 
         assert_equals(file.serialize(), {
             u'id': file._id,
             u'path': file.path,
             u'created': date.isoformat(),
-            u'name': 'MOAR PYLONS',
-            u'kind': 'file',
+            u'name': u'MOAR PYLONS',
+            u'kind': u'file',
             u'version': 1,
             u'downloads': 0,
             u'size': 1234L,
             u'modified': date.isoformat(),
-            u'contentType': 'text/plain',
+            u'contentType': u'text/plain',
             u'checkout': None,
             u'md5': None,
             u'sha256': None,
