@@ -148,7 +148,8 @@ def _render_conference_node(node, idx, conf):
             x for x in
             StoredFileNode.find(
                 Q('node', 'eq', node) &
-                Q('is_file', 'eq', True)
+                Q('is_file', 'eq', True) &
+                Q('provider', 'eq', 'osfstorage')
             ).limit(1)
         ).wrapped()
         download_count = record.get_download_count()
