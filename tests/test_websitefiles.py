@@ -6,6 +6,7 @@ from django.utils import timezone
 from modularodm import Q
 from nose.tools import *  # noqa
 
+from addons.osfstorage.models import OsfStorageFile, OsfStorageFolder, OsfStorageFileNode
 from addons.s3.models import S3File
 from osf.models import File
 from osf.models import FileNode
@@ -148,9 +149,17 @@ class TestFileNodeObj(FilesTestCase):
             materialized_path='/long/path/to/name2/',
         )
 
+        import logging
+        logger = logging.getLogger(__name__)
+
         assert_equal(TestFile.objects.count(), 1)
         assert_equal(TestFolder.objects.count(), 1)
         assert_equal(TestFileNode.objects.count(), 2)
+        assert_equal(OsfStorageFileNode.objects.count(), 2)
+        assert_equal(OsfStorageFile.objects.count(), 0)
+        assert_equal(OsfStorageFolder.objects.count(), 2)
+        logger.info('BASEFILES!!!')
+        logger.info([repr(x) for x in BaseFileNode.objects.all()])
         assert_equal(BaseFileNode.objects.count(), 4)  # roots of things
 
     def test_find_one(self):
