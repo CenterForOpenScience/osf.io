@@ -161,7 +161,7 @@ def osfstorage_create_child(file_node, payload, node_addon, **kwargs):
             created, file_node = True, parent.append_folder(name)
         else:
             created, file_node = True, parent.append_file(name)
-    except (KeyExistsException, ValidationError, IntegrityError):
+    except (ValidationError, IntegrityError):
         created, file_node = False, parent.find_child_by_name(name, kind=int(not is_folder))
 
     if not created and is_folder:
