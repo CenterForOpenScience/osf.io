@@ -1,6 +1,9 @@
 """
 Utility functions and classes
 """
+from modularodm import Q
+from osf.models import Subject
+
 from django.core.urlresolvers import reverse
 from django.utils.http import urlencode
 
@@ -13,6 +16,28 @@ def reverse_qs(view, urlconf=None, args=None, kwargs=None, current_app=None, que
 
 def osf_staff_check(user):
     return user.is_authenticated and user.is_staff
+
+
+def rules_to_subjects(rules):
+    """
+    Take a list of rules, and return the subjects that are included in that rule.
+
+    Code copied from the property `all_subjects` in the PreprintProvider model.
+
+    :param rules: list of properly formatted subject rules
+    :return: list of subject ids included in the rules
+    """
+    q = []
+    for rule in rules:
+        if rule[1]:
+            q.append(Q('parents', 'eq', Subject.load(rule[0][-1])))
+            if len(rule[0]) == 1:
+                potential_parents = Subject.find(Q('parents', 'eq', Subject.load(rule[0][-1])))
+                for parent in potential_parents:
+                    q.append(Q('parents', 'eq', parent))
+        for sub in rule[0]:
+            q.append(Q('_id', 'eq', sub))
+    return Subject.find(reduce(lambda x, y: x | y, q)) if len(q) > 1 else (Subject.find(q[0]) if len(q) else Subject.find())
 
 
 def get_subject_rules(subjects_selected):

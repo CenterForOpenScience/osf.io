@@ -13,7 +13,7 @@ from django.forms.models import model_to_dict
 from django.shortcuts import redirect
 
 from admin.base import settings
-from admin.base.utils import get_subject_rules
+from admin.base.utils import get_subject_rules, rules_to_subjects
 from admin.base.forms import ImportFileForm
 from admin.preprint_providers.forms import PreprintProviderForm, PreprintProviderSubjectForm
 from osf.models import PreprintProvider, NodeLicense, Subject
@@ -56,6 +56,16 @@ class GetSubjectDescendants(PermissionRequiredMixin, View):
         all_descendants = list(direct_children) + grandchildren
 
         return JsonResponse({'all_descendants': [sub.id for sub in all_descendants]})
+
+
+class RulesToSubjects(PermissionRequiredMixin, View):
+    permission_required = 'osf.view_preprint_provider'
+    raise_exception = True
+
+    def get(self, request, *args, **kwargs):
+        rules = json.loads(request.GET['rules'])
+        all_subjects = rules_to_subjects(rules)
+        return JsonResponse({'subjects': [sub.id for sub in all_subjects]})
 
 
 class PreprintProviderDisplay(PermissionRequiredMixin, DetailView):

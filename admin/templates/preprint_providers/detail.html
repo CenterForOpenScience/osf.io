@@ -2,9 +2,6 @@
 {% load static %}
 {% block top_includes %}
     <link rel="stylesheet" type="text/css" href="/static/css/institutions.css" />
-    <link href="//cdnjs.cloudflare.com/ajax/libs/select2/4.0.0/css/select2.min.css" rel="stylesheet" />
-    <script src="//cdnjs.cloudflare.com/ajax/libs/select2/4.0.0/js/select2.min.js"></script>
-    <script src="https://code.jquery.com/jquery-3.1.1.min.js" integrity="sha256-hVVnYaiADRTO2PzUGmuLJr8BLUSjGIZsDYGmIJLv2b8=" crossorigin="anonymous"></script>
 {% endblock %}
 {% load user_extras %}
 {% load spam_extras %}
@@ -48,7 +45,7 @@
             </div>
         </div>
         <div class="row" id="form-view" style="display:none;">
-            <div class="col-md-7">
+            <div class="col-md-8">
                 <ul class="nav nav-tabs" role="tablist">
                     <li role="presentation" class="active"><a href="#provider_attributes" data-toggle="tab">Attributes</a></li>
                     <li role="presentation"><a href="#provider_subjects" data-toggle="tab">Subjects</a></li>
@@ -102,7 +99,7 @@
                     </div>
                 </div>
             </div>
-            <div class="col-md-5">
+            <div class="col-md-4">
                 <div>
                     <h4>Import from JSON</h4>
                     <p>Choose a JSON file that has been previously exported from another Preprint Provider detail page. This will
@@ -145,6 +142,11 @@
                 selected_subjects = selected_subjects.filter(function(element) {
                     return element !== subject;
                 });
+            };
+
+            var clearSubjects = function() {
+                $('#id_subjects_chosen').val('');
+                selected_subjects = [];
             };
 
             // Section and selectors for expanding lists
@@ -217,6 +219,26 @@
                 $('#show-modify-form').text(new_text);
             });
 
+            var populateSubjects = function(rules) {
+                $.get("{% url 'preprint_providers:rules_to_subjects' %}", {'rules': JSON.stringify(rules)}, function (data) {
+                    var subjects = data['subjects'];
+                    for (var h=0; h<selected_subjects.length; h++) {
+                        var element = $('input[value=' + selected_subjects[h] + ']')[0];
+                        if (element) {
+                            element.checked = false;
+                        }
+                    }
+                    clearSubjects();
+                    for (var i=0; i<subjects.length; i++) {
+                        addSubject(subjects[i]);
+                        var element = $('input[value=' + subjects[i] + ']')[0];
+                        if (element) {
+                            element.checked = true;
+                        }
+                    }
+                });
+            };
+
             $("#import-form").submit(function(event) {
                 event.preventDefault();
                 $.ajax({
@@ -229,8 +251,12 @@
                     success: function(response) {
                         for (var k in response){
                             if (response.hasOwnProperty(k)) {
-                                var field = $('#id_' + k);
-                                field.val(response[k]);
+                                if (k === 'subjects_acceptable') {
+                                    populateSubjects(response[k]);
+                                } else {
+                                    var field = $('#id_' + k);
+                                    field.val(response[k]);
+                                }
                             }
                         }
                     }
