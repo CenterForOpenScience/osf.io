@@ -125,12 +125,16 @@ class IncludeQuerySet(models.QuerySet):
 
     def _include(self, field):
         sql, params = self._build_include_sql(field, self._includes[field])
+        # Use add_extra to avoid a pointless call to _clone
+        # For some reason it doesn't take keywords...
         self.query.add_extra({'__' + field.name: sql}, params, None, None, None, None)
 
     def _build_include_sql(self, field, children):
         host_model = field.model
         model = field.related_model
 
+        # join_columns on generic relations are backwards
+        # Probably a reason/ better way to handle this
         if isinstance(field, GenericRelation):
             column, host_column = field.get_joining_columns()[0]
         else:
@@ -138,6 +142,7 @@ class IncludeQuerySet(models.QuerySet):
 
         qs = model.objects.all()
 
+        # TODO be able to set limits per thing included
         if self._include_limit:
             qs.query.set_limits(0, self._include_limit)
 
@@ -145,6 +150,7 @@ class IncludeQuerySet(models.QuerySet):
         if qs.ordered:
             kwargs['order_by'] = zip(*qs.query.get_compiler(using=self.db).get_order_by())[0]
 
+        import ipdb; ipdb.set_trace()
         where = ['"{table}"."{column}" = "{host_table}"."{host_column}"'.format(
             table=model._meta.db_table,
             column=column,
