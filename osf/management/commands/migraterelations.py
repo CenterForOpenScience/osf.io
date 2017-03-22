@@ -75,10 +75,10 @@ def build_toku_django_lookup_table_cache():
     # add the "special" ones
     lookups.update(
         {format_lookup_key(x['name'], ContentType.objects.get_for_model(Tag).pk, template='{}:not_system'): x['pk'] for x in
-         Tag.objects.filter(system=False).values('name', 'pk')})
+         Tag.all_tags.filter(system=False).values('name', 'pk')})
     lookups.update(
         {format_lookup_key(x['name'], ContentType.objects.get_for_model(Tag).pk, template='{}:system'): x['pk'] for x in
-         Tag.objects.filter(system=True).values('name', 'pk')})
+         Tag.all_tags.filter(system=True).values('name', 'pk')})
 
     lookups.update({format_lookup_key(x['_id'], ContentType.objects.get_for_model(CitationStyle).pk): x['pk']
                     for x in CitationStyle.objects.all().values('_id', 'pk')})

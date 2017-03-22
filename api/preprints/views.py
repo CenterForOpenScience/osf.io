@@ -38,8 +38,7 @@ class PreprintMixin(NodeMixin):
         preprint = get_object_or_error(
             PreprintService,
             self.kwargs[self.preprint_lookup_url_kwarg],
-            display_name='preprint',
-            prefetch_fields=self.serializer_class().model_field_names
+            display_name='preprint'
         )
         if not preprint:
             raise NotFound
@@ -72,18 +71,10 @@ class PreprintList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMixin):
 
     # overrides FilterMixin
     def postprocess_query_param(self, key, field_name, operation):
-        # tag queries will usually be on Tag.name,
-        # ?filter[tags]=foo should be translated to Q('tags__name', 'eq', 'foo')
-        # But queries on lists should be tags, e.g.
-        # ?filter[tags]=foo,bar should be translated to Q('tags', 'isnull', True)
-        # ?filter[tags]=[] should be translated to Q('tags', 'isnull', True)
-        if field_name == 'tags':
-            if operation['value'] not in (list(), tuple()):
-                operation['source_field_name'] = 'tags__name'
-                operation['op'] = 'iexact'
-
         if field_name == 'provider':
             operation['source_field_name'] = 'provider___id'
+        if field_name == 'id':
+            operation['source_field_name'] = 'guids___id'
 
     def get_serializer_class(self):
         if self.request.method == 'POST':

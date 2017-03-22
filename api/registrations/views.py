@@ -32,6 +32,8 @@ from api.registrations.serializers import (
     RegistrationProviderSerializer
 )
 
+from api.nodes.filters import NodesListFilterMixin
+
 from api.nodes.views import (
     NodeMixin, ODMFilterMixin, NodeRegistrationsList,
     NodeCommentsList, NodeProvidersList, NodeFilesList, NodeFileDetail,
@@ -58,8 +60,7 @@ class RegistrationMixin(NodeMixin):
         node = get_object_or_error(
             Node,
             self.kwargs[self.node_lookup_url_kwarg],
-            display_name='node',
-            prefetch_fields=self.serializer_class().model_field_names,
+            display_name='node'
 
         )
         # Nodes that are folders/collections are treated as a separate resource, so if the client
@@ -72,7 +73,7 @@ class RegistrationMixin(NodeMixin):
         return node
 
 
-class RegistrationList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
+class RegistrationList(JSONAPIBaseView, generics.ListAPIView, NodesListFilterMixin):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#Registrations_registrations_list).
     """
     permission_classes = (

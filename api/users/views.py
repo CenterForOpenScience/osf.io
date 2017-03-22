@@ -10,7 +10,7 @@ from api.base.utils import (default_node_list_query,
                             default_node_permission_query, get_object_or_error)
 from api.base.views import JSONAPIBaseView
 from api.institutions.serializers import InstitutionSerializer
-from api.nodes.filters import NodePreprintsFilterMixin
+from api.nodes.filters import NodePreprintsFilterMixin, NodesListFilterMixin
 from api.nodes.serializers import NodeSerializer
 from api.preprints.serializers import PreprintSerializer
 from api.registrations.serializers import RegistrationSerializer
@@ -47,7 +47,7 @@ class UserMixin(object):
             else:
                 return self.request.user
 
-        obj = get_object_or_error(User, key, 'user', prefetch_fields=self.serializer_class().model_field_names)
+        obj = get_object_or_error(User, key, 'user')
         if check_permissions:
             # May raise a permission denied
             self.check_object_permissions(self.request, obj)
@@ -300,7 +300,7 @@ class UserAddonAccountDetail(JSONAPIBaseView, generics.RetrieveAPIView, UserMixi
         return account
 
 
-class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, NodePreprintsFilterMixin):
+class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, NodePreprintsFilterMixin, NodesListFilterMixin):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#Users_users_nodes_list).
     """
     permission_classes = (

@@ -31,8 +31,7 @@ class LicenseDetail(JSONAPIBaseView, generics.RetrieveAPIView):
         license = get_object_or_error(
             NodeLicense,
             self.kwargs[self.lookup_url_kwarg],
-            display_name='license',
-            prefetch_fields=self.serializer_class().model_field_names
+            display_name='license'
         )
         self.check_object_permissions(self.request, license)
         return license

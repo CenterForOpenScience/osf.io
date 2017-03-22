@@ -76,11 +76,15 @@ SILENT_LOGGERS = [
     'framework.auth.core',
     'framework.celery_tasks.signals',
     'website.app',
+    'website.archiver.tasks',
     'website.mails',
     'website.notifications.listeners',
     'website.search.elastic_search',
     'website.search_migration.migrate',
     'website.util.paths',
+    'requests_oauthlib.oauth2_session',
+    'raven.base.Client',
+    'raven.contrib.django.client.DjangoClient',
 ]
 for logger_name in SILENT_LOGGERS:
     logging.getLogger(logger_name).setLevel(logging.CRITICAL)
@@ -137,7 +141,7 @@ class DbTestCase(unittest.TestCase):
         settings.ENABLE_EMAIL_SUBSCRIPTIONS = False
 
         cls._original_bcrypt_log_rounds = settings.BCRYPT_LOG_ROUNDS
-        settings.BCRYPT_LOG_ROUNDS = 1
+        settings.BCRYPT_LOG_ROUNDS = 4
 
         # teardown_database(database=database_proxy._get_current_object())
 

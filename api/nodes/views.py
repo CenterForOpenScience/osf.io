@@ -41,7 +41,7 @@ from api.identifiers.serializers import NodeIdentifierSerializer
 from api.identifiers.views import IdentifierList
 from api.institutions.serializers import InstitutionSerializer
 from api.logs.serializers import NodeLogSerializer
-from api.nodes.filters import NodePreprintsFilterMixin
+from api.nodes.filters import NodePreprintsFilterMixin, NodesListFilterMixin
 from api.nodes.permissions import (
     IsAdmin,
     IsPublic,
@@ -104,8 +104,7 @@ class NodeMixin(object):
         node = get_object_or_error(
             Node,
             self.kwargs[self.node_lookup_url_kwarg],
-            display_name='node',
-            prefetch_fields=self.serializer_class().model_field_names
+            display_name='node'
         )
         # Nodes that are folders/collections are treated as a separate resource, so if the client
         # requests a collection through a node endpoint, we return a 404
@@ -125,7 +124,7 @@ class DraftMixin(object):
         node_id = self.kwargs['node_id']
         if draft_id is None:
             draft_id = self.kwargs['draft_id']
-        draft = get_object_or_error(DraftRegistration, draft_id, prefetch_fields=self.serializer_class().model_field_names)
+        draft = get_object_or_error(DraftRegistration, draft_id)
 
         if not draft.branched_from._id == node_id:
             raise ValidationError('This draft registration is not created from the given node.')
@@ -179,7 +178,7 @@ class WaterButlerMixin(object):
         return obj
 
 
-class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.BulkDestroyJSONAPIView, bulk_views.ListBulkCreateJSONAPIView, NodePreprintsFilterMixin, WaterButlerMixin):
+class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.BulkDestroyJSONAPIView, bulk_views.ListBulkCreateJSONAPIView, NodePreprintsFilterMixin, NodesListFilterMixin, WaterButlerMixin):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#Nodes_nodes_list).
     """
     permission_classes = (
@@ -196,26 +195,6 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
     view_name = 'node-list'
 
     ordering = ('-date_modified', )  # default ordering
-
-    # overrides ODMFilterMixin
-    def _operation_to_query(self, operation):
-        # We special case filters on root because root isn't a field; to get the children
-        # of a root, we use a custom manager method, Node.objects.get_children, and build
-        # a query from that
-        if operation['source_field_name'] == 'root':
-            child_pks = []
-            for root_guid in operation['value']:
-                root = get_object_or_error(Node, root_guid, display_name='root', prefetch_fields=self.serializer_class().model_field_names)
-                child_pks.extend(Node.objects.get_children(root=root, primary_keys=True))
-            return Q('id', 'in', child_pks)
-        elif operation['source_field_name'] == 'parent_node':
-            if operation['value']:
-                parent = get_object_or_error(Node, operation['value'], display_name='parent', prefetch_fields=self.serializer_class().model_field_names)
-                return Q('parent_nodes', 'eq', parent.id)
-            else:
-                return Q('parent_nodes', 'isnull', True)
-        else:
-            return super(NodeList, self)._operation_to_query(operation)
 
     # overrides FilterMixin
     def postprocess_query_param(self, key, field_name, operation):
@@ -907,8 +886,7 @@ class NodeLinksDetail(BaseNodeLinksDetail, generics.RetrieveDestroyAPIView, Node
         node_link = get_object_or_error(
             NodeRelation,
             self.kwargs[self.node_link_lookup_url_kwarg],
-            'node link',
-            prefetch_fields=self.serializer_class().model_field_names
+            'node link'
         )
         self.check_object_permissions(self.request, node_link)
         return node_link
@@ -2577,6 +2555,13 @@ class NodePreprintsList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, NodePr
 
     view_category = 'nodes'
     view_name = 'node-preprints'
+
+    def postprocess_query_param(self, key, field_name, operation):
+        if field_name == 'provider':
+            operation['source_field_name'] = 'provider___id'
+
+        if field_name == 'id':
+            operation['source_field_name'] = 'guids___id'
 
     # overrides ODMFilterMixin
     def get_default_odm_query(self):
