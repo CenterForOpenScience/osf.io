@@ -58,7 +58,6 @@ class TestSetPreprintFile(OsfTestCase):
 
         self.project = ProjectFactory(creator=self.user)
         self.file = OsfStorageFile.create(
-            is_file=True,
             node=self.project,
             path='/panda.txt',
             name='panda.txt',
@@ -66,7 +65,6 @@ class TestSetPreprintFile(OsfTestCase):
         self.file.save()
 
         self.file_two = OsfStorageFile.create(
-            is_file=True,
             node=self.project,
             path='/pandapanda.txt',
             name='pandapanda.txt',
@@ -165,7 +163,6 @@ class TestPreprintServicePermissions(OsfTestCase):
     def test_nonadmin_cannot_set_file(self):
         initial_file = self.preprint.primary_file
         file = OsfStorageFile.create(
-            is_file=True,
             node=self.project,
             path='/panda.txt',
             name='panda.txt',
@@ -197,7 +194,6 @@ class TestPreprintServicePermissions(OsfTestCase):
     def test_admin_can_set_file(self):
         initial_file = self.preprint.primary_file
         file = OsfStorageFile.create(
-            is_file=True,
             node=self.project,
             path='/panda.txt',
             name='panda.txt',

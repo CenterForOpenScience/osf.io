@@ -37,8 +37,8 @@ class TestOsfstorageFileNode(StorageTestCase):
         assert_equal(self.project, self.node_settings.root_node.node)
 
     # def test_get_folder(self):
-    #     file = models.OsfStorageFileNode(name='MOAR PYLONS', is_file=True, node=self.node)
-    #     folder = models.OsfStorageFileNode(name='MOAR PYLONS', is_file=False, node=self.node)
+    #     file = models.OsfStorageFile(name='MOAR PYLONS', node=self.node)
+    #     folder = models.OsfStorageFolder(name='MOAR PYLONS', node=self.node)
 
     #     _id = folder._id
 
@@ -48,8 +48,8 @@ class TestOsfstorageFileNode(StorageTestCase):
     #     assert_equal(folder, models.OsfStorageFileNode.get_folder(_id, self.node_settings))
 
     # def test_get_file(self):
-    #     file = models.OsfStorageFileNode(name='MOAR PYLONS', is_file=True, node=self.node)
-    #     folder = models.OsfStorageFileNode(name='MOAR PYLONS', is_file=False, node=self.node)
+    #     file = models.OsfStorageFile(name='MOAR PYLONS', node=self.node)
+    #     folder = models.OsfStorageFolder(name='MOAR PYLONS', node=self.node)
 
     #     file.save()
     #     folder.save()
@@ -139,7 +139,7 @@ class TestOsfstorageFileNode(StorageTestCase):
         assert_equal(self.node_settings.get_root().path, path)
 
     def test_file_path(self):
-        file = OsfStorageFile(name='MOAR PYLONS', is_file=True, node=self.node)
+        file = OsfStorageFile(name='MOAR PYLONS', node=self.node)
         file.save()
         assert_equal(file.name, 'MOAR PYLONS')
         assert_equal(file.path, '/{}'.format(file._id))

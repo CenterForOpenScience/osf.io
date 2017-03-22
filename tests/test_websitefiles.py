@@ -284,7 +284,6 @@ class TestFileNodeObj(FilesTestCase):
         root = TestFolder(
             _path='root',
             name='rootfolder',
-            is_file=False,
             node=self.node,
             provider='test',
             materialized_path='/long/path/to',
@@ -295,7 +294,6 @@ class TestFileNodeObj(FilesTestCase):
             parent_id=root.id,
             _path='afile',
             name='name',
-            is_file=True,
             node=self.node,
             provider='test',
             materialized_path='/long/path/to/name',

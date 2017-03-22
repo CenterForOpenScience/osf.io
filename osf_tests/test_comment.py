@@ -1001,7 +1001,6 @@ class TestBoxFileCommentMoveRename(FileCommentMoveRenameTestMixin):
 
     def _create_file_with_comment(self, node, path, user):
         self.file = self.ProviderFile.create(
-            is_file=True,
             node=node,
             path=self._format_path(path),
             name=path.strip('/'),
@@ -1023,7 +1022,6 @@ class TestDropboxFileCommentMoveRename(FileCommentMoveRenameTestMixin):
 
     def _create_file_with_comment(self, node, path, user):
         self.file = self.ProviderFile.create(
-            is_file=True,
             node=node,
             path='{}{}'.format(node.get_addon(self.provider).folder, path),
             name=path.strip('/'),
