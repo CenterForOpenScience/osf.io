@@ -368,7 +368,11 @@ class LinkedRegistrationsRelationship(JSONAPIBaseView, generics.RetrieveUpdateDe
 @api_view(('GET',))
 @throttle_classes([RootAnonThrottle, UserRateThrottle])
 def root(request, format=None, **kwargs):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#Base_base_read).
+    """
+    The documentation for this endpoint can be found [here](https://developer.osf.io/#Base_base_read).
+
+
+    The documentation for the Open Science Framework API can be found at `https://developer.osf.io`.
     """
     if request.user and not request.user.is_anonymous():
         user = request.user
