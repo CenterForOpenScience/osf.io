@@ -3,6 +3,7 @@ import furl
 import httplib as http
 import re
 import urllib
+import requests
 
 import markupsafe
 from django.utils import timezone
@@ -14,7 +15,8 @@ from modularodm.exceptions import NoResultsFound
 from modularodm.exceptions import ValidationError
 from modularodm.exceptions import ValidationValueError
 
-from framework import forms, status
+from framework import forms, status, discourse
+import framework.discourse.users
 from framework import auth as framework_auth
 from framework.auth import exceptions
 from framework.auth import cas, campaigns
@@ -35,6 +37,9 @@ from website.util.time import throttle_period_expired
 from website.models import User
 from website.util import web_url_for
 from website.util.sanitize import strip_html
+
+import logging
+logger = logging.getLogger(__name__)
 
 
 @block_bing_preview
@@ -390,6 +395,7 @@ def auth_logout(redirect_url=None):
     :param redirect_url: url to redirect user after CAS logout, default is 'goodbye'
     :return:
     """
+    discourse.users.logout()
 
     # OSF tells CAS where it wants to be redirected back after successful logout.
     # However, CAS logout flow may not respect this url if user is authenticated through remote identity provider.

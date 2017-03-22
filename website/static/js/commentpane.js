@@ -1,6 +1,7 @@
 (function(window, document, $) {
 
     'use strict';
+    var $osf = require('js/osfHelpers');
 
     var defaults = {
         animateTime: 100,
@@ -47,6 +48,42 @@
             return $(document.body).width() * options.maxWidthProp;
         };
 
+        var insertCommentsIframe = function(discourseUrl, topicId) {
+            window.DiscourseEmbed = { discourseUrl: discourseUrl, topicId: topicId };
+
+            var d = document.createElement('script');
+            d.type = 'text/javascript';
+            d.async = true;
+            d.src = discourseUrl + 'javascripts/embed.js';
+            d.onload = function() {
+                // patch the href to include the view_only parameter
+                var viewOnly = $osf.urlParams().view_only;
+                if (viewOnly) {
+                    var discourseEmbedFrame = document.getElementById('discourse-embed-frame');
+                    discourseEmbedFrame.src += '&view_only=' + viewOnly;
+                }
+            };
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(d);
+        };
+
+        var loadDiscourseComments = function() {
+            var discourseEmbedFrame = document.getElementById('discourse-embed-frame');
+            var discourseComments = document.getElementById('discourse-comments');
+            if (discourseEmbedFrame) {
+                // force reload.
+                discourseEmbedFrame.src += '';
+            } else if (!discourseComments.discourseBegunLoading) {
+                discourseComments.discourseBegunLoading = true;
+
+                var discourseUrl = discourseComments.getAttribute('data-discourse-url');
+                var topicId = discourseComments.getAttribute('data-discourse-topic-id');
+                // initial load.
+                if (topicId !== 'None') {
+                    insertCommentsIframe(discourseUrl, topicId);
+                }
+            }
+        };
+
         self.toggle = function() {
             var width;
             if ($pane.width()) {
@@ -64,7 +101,13 @@
             $handle.tooltip('hide');
             $toggleElm.animate(
                 {width: width},
-                options.animateTime
+                options.animateTime,
+                function() {
+                    // load comments when the panel is opening
+                    if (width > 0) {
+                        loadDiscourseComments();
+                    }
+                }
             );
         };
 

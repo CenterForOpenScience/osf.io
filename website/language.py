@@ -201,3 +201,11 @@ DISK_SAVING_MODE = 'Forks, registrations, and uploads to OSF Storage uploads are
 
 #log out and revisit the link to confirm emails
 CONFIRM_ALTERNATE_EMAIL_ERROR = 'The email address has <b>NOT</b> been added to your account. Please log out and revisit the link in your email. Thank you.'
+
+
+# For use by the Discourse forum server configuration script
+DISCOURSE_WELCOME_TOPIC = ('This forum is a place for your project team to have open discussions about your research. '
+    'Topics are automatically made for the project, components, wiki pages, and files. '
+    'Whenever you see the discussion bubble in the top right corner of an OSF page, you can click it to reveal the linked forum topic. '
+    'You can also start new topics in the forum about other aspects of the project. '
+    'We hope you will use this area to promote your research and keep record of the discussions behind it.')

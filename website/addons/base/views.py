@@ -4,6 +4,7 @@ import os
 import uuid
 import markupsafe
 from django.utils import timezone
+import requests
 
 from flask import make_response
 from flask import redirect
@@ -16,7 +17,7 @@ from modularodm import Q
 from modularodm.exceptions import NoResultsFound
 
 from addons.base.models import BaseStorageAddon
-from framework import sentry
+from framework import sentry, discourse
 from framework.auth import Auth
 from framework.auth import cas
 from framework.auth import oauth_scopes
@@ -41,6 +42,9 @@ from website.util import rubeus
 
 # import so that associated listener is instantiated and gets emails
 from website.notifications.events.files import FileEvent  # noqa
+
+import logging
+logger = logging.getLogger(__name__)
 
 ERROR_MESSAGES = {'FILE_GONE': u'''
 <style>
@@ -727,7 +731,8 @@ def addon_view_file(auth, node, file_node, version):
         'file_tags': file_node.tags.filter(system=False).values_list('name', flat=True),
         'file_guid': file_node.get_guid()._id,
         'file_id': file_node._id,
-        'allow_comments': file_node.provider in settings.ADDONS_COMMENTABLE
+        'allow_comments': file_node.provider in settings.ADDONS_COMMENTABLE,
+        'discourse_topic_id': discourse.topics.get_or_create_topic_id(file_node),
     })
 
     ret.update(rubeus.collect_addon_assets(node))

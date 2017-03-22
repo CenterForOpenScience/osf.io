@@ -3,6 +3,7 @@ import logging
 import httplib as http
 import math
 from itertools import islice
+import requests
 
 from flask import request
 from modularodm import Q
@@ -10,7 +11,9 @@ from modularodm.exceptions import ModularOdmException, ValidationError
 from django.apps import apps
 from django.db.models import Count
 
-from framework import status
+from framework import status, discourse
+import framework.discourse.topics
+import framework.discourse.users
 from framework.utils import iso8601format
 from framework.flask import redirect
 from framework.auth.decorators import must_be_logged_in, collect_auth
@@ -678,6 +681,7 @@ def _view_project(node, auth, primary=False,
             messages = addon.before_page_load(node, user) or []
             for message in messages:
                 status.push_status_message(message, kind='info', dismissible=False, trust=True)
+
     data = {
         'node': {
             'disapproval_link': disapproval_link,
@@ -784,8 +788,11 @@ def _view_project(node, auth, primary=False,
         'node_categories': [
             {'value': key, 'display_name': value}
             for key, value in settings.NODE_CATEGORY_MAP.iteritems()
-        ]
+        ],
+        'discourse_topic_id': discourse.topics.get_or_create_topic_id(node),
+        'discourse_apikey': discourse.users.get_user_apikey(),
     }
+    
     if embed_contributors and not anonymous:
         data['node']['contributors'] = utils.serialize_contributors(node.visible_contributors, node=node)
     if embed_descendants:
@@ -804,6 +811,7 @@ def _view_project(node, auth, primary=False,
             serialize_node_summary(node=each, auth=auth, show_path=False)
             for each in node.forks.exclude(type='osf.registration').exclude(is_deleted=True).sort('-forked_date').annotate(nlogs=Count('logs'))
         ]
+
     return data
 
 def get_affiliated_institutions(obj):

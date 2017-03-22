@@ -192,6 +192,7 @@
                 newAndNoteworthy: ${ noteworthy_links_node | sjson, n },
                 maintenance: ${ maintenance | sjson, n},
                 analyticsMeta: {},
+                discourseUrl: ${ discourse_url | sjson, n },
             });
         </script>
 

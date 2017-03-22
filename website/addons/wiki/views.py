@@ -6,12 +6,15 @@ import logging
 from bs4 import BeautifulSoup
 from flask import request
 
+from framework import discourse
+import framework.discourse.topics
 from framework.mongo.utils import to_mongo_key
 from framework.exceptions import HTTPError
 from framework.auth.utils import privacy_info_handle
 from framework.auth.decorators import must_be_logged_in
 from framework.flask import redirect
 
+import website
 from website.addons.wiki import settings
 from website.addons.wiki import utils as wiki_utils
 from website.profile.utils import get_gravatar
@@ -210,6 +213,8 @@ def project_wiki_delete(auth, wname, **kwargs):
         raise HTTPError(http.NOT_FOUND)
     node.delete_node_wiki(wiki_name, auth)
     wiki_utils.broadcast_to_sharejs('delete', sharejs_uuid, node)
+
+    discourse.topics.delete_topic(wiki_page)
     return {}
 
 
@@ -321,6 +326,7 @@ def project_wiki_view(auth, wname, path=None, **kwargs):
             'web': _get_wiki_web_urls(node, wiki_name),
             'gravatar': get_gravatar(auth.user, 25),
         },
+        'discourse_topic_id': discourse.topics.get_or_create_topic_id(wiki_page),
     }
     ret.update(_view_project(node, auth, primary=True))
     ret['user']['can_edit_wiki_body'] = can_edit

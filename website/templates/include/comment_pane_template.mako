@@ -14,48 +14,15 @@
             <button type="button" class="close text-smaller" data-bind="click: togglePane">
                 <i class="fa fa-times"></i>
             </button>
-            <h4>
+            <h4 style="margin-bottom: 20px">
                 <span data-bind="if: page() == 'files'">Files | <span data-bind="text: pageTitle"></span> Discussion</span>
                 <span data-bind="if: page() == 'wiki'">Wiki | <span data-bind="text: pageTitle"></span> Discussion</span>
                 <span data-bind="if: page() == 'node'"><span data-bind="text: pageTitle"></span> | Discussion</span>
             </h4>
 
-            <div data-bind="if: canComment" style="margin-top: 20px">
-                <form class="form">
-                    <div class="form-group">
-                        <span>
-                            <div class="form-control atwho-input" placeholder="Add a comment" data-bind="editableHTML: {observable: replyContent, onUpdate: handleEditableUpdate}, attr: {maxlength: $root.MAXLENGTH}" contenteditable="true"></div>
-                        </span>
-                    </div>
-                    <div data-bind="if: replyNotEmpty" class="form-group">
-                        <div class="clearfix">
-                            <div class="pull-right">
-                                <a class="btn btn-default btn-sm" data-bind="click: cancelReply, css: {disabled: submittingReply}">Cancel</a>
-                                <a class="btn btn-success btn-sm" data-bind="click: submitReply, visible: validateReply(), css: {disabled: submittingReply}, text: commentButtonText"></a>
-                                <span data-bind="text: replyErrorMessage" class="text-danger"></span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="text-danger" data-bind="text: errorMessage"></div>
-                </form>
-            </div>
-            <div data-bind="template: {name: 'commentTemplate', foreach: comments}"></div>
-            <!-- ko if: loadingComments -->
-            ## Placeholder blank comment template with default gravitar to replace spinner
-            <div class="comment-container">
-                <div class="comment-body osf-box">
-                    <div class="comment-info">
-                        <img src="https://secure.gravatar.com/avatar/placeholder?d=identicon&s=20" alt="default">
-                        <span class="comment-author">Loading...</span>
-                    </div>
-                    <div class="comment-content">
-                        <span class="component-overflow"></span>
-                    </div>
-                </div>
-            </div>
-            <!-- /ko -->
+            ## Discourse comment embedding
+            <div id='discourse-comments' data-discourse-url='${ discourse_url }' data-discourse-topic-id='${ discourse_topic_id }'></div>
         </div>
     </div>
 
 </div>
-<%include file="comment_template.mako" />

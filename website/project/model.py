@@ -7,6 +7,7 @@ import os
 import re
 import urlparse
 import warnings
+import requests
 
 import jsonschema
 import pymongo
@@ -946,6 +947,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
 
     alternative_citations = fields.ForeignField('alternativecitation', list=True)
 
+    notification_settings_dirty = fields.BooleanField(default=False)
+
     _meta = {
         'optimistic': True,
     }
@@ -1651,7 +1654,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
         self.adjust_permissions()
 
         first_save = not self._is_loaded
-
         if first_save and self.is_bookmark_collection:
             existing_bookmark_collections = Node.find(
                 Q('is_bookmark_collection', 'eq', True) & Q('contributors', 'eq', self.creator._id) & Q('is_deleted', 'eq', False)

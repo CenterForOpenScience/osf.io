@@ -1,0 +1,145 @@
+## this is the all-in-one, standalone Discourse Docker container template
+##
+## After making changes to this file, you MUST rebuild
+## /var/discourse/launcher rebuild app
+##
+## BE *VERY* CAREFUL WHEN EDITING!
+## YAML FILES ARE SUPER SUPER SENSITIVE TO MISTAKES IN WHITESPACE OR ALIGNMENT!
+## visit http://www.yamllint.com/ to validate this file as needed
+
+templates:
+  - "templates/postgres.template.yml"
+  - "templates/redis.template.yml"
+  - "templates/web.template.yml"
+## We inline this template so that we can modify it
+  #- "templates/web.ratelimited.template.yml"
+## Uncomment these two lines if you wish to add Lets Encrypt (https)
+  #- "templates/web.ssl.template.yml"
+  #- "templates/web.letsencrypt.ssl.template.yml"
+
+## which TCP/IP ports should this container expose?
+## If you want Discourse to share a port with another webserver like Apache or nginx,
+## see https://meta.discourse.org/t/17247 for details
+expose:
+  - "80:80"   # http
+  - "443:443" # https
+
+params:
+  ## Inline inclusion of templates/web.ratelimited.template.yml
+  reqs_per_second: 12
+  burst_per_second: 12
+  reqs_per_minute: 200
+  burst_per_minute: 100
+
+  osf_server_address: CHANGEME
+
+  db_default_text_search_config: "pg_catalog.english"
+
+  ## Set db_shared_buffers to a max of 25% of the total memory.
+  ## will be set automatically by bootstrap based on detected RAM, or you can override
+  db_shared_buffers: "128MB"
+
+  ## can improve sorting performance, but adds memory usage per-connection
+  #db_work_mem: "40MB"
+
+  ## Which Git revision should this container use? (default: tests-passed)
+  ## This is where tests-passed happened to be when I figured out I should
+  ## really be freezing this in place for sanity's sake.
+  ## As soon as a beta branch includes this commit, I will change to that.
+  ## And then to a stable release when the beta becomes stable.
+  version: 7c8095294d7296f0f27d4cb4066f1555fc8c2cbc
+
+env:
+  LANG: en_US.UTF-8
+  # DISCOURSE_DEFAULT_LOCALE: en
+
+  ## How many concurrent web requests are supported? Depends on memory and CPU cores.
+  ## will be set automatically by bootstrap based on detected CPUs, or you can override
+  UNICORN_WORKERS: 2
+
+  ## TODO: The domain name this Discourse instance will respond to
+  DISCOURSE_HOSTNAME: CHANGE_ME
+
+  ## Uncomment if you want the container to be started with the same
+  ## hostname (-h option) as specified above (default "$hostname-$config")
+  #DOCKER_USE_HOSTNAME: true
+
+  ## TODO: List of comma delimited emails that will be made admin and developer
+  ## on initial signup example 'user1@example.com,user2@example.com'
+  DISCOURSE_DEVELOPER_EMAILS: 'CHANGE_ME'
+
+  ## TODO: The SMTP mail server used to validate new accounts and send notifications
+  DISCOURSE_SMTP_ADDRESS: 10.0.2.2         # required
+  DISCOURSE_SMTP_PORT: 387
+  #DISCOURSE_SMTP_USER_NAME: postmaster@discourse.example.com
+  #DISCOURSE_SMTP_PASSWORD: ""
+  #DISCOURSE_SMTP_ENABLE_START_TLS: true           # (optional, default true)
+
+  ## If you added the Lets Encrypt template, uncomment below to get a free SSL certificate
+  #LETSENCRYPT_ACCOUNT_EMAIL: me@example.com
+
+  ## The CDN address for this Discourse instance (configured to pull)
+  ## see https://meta.discourse.org/t/14857 for details
+  #DISCOURSE_CDN_URL: //discourse-cdn.example.com
+
+  DISCOURSE_ENABLE_CORS: true
+
+## The Docker container is stateless; all data is stored in /shared
+volumes:
+  - volume:
+      host: /var/discourse/shared/standalone
+      guest: /shared
+  - volume:
+      host: /var/discourse/shared/standalone/log/var-log
+      guest: /var/log
+
+## Plugins go here
+## see https://meta.discourse.org/t/19157 for details
+hooks:
+  after_code:
+    - exec:
+        cd: $home/plugins
+        cmd:
+          - git clone https://github.com/discourse/docker_manager.git
+          - git clone https://github.com/CenterForOpenScience/discourse-osf-plugin.git
+          - git clone https://github.com/CenterForOpenScience/discourse-osf-projects.git
+    - exec:
+        cd: $home/script/import_scripts
+        cmd:
+          - git init
+          - git remote add origin https://github.com/acshi/discourse-osf-import
+          - git fetch
+          - git checkout -t origin/master
+
+## Any custom commands to run after building
+run:
+  - exec: echo "Beginning of custom commands"
+  ## If you want to set the 'From' email address for your first registration, uncomment and change:
+  ## After getting the first signup email, re-comment the line. It only needs to run once.
+  #- exec: rails r "SiteSetting.notification_email='info@unconfigured.discourse.org'"
+  - exec: echo "End of custom commands"
+  ## Inline inclusion of templates/web.ratelimited.template.yml
+  ## We modify it so that the osf_server_address ip address is not rate-limited
+  - replace:
+     filename: "/etc/nginx/conf.d/discourse.conf"
+     from: /server.+{/
+     to: |
+       geo $whitelist {
+         default 0;
+         $osf_server_address 1;
+       }
+       map $whitelist $rate_limit_addr {
+         default $binary_remote_addr;
+         1 "";
+       }
+       limit_req_zone $rate_limit_addr zone=flood:10m rate=$reqs_per_secondr/s;
+       limit_req_zone $rate_limit_addr zone=bot:10m rate=$reqs_per_minuter/m;
+       limit_req_status 429;
+       server {
+  - replace:
+     filename: "/etc/nginx/conf.d/discourse.conf"
+     from: "/location @discourse {/"
+     to: |
+       location @discourse {
+         limit_req zone=flood burst=$burst_per_second nodelay;
+         limit_req zone=bot burst=$burst_per_minute nodelay;

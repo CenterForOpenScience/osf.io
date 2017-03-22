@@ -8,6 +8,7 @@ import markdown
 import pytz
 from addons.base.models import BaseNodeSettings
 from bleach.callbacks import nofollow
+from django.contrib.postgres import fields
 from django.db import models
 from django.utils import timezone
 from framework.forms.utils import sanitize
@@ -111,6 +112,12 @@ class NodeWikiPage(GuidMixin, BaseModel):
     user = models.ForeignKey('osf.OSFUser', null=True, blank=True)
     node = models.ForeignKey('osf.AbstractNode', null=True, blank=True)
 
+    discourse_topic_id = models.IntegerField(default=None, null=True, blank=True)
+    discourse_topic_title = models.TextField(default='', blank=True)
+    discourse_topic_parent_guids = fields.ArrayField(models.TextField(default='', blank=True), default=None, null=True, blank=True)
+    discourse_topic_deleted = models.BooleanField(default=False)
+    discourse_post_id = models.IntegerField(default=None, null=True, blank=True)
+
     @property
     def is_current(self):
         key = to_mongo_key(self.page_name)
@@ -141,6 +148,18 @@ class NodeWikiPage(GuidMixin, BaseModel):
     def root_target_page(self):
         """The comment page type associated with NodeWikiPages."""
         return 'wiki'
+
+    # For Discourse API compatibility
+    @property
+    def guid_id(self):
+        """The GUID value associated with this object."""
+        return self._id
+
+    # For Discourse API compatibility
+    @property
+    def label(self):
+        """The label/title/name associated with this object."""
+        return self.page_name
 
     @property
     def is_deleted(self):

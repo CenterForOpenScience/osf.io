@@ -1,4 +1,5 @@
 <%block name="nav">
+<% from website import settings %>
 <link rel="stylesheet" href='/static/css/nav.css'>
 <div class="osf-nav-wrapper">
 
@@ -95,6 +96,7 @@
 
 
 </nav>
+
     <!-- ko ifnot: onSearchPage -->
         <%include file='./search_bar.mako' />
     <!-- /ko -->

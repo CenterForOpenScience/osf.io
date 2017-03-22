@@ -129,7 +129,6 @@ class TrashedFileNode(StoredObject, Commentable):
         if recursive:
             for child in TrashedFileNode.find(Q('parent', 'eq', self)):
                 child.restore(recursive=recursive, parent=restored)
-
         TrashedFileNode.remove_one(self)
         return restored
 
@@ -144,6 +143,7 @@ class TrashedFileNode(StoredObject, Commentable):
             return Guid.find(Q('referent', 'eq', self))[0]
         except IndexError:
             return None
+
 
 @unique_on(['node', 'name', 'parent', 'is_file', 'provider', 'path'])
 class StoredFileNode(StoredObject, Commentable):
@@ -558,7 +558,6 @@ class FileNode(object):
             versions=self.versions,
             last_touched=self.last_touched,
             materialized_path=self.materialized_path,
-
             deleted_by=user
         )
         if save:

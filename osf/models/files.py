@@ -5,10 +5,13 @@ import os
 import requests
 from dateutil.parser import parse as parse_date
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
+from django.contrib.postgres import fields
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import models, connection
 from django.utils import timezone
 from framework.analytics import get_basic_counters
+from framework import discourse
+import framework.discourse.topics
 from modularodm.exceptions import NoResultsFound
 from osf.models.base import BaseModel, Guid, OptionalGuidMixin, ObjectIDMixin
 from osf.models.comment import CommentableMixin
@@ -67,6 +70,12 @@ class TrashedFileNode(CommentableMixin, OptionalGuidMixin, ObjectIDMixin, BaseMo
     deleted_on = NonNaiveDateTimeField(default=timezone.now)  # auto_now_add=True)
     tags = models.ManyToManyField('osf.Tag')
     suspended = models.BooleanField(default=False)
+
+    discourse_topic_id = models.IntegerField(default=None, null=True, blank=True)
+    discourse_topic_title = models.TextField(default='', blank=True)
+    discourse_topic_parent_guids = fields.ArrayField(models.TextField(default='', blank=True), default=None, null=True, blank=True)
+    discourse_topic_deleted = models.BooleanField(default=False)
+    discourse_post_id = models.IntegerField(default=None, null=True, blank=True)
 
     copied_from = models.ForeignKey('osf.StoredFileNode', default=None, null=True, blank=True)
 
@@ -136,6 +145,19 @@ class TrashedFileNode(CommentableMixin, OptionalGuidMixin, ObjectIDMixin, BaseMo
         """The comment page type associated with TrashedFileNodes."""
         return 'files'
 
+    # for Discourse compatibility
+    @property
+    def guid_id(self):
+        """The GUID value associated with this object."""
+        guid_obj = self.get_guid()
+        return guid_obj._id if guid_obj else None
+
+    # For Discourse API compatibility
+    @property
+    def label(self):
+        """The label/title/name associated with this object."""
+        return self.name
+
     @property
     def is_deleted(self):
         return True
@@ -172,6 +194,9 @@ class TrashedFileNode(CommentableMixin, OptionalGuidMixin, ObjectIDMixin, BaseMo
         if recursive:
             for child in self.children:
                 child.restore(recursive=recursive, parent=restored)
+
+        discourse.topics.undelete_topic(restored)
+
         TrashedFileNode.remove_one(self)
         return restored
 
@@ -212,6 +237,12 @@ class StoredFileNode(CommentableMixin, OptionalGuidMixin, Taggable, ObjectIDMixi
     name = models.CharField(max_length=1000, blank=True, null=True)
     path = models.CharField(max_length=2000, blank=True, null=True)  # 1950 on prod
     _materialized_path = models.CharField(max_length=1000, blank=True, null=True)  # 482 on staging
+
+    discourse_topic_id = models.IntegerField(default=None, null=True, blank=True)
+    discourse_topic_title = models.TextField(default='', blank=True)
+    discourse_topic_parent_guids = fields.ArrayField(models.TextField(default='', blank=True), default=None, null=True, blank=True)
+    discourse_topic_deleted = models.BooleanField(default=False)
+    discourse_post_id = models.IntegerField(default=None, null=True, blank=True)
 
     # The User that has this file "checked out"
     # Should only be used for OsfStorage
@@ -284,6 +315,26 @@ class StoredFileNode(CommentableMixin, OptionalGuidMixin, Taggable, ObjectIDMixi
     def root_target_page(self):
         """The comment page type associated with StoredFileNodes."""
         return 'files'
+
+    # for Discourse compatibility
+    @property
+    def guid_id(self):
+        """The GUID value associated with this object."""
+        guid_obj = self.get_guid()
+        return guid_obj._id if guid_obj else None
+
+    # For Discourse API compatibility
+    @property
+    def label(self):
+        """The label/title/name associated with this object."""
+        return self.name
+
+    def save(self):
+        # keep discourse up to date with changed filename. It will be a NOP if everything is synced already.
+        if self.discourse_topic_id:
+            discourse.topics.sync_topic(self, should_save=False)
+
+        return super(StoredFileNode, self).save()
 
     @property
     def is_deleted(self):
@@ -549,6 +600,7 @@ class FileNode(object):
             'path': self.path,
             'name': self.name,
             'kind': self.kind,
+            'discourse_topic_id': self.discourse_topic_id,
         }
 
     def generate_waterbutler_url(self, **kwargs):
@@ -564,6 +616,8 @@ class FileNode(object):
         and remove it from StoredFileNode
         :param user User or None: The user that deleted this FileNode
         """
+        discourse.topics.delete_topic(self)
+
         trashed = self._create_trashed(user=user, parent=parent)
         self._repoint_guids(trashed)
         self.node.save()
@@ -606,6 +660,11 @@ class FileNode(object):
             provider=self.provider,
             last_touched=self.last_touched,
             materialized_path=self.materialized_path,
+            discourse_topic_id=self.discourse_topic_id,
+            discourse_topic_title=self.discourse_topic_title,
+            discourse_topic_parent_guids=self.discourse_topic_parent_guids,
+            discourse_topic_deleted=self.discourse_topic_deleted,
+            discourse_post_id=self.discourse_post_id,
             deleted_by=user
         )
         if self.versions.exists():

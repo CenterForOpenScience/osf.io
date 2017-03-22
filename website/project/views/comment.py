@@ -6,6 +6,7 @@ from flask import request
 
 from api.caching.tasks import ban_url
 from osf.models import Guid
+from framework import discourse
 from framework.postcommit_tasks.handlers import enqueue_postcommit_task
 from modularodm import Q
 from website import settings
@@ -46,9 +47,19 @@ def update_file_guid_referent(self, node, event_type, payload, user=None):
                 old_file = FileNode.load(obj.referent._id)
                 obj.referent = create_new_file(obj, source, destination, destination_node)
                 obj.save()
+
+                obj.referent.discourse_topic_id = old_file.discourse_topic_id
+                obj.referent.discourse_topic_title = old_file.discourse_topic_title
+                obj.referent.discourse_topic_parent_guids = old_file.discourse_topic_parent_guids
+                obj.referent.discourse_topic_deleted = old_file.discourse_topic_deleted
+                obj.referent.discourse_post_id = old_file.discourse_post_id
+                obj.referent.save()
+
+                old_file.discourse_topic_id = None
+                old_file.discourse_post_id = None
+
                 if old_file and not TrashedFileNode.load(old_file._id):
                     old_file.delete()
-
 
 def create_new_file(obj, source, destination, destination_node):
     # TODO: Remove when materialized paths are fixed in the payload returned from waterbutler

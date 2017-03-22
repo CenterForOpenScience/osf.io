@@ -232,8 +232,8 @@
 
 <%include file="project/modal_add_pointer.mako"/>
 
-% if user['can_comment'] or node['has_comments']:
-    <%include file="include/comment_pane_template.mako"/>
+% if not node['anonymous']:
+<%include file="include/comment_pane_template.mako"/>
 % endif
 
 % if node['is_preprint']:
@@ -384,11 +384,27 @@
          </div>
         % endif
 
+        <!-- Forum Feed (Latest Topics) -->
+        % if not node['anonymous']:
+            <div class="panel panel-default">
+                <div class="panel-heading clearfix">
+                    <h3 class="panel-title">Latest Forum Topics</h3>
+                </div>
+                <div class="panel-body">
+                    <div id="forumFeed">
+                        <div class="spinner-loading-wrapper">
+                            <div class="logo-spin logo-lg"></div>
+                             <p class="m-t-sm fg-load-message">Loading forum topics...  </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        % endif
+
         <!-- Show child on right if widgets -->
         % if addons:
             ${children()}
         % endif
-
 
         %if node['tags'] or 'write' in user['permissions']:
          <div class="tags panel panel-default">
@@ -492,6 +508,7 @@ ${parent.javascript_bottom()}
                 public: true,
             },
         },
+        discourseUserApikey: ${ discourse_apikey | sjson, n },
     });
 </script>
 

@@ -247,3 +247,41 @@ $(function() {
     // END Maintenance alert
 
 });
+
+$(function() {
+    function performDiscourseLogin() {
+        var iframe = document.createElement('iframe');
+        iframe.style.display = 'none';
+        iframe.src = contextVars.discourseUrl + 'session/sso';
+        iframe.addEventListener('load', function(e) {
+            this.parentNode.removeChild(this);
+            // Verify log-in
+            $.ajax({
+                url: contextVars.discourseUrl + 'session/current.json',
+                xhrFields: { withCredentials: true }}
+            ).then(function(json) {
+                if (json.current_user && json.current_user.username === contextVars.currentUser.id) {
+                    if(typeof(Storage) !== 'undefined') {
+                        sessionStorage.discourseLoggedIn = 'true';
+                    }
+                }
+            });
+        });
+        document.body.appendChild(iframe);
+    }
+
+    function discourseAutoLogin() {
+        if (contextVars.currentUser.id) {
+            if (typeof(Storage) !== 'undefined' && sessionStorage.discourseLoggedIn === 'true') {
+                return;
+            } else {
+                performDiscourseLogin();
+            }
+        } else if (typeof(Storage) !== 'undefined') {
+            sessionStorage.discourseLoggedIn = 'false';
+            return;
+        }
+    };
+
+    discourseAutoLogin();
+});
