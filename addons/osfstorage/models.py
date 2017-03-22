@@ -207,7 +207,6 @@ class OsfStorageFileNode(BaseFileNode):
     def save(self):
         self._path = ''
         self._materialized_path = ''
-        self.provider = self._provider
         return super(OsfStorageFileNode, self).save()
 
 
