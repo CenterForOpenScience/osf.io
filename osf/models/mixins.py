@@ -103,6 +103,7 @@ class Taggable(models.Model):
 
         if not self.tags.filter(id=tag_instance.id).exists():
             self.tags.add(tag_instance)
+            # TODO: Logging belongs in on_tag_added hook
             if log:
                 self.add_tag_log(tag_instance, auth)
             if save:
@@ -111,6 +112,8 @@ class Taggable(models.Model):
         return tag_instance
 
     def add_system_tag(self, tag, save=True):
+        if isinstance(tag, Tag) and not tag.system:
+            raise ValueError('Non-system tag passed to add_system_tag')
         return self.add_tag(tag=tag, auth=None, save=save, log=False, system=True)
 
     def add_tag_log(self, *args, **kwargs):
