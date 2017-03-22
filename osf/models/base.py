@@ -94,7 +94,7 @@ class BaseModel(models.Model):
         abstract = True
 
     def to_storage(self):
-        local_django_fields = set([x.name for x in self._meta.get_fields() if not x.is_relation or (not x.auto_created and (x.many_to_one or x.one_to_one))])
+        local_django_fields = set([x.name for x in self._meta.concrete_fields])
         return {name: self.serializable_value(name) for name in local_django_fields}
 
     @classmethod
