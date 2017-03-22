@@ -19,12 +19,14 @@ SILENT_LOGGERS = [
     'framework.auth.core',
     'framework.celery_tasks.signals',
     'website.app',
+    'website.archiver.tasks',
     'website.mails',
     'website.notifications.listeners',
     'website.search.elastic_search',
     'website.search_migration.migrate',
     'website.util.paths',
     'requests_oauthlib.oauth2_session',
+    'raven.base.Client',
     'raven.contrib.django.client.DjangoClient',
 ]
 for logger_name in SILENT_LOGGERS:
