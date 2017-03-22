@@ -661,6 +661,8 @@ class GuidMixin(BaseIDMixin):
 
     @cached_property
     def _id(self):
+        if not getattr(self.guids.all(), '_result_cache', None):
+            import ipdb; ipdb.set_trace()
         try:
             guid = self.guids.all()[0]
         except IndexError:

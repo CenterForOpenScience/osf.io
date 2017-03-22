@@ -50,6 +50,7 @@ from osf.modm_compat import Q
 from osf.utils.auth import Auth, get_user
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import NonNaiveDateTimeField
+from osf.utils.manager import IncludeQuerySet
 from website import language, settings
 from website.citations.utils import datetime_to_csl
 from website.exceptions import (InvalidTagError, NodeStateError,
@@ -69,67 +70,11 @@ from .base import BaseModel, Guid, GuidMixin, GuidMixinQuerySet
 
 logger = logging.getLogger(__name__)
 
-from django.db.models.query import ModelIterable
 
 
-def set_prefetch_results_cache(instance, field, results):
-    if not hasattr(instance, '_prefetched_objects_cache'):
-        instance._prefetched_objects_cache = {}
-    instance._prefetched_objects_cache[field.name] = field.model.objects.none()
-    instance._prefetched_objects_cache[field.name]._result_cache = results
 
-
-import ciso8601
-class ScaryModelIterable(ModelIterable):
-
-    PREFIX = '_scaryprefetch_'
-
-    def __iter__(self):
-        prefetched = {}
-        for key in self.queryset.query._extra:
-            if key.startswith(self.PREFIX):
-                field = key.replace(self.PREFIX, '', 1)
-                prefetched[field] = self.queryset.model._meta.get_field(field)
-
-        for instance in super(ScaryModelIterable, self).__iter__():
-            for name, field in prefetched.iteritems():
-                if not hasattr(instance, '_prefetched_objects_cache'):
-                    instance._prefetched_objects_cache = {}
-                instance._prefetched_objects_cache[name] = getattr(instance, name).none()
-                instance._prefetched_objects_cache[name]._result_cache = []
-
-                for serial in instance.__dict__.pop(self.PREFIX + name, []):
-                    if name == 'contributor_set':
-                        guids = []
-                        for g in serial['user'].pop('guids'):
-                            g = Guid(**g)
-                            g._state.adding = False
-                            g._state.db = 'default'
-                            guids.append(g)
-
-                        user = OSFUser(**serial.pop('user'))
-                        user._state.adding = False
-                        user._state.db = 'default'
-                        user.date_registered = ciso8601.parse_datetime(user.date_registered)
-
-                        set_prefetch_results_cache(user, OSFUser._meta.get_field('guids'), guids)
-                        # user.guids._known_related_objects(OSFUser.
-
-                        contributor = Contributor(**serial)
-                        contributor._state.adding = False
-                        contributor._state.db = 'default'
-                        contributor._user_cache = user
-                        contributor._node_cache = instance
-                        instance._prefetched_objects_cache[name]._result_cache.append(contributor)
-                    if name == 'guids':
-                        g = Guid(**serial)
-                        g._state.adding = False
-                        g._state.db = 'default'
-                        instance._prefetched_objects_cache[name]._result_cache.append(g)
-            yield instance
-
-
-class AbstractNodeQuerySet(GuidMixinQuerySet):
+# class AbstractNodeQuerySet(GuidMixinQuerySet):
+class AbstractNodeQuerySet(IncludeQuerySet):
 
     def get_roots(self):
         return self.extra(
@@ -143,48 +88,6 @@ class AbstractNodeQuerySet(GuidMixinQuerySet):
         if primary_keys:
             query = query.values_list('id', flat=True)
         return query
-
-    def count(self):
-        return super(AbstractNodeQuerySet, self._clone().extra(select={})).count()
-
-    # def all(self):
-    #     if self._result_cache:
-    #         return self
-    #     return self._clone(annotate=True)
-
-    def pls_mak_fast(self):
-        contributor_fields = ['\'{1}\', "{0}"."{1}"'.format(Contributor._meta.db_table, f.column) for f in Contributor._meta.concrete_fields]
-        osfuser_fields = ['\'{1}\', "{0}"."{1}"'.format(OSFUser._meta.db_table, f.column) for f in OSFUser._meta.concrete_fields]
-        guid_fields = ['\'{1}\', "{0}"."{1}"'.format(Guid._meta.db_table, f.column) for f in Guid._meta.concrete_fields]
-
-        osfuser_fields.append('''
-            'guids', (SELECT json_agg(json_build_object({})) FROM osf_guid WHERE osf_guid.object_id = osf_osfuser.id AND osf_guid.content_type_id = 18)
-        '''.format(', '.join(guid_fields)))
-        contributor_fields.append('\'user\', json_build_object({})'.format(', '.join(osfuser_fields)))
-
-        qs = self.prefetch_related(None)
-        qs.remove_guid_annotations()
-        qs = qs.extra(
-            select={
-                '_scaryprefetch_contributor_set': '''
-                    SELECT json_agg(json_build_object({}) ORDER BY "osf_contributor"."_order" ASC)
-                    FROM osf_contributor
-                    JOIN osf_osfuser ON osf_osfuser.id = osf_contributor.user_id
-                    WHERE node_id = osf_abstractnode.id
-                    LIMIT 10
-                '''.format(', '.join(contributor_fields)),
-                '_scaryprefetch_guids': '''
-                    SELECT json_agg(json_build_object({}))
-                    FROM osf_guid WHERE osf_guid.object_id = osf_abstractnode.id
-                    AND osf_guid.content_type_id = 27
-                '''.format(', '.join(guid_fields))
-
-            }
-        )
-
-        qs._iterable_class = ScaryModelIterable
-
-        return qs
 
     def can_view(self, user=None, private_link=None):
         qs = self.filter(is_public=True)
