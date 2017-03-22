@@ -12,6 +12,36 @@ from website import settings
 from osf.exceptions import ValidationError, ValidationValueError, reraise_django_validation_errors
 
 
+def validate_history_item(items):
+    for value in items or []:
+        string_required(value.get('institution'))
+        startMonth = value.get('startMonth')
+        startYear = value.get('startYear')
+        endMonth = value.get('endMonth')
+        endYear = value.get('endYear')
+
+        validate_year(startYear)
+        validate_year(endYear)
+
+        if startYear and endYear:
+            if endYear < startYear:
+                raise ValidationValueError('End date must be later than start date.')
+            elif endYear == startYear:
+                if endMonth and startMonth and endMonth < startMonth:
+                    raise ValidationValueError('End date must be later than start date.')
+
+
+def validate_year(item):
+    if item:
+        try:
+            int(item)
+        except ValueError:
+            raise ValidationValueError('Please enter a valid year.')
+        else:
+            if len(item) != 4:
+                raise ValidationValueError('Please enter a valid year.')
+
+
 def string_required(value):
     if value is None or value.strip() == '':
         raise ValidationValueError('Value must not be empty.')

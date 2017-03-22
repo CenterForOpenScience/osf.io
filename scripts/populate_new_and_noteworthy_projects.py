@@ -13,9 +13,10 @@ from website import models
 from framework.auth.core import Auth
 from scripts import utils as script_utils
 from framework.celery_tasks import app as celery_app
+from framework.encryption import ensure_bytes
 from website.settings import \
     POPULAR_LINKS_NODE, NEW_AND_NOTEWORTHY_LINKS_NODE,\
-    NEW_AND_NOTEWORTHY_CONTRIBUTOR_BLACKLIST, POPULAR_LINKS_REGISTRATIONS
+    NEW_AND_NOTEWORTHY_CONTRIBUTOR_BLACKLIST
 
 logger = logging.getLogger(__name__)
 
@@ -32,7 +33,7 @@ def acceptable_title(node):
     """ Omit projects that have certain words in the title """
 
     omit_titles = ['test', 'photo', 'workshop', 'data']
-    if any(word in str(node['title']).lower() for word in omit_titles):
+    if any(word in ensure_bytes(node['title']).lower() for word in omit_titles):
         return False
     return True
 

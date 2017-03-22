@@ -1020,13 +1020,54 @@ class TestAUserProfile(OsfTestCase):
         assert_in_html(self.component.title, res)
         assert_in_html(self.project.title, res)
 
+    def test_shows_projects_with_many_contributors(self):
+        # My project has many contributors
+        for _ in range(5):
+            user = UserFactory()
+            self.project.add_contributor(user, auth=Auth(self.project.creator), save=True)
+
+        # I go to my own profile
+        url = web_url_for('profile_view_id', uid=self.me._primary_key)
+        res = self.app.get(url, auth=self.me.auth)
+        # I see '3 more' as a link
+        assert_in('3 more', res)
+
+        res = res.click('3 more')
+        assert_equal(res.request.path, self.project.url)
+
+    def test_has_no_public_projects_or_components_on_own_profile(self):
+        # User goes to their profile
+        url = web_url_for('profile_view_id', uid=self.user._id)
+        res = self.app.get(url, auth=self.user.auth)
+
+        # user has no public components/projects
+        assert_in('You have no public projects', res)
+        assert_in('You have no public components', res)
+
     def test_user_no_public_projects_or_components(self):
         # I go to other user's profile
-        url = web_url_for('profile_view_id', uid=self.user._primary_key)
+        url = web_url_for('profile_view_id', uid=self.user._id)
         # User has no public components/projects
         res = self.app.get(url, auth=self.me.auth)
         assert_in('This user has no public projects', res)
         assert_in('This user has no public components', res)
+
+    # regression test
+    def test_does_not_show_registrations(self):
+        project = ProjectFactory(creator=self.user)
+        component = NodeFactory(parent=project, creator=self.user, is_public=False)
+        # User has a registration with public components
+        reg = RegistrationFactory(project=component.parent_node, creator=self.user, is_public=True)
+        for each in reg.nodes:
+            each.is_public = True
+            each.save()
+        # I go to other user's profile
+        url = web_url_for('profile_view_id', uid=self.user._id)
+        # Registration does not appear on profile
+        res = self.app.get(url, auth=self.me.auth)
+        assert_in('This user has no public components', res)
+        assert_not_in(reg.title, res)
+        assert_not_in(reg.nodes[0].title, res)
 
 if __name__ == '__main__':
     unittest.main()

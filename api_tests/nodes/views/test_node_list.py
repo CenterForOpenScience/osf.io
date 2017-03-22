@@ -9,8 +9,10 @@ from framework.auth.core import Auth
 from website.models import Node, NodeLog
 from website.util import permissions
 from website.util.sanitize import strip_html
+from website.views import find_bookmark_collection
 
 from api.base.settings.defaults import API_BASE, MAX_PAGE_SIZE
+from api_tests.nodes.filters.test_filters import NodesListFilteringMixin
 
 from tests.base import ApiTestCase
 from osf_tests.factories import (
@@ -130,7 +132,7 @@ class TestNodeFiltering(ApiTestCase):
                                                        is_public=False,
                                                        creator=self.user_two)
         self.folder = CollectionFactory()
-        self.bookmark_collection = BookmarkCollectionFactory()
+        self.bookmark_collection = find_bookmark_collection(self.user_one)
 
         self.url = "/{}nodes/".format(API_BASE)
 
@@ -512,7 +514,8 @@ class TestNodeFiltering(ApiTestCase):
         res = self.app.get(url, auth=self.user_one.auth)
         assert_equal(res.status_code, 200)
 
-        root_nodes = Node.objects.get_children(root=root).filter(is_public=True)
+        root_nodes = Node.objects.filter(root__guids___id=root._id)
+
         assert_equal(len(res.json['data']), root_nodes.count())
 
     def test_filtering_on_parent(self):
@@ -2119,3 +2122,8 @@ class TestNodeListPagination(ApiTestCase):
 
         assert_not_in('{}-{}'.format(res.json['data'][0]['id'], self.users[10]._id), uids)
         assert_equal(res.json['data'][0]['embeds']['contributors']['links']['meta']['per_page'], 10)
+
+
+class TestNodeListFiltering(NodesListFilteringMixin, ApiTestCase):
+
+    url = '/{}nodes/?'.format(API_BASE)

@@ -1,9 +1,11 @@
+import mock
 import pytest
 from django.core.exceptions import MultipleObjectsReturned
 
 from osf.models import Guid, NodeLicenseRecord, OSFUser
 from osf.modm_compat import Q
-from .factories import UserFactory, NodeFactory, NodeLicenseRecordFactory, RegistrationFactory
+from osf_tests.factories import UserFactory, NodeFactory, NodeLicenseRecordFactory, RegistrationFactory
+from tests.base import OsfTestCase
 
 @pytest.mark.django_db
 class TestGuid:
@@ -72,7 +74,7 @@ class TestReferent:
         node = NodeFactory()
 
         user_guid = user.guids[0]
-        node_guid = node_guids[0]
+        node_guid = node.guids[0]
 
         user._id = node_guid._id
         node._id = user_guid._id
@@ -109,7 +111,6 @@ class TestReferent:
 
         assert guid.guid != obj.guid.guid
 
-
     @pytest.mark.parametrize('Factory',
     [
         UserFactory,
@@ -124,6 +125,38 @@ class TestReferent:
             guids.append(Guid.objects.create(referent=obj))
 
         try:
-            things = Factory._meta.model.objects.get(id=obj.id)
+            Factory._meta.model.objects.get(id=obj.id)
         except MultipleObjectsReturned as ex:
             pytest.fail('Multiple objects returned for {} with multiple guids. {}'.format(Factory._meta.model, ex))
+
+
+class TestResolveGuid(OsfTestCase):
+
+    def setUp(self):
+        super(TestResolveGuid, self).setUp()
+        self.node = NodeFactory()
+
+    def test_resolve_guid(self):
+        res_guid = self.app.get(self.node.web_url_for('node_setting', _guid=True), auth=self.node.creator.auth)
+        res_full = self.app.get(self.node.web_url_for('node_setting'), auth=self.node.creator.auth)
+        assert res_guid.text == res_full.text
+
+    def test_resolve_guid_no_referent(self):
+        guid = Guid.load(self.node._id)
+        guid.referent = None
+        guid.save()
+        res = self.app.get(
+            self.node.web_url_for('node_setting', _guid=True),
+            auth=self.node.creator.auth,
+            expect_errors=True,
+        )
+        assert res.status_code == 404
+
+    @mock.patch('osf.models.node.Node.deep_url', None)
+    def test_resolve_guid_no_url(self):
+        res = self.app.get(
+            self.node.web_url_for('node_setting', _guid=True),
+            auth=self.node.creator.auth,
+            expect_errors=True,
+        )
+        assert res.status_code == 404

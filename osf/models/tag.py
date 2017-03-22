@@ -2,6 +2,14 @@ from django.db import models
 
 from .base import BaseModel
 
+
+class TagManager(models.Manager):
+    """Manager that filters out system tags by default.
+    """
+
+    def get_queryset(self):
+        return super(TagManager, self).get_queryset().filter(system=False)
+
 class Tag(BaseModel):
     # TODO DELETE ME POST MIGRATION
     primary_identifier_name = 'name'
@@ -10,6 +18,9 @@ class Tag(BaseModel):
     # /TODO DELETE ME POST MIGRATION
     name = models.CharField(db_index=True, max_length=1024)
     system = models.BooleanField(default=False)
+
+    objects = TagManager()
+    all_tags = models.Manager()
 
     def __unicode__(self):
         if self.system:
@@ -24,12 +35,12 @@ class Tag(BaseModel):
         return self.name.lower()
 
     @classmethod
-    def load(cls, data):
+    def load(cls, data, system=False):
         """For compatibility with v1: the tag name used to be the _id,
         so we make Tag.load('tagname') work as if `name` were the primary key.
         """
         try:
-            return cls.objects.get(name=data)
+            return cls.all_tags.get(system=system, name=data)
         except cls.DoesNotExist:
             return None
 

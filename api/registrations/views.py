@@ -32,6 +32,8 @@ from api.registrations.serializers import (
     RegistrationProviderSerializer
 )
 
+from api.nodes.filters import NodesListFilterMixin
+
 from api.nodes.views import (
     NodeMixin, ODMFilterMixin, NodeRegistrationsList,
     NodeCommentsList, NodeProvidersList, NodeFilesList, NodeFileDetail,
@@ -59,6 +61,7 @@ class RegistrationMixin(NodeMixin):
             Node,
             self.kwargs[self.node_lookup_url_kwarg],
             display_name='node'
+
         )
         # Nodes that are folders/collections are treated as a separate resource, so if the client
         # requests a collection through a node endpoint, we return a 404
@@ -70,7 +73,7 @@ class RegistrationMixin(NodeMixin):
         return node
 
 
-class RegistrationList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
+class RegistrationList(JSONAPIBaseView, generics.ListAPIView, NodesListFilterMixin):
     """Node Registrations.
 
     Registrations are read-only snapshots of a project. This view is a list of all current registrations for which a user

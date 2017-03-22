@@ -104,6 +104,8 @@ class TestAddonAuth(OsfTestCase):
         self.node_addon.user_settings = self.user_addon
         self.node_addon.external_account = self.oauth_settings
         self.node_addon.save()
+        self.user_addon.oauth_grants[self.node._id] = {self.oauth_settings._id: []}
+        self.user_addon.save()
 
     def build_url(self, **kwargs):
         options = {'payload': jwe.encrypt(jwt.encode({'data': dict(dict(
@@ -188,6 +190,8 @@ class TestAddonLogs(OsfTestCase):
         self.node_addon.user_settings = self.user_addon
         self.node_addon.external_account = self.oauth_settings
         self.node_addon.save()
+        self.user_addon.oauth_grants[self.node._id] = {self.oauth_settings._id: []}
+        self.user_addon.save()
 
     def build_payload(self, metadata, **kwargs):
         options = dict(
@@ -594,6 +598,9 @@ class TestAddonFileViews(OsfTestCase):
         self.node_addon.repo = 'Truth'
         self.node_addon.user = 'E'
         self.node_addon.save()
+
+        self.user_addon.oauth_grants[self.project._id] = {self.oauth._id: []}
+        self.user_addon.save()
 
     @classmethod
     def tearDownClass(cls):

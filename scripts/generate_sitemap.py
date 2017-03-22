@@ -18,7 +18,7 @@ import logging
 
 from framework import sentry
 from framework.celery_tasks import app as celery_app
-from osf.models import OSFUser, Node, Registration
+from osf.models import OSFUser, AbstractNode, Registration
 from osf.models.preprint_service import PreprintService
 from scripts import utils as script_utils
 from website import settings
@@ -27,6 +27,26 @@ from website.app import init_app
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
+class Progress(object):
+    def __init__(self, bar_len=50):
+        self.bar_len = bar_len
+    
+    def start(self, total, prefix):
+        self.total = total
+        self.count = 0
+        self.prefix = prefix
+    
+    def increment(self, inc=1):
+        self.count += inc
+        filled_len = int(round(self.bar_len * self.count / float(self.total)))
+        percents = round(100.0 * self.count / float(self.total), 1)
+        bar = '=' * filled_len + '-' * (self.bar_len - filled_len)
+        sys.stdout.flush()
+        sys.stdout.write('{}[{}] {}{} ... {}\r'.format(self.prefix, bar, percents, '%', str(self.total)))
+
+    def stop(self):
+        # To preserve line, there is probably a better way to do this
+        print('')
 
 class Sitemap(object):
     def __init__(self):
@@ -116,22 +136,35 @@ class Sitemap(object):
 
     def generate(self):
         print('Generating Sitemap')
+
+        # Progress bar
+        progress = Progress()
+
         # Static urls
+        progress.start(len(settings.SITEMAP_STATIC_URLS), 'STAT: ')
         for config in settings.SITEMAP_STATIC_URLS:
             config['loc'] = urlparse.urljoin(settings.DOMAIN, config['loc'])
             self.add_url(config)
+            progress.increment()
+        progress.stop()
 
         # User urls
-        for obj in OSFUser.objects.filter(is_active=True).iterator():
+        objs = OSFUser.objects.filter(is_active=True)
+        progress.start(objs.count(), 'USER: ')
+        for obj in objs.iterator():
             try:
                 config = settings.SITEMAP_USER_CONFIG
                 config['loc'] = urlparse.urljoin(settings.DOMAIN, obj.url)
                 self.add_url(config)
             except Exception as e:
                 self.log_errors(obj, obj._id, e)
+            progress.increment()
+        progress.stop()
 
-        # Node urls
-        for obj in Node.objects.filter(is_public=True, is_deleted=False).iterator():
+        # AbstractNode urls (Nodes and Registrations, no colelctions)
+        objs = AbstractNode.objects.filter(is_public=True, is_deleted=False, retraction_id__isnull=True).exclude(type="osf.collection") 
+        progress.start(objs.count(), 'NODE: ')
+        for obj in objs.iterator():
             try:
                 config = settings.SITEMAP_NODE_CONFIG
                 config['loc'] = urlparse.urljoin(settings.DOMAIN, obj.url)
@@ -139,19 +172,13 @@ class Sitemap(object):
                 self.add_url(config)
             except Exception as e:
                 self.log_errors(obj, obj._id, e)
-
-        # Registration urls
-        for obj in Registration.objects.filter(retraction=False, is_deleted=False, is_public=True).iterator():
-            try:
-                config = settings.SITEMAP_REGISTRATION_CONFIG
-                config['loc'] = urlparse.urljoin(settings.DOMAIN, obj.url)
-                config['lastmod'] = obj.date_modified.isoformat()
-                self.add_url(config)
-            except Exception as e:
-                self.log_errors(obj, obj._id, e)
+            progress.increment()
+        progress.stop()
 
         # Preprint urls
-        for obj in PreprintService.objects.filter(node__isnull=False, node__is_deleted=False, node__is_public=True, is_published=True).iterator():
+        objs = PreprintService.objects.filter(node__isnull=False, node__is_deleted=False, node__is_public=True, is_published=True)
+        progress.start(objs.count() * 2, 'PREP: ')
+        for obj in objs.iterator():
             try:
                 preprint_date = obj.date_modified.isoformat()
                 config = settings.SITEMAP_PREPRINT_CONFIG
@@ -177,6 +204,8 @@ class Sitemap(object):
                     self.log_errors(obj.primary_file, obj.primary_file._id, e)
             except Exception as e:
                 self.log_errors(obj, obj._id, e)
+            progress.increment(2)
+        progress.stop()
 
         # Final write
         self.write_doc()

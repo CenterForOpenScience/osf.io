@@ -10,14 +10,14 @@ from api.base.utils import (default_node_list_query,
                             default_node_permission_query, get_object_or_error)
 from api.base.views import JSONAPIBaseView
 from api.institutions.serializers import InstitutionSerializer
-from api.nodes.filters import NodePreprintsFilterMixin
+from api.nodes.filters import NodePreprintsFilterMixin, NodesListFilterMixin
 from api.nodes.serializers import NodeSerializer
 from api.preprints.serializers import PreprintSerializer
 from api.registrations.serializers import RegistrationSerializer
 from api.users.permissions import (CurrentUser, ReadOnlyOrCurrentUser,
                                    ReadOnlyOrCurrentUserRelationship)
 from api.users.serializers import (UserAddonSettingsSerializer,
-                                   UserCreateSerializer, UserDetailSerializer,
+                                   UserDetailSerializer,
                                    UserInstitutionsRelationshipSerializer,
                                    UserSerializer)
 from django.contrib.auth.models import AnonymousUser
@@ -132,13 +132,6 @@ class UserList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
         # TODO: sort
         query = self.get_query_from_request()
         return User.find(query)
-
-    # overrides ListCreateAPIView
-    def get_serializer_class(self):
-        if self.request.method == 'POST':
-            return UserCreateSerializer
-        else:
-            return UserSerializer
 
 
 class UserDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, UserMixin):
@@ -426,7 +419,7 @@ class UserAddonAccountDetail(JSONAPIBaseView, generics.RetrieveAPIView, UserMixi
         return account
 
 
-class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, NodePreprintsFilterMixin):
+class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, NodePreprintsFilterMixin, NodesListFilterMixin):
     """List of nodes that the user contributes to. *Read-only*.
 
     Paginated list of nodes that the user contributes to ordered by `date_modified`.  User registrations are not available
@@ -505,7 +498,7 @@ class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, NodePreprintsF
 
     # overrides ListAPIView
     def get_queryset(self):
-        return Node.find(self.get_query_from_request())
+        return Node.find(self.get_query_from_request()).select_related('root')
 
 
 class UserPreprints(UserNodes):

@@ -112,10 +112,12 @@ def validate_social(value):
     validate_profile_websites(value.get('profileWebsites'))
 
 
+def get_current_user_id():
+    return session._get_current_object() and session.data.get('auth_user_id')
+
 # TODO - rename to _get_current_user_from_session /HRYBACKI
 def _get_current_user():
-    uid = session._get_current_object() and session.data.get('auth_user_id')
-    return User.load(uid)
+    return User.load(get_current_user_id())
 
 
 # TODO: This should be a class method of User?
@@ -1067,7 +1069,7 @@ class User(GuidStoredObject, AddonModelMixin):
         :return:
         """
         from website.search import search
-        search.update_contributors(self.visible_contributor_to)
+        search.update_contributors_async(self.id)
 
     def update_affiliated_institutions_by_email_domain(self):
         """
@@ -1288,11 +1290,15 @@ class User(GuidStoredObject, AddonModelMixin):
     def save(self, *args, **kwargs):
         # TODO: Update mailchimp subscription on username change
         # Avoid circular import
+        first_save = not self._is_loaded
         self.username = self.username.lower().strip() if self.username else None
         ret = super(User, self).save(*args, **kwargs)
         if self.SEARCH_UPDATE_FIELDS.intersection(ret) and self.is_confirmed:
             self.update_search()
             self.update_search_nodes_contributors()
+        if first_save:
+            from website.project import new_bookmark_collection  # Avoid circular import
+            new_bookmark_collection(self)
         return ret
 
     def update_search(self):
