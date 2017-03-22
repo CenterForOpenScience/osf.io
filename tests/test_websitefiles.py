@@ -281,6 +281,7 @@ class TestFileNodeObj(FilesTestCase):
         assert_equal(TestFile.load(fn._id), None)
 
     def test_restore_file(self):
+        # import ipdb; ipdb.set_trace()
         root = TestFolder(
             _path='root',
             name='rootfolder',
@@ -661,15 +662,17 @@ class TestFolderObj(FilesTestCase):
 
         guid = self.parent.get_guid(create=True)
         child_guid = child.get_guid(create=True)
-
         trashed_parent = self.parent.delete(user=self.user)
 
         guid.reload()
         child_guid.reload()
 
+        child = models.TrashedFileNode.load(child._id)
+        prnt = child.parent
+
         assert_equal(
             trashed_parent,
-            models.TrashedFileNode.load(child._id).parent
+            prnt
         )
 
         assert_equal(trashed_parent, guid.referent)

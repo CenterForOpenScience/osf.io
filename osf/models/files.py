@@ -36,8 +36,15 @@ logger = logging.getLogger(__name__)
 
 
 class BaseFileNodeManager(Manager):
+    use_for_related_fields = True
+
     def get_queryset(self):
         qs = super(BaseFileNodeManager, self).get_queryset()
+        
+        if issubclass(qs.model, TrashedFileNode):
+            qs = qs.filter(type__in=TrashedFileNode._typedmodels_subtypes)
+        else:
+            qs = qs.exclude(type__in=TrashedFileNode._typedmodels_subtypes)
         if hasattr(self.model, '_provider') and self.model._provider is not None:
             return qs.filter(provider=self.model._provider)
         return qs
@@ -74,7 +81,7 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
     # A list of dictionaries sorted by the 'modified' key
     # The raw output of the metadata request deduped by etag
     # Add regardless it can be pinned to a version or not
-    _history = DateTimeAwareJSONField(default=[], blank=True)
+    _history = DateTimeAwareJSONField(default=list, blank=True)
     # A concrete version of a FileNode, must have an identifier
     versions = models.ManyToManyField('FileVersion')
 
@@ -93,6 +100,7 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
     deleted_by = models.ForeignKey('osf.OSFUser', related_name='files_deleted_by', null=True, blank=True)
 
     objects = BaseFileNodeManager()
+    _base_manager = BaseFileNodeManager()
 
     class Meta:
         index_together = (
@@ -114,7 +122,7 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
     @property
     def is_file(self):
         # TODO split is file logic into subclasses
-        return issubclass(self.__class__, (File, TrashedFile))
+        return isinstance(self, (File, TrashedFile))
 
     @property
     def path(self):
@@ -385,9 +393,6 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
 
     def _repoint_guids(self, updated):
         logger.warn('BaseFileNode._repoint_guids is deprecated.')
-        # for guid in Guid.find(Q('referent', 'eq', self)):
-        #     guid.referent = updated
-        #     guid.save()
 
     def _update_node(self, recursive=True, save=True):
         if self.parent is not None:
@@ -438,7 +443,7 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
             'kind': self.kind,
         }
 
-    def save(self, *args, **kwargs):                  # TODO is there a way to do this with inheritance?
+    def save(self, *args, **kwargs):
         if hasattr(self._meta.model, '_provider') and self._meta.model._provider is not None:
             self.provider = self._meta.model._provider
         super(BaseFileNode, self).save(*args, **kwargs)
@@ -460,7 +465,6 @@ class UnableToRestore(Exception):
 
 
 class File(models.Model):
-    _is_file = True
 
     class Meta:
         abstract = True
@@ -500,7 +504,6 @@ class File(models.Model):
 
 
 class Folder(models.Model):
-    _is_file = False
 
     class Meta:
         abstract = True
@@ -536,15 +539,7 @@ class Folder(models.Model):
         return child
 
     def find_child_by_name(self, name, kind=2):
-        # kind == 2
-        type_cls = None
-        if kind == 1:
-            # file
-            type_cls = File
-        elif kind == 0:
-            # folder
-            type_cls = Folder
-        return self._resolve_class(type_cls).find_one(
+        return self.resolve_class(self.provider, kind).find_one(
             Q('name', 'eq', name) &
             Q('parent', 'eq', self)
         )
@@ -574,15 +569,15 @@ class TrashedFileNode(BaseFileNode):
         :param deleted_on:
         :return:
         """
+        if self.parent and self.parent.is_deleted:
+            raise ValueError('No parent to restore to')
+
         type_cls = File if self.is_file else Folder
 
         self.recast(self._resolve_class(type_cls)._typedmodels_type)
 
         if save:
             self.save()
-
-        if self.parent and self.parent.is_deleted:
-            raise ValueError('No parent to restore to')
 
         return self
 
