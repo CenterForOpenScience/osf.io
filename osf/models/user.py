@@ -1233,6 +1233,8 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             tag_instance, created = Tag.all_tags.get_or_create(name=tag.lower(), system=True)
         else:
             tag_instance = tag
+        if not tag_instance.system:
+            raise ValueError('Non-system tag passed to add_system_tag')
         if not self.all_tags.filter(id=tag_instance.id).exists():
             self.tags.add(tag_instance)
         return tag_instance
