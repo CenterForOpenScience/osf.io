@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from rest_framework import permissions
+from rest_framework import exceptions
 
 from api.base.utils import get_user_auth
 from website.models import PreprintService
@@ -15,4 +16,6 @@ class PreprintPublishedOrAdmin(permissions.BasePermission):
         if request.method in permissions.SAFE_METHODS:
             return obj.is_published or node.has_permission(auth.user, osf_permissions.ADMIN)
         else:
-            return node.has_permission(auth.user, osf_permissions.ADMIN)
+            if not node.has_permission(auth.user, osf_permissions.ADMIN):
+                raise exceptions.PermissionDenied(detail='User must be an admin to update a preprint.')
+            return True

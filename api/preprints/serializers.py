@@ -130,9 +130,6 @@ class PreprintSerializer(JSONAPISerializer):
         assert isinstance(preprint.node, Node), 'You must specify a preprint with a valid node to be updated.'
 
         auth = get_user_auth(self.context['request'])
-        if not preprint.node.has_permission(auth.user, 'admin'):
-            raise exceptions.PermissionDenied(detail='User must be an admin to update a preprint.')
-
         save_node = False
         save_preprint = False
         recently_published = False
