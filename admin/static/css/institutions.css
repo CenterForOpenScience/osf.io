@@ -10,19 +10,19 @@
 p input {
     padding: 5px 5px 5px 5px;
     margin-left: 10px;
-    width: 500px;
+    width: 80%;
 }
 
 p select {
     padding: 5px 5px 5px 5px;
     margin-left: 10px;
-    width: 500px;
+    width: 80%;
 }
 
 p textarea {
     padding: 5px 5px 5px 5px;
     margin-left: 10px;
-    width: 500px;
+    width: 80%;
 }
 
 form p label {
@@ -42,4 +42,12 @@ form p label {
     -webkit-column-count: 3; /* Chrome, Safari, Opera */
     -moz-column-count: 3; /* Firefox */
     column-count: 3;
+}
+
+.json-import {
+    padding-top: 50px;
+}
+
+.firstlevel_subjects {
+    width: 120%;
 }
