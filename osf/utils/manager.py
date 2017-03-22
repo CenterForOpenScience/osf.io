@@ -106,6 +106,7 @@ class IncludeQuerySet(models.QuerySet):
         clone._include_limit = kwargs.pop('limit_includes', None)
         assert not kwargs, '"limit_includes" is the only accepted kwargs. Eat your heart out 2.7'
 
+        clone.query.get_initial_alias()
         for name in related_names:
             ctx, model = self._includes, self.model
             for spl in name.split('__'):
@@ -142,6 +143,10 @@ class IncludeQuerySet(models.QuerySet):
 
         qs = model.objects.all()
 
+        qs.query.table_map = self.query.table_map
+        qs.query.alias_map = self.query.alias_map
+        qs.query.alias_refcount = self.query.alias_refcount
+
         # TODO be able to set limits per thing included
         if self._include_limit:
             qs.query.set_limits(0, self._include_limit)
@@ -150,17 +155,21 @@ class IncludeQuerySet(models.QuerySet):
         if qs.ordered:
             kwargs['order_by'] = zip(*qs.query.get_compiler(using=self.db).get_order_by())[0]
 
-        import ipdb; ipdb.set_trace()
-        where = ['"{table}"."{column}" = "{host_table}"."{host_column}"'.format(
-            table=model._meta.db_table,
+        compiler = qs.query.get_compiler(using=self.db)
+
+        table = compiler.quote_name_unless_alias(qs.query.get_initial_alias())
+        host_table = compiler.quote_name_unless_alias(qs.query.table_alias(host_model._meta.db_table)[0])
+
+        where = ['{table}."{column}" = {host_table}."{host_column}"'.format(
+            table=table,
             column=column,
-            host_table=host_model._meta.db_table,
+            host_table=host_table,
             host_column=host_column,
         )]
 
         if isinstance(field, GenericRelation):
-            where.append('"{table}"."{content_type}" = {content_type_id}'.format(
-                table=model._meta.db_table,
+            where.append('{table}."{content_type}" = {content_type_id}'.format(
+                table=table,
                 content_type=model._meta.get_field(field.content_type_field_name).column,
                 content_type_id=ContentType.objects.get_for_model(host_model).pk
             ))
