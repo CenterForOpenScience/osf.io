@@ -24,7 +24,6 @@ from framework.mongo import database
 from framework.mongo import set_up_storage
 from framework.mongo import storage
 from framework.transactions.context import transaction as modm_transaction
-from osf.models import BaseFileNode
 from osf.models import Comment
 from osf.models import Institution
 from osf.models import (NodeLog, OSFUser,
@@ -149,7 +148,7 @@ def migrate_user_activity_counters(page_size=20000):
 def make_guids():
     logger.info('Starting {}...'.format(sys._getframe().f_code.co_name))
 
-    guid_models = [model for model in get_ordered_models() if (issubclass(model, GuidMixin) or issubclass(model, OptionalGuidMixin)) and ((not issubclass(model, AbstractNode) or model is AbstractNode) and (not issubclass(model, BaseFileNode) or model is BaseFileNode))]
+    guid_models = [model for model in get_ordered_models() if (issubclass(model, GuidMixin) or issubclass(model, OptionalGuidMixin)) and model.__subclasses__() == []]
 
     with connection.cursor() as cursor:
         with transaction.atomic():
@@ -289,7 +288,7 @@ def validate_guid_referents_against_ids():
     set_backend()
     register_nonexistent_models_with_modm()
     with ipdb.launch_ipdb_on_exception():
-        for django_model in [model for model in get_ordered_models() if (issubclass(model, GuidMixin) or issubclass(model, OptionalGuidMixin)) and (issubclass(model, GuidMixin) or issubclass(model, OptionalGuidMixin)) and ((not issubclass(model, AbstractNode) or model is AbstractNode) and (not issubclass(model, BaseFileNode) or model is BaseFileNode))]:
+        for django_model in [model for model in get_ordered_models() if (issubclass(model, GuidMixin) or issubclass(model, OptionalGuidMixin)) and model.__subclasses__() == []]:
             if not hasattr(django_model, 'modm_model_path'):
                 logger.info('################################################\n'
                             '{} doesn\'t have a modm_model_path\n'
@@ -879,7 +878,7 @@ class Command(BaseCommand):
                 continue
             elif (options['nodelogs'] or options['nodelogsguids']) and django_model is not NodeLog:
                 continue
-            elif django_model in (AbstractNode, BaseFileNode):
+            elif django_model.__subclasses__() != []:
                 continue
 
             if not hasattr(django_model, 'modm_model_path'):
