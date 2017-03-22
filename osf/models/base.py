@@ -9,19 +9,20 @@ from django.contrib.contenttypes.fields import (GenericForeignKey,
                                                 GenericRelation)
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.postgres.fields import ArrayField
-from django.core.exceptions import ValidationError as DjangoValidationError
 from django.core.exceptions import MultipleObjectsReturned
+from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import models
-from django.db.models import F
+from django.db.models import F, Q
 from django.db.models import ForeignKey
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils import timezone
+from osf.utils.caching import cached_property
 from osf.exceptions import ValidationError
 from osf.modm_compat import to_django_query
 from osf.utils.datetime_aware_jsonfield import (DateTimeAwareJSONField,
                                                 coerce_nonnaive_datetimes)
-from osf.utils.fields import LowercaseCharField
+from osf.utils.fields import LowercaseCharField, NonNaiveDateTimeField
 
 ALPHABET = '23456789abcdefghjkmnpqrstuvwxyz'
 
@@ -43,8 +44,10 @@ def generate_guid(length=5):
                 # valid and unique guid
                 return guid_id
 
+
 def generate_object_id():
     return str(bson.ObjectId())
+
 
 class MODMCompatibilityQuerySet(models.QuerySet):
 
@@ -62,6 +65,16 @@ class MODMCompatibilityQuerySet(models.QuerySet):
                 yield item.wrapped()
             else:
                 yield item
+
+    def eager(self, *fields):
+        qs = self._clone()
+        field_set = set(fields)
+        fk_fields = set(qs.model.get_fk_field_names()) & field_set
+        m2m_fields = set(qs.model.get_m2m_field_names()) & field_set
+        if 'contributors' in field_set:
+            m2m_fields.add('_contributors')
+        qs = qs.select_related(*fk_fields).prefetch_related(*m2m_fields)
+        return qs
 
     def sort(self, *fields):
         # Fields are passed in as e.g. [('title', 1), ('date_created', -1)]
@@ -83,38 +96,28 @@ class MODMCompatibilityQuerySet(models.QuerySet):
         return self[:n]
 
 
-class GuidMODMCompatibilityQuerySet(MODMCompatibilityQuerySet):
-    """ Hijacks Django internals, adding annotations to read queries
-        to limit the number of DB calls when serializing objects with Guids.
-    """
-
-    def __init__(self, model=None, query=None, using=None, hints=None):
-        self.__for_write = False
-        return super(GuidMODMCompatibilityQuerySet, self).__init__(model=model, query=query, using=using, hints=hints)
-
-    @property
-    def _for_write(self):
-        return self.__for_write
-
-    @_for_write.setter
-    def _for_write(self, value):
-        self.query.annotations.pop('guids___id', None)
-        if not value:
-            self.query.add_annotation(F('guids___id'), 'guids___id', is_summary=False)
-        self.__for_write = value
-
-
 class BaseModel(models.Model):
     """Base model that acts makes subclasses mostly compatible with the
     modular-odm ``StoredObject`` interface.
     """
 
-    migration_page_size = 20000
+    migration_page_size = 50000
 
     objects = MODMCompatibilityQuerySet.as_manager()
 
     class Meta:
         abstract = True
+
+    @classmethod
+    def get_fk_field_names(cls):
+        return [field.name for field in cls._meta.get_fields() if
+                    field.is_relation and not field.auto_created and (field.many_to_one or field.one_to_one) and not isinstance(field, GenericForeignKey)]
+
+    @classmethod
+    def get_m2m_field_names(cls):
+        return [field.attname or field.name for field in
+                     cls._meta.get_fields() if
+                     field.is_relation and field.many_to_many and not hasattr(field, 'field')]
 
     @classmethod
     def load(cls, data):
@@ -191,6 +194,16 @@ class BaseModel(models.Model):
     def _primary_name(self):
         return '_id'
 
+    @property
+    def _is_loaded(self):
+        return bool(self.pk)
+
+    def reload(self):
+        return self.refresh_from_db()
+
+    def _natural_key(self):
+        return self.pk
+
     def clone(self):
         """Create a new, unsaved copy of this object."""
         copy = self.__class__.objects.get(pk=self.pk)
@@ -201,18 +214,11 @@ class BaseModel(models.Model):
         for field_name in fk_field_names:
             setattr(copy, field_name, None)
 
-        return self._on_clone(copy)
-
-    def _on_clone(self, copy):
-        """ Override hook to add subclass-specific clone behavior
-        """
+        try:
+            copy._id = bson.ObjectId()
+        except AttributeError:
+            pass
         return copy
-
-    def reload(self):
-        return self.refresh_from_db()
-
-    def _natural_key(self):
-        return self.pk
 
     def save(self, *args, **kwargs):
         # Make Django validate on save (like modm)
@@ -242,7 +248,7 @@ class Guid(BaseModel):
     referent = GenericForeignKey()
     content_type = models.ForeignKey(ContentType, null=True, blank=True)
     object_id = models.PositiveIntegerField(null=True, blank=True)
-    created = models.DateTimeField(db_index=True, auto_now_add=True)
+    created = NonNaiveDateTimeField(db_index=True, default=timezone.now)  # auto_now_add=True)
 
     # Override load in order to load by GUID
     @classmethod
@@ -287,11 +293,15 @@ class Guid(BaseModel):
     class Meta:
         ordering = ['-created']
         get_latest_by = 'created'
+        index_together = (
+            ('content_type', 'object_id', 'created'),
+        )
 
 
 class BlackListGuid(BaseModel):
     # TODO DELETE ME POST MIGRATION
     modm_model_path = 'framework.guid.model.BlacklistGuid'
+    primary_identifier_name = 'guid'
     modm_query = None
     migration_page_size = 500000
     # /TODO DELETE ME POST MIGRATION
@@ -393,12 +403,6 @@ class ObjectIDMixin(BaseIDMixin):
     def _natural_key(self):
         return self._id
 
-    def _on_clone(self, copy):
-        try:
-            copy._id = bson.ObjectId()
-        except AttributeError:
-            pass
-        return copy
 
 class InvalidGuid(Exception):
     pass
@@ -411,14 +415,14 @@ class OptionalGuidMixin(BaseIDMixin):
     """
     __guid_min_length__ = 5
 
-    objects = GuidMODMCompatibilityQuerySet.as_manager()
-    subselect = MODMCompatibilityQuerySet.as_manager()
-
     guids = GenericRelation(Guid, related_name='referent', related_query_name='referents')
     guid_string = ArrayField(models.CharField(max_length=255, null=True, blank=True), null=True, blank=True)
     content_type_pk = models.PositiveIntegerField(null=True, blank=True)
 
     def get_guid(self, create=False):
+        if not self.pk:
+            logger.warn('Implicitly saving object before creating guid')
+            self.save()
         if create:
             try:
                 guid, created = Guid.objects.get_or_create(
@@ -447,11 +451,194 @@ class OptionalGuidMixin(BaseIDMixin):
         abstract = True
 
 
+class GuidMixinQuerySet(MODMCompatibilityQuerySet):
+    tables = ['osf_guid', 'django_content_type']
+
+    GUID_FIELDS = [
+        'guids__id',
+        'guids___id',
+        'guids__content_type_id',
+        'guids__object_id',
+        'guids__created'
+    ]
+    def annotate_query_with_guids(self):
+        self._prefetch_related_lookups = ['guids']
+        for field in self.GUID_FIELDS:
+            self.query.add_annotation(
+                F(field), '_{}'.format(field), is_summary=False
+            )
+        for table in self.tables:
+            if table not in self.query.tables:
+                self.safe_table_alias(table)
+
+    def remove_guid_annotations(self):
+        for k, v in self.query.annotations.iteritems():
+            if k[1:] in self.GUID_FIELDS:
+                del self.query.annotations[k]
+        for table_name in ['osf_guid', 'django_content_type']:
+            if table_name in self.query.alias_map:
+                del self.query.alias_map[table_name]
+            if table_name in self.query.alias_refcount:
+                del self.query.alias_refcount[table_name]
+            if table_name in self.query.tables:
+                del self.query.tables[self.query.tables.index(table_name)]
+
+    def safe_table_alias(self, table_name, create=False):
+        """
+        Returns a table alias for the given table_name and whether this is a
+        new alias or not.
+
+        If 'create' is true, a new alias is always created. Otherwise, the
+        most recently created alias for the table (if one exists) is reused.
+        """
+        alias_list = self.query.table_map.get(table_name)
+        if not create and alias_list:
+            alias = alias_list[0]
+            if alias in self.query.alias_refcount:
+                self.query.alias_refcount[alias] += 1
+            else:
+                self.query.alias_refcount[alias] = 1
+            return alias, False
+
+        # Create a new alias for this table.
+        if alias_list:
+            alias = '%s%d' % (self.query.alias_prefix, len(self.query.alias_map) + 1)
+            alias_list.append(alias)
+        else:
+            # The first occurrence of a table uses the table name directly.
+            alias = table_name
+            self.query.table_map[alias] = [alias]
+        self.query.alias_refcount[alias] = 1
+        self.tables.append(alias)
+        return alias, True
+
+    def _clone(self, annotate=False, **kwargs):
+        query = self.query.clone()
+        if self._sticky_filter:
+            query.filter_is_sticky = True
+        if annotate:
+            self.annotate_query_with_guids()
+        clone = self.__class__(model=self.model, query=query, using=self._db, hints=self._hints)
+        # this method was copied from the default django queryset except for the below two lines
+        if annotate:
+            clone.annotate_query_with_guids()
+        clone._for_write = self._for_write
+        clone._prefetch_related_lookups = self._prefetch_related_lookups[:]
+        clone._known_related_objects = self._known_related_objects
+        clone._iterable_class = self._iterable_class
+        clone._fields = self._fields
+
+        clone.__dict__.update(kwargs)
+        return clone
+
+    def annotate(self, *args, **kwargs):
+        self.annotate_query_with_guids()
+        return super(GuidMixinQuerySet, self).annotate(*args, **kwargs)
+
+    def _filter_or_exclude(self, negate, *args, **kwargs):
+        if args or kwargs:
+            assert self.query.can_filter(), \
+                'Cannot filter a query once a slice has been taken.'
+        clone = self._clone(annotate=True)
+        if negate:
+            clone.query.add_q(~Q(*args, **kwargs))
+        else:
+            clone.query.add_q(Q(*args, **kwargs))
+        return clone
+
+    def all(self):
+        return self._clone(annotate=True)
+
+    # does implicit filter
+    def get(self, *args, **kwargs):
+        # add this to make sure we don't get dupes
+        self.query.add_distinct_fields('id')
+        return super(GuidMixinQuerySet, self).get(*args, **kwargs)
+
+    # TODO: Below lines are commented out to ensure that
+    # the annotations are used after running .count()
+    # e.g.
+    #    queryset.count()
+    #    queryset[0]
+    # This is more efficient when doing chained operations
+    # on a queryset, but less efficient when only getting a count.
+    # Figure out a way to get the best of both worlds
+
+    # def count(self):
+    #     self.remove_guid_annotations()
+    #     return super(GuidMixinQuerySet, self).count()
+
+    def update(self, **kwargs):
+        self.remove_guid_annotations()
+        return super(GuidMixinQuerySet, self).update(**kwargs)
+
+    def update_or_create(self, defaults=None, **kwargs):
+        self.remove_guid_annotations()
+        return super(GuidMixinQuerySet, self).update_or_create(defaults=defaults, **kwargs)
+
+    def values(self, *fields):
+        self.remove_guid_annotations()
+        return super(GuidMixinQuerySet, self).values(*fields)
+
+    def create(self, **kwargs):
+        self.remove_guid_annotations()
+        return super(GuidMixinQuerySet, self).create(**kwargs)
+
+    def bulk_create(self, objs, batch_size=None):
+        self.remove_guid_annotations()
+        return super(GuidMixinQuerySet, self).bulk_create(objs, batch_size)
+
+    def get_or_create(self, defaults=None, **kwargs):
+        self.remove_guid_annotations()
+        return super(GuidMixinQuerySet, self).get_or_create(defaults, **kwargs)
+
+    def values_list(self, *fields, **kwargs):
+        self.remove_guid_annotations()
+        return super(GuidMixinQuerySet, self).values_list(*fields, **kwargs)
+
+    def exists(self):
+        self.remove_guid_annotations()
+        return super(GuidMixinQuerySet, self).exists()
+
+    def _fetch_all(self):
+        if self._result_cache is None:
+            self._result_cache = list(self._iterable_class(self))
+        if self._prefetch_related_lookups and not self._prefetch_done:
+            if 'guids' in self._prefetch_related_lookups and self._result_cache and hasattr(self._result_cache[0], '_guids__id'):
+                # if guids is requested for prefetch and there are things in the result cache and the first one has
+                # the annotated guid fields then remove guids from prefetch_related_lookups
+                del self._prefetch_related_lookups[self._prefetch_related_lookups.index('guids')]
+                results = []
+                for result in self._result_cache:
+                    # loop through the result cache
+                    guid_dict = {}
+                    for field in self.GUID_FIELDS:
+                        # pull the fields off of the result object and put them in a dictionary without prefixed names
+                        guid_dict[field] = getattr(result, '_{}'.format(field), None)
+                    if None in guid_dict.values():
+                        # if we get an invalid result field value, stop
+                        logger.warning(
+                            'Annotated guids came back will None values for {}, resorting to extra query'.format(result))
+                        return
+                    if not hasattr(result, '_prefetched_objects_cache'):
+                        # initialize _prefetched_objects_cache
+                        result._prefetched_objects_cache = {}
+                    if 'guids' not in result._prefetched_objects_cache:
+                        # intialize guids in _prefetched_objects_cache
+                        result._prefetched_objects_cache['guids'] = Guid.objects.none()
+                    # build a result dictionary of even more proper fields
+                    result_dict = {key.replace('guids__', ''): value for key, value in guid_dict.iteritems()}
+                    # make an unsaved guid instance
+                    guid = Guid(**result_dict)
+                    result._prefetched_objects_cache['guids']._result_cache = [guid, ]
+                    results.append(result)
+                # replace the result cache with the new set of results
+                self._result_cache = results
+            self._prefetch_related_objects()
+
+
 class GuidMixin(BaseIDMixin):
     __guid_min_length__ = 5
-
-    objects = GuidMODMCompatibilityQuerySet.as_manager()
-    subselect = MODMCompatibilityQuerySet.as_manager()
 
     primary_identifier_name = 'guid_string'
 
@@ -459,36 +646,33 @@ class GuidMixin(BaseIDMixin):
     guid_string = ArrayField(models.CharField(max_length=255, null=True, blank=True), null=True, blank=True)
     content_type_pk = models.PositiveIntegerField(null=True, blank=True)
 
+    objects = GuidMixinQuerySet.as_manager()
     # TODO: use pre-delete signal to disable delete cascade
 
     def _natural_key(self):
         return self.guid_string
 
-    @property
+    @cached_property
     def _id(self):
-        if hasattr(self, 'guids___id'):
-            return self.guids___id
-        guid = self.guids.order_by('-created').first()
+        try:
+            guid = self.guids.all()[0]
+        except IndexError:
+            return None
         if guid:
-            setattr(self, 'guids___id', guid._id)
             return guid._id
         return None
 
     @_id.setter
     def _id(self, value):
         # TODO do we really want to allow this?
-        if not value:
-            value = generate_guid(length=self.__guid_min_length__)
         guid, created = Guid.objects.get_or_create(_id=value)
         if created:
             guid.object_id = self.pk
             guid.content_type = ContentType.objects.get_for_model(self)
             guid.save()
-            setattr(self, 'guids___id', guid._id)
         elif guid.content_type == ContentType.objects.get_for_model(self) and guid.object_id == self.pk:
             # TODO should this up the created for the guid until now so that it appears as the first guid
             # for this object?
-            setattr(self, 'guids___id', guid._id)
             return
         else:
             raise InvalidGuid('Cannot indirectly repoint an existing guid, please use the Guid model')
@@ -498,10 +682,8 @@ class GuidMixin(BaseIDMixin):
     @classmethod
     def load(cls, q):
         try:
-            content_type = ContentType.objects.get_for_model(cls)
-            # if referent doesn't exist it will return None
-            return Guid.objects.get(_id=q, content_type=content_type).referent
-        except Guid.DoesNotExist:
+            return cls.objects.filter(guids___id=q)[0]
+        except IndexError:
             # modm doesn't throw exceptions when loading things that don't exist
             return None
 
@@ -559,7 +741,7 @@ def ensure_guid(sender, instance, created, **kwargs):
         return False
     existing_guids = Guid.objects.filter(object_id=instance.pk, content_type=ContentType.objects.get_for_model(instance))
     has_cached_guids = hasattr(instance, '_prefetched_objects_cache') and 'guids' in instance._prefetched_objects_cache
-    if not existing_guids.exists() and instance.guid_string is None:
+    if not existing_guids.exists():
         # Clear query cache of instance.guids
         if has_cached_guids:
             del instance._prefetched_objects_cache['guids']
@@ -571,6 +753,3 @@ def ensure_guid(sender, instance, created, **kwargs):
             del instance._prefetched_objects_cache['guids']
         Guid.objects.create(object_id=instance.pk, content_type_id=instance.content_type_pk,
                             _id=instance.guid_string)
-    if instance._id and existing_guids.exists() and not existing_guids.filter(_id=instance._id).exists():
-        # Handle case where _id is old value after a .clone()
-        instance._id = existing_guids.first()._id

@@ -41,7 +41,7 @@ from api.identifiers.serializers import NodeIdentifierSerializer
 from api.identifiers.views import IdentifierList
 from api.institutions.serializers import InstitutionSerializer
 from api.logs.serializers import NodeLogSerializer
-from api.nodes.filters import NodePreprintsFilterMixin
+from api.nodes.filters import NodePreprintsFilterMixin, NodesListFilterMixin
 from api.nodes.permissions import (
     IsAdmin,
     IsPublic,
@@ -178,7 +178,7 @@ class WaterButlerMixin(object):
         return obj
 
 
-class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.BulkDestroyJSONAPIView, bulk_views.ListBulkCreateJSONAPIView, NodePreprintsFilterMixin, WaterButlerMixin):
+class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.BulkDestroyJSONAPIView, bulk_views.ListBulkCreateJSONAPIView, NodePreprintsFilterMixin, NodesListFilterMixin, WaterButlerMixin):
     """Nodes that represent projects and components. *Writeable*.
 
     Paginated list of nodes ordered by their `date_modified`.  Each resource contains the full representation of the
@@ -282,26 +282,6 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
     view_name = 'node-list'
 
     ordering = ('-date_modified', )  # default ordering
-
-    # overrides ODMFilterMixin
-    def _operation_to_query(self, operation):
-        # We special case filters on root because root isn't a field; to get the children
-        # of a root, we use a custom manager method, Node.objects.get_children, and build
-        # a query from that
-        if operation['source_field_name'] == 'root':
-            child_pks = []
-            for root_guid in operation['value']:
-                root = get_object_or_error(Node, root_guid, display_name='root')
-                child_pks.extend(Node.objects.get_children(root=root, primary_keys=True))
-            return Q('id', 'in', child_pks)
-        elif operation['source_field_name'] == 'parent_node':
-            if operation['value']:
-                parent = get_object_or_error(Node, operation['value'], display_name='parent')
-                return Q('parent_nodes', 'eq', parent.id)
-            else:
-                return Q('parent_nodes', 'isnull', True)
-        else:
-            return super(NodeList, self)._operation_to_query(operation)
 
     # overrides FilterMixin
     def postprocess_query_param(self, key, field_name, operation):
@@ -709,7 +689,7 @@ class NodeContributorsList(BaseContributorList, bulk_views.BulkUpdateJSONAPIView
                     raise ValidationError('Contributor identifier not provided.')
                 except IndexError:
                     raise ValidationError('Contributor identifier incorrectly formatted.')
-            queryset[:] = [contrib for contrib in queryset if contrib._id in contrib_ids]
+            queryset = queryset.filter(guids___id__in=contrib_ids)
         return queryset
 
     # Overrides BulkDestroyJSONAPIView
@@ -2601,7 +2581,7 @@ class NodeLogList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, ODMFilterMix
         return query
 
     def get_queryset(self):
-        queryset = NodeLog.find(self.get_query_from_request())
+        queryset = NodeLog.find(self.get_query_from_request()).select_related('node', 'original_node', 'user')
         return queryset
 
 
@@ -3084,9 +3064,8 @@ class LinkedNodesList(BaseLinkedList, NodeMixin):
     view_name = 'linked-nodes'
 
     def get_queryset(self):
-        return [node for node in
-            super(LinkedNodesList, self).get_queryset()
-            if not node.is_registration]
+        queryset = super(LinkedNodesList, self).get_queryset()
+        return queryset.exclude(type='osf.registration')
 
     # overrides APIView
     def get_parser_context(self, http_request):
@@ -3356,6 +3335,13 @@ class NodePreprintsList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, NodePr
 
     view_category = 'nodes'
     view_name = 'node-preprints'
+
+    def postprocess_query_param(self, key, field_name, operation):
+        if field_name == 'provider':
+            operation['source_field_name'] = 'provider___id'
+
+        if field_name == 'id':
+            operation['source_field_name'] = 'guids___id'
 
     # overrides ODMFilterMixin
     def get_default_odm_query(self):

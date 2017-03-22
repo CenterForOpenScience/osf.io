@@ -3,6 +3,7 @@ from django.db import models
 from django.utils import timezone
 from osf.models.base import BaseModel, ObjectIDMixin
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
+from osf.utils.fields import NonNaiveDateTimeField
 from website.util import api_v2_url
 
 
@@ -137,7 +138,7 @@ class NodeLog(ObjectIDMixin, BaseModel):
                     config.actions for config in apps.get_app_configs() if config.name.startswith('addons.')
                 ], tuple())))
     action_choices = [(action, action.upper()) for action in actions]
-    date = models.DateTimeField(default=timezone.now, db_index=True,
+    date = NonNaiveDateTimeField(default=timezone.now, db_index=True,
                                 null=True, blank=True)  # auto_now_add=True)
     # TODO build action choices on the fly with the addon stuff
     action = models.CharField(max_length=255, db_index=True)  # , choices=action_choices)

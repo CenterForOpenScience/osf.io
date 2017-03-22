@@ -2628,6 +2628,7 @@ tbOptions = {
     },
     onload : function () {
         var tb = this;
+        tb.options.onload = null;  // Make sure we don't get called again
         _loadTopLevelChildren.call(tb);
         tb.uploadStates = [];
         tb.pendingFileOps = [];

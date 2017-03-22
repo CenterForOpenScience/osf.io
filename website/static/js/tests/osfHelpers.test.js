@@ -12,7 +12,85 @@ var $osf = require('../osfHelpers');
 sinon.assert.expose(assert, {prefix: ''});
 
 describe('osfHelpers', () => {
+    describe('getAllNodeChildrenFromNodeList', () => {
+         var getItem = function(parent, id){
+             if (parent) {
+                 return {
+                     'relationships': {
+                         'parent': {
+                             'links': {
+                                 'related': {
+                                     'href': '/v2/nodes/' + parent + '/',
+                                 }
+                             }
+                         }
+                     },
+                     'id': id,
+                 };
+             }
+             else {
+                 return {
+                     'relationships': {},
+                     'id': id,
+                 };
+             }
+         };
+         var nodeList = {};
+         var a0 = getItem(null, 'a0');
+         var a1 = getItem('a0', 'a1');
+         var a2 = getItem('a1', 'a2');
+         var a3 = getItem('a2', 'a3');
+         var b = getItem('a0', 'b');
+         nodeList.a0 = a0;
+         nodeList.a1 = a1;
+         nodeList.a2 = a2;
+         nodeList.a3 = a3;
+         nodeList.b = b;
 
+         it('returns no children when there are no children', () => {
+             var a3List = $osf.getAllNodeChildrenFromNodeList('a3', nodeList);
+             assert.equal(a3List.a0, undefined);
+             assert.equal(a3List.a1, undefined);
+             assert.equal(a3List.a2, undefined);
+             assert.equal(a3List.a3, undefined);
+             assert.equal(a3List.b, undefined);
+             var bList = $osf.getAllNodeChildrenFromNodeList('b', nodeList);
+             assert.equal(bList.a0, undefined);
+             assert.equal(bList.a1, undefined);
+             assert.equal(bList.a2, undefined);
+             assert.equal(bList.a3, undefined);
+             assert.equal(bList.b, undefined);
+         });
+
+         it('returns one child when there is only one child', () => {
+             var a2List = $osf.getAllNodeChildrenFromNodeList('a2', nodeList);
+             assert.equal(a2List.a0, undefined);
+             assert.equal(a2List.a1, undefined);
+             assert.equal(a2List.a2, undefined);
+             assert.equal(a2List.a3.id, 'a3');
+             assert.equal(a2List.b, undefined);
+         });
+
+         it('returns two children when child has a child', () => {
+             var a1List = $osf.getAllNodeChildrenFromNodeList('a1', nodeList);
+             assert.equal(a1List.a0, undefined);
+             assert.equal(a1List.a1, undefined);
+             assert.equal(a1List.a2.id, 'a2');
+             assert.equal(a1List.a3.id, 'a3');
+             assert.equal(a1List.b, undefined);
+         });
+
+         it('returns all children except the root', () => {
+             var a0List = $osf.getAllNodeChildrenFromNodeList('a0', nodeList);
+             assert.equal(a0List.a0, undefined);
+             assert.equal(a0List.a1.id, 'a1');
+             assert.equal(a0List.a2.id, 'a2');
+             assert.equal(a0List.a3.id, 'a3');
+             assert.equal(a0List.b.id, 'b');
+         });
+     });
+
+    
     describe('growl', () => {
         it('calls $.growl with correct arguments', () => {
             var stub = new sinon.stub($, 'growl');
@@ -175,6 +253,14 @@ describe('osfHelpers', () => {
             var fixture = [{foo: 42}, {foo: 24}, {foo: 424, bar:242}, {bar: 2424}];
             var ret = $osf.mapByProperty(fixture, 'foo');
             assert.deepEqual(ret, [42, 24, 424]);
+        });
+    });
+
+    describe('decodeText', () => {
+        it('returns properly decoded text', () => {
+            var text = '&amp;';
+            var ret = $osf.decodeText(text);
+            assert.equal(ret, '&');
         });
     });
 

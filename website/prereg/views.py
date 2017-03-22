@@ -24,7 +24,7 @@ def prereg_landing_page(auth, **kwargs):
         if node.has_permission(user=auth.user, permission='admin')
     ]
     has_projects = bool(registerable_nodes)
-    has_draft_registrations = utils.drafts_for_user(auth.user, campaign).exists()
+    has_draft_registrations = bool(utils.drafts_for_user(auth.user, campaign).count())
 
     return {
         'has_draft_registrations': has_draft_registrations,

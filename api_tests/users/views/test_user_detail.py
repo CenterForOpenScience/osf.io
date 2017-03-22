@@ -4,6 +4,7 @@ from nose.tools import *  # flake8: noqa
 
 from website.models import Node
 from website.util.sanitize import strip_html
+from website.views import find_bookmark_collection
 
 from tests.base import ApiTestCase
 from osf_tests.factories import AuthUserFactory, BookmarkCollectionFactory, CollectionFactory, ProjectFactory
@@ -103,7 +104,7 @@ class TestUserRoutesNodeRoutes(ApiTestCase):
 
         self.folder = CollectionFactory()
         self.deleted_folder = CollectionFactory(title="Deleted Folder User One", is_public=False, creator=self.user_one, is_deleted=True)
-        self.bookmark_collection = BookmarkCollectionFactory()
+        self.bookmark_collection = find_bookmark_collection(self.user_one)
 
     def test_get_200_path_users_me_userone_logged_in(self):
         url = "/{}users/me/".format(API_BASE)

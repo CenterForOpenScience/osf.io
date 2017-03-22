@@ -33,6 +33,11 @@ EXTERNAL_EMBER_APPS = {
     #     'url': '/meetings/',
     #     'server': 'http://localhost:4201',
     #     'path': '../osf-meetings/dist/'
+    # },
+    # 'registries': {
+    #     'url': '/registries/',
+    #     'server': 'http://localhost:4200',
+    #     'path': '../ember-osf-registries/dist/'
     # }
 }
 

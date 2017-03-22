@@ -1,8 +1,11 @@
 import pytest
 
+from django.db import IntegrityError
+
 from framework.auth import Auth
 
 from website.exceptions import NodeStateError
+from website.views import find_bookmark_collection
 from .factories import (
     UserFactory,
     ProjectFactory,
@@ -25,7 +28,7 @@ class TestBookmarkCollection:
 
     @pytest.fixture()
     def project(self, user):
-        return BookmarkCollectionFactory(creator=user)
+        return find_bookmark_collection(user)
 
     def test_bookmark_collection_is_bookmark_collection(self, project):
         assert project.is_bookmark_collection is True
@@ -38,7 +41,7 @@ class TestBookmarkCollection:
             project.remove_node(auth)
 
     def test_cannot_have_two_bookmark_collection(self, user, project):
-        with pytest.raises(NodeStateError):
+        with pytest.raises(IntegrityError):
             BookmarkCollectionFactory(creator=user)
 
     def test_cannot_link_to_bookmark_collection(self, user, auth, project):
