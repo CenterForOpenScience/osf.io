@@ -2,8 +2,9 @@
 # -*- coding: utf-8 -*-
 import httplib as http
 
-from flask import request, send_file
-import StringIO
+from flask import request
+# from flask import send_file
+# import StringIO
 
 from modularodm import Q
 from modularodm.storage.base import KeyExistsException
@@ -20,7 +21,7 @@ from website.oauth.models import ExternalAccount
 from website.project.decorators import (
     must_have_addon, must_be_addon_authorizer,
     must_have_permission,
-    must_be_contributor_or_public
+    # must_be_contributor_or_public
 )
 from website.util import api_url_for
 from website.util.sanitize import assert_clean

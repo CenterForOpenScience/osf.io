@@ -1,5 +1,5 @@
 from framework.routing import Rule, json_renderer
-from website.routes import OsfWebRenderer
+#from website.routes import OsfWebRenderer
 
 from . import views
 
@@ -68,7 +68,6 @@ api_routes = {
             views.dmptool_root_folder,
             json_renderer,
         ),
-
         # Rule(
         #     [
         #         '/project/<pid>/dmptool/widget/',
@@ -88,7 +87,6 @@ api_routes = {
         #     views.dmptool_get_widget_contents,
         #     json_renderer,
         # ),
-        
         # Rule(
         #     [
         #         '/project/<pid>/dmptool/get-plan/<planid>',

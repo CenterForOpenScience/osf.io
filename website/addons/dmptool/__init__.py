@@ -2,7 +2,7 @@ import os
 
 from .model import AddonDmptoolUserSettings, AddonDmptoolNodeSettings
 from .routes import api_routes
-# import views
+import views
 
 MODELS = [AddonDmptoolNodeSettings, AddonDmptoolUserSettings]
 USER_SETTINGS_MODEL = AddonDmptoolUserSettings

@@ -10,14 +10,14 @@ from website.addons.evernote.serializer import EvernoteSerializer
 from website.oauth.models import ExternalAccount
 from website.util import permissions
 from website.project.decorators import (
-    must_be_contributor_or_public,
+    # must_be_contributor_or_public,
     must_have_addon,
     must_be_addon_authorizer,
     must_not_be_registration,
     must_have_permission
 )
 
-import ENML2HTML
+# import ENML2HTML
 
 import logging
 logger = logging.getLogger(__name__)
