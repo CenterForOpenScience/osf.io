@@ -35,7 +35,7 @@ syncs:
     sync_excludes: ['.DS_Store', '*.map', '*.pyc', '*.tmp', '.git', '.idea', 'bower_components', 'node_modules', 'tmp', 'dist']
     watch_excludes: ['.*\.DS_Store', '.*\.map', '.*\.pyc', '.*\.tmp', '.*/\.git', '.*/\.idea', '.*/bower_components', '.*/node_modules', '.*/tmp', '.*/dist']
 
-  ember-osf-sync:
+  emberosf-sync:
     src: '../ember-osf/'
     dest: '/code'
     sync_strategy: 'unison'

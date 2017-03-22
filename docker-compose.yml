@@ -198,9 +198,6 @@ services:
     tty: true
 
 
-#  ember-osf:
-#    image: quay.io/centerforopenscience/ember-osf
-
   ##############
   # Registries #
   ##############
