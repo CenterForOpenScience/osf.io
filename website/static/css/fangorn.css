@@ -356,8 +356,8 @@ a.fangorn-toolbar-icon {
     background: url('/static/img/hgrid/fontawesome/file-text-o.png');
 }
 
-/* file pop up model text  */
+/* file pop up modal text  */
 .replace-file {
-    margin-left:8px;
-    font-weight:bold;
+    margin-left: 8px;
+    font-weight: bold;
 }

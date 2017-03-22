@@ -441,7 +441,7 @@ function checkConflicts(tb, item, folder, cb) {
                     '"Keep Both" will retain both files (and their version histories) in this location.'),
                 m('h5.text-danger.replace-file',
                     '"Replace" will overwrite the existing file in this location. ' +
-                    'You will lose previous versions versions of the overwritten file. ' +
+                    'You will lose previous versions of the overwritten file. ' +
                     'You will keep previous versions of the moved file.'),
                 m('h5.text-danger.replace-file', '"Cancel" will cancel the move.')
             ]);
@@ -472,7 +472,7 @@ function checkConflictsRename(tb, item, name, cb) {
                     '"Keep Both" will retain both files (and their version histories) in this location.'),
                 m('h5.text-danger.replace-file',
                     '"Replace" will overwrite the existing file in this location. ' +
-                    'You will lose previous versions versions of the overwritten file. ' +
+                    'You will lose previous versions of the overwritten file. ' +
                     'You will keep previous versions of the moved file.'),
                 m('h5.text-danger.replace-file', '"Cancel" will cancel the move.')
             ]);
