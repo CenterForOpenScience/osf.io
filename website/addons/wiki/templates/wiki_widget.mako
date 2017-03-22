@@ -4,7 +4,7 @@
     % if wiki_content:
         ${wiki_content}
     % else:
-        <p class="test-muted"><em>Add important information, links, or images here to describe your project.</em></p>
+        <p class="text-muted"><em>Add important information, links, or images here to describe your project.</em></p>
     % endif
 </div>
 
