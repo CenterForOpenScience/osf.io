@@ -36,7 +36,7 @@ from website.project.decorators import (
 )
 from website.util import api_url_for
 
-from tests.test_cas_authentication import make_external_response, generate_external_user_with_resp
+from tests.test_cas_authentication import generate_external_user_with_resp
 
 
 class TestAuthUtils(OsfTestCase):
