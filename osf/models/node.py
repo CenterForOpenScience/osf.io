@@ -35,6 +35,7 @@ from osf.models.citation import AlternativeCitation
 from osf.models.contributor import (Contributor, RecentlyAddedContributor,
                                     get_contributor_permissions)
 from osf.models.identifiers import Identifier, IdentifierMixin
+from osf.models.licenses import NodeLicenseRecord
 from osf.models.mixins import (AddonModelMixin, CommentableMixin, Loggable,
                                NodeLinkMixin, Taggable)
 from osf.models.node_relation import NodeRelation
@@ -197,6 +198,26 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     # Named constants
     PRIVATE = 'private'
     PUBLIC = 'public'
+
+    LICENSE_QUERY = re.sub('\s+', ' ', '''WITH RECURSIVE ascendants AS (
+            SELECT
+                N.node_license_id,
+                R.parent_id
+            FROM "{noderelation}" AS R
+                JOIN "{abstractnode}" AS N ON N.id = R.parent_id
+            WHERE R.is_node_link IS FALSE
+                AND R.child_id = %s
+        UNION ALL
+            SELECT
+                N.node_license_id,
+                R.parent_id
+            FROM ascendants AS D
+                JOIN "{noderelation}" AS R ON D.parent_id = R.child_id
+                JOIN "{abstractnode}" AS N ON N.id = R.parent_id
+            WHERE R.is_node_link IS FALSE
+            AND D.node_license_id IS NULL
+    ) SELECT {fields} FROM "{nodelicenserecord}"
+    WHERE id = (SELECT node_license_id FROM ascendants WHERE node_license_id IS NOT NULL) LIMIT 1;''')
 
     affiliated_institutions = models.ManyToManyField('Institution', related_name='nodes')
     alternative_citations = models.ManyToManyField(AlternativeCitation, related_name='nodes')
@@ -898,10 +919,19 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     @property
     def license(self):
-        node_license = self.node_license
-        if not node_license and self.parent_node:
-            return self.parent_node.license
-        return node_license
+        if self.node_license_id:
+            return self.node_license
+        with connection.cursor() as cursor:
+            cursor.execute(self.LICENSE_QUERY.format(
+                abstractnode=AbstractNode._meta.db_table,
+                noderelation=NodeRelation._meta.db_table,
+                nodelicenserecord=NodeLicenseRecord._meta.db_table,
+                fields=', '.join('"{}"."{}"'.format(NodeLicenseRecord._meta.db_table, f.column) for f in NodeLicenseRecord._meta.concrete_fields)
+            ), [self.id])
+            res = cursor.fetchone()
+            if res:
+                return NodeLicenseRecord.from_db(self._state.db, None, res)
+        return None
 
     @property
     def visible_contributors(self):
