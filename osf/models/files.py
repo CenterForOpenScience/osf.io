@@ -40,11 +40,7 @@ class BaseFileNodeManager(Manager):
 
     def get_queryset(self):
         qs = super(BaseFileNodeManager, self).get_queryset()
-        
-        if issubclass(qs.model, TrashedFileNode):
-            qs = qs.filter(type__in=TrashedFileNode._typedmodels_subtypes)
-        else:
-            qs = qs.exclude(type__in=TrashedFileNode._typedmodels_subtypes)
+
         if hasattr(self.model, '_provider') and self.model._provider is not None:
             return qs.filter(provider=self.model._provider)
         return qs
@@ -514,7 +510,7 @@ class Folder(models.Model):
 
     @property
     def children(self):
-        return self._children.all()
+        return self._children.exclude(type__in=TrashedFileNode._typedmodels_subtypes)
 
     def append_file(self, name, path=None, materialized_path=None, save=True):
         return self._create_child(name, File, path=path, materialized_path=materialized_path, save=save)
@@ -595,7 +591,11 @@ class TrashedFolder(TrashedFileNode):
 
     @property
     def trashed_children(self):
-        return self._children
+        return self._children.filter(type__in=TrashedFileNode._typedmodels_subtypes)
+
+    @property
+    def children(self):
+        return self.trashed_children
 
     def restore(self, recursive=True, parent=None, save=True, deleted_on=None):
         """
