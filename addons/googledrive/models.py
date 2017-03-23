@@ -18,7 +18,9 @@ from addons.googledrive.client import (GoogleAuthClient,
 from addons.googledrive.serializer import GoogleDriveSerializer
 from addons.googledrive.utils import to_hgrid
 from website.util import api_v2_url
-
+# TODO DELETE ME POST MIGRATION
+from modularodm import Q as MQ
+# /TODO DELETE ME POST MIGRATION
 
 # from website.files.models.ext import PathFollowingFileNode
 
@@ -28,10 +30,6 @@ from website.util import api_v2_url
 # folder_path and filenode.path
 # class GoogleDriveFileNode(PathFollowingFileNode):
 class GoogleDriveFileNode(BaseFileNode):
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.files.models.googledrive.GoogleDriveFileNode'
-    modm_query = None
-    # /TODO DELETE ME POST MIGRATION
     _provider = 'googledrive'
     FOLDER_ATTR_NAME = 'folder_path'
 
@@ -39,7 +37,7 @@ class GoogleDriveFileNode(BaseFileNode):
 class GoogleDriveFolder(GoogleDriveFileNode, Folder):
     # TODO DELETE ME POST MIGRATION
     modm_model_path = 'website.files.models.googledrive.GoogleDriveFolder'
-    modm_query = None
+    modm_query = MQ('is_file', 'eq', False)
     # /TODO DELETE ME POST MIGRATION
     pass
 
@@ -47,7 +45,7 @@ class GoogleDriveFolder(GoogleDriveFileNode, Folder):
 class GoogleDriveFile(GoogleDriveFileNode, File):
     # TODO DELETE ME POST MIGRATION
     modm_model_path = 'website.files.models.googledrive.GoogleDriveFile'
-    modm_query = None
+    modm_query = MQ('is_file', 'eq', True)
     # /TODO DELETE ME POST MIGRATION
     pass
 

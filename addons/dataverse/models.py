@@ -12,20 +12,18 @@ from addons.base import exceptions
 from addons.dataverse.client import connect_from_settings_or_401
 from addons.dataverse.serializer import DataverseSerializer
 from addons.dataverse.utils import DataverseNodeLogger
-
+# TODO DELETE ME POST MIGRATION
+from modularodm import Q as MQ
+# /TODO DELETE ME POST MIGRATION
 
 class DataverseFileNode(BaseFileNode):
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.files.models.dataverse.DataverseFileNode'
-    modm_query = None
-    # /TODO DELETE ME POST MIGRATION
     _provider = 'dataverse'
 
 
 class DataverseFolder(DataverseFileNode, Folder):
     # TODO DELETE ME POST MIGRATION
     modm_model_path = 'website.files.models.dataverse.DataverseFolder'
-    modm_query = None
+    modm_query = MQ('is_file', 'eq', False)
     # /TODO DELETE ME POST MIGRATION
     pass
 
@@ -33,7 +31,7 @@ class DataverseFolder(DataverseFileNode, Folder):
 class DataverseFile(DataverseFileNode, File):
     # TODO DELETE ME POST MIGRATION
     modm_model_path = 'website.files.models.dataverse.DataverseFile'
-    modm_query = None
+    modm_query = MQ('is_file', 'eq', True)
     # /TODO DELETE ME POST MIGRATION
     version_identifier = 'version'
 

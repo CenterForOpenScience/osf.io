@@ -13,20 +13,18 @@ from addons.figshare import settings as figshare_settings
 from addons.figshare import messages
 from addons.figshare.client import FigshareClient
 from addons.figshare.serializer import FigshareSerializer
-
+# TODO DELETE ME POST MIGRATION
+from modularodm import Q as MQ
+# /TODO DELETE ME POST MIGRATION
 
 class FigshareFileNode(BaseFileNode):
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.files.models.figshare.FigshareFileNode'
-    modm_query = None
-    # /TODO DELETE ME POST MIGRATION
     _provider = 'figshare'
 
 
 class FigshareFolder(FigshareFileNode, Folder):
     # TODO DELETE ME POST MIGRATION
     modm_model_path = 'website.files.models.figshare.FigshareFolder'
-    modm_query = None
+    modm_query = MQ('is_file', 'eq', False)
     # /TODO DELETE ME POST MIGRATION
     pass
 
@@ -34,7 +32,7 @@ class FigshareFolder(FigshareFileNode, Folder):
 class FigshareFile(FigshareFileNode, File):
     # TODO DELETE ME POST MIGRATION
     modm_model_path = 'website.files.models.figshare.FigshareFile'
-    modm_query = None
+    modm_query = MQ('is_file', 'eq', True)
     # /TODO DELETE ME POST MIGRATION
     version_identifier = 'ref'
 
