@@ -5,9 +5,8 @@ import json
 from django.core import serializers
 from django.core.urlresolvers import reverse, reverse_lazy
 from django.http import HttpResponseForbidden, HttpResponse, JsonResponse
-from django.views.generic import ListView, FormView, DetailView, View, CreateView
+from django.views.generic import ListView, FormView, DetailView, View, CreateView, DeleteView, TemplateView
 from django.views.generic.detail import SingleObjectMixin
-
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.forms.models import model_to_dict
 from django.shortcuts import redirect
@@ -169,7 +168,7 @@ class ExportPreprintProvider(PermissionRequiredMixin, View):
     permission_required = 'osf.change_preprint_provider'
     raise_exception = True
 
-    def post(self, request, *args, **kwargs):
+    def get(self, request, *args, **kwargs):
         preprint_provider = PreprintProvider.objects.get(id=self.kwargs['preprint_provider_id'])
         data = serializers.serialize("json", [preprint_provider])
 
@@ -178,6 +177,28 @@ class ExportPreprintProvider(PermissionRequiredMixin, View):
         response = HttpResponse(data, content_type='text/json')
         response['Content-Disposition'] = 'attachment; filename={}'.format(filename)
         return response
+
+
+class DeletePreprintProvider(PermissionRequiredMixin, DeleteView):
+    permission_required = 'osf.change_preprint_provider'
+    raise_exception = True
+    template_name = 'preprint_providers/confirm_delete.html'
+    success_url = reverse_lazy('preprint_providers:list')
+
+    def get_object(self, queryset=None):
+        provider = PreprintProvider.objects.get(id=self.kwargs['preprint_provider_id'])
+        if provider.preprint_services.count() > 0:
+            return redirect(reverse_lazy('preprint_providers:cannot_delete', kwargs={'preprint_provider_id': provider.pk}))
+        return provider
+
+
+class CannotDeleteProvider(TemplateView):
+    template_name = 'preprint_providers/cannot_delete.html'
+
+    def get_context_data(self, **kwargs):
+        context = super(CannotDeleteProvider, self).get_context_data(**kwargs)
+        context['provider'] = PreprintProvider.objects.get(id=self.kwargs['preprint_provider_id'])
+        return context
 
 
 class ImportPreprintProvider(PermissionRequiredMixin, View):
@@ -237,7 +258,7 @@ class SubjectDynamicUpdateView(PermissionRequiredMixin, View):
 
         subject_html = '<ul class="other-levels" style="list-style-type:none">'
         for subject in subjects_from_parent:
-            subject_html += '<li><label><input type="checkbox" name="{}" value="{}">{}</label>'.format(new_level, subject.id, subject.text)
+            subject_html += '<li><label><input type="checkbox" name="{}" value="{}" parent={}>{}</label>'.format(new_level, subject.id, parent_id, subject.text)
             if subject.children.count():
                     subject_html += '<i class="subject-icon glyphicon glyphicon-menu-right"></i>'
             subject_html += '</li>'
@@ -252,13 +273,9 @@ class CreatePreprintProvider(PermissionRequiredMixin, CreateView):
     template_name = 'preprint_providers/create.html'
     success_url = reverse_lazy('preprint_providers:list')
     model = PreprintProvider
+    form_class = PreprintProviderForm
 
     def get_context_data(self, *args, **kwargs):
         kwargs['import_form'] = ImportFileForm()
+        kwargs['subject_form'] = PreprintProviderSubjectForm()
         return super(CreatePreprintProvider, self).get_context_data(*args, **kwargs)
-
-    fields = [
-        'name', 'logo_name', 'header_text', 'description', 'banner_name',
-        'external_url', 'email_contact', 'email_support', 'example', 'access_token',
-        'advisory_board', 'social_twitter', 'social_facebook', 'licenses_acceptable'
-    ]

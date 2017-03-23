@@ -2,6 +2,7 @@
 {% load static %}
 {% block top_includes %}
     <link rel="stylesheet" type="text/css" href="/static/css/institutions.css" />
+    <script src="/static/js/preprint_providers/preprintProviders.js"></script>
 {% endblock %}
 {% load user_extras %}
 {% load spam_extras %}
@@ -11,13 +12,13 @@
 {% block content %}
     <div class="container-fluid">
         <div class="row">
-            <div class="col-md-6">
-                <form action={% url 'preprint_providers:export' preprint_provider.id %} method="post">
-                    {% csrf_token %}
-                    <input class="btn btn-primary" type="submit" value="Export Preprint Provider Metadata" />
-                </form>
+            <div class="col-md-12">
+                <a class="btn btn-primary" href={% url 'preprint_providers:export' preprint_provider.id %}>Export preprint provider metadata</a>
+                <a class="btn btn-danger" href={% url 'preprint_providers:delete' preprint_provider.id %}>Delete preprint provider</a>
             </div>
-            <div class="col-md-6">
+        </div>
+        <div class="row">
+            <div class="col-md-6 text-center">
                 <img class="institution-logo" src="{{ logohost }}/static/img/preprint_providers/{{ preprint_provider.logo_name }}">
                 <h2>{{ preprint_provider.name }}</h2>
             </div>
@@ -117,152 +118,12 @@
 {% endblock content %}
 {% block bottom_js %}
     <script>
-        var originalsubjects = {{ subject_ids|escapejs }};
-        var selected_subjects = originalsubjects.slice();
-        $(document).ready(function() {
-
-            var addSubject = function(subject) {
-                var subject = parseInt(subject);
-                if ($('#id_subjects_chosen').val() !== "") {
-                    $('#id_subjects_chosen').val($('#id_subjects_chosen').val() + ", " + subject);
-                } else {
-                    $('#id_subjects_chosen').val(subject);
-                }
-
-                if (selected_subjects.indexOf(subject) === -1) {
-                    selected_subjects.push(subject);
-                }
-            };
-
-            var removeSubject = function(subject) {
-                var subject = parseInt(subject);
-                var re = new RegExp('\\b' + subject + '\\b', 'g');
-                $('#id_subjects_chosen').val($('#id_subjects_chosen').val().replace(re, ''));
-
-                selected_subjects = selected_subjects.filter(function(element) {
-                    return element !== subject;
-                });
-            };
-
-            var clearSubjects = function() {
-                $('#id_subjects_chosen').val('');
-                selected_subjects = [];
-            };
-
-            // Section and selectors for expanding lists
-            $('body').on("click", '.subject-icon', function() {
-                var elem = $(this)[0].previousElementSibling.firstChild;
-                var nextlevel;
-
-                if ($(this)[0].classList.contains("first-level")) {
-                    $('.other-levels').hide();
-                }
-
-                if (selected_subjects.indexOf(parseInt(elem.value)) === -1) {
-                    addSubject(elem.value);
-                    elem.checked = true;
-                }
-
-                if (elem.name === 'toplevel_subjects') {
-                    nextlevel = '#secondlevel_subjects'
-                } else if (elem.name === 'secondlevel_subjects') {
-                    nextlevel = '#thirdlevel_subjects'
-                }
-                $.get("{% url 'preprint_providers:get_subjects' preprint_provider.id %}", {'parent_id': elem.value}, function (data) {
-                    $(nextlevel).html(data['html']);
-                }).then(function(data) {
-                    for (i = 0; i < data['subject_ids'].length; i++) {
-                        if (selected_subjects.indexOf(data['subject_ids'][i]) !== -1) {
-                            $("input[value=" + data['subject_ids'][i] + "]").prop('checked', true);
-                        }
-                    }
-                });
-            });
-
-            // Section for adding and removing checked items
-            $('body').on("click", 'input[type="checkbox"]', function() {
-                var subjectsToRemove = [];
-                var elem = $(this)[0];
-                if (elem.checked) {
-                    addSubject(elem.value);
-                } else {
-                    $.get(
-                        "{% url 'preprint_providers:get_descendants' preprint_provider.id %}",
-                        {'parent_id': elem.value}
-                    ).then(function(data) {
-                        var descendants = data['all_descendants'];
-                        for (j=0; j < descendants.length; j++) {
-                            $("input[value=" + descendants[j] + "]").prop('checked', false);
-                            var descendant_index = selected_subjects.indexOf(parseInt(descendants[j]));
-                            if (descendant_index > -1) {
-                                subjectsToRemove.push(descendants[j]);
-                            }
-                        }
-                    }).then(function() {
-                        subjectsToRemove.push(elem.value);
-
-                        for (i=0; i<subjectsToRemove.length; i++) {
-                            removeSubject(subjectsToRemove[i]);
-                        }
-
-                    });
-                }
-            });
-
-            $('#show-modify-form').click(function() {
-
-                $('#table-view').toggle();
-                $('#form-view').toggle();
-
-                var text = $('#show-modify-form').text();
-                var new_text = (text.trim() == "Modify Preprint Provider") ? "Hide Form" : "Modify Preprint Provider";
-                $('#show-modify-form').text(new_text);
-            });
-
-            var populateSubjects = function(rules) {
-                $.get("{% url 'preprint_providers:rules_to_subjects' %}", {'rules': JSON.stringify(rules)}, function (data) {
-                    var subjects = data['subjects'];
-                    for (var h=0; h<selected_subjects.length; h++) {
-                        var element = $('input[value=' + selected_subjects[h] + ']')[0];
-                        if (element) {
-                            element.checked = false;
-                        }
-                    }
-                    clearSubjects();
-                    for (var i=0; i<subjects.length; i++) {
-                        addSubject(subjects[i]);
-                        var element = $('input[value=' + subjects[i] + ']')[0];
-                        if (element) {
-                            element.checked = true;
-                        }
-                    }
-                });
-            };
-
-            $("#import-form").submit(function(event) {
-                event.preventDefault();
-                $.ajax({
-                    url: '{% url 'institutions:import' %}',
-                    type: "post",
-                    data: new FormData($(this)[0]),
-                    cache: false,
-                    contentType: false,
-                    processData: false,
-                    success: function(response) {
-                        for (var k in response){
-                            if (response.hasOwnProperty(k)) {
-                                if (k === 'subjects_acceptable') {
-                                    populateSubjects(response[k]);
-                                } else {
-                                    var field = $('#id_' + k);
-                                    field.val(response[k]);
-                                }
-                            }
-                        }
-                    }
-                });
-            });
-        });
+        window.templateVars = {
+            'importUrl': '{% url 'preprint_providers:import' %}',
+            'getSubjectsUrl': '{% url 'preprint_providers:get_subjects' %}',
+            'getDescendantsUrl': '{% url 'preprint_providers:get_descendants' %}',
+            'rulesToSubjectsUrl': '{% url 'preprint_providers:rules_to_subjects' %}',
+            'originalSubjects': {{ subject_ids | escapejs }}
+        }
     </script>
-
 {% endblock %}

@@ -2,6 +2,7 @@
 {% load static %}
 {% block top_includes %}
     <link rel="stylesheet" type="text/css" href="/static/css/institutions.css" />
+    <script src="/static/js/preprint_providers/preprintProviders.js"></script>
 {% endblock %}
 {% load user_extras %}
 {% load spam_extras %}
@@ -16,14 +17,45 @@
             </div>
         </div>
         <div class="row">
-            <div class="col-md-7">
+            <div class="col-md-9">
                 <form action="" method="post">
                     {% csrf_token %}
-                    {{ form.as_p }}
+                    {{ form.non_field_errors }}
+                    {% for field in form %}
+                        {%  if field.label != 'Toplevel subjects' %}
+                            <div class="fieldWrapper">
+                                {{ field.errors }}
+                                <p>
+                                    {{ field.label_tag }}
+                                    {{ field }}
+                                </p>
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="firstlevel_subjects">
+                                <ul style="list-style-type:none">
+                                    {% for subject in form.toplevel_subjects %}
+                                        <li>{{ subject }} <i class="subject-icon first-level glyphicon glyphicon-menu-right"></i></li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div id="secondlevel_subjects">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div id="thirdlevel_subjects">
+                            </div>
+                        </div>
+                    </div>
+
                     <input class="form-button" type="submit" value="Save" />
                 </form>
             </div>
-            <div class="col-md-5">
+            <div class="col-md-3">
                 <div>
                     <h4>Import from JSON</h4>
                     <p>Choose a JSON file that has been previously exported from another Preprint Provider detail page. This will
@@ -41,28 +73,13 @@
 {% endblock content %}
 
 {% block bottom_js %}
-    <script>
-        $(document).ready(function() {
-
-            $("#import-form").submit(function(event) {
-                event.preventDefault();
-                $.ajax({
-                    url: '{% url 'preprint_providers:import' %}',
-                    type: "post",
-                    data: new FormData($(this)[0]),
-                    cache: false,
-                    contentType: false,
-                    processData: false,
-                    success: function(response) {
-                        for (var k in response){
-                            if (response.hasOwnProperty(k)) {
-                                var field = $('#id_' + k);
-                                field.val(response[k]);
-                            }
-                        }
-                    }
-                });
-            });
-        });
-    </script>
+<script>
+    window.templateVars = {
+        'importUrl': '{% url 'preprint_providers:import' %}',
+        'getSubjectsUrl': '{% url 'preprint_providers:get_subjects' %}',
+        'getDescendantsUrl': '{% url 'preprint_providers:get_descendants' %}',
+        'rulesToSubjectsUrl': '{% url 'preprint_providers:rules_to_subjects' %}',
+        'originalSubjects': []
+    }
+</script>
 {% endblock %}
