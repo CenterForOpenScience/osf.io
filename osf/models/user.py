@@ -363,6 +363,9 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     is_active = models.BooleanField(default=False)
     is_staff = models.BooleanField(default=False)
 
+    def __repr__(self):
+        return '<OSFUser({0!r}) with guid {1!r}>'.format(self.username, self._id)
+
     @property
     def deep_url(self):
         """Used for GUID resolution."""
