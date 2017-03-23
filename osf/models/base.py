@@ -93,6 +93,9 @@ class BaseModel(models.Model):
     class Meta:
         abstract = True
 
+    def __unicode__(self):
+        return '{}'.format(self.id)
+
     def to_storage(self):
         local_django_fields = set([x.name for x in self._meta.concrete_fields])
         return {name: self.serializable_value(name) for name in local_django_fields}
@@ -246,6 +249,9 @@ class Guid(BaseModel):
     object_id = models.PositiveIntegerField(null=True, blank=True)
     created = NonNaiveDateTimeField(db_index=True, default=timezone.now)  # auto_now_add=True)
 
+    def __repr__(self):
+        return '<id:{0}, referent:({1})>'.format(self._id, self.referent.__repr__())
+
     # Override load in order to load by GUID
     @classmethod
     def load(cls, data):
@@ -375,6 +381,9 @@ class ObjectIDMixin(BaseIDMixin):
 
     _id = models.CharField(max_length=24, default=generate_object_id, unique=True, db_index=True)
 
+    def __unicode__(self):
+        return '_id: {}'.format(self._id)
+
     @classmethod
     def load(cls, q):
         try:
@@ -410,6 +419,9 @@ class OptionalGuidMixin(BaseIDMixin):
     guids = GenericRelation(Guid, related_name='referent', related_query_name='referents')
     guid_string = ArrayField(models.CharField(max_length=255, null=True, blank=True), null=True, blank=True)
     content_type_pk = models.PositiveIntegerField(null=True, blank=True)
+
+    def __unicode__(self):
+        return '{}'.format(self.get_guid() or self.id)
 
     def get_guid(self, create=False):
         if not self.pk:
@@ -640,6 +652,9 @@ class GuidMixin(BaseIDMixin):
 
     objects = GuidMixinQuerySet.as_manager()
     # TODO: use pre-delete signal to disable delete cascade
+
+    def __unicode__(self):
+        return '{}'.format(self._id)
 
     def _natural_key(self):
         return self.guid_string
