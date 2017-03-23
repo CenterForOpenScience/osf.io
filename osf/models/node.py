@@ -35,6 +35,7 @@ from osf.models.citation import AlternativeCitation
 from osf.models.contributor import (Contributor, RecentlyAddedContributor,
                                     get_contributor_permissions)
 from osf.models.identifiers import Identifier, IdentifierMixin
+from osf.models.licenses import NodeLicenseRecord
 from osf.models.mixins import (AddonModelMixin, CommentableMixin, Loggable,
                                NodeLinkMixin, Taggable)
 from osf.models.node_relation import NodeRelation
@@ -897,10 +898,44 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     @property
     def license(self):
-        node_license = self.node_license
-        if not node_license and self.parent_node:
-            return self.parent_node.license
-        return node_license
+        if self.node_license:
+            return self.node_license
+        else:
+            sql = """
+            WITH RECURSIVE ascendants AS
+            (SELECT
+               N.node_license_id,
+               parent_id,
+               child_id,
+               1 AS LEVEL
+             FROM %s
+               JOIN %s AS N ON N.id = parent_id
+             WHERE is_node_link IS FALSE
+             UNION ALL
+             SELECT
+               N.node_license_id,
+               S.parent_id,
+               D.child_id,
+               D.level + 1
+             FROM ascendants AS D
+               JOIN %s AS S ON D.parent_id = S.child_id
+               JOIN %s AS N ON N.id = S.parent_id
+             WHERE S.is_node_link IS FALSE )
+            SELECT node_license_id
+            FROM ascendants
+            WHERE child_id = %s
+                AND node_license_id NOTNULL
+            ORDER BY level ASC
+            LIMIT 1;
+            """
+            with connection.cursor() as cursor:
+                node_relation_table = AsIs(NodeRelation._meta.db_table)
+                abstract_node_table = AsIs(AbstractNode._meta.db_table)
+                cursor.execute(sql, [node_relation_table, abstract_node_table, node_relation_table, abstract_node_table, self.pk])
+                res = cursor.fetchone()
+                if res:
+                    return NodeLicenseRecord.objects.get(pk=res[0])
+        return None
 
     @property
     def visible_contributors(self):
