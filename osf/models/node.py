@@ -199,6 +199,26 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     PRIVATE = 'private'
     PUBLIC = 'public'
 
+    LICENSE_QUERY = re.sub('\s+', ' ', '''WITH RECURSIVE ascendants AS (
+            SELECT
+                N.node_license_id,
+                R.parent_id
+            FROM "{noderelation}" AS R
+                JOIN "{abstractnode}" AS N ON N.id = R.parent_id
+            WHERE R.is_node_link IS FALSE
+                AND R.child_id = %s
+        UNION ALL
+            SELECT
+                N.node_license_id,
+                R.parent_id
+            FROM ascendants AS D
+                JOIN "{noderelation}" AS R ON D.parent_id = R.child_id
+                JOIN "{abstractnode}" AS N ON N.id = R.parent_id
+            WHERE R.is_node_link IS FALSE
+            AND D.node_license_id IS NULL
+    ) SELECT {fields} FROM "{nodelicenserecord}"
+    WHERE id = (SELECT node_license_id FROM ascendants WHERE node_license_id IS NOT NULL) LIMIT 1;''')
+
     affiliated_institutions = models.ManyToManyField('Institution', related_name='nodes')
     alternative_citations = models.ManyToManyField(AlternativeCitation, related_name='nodes')
     category = models.CharField(max_length=255,
@@ -898,43 +918,18 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     @property
     def license(self):
-        if self.node_license:
+        if self.node_license_id:
             return self.node_license
-        else:
-            sql = """
-            WITH RECURSIVE ascendants AS
-            (SELECT
-               N.node_license_id,
-               parent_id,
-               child_id,
-               1 AS LEVEL
-             FROM %s
-               JOIN %s AS N ON N.id = parent_id
-             WHERE is_node_link IS FALSE
-             UNION ALL
-             SELECT
-               N.node_license_id,
-               S.parent_id,
-               D.child_id,
-               D.level + 1
-             FROM ascendants AS D
-               JOIN %s AS S ON D.parent_id = S.child_id
-               JOIN %s AS N ON N.id = S.parent_id
-             WHERE S.is_node_link IS FALSE )
-            SELECT node_license_id
-            FROM ascendants
-            WHERE child_id = %s
-                AND node_license_id NOTNULL
-            ORDER BY level ASC
-            LIMIT 1;
-            """
-            with connection.cursor() as cursor:
-                node_relation_table = AsIs(NodeRelation._meta.db_table)
-                abstract_node_table = AsIs(AbstractNode._meta.db_table)
-                cursor.execute(sql, [node_relation_table, abstract_node_table, node_relation_table, abstract_node_table, self.pk])
-                res = cursor.fetchone()
-                if res:
-                    return NodeLicenseRecord.objects.get(pk=res[0])
+        with connection.cursor() as cursor:
+            cursor.execute(self.LICENSE_QUERY.format(
+                abstractnode=AbstractNode._meta.db_table,
+                noderelation=NodeRelation._meta.db_table,
+                nodelicenserecord=NodeLicenseRecord._meta.db_table,
+                fields=', '.join('"{}"."{}"'.format(NodeLicenseRecord._meta.db_table, f.column) for f in NodeLicenseRecord._meta.concrete_fields)
+            ), [self.id])
+            res = cursor.fetchone()
+            if res:
+                return NodeLicenseRecord.from_db(self._state.db, None, res)
         return None
 
     @property
