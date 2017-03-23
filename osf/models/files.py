@@ -78,6 +78,11 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
     modm_model_path = 'website.files.models.base.StoredFileNode'
     modm_query = None
     migration_page_size = 10000
+    FIELD_ALIASES = {
+        'path': '_path',
+        'history': '_history',
+        'materialized_path': '_materialized_path',
+    }
     # /TODO DELETE ME POST MIGRATION]
     version_identifier = 'revision'  # For backwards compatibility
     FOLDER, FILE, ANY = 0, 1, 2
@@ -456,6 +461,16 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
             self.name,
             self.node
         )
+
+    @classmethod
+    def migrate_from_modm(cls, modm_obj):
+        django_obj = super(BaseFileNode, cls).migrate_from_modm(modm_obj)
+        django_obj._history = modm_obj.history
+        django_obj._materialized_path = modm_obj.materialized_path
+        django_obj._path = modm_obj.path
+        if hasattr(modm_obj, 'deleted_on'):
+            django_obj.deleted_on = modm_obj.deleted_on
+        return django_obj
 
 
 # TODO Refactor code pointing at FileNode to point to StoredFileNode
