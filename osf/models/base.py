@@ -409,52 +409,6 @@ class InvalidGuid(Exception):
     pass
 
 
-class OptionalGuidMixin(BaseIDMixin):
-    """
-    This makes it so that things can **optionally** have guids. Think files.
-    Things that inherit from this must also inherit from ObjectIDMixin ... probably
-    """
-    __guid_min_length__ = 5
-
-    guids = GenericRelation(Guid, related_name='referent', related_query_name='referents')
-    guid_string = ArrayField(models.CharField(max_length=255, null=True, blank=True), null=True, blank=True)
-    content_type_pk = models.PositiveIntegerField(null=True, blank=True)
-
-    def __unicode__(self):
-        return '{}'.format(self.get_guid() or self.id)
-
-    def get_guid(self, create=False):
-        if not self.pk:
-            logger.warn('Implicitly saving object before creating guid')
-            self.save()
-        if create:
-            try:
-                guid, created = Guid.objects.get_or_create(
-                    object_id=self.pk,
-                    content_type_id=ContentType.objects.get_for_model(self).pk
-                )
-            except MultipleObjectsReturned:
-                # lol, hacks
-                pass
-            else:
-                return guid
-        return self.guids.order_by('-created').first()
-
-    @classmethod
-    def migrate_from_modm(cls, modm_obj):
-        instance = super(OptionalGuidMixin, cls).migrate_from_modm(modm_obj)
-        from website.models import Guid as MODMGuid
-        from modularodm import Q as MODMQ
-        if modm_obj.get_guid():
-            guids = MODMGuid.find(MODMQ('referent', 'eq', modm_obj._id))
-            setattr(instance, 'guid_string', [x.lower() for x in guids.get_keys()])
-            setattr(instance, 'content_type_pk', ContentType.objects.get_for_model(cls).pk)
-        return instance
-
-    class Meta:
-        abstract = True
-
-
 class GuidMixinQuerySet(MODMCompatibilityQuerySet):
     tables = ['osf_guid', 'django_content_type']
 
@@ -737,6 +691,99 @@ class GuidMixin(BaseIDMixin):
         setattr(django_obj, 'content_type_pk', ContentType.objects.get_for_model(cls).pk)
 
         return django_obj
+
+    class Meta:
+        abstract = True
+
+
+class OptionalGuidMixinQuerySet(GuidMixinQuerySet):
+    def _fetch_all(self):
+        if self._result_cache is None:
+            self._result_cache = list(self._iterable_class(self))
+        if self._prefetch_related_lookups and not self._prefetch_done:
+            if 'guids' in self._prefetch_related_lookups and self._result_cache and hasattr(self._result_cache[0], '_guids__id'):
+                # if guids is requested for prefetch and there are things in the result cache and the first one has
+                # the annotated guid fields then remove guids from prefetch_related_lookups
+                del self._prefetch_related_lookups[self._prefetch_related_lookups.index('guids')]
+                results = []
+                for result in self._result_cache:
+                    # loop through the result cache
+                    if not hasattr(result, '_prefetched_objects_cache'):
+                        # initialize _prefetched_objects_cache
+                        result._prefetched_objects_cache = {}
+                    if 'guids' not in result._prefetched_objects_cache:
+                        # intialize guids in _prefetched_objects_cache
+                        result._prefetched_objects_cache['guids'] = Guid.objects.none()
+                    guid_dict = {}
+                    for field in self.GUID_FIELDS:
+                        # pull the fields off of the result object and put them in a dictionary without prefixed names
+                        guid_dict[field] = getattr(result, '_{}'.format(field), None)
+                    if None in guid_dict.values():
+                        if not any(guid_dict.values()):
+                            # Optional Guid is nonexistent
+                            if not results:
+                                # Append Guid.objects.none
+                                results.append(result)
+                            break
+                        else:
+                            # if we get an invalid result field value, stop
+                            logger.warning(
+                                'Annotated guids came back will None values for {}, resorting to extra query'.format(result))
+                            return
+                    # build a result dictionary of even more proper fields
+                    result_dict = {key.replace('guids__', ''): value for key, value in guid_dict.iteritems()}
+                    # make an unsaved guid instance
+                    guid = Guid(**result_dict)
+                    result._prefetched_objects_cache['guids']._result_cache = [guid, ]
+                    results.append(result)
+                # replace the result cache with the new set of results
+                self._result_cache = results
+            self._prefetch_related_objects()
+
+
+class OptionalGuidMixin(BaseIDMixin):
+    """
+    This makes it so that things can **optionally** have guids. Think files.
+    Things that inherit from this must also inherit from ObjectIDMixin ... probably
+    """
+    __guid_min_length__ = 5
+
+    guids = GenericRelation(Guid, related_name='referent', related_query_name='referents')
+    guid_string = ArrayField(models.CharField(max_length=255, null=True, blank=True), null=True, blank=True)
+    content_type_pk = models.PositiveIntegerField(null=True, blank=True)
+
+    objects = OptionalGuidMixinQuerySet.as_manager()
+
+    def __unicode__(self):
+        return '{}'.format(self.get_guid() or self.id)
+
+    def get_guid(self, create=False):
+        if not self.pk:
+            logger.warn('Implicitly saving object before creating guid')
+            self.save()
+        if create:
+            try:
+                guid, created = Guid.objects.get_or_create(
+                    object_id=self.pk,
+                    content_type_id=ContentType.objects.get_for_model(self).pk
+                )
+            except MultipleObjectsReturned:
+                # lol, hacks
+                pass
+            else:
+                return guid
+        return self.guids.order_by('-created').first()
+
+    @classmethod
+    def migrate_from_modm(cls, modm_obj):
+        instance = super(OptionalGuidMixin, cls).migrate_from_modm(modm_obj)
+        from website.models import Guid as MODMGuid
+        from modularodm import Q as MODMQ
+        if modm_obj.get_guid():
+            guids = MODMGuid.find(MODMQ('referent', 'eq', modm_obj._id))
+            setattr(instance, 'guid_string', [x.lower() for x in guids.get_keys()])
+            setattr(instance, 'content_type_pk', ContentType.objects.get_for_model(cls).pk)
+        return instance
 
     class Meta:
         abstract = True
