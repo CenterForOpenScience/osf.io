@@ -98,15 +98,6 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
     objects = BaseFileNodeManager()
     _base_manager = BaseFileNodeManager()
 
-    class Meta:
-        index_together = (
-            ('node', 'type', 'provider', '_path'),
-            ('node', 'type', 'provider'),
-        )
-        unique_together = (
-            ('node', 'name', 'parent', 'type', '_path'),
-        )
-
     @property
     def history(self):
         return self._history
