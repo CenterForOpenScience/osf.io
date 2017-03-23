@@ -5,7 +5,7 @@
     "schema": {
         "type": "object",
         "properties": {
-            "about": {
+            "about_link": {
                 "type": "string"
             },
             "advisory_board": {
@@ -64,11 +64,16 @@
                     }
                 }
             },
-            "email_contact": {
-                "type": "string"
-            },
-            "email_support": {
-                "type": "string"
+            "emails": {
+                "type": "object",
+                "properties": {
+                    "contact": {
+                        "type": "string"
+                    },
+                    "support": {
+                        "type": "string"
+                    }
+                }
             },
             "example": {
                 "type": "string"
