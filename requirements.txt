@@ -85,7 +85,7 @@ keen==0.3.21
 python-geoip-geolite2==2015.0303
 
 # OSF models
-git+https://github.com/cwisecarver/django-typed-models@0.5.2
+git+https://github.com/cos-forks/django-typed-models@0.5.2
 django-dirtyfields==1.2
 django-extensions==1.6.1
 psycopg2==2.6.2
