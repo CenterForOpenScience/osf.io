@@ -60,19 +60,20 @@ from website.mails import mails
 from website.project import signals as project_signals
 from website.project import tasks as node_tasks
 from website.project.model import NodeUpdateError
+
 from website.util import (api_url_for, api_v2_url, get_headers_from_request,
                           sanitize, web_url_for)
 from website.util.permissions import (ADMIN, CREATOR_PERMISSIONS,
                                       DEFAULT_CONTRIBUTOR_PERMISSIONS, READ,
                                       WRITE, expand_permissions,
                                       reduce_permissions)
-from .base import BaseModel, Guid, GuidMixin
+from .base import BaseModel, Guid, GuidMixin, MODMCompatibilityQuerySet
 
 
 logger = logging.getLogger(__name__)
 
 
-class AbstractNodeQuerySet(IncludeQuerySet):
+class AbstractNodeQuerySet(MODMCompatibilityQuerySet, IncludeQuerySet):
 
     def get_roots(self):
         return self.extra(

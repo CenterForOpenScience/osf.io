@@ -40,7 +40,7 @@ class AbstractBaseContributor(models.Model):
         return 'read'
 
 class Contributor(AbstractBaseContributor):
-    node = models.ForeignKey('AbstractNode', related_name='contributor_set')
+    node = models.ForeignKey('AbstractNode')
 
     @property
     def _id(self):

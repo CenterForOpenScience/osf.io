@@ -500,7 +500,7 @@ class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, NodePreprintsF
 
     # overrides ListAPIView
     def get_queryset(self):
-        return Node.find(self.get_query_from_request()).select_related('node_license').include('guids', 'contributor_set__user__guids', 'root__guids', limit_includes=10)
+        return Node.find(self.get_query_from_request()).select_related('node_license').include('guids', 'contributor__user__guids', 'root__guids', limit_includes=10)
 
 
 class UserPreprints(UserNodes):
