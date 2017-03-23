@@ -66,14 +66,12 @@ from website.util.permissions import (ADMIN, CREATOR_PERMISSIONS,
                                       DEFAULT_CONTRIBUTOR_PERMISSIONS, READ,
                                       WRITE, expand_permissions,
                                       reduce_permissions)
-from .base import BaseModel, Guid, GuidMixin, GuidMixinQuerySet
+from .base import BaseModel, Guid, GuidMixin
+
 
 logger = logging.getLogger(__name__)
 
 
-
-
-# class AbstractNodeQuerySet(GuidMixinQuerySet):
 class AbstractNodeQuerySet(IncludeQuerySet):
 
     def get_roots(self):
