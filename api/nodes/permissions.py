@@ -57,7 +57,6 @@ class AdminOrPublic(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
         assert isinstance(obj, (AbstractNode, User, Institution, BaseAddonSettings, DraftRegistration, PrivateLink)), 'obj must be an Node, User, Institution, Draft Registration, PrivateLink, or AddonSettings; got {}'.format(obj)
         auth = get_user_auth(request)
-        # node = AbstractNode.load(request.parser_context['kwargs'][view.node_lookup_url_kwarg])
         if request.method in permissions.SAFE_METHODS:
             return obj.is_public or obj.can_view(auth)
         else:

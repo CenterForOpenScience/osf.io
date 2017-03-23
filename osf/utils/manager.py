@@ -213,9 +213,3 @@ class IncludeQuerySet(models.QuerySet):
         qs = qs.values_list('__fields')
 
         return qs.query.sql_with_params()
-
-
-# IncludeQuerySet.as_manager().contribute_to_class(Guid, 'bobjects')
-# IncludeQuerySet.as_manager().contribute_to_class(AbstractNode, 'bobjects')
-# IncludeQuerySet.as_manager().contribute_to_class(Contributor, 'bobjects')
-# IncludeQuerySet.as_manager().contribute_to_class(OSFUser, 'bobjects')

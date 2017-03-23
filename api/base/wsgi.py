@@ -55,16 +55,6 @@ def __getattr__(self, attr):
 Field.context = context
 Request.__getattr__ = __getattr__
 Request.__getattribute__ = object.__getattribute__
-
-import ujson
-import psycopg2
-def _load(s):
-    if s == '{}':
-        return {}
-    return ujson.loads(s)
-psycopg2.extras.register_default_json(globally=True, loads=_load)
-# psycopg2.extras.register_default_json(globally=True, loads=ujson.loads)
-
 ############# /monkeys ####################
 
 init_app(set_backends=True, routes=False, attach_request_handlers=False)
