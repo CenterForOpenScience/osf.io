@@ -68,43 +68,6 @@ api_routes = {
             views.dmptool_root_folder,
             json_renderer,
         ),
-        # Rule(
-        #     [
-        #         '/project/<pid>/dmptool/widget/',
-        #         '/project/<pid>/node/<nid>/dmptool/widget/',
-        #     ],
-        #     'get',
-        #     views.dmptool_widget,
-        #     OsfWebRenderer('../addons/dmptool/templates/dmptool_widget.mako'),
-        # ),
-
-        # Rule(
-        #     [
-        #         '/project/<pid>/dmptool/widget/contents/',
-        #         '/project/<pid>/node/<nid>/dmptool/widget/contents/',
-        #     ],
-        #     'get',
-        #     views.dmptool_get_widget_contents,
-        #     json_renderer,
-        # ),
-        # Rule(
-        #     [
-        #         '/project/<pid>/dmptool/get-plan/<planid>',
-        #         '/project/<pid>/node/<nid>/dmptool/get-plan/<planid>',
-        #     ],
-        #     'get',
-        #     views.dmptool_get_plan,
-        #     json_renderer,
-        # ),
-        # Rule(
-        #     [
-        #         '/project/<pid>/dmptool/download-plan/<planid>/<fmt>',
-        #         '/project/<pid>/node/<nid>/dmptool/download-plan/<planid>/<fmt>',
-        #     ],
-        #     'get',
-        #     views.dmptool_download_plan,
-        #     json_renderer,
-        # ),
     ],
     'prefix': '/api/v1'
 }

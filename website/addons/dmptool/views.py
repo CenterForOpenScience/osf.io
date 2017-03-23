@@ -3,8 +3,6 @@
 import httplib as http
 
 from flask import request
-# from flask import send_file
-# import StringIO
 
 from modularodm import Q
 from modularodm.storage.base import KeyExistsException
@@ -20,8 +18,7 @@ from website.addons.dmptool.serializer import DmptoolSerializer
 from website.oauth.models import ExternalAccount
 from website.project.decorators import (
     must_have_addon, must_be_addon_authorizer,
-    must_have_permission,
-    # must_be_contributor_or_public
+    must_have_permission
 )
 from website.util import api_url_for
 from website.util.sanitize import assert_clean
@@ -155,96 +152,3 @@ def dmptool_set_config(node_addon, auth, **kwargs):
     node_addon.set_folder(dmptool, dataset, auth)
 
     return {'dmptool': dmptool.title, 'dataset': dataset.title}, http.OK
-
-## Crud ##
-
-## Widget ##
-
-# @must_be_contributor_or_public
-# @must_have_addon(SHORT_NAME, 'node')
-# def dmptool_widget(node_addon, **kwargs):
-
-#     node = node_addon.owner
-#     widget_url = node.api_url_for('dmptool_get_widget_contents')
-
-#     ret = {
-#         'complete': node_addon.complete,
-#         'widget_url': widget_url,
-#     }
-#     ret.update(node_addon.config.to_json())
-
-#     return ret, http.OK
-
-
-# @must_be_contributor_or_public
-# @must_have_addon(SHORT_NAME, 'node')
-# def dmptool_get_widget_contents(node_addon, **kwargs):
-
-#     node = node_addon.owner
-#     data = {
-#         'connected': False,
-#     }
-
-#     if not node_addon.complete:
-#         return {'data': data}, http.OK
-
-#     connection = client.connect_from_settings_or_401(node_addon)
-#     plans = connection.plans_owned()
-#     dmptool_host = node_addon.external_account.oauth_key
-
-#     # loop through plans to add plan url to each plan
-#     # https://dmptool.org/plans/21222/edit
-#     for plan in plans:
-#         plan['url'] = 'https://{}/plans/{}/edit'.format(dmptool_host, plan['id'])
-#         plan['get_plan_url'] = node.api_url_for('dmptool_get_plan',
-#                 planid=plan['id'])
-
-#     data.update({
-#         'dmptool_host': dmptool_host,
-#         'plans': plans,
-#         'connected': True,
-#         'urls': {
-#             'add_user_account': api_url_for('dmptool_add_user_account')
-#         }
-#     })
-#     return {'data': data}, http.OK
-
-
-# @must_have_addon(SHORT_NAME, 'user')
-# @must_have_addon(SHORT_NAME, 'node')
-# def dmptool_get_plan(node_addon, planid, **kwargs):
-#     """Get plan for id"""
-
-#     node = node_addon.owner
-#     connection = client.connect_from_settings_or_401(node_addon)
-#     try:
-#         plan = connection.plans_full(id_=planid)
-#         plan['pdf_url'] = node.api_url_for('dmptool_download_plan',
-#             planid=plan['id'], fmt='pdf')
-#         plan['docx_url'] = node.api_url_for('dmptool_download_plan',
-#             planid=plan['id'], fmt='docx')
-#         html_ = 'HTML to come'
-#     except:
-#         plan = None
-#         html_ = None
-
-#     ret = {
-#         'planid': planid,
-#         'plan': plan,
-#         'html': html_
-#     }
-#     return ret, http.OK
-
-# @must_have_addon(SHORT_NAME, 'user')
-# @must_have_addon(SHORT_NAME, 'node')
-# def dmptool_download_plan(node_addon, planid, fmt, **kwargs):
-#     # http://flask.pocoo.org/snippets/32/
-
-#     connection = client.connect_from_settings_or_401(node_addon)
-
-#     strIO = StringIO.StringIO()
-#     strIO.write(connection.plans_full(planid, fmt))
-#     strIO.seek(0)
-#     return send_file(strIO,
-#                      attachment_filename='{}.{}'.format(planid, fmt),
-#                      as_attachment=True)
