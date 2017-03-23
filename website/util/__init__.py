@@ -2,7 +2,6 @@
 
 import collections
 import re
-import urllib
 import logging
 import urlparse
 from contextlib import contextmanager
@@ -10,6 +9,7 @@ from contextlib import contextmanager
 from blinker import ANY
 import furl
 
+from django.utils.http import urlencode, urlquote
 from flask import request, url_for
 
 from website import settings as website_settings
@@ -117,7 +117,8 @@ def api_v2_url(path_str,
     x = urlparse.urljoin(base_route, urlparse.urljoin(base_prefix, path_str.lstrip('/')))
 
     if params or kwargs:
-        x = '{}?{}'.format(x, urllib.quote(dict(params, **kwargs), safe='~()*!.\''))
+        x = '{}?{}'.format(x, urlencode(dict(params, **kwargs)))
+
     return x
 
 
@@ -184,7 +185,7 @@ def waterbutler_api_url_for(node_id, provider, path='/', _internal=False, **kwar
     assert path.startswith('/'), 'Path must always start with /'
     url = furl.furl(website_settings.WATERBUTLER_INTERNAL_URL if _internal else website_settings.WATERBUTLER_URL)
     segments = ['v1', 'resources', node_id, 'providers', provider] + path.split('/')[1:]
-    url.path.segments.extend([urllib.quote(x.encode('utf-8')) for x in segments])
+    url.path.segments.extend([urlquote(x) for x in segments])
     url.args.update(kwargs)
     return url.url
 
