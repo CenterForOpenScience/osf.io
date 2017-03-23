@@ -117,8 +117,7 @@ def api_v2_url(path_str,
     x = urlparse.urljoin(base_route, urlparse.urljoin(base_prefix, path_str.lstrip('/')))
 
     if params or kwargs:
-        x = '{}?{}'.format(x, urllib.urlencode(dict(params, **kwargs)))
-
+        x = '{}?{}'.format(x, urllib.quote(dict(params, **kwargs), safe='~()*!.\''))
     return x
 
 
