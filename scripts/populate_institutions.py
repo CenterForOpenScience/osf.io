@@ -54,6 +54,17 @@ def main(env):
     if env == 'prod':
         INSTITUTIONS = [
             {
+                '_id': 'bu',
+                'name': 'Boston University',
+                'description': 'A Research Project Management Tool for BU',
+                'banner_name': 'bu-banner.png',
+                'logo_name': 'bu-shield.png',
+                'auth_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://shib.bu.edu/idp/shibboleth')),
+                'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://osf.io/goodbye')),
+                'domains': ['osf.bu.edu'],
+                'email_domains': [],
+            },
+            {
                 '_id': 'busara',
                 'name': 'Busara Center for Behavioral Economics',
                 'description': 'The <a href="http://www.busaracenter.org/">Busara Center</a> for Behavioral Economics',
@@ -85,6 +96,17 @@ def main(env):
                 'logout_url': None,
                 'domains': ['osf.cos.io'],
                 'email_domains': ['cos.io'],
+            },
+            {
+                '_id': 'duke',
+                'name': 'Duke University',
+                'description': 'A research data service provided by <a href="https://library.duke.edu/data/data-management">Duke Libraries</a>.',
+                'banner_name': 'duke-banner.png',
+                'logo_name': 'duke-shield.png',
+                'auth_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('urn:mace:incommon:duke.edu')),
+                'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://osf.io/goodbye')),
+                'domains': [],
+                'email_domains': [],
             },
             {
                 '_id': 'esip',
@@ -173,6 +195,18 @@ def main(env):
                 'logout_url': None,
                 'domains': [],
                 'email_domains': ['dc.gov'],
+            },
+            {
+                '_id': 'uc',
+                'name': 'University of Cincinnati',
+                'description': 'In partnership with the <a href="https://research.uc.edu/home/officeofresearch/administrativeoffices.aspx">Office of Research</a>, <a href="https://www.libraries.uc.edu/">UC Libraries</a> and <a href="https://www.uc.edu/ucit.html">IT&#64;UC</a>. Projects must abide by the University Security and Data Protection Policies depending on approval from OoR. Learn more by visiting <a href="https://libraries.uc.edu/digital-scholarship/data-services.html">Research Data & GIS services</a>.',
+                'banner_name': 'uc-banner.png',
+                'logo_name': 'uc-shield.png',
+                'auth_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://login.uc.edu/idp/shibboleth')),
+                'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://osf.io/goodbye')),
+                'domains': ['osf.uc.edu'],
+                'email_domains': [],
+
             },
             {
                 '_id': 'ucsd',
@@ -337,6 +371,17 @@ def main(env):
     elif env == 'test':
         INSTITUTIONS = [
             {
+                '_id': 'bu',
+                'name': 'Boston University [Test]',
+                'description': 'A Research Project Management Tool for BU',
+                'banner_name': 'bu-banner.png',
+                'logo_name': 'bu-shield.png',
+                'auth_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://shib.bu.edu/idp/shibboleth')),
+                'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://test.osf.io/goodbye')),
+                'domains': ['osf.bu.edu'],
+                'email_domains': [],
+            },
+            {
                 '_id': 'busara',
                 'name': 'Busara Center for Behavioral Economics [Test]',
                 'description': 'The <a href="http://www.busaracenter.org/">Busara Center</a> for Behavioral Economics',
@@ -368,6 +413,17 @@ def main(env):
                 'logout_url': None,
                 'domains': ['test-osf.cos.io'],
                 'email_domains': ['cos.io'],
+            },
+            {
+                '_id': 'duke',
+                'name': 'Duke University [Test]',
+                'description': 'A research data service provided by <a href="https://library.duke.edu/data/data-management">Duke Libraries</a>.',
+                'banner_name': 'duke-banner.png',
+                'logo_name': 'duke-shield.png',
+                'auth_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('urn:mace:incommon:duke.edu')),
+                'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://test.osf.io/goodbye')),
+                'domains': [],
+                'email_domains': [],
             },
             {
                 '_id': 'esip',
@@ -456,6 +512,17 @@ def main(env):
                 'logout_url': None,
                 'domains': [],
                 'email_domains': ['dc.gov'],
+            },
+            {
+                '_id': 'uc',
+                'name': 'University of Cincinnati [Test]',
+                'description': 'In partnership with the <a href="https://research.uc.edu/home/officeofresearch/administrativeoffices.aspx">Office of Research</a>, <a href="https://www.libraries.uc.edu/">UC Libraries</a> and <a href="https://www.uc.edu/ucit.html">IT&#64;UC</a>. Projects must abide by the University Security and Data Protection Policies depending on approval from OoR. Learn more by visiting <a href="https://libraries.uc.edu/digital-scholarship/data-services.html">Research Data & GIS services</a>.',
+                'banner_name': 'uc-banner.png',
+                'logo_name': 'uc-shield.png',
+                'auth_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://login.uc.edu/idp/shibboleth')),
+                'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://test.osf.io/goodbye')),
+                'domains': ['osf.uc.edu'],
+                'email_domains': [],
             },
             {
                 '_id': 'ucsd',
