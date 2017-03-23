@@ -10,7 +10,6 @@ from framework.auth.oauth_scopes import CoreScopes
 
 from api.base.exceptions import Conflict
 from api.base.views import JSONAPIBaseView
-from api.base.filters import ListFilterMixin
 from api.base.parsers import (
     JSONAPIMultipleRelationshipsParser,
     JSONAPIMultipleRelationshipsParserForRegularJSON,
@@ -28,6 +27,7 @@ from api.nodes.serializers import (
 )
 from api.nodes.views import NodeMixin, WaterButlerMixin
 from api.nodes.permissions import ContributorOrPublic
+from api.preprints.filters import PreprintsListFilterMixin
 from api.preprints.permissions import PreprintPublishedOrAdmin
 
 
@@ -50,7 +50,7 @@ class PreprintMixin(NodeMixin):
         return preprint
 
 
-class PreprintList(JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMixin):
+class PreprintList(JSONAPIBaseView, generics.ListCreateAPIView, PreprintsListFilterMixin):
     """Preprints that represent a special kind of preprint node. *Writeable*.
 
     Paginated list of preprints ordered by their `date_created`.  Each resource contains a representation of the
