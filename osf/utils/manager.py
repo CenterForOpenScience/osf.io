@@ -17,6 +17,8 @@ from django.db.models.query import ModelIterable
 def _load(s):
     if s == '{}':
         return {}
+    if s == '[]':
+        return []
     return ujson.loads(s)
 psycopg2.extras.register_default_json(globally=True, loads=_load)
 
@@ -45,12 +47,17 @@ class JSONAgg(ArrayAgg):
 
 class IncludeModelIterable(ModelIterable):
 
+    # ModelIterables are responsible for hydrating the rows sent back from the DB
+    # Hook in here to pluck off the extra json aggregations that were tacked on
+
     @classmethod
     def parse_nested(cls, instance, field, nested, datas):
         if field.many_to_one:
             datas = (datas, )
         ps = []
 
+        # Fun caveat of throwing everything into JSON, it doesn't support datetimes. Everything gets sent back as iso8601 strings
+        # Make a list of all fields that should be datetimes and parse them ahead of time
         dts = [i for i, f in enumerate(field.related_model._meta.concrete_fields) if isinstance(f, models.DateTimeField)]
 
         for data in datas or []:
@@ -60,6 +67,7 @@ class IncludeModelIterable(ModelIterable):
                 if data[i]:
                     data[i] = ciso8601.parse_datetime(data[i])
 
+            # from_db expects the final argument to be a tuple of fields in the order of concrete_fields
             parsed = field.related_model.from_db(instance._state.db, None, data)
 
             for (f, n), d in zip(nested.items(), nested_data):
@@ -67,7 +75,6 @@ class IncludeModelIterable(ModelIterable):
 
             if field.remote_field.concrete:
                 setattr(parsed, field.remote_field.get_cache_name(), instance)
-            # import ipdb; ipdb.set_trace()
 
             ps.append(parsed)
 
@@ -98,7 +105,10 @@ class IncludeQuerySet(models.QuerySet):
     def __init__(self, *args, **kwargs):
         super(IncludeQuerySet, self).__init__(*args, **kwargs)
         self._include_limit = None
+        # Needs to be ordered, otherwise there is no way to tell which elements are the child includes
+        # {field: {child_field: {}}}
         self._includes = OrderedDict()
+        # Not sure why Django didn't make this a class level variable w/e
         self._iterable_class = IncludeModelIterable
 
     def include(self, *related_names, **kwargs):
@@ -106,6 +116,9 @@ class IncludeQuerySet(models.QuerySet):
         clone._include_limit = kwargs.pop('limit_includes', None)
         assert not kwargs, '"limit_includes" is the only accepted kwargs. Eat your heart out 2.7'
 
+        # Parse everything the way django handles joins/select related
+        # Including multiple child fields ie .include(field1__field2, field1__field3)
+        # turns into {field1: {field2: {}, field3: {}}
         for name in related_names:
             ctx, model = self._includes, self.model
             for spl in name.split('__'):
@@ -143,19 +156,28 @@ class IncludeQuerySet(models.QuerySet):
 
         qs = model.objects.all()
 
-        # TODO be able to set limits per thing included
-        if self._include_limit:
-            qs.query.set_limits(0, self._include_limit)
-
+        # Django's queries are amazing lazy. Calling get_initial_alias() seems
+        # to be the fastest way to populate the internal alias structures so we can avoid any overlap
+        # This all needs to happen before anything else, otherwise the aliases will get out of sync
+        # and they queries could either break or return the wrong data
         qs.query.get_initial_alias()
+        # bump_prefix will effectively place this query's aliases into their own namespace
+        # No need to worry about conflicting includes
         qs.query.bump_prefix(host_query)
 
         table = qs.query.get_compiler(using=self.db).quote_name_unless_alias(qs.query.get_initial_alias())
         host_table = host_query.get_compiler(using=self.db).quote_name_unless_alias(host_query.get_initial_alias())
 
+        # TODO be able to set limits per thing included
+        if self._include_limit:
+            qs.query.set_limits(0, self._include_limit)
+
+        # Any ordering needs to be plucked from the query set and added into the JSONAgg that we will be build
+        # because SQL
         kwargs = {}
         if qs.ordered:
             kwargs['order_by'] = zip(*qs.query.get_compiler(using=self.db).get_order_by())[0]
+        qs.query.clear_ordering(True)
 
         where = ['{table}."{column}" = {host_table}."{host_column}"'.format(
             table=table,
@@ -165,6 +187,7 @@ class IncludeQuerySet(models.QuerySet):
         )]
 
         if isinstance(field, GenericRelation):
+            # Add the additional content type filter for GFKs
             where.append('{table}."{content_type}" = {content_type_id}'.format(
                 table=table,
                 content_type=model._meta.get_field(field.content_type_field_name).column,
@@ -188,7 +211,6 @@ class IncludeQuerySet(models.QuerySet):
         qs.query.add_annotation(agg, '__fields', is_summary=True)
 
         qs = qs.values_list('__fields')
-        qs.query.clear_ordering(True)
 
         return qs.query.sql_with_params()
 
