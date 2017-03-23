@@ -86,6 +86,11 @@ def main(env):
             'licenses_acceptable': ['CC0 1.0 Universal', 'CC-By Attribution 4.0 International', 'No license'],
             'header_text': '',
             'subjects_acceptable': [],
+            'extra': {
+                'banner_name': 'cos-banner.png',
+                'description': 'A scholarly commons to connect the entire research cycle',
+                'example': 'khbvy',
+            },
         },
         'engrxiv': {
             '_id': 'engrxiv',
@@ -124,6 +129,77 @@ def main(env):
             'social_instagram': 'engrxiv',
             'licenses_acceptable': ['CC0 1.0 Universal', 'CC-By Attribution 4.0 International', 'No license'],
             'header_text': '',
+            'extra': {
+                'about_link': 'http://blog.engrxiv.org/about/',
+                'advisory_board': {
+                    'groups': [{
+                        'group_name': 'Steering Committee',
+                        'members': [
+                            {
+                                'name': 'Phoebe Ayers',
+                                'url': 'http://libguides.mit.edu/profiles/psayers',
+                                'role': 'librarian',
+                                'affiliation': 'Massachusetts Institute of Technology'
+                            },
+                            {
+                                'name': 'Lorena A. Barba',
+                                'url': 'http://stem.gwu.edu/lorena-barba',
+                                'role': 'aerospace engineer',
+                                'affiliation': 'The George Washington University'
+                            },
+                            {
+                                'name': 'Devin R. Berg',
+                                'url': 'http://www.devinberg.com/',
+                                'role': 'mechanical engineer',
+                                'affiliation': 'University of Wisconsin-Stout'
+                            },
+                            {
+                                'name': 'Bryony Dupont',
+                                'url': 'http://mime.oregonstate.edu/people/dupont',
+                                'role': 'mechanical engineer',
+                                'affiliation': 'Oregon State University'
+                            },
+                            {
+                                'name': 'David Jensen',
+                                'url': 'http://directory.uark.edu/people/dcjensen',
+                                'role': 'mechanical engineer',
+                                'affiliation': 'University of Arkansas'
+                            },
+                            {
+                                'name': 'Kevin Moerman',
+                                'url': 'http://biomech.media.mit.edu/people/',
+                                'role': 'biomechanical engineer',
+                                'affiliation': 'Massachusetts Institute of Technology'
+                            },
+                            {
+                                'name': 'Kyle Niemeyer',
+                                'url': 'http://kyleniemeyer.com/',
+                                'role': 'mechanical engineer',
+                                'affiliation': 'Oregon State University'
+                            },
+                            {
+                                'name': 'Douglas Van Bossuyt',
+                                'url': 'http://www.douglasvanbossuyt.com/',
+                                'role': 'mechanical engineer',
+                                'affiliation': 'KTM Research'
+                            }
+                        ]
+                    }]
+                },
+                'banner_name': 'engrxiv-banner.png',
+                'blog_url': 'http://blog.engrxiv.org/',
+                'description': 'The open archive of engineering.',
+                'emails': {
+                    'contact': 'contact+engrxiv@osf.io',
+                    'support': 'support+engrxiv@osf.io'
+                },
+                'example': 'k7fgk',
+                'social': {
+                    'facebook': 'engrXiv',
+                    'instagram': 'engrxiv',
+                    'twitter': 'engrxiv'
+                }
+            },
             'subjects_acceptable': [
                 (['Computer and information sciences', 'Software engineering'], True),
                 (['Engineering and technology'], True),
@@ -269,6 +345,77 @@ def main(env):
             'social_instagram': 'psyarxiv',
             'licenses_acceptable': ['CC0 1.0 Universal', 'CC-By Attribution 4.0 International', 'No license'],
             'header_text': '',
+            'extra': {
+                'about_link': 'http://blog.psyarxiv.com/psyarxiv/about-psyarxiv/',
+                'advisory_board': {
+                    'groups': [{
+                        'group_name': 'Steering Committee',
+                        'members': [
+                            {
+                                'name': 'Jack Arnal',
+                                'affiliation': 'McDaniel College'
+                            },
+                            {
+                                'name': 'David Barner',
+                                'affiliation': 'University of California, San Diego'
+                            },
+                            {
+                                'name': 'Benjamin Brown',
+                                'affiliation': 'Georgia Gwinnett College'
+                            },
+                            {
+                                'name': 'David Condon',
+                                'affiliation': 'Northwestern University'
+                            },
+                            {
+                                'name': 'Will Cross',
+                                'affiliation': 'North Carolina State University Libraries'
+                            },
+                            {
+                                'name': 'Anita Eerland',
+                                'affiliation': 'Utrecht University'
+                            },
+                            {
+                                'name': 'Chris Hartgerink',
+                                'affiliation': 'Tilburg University'
+                            },
+                            {
+                                'name': 'Alex Holcombe',
+                                'affiliation': 'University of Sydney'
+                            },
+                            {
+                                'name': 'Jeff Hughes',
+                                'affiliation': 'University of Waterloo'
+                            },
+                            {
+                                'name': 'Don Moore',
+                                'affiliation': 'University of California, Berkeley'
+                            },
+                            {
+                                'name': 'Sean Rife',
+                                'affiliation': 'Murray State University'
+                            }
+                        ]
+                    }]
+                },
+                'banner_name': 'psyarxiv-banner.png',
+                'blog_url': 'http://blog.psyarxiv.com/psyarxiv/',
+                'description': 'A free preprint service for the psychological sciences.',
+                'description_link': {
+                    'url': 'http://improvingpsych.org',
+                    'text': 'The Society for the Improvement of Psychological Science'
+                },
+                'emails': {
+                    'contact': 'contact+psyarxiv@osf.io',
+                    'support': 'support+psyarxiv@osf.io'
+                },
+                'example': 'k9mn3',
+                'social': {
+                    'facebook': 'PsyArXiv',
+                    'instagram': 'psyarxiv',
+                    'twitter': 'psyarxiv'
+                }
+            },
             'subjects_acceptable': [
                 (['Social and behavioral sciences'], True),
                 (['Arts and Humanities'], True),
@@ -355,6 +502,65 @@ def main(env):
             'social_instagram': 'socarxiv',
             'licenses_acceptable': ['CC0 1.0 Universal', 'CC-By Attribution 4.0 International', 'No license'],
             'header_text': '',
+            'extra': {
+                'about_link': 'https://socopen.org/welcome/',
+                'advisory_board': {
+                    'groups': [{
+                        'group_name': 'Steering Committee',
+                        'members': [
+                            {
+                                'name': 'Elizabeth Popp Berman',
+                                'affiliation': 'University at Albany SUNY'
+                            },
+                            {
+                                'name': 'Chris Bourg',
+                                'affiliation': 'Massachusetts Institute of Technology'
+                            },
+                            {
+                                'name': 'Neal Caren',
+                                'affiliation': 'University of North Carolina at Chapel Hill'
+                            },
+                            {
+                                'name': 'Philip N. Cohen',
+                                'affiliation': 'University of Maryland, College Park'
+                            },
+                            {
+                                'name': 'Tressie McMillan Cottom',
+                                'affiliation': 'Virginia Commonwealth University'
+                            },
+                            {
+                                'name': 'Tina Fetner',
+                                'affiliation': 'McMaster University'
+                            },
+                            {
+                                'name': 'Dan Hirschman',
+                                'affiliation': 'Brown University'
+                            },
+                            {
+                                'name': 'Rebecca Kennison',
+                                'affiliation': 'K|N Consultants'
+                            },
+                            {
+                                'name': 'Judy Ruttenberg',
+                                'affiliation': 'Association of Research Libraries'
+                            }
+                        ]
+                    }]
+                },
+                'banner_name': 'socarxiv-banner.png',
+                'blog_url': 'http://socopen.org/',
+                'description': 'Open archive of the social sciences',
+                'emails': {
+                    'contact': 'contact+socarxiv@osf.io',
+                    'support': 'support+socarxiv@osf.io'
+                },
+                'example': 'qmdc4',
+                'social': {
+                    'facebook': 'socarxiv',
+                    'instagram': 'socarxiv',
+                    'twitter': 'socarxiv'
+                }
+            },
             'subjects_acceptable': [
                 (['Arts and Humanities'], True),
                 (['Education'], True),
@@ -383,6 +589,18 @@ def main(env):
             'social_facebook': 'SciELONetwork',
             'header_text': '',
             'licenses_acceptable': ['CC-By Attribution 4.0 International'],
+            'extra': {
+                'banner_name': 'scielo-logo.png',
+                'description': 'Advancing Research Communication',
+                'emails': {
+                    'contact': 'contact+scielo@osf.io',
+                    'support': 'support+scielo@osf.io'
+                },
+                'social': {
+                    'facebook': 'SciELONetwork',
+                    'twitter': 'RedeSciELO'
+                }
+            },
             'subjects_acceptable':[]
         },
         'agrixiv': {
@@ -436,6 +654,105 @@ def main(env):
             'social_instagram': 'agrixiv',
             'licenses_acceptable': ['CC0 1.0 Universal', 'CC-By Attribution 4.0 International'],
             'header_text': '',
+            'extra': {
+                'about_link': 'https://agrixiv.wordpress.com/about/',
+                'advisory_board': {
+                    'groups': [{
+                        'group_name': 'Steering Committee',
+                        'members': [
+                            {
+                                'name': 'Abeer Elhalwagi',
+                                'affiliation': 'National Gene Bank, Egypt'
+                            },
+                            {
+                                'name': 'Ajit Maru',
+                                'affiliation': 'Global Forum on Agricultural Research'
+                            },
+                            {
+                                'name': 'Bernard Pochet',
+                                'affiliation': 'University of Liège - Gembloux Agro-Bio Tech'
+                            },
+                            {
+                                'name': 'Dinesh Kumar',
+                                'affiliation': 'Indian Agricultural Statistics Research Institute'
+                            },
+                            {
+                                'name': 'Oya Yildirim Rieger',
+                                'affiliation': 'Cornell University'
+                            },
+                            {
+                                'name': 'Prateek Mahalwar',
+                                'affiliation': 'Ernst & Young GmbH Wirtschaftsprüfungsgesellschaft'
+                            },
+                            {
+                                'name': 'Satendra Kumar Singh',
+                                'affiliation': 'Indian Council of Agricultural Research'
+                            },
+                            {
+                                'name': 'Vassilis Protonotarios',
+                                'affiliation': 'Neuropublic'
+                            },
+                            {
+                                'name': 'Vinodh Ilangovan',
+                                'affiliation': 'Max Planck Institute for Biophysical Chemistry'
+                            }
+                        ]
+                    }, {
+                        'group_name': 'Working Group',
+                        'members': [
+                            {
+                                'name': 'Chandni Singh',
+                                'affiliation': 'Indian Institute for Human Settlements'
+                            },
+                            {
+                                'name': 'Gopinath KA',
+                                'affiliation': 'Central Research Institute for Dryland Agriculture'
+                            },
+                            {
+                                'name': 'Ivonne Lujano',
+                                'affiliation': 'University of the State of Mexico'
+                            },
+                            {
+                                'name': 'Khelif Karima',
+                                'affiliation': 'Institut National de la Recherche Agronomique d''Algérie'
+                            },
+                            {
+                                'name': 'Kuldeep Singh Jadon',
+                                'affiliation': 'Central Arid Zone Research Institute'
+                            },
+                            {
+                                'name': 'Paraj Shukla',
+                                'affiliation': 'King Saud University'
+                            },
+                            {
+                                'name': 'Sridhar Gutam',
+                                'affiliation': 'ICAR RCER Research Centre/Open Access India'
+                            },
+                            {
+                                'name': 'Sumant Vyas',
+                                'affiliation': 'National Research Centre on Camel'
+                            },
+                            {
+                                'name': 'Susmita Das',
+                                'affiliation': 'Bangladesh Agricultural Research Council'
+                            }
+                        ]
+                    }]
+                },
+                'banner_name': 'agrixiv-banner.svg',
+                'blog_url': 'https://agrixiv.wordpress.com/',
+                'description': 'Preprints for Agriculture and Allied Sciences',
+                'emails': {
+                    'contact': 'contact+agrixiv@osf.io',
+                    'support': 'support+agrixiv@osf.io'
+                },
+                'example': '8whkp',
+                'social': {
+                    'facebook': 'agrixiv',
+                    'instagram': 'agrixiv',
+                    'twitter': 'AgriXiv'
+                }
+            },
             'subjects_acceptable': [
                 (['Business', 'Business Administration, Management, and Operations'], False),
                 (['Business', 'Business and Corporate Communications'], False),
@@ -1039,6 +1356,45 @@ def main(env):
             'social_twitter': 'UCBITSS',
             'licenses_acceptable': ['CC-By Attribution 4.0 International', 'CC0 1.0 Universal'],
             'header_text': '',
+            'extra': {
+                'advisory_board': {
+                    'groups': [{
+                        'group_name': 'Steering Committee',
+                        'members': [
+                            {
+                                'name': 'Edward Miguel',
+                                'affiliation': 'UC Berkeley'
+                            },
+                            {
+                                'name': 'Garret Christensen',
+                            },
+                            {
+                                'name': 'Kelsey Mulcahy',
+                            },
+                            {
+                                'name': 'Temina Madon',
+                            },
+                            {
+                                'name': 'Jennifer Sturdy',
+                                'affiliation': 'BITSS'
+                            }
+                        ]
+                    }]
+                },
+                'banner_name': 'bitss-banner.png',
+                'description': 'An interdisciplinary archive of articles focused on improving research transparency and reproducibility',
+                'description-link': {
+                    'url': 'http://www.bitss.org',
+                    'text': 'The Berkeley Initiative for Transparency in the Social Sciences (BITSS)'
+                },
+                'emails': {
+                    'contact': 'contact+bitss@osf.io',
+                    'support': 'support+bitss@osf.io'
+                },
+                'social': {
+                    'twitter': 'UCBITSS'
+                }
+            },
             'subjects_acceptable': [
                 (['Medicine and Health Sciences', 'Health Information Technology'], False),
                 (['Medicine and Health Sciences', 'Mental and Social Health'], False),
