@@ -4,11 +4,6 @@ from contextlib import contextmanager
 import collections
 import logging
 import re
-<<<<<<< HEAD
-import logging
-=======
-import urllib
->>>>>>> MAK GO FAST
 import urlparse
 
 from blinker import ANY
