@@ -22,6 +22,7 @@ from website.files import utils
 from website.files.exceptions import VersionNotFoundError
 from website.util import api_v2_url, waterbutler_api_url_for
 from osf.utils.datetime_aware_jsonfield import coerce_nonnaive_datetimes
+import pytz
 
 # TODO DELETE ME POST MIGRATION
 from modularodm import Q as MQ
@@ -474,7 +475,7 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
         django_obj._materialized_path = modm_obj.materialized_path
         django_obj._path = modm_obj.path
         if hasattr(modm_obj, 'deleted_on'):
-            django_obj.deleted_on = modm_obj.deleted_on
+            django_obj.deleted_on = pytz.utc.localize(modm_obj.deleted_on)
         return django_obj
 
 
