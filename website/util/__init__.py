@@ -114,13 +114,12 @@ def api_v2_url(path_str,
     """
     params = params or {}  # Optional params dict for special-character param names, eg filter[fullname]
 
-    base_url = furl.furl(base_route + base_prefix)
+    x = urlparse.urljoin(base_route, urlparse.urljoin(base_prefix, path_str.lstrip('/')))
 
-    base_url.path.add([x for x in path_str.split('/') if x] + [''])
+    if params or kwargs:
+        x = '{}?{}'.format(x, urllib.urlencode(dict(params, **kwargs)))
 
-    base_url.args.update(params)
-    base_url.args.update(kwargs)
-    return str(base_url)
+    return x
 
 
 def web_url_for(view_name, _absolute=False, _guid=False, *args, **kwargs):
