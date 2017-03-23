@@ -355,7 +355,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         super(AbstractNode, self).__init__(*args, **kwargs)
 
     def __unicode__(self):
-        return u'{} : ({})'.format(self.title, self._id)
+        return ('(title={self.title!r}, category={self.category!r}) '
+                'with guid {self._id!r}').format(self=self)
 
     @property
     def is_registration(self):
