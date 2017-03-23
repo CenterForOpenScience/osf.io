@@ -1,10 +1,7 @@
 # -*- coding: utf-8 -*-
 import urllib
 import urlparse
-<<<<<<< HEAD
 
-=======
->>>>>>> MAK GO FAST
 import furl
 from django.core.exceptions import ObjectDoesNotExist
 from modularodm import Q
