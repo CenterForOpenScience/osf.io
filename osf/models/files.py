@@ -21,6 +21,7 @@ from osf.utils.fields import NonNaiveDateTimeField
 from website.files import utils
 from website.files.exceptions import VersionNotFoundError
 from website.util import api_v2_url, waterbutler_api_url_for
+from osf.utils.datetime_aware_jsonfield import coerce_nonnaive_datetimes
 
 # TODO DELETE ME POST MIGRATION
 from modularodm import Q as MQ
