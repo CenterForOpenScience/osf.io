@@ -469,7 +469,7 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
     @classmethod
     def migrate_from_modm(cls, modm_obj):
         django_obj = super(BaseFileNode, cls).migrate_from_modm(modm_obj)
-        django_obj._history = modm_obj.history
+        django_obj._history = coerce_nonnaive_datetimes(modm_obj.history)
         django_obj._materialized_path = modm_obj.materialized_path
         django_obj._path = modm_obj.path
         if hasattr(modm_obj, 'deleted_on'):
