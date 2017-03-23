@@ -8,6 +8,12 @@ class NodeRelation(ObjectIDMixin, BaseModel):
     child = models.ForeignKey('AbstractNode')
     is_node_link = models.BooleanField(default=False, db_index=True)
 
+    def __unicode__(self):
+        return '{}, parent={}, child={}'.format(
+            'Node Link' if self.is_node_link else 'Component',
+            self.parent.__unicode__(),
+            self.child.__unicode__())
+
     @property
     def node(self):
         """For v1 compat."""
