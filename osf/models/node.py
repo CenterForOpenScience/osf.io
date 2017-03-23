@@ -338,7 +338,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     identifiers = GenericRelation(Identifier, related_query_name='nodes')
 
     # Preprint fields
-    preprint_file = models.ForeignKey('osf.StoredFileNode',
+    preprint_file = models.ForeignKey('osf.BaseFileNode',
                                       on_delete=models.SET_NULL,
                                       null=True, blank=True)
     preprint_article_doi = models.CharField(max_length=128,

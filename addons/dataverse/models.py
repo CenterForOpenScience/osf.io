@@ -6,7 +6,7 @@ from addons.base.models import (BaseOAuthNodeSettings, BaseOAuthUserSettings,
 from django.db import models
 from framework.auth.decorators import Auth
 from framework.exceptions import HTTPError
-from osf.models.files import File, FileNode, Folder, FileVersion
+from osf.models.files import File, Folder, FileVersion, BaseFileNode
 from osf.utils.auth import _get_current_user
 from addons.base import exceptions
 from addons.dataverse.client import connect_from_settings_or_401
@@ -14,12 +14,13 @@ from addons.dataverse.serializer import DataverseSerializer
 from addons.dataverse.utils import DataverseNodeLogger
 
 
-class DataverseFileNode(FileNode):
+class DataverseFileNode(BaseFileNode):
     # TODO DELETE ME POST MIGRATION
     modm_model_path = 'website.files.models.dataverse.DataverseFileNode'
     modm_query = None
     # /TODO DELETE ME POST MIGRATION
-    provider = 'dataverse'
+    _provider = 'dataverse'
+
 
 class DataverseFolder(DataverseFileNode, Folder):
     # TODO DELETE ME POST MIGRATION
@@ -27,6 +28,7 @@ class DataverseFolder(DataverseFileNode, Folder):
     modm_query = None
     # /TODO DELETE ME POST MIGRATION
     pass
+
 
 class DataverseFile(DataverseFileNode, File):
     # TODO DELETE ME POST MIGRATION
@@ -60,6 +62,7 @@ class DataverseFile(DataverseFileNode, File):
                 pass
         return version
 
+
 class DataverseProvider(object):
     """An alternative to `ExternalProvider` not tied to OAuth"""
     name = 'Dataverse'
@@ -77,6 +80,7 @@ class DataverseProvider(object):
             status=self.account.provider_id if self.account else 'anonymous'
         )
 
+
 class UserSettings(BaseOAuthUserSettings):
     # TODO DELETE ME POST MIGRATION
     modm_model_path = 'website.addons.dataverse.model.AddonDataverseUserSettings'
@@ -84,6 +88,7 @@ class UserSettings(BaseOAuthUserSettings):
     # /TODO DELETE ME POST MIGRATION
     oauth_provider = DataverseProvider
     serializer = DataverseSerializer
+
 
 class NodeSettings(BaseStorageAddon, BaseOAuthNodeSettings):
     # TODO DELETE ME POST MIGRATION

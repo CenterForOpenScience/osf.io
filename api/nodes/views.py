@@ -86,7 +86,8 @@ from osf.models import AbstractNode
 from osf.models import (Node, PrivateLink, NodeLog, Institution, Comment, DraftRegistration, PreprintService, FileNode)
 from osf.models import OSFUser as User
 from osf.models import NodeRelation, AlternativeCitation, Guid
-from osf.models import StoredFileNode
+from osf.models import BaseFileNode
+from osf.models.files import File, Folder
 from addons.wiki.models import NodeWikiPage
 from website.exceptions import NodeStateError
 from website.util.permissions import ADMIN
@@ -1906,15 +1907,38 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
             if operation['value'] not in (list(), tuple()):
                 operation['source_field_name'] = 'tags__name'
                 operation['op'] = 'iexact'
+        if field_name == 'path':
+            operation['source_field_name'] = '_path'
+        # NOTE: This is potentially fragile, if we ever add filtering on provider
+        # we're going to have to get a bit tricky. get_default_queryset should ramain filtering on BaseFileNode, for now
+        if field_name == 'kind':
+            if operation['value'].lower() == 'folder':
+                kind = Folder
+            else:
+                # Default to File, should probably raise an exception in the future
+                kind = File  # Default to file
+
+            operation['source_field_name'] = 'type'
+            operation['op'] = 'in'
+            operation['value'] = [
+                sub._typedmodels_type
+                for sub in kind.__subclasses__()
+                if hasattr(sub, '_typedmodels_type')
+            ]
 
     def get_default_queryset(self):
-        # Don't bother going to waterbutler for osfstorage
         files_list = self.fetch_from_waterbutler()
 
         if isinstance(files_list, list):
-            return StoredFileNode.objects.filter(id__in=[self.get_file_item(file).id for file in files_list])
+            provider = self.kwargs[self.provider_lookup_url_kwarg]
+            # Resolve to a provider-specific subclass, so that
+            # trashed file nodes are filtered out automatically
+            ConcreteFileNode = BaseFileNode.resolve_class(provider, FileNode.ANY)
+            return ConcreteFileNode.objects.filter(
+                id__in=[self.get_file_item(file).id for file in files_list],
+            )
 
-        if isinstance(files_list, dict) or getattr(files_list, 'is_file', False):
+        if isinstance(files_list, list) or not isinstance(files_list, Folder):
             # We should not have gotten a file here
             raise NotFound
 
@@ -1946,7 +1970,7 @@ class NodeFileDetail(JSONAPIBaseView, generics.RetrieveAPIView, WaterButlerMixin
         if isinstance(fobj, dict):
             return self.get_file_item(fobj)
 
-        if isinstance(fobj, list) or not getattr(fobj, 'is_file', True):
+        if isinstance(fobj, list) or not isinstance(fobj, File):
             # We should not have gotten a folder here
             raise NotFound
 

@@ -51,21 +51,6 @@ def generate_object_id():
 
 class MODMCompatibilityQuerySet(models.QuerySet):
 
-    def __getitem__(self, k):
-        item = super(MODMCompatibilityQuerySet, self).__getitem__(k)
-        if hasattr(item, 'wrapped'):
-            return item.wrapped()
-        else:
-            return item
-
-    def __iter__(self):
-        items = super(MODMCompatibilityQuerySet, self).__iter__()
-        for item in items:
-            if hasattr(item, 'wrapped'):
-                yield item.wrapped()
-            else:
-                yield item
-
     def eager(self, *fields):
         qs = self._clone()
         field_set = set(fields)
@@ -107,6 +92,10 @@ class BaseModel(models.Model):
 
     class Meta:
         abstract = True
+
+    def to_storage(self):
+        local_django_fields = set([x.name for x in self._meta.concrete_fields])
+        return {name: self.serializable_value(name) for name in local_django_fields}
 
     @classmethod
     def get_fk_field_names(cls):
@@ -201,6 +190,13 @@ class BaseModel(models.Model):
     def reload(self):
         return self.refresh_from_db()
 
+    def refresh_from_db(self):
+        super(BaseModel, self).refresh_from_db()
+        # Django's refresh_from_db does not uncache GFKs
+        for field in self._meta.virtual_fields:
+            if hasattr(field, 'cache_attr') and field.cache_attr in self.__dict__:
+                del self.__dict__[field.cache_attr]
+
     def _natural_key(self):
         return self.pk
 
@@ -257,10 +253,6 @@ class Guid(BaseModel):
             return cls.objects.get(_id=data)
         except cls.DoesNotExist:
             return None
-
-    def reload(self):
-        del self._referent_cache
-        return super(Guid, self).reload()
 
     @classmethod
     def migrate_from_modm(cls, modm_obj, object_id=None, content_type=None):
