@@ -10,7 +10,7 @@
         <div class="col-xs-9 col-sm-8">
 
     % if node['fork_count']:
-        ${render_nodes.render_nodes(nodes=node['forks'], sortable=True, user=user, pluralized_node_type='forks', show_path=False, include_js=True)}
+        ${render_nodes.render_nodes(nodes=node['forks'], sortable=False, user=user, pluralized_node_type='forks', show_path=False, include_js=True)}
     % else:
             <p class="m-md">This project has no forks. A fork is a copy of a project that you can change without
             affecting the original project.</p>
