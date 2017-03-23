@@ -23,7 +23,7 @@ def reset_root(*args):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0039_merge'),
+        ('osf', '0001_initial'),
     ]
 
     operations = [
