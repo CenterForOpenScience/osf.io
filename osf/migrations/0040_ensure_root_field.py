@@ -17,7 +17,7 @@ def ensure_root(*args):
         node.save()
 
 def reset_root(*args):
-    AbstractNode.objects.all().invalidated_update(root=None)
+    AbstractNode.objects.all().update(root=None)
 
 
 class Migration(migrations.Migration):

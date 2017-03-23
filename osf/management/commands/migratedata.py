@@ -640,7 +640,7 @@ def save_bare_system_tags(page_size=10000):
     Tag.objects.bulk_create(system_tags)
 
     logger.info('MODM System Tags: {}'.format(total))
-    logger.info('django system tags: {}'.format(Tag.objects.filter(system=True).count()))
+    logger.info('django system tags: {}'.format(Tag.all_tags.filter(system=True).count()))
     logger.info('Done with {} in {} seconds...'.format(
         sys._getframe().f_code.co_name,
         (timezone.now() - start).total_seconds()))

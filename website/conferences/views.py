@@ -4,7 +4,6 @@ import httplib
 import logging
 
 from django.db import transaction
-from django.utils import timezone
 from modularodm import Q
 from modularodm.exceptions import ModularOdmException
 
@@ -84,8 +83,9 @@ def add_poster_by_email(conference, message):
             user.save()  # need to save in order to access m2m fields (e.g. tags)
             users_created.append(user)
             user.add_system_tag('osf4m')
-            user.date_last_login = timezone.now()
+            user.update_date_last_login()
             user.save()
+
             # must save the user first before accessing user._id
             set_password_url = web_url_for(
                 'reset_password_get',

@@ -54,6 +54,7 @@ from osf_tests.factories import (
     NodeRelationFactory,
     InstitutionFactory,
     SessionFactory,
+    TagFactory,
 )
 from .factories import get_default_metaschema
 from addons.wiki.tests.factories import NodeWikiFactory
@@ -685,9 +686,9 @@ class TestTagging:
         node.add_system_tag('FoO')
         node.save()
 
-        tag = Tag.objects.get(name='FoO')
-        assert node.tags.count() == 1
-        assert tag in node.tags.all()
+        tag = Tag.all_tags.get(name='FoO', system=True)
+        assert node.all_tags.count() == 1
+        assert tag in node.all_tags.all()
 
         assert tag.system is True
 
@@ -695,12 +696,44 @@ class TestTagging:
         new_log_count = node.logs.count()
         assert original_log_count == new_log_count
 
+    def test_add_system_tag_instance(self, node):
+        tag = TagFactory(system=True)
+        node.add_system_tag(tag)
+
+        assert tag in node.all_tags.all()
+
+    def test_add_system_tag_non_system_instance(self, node):
+        tag = TagFactory(system=False)
+        with pytest.raises(ValueError):
+            node.add_system_tag(tag)
+
+        assert tag not in node.all_tags.all()
+
     def test_system_tags_property(self, node, auth):
+        other_node = ProjectFactory()
+        other_node.add_system_tag('bAr')
+
         node.add_system_tag('FoO')
         node.add_tag('bAr', auth=auth)
 
         assert 'FoO' in node.system_tags
         assert 'bAr' not in node.system_tags
+
+    def test_system_tags_property_on_registration(self):
+        project = ProjectFactory()
+        project.add_system_tag('from-project')
+        registration = RegistrationFactory(project=project)
+
+        registration.add_system_tag('registration-only')
+
+        # Registration gets project's system tags
+        assert 'from-project' in registration.system_tags
+        assert 'registration-only' not in project.system_tags
+        assert 'registration-only' in registration.system_tags
+
+    def test_tags_does_not_return_system_tags(self, node):
+        node.add_system_tag('systag')
+        assert 'systag' not in node.tags.values_list('name', flat=True)
 
 class TestSearch:
 

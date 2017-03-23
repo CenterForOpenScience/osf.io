@@ -788,10 +788,10 @@ def make_url_map(app):
 
     process_rules(app, [
 
-        Rule('/profile/', 'get', profile_views.profile_view, json_renderer),
+        Rule('/profile/', 'get', profile_views.profile_view_json, json_renderer),
         Rule('/profile/', 'put', profile_views.update_user, json_renderer),
         Rule('/resend/', 'put', profile_views.resend_confirmation, json_renderer),
-        Rule('/profile/<uid>/', 'get', profile_views.profile_view_id, json_renderer),
+        Rule('/profile/<uid>/', 'get', profile_views.profile_view_id_json, json_renderer),
 
         # Used by profile.html
         Rule('/profile/<uid>/edit/', 'post', profile_views.edit_profile, json_renderer),
