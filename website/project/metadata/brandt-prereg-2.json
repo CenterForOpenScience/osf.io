@@ -1,5 +1,6 @@
 {
     "name": "Replication Recipe (Brandt et al., 2013): Pre-Registration",
+    "category": "registration",
     "version": 2,
     "description": "This registration form is intended for use when conducting a replication. You will be asked a series of questions about the study you intend to replicate. This registration form is not a valid submission for the Pre-registration Prize.",
     "pages": [{

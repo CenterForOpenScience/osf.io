@@ -1,5 +1,6 @@
 {
     "name": "Prereg Challenge",
+    "category": "registration",
     "version": 2,
     "flags": {
         "payment_sent": false,

@@ -1,5 +1,6 @@
 {
     "name": "Election Research Preacceptance Competition",
+    "category": "registration",
     "version": 2,
     "flags": {
         "payment_sent": false,
