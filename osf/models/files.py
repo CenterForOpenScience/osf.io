@@ -103,9 +103,6 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
             ('node', 'type', 'provider', '_path'),
             ('node', 'type', 'provider'),
         )
-        unique_together = (
-            ('node', 'name', 'parent', 'type', '_path'),
-        )
 
     @property
     def history(self):
