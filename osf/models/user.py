@@ -129,6 +129,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         'schools',
         'social',
     }
+    TRACK_FIELDS.add('password')
 
     # TODO: Add SEARCH_UPDATE_NODE_FIELDS, for fields that should trigger a
     #   search update for all nodes to which the user is a contributor.
