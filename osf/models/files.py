@@ -22,6 +22,10 @@ from website.files import utils
 from website.files.exceptions import VersionNotFoundError
 from website.util import api_v2_url, waterbutler_api_url_for
 
+# TODO DELETE ME POST MIGRATION
+from modularodm import Q as MQ
+# /TODO DELETE ME POST MIGRATION
+
 __all__ = (
     'File',
     'Folder',
@@ -482,7 +486,6 @@ class UnableToRestore(Exception):
 
 
 class File(models.Model):
-
     class Meta:
         abstract = True
 
@@ -600,12 +603,20 @@ class TrashedFileNode(BaseFileNode):
 
 
 class TrashedFile(TrashedFileNode):
+    # TODO DELETE ME POST MIGRATION
+    modm_model_path = 'website.files.models.base.TrashedFileNode'
+    modm_query = MQ('is_file', 'eq', True)
+    # /TODO DELETE ME POST MIGRATION
     @property
     def kind(self):
         return 'file'
 
 
 class TrashedFolder(TrashedFileNode):
+    # TODO DELETE ME POST MIGRATION
+    modm_model_path = 'website.files.models.base.TrashedFileNode'
+    modm_query = MQ('is_file', 'eq', False)
+    # /TODO DELETE ME POST MIGRATION
     @property
     def kind(self):
         return 'folder'
