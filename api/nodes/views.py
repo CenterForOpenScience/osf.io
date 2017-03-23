@@ -86,7 +86,7 @@ from osf.models import AbstractNode
 from osf.models import (Node, PrivateLink, NodeLog, Institution, Comment, DraftRegistration, PreprintService, FileNode)
 from osf.models import OSFUser as User
 from osf.models import NodeRelation, AlternativeCitation, Guid
-from osf.models import StoredFileNode
+from osf.models import BaseFileNode
 from osf.models.files import File, Folder
 from addons.wiki.models import NodeWikiPage
 from website.exceptions import NodeStateError
@@ -1910,7 +1910,7 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
         if field_name == 'path':
             operation['source_field_name'] = '_path'
         # NOTE: This is potentially fragile, if we ever add filtering on provider
-        # we're going to have to get a bit tricky. get_default_queryset should ramain filtering on StoredFileNode, for now
+        # we're going to have to get a bit tricky. get_default_queryset should ramain filtering on BaseFileNode, for now
         if field_name == 'kind':
             if operation['value'].lower() == 'folder':
                 kind = Folder
@@ -1927,11 +1927,16 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
             ]
 
     def get_default_queryset(self):
-        # Don't bother going to waterbutler for osfstorage
         files_list = self.fetch_from_waterbutler()
 
         if isinstance(files_list, list):
-            return StoredFileNode.objects.filter(id__in=[self.get_file_item(file).id for file in files_list])
+            provider = self.kwargs[self.provider_lookup_url_kwarg]
+            # Resolve to a provider-specific subclass, so that
+            # trashed file nodes are filtered out automatically
+            ConcreteFileNode = BaseFileNode.resolve_class(provider, FileNode.ANY)
+            return ConcreteFileNode.objects.filter(
+                id__in=[self.get_file_item(file).id for file in files_list],
+            )
 
         if isinstance(files_list, list) or not isinstance(files_list, Folder):
             # We should not have gotten a file here

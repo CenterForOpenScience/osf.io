@@ -45,6 +45,16 @@ class BaseFileNodeManager(Manager):
             return qs.filter(provider=self.model._provider)
         return qs
 
+class ActiveFileNodeManager(Manager):
+    """Manager that filters out TrashedFileNodes.
+    Note: We do not use this as the default manager for BaseFileNode because
+    that would prevent TrashedFileNodes from accessing their `parent` field if
+    the parent was not a TrashedFileNode.
+    """
+
+    def get_queryset(self):
+        qs = super(ActiveFileNodeManager, self).get_queryset()
+        return qs.exclude(type__in=TrashedFileNode._typedmodels_subtypes)
 
 class UnableToResolveFileClass(Exception):
     pass
@@ -55,11 +65,14 @@ class DeprecatedException(Exception):
 
 
 class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, ObjectIDMixin, BaseModel):
-    """
-        The storage backend for FileNode objects.
-        This class should generally not be used or created manually as FileNode
-        contains all the helpers required.
-        A FileNode wraps a StoredFileNode to provider usable abstraction layer
+    """Base class for all provider-specific file models and the trashed file model.
+    This class should generally not be used or created manually. Use the provider-specific
+    subclasses instead.
+
+    WARNING: Be careful when using ``.filter``, ``.exclude``, etc. on this model.
+    The default queryset for will NOT filter out TrashedFileNodes by default.
+    Also, calling ``.load`` may return a `TrashedFileNode`.
+    Use the ``BaseFileNode.active`` manager when you want to filter out TrashedFileNodes.
     """
     # TODO DELETE ME POST MIGRATION
     modm_model_path = 'website.files.models.base.StoredFileNode'
@@ -96,6 +109,7 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
     deleted_by = models.ForeignKey('osf.OSFUser', related_name='files_deleted_by', null=True, blank=True)
 
     objects = BaseFileNodeManager()
+    active = ActiveFileNodeManager()
     _base_manager = BaseFileNodeManager()
 
     @property
@@ -396,6 +410,7 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
         logger.warn('Wrapped is deprecated.')
         return self
 
+    # TODO: Remove unused parent param
     def delete(self, user=None, parent=None, save=True, deleted_on=None):
         """
         Recast a Folder to TrashedFolder, set fields related to deleting,

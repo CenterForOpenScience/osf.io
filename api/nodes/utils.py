@@ -12,6 +12,7 @@ from api.base.exceptions import ServiceUnavailableError
 from api.base.utils import get_object_or_error
 
 def get_file_object(node, path, provider, request):
+    # Don't bother going to waterbutler for osfstorage
     if provider == 'osfstorage':
         # Kinda like /me for a user
         # The one odd case where path is not really path

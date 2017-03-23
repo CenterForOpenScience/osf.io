@@ -60,7 +60,7 @@ def add_to_white_list(gtg):
 
 
 def get_usage(node):
-    vids = [each for each in StoredFileNode.objects.filter(provider='osfstorage', node=node).values_list('versions', flat=True) if each]
+    vids = [each for each in StoredFileNode.active.filter(provider='osfstorage', node=node).values_list('versions', flat=True) if each]
 
     t_vids = [each for eac in TrashedFile.objects.filter(provider='osfstorage', node=node).values_list('versions', flat=True) if each]
 

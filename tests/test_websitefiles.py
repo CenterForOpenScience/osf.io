@@ -152,14 +152,19 @@ class TestFileNodeObj(FilesTestCase):
         import logging
         logger = logging.getLogger(__name__)
 
+        # Temporary debugging on Travis
+        logger.info('TESTFILES!!!')
+        logger.info([repr(x) for x in TestFile.objects.all()])
+        logger.info('OSFSTORAGEFILES!!!')
+        logger.info([repr(x) for x in OsfStorageFileNode.objects.all()])
+        logger.info('BASEFILES!!!')
+        logger.info([repr(x) for x in BaseFileNode.objects.all()])
         assert_equal(TestFile.objects.count(), 1)
         assert_equal(TestFolder.objects.count(), 1)
         assert_equal(TestFileNode.objects.count(), 2)
         assert_equal(OsfStorageFileNode.objects.count(), 2)
         assert_equal(OsfStorageFile.objects.count(), 0)
         assert_equal(OsfStorageFolder.objects.count(), 2)
-        logger.info('BASEFILES!!!')
-        logger.info([repr(x) for x in BaseFileNode.objects.all()])
         assert_equal(BaseFileNode.objects.count(), 4)  # roots of things
 
     def test_find_one(self):
