@@ -739,7 +739,6 @@ class NodeContributorsSerializer(JSONAPISerializer):
     ])
 
     id = IDField(source='_id', read_only=True)
-    # id = ContributorIDField(read_only=True, source='_id')
     type = TypeField()
     index = ser.IntegerField(required=False, read_only=True, source='_order')
 
@@ -779,7 +778,7 @@ class NodeContributorsSerializer(JSONAPISerializer):
         )
 
     def get_unregistered_contributor(self, obj):
-        unclaimed_records = obj.user.unclaimed_records.get(obj.node_id, None)
+        unclaimed_records = obj.user.unclaimed_records.get(obj.node._id, None)
         if unclaimed_records:
             return unclaimed_records.get('name', None)
 

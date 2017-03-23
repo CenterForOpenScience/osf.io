@@ -83,13 +83,7 @@ class JSONAPIBaseView(generics.GenericAPIView):
             _cache_key = (v.cls, field_name, view.get_serializer_class(), (type(item), item.id))
             if _cache_key in CACHE.setdefault(self.request._request, {}):
                 # We already have the result for this embed, return it
-                # print('==================== HIT ==================')
-                # print(_cache_key)
-                # print('==================== /HIT ==================')
                 return CACHE[self.request._request][_cache_key]
-            # print('==================== MISS ==================')
-            # print(_cache_key)
-            # print('==================== /MISS ==================')
 
             # Cache serializers. to_representation of a serializer should NOT augment it's fields so resetting the context
             # should be sufficient for reuse
