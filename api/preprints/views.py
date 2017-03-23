@@ -143,7 +143,7 @@ class PreprintList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMixin):
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
         ContributorOrPublic,
-        PreprintPublishedOrAdmin,
+        PreprintPublishedOrAdmin,  # TODO: tests fail because this isn't applied. Use ListFilterMixin
     )
 
     parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON,)
