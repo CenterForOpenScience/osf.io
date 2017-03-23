@@ -118,7 +118,7 @@ class PostcommitTaskMiddleware(object):
     def process_response(self, request, response):
         postcommit_after_request(response=response, base_status_error_code=400)
         return response
-
+# import vmprof
 # Adapted from http://www.djangosnippets.org/snippets/186/
 # Original author: udfalkso
 # Modified by: Shwagroo Team and Gun.io
@@ -134,14 +134,19 @@ class ProfileMiddleware(object):
     """
     def process_request(self, request):
         if (settings.DEBUG or request.user.is_superuser) and 'prof' in request.GET:
+            # import ipdb; ipdb.set_trace()
+            # self.file = open('request.profile', 'w+b')
             self.prof = cProfile.Profile()
 
     def process_view(self, request, callback, callback_args, callback_kwargs):
         if (settings.DEBUG or request.user.is_superuser) and 'prof' in request.GET:
             self.prof.enable()
+            # vmprof.enable(self.file.fileno())
 
     def process_response(self, request, response):
         if (settings.DEBUG or request.user.is_superuser) and 'prof' in request.GET:
+            # vmprof.disable()
+            # self.file.close()
             self.prof.disable()
 
             s = StringIO.StringIO()

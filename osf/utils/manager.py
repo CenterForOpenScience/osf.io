@@ -106,7 +106,6 @@ class IncludeQuerySet(models.QuerySet):
         clone._include_limit = kwargs.pop('limit_includes', None)
         assert not kwargs, '"limit_includes" is the only accepted kwargs. Eat your heart out 2.7'
 
-        clone.query.get_initial_alias()
         for name in related_names:
             ctx, model = self._includes, self.model
             for spl in name.split('__'):
@@ -125,12 +124,13 @@ class IncludeQuerySet(models.QuerySet):
         return clone
 
     def _include(self, field):
-        sql, params = self._build_include_sql(field, self._includes[field])
+        self.query.get_initial_alias()
+        sql, params = self._build_include_sql(field, self._includes[field], self.query)
         # Use add_extra to avoid a pointless call to _clone
         # For some reason it doesn't take keywords...
         self.query.add_extra({'__' + field.name: sql}, params, None, None, None, None)
 
-    def _build_include_sql(self, field, children):
+    def _build_include_sql(self, field, children, host_query):
         host_model = field.model
         model = field.related_model
 
@@ -143,22 +143,19 @@ class IncludeQuerySet(models.QuerySet):
 
         qs = model.objects.all()
 
-        qs.query.table_map = self.query.table_map
-        qs.query.alias_map = self.query.alias_map
-        qs.query.alias_refcount = self.query.alias_refcount
-
         # TODO be able to set limits per thing included
         if self._include_limit:
             qs.query.set_limits(0, self._include_limit)
 
+        qs.query.get_initial_alias()
+        qs.query.bump_prefix(host_query)
+
+        table = qs.query.get_compiler(using=self.db).quote_name_unless_alias(qs.query.get_initial_alias())
+        host_table = host_query.get_compiler(using=self.db).quote_name_unless_alias(host_query.get_initial_alias())
+
         kwargs = {}
         if qs.ordered:
             kwargs['order_by'] = zip(*qs.query.get_compiler(using=self.db).get_order_by())[0]
-
-        compiler = qs.query.get_compiler(using=self.db)
-
-        table = compiler.quote_name_unless_alias(qs.query.get_initial_alias())
-        host_table = compiler.quote_name_unless_alias(qs.query.table_alias(host_model._meta.db_table)[0])
 
         where = ['{table}."{column}" = {host_table}."{host_column}"'.format(
             table=table,
@@ -179,6 +176,7 @@ class IncludeQuerySet(models.QuerySet):
         expressions = [f.column for f in model._meta.concrete_fields]
 
         for item in children.items():
+            item = item + (qs.query, )
             expressions.append(RawSQL(*self._build_include_sql(*item)))
 
         agg = JSONBuildArray(*expressions)
