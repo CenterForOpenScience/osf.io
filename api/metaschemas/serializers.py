@@ -4,10 +4,15 @@ from api.base.serializers import (JSONAPISerializer, IDField, TypeField, LinksFi
 
 class MetaSchemaSerializer(JSONAPISerializer):
 
+    filterable_fields = frozenset([
+        'category'
+    ])
+
     id = IDField(source='_id', read_only=True)
     type = TypeField()
 
     name = ser.CharField(read_only=True)
+    category = ser.CharField(read_only=True)
     schema_version = ser.IntegerField(read_only=True)
     schema = ser.DictField(read_only=True)
 
