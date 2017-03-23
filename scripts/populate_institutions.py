@@ -100,7 +100,7 @@ def main(env):
             {
                 '_id': 'duke',
                 'name': 'Duke University',
-                'description': 'A research data service provided by <a href="https://library.duke.edu/research/">Duke Libraries</a>.',
+                'description': 'A research data service provided by <a href="https://library.duke.edu/data/data-management">Duke Libraries</a>.',
                 'banner_name': 'duke-banner.png',
                 'logo_name': 'duke-shield.png',
                 'auth_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('urn:mace:incommon:duke.edu')),
@@ -417,7 +417,7 @@ def main(env):
             {
                 '_id': 'duke',
                 'name': 'Duke University [Test]',
-                'description': 'A research data service provided by <a href="https://library.duke.edu/research/">Duke Libraries</a>.',
+                'description': 'A research data service provided by <a href="https://library.duke.edu/data/data-management">Duke Libraries</a>.',
                 'banner_name': 'duke-banner.png',
                 'logo_name': 'duke-shield.png',
                 'auth_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('urn:mace:incommon:duke.edu')),
