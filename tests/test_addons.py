@@ -844,7 +844,7 @@ class TestAddonFileViews(OsfTestCase):
             }
         }
         views.addon_delete_file_node(self=None, node=self.project, user=self.user, event_type='file_removed', payload=payload)
-        assert_false(StoredFileNode.load(file_node._id))
+        assert_false(GithubFileNode.load(file_node._id))
         assert_true(TrashedFileNode.load(file_node._id))
 
     def test_delete_action_for_folder_deletes_subfolders_and_creates_trashed_file_nodes(self):
@@ -864,7 +864,7 @@ class TestAddonFileViews(OsfTestCase):
             }
         }
         views.addon_delete_file_node(self=None, node=self.project, user=self.user, event_type='file_removed', payload=payload)
-        assert_false(GithubFileNode.load(file_node._id))
+        assert_false(StoredFileNode.load(file_node._id))
         assert_true(TrashedFileNode.load(file_node._id))
         assert_false(GithubFileNode.load(subfolder._id))
 
