@@ -11,7 +11,6 @@ import osf.models.admin_log_entry
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('admin', '0002_logentry_remove_auto_add'),
         ('osf', '0034_merge'),
     ]
 
