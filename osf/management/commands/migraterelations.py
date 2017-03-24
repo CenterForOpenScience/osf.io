@@ -414,7 +414,8 @@ def save_page_of_fk_relationships(self, django_model, fk_relations, offset, limi
                         for obj in django_objects_to_update:
                             try:
                                 if isinstance(obj, TypedModel):
-                                    obj.recast().save()
+                                    obj.recast()
+                                    obj.save()
                                 else:
                                     obj.save()
                             except IntegrityError as ex:
