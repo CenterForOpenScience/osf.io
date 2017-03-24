@@ -405,7 +405,15 @@ def save_page_of_fk_relationships(self, django_model, fk_relations, offset, limi
                         batch_size = n_objects_to_update // 5
                     else:
                         batch_size = None
-                    bulk_update(django_objects_to_update, batch_size=batch_size)
+                    try:
+                        bulk_update(django_objects_to_update, batch_size=batch_size)
+                    except IntegrityError as ex:
+                        logger.error('FALLBACK TO SLOW SAVE: Integrity error saving page {}:{} of {} with exception {}'.format(offset,limit+offset, django_model, ex))
+                        for obj in django_objects_to_update:
+                            try:
+                                obj.save()
+                            except IntegrityError as ex:
+                                logger.error('Integrity error saving {} with id of {} with exception {}'.format(django_model, obj.id, ex))
 
             modm_obj._cache.clear()
             modm_obj._object_cache.clear()
