@@ -4,10 +4,10 @@ import json
 
 from django.core import serializers
 from django.forms.models import model_to_dict
-from django.core.urlresolvers import reverse, reverse_lazy
-from django.http import HttpResponseForbidden, HttpResponse, JsonResponse
-from django.views.generic import ListView, FormView, DetailView, View, CreateView
-from django.views.generic.detail import SingleObjectMixin
+from django.core.urlresolvers import reverse_lazy
+from django.core.exceptions import PermissionDenied
+from django.http import HttpResponse, JsonResponse
+from django.views.generic import ListView, DetailView, View, CreateView, UpdateView
 from django.contrib.auth.mixins import PermissionRequiredMixin
 
 from admin.base import settings
@@ -25,17 +25,18 @@ class InstitutionList(PermissionRequiredMixin, ListView):
     model = Institution
 
     def get_queryset(self):
+        if not self.has_permission():
+            raise PermissionDenied()
         return Institution.objects.all().sort(self.ordering)
 
     def get_context_data(self, **kwargs):
         query_set = kwargs.pop('object_list', self.object_list)
         page_size = self.get_paginate_by(query_set)
         paginator, page, query_set, is_paginated = self.paginate_queryset(query_set, page_size)
-        return {
-            'institutions': query_set,
-            'page': page,
-            'logohost': settings.OSF_URL
-        }
+        kwargs.setdefault('institutions', query_set)
+        kwargs.setdefault('page', page)
+        kwargs.setdefault('logohost', settings.OSF_URL)
+        return super(InstitutionList, self).get_context_data(**kwargs)
 
 
 class InstitutionDisplay(PermissionRequiredMixin, DetailView):
@@ -45,6 +46,8 @@ class InstitutionDisplay(PermissionRequiredMixin, DetailView):
     raise_exception = True
 
     def get_object(self, queryset=None):
+        if not self.has_permission():
+            raise PermissionDenied()
         return Institution.objects.get(id=self.kwargs.get('institution_id'))
 
     def get_context_data(self, *args, **kwargs):
@@ -91,39 +94,33 @@ class ImportInstitution(PermissionRequiredMixin, View):
         return parsed_file
 
 
-class InstitutionChangeForm(PermissionRequiredMixin, SingleObjectMixin, FormView):
-    template_name = 'institutions/detail.html'
-    form_class = InstitutionForm
-    model = Institution
+class InstitutionChangeForm(PermissionRequiredMixin, UpdateView):
     permission_required = 'osf.change_institution'
     raise_exception = True
+    model = Institution
+    form_class = InstitutionForm
 
     def get_object(self, queryset=None):
-        return Institution.objects.get(id=self.kwargs.get('institution_id'))
+        if not self.has_permission():
+            raise PermissionDenied()
+        provider_id = self.kwargs.get('institution_id')
+        return Institution.objects.get(id=provider_id)
 
-    def update_institution_attributes(self, institution):
-        form = InstitutionForm(self.request.POST or None, instance=institution)
-        if form.is_valid():
-            form.save()
-        return reverse('institutions:detail', kwargs={'institution_id': self.object.pk})
+    def get_context_data(self, *args, **kwargs):
+        kwargs['import_form'] = ImportFileForm()
+        return super(InstitutionChangeForm, self).get_context_data(*args, **kwargs)
 
-    def post(self, request, *args, **kwargs):
-        if not request.user.is_authenticated:
-            return HttpResponseForbidden()
-        self.object = self.get_object()
-        self.update_institution_attributes(self.object)
-        return super(InstitutionChangeForm, self).post(request, *args, **kwargs)
-
-    def get_success_url(self):
-        return reverse('institutions:detail', kwargs={'institution_id': self.object.pk})
+    def get_success_url(self, *args, **kwargs):
+        return reverse_lazy('institutions:detail', kwargs={'institution_id': self.kwargs.get('institution_id')})
 
 
 class InstitutionExport(PermissionRequiredMixin, View):
-
     permission_required = 'osf.change_institution'
     raise_exception = True
 
     def post(self, request, *args, **kwargs):
+        if not self.has_permission():
+            raise PermissionDenied()
         institution = Institution.objects.get(id=self.kwargs['institution_id'])
         data = serializers.serialize('json', [institution])
 
@@ -139,13 +136,11 @@ class CreateInstitution(PermissionRequiredMixin, CreateView):
     raise_exception = True
     template_name = 'institutions/create.html'
     success_url = reverse_lazy('institutions:list')
+    model = Institution
+    form_class = InstitutionForm
 
     def get_context_data(self, *args, **kwargs):
+        if not self.has_permission():
+            raise PermissionDenied()
         kwargs['import_form'] = ImportFileForm()
         return super(CreateInstitution, self).get_context_data(*args, **kwargs)
-
-    model = Institution
-    fields = [
-        'banner_name', 'login_url', 'domains', 'email_domains',
-        'logo_name', 'logout_url', 'name', 'description'
-    ]
