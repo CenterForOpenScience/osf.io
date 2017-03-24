@@ -27,7 +27,7 @@ from framework.transactions.context import transaction as modm_transaction
 from osf.models import Comment
 from osf.models import Institution
 from osf.models import (NodeLog, OSFUser,
-                        PageCounter, StoredFileNode, Tag, UserActivityCounter)
+                        PageCounter, StoredFileNode, BaseFileNode, Tag, UserActivityCounter)
 from osf.models.base import Guid, GuidMixin, OptionalGuidMixin
 from osf.models.node import AbstractNode
 from osf.utils.order_apps import get_ordered_models
