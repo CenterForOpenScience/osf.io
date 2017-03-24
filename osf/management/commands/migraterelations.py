@@ -13,7 +13,6 @@ from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.core.management import BaseCommand
 from django.db import transaction
-from typedmodels.models import TypedModel
 
 from addons.osfstorage.models import NodeSettings as OSFStorageNodeSettings
 from addons.wiki.models import NodeSettings as WikiNodeSettings
@@ -36,7 +35,6 @@ from website.models import \
 from website.models import Pointer as MODMPointer
 from website.models import User as MODMUser
 from .migratedata import set_backend, get_modm_model, register_nonexistent_models_with_modm
-from django.db import IntegrityError
 
 logger = logging.getLogger('migrations')
 
@@ -407,19 +405,7 @@ def save_page_of_fk_relationships(self, django_model, fk_relations, offset, limi
                         batch_size = n_objects_to_update // 5
                     else:
                         batch_size = None
-                    try:
-                        bulk_update(django_objects_to_update, batch_size=batch_size)
-                    except IntegrityError as ex:
-                        logger.error('FALLBACK TO SLOW SAVE: Integrity error saving page {}:{} of {} with exception {}'.format(offset,limit+offset, django_model, ex))
-                        for obj in django_objects_to_update:
-                            try:
-                                if isinstance(obj, TypedModel):
-                                    obj.recast()
-                                    obj.save()
-                                else:
-                                    obj.save()
-                            except IntegrityError as ex:
-                                logger.error('Integrity error saving {} with id of {} with exception {}'.format(django_model, obj.id, ex))
+                    bulk_update(django_objects_to_update, batch_size=batch_size)
 
             modm_obj._cache.clear()
             modm_obj._object_cache.clear()
