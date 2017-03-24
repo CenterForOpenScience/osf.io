@@ -2,8 +2,6 @@
 
 var $osf = require('js/osfHelpers');
 var $ = require('jquery');
-var m = require('mithril');
-var LogFeed = require('js/components/logFeed.js');
 
 // model for components, due to simplicity did not create a new file
 var ComponentControl = {};
