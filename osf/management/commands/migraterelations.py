@@ -448,6 +448,8 @@ def save_fk_relationships(django_model, page_size):
 
 @app.task(bind=True)
 def save_page_of_m2m_relationships(self, django_model, m2m_relations, offset, limit):
+    init_app(routes=False, attach_request_handlers=False, fixtures=False)
+
     try:
         with transaction.atomic():  # one transaction per page
             modm_model = get_modm_model(django_model)
