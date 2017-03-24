@@ -15,7 +15,7 @@ from modularodm import Q
 from framework.exceptions import HTTPError
 
 from website.models import Node, MetaSchema, DraftRegistration
-from website.project.metadata.schemas import ACTIVE_META_SCHEMAS, _name_to_id
+from website.project.metadata.schemas import ACTIVE_META_SCHEMAS, _name_to_id, LATEST_SCHEMA_VERSION
 from website.util import permissions, api_url_for
 from website.project.views import drafts as draft_views
 
@@ -453,7 +453,12 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
     def test_get_metaschemas(self):
         url = api_url_for('get_metaschemas')
         res = self.app.get(url).json
-        assert_equal(len(res['meta_schemas']), len(ACTIVE_META_SCHEMAS))
+        active_metaschemas = MetaSchema.objects.filter(
+            category='registration',
+            schema_version=LATEST_SCHEMA_VERSION,
+            name__in=ACTIVE_META_SCHEMAS
+        )
+        assert_equal(len(res['meta_schemas']), active_metaschemas.count())
 
     def test_get_metaschemas_all(self):
         url = api_url_for('get_metaschemas', include='all')

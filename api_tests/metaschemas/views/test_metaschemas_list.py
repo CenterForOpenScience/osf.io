@@ -37,7 +37,8 @@ class TestMetaSchemaList(ApiTestCase):
         assert_equal(res.status_code, 200)
         for schema in res.json['data']:
             assert_in(schema['attributes']['name'], ACTIVE_META_SCHEMAS)
-            assert_equal(schema['attributes']['schema_version'], 2)
+            if schema['attributes']['category'] == 'registration':
+                assert_equal(schema['attributes']['schema_version'], 2)
 
     def test_pass_unauthenticated_user_can_view_schemas(self):
         res = self.app.get(self.url)
