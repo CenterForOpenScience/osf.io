@@ -61,17 +61,16 @@ def get_subject_rules(subjects_selected):
     subjects_done = []
     while len(subjects_done) < len(subjects_selected):
         parents_left = [sub for sub in subjects_selected if sub.parents.count() == 0 and sub not in subjects_done]
-        subjects_left = [sub for sub in subjects_selected if sub not in subjects_done]
+        subjects_left = [sub for sub in subjects_selected if sub not in subjects_done and sub.parents.exists()]
         for parent in parents_left:
             parent_has_no_descendants_in_rules = True
-            grandchildren_used = 0
-            children_used = 0
+            used_children = []
             all_grandchildren = False
             potential_children_rules = []
             for child in parent.children.all():
                 child_has_no_descendants_in_rules = True
                 if child in subjects_selected:
-                    children_used += 1
+                    used_children.append(child)
                     used_grandchildren = []
                     potential_grandchildren_rules = []
                     parent_has_no_descendants_in_rules = False
@@ -79,30 +78,27 @@ def get_subject_rules(subjects_selected):
                     if child in subjects_left:
                         for grandchild in child.children.all():
                             if grandchild in subjects_selected:
-                                grandchildren_used += 1
                                 child_has_no_descendants_in_rules = False
 
                                 if grandchild in subjects_left:
                                     potential_grandchildren_rules.append([[parent._id, child._id, grandchild._id], False])
-                                subjects_done.append(grandchild)
                                 used_grandchildren.append(grandchild)
 
                         if len(used_grandchildren) == child.children.count():
                             all_grandchildren = True
                             subjects_done += used_grandchildren
-                            subjects_done.append(child)
                             potential_children_rules.append([[parent._id, child._id], True])
                         else:
                             new_rules += potential_grandchildren_rules
 
                         if child_has_no_descendants_in_rules:
                             potential_children_rules.append([[parent._id, child._id], False])
-                        subjects_done.append(child)
+                subjects_done += used_children
 
             if parent_has_no_descendants_in_rules:
                 new_rules.append([[parent._id], False])
 
-            if parent.children.count() == children_used and all_grandchildren:
+            elif parent.children.count() == len(used_children) and all_grandchildren:
                 new_rules.append([[parent._id], True])
             else:
                 new_rules += potential_children_rules
