@@ -103,8 +103,12 @@ def build_toku_django_lookup_table_cache():
 
 
 def do_model_lookup(model):
-    if (issubclass(model, AbstractNode) and model is not AbstractNode) or (issubclass(model, BaseFileNode) and model is not BaseFileNode):
+    if (issubclass(model, AbstractNode) and model is not AbstractNode):
         return
+
+    if (issubclass(model, BaseFileNode) and model is not BaseFileNode):
+        return
+
     lookup_string = model.primary_identifier_name
     lookup_dict = {}
 
