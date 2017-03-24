@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 def get_targets():
     logger.info('Acquiring targets...')
-    targets = [u for u in User.find() if Node.find(Q('is_bookmark_collection', 'eq', True) & Q('is_deleted', 'eq', False) & Q('contributors', 'eq', u._id)).count() > 1]
+    targets = [u for u in User.find() if Node.find(Q('is_bookmark_collection', 'eq', True) & Q('is_deleted', 'eq', False) & Q('creator', 'eq', u._id)).count() > 1]
     logger.info('Found {} target users.'.format(len(targets)))
     return targets
 
