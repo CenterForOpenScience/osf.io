@@ -32,12 +32,3 @@ class PreprintProviderForm(ModelForm):
         subjects_selected = [Subject.objects.get(id=ident) for ident in subject_ids]
         rules = get_subject_rules(subjects_selected)
         return rules
-
-class PreprintProviderSubjectForm(Form):
-
-    def get_toplevel_subjects():
-        subjects = Subject.objects.filter(parents__isnull=True)
-        return [(sub.id, sub.text) for sub in subjects]
-
-    toplevel_subjects = MultipleChoiceField(choices=get_toplevel_subjects(), widget=CheckboxSelectMultiple())
-    subjects_chosen = CharField(widget=HiddenInput())

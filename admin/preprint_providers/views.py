@@ -3,18 +3,17 @@ from __future__ import unicode_literals
 import json
 
 from django.core import serializers
-from django.core.urlresolvers import reverse, reverse_lazy
-from django.http import HttpResponseForbidden, HttpResponse, JsonResponse
-from django.views.generic import ListView, FormView, DetailView, View, CreateView, DeleteView, TemplateView
-from django.views.generic.detail import SingleObjectMixin
+from django.core.urlresolvers import reverse_lazy
+from django.http import HttpResponse, JsonResponse
+from django.views.generic import ListView, DetailView, View, CreateView, DeleteView, TemplateView, UpdateView
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.forms.models import model_to_dict
 from django.shortcuts import redirect
 
 from admin.base import settings
-from admin.base.utils import get_subject_rules, rules_to_subjects
+from admin.base.utils import rules_to_subjects
 from admin.base.forms import ImportFileForm
-from admin.preprint_providers.forms import PreprintProviderForm, PreprintProviderSubjectForm
+from admin.preprint_providers.forms import PreprintProviderForm
 from osf.models import PreprintProvider, NodeLicense, Subject
 
 
@@ -114,11 +113,10 @@ class PreprintProviderDisplay(PermissionRequiredMixin, DetailView):
         kwargs['subject_ids'] = subject_ids
         kwargs['logohost'] = settings.OSF_URL
         fields = model_to_dict(preprint_provider)
-        kwargs['change_form'] = PreprintProviderForm(initial=fields)
-        initial_subjects = {'toplevel_subjects': subject_ids, 'subjects_chosen': ', '.join(str(i) for i in subject_ids)}
-        kwargs['subject_form'] = PreprintProviderSubjectForm(initial=initial_subjects)
+        fields['toplevel_subjects'] = subject_ids
+        fields['subjects_chosen'] = ', '.join(str(i) for i in subject_ids)
+        kwargs['form'] = PreprintProviderForm(initial=fields)
         kwargs['import_form'] = ImportFileForm()
-
         return kwargs
 
 
@@ -135,33 +133,22 @@ class PreprintProviderDetail(PermissionRequiredMixin, View):
         return view(request, *args, **kwargs)
 
 
-class PreprintProviderChangeForm(PermissionRequiredMixin, SingleObjectMixin, FormView):
-    form_class = PreprintProviderForm
-    model = PreprintProvider
+class PreprintProviderChangeForm(PermissionRequiredMixin, UpdateView):
     permission_required = 'osf.change_preprint_provider'
     raise_exception = True
+    model = PreprintProvider
+    form_class = PreprintProviderForm
 
     def get_object(self, queryset=None):
-        return PreprintProvider.objects.get(id=self.kwargs.get('preprint_provider_id'))
+        provider_id = self.kwargs.get('preprint_provider_id')
+        return PreprintProvider.objects.get(id=provider_id)
 
-    def update_preprint_provider_attributes(self, preprint_provider):
-        form = PreprintProviderForm(self.request.POST or None, instance=preprint_provider)
+    def get_context_data(self, *args, **kwargs):
+        kwargs['import_form'] = ImportFileForm()
+        return super(PreprintProviderChangeForm, self).get_context_data(*args, **kwargs)
 
-        if form.is_valid():
-            form.save()
-
-        self.object.refresh_from_db()
-        return reverse('preprint_providers:detail', kwargs={'preprint_provider_id': self.object.pk})
-
-    def post(self, request, *args, **kwargs):
-        if not request.user.is_authenticated:
-            return HttpResponseForbidden()
-        self.object = self.get_object()
-        self.update_preprint_provider_attributes(self.object)
-        return super(PreprintProviderChangeForm, self).post(request, *args, **kwargs)
-
-    def get_success_url(self):
-        return reverse('preprint_providers:detail', kwargs={'preprint_provider_id': self.object.pk})
+    def get_success_url(self, *args, **kwargs):
+        return reverse_lazy('preprint_providers:detail', kwargs={'preprint_provider_id': self.kwargs.get('preprint_provider_id')})
 
 
 class ExportPreprintProvider(PermissionRequiredMixin, View):
@@ -219,29 +206,6 @@ class ImportPreprintProvider(PermissionRequiredMixin, View):
         return parsed_file
 
 
-class ProcessSubjects(PermissionRequiredMixin, View):
-    permission_required = 'osf.change_preprint_provider'
-    raise_exception = True
-
-    def update_subjects_on_provider(self, subject_ids, *args, **kwargs):
-        provider = PreprintProvider.objects.get(id=kwargs['preprint_provider_id'])
-        subject_ids = filter(lambda subject: subject != '', subject_ids)
-        subjects_selected = [Subject.objects.get(id=ident) for ident in subject_ids]
-
-        rules = get_subject_rules(subjects_selected)
-        provider.subjects_acceptable = rules
-        provider.save()
-
-    def post(self, request, *args, **kwargs):
-        if not request.user.is_authenticated:
-            return HttpResponseForbidden()
-
-        subjects_selected = [sub.strip() for sub in request.POST['subjects_chosen'].split(',')]
-        self.update_subjects_on_provider(subjects_selected, *args, **kwargs)
-
-        return redirect(reverse('preprint_providers:detail', kwargs=kwargs))
-
-
 class SubjectDynamicUpdateView(PermissionRequiredMixin, View):
     permission_required = 'osf.change_preprint_provider'
     raise_exception = True
@@ -277,5 +241,4 @@ class CreatePreprintProvider(PermissionRequiredMixin, CreateView):
 
     def get_context_data(self, *args, **kwargs):
         kwargs['import_form'] = ImportFileForm()
-        kwargs['subject_form'] = PreprintProviderSubjectForm()
         return super(CreatePreprintProvider, self).get_context_data(*args, **kwargs)

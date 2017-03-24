@@ -59,12 +59,12 @@ $(document).ready(function() {
     // Section for adding and removing checked items
     $("body").on("click", "input[type='checkbox']", function() {
         var subjectsToRemove = [];
-        var elem = $(this)[0];
-        if (elem.checked) {
-            addSubject(elem.value);
+        var elem = $(this);
+        if (elem.prop('checked') && elem.prop("name") !== "licenses_acceptable") {
+            addSubject(elem[0].value);
 
             // Also make sure to select parents and grandparents!
-            var parentId = elem.getAttribute("parent");
+            var parentId = elem[0].getAttribute("parent");
             if (parentId) {
                 addSubject(parentId);
                 var parentElem = $("input[value=" + parentId + "]");
@@ -83,7 +83,7 @@ $(document).ready(function() {
         } else {
             $.get(
                 window.templateVars.getDescendantsUrl,
-                {"parent_id": elem.value}
+                {"parent_id": elem[0].value}
             ).then(function(data) {
                 var descendants = data["all_descendants"];
                 for (j=0; j < descendants.length; j++) {
@@ -98,7 +98,7 @@ $(document).ready(function() {
                     }
                 }
             }).then(function() {
-                subjectsToRemove.push(elem.value);
+                subjectsToRemove.push(elem[0].value);
                 for (i=0; i<subjectsToRemove.length; i++) {
                     removeSubject(subjectsToRemove[i]);
                 }

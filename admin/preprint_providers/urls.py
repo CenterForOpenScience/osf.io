@@ -13,5 +13,4 @@ urlpatterns = [
     url(r'^(?P<preprint_provider_id>[a-z0-9]+)/$', views.PreprintProviderDetail.as_view(), name='detail'),
     url(r'^(?P<preprint_provider_id>[a-z0-9]+)/delete/$', views.DeletePreprintProvider.as_view(), name='delete'),
     url(r'^(?P<preprint_provider_id>[a-z0-9]+)/export/$', views.ExportPreprintProvider.as_view(), name='export'),
-    url(r'^(?P<preprint_provider_id>[a-z0-9]+)/process_subjects/$', views.ProcessSubjects.as_view(), name='process_subjects'),
 ]
