@@ -298,13 +298,12 @@ Delete a persistent storage volume:
 git stash # if you have any changes that need to be stashed
 git pull upstream develop # (replace upstream with the name of your remote)
 git stash pop # unstash changes
-docker-compose pull # pull the latest images
-
 # If you get an out of space error
-docker image prune \
-  && docker-compose pull
+docker image prune
+# Pull latest images
+docker-compose pull
 
 docker-compose up requirements mfr_requirements wb_requirements
-docker-compose run --rm web python manage.py migrate # run migrations
-
+# Run db migrations
+docker-compose run --rm web python manage.py migrate
 ```
