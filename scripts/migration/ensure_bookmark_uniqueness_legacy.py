@@ -7,13 +7,14 @@ from framework.auth.core import User
 from framework.transactions.context import TokuTransaction
 from scripts import utils as script_utils
 from website.app import init_app
-from website.models import Node
+from website.project.model import Node
 
 
 logger = logging.getLogger(__name__)
 
 def get_targets():
     logger.info('Acquiring targets...')
+    import ipdb; ipdb.set_trace()
     targets = [u for u in User.find() if Node.find(Q('is_bookmark_collection', 'eq', True) & Q('is_deleted', 'eq', False) & Q('contributors', 'eq', u._id)).count() > 1]
     logger.info('Found {} target users.'.format(len(targets)))
     return targets
