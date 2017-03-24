@@ -23,9 +23,8 @@ def migrate():
     total = len(targets)
     for i, user in enumerate(targets):
         logger.info('({}/{}) Preparing to migrate User {}'.format(i + 1, total, user._id))
-        bookmarks = Node.find(Q('is_bookmark_collection', 'eq', True) & Q('creator', 'eq', user._id))
-        if sum([bool(n.nodes) for n in bookmarks]) > 1:
-            raise Exception('Expected no users to have more than one bookmark with .nodes, {} violated'.format(user._id))
+        bookmarks = Node.find(Q('is_bookmark_collection', 'eq', True) & Q('creator', 'eq', user._id)).sort('-date_modified')
+
         bookmark_to_keep = None
         for n in bookmarks:
             if n.nodes:
