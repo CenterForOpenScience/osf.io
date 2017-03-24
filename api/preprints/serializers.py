@@ -19,7 +19,7 @@ from framework.exceptions import PermissionsError
 from website.util import permissions
 from website.exceptions import NodeStateError
 from website.project import signals as project_signals
-from website.models import StoredFileNode, PreprintService, PreprintProvider, Node, NodeLicense
+from osf.models import StoredFileNode, PreprintService, PreprintProvider, Node, NodeLicense
 
 
 class PrimaryFileRelationshipField(RelationshipField):
@@ -136,7 +136,6 @@ class PreprintSerializer(JSONAPISerializer):
         save_node = False
         save_preprint = False
         recently_published = False
-
         primary_file = validated_data.pop('primary_file', None)
         if primary_file:
             self.set_field(preprint.set_primary_file, primary_file, auth)
@@ -177,7 +176,7 @@ class PreprintSerializer(JSONAPISerializer):
         # nodes will send emails making it seem like a new node.
         if recently_published:
             for author in preprint.node.contributors:
-                if author != auth.user:
+                if author.is_active and author != auth.user:
                     project_signals.contributor_added.send(preprint.node, contributor=author, auth=auth, email_template='preprint')
 
         return preprint

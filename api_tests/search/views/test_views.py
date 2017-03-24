@@ -113,11 +113,11 @@ class TestSearch(ApiSearchTestCase):
         components_link = search_fields['components']['related']['href']
         registrations_link = search_fields['registrations']['related']['href']
 
-        assert_in('/{}search/users/?q=*'.format(API_BASE), users_link)
-        assert_in('/{}search/files/?q=*'.format(API_BASE), files_link)
-        assert_in('/{}search/projects/?q=*'.format(API_BASE), projects_link)
-        assert_in('/{}search/components/?q=*'.format(API_BASE), components_link)
-        assert_in('/{}search/registrations/?q=*'.format(API_BASE), registrations_link)
+        assert_in('/{}search/users/?q=%2A'.format(API_BASE), users_link)
+        assert_in('/{}search/files/?q=%2A'.format(API_BASE), files_link)
+        assert_in('/{}search/projects/?q=%2A'.format(API_BASE), projects_link)
+        assert_in('/{}search/components/?q=%2A'.format(API_BASE), components_link)
+        assert_in('/{}search/registrations/?q=%2A'.format(API_BASE), registrations_link)
 
     def test_search_fields_links_with_query(self):
         url = '{}?q=science'.format(self.url)

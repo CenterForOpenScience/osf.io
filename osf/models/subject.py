@@ -14,6 +14,9 @@ class Subject(ObjectIDMixin, BaseModel):
     text = models.CharField(null=False, max_length=256, unique=True)  # max length on prod: 73
     parents = models.ManyToManyField('self', symmetrical=False, related_name='children')
 
+    def __unicode__(self):
+        return '{} with id {}'.format(self.name, self.id)
+
     @property
     def absolute_api_v2_url(self):
         return api_v2_url('taxonomies/{}/'.format(self._id))

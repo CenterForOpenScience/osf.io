@@ -148,7 +148,7 @@ def migrate_user_activity_counters(page_size=20000):
 def make_guids():
     logger.info('Starting {}...'.format(sys._getframe().f_code.co_name))
 
-    guid_models = [model for model in get_ordered_models() if (issubclass(model, GuidMixin) or issubclass(model, OptionalGuidMixin)) and (not issubclass(model, AbstractNode) or model is AbstractNode)]
+    guid_models = [model for model in get_ordered_models() if (issubclass(model, GuidMixin) or issubclass(model, OptionalGuidMixin)) and model.__subclasses__() == []]
 
     with connection.cursor() as cursor:
         with transaction.atomic():
@@ -288,7 +288,7 @@ def validate_guid_referents_against_ids():
     set_backend()
     register_nonexistent_models_with_modm()
     with ipdb.launch_ipdb_on_exception():
-        for django_model in [model for model in get_ordered_models() if (issubclass(model, GuidMixin) or issubclass(model, OptionalGuidMixin)) and (not issubclass(model, AbstractNode) or model is AbstractNode)]:
+        for django_model in [model for model in get_ordered_models() if (issubclass(model, GuidMixin) or issubclass(model, OptionalGuidMixin)) and model.__subclasses__() == []]:
             if not hasattr(django_model, 'modm_model_path'):
                 logger.info('################################################\n'
                             '{} doesn\'t have a modm_model_path\n'
@@ -640,7 +640,7 @@ def save_bare_system_tags(page_size=10000):
     Tag.objects.bulk_create(system_tags)
 
     logger.info('MODM System Tags: {}'.format(total))
-    logger.info('django system tags: {}'.format(Tag.objects.filter(system=True).count()))
+    logger.info('django system tags: {}'.format(Tag.all_tags.filter(system=True).count()))
     logger.info('Done with {} in {} seconds...'.format(
         sys._getframe().f_code.co_name,
         (timezone.now() - start).total_seconds()))
@@ -878,7 +878,7 @@ class Command(BaseCommand):
                 continue
             elif (options['nodelogs'] or options['nodelogsguids']) and django_model is not NodeLog:
                 continue
-            elif django_model is AbstractNode:
+            elif django_model.__subclasses__() != []:
                 continue
 
             if not hasattr(django_model, 'modm_model_path'):

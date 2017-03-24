@@ -75,6 +75,6 @@ class CitationStyleDetail(JSONAPIBaseView, generics.RetrieveAPIView):
     view_name = 'citation-detail'
 
     def get_object(self):
-        cit = get_object_or_error(CitationStyle, self.kwargs['citation_id'], prefetch_fields=self.serializer_class().model_field_names)
+        cit = get_object_or_error(CitationStyle, self.kwargs['citation_id'])
         self.check_object_permissions(self.request, cit)
         return cit

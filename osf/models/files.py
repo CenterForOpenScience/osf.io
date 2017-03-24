@@ -1,34 +1,33 @@
-import functools
 import logging
 import os
 
 import requests
 from dateutil.parser import parse as parse_date
-from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from django.core.exceptions import ObjectDoesNotExist
-from django.db import models, connection
+from django.db import models
+from django.db.models import Manager
 from django.utils import timezone
-from framework.analytics import get_basic_counters
 from modularodm.exceptions import NoResultsFound
-from osf.models.base import BaseModel, Guid, OptionalGuidMixin, ObjectIDMixin
+from typedmodels.models import TypedModel
+
+from framework.analytics import get_basic_counters
+from osf.models.base import BaseModel, OptionalGuidMixin, ObjectIDMixin
 from osf.models.comment import CommentableMixin
 from osf.models.mixins import Taggable
 from osf.models.validators import validate_location
 from osf.modm_compat import Q
-from osf.utils.fields import NonNaiveDateTimeField
-from website.util import api_v2_url
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
-from psycopg2._psycopg import AsIs
-from website import util
-from website.files import exceptions
+from osf.utils.fields import NonNaiveDateTimeField
 from website.files import utils
+from website.files.exceptions import VersionNotFoundError
+from website.util import api_v2_url, waterbutler_api_url_for
 
 __all__ = (
     'File',
     'Folder',
-    'FileNode',
     'FileVersion',
     'StoredFileNode',
+    'BaseFileNode',
     'TrashedFileNode',
 )
 
@@ -36,230 +35,107 @@ PROVIDER_MAP = {}
 logger = logging.getLogger(__name__)
 
 
-class TrashedFileNode(CommentableMixin, OptionalGuidMixin, ObjectIDMixin, BaseModel):
-    """The graveyard for all deleted FileNodes"""
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.files.models.TrashedFileNode'
-    modm_query = None
-    migration_page_size = 100000
-    # /TODO DELETE ME POST MIGRATION
+class BaseFileNodeManager(Manager):
+    use_for_related_fields = True
 
-    last_touched = NonNaiveDateTimeField(null=True, blank=True)
-    history = DateTimeAwareJSONField(default=list, blank=True)
-    versions = models.ManyToManyField('FileVersion')
+    def get_queryset(self):
+        qs = super(BaseFileNodeManager, self).get_queryset()
 
-    node = models.ForeignKey('osf.AbstractNode', null=True, blank=True)
-    object_id = models.PositiveIntegerField(null=True, blank=True)
-    content_type = models.ForeignKey('contenttypes.ContentType', null=True, blank=True)
-    parent = GenericForeignKey()
+        if hasattr(self.model, '_provider') and self.model._provider is not None:
+            return qs.filter(provider=self.model._provider)
+        return qs
 
-    trashed_children = GenericRelation('self')
-
-    is_file = models.BooleanField(default=True)
-    provider = models.CharField(max_length=25, blank=True, null=True)  # max_length in staging was 11
-
-    name = models.CharField(max_length=1000, blank=True, null=True)  # max_length in staging was 858
-    path = models.CharField(max_length=200, blank=True, null=True)  # max_length in staging was 140
-    # max_length in staging was 265
-    _materialized_path = models.CharField(max_length=300, blank=True, null=True)
-    checkout = models.ForeignKey('osf.OSFUser', related_name='trashed_files_checked_out', null=True, blank=True)
-    deleted_by = models.ForeignKey('osf.OSFUser', related_name='files_deleted_by', null=True, blank=True)
-    deleted_on = NonNaiveDateTimeField(default=timezone.now)  # auto_now_add=True)
-    tags = models.ManyToManyField('osf.Tag')
-    suspended = models.BooleanField(default=False)
-
-    copied_from = models.ForeignKey('osf.StoredFileNode', default=None, null=True, blank=True)
-
-    @property
-    def materialized_path(self):
-        if self.provider == 'osfstorage':
-            # TODO Optimize this.
-            sql = """
-                WITH RECURSIVE
-                    materialized_path_cte(id, object_id, provider, GEN_DEPTH, GEN_PATH) AS (
-                    SELECT
-                      sfn.id,
-                      sfn.object_id,
-                      sfn.provider,
-                      1 :: INT         AS depth,
-                      sfn.name :: TEXT AS GEN_PATH
-                    FROM "%s" AS sfn
-                    WHERE
-                      sfn.provider = 'osfstorage' AND
-                      sfn.object_id IS NULL
-                    UNION ALL
-                    SELECT
-                      c.id,
-                      c.object_id,
-                      c.provider,
-                      p.GEN_DEPTH + 1                       AS GEN_DEPTH,
-                      (p.GEN_PATH || '/' || c.name :: TEXT) AS GEN_PATH
-                    FROM materialized_path_cte AS p, "%s" AS c
-                    WHERE c.object_id = p.id
-                  )
-                SELECT gen_path
-                FROM materialized_path_cte AS n
-                WHERE
-                  GEN_DEPTH > 1
-                  AND
-                  n.id = %s
-                LIMIT 1;
-            """
-            with connection.cursor() as cursor:
-                cursor.execute(sql, [AsIs(self._meta.db_table), AsIs(self._meta.db_table), self.pk])
-                row = cursor.fetchone()
-                if not row:
-                    return row
-                return row[0]
-        else:
-            return self._materialized_path
-
-    @materialized_path.setter
-    def materialized_path(self, val):
-        self._materialized_path = val
-
-    @property
-    def deep_url(self):
-        """Allows deleted files to resolve to a view
-        that will provide a nice error message and http.GONE
-        """
-        return self.node.web_url_for('addon_deleted_file', trashed_id=self._id)
-
-    # For Comment API compatibility
-    @property
-    def target_type(self):
-        """The object "type" used in the OSF v2 API."""
-        return 'files'
-
-    @property
-    def root_target_page(self):
-        """The comment page type associated with TrashedFileNodes."""
-        return 'files'
-
-    @property
-    def is_deleted(self):
-        return True
-
-    def belongs_to_node(self, node_id):
-        """Check whether the file is attached to the specified node."""
-        return self.node._id == node_id
-
-    def get_extra_log_params(self, comment):
-        return {'file': {'name': self.name, 'url': comment.get_comment_page_url()}}
-
-    def restore(self, recursive=True, parent=None):
-        """Recreate a StoredFileNode from the data in this object
-        Will re-point all guids and finally remove itself
-        :raises KeyExistsException:
-        """
-        local_field_names = self._meta.get_all_field_names()
-        intersecting_field_names = set(
-            local_field_names
-        ).intersection(set(
-            FileNode._meta.get_all_field_names()
-        ))
-
-        data = {key: getattr(self, key) for key in intersecting_field_names if
-                getattr(self, key, None) is not None}
-        if parent:
-            data['parent_id'] = parent.pk
-
-        restored = FileNode.resolve_class(self.provider, int(self.is_file))(**data)
-        if not restored.parent:
-            raise ValueError('No parent to restore to')
-        restored.save()
-
-        if recursive:
-            for child in self.children:
-                child.restore(recursive=recursive, parent=restored)
-        TrashedFileNode.remove_one(self)
-        return restored
-
-
-class StoredFileNode(CommentableMixin, OptionalGuidMixin, Taggable, ObjectIDMixin, BaseModel):
-    """
-        The storage backend for FileNode objects.
-        This class should generally not be used or created manually as FileNode
-        contains all the helpers required.
-        A FileNode wraps a StoredFileNode to provider usable abstraction layer
+class ActiveFileNodeManager(Manager):
+    """Manager that filters out TrashedFileNodes.
+    Note: We do not use this as the default manager for BaseFileNode because
+    that would prevent TrashedFileNodes from accessing their `parent` field if
+    the parent was not a TrashedFileNode.
     """
 
+    def get_queryset(self):
+        qs = super(ActiveFileNodeManager, self).get_queryset()
+        return qs.exclude(type__in=TrashedFileNode._typedmodels_subtypes)
+
+class UnableToResolveFileClass(Exception):
+    pass
+
+
+class DeprecatedException(Exception):
+    pass
+
+
+class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, ObjectIDMixin, BaseModel):
+    """Base class for all provider-specific file models and the trashed file model.
+    This class should generally not be used or created manually. Use the provider-specific
+    subclasses instead.
+
+    WARNING: Be careful when using ``.filter``, ``.exclude``, etc. on this model.
+    The default queryset for will NOT filter out TrashedFileNodes by default.
+    Also, calling ``.load`` may return a `TrashedFileNode`.
+    Use the ``BaseFileNode.active`` manager when you want to filter out TrashedFileNodes.
+    """
     # TODO DELETE ME POST MIGRATION
     modm_model_path = 'website.files.models.base.StoredFileNode'
     modm_query = None
     migration_page_size = 10000
-    # /TODO DELETE ME POST MIGRATION
+    # /TODO DELETE ME POST MIGRATION]
+    version_identifier = 'revision'  # For backwards compatibility
+    FOLDER, FILE, ANY = 0, 1, 2
 
+    # The User that has this file "checked out"
+    # Should only be used for OsfStorage
+    checkout = models.ForeignKey('osf.OSFUser', blank=True, null=True)
     # The last time the touch method was called on this FileNode
     last_touched = NonNaiveDateTimeField(null=True, blank=True)
     # A list of dictionaries sorted by the 'modified' key
     # The raw output of the metadata request deduped by etag
     # Add regardless it can be pinned to a version or not
-    history = DateTimeAwareJSONField(default=[], blank=True)
+    _history = DateTimeAwareJSONField(default=list, blank=True)
     # A concrete version of a FileNode, must have an identifier
     versions = models.ManyToManyField('FileVersion')
 
-    node = models.ForeignKey('AbstractNode', blank=True, null=True)
-    parent = models.ForeignKey('StoredFileNode', blank=True, null=True, default=None, related_name='child')
-    copied_from = models.ForeignKey('StoredFileNode', blank=True, null=True, default=None,
-                                    related_name='copy_of')
+    node = models.ForeignKey('osf.AbstractNode', blank=True, null=True, related_name='files')
+    parent = models.ForeignKey('self', blank=True, null=True, default=None, related_name='_children')
+    copied_from = models.ForeignKey('self', blank=True, null=True, default=None, related_name='copy_of')
 
-    trashed_children = GenericRelation('TrashedFileNode')
-
-    is_file = models.BooleanField(default=True)
     provider = models.CharField(max_length=25, blank=False, null=False, db_index=True)
 
-    name = models.CharField(max_length=1000, blank=True, null=True)
-    path = models.CharField(max_length=2000, blank=True, null=True)  # 1950 on prod
-    _materialized_path = models.CharField(max_length=1000, blank=True, null=True)  # 482 on staging
+    name = models.TextField(blank=True, null=True)
+    _path = models.TextField(blank=True, null=True)  # 1950 on prod
+    _materialized_path = models.TextField(blank=True, null=True)  # 482 on staging
 
-    # The User that has this file "checked out"
-    # Should only be used for OsfStorage
-    checkout = models.ForeignKey('OSFUser', blank=True, null=True)
+    is_deleted = False
+    deleted_on = NonNaiveDateTimeField(blank=True, null=True)
+    deleted_by = models.ForeignKey('osf.OSFUser', related_name='files_deleted_by', null=True, blank=True)
+
+    objects = BaseFileNodeManager()
+    active = ActiveFileNodeManager()
+    _base_manager = BaseFileNodeManager()
+
+    @property
+    def history(self):
+        return self._history
+
+    @history.setter
+    def history(self, value):
+        setattr(self, '_history', value)
+
+    @property
+    def is_file(self):
+        # TODO split is file logic into subclasses
+        return isinstance(self, (File, TrashedFile))
+
+    @property
+    def path(self):
+        return self._path
+
+    @path.setter
+    def path(self, value):
+        self._path = value
 
     @property
     def materialized_path(self):
-        if self.provider == 'osfstorage':
-            # TODO Optimize this.
-            sql = """
-                WITH RECURSIVE
-                    materialized_path_cte(id, parent_id, provider, GEN_DEPTH, GEN_PATH) AS (
-                    SELECT
-                      sfn.id,
-                      sfn.parent_id,
-                      sfn.provider,
-                      1 :: INT         AS depth,
-                      sfn.name :: TEXT AS GEN_PATH
-                    FROM "%s" AS sfn
-                    WHERE
-                      sfn.provider = 'osfstorage' AND
-                      sfn.parent_id IS NULL
-                    UNION ALL
-                    SELECT
-                      c.id,
-                      c.parent_id,
-                      c.provider,
-                      p.GEN_DEPTH + 1                       AS GEN_DEPTH,
-                      (p.GEN_PATH || '/' || c.name :: TEXT) AS GEN_PATH
-                    FROM materialized_path_cte AS p, "%s" AS c
-                    WHERE c.parent_id = p.id
-                  )
-                SELECT gen_path
-                FROM materialized_path_cte AS n
-                WHERE
-                  GEN_DEPTH > 1
-                  AND
-                  n.id = %s
-                LIMIT 1;
-            """
-            with connection.cursor() as cursor:
-                cursor.execute(sql, [AsIs(self._meta.db_table), AsIs(self._meta.db_table), self.pk])
-                row = cursor.fetchone()
-                if not row:
-                    return row
-                return row[0]
-        else:
-            return self._materialized_path
+        return self._materialized_path
 
     @materialized_path.setter
     def materialized_path(self, val):
@@ -267,7 +143,11 @@ class StoredFileNode(CommentableMixin, OptionalGuidMixin, Taggable, ObjectIDMixi
 
     @property
     def deep_url(self):
-        return self.wrapped().deep_url
+        """The url that this filenodes guid should resolve to.
+        Implemented here so that subclasses may override it or path.
+        See OsfStorage or PathFollowingNode.
+        """
+        return self.node.web_url_for('addon_view_or_download_file', provider=self.provider, path=self.path.strip('/'))
 
     @property
     def absolute_api_v2_url(self):
@@ -286,99 +166,34 @@ class StoredFileNode(CommentableMixin, OptionalGuidMixin, Taggable, ObjectIDMixi
         return 'files'
 
     @property
-    def is_deleted(self):
-        if self.provider == 'osfstorage':
-            return False
-
-    def belongs_to_node(self, node_id):
-        """Check whether the file is attached to the specified node."""
-        return self.node._id == node_id
-
-    def get_extra_log_params(self, comment):
-        return {'file': {'name': self.name, 'url': comment.get_comment_page_url()}}
-
-    # used by django and DRF
-    def get_absolute_url(self):
-        return self.absolute_api_v2_url
-
-    def wrapped(self):
-        """Wrap self in a FileNode subclass
+    def stored_object(self):
         """
-        return FileNode.resolve_class(self.provider, int(self.is_file))(self)
+        DEPRECATED: Returns self after logging.
+        :return:
+        """
+        logger.warn('BaseFileNode.stored_object is deprecated.')
+        return self
 
-    class Meta:
-        unique_together = [
-            ('node', 'name', 'parent', 'is_file', 'provider', 'path',)
-        ]
-        index_together = [
-            ('path', 'node', 'is_file', 'provider'),
-            ('node', 'is_file', 'provider'),
-        ]
-
-
-class FileNodeMeta(type):
-    """Keeps track of subclasses of the ``FileNode`` object
-    Inserts all into the PROVIDER_MAP following the pattern:
-    {
-        provider: [ProviderFolder, ProviderFile, ProviderFileNode]
-    }
-    """
-
-    def __init__(cls, name, bases, dct):
-        super(FileNodeMeta, cls).__init__(name, bases, dct)
-        if hasattr(cls, 'provider'):
-            cls_map = PROVIDER_MAP.setdefault(cls.provider, [None, None, None])
-            index = int(getattr(cls, 'is_file', 2))
-
-            if cls_map[index] is not None:
-                raise ValueError('Conflicting providers')
-
-            cls_map[index] = cls
-
-
-class FileNode(object):
-    """The base class for the entire files storage system.
-    Use for querying on all files and folders in the database
-    Note: This is a proxy object for StoredFileNode
-    """
-    FOLDER, FILE, ANY = 0, 1, 2
-
-    __metaclass__ = FileNodeMeta
+    @stored_object.setter
+    def stored_object(self, value):
+        raise DeprecatedException('BaseFileNode.stored_object is deprecated.')
 
     @classmethod
     def create(cls, **kwargs):
-        """A layer of abstraction around the creation of FileNodes.
-        Provides hook in points for subclasses
-        This is used only for GUID creation.
-        """
-        assert hasattr(cls, 'is_file') and hasattr(cls,
-                                                   'provider'), 'Must have is_file and provider to call ' \
-                                                                'create'
-        kwargs['is_file'] = cls.is_file
-        kwargs['provider'] = cls.provider
+        kwargs.update(provider=cls._provider)
         return cls(**kwargs)
 
     @classmethod
     def get_or_create(cls, node, path):
-        """Tries to find a FileNode with node and path
-        See FileNode.create
-        Note: Osfstorage overrides this method due to odd database constraints
-        """
-        path = '/' + path.lstrip('/')
-        try:
-            # Note: Possible race condition here
-            # Currently create then find is not super feasible as create would require a
-            # call to save which we choose not to call to avoid filling  the database
-            # with notfound/googlebot files/url. Raising 404 errors may roll back the transaction however
-            return cls.find_one(Q('node', 'eq', node) & Q('path', 'eq', path))
-        except NoResultsFound:
-            return cls.create(node=node, path=path)
+        obj, _ = cls.objects.get_or_create(node=node, _path='/' + path.lstrip('/'))
+        return obj
 
     @classmethod
     def get_file_guids(cls, materialized_path, provider, node):
         guids = []
         materialized_path = '/' + materialized_path.lstrip('/')
         if materialized_path.endswith('/'):
+            # it's a folder
             folder_children = cls.find(Q('provider', 'eq', provider) &
                                        Q('node', 'eq', node) &
                                        Q('_materialized_path', 'startswith', materialized_path))
@@ -388,6 +203,7 @@ class FileNode(object):
                     if guid:
                         guids.append(guid._id)
         else:
+            # it's a file
             try:
                 file_obj = cls.find_one(
                     Q('node', 'eq', node) & Q('_materialized_path', 'eq', materialized_path))
@@ -399,56 +215,13 @@ class FileNode(object):
 
         return guids
 
-    @classmethod
-    def resolve_class(cls, provider, _type=2):
-        """Resolve a provider and type to the appropriate subclass.
-        Usage:
-            >>> FileNode.resolve_class('box', FileNode.ANY)  # BoxFileNode
-            >>> FileNode.resolve_class('dropbox', FileNode.FILE)  # DropboxFile
-        :rtype: Subclass of FileNode
-        """
-        try:
-            return PROVIDER_MAP[provider][int(_type)]
-        except IndexError:
-            raise exceptions.SubclassNotFound('_type must be 0, 1, or 2')
-        except KeyError:
-            raise exceptions.SubclassNotFound(provider)
-
-    @classmethod
-    def _filter(cls, qs=None):
-        """Creates an odm query to limit the scope of whatever search method
-        to the given class.
-        :param qs RawQuery: An odm query or None
-        :rtype: RawQuery or None
-        """
-        # Build a list of all possible constraints leaving None when appropriate
-        # filter(None, ...) removes all falsey values
-        qs = filter(None, (qs,
-                           Q('is_file', 'eq', cls.is_file) if hasattr(cls, 'is_file') else None,
-                           Q('provider', 'eq', cls.provider) if hasattr(cls, 'provider') else None,
-                           ))
-        # If out list is empty return None; there's no filters to be applied
-        if not qs:
-            return None
-        # Use reduce to & together all our queries. equivalent to:
-        # return q1 & q2 ... & qn
-        return functools.reduce(lambda q1, q2: q1 & q2, qs)
-
-    @classmethod
-    def find(cls, qs=None):
-        """A proxy for StoredFileNode.find but applies class based constraints.
-        Wraps The MongoQuerySet in a GenWrapper this overrides the __iter__ of
-        MongoQuerySet to return wrapped objects
-        :rtype: GenWrapper<MongoQuerySet<cls>>
-        """
-        return utils.GenWrapper(StoredFileNode.find(cls._filter(qs)).order_by('id'))
-
-    @classmethod
-    def find_one(cls, qs):
-        """A proxy for StoredFileNode.find_one but applies class based constraints.
-        :rtype: cls
-        """
-        return StoredFileNode.find_one(cls._filter(qs)).wrapped()
+    def to_storage(self):
+        storage = super(BaseFileNode, self).to_storage()
+        if 'trashed' not in self.type.lower():
+            for key in tuple(storage.keys()):
+                if 'deleted' in key:
+                    storage.pop(key)
+        return storage
 
     @classmethod
     def files_checked_out(cls, user):
@@ -459,232 +232,56 @@ class FileNode(object):
         return cls.find(Q('checkout', 'eq', user))
 
     @classmethod
-    def load(cls, _id):
-        """A proxy for StoredFileNode.load requires the wrapped version of the found value
-        to be an instance of cls.
-        :rtype: cls
-        """
-        inst = StoredFileNode.load(_id)
-        if not inst:
-            return None
-        inst = inst.wrapped()
-        assert isinstance(inst, cls), 'Loaded object {} is not of type {}'.format(inst, cls)
-        return inst
+    def resolve_class(cls, provider, type_integer):
+        type_mapping = {0: Folder, 1: File, 2: None}
+        type_cls = type_mapping[type_integer]
 
-    @property
-    def parent(self):
-        """A proxy to self.stored_object.parent but forces it to be wrapped.
-        """
-        if self.stored_object.parent:
-            return self.stored_object.parent.wrapped()
-        return None
+        for subclass in BaseFileNode.__subclasses__():
+            if type_cls:
+                for subsubclass in subclass.__subclasses__():
+                    if issubclass(subsubclass, type_cls) and subsubclass._provider == provider:
+                        return subsubclass
+            else:
+                if subclass._provider == provider:
+                    return subclass
+        raise UnableToResolveFileClass('Could not resolve class for {} and {}'.format(provider, type_cls))
 
-    @parent.setter
-    def parent(self, val):
-        """A proxy to self.stored_object.parent but will unwrap it when need be
-        """
-        if isinstance(val, FileNode):
-            val = val.stored_object
-        self.stored_object.parent = val
-
-    @property
-    def copied_from(self):
-        if self.stored_object.copied_from:
-            return self.stored_object.copied_from
-        return None
-
-    @copied_from.setter
-    def copied_from(self, val):
-        if isinstance(val, FileNode):
-            val = val.stored_object
-        self.stored_object.copied_from = val
-
-    @property
-    def deep_url(self):
-        """The url that this filenodes guid should resolve to.
-        Implemented here so that subclasses may override it or path.
-        See OsfStorage or PathFollowingNode.
-        """
-        return self.node.web_url_for('addon_view_or_download_file', provider=self.provider,
-                                     path=self.path.strip('/'))
-
-    @property
-    def kind(self):
-        """Whether this FileNode is a file or folder as a string.
-        Used for serialization and backwards compatability
-        :rtype: str
-        :returns: 'file' or 'folder'
-        """
-        return 'file' if self.is_file else 'folder'
-
-    def __init__(self, *args, **kwargs):
-        """Contructor for FileNode's subclasses
-        If called with only a StoredFileNode it will be attached to self
-        Otherwise:
-        Injects provider and is_file when appropriate.
-        Creates a new StoredFileNode with kwargs, not saved.
-        Then attaches stored_object to self
-        """
-        if args and isinstance(args[0], StoredFileNode):
-            assert len(args) == 1
-            assert len(kwargs) == 0
-            self.stored_object = args[0]
-        else:
-            if hasattr(self, 'provider'):
-                kwargs['provider'] = self.provider
-            if hasattr(self, 'is_file'):
-                kwargs['is_file'] = self.is_file
-            self.stored_object = StoredFileNode(*args, **kwargs)
-
-    def save(self):
-        """A proxy to self.stored_object.save.
-        Implemented top level so that child class may override it
-        and just call super.save rather than self.stored_object.save
-        """
-        return self.stored_object.save()
-
-    def serialize(self, **kwargs):
-        return {
-            'id': self._id,
-            'path': self.path,
-            'name': self.name,
-            'kind': self.kind,
-        }
-
-    def generate_waterbutler_url(self, **kwargs):
-        return util.waterbutler_api_url_for(
-            self.node._id,
-            self.provider,
-            self.path,
-            **kwargs
-        )
-
-    def delete(self, user=None, parent=None):
-        """Move self into the TrashedFileNode collection
-        and remove it from StoredFileNode
-        :param user User or None: The user that deleted this FileNode
-        """
-        trashed = self._create_trashed(user=user, parent=parent)
-        self._repoint_guids(trashed)
-        self.node.save()
-        StoredFileNode.remove_one(self.stored_object)
-        return trashed
-
-    def copy_under(self, destination_parent, name=None):
-        return utils.copy_files(self, destination_parent.node, destination_parent, name=name)
-
-    def move_under(self, destination_parent, name=None):
-        self.name = name or self.name
-        self.parent = destination_parent.stored_object
-        self._update_node(save=True)  # Trust _update_node to save us
-
-        return self
-
-    def update(self, revision, data, save=True, user=None):
-        """Note: User is a kwargs here because of special requirements of
-        dataverse and django
-        See dataversefile.update
-        """
-        self.name = data['name']
-        self.materialized_path = data['materialized']
-        self.last_touched = timezone.now()
-        if save:
-            self.save()
-
-    def _create_trashed(self, save=True, user=None, parent=None):
-        if save is False:
-            logger.warning('Asked to create a TrashedFileNode without saving.')
-        trashed = TrashedFileNode.objects.create(
-            _id=self._id,
-            name=self.name,
-            path=self.path,
-            node=self.node,
-            parent=parent or self.parent,
-            history=self.history,
-            is_file=self.is_file,
-            checkout=self.checkout,
-            provider=self.provider,
-            last_touched=self.last_touched,
-            materialized_path=self.materialized_path,
-            deleted_by=user
-        )
-        if self.versions.exists():
-            trashed.versions.add(*self.versions.all())
-        return trashed
-
-    def _repoint_guids(self, updated):
-        for guid in Guid.find(Q('referent', 'eq', self)):
-            guid.referent = updated
-            guid.save()
-
-    def _update_node(self, recursive=True, save=True):
-        if self.parent is not None:
-            self.node = self.parent.node
-        if save:
-            self.save()
-        if recursive and not self.is_file:
-            for child in self.children:
-                child._update_node(save=save)
-
-    def __getattr__(self, name):
-        """For the purpose of proxying all calls to the below stored_object
-        Saves typing out ~10 properties or so
-        """
-        if 'stored_object' in self.__dict__:
-            try:
-                return getattr(self.stored_object, name)
-            except AttributeError:
-                pass  # Avoids error message about the underlying object
-        return object.__getattribute__(self, name)
-
-    def __setattr__(self, name, val):
-        # Property setters are called after __setattr__ is called
-        # If the requested attribute is a property with a setter go ahead and use it
-        maybe_prop = getattr(self.__class__, name, None)
-        if isinstance(maybe_prop, property) and maybe_prop.fset is not None:
-            return object.__setattr__(self, name, val)
-        if 'stored_object' in self.__dict__:
-            return setattr(self.stored_object, name, val)
-        return object.__setattr__(self, name, val)
-
-    def __eq__(self, other):
-        return self.stored_object == getattr(other, 'stored_object', None)
-
-    def __repr__(self):
-        return '<{}(name={!r}, node={!r})>'.format(
-            self.__class__.__name__,
-            self.stored_object.name,
-            self.stored_object.node
-        )
-
-
-class File(FileNode):
-    is_file = True
-    version_identifier = 'revision'  # For backwards compatability
+    def _resolve_class(self, type_cls):
+        for subclass in BaseFileNode.__subclasses__():
+            if type_cls:
+                for subsubclass in subclass.__subclasses__():
+                    if issubclass(subsubclass, type_cls) and subsubclass._provider == self.provider:
+                        return subsubclass
+            else:
+                if subclass._provider == self.provider:
+                    return subclass
 
     def get_version(self, revision, required=False):
         """Find a version with identifier revision
         :returns: FileVersion or None
         :raises: VersionNotFoundError if required is True
         """
-        if not self.pk:
-            # Prevent issue where django accesses M2M before saving
-            return None
         try:
-            version = self.versions.get(identifier=revision)
+            return self.versions.get(identifier=revision)
         except ObjectDoesNotExist:
             if required:
-                raise exceptions.VersionNotFoundError(revision)
+                raise VersionNotFoundError(revision)
             return None
-        else:
-            return version
+
+    def generate_waterbutler_url(self, **kwargs):
+        return waterbutler_api_url_for(
+            self.node._id,
+            self.provider,
+            self.path,
+            **kwargs
+        )
 
     def update_version_metadata(self, location, metadata):
-        for version in reversed(self.versions):
-            if version.location == location:
-                version.update_metadata(metadata)
-                return
-        raise exceptions.VersionNotFoundError(location)
+        try:
+            self.versions.get(location=location).update_metadata(metadata)
+            return
+        except ObjectDoesNotExist:
+            raise VersionNotFoundError(location)
 
     def touch(self, auth_header, revision=None, **kwargs):
         """The bread and butter of File, collects metadata about self
@@ -698,7 +295,9 @@ class File(FileNode):
         :param str or None auth_header: If truthy it will set as the Authorization header
         :returns: None if the file is not found otherwise FileVersion or (version, Error HTML)
         """
-        # For backwards compatability
+        # Resvolve primary key on first touch
+        self.save()
+        # For backwards compatibility
         revision = revision or kwargs.get(self.version_identifier)
 
         version = self.get_version(revision)
@@ -722,9 +321,9 @@ class File(FileNode):
         # return self.update(revision, json.loads(resp.headers['x-waterbutler-metadata']))
 
     def update(self, revision, data, user=None):
-        """Using revision and data update all data pertaining to self
+        """Using revision and data update all data pretaining to self
         :param str or None revision: The revision that data points to
-        :param dict data: Metadata received from waterbutler
+        :param dict data: Metadata recieved from waterbutler
         :returns: FileVersion
         """
         self.name = data['name']
@@ -745,13 +344,9 @@ class File(FileNode):
         # Dont save the latest information
         if revision is not None:
             version.save()
-            if self._state.adding:
-                # Must be saved before ManyRelatedManager is used.
-                self.save()
             self.versions.add(version)
-
         for entry in self.history:
-            if 'etag' in entry and 'etag' in data and entry['etag'] == data['etag']:
+            if ('etag' in entry and 'etag' in data) and (entry['etag'] == data['etag']):
                 break
         else:
             # Insert into history if there is no matching etag
@@ -776,10 +371,116 @@ class File(FileNode):
 
         return count or 0
 
+    def copy_under(self, destination_parent, name=None):
+        return utils.copy_files(self, destination_parent.node, destination_parent, name=name)
+
+    def move_under(self, destination_parent, name=None):
+        self.name = name or self.name
+        self.parent = destination_parent.stored_object
+        self._update_node(save=True)  # Trust _update_node to save us
+
+        return self
+
+    def belongs_to_node(self, node_id):
+        """Check whether the file is attached to the specified node."""
+        return self.node._id == node_id
+
+    def get_extra_log_params(self, comment):
+        return {'file': {'name': self.name, 'url': comment.get_comment_page_url()}}
+
+    # used by django and DRF
+    def get_absolute_url(self):
+        return self.absolute_api_v2_url
+
+    def _repoint_guids(self, updated):
+        logger.warn('BaseFileNode._repoint_guids is deprecated.')
+
+    def _update_node(self, recursive=True, save=True):
+        if self.parent is not None:
+            self.node = self.parent.node
+        if save:
+            self.save()
+        if recursive and not self.is_file:
+            for child in self.children:
+                child._update_node(save=save)
+
+    def wrapped(self):
+        """Wrap self in a FileNode subclass
+        """
+        logger.warn('Wrapped is deprecated.')
+        return self
+
+    # TODO: Remove unused parent param
+    def delete(self, user=None, parent=None, save=True, deleted_on=None):
+        """
+        Recast a Folder to TrashedFolder, set fields related to deleting,
+        and recast children.
+        :param user:
+        :param parent:
+        :param save:
+        :param deleted_on:
+        :return:
+        """
+        self.deleted_by = user
+        self.deleted_on = deleted_on = deleted_on or timezone.now()
+
+        if not self.is_file:
+            self.recast(TrashedFolder._typedmodels_type)
+
+            for child in BaseFileNode.objects.filter(parent=self.id).exclude(type__in=TrashedFileNode._typedmodels_subtypes):
+                child.delete(user=user, save=save, deleted_on=deleted_on)
+        else:
+            self.recast(TrashedFile._typedmodels_type)
+
+        if save:
+            self.save()
+
+        return self
+
+    def _serialize(self, **kwargs):
+        return {
+            'id': self._id,
+            'path': self.path,
+            'name': self.name,
+            'kind': self.kind,
+        }
+
+    def save(self, *args, **kwargs):
+        if hasattr(self._meta.model, '_provider') and self._meta.model._provider is not None:
+            self.provider = self._meta.model._provider
+        super(BaseFileNode, self).save(*args, **kwargs)
+
+    def __repr__(self):
+        return '<{}(name={!r}, node={!r})>'.format(
+            self.__class__.__name__,
+            self.name,
+            self.node
+        )
+
+
+# TODO Refactor code pointing at FileNode to point to StoredFileNode
+FileNode = StoredFileNode = BaseFileNode
+
+
+class UnableToRestore(Exception):
+    pass
+
+
+class File(models.Model):
+
+    class Meta:
+        abstract = True
+
+    @property
+    def kind(self):
+        return 'file'
+
     def serialize(self):
-        if not self.versions.exists():
+        newest_version = self.versions.all().last()
+
+        if not newest_version:
             return dict(
-                super(File, self).serialize(),
+                self._serialize(),
                 size=None,
                 version=None,
                 modified=None,
@@ -789,65 +490,135 @@ class File(FileNode):
                 checkout=self.checkout._id if self.checkout else None,
             )
 
-        version = self.versions.last()
         return dict(
-            super(File, self).serialize(),
-            size=version.size,
+            self._serialize(),
+            size=newest_version.size,
             downloads=self.get_download_count(),
             checkout=self.checkout._id if self.checkout else None,
-            version=version.identifier if self.versions.exists() else None,
-            contentType=version.content_type if self.versions.exists() else None,
-            modified=version.date_modified.isoformat() if version.date_modified else None,
-            created=self.versions.first().date_modified.isoformat() if self.versions.first().date_modified else None,
+            version=newest_version.identifier if newest_version else None,
+            contentType=newest_version.content_type if newest_version else None,
+            modified=newest_version.date_modified.isoformat() if newest_version.date_modified else None,
+            created=self.versions.all().first().date_modified.isoformat() if self.versions.all().first().date_modified else None,
         )
 
+    def restore(self, recursive=True, parent=None, save=True, deleted_on=None):
+        raise UnableToRestore('You cannot restore something that is not deleted.')
 
-class Folder(FileNode):
-    is_file = False
+
+class Folder(models.Model):
+
+    class Meta:
+        abstract = True
+
+    @property
+    def kind(self):
+        return 'folder'
 
     @property
     def children(self):
-        """Finds all Filenodes that view self as a parent
-        :returns: A GenWrapper for all children
-        :rtype: GenWrapper<MongoQuerySet<cls>>
-        """
-        return FileNode.find(Q('parent_id', 'eq', self.id))
-
-    def delete(self, recurse=True, user=None, parent=None):
-        trashed = self._create_trashed(user=user, parent=parent)
-        if recurse:
-            for child in self.children:
-                child.delete(user=user, parent=trashed)
-        self._repoint_guids(trashed)
-        StoredFileNode.remove_one(self.stored_object)
-        return trashed
+        return self._children.exclude(type__in=TrashedFileNode._typedmodels_subtypes)
 
     def append_file(self, name, path=None, materialized_path=None, save=True):
-        return self._create_child(name, FileNode.FILE, path=path, materialized_path=materialized_path,
-                                  save=save)
+        return self._create_child(name, File, path=path, materialized_path=materialized_path, save=save)
 
     def append_folder(self, name, path=None, materialized_path=None, save=True):
-        return self._create_child(name, FileNode.FOLDER, path=path, materialized_path=materialized_path,
-                                  save=save)
+        return self._create_child(name, Folder, path=path, materialized_path=materialized_path, save=save)
 
     def _create_child(self, name, kind, path=None, materialized_path=None, save=True):
-        child = FileNode.resolve_class(self.provider, kind)(
+        if not self.pk:
+            logger.warn('BaseFileNode._create_child caused an implicit save because you just created a child with an unsaved parent.')
+            self.save()
+        child = self._resolve_class(kind)(
             name=name,
             node=self.node,
             path=path or '/' + name,
-            parent=self.stored_object,
-            materialized_path=materialized_path or os.path.join(
-                self.materialized_path, name) + '/' if not kind else ''
-        ).wrapped()
+            parent=self,
+            materialized_path=materialized_path or
+            os.path.join(self.materialized_path, name) + '/' if kind is Folder else ''
+        )
         if save:
             child.save()
         return child
 
     def find_child_by_name(self, name, kind=2):
-        return FileNode.resolve_class(self.provider, kind).find_one(
+        return self.resolve_class(self.provider, kind).find_one(
             Q('name', 'eq', name) &
-            Q('parent', 'eq', self.id)
+            Q('parent', 'eq', self)
         )
+
+    def serialize(self):
+        return self._serialize()
+
+
+class UnableToDelete(Exception):
+    pass
+
+
+class TrashedFileNode(BaseFileNode):
+    is_deleted = True
+    _provider = None
+
+    def delete(self, user=None, parent=None, save=True, deleted_on=None):
+        if isinstance(self, TrashedFileNode):  # TODO Why is this needed
+            raise UnableToDelete('You cannot delete things that are deleted.')
+
+    def restore(self, recursive=True, parent=None, save=True, deleted_on=None):
+        """
+        Restore a file or folder
+        :param recursive:
+        :param parent:
+        :param save:
+        :param deleted_on:
+        :return:
+        """
+        if self.parent and self.parent.is_deleted:
+            raise ValueError('No parent to restore to')
+
+        type_cls = File if self.is_file else Folder
+
+        self.recast(self._resolve_class(type_cls)._typedmodels_type)
+
+        if save:
+            self.save()
+
+        return self
+
+
+class TrashedFile(TrashedFileNode):
+    @property
+    def kind(self):
+        return 'file'
+
+
+class TrashedFolder(TrashedFileNode):
+    @property
+    def kind(self):
+        return 'folder'
+
+    @property
+    def trashed_children(self):
+        return self._children.filter(type__in=TrashedFileNode._typedmodels_subtypes)
+
+    @property
+    def children(self):
+        return self.trashed_children
+
+    def restore(self, recursive=True, parent=None, save=True, deleted_on=None):
+        """
+        Restore a folder
+        :param recursive:
+        :param parent:
+        :param save:
+        :param deleted_on:
+        :return:
+        """
+        tf = super(TrashedFolder, self).restore(recursive=True, parent=None, save=True, deleted_on=None)
+
+        if not self.is_file and recursive:
+            deleted_on = deleted_on or self.deleted_on
+            for child in TrashedFileNode.objects.filter(parent=self.id, deleted_on=deleted_on):
+                child.restore(recursive=True, save=save, deleted_on=deleted_on)
+        return tf
 
 
 class FileVersion(ObjectIDMixin, BaseModel):

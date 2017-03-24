@@ -21,6 +21,7 @@ from osf import models
 from osf.models import (ApiOAuth2Scope, BlackListGuid, CitationStyle, Guid,
                         Institution, NodeRelation, NotificationSubscription,
                         RecentlyAddedContributor, StoredFileNode, Tag)
+from osf.models import BaseFileNode
 from osf.models import OSFUser
 from osf.models.contributor import (AbstractBaseContributor, Contributor,
                                     InstitutionalContributor)
@@ -75,10 +76,10 @@ def build_toku_django_lookup_table_cache():
     # add the "special" ones
     lookups.update(
         {format_lookup_key(x['name'], ContentType.objects.get_for_model(Tag).pk, template='{}:not_system'): x['pk'] for x in
-         Tag.objects.filter(system=False).values('name', 'pk')})
+         Tag.all_tags.filter(system=False).values('name', 'pk')})
     lookups.update(
         {format_lookup_key(x['name'], ContentType.objects.get_for_model(Tag).pk, template='{}:system'): x['pk'] for x in
-         Tag.objects.filter(system=True).values('name', 'pk')})
+         Tag.all_tags.filter(system=True).values('name', 'pk')})
 
     lookups.update({format_lookup_key(x['_id'], ContentType.objects.get_for_model(CitationStyle).pk): x['pk']
                     for x in CitationStyle.objects.all().values('_id', 'pk')})
@@ -102,7 +103,7 @@ def build_toku_django_lookup_table_cache():
 
 
 def do_model_lookup(model):
-    if issubclass(model, AbstractNode) and model is not AbstractNode:
+    if (issubclass(model, AbstractNode) and model is not AbstractNode) or (issubclass(model, BaseFileNode) and model is not BaseFileNode):
         return
     lookup_string = model.primary_identifier_name
     lookup_dict = {}
@@ -196,6 +197,7 @@ def do_model(django_model, *args, **options):
     if issubclass(django_model, AbstractBaseContributor) \
             or django_model is ApiOAuth2Scope or \
             (issubclass(django_model, AbstractNode) and django_model is not AbstractNode) or \
+            django_model is BaseFileNode or \
             not hasattr(django_model, 'modm_model_path'):
         return
 
@@ -222,6 +224,7 @@ def save_page_of_fk_relationships(self, django_model, fk_relations, offset, limi
     register_nonexistent_models_with_modm()
     # Disable typedmodel auto-recasting to prevent migration from missing fields h/t @chrisseto
     AbstractNode._auto_recast = False
+    BaseFileNode._auto_recast = False
     try:
         with transaction.atomic():  # one transaction per page
             bad_fields = []
@@ -409,6 +412,7 @@ def save_page_of_fk_relationships(self, django_model, fk_relations, offset, limi
     finally:
         # Disable typedmodel auto-recasting to prevent migration from missing fields h/t @chrisseto
         AbstractNode._auto_recast = True
+        BaseFileNode._auto_recast = True
 
 
 @app.task()

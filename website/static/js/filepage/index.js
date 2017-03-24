@@ -142,11 +142,12 @@ var FileViewPage = {
                         '. It needs to be checked in before any changes can be made.'
                     ])));
                 }
+                m.redraw(true);
             });
         };
         if (self.file.provider === 'osfstorage'){
             self.canEdit = function() {
-                return ((!self.file.checkoutUser) || (self.file.checkoutUser === self.context.currentUser.id)) ? self.context.currentUser.canEdit : false;
+                return (self.requestDone && ((!self.file.checkoutUser) || (self.file.checkoutUser === self.context.currentUser.id))) ? self.context.currentUser.canEdit : false;
             };
             self.isCheckoutUser();
         } else {
