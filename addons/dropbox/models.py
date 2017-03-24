@@ -12,7 +12,7 @@ from framework.auth import Auth
 from framework.exceptions import HTTPError
 from framework.sessions import session
 from osf.models.external import ExternalProvider
-from osf.models.files import File, FileNode, Folder
+from osf.models.files import File, Folder, BaseFileNode
 from urllib3.exceptions import MaxRetryError
 from addons.base import exceptions
 from addons.dropbox import settings
@@ -22,12 +22,13 @@ from website.util import api_v2_url, web_url_for
 logger = logging.getLogger(__name__)
 
 
-class DropboxFileNode(FileNode):
+class DropboxFileNode(BaseFileNode):
     # TODO DELETE ME POST MIGRATION
     modm_model_path = 'website.files.models.dropbox.DropboxFileNode'
     modm_query = None
     # /TODO DELETE ME POST MIGRATION
-    provider = 'dropbox'
+    _provider = 'dropbox'
+
 
 class DropboxFolder(DropboxFileNode, Folder):
     # TODO DELETE ME POST MIGRATION
@@ -36,12 +37,14 @@ class DropboxFolder(DropboxFileNode, Folder):
     # /TODO DELETE ME POST MIGRATION
     pass
 
+
 class DropboxFile(DropboxFileNode, File):
     # TODO DELETE ME POST MIGRATION
     modm_model_path = 'website.files.models.dropbox.DropboxFile'
     modm_query = None
     # /TODO DELETE ME POST MIGRATION
     pass
+
 
 class Provider(ExternalProvider):
     name = 'Dropbox'
@@ -127,6 +130,7 @@ class UserSettings(BaseOAuthUserSettings):
             client.disable_access_token()
         except ErrorResponse:
             pass
+
 
 class NodeSettings(BaseStorageAddon, BaseOAuthNodeSettings):
     # TODO DELETE ME POST MIGRATION

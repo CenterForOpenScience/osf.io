@@ -49,7 +49,6 @@ class TestGuidDetail(ApiTestCase):
 
     def test_redirect_to_file_view(self):
         test_file = OsfStorageFile.create(
-            is_file=True,
             node=ProjectFactory(),
             path='/test',
             name='test',
@@ -88,7 +87,6 @@ class TestGuidDetail(ApiTestCase):
     def test_redirect_when_viewing_private_project_file_through_view_only_link(self):
         project = ProjectFactory()
         test_file = OsfStorageFile.create(
-            is_file=True,
             node=project,
             path='/test',
             name='test',

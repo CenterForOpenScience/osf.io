@@ -38,6 +38,9 @@ class PreprintProvider(ObjectIDMixin, BaseModel):
 
     extra = DateTimeAwareJSONField(blank=True, default=dict)
 
+    def __unicode__(self):
+        return '{} with id {}'.format(self.name, self.id)
+
     @property
     def top_level_subjects(self):
         if len(self.subjects_acceptable) == 0:

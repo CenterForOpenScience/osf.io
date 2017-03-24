@@ -11,18 +11,15 @@ from framework.auth import get_or_create_user
 from framework.exceptions import HTTPError
 from framework.flask import redirect
 from framework.transactions.handlers import no_auto_transaction
-
 from website import settings
-from website.models import Node, Tag
-from website.util import web_url_for
-from website.mails import send_mail
-from website.files.models import StoredFileNode
-from website.mails import CONFERENCE_SUBMITTED, CONFERENCE_INACTIVE, CONFERENCE_FAILED
-
 from website.conferences import utils, signals
 from website.conferences.message import ConferenceMessage, ConferenceError
 from website.conferences.model import Conference
-
+from website.files.models import OsfStorageFile
+from website.mails import CONFERENCE_SUBMITTED, CONFERENCE_INACTIVE, CONFERENCE_FAILED
+from website.mails import send_mail
+from website.models import Node, Tag
+from website.util import web_url_for
 
 logger = logging.getLogger(__name__)
 
@@ -143,16 +140,13 @@ def add_poster_by_email(conference, message):
 
 
 def _render_conference_node(node, idx, conf):
-    try:
-        record = next(
-            x for x in
-            StoredFileNode.find(
-                Q('node', 'eq', node) &
-                Q('is_file', 'eq', True)
-            ).limit(1)
-        ).wrapped()
-        download_count = record.get_download_count()
+    record = OsfStorageFile.objects.filter(node=node).first()
 
+    if not record:
+        download_url = ''
+        download_count = 0
+    else:
+        download_count = record.get_download_count()
         download_url = node.web_url_for(
             'addon_view_or_download_file',
             path=record.path.strip('/'),
@@ -160,9 +154,6 @@ def _render_conference_node(node, idx, conf):
             action='download',
             _absolute=True,
         )
-    except StopIteration:
-        download_url = ''
-        download_count = 0
 
     author = node.visible_contributors[0]
     tags = list(node.tags.filter(system=False).values_list('name', flat=True))

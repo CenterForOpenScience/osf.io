@@ -12,7 +12,7 @@ from framework.auth import Auth
 from framework.exceptions import HTTPError
 from oauthlib.oauth2 import InvalidGrantError
 from osf.models.external import ExternalProvider
-from osf.models.files import File, FileNode, Folder
+from osf.models.files import File, Folder, BaseFileNode
 from urllib3.exceptions import MaxRetryError
 from addons.base import exceptions
 from addons.box import settings
@@ -22,12 +22,13 @@ from website.util import api_v2_url
 logger = logging.getLogger(__name__)
 
 
-class BoxFileNode(FileNode):
+class BoxFileNode(BaseFileNode):
     # TODO DELETE ME POST MIGRATION
     modm_model_path = 'website.files.models.box.BoxFileNode'
     modm_query = None
     # /TODO DELETE ME POST MIGRATION
-    provider = 'box'
+    _provider = 'box'
+
 
 class BoxFolder(BoxFileNode, Folder):
     # TODO DELETE ME POST MIGRATION
@@ -36,12 +37,14 @@ class BoxFolder(BoxFileNode, Folder):
     # /TODO DELETE ME POST MIGRATION
     pass
 
+
 class BoxFile(BoxFileNode, File):
     # TODO DELETE ME POST MIGRATION
     modm_model_path = 'website.files.models.box.BoxFile'
     modm_query = None
     # /TODO DELETE ME POST MIGRATION
     pass
+
 
 class Provider(ExternalProvider):
     name = 'Box'

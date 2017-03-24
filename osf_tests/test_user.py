@@ -39,6 +39,7 @@ from .factories import (
     NodeFactory,
     InstitutionFactory,
     SessionFactory,
+    TagFactory,
     UserFactory,
     UnregUserFactory,
     UnconfirmedUserFactory
@@ -946,6 +947,17 @@ class TestTagging:
 
         tag = Tag.all_tags.get(name=tag_name, system=True)
         assert tag in user.all_tags.all()
+
+    def test_add_system_tag_instance(self, user):
+        tag = TagFactory(system=True)
+        user.add_system_tag(tag)
+        assert tag in user.all_tags.all()
+
+    def test_add_system_tag_with_non_system_instance(self, user):
+        tag = TagFactory(system=False)
+        with pytest.raises(ValueError):
+            user.add_system_tag(tag)
+        assert tag not in user.all_tags.all()
 
     def test_tags_get_lowercased(self, user):
         tag_name = 'NeOn'

@@ -50,7 +50,7 @@ class TestCampaignInitialization(OsfTestCase):
             'psyarxiv-preprints',
         ]
         self.refresh = timezone.now()
-        campaigns.CAMPAIGNS = None
+        campaigns.CAMPAIGNS = None  # force campaign refresh now that preprint providers are populated
         campaigns.CAMPAIGNS_LAST_REFRESHED = self.refresh
 
     def test_get_campaigns_init(self):
@@ -90,6 +90,7 @@ class TestCampaignMethods(OsfTestCase):
             'psyarxiv-preprints',
         ]
         self.invalid_campaign = 'invalid_campaign'
+        campaigns.CAMPAIGNS = None  # force campaign refresh now that preprint providers are populated
 
     def test_is_institution_login(self):
         for campaign in self.campaign_lists:
@@ -157,7 +158,7 @@ class TestCampaignMethods(OsfTestCase):
 
     def test_campaign_for_user(self):
         user = factories.UserFactory()
-        user.tags.add(factories.TagFactory(name='osf_preprints', system=True))
+        user.add_system_tag('osf_preprints')
         user.save()
         campaign = campaigns.campaign_for_user(user)
         assert_equal(campaign, 'osf-preprints')

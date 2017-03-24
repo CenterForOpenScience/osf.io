@@ -533,7 +533,6 @@ class PreprintFactory(DjangoModelFactory):
             )
 
         file = OsfStorageFile.create(
-            is_file=True,
             node=project,
             path='/{}'.format(filename),
             name=filename,

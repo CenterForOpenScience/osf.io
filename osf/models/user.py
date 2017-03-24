@@ -129,6 +129,8 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         'schools',
         'social',
     }
+    TRACK_FIELDS = SEARCH_UPDATE_FIELDS.copy()
+    TRACK_FIELDS.add('password')
 
     # TODO: Add SEARCH_UPDATE_NODE_FIELDS, for fields that should trigger a
     #   search update for all nodes to which the user is a contributor.
@@ -360,6 +362,9 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
     is_active = models.BooleanField(default=False)
     is_staff = models.BooleanField(default=False)
+
+    def __repr__(self):
+        return '<OSFUser({0!r}) with guid {1!r}>'.format(self.username, self._id)
 
     @property
     def deep_url(self):
@@ -1233,6 +1238,8 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             tag_instance, created = Tag.all_tags.get_or_create(name=tag.lower(), system=True)
         else:
             tag_instance = tag
+        if not tag_instance.system:
+            raise ValueError('Non-system tag passed to add_system_tag')
         if not self.all_tags.filter(id=tag_instance.id).exists():
             self.tags.add(tag_instance)
         return tag_instance

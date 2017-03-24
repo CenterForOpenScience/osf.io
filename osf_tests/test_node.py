@@ -54,6 +54,7 @@ from osf_tests.factories import (
     NodeRelationFactory,
     InstitutionFactory,
     SessionFactory,
+    TagFactory,
 )
 from .factories import get_default_metaschema
 from addons.wiki.tests.factories import NodeWikiFactory
@@ -694,6 +695,19 @@ class TestTagging:
         # No log added
         new_log_count = node.logs.count()
         assert original_log_count == new_log_count
+
+    def test_add_system_tag_instance(self, node):
+        tag = TagFactory(system=True)
+        node.add_system_tag(tag)
+
+        assert tag in node.all_tags.all()
+
+    def test_add_system_tag_non_system_instance(self, node):
+        tag = TagFactory(system=False)
+        with pytest.raises(ValueError):
+            node.add_system_tag(tag)
+
+        assert tag not in node.all_tags.all()
 
     def test_system_tags_property(self, node, auth):
         other_node = ProjectFactory()
