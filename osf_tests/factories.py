@@ -506,9 +506,7 @@ class PreprintProviderFactory(DjangoModelFactory):
 
 
 class PreprintFactory(DjangoModelFactory):
-    doi = factory.Sequence(lambda n: '10.123/{}'.format(n))
     provider = factory.SubFactory(PreprintProviderFactory)
-    external_url = 'http://hello.org'
 
     class Meta:
         model = models.PreprintService
