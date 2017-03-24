@@ -23,7 +23,7 @@ def migrate():
     total = len(targets)
     for i, user in enumerate(targets):
         logger.info('({}/{}) Preparing to migrate User {}'.format(i + 1, total, user._id))
-        bookmarks = Node.find(Q('is_bookmark_collection', 'eq', True) & Q('contributors', 'eq', user._id))
+        bookmarks = Node.find(Q('is_bookmark_collection', 'eq', True) & Q('creator', 'eq', user._id))
         if sum([bool(n.nodes) for n in bookmarks]) > 1:
             raise Exception('Expected no users to have more than one bookmark with .nodes, {} violated'.format(user._id))
         bookmark_to_keep = None
@@ -41,7 +41,7 @@ def migrate():
 
 def main():
     parser = argparse.ArgumentParser(
-        description='Ensures every confirmed user has only one bookmark collection.'
+        description='Ensures every user has only one bookmark collection.'
     )
     parser.add_argument(
         '--dry',
