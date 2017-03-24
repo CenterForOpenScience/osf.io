@@ -7,7 +7,7 @@ from framework.auth.core import User
 from framework.transactions.context import TokuTransaction
 from scripts import utils as script_utils
 from website.app import init_app
-from website.project import Node
+from website.models import Node
 
 
 logger = logging.getLogger(__name__)
