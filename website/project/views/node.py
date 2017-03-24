@@ -397,7 +397,11 @@ def project_reorder_components(node, **kwargs):
     :param-json list new_list: List of strings that include node GUIDs.
     """
     ordered_guids = request.get_json().get('new_list', [])
-    node_relations = node.node_relations.select_related('child').filter(child__is_deleted=False)
+    node_relations = (
+        node.node_relations
+            .select_related('child')
+            .filter(child__is_deleted=False)
+    )
     deleted_node_relation_ids = list(
         node.node_relations.select_related('child')
         .filter(child__is_deleted=True)
@@ -789,7 +793,8 @@ def _view_project(node, auth, primary=False,
     if embed_contributors and not anonymous:
         data['node']['contributors'] = utils.serialize_contributors(node.visible_contributors, node=node)
     if embed_descendants:
-        descendants = _get_readable_descendants(auth=auth, node=node)
+        descendants, all_readable = _get_readable_descendants(auth=auth, node=node)
+        data['user']['can_sort'] = all_readable
         data['node']['descendants'] = [
             serialize_node_summary(node=each, auth=auth, primary=not node.has_node_link_to(each), show_path=False)
             for each in descendants
@@ -878,10 +883,12 @@ def get_recent_logs(node, **kwargs):
 
 def _get_readable_descendants(auth, node, permission=None):
     descendants = []
+    all_readable = True
     for child in node.get_nodes(is_deleted=False):
         if permission:
             perm = permission.lower().strip()
             if not child.has_permission(auth.user, perm):
+                all_readable = False
                 continue
         # User can view child
         if child.can_view(auth):
@@ -890,10 +897,13 @@ def _get_readable_descendants(auth, node, permission=None):
         elif node.linked_nodes.filter(id=child.id).exists():
             if node.has_permission(auth.user, 'write'):
                 descendants.append(child)
+            else:
+                all_readable = False
         else:
+            all_readable = False
             for descendant in child.find_readable_descendants(auth):
                 descendants.append(descendant)
-    return descendants
+    return descendants, all_readable
 
 def node_child_tree(user, nodes):
     """ Format data to test for node privacy settings for use in treebeard.

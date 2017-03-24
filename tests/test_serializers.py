@@ -292,8 +292,9 @@ class TestGetReadableDescendants(OsfTestCase):
     def test__get_readable_descendants(self):
         project = ProjectFactory(creator=self.user)
         child = NodeFactory(parent=project, creator=self.user)
-        nodes = _get_readable_descendants(auth=Auth(project.creator), node=project)
+        nodes, all_readable = _get_readable_descendants(auth=Auth(project.creator), node=project)
         assert_equal(nodes[0]._id, child._id)
+        assert_true(all_readable)
 
     def test__get_readable_descendants_includes_pointers(self):
         project = ProjectFactory(creator=self.user)
@@ -301,11 +302,12 @@ class TestGetReadableDescendants(OsfTestCase):
         node_relation = project.add_pointer(pointed, auth=Auth(self.user))
         project.save()
 
-        nodes = _get_readable_descendants(auth=Auth(project.creator), node=project)
+        nodes, all_readable = _get_readable_descendants(auth=Auth(project.creator), node=project)
 
         assert_equal(len(nodes), 1)
         assert_equal(nodes[0].title, pointed.title)
         assert_equal(nodes[0]._id, pointed._id)
+        assert_true(all_readable)
 
     def test__get_readable_descendants_masked_by_permissions(self):
         # Users should be able to see through components they do not have
@@ -368,14 +370,16 @@ class TestGetReadableDescendants(OsfTestCase):
         NodeRelation.objects.create(parent=component7, child=component8)
         NodeRelation.objects.create(parent=component7, child=component9)
 
-        nodes = _get_readable_descendants(auth=Auth(userA), node=project1)
+        nodes, all_readable = _get_readable_descendants(auth=Auth(userA), node=project1)
         assert_equal(len(nodes), 3)
+        assert_false(all_readable)
 
         for node in nodes:
             assert_in(node.title, ['Two', 'Six', 'Seven'])
 
-        nodes = _get_readable_descendants(auth=Auth(userB), node=project1)
+        nodes, all_readable = _get_readable_descendants(auth=Auth(userB), node=project1)
         assert_equal(len(nodes), 3)
+        assert_false(all_readable)
         for node in nodes:
             assert_in(node.title, ['Four', 'Eight', 'Nine'])
 
