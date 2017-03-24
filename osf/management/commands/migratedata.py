@@ -148,7 +148,7 @@ def migrate_user_activity_counters(page_size=20000):
 def make_guids():
     logger.info('Starting {}...'.format(sys._getframe().f_code.co_name))
 
-    guid_models = [model for model in get_ordered_models() if (issubclass(model, GuidMixin) or issubclass(model, OptionalGuidMixin)) and model.__subclasses__() == []]
+    guid_models = [model for model in get_ordered_models() if (issubclass(model, GuidMixin) or issubclass(model, OptionalGuidMixin)) and (model.__subclasses__() == [] and not issubclass(model, AbstractNode)) or model is AbstractNode]
 
     with connection.cursor() as cursor:
         with transaction.atomic():
@@ -288,7 +288,7 @@ def validate_guid_referents_against_ids():
     set_backend()
     register_nonexistent_models_with_modm()
     with ipdb.launch_ipdb_on_exception():
-        for django_model in [model for model in get_ordered_models() if (issubclass(model, GuidMixin) or issubclass(model, OptionalGuidMixin)) and model.__subclasses__() == []]:
+        for django_model in [model for model in get_ordered_models() if (issubclass(model, GuidMixin) or issubclass(model, OptionalGuidMixin)) and (model.__subclasses__() == [] and not issubclass(model, AbstractNode)) or model is AbstractNode]:
             if not hasattr(django_model, 'modm_model_path'):
                 logger.info('################################################\n'
                             '{} doesn\'t have a modm_model_path\n'
