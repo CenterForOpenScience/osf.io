@@ -201,7 +201,7 @@ def do_model(django_model, *args, **options):
     if issubclass(django_model, AbstractBaseContributor) \
             or django_model is ApiOAuth2Scope or \
             (issubclass(django_model, AbstractNode) and django_model is not AbstractNode) or \
-            django_model is BaseFileNode or \
+            (issubclass(django_model, BaseFileNode) and django_model.__subclasses__() != []) or \
             not hasattr(django_model, 'modm_model_path'):
         return
 
