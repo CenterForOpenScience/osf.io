@@ -35,6 +35,7 @@ from website.models import \
 from website.models import Pointer as MODMPointer
 from website.models import User as MODMUser
 from .migratedata import set_backend, get_modm_model, register_nonexistent_models_with_modm
+from django.db import IntegrityError
 
 logger = logging.getLogger('migrations')
 
