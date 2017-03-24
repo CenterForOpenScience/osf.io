@@ -13,6 +13,7 @@ from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.core.management import BaseCommand
 from django.db import transaction
+from typedmodels.models import TypedModel
 
 from addons.osfstorage.models import NodeSettings as OSFStorageNodeSettings
 from addons.wiki.models import NodeSettings as WikiNodeSettings
@@ -412,7 +413,10 @@ def save_page_of_fk_relationships(self, django_model, fk_relations, offset, limi
                         logger.error('FALLBACK TO SLOW SAVE: Integrity error saving page {}:{} of {} with exception {}'.format(offset,limit+offset, django_model, ex))
                         for obj in django_objects_to_update:
                             try:
-                                obj.save()
+                                if isinstance(obj, TypedModel):
+                                    obj.recast().save()
+                                else:
+                                    obj.save()
                             except IntegrityError as ex:
                                 logger.error('Integrity error saving {} with id of {} with exception {}'.format(django_model, obj.id, ex))
 
