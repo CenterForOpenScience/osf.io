@@ -4,10 +4,15 @@ This will update node links on POPULAR_LINKS_NODE and NEW_AND_NOTEWORTHY_LINKS_N
 import sys
 import logging
 import dateutil
+
+import django
 from django.utils import timezone
 from django.db import transaction
 from django.db.models import Q
 from website.app import init_app
+
+django.setup()
+
 from osf.models import Node, NodeLog
 from framework.auth.core import Auth
 from scripts import utils as script_utils
