@@ -1521,7 +1521,7 @@ class NodeLinksDetail(BaseNodeLinksDetail, generics.RetrieveDestroyAPIView, Node
             self.kwargs[self.node_link_lookup_url_kwarg],
             'node link'
         )
-        self.check_object_permissions(self.request, node_link)
+        self.check_object_permissions(self.request, node_link.parent)
         return node_link
 
     # overrides DestroyAPIView

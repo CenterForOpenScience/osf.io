@@ -28,14 +28,14 @@ class ContributorOrPublic(permissions.BasePermission):
 class IsPublic(permissions.BasePermission):
 
     def has_object_permission(self, request, view, obj):
-        assert isinstance(obj, (AbstractNode)), 'obj must be an Node got {}'.format(obj)
+        assert isinstance(obj, AbstractNode), 'obj must be an Node got {}'.format(obj)
         auth = get_user_auth(request)
         return obj.is_public or obj.can_view(auth)
 
 
 class IsAdmin(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
-        assert isinstance(obj, (AbstractNode)), 'obj must be an Node, got {}'.format(obj)
+        assert isinstance(obj, AbstractNode), 'obj must be an Node, got {}'.format(obj)
         auth = get_user_auth(request)
         return obj.has_permission(auth.user, osf_permissions.ADMIN)
 

@@ -27,7 +27,7 @@ from api.nodes.permissions import ContributorOrPublicForRelationshipPointers
 from api.nodes.permissions import ReadOnlyIfRegistration
 from api.users.serializers import UserSerializer
 from framework.auth.oauth_scopes import CoreScopes
-from osf.models.contributor import Contributor, get_contributor_permissions
+from osf.models.contributor import Contributor
 from website.models import Pointer
 
 CACHE = weakref.WeakKeyDictionary()
@@ -770,15 +770,9 @@ class BaseContributorDetail(JSONAPIBaseView, generics.RetrieveAPIView):
         # May raise a permission denied
         self.check_object_permissions(self.request, user)
         try:
-            contributor = node.contributor_set.get(user=user)
+            return node.contributor_set.get(user=user)
         except Contributor.DoesNotExist:
             raise NotFound('{} cannot be found in the list of contributors.'.format(user))
-
-        user.permission = get_contributor_permissions(contributor, as_list=False)
-        user.bibliographic = contributor.visible
-        user.node_id = node._id
-        user.index = list(node.get_contributor_order()).index(contributor.id)
-        return user
 
 
 class BaseContributorList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
