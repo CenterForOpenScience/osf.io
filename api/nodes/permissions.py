@@ -35,7 +35,7 @@ class IsPublic(permissions.BasePermission):
 
 class IsAdmin(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
-        assert isinstance(obj, (AbstractNode, DraftRegistration, PrivateLink)), 'obj must be an Node, Draft Registration, or PrivateLink, got {}'.format(obj)
+        assert isinstance(obj, (AbstractNode)), 'obj must be an Node, got {}'.format(obj)
         auth = get_user_auth(request)
         return obj.has_permission(auth.user, osf_permissions.ADMIN)
 
