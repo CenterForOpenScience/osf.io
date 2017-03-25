@@ -21,22 +21,20 @@ from addons.github.api import GitHubClient
 from addons.github.exceptions import ApiError, NotFoundError
 from addons.github.serializer import GitHubSerializer
 from website.util import web_url_for
-
+# TODO DELETE ME POST MIGRATION
+from modularodm import Q as MQ
+# /TODO DELETE ME POST MIGRATION
 hook_domain = github_settings.HOOK_DOMAIN or settings.DOMAIN
 
 
 class GithubFileNode(BaseFileNode):
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.files.models.github.GithubFileNode'
-    modm_query = None
-    # /TODO DELETE ME POST MIGRATION
     _provider = 'github'
 
 
 class GithubFolder(GithubFileNode, Folder):
     # TODO DELETE ME POST MIGRATION
     modm_model_path = 'website.files.models.github.GithubFolder'
-    modm_query = None
+    modm_query = MQ('is_file', 'eq', False)
     # /TODO DELETE ME POST MIGRATION
     pass
 
@@ -44,7 +42,7 @@ class GithubFolder(GithubFileNode, Folder):
 class GithubFile(GithubFileNode, File):
     # TODO DELETE ME POST MIGRATION
     modm_model_path = 'website.files.models.github.GithubFile'
-    modm_query = None
+    modm_query = MQ('is_file', 'eq', True)
     # /TODO DELETE ME POST MIGRATION
     version_identifier = 'ref'
 

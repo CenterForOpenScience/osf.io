@@ -13,22 +13,20 @@ from addons.owncloud.serializer import OwnCloudSerializer
 from addons.owncloud.settings import DEFAULT_HOSTS, USE_SSL
 from website.oauth.models import BasicAuthProviderMixin
 from website.util import api_v2_url
-
+# TODO DELETE ME POST MIGRATION
+from modularodm import Q as MQ
+# /TODO DELETE ME POST MIGRATION
 logger = logging.getLogger(__name__)
 
 
 class OwncloudFileNode(BaseFileNode):
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.files.models.owncloud.OwncloudFileNode'
-    modm_query = None
-    # /TODO DELETE ME POST MIGRATION
     _provider = 'owncloud'
 
 
 class OwncloudFolder(OwncloudFileNode, Folder):
     # TODO DELETE ME POST MIGRATION
     modm_model_path = 'website.files.models.owncloud.OwncloudFolder'
-    modm_query = None
+    modm_query = MQ('is_file', 'eq', False)
     # /TODO DELETE ME POST MIGRATION
     pass
 
@@ -36,7 +34,7 @@ class OwncloudFolder(OwncloudFileNode, Folder):
 class OwncloudFile(OwncloudFileNode, File):
     # TODO DELETE ME POST MIGRATION
     modm_model_path = 'website.files.models.owncloud.OwncloudFile'
-    modm_query = None
+    modm_query = MQ('is_file', 'eq', True)
     # /TODO DELETE ME POST MIGRATION
     pass
 

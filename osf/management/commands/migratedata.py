@@ -27,7 +27,7 @@ from framework.transactions.context import transaction as modm_transaction
 from osf.models import Comment
 from osf.models import Institution
 from osf.models import (NodeLog, OSFUser,
-                        PageCounter, StoredFileNode, Tag, UserActivityCounter)
+                        PageCounter, StoredFileNode, BaseFileNode, Tag, UserActivityCounter)
 from osf.models.base import Guid, GuidMixin, OptionalGuidMixin
 from osf.models.node import AbstractNode
 from osf.utils.order_apps import get_ordered_models
@@ -74,6 +74,8 @@ def get_modm_model(django_model):
 
 @app.task()
 def migrate_page_counters(page_size=20000):
+    init_app(routes=False, attach_request_handlers=False, fixtures=False)
+
     logger.info('Starting {}...'.format(sys._getframe().f_code.co_name))
     collection = database['pagecounters']
 
@@ -110,6 +112,8 @@ def migrate_page_counters(page_size=20000):
 
 @app.task()
 def migrate_user_activity_counters(page_size=20000):
+    init_app(routes=False, attach_request_handlers=False, fixtures=False)
+
     logger.info('Starting {}...'.format(sys._getframe().f_code.co_name))
     collection = database['useractivitycounters']
 
@@ -146,9 +150,11 @@ def migrate_user_activity_counters(page_size=20000):
 
 @app.task()
 def make_guids():
+    init_app(routes=False, attach_request_handlers=False, fixtures=False)
+
     logger.info('Starting {}...'.format(sys._getframe().f_code.co_name))
 
-    guid_models = [model for model in get_ordered_models() if (issubclass(model, GuidMixin) or issubclass(model, OptionalGuidMixin)) and model.__subclasses__() == []]
+    guid_models = [model for model in get_ordered_models() if (issubclass(model, GuidMixin) or issubclass(model, OptionalGuidMixin)) and not issubclass(model, (AbstractNode, BaseFileNode)) or model is AbstractNode or model is BaseFileNode]
 
     with connection.cursor() as cursor:
         with transaction.atomic():
@@ -288,7 +294,7 @@ def validate_guid_referents_against_ids():
     set_backend()
     register_nonexistent_models_with_modm()
     with ipdb.launch_ipdb_on_exception():
-        for django_model in [model for model in get_ordered_models() if (issubclass(model, GuidMixin) or issubclass(model, OptionalGuidMixin)) and model.__subclasses__() == []]:
+        for django_model in [model for model in get_ordered_models() if (issubclass(model, GuidMixin) or issubclass(model, OptionalGuidMixin)) and not issubclass(model, (AbstractNode, BaseFileNode)) or model is AbstractNode or model is BaseFileNode]:
             if not hasattr(django_model, 'modm_model_path'):
                 logger.info('################################################\n'
                             '{} doesn\'t have a modm_model_path\n'
@@ -338,6 +344,8 @@ def validate_guid_referents_against_ids():
 
 @app.task()
 def fix_guids():
+    init_app(routes=False, attach_request_handlers=False, fixtures=False)
+
     modm_guids = MGuid.find().get_keys()
     dj_guids = Guid.objects.all().values_list('_id', flat=True)
     set_of_modm_guids = set(modm_guids)
@@ -616,6 +624,8 @@ class DuplicateExternalAccounts(Exception):
 
 @app.task()
 def save_bare_system_tags(page_size=10000):
+    init_app(routes=False, attach_request_handlers=False, fixtures=False)
+
     logger.info('Starting save_bare_system_tags...')
     start = timezone.now()
 

@@ -16,6 +16,9 @@ from osf.utils.auth import Auth
 from website.files import exceptions
 from website.files import utils as files_utils
 from website.util import permissions
+# TODO DELETE ME POST MIGRATION
+from modularodm import Q as MQ
+# /TODO DELETE ME POST MIGRATION
 
 settings = apps.get_app_config('addons_osfstorage')
 
@@ -23,10 +26,6 @@ logger = logging.getLogger(__name__)
 
 
 class OsfStorageFileNode(BaseFileNode):
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.files.models.osfstorage.OsfStorageFileNode'
-    modm_query = None
-    # /TODO DELETE ME POST MIGRATION
     _provider = 'osfstorage'
 
     @property
@@ -213,7 +212,7 @@ class OsfStorageFileNode(BaseFileNode):
 class OsfStorageFile(OsfStorageFileNode, File):
     # TODO DELETE ME POST MIGRATION
     modm_model_path = 'website.files.models.osfstorage.OsfStorageFile'
-    modm_query = None
+    modm_query = MQ('is_file', 'eq', True)
     # /TODO DELETE ME POST MIGRATION
 
     def touch(self, bearer, version=None, revision=None, **kwargs):
@@ -345,7 +344,7 @@ class OsfStorageFile(OsfStorageFileNode, File):
 class OsfStorageFolder(OsfStorageFileNode, Folder):
     # TODO DELETE ME POST MIGRATION
     modm_model_path = 'website.files.models.osfstorage.OsfStorageFolder'
-    modm_query = None
+    modm_query = MQ('is_file', 'eq', False)
     # /TODO DELETE ME POST MIGRATION
 
     @property

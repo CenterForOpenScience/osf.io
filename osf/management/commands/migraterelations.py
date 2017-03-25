@@ -103,8 +103,12 @@ def build_toku_django_lookup_table_cache():
 
 
 def do_model_lookup(model):
-    if (issubclass(model, AbstractNode) and model is not AbstractNode) or (issubclass(model, BaseFileNode) and model is not BaseFileNode):
+    if (issubclass(model, AbstractNode) and model is not AbstractNode):
         return
+
+    if (issubclass(model, BaseFileNode) and model is not BaseFileNode):
+        return
+
     lookup_string = model.primary_identifier_name
     lookup_dict = {}
 
@@ -197,7 +201,7 @@ def do_model(django_model, *args, **options):
     if issubclass(django_model, AbstractBaseContributor) \
             or django_model is ApiOAuth2Scope or \
             (issubclass(django_model, AbstractNode) and django_model is not AbstractNode) or \
-            django_model is BaseFileNode or \
+            (issubclass(django_model, BaseFileNode) and django_model.__subclasses__() != []) or \
             not hasattr(django_model, 'modm_model_path'):
         return
 
@@ -448,6 +452,8 @@ def save_fk_relationships(django_model, page_size):
 
 @app.task(bind=True)
 def save_page_of_m2m_relationships(self, django_model, m2m_relations, offset, limit):
+    init_app(routes=False, attach_request_handlers=False, fixtures=False)
+
     try:
         with transaction.atomic():  # one transaction per page
             modm_model = get_modm_model(django_model)

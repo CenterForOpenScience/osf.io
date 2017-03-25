@@ -18,22 +18,21 @@ from addons.base import exceptions
 from addons.box import settings
 from addons.box.serializer import BoxSerializer
 from website.util import api_v2_url
+# TODO DELETE ME POST MIGRATION
+from modularodm import Q as MQ
+# /TODO DELETE ME POST MIGRATION
 
 logger = logging.getLogger(__name__)
 
 
 class BoxFileNode(BaseFileNode):
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.files.models.box.BoxFileNode'
-    modm_query = None
-    # /TODO DELETE ME POST MIGRATION
     _provider = 'box'
 
 
 class BoxFolder(BoxFileNode, Folder):
     # TODO DELETE ME POST MIGRATION
     modm_model_path = 'website.files.models.box.BoxFolder'
-    modm_query = None
+    modm_query = MQ('is_file', 'eq', False)
     # /TODO DELETE ME POST MIGRATION
     pass
 
@@ -41,7 +40,7 @@ class BoxFolder(BoxFileNode, Folder):
 class BoxFile(BoxFileNode, File):
     # TODO DELETE ME POST MIGRATION
     modm_model_path = 'website.files.models.box.BoxFile'
-    modm_query = None
+    modm_query = MQ('is_file', 'eq', True)
     # /TODO DELETE ME POST MIGRATION
     pass
 

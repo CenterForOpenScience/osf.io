@@ -19,21 +19,21 @@ from addons.dropbox import settings
 from addons.dropbox.serializer import DropboxSerializer
 from website.util import api_v2_url, web_url_for
 
+# TODO DELETE ME POST MIGRATION
+from modularodm import Q as MQ
+# /TODO DELETE ME POST MIGRATION
+
 logger = logging.getLogger(__name__)
 
 
 class DropboxFileNode(BaseFileNode):
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.files.models.dropbox.DropboxFileNode'
-    modm_query = None
-    # /TODO DELETE ME POST MIGRATION
     _provider = 'dropbox'
 
 
 class DropboxFolder(DropboxFileNode, Folder):
     # TODO DELETE ME POST MIGRATION
     modm_model_path = 'website.files.models.dropbox.DropboxFolder'
-    modm_query = None
+    modm_query = MQ('is_file', 'eq', False)
     # /TODO DELETE ME POST MIGRATION
     pass
 
@@ -41,7 +41,7 @@ class DropboxFolder(DropboxFileNode, Folder):
 class DropboxFile(DropboxFileNode, File):
     # TODO DELETE ME POST MIGRATION
     modm_model_path = 'website.files.models.dropbox.DropboxFile'
-    modm_query = None
+    modm_query = MQ('is_file', 'eq', True)
     # /TODO DELETE ME POST MIGRATION
     pass
 
