@@ -62,9 +62,10 @@ class JSONAPIBaseView(generics.GenericAPIView):
             else:
                 request = EmbeddedRequest(self.request)
 
+            request.parents.setdefault(type(item), {})[item._id] = item
+
             view_kwargs.update({
                 'request': request,
-                'parent_obj': item,
                 'is_embedded': True,
             })
 

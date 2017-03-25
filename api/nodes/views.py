@@ -102,14 +102,19 @@ class NodeMixin(object):
     node_lookup_url_kwarg = 'node_id'
 
     def get_node(self, check_object_permissions=True):
+        node = None
+
         if self.kwargs.get('is_embedded') is True:
-            node = self.kwargs.pop('parent_obj')
-        else:
+            # If this is an embedded request, the node might be cached somewhere
+            node = self.request.parents[Node].get(self.kwargs[self.node_lookup_url_kwarg])
+
+        if node is None:
             node = get_object_or_error(
                 Node,
                 self.kwargs[self.node_lookup_url_kwarg],
                 display_name='node'
             )
+
         # Nodes that are folders/collections are treated as a separate resource, so if the client
         # requests a collection through a node endpoint, we return a 404
         if node.is_collection or node.is_registration:
