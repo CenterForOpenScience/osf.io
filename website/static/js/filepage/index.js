@@ -142,7 +142,7 @@ var FileViewPage = {
                         '. It needs to be checked in before any changes can be made.'
                     ])));
                 }
-                m.redraw(true);
+                self.enableEditing();
             });
         };
         if (self.file.provider === 'osfstorage'){
