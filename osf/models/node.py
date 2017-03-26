@@ -860,6 +860,9 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     def set_permissions(self, user, permissions, validate=True, save=False):
         # Ensure that user's permissions cannot be lowered if they are the only admin
+        if isinstance(user, Contributor):
+            user = user.user
+
         if validate and (reduce_permissions(self.get_permissions(user)) == ADMIN and
                                  reduce_permissions(permissions) != ADMIN):
             admin_contribs = Contributor.objects.filter(node=self, admin=True)
@@ -1278,6 +1281,10 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         :param contributor: User object, the contributor to be removed
         :param auth: All the auth information including user, API key.
         """
+
+        if isinstance(contributor, Contributor):
+            contributor = contributor.user
+
         # remove unclaimed record if necessary
         if self._primary_key in contributor.unclaimed_records:
             del contributor.unclaimed_records[self._primary_key]
@@ -1349,11 +1356,12 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
         return all(results)
 
-    def move_contributor(self, user, auth, index, save=False):
+    def move_contributor(self, contributor, auth, index, save=False):
         if not self.has_permission(auth.user, ADMIN):
             raise PermissionsError('Only admins can modify contributor order')
+        if isinstance(contributor, OSFUser):
+            contributor = self.contributor_set.get(user=contributor)
         contributor_ids = list(self.get_contributor_order())
-        contributor = self.contributor_set.get(user=user)
         old_index = contributor_ids.index(contributor.id)
         contributor_ids.insert(index, contributor_ids.pop(old_index))
         self.set_contributor_order(contributor_ids)
@@ -1363,7 +1371,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 'project': self.parent_id,
                 'node': self._id,
                 'contributors': [
-                    user._id
+                    contributor.user._id
                 ],
             },
             auth=auth,

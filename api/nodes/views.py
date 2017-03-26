@@ -834,7 +834,7 @@ class NodeContributorDetail(BaseContributorDetail, generics.RetrieveUpdateDestro
     def perform_destroy(self, instance):
         node = self.get_node()
         auth = get_user_auth(self.request)
-        if len(node.visible_contributors) == 1 and node.get_visible(instance):
+        if len(node.visible_contributors) == 1 and instance.visible:
             raise ValidationError('Must have at least one visible contributor')
         removed = node.remove_contributor(instance, auth)
         if not removed:
