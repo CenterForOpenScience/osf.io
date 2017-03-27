@@ -1145,17 +1145,18 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             self.save()
 
     def add_unregistered_contributor(self, fullname, email, auth, send_email='default',
-                                     visible=True, permissions=None, save=False):
+                                     visible=True, permissions=None, save=False, existing_user=None):
         """Add a non-registered contributor to the project.
 
         :param str fullname: The full name of the person.
         :param str email: The email address of the person.
         :param Auth auth: Auth object for the user adding the contributor.
+        :param User existing_user: the unregister_contributor if it is already created, otherwise None
         :returns: The added contributor
         :raises: DuplicateEmailError if user with given email is already in the database.
         """
-        # Create a new user record
-        contributor = OSFUser.create_unregistered(fullname=fullname, email=email)
+        # Create a new user record if you weren't passed an existing user
+        contributor = existing_user if existing_user else OSFUser.create_unregistered(fullname=fullname, email=email)
 
         contributor.add_unclaimed_record(node=self, referrer=auth.user,
                                          given_name=fullname, email=email)
