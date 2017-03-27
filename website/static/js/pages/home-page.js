@@ -60,14 +60,6 @@ $(document).ready(function(){
 
                     ]
                 )),
-                m('.prereg', m('.container',
-                    [
-                        m('.row', [
-                            m(columnSizeClass,  m.component(Prereg, {}))
-                        ])
-
-                    ]
-                )),
                 m('.meetings', m('.container',
                     [
                         m('.row', [
