@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 # Tests ported from tests/test_models.py and tests/test_user.py
+import os
+import json
 import datetime as dt
 import urlparse
 
@@ -17,6 +19,8 @@ from framework.celery_tasks import handlers
 from website import settings
 from website import filters
 from website import mailchimp_utils
+from website.project.signals import contributor_added
+from website.project.views.contributor import notify_added_contributor
 from website.views import find_bookmark_collection
 
 from osf.models import AbstractNode, OSFUser as User, Tag, Contributor, Session
@@ -28,13 +32,19 @@ from osf.modm_compat import Q
 from .utils import capture_signals
 from .factories import (
     fake,
+    AuthUserFactory,
+    CollectionFactory,
+    ExternalAccountFactory,
     ProjectFactory,
     NodeFactory,
     InstitutionFactory,
+    SessionFactory,
+    TagFactory,
     UserFactory,
     UnregUserFactory,
     UnconfirmedUserFactory
 )
+from tests.base import OsfTestCase
 
 
 pytestmark = pytest.mark.django_db
@@ -87,6 +97,35 @@ class TestOSFUser:
         )
         assert 'institution_campaign' in user.system_tags
 
+    def test_create_unconfirmed_from_external_service(self):
+        name, email = fake.name(), fake.email()
+        external_identity = {
+            'ORCID': {
+                fake.ean(): 'CREATE'
+            }
+        }
+        user = User.create_unconfirmed(
+            username=email,
+            password=str(fake.password()),
+            fullname=name,
+            external_identity=external_identity,
+        )
+        user.save()
+        assert user.is_registered is False
+        assert len(user.email_verifications.keys()) == 1
+        assert user.email_verifications.popitem()[1]['external_identity'] == external_identity
+        assert len(user.emails) == 0, 'primary email has not been added to emails list'
+
+    def test_create_confirmed(self):
+        name, email = fake.name(), fake.email()
+        user = User.create_confirmed(
+            username=email, password='foobar', fullname=name
+        )
+        user.save()
+        assert user.is_registered is True
+        assert user.is_claimed is True
+        assert user.date_registered == user.date_confirmed
+
     def test_update_guessed_names(self):
         name = fake.name()
         u = User(fullname=name)
@@ -133,6 +172,28 @@ class TestOSFUser:
         with pytest.raises(ValidationError):
             dupe.save()
 
+    def test_merged_user_is_not_active(self):
+        master = UserFactory()
+        dupe = UserFactory(merged_by=master)
+        assert dupe.is_active is False
+
+    def test_non_registered_user_is_not_active(self):
+        u = User(username=fake.email(),
+                 fullname='Freddie Mercury',
+                 is_registered=False)
+        u.set_password('killerqueen')
+        u.save()
+        assert u.is_active is False
+
+    def test_user_with_no_password_is_invalid(self):
+        u = User(
+            username=fake.email(),
+            fullname='Freddie Mercury',
+            is_registered=True,
+        )
+        with pytest.raises(ValidationError):
+            u.save()
+
     def test_merged_user_with_two_account_on_same_project_with_different_visibility_and_permissions(self, user):
         user2 = UserFactory.build()
         user2.save()
@@ -170,6 +231,18 @@ class TestOSFUser:
         u = User(username=fake.email())
         with pytest.raises(ValidationError):
             u.save()
+
+    def test_add_blacklisted_domain_unconfirmed_email(self, user):
+        with pytest.raises(ValidationError) as e:
+            user.add_unconfirmed_email('kanye@mailinator.com')
+        assert e.value.message == 'Invalid Email'
+
+    @mock.patch('website.security.random_string')
+    def test_get_confirmation_url_for_external_service(self, random_string):
+        random_string.return_value = 'abcde'
+        u = UnconfirmedUserFactory()
+        assert (u.get_confirmation_url(u.username, external_id_provider='service', destination='dashboard') ==
+                '{0}confirm/external/{1}/{2}/?destination={3}'.format(settings.DOMAIN, u._id, 'abcde', 'dashboard'))
 
     @mock.patch('website.security.random_string')
     def test_get_confirmation_token(self, random_string):
@@ -465,8 +538,8 @@ class TestProjectsInCommon:
         projects = set(user.contributed)
         user2_project_keys = set([node._id for node in user2.contributed])
 
-        assert(user.get_projects_in_common(user2) ==
-                     projects.intersection(user2.contributed))
+        assert set(n._id for n in user.get_projects_in_common(user2)) == project_keys.intersection(user2_project_keys)
+        assert user.get_projects_in_common(user2) == projects.intersection(user2.contributed)
 
     def test_n_projects_in_common(self, user, auth):
         user2 = UserFactory()
@@ -796,6 +869,16 @@ class TestUnregisteredUser:
         assert bool(unreg_user.verify_claim_token(valid, project_id=project._primary_key)) is True
         assert bool(unreg_user.verify_claim_token('invalidtoken', project_id=project._primary_key)) is False
 
+    def test_verify_claim_token_with_no_expiration_date(self, unreg_user, project):
+        # Legacy records may not have an 'expires' key
+        #self.add_unclaimed_record()
+        record = unreg_user.get_unclaimed_record(project._primary_key)
+        del record['expires']
+        unreg_user.save()
+        token = record['token']
+        assert unreg_user.verify_claim_token(token, project_id=project._primary_key) is True
+
+
 # Copied from tests/test_models.py
 class TestRecentlyAdded:
 
@@ -862,16 +945,27 @@ class TestTagging:
 
         assert len(user.system_tags) == 1
 
-        tag = Tag.objects.get(name=tag_name, system=True)
-        assert tag in user.tags.all()
+        tag = Tag.all_tags.get(name=tag_name, system=True)
+        assert tag in user.all_tags.all()
+
+    def test_add_system_tag_instance(self, user):
+        tag = TagFactory(system=True)
+        user.add_system_tag(tag)
+        assert tag in user.all_tags.all()
+
+    def test_add_system_tag_with_non_system_instance(self, user):
+        tag = TagFactory(system=False)
+        with pytest.raises(ValueError):
+            user.add_system_tag(tag)
+        assert tag not in user.all_tags.all()
 
     def test_tags_get_lowercased(self, user):
         tag_name = 'NeOn'
         user.add_system_tag(tag_name)
         user.save()
 
-        tag = Tag.objects.get(name=tag_name.lower(), system=True)
-        assert tag in user.tags.all()
+        tag = Tag.all_tags.get(name=tag_name.lower(), system=True)
+        assert tag in user.all_tags.all()
 
     def test_system_tags_property(self, user):
         tag_name = fake.word()
@@ -1038,3 +1132,665 @@ class TestMergingUsers:
         merge_dupe()  # perform the merge
 
         assert project.get_permissions(master) == ['read', 'write', 'admin']
+
+
+class TestDisablingUsers(OsfTestCase):
+    def setUp(self):
+        super(TestDisablingUsers, self).setUp()
+        self.user = UserFactory()
+
+    def test_user_enabled_by_default(self):
+        assert self.user.is_disabled is False
+
+    def test_disabled_user(self):
+        """Ensure disabling a user sets date_disabled"""
+        self.user.is_disabled = True
+        self.user.save()
+
+        assert isinstance(self.user.date_disabled, dt.datetime)
+        assert self.user.is_disabled is True
+        assert self.user.is_active is False
+
+    def test_reenabled_user(self):
+        """Ensure restoring a disabled user unsets date_disabled"""
+        self.user.is_disabled = True
+        self.user.save()
+
+        self.user.is_disabled = False
+        self.user.save()
+
+        assert self.user.date_disabled is None
+        assert self.user.is_disabled is False
+        assert self.user.is_active is True
+
+    def test_is_disabled_idempotency(self):
+        self.user.is_disabled = True
+        self.user.save()
+
+        old_date_disabled = self.user.date_disabled
+
+        self.user.is_disabled = True
+        self.user.save()
+
+        new_date_disabled = self.user.date_disabled
+
+        assert new_date_disabled == old_date_disabled
+
+    @mock.patch('website.mailchimp_utils.get_mailchimp_api')
+    def test_disable_account_and_remove_sessions(self, mock_mail):
+        session1 = SessionFactory(user=self.user, date_created=(timezone.now() - dt.timedelta(seconds=settings.OSF_SESSION_TIMEOUT)))
+        session2 = SessionFactory(user=self.user, date_created=(timezone.now() - dt.timedelta(seconds=settings.OSF_SESSION_TIMEOUT)))
+
+        self.user.mailchimp_mailing_lists[settings.MAILCHIMP_GENERAL_LIST] = True
+        self.user.save()
+        self.user.disable_account()
+
+        assert self.user.is_disabled is True
+        assert isinstance(self.user.date_disabled, dt.datetime)
+        assert self.user.mailchimp_mailing_lists[settings.MAILCHIMP_GENERAL_LIST] is False
+
+        assert not Session.load(session1._id)
+        assert not Session.load(session2._id)
+
+    def test_disable_account_api(self):
+        settings.ENABLE_EMAIL_SUBSCRIPTIONS = True
+        with pytest.raises(mailchimp_utils.mailchimp.InvalidApiKeyError):
+            self.user.disable_account()
+
+# Copied from tests/modes/test_user.py
+class TestUser(OsfTestCase):
+    def setUp(self):
+        super(TestUser, self).setUp()
+        self.user = AuthUserFactory()
+
+    def tearDown(self):
+        AbstractNode.remove()
+        User.remove()
+        Session.remove()
+        super(TestUser, self).tearDown()
+
+    # Regression test for https://github.com/CenterForOpenScience/osf.io/issues/2454
+    def test_add_unconfirmed_email_when_email_verifications_is_empty(self):
+        self.user.email_verifications = []
+        self.user.save()
+        email = fake.email()
+        self.user.add_unconfirmed_email(email)
+        self.user.save()
+        assert email in self.user.unconfirmed_emails
+
+    def test_unconfirmed_emails(self):
+        assert self.user.unconfirmed_emails == []
+        self.user.add_unconfirmed_email('foo@bar.com')
+        assert self.user.unconfirmed_emails == ['foo@bar.com']
+
+        # email_verifications field may NOT be None
+        self.user.email_verifications = []
+        self.user.save()
+        assert self.user.unconfirmed_emails == []
+
+    def test_unconfirmed_emails_unregistered_user(self):
+        assert UnregUserFactory().unconfirmed_emails == []
+
+    def test_unconfirmed_emails_unconfirmed_user(self):
+        user = UnconfirmedUserFactory()
+
+        assert user.unconfirmed_emails == [user.username]
+
+    # regression test for https://sentry.cos.io/sentry/osf/issues/6510/
+    def test_unconfirmed_email_info_when_email_verifications_is_empty(self):
+        user = UserFactory()
+        user.email_verifications = []
+        assert user.unconfirmed_email_info == []
+
+    def test_remove_unconfirmed_email(self):
+        self.user.add_unconfirmed_email('foo@bar.com')
+        self.user.save()
+
+        assert 'foo@bar.com' in self.user.unconfirmed_emails  # sanity check
+
+        self.user.remove_unconfirmed_email('foo@bar.com')
+        self.user.save()
+
+        assert 'foo@bar.com' not in self.user.unconfirmed_emails
+
+    def test_confirm_email(self):
+        token = self.user.add_unconfirmed_email('foo@bar.com')
+        self.user.confirm_email(token)
+
+        assert 'foo@bar.com' not in self.user.unconfirmed_emails
+        assert 'foo@bar.com' in self.user.emails
+
+    def test_confirm_email_comparison_is_case_insensitive(self):
+        u = UnconfirmedUserFactory.build(
+            username='letsgettacos@lgt.com'
+        )
+        u.add_unconfirmed_email('LetsGetTacos@LGT.com')
+        u.save()
+        assert u.is_confirmed is False  # sanity check
+
+        token = u.get_confirmation_token('LetsGetTacos@LGT.com')
+
+        confirmed = u.confirm_email(token)
+        assert confirmed is True
+        assert u.is_confirmed is True
+
+    def test_cannot_remove_primary_email_from_email_list(self):
+        with pytest.raises(PermissionsError) as e:
+            self.user.remove_email(self.user.username)
+        assert e.value.message == "Can't remove primary email"
+
+    def test_add_same_unconfirmed_email_twice(self):
+        email = "test@mail.com"
+        token1 = self.user.add_unconfirmed_email(email)
+        self.user.save()
+        self.user.reload()
+        assert token1 == self.user.get_confirmation_token(email)
+        assert email == self.user.get_unconfirmed_email_for_token(token1)
+
+        token2 = self.user.add_unconfirmed_email(email)
+        self.user.save()
+        self.user.reload()
+        assert token1 != self.user.get_confirmation_token(email)
+        assert token2 == self.user.get_confirmation_token(email)
+        assert email == self.user.get_unconfirmed_email_for_token(token2)
+        with pytest.raises(InvalidTokenError):
+            self.user.get_unconfirmed_email_for_token(token1)
+
+    def test_contributed_property(self):
+        projects_contributed_to = AbstractNode.find(Q('contributors', 'eq', self.user))
+        assert list(self.user.contributed.all()) == list(projects_contributed_to)
+
+    def test_contributor_to_property(self):
+        normal_node = ProjectFactory(creator=self.user)
+        normal_contributed_node = ProjectFactory()
+        normal_contributed_node.add_contributor(self.user)
+        normal_contributed_node.save()
+        deleted_node = ProjectFactory(creator=self.user, is_deleted=True)
+        bookmark_collection_node = find_bookmark_collection(self.user)
+        collection_node = CollectionFactory(creator=self.user)
+        project_to_be_invisible_on = ProjectFactory()
+        project_to_be_invisible_on.add_contributor(self.user, visible=False)
+        project_to_be_invisible_on.save()
+        contributor_to_nodes = [node._id for node in self.user.contributor_to]
+
+        assert normal_node._id in contributor_to_nodes
+        assert normal_contributed_node._id in contributor_to_nodes
+        assert project_to_be_invisible_on._id in contributor_to_nodes
+        assert deleted_node._id not in contributor_to_nodes
+        assert bookmark_collection_node._id not in contributor_to_nodes
+        assert collection_node._id not in contributor_to_nodes
+
+    def test_visible_contributor_to_property(self):
+        invisible_contributor = UserFactory()
+        normal_node = ProjectFactory(creator=invisible_contributor)
+        deleted_node = ProjectFactory(creator=invisible_contributor, is_deleted=True)
+        bookmark_collection_node = find_bookmark_collection(invisible_contributor)
+        collection_node = CollectionFactory(creator=invisible_contributor)
+        project_to_be_invisible_on = ProjectFactory()
+        project_to_be_invisible_on.add_contributor(invisible_contributor, visible=False)
+        project_to_be_invisible_on.save()
+        visible_contributor_to_nodes = [node._id for node in invisible_contributor.visible_contributor_to]
+
+        assert normal_node._id in visible_contributor_to_nodes
+        assert deleted_node._id not in visible_contributor_to_nodes
+        assert bookmark_collection_node._id not in visible_contributor_to_nodes
+        assert collection_node._id not in visible_contributor_to_nodes
+        assert project_to_be_invisible_on._id not in visible_contributor_to_nodes
+
+    def test_created_property(self):
+        # make sure there's at least one project
+        ProjectFactory(creator=self.user)
+        projects_created_by_user = AbstractNode.find(Q('creator', 'eq', self.user))
+        assert list(self.user.created.all()) == list(projects_created_by_user)
+
+
+# Copied from tests/models/test_user.py
+class TestUserMerging(OsfTestCase):
+    def setUp(self):
+        super(TestUserMerging, self).setUp()
+        self.user = UserFactory()
+        with self.context:
+            handlers.celery_before_request()
+
+    def _add_unconfirmed_user(self):
+        self.unconfirmed = UnconfirmedUserFactory()
+
+        self.user.add_system_tag('user')
+        self.user.add_system_tag('shared')
+        self.unconfirmed.add_system_tag('unconfirmed')
+        self.unconfirmed.add_system_tag('shared')
+
+    def _add_unregistered_user(self):
+        self.unregistered = UnregUserFactory()
+
+        self.project_with_unreg_contrib = ProjectFactory()
+        self.project_with_unreg_contrib.add_unregistered_contributor(
+            fullname='Unreg',
+            email=self.unregistered.username,
+            auth=Auth(self.project_with_unreg_contrib.creator)
+        )
+        self.project_with_unreg_contrib.save()
+
+    @mock.patch('website.mailchimp_utils.get_mailchimp_api')
+    def test_merge(self, mock_get_mailchimp_api):
+        def is_mrm_field(value):
+            return 'ManyRelatedManager' in str(value.__class__)
+
+        other_user = UserFactory()
+        other_user.save()
+
+        # define values for users' fields
+        today = timezone.now()
+        yesterday = today - dt.timedelta(days=1)
+
+        self.user.comments_viewed_timestamp['shared_gt'] = today
+        other_user.comments_viewed_timestamp['shared_gt'] = yesterday
+        self.user.comments_viewed_timestamp['shared_lt'] = yesterday
+        other_user.comments_viewed_timestamp['shared_lt'] = today
+        self.user.comments_viewed_timestamp['user'] = yesterday
+        other_user.comments_viewed_timestamp['other'] = yesterday
+
+        self.user.email_verifications = {'user': {'email': 'a'}}
+        other_user.email_verifications = {'other': {'email': 'b'}}
+
+        self.user.notifications_configured = {'abc12': True}
+        other_user.notifications_configured = {'123ab': True}
+
+        self.user.external_accounts = [ExternalAccountFactory()]
+        other_user.external_accounts = [ExternalAccountFactory()]
+
+        self.user.mailchimp_mailing_lists = {
+            'user': True,
+            'shared_gt': True,
+            'shared_lt': False,
+        }
+        other_user.mailchimp_mailing_lists = {
+            'other': True,
+            'shared_gt': False,
+            'shared_lt': True,
+        }
+
+        self.user.security_messages = {
+            'user': today,
+            'shared': today,
+        }
+        other_user.security_messages = {
+            'other': today,
+            'shared': today,
+        }
+
+        self.user.add_system_tag('user')
+        self.user.add_system_tag('shared')
+        other_user.add_system_tag('other')
+        other_user.add_system_tag('shared')
+
+        self.user.save()
+        other_user.save()
+
+        # define expected behavior for ALL FIELDS of the User object
+        default_to_master_user_fields = [
+            'id',
+            'date_confirmed',
+            'date_disabled',
+            'date_last_login',
+            'date_registered',
+            'email_last_sent',
+            'external_identity',
+            'family_name',
+            'fullname',
+            'given_name',
+            'is_claimed',
+            'is_invited',
+            'is_registered',
+            'jobs',
+            'locale',
+            'merged_by',
+            'middle_names',
+            'password',
+            'recently_added',
+            'schools',
+            'social',
+            'suffix',
+            'timezone',
+            'username',
+            'mailing_lists',
+            'verification_key',
+            'verification_key_v2',
+            'affiliated_institutions',
+            'contributor_added_email_records',
+            'requested_deactivation',
+        ]
+
+        calculated_fields = {
+            'comments_viewed_timestamp': {
+                'user': yesterday,
+                'other': yesterday,
+                'shared_gt': today,
+                'shared_lt': today,
+            },
+            'email_verifications': {
+                'user': {'email': 'a'},
+                'other': {'email': 'b'},
+            },
+            'notifications_configured': {
+                '123ab': True, 'abc12': True,
+            },
+            'emails': [
+                self.user.username,
+                other_user.username,
+            ],
+            'external_accounts': [
+                self.user.external_accounts.first().id,
+                other_user.external_accounts.first().id,
+            ],
+            'mailchimp_mailing_lists': {
+                'user': True,
+                'other': True,
+                'shared_gt': True,
+                'shared_lt': True,
+            },
+            'osf_mailing_lists': {
+                'Open Science Framework Help': True
+            },
+            'security_messages': {
+                'user': today,
+                'other': today,
+                'shared': today,
+            },
+            'unclaimed_records': {},
+        }
+
+        # from the explicit rules above, compile expected field/value pairs
+        expected = {}
+        expected.update(calculated_fields)
+        for key in default_to_master_user_fields:
+            if is_mrm_field(getattr(self.user, key)):
+                expected[key] = list(getattr(self.user, key).all().values_list('id', flat=True))
+            else:
+                expected[key] = getattr(self.user, key)
+
+        # ensure all fields of the user object have an explicit expectation
+        assert set(expected.keys()).issubset(set(self.user._meta.get_all_field_names()))
+
+        # mock mailchimp
+        mock_client = mock.MagicMock()
+        mock_get_mailchimp_api.return_value = mock_client
+        mock_client.lists.list.return_value = {'data': [{'id': x, 'list_name': list_name} for x, list_name in enumerate(self.user.mailchimp_mailing_lists)]}
+
+        # perform the merge
+        self.user.merge_user(other_user)
+        self.user.save()
+        handlers.celery_teardown_request()
+
+        self.user.reload()
+
+        # check each field/value pair
+        for k, v in expected.iteritems():
+            if is_mrm_field(getattr(self.user, k)):
+                assert list(getattr(self.user, k).all().values_list('id', flat=True)) == v, '{} doesn\'t match expectations'.format(k)
+            else:
+                assert getattr(self.user, k) == v, '{} doesn\'t match expectation'.format(k)
+
+
+        assert sorted(self.user.system_tags) == ['other', 'shared', 'user']
+
+        # check fields set on merged user
+        assert other_user.merged_by == self.user
+
+        assert Session.find(Q('data.auth_user_id', 'eq', other_user._id)).count() == 0
+
+    def test_merge_unconfirmed(self):
+        self._add_unconfirmed_user()
+        unconfirmed_username = self.unconfirmed.username
+        self.user.merge_user(self.unconfirmed)
+
+        assert self.unconfirmed.is_merged is True
+        assert self.unconfirmed.merged_by == self.user
+
+        assert self.user.is_claimed is True
+        assert self.user.is_invited is False
+
+        # TODO: test profile fields - jobs, schools, social
+        # TODO: test security_messages
+        # TODO: test mailing_lists
+
+        assert sorted(self.user.system_tags) == sorted(['shared', 'user', 'unconfirmed'])
+
+        # TODO: test emails
+        # TODO: test external_accounts
+
+        assert self.unconfirmed.email_verifications == {}
+        assert self.unconfirmed.password[0] == '!'
+        assert self.unconfirmed.verification_key is None
+        # The mergee's email no longer needs to be confirmed by merger
+        unconfirmed_emails = [record['email'] for record in self.user.email_verifications.values()]
+        assert unconfirmed_username not in unconfirmed_emails
+
+    def test_merge_preserves_external_identity(self):
+        verified_user = UserFactory(external_identity={'ORCID': {'1234-1234-1234-1234': 'VERIFIED'}})
+        linking_user = UserFactory(external_identity={'ORCID': {'1234-1234-1234-1234': 'LINK'}})
+        creating_user = UserFactory(external_identity={'ORCID': {'1234-1234-1234-1234': 'CREATE'}})
+        different_id_user = UserFactory(external_identity={'ORCID': {'4321-4321-4321-4321': 'VERIFIED'}})
+        no_id_user = UserFactory(external_identity={'ORCID': {}})
+        no_provider_user = UserFactory(external_identity={})
+
+        linking_user.merge_user(creating_user)
+        assert linking_user.external_identity == {'ORCID': {'1234-1234-1234-1234': 'LINK'}}
+        linking_user.merge_user(verified_user)
+        assert linking_user.external_identity == {'ORCID': {'1234-1234-1234-1234': 'VERIFIED'}}
+        linking_user.merge_user(no_id_user)
+        assert linking_user.external_identity == {'ORCID': {'1234-1234-1234-1234': 'VERIFIED'}}
+        linking_user.merge_user(no_provider_user)
+        assert linking_user.external_identity == {'ORCID': {'1234-1234-1234-1234': 'VERIFIED'}}
+        linking_user.merge_user(different_id_user)
+        assert linking_user.external_identity == {'ORCID': {'1234-1234-1234-1234': 'VERIFIED', '4321-4321-4321-4321': 'VERIFIED'}}
+
+        assert creating_user.external_identity == {}
+        assert verified_user.external_identity == {}
+        assert no_id_user.external_identity == {}
+        assert no_provider_user.external_identity== {}
+
+        no_provider_user.merge_user(linking_user)
+        assert linking_user.external_identity == {}
+        assert no_provider_user.external_identity == {'ORCID': {'1234-1234-1234-1234': 'VERIFIED', '4321-4321-4321-4321': 'VERIFIED'}}
+
+    def test_merge_unregistered(self):
+        # test only those behaviors that are not tested with unconfirmed users
+        self._add_unregistered_user()
+
+        self.user.merge_user(self.unregistered)
+
+        self.project_with_unreg_contrib.reload()
+        assert self.user.is_invited is True
+        assert self.user in self.project_with_unreg_contrib.contributors
+
+    @mock.patch('website.project.views.contributor.mails.send_mail')
+    def test_merge_doesnt_send_signal(self, mock_notify):
+        #Explictly reconnect signal as it is disconnected by default for test
+        contributor_added.connect(notify_added_contributor)
+        other_user = UserFactory()
+        self.user.merge_user(other_user)
+        assert other_user.merged_by._id == self.user._id
+        assert mock_notify.called is False
+
+
+class TestUserValidation(OsfTestCase):
+
+    def setUp(self):
+        super(TestUserValidation, self).setUp()
+        self.user = AuthUserFactory()
+
+    def test_validate_fullname_none(self):
+        self.user.fullname = None
+        with pytest.raises(ValidationError):
+            self.user.save()
+
+    def test_validate_fullname_empty(self):
+        self.user.fullname = ''
+        with pytest.raises(ValidationError):
+            self.user.save()
+
+    def test_validate_social_profile_websites_empty(self):
+        self.user.social = {'profileWebsites': []}
+        self.user.save()
+        assert self.user.social['profileWebsites'] == []
+
+    def test_validate_social_profile_website_many_different(self):
+        basepath = os.path.dirname(__file__)
+        url_data_path = os.path.join(basepath, '../website/static/urlValidatorTest.json')
+        with open(url_data_path) as url_test_data:
+            data = json.load(url_test_data)
+
+        fails_at_end = False
+        for should_pass in data["testsPositive"]:
+            try:
+                self.user.social = {'profileWebsites': [should_pass]}
+                self.user.save()
+                assert self.user.social['profileWebsites'] == [should_pass]
+            except ValidationError:
+                fails_at_end = True
+                print('\"' + should_pass + '\" failed but should have passed while testing that the validator ' + data['testsPositive'][should_pass])
+
+        for should_fail in data["testsNegative"]:
+            self.user.social = {'profileWebsites': [should_fail]}
+            try:
+                with pytest.raises(ValidationError):
+                    self.user.save()
+            except AssertionError:
+                fails_at_end = True
+                print('\"' + should_fail + '\" passed but should have failed while testing that the validator ' + data['testsNegative'][should_fail])
+        if fails_at_end:
+            raise
+
+    def test_validate_multiple_profile_websites_valid(self):
+        self.user.social = {'profileWebsites': ['http://cos.io/', 'http://thebuckstopshere.com', 'http://dinosaurs.com']}
+        self.user.save()
+        assert self.user.social['profileWebsites'] == ['http://cos.io/', 'http://thebuckstopshere.com', 'http://dinosaurs.com']
+
+    def test_validate_social_profile_websites_invalid(self):
+        self.user.social = {'profileWebsites': ['help computer']}
+        with pytest.raises(ValidationError):
+            self.user.save()
+
+    def test_validate_multiple_profile_social_profile_websites_invalid(self):
+        self.user.social = {'profileWebsites': ['http://cos.io/', 'help computer', 'http://dinosaurs.com']}
+        with pytest.raises(ValidationError):
+            self.user.save()
+
+    def test_empty_social_links(self):
+        assert self.user.social_links == {}
+        assert len(self.user.social_links) == 0
+
+    def test_profile_website_unchanged(self):
+        self.user.social = {'profileWebsites': ['http://cos.io/']}
+        self.user.save()
+        assert self.user.social_links['profileWebsites'] == ['http://cos.io/']
+        assert len(self.user.social_links) == 1
+
+    def test_various_social_handles(self):
+        self.user.social = {
+            'profileWebsites': ['http://cos.io/'],
+            'twitter': 'OSFramework',
+            'github': 'CenterForOpenScience'
+        }
+        self.user.save()
+        assert self.user.social_links == {
+            'profileWebsites': ['http://cos.io/'],
+            'twitter': 'http://twitter.com/OSFramework',
+            'github': 'http://github.com/CenterForOpenScience'
+        }
+
+    def test_multiple_profile_websites(self):
+        self.user.social = {
+            'profileWebsites': ['http://cos.io/', 'http://thebuckstopshere.com', 'http://dinosaurs.com'],
+            'twitter': 'OSFramework',
+            'github': 'CenterForOpenScience'
+        }
+        self.user.save()
+        assert self.user.social_links == {
+            'profileWebsites': ['http://cos.io/', 'http://thebuckstopshere.com', 'http://dinosaurs.com'],
+            'twitter': 'http://twitter.com/OSFramework',
+            'github': 'http://github.com/CenterForOpenScience'
+        }
+
+    def test_nonsocial_ignored(self):
+        self.user.social = {
+            'foo': 'bar',
+        }
+        self.user.save()
+        assert self.user.social_links == {}
+
+    def test_validate_jobs_valid(self):
+        self.user.jobs = [{
+            'institution': 'School of Lover Boys',
+            'department': 'Fancy Patter',
+            'title': 'Lover Boy',
+            'startMonth': 1,
+            'startYear': '1970',
+            'endMonth': 1,
+            'endYear': '1980',
+        }]
+        self.user.save()
+
+    def test_validate_jobs_institution_empty(self):
+        self.user.jobs = [{'institution': ''}]
+        with pytest.raises(ValidationError):
+            self.user.save()
+
+    def test_validate_jobs_bad_end_date(self):
+        # end year is < start year
+        self.user.jobs = [{
+            'institution': fake.company(),
+            'department': fake.bs(),
+            'position': fake.catch_phrase(),
+            'startMonth': 1,
+            'startYear': '1970',
+            'endMonth': 1,
+            'endYear': '1960',
+        }]
+        with pytest.raises(ValidationError):
+            self.user.save()
+
+    def test_validate_schools_bad_end_date(self):
+        # end year is < start year
+        self.user.schools = [{
+            'degree': fake.catch_phrase(),
+            'institution': fake.company(),
+            'department': fake.bs(),
+            'startMonth': 1,
+            'startYear': '1970',
+            'endMonth': 1,
+            'endYear': '1960',
+        }]
+        with pytest.raises(ValidationError):
+            self.user.save()
+
+    def test_validate_jobs_bad_year(self):
+        start_year = ['hi', '20507', '99', '67.34']
+        for year in start_year:
+            self.user.jobs = [{
+                'institution': fake.company(),
+                'department': fake.bs(),
+                'position': fake.catch_phrase(),
+                'startMonth': 1,
+                'startYear': year,
+                'endMonth': 1,
+                'endYear': '1960',
+            }]
+            with pytest.raises(ValidationError):
+                self.user.save()
+
+    def test_validate_schools_bad_year(self):
+        start_year = ['hi', '20507', '99', '67.34']
+        for year in start_year:
+            self.user.schools = [{
+                'degree': fake.catch_phrase(),
+                'institution': fake.company(),
+                'department': fake.bs(),
+                'startMonth': 1,
+                'startYear': year,
+                'endMonth': 1,
+                'endYear': '1960',
+            }]
+            with pytest.raises(ValidationError):
+                self.user.save()

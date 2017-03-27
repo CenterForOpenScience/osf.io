@@ -21,33 +21,37 @@ from website.project.signals import comment_added, mention_added
 
 @file_updated.connect
 def update_file_guid_referent(self, node, event_type, payload, user=None):
-    if event_type == 'addon_file_moved' or event_type == 'addon_file_renamed':
-        source = payload['source']
-        destination = payload['destination']
-        source_node = Node.load(source['node']['_id'])
-        destination_node = node
-        file_guids = FileNode.resolve_class(source['provider'], FileNode.ANY).get_file_guids(
-            materialized_path=source['materialized'] if source['provider'] != 'osfstorage' else source['path'],
-            provider=source['provider'],
-            node=source_node)
+    if event_type not in ('addon_file_moved', 'addon_file_renamed'):
+        return  # Nothing to do
 
-        if event_type == 'addon_file_renamed' and source['provider'] in settings.ADDONS_BASED_ON_IDS:
-            return
-        if event_type == 'addon_file_moved' and (source['provider'] == destination['provider'] and
-                                                 source['provider'] in settings.ADDONS_BASED_ON_IDS) and source_node == destination_node:
-            return
+    source, destination = payload['source'], payload['destination']
+    source_node, destination_node = Node.load(source['node']['_id']), Node.load(destination['node']['_id'])
 
-        for guid in file_guids:
-            obj = Guid.load(guid)
-            if source_node != destination_node and Comment.find(Q('root_target._id', 'eq', guid)).count() != 0:
-                update_comment_node(guid, source_node, destination_node)
+    if source['provider'] in settings.ADDONS_BASED_ON_IDS:
+        if event_type == 'addon_file_renamed':
+            return  # Node has not changed and provider has not changed
 
-            if source['provider'] != destination['provider'] or source['provider'] != 'osfstorage':
-                old_file = FileNode.load(obj.referent._id)
-                obj.referent = create_new_file(obj, source, destination, destination_node)
-                obj.save()
-                if old_file and not TrashedFileNode.load(old_file._id):
-                    old_file.delete()
+        # Must be a move
+        if source['provider'] == destination['provider'] and source_node == destination_node:
+            return  # Node has not changed and provider has not changed
+
+    file_guids = FileNode.resolve_class(source['provider'], FileNode.ANY).get_file_guids(
+        materialized_path=source['materialized'] if source['provider'] != 'osfstorage' else source['path'],
+        provider=source['provider'],
+        node=source_node
+    )
+
+    for guid in file_guids:
+        obj = Guid.load(guid)
+        if source_node != destination_node and Comment.find(Q('root_target._id', 'eq', guid)).count() != 0:
+            update_comment_node(guid, source_node, destination_node)
+
+        if source['provider'] != destination['provider'] or source['provider'] != 'osfstorage':
+            old_file = FileNode.load(obj.referent._id)
+            obj.referent = create_new_file(obj, source, destination, destination_node)
+            obj.save()
+            if old_file and not TrashedFileNode.load(old_file._id):
+                old_file.delete()
 
 
 def create_new_file(obj, source, destination, destination_node):

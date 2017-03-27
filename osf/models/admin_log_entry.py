@@ -41,3 +41,6 @@ class AdminLogEntry(LogEntry):
     message.allow_tags = True
 
     objects = AdminLogEntryManager()
+
+    class Meta:
+        proxy = True

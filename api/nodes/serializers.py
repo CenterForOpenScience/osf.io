@@ -1,3 +1,5 @@
+from django.db import connection
+
 from api.base.exceptions import (Conflict, EndpointNotImplementedError,
                                  InvalidModelValueError,
                                  RelationshipPostMakesNoChanges)
@@ -7,7 +9,7 @@ from api.base.serializers import (DateByVersion, HideIfRegistration, IDField,
                                   JSONAPISerializer, LinksField,
                                   NodeFileHyperLinkField, RelationshipField,
                                   ShowIfVersion, TargetTypeField, TypeField,
-                                  WaterbutlerLink, relationship_diff)
+                                  WaterbutlerLink, relationship_diff, PrefetchRelationshipsSerializer)
 from api.base.settings import ADDONS_FOLDER_CONFIGURABLE
 from api.base.utils import (absolute_reverse, get_object_or_error,
                             get_user_auth, is_truthy)
@@ -44,7 +46,7 @@ class NodeTagField(ser.Field):
         return data
 
 
-class NodeLicenseSerializer(ser.Serializer):
+class NodeLicenseSerializer(PrefetchRelationshipsSerializer):
 
     copyright_holders = ser.ListField(allow_empty=True)
     year = ser.CharField(allow_blank=True)
@@ -336,9 +338,37 @@ class NodeSerializer(JSONAPISerializer):
 
     def get_node_count(self, obj):
         auth = get_user_auth(self.context['request'])
-        return len([node_relation
-                    for node_relation in obj.node_relations.filter(child__is_deleted=False, is_node_link=False)
-                    if node_relation.child.can_view(auth)])
+        user_id = getattr(auth.user, 'id', None)
+        with connection.cursor() as cursor:
+            cursor.execute('''
+                WITH RECURSIVE parents AS (
+                  SELECT parent_id, child_id
+                  FROM osf_noderelation
+                  WHERE child_id = %s AND is_node_link IS FALSE
+                UNION ALL
+                  SELECT osf_noderelation.parent_id, parents.parent_id AS child_id
+                  FROM parents JOIN osf_noderelation ON parents.PARENT_ID = osf_noderelation.child_id
+                  WHERE osf_noderelation.is_node_link IS FALSE
+                ), has_admin AS (SELECT * FROM osf_contributor WHERE (node_id IN (SELECT parent_id FROM parents) OR node_id = %s) AND user_id = %s AND admin IS TRUE LIMIT 1)
+                SELECT DISTINCT
+                  COUNT(child_id)
+                FROM
+                  osf_noderelation
+                JOIN osf_abstractnode ON osf_noderelation.child_id = osf_abstractnode.id
+                JOIN osf_contributor ON osf_abstractnode.id = osf_contributor.node_id
+                LEFT JOIN osf_privatelink_nodes ON osf_abstractnode.id = osf_privatelink_nodes.abstractnode_id
+                LEFT JOIN osf_privatelink ON osf_privatelink_nodes.privatelink_id = osf_privatelink.id
+                WHERE parent_id = %s
+                AND osf_abstractnode.is_deleted IS FALSE
+                AND (
+                  osf_abstractnode.is_public
+                  OR (TRUE IN (SELECT TRUE FROM has_admin))
+                  OR (osf_contributor.user_id = %s AND osf_contributor.read IS TRUE)
+                  OR (osf_privatelink.key = %s AND osf_privatelink.is_deleted = FALSE)
+                );
+            ''', [obj.id, obj.id, user_id, obj.id, user_id, auth.private_key])
+
+            return int(cursor.fetchone()[0])
 
     def get_contrib_count(self, obj):
         return len(obj.contributors)
@@ -957,7 +987,7 @@ class InstitutionRelated(JSONAPIRelationshipSerializer):
     class Meta:
         type_ = 'institutions'
 
-class NodeInstitutionsRelationshipSerializer(ser.Serializer):
+class NodeInstitutionsRelationshipSerializer(PrefetchRelationshipsSerializer):
     data = ser.ListField(child=InstitutionRelated())
     links = LinksField({'self': 'get_self_url',
                         'html': 'get_related_url'})

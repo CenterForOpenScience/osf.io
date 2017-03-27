@@ -6,7 +6,10 @@
 var $ = require('jquery');
 var bootbox = require('bootbox');
 var Raven = require('raven-js');
+var m = require('mithril');
 var ko = require('knockout');
+var LogFeed = require('js/components/logFeed.js');
+
 
 var $osf = require('js/osfHelpers');
 
@@ -145,11 +148,24 @@ NodeActions.openCloseNode = function(nodeId) {
     var body = $('#body-' + nodeId);
 
     body.toggleClass('hide');
+    var node = null;
+
+    if (document.getElementById('logFeed-' + nodeId).children[0].classList.item(0) === 'spinner-loading-wrapper') {
+        for (var i = 0; i < window.contextVars.nodes.length; ++i){
+            if (window.contextVars.nodes[i].id === nodeId) {
+                node = window.contextVars.nodes[i].node;
+            }
+        }
+    }
 
     if (body.hasClass('hide')) {
         icon.removeClass('fa fa-angle-up');
         icon.addClass('fa fa-angle-down');
     } else {
+        if (node && node.can_view && !node.archiving && !node.is_retracted) {
+            var nodeLogFeed = 'logFeed-' + node.primary_id;
+            m.mount(document.getElementById(nodeLogFeed), m.component(LogFeed.LogFeed, {node: node, limitLogs: true}));
+        }
         icon.removeClass('fa fa-angle-down');
         icon.addClass('fa fa-angle-up');
     }

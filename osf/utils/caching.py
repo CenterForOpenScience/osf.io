@@ -4,6 +4,10 @@ The cache is stored on the model as a protected attribute. Expensive
 property lookups, such as database access, can therefore be sped up
 when accessed multiple times in the same request.
 The property can also be safely set and deleted without interference.
+
+NOTE: Properties will *not* be cached if they return `None`. Use
+`django.utils.functional.cached_property` for properties that
+can return `None` and do not need a setter.
 """
 from __future__ import unicode_literals
 

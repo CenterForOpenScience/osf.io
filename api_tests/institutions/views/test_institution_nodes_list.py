@@ -4,6 +4,7 @@ from tests.base import ApiTestCase
 from osf_tests.factories import InstitutionFactory, AuthUserFactory, ProjectFactory, NodeFactory
 
 from api.base.settings.defaults import API_BASE
+from api_tests.nodes.filters.test_filters import NodesListFilteringMixin
 
 class TestInstitutionNodeList(ApiTestCase):
 
@@ -91,3 +92,32 @@ class TestInstitutionNodeList(ApiTestCase):
         assert_not_in(self.node._id, affiliated_node_ids)
         assert_in(self.component._id, affiliated_node_ids)
 
+
+class TestNodeListFiltering(NodesListFilteringMixin, ApiTestCase):
+
+    def setUp(self):
+        self.institution = InstitutionFactory()
+        self.url = '/{}institutions/{}/nodes/?version=2.2&'.format(API_BASE, self.institution._id)
+
+        super(TestNodeListFiltering, self).setUp()
+
+        self.node_A.is_public = True
+        self.node_B1.is_public = True
+        self.node_B2.is_public = True
+        self.node_C1.is_public = True
+        self.node_C2.is_public = True
+        self.node_D2.is_public = True
+
+        self.node_A.affiliated_institutions.add(self.institution)
+        self.node_B1.affiliated_institutions.add(self.institution)
+        self.node_B2.affiliated_institutions.add(self.institution)
+        self.node_C1.affiliated_institutions.add(self.institution)
+        self.node_C2.affiliated_institutions.add(self.institution)
+        self.node_D2.affiliated_institutions.add(self.institution)
+
+        self.node_A.save()
+        self.node_B1.save()
+        self.node_B2.save()
+        self.node_C1.save()
+        self.node_C2.save()
+        self.node_D2.save()
