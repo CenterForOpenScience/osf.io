@@ -40,6 +40,9 @@ class Command(BaseCommand):
                       '################################################'.format(
                     django_model._meta.model.__name__))
                 continue
+            elif django_model.__subclasses__() != []:
+                logger.info('Skipping {}.{}'.format(django_model.__module__, django_model))
+                continue
             elif django_model is Tag or django_model is BlackListGuid:
                 # TODO we'll do this by hand because tags are special
                 # TODO we'll do blacklistguids by hand because they've got a bunch of new ones that don't exist in modm
@@ -55,7 +58,6 @@ def do_model(django_model):
     register_nonexistent_models_with_modm()
 
     page_size = django_model.migration_page_size
-    page_size = 10000
 
     validate_model_data(django_model, page_size=page_size)
 
