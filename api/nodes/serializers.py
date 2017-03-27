@@ -826,7 +826,7 @@ class NodeContributorsCreateSerializer(NodeContributorsSerializer):
             raise exceptions.ValidationError(detail='{} is not a valid email preference.'.format(send_email))
 
         try:
-            contributor = node.add_contributor_registered_or_not(
+            contributor_obj = node.add_contributor_registered_or_not(
                 auth=auth, user_id=id, email=email, full_name=full_name, send_email=send_email,
                 permissions=permissions, bibliographic=bibliographic, index=index, save=True
             )
@@ -835,7 +835,7 @@ class NodeContributorsCreateSerializer(NodeContributorsSerializer):
         except ValueError as e:
             raise exceptions.NotFound(detail=e.args[0])
 
-        return contributor
+        return contributor_obj
 
 
 class NodeContributorDetailSerializer(NodeContributorsSerializer):
