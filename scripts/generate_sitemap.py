@@ -114,7 +114,7 @@ class Sitemap(object):
             loc_text = self.doc.createTextNode(urlparse.urljoin(settings.DOMAIN, 'sitemaps/sitemap_{}.xml.gz'.format(str(f))))
             loc.appendChild(loc_text)
 
-            datemod = doc.createElement('datemod')
+            datemod = doc.createElement('lastmod')
             sitemap.appendChild(datemod)
             datemod_text = self.doc.createTextNode(datetime.datetime.now().isoformat())
             datemod.appendChild(datemod_text)
