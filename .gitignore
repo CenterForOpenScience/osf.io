@@ -69,6 +69,7 @@ website/mfrcache/
 website/mfrtemp/
 website/osfstoragecache/
 website/gpg/
+website/static/sitemaps/
 webpack-assets.json
 sauce.json
 

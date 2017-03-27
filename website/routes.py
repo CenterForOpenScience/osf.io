@@ -171,6 +171,20 @@ def robots():
         mimetype='text/plain'
     )
 
+def sitemap_file(path):
+    """Serves the sitemap/* files."""
+    if path.endswith('.xml.gz'):
+        mime = 'application/x-gzip'
+    elif path.endswith('.xml'):
+        mime = 'text/xml'
+    else:
+        raise HTTPError(http.NOT_FOUND)
+    return send_from_directory(
+        settings.STATIC_FOLDER + '/sitemaps/',
+        path,
+        mimetype=mime
+    )
+
 def ember_app(path=None):
     """Serve the contents of the ember application"""
     ember_app_folder = None
@@ -251,6 +265,7 @@ def make_url_map(app):
     process_rules(app, [
         Rule('/favicon.ico', 'get', favicon, json_renderer),
         Rule('/robots.txt', 'get', robots, json_renderer),
+        Rule('/sitemaps/<path>', 'get', sitemap_file, json_renderer),
     ])
 
     if settings.USE_EXTERNAL_EMBER:
