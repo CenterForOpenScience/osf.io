@@ -319,7 +319,6 @@ def save_page_of_fk_relationships(self, django_model, fk_relations, offset, limi
                         ct_field_name = field.ct_field
                         fk_field_name = field.fk_field
 
-                        field_names.add(field_name)
                         field_names.add(ct_field_name)
                         field_names.add(fk_field_name)
 
