@@ -229,6 +229,9 @@ def save_page_of_fk_relationships(self, django_model, fk_relations, offset, limi
     # Disable typedmodel auto-recasting to prevent migration from missing fields h/t @chrisseto
     AbstractNode._auto_recast = False
     BaseFileNode._auto_recast = False
+
+    field_names = set()
+
     try:
         with transaction.atomic():  # one transaction per page
             bad_fields = []
@@ -315,6 +318,11 @@ def save_page_of_fk_relationships(self, django_model, fk_relations, offset, limi
                         field_name = field.name
                         ct_field_name = field.ct_field
                         fk_field_name = field.fk_field
+
+                        field_names.add(field_name)
+                        field_names.add(ct_field_name)
+                        field_names.add(fk_field_name)
+
                         value = getattr(modm_obj, field_name)
                         if value is None:
                             continue
@@ -341,6 +349,7 @@ def save_page_of_fk_relationships(self, django_model, fk_relations, offset, limi
                         field_name = field.attname
                         if field_name in bad_fields:
                             continue
+                        field_names.add(field_name)
                         try:
                             value = getattr(modm_obj, field_name.replace('_id', ''))
                         except AttributeError:
@@ -405,7 +414,7 @@ def save_page_of_fk_relationships(self, django_model, fk_relations, offset, limi
                         batch_size = n_objects_to_update // 5
                     else:
                         batch_size = None
-                    bulk_update(django_objects_to_update, batch_size=batch_size)
+                    bulk_update(django_objects_to_update, batch_size=batch_size, update_fields=field_names)
 
             modm_obj._cache.clear()
             modm_obj._object_cache.clear()
