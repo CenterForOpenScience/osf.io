@@ -1076,7 +1076,8 @@ class TestNodeAddContributorRegisteredOrNot:
 
     def test_add_contributor_user_id(self, user, node):
         registered_user = UserFactory()
-        contributor = node.add_contributor_registered_or_not(auth=Auth(user), user_id=registered_user._id, save=True)
+        contributor_obj = node.add_contributor_registered_or_not(auth=Auth(user), user_id=registered_user._id, save=True)
+        contributor = contributor_obj.user
         assert contributor in node.contributors
         assert contributor.is_registered is True
 
@@ -1091,18 +1092,21 @@ class TestNodeAddContributorRegisteredOrNot:
         assert 'was not found' in excinfo.value.message
 
     def test_add_contributor_fullname_email(self, user, node):
-        contributor = node.add_contributor_registered_or_not(auth=Auth(user), full_name='Jane Doe', email='jane@doe.com')
+        contributor_obj = node.add_contributor_registered_or_not(auth=Auth(user), full_name='Jane Doe', email='jane@doe.com')
+        contributor = contributor_obj.user
         assert contributor in node.contributors
         assert contributor.is_registered is False
 
     def test_add_contributor_fullname(self, user, node):
-        contributor = node.add_contributor_registered_or_not(auth=Auth(user), full_name='Jane Doe')
+        contributor_obj = node.add_contributor_registered_or_not(auth=Auth(user), full_name='Jane Doe')
+        contributor = contributor_obj.user
         assert contributor in node.contributors
         assert contributor.is_registered is False
 
     def test_add_contributor_fullname_email_already_exists(self, user, node):
         registered_user = UserFactory()
-        contributor = node.add_contributor_registered_or_not(auth=Auth(user), full_name='F Mercury', email=registered_user.username)
+        contributor_obj = node.add_contributor_registered_or_not(auth=Auth(user), full_name='F Mercury', email=registered_user.username)
+        contributor = contributor_obj.user
         assert contributor in node.contributors
         assert contributor.is_registered is True
 
