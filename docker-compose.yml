@@ -158,7 +158,6 @@ services:
       - osfstoragecache_vol:/code/website/osfstoragecache
       - wb_tmp_vol:/tmp
     stdin_open: true
-    tty: true
 
   wb_worker:
     image: quay.io/centerforopenscience/waterbutler:develop
