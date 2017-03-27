@@ -7,14 +7,14 @@ from framework.auth.core import User
 from framework.transactions.context import TokuTransaction
 from scripts import utils as script_utils
 from website.app import init_app
-from website.project import Node
+from website.project.model import Node
 
 
 logger = logging.getLogger(__name__)
 
 def get_targets():
     logger.info('Acquiring targets...')
-    targets = [u for u in User.find() if Node.find(Q('is_bookmark_collection', 'eq', True) & Q('is_deleted', 'eq', False) & Q('contributors', 'eq', u._id)).count() > 1]
+    targets = [u for u in User.find() if Node.find(Q('is_bookmark_collection', 'eq', True) & Q('is_deleted', 'eq', False) & Q('creator', 'eq', u._id)).count() > 1]
     logger.info('Found {} target users.'.format(len(targets)))
     return targets
 
@@ -23,9 +23,8 @@ def migrate():
     total = len(targets)
     for i, user in enumerate(targets):
         logger.info('({}/{}) Preparing to migrate User {}'.format(i + 1, total, user._id))
-        bookmarks = Node.find(Q('is_bookmark_collection', 'eq', True) & Q('contributors', 'eq', user._id))
-        if sum([bool(n.nodes) for n in bookmarks]) > 1:
-            raise Exception('Expected no users to have more than one bookmark with .nodes, {} violated'.format(user._id))
+        bookmarks = Node.find(Q('is_bookmark_collection', 'eq', True) & Q('creator', 'eq', user._id)).sort('-date_modified')
+
         bookmark_to_keep = None
         for n in bookmarks:
             if n.nodes:
@@ -41,7 +40,7 @@ def migrate():
 
 def main():
     parser = argparse.ArgumentParser(
-        description='Ensures every confirmed user has only one bookmark collection.'
+        description='Ensures every user has only one bookmark collection.'
     )
     parser.add_argument(
         '--dry',
