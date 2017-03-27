@@ -414,7 +414,7 @@ def save_page_of_fk_relationships(self, django_model, fk_relations, offset, limi
                         batch_size = n_objects_to_update // 5
                     else:
                         batch_size = None
-                    bulk_update(django_objects_to_update, batch_size=batch_size, update_fields=field_names)
+                    bulk_update(django_objects_to_update, batch_size=batch_size, update_fields=list(field_names))
 
             modm_obj._cache.clear()
             modm_obj._object_cache.clear()
