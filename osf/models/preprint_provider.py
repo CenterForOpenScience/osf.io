@@ -34,6 +34,9 @@ class PreprintProvider(ObjectIDMixin, BaseModel):
     subjects_acceptable = DateTimeAwareJSONField(blank=True, default=list)
     licenses_acceptable = models.ManyToManyField(NodeLicense, blank=True)
 
+    def __unicode__(self):
+        return '{} with id {}'.format(self.name, self.id)
+
     @property
     def top_level_subjects(self):
         if len(self.subjects_acceptable) == 0:

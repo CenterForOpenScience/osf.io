@@ -37,8 +37,8 @@ class TestOsfstorageFileNode(StorageTestCase):
         assert_equal(self.project, self.node_settings.root_node.node)
 
     # def test_get_folder(self):
-    #     file = models.OsfStorageFileNode(name='MOAR PYLONS', is_file=True, node=self.node)
-    #     folder = models.OsfStorageFileNode(name='MOAR PYLONS', is_file=False, node=self.node)
+    #     file = models.OsfStorageFile(name='MOAR PYLONS', node=self.node)
+    #     folder = models.OsfStorageFolder(name='MOAR PYLONS', node=self.node)
 
     #     _id = folder._id
 
@@ -48,8 +48,8 @@ class TestOsfstorageFileNode(StorageTestCase):
     #     assert_equal(folder, models.OsfStorageFileNode.get_folder(_id, self.node_settings))
 
     # def test_get_file(self):
-    #     file = models.OsfStorageFileNode(name='MOAR PYLONS', is_file=True, node=self.node)
-    #     folder = models.OsfStorageFileNode(name='MOAR PYLONS', is_file=False, node=self.node)
+    #     file = models.OsfStorageFile(name='MOAR PYLONS', node=self.node)
+    #     folder = models.OsfStorageFolder(name='MOAR PYLONS', node=self.node)
 
     #     file.save()
     #     folder.save()
@@ -81,49 +81,49 @@ class TestOsfstorageFileNode(StorageTestCase):
         version = file.create_version(
             self.user,
             {
-                'service': 'cloud',
-                settings.WATERBUTLER_RESOURCE: 'osf',
-                'object': '06d80e',
+                u'service': u'cloud',
+                settings.WATERBUTLER_RESOURCE: u'osf',
+                u'object': u'06d80e',
             }, {
-                'size': 1234,
-                'contentType': 'text/plain'
+                u'size': 1234,
+                u'contentType': u'text/plain'
             })
 
         assert_equals(file.serialize(), {
-            'id': file._id,
-            'path': file.path,
-            'created': None,
-            'name': 'MOAR PYLONS',
-            'kind': 'file',
-            'version': 1,
-            'downloads': 0,
-            'size': 1234L,
-            'modified': None,
-            'contentType': 'text/plain',
-            'checkout': None,
-            'md5': None,
-            'sha256': None,
+            u'id': file._id,
+            u'path': file.path,
+            u'created': None,
+            u'name': u'MOAR PYLONS',
+            u'kind': u'file',
+            u'version': 1,
+            u'downloads': 0,
+            u'size': 1234L,
+            u'modified': None,
+            u'contentType': u'text/plain',
+            u'checkout': None,
+            u'md5': None,
+            u'sha256': None,
         })
 
         date = timezone.now()
         version.update_metadata({
-            'modified': date.isoformat()
+            u'modified': date.isoformat()
         })
 
         assert_equals(file.serialize(), {
-            'id': file._id,
-            'path': file.path,
-            'created': date.isoformat(),
-            'name': 'MOAR PYLONS',
-            'kind': 'file',
-            'version': 1,
-            'downloads': 0,
-            'size': 1234L,
-            'modified': date.isoformat(),
-            'contentType': 'text/plain',
-            'checkout': None,
-            'md5': None,
-            'sha256': None,
+            u'id': file._id,
+            u'path': file.path,
+            u'created': date.isoformat(),
+            u'name': u'MOAR PYLONS',
+            u'kind': u'file',
+            u'version': 1,
+            u'downloads': 0,
+            u'size': 1234L,
+            u'modified': date.isoformat(),
+            u'contentType': u'text/plain',
+            u'checkout': None,
+            u'md5': None,
+            u'sha256': None,
         })
 
     def test_get_child_by_name(self):
@@ -139,7 +139,7 @@ class TestOsfstorageFileNode(StorageTestCase):
         assert_equal(self.node_settings.get_root().path, path)
 
     def test_file_path(self):
-        file = OsfStorageFileNode(name='MOAR PYLONS', is_file=True, node=self.node)
+        file = OsfStorageFile(name='MOAR PYLONS', node=self.node)
         file.save()
         assert_equal(file.name, 'MOAR PYLONS')
         assert_equal(file.path, '/{}'.format(file._id))
@@ -164,10 +164,12 @@ class TestOsfstorageFileNode(StorageTestCase):
             child.append_file('Cant')
 
     def test_children(self):
-        assert_equals([
-                      self.node_settings.get_root().append_file('Foo{}Bar'.format(x))
-                      for x in xrange(100)
-                      ], list(self.node_settings.get_root().children))
+        kids = [
+            self.node_settings.get_root().append_file('Foo{}Bar'.format(x))
+            for x in xrange(100)
+        ]
+
+        assert_equals(sorted(kids, key=lambda kid: kid.name), list(self.node_settings.get_root().children.order_by('name')))
 
     def test_download_count_file_defaults(self):
         child = self.node_settings.get_root().append_file('Test')
@@ -217,29 +219,12 @@ class TestOsfstorageFileNode(StorageTestCase):
                 None
             )
 
-    # def test_delete_file(self):
-    #     child = self.node_settings.get_root().append_file('Test')
-    #     child.delete()
-    #
-    #     assert_is(models.OsfStorageFileNode.load(child._id), None)
-    #     trashed = models.TrashedFileNode.load(child._id)
-    #     child_storage = child.to_storage()
-    #     trashed_storage = trashed.to_storage()
-    #     trashed_storage['parent'] = trashed_storage['parent'][0]
-    #     child_storage['materialized_path'] = child.materialized_path
-    #     trashed_storage.pop('deleted_by')
-    #     trashed_storage.pop('deleted_on')
-    #     trashed_storage.pop('suspended')
-    #     assert_equal(child_storage.pop('path'), '')
-    #     assert_equal(trashed_storage.pop('path'), '/' + child._id)
-    #     assert_equal(trashed_storage, child_storage)
-
     def test_delete_file(self):
         child = self.node_settings.get_root().append_file('Test')
         field_names = [f.name for f in child._meta.get_fields() if not f.is_relation and f.name not in ['id', 'guid_string', 'content_type_pk']]
         child_data = {f: getattr(child, f) for f in field_names}
         child.delete()
-        assert_raises(ObjectDoesNotExist, child.reload)
+
         assert_is(OsfStorageFileNode.load(child._id), None)
         trashed = models.TrashedFileNode.load(child._id)
         child_storage = dict()
@@ -247,8 +232,8 @@ class TestOsfstorageFileNode(StorageTestCase):
         trashed_storage['parent'] = trashed.parent._id
         child_storage['materialized_path'] = child.materialized_path
         assert_equal(trashed.path, '/' + child._id)
-        trashed_field_names = [f.name for f in trashed._meta.get_fields() if not f.is_relation and
-                               f.name not in ['id', 'guid_string', 'path', '_materialized_path', 'content_type_pk']]
+        trashed_field_names = [f.name for f in child._meta.get_fields() if not f.is_relation and
+                               f.name not in ['id', 'guid_string', '_materialized_path', 'content_type_pk', '_path', 'deleted_on', 'deleted_by', 'type']]
         for f, value in child_data.iteritems():
             if f in trashed_field_names:
                 assert_equal(getattr(trashed, f), value)

@@ -441,9 +441,6 @@ class ListFilterMixin(FilterMixin):
             for key, field_names in filters.iteritems():
                 for field_name, data in field_names.iteritems():
                     query_field_name = data['source_field_name']
-                    if query_field_name == 'kind':
-                        query_field_name = 'is_file'
-                        data['value'] = data['value'] == 'file'
                     if isinstance(queryset, list):
                         queryset = self.get_filtered_queryset(field_name, data, queryset)
                     else:

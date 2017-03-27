@@ -50,6 +50,7 @@ def validate_page_name(value):
     value = (value or '').strip()
 
     if not value:
+        # TODO: determine if this if possible anymore, deprecate if not
         raise NameEmptyError('Page name cannot be blank.')
     if value.find('/') != -1:
         raise NameInvalidError('Page name cannot contain forward slashes.')
