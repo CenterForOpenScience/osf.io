@@ -43,6 +43,9 @@ CITATION_STYLES_PATH = os.path.join(BASE_PATH, 'static', 'vendor', 'bower_compon
 # Minimum seconds between forgot password email attempts
 SEND_EMAIL_THROTTLE = 30
 
+# Seconds that must elapse before updating a user's date_last_login field
+DATE_LAST_LOGIN_THROTTLE = 60
+
 # Hours before pending embargo/retraction/registration automatically becomes active
 RETRACTION_PENDING_TIME = datetime.timedelta(days=2)
 EMBARGO_PENDING_TIME = datetime.timedelta(days=2)
@@ -138,11 +141,6 @@ WELCOME_OSF4M_WAIT_TIME_GRACE = timedelta(days=12)
 
 # TODO: Override in local.py
 MAILGUN_API_KEY = None
-
-# TODO: Override in local.py in production
-UPLOADS_PATH = os.path.join(BASE_PATH, 'uploads')
-MFR_CACHE_PATH = os.path.join(BASE_PATH, 'mfrcache')
-MFR_TEMP_PATH = os.path.join(BASE_PATH, 'mfrtemp')
 
 # Use Celery for file rendering
 USE_CELERY = True

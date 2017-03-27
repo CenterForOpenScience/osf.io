@@ -1,5 +1,7 @@
 <%inherit file="base.mako"/>
 
+<%namespace name="contributor_list" file="util/contributor_list.mako" />
+
 <%def name="title()">Public Activity</%def>
 
 <%def name="stylesheets()">
@@ -88,14 +90,16 @@
                     </div>
                 </div>
                 <!-- Show abbreviated contributors list -->
-                <div mod-meta='{
-                    "tpl": "util/render_users_abbrev.mako",
-                    "uri": "${node.api_url}contributors_abbrev/",
-                    "kwargs": {
-                        "node_url": "${node.url}"
-                    },
-                    "replace": true
-                }'></div>
+                ## render_contributors expects a list of dicts, so we need to serialize the contributors
+                <%
+                    from website.views import serialize_contributors_for_summary
+                    contributors_dict = serialize_contributors_for_summary(node)
+                    contributors = contributors_dict['contributors']
+                    others_count = contributors_dict['others_count']
+                %>
+
+                ${ contributor_list.render_contributors(contributors=contributors, others_count=others_count, node_url=node.url) }
+
             </div>
         % endfor
     </%def>

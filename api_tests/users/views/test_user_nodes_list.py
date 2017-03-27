@@ -2,9 +2,19 @@
 from nose.tools import *  # flake8: noqa
 
 from tests.base import ApiTestCase
-from osf_tests.factories import AuthUserFactory, BookmarkCollectionFactory, CollectionFactory, ProjectFactory, RegistrationFactory, PreprintFactory
+from osf_tests.factories import (
+    AuthUserFactory,
+    BookmarkCollectionFactory,
+    CollectionFactory,
+    NodeFactory,
+    PreprintFactory,
+    ProjectFactory,
+    RegistrationFactory,
+)
 
 from api.base.settings.defaults import API_BASE
+from api_tests.nodes.filters.test_filters import NodesListFilteringMixin
+
 from website.views import find_bookmark_collection
 
 
@@ -133,3 +143,8 @@ class TestUserNodesPreprintsFiltering(ApiTestCase):
         actual_ids = [n['id'] for n in res.json['data']]
 
         assert_equal(set(expected_ids), set(actual_ids))
+
+
+class TestNodeListFiltering(NodesListFilteringMixin, ApiTestCase):
+
+    url = '/{}users/me/nodes/?'.format(API_BASE)

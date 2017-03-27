@@ -11,7 +11,7 @@ from django.db import models
 from framework.auth import Auth
 from github3 import GitHubError
 from osf.models.external import ExternalProvider
-from osf.models.files import File, FileNode, Folder
+from osf.models.files import File, Folder, BaseFileNode
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from website import settings
 from addons.base import exceptions
@@ -21,29 +21,28 @@ from addons.github.api import GitHubClient
 from addons.github.exceptions import ApiError, NotFoundError
 from addons.github.serializer import GitHubSerializer
 from website.util import web_url_for
-
+# TODO DELETE ME POST MIGRATION
+from modularodm import Q as MQ
+# /TODO DELETE ME POST MIGRATION
 hook_domain = github_settings.HOOK_DOMAIN or settings.DOMAIN
 
 
-class GithubFileNode(FileNode):
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.files.models.github.GithubFileNode'
-    modm_query = None
-    # /TODO DELETE ME POST MIGRATION
-    provider = 'github'
+class GithubFileNode(BaseFileNode):
+    _provider = 'github'
 
 
 class GithubFolder(GithubFileNode, Folder):
     # TODO DELETE ME POST MIGRATION
     modm_model_path = 'website.files.models.github.GithubFolder'
-    modm_query = None
+    modm_query = MQ('is_file', 'eq', False)
     # /TODO DELETE ME POST MIGRATION
     pass
+
 
 class GithubFile(GithubFileNode, File):
     # TODO DELETE ME POST MIGRATION
     modm_model_path = 'website.files.models.github.GithubFile'
-    modm_query = None
+    modm_query = MQ('is_file', 'eq', True)
     # /TODO DELETE ME POST MIGRATION
     version_identifier = 'ref'
 

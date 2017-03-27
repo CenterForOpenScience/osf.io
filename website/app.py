@@ -5,6 +5,7 @@ import framework
 import importlib
 import itertools
 import json
+import logging
 import os
 import sys
 import thread
@@ -19,7 +20,8 @@ from framework.addons.utils import render_addon_capabilities
 from framework.celery_tasks import handlers as celery_task_handlers
 from framework.django import handlers as django_handlers
 from framework.flask import add_handlers, app
-from framework.logging import logger
+# Import necessary to initialize the root logger
+from framework.logging import logger as root_logger  # noqa
 from framework.mongo import handlers as mongo_handlers
 from framework.mongo import set_up_storage, storage
 from framework.postcommit_tasks import handlers as postcommit_handlers
@@ -28,11 +30,15 @@ from framework.transactions import handlers as transaction_handlers
 from website import maintenance
 # Imports necessary to connect signals
 from website.archiver import listeners  # noqa
+from website.files.models import FileNode
 from website.mails import listeners  # noqa
 from website.notifications import listeners  # noqa
 from website.project.licenses import ensure_licenses
 from website.project.model import ensure_schemas
 from werkzeug.contrib.fixers import ProxyFix
+
+logger = logging.getLogger(__name__)
+
 
 def init_addons(settings, routes=True):
     """Initialize each addon in settings.ADDONS_REQUESTED.
@@ -188,6 +194,7 @@ def patch_models(settings):
         models.OSFUser: 'User',
         models.AbstractNode: 'Node',
         models.NodeRelation: 'Pointer',
+        models.BaseFileNode: 'StoredFileNode',
     }
     for module in sys.modules.values():
         if not module:
@@ -197,7 +204,7 @@ def patch_models(settings):
             if (
                 hasattr(module, model_name) and
                 isinstance(getattr(module, model_name), type) and
-                issubclass(getattr(module, model_name), modularodm.StoredObject)
+                (issubclass(getattr(module, model_name), modularodm.StoredObject) or issubclass(getattr(module, model_name), FileNode))
             ):
                 setattr(module, model_name, model_cls)
             # Institution is a special case because it isn't a StoredObject

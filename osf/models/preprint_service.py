@@ -50,6 +50,9 @@ class PreprintService(GuidMixin, BaseModel):
     class Meta:
         unique_together = ('node', 'provider')
 
+    def __unicode__(self):
+        return '{} preprint (guid={}) of {}'.format('published' if self.is_published else 'unpublished', self._id, self.node.__unicode__())
+
     @property
     def primary_file(self):
         if not self.node:

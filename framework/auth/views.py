@@ -22,7 +22,7 @@ from framework.auth import logout as osf_logout
 from framework.auth import get_user
 from framework.auth.exceptions import DuplicateEmailError, ExpiredTokenError, InvalidTokenError
 from framework.auth.core import generate_verification_key
-from framework.auth.decorators import collect_auth, must_be_logged_in
+from framework.auth.decorators import block_bing_preview, collect_auth, must_be_logged_in
 from framework.auth.forms import ResendConfirmationForm, ForgotPasswordForm, ResetPasswordForm
 from framework.auth.utils import ensure_external_identity_uniqueness, validate_recaptcha
 from framework.exceptions import HTTPError
@@ -37,6 +37,7 @@ from website.util import web_url_for
 from website.util.sanitize import strip_html
 
 
+@block_bing_preview
 @collect_auth
 def reset_password_get(auth, uid=None, token=None):
     """
@@ -440,6 +441,7 @@ def auth_email_logout(token, user):
     return resp
 
 
+@block_bing_preview
 @collect_auth
 def external_login_confirm_email_get(auth, uid, token):
     """
@@ -454,6 +456,7 @@ def external_login_confirm_email_get(auth, uid, token):
     :param uid: the user's primary key
     :param token: the verification token
     """
+
     user = User.load(uid)
     if not user:
         raise HTTPError(http.BAD_REQUEST)
@@ -531,6 +534,7 @@ def external_login_confirm_email_get(auth, uid, token):
     ))
 
 
+@block_bing_preview
 @collect_auth
 def confirm_email_get(token, auth=None, **kwargs):
     """
@@ -577,7 +581,7 @@ def confirm_email_get(token, auth=None, **kwargs):
         })
 
     if is_initial_confirmation:
-        user.date_last_login = timezone.now()
+        user.update_date_last_login()
         user.save()
 
         # send out our welcome message

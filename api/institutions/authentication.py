@@ -66,6 +66,8 @@ class InstitutionAuthentication(BaseAuthentication):
         fullname = provider['user'].get('fullname')
         given_name = provider['user'].get('givenName')
         family_name = provider['user'].get('familyName')
+        middle_names = provider['user'].get('middleNames')
+        suffix = provider['user'].get('suffix')
 
         # use given name and family name to build full name if not provided
         if given_name and family_name and not fullname:
@@ -75,21 +77,21 @@ class InstitutionAuthentication(BaseAuthentication):
         if not fullname:
             fullname = username
 
+        # `get_or_create_user()` guesses names from fullname
+        # replace the guessed ones if the names are provided from the authentication request
         user, created = get_or_create_user(fullname, username, reset_password=False)
-
         if created:
-            # `get_or_create_user()` guesses given name and family name from fullname
-            # replace the guessed ones if the names are provided from the authentication request
             if given_name:
                 user.given_name = given_name
             if family_name:
                 user.family_name = family_name
-            user.middle_names = provider['user'].get('middleNames')
-            user.suffix = provider['user'].get('suffix')
-            user.date_last_login = timezone.now()
+            if middle_names:
+                user.middle_names = middle_names
+            if suffix:
+                user.suffix = suffix
+            user.update_date_last_login()
 
             # save and register user
-            # a user must be saved in order to have a valid `guid___id`
             user.save()
             user.register(username)
 
