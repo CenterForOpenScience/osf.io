@@ -79,7 +79,12 @@ class JSONAPIBaseView(generics.GenericAPIView):
             view.format_kwarg = view.get_format_suffix(**view_kwargs)
 
             if not isinstance(view, ListModelMixin):
-                item = view.get_object()
+                try:
+                    item = view.get_object()
+                except Exception as e:
+                    with transaction.atomic():
+                        ret = view.handle_exception(e).data
+                    return ret
 
             _cache_key = (v.cls, field_name, view.get_serializer_class(), (type(item), item.id))
             if _cache_key in CACHE.setdefault(self.request._request, {}):
