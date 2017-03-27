@@ -195,7 +195,6 @@ services:
 
   registries:
     image: quay.io/centerforopenscience/ember-osf-registries:develop-development-local
-    build: ../ember-osf-registries
     command: /bin/bash -c "yarn --pure-lockfile --no-progress --no-emoji && ./node_modules/bower/bin/bower install --allow-root --config.interactive=false && ./node_modules/ember-cli/bin/ember serve --host 0.0.0.0 --port 4300"
     restart: unless-stopped
     environment:
