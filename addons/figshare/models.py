@@ -234,7 +234,7 @@ class NodeSettings(BaseStorageAddon, BaseOAuthNodeSettings):
         :param User user:
         :return str: Alert message
         """
-        if not self.folder_id:
+        if not self.configured:
             return []
         figshare = node.get_addon('figshare')
         # Quit if no user authorization
