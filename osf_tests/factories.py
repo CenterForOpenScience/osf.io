@@ -6,7 +6,6 @@ import mock
 from factory import SubFactory
 from factory.fuzzy import FuzzyDateTime, FuzzyAttribute, FuzzyChoice
 from mock import patch, Mock
-from random import randint
 
 import factory
 import pytz
@@ -16,7 +15,6 @@ from django.db.utils import IntegrityError
 from faker import Factory
 from modularodm.exceptions import NoResultsFound
 
-from osf.models import OSFUser
 from website.notifications.constants import NOTIFICATION_TYPES
 from website.util import permissions
 from website.project.licenses import ensure_licenses
@@ -48,7 +46,7 @@ def FakeList(provider, n, *args, **kwargs):
 class UserFactory(DjangoModelFactory):
     # TODO: Change this to only generate long names and see what breaks
     fullname = factory.Sequence(lambda n: 'Freddie Mercury{0}'.format(n))
-    
+
     username = factory.Faker('email')
     password = factory.PostGenerationMethodCall('set_password',
                                                 'queenfan86')
@@ -228,6 +226,13 @@ class NodeLicenseRecordFactory(DjangoModelFactory):
             )
         )
         return super(NodeLicenseRecordFactory, cls)._create(*args, **kwargs)
+
+
+class NodeLogFactory(DjangoModelFactory):
+    class Meta:
+        model = models.NodeLog
+    action = 'file_added'
+    user = SubFactory(UserFactory)
 
 class PrivateLinkFactory(DjangoModelFactory):
     class Meta:
@@ -528,7 +533,6 @@ class PreprintFactory(DjangoModelFactory):
             )
 
         file = OsfStorageFile.create(
-            is_file=True,
             node=project,
             path='/{}'.format(filename),
             name=filename,

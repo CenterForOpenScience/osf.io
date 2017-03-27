@@ -8,7 +8,8 @@ from framework.auth.core import Auth
 from osf_tests.factories import PreprintFactory, AuthUserFactory, ProjectFactory, SubjectFactory, PreprintProviderFactory
 from osf.models import PreprintService, NodeLicense
 from website.project.licenses import ensure_licenses
-from tests.base import ApiTestCase
+from website.project.signals import contributor_added
+from tests.base import ApiTestCase, fake, capture_signals
 
 ensure_licenses = functools.partial(ensure_licenses, warn=False)
 
@@ -227,7 +228,6 @@ class TestPreprintUpdate(ApiTestCase):
         self.preprint.node.add_contributor(user_two, permissions=['read', 'write'], auth=Auth(self.user), save=True)
 
         assert_not_equal(self.preprint.subjects[0][0], self.subject._id)
-
         update_subjects_payload = build_preprint_update_payload(self.preprint._id, attributes={"subjects": [[self.subject._id]]})
 
         res = self.app.patch_json_api(self.url, update_subjects_payload, auth=user_two.auth, expect_errors=True)
@@ -247,6 +247,30 @@ class TestPreprintUpdate(ApiTestCase):
         assert_equal(res.status_code, 403)
 
         assert_not_equal(self.preprint.subjects[0], self.subject._id)
+
+    def test_update_published(self):
+        unpublished = PreprintFactory(creator=self.user, is_published=False)
+        url = '/{}preprints/{}/'.format(API_BASE, unpublished._id)
+        payload = build_preprint_update_payload(unpublished._id, attributes={'is_published': True})
+        res = self.app.patch_json_api(url, payload, auth=self.user.auth)
+        unpublished.reload()
+        assert_true(unpublished.is_published)
+
+    # Regression test for https://openscience.atlassian.net/browse/OSF-7630
+    def test_update_published_does_not_send_contributor_added_for_inactive_users(self):
+        unpublished = PreprintFactory(creator=self.user, is_published=False)
+        unpublished.node.add_unregistered_contributor(
+            fullname=fake.name(),
+            email=fake.email(),
+            auth=Auth(self.user),
+            save=True
+        )
+        url = '/{}preprints/{}/'.format(API_BASE, unpublished._id)
+        payload = build_preprint_update_payload(unpublished._id, attributes={'is_published': True})
+        with capture_signals() as captured:
+            res = self.app.patch_json_api(url, payload, auth=self.user.auth)
+            # Signal not sent, because contributor is not registered
+            assert_false(captured[contributor_added])
 
 
 class TestPreprintUpdateLicense(ApiTestCase):

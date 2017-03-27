@@ -35,6 +35,9 @@ class NodeLicense(ObjectIDMixin, BaseModel):
     text = models.TextField(null=False)
     properties = ArrayField(models.CharField(max_length=128), default=list, blank=True)
 
+    def __unicode__(self):
+        return '(license_id={}, name={})'.format(self.license_id, self.name)
+
     @classmethod
     def migrate_from_modm(cls, modm_obj):
         django_obj = super(NodeLicense, cls).migrate_from_modm(modm_obj)
@@ -57,6 +60,11 @@ class NodeLicenseRecord(ObjectIDMixin, BaseModel):
     copyright_holders = ArrayField(
         models.CharField(max_length=256, blank=True, null=True),
         default=list, blank=True)
+
+    def __unicode__(self):
+        if self.node_license:
+            return self.node_license.__unicode__()
+        return super(NodeLicenseRecord, self).__unicode__()
 
     @property
     def name(self):

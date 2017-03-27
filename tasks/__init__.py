@@ -417,6 +417,12 @@ def migrate_search(ctx, delete=False, index=settings.ELASTIC_INDEX):
     init_app(routes=False, set_backends=False)
     from website.search_migration.migrate import migrate
 
+    # NOTE: Silence the warning:
+    # "InsecureRequestWarning: Unverified HTTPS request is being made. Adding certificate verification is strongly advised."
+    SILENT_LOGGERS = ['py.warnings']
+    for logger in SILENT_LOGGERS:
+        logging.getLogger(logger).setLevel(logging.ERROR)
+
     migrate(delete, index=index)
 
 
@@ -514,6 +520,7 @@ def requirements(ctx, base=False, addons=False, release=False, dev=False, quick=
     ctx.run('pip uninstall uritemplate.py --yes || true')
     ctx.run('pip install --no-cache-dir uritemplate.py==0.3.0')
 
+
 @task
 def test_module(ctx, module=None, numprocesses=None, params=None):
     """Helper for running tests.
@@ -527,7 +534,7 @@ def test_module(ctx, module=None, numprocesses=None, params=None):
     # https://github.com/gabrielfalcao/HTTPretty/issues/209#issue-54090252
     args = ['-s']
     if numprocesses > 1:
-        args += ['-n {}'.format(numprocesses)]
+        args += ['-n {}'.format(numprocesses), '--max-slave-restart=0']
     modules = [module] if isinstance(module, basestring) else module
     args.extend(modules)
     if params:

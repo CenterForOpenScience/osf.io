@@ -3,9 +3,11 @@ from nose.tools import *  # flake8: noqa
 from framework.auth.core import Auth
 from tests.base import ApiTestCase
 from api.base.settings.defaults import API_BASE
+from api_tests.preprints.filters.test_filters import PreprintsListFilteringMixin
 
+from website.preprints.model import PreprintService
 from website.files.models.osfstorage import OsfStorageFile
-from osf_tests.factories import PreprintFactory, AuthUserFactory, ProjectFactory, SubjectFactory
+from osf_tests.factories import PreprintFactory, AuthUserFactory, ProjectFactory, SubjectFactory, PreprintProviderFactory
 from api_tests import utils as test_utils
 
 
@@ -53,3 +55,24 @@ class TestNodePreprintList(ApiTestCase):
 
         assert_equal(res.status_code, 200)
         assert_equal(res.json['data'][0]['id'], self.preprint._id)
+
+class TestNodePreprintsListFiltering(PreprintsListFilteringMixin, ApiTestCase):
+
+    def setUp(self):
+        self.user = AuthUserFactory()
+        # all different providers
+        self.provider = PreprintProviderFactory(name='Sockarxiv')
+        self.provider_two = PreprintProviderFactory(name='Piratearxiv')
+        self.provider_three = PreprintProviderFactory(name='Mockarxiv')
+        # all same project
+        self.project = ProjectFactory(creator=self.user)
+        self.project_two = self.project
+        self.project_three = self.project
+        self.url = '/{}nodes/{}/preprints/?version=2.2&'.format(API_BASE, self.project._id)
+        super(TestNodePreprintsListFiltering, self).setUp()
+
+    def test_provider_filter_equals_returns_one(self):
+        expected = [self.preprint_two._id]
+        res = self.app.get('{}{}'.format(self.provider_url, self.provider_two._id), auth=self.user.auth)
+        actual = [preprint['id'] for preprint in res.json['data']]
+        assert_equal(expected, actual)

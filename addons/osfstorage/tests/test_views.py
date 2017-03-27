@@ -326,7 +326,7 @@ class TestUploadFileHook(HookTestCase):
         assert_equal(res.json['status'], 'success')
         assert_is(res.json['archive'], True)
 
-        self.send_hook(
+        res = self.send_hook(
             'osfstorage_update_metadata',
             {},
             payload={'metadata': {

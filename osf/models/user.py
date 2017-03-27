@@ -30,7 +30,6 @@ from framework.auth.exceptions import (ChangePasswordError, ExpiredTokenError,
                                        MergeConfirmedRequiredError,
                                        MergeConflictError)
 from framework.exceptions import PermissionsError
-from framework.sentry import log_exception
 from framework.sessions.utils import remove_sessions_for_user
 from framework.mongo import get_cache_key
 from modularodm.exceptions import NoResultsFound
@@ -41,7 +40,7 @@ from osf.models.institution import Institution
 from osf.models.mixins import AddonModelMixin
 from osf.models.session import Session
 from osf.models.tag import Tag
-from osf.models.validators import validate_email, validate_social
+from osf.models.validators import validate_email, validate_social, validate_history_item
 from osf.modm_compat import Q
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import NonNaiveDateTimeField
@@ -130,6 +129,8 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         'schools',
         'social',
     }
+    TRACK_FIELDS = SEARCH_UPDATE_FIELDS.copy()
+    TRACK_FIELDS.add('password')
 
     # TODO: Add SEARCH_UPDATE_NODE_FIELDS, for fields that should trigger a
     #   search update for all nodes to which the user is a contributor.
@@ -158,7 +159,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     # Hashed. Use `User.set_password` and `User.check_password`
     # password = models.CharField(max_length=255)
 
-    fullname = models.CharField(max_length=255, blank=True)
+    fullname = models.CharField(max_length=255)
 
     # user has taken action to register the account
     is_registered = models.BooleanField(db_index=True, default=False)
@@ -291,9 +292,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     # }
 
     # Employment history
-    # jobs = fields.DictionaryField(list=True, validate=validate_history_item)
-    # TODO: Add validation
-    jobs = DateTimeAwareJSONField(default=list, blank=True)
+    jobs = DateTimeAwareJSONField(default=list, blank=True, validators=[validate_history_item])
     # Format: list of {
     #     'title': <position or job title>,
     #     'institution': <institution or organization>,
@@ -307,9 +306,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     # }
 
     # Educational history
-    # schools = fields.DictionaryField(list=True, validate=validate_history_item)
-    # TODO: Add validation
-    schools = DateTimeAwareJSONField(default=list, blank=True)
+    schools = DateTimeAwareJSONField(default=list, blank=True, validators=[validate_history_item])
     # Format: list of {
     #     'degree': <position or job title>,
     #     'institution': <institution or organization>,
@@ -323,8 +320,6 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     # }
 
     # Social links
-    # social = fields.DictionaryField(validate=validate_social)
-    # TODO: Add validation
     social = DateTimeAwareJSONField(default=dict, blank=True, validators=[validate_social])
     # Format: {
     #     'profileWebsites': <list of profile websites>
@@ -367,6 +362,9 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
     is_active = models.BooleanField(default=False)
     is_staff = models.BooleanField(default=False)
+
+    def __repr__(self):
+        return '<OSFUser({0!r}) with guid {1!r}>'.format(self.username, self._id)
 
     @property
     def deep_url(self):
@@ -462,12 +460,18 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             return None
 
     @property
+    def all_tags(self):
+        """Return a queryset containing all of this user's tags (incl. system tags)."""
+        # Tag's default manager only returns non-system tags, so we can't use self.tags
+        return Tag.all_tags.filter(osfuser=self)
+
+    @property
     def system_tags(self):
-        """The system tags associated with this user. This currently returns a list of string
+        """The system tags associated with this node. This currently returns a list of string
         names for the tags, for compatibility with v1. Eventually, we can just return the
         QuerySet.
         """
-        return self.tags.filter(system=True).values_list('name', flat=True)
+        return self.all_tags.filter(system=True).values_list('name', flat=True)
 
     @property
     def csl_given_name(self):
@@ -675,12 +679,12 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
                 node.contributor_set.filter(user=user).delete()
             else:
-                node.contributor_set.filter(user=user).invalidated_update(user=self)
+                node.contributor_set.filter(user=user).update(user=self)
 
             node.save()
 
         # - projects where the user was the creator
-        user.created.filter(is_bookmark_collection=False).invalidated_update(creator=self)
+        user.created.filter(is_bookmark_collection=False).update(creator=self)
 
         # - file that the user has checked_out, import done here to prevent import error
         from osf.models import FileNode
@@ -727,6 +731,8 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
                 raise
         except mailchimp_utils.mailchimp.EmailNotExistsError:
             pass
+        # Call to `unsubscribe` above saves, and can lead to stale data
+        self.reload()
         self.is_disabled = True
 
         # we must call both methods to ensure the current session is cleared and all existing
@@ -1119,12 +1125,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
     def update_search(self):
         from website.search.search import update_user
-        from website.search.exceptions import SearchUnavailableError
-        try:
-            update_user(self)
-        except SearchUnavailableError as e:
-            logger.exception(e)
-            log_exception()
+        update_user(self)
 
     def update_search_nodes_contributors(self):
         """
@@ -1133,7 +1134,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         :return:
         """
         from website.search import search
-        search.update_contributors(self.visible_contributor_to)
+        search.update_contributors_async(self.id)
 
     def update_search_nodes(self):
         """Call `update_search` on all nodes on which the user is a
@@ -1143,6 +1144,9 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         """
         for node in self.contributed:
             node.update_search()
+
+    def update_date_last_login(self):
+        self.date_last_login = timezone.now()
 
     def get_summary(self, formatter='long'):
         return {
@@ -1231,10 +1235,12 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
     def add_system_tag(self, tag):
         if not isinstance(tag, Tag):
-            tag_instance, created = Tag.objects.get_or_create(name=tag.lower(), system=True)
+            tag_instance, created = Tag.all_tags.get_or_create(name=tag.lower(), system=True)
         else:
             tag_instance = tag
-        if not self.tags.filter(id=tag_instance.id).exists():
+        if not tag_instance.system:
+            raise ValueError('Non-system tag passed to add_system_tag')
+        if not self.all_tags.filter(id=tag_instance.id).exists():
             self.tags.add(tag_instance)
         return tag_instance
 
