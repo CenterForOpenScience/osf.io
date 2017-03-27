@@ -12,6 +12,8 @@ from website.addons.base import StorageAddonBase
 
 from website.addons.dmptool.serializer import DmptoolSerializer
 
+ROOT_FOLDER_NAME = '/'
+
 
 class DmptoolProvider(object):
     """An alternative to `ExternalProvider` not tied to OAuth"""
@@ -39,9 +41,9 @@ class AddonDmptoolNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
     oauth_provider = DmptoolProvider
     serializer = DmptoolSerializer
 
-    folder_id = fields.StringField(default='xxxxx')
-    folder_name = fields.StringField(default='xxxxx')
-    folder_path = fields.StringField(default='xxxxx')
+    folder_id = fields.StringField(default=ROOT_FOLDER_NAME)
+    folder_name = fields.StringField(default=ROOT_FOLDER_NAME)
+    folder_path = fields.StringField(default=ROOT_FOLDER_NAME)
 
     def set_user_auth(self, user_settings):
 
@@ -54,8 +56,8 @@ class AddonDmptoolNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
     def set_folder(self, folder_id, auth):
 
         self.folder_id = str(folder_id)
-        self.folder_name = 'xxxxx'
-        self.folder_path = 'xxxxx'
+        self.folder_name = ROOT_FOLDER_NAME
+        self.folder_path = ROOT_FOLDER_NAME
         self.save()
 
         if not self.complete:
@@ -83,9 +85,9 @@ class AddonDmptoolNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         """
         TO DO: deal with this hack.  For the dmptool, there is no folder per se, just plans.
         """
-        self.folder_id = 'xxxxx'
-        self.folder_name = 'xxxxx'
-        self.folder_path = 'xxxxx'
+        self.folder_id = ROOT_FOLDER_NAME
+        self.folder_name = ROOT_FOLDER_NAME
+        self.folder_path = ROOT_FOLDER_NAME
 
     def deauthorize(self, auth=None, add_log=True):
         """Remove user authorization from this node and log the event."""
