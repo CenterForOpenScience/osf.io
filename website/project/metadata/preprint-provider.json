@@ -4,6 +4,7 @@
     "category": "preprintprovider",
     "schema": {
         "type": "object",
+        "additionalProperties": false,
         "properties": {
             "about_link": {
                 "type": "string"

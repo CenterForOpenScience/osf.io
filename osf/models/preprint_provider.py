@@ -5,6 +5,7 @@ from website.util import api_v2_url
 from modularodm import Q
 
 from osf.models.base import BaseModel, ObjectIDMixin
+from osf.models.validators import validate_preprint_provider_extra
 from osf.utils.fields import EncryptedTextField
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.models.licenses import NodeLicense
@@ -36,7 +37,7 @@ class PreprintProvider(ObjectIDMixin, BaseModel):
     subjects_acceptable = DateTimeAwareJSONField(blank=True, default=list)
     licenses_acceptable = models.ManyToManyField(NodeLicense, blank=True)
 
-    extra = DateTimeAwareJSONField(blank=True, default=dict)
+    extra = DateTimeAwareJSONField(blank=True, default=dict, validators=[validate_preprint_provider_extra])
 
     def __unicode__(self):
         return '{} with id {}'.format(self.name, self.id)
