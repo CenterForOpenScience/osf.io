@@ -812,7 +812,9 @@ class NodeContributorsCreateSerializer(NodeContributorsSerializer):
     def create(self, validated_data):
         id = validated_data.get('_id')
         email = validated_data.get('email')
-        index = validated_data.get('index')
+        index = None
+        if '_order' in validated_data:
+            index = validated_data.pop('_order')
         node = self.context['view'].get_node()
         auth = Auth(self.context['request'].user)
         full_name = validated_data.get('full_name')

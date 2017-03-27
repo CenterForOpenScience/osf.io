@@ -1222,7 +1222,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         auth.user.save()
 
         if index is not None:
-            self.move_contributor(user=contributor, index=index, auth=auth, save=True)
+            self.move_contributor(contributor=contributor, index=index, auth=auth, save=True)
 
         contributor_obj = self.contributor_set.get(user=contributor)
         contributor.permission = get_contributor_permissions(contributor_obj, as_list=False)
