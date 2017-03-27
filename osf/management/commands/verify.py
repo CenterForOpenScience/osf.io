@@ -12,7 +12,7 @@ from django.core.management import BaseCommand
 from api.base.celery import app
 from osf.management.commands.migratedata import register_nonexistent_models_with_modm, get_modm_model
 from osf.management.commands.migraterelations import build_toku_django_lookup_table_cache, format_lookup_key
-from osf.models import BlackListGuid
+from osf.models import BlackListGuid, NotificationSubscription
 from osf.models import EmbargoTerminationApproval
 from osf.models import OSFUser
 from osf.models import Tag
@@ -24,6 +24,10 @@ logger = logging.getLogger('migrations')
 
 class NotGonnaDoItException(Exception):
     pass
+
+# NodeLicenseRecord appears pretty broke
+# StoredFileNode has no attribute deleted_by, probably deleted_on too
+
 
 
 class Command(BaseCommand):
@@ -89,7 +93,7 @@ def validate_m2m_field(field_name, django_obj, modm_obj):
     modm_guids = [obj._id for obj in getattr(modm_obj, modm_field_name)]
     for django_guid in django_guids:
         try:
-            assert django_guid in modm_guids, '{} for model {}.{} was not in modm guids'.format(django_guid, django_obj._meta.model.__module__, django_obj._meta.model.__name__)
+            assert django_guid in modm_guids, '{} for model {}.{} was not in modm guids for field {}'.format(django_guid, django_obj._meta.model.__module__, django_obj._meta.model.__name__, modm_field_name)
         except AssertionError as ex:
             logger.error(ex)
 
@@ -101,12 +105,17 @@ def validate_fk_relation(field_name, django_obj, modm_obj):
     if django_obj._meta.model is EmbargoTerminationApproval and field_name == 'initiated_by':
         # EmbargoTerminationApproval didn't have an initiated_by in modm even though it was supposed to.
         return
+
     django_field_value = getattr(django_obj, field_name)
     # if there's a field alias, let's use that.
     if getattr(django_obj, 'FIELD_ALIASES', None) is None:
         modm_field_name = field_name
     else:
         modm_field_name = {v: k for k, v in getattr(django_obj, 'FIELD_ALIASES', {}).iteritems()}.get(field_name, field_name)
+
+    if django_obj._meta.model is NotificationSubscription and field_name in ['user', 'node']:
+        modm_field_name = 'owner'
+
     modm_field_value = getattr(modm_obj, modm_field_name)
     if modm_field_value and django_field_value:
         try:
@@ -118,8 +127,8 @@ def validate_fk_relation(field_name, django_obj, modm_obj):
 
 
 def validate_basic_field(field_name, django_obj, modm_obj):
-    if field_name in ['id', 'pk', 'object_id', 'guid_string']:
-        # modm doesn't have ids or guids
+    if field_name in ['id', 'pk', 'object_id', 'guid_string', 'last_login']:
+        # modm doesn't have ids or guids or last_login
         return
     # if there's a field alias, let's use that.
     if getattr(django_obj, 'FIELD_ALIASES', None) is None:
@@ -129,14 +138,45 @@ def validate_basic_field(field_name, django_obj, modm_obj):
 
     if modm_field_name is False:
         return
-    if isinstance(getattr(modm_obj, modm_field_name), datetime):
+
+    modm_value = getattr(modm_obj, modm_field_name)
+    django_value = getattr(django_obj, field_name)
+
+    if field_name == 'password':
+        modm_value = 'bcrypt${}'.format(modm_value)
+
+    if type(django_value) != type(modm_value):
+        # jsonb fields
+        if modm_value is None and django_value == {}:
+            return
+
+        # bool defaulting to False but None in modm is falsey
+        if modm_value is None and django_value is False:
+            return
+
+        # sometimes None is an empty string because MongoDB
+        if modm_value is None and django_value == '':
+            return
+
+        if modm_value is None:
+            logger.error('modm value was None but django value was {}'.format(django_value))
+            return
+
+        # sometimes strings used to be integers, in some documents... LicenseRecord.year
         try:
-            assert getattr(django_obj, field_name) == pytz.utc.localize(getattr(modm_obj, modm_field_name)), '{} {}:{} {}:{}'.format(django_obj, field_name, getattr(django_obj, field_name), modm_field_name, pytz.utc.localize(getattr(modm_obj, modm_field_name)))
+            assert django_value.__class__(modm_value) == django_value, 'WITH TYPECAST: {}.{} {} {}:{} {}:{}'.format(django_obj.__module__, django_obj.__class__, django_obj, field_name, django_value, modm_field_name, modm_value)
+        except AssertionError as ex:
+            logger.error(ex)
+        return
+
+    if isinstance(modm_value, datetime):
+        try:
+            assert django_value == pytz.utc.localize(modm_value), '{}.{} {} {}:{} {}:{}'.format(django_obj.__module__, django_obj.__class__, django_obj, field_name, django_value, modm_field_name, pytz.utc.localize(modm_value))
         except AssertionError as ex:
             logger.error(ex)
         return
     try:
-        assert getattr(django_obj, field_name) == getattr(modm_obj, modm_field_name), '{} {}:{} {}:{}'.format(django_obj, field_name, getattr(django_obj, field_name), modm_field_name, getattr(modm_obj, modm_field_name))
+        assert django_value == modm_value, '{}.{} {} {}:{} {}:{}'.format(django_obj.__module__, django_obj.__class__, django_obj, field_name, django_value, modm_field_name, modm_value)
     except AssertionError as ex:
         logger.error(ex)
 
