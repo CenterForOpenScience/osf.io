@@ -20,7 +20,7 @@ from api.base.celery import app
 from osf import models
 from osf.models import (ApiOAuth2Scope, BlackListGuid, CitationStyle, Guid,
                         Institution, NodeRelation, NotificationSubscription,
-                        RecentlyAddedContributor, StoredFileNode, Tag)
+                        RecentlyAddedContributor, StoredFileNode, Tag, NodeLog)
 from osf.models import BaseFileNode
 from osf.models import OSFUser
 from osf.models.contributor import (AbstractBaseContributor, Contributor,
@@ -411,7 +411,8 @@ def save_page_of_fk_relationships(self, django_model, fk_relations, offset, limi
             modm_obj._object_cache.clear()
 
     except Exception as ex:
-        logger.error('Retrying: Failed to save page model: {} offset:{} limit:{} of foreign keys with exception {}'.format(django_model, offset, limit, ex.message))
+        logger.error('Retrying: Failed to save page model: {} offset:{} limit:{} of foreign keys with exception {}'.format(django_model, offset, limit, ex))
+        logger.error('{} {}'.format(ex.__dict__, ex.__class__))
         self.retry(countdown=60)  # retry in 1m
     finally:
         # Disable typedmodel auto-recasting to prevent migration from missing fields h/t @chrisseto
@@ -421,11 +422,16 @@ def save_page_of_fk_relationships(self, django_model, fk_relations, offset, limi
 
 @app.task()
 def save_fk_relationships(django_model, page_size):
+    kwargs = {}
     logger.info(
         'Starting {} on {}...'.format(sys._getframe().f_code.co_name, django_model._meta.model.__module__))
     init_app(routes=False, attach_request_handlers=False, fixtures=False)
     set_backend()
     register_nonexistent_models_with_modm()
+
+    if django_model is NodeLog:
+        kwargs.update(dict(queue='nodelogs'))
+
     fk_relations = [field for field in django_model._meta.get_fields() if
                     field.is_relation and not field.auto_created and (field.many_to_one or field.one_to_one)]
 
@@ -446,7 +452,7 @@ def save_fk_relationships(django_model, page_size):
 
     while model_count < model_total:
         logger.info('{}.{} starting'.format(django_model._meta.model.__module__, django_model._meta.model.__name__))
-        save_page_of_fk_relationships.delay(django_model, fk_relations, model_count, model_count+page_size)
+        save_page_of_fk_relationships.apply_async((django_model, fk_relations, model_count, model_count+page_size), {}, **kwargs)
         model_count += page_size
 
 
