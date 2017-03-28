@@ -100,7 +100,7 @@ def index():
 
 
 def find_bookmark_collection(user):
-    return Node.find_one(Q('is_bookmark_collection', 'eq', True) & Q('contributors', 'eq', user._id) & Q('is_deleted', 'eq', False))
+    return Node.find_one(Q('is_bookmark_collection', 'eq', True) & Q('creator', 'eq', user._id) & Q('is_deleted', 'eq', False))
 
 @must_be_logged_in
 def dashboard(auth):
