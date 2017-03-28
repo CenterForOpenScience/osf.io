@@ -11,8 +11,15 @@ from api.addons.serializers import NodeAddonFolderSerializer
 from api.addons.views import AddonSettingsMixin
 from api.base import generic_bulk_views as bulk_views
 from api.base import permissions as base_permissions
-from api.base.exceptions import InvalidModelValueError, JSONAPIException, Gone
-from api.base.exceptions import RelationshipPostMakesNoChanges, EndpointNotImplementedError
+from api.base.exceptions import (
+    InvalidModelValueError,
+    JSONAPIException,
+    Gone,
+    InvalidFilterOperator,
+    InvalidFilterValue,
+    RelationshipPostMakesNoChanges,
+    EndpointNotImplementedError,
+)
 from api.base.filters import ODMFilterMixin, ListFilterMixin
 from api.base.pagination import CommentPagination, NodeContributorPagination, MaxSizePagination
 from api.base.parsers import (
@@ -90,7 +97,7 @@ from osf.models import BaseFileNode
 from osf.models.files import File, Folder
 from addons.wiki.models import NodeWikiPage
 from website.exceptions import NodeStateError
-from website.util.permissions import ADMIN
+from website.util.permissions import ADMIN, PERMISSIONS
 
 
 class NodeMixin(object):
@@ -672,6 +679,22 @@ class NodeContributorsList(BaseContributorList, bulk_views.BulkUpdateJSONAPIView
     view_category = 'nodes'
     view_name = 'node-contributors'
     ordering = ('_order',)  # default ordering
+
+    # overrides FilterMixin
+    def postprocess_query_param(self, key, field_name, operation):
+        if field_name == 'bibliographic':
+            operation['source_field_name'] = 'visible'
+
+    # overrides FilterMixin
+    def filter_by_field(self, queryset, field_name, operation):
+        if field_name == 'permission':
+            if operation['op'] != 'eq':
+                raise InvalidFilterOperator(value=operation['op'], valid_operators=['eq'])
+            # operation['value'] should be 'admin', 'write', or 'read'
+            if operation['value'].lower().strip() not in PERMISSIONS:
+                raise InvalidFilterValue(value=operation['value'])
+            return queryset.filter(**{operation['value'].lower().strip(): True})
+        return super(NodeContributorsList, self).filter_by_field(queryset, field_name, operation)
 
     # overrides ListBulkCreateJSONAPIView, BulkUpdateJSONAPIView, BulkDeleteJSONAPIView
     def get_serializer_class(self):
