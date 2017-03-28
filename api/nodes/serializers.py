@@ -790,7 +790,7 @@ class NodeContributorsCreateSerializer(NodeContributorsSerializer):
 
     id = IDField(source='_id', required=False, allow_null=True)
     full_name = ser.CharField(required=False)
-    email = ser.EmailField(required=False)
+    email = ser.EmailField(required=False, source='user.email')
     index = ser.IntegerField(required=False, source='_order')
 
     users = RelationshipField(
@@ -811,7 +811,7 @@ class NodeContributorsCreateSerializer(NodeContributorsSerializer):
 
     def create(self, validated_data):
         id = validated_data.get('_id')
-        email = validated_data.get('email')
+        email = validated_data.get('user', {}).get('email', None)
         index = None
         if '_order' in validated_data:
             index = validated_data.pop('_order')
@@ -836,7 +836,6 @@ class NodeContributorsCreateSerializer(NodeContributorsSerializer):
             raise exceptions.ValidationError(detail=e.messages[0])
         except ValueError as e:
             raise exceptions.NotFound(detail=e.args[0])
-
         return contributor_obj
 
 
