@@ -16,14 +16,7 @@ from osf.models import Institution, Node
 
 from admin_tests.utilities import setup_form_view, setup_user_view
 
-from admin.institutions.views import (
-    InstitutionList,
-    InstitutionDisplay,
-    InstitutionChangeForm,
-    InstitutionExport,
-    CreateInstitution,
-    InstitutionNodeList
-)
+from admin.institutions import views
 from admin.institutions.forms import InstitutionForm
 from admin.base.forms import ImportFileForm
 
@@ -41,7 +34,7 @@ class TestInstitutionList(AdminTestCase):
         self.user.save()
 
         self.request = RequestFactory().get('/fake_path')
-        self.view = InstitutionList()
+        self.view = views.InstitutionList()
         self.view = setup_user_view(self.view, self.request, user=self.user)
 
     def test_get_list(self, *args, **kwargs):
@@ -81,7 +74,7 @@ class TestInstitutionDisplay(AdminTestCase):
         self.institution = InstitutionFactory()
 
         self.request = RequestFactory().get('/fake_path')
-        self.view = InstitutionDisplay()
+        self.view = views.InstitutionDisplay()
         self.view = setup_user_view(self.view, self.request, user=self.user)
 
         self.view.kwargs = {'institution_id': self.institution.id}
@@ -111,34 +104,51 @@ class TestInstitutionDisplay(AdminTestCase):
         nt.assert_equal(res.status_code, 200)
 
 
-# class TestInstitutionDelete(AdminTestCase):
-#     def setUp(self):
-#         self.user = AuthUserFactory()
-#         self.view_permission = Permission.objects.get(codename='view_institution')
-#         self.user.user_permissions.add(self.view_permission)
-#         self.user.save()
-#
-#         self.institution = InstitutionFactory()
-#
-#         self.request = RequestFactory().get('/fake_path')
-#         self.view = InstitutionDisplay()
-#         self.view = setup_user_view(self.view, self.request, user=self.user)
-#
-#         self.view.kwargs = {'institution_id': self.institution.id}
-#
-#     def test_unaffilated_institution(self):
-#         pass
-#
-#     def test_cant_delete_if_users_affiliated(self):
-#         self.user.affiliated_institutions.add(self.institution)
-#         pass
-#
-#     def cant_delete_if_no_permissions(self):
-#         user2 = AuthUserFactory()
-#         nt.assert_false(user2.has_perm('osf.view_institution'))
-#         self.request.user = user2
-#         with nt.assert_raises(PermissionDenied):
-#             self.view.get(self.request)
+class TestInstitutionDelete(AdminTestCase):
+    def setUp(self):
+        self.user = AuthUserFactory()
+        self.view_permission = Permission.objects.get(codename='delete_institution')
+        self.user.user_permissions.add(self.view_permission)
+        self.user.save()
+
+        self.institution = InstitutionFactory()
+
+        self.request = RequestFactory().get('/fake_path')
+        self.view = views.DeleteInstitution()
+        self.view = setup_user_view(self.view, self.request, user=self.user)
+
+        self.view.kwargs = {'institution_id': self.institution.id}
+
+    def test_unaffiliated_institution_delete(self):
+        redirect = self.view.delete(self.request)
+        nt.assert_equal(redirect.url, '/institutions/')
+        nt.assert_equal(redirect.status_code, 302)
+
+    def test_unaffiliated_institution_get(self):
+        res = self.view.get(self.request)
+        nt.assert_equal(res.status_code, 200)
+
+    def test_cannot_delete_if_nodes_affiliated(self):
+        node = ProjectFactory(creator=self.user)
+        node.affiliated_institutions.add(self.institution)
+
+        redirect = self.view.delete(self.request)
+        nt.assert_equal(redirect.url, '/institutions/{}/cannot_delete/'.format(self.institution.id))
+        nt.assert_equal(redirect.status_code, 302)
+
+    def cannot_delete_if_no_permissions(self):
+        user2 = AuthUserFactory()
+        nt.assert_false(user2.has_perm('osf.delete_institution'))
+        self.request.user = user2
+        with nt.assert_raises(PermissionDenied):
+            self.view.delete(self.request)
+
+    def cannot_get_confirmation_if_no_permissions(self):
+        user2 = AuthUserFactory()
+        nt.assert_false(user2.has_perm('osf.delete_institution'))
+        self.request.user = user2
+        with nt.assert_raises(PermissionDenied):
+            self.view.get(self.request)
 
 
 class TestInstitutionChangeForm(AdminTestCase):
@@ -154,7 +164,7 @@ class TestInstitutionChangeForm(AdminTestCase):
 
         self.request = RequestFactory().get('/fake_path')
         self.request.user = self.user
-        self.view = InstitutionChangeForm()
+        self.view = views.InstitutionChangeForm()
         self.view = setup_form_view(self.view, self.request, form=InstitutionForm())
 
         self.view.kwargs = {'institution_id': self.institution.id}
@@ -188,28 +198,28 @@ class TestInstitutionExport(AdminTestCase):
         super(TestInstitutionExport, self).setUp()
 
         self.user = AuthUserFactory()
-        self.change_permission = Permission.objects.get(codename='change_institution')
+        self.change_permission = Permission.objects.get(codename='view_institution')
         self.user.user_permissions.add(self.change_permission)
         self.user.save()
 
         self.institution = InstitutionFactory()
 
         self.request = RequestFactory().get('/fake_path')
-        self.view = InstitutionExport()
+        self.view = views.InstitutionExport()
         self.view = setup_user_view(self.view, self.request, user=self.user)
 
         self.view.kwargs = {'institution_id': self.institution.id}
 
     def test_no_permission_raises(self):
         user2 = AuthUserFactory()
-        nt.assert_false(user2.has_perm('osf.change_institution'))
+        nt.assert_false(user2.has_perm('osf.view_institution'))
         self.request.user = user2
 
         with nt.assert_raises(PermissionDenied):
-            self.view.post(self.request)
+            self.view.get(self.request)
 
-    def test_post(self):
-        res = self.view.post(self.request)
+    def test_get(self):
+        res = self.view.get(self.request)
         content_dict = json.loads(res.content)[0]
         nt.assert_equal(content_dict['model'], 'osf.institution')
         nt.assert_equal(content_dict['fields']['name'], self.institution.name)
@@ -229,7 +239,7 @@ class TestCreateInstitution(AdminTestCase):
 
         self.request = RequestFactory().get('/fake_path')
         self.request.user = self.user
-        self.view = CreateInstitution()
+        self.view = views.CreateInstitution()
         self.view = setup_form_view(self.view, self.request, form=InstitutionForm())
 
         self.view.kwargs = {'institution_id': self.institution.id}
@@ -272,7 +282,7 @@ class TestAffiliatedNodeList(AdminTestCase):
 
         self.request = RequestFactory().get('/fake_path')
         self.request.user = self.user
-        self.view = InstitutionNodeList()
+        self.view = views.InstitutionNodeList()
         self.view = setup_form_view(self.view, self.request, form=InstitutionForm())
 
         self.view.kwargs = {'institution_id': self.institution.id}

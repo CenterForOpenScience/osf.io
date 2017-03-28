@@ -3,11 +3,12 @@ from __future__ import unicode_literals
 import json
 
 from django.core import serializers
+from django.shortcuts import redirect
 from django.forms.models import model_to_dict
 from django.core.urlresolvers import reverse_lazy
 from django.core.exceptions import PermissionDenied
 from django.http import HttpResponse, JsonResponse
-from django.views.generic import ListView, DetailView, View, CreateView, UpdateView
+from django.views.generic import ListView, DetailView, View, CreateView, UpdateView, DeleteView, TemplateView
 from django.contrib.auth.mixins import PermissionRequiredMixin
 
 from admin.base import settings
@@ -116,10 +117,10 @@ class InstitutionChangeForm(PermissionRequiredMixin, UpdateView):
 
 
 class InstitutionExport(PermissionRequiredMixin, View):
-    permission_required = 'osf.change_institution'
+    permission_required = 'osf.view_institution'
     raise_exception = True
 
-    def post(self, request, *args, **kwargs):
+    def get(self, request, *args, **kwargs):
         if not self.has_permission():
             raise PermissionDenied()
         institution = Institution.objects.get(id=self.kwargs['institution_id'])
@@ -170,3 +171,37 @@ class InstitutionNodeList(PermissionRequiredMixin, ListView):
         kwargs.setdefault('page', page)
         kwargs.setdefault('logohost', settings.OSF_URL)
         return super(InstitutionNodeList, self).get_context_data(**kwargs)
+
+
+class DeleteInstitution(PermissionRequiredMixin, DeleteView):
+    permission_required = 'osf.delete_institution'
+    raise_exception = True
+    template_name = 'institutions/confirm_delete.html'
+    success_url = reverse_lazy('institutions:list')
+
+    def delete(self, request, *args, **kwargs):
+        institution = Institution.objects.get(id=self.kwargs['institution_id'])
+        if institution.nodes.count() > 0:
+            return redirect('institutions:cannot_delete', institution_id=institution.pk)
+        return super(DeleteInstitution, self).delete(request, *args, **kwargs)
+
+    def get(self, request, *args, **kwargs):
+        institution = Institution.objects.get(id=self.kwargs['institution_id'])
+        if institution.nodes.count() > 0:
+            return redirect('institutions:cannot_delete', institution_id=institution.pk)
+        return super(DeleteInstitution, self).get(request, *args, **kwargs)
+
+    def get_object(self, queryset=None):
+        if not self.has_permission():
+            raise PermissionDenied()
+        institution = Institution.objects.get(id=self.kwargs['institution_id'])
+        return institution
+
+
+class CannotDeleteInstitution(TemplateView):
+    template_name = 'institutions/cannot_delete.html'
+
+    def get_context_data(self, **kwargs):
+        context = super(CannotDeleteInstitution, self).get_context_data(**kwargs)
+        context['institution'] = Institution.objects.get(id=self.kwargs['institution_id'])
+        return context

@@ -12,10 +12,10 @@
     <div class="container-fluid">
         <div class="row">
             <div class="col-md-12">
-                <form action={% url 'institutions:export' institution.id %} method="post">
-                    {% csrf_token %}
-                    <input class="btn btn-primary" type="submit" value="Export institution metadata" />
-                </form>
+                <a class="btn btn-primary" href={% url 'institutions:export' institution.id %}>Export institution metadata</a>
+                {%  if perms.osf.delete_institution %}
+                <a class="btn btn-danger" href={% url 'institutions:delete' institution.id %}>Delete institution</a>
+                {%  endif %}
             </div>
         </div>
 
