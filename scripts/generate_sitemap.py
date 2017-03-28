@@ -118,7 +118,12 @@ class Sitemap(object):
 
     def ship_to_s3(self, name, path):
         data = open(path, 'rb')
-        self.s3.Bucket(settings.SITEMAP_AWS_BUCKET).put_object(Key='sitemaps/{}'.format(name), Body=data)
+        try:
+            self.s3.Bucket(settings.SITEMAP_AWS_BUCKET).put_object(Key='sitemaps/{}'.format(name), Body=data)
+        except Exception as e:
+            logger.info('Error sending data to s3 via boto3')
+            logger.exception(e)
+            sentry.log_message('ERROR: Sitemaps could not be uploaded to s3, see `generate_sitemap` logs')
         data.close()
 
     def write_sitemap_index(self):
