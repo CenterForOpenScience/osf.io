@@ -719,11 +719,13 @@ class Command(BaseCommand):
         if not options['m2m'] and not options['fk']:
             return
 
-        for model in models:
-            do_model.delay(model, **options)
         if options['m2m']:
             migrate_node_through_models.delay()
             migration_institutional_contributors.delay()
+            
+        for model in models:
+            do_model.delay(model, **options)
+
 
 
 @app.task()
