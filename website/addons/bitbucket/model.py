@@ -177,7 +177,7 @@ class BitbucketNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
 
     @property
     def is_private(self):
-        connection = BitbucketClient(access_token=self.external_account.oauth_key)
+        connection = BitbucketClient(access_token=self.api.fetch_access_token())
         return connection.repo(user=self.user, repo=self.repo)['is_private']
 
     def fetch_access_token(self):
@@ -194,7 +194,7 @@ class BitbucketNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         if self.user_settings and self.user_settings.has_auth:
             valid_credentials = False
             owner = self.user_settings.owner
-            connection = BitbucketClient(access_token=self.external_account.oauth_key)
+            connection = BitbucketClient(access_token=self.api.fetch_access_token())
 
             # TODO: Fetch repo list client-side
             # Since /user/repos excludes organization repos to which the
@@ -235,7 +235,7 @@ class BitbucketNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
     def serialize_waterbutler_credentials(self):
         if not self.complete or not self.repo:
             raise exceptions.AddonError('Addon is not authorized')
-        return {'token': self.external_account.oauth_key}
+        return {'token': self.api.fetch_access_token()}
 
     def serialize_waterbutler_settings(self):
         if not self.complete:
