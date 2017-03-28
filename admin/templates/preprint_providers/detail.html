@@ -14,7 +14,9 @@
         <div class="row">
             <div class="col-md-12">
                 <a class="btn btn-primary" href={% url 'preprint_providers:export' preprint_provider.id %}>Export preprint provider metadata</a>
+                {%  if perms.osf.delete_preprintprovider %}
                 <a class="btn btn-danger" href={% url 'preprint_providers:delete' preprint_provider.id %}>Delete preprint provider</a>
+                {% endif %}
             </div>
         </div>
         <div class="row">
@@ -23,7 +25,7 @@
                 <h2>{{ preprint_provider.name }}</h2>
             </div>
         </div>
-        {% if perms.osf.change_preprint_provider %}
+        {% if perms.osf.change_preprintprovider %}
         <div class="row">
             <div class="col-md-12">
                 <button id="show-modify-form" class="btn btn-link" type="button">

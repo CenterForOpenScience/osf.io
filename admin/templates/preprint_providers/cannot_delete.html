@@ -10,10 +10,8 @@
         <div class="row">
             <div class="col-md-12">
                 <h3>Cannot Delete {{ provider.name }}</h3>
-                <p>{{ provider.name }} has {{ provider.preprint_services.length }} preprints associated with it, and therefore cannot be safely deleted.</p>
-                <p>Please move the associated preprints and try again.</p>
+                <p>{{ provider.name }} has {{ provider.preprint_services.count }} preprints associated with it, and therefore cannot be safely deleted.</p>
             </div>
         </div>
     </div>
 {% endblock content %}
-

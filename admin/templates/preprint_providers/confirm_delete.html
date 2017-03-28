@@ -15,11 +15,10 @@
             <div class="col-md-12">
                 <form action="" method="post">{% csrf_token %}
                     <p>Are you sure you want to delete "{{ object.name }}"?</p>
-                    <input type="submit" value="Confirm" />
+                    <input class="btn btn-primary" type="submit" value="Confirm" />
                 </form>
             </div>
         </div>
     </div>
 
 {% endblock content %}
-
