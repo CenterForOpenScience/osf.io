@@ -33,6 +33,12 @@ class PreprintProvider(ObjectIDMixin, BaseModel):
     licenses_acceptable = models.ManyToManyField(NodeLicense, blank=True, related_name='licenses_acceptable')
     default_license = models.ForeignKey(NodeLicense, blank=True, related_name='default_license', null=True)
 
+    class Meta:
+        # custom permissions for use in the OSF Admin App
+        permissions = (
+            ('view_preprintprovider', 'Can view preprint provider details'),
+        )
+
     def __unicode__(self):
         return '{} with id {}'.format(self.name, self.id)
 
