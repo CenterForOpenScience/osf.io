@@ -1,0 +1,251 @@
+import json
+
+from nose import tools as nt
+from django.test import RequestFactory
+from django.contrib.auth.models import Permission
+from django.core.exceptions import PermissionDenied
+
+
+from tests.base import AdminTestCase
+from osf_tests.factories import (
+    AuthUserFactory,
+    InstitutionFactory
+)
+from osf.models import Institution
+
+from admin_tests.utilities import setup_form_view, setup_user_view
+
+from admin.institutions.views import (
+    InstitutionList,
+    InstitutionDisplay,
+    InstitutionChangeForm,
+    InstitutionExport,
+    CreateInstitution
+)
+from admin.institutions.forms import InstitutionForm
+from admin.base.forms import ImportFileForm
+
+
+class TestInstitutionList(AdminTestCase):
+    def setUp(self):
+        super(TestInstitutionList, self).setUp()
+
+        self.institution1 = InstitutionFactory()
+        self.institution2 = InstitutionFactory()
+
+        self.user = AuthUserFactory()
+        self.view_permission = Permission.objects.get(codename='view_institution')
+        self.user.user_permissions.add(self.view_permission)
+        self.user.save()
+
+        self.request = RequestFactory().get('/fake_path')
+        self.view = InstitutionList()
+        self.view = setup_user_view(self.view, self.request, user=self.user)
+
+    def test_get_list(self, *args, **kwargs):
+        res = self.view.get(self.request, *args, **kwargs)
+        nt.assert_equal(res.status_code, 200)
+
+    def test_get_queryset(self):
+        institutions_returned = list(self.view.get_queryset())
+        inst_list = [self.institution1, self.institution2]
+        nt.assert_items_equal(institutions_returned, inst_list)
+        nt.assert_is_instance(institutions_returned[0], Institution)
+
+    def test_context_data(self):
+        self.view.object_list = self.view.get_queryset()
+        res = self.view.get_context_data()
+        nt.assert_is_instance(res, dict)
+        nt.assert_equal(len(res['institutions']), 2)
+        nt.assert_is_instance(res['institutions'][0], Institution)
+
+    def test_no_permission_raises(self):
+        user2 = AuthUserFactory()
+        nt.assert_false(user2.has_perm('osf.view_institution'))
+        self.request.user = user2
+        with nt.assert_raises(PermissionDenied):
+            self.view.get(self.request)
+
+
+class TestInstitutionDisplay(AdminTestCase):
+    def setUp(self):
+        super(TestInstitutionDisplay, self).setUp()
+
+        self.user = AuthUserFactory()
+        self.view_permission = Permission.objects.get(codename='view_institution')
+        self.user.user_permissions.add(self.view_permission)
+        self.user.save()
+
+        self.institution = InstitutionFactory()
+
+        self.request = RequestFactory().get('/fake_path')
+        self.view = InstitutionDisplay()
+        self.view = setup_user_view(self.view, self.request, user=self.user)
+
+        self.view.kwargs = {'institution_id': self.institution.id}
+
+    def test_get_object(self):
+        obj = self.view.get_object()
+        nt.assert_is_instance(obj, Institution)
+        nt.assert_equal(obj.name, self.institution.name)
+
+    def test_context_data(self):
+        res = self.view.get_context_data()
+        nt.assert_is_instance(res, dict)
+        nt.assert_is_instance(res['institution'], dict)
+        nt.assert_equal(res['institution']['name'], self.institution.name)
+        nt.assert_is_instance(res['change_form'], InstitutionForm)
+        nt.assert_is_instance(res['import_form'], ImportFileForm)
+
+    def test_no_permission_raises(self):
+        user2 = AuthUserFactory()
+        nt.assert_false(user2.has_perm('osf.view_institution'))
+        self.request.user = user2
+        with nt.assert_raises(PermissionDenied):
+            self.view.get(self.request)
+
+    def test_get(self, *args, **kwargs):
+        res = self.view.get(self.request, *args, **kwargs)
+        nt.assert_equal(res.status_code, 200)
+
+
+# class TestInstitutionDelete(AdminTestCase):
+#     def setUp(self):
+#         self.user = AuthUserFactory()
+#         self.view_permission = Permission.objects.get(codename='view_institution')
+#         self.user.user_permissions.add(self.view_permission)
+#         self.user.save()
+#
+#         self.institution = InstitutionFactory()
+#
+#         self.request = RequestFactory().get('/fake_path')
+#         self.view = InstitutionDisplay()
+#         self.view = setup_user_view(self.view, self.request, user=self.user)
+#
+#         self.view.kwargs = {'institution_id': self.institution.id}
+#
+#     def test_unaffilated_institution(self):
+#         pass
+#
+#     def test_cant_delete_if_users_affiliated(self):
+#         self.user.affiliated_institutions.add(self.institution)
+#         pass
+#
+#     def cant_delete_if_no_permissions(self):
+#         user2 = AuthUserFactory()
+#         nt.assert_false(user2.has_perm('osf.view_institution'))
+#         self.request.user = user2
+#         with nt.assert_raises(PermissionDenied):
+#             self.view.get(self.request)
+
+
+class TestInstitutionChangeForm(AdminTestCase):
+    def setUp(self):
+        super(TestInstitutionChangeForm, self).setUp()
+
+        self.user = AuthUserFactory()
+        self.change_permission = Permission.objects.get(codename='change_institution')
+        self.user.user_permissions.add(self.change_permission)
+        self.user.save()
+
+        self.institution = InstitutionFactory()
+
+        self.request = RequestFactory().get('/fake_path')
+        self.request.user = self.user
+        self.view = InstitutionChangeForm()
+        self.view = setup_form_view(self.view, self.request, form=InstitutionForm())
+
+        self.view.kwargs = {'institution_id': self.institution.id}
+
+    def test_get_context_data(self):
+        self.view.object = self.institution
+        res = self.view.get_context_data()
+        nt.assert_is_instance(res, dict)
+        nt.assert_is_instance(res['import_form'], ImportFileForm)
+
+    def test_no_permission_raises(self):
+        user2 = AuthUserFactory()
+        nt.assert_false(user2.has_perm('osf.change_institution'))
+        self.request.user = user2
+
+        with nt.assert_raises(PermissionDenied):
+            self.view.get(self.request)
+
+    def test_institution_form(self):
+        new_data = {
+            'name': 'New Name',
+            'logo_name': 'awesome_logo.png',
+            'domains': 'http://kris.biz/, http://www.little.biz/'
+        }
+        form = InstitutionForm(data=new_data)
+        nt.assert_true(form.is_valid())
+
+
+class TestInstitutionExport(AdminTestCase):
+    def setUp(self):
+        super(TestInstitutionExport, self).setUp()
+
+        self.user = AuthUserFactory()
+        self.change_permission = Permission.objects.get(codename='change_institution')
+        self.user.user_permissions.add(self.change_permission)
+        self.user.save()
+
+        self.institution = InstitutionFactory()
+
+        self.request = RequestFactory().get('/fake_path')
+        self.view = InstitutionExport()
+        self.view = setup_user_view(self.view, self.request, user=self.user)
+
+        self.view.kwargs = {'institution_id': self.institution.id}
+
+    def test_no_permission_raises(self):
+        user2 = AuthUserFactory()
+        nt.assert_false(user2.has_perm('osf.change_institution'))
+        self.request.user = user2
+
+        with nt.assert_raises(PermissionDenied):
+            self.view.post(self.request)
+
+    def test_post(self):
+        res = self.view.post(self.request)
+        content_dict = json.loads(res.content)[0]
+        nt.assert_equal(content_dict['model'], 'osf.institution')
+        nt.assert_equal(content_dict['fields']['name'], self.institution.name)
+        nt.assert_equal(res.__getitem__('content-type'), 'text/json')
+
+
+class TestCreateInstitution(AdminTestCase):
+    def setUp(self):
+        super(TestCreateInstitution, self).setUp()
+
+        self.user = AuthUserFactory()
+        self.change_permission = Permission.objects.get(codename='change_institution')
+        self.user.user_permissions.add(self.change_permission)
+        self.user.save()
+
+        self.institution = InstitutionFactory()
+
+        self.request = RequestFactory().get('/fake_path')
+        self.request.user = self.user
+        self.view = CreateInstitution()
+        self.view = setup_form_view(self.view, self.request, form=InstitutionForm())
+
+        self.view.kwargs = {'institution_id': self.institution.id}
+
+    def test_get_context_data(self):
+        self.view.object = self.institution
+        res = self.view.get_context_data()
+        nt.assert_is_instance(res, dict)
+        nt.assert_is_instance(res['import_form'], ImportFileForm)
+
+    def test_no_permission_raises(self):
+        user2 = AuthUserFactory()
+        nt.assert_false(user2.has_perm('osf.change_institution'))
+        self.request.user = user2
+
+        with nt.assert_raises(PermissionDenied):
+            self.view.get(self.request)
+
+    def test_get_view(self):
+        res = self.view.get(self.request)
+        nt.assert_equal(res.status_code, 200)
