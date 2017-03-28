@@ -24,13 +24,13 @@ CONFIGS = ['accounts', 'node']
 CATEGORIES = ['storage']
 
 INCLUDE_JS = {
-    'widget': [],
+    # 'widget': [],
     'page': [],
     'files': [],
 }
 
 INCLUDE_CSS = {
-    'widget': ['dmptool.css'],
+    # 'widget': ['dmptool.css'],
     'page': [],
 }
 
