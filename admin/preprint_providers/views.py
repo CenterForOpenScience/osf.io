@@ -6,6 +6,7 @@ from django.core import serializers
 from django.core.urlresolvers import reverse_lazy
 from django.http import HttpResponse, JsonResponse
 from django.views.generic import ListView, DetailView, View, CreateView, DeleteView, TemplateView, UpdateView
+from django.core.exceptions import PermissionDenied
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.forms.models import model_to_dict
 from django.shortcuts import redirect
@@ -21,11 +22,13 @@ class PreprintProviderList(PermissionRequiredMixin, ListView):
     paginate_by = 25
     template_name = 'preprint_providers/list.html'
     ordering = 'name'
-    permission_required = 'osf.view_preprint_provider'
+    permission_required = 'osf.view_preprintprovider'
     raise_exception = True
     model = PreprintProvider
 
     def get_queryset(self):
+        if not self.has_permission():
+            raise PermissionDenied()
         return PreprintProvider.objects.all().sort(self.ordering)
 
     def get_context_data(self, **kwargs):
@@ -42,10 +45,12 @@ class PreprintProviderList(PermissionRequiredMixin, ListView):
 
 class GetSubjectDescendants(PermissionRequiredMixin, View):
     template_name = 'preprint_providers/detail.html'
-    permission_required = 'osf.view_preprint_provider'
+    permission_required = 'osf.view_preprintprovider'
     raise_exception = True
 
     def get(self, request, *args, **kwargs):
+        if not self.has_permission():
+            raise PermissionDenied()
         parent_id = request.GET['parent_id']
         direct_children = Subject.objects.get(id=parent_id).children.all()
         grandchildren = []
@@ -57,7 +62,7 @@ class GetSubjectDescendants(PermissionRequiredMixin, View):
 
 
 class RulesToSubjects(PermissionRequiredMixin, View):
-    permission_required = 'osf.view_preprint_provider'
+    permission_required = 'osf.view_preprintprovider'
     raise_exception = True
 
     def get(self, request, *args, **kwargs):
@@ -69,10 +74,12 @@ class RulesToSubjects(PermissionRequiredMixin, View):
 class PreprintProviderDisplay(PermissionRequiredMixin, DetailView):
     model = PreprintProvider
     template_name = 'preprint_providers/detail.html'
-    permission_required = 'osf.view_preprint_provider'
+    permission_required = 'osf.view_preprintprovider'
     raise_exception = True
 
     def get_object(self, queryset=None):
+        if not self.has_permission():
+            raise PermissionDenied()
         return PreprintProvider.objects.get(id=self.kwargs.get('preprint_provider_id'))
 
     def get_context_data(self, *args, **kwargs):
@@ -121,7 +128,7 @@ class PreprintProviderDisplay(PermissionRequiredMixin, DetailView):
 
 
 class PreprintProviderDetail(PermissionRequiredMixin, View):
-    permission_required = 'osf.view_preprint_provider'
+    permission_required = 'osf.view_preprintprovider'
     raise_exception = True
 
     def get(self, request, *args, **kwargs):
@@ -134,12 +141,14 @@ class PreprintProviderDetail(PermissionRequiredMixin, View):
 
 
 class PreprintProviderChangeForm(PermissionRequiredMixin, UpdateView):
-    permission_required = 'osf.change_preprint_provider'
+    permission_required = 'osf.change_preprintprovider'
     raise_exception = True
     model = PreprintProvider
     form_class = PreprintProviderForm
 
     def get_object(self, queryset=None):
+        if not self.has_permission():
+            raise PermissionDenied()
         provider_id = self.kwargs.get('preprint_provider_id')
         return PreprintProvider.objects.get(id=provider_id)
 
@@ -152,7 +161,7 @@ class PreprintProviderChangeForm(PermissionRequiredMixin, UpdateView):
 
 
 class ExportPreprintProvider(PermissionRequiredMixin, View):
-    permission_required = 'osf.change_preprint_provider'
+    permission_required = 'osf.change_preprintprovider'
     raise_exception = True
 
     def get(self, request, *args, **kwargs):
@@ -167,12 +176,14 @@ class ExportPreprintProvider(PermissionRequiredMixin, View):
 
 
 class DeletePreprintProvider(PermissionRequiredMixin, DeleteView):
-    permission_required = 'osf.change_preprint_provider'
+    permission_required = 'osf.delete_preprintprovider'
     raise_exception = True
     template_name = 'preprint_providers/confirm_delete.html'
     success_url = reverse_lazy('preprint_providers:list')
 
     def get_object(self, queryset=None):
+        if not self.has_permission():
+            raise PermissionDenied()
         provider = PreprintProvider.objects.get(id=self.kwargs['preprint_provider_id'])
         if provider.preprint_services.count() > 0:
             return redirect(reverse_lazy('preprint_providers:cannot_delete', kwargs={'preprint_provider_id': provider.pk}))
