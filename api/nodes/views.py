@@ -2,6 +2,7 @@ import re
 
 from django.apps import apps
 from modularodm import Q
+from django.db.models import Q as DjangoQ
 from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import PermissionDenied, ValidationError, NotFound, MethodNotAllowed, NotAuthenticated
 from rest_framework.response import Response
@@ -11,16 +12,9 @@ from api.addons.serializers import NodeAddonFolderSerializer
 from api.addons.views import AddonSettingsMixin
 from api.base import generic_bulk_views as bulk_views
 from api.base import permissions as base_permissions
-from api.base.exceptions import (
-    InvalidModelValueError,
-    JSONAPIException,
-    Gone,
-    InvalidFilterOperator,
-    InvalidFilterValue,
-    RelationshipPostMakesNoChanges,
-    EndpointNotImplementedError,
-)
-from api.base.filters import ODMFilterMixin, ListFilterMixin
+from api.base.exceptions import InvalidModelValueError, JSONAPIException, Gone
+from api.base.exceptions import RelationshipPostMakesNoChanges, EndpointNotImplementedError
+from api.base.filters import ODMFilterMixin, ListFilterMixin, DjangoFilterMixin
 from api.base.pagination import CommentPagination, NodeContributorPagination, MaxSizePagination
 from api.base.parsers import (
     JSONAPIRelationshipParser,
@@ -48,7 +42,7 @@ from api.identifiers.serializers import NodeIdentifierSerializer
 from api.identifiers.views import IdentifierList
 from api.institutions.serializers import InstitutionSerializer
 from api.logs.serializers import NodeLogSerializer
-from api.nodes.filters import NodePreprintsFilterMixin, NodesListFilterMixin
+from api.nodes.filters import NodeODMFilterMixin, NodesListFilterMixin
 from api.nodes.permissions import (
     IsAdmin,
     IsPublic,
@@ -97,31 +91,24 @@ from osf.models import BaseFileNode
 from osf.models.files import File, Folder
 from addons.wiki.models import NodeWikiPage
 from website.exceptions import NodeStateError
-from website.util.permissions import ADMIN, PERMISSIONS
+from website.util.permissions import ADMIN
+from api.preprints.permissions import PreprintPublishedOrAdmin
 
 
 class NodeMixin(object):
     """Mixin with convenience methods for retrieving the current node based on the
-    current URL. By default, fetches the current node based on the node_id kwarg.
+current URL. By default, fetches the current node based on the node_id kwarg.
     """
 
     serializer_class = NodeSerializer
     node_lookup_url_kwarg = 'node_id'
 
     def get_node(self, check_object_permissions=True):
-        node = None
-
-        if self.kwargs.get('is_embedded') is True:
-            # If this is an embedded request, the node might be cached somewhere
-            node = self.request.parents[Node].get(self.kwargs[self.node_lookup_url_kwarg])
-
-        if node is None:
-            node = get_object_or_error(
-                Node,
-                self.kwargs[self.node_lookup_url_kwarg],
-                display_name='node'
-            )
-
+        node = get_object_or_error(
+            Node,
+            self.kwargs[self.node_lookup_url_kwarg],
+            display_name='node'
+        )
         # Nodes that are folders/collections are treated as a separate resource, so if the client
         # requests a collection through a node endpoint, we return a 404
         if node.is_collection or node.is_registration:
@@ -157,7 +144,7 @@ class DraftMixin(object):
             if draft.requires_approval and draft.is_approved and (not registered_and_deleted):
                 raise PermissionDenied('This draft has already been approved and cannot be modified.')
 
-        self.check_object_permissions(self.request, draft.branched_from)
+        self.check_object_permissions(self.request, draft)
         return draft
 
 
@@ -194,7 +181,7 @@ class WaterButlerMixin(object):
         return obj
 
 
-class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.BulkDestroyJSONAPIView, bulk_views.ListBulkCreateJSONAPIView, NodePreprintsFilterMixin, NodesListFilterMixin, WaterButlerMixin):
+class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.BulkDestroyJSONAPIView, bulk_views.ListBulkCreateJSONAPIView, NodeODMFilterMixin, NodesListFilterMixin, WaterButlerMixin):
     """Nodes that represent projects and components. *Writeable*.
 
     Paginated list of nodes ordered by their `date_modified`.  Each resource contains the full representation of the
@@ -678,23 +665,7 @@ class NodeContributorsList(BaseContributorList, bulk_views.BulkUpdateJSONAPIView
     serializer_class = NodeContributorsSerializer
     view_category = 'nodes'
     view_name = 'node-contributors'
-    ordering = ('_order',)  # default ordering
-
-    # overrides FilterMixin
-    def postprocess_query_param(self, key, field_name, operation):
-        if field_name == 'bibliographic':
-            operation['source_field_name'] = 'visible'
-
-    # overrides FilterMixin
-    def filter_by_field(self, queryset, field_name, operation):
-        if field_name == 'permission':
-            if operation['op'] != 'eq':
-                raise InvalidFilterOperator(value=operation['op'], valid_operators=['eq'])
-            # operation['value'] should be 'admin', 'write', or 'read'
-            if operation['value'].lower().strip() not in PERMISSIONS:
-                raise InvalidFilterValue(value=operation['value'])
-            return queryset.filter(**{operation['value'].lower().strip(): True})
-        return super(NodeContributorsList, self).filter_by_field(queryset, field_name, operation)
+    ordering = ('index',)  # default ordering
 
     # overrides ListBulkCreateJSONAPIView, BulkUpdateJSONAPIView, BulkDeleteJSONAPIView
     def get_serializer_class(self):
@@ -721,7 +692,7 @@ class NodeContributorsList(BaseContributorList, bulk_views.BulkUpdateJSONAPIView
                     raise ValidationError('Contributor identifier not provided.')
                 except IndexError:
                     raise ValidationError('Contributor identifier incorrectly formatted.')
-            queryset = queryset.filter(user__guids___id__in=contrib_ids)
+            queryset = queryset.filter(guids___id__in=contrib_ids)
         return queryset
 
     # Overrides BulkDestroyJSONAPIView
@@ -857,7 +828,7 @@ class NodeContributorDetail(BaseContributorDetail, generics.RetrieveUpdateDestro
     def perform_destroy(self, instance):
         node = self.get_node()
         auth = get_user_auth(self.request)
-        if len(node.visible_contributors) == 1 and instance.visible:
+        if len(node.visible_contributors) == 1 and node.get_visible(instance):
             raise ValidationError('Must have at least one visible contributor')
         removed = node.remove_contributor(instance, auth)
         if not removed:
@@ -1185,7 +1156,7 @@ class NodeRegistrationsList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMix
         serializer.save(draft=draft)
 
 
-class NodeChildrenList(JSONAPIBaseView, bulk_views.ListBulkCreateJSONAPIView, NodeMixin, NodePreprintsFilterMixin):
+class NodeChildrenList(JSONAPIBaseView, bulk_views.ListBulkCreateJSONAPIView, NodeMixin, NodeODMFilterMixin):
     """Children of the current node. *Writeable*.
 
     This will get the next level of child nodes for the selected node if the current user has read access for those
@@ -1275,7 +1246,7 @@ class NodeChildrenList(JSONAPIBaseView, bulk_views.ListBulkCreateJSONAPIView, No
     view_category = 'nodes'
     view_name = 'node-children'
 
-    # overrides NodePreprintsFilterMixin
+    # overrides NodeODMFilterMixin
     def get_default_odm_query(self):
         return default_node_list_query()
 
@@ -1544,7 +1515,7 @@ class NodeLinksDetail(BaseNodeLinksDetail, generics.RetrieveDestroyAPIView, Node
             self.kwargs[self.node_link_lookup_url_kwarg],
             'node link'
         )
-        self.check_object_permissions(self.request, node_link.parent)
+        self.check_object_permissions(self.request, node_link)
         return node_link
 
     # overrides DestroyAPIView
@@ -1559,7 +1530,7 @@ class NodeLinksDetail(BaseNodeLinksDetail, generics.RetrieveDestroyAPIView, Node
         node.save()
 
 
-class NodeForksList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin, NodePreprintsFilterMixin):
+class NodeForksList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin, NodeODMFilterMixin):
     """Forks of the current node. *Writeable*.
 
     Paginated list of the current node's forks ordered by their `forked_date`. Forks are copies of projects that you can
@@ -3327,7 +3298,7 @@ class NodeIdentifierList(NodeMixin, IdentifierList):
     serializer_class = NodeIdentifierSerializer
 
 
-class NodePreprintsList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, NodePreprintsFilterMixin):
+class NodePreprintsList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, DjangoFilterMixin):
     """List of preprints for a node. *Read-only*.
 
     ##Note
@@ -3380,6 +3351,7 @@ class NodePreprintsList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, NodePr
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
         ContributorOrPublic,
+        PreprintPublishedOrAdmin,
     )
     parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON,)
 
@@ -3398,12 +3370,24 @@ class NodePreprintsList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, NodePr
         if field_name == 'id':
             operation['source_field_name'] = 'guids___id'
 
-    # overrides ODMFilterMixin
-    def get_default_odm_query(self):
-        return (
-            Q('node', 'eq', self.get_node())
+    # overrides DjangoFilterMixin
+    def get_default_django_query(self):
+        auth = get_user_auth(self.request)
+        user = getattr(auth, 'user', None)
+        if not user:
+            return (DjangoQ(node=self.get_node(), is_published=True))
+        
+        ##########################
+        # check if this can be optimized to not do a join
+        ##########################
+        # only show unpublished preprints if admin on project
+        return (DjangoQ(node=self.get_node()) & 
+            (
+                DjangoQ(is_published=True) | 
+                DjangoQ(node__contributor__admin=True, node__contributor__user_id=user.id)
+            )
         )
 
     # overrides ListAPIView
     def get_queryset(self):
-        return PreprintService.find(self.get_query_from_request())
+        return PreprintService.objects.filter(self.get_query_from_request())

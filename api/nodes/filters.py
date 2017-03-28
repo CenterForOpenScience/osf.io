@@ -4,7 +4,7 @@ import operator
 from modularodm import Q
 
 from api.base.exceptions import InvalidFilterError, InvalidFilterValue
-from api.base.filters import ODMFilterMixin
+from api.base.filters import ODMFilterMixin, DjangoFilterMixin
 from api.base import utils
 
 from osf.models import AbstractNode
@@ -24,8 +24,7 @@ class NodesListFilterMixin(ODMFilterMixin):
                 return Q('parent_nodes__guids___id', 'eq', None)
         return super(NodesListFilterMixin, self)._operation_to_query(operation)
 
-
-class NodePreprintsFilterMixin(ODMFilterMixin):
+class NodeODMFilterMixin(ODMFilterMixin):
 
     def should_parse_special_query_params(self, field_name):
         return field_name == 'preprint'

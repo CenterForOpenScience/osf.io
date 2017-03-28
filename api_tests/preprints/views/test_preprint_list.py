@@ -1,12 +1,10 @@
 from nose.tools import *  # flake8: noqa
 
-from addons.github.models import GithubFile
 from framework.auth.core import Auth
 from api.base.settings.defaults import API_BASE
 from api_tests.preprints.filters.test_filters import PreprintsListFilteringMixin
 from website.util import permissions
-from website.models import Node
-from website.preprints.model import PreprintService
+from osf.models import PreprintService, Node
 from website.project import signals as project_signals
 
 
@@ -83,9 +81,9 @@ class TestPreprintsListFiltering(PreprintsListFilteringMixin, ApiTestCase):
         self.provider = PreprintProviderFactory(name='Sockarxiv')
         self.provider_two = PreprintProviderFactory(name='Piratearxiv')
         self.provider_three = self.provider
-        self.project = ProjectFactory()
-        self.project_two = ProjectFactory()
-        self.project_three = ProjectFactory()
+        self.project = ProjectFactory(creator=self.user)
+        self.project_two = ProjectFactory(creator=self.user)
+        self.project_three = ProjectFactory(creator=self.user)
         self.url = '/{}preprints/?version=2.2&'.format(API_BASE)
         super(TestPreprintsListFiltering, self).setUp()
 
@@ -214,7 +212,7 @@ class TestPreprintCreate(ApiTestCase):
 
     def test_file_not_osfstorage(self):
         github_file = self.file_one_public_project
-        github_file.recast(GithubFile._typedmodels_type)
+        github_file.provider = 'github'
         github_file.save()
         public_project_payload = build_preprint_create_payload(self.public_project._id, self.provider._id, github_file._id)
         res = self.app.post_json_api(self.url, public_project_payload, auth=self.user.auth, expect_errors=True)
@@ -256,3 +254,68 @@ class TestPreprintCreate(ApiTestCase):
         log = preprint.node.logs.latest()
         assert_equal(log.action, 'preprint_initiated')
         assert_equal(log.params.get('preprint'), preprint_id)
+
+
+class TestPreprintIsPublishedList(ApiTestCase):
+    def setUp(self):
+        super(TestPreprintIsPublishedList, self).setUp()
+        self.admin = AuthUserFactory()
+        self.write_contrib = AuthUserFactory()
+        self.non_contrib = AuthUserFactory()
+
+        self.published_project = ProjectFactory(creator=self.admin, is_public=True)
+        self.public_project = ProjectFactory(creator=self.admin, is_public=True)
+        
+        self.public_project.add_contributor(self.write_contrib, permissions=permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS, save=True)
+        self.subject = SubjectFactory()
+        self.provider = PreprintProviderFactory()
+
+        self.file_one_public_project = test_utils.create_test_file(self.public_project, self.admin, 'mgla.pdf')
+        self.file_one_published_project = test_utils.create_test_file(self.published_project, self.admin, 'saor.pdf')
+
+        self.unpublished_preprint = PreprintFactory(creator=self.admin, filename='mgla.pdf', provider=self.provider, subjects=[[self.subject._id]], project=self.public_project, is_published=False)
+        self.published_preprint = PreprintFactory(creator=self.admin, filename='saor.pdf', provider=self.provider, subjects=[[self.subject._id]], project=self.published_project, is_published=True)
+
+        self.url = '/{}preprints/'.format(API_BASE)
+
+    def tearDown(self):
+        super(TestPreprintIsPublishedList, self).tearDown()
+        PreprintService.remove()
+        Node.remove()
+
+    def test_unpublished_visible_to_admins(self):
+        res = self.app.get(self.url, auth=self.admin.auth)
+        assert len(res.json['data']) == 2
+        assert self.unpublished_preprint._id in [d['id'] for d in res.json['data']]
+
+    def test_unpublished_invisible_to_write_contribs(self):
+        res = self.app.get(self.url, auth=self.write_contrib.auth)
+        assert len(res.json['data']) == 1
+        assert self.unpublished_preprint._id not in [d['id'] for d in res.json['data']]
+
+    def test_unpublished_invisible_to_non_contribs(self):
+        res = self.app.get(self.url, auth=self.non_contrib.auth)
+        assert len(res.json['data']) == 1
+        assert self.unpublished_preprint._id not in [d['id'] for d in res.json['data']]
+
+    def test_unpublished_invisible_to_public(self):
+        res = self.app.get(self.url)
+        assert len(res.json['data']) == 1
+        assert self.unpublished_preprint._id not in [d['id'] for d in res.json['data']]
+
+    def test_filter_published_false_admin(self):
+        res = self.app.get('{}?filter[is_published]=false'.format(self.url), auth=self.admin.auth)
+        assert len(res.json['data']) == 1
+        assert self.unpublished_preprint._id in [d['id'] for d in res.json['data']]
+
+    def test_filter_published_false_write_contrib(self):
+        res = self.app.get('{}?filter[is_published]=false'.format(self.url), auth=self.write_contrib.auth)
+        assert len(res.json['data']) == 0
+
+    def test_filter_published_false_non_contrib(self):
+        res = self.app.get('{}?filter[is_published]=false'.format(self.url), auth=self.non_contrib.auth)
+        assert len(res.json['data']) == 0
+
+    def test_filter_published_false_public(self):
+        res = self.app.get('{}?filter[is_published]=false'.format(self.url))
+        assert len(res.json['data']) == 0

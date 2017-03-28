@@ -642,3 +642,37 @@ class TestPreprintUpdateLicense(ApiTestCase):
         assert_equal(res.status_code, 200)
         assert_equal(before_num_logs, after_num_logs)
         assert_equal(before_update_log._id, after_update_log._id)
+
+
+class TestPreprintIsPublishedDetail(ApiTestCase):
+    def setUp(self):
+        super(TestPreprintIsPublishedDetail, self).setUp()
+        self.admin= AuthUserFactory()
+        self.write_contrib = AuthUserFactory()
+        self.non_contrib = AuthUserFactory()
+
+        self.public_project = ProjectFactory(creator=self.admin, public=True)
+        self.public_project.add_contributor(self.write_contrib, permissions=['read', 'write'], save=True)
+        self.subject = SubjectFactory()
+        self.provider = PreprintProviderFactory()
+        self.file_one_public_project = test_utils.create_test_file(self.public_project, self.admin, 'mgla.pdf')
+
+        self.unpublished_preprint = PreprintFactory(creator=self.admin, filename='mgla.pdf', provider=self.provider, subjects=[[self.subject._id]], project=self.public_project, is_published=False)
+
+        self.url = '/{}preprints/{}/'.format(API_BASE, self.unpublished_preprint._id)
+
+    def test_unpublished_visible_to_admins(self):
+        res = self.app.get(self.url, auth=self.admin.auth)
+        assert res.json['data']['id'] == self.unpublished_preprint._id
+
+    def test_unpublished_invisible_to_write_contribs(self):
+        res = self.app.get(self.url, auth=self.write_contrib.auth, expect_errors=True)
+        assert res.status_code == 403
+
+    def test_unpublished_invisible_to_non_contribs(self):
+        res = self.app.get(self.url, auth=self.non_contrib.auth, expect_errors=True)
+        assert res.status_code == 403
+
+    def test_unpublished_invisible_to_public(self):
+        res = self.app.get(self.url, expect_errors=True)
+        assert res.status_code == 401

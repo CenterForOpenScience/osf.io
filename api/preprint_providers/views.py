@@ -2,21 +2,24 @@ from rest_framework import generics
 from rest_framework import permissions as drf_permissions
 
 from modularodm import Q
+from django.db.models import Q as DjangoQ
 
 from framework.auth.oauth_scopes import CoreScopes
 
 from website.models import Node, Subject, PreprintService, PreprintProvider
 
 from api.base import permissions as base_permissions
-from api.base.filters import ODMFilterMixin
+from api.base.filters import DjangoFilterMixin, ODMFilterMixin
 from api.base.views import JSONAPIBaseView
 from api.base.pagination import MaxSizePagination
+from api.base.utils import get_user_auth
 
 from api.licenses.views import LicenseList
 from api.taxonomies.serializers import TaxonomySerializer
 from api.preprint_providers.serializers import PreprintProviderSerializer
 from api.preprints.serializers import PreprintSerializer
 
+from api.preprints.permissions import PreprintPublishedOrAdmin
 
 class PreprintProviderList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
     """
@@ -120,7 +123,7 @@ class PreprintProviderDetail(JSONAPIBaseView, generics.RetrieveAPIView):
         return PreprintProvider.load(self.kwargs['provider_id'])
 
 
-class PreprintProviderPreprintList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
+class PreprintProviderPreprintList(JSONAPIBaseView, generics.ListAPIView, DjangoFilterMixin):
     """Preprints from a given preprint_provider. *Read Only*
 
     To update preprints with a given preprint_provider, see the `<node_id>/relationships/preprint_provider` endpoint
@@ -163,6 +166,7 @@ class PreprintProviderPreprintList(JSONAPIBaseView, generics.ListAPIView, ODMFil
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
+        PreprintPublishedOrAdmin,
     )
 
     ordering = ('-date_created')
@@ -183,20 +187,24 @@ class PreprintProviderPreprintList(JSONAPIBaseView, generics.ListAPIView, ODMFil
         if field_name == 'id':
             operation['source_field_name'] = 'guids___id'
 
-    # overrides ODMFilterMixin
-    def get_default_odm_query(self):
-        # TODO: this will return unpublished preprints so that users
-        # can find and resume the publishing workflow, but filtering
-        # public preprints should filter for `is_published`
-        provider = PreprintProvider.find_one(Q('_id', 'eq', self.kwargs['provider_id']))
-        return (
-            Q('provider', 'eq', provider)
+    # overrides DjangoFilterMixin
+    def get_default_django_query(self):
+        auth = get_user_auth(self.request)
+        user = getattr(auth, 'user', None)
+        if not user:
+            return (DjangoQ(node__isnull=False, is_published=True, provider___id=self.kwargs['provider_id']))
+
+        # only show unpublished preprints if admin on project
+        return (DjangoQ(node__isnull=False, provider___id=self.kwargs['provider_id']) & 
+            (
+                DjangoQ(is_published=True) | 
+                DjangoQ(node__contributor__admin=True, node__contributor__user_id=user.id)
+            )
         )
 
     # overrides ListAPIView
     def get_queryset(self):
-        query = self.get_query_from_request()
-        return PreprintService.find(query)
+        return PreprintService.objects.filter(self.get_query_from_request())
 
 
 class PreprintProviderSubjectList(JSONAPIBaseView, generics.ListAPIView):
