@@ -13,7 +13,7 @@ from django.contrib.auth.mixins import PermissionRequiredMixin
 from admin.base import settings
 from admin.base.forms import ImportFileForm
 from admin.institutions.forms import InstitutionForm
-from osf.models import Institution
+from osf.models import Institution, Node
 
 
 class InstitutionList(PermissionRequiredMixin, ListView):
@@ -59,6 +59,7 @@ class InstitutionDisplay(PermissionRequiredMixin, DetailView):
         fields = institution_dict
         kwargs['change_form'] = InstitutionForm(initial=fields)
         kwargs['import_form'] = ImportFileForm()
+        kwargs['node_count'] = institution.nodes.count()
 
         return kwargs
 
@@ -144,3 +145,28 @@ class CreateInstitution(PermissionRequiredMixin, CreateView):
             raise PermissionDenied()
         kwargs['import_form'] = ImportFileForm()
         return super(CreateInstitution, self).get_context_data(*args, **kwargs)
+
+
+class InstitutionNodeList(PermissionRequiredMixin, ListView):
+    template_name = 'institutions/node_list.html'
+    paginate_by = 25
+    ordering = 'date_modified'
+    permission_required = 'osf.view_node'
+    raise_exception = True
+    model = Node
+
+    def get_queryset(self):
+        if not self.has_permission():
+            raise PermissionDenied()
+        inst = self.kwargs['institution_id']
+        return Node.objects.filter(affiliated_institutions=inst).sort(self.ordering)
+
+    def get_context_data(self, **kwargs):
+        query_set = kwargs.pop('object_list', self.object_list)
+        page_size = self.get_paginate_by(query_set)
+        paginator, page, query_set, is_paginated = self.paginate_queryset(query_set, page_size)
+        kwargs.setdefault('nodes', query_set)
+        kwargs.setdefault('institution', Institution.objects.get(id=self.kwargs['institution_id']))
+        kwargs.setdefault('page', page)
+        kwargs.setdefault('logohost', settings.OSF_URL)
+        return super(InstitutionNodeList, self).get_context_data(**kwargs)

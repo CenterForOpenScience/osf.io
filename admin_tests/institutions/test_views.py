@@ -9,9 +9,10 @@ from django.core.exceptions import PermissionDenied
 from tests.base import AdminTestCase
 from osf_tests.factories import (
     AuthUserFactory,
-    InstitutionFactory
+    InstitutionFactory,
+    ProjectFactory
 )
-from osf.models import Institution
+from osf.models import Institution, Node
 
 from admin_tests.utilities import setup_form_view, setup_user_view
 
@@ -20,7 +21,8 @@ from admin.institutions.views import (
     InstitutionDisplay,
     InstitutionChangeForm,
     InstitutionExport,
-    CreateInstitution
+    CreateInstitution,
+    InstitutionNodeList
 )
 from admin.institutions.forms import InstitutionForm
 from admin.base.forms import ImportFileForm
@@ -249,3 +251,52 @@ class TestCreateInstitution(AdminTestCase):
     def test_get_view(self):
         res = self.view.get(self.request)
         nt.assert_equal(res.status_code, 200)
+
+
+class TestAffiliatedNodeList(AdminTestCase):
+    def setUp(self):
+        super(TestAffiliatedNodeList, self).setUp()
+
+        self.institution = InstitutionFactory()
+
+        self.user = AuthUserFactory()
+        self.view_node = Permission.objects.get(codename='view_node')
+        self.user.user_permissions.add(self.view_node)
+        self.user.affiliated_institutions.add(self.institution)
+        self.user.save()
+
+        self.node1 = ProjectFactory(creator=self.user)
+        self.node2 = ProjectFactory(creator=self.user)
+        self.node1.affiliated_institutions.add(self.institution)
+        self.node2.affiliated_institutions.add(self.institution)
+
+        self.request = RequestFactory().get('/fake_path')
+        self.request.user = self.user
+        self.view = InstitutionNodeList()
+        self.view = setup_form_view(self.view, self.request, form=InstitutionForm())
+
+        self.view.kwargs = {'institution_id': self.institution.id}
+
+    def test_get_context_data(self):
+        self.view.object_list = [self.node1, self.node2]
+        res = self.view.get_context_data()
+        nt.assert_is_instance(res, dict)
+        nt.assert_is_instance(res['institution'], Institution)
+
+    def test_no_permission_raises(self):
+        user2 = AuthUserFactory()
+        nt.assert_false(user2.has_perm('osf.view_node'))
+        self.request.user = user2
+
+        with nt.assert_raises(PermissionDenied):
+            self.view.get(self.request)
+
+    def test_get_view(self):
+        res = self.view.get(self.request)
+        nt.assert_equal(res.status_code, 200)
+
+    def test_get_queryset(self):
+        nodes_returned = list(self.view.get_queryset())
+        node_list = [self.node1, self.node2]
+        nt.assert_items_equal(nodes_returned, node_list)
+        nt.assert_is_instance(nodes_returned[0], Node)
