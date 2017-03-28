@@ -3,7 +3,16 @@ from rest_framework import permissions
 from rest_framework import exceptions
 
 from addons.base.models import BaseAddonSettings
-from osf.models import AbstractNode, OSFUser as User, Institution, DraftRegistration, PrivateLink, PreprintService, NodeRelation
+from osf.models import (
+    AbstractNode,
+    Contributor,
+    DraftRegistration,
+    Institution,
+    NodeRelation,
+    OSFUser as User,
+    PreprintService,
+    PrivateLink,
+)
 from website.project.metadata.utils import is_prereg_admin
 from website.util import permissions as osf_permissions
 
@@ -77,7 +86,7 @@ class ContributorDetailPermissions(permissions.BasePermission):
     """Permissions for contributor detail page."""
 
     def has_object_permission(self, request, view, obj):
-        assert isinstance(obj, (AbstractNode, User)), 'obj must be User or Node, got {}'.format(obj)
+        assert isinstance(obj, (AbstractNode, User, Contributor)), 'obj must be User, Contributor, or Node, got {}'.format(obj)
         auth = get_user_auth(request)
         context = request.parser_context['kwargs']
         node = AbstractNode.load(context[view.node_lookup_url_kwarg])
