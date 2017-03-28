@@ -116,7 +116,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     USERNAME_FIELD = 'username'
 
     # Node fields that trigger an update to the search engine on save
-    SEARCH_UPDATE_FIELDS = TRACK_FIELDS = {
+    SEARCH_UPDATE_FIELDS = {
         'fullname',
         'given_name',
         'middle_names',
