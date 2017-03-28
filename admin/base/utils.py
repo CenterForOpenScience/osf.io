@@ -2,7 +2,7 @@
 Utility functions and classes
 """
 from modularodm import Q
-from osf.models import Subject
+from osf.models import Subject, NodeLicense
 
 from django.core.urlresolvers import reverse
 from django.utils.http import urlencode
@@ -106,3 +106,12 @@ def get_subject_rules(subjects_selected):
             subjects_done.append(parent)
 
     return new_rules
+
+
+def get_nodelicense_choices():
+    return [(sub.id, sub.text) for sub in NodeLicense.objects.all()]
+
+
+def get_toplevel_subjects():
+    subjects = Subject.objects.filter(parents__isnull=True)
+    return [(sub.id, sub.text) for sub in subjects]
