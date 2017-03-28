@@ -13,6 +13,7 @@ from api.base.serializers import RelationshipField, TargetField
 from dateutil import parser as date_parser
 from django.core.exceptions import ValidationError
 from django.db.models import QuerySet as DjangoQuerySet
+from django.db.models import Q as DjangoQ
 from modularodm import Q
 from modularodm.query import queryset as modularodm_queryset
 from rest_framework import serializers as ser
@@ -398,6 +399,102 @@ class ODMFilterMixin(FilterMixin):
         """
         pass
 
+class DjangoFilterMixin(FilterMixin):
+    """View mixin that adds a get_query_from_request method which converts query params
+    of the form `filter[field_name]=value` into a Django Query object.
+
+    Subclasses must define `get_default_django_query()`.
+
+    Serializers that want to restrict which fields are used for filtering need to have a variable called
+    filterable_fields which is a frozenset of strings representing the field names as they appear in the serialization.
+    """
+
+    # TODO Handle simple and complex non-standard fields
+    field_comparison_operators = {
+        ser.CharField: 'icontains',
+        ser.ListField: 'contains',
+    }
+
+    def __init__(self, *args, **kwargs):
+        super(FilterMixin, self).__init__(*args, **kwargs)
+        if not self.serializer_class:
+            raise NotImplementedError()
+
+    def get_default_django_query(self):
+        """Return the default Django query for the result set.
+
+        NOTE: If the client provides additional filters in query params, the filters
+        will intersected with this query.
+        """
+        raise NotImplementedError('Must define get_default_django_query')
+
+    def get_query_from_request(self):
+        if self.request.parser_context['kwargs'].get('is_embedded'):
+            param_query = None
+        else:
+            param_query = self.query_params_to_django_query(self.request.query_params)
+        default_query = self.get_default_django_query()
+
+        if param_query and default_query:
+            query = param_query & default_query
+        elif param_query:
+            query = param_query
+        else:
+            query = default_query
+
+        return query
+
+    def _operation_to_query(self, operation):
+        print operation
+        if operation['op'] in ['lt', 'lte', 'gt', 'gte', 'in']:
+            operation['source_field_name'] = '{}__{}'.format(operation['source_field_name'], operation['op'])
+        return DjangoQ(**{operation['source_field_name']: operation['value']})
+
+    def query_params_to_django_query(self, query_params):
+        """Convert query params to a Django Query object."""
+        filters = self.parse_query_params(query_params)
+        if filters:
+            query_parts = []
+            for key, field_names in filters.iteritems():
+                sub_query_parts = []
+                for field_name, data in field_names.iteritems():
+                    # Query based on the DB field, not the name of the serializer parameter
+                    if self.should_convert_special_params_to_django_query(field_name):
+                        sub_query = self.convert_special_params_to_django_query(field_name, query_params, key, data)
+                    elif isinstance(data, list):
+                        sub_query = functools.reduce(operator.and_, [
+                            self._operation_to_query(item)
+                            for item in data
+                        ])
+                    else:
+                        sub_query = self._operation_to_query(data)
+
+                    sub_query_parts.append(sub_query)
+
+                try:
+                    sub_query = functools.reduce(operator.or_, sub_query_parts)
+                    query_parts.append(sub_query)
+                except TypeError:
+                    continue
+
+            try:
+                query = functools.reduce(operator.and_, query_parts)
+            except TypeError:
+                query = None
+        else:
+            query = None
+
+        return query
+
+    def should_convert_special_params_to_django_query(self, field_name):
+        """ This should be overridden in subclasses for custom filtering behavior
+        """
+        return False
+
+    def convert_special_params_to_django_query(self, field_name, query_params, key, data):
+        """ This should be overridden in subclasses for custom filtering behavior
+        """
+        pass
 
 class ListFilterMixin(FilterMixin):
     """View mixin that adds a get_queryset_from_request method which uses query params
