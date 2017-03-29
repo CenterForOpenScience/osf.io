@@ -2,12 +2,14 @@
 from api.addons.views import AddonSettingsMixin
 from api.base import permissions as base_permissions
 from api.base.exceptions import Conflict
-from api.base.filters import ListFilterMixin, ODMFilterMixin
+from api.base.filters import ListFilterMixin, ODMFilterMixin, DjangoFilterMixin
 from api.base.parsers import (JSONAPIRelationshipParser,
                               JSONAPIRelationshipParserForRegularJSON)
 from api.base.serializers import AddonAccountSerializer
 from api.base.utils import (default_node_list_query,
-                            default_node_permission_query, get_object_or_error)
+                            default_node_permission_query,
+                            get_object_or_error,
+                            get_user_auth)
 from api.base.views import JSONAPIBaseView
 from api.institutions.serializers import InstitutionSerializer
 from api.nodes.filters import NodeODMFilterMixin, NodesListFilterMixin
@@ -23,11 +25,14 @@ from api.users.serializers import (UserAddonSettingsSerializer,
 from django.contrib.auth.models import AnonymousUser
 from framework.auth.oauth_scopes import CoreScopes
 from modularodm import Q
+from django.db.models import Q as DjangoQ
 from rest_framework import permissions as drf_permissions
 from rest_framework import generics
 from rest_framework.exceptions import NotAuthenticated, NotFound
 from website.models import ExternalAccount, Node, User
 
+from osf.models import PreprintService
+from api.preprints.permissions import PreprintPublishedOrAdmin
 
 class UserMixin(object):
     """Mixin with convenience methods for retrieving the current user based on the
@@ -501,7 +506,16 @@ class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, NodeODMFilterM
         return Node.find(self.get_query_from_request()).select_related('root')
 
 
-class UserPreprints(UserNodes):
+class UserPreprints(JSONAPIBaseView, generics.ListAPIView, UserMixin, DjangoFilterMixin):
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+        PreprintPublishedOrAdmin,
+    )
+
+    ordering = ('-date_created')
+    model_class = Node
+
     required_read_scopes = [CoreScopes.USERS_READ, CoreScopes.NODE_PREPRINTS_READ]
     required_write_scopes = [CoreScopes.USERS_WRITE, CoreScopes.NODE_PREPRINTS_WRITE]
 
@@ -509,42 +523,40 @@ class UserPreprints(UserNodes):
     view_category = 'users'
     view_name = 'user-preprints'
 
-    # overrides ODMFilterMixin
-    def get_default_odm_query(self):
-        user = self.get_user()
+    def postprocess_query_param(self, key, field_name, operation):
+        if field_name == 'provider':
+            operation['source_field_name'] = 'provider___id'
 
-        query = (
-            Q('is_deleted', 'ne', True) &
-            Q('contributors', 'eq', user) &
-            Q('preprint_file', 'ne', None) &
-            Q('is_public', 'eq', True)
+        if field_name == 'id':
+            operation['source_field_name'] = 'guids___id'
+
+    # overrides ODMFilterMixin
+    def get_default_django_query(self):
+        # the user being viewed via the api
+        viewed_user_id = self.get_user(check_permissions=False)._id
+
+        auth = get_user_auth(self.request)
+        # the person viewing the information
+        user_id = getattr(auth, 'user', None)._id
+
+        if not user_id:
+            return (DjangoQ(node__isnull=False, node__is_deleted=False, node__is_public=True, is_published=True, node___contributors__guids___id=viewed_user_id))
+        elif viewed_user_id == user_id:
+            return (DjangoQ(node__isnull=False, node__is_deleted=False, node___contributors__guids___id=viewed_user_id))
+        return (DjangoQ(node__isnull=False, node__is_deleted=False, node__is_public=True, node___contributors__guids___id=viewed_user_id) & 
+            (
+                DjangoQ(is_published=True) | 
+                (DjangoQ(node__contributor__admin=True, node__contributor__user_id=user_id))
+            )
         )
 
-        return query
-
     def get_queryset(self):
-        # Overriding the default query parameters if the provider filter is present, because the provider is stored on
-        # the PreprintService object, not the node itself
-        filter_key = 'filter[provider]'
-        provider_filter = None
-
-        if filter_key in self.request.query_params:
-            # Have to have this mutable so that the filter can be removed in the ODM query, otherwise it will return an
-            # empty set
-            self.request.GET._mutable = True
-            provider_filter = self.request.query_params[filter_key]
-            self.request.query_params.pop(filter_key)
-
-        nodes = Node.find(self.get_query_from_request())
-        preprints = []
         # TODO [OSF-7090]: Rearchitect how `.is_preprint` is determined,
         # so that a query that is guaranteed to return only
         # preprints can be constructed.
-        for node in nodes:
-            for preprint in node.preprints.all():
-                if provider_filter is None or preprint.provider._id == provider_filter:
-                    preprints.append(preprint)
-        return preprints
+        # NOTE: the above comment may not be relevant to this code anymore
+        return PreprintService.objects.filter(self.get_query_from_request())
+
 
 class UserInstitutions(JSONAPIBaseView, generics.ListAPIView, UserMixin):
     permission_classes = (

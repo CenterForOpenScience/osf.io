@@ -3374,14 +3374,15 @@ class NodePreprintsList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, Django
     def get_default_django_query(self):
         auth = get_user_auth(self.request)
         user = getattr(auth, 'user', None)
+        node = self.get_node(check_object_permissions=False)
         if not user:
-            return (DjangoQ(node=self.get_node(), is_published=True))
+            return (DjangoQ(node=node, is_published=True))
         
         ##########################
         # check if this can be optimized to not do a join
         ##########################
         # only show unpublished preprints if admin on project
-        return (DjangoQ(node=self.get_node()) & 
+        return (DjangoQ(node=node) & 
             (
                 DjangoQ(is_published=True) | 
                 DjangoQ(node__contributor__admin=True, node__contributor__user_id=user.id)

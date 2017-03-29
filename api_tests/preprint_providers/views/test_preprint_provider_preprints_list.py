@@ -24,9 +24,9 @@ class TestPreprintProviderPreprintsListFiltering(PreprintsListFilteringMixin, Ap
         self.provider_two = self.provider
         self.provider_three = self.provider
         # all different projects
-        self.project = ProjectFactory()
-        self.project_two = ProjectFactory()
-        self.project_three = ProjectFactory()
+        self.project = ProjectFactory(creator=self.user)
+        self.project_two = ProjectFactory(creator=self.user)
+        self.project_three = ProjectFactory(creator=self.user)
         self.url = '/{}preprint_providers/{}/preprints/?version=2.2&'.format(API_BASE, self.provider._id)
         super(TestPreprintProviderPreprintsListFiltering, self).setUp()
 
