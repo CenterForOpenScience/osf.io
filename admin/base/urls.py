@@ -24,8 +24,10 @@ urlpatterns = [
             url(r'^project/', include('admin.pre_reg.urls', namespace='pre_reg')),
             url(r'^metrics/', include('admin.metrics.urls',
                                       namespace='metrics')),
+            url(r'^desk/', include('admin.desk.urls',
+                                   namespace='desk')),
             url(r'^sales_analytics/', include('admin.sales_analytics.urls', namespace='sales_analytics')),
-        ])
+        ]),
     ),
 ]
 

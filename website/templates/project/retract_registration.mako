@@ -29,7 +29,7 @@
 
             <div class="form-group">
                 <label style="font-weight:normal" class="control-label">
-                    Type <span data-bind="text: truncatedTitle" style="font-weight:bold"></span> and click Withdraw Registration if you are sure you want to continue.
+                    Type <span data-bind="text: confirmationString" style="font-weight:bold"></span> and click Withdraw Registration if you are sure you want to continue.
                 </label>
                 <input  type="text"
                         class="form-control"

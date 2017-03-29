@@ -230,6 +230,7 @@ class TestCreateBucket(S3AddonTestCase):
 
     def test_locations(self):
         assert_true(validate_bucket_location(''))
+        assert_true(validate_bucket_location('us-east-2'))
         assert_true(validate_bucket_location('eu-central-1'))
         assert_true(validate_bucket_location('us-west-1'))
         assert_true(validate_bucket_location('us-west-2'))
@@ -237,9 +238,9 @@ class TestCreateBucket(S3AddonTestCase):
         assert_true(validate_bucket_location('ap-northeast-2'))
         assert_true(validate_bucket_location('ap-southeast-1'))
         assert_true(validate_bucket_location('ap-southeast-2'))
+        assert_true(validate_bucket_location('ap-south-1'))
         assert_true(validate_bucket_location('sa-east-1'))
         assert_true(validate_bucket_location('eu-west-1'))
-
 
     @mock.patch('website.addons.s3.views.utils.create_bucket')
     @mock.patch('website.addons.s3.views.utils.get_bucket_names')

@@ -1,7 +1,7 @@
 import re
 from modularodm import Q
 from rest_framework import generics, permissions as drf_permissions
-from rest_framework.exceptions import PermissionDenied, ValidationError, NotFound, MethodNotAllowed
+from rest_framework.exceptions import PermissionDenied, ValidationError, NotFound, MethodNotAllowed, NotAuthenticated
 from rest_framework.status import HTTP_204_NO_CONTENT
 from rest_framework.response import Response
 
@@ -16,6 +16,8 @@ from api.base.views import JSONAPIBaseView
 from api.base.parsers import (
     JSONAPIRelationshipParser,
     JSONAPIRelationshipParserForRegularJSON,
+    JSONAPIMultipleRelationshipsParser,
+    JSONAPIMultipleRelationshipsParserForRegularJSON,
 )
 from api.base.exceptions import RelationshipPostMakesNoChanges, EndpointNotImplementedError
 from api.base.pagination import CommentPagination, NodeContributorPagination, MaxSizePagination
@@ -27,13 +29,14 @@ from api.files.serializers import FileSerializer
 from api.comments.serializers import NodeCommentSerializer, CommentCreateSerializer
 from api.comments.permissions import CanCommentOrPublic
 from api.users.views import UserMixin
-from api.wikis.serializers import WikiSerializer
+from api.wikis.serializers import NodeWikiSerializer
 from api.base.views import LinkedNodesRelationship, BaseContributorDetail, BaseContributorList, BaseNodeLinksDetail, BaseNodeLinksList, BaseLinkedList
 from api.base.throttling import (
     UserRateThrottle,
     NonCookieAuthThrottle,
     AddContributorThrottle,
 )
+from api.nodes.filters import NodePreprintsFilterMixin
 from api.nodes.serializers import (
     NodeSerializer,
     ForwardNodeAddonSettingsSerializer,
@@ -76,11 +79,12 @@ from api.nodes.permissions import (
     NodeLinksShowIfVersion,
 )
 from api.logs.serializers import NodeLogSerializer
+from api.preprints.serializers import PreprintSerializer
 
 from website.addons.wiki.model import NodeWikiPage
 from website.exceptions import NodeStateError
 from website.util.permissions import ADMIN
-from website.models import Node, Pointer, Comment, NodeLog, Institution, DraftRegistration, PrivateLink
+from website.models import Node, Pointer, Comment, NodeLog, Institution, DraftRegistration, PrivateLink, PreprintService
 from website.files.models import FileNode
 from framework.auth.core import User
 from api.base.utils import default_node_list_query, default_node_permission_query
@@ -172,7 +176,7 @@ class WaterButlerMixin(object):
         return obj
 
 
-class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.BulkDestroyJSONAPIView, bulk_views.ListBulkCreateJSONAPIView, ODMFilterMixin, WaterButlerMixin):
+class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.BulkDestroyJSONAPIView, bulk_views.ListBulkCreateJSONAPIView, NodePreprintsFilterMixin, WaterButlerMixin):
     """Nodes that represent projects and components. *Writeable*.
 
     Paginated list of nodes ordered by their `date_modified`.  Each resource contains the full representation of the
@@ -277,7 +281,7 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
 
     ordering = ('-date_modified', )  # default ordering
 
-    # overrides ODMFilterMixin
+    # overrides NodePreprintsFilterMixin
     def get_default_odm_query(self):
         user = self.request.user
         base_query = default_node_list_query()
@@ -517,6 +521,8 @@ class NodeDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, NodeMix
 
     required_read_scopes = [CoreScopes.NODE_BASE_READ]
     required_write_scopes = [CoreScopes.NODE_BASE_WRITE]
+
+    parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON,)
 
     serializer_class = NodeDetailSerializer
     view_category = 'nodes'
@@ -1128,7 +1134,7 @@ class NodeRegistrationsList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMix
         serializer.save(draft=draft)
 
 
-class NodeChildrenList(JSONAPIBaseView, bulk_views.ListBulkCreateJSONAPIView, NodeMixin, ODMFilterMixin):
+class NodeChildrenList(JSONAPIBaseView, bulk_views.ListBulkCreateJSONAPIView, NodeMixin, NodePreprintsFilterMixin):
     """Children of the current node. *Writeable*.
 
     This will get the next level of child nodes for the selected node if the current user has read access for those
@@ -1218,7 +1224,7 @@ class NodeChildrenList(JSONAPIBaseView, bulk_views.ListBulkCreateJSONAPIView, No
     view_category = 'nodes'
     view_name = 'node-children'
 
-    # overrides ODMFilterMixin
+    # overrides NodePreprintsFilterMixin
     def get_default_odm_query(self):
         return default_node_list_query()
 
@@ -1273,11 +1279,14 @@ class NodeCitationDetail(JSONAPIBaseView, generics.RetrieveAPIView, NodeMixin):
 
     def get_object(self):
         node = self.get_node()
+        auth = get_user_auth(self.request)
+        if not node.is_public and not node.can_view(auth):
+            raise PermissionDenied if auth.user else NotAuthenticated
         return node.csl
 
 
 class NodeCitationStyleDetail(JSONAPIBaseView, generics.RetrieveAPIView, NodeMixin):
-    """ The node citation for a node in a specific style's format t *read only*
+    """ The node citation for a node in a specific style's format *read only*
 
         ##Note
         **This API endpoint is under active development, and is subject to change in the future**
@@ -1303,6 +1312,10 @@ class NodeCitationStyleDetail(JSONAPIBaseView, generics.RetrieveAPIView, NodeMix
 
     def get_object(self):
         node = self.get_node()
+        auth = get_user_auth(self.request)
+        if not node.is_public and not node.can_view(auth):
+            raise PermissionDenied if auth.user else NotAuthenticated
+
         style = self.kwargs.get('style_id')
         try:
             citation = render_citation(node=node, style=style)
@@ -1497,7 +1510,7 @@ class NodeLinksDetail(BaseNodeLinksDetail, generics.RetrieveDestroyAPIView, Node
         node.save()
 
 
-class NodeForksList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin, ODMFilterMixin):
+class NodeForksList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin, NodePreprintsFilterMixin):
     """Forks of the current node. *Writeable*.
 
     Paginated list of the current node's forks ordered by their `forked_date`. Forks are copies of projects that you can
@@ -2873,7 +2886,7 @@ class NodeWikiList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, ODMFilterMi
 
     required_read_scopes = [CoreScopes.WIKI_BASE_READ]
     required_write_scopes = [CoreScopes.NULL]
-    serializer_class = WikiSerializer
+    serializer_class = NodeWikiSerializer
 
     view_category = 'nodes'
     view_name = 'node-wikis'
@@ -3222,3 +3235,78 @@ class NodeIdentifierList(NodeMixin, IdentifierList):
     """
 
     serializer_class = NodeIdentifierSerializer
+
+
+class NodePreprintsList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, NodePreprintsFilterMixin):
+    """List of preprints for a node. *Read-only*.
+
+    ##Note
+    **This API endpoint is under active development, and is subject to change in the future.**
+
+    Paginated list of preprints ordered by their `date_created`.  Each resource contains a representation of the
+    preprint.
+
+    ##Preprint Attributes
+
+    OSF Preprint entities have the "preprints" `type`.
+
+        name                            type                                description
+        ====================================================================================
+        date_created                    iso8601 timestamp                   timestamp that the preprint was created
+        date_modified                   iso8601 timestamp                   timestamp that the preprint was last modified
+        date_published                  iso8601 timestamp                   timestamp when the preprint was published
+        is_published                    boolean                             whether or not this preprint is published
+        is_preprint_orphan              boolean                             whether or not this preprint is orphaned
+        subjects                        list of lists of dictionaries       ids of Subject in the PLOS taxonomy. Dictrionary, containing the subject text and subject ID
+        provider                        string                              original source of the preprint
+        doi                             string                              bare DOI for the manuscript, as entered by the user
+
+    ##Relationships
+
+    ###Node
+    The node that this preprint was created for
+
+    ###Primary File
+    The file that is designated as the preprint's primary file, or the manuscript of the preprint.
+
+    ###Provider
+    Link to preprint_provider detail for this preprint
+
+    ##Links
+
+    - `self` -- Preprint detail page for the current preprint
+    - `html` -- Project on the OSF corresponding to the current preprint
+    - `doi` -- URL representation of the DOI entered by the user for the preprint manuscript
+
+    See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
+
+    ##Query Params
+
+    + `page=<Int>` -- page number of results to view, default 1
+
+    #This Request/Response
+    """
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+        ContributorOrPublic,
+    )
+    parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON,)
+
+    required_read_scopes = [CoreScopes.NODE_PREPRINTS_READ]
+    required_write_scopes = [CoreScopes.NODE_PREPRINTS_WRITE]
+
+    serializer_class = PreprintSerializer
+
+    view_category = 'nodes'
+    view_name = 'node-preprints'
+
+    # overrides ODMFilterMixin
+    def get_default_odm_query(self):
+        return (
+            Q('node', 'eq', self.get_node())
+        )
+
+    # overrides ListAPIView
+    def get_queryset(self):
+        return PreprintService.find(self.get_query_from_request())

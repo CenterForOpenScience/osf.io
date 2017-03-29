@@ -27,7 +27,7 @@ REGISTRATION_UNAVAILABLE = 'Registration currently unavailable.'
 
 ALREADY_REGISTERED = u'The email {email} has already been registered.'
 
-AFTER_SUBMIT_FOR_REVIEW = 'Your submission has been received. You will be notified within ten business days regarding the status of your submission. If you have questions you may contact us at prereg@cos.io.'
+AFTER_SUBMIT_FOR_REVIEW = 'Your submission has been received. You will be notified within two business days regarding the status of your submission. If you have questions you may contact us at prereg@cos.io.'
 
 # Shown if user tries to login with an email that is not yet confirmed
 UNCONFIRMED = ('This login email has been registered but not confirmed. Please check your email (and spam folder).'
@@ -45,7 +45,7 @@ Log-in failed. Please try again or reset your password.
 
 # Shown at login page if user tries to access a resource that requires auth
 MUST_LOGIN = '''
-You must log in to access this resource.
+You must log in or create a new account to claim the contributor-ship.
 '''
 
 # Shown on logout

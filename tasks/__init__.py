@@ -57,26 +57,28 @@ def task(*args, **kwargs):
 
 
 @task
-def server(ctx, host=None, port=5000, debug=True, live=False, gitlogs=False):
+def server(ctx, host=None, port=5000, debug=True, gitlogs=False):
     """Run the app server."""
-    if gitlogs:
-        git_logs(ctx)
-    from website.app import init_app
-    os.environ['DJANGO_SETTINGS_MODULE'] = 'api.base.settings'
-    app = init_app(set_backends=True, routes=True)
-    settings.API_SERVER_PORT = port
+    if os.environ.get('WERKZEUG_RUN_MAIN') == 'true' or not debug:
+        if os.environ.get('WEB_REMOTE_DEBUG', None):
+            import pydevd
+            # e.g. '127.0.0.1:5678'
+            remote_parts = os.environ.get('WEB_REMOTE_DEBUG').split(':')
+            pydevd.settrace(remote_parts[0], port=int(remote_parts[1]), suspend=False, stdoutToServer=True, stderrToServer=True)
 
-    if live:
-        from livereload import Server
-        server = Server(app.wsgi_app)
-        server.watch(os.path.join(HERE, 'website', 'static', 'public'))
-        server.serve(port=port)
+        if gitlogs:
+            git_logs(ctx)
+        from website.app import init_app
+        os.environ['DJANGO_SETTINGS_MODULE'] = 'api.base.settings'
+        app = init_app(set_backends=True, routes=True)
+        settings.API_SERVER_PORT = port
     else:
-        if settings.SECURE_MODE:
-            context = (settings.OSF_SERVER_CERT, settings.OSF_SERVER_KEY)
-        else:
-            context = None
-        app.run(host=host, port=port, debug=debug, threaded=debug, extra_files=[settings.ASSET_HASH_PATH], ssl_context=context)
+        from framework.flask import app
+
+    context = None
+    if settings.SECURE_MODE:
+        context = (settings.OSF_SERVER_CERT, settings.OSF_SERVER_KEY)
+    app.run(host=host, port=port, debug=debug, threaded=debug, extra_files=[settings.ASSET_HASH_PATH], ssl_context=context)
 
 
 @task
@@ -366,7 +368,7 @@ def sharejs(ctx, host=None, port=None, db_url=None, cors_allow_origin=None):
 
 
 @task(aliases=['celery'])
-def celery_worker(ctx, level='debug', hostname=None, beat=False):
+def celery_worker(ctx, level='debug', hostname=None, beat=False, queues=None):
     """Run the Celery process."""
     cmd = 'celery worker -A framework.celery_tasks -l {0}'.format(level)
     if hostname:
@@ -374,6 +376,8 @@ def celery_worker(ctx, level='debug', hostname=None, beat=False):
     # beat sets up a cron like scheduler, refer to website/settings
     if beat:
         cmd = cmd + ' --beat'
+    if queues:
+        cmd = cmd + ' --queues={}'.format(queues)
     ctx.run(bin_prefix(cmd), pty=True)
 
 
@@ -497,7 +501,9 @@ def requirements(ctx, base=False, addons=False, release=False, dev=False, metric
                 pip_install(req_file, constraints_file=CONSTRAINTS_PATH),
                 echo=True
             )
-
+    # fix URITemplate name conflict h/t @github
+    ctx.run('pip uninstall uritemplate.py --yes || true')
+    ctx.run('pip install --no-cache-dir uritemplate.py==0.3.0')
 
 @task
 def test_module(ctx, module=None, verbosity=2):
@@ -680,33 +686,6 @@ def addon_requirements(ctx):
 
 
 @task
-def encryption(ctx, owner=None):
-    """Generate GnuPG key.
-
-    For local development:
-    > invoke encryption
-    On Linode:
-    > sudo env/bin/invoke encryption --owner www-data
-
-    """
-    if not settings.USE_GNUPG:
-        print('GnuPG is not enabled. No GnuPG key will be generated.')
-        return
-
-    import gnupg
-    gpg = gnupg.GPG(gnupghome=settings.GNUPG_HOME, gpgbinary=settings.GNUPG_BINARY)
-    keys = gpg.list_keys()
-    if keys:
-        print('Existing GnuPG key found')
-        return
-    print('Generating GnuPG key')
-    input_data = gpg.gen_key_input(name_real='OSF Generated Key')
-    gpg.gen_key(input_data)
-    if owner:
-        ctx.run('sudo chown -R {0} {1}'.format(owner, settings.GNUPG_HOME))
-
-
-@task
 def travis_addon_settings(ctx):
     for directory in os.listdir(settings.ADDON_PATH):
         path = os.path.join(settings.ADDON_PATH, directory, 'settings')
@@ -749,12 +728,11 @@ def packages(ctx):
         'upgrade',
         'install libxml2',
         'install libxslt',
-        'install elasticsearch',
+        'install elasticsearch@1.7',
         'install rabbitmq',
-        'install gpg',
         'install node',
         'tap tokutek/tokumx',
-        'install tokumx-bin',
+        'install chrisseto/homebrew-tokumx/tokumx-bin',
     ]
     if platform.system() == 'Darwin':
         print('Running brew commands')
@@ -771,17 +749,16 @@ def packages(ctx):
 def bower_install(ctx):
     print('Installing bower-managed packages')
     bower_bin = os.path.join(HERE, 'node_modules', 'bower', 'bin', 'bower')
-    ctx.run('{} prune'.format(bower_bin), echo=True)
-    ctx.run('{} install'.format(bower_bin), echo=True)
+    ctx.run('{} prune --allow-root'.format(bower_bin), echo=True)
+    ctx.run('{} install --allow-root'.format(bower_bin), echo=True)
 
 
 @task
 def setup(ctx):
-    """Creates local settings, installs requirements, and generates encryption key"""
+    """Creates local settings, and installs requirements"""
     copy_settings(ctx, addons=True)
     packages(ctx)
     requirements(ctx, addons=True, dev=True)
-    encryption(ctx)
     # Build nodeCategories.json before building assets
     build_js_config_files(ctx)
     assets(ctx, dev=True, watch=False)

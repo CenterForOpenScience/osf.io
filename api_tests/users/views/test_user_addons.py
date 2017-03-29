@@ -12,11 +12,13 @@ from tests.utils import mock_auth
 from website.addons.box.tests.factories import BoxAccountFactory
 from website.addons.dataverse.tests.factories import DataverseAccountFactory
 from website.addons.dropbox.tests.factories import DropboxAccountFactory
+from website.addons.figshare.tests.factories import FigshareAccountFactory
 from website.addons.github.tests.factories import GitHubAccountFactory
 from website.addons.googledrive.tests.factories import GoogleDriveAccountFactory
 from website.addons.mendeley.tests.factories import MendeleyAccountFactory
 from website.addons.s3.tests.factories import S3AccountFactory
 from website.addons.zotero.tests.factories import ZoteroAccountFactory
+from website.addons.owncloud.tests.factories import OwnCloudAccountFactory
 
 class UserAddonListMixin(object):
     def set_setting_list_url(self):
@@ -371,10 +373,6 @@ class TestUserWikiAddon(UserUnmanageableAddonTestSuiteMixin, ApiAddonTestCase):
     short_name = 'wiki'
 
 
-class TestUserFigshareAddon(UserUnmanageableAddonTestSuiteMixin, ApiAddonTestCase):
-    short_name = 'figshare'
-
-
 # OAUTH
 
 
@@ -417,6 +415,14 @@ class TestUserZoteroAddon(UserOAuthAddonTestSuiteMixin, ApiAddonTestCase):
     short_name = 'zotero'
     AccountFactory = ZoteroAccountFactory
 
+class TestUserOwnCloudAddon(UserOAuthAddonTestSuiteMixin, ApiAddonTestCase):
+    short_name = 'owncloud'
+    AccountFactory = OwnCloudAccountFactory
+
+
+class TestUserFigshareAddon(UserOAuthAddonTestSuiteMixin, ApiAddonTestCase):
+    short_name = 'figshare'
+    AccountFactory = FigshareAccountFactory
 
 class TestUserInvalidAddon(UserAddonTestSuiteMixin, ApiAddonTestCase):
     addon_type = 'INVALID'

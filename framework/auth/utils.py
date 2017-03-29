@@ -113,6 +113,7 @@ def validate_recaptcha(response, remote_ip=None):
     Validate if the recaptcha response is valid.
 
     :param response: the recaptcha response form submission
+    :param remote_ip: the remote ip address
     :return: True if valid, False otherwise
     """
     if not response:

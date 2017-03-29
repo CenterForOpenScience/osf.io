@@ -79,6 +79,7 @@ COPY ./website/addons/dataverse/requirements.txt /code/website/addons/dataverse/
 COPY ./website/addons/dropbox/requirements.txt /code/website/addons/dropbox/
 COPY ./website/addons/github/requirements.txt /code/website/addons/github/
 COPY ./website/addons/mendeley/requirements.txt /code/website/addons/mendeley/
+COPY ./website/addons/owncloud/requirements.txt /code/website/addons/owncloud/
 COPY ./website/addons/s3/requirements.txt /code/website/addons/s3/
 COPY ./website/addons/twofactor/requirements.txt /code/website/addons/twofactor/
 COPY ./website/addons/zotero/requirements.txt /code/website/addons/zotero/
@@ -93,6 +94,7 @@ RUN pip install --no-cache-dir -c /code/requirements/constraints.txt -r /code/we
     && pip install --no-cache-dir -c /code/requirements/constraints.txt -r /code/website/addons/dropbox/requirements.txt \
     && pip install --no-cache-dir -c /code/requirements/constraints.txt -r /code/website/addons/github/requirements.txt \
     && pip install --no-cache-dir -c /code/requirements/constraints.txt -r /code/website/addons/mendeley/requirements.txt \
+    && pip install --no-cache-dir -c /code/requirements/constraints.txt -r /code/website/addons/owncloud/requirements.txt \
     && pip install --no-cache-dir -c /code/requirements/constraints.txt -r /code/website/addons/s3/requirements.txt \
     && pip install --no-cache-dir -c /code/requirements/constraints.txt -r /code/website/addons/twofactor/requirements.txt \
     && pip install --no-cache-dir -c /code/requirements/constraints.txt -r /code/website/addons/zotero/requirements.txt
@@ -133,6 +135,7 @@ COPY ./website/addons/github/static/ /code/website/addons/github/static/
 COPY ./website/addons/googledrive/static/ /code/website/addons/googledrive/static/
 COPY ./website/addons/mendeley/static/ /code/website/addons/mendeley/static/
 COPY ./website/addons/osfstorage/static/ /code/website/addons/osfstorage/static/
+COPY ./website/addons/owncloud/static/ /code/website/addons/owncloud/static/
 COPY ./website/addons/s3/static/ /code/website/addons/s3/static/
 COPY ./website/addons/twofactor/static/ /code/website/addons/twofactor/static/
 COPY ./website/addons/wiki/static/ /code/website/addons/wiki/static/

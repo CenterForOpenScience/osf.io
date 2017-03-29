@@ -1,60 +1,137 @@
-import httplib as http
-
+from datetime import datetime
 import furl
-from werkzeug.datastructures import ImmutableDict
-from framework.exceptions import HTTPError
+import logging
+
+from modularodm import Q
+from modularodm.exceptions import NoResultsFound, QueryException, ImproperConfigurationError
 
 from website import mails
-from website.settings import DOMAIN
+from website.models import PreprintProvider
+from website.settings import DOMAIN, CAMPAIGN_REFRESH_THRESHOLD
+from website.util.time import throttle_period_expired
 
-CAMPAIGNS = ImmutableDict({
-    'prereg': {
-        'system_tag': 'prereg_challenge_campaign',
-        'redirect_url': lambda: furl.furl(DOMAIN).add(path='prereg/').url,
-        'confirmation_email_template': mails.CONFIRM_EMAIL_PREREG,
-    },
-    'institution': {
-        'system_tag': 'institution_campaign',
-        'redirect_url': lambda: ''
-    },
-    'erpc': {
-        'system_tag': 'erp_challenge_campaign',
-        'redirect_url': lambda: furl.furl(DOMAIN).add(path='erpc/').url,
-        'confirmation_email_template': mails.CONFIRM_EMAIL_ERPC,
-    },
-    # Various preprint services
-    # Each preprint service will offer their own campaign with appropriate distinct branding
-    'osf-preprints': {
-        'system_tag': 'osf_preprints',
-        'redirect_url': lambda: furl.furl(DOMAIN).add(path='preprints/').url,
-        'confirmation_email_template': mails.CONFIRM_EMAIL_PREPRINTS_OSF
-    }
-})
+
+CAMPAIGNS = None
+CAMPAIGNS_LAST_REFRESHED = datetime.utcnow()
+
+
+def get_campaigns():
+
+    global CAMPAIGNS
+    global CAMPAIGNS_LAST_REFRESHED
+
+    logger = logging.getLogger(__name__)
+
+    if not CAMPAIGNS or throttle_period_expired(CAMPAIGNS_LAST_REFRESHED, CAMPAIGN_REFRESH_THRESHOLD):
+
+        # Native campaigns: PREREG and ERPC
+        CAMPAIGNS = {
+            'prereg': {
+                'system_tag': 'prereg_challenge_campaign',
+                'redirect_url': furl.furl(DOMAIN).add(path='prereg/').url,
+                'confirmation_email_template': mails.CONFIRM_EMAIL_PREREG,
+                'login_type': 'native',
+            },
+            'erpc': {
+                'system_tag': 'erp_challenge_campaign',
+                'redirect_url': furl.furl(DOMAIN).add(path='erpc/').url,
+                'confirmation_email_template': mails.CONFIRM_EMAIL_ERPC,
+                'login_type': 'native',
+            },
+        }
+
+        # Institution Login
+        CAMPAIGNS.update({
+            'institution': {
+                'system_tag': 'institution_campaign',
+                'redirect_url': '',
+                'login_type': 'institution',
+            },
+        })
+
+        # Proxy campaigns: Preprints, both OSF and branded ones
+        try:
+            preprint_providers = PreprintProvider.find(Q('_id', 'ne', None))
+            for provider in preprint_providers:
+                if provider._id == 'osf':
+                    template = 'osf'
+                    name = 'OSF'
+                    url_path = 'preprints/'
+                else:
+                    template = 'branded'
+                    name = provider.name
+                    url_path = 'preprints/{}'.format(provider._id)
+                campaign = '{}-preprints'.format(provider._id)
+                system_tag = '{}_preprints'.format(provider._id)
+                CAMPAIGNS.update({
+                    campaign: {
+                        'system_tag': system_tag,
+                        'redirect_url': furl.furl(DOMAIN).add(path=url_path).url,
+                        'confirmation_email_template': mails.CONFIRM_EMAIL_PREPRINTS(template, name),
+                        'login_type': 'proxy',
+                        'provider': name,
+                    }
+                })
+        except (NoResultsFound or QueryException or ImproperConfigurationError) as e:
+            logger.warn('An error has occurred during campaign initialization: {}', e)
+
+        CAMPAIGNS_LAST_REFRESHED = datetime.utcnow()
+
+    return CAMPAIGNS
 
 
 def system_tag_for_campaign(campaign):
-    if campaign in CAMPAIGNS:
-        return CAMPAIGNS[campaign]['system_tag']
+    campaigns = get_campaigns()
+    if campaign in campaigns:
+        return campaigns.get(campaign).get('system_tag')
     return None
 
 
 def email_template_for_campaign(campaign):
-    if campaign in CAMPAIGNS:
-        return CAMPAIGNS[campaign]['confirmation_email_template']
+    campaigns = get_campaigns()
+    if campaign in campaigns:
+        return campaigns.get(campaign).get('confirmation_email_template')
+    return None
 
 
 def campaign_for_user(user):
-    for campaign, config in CAMPAIGNS.items():
-        # TODO: This is a bit of a one-off to support the Prereg Challenge.
-        # We should think more about the campaigns architecture and in
-        # particular define the behavior if the user has more than one
-        # campagin tag in their system_tags.
-        if config['system_tag'] in user.system_tags:
+    campaigns = get_campaigns()
+    for campaign, config in campaigns.items():
+        if config.get('system_tag') in user.system_tags:
             return campaign
+    return None
+
+
+def is_institution_login(campaign):
+    campaigns = get_campaigns()
+    if campaign in campaigns:
+        return campaigns.get(campaign).get('login_type') == 'institution'
+    return None
+
+
+def is_native_login(campaign):
+    campaigns = get_campaigns()
+    if campaign in campaigns:
+        return campaigns.get(campaign).get('login_type') == 'native'
+    return None
+
+
+def is_proxy_login(campaign):
+    campaigns = get_campaigns()
+    if campaign in campaigns:
+        return campaigns.get(campaign).get('login_type') == 'proxy'
+    return None
+
+
+def get_service_provider(campaign):
+    campaigns = get_campaigns()
+    if campaign in campaigns:
+        return campaigns.get(campaign).get('provider')
+    return None
 
 
 def campaign_url_for(campaign):
-    if campaign not in CAMPAIGNS:
-        raise HTTPError(http.BAD_REQUEST)
-    else:
-        return CAMPAIGNS[campaign]['redirect_url']()
+    campaigns = get_campaigns()
+    if campaign in campaigns:
+        return campaigns.get(campaign).get('redirect_url')
+    return None

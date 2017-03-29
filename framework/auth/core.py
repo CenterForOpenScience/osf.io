@@ -6,6 +6,7 @@ import itertools
 import logging
 import re
 import urlparse
+import urllib
 
 import bson
 import pytz
@@ -720,7 +721,10 @@ class User(GuidStoredObject, AddonModelMixin):
             record = self.get_unclaimed_record(project_id)
         except ValueError:  # No unclaimed record for given pid
             return False
-        return record['token'] == token and record['expires'] > dt.datetime.utcnow()
+        valid = record['token'] == token
+        if 'expires' in record:
+            valid = valid and record['expires'] > dt.datetime.utcnow()
+        return valid
 
     def get_claim_url(self, project_id, external=False):
         """
@@ -766,7 +770,7 @@ class User(GuidStoredObject, AddonModelMixin):
         :rtype: list
         :returns: Changed fields from the user save
         """
-        had_existing_password = bool(self.password)
+        had_existing_password = bool(self.password and self.is_confirmed)
         self.password = generate_password_hash(raw_password)
         if self.username == raw_password:
             raise ChangePasswordError(['Password cannot be the same as your email address'])
@@ -934,7 +938,7 @@ class User(GuidStoredObject, AddonModelMixin):
                 return token
         raise KeyError('No confirmation token for email "{0}"'.format(email))
 
-    def get_confirmation_url(self, email, external=True, force=False, renew=False, external_id_provider=None):
+    def get_confirmation_url(self, email, external=True, force=False, renew=False, external_id_provider=None, destination=None):
         """
         Return the confirmation url for a given email.
 
@@ -943,6 +947,7 @@ class User(GuidStoredObject, AddonModelMixin):
         :param force: If an expired token exists for the given email, generate a new one and return it.
         :param renew: Generate a new token and return it.
         :param external_id_provider: The external identity provider that authenticates the user.
+        :param destination: The destination page to redirect after confirmation
         :return: Return the confirmation url.
         :raises: ExpiredTokenError if trying to access a token that is expired.
         :raises: KeyError if there is no token for the email.
@@ -950,11 +955,9 @@ class User(GuidStoredObject, AddonModelMixin):
 
         base = settings.DOMAIN if external else '/'
         token = self.get_confirmation_token(email, force=force, renew=renew)
-
-        if external_id_provider:
-            return '{0}confirm/external/{1}/{2}/'.format(base, self._primary_key, token)
-        else:
-            return '{0}confirm/{1}/{2}/'.format(base, self._primary_key, token)
+        external = 'external/' if external_id_provider else ''
+        destination = '?{}'.format(urllib.urlencode({'destination': destination})) if destination else ''
+        return '{0}confirm/{1}{2}/{3}/{4}'.format(base, external, self._primary_key, token, destination)
 
     def get_unconfirmed_email_for_token(self, token):
         """Return email if valid.
@@ -1017,7 +1020,6 @@ class User(GuidStoredObject, AddonModelMixin):
         if unregistered_user:
             self.merge_user(unregistered_user)
             self.save()
-            unregistered_user.username = None
 
         if email not in self.emails:
             self.emails.append(email)
@@ -1286,11 +1288,15 @@ class User(GuidStoredObject, AddonModelMixin):
     def save(self, *args, **kwargs):
         # TODO: Update mailchimp subscription on username change
         # Avoid circular import
+        first_save = not self._is_loaded
         self.username = self.username.lower().strip() if self.username else None
         ret = super(User, self).save(*args, **kwargs)
         if self.SEARCH_UPDATE_FIELDS.intersection(ret) and self.is_confirmed:
             self.update_search()
             self.update_search_nodes_contributors()
+        if first_save:
+            from website.project import new_bookmark_collection  # Avoid circular import
+            new_bookmark_collection(self)
         return ret
 
     def update_search(self):
@@ -1463,7 +1469,9 @@ class User(GuidStoredObject, AddonModelMixin):
             elif timestamp > self.comments_viewed_timestamp[target_id]:
                 self.comments_viewed_timestamp[target_id] = timestamp
 
-        self.emails.extend(user.emails)
+        for email in user.emails:
+            if email not in self.emails:
+                self.emails.append(email)
         user.emails = []
 
         for k, v in user.email_verifications.iteritems():
@@ -1574,9 +1582,8 @@ class User(GuidStoredObject, AddonModelMixin):
 
         remove_sessions_for_user(user)
 
-        # - username is set to None so the resultant user can set it primary
-        #   in the future.
-        user.username = None
+        # - username is set to _id to ensure uniqueness
+        user.username = user._id
         user.password = None
         user.verification_key = None
         user.osf_mailing_lists = {}

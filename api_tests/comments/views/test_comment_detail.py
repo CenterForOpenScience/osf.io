@@ -232,6 +232,27 @@ class CommentDetailMixin(object):
         res = self.app.delete_json_api(self.private_url, auth=self.user.auth)
         assert_equal(res.status_code, 204)
 
+    def test_private_node_only_logged_in_contributor_commenter_can_delete_own_reply(self):
+        self._set_up_private_project_with_comment()
+        reply_target = Guid.load(self.comment._id)
+        reply = CommentFactory(node=self.private_project, target=reply_target, user=self.user)
+        reply_url = '/{}comments/{}/'.format(API_BASE, reply)
+        res = self.app.delete_json_api(reply_url, auth=self.user.auth)
+        assert_equal(res.status_code, 204)        
+
+    def test_private_node_only_logged_in_contributor_commenter_can_undelete_own_reply(self):
+        self._set_up_private_project_with_comment()
+        reply_target = Guid.load(self.comment._id)
+        reply = CommentFactory(node=self.private_project, target=reply_target, user=self.user)
+        reply_url = '/{}comments/{}/'.format(API_BASE, reply)
+        reply.is_deleted = True
+        reply.save()
+        payload = self._set_up_payload(reply._id, has_content=False)
+        res = self.app.patch_json_api(reply_url, payload, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        assert_false(res.json['data']['attributes']['deleted'])
+        assert_equal(res.json['data']['attributes']['content'], reply.content)
+
     def test_private_node_contributor_cannot_delete_other_users_comment(self):
         self._set_up_private_project_with_comment()
         res = self.app.delete_json_api(self.private_url, auth=self.contributor.auth, expect_errors=True)
@@ -442,6 +463,8 @@ class TestCommentDetailView(CommentDetailMixin, ApiTestCase):
         self.public_project = ProjectFactory.create(is_public=True, creator=self.user)
         self.public_project.add_contributor(self.contributor, save=True)
         self.public_comment = CommentFactory(node=self.public_project, user=self.user)
+        reply_target = Guid.load(self.public_comment._id)
+        self.public_comment_reply = CommentFactory(node=self.public_project, target=reply_target, user=self.user)
         self.public_url = '/{}comments/{}/'.format(API_BASE, self.public_comment._id)
         self.public_comment_payload = self._set_up_payload(self.public_comment._id)
 
@@ -536,6 +559,8 @@ class TestFileCommentDetailView(CommentDetailMixin, ApiTestCase):
         self.public_project.add_contributor(self.contributor, save=True)
         self.public_file = test_utils.create_test_file(self.public_project, self.user)
         self.public_comment = CommentFactory(node=self.public_project, target=self.public_file.get_guid(), user=self.user)
+        reply_target = Guid.load(self.public_comment._id)
+        self.public_comment_reply = CommentFactory(node=self.public_project, target=reply_target, user=self.user)
         self.public_url = '/{}comments/{}/'.format(API_BASE, self.public_comment._id)
         self.public_comment_payload = self._set_up_payload(self.public_comment._id)
 
@@ -613,6 +638,8 @@ class TestWikiCommentDetailView(CommentDetailMixin, ApiTestCase):
         self.public_project.add_contributor(self.contributor, save=True)
         self.public_wiki = NodeWikiFactory(node=self.public_project, user=self.user)
         self.public_comment = CommentFactory(node=self.public_project, target=Guid.load(self.public_wiki._id), user=self.user)
+        reply_target = Guid.load(self.public_comment._id)
+        self.public_comment_reply = CommentFactory(node=self.public_project, target=reply_target, user=self.user)
         self.public_url = '/{}comments/{}/'.format(API_BASE, self.public_comment._id)
         self.public_comment_payload = self._set_up_payload(self.public_comment._id)
 
