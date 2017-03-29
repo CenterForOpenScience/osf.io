@@ -109,7 +109,7 @@ def get_subject_rules(subjects_selected):
 
 
 def get_nodelicense_choices():
-    return [(sub.id, sub.text) for sub in NodeLicense.objects.all()]
+    return [(sub.id, sub.name) for sub in NodeLicense.objects.all()]
 
 
 def get_toplevel_subjects():
