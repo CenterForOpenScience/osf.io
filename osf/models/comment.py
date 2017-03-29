@@ -20,10 +20,6 @@ from website.project.model import get_valid_mentioned_users_guids
 
 
 class Comment(GuidMixin, SpamMixin, CommentableMixin, BaseModel):
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.project.model.Comment'
-    modm_query = None
-    # /TODO DELETE ME POST MIGRATION
     __guid_min_length__ = 12
     OVERVIEW = 'node'
     FILES = 'files'
@@ -253,15 +249,3 @@ class Comment(GuidMixin, SpamMixin, CommentableMixin, BaseModel):
                 save=False,
             )
             self.node.save()
-
-    @classmethod
-    def migrate_from_modm(cls, modm_obj):
-        django_obj = super(Comment, cls).migrate_from_modm(modm_obj)
-
-        keys = ['category', 'text', 'date', 'retracted']
-
-        for uid, value in django_obj.reports.iteritems():
-            for key in keys:
-                django_obj.reports[uid].setdefault(key)
-
-        return django_obj

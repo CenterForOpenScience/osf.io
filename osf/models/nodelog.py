@@ -8,7 +8,6 @@ from website.util import api_v2_url
 
 
 class NodeLog(ObjectIDMixin, BaseModel):
-
     FIELD_ALIASES = {
         # TODO: Find a better way
         'node': 'node__guids___id',

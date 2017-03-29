@@ -25,7 +25,6 @@ from website.files.exceptions import VersionNotFoundError
 from website.util import api_v2_url, waterbutler_api_url_for
 from osf.utils.manager import IncludeQuerySet
 
-
 __all__ = (
     'File',
     'Folder',

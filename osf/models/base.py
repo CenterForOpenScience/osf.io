@@ -1,10 +1,8 @@
 import logging
 import random
-from datetime import datetime
 
 import bson
 import modularodm.exceptions
-import pytz
 from django.contrib.contenttypes.fields import (GenericForeignKey,
                                                 GenericRelation)
 from django.contrib.contenttypes.models import ContentType
@@ -16,12 +14,9 @@ from django.db.models import F, Q
 from django.db.models import ForeignKey
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-from django.utils import timezone
 from osf.utils.caching import cached_property
 from osf.exceptions import ValidationError
 from osf.modm_compat import to_django_query
-from osf.utils.datetime_aware_jsonfield import (DateTimeAwareJSONField,
-                                                coerce_nonnaive_datetimes)
 from osf.utils.fields import LowercaseCharField, NonNaiveDateTimeField
 
 ALPHABET = '23456789abcdefghjkmnpqrstuvwxyz'
@@ -151,37 +146,6 @@ class BaseModel(models.Model):
         if obj.pk:
             return obj.delete()
 
-    @classmethod
-    def migrate_from_modm(cls, modm_obj):
-        """
-        Given a modm object, make a django object with the same local fields.
-
-        This is a base method that may work for simple objects.
-        It should be customized in the child class if it doesn't work.
-
-        :param modm_obj:
-        :return:
-        """
-        django_obj = cls()
-
-        local_django_fields = set([x.name for x in django_obj._meta.get_fields() if not x.is_relation])
-
-        intersecting_fields = set(modm_obj.to_storage().keys()).intersection(
-            set(local_django_fields))
-
-        for field in intersecting_fields:
-            modm_value = getattr(modm_obj, field)
-            if modm_value is None:
-                continue
-            if isinstance(modm_value, datetime):
-                modm_value = pytz.utc.localize(modm_value)
-            # TODO Remove this after migration
-            if isinstance(django_obj._meta.get_field(field), DateTimeAwareJSONField):
-                modm_value = coerce_nonnaive_datetimes(modm_value)
-            setattr(django_obj, field, modm_value)
-
-        return django_obj
-
     @property
     def _primary_name(self):
         return '_id'
@@ -236,10 +200,6 @@ class Guid(BaseModel):
     'initialize_<ID type>' (e.g. 'initialize_guid') that generates and sets the field.
     """
     primary_identifier_name = '_id'
-    # TODO DELETE ME POST MIGRATION
-    modm_query = None
-    migration_page_size = 500000
-    # /TODO DELETE ME POST MIGRATION
 
     id = models.AutoField(primary_key=True)
     _id = LowercaseCharField(max_length=255, null=False, blank=False, default=generate_guid, db_index=True,
@@ -260,34 +220,6 @@ class Guid(BaseModel):
         except cls.DoesNotExist:
             return None
 
-    @classmethod
-    def migrate_from_modm(cls, modm_obj, object_id=None, content_type=None):
-        """
-        Given a modm Guid make a django Guid
-
-        :param object_id:
-        :param content_type:
-        :param modm_obj:
-        :return:
-        """
-        django_obj = cls()
-
-        if modm_obj._id != modm_obj.referent._id:
-            # if the object has a BSON id, get the created date from that
-            django_obj.created = bson.ObjectId(modm_obj.referent._id).generation_time
-        else:
-            # just make it now
-            django_obj.created = timezone.now()
-
-        django_obj._id = modm_obj._id
-
-        if object_id and content_type:
-            # if the referent was passed set the GFK to point to it
-            django_obj.content_type = content_type
-            django_obj.object_id = object_id
-
-        return django_obj
-
     class Meta:
         ordering = ['-created']
         get_latest_by = 'created'
@@ -297,33 +229,12 @@ class Guid(BaseModel):
 
 
 class BlackListGuid(BaseModel):
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'framework.guid.model.BlacklistGuid'
-    primary_identifier_name = 'guid'
-    modm_query = None
-    migration_page_size = 500000
-    # /TODO DELETE ME POST MIGRATION
     id = models.AutoField(primary_key=True)
     guid = LowercaseCharField(max_length=255, unique=True, db_index=True)
 
     @property
     def _id(self):
         return self.guid
-
-    @classmethod
-    def migrate_from_modm(cls, modm_obj):
-        """
-        Given a modm BlacklistGuid make a django BlackListGuid
-
-        :param modm_obj:
-        :return:
-        """
-        django_obj = cls()
-
-        django_obj.guid = modm_obj._id
-
-        return django_obj
-
 
 def generate_guid_instance():
     return Guid.objects.create().id
@@ -341,37 +252,6 @@ class PKIDStr(str):
 
 
 class BaseIDMixin(models.Model):
-    @classmethod
-    def migrate_from_modm(cls, modm_obj):
-        """
-        Given a modm object, make a django object with the same local fields.
-
-        This is a base method that may work for simple objects.
-        It should be customized in the child class if it doesn't work.
-
-        :param modm_obj:
-        :return:
-        """
-        django_obj = cls()
-
-        local_django_fields = set([x.name for x in django_obj._meta.get_fields() if not x.is_relation])
-
-        intersecting_fields = set(modm_obj.to_storage().keys()).intersection(
-            set(local_django_fields))
-
-        for field in intersecting_fields:
-            modm_value = getattr(modm_obj, field)
-            if modm_value is None:
-                continue
-            if isinstance(modm_value, datetime):
-                modm_value = pytz.utc.localize(modm_value)
-            # TODO Remove this after migration
-            if isinstance(django_obj._meta.get_field(field), DateTimeAwareJSONField):
-                modm_value = coerce_nonnaive_datetimes(modm_value)
-            setattr(django_obj, field, modm_value)
-
-        return django_obj
-
     class Meta:
         abstract = True
 
@@ -391,12 +271,6 @@ class ObjectIDMixin(BaseIDMixin):
         except cls.DoesNotExist:
             # modm doesn't throw exceptions when loading things that don't exist
             return None
-
-    @classmethod
-    def migrate_from_modm(cls, modm_obj):
-        django_obj = super(ObjectIDMixin, cls).migrate_from_modm(modm_obj)
-        django_obj._id = str(modm_obj._id)
-        return django_obj
 
     class Meta:
         abstract = True
@@ -439,17 +313,6 @@ class OptionalGuidMixin(BaseIDMixin):
             else:
                 return guid
         return self.guids.order_by('-created').first()
-
-    @classmethod
-    def migrate_from_modm(cls, modm_obj):
-        instance = super(OptionalGuidMixin, cls).migrate_from_modm(modm_obj)
-        from website.models import Guid as MODMGuid
-        from modularodm import Q as MODMQ
-        if modm_obj.get_guid():
-            guids = MODMGuid.find(MODMQ('referent', 'eq', modm_obj._id))
-            setattr(instance, 'guid_string', [x.lower() for x in guids.get_keys()])
-            setattr(instance, 'content_type_pk', ContentType.objects.get_for_model(cls).pk)
-        return instance
 
     class Meta:
         abstract = True
@@ -697,46 +560,6 @@ class GuidMixin(BaseIDMixin):
     @property
     def deep_url(self):
         return None
-
-    @classmethod
-    def migrate_from_modm(cls, modm_obj):
-        """
-        Given a modm object, make a django object with the same local fields.
-
-        This is a base method that may work for simple objects.
-        It should be customized in the child class if it doesn't work.
-
-        :param modm_obj:
-        :return:
-        """
-        django_obj = cls()
-
-        local_django_fields = set(
-            [x.name for x in django_obj._meta.get_fields() if not x.is_relation and x.name != '_id'])
-
-        intersecting_fields = set(modm_obj.to_storage().keys()).intersection(
-            set(local_django_fields))
-
-        for field in intersecting_fields:
-            modm_value = getattr(modm_obj, field)
-            if modm_value is None:
-                continue
-            if isinstance(modm_value, datetime):
-                modm_value = pytz.utc.localize(modm_value)
-            # TODO Remove this after migration
-            if isinstance(django_obj._meta.get_field(field), DateTimeAwareJSONField):
-                modm_value = coerce_nonnaive_datetimes(modm_value)
-            setattr(django_obj, field, modm_value)
-
-        from website.models import Guid as MODMGuid
-        from modularodm import Q as MODMQ
-
-        guids = MODMGuid.find(MODMQ('referent', 'eq', modm_obj._id))
-
-        setattr(django_obj, 'guid_string', list(set([x.lower() for x in guids.get_keys()])))
-        setattr(django_obj, 'content_type_pk', ContentType.objects.get_for_model(cls).pk)
-
-        return django_obj
 
     class Meta:
         abstract = True

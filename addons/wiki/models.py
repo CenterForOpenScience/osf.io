@@ -9,7 +9,6 @@ import pytz
 from addons.base.models import BaseNodeSettings
 from bleach.callbacks import nofollow
 from django.db import models
-from django.utils import timezone
 from framework.forms.utils import sanitize
 from markdown.extensions import codehilite, fenced_code, wikilinks
 from osf.models import AbstractNode, NodeLog
@@ -269,10 +268,6 @@ class NodeWikiPage(GuidMixin, BaseModel):
 
 
 class NodeSettings(BaseNodeSettings):
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.addons.wiki.model.AddonWikiNodeSettings'
-    modm_query = None
-    # /TODO DELETE ME POST MIGRATION
     complete = True
     has_auth = True
     is_publicly_editable = models.BooleanField(default=False, db_index=True)

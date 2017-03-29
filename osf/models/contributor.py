@@ -1,5 +1,4 @@
 from django.db import models
-from django.utils import timezone
 
 from osf.utils.fields import NonNaiveDateTimeField
 from website.util.permissions import (
