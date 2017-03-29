@@ -651,7 +651,7 @@ class TestPreprintIsPublishedDetail(ApiTestCase):
         self.write_contrib = AuthUserFactory()
         self.non_contrib = AuthUserFactory()
 
-        self.public_project = ProjectFactory(creator=self.admin, public=True)
+        self.public_project = ProjectFactory(creator=self.admin, is_public=True)
         self.public_project.add_contributor(self.write_contrib, permissions=['read', 'write'], save=True)
         self.subject = SubjectFactory()
         self.provider = PreprintProviderFactory()
