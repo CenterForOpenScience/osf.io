@@ -86,6 +86,17 @@ def validate_m2m_field(field_name, django_obj, modm_obj):
         except AttributeError:
             primary_identifier_name = '_id'
     django_guids = manager.all().values_list(primary_identifier_name, flat=True)
+
+    flat_django_guids = []
+
+    for guid in django_guids:
+        if isinstance(guid, list):
+            flat_django_guids.append(*guid)
+        else:
+            flat_django_guids.append(guid)
+
+    django_guids = flat_django_guids
+
     # if there's a field alias, let's use that.
     if getattr(django_obj, 'FIELD_ALIASES', None) is None:
         modm_field_name = field_name
@@ -133,7 +144,7 @@ def validate_fk_relation(field_name, django_obj, modm_obj):
 
 
 def validate_basic_field(field_name, django_obj, modm_obj):
-    if field_name in ['id', 'pk', 'object_id', 'guid_string', 'last_login', 'is_superuser', 'content_type_pk', 'content_type_id']:
+    if field_name in ['id', 'pk', 'object_id', 'guid_string', 'last_login', 'is_superuser', 'content_type_pk', 'content_type_id', 'type']:
         # modm doesn't have these
         return
     # if there's a field alias, let's use that.
@@ -147,6 +158,11 @@ def validate_basic_field(field_name, django_obj, modm_obj):
 
     modm_value = getattr(modm_obj, modm_field_name)
     django_value = getattr(django_obj, field_name)
+
+    # we will never have to do this again
+    if modm_value == 'JyZND':
+        modm_value = modm_value.lower()
+
 
     if field_name == 'password':
         modm_value = 'bcrypt${}'.format(modm_value)
