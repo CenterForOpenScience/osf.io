@@ -12,8 +12,15 @@ from api.addons.serializers import NodeAddonFolderSerializer
 from api.addons.views import AddonSettingsMixin
 from api.base import generic_bulk_views as bulk_views
 from api.base import permissions as base_permissions
-from api.base.exceptions import InvalidModelValueError, JSONAPIException, Gone
-from api.base.exceptions import RelationshipPostMakesNoChanges, EndpointNotImplementedError
+from api.base.exceptions import (
+    InvalidModelValueError,
+    JSONAPIException,
+    Gone,
+    InvalidFilterOperator,
+    InvalidFilterValue,
+    RelationshipPostMakesNoChanges,
+    EndpointNotImplementedError,
+)
 from api.base.filters import ODMFilterMixin, ListFilterMixin, DjangoFilterMixin
 from api.base.pagination import CommentPagination, NodeContributorPagination, MaxSizePagination
 from api.base.parsers import (
@@ -77,6 +84,7 @@ from api.nodes.serializers import (
     NodeCitationStyleSerializer
 )
 from api.nodes.utils import get_file_object
+from api.preprints.permissions import PreprintPublishedOrAdmin
 from api.preprints.serializers import PreprintSerializer
 from api.registrations.serializers import RegistrationSerializer
 from api.users.views import UserMixin
@@ -91,8 +99,7 @@ from osf.models import BaseFileNode
 from osf.models.files import File, Folder
 from addons.wiki.models import NodeWikiPage
 from website.exceptions import NodeStateError
-from website.util.permissions import ADMIN
-from api.preprints.permissions import PreprintPublishedOrAdmin
+from website.util.permissions import ADMIN, PERMISSIONS
 
 
 class NodeMixin(object):
@@ -104,11 +111,19 @@ current URL. By default, fetches the current node based on the node_id kwarg.
     node_lookup_url_kwarg = 'node_id'
 
     def get_node(self, check_object_permissions=True):
-        node = get_object_or_error(
-            Node,
-            self.kwargs[self.node_lookup_url_kwarg],
-            display_name='node'
-        )
+        node = None
+
+        if self.kwargs.get('is_embedded') is True:
+            # If this is an embedded request, the node might be cached somewhere
+            node = self.request.parents[Node].get(self.kwargs[self.node_lookup_url_kwarg])
+
+        if node is None:
+            node = get_object_or_error(
+                Node,
+                self.kwargs[self.node_lookup_url_kwarg],
+                display_name='node'
+            )
+
         # Nodes that are folders/collections are treated as a separate resource, so if the client
         # requests a collection through a node endpoint, we return a 404
         if node.is_collection or node.is_registration:
@@ -144,7 +159,7 @@ class DraftMixin(object):
             if draft.requires_approval and draft.is_approved and (not registered_and_deleted):
                 raise PermissionDenied('This draft has already been approved and cannot be modified.')
 
-        self.check_object_permissions(self.request, draft)
+        self.check_object_permissions(self.request, draft.branched_from)
         return draft
 
 
@@ -665,7 +680,23 @@ class NodeContributorsList(BaseContributorList, bulk_views.BulkUpdateJSONAPIView
     serializer_class = NodeContributorsSerializer
     view_category = 'nodes'
     view_name = 'node-contributors'
-    ordering = ('index',)  # default ordering
+    ordering = ('_order',)  # default ordering
+
+    # overrides FilterMixin
+    def postprocess_query_param(self, key, field_name, operation):
+        if field_name == 'bibliographic':
+            operation['source_field_name'] = 'visible'
+
+    # overrides FilterMixin
+    def filter_by_field(self, queryset, field_name, operation):
+        if field_name == 'permission':
+            if operation['op'] != 'eq':
+                raise InvalidFilterOperator(value=operation['op'], valid_operators=['eq'])
+            # operation['value'] should be 'admin', 'write', or 'read'
+            if operation['value'].lower().strip() not in PERMISSIONS:
+                raise InvalidFilterValue(value=operation['value'])
+            return queryset.filter(**{operation['value'].lower().strip(): True})
+        return super(NodeContributorsList, self).filter_by_field(queryset, field_name, operation)
 
     # overrides ListBulkCreateJSONAPIView, BulkUpdateJSONAPIView, BulkDeleteJSONAPIView
     def get_serializer_class(self):
@@ -692,7 +723,7 @@ class NodeContributorsList(BaseContributorList, bulk_views.BulkUpdateJSONAPIView
                     raise ValidationError('Contributor identifier not provided.')
                 except IndexError:
                     raise ValidationError('Contributor identifier incorrectly formatted.')
-            queryset = queryset.filter(guids___id__in=contrib_ids)
+            queryset = queryset.filter(user__guids___id__in=contrib_ids)
         return queryset
 
     # Overrides BulkDestroyJSONAPIView
@@ -828,7 +859,7 @@ class NodeContributorDetail(BaseContributorDetail, generics.RetrieveUpdateDestro
     def perform_destroy(self, instance):
         node = self.get_node()
         auth = get_user_auth(self.request)
-        if len(node.visible_contributors) == 1 and node.get_visible(instance):
+        if len(node.visible_contributors) == 1 and instance.visible:
             raise ValidationError('Must have at least one visible contributor')
         removed = node.remove_contributor(instance, auth)
         if not removed:
@@ -1515,7 +1546,7 @@ class NodeLinksDetail(BaseNodeLinksDetail, generics.RetrieveDestroyAPIView, Node
             self.kwargs[self.node_link_lookup_url_kwarg],
             'node link'
         )
-        self.check_object_permissions(self.request, node_link)
+        self.check_object_permissions(self.request, node_link.parent)
         return node_link
 
     # overrides DestroyAPIView

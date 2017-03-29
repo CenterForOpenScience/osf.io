@@ -120,9 +120,10 @@ class PostcommitTaskMiddleware(object):
         return response
 
 
-# Orignal version taken from http://www.djangosnippets.org/snippets/186/
+# Adapted from http://www.djangosnippets.org/snippets/186/
 # Original author: udfalkso
 # Modified by: Shwagroo Team and Gun.io
+# Modified by: COS
 class ProfileMiddleware(object):
     """
     Displays hotshot profiling for any view.
@@ -144,7 +145,6 @@ class ProfileMiddleware(object):
         if (settings.DEBUG or request.user.is_superuser) and 'prof' in request.GET:
             self.prof.disable()
 
-            self.prof.dump_stats('request.profile')
             s = StringIO.StringIO()
             ps = pstats.Stats(self.prof, stream=s).sort_stats('cumtime')
             ps.print_stats()
