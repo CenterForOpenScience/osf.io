@@ -234,6 +234,9 @@ class NodeSettings(BaseStorageAddon, BaseOAuthNodeSettings):
         :param User user:
         :return str: Alert message
         """
+        ## TEMPORARY bypass to allow accessing projects with figshare on staging
+        return []
+        ## /TEMPORARY bypass
         if not self.configured:
             return []
         figshare = node.get_addon('figshare')
