@@ -6,15 +6,26 @@
 var m = require('mithril');
 var $ = require('jquery');
 var URI = require('URIjs');
-var Fangorn = require('js/fangorn');
+var Fangorn = require('js/fangorn').Fangorn;
 var waterbutler = require('js/waterbutler');
 var $osf = require('js/osfHelpers');
 
 // Cross browser key codes for the Command key
 var commandKeys = [224, 17, 91, 93];
 
+function _getCurrentBranch(item) {
+    var branch;
+    alert(typeof item.data.path);
+    if (item.kind === 'folder' && item.data.path === '/'){
+        branch = item.data.default_branch;
+    } else {
+        branch = item.data.extra.ref || item.data.extra.fileSha;
+    }
+    return branch;
+}
+
 function _uploadUrl(item, file) {
-    var branch = item.data.extra.ref || item.data.extra.fileSha;
+    var branch = _getCurrentBranch(item);
     return waterbutler.buildTreeBeardUpload(item, file, {branch: branch });
 }
 
@@ -27,7 +38,7 @@ function _removeEvent (event, items) {
     function runDelete (item) {
         // delete from server, if successful delete from view
         tb.select('.modal-footer .btn-danger').html('<i> Deleting...</i>').removeClass('btn-danger').addClass('btn-default disabled');
-        var branch = tem.data.extra.ref || item.data.extra.fileSha || $osf.urlParams().branch;
+        var branch = $osf.urlParams().branch || _getCurrentBranch(item);
 
         $.ajax({
             url: waterbutler.buildTreeBeardDelete(item, {branch: branch}),
@@ -126,14 +137,14 @@ var _gitlabItemButtons = {
         var buttons = [];
         function _downloadEvent(event, item, col) {
             event.stopPropagation();
-            var branch = tem.data.extra.ref || item.data.extra.fileSha;
+            var branch = _getCurrentBranch(item);
             window.location = waterbutler.buildTreeBeardDownload(item, {branch: branch});
         }
         // Download Zip File
         if (item.kind === 'folder') {
             var branchArray = [];
             if (item.data.branches) {
-                item.data.branch = item.data.extra.ref || item.data.extra.fileSha;
+                item.data.branch = _getCurrentBranch(item);
                 for (var i = 0; i < item.data.branches.length; i++) {
                     var selected = item.data.branches[i] === item.data.branch ? 'selected' : '';
                     branchArray.push(m('option', {
@@ -184,7 +195,8 @@ var _gitlabItemButtons = {
                     }
                 }
                 if (item.data.addonFullname) {
-                    var branchParamUrl = '?ref=' + (item.data.extra.ref || item.data.extra.fileSha);
+                    var branch = _getCurrentBranch(item);
+                    var branchParamUrl = '?ref=' + branch;
 
                     buttons.push(
                         m.component(Fangorn.Components.button, {
@@ -268,7 +280,7 @@ function changeBranch(item, ref){
 }
 
 function _resolveLazyLoad(item) {
-    var branch = item.data.extra.ref || item.data.extra.fileSha;
+    var branch = _getCurrentBranch(item);
     return waterbutler.buildTreeBeardMetadata(item, {ref: branch});
 }
 

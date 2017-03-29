@@ -88,7 +88,6 @@ class GitLabNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
     repo_id = fields.StringField()
     hook_id = fields.StringField()
     hook_secret = fields.StringField()
-    registration_data = fields.DictionaryField()
 
     @property
     def folder_id(self):
@@ -131,7 +130,6 @@ class GitLabNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         self.repo_id = None
         self.hook_id = None
         self.hook_secret = None
-        self.registration_data = None
 
     def deauthorize(self, auth=None, log=True):
         self.delete_hook(save=False)
