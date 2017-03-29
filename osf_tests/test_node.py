@@ -71,6 +71,10 @@ def node(user):
     return NodeFactory(creator=user)
 
 @pytest.fixture()
+def project(user):
+    return ProjectFactory(creator=user)
+
+@pytest.fixture()
 def auth(user):
     return Auth(user)
 
@@ -2651,21 +2655,21 @@ class TestForkNode:
                                         child, title_prepend='')
 
     @mock.patch('framework.status.push_status_message')
-    def test_fork_recursion(self, mock_push_status_message, node, user, auth, request_context):
+    def test_fork_recursion(self, mock_push_status_message, project, user, auth, request_context):
         """Omnibus test for forking.
         """
         # Make some children
-        component = NodeFactory(creator=user, parent=node)
-        subproject = ProjectFactory(creator=user, parent=node)
+        component = NodeFactory(creator=user, parent=project)
+        subproject = ProjectFactory(creator=user, parent=project)
 
         # Add pointers to test copying
         pointee = ProjectFactory()
-        node.add_pointer(pointee, auth=auth)
+        project.add_pointer(pointee, auth=auth)
         component.add_pointer(pointee, auth=auth)
         subproject.add_pointer(pointee, auth=auth)
 
         # Add add-on to test copying
-        node.add_addon('dropbox', auth)
+        project.add_addon('dropbox', auth)
         component.add_addon('dropbox', auth)
         subproject.add_addon('dropbox', auth)
 
@@ -2674,16 +2678,10 @@ class TestForkNode:
 
         # Fork node
         with mock.patch.object(Node, 'bulk_update_search'):
-            fork = node.fork_node(auth=auth)
+            fork = project.fork_node(auth=auth)
 
         # Compare fork to original
-        self._cmp_fork_original(user, fork_date, fork, node)
-
-    def test_forked_component_has_parent_node(self, node, auth):
-        assert node.parent_node
-
-        fork = node.fork_node(auth=auth)
-        assert fork.parent_node == node.parent_node
+        self._cmp_fork_original(user, fork_date, fork, project)
 
     def test_fork_private_children(self, node, user, auth):
         """Tests that only public components are created
