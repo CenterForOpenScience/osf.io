@@ -29,6 +29,7 @@ from api.users.serializers import UserSerializer
 from framework.auth.oauth_scopes import CoreScopes
 from osf.models.contributor import Contributor
 from website.models import Pointer
+from website import maintenance
 
 CACHE = weakref.WeakKeyDictionary()
 
@@ -756,6 +757,13 @@ def root(request, format=None, **kwargs):
         return_val['meta']['admin'] = True
 
     return Response(return_val)
+
+@api_view(('GET',))
+@throttle_classes([RootAnonThrottle, UserRateThrottle])
+def status_check(request, format=None, **kwargs):
+    return Response({
+        'maintenance': maintenance.get_maintenance(),
+    })
 
 
 def error_404(request, format=None, *args, **kwargs):
