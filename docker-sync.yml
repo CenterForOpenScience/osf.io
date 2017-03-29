@@ -21,7 +21,7 @@ syncs:
 #    src: '../modular-file-renderer'
 #    dest: '/code'
 #    sync_strategy: 'unison'
-#    sync_args: [ '-prefer newer'' ]
+#    sync_args: [ '-prefer newer' ]
 #    sync_excludes_type: 'Name'
 #    sync_excludes: ['.DS_Store', '*.pyc', '*.tmp', '.git', '.idea']
 #    watch_excludes: ['.*\.DS_Store', '.*\.pyc', '.*\.tmp', '.*/\.git', '.*/\.idea']
