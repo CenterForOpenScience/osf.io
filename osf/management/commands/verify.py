@@ -147,11 +147,15 @@ def validate_basic_field(field_name, django_obj, modm_obj):
     if field_name in ['id', 'pk', 'object_id', 'guid_string', 'last_login', 'is_superuser', 'content_type_pk', 'content_type_id', 'type']:
         # modm doesn't have these
         return
+
     # if there's a field alias, let's use that.
     if getattr(django_obj, 'FIELD_ALIASES', None) is None:
         modm_field_name = field_name
     else:
         modm_field_name = {v: k for k, v in getattr(django_obj, 'FIELD_ALIASES', {}).iteritems()}.get(field_name, field_name)
+
+    if field_name == '_history':
+        modm_field_name = 'history'
 
     if modm_field_name is False:
         return
