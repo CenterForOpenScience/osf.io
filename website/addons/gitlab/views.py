@@ -101,9 +101,9 @@ def gitlab_user_config_get(auth, **kwargs):
 def gitlab_add_user_account(auth, **kwargs):
     """Verifies new external account credentials and adds to user's list"""
 
-    host = furl()
-    host.host = request.json.get('host').rstrip('/')
-    host.scheme = 'https'
+    f = furl()
+    f.host = request.json.get('host').rstrip('/')
+    f.scheme = 'https'
     clientId = request.json.get('clientId')
     clientSecret = request.json.get('clientSecret')
 
@@ -111,8 +111,8 @@ def gitlab_add_user_account(auth, **kwargs):
         account = ExternalAccount(
             provider='gitlab',
             provider_name='GitLab',
-            display_name=host,       # no username; show host
-            oauth_key=host,          # hijacked; now host
+            display_name=f.host,       # no username; show host
+            oauth_key=f.host,          # hijacked; now host
             oauth_secret=clientSecret,   # hijacked; now clientSecret
             provider_id=clientId,   # hijacked; now clientId
         )
