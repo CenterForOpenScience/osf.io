@@ -27,7 +27,7 @@ from website import language, settings
 from website.models import NodeLog
 from website.prereg import utils as prereg_utils
 from website.project import utils as project_utils
-from osf.models import MetaSchema, DraftRegistration
+from osf.models import MetaSchema, DraftRegistration, Sanction
 from website.project.metadata.schemas import ACTIVE_META_SCHEMAS
 from website.project.metadata.utils import serialize_meta_schema, serialize_draft_registration
 from website.project.utils import serialize_node
@@ -128,6 +128,11 @@ def submit_draft_for_review(auth, node, draft, *args, **kwargs):
         validate_embargo_end_date(end_date_string, node)
         meta['embargo_end_date'] = end_date_string
     meta['registration_choice'] = registration_choice
+
+    # Don't allow resubmission unless submission was rejected
+    if draft.approval and draft.approval.state != Sanction.REJECTED:
+        raise HTTPError(http.CONFLICT, data=dict(message_long='Cannot resubmit previously submitted draft.'))
+
     draft.submit_for_review(
         initiated_by=auth.user,
         meta=meta,
@@ -180,6 +185,10 @@ def register_draft_registration(auth, node, draft, *args, **kwargs):
     data = request.get_json()
     registration_choice = data.get('registrationChoice', 'immediate')
     validate_registration_choice(registration_choice)
+
+    # Don't allow resubmission unless submission was rejected
+    if draft.approval and draft.approval.state != Sanction.REJECTED:
+        raise HTTPError(http.CONFLICT, data=dict(message_long='Cannot resubmit previously submitted draft.'))
 
     register = draft.register(auth)
     draft.save()

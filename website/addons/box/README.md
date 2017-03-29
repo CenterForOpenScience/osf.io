@@ -1,5 +1,8 @@
 # OSF Box Addon
 
+## Deprecation Warning: ./website/addons has been moved to ./addons
+## Please configure in the new location
+
 Enabling the addon for development
 
 1. If `website/addons/box/settings/local.py` does not yet exist, create a local box settings file with `cp website/addons/box/settings/local-dist.py website/addons/box/settings/local.py`

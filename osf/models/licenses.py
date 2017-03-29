@@ -26,11 +26,17 @@ class NodeLicense(ObjectIDMixin, BaseModel):
     # TODO DELETE ME POST MIGRATION
     modm_model_path = 'website.project.licenses.NodeLicense'
     modm_query = None
+    FIELD_ALIASES = {
+        'id': 'license_id'
+    }
     # /TODO DELETE ME POST MIGRATION
     license_id = models.CharField(max_length=128, null=False, unique=True)
     name = models.CharField(max_length=256, null=False, unique=True)
     text = models.TextField(null=False)
     properties = ArrayField(models.CharField(max_length=128), default=list, blank=True)
+
+    def __unicode__(self):
+        return '(license_id={}, name={})'.format(self.license_id, self.name)
 
     @classmethod
     def migrate_from_modm(cls, modm_obj):
@@ -54,6 +60,11 @@ class NodeLicenseRecord(ObjectIDMixin, BaseModel):
     copyright_holders = ArrayField(
         models.CharField(max_length=256, blank=True, null=True),
         default=list, blank=True)
+
+    def __unicode__(self):
+        if self.node_license:
+            return self.node_license.__unicode__()
+        return super(NodeLicenseRecord, self).__unicode__()
 
     @property
     def name(self):

@@ -216,15 +216,13 @@ class BaseOAuthUserSettings(BaseUserSettings):
         """
         for node in self.get_nodes_with_oauth_grants(external_account):
             try:
-                addon_settings = node.get_addon(external_account.provider, deleted=True)
+                node.get_addon(external_account.provider, deleted=True).deauthorize(auth=auth)
             except AttributeError:
                 # No associated addon settings despite oauth grant
                 pass
-            else:
-                addon_settings.deauthorize(auth=auth)
 
         if external_account.osfuser_set.count() == 1 and \
-                external_account.osfuser_set.filter(osfuser=auth.user).count() == 1:
+                external_account.osfuser_set.filter(id=auth.user.id).exists():
             # Only this user is using the account, so revoke remote access as well.
             self.revoke_remote_oauth_access(external_account)
 
@@ -821,6 +819,7 @@ class BaseOAuthNodeSettings(BaseNodeSettings):
                 category=fork.project_or_component,
             )
         else:
+            clone.clear_settings()
             message = (
                 u'{addon} authorization not copied to forked {category}. You may '
                 u'authorize this fork on the <u><a href="{url}">Settings</a></u> '

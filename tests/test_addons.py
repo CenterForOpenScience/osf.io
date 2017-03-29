@@ -104,6 +104,8 @@ class TestAddonAuth(OsfTestCase):
         self.node_addon.user_settings = self.user_addon
         self.node_addon.external_account = self.oauth_settings
         self.node_addon.save()
+        self.user_addon.oauth_grants[self.node._id] = {self.oauth_settings._id: []}
+        self.user_addon.save()
 
     def build_url(self, **kwargs):
         options = {'payload': jwe.encrypt(jwt.encode({'data': dict(dict(
@@ -188,6 +190,8 @@ class TestAddonLogs(OsfTestCase):
         self.node_addon.user_settings = self.user_addon
         self.node_addon.external_account = self.oauth_settings
         self.node_addon.save()
+        self.user_addon.oauth_grants[self.node._id] = {self.oauth_settings._id: []}
+        self.user_addon.save()
 
     def build_payload(self, metadata, **kwargs):
         options = dict(
@@ -541,37 +545,21 @@ def assert_urls_equal(url1, url2):
     assert_equal(furl1, furl2)
 
 
-class MockFileNode(file_models.FileNode):
-    provider = 'test_addons'
-
-    def touch(self, bearer, version=None, revision=None, **kwargs):
-        if version:
-            if self.versions:
-                try:
-                    return self.versions[int(version) - 1]
-                except (IndexError, ValueError):
-                    return None
-            else:
+def mock_touch(self, bearer, version=None, revision=None, **kwargs):
+    if version:
+        if self.versions:
+            try:
+                return self.versions[int(version) - 1]
+            except (IndexError, ValueError):
                 return None
-        return file_models.FileVersion()
+        else:
+            return None
+    return file_models.FileVersion()
 
 
-class MockFile(MockFileNode, file_models.File):
-    pass
-
-
-class MockFolder(MockFileNode, file_models.Folder):
-    pass
-
-
+@mock.patch('addons.github.models.GithubFileNode.touch', mock_touch)
 @mock.patch('addons.github.models.GitHubClient.repo', mock.Mock(side_effect=ApiError))
 class TestAddonFileViews(OsfTestCase):
-
-    @classmethod
-    def setUpClass(cls):
-        super(TestAddonFileViews, cls).setUpClass()
-        PROVIDER_MAP['github'] = [MockFolder, MockFile, MockFileNode]
-        MockFileNode.provider = 'github'
 
     def setUp(self):
         super(TestAddonFileViews, self).setUp()
@@ -595,16 +583,13 @@ class TestAddonFileViews(OsfTestCase):
         self.node_addon.user = 'E'
         self.node_addon.save()
 
-    @classmethod
-    def tearDownClass(cls):
-        super(TestAddonFileViews, cls).tearDownClass()
-        PROVIDER_MAP['github'] = [GithubFolder, GithubFile, GithubFileNode]
-        del PROVIDER_MAP['test_addons']
+        self.user_addon.oauth_grants[self.project._id] = {self.oauth._id: []}
+        self.user_addon.save()
 
     def get_test_file(self):
         version = file_models.FileVersion(identifier='1')
         version.save()
-        ret = MockFile(
+        ret = GithubFile(
             name='Test',
             node=self.project,
             path='/test/Test',
@@ -617,7 +602,7 @@ class TestAddonFileViews(OsfTestCase):
     def get_second_test_file(self):
         version = file_models.FileVersion(identifier='1')
         version.save()
-        ret = MockFile(
+        ret = GithubFile(
             name='Test2',
             node=self.project,
             path='/test/Test2',
@@ -859,12 +844,12 @@ class TestAddonFileViews(OsfTestCase):
             }
         }
         views.addon_delete_file_node(self=None, node=self.project, user=self.user, event_type='file_removed', payload=payload)
-        assert_false(StoredFileNode.load(file_node._id))
+        assert_false(GithubFileNode.load(file_node._id))
         assert_true(TrashedFileNode.load(file_node._id))
 
     def test_delete_action_for_folder_deletes_subfolders_and_creates_trashed_file_nodes(self):
         file_node = self.get_test_file()
-        subfolder = MockFolder(
+        subfolder = GithubFolder(
             name='folder',
             node=self.project,
             path='/test/folder/',
@@ -879,9 +864,8 @@ class TestAddonFileViews(OsfTestCase):
             }
         }
         views.addon_delete_file_node(self=None, node=self.project, user=self.user, event_type='file_removed', payload=payload)
-        assert_false(StoredFileNode.load(file_node._id))
+        assert_false(GithubFileNode.load(subfolder._id))
         assert_true(TrashedFileNode.load(file_node._id))
-        assert_false(StoredFileNode.load(subfolder._id))
 
     @mock.patch('website.archiver.tasks.archive')
     def test_archived_from_url(self, mock_archive):

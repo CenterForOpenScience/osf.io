@@ -3,9 +3,26 @@ import operator
 
 from modularodm import Q
 
-from api.base.exceptions import InvalidFilterError
+from api.base.exceptions import InvalidFilterError, InvalidFilterValue
 from api.base.filters import ODMFilterMixin
 from api.base import utils
+
+from osf.models import AbstractNode
+
+class NodesListFilterMixin(ODMFilterMixin):
+
+    def _operation_to_query(self, operation):
+        if operation['source_field_name'] == 'root':
+            if None in operation['value']:
+                raise InvalidFilterValue()
+            return Q('root__guids___id', 'in', operation['value'])
+        if operation['source_field_name'] == 'parent_node':
+            if operation['value']:
+                parent = utils.get_object_or_error(AbstractNode, operation['value'], display_name='parent')
+                return Q('_id', 'in', [node._id for node in parent.get_nodes(is_node_link=False)])
+            else:
+                return Q('parent_nodes__guids___id', 'eq', None)
+        return super(NodesListFilterMixin, self)._operation_to_query(operation)
 
 
 class NodePreprintsFilterMixin(ODMFilterMixin):

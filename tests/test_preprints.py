@@ -27,6 +27,7 @@ from osf_tests.factories import (
     SubjectFactory
 )
 from tests.utils import assert_logs, assert_not_logs
+from website.project.views.contributor import find_preprint_provider
 
 
 class TestPreprintFactory(OsfTestCase):
@@ -57,7 +58,6 @@ class TestSetPreprintFile(OsfTestCase):
 
         self.project = ProjectFactory(creator=self.user)
         self.file = OsfStorageFile.create(
-            is_file=True,
             node=self.project,
             path='/panda.txt',
             name='panda.txt',
@@ -65,7 +65,6 @@ class TestSetPreprintFile(OsfTestCase):
         self.file.save()
 
         self.file_two = OsfStorageFile.create(
-            is_file=True,
             node=self.project,
             path='/pandapanda.txt',
             name='pandapanda.txt',
@@ -111,13 +110,13 @@ class TestSetPreprintFile(OsfTestCase):
 
     def test_add_primary_file(self):
         self.preprint.set_primary_file(self.file, auth=self.auth, save=True)
-        assert_equal(self.project.preprint_file.wrapped(), self.file)
+        assert_equal(self.project.preprint_file, self.file)
         assert_equal(type(self.project.preprint_file), type(self.file.stored_object))
 
     @assert_logs(NodeLog.PREPRINT_FILE_UPDATED, 'project')
     def test_change_primary_file(self):
         self.preprint.set_primary_file(self.file, auth=self.auth, save=True)
-        assert_equal(self.project.preprint_file.wrapped(), self.file)
+        assert_equal(self.project.preprint_file, self.file)
 
         self.preprint.set_primary_file(self.file_two, auth=self.auth, save=True)
         assert_equal(self.project.preprint_file._id, self.file_two._id)
@@ -164,7 +163,6 @@ class TestPreprintServicePermissions(OsfTestCase):
     def test_nonadmin_cannot_set_file(self):
         initial_file = self.preprint.primary_file
         file = OsfStorageFile.create(
-            is_file=True,
             node=self.project,
             path='/panda.txt',
             name='panda.txt',
@@ -196,7 +194,6 @@ class TestPreprintServicePermissions(OsfTestCase):
     def test_admin_can_set_file(self):
         initial_file = self.preprint.primary_file
         file = OsfStorageFile.create(
-            is_file=True,
             node=self.project,
             path='/panda.txt',
             name='panda.txt',
@@ -251,6 +248,14 @@ class TestPreprintProviders(OsfTestCase):
         self.preprint.reload()
 
         assert_equal(self.preprint.provider, None)
+
+    def test_find_provider(self):
+        self.preprint.provider = self.provider
+        self.preprint.save()
+        self.preprint.reload()
+
+        assert ('branded', 'WWEArxiv') == find_preprint_provider(self.preprint.node)
+
 
 class TestOnPreprintUpdatedTask(OsfTestCase):
     def setUp(self):

@@ -4,27 +4,9 @@
     <title>Desk user settings</title>
 {% endblock title %}
 {% block content %}
-
-
-    {%   if request.user.admin_profile %}
-        <div>Desk token: {{ request.user.admin_profile.desk_token }}</div>
-        <div>Desk token secret: {{ request.user.admin_profile.desk_token_secret }}</div>
-
-        <a href="#edit_desk_token" class="btn btn-default" data-toggle="collapse">Edit</a>
-        <div id="edit_desk_token" class="collapse">
-            <form class="well" method="post" action="{% url 'auth:desk_update' %}">
-                {% csrf_token %}
-                {{ form }}
-                <input type="submit" class="btn btn-primary" value="Update" />
-            </form>
-        </div>
-
-
-    {%  else %}
-        <form class="well" method="post" action="{% url 'auth:desk' %}">
-            {% csrf_token %}
-            {{ form }}
-            <input type="submit" class="btn btn-primary" value="Save" />
-        </form>
-    {% endif %}
+    <form class="well" method="post" action="{% url 'auth:desk' %}">
+        {% csrf_token %}
+        {{ form }}
+        <input type="submit" class="btn btn-primary" value="Save" />
+    </form>
 {% endblock content %}

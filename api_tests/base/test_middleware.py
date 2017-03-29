@@ -10,7 +10,6 @@ from nose.tools import *  # flake8: noqa
 from rest_framework.test import APIRequestFactory
 
 from website.util import api_v2_url
-from api.base.middleware import TokuTransactionMiddleware
 from api.base import settings
 from api.base.middleware import CorsMiddleware
 from tests.base import ApiTestCase
@@ -25,27 +24,6 @@ class MiddlewareTestCase(ApiTestCase):
         self.mock_response = mock.Mock()
         self.request_factory = APIRequestFactory()
 
-
-# TODO Fix, these tests don't line up with the new middleware for django+flask
-@pytest.mark.skip
-class TestMiddlewareRollback(MiddlewareTestCase):
-    MIDDLEWARE = TokuTransactionMiddleware
-
-    @mock.patch('framework.transactions.handlers.commands')
-    def test_400_error_causes_rollback(self, mock_commands):
-
-        self.mock_response.status_code = 400
-        self.middleware.process_response(mock.Mock(), self.mock_response)
-
-        assert_true(mock_commands.rollback.called)
-
-    @mock.patch('framework.transactions.handlers.commands')
-    def test_200_OK_causes_commit(self, mock_commands):
-
-        self.mock_response.status_code = 200
-        self.middleware.process_response(mock.Mock(), self.mock_response)
-
-        assert_true(mock_commands.commit.called)
 
 class TestCorsMiddleware(MiddlewareTestCase):
     MIDDLEWARE = CorsMiddleware

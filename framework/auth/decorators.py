@@ -14,6 +14,22 @@ from .core import Auth
 from .core import User
 
 
+# TODO [CAS-10][OSF-7566]: implement long-term fix for URL preview/prefetch
+def block_bing_preview(func):
+    """
+    This decorator is a temporary fix to prevent BingPreview from pre-fetching confirmation links.
+    """
+
+    @functools.wraps(func)
+    def wrapped(*args, **kwargs):
+        user_agent = request.headers.get('User-Agent')
+        if user_agent and 'BingPreview' in user_agent:
+            return HTTPError(httplib.FORBIDDEN)
+        return func(*args, **kwargs)
+
+    return wrapped
+
+
 def collect_auth(func):
 
     @functools.wraps(func)

@@ -5,6 +5,7 @@ import urllib
 import urlparse
 import uuid
 from copy import deepcopy
+from flask import Request as FlaskRequest
 from framework import analytics
 
 # OSF imports
@@ -12,10 +13,14 @@ import framework.mongo
 import itsdangerous
 import pytz
 from dirtyfields import DirtyFieldsMixin
+
 from django.conf import settings
 from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
+from django.contrib.auth.hashers import check_password
 from django.contrib.auth.models import PermissionsMixin
 from django.contrib.postgres import fields
+from django.dispatch import receiver
+from django.db.models.signals import post_save
 from django.db import models
 from django.utils import timezone
 from framework.auth import Auth, signals
@@ -25,25 +30,27 @@ from framework.auth.exceptions import (ChangePasswordError, ExpiredTokenError,
                                        MergeConfirmedRequiredError,
                                        MergeConflictError)
 from framework.exceptions import PermissionsError
-from framework.sentry import log_exception
 from framework.sessions.utils import remove_sessions_for_user
+from framework.mongo import get_cache_key
 from modularodm.exceptions import NoResultsFound
 from osf.exceptions import reraise_django_validation_errors
-from osf.models.base import BaseModel, GuidMixin
+from osf.models.base import BaseModel, GuidMixin, GuidMixinQuerySet
 from osf.models.contributor import RecentlyAddedContributor
 from osf.models.institution import Institution
 from osf.models.mixins import AddonModelMixin
 from osf.models.session import Session
 from osf.models.tag import Tag
-from osf.models.validators import validate_email, validate_social
+from osf.models.validators import validate_email, validate_social, validate_history_item
 from osf.modm_compat import Q
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
-from osf.utils.fields import NonNaiveDatetimeField
+from osf.utils.fields import NonNaiveDateTimeField
 from osf.utils.names import impute_names
 from website import settings as website_settings
 from website import filters, mails
+from website.project import new_bookmark_collection
 
 logger = logging.getLogger(__name__)
+
 
 def get_default_mailing_lists():
     return {'Open Science Framework Help': True}
@@ -57,7 +64,9 @@ name_formatters = {
     ),
 }
 
+
 class OSFUserManager(BaseUserManager):
+
     def create_user(self, username, password=None):
         if not username:
             raise ValueError('Users must have a username')
@@ -72,6 +81,18 @@ class OSFUserManager(BaseUserManager):
         user.save(using=self._db)
         return user
 
+    _queryset_class = GuidMixinQuerySet
+
+    def all(self):
+        qs = super(OSFUserManager, self).all()
+        qs.annotate_query_with_guids()
+        return qs
+
+    def eager(self, *fields):
+        fk_fields = set(self.model.get_fk_field_names()) & set(fields)
+        m2m_fields = set(self.model.get_m2m_field_names()) & set(fields)
+        return self.select_related(*fk_fields).prefetch_related(*m2m_fields)
+
     def create_superuser(self, username, password):
         user = self.create_user(username, password=password)
         user.is_superuser = True
@@ -81,8 +102,7 @@ class OSFUserManager(BaseUserManager):
         return user
 
 
-class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
-              AbstractBaseUser, PermissionsMixin, AddonModelMixin):
+class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, PermissionsMixin, AddonModelMixin):
     # TODO DELETE ME POST MIGRATION
     modm_model_path = 'framework.auth.core.User'
     modm_query = None
@@ -109,6 +129,8 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
         'schools',
         'social',
     }
+    TRACK_FIELDS = SEARCH_UPDATE_FIELDS.copy()
+    TRACK_FIELDS.update({'password', 'last_login'})
 
     # TODO: Add SEARCH_UPDATE_NODE_FIELDS, for fields that should trigger a
     #   search update for all nodes to which the user is a contributor.
@@ -137,7 +159,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
     # Hashed. Use `User.set_password` and `User.check_password`
     # password = models.CharField(max_length=255)
 
-    fullname = models.CharField(max_length=255, blank=True)
+    fullname = models.CharField(max_length=255)
 
     # user has taken action to register the account
     is_registered = models.BooleanField(db_index=True, default=False)
@@ -149,7 +171,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
     is_claimed = models.BooleanField(default=False, db_index=True)
 
     # a list of strings - for internal use
-    tags = models.ManyToManyField('Tag')
+    tags = models.ManyToManyField('Tag', blank=True)
 
     # security emails that have been sent
     # TODO: This should be removed and/or merged with system_tags
@@ -201,7 +223,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
     #   'expires': <verification expiration time>
     # }
 
-    email_last_sent = NonNaiveDatetimeField(null=True, blank=True)
+    email_last_sent = NonNaiveDateTimeField(null=True, blank=True)
 
     # confirmed emails
     #   emails should be stripped of whitespace and lower-cased before appending
@@ -240,7 +262,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
     # }
 
     # the date this user was registered
-    date_registered = NonNaiveDatetimeField(db_index=True, default=timezone.now)  # auto_now_add=True)
+    date_registered = NonNaiveDateTimeField(db_index=True, default=timezone.now)  # auto_now_add=True)
 
     # list of collaborators that this user recently added to nodes as a contributor
     # recently_added = fields.ForeignField("user", list=True)
@@ -251,7 +273,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
 
     # Attached external accounts (OAuth)
     # external_accounts = fields.ForeignField("externalaccount", list=True)
-    external_accounts = models.ManyToManyField('ExternalAccount')
+    external_accounts = models.ManyToManyField('ExternalAccount', blank=True)
 
     # CSL names
     given_name = models.CharField(max_length=255, blank=True)
@@ -270,9 +292,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
     # }
 
     # Employment history
-    # jobs = fields.DictionaryField(list=True, validate=validate_history_item)
-    # TODO: Add validation
-    jobs = DateTimeAwareJSONField(default=list, blank=True)
+    jobs = DateTimeAwareJSONField(default=list, blank=True, validators=[validate_history_item])
     # Format: list of {
     #     'title': <position or job title>,
     #     'institution': <institution or organization>,
@@ -286,9 +306,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
     # }
 
     # Educational history
-    # schools = fields.DictionaryField(list=True, validate=validate_history_item)
-    # TODO: Add validation
-    schools = DateTimeAwareJSONField(default=list, blank=True)
+    schools = DateTimeAwareJSONField(default=list, blank=True, validators=[validate_history_item])
     # Format: list of {
     #     'degree': <position or job title>,
     #     'institution': <institution or organization>,
@@ -302,8 +320,6 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
     # }
 
     # Social links
-    # social = fields.DictionaryField(validate=validate_social)
-    # TODO: Add validation
     social = DateTimeAwareJSONField(default=dict, blank=True, validators=[validate_social])
     # Format: {
     #     'profileWebsites': <list of profile websites>
@@ -314,13 +330,13 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
     piwik_token = models.CharField(max_length=255, blank=True)
 
     # date the user last sent a request
-    date_last_login = NonNaiveDatetimeField(null=True, blank=True)
+    date_last_login = NonNaiveDateTimeField(null=True, blank=True)
 
     # date the user first successfully confirmed an email address
-    date_confirmed = NonNaiveDatetimeField(db_index=True, null=True, blank=True)
+    date_confirmed = NonNaiveDateTimeField(db_index=True, null=True, blank=True)
 
     # When the user was disabled.
-    date_disabled = NonNaiveDatetimeField(db_index=True, null=True, blank=True)
+    date_disabled = NonNaiveDateTimeField(db_index=True, null=True, blank=True)
 
     # when comments were last viewed
     comments_viewed_timestamp = DateTimeAwareJSONField(default=dict, blank=True)
@@ -338,7 +354,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
     # whether the user has requested to deactivate their account
     requested_deactivation = models.BooleanField(default=False)
 
-    affiliated_institutions = models.ManyToManyField('Institution')
+    affiliated_institutions = models.ManyToManyField('Institution', blank=True)
 
     notifications_configured = DateTimeAwareJSONField(default=dict, blank=True)
 
@@ -346,6 +362,9 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
 
     is_active = models.BooleanField(default=False)
     is_staff = models.BooleanField(default=False)
+
+    def __repr__(self):
+        return '<OSFUser({0!r}) with guid {1!r}>'.format(self.username, self._id)
 
     @property
     def deep_url(self):
@@ -441,12 +460,18 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
             return None
 
     @property
+    def all_tags(self):
+        """Return a queryset containing all of this user's tags (incl. system tags)."""
+        # Tag's default manager only returns non-system tags, so we can't use self.tags
+        return Tag.all_tags.filter(osfuser=self)
+
+    @property
     def system_tags(self):
-        """The system tags associated with this user. This currently returns a list of string
+        """The system tags associated with this node. This currently returns a list of string
         names for the tags, for compatibility with v1. Eventually, we can just return the
         QuerySet.
         """
-        return self.tags.filter(system=True).values_list('name', flat=True)
+        return self.all_tags.filter(system=True).values_list('name', flat=True)
 
     @property
     def csl_given_name(self):
@@ -465,6 +490,10 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
     @property
     def contributor_to(self):
         return self.nodes.filter(is_deleted=False).exclude(type='osf.collection')
+
+    @property
+    def visible_contributor_to(self):
+        return self.nodes.filter(is_deleted=False, contributor__visible=True).exclude(type='osf.collection')
 
     def set_unusable_username(self):
         """Sets username to an unusable value. Used for, e.g. for invited contributors
@@ -655,7 +684,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
             node.save()
 
         # - projects where the user was the creator
-        user.created.update(creator=self)
+        user.created.filter(is_bookmark_collection=False).update(creator=self)
 
         # - file that the user has checked_out, import done here to prevent import error
         from osf.models import FileNode
@@ -677,6 +706,42 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
 
         user.save()
 
+    def disable_account(self):
+        """
+        Disables user account, making is_disabled true, while also unsubscribing user
+        from mailchimp emails, remove any existing sessions.
+
+        Ported from framework/auth/core.py
+        """
+        from website import mailchimp_utils
+        from framework.auth import logout
+
+        try:
+            mailchimp_utils.unsubscribe_mailchimp(
+                list_name=website_settings.MAILCHIMP_GENERAL_LIST,
+                user_id=self._id,
+                username=self.username
+            )
+        except mailchimp_utils.mailchimp.ListNotSubscribedError:
+            pass
+        except mailchimp_utils.mailchimp.InvalidApiKeyError:
+            if not website_settings.ENABLE_EMAIL_SUBSCRIPTIONS:
+                pass
+            else:
+                raise
+        except mailchimp_utils.mailchimp.EmailNotExistsError:
+            pass
+        # Call to `unsubscribe` above saves, and can lead to stale data
+        self.reload()
+        self.is_disabled = True
+
+        # we must call both methods to ensure the current session is cleared and all existing
+        # sessions are revoked.
+        req = get_cache_key()
+        if isinstance(req, FlaskRequest):
+            logout()
+        remove_sessions_for_user(self)
+
     def update_is_active(self):
         """Update ``is_active`` to be consistent with the fields that
         it depends on.
@@ -693,12 +758,11 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
     def save(self, *args, **kwargs):
         self.update_is_active()
         self.username = self.username.lower().strip() if self.username else None
-        dirty_fields = set(self.get_dirty_fields())
+        dirty_fields = set(self.get_dirty_fields(check_relationship=True))
         ret = super(OSFUser, self).save(*args, **kwargs)
         if self.SEARCH_UPDATE_FIELDS.intersection(dirty_fields) and self.is_confirmed:
             self.update_search()
-            # TODO
-            # self.update_search_nodes_contributors()
+            self.update_search_nodes_contributors()
         return ret
 
     # Legacy methods
@@ -1061,12 +1125,16 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
 
     def update_search(self):
         from website.search.search import update_user
-        from website.search.exceptions import SearchUnavailableError
-        try:
-            update_user(self)
-        except SearchUnavailableError as e:
-            logger.exception(e)
-            log_exception()
+        update_user(self)
+
+    def update_search_nodes_contributors(self):
+        """
+        Bulk update contributor name on all nodes on which the user is
+        a contributor.
+        :return:
+        """
+        from website.search import search
+        search.update_contributors_async(self.id)
 
     def update_search_nodes(self):
         """Call `update_search` on all nodes on which the user is a
@@ -1077,6 +1145,9 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
         for node in self.contributed:
             node.update_search()
 
+    def update_date_last_login(self):
+        self.date_last_login = timezone.now()
+
     def get_summary(self, formatter='long'):
         return {
             'user_fullname': self.fullname,
@@ -1084,6 +1155,20 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
             'user_display_name': name_formatters[formatter](self),
             'user_is_claimed': self.is_claimed
         }
+
+    def check_password(self, raw_password):
+        """
+        Return a boolean of whether the raw_password was correct. Handles
+        hashing formats behind the scenes.
+
+        Source: https://github.com/django/django/blob/master/django/contrib/auth/base_user.py#L104
+        """
+        def setter(raw_password):
+            self.set_password(raw_password, notify=False)
+            # Password hash upgrades shouldn't be considered password changes.
+            self._password = None
+            self.save(update_fields=['password'])
+        return check_password(raw_password, self.password, setter)
 
     def change_password(self, raw_old_password, raw_new_password, raw_confirm_password):
         """Change the password for this user to the hash of ``raw_new_password``."""
@@ -1150,10 +1235,12 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
 
     def add_system_tag(self, tag):
         if not isinstance(tag, Tag):
-            tag_instance, created = Tag.objects.get_or_create(name=tag.lower(), system=True)
+            tag_instance, created = Tag.all_tags.get_or_create(name=tag.lower(), system=True)
         else:
             tag_instance = tag
-        if not self.tags.filter(id=tag_instance.id).exists():
+        if not tag_instance.system:
+            raise ValueError('Non-system tag passed to add_system_tag')
+        if not self.all_tags.filter(id=tag_instance.id).exists():
             self.tags.add(tag_instance)
         return tag_instance
 
@@ -1170,15 +1257,12 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
                  .filter(_contributors=other_user)
                  .distinct())
 
-    def get_projects_in_common(self, other_user, primary_keys=True):
+    def get_projects_in_common(self, other_user):
         """Returns either a collection of "shared projects" (projects that both users are contributors for)
         or just their primary keys
         """
         query = self._projects_in_common_query(other_user)
-        if primary_keys:
-            return set(query.values_list('guids___id', flat=True))
-        else:
-            return set(query.all())
+        return set(query.all())
 
     def n_projects_in_common(self, other_user):
         """Returns number of "shared projects" (projects that both users are contributors for)"""
@@ -1253,11 +1337,10 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
         """
         try:
             email_domains = [email.split('@')[1].lower() for email in self.emails]
-            insts = Institution.find(Q('email_domains', 'overlap', email_domains))
-            affiliated = self.affiliated_institutions.all()
-            self.affiliated_institutions.add(*[each for each in insts
-                                                if each not in affiliated])
-        except (IndexError, NoResultsFound):
+            insts = Institution.objects.filter(email_domains__overlap=email_domains)
+            if insts.exists():
+                self.affiliated_institutions.add(*insts)
+        except IndexError:
             pass
 
     def remove_institution(self, inst_id):
@@ -1330,3 +1413,14 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
         """
         default_timestamp = dt.datetime(1970, 1, 1, 12, 0, 0, tzinfo=pytz.utc)
         return self.comments_viewed_timestamp.get(target_id, default_timestamp)
+
+    class Meta:
+        # custom permissions for use in the OSF Admin App
+        permissions = (
+            ('view_user', 'Can view user details'),
+        )
+
+@receiver(post_save, sender=OSFUser)
+def create_bookmark_collection(sender, instance, created, **kwargs):
+    if created:
+        new_bookmark_collection(instance)

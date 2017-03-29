@@ -7,6 +7,7 @@ from osf.models import Node
 from osf.models import OSFUser
 from osf.models.base import BaseModel, ObjectIDMixin
 from osf.models.validators import validate_subscription_type
+from osf.utils.fields import NonNaiveDateTimeField
 from website.notifications.constants import NOTIFICATION_TYPES
 
 
@@ -15,7 +16,7 @@ class NotificationSubscription(BaseModel):
     # TODO DELETE ME POST MIGRATION
     modm_model_path = 'website.notifications.model.NotificationSubscription'
     modm_query = None
-    migration_page_size = 120000
+    migration_page_size = 20000
     # /TODO DELETE ME POST MIGRATION
     _id = models.CharField(max_length=50, db_index=True)  # pxyz_wiki_updated, uabc_comment_replies
 
@@ -121,7 +122,7 @@ class NotificationDigest(ObjectIDMixin, BaseModel):
     modm_query = None
     # /TODO DELETE ME POST MIGRATION
     user = models.ForeignKey('OSFUser', null=True, blank=True)
-    timestamp = models.DateTimeField()
+    timestamp = NonNaiveDateTimeField()
     send_type = models.CharField(max_length=50, db_index=True, validators=[validate_subscription_type, ])
     event = models.CharField(max_length=50)
     message = models.CharField(max_length=2048)

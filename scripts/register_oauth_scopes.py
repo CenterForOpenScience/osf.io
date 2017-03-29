@@ -37,10 +37,10 @@ def get_or_create(name, description, save=True):
     try:
         scope_obj = ApiOAuth2Scope.objects.get(name=name)
         setattr(scope_obj, 'description', description)
-        print("Updating existing database entry for: %s", name)
+        print('Updating existing database entry for: {}'.format(name))
     except ApiOAuth2Scope.DoesNotExist:
         scope_obj = ApiOAuth2Scope(name=name, description=description)
-        print("Created new database entry for: %s", name)
+        print('Created new database entry for: {}'.format(name))
 
     if save:
         scope_obj.save()

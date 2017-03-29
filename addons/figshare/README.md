@@ -5,29 +5,28 @@ associated with the API application. Attempting to use the same account will res
 akin to *{"error": "You cannot request an access token for yourself!"}* (This note may be outdated,
 as figshare updated their original API.)
 
-Two methods of local testing: 
-* Using an OAuth App registered on figshare, which requires a callback url that uses https. This README 
+Two methods of local testing:
+* Using an OAuth App registered on figshare, which requires a callback url that uses https. This README
 has instructions for use with ngrok, but there are other methods.
 * Manually generating an Auth token through figshare's UI and creating an ExternalAccount via shell.
 
 ### A) OAuth and ngrok (untested)
 
 1. Download ngrok (partially free, but TLS requires [subscription](https://ngrok.com/product#pricing))
-2. Run with `ngrok tls -subdomain=openscience 5000` 
+2. Run with `ngrok tls -subdomain=openscience 5000`
   * `-subdomain` can be something other than `openscience`
   * this assumes you have the OSF running with https enabled
-3. Copy website/addons/figshare/settings/defaults.py to website/addons/figshare/settings/local.py
-4. Go to [figshare](http://figshare.com), create an account, and login 
+3. Copy addons/figshare/settings/defaults.py to addons/figshare/settings/local.py
+4. Go to [figshare](http://figshare.com), create an account, and login
 5. Click the dropdown with your name and select **Applications** and click **Create application**
 6. Add https://openscience.ngrok.io:5000/api/v1/oauth/callback/figshare/ as the **Callback URL**
-7. Open website/addons/figshare/settings/local.py
+7. Open addons/figshare/settings/local.py
   * Copy the *consumer_key* to **CLIENT_ID**
   * Copy the *consumer_secret* to **CLIENT_SECRET**
-8. Open website/settings/local.py, add *figshare* to ADDONS_REQUESTED
 
 ### B) Manual generation of auth token and ExternalAccount
 
-1. Go to [figshare](http://figshare.com), create an account, and login 
+1. Go to [figshare](http://figshare.com), create an account, and login
 2. Click the dropdown with your name and select **Applications** and click **Create Personal Token**
 3. `invoke shell`, then run:
 ```

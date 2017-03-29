@@ -152,7 +152,7 @@ var mergePagesAjaxJSON = function(pages) {
 
 /**
  * Takes an array of response objects and returns just the children from the parent
- * @param {Array of Objects}, requires that api v2 call contained ``embed=parent``
+ * @param {Array of Objects}`
  * @return {Object data}
  */
 var getAllNodeChildrenFromNodeList = function(parent, nodeList) {
@@ -179,7 +179,7 @@ var getAllNodeChildrenFromNodeList = function(parent, nodeList) {
         var node = remaining.pop();
         for (var c in tree[node]){
             var child = tree[node][c];
-            remaining.push(tree[child]);
+            remaining.push([child]);
             children[child] = nodeList[child];    
         }
     }
@@ -362,6 +362,15 @@ var mapByProperty = function(list, attr) {
 };
 
 
+/** 
+ * Replaces encoded & with decoded values
+ */
+var decodeText = function(text) {
+    if(typeof text === 'string') {
+        return text.replace(/&amp;/g, '&');
+    }
+    return text;
+};
 
 /**
   * Return whether or not a value is an email address.
@@ -1068,5 +1077,6 @@ module.exports = window.$.osf = {
     getDomain: getDomain,
     toRelativeUrl: toRelativeUrl,
     linkifyText: linkifyText,
-    getConfirmationString: getConfirmationString
+    getConfirmationString: getConfirmationString,
+    decodeText: decodeText,
 };

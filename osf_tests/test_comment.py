@@ -377,7 +377,6 @@ class TestCommentModel:
         n_unread = Comment.find_n_unread(user=user, node=project, page='node')
         assert n_unread == 1
 
-
     def test_find_unread_does_not_include_deleted_comments(self):
         project = ProjectFactory()
         user = AuthUserFactory()
@@ -390,11 +389,25 @@ class TestCommentModel:
 
 # copied from tests/test_comments.py
 class FileCommentMoveRenameTestMixin(object):
-    # TODO: Remove skip decorators when files are implemented
-    # and when waterbutler payloads are consistently formatted
-    # for intra-provider folder moves and renames.
-
     id_based_providers = ['osfstorage']
+
+    @pytest.fixture()
+    def project(self, user):
+        p =  ProjectFactory(creator=user)
+        p_settings = p.get_or_add_addon(self.provider, Auth(user))
+        p_settings.folder = '/Folder1'
+        p_settings.save()
+        p.save()
+        return p
+
+    @pytest.fixture()
+    def component(self, user, project):
+        c = NodeFactory(parent=project, creator=user)
+        c_settings = c.get_or_add_addon(self.provider, Auth(user))
+        c_settings.folder = '/Folder2'
+        c_settings.save()
+        c.save()
+        return c
 
     @property
     def provider(self):
@@ -456,13 +469,12 @@ class FileCommentMoveRenameTestMixin(object):
 
     def _create_file_with_comment(self, node, path, user):
         self.file = self.ProviderFile.create(
-            is_file=True,
             node=node,
             path=path,
             name=path.strip('/'),
             materialized_path=path)
-        self.guid = self.file.get_guid(create=True)
         self.file.save()
+        self.guid = self.file.get_guid(create=True)
         self.comment = CommentFactory(user=user, node=node, target=self.guid)
 
     def test_comments_move_on_file_rename(self, project, user):
@@ -571,7 +583,6 @@ class FileCommentMoveRenameTestMixin(object):
         file_comments = Comment.find(Q('root_target', 'eq', self.guid.pk))
         assert file_comments.count() == 1
 
-
     def test_comments_move_when_file_moved_from_project_to_component(self, project, component, user):
         source = {
             'path': '/file.txt',
@@ -593,7 +604,6 @@ class FileCommentMoveRenameTestMixin(object):
         assert self.guid.referent.node._id == destination['node']._id
         file_comments = Comment.find(Q('root_target', 'eq', self.guid.pk))
         assert file_comments.count() == 1
-
 
     def test_comments_move_when_file_moved_from_component_to_project(self, project, component, user):
         source = {
@@ -991,7 +1001,6 @@ class TestBoxFileCommentMoveRename(FileCommentMoveRenameTestMixin):
 
     def _create_file_with_comment(self, node, path, user):
         self.file = self.ProviderFile.create(
-            is_file=True,
             node=node,
             path=self._format_path(path),
             name=path.strip('/'),
@@ -1006,7 +1015,6 @@ class TestBoxFileCommentMoveRename(FileCommentMoveRenameTestMixin):
         return '/9876543210/' if path.endswith('/') else '/1234567890'
 
 
-@pytest.mark.skip
 class TestDropboxFileCommentMoveRename(FileCommentMoveRenameTestMixin):
 
     provider = 'dropbox'
@@ -1014,7 +1022,6 @@ class TestDropboxFileCommentMoveRename(FileCommentMoveRenameTestMixin):
 
     def _create_file_with_comment(self, node, path, user):
         self.file = self.ProviderFile.create(
-            is_file=True,
             node=node,
             path='{}{}'.format(node.get_addon(self.provider).folder, path),
             name=path.strip('/'),
@@ -1024,19 +1031,16 @@ class TestDropboxFileCommentMoveRename(FileCommentMoveRenameTestMixin):
         self.comment = CommentFactory(user=user, node=node, target=self.guid)
 
 
-@pytest.mark.skip
 class TestGoogleDriveFileCommentMoveRename(FileCommentMoveRenameTestMixin):
 
     provider = 'googledrive'
     ProviderFile = GoogleDriveFile
 
-@pytest.mark.skip
 class TestGithubFileCommentMoveRename(FileCommentMoveRenameTestMixin):
 
     provider = 'github'
     ProviderFile = GithubFile
 
-@pytest.mark.skip
 class TestS3FileCommentMoveRename(FileCommentMoveRenameTestMixin):
 
     provider = 's3'

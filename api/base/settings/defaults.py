@@ -31,6 +31,13 @@ DATABASES = {
     }
 }
 
+DATABASE_ROUTERS = ['osf.db.router.PostgreSQLFailoverRouter', ]
+CELERY_IMPORTS = [
+    'osf.management.commands.migratedata',
+    'osf.management.commands.migraterelations',
+    'osf.management.commands.verify',
+]
+
 PASSWORD_HASHERS = [
     'django.contrib.auth.hashers.BCryptSHA256PasswordHasher',
     'django.contrib.auth.hashers.BCryptPasswordHasher',
@@ -105,9 +112,6 @@ INSTALLED_APPS = (
 # local development using https
 if osf_settings.SECURE_MODE and DEBUG:
     INSTALLED_APPS += ('sslserver',)
-
-if DEBUG:
-    INSTALLED_APPS += ('debug_toolbar', )
 
 # TODO: Are there more granular ways to configure reporting specifically related to the API?
 RAVEN_CONFIG = {
@@ -275,3 +279,7 @@ ADDONS_FOLDER_CONFIGURABLE = ['box', 'dropbox', 's3', 'googledrive', 'figshare',
 ADDONS_OAUTH = ADDONS_FOLDER_CONFIGURABLE + ['dataverse', 'github', 'mendeley', 'zotero', 'forward']
 
 BYPASS_THROTTLE_TOKEN = 'test-token'
+
+SHELL_PLUS_PRE_IMPORTS = (
+    ('osf.management.utils', ('print_sql', )),
+)

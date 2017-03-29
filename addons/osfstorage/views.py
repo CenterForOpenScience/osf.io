@@ -4,8 +4,9 @@ import httplib
 import logging
 
 from django.core.exceptions import ValidationError
+from django.db import IntegrityError
+from django.db import transaction
 from modularodm import Q
-from modularodm.storage.base import KeyExistsException
 
 from flask import request
 
@@ -156,11 +157,14 @@ def osfstorage_create_child(file_node, payload, node_addon, **kwargs):
         raise HTTPError(httplib.BAD_REQUEST)
 
     try:
-        if is_folder:
-            created, file_node = True, parent.append_folder(name)
-        else:
-            created, file_node = True, parent.append_file(name)
-    except (KeyExistsException, ValidationError):
+        # Create a save point so that we can rollback and unlock
+        # the parent record
+        with transaction.atomic():
+            if is_folder:
+                created, file_node = True, parent.append_folder(name)
+            else:
+                created, file_node = True, parent.append_file(name)
+    except (ValidationError, IntegrityError):
         created, file_node = False, parent.find_child_by_name(name, kind=int(not is_folder))
 
     if not created and is_folder:
