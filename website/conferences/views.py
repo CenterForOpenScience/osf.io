@@ -156,7 +156,7 @@ def _render_conference_node(node, idx, conf):
         )
 
     author = node.visible_contributors[0]
-    tags = list(node.tags.filter(system=False).values_list('name', flat=True))
+    tags = [n.lower() for n in node.tags.filter(system=False).values_list('name', flat=True)]
 
     return {
         'id': idx,
