@@ -133,7 +133,7 @@ def validate_fk_relation(field_name, django_obj, modm_obj):
 
 
 def validate_basic_field(field_name, django_obj, modm_obj):
-    if field_name in ['id', 'pk', 'object_id', 'guid_string', 'last_login', 'is_superuser']:
+    if field_name in ['id', 'pk', 'object_id', 'guid_string', 'last_login', 'is_superuser', 'content_type_pk', 'content_type_id']:
         # modm doesn't have these
         return
     # if there's a field alias, let's use that.
