@@ -288,11 +288,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             parent = node_rel.parent
             if parent:
                 return parent
-        # for v1 compat: self is a forked component (the parent was not forked).
-        # In this case, the parent node is the same as the parent of the
-        # copied node
-        if self.is_fork:
-            return self.forked_from.parent_node
         return None
 
     @property
