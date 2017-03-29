@@ -61,7 +61,7 @@ class InstitutionalContributor(AbstractBaseContributor):
 class RecentlyAddedContributor(models.Model):
     user = models.ForeignKey('OSFUser')  # the user who added the contributor
     contributor = models.ForeignKey('OSFUser', related_name='recently_added_by')  # the added contributor
-    date_added = NonNaiveDateTimeField(default=timezone.now)  # auto_now=True)
+    date_added = NonNaiveDateTimeField(auto_now=True)
 
     class Meta:
         unique_together = ('user', 'contributor')

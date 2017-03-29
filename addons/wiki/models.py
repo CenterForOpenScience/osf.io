@@ -99,15 +99,9 @@ def build_wiki_url(node, label, base, end):
 
 
 class NodeWikiPage(GuidMixin, BaseModel):
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.addons.wiki.model.NodeWikiPage'
-    modm_query = None
-    primary_identifier_name = 'guids___id'
-    # /TODO DELETE ME POST MIGRATION
-
     page_name = models.CharField(max_length=200, validators=[validate_page_name, ])
     version = models.IntegerField(default=1)
-    date = NonNaiveDateTimeField(default=timezone.now)  # auto_now_add=True)
+    date = NonNaiveDateTimeField(auto_now_add=True)
     content = models.TextField(default='', blank=True)
     user = models.ForeignKey('osf.OSFUser', null=True, blank=True)
     node = models.ForeignKey('osf.AbstractNode', null=True, blank=True)

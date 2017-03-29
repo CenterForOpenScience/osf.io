@@ -10,8 +10,8 @@ class Session(ObjectIDMixin, BaseModel):
     modm_query = None
     migration_page_size = 30000
     # /TODO DELETE ME POST MIGRATION
-    date_created = NonNaiveDateTimeField(default=timezone.now)
-    date_modified = NonNaiveDateTimeField(default=timezone.now)  # auto_now=True)
+    date_created = NonNaiveDateTimeField(auto_now_add=True)
+    date_modified = NonNaiveDateTimeField(auto_now=True)
     data = DateTimeAwareJSONField(default=dict, blank=True)
 
     @property

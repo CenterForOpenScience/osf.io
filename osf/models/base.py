@@ -247,7 +247,7 @@ class Guid(BaseModel):
     referent = GenericForeignKey()
     content_type = models.ForeignKey(ContentType, null=True, blank=True)
     object_id = models.PositiveIntegerField(null=True, blank=True)
-    created = NonNaiveDateTimeField(db_index=True, default=timezone.now)  # auto_now_add=True)
+    created = NonNaiveDateTimeField(db_index=True, auto_now_add=True)
 
     def __repr__(self):
         return '<id:{0}, referent:({1})>'.format(self._id, self.referent.__repr__())

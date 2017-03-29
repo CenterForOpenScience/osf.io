@@ -262,7 +262,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     # }
 
     # the date this user was registered
-    date_registered = NonNaiveDateTimeField(db_index=True, default=timezone.now)  # auto_now_add=True)
+    date_registered = NonNaiveDateTimeField(db_index=True, auto_now_add=True)
 
     # list of collaborators that this user recently added to nodes as a contributor
     # recently_added = fields.ForeignField("user", list=True)

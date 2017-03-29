@@ -386,8 +386,8 @@ class DraftRegistration(ObjectIDMixin, BaseModel):
     # /TODO DELETE ME POST MIGRATION
     URL_TEMPLATE = settings.DOMAIN + 'project/{node_id}/drafts/{draft_id}'
 
-    datetime_initiated = NonNaiveDateTimeField(default=timezone.now)  # auto_now_add=True)
-    datetime_updated = NonNaiveDateTimeField(default=timezone.now)  # auto_now=True)
+    datetime_initiated = NonNaiveDateTimeField(auto_now_add=True)
+    datetime_updated = NonNaiveDateTimeField(auto_now=True)
     # Original Node a draft registration is associated with
     branched_from = models.ForeignKey('Node', null=True, related_name='registered_draft')
 

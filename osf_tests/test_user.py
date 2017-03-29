@@ -70,9 +70,6 @@ class TestOSFUser:
         user = User.create(
             username=email, password='foobar', fullname=name
         )
-        # TODO: Remove me when auto_now_add is enabled (post-migration)
-        user.date_registered = timezone.now()
-        user.save()
         assert user.check_password('foobar') is True
         assert user._id
         assert user.given_name == impute_names_model(name)['given_name']
@@ -82,9 +79,6 @@ class TestOSFUser:
         user = User.create_unconfirmed(
             username=email, password='foobar', fullname=name
         )
-        # TODO: Remove me when auto_now_add is enabled (post-migration)
-        user.date_registered = timezone.now()
-        user.save()
         assert user.is_registered is False
         assert len(user.email_verifications.keys()) == 1
         assert len(user.emails) == 0, 'primary email has not been added to emails list'

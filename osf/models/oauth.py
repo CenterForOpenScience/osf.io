@@ -69,8 +69,7 @@ class ApiOAuth2Application(base.ObjectIDMixin, base.BaseModel):
     name = models.CharField(db_index=True, blank=False, null=False, max_length=200)
     description = models.CharField(blank=True, null=True, max_length=1000)
 
-    # TODO: `auto_now_add` after migration
-    date_created = NonNaiveDateTimeField(default=timezone.now)
+    date_created = NonNaiveDateTimeField(auto_now_add=True)
 
     home_url = models.URLField(blank=False, null=False)
     callback_url = models.URLField(blank=False, null=False)

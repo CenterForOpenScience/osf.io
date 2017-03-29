@@ -43,8 +43,8 @@ class Comment(GuidMixin, SpamMixin, CommentableMixin, BaseModel):
                                     related_name='child_comments',
                                     null=True, blank=True)
 
-    date_created = NonNaiveDateTimeField(default=timezone.now)  # auto_now_add=True)
-    date_modified = NonNaiveDateTimeField(default=timezone.now)  # auto_now=True)
+    date_created = NonNaiveDateTimeField(auto_now_add=True)
+    date_modified = NonNaiveDateTimeField(auto_now=True)
     modified = models.BooleanField(default=False)
     is_deleted = models.BooleanField(default=False)
     # The type of root_target: node/files
