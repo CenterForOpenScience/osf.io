@@ -238,12 +238,12 @@ class OsfStorageFile(OsfStorageFileNode, File):
             ret['fullPath'] = self.materialized_path
 
         version = self.get_version(version)
-        return dict(
-            ret,
-            version=self.versions.count(),
-            md5=version.metadata.get('md5') if version else None,
-            sha256=version.metadata.get('sha256') if version else None,
-        )
+        ret.update({
+            'version': self.versions.count(),
+            'md5': version.metadata.get('md5') if version else None,
+            'sha256': version.metadata.get('sha256') if version else None,
+        })
+        return ret
 
     def create_version(self, creator, location, metadata=None):
         latest_version = self.get_version()

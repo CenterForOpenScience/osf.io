@@ -1,3 +1,5 @@
+from __future__ import unicode_literals
+
 import logging
 import os
 
@@ -499,27 +501,25 @@ class File(models.Model):
         newest_version = self.versions.all().last()
 
         if not newest_version:
-            return dict(
-                self._serialize(),
-                size=None,
-                version=None,
-                modified=None,
-                created=None,
-                contentType=None,
-                downloads=self.get_download_count(),
-                checkout=self.checkout._id if self.checkout else None,
-            )
+            return dict(self._serialize(), **{
+                'size': None,
+                'version': None,
+                'modified': None,
+                'created': None,
+                'contentType': None,
+                'downloads': self.get_download_count(),
+                'checkout': self.checkout._id if self.checkout else None,
+            })
 
-        return dict(
-            self._serialize(),
-            size=newest_version.size,
-            downloads=self.get_download_count(),
-            checkout=self.checkout._id if self.checkout else None,
-            version=newest_version.identifier if newest_version else None,
-            contentType=newest_version.content_type if newest_version else None,
-            modified=newest_version.date_modified.isoformat() if newest_version.date_modified else None,
-            created=self.versions.all().first().date_modified.isoformat() if self.versions.all().first().date_modified else None,
-        )
+        return dict(self._serialize(), **{
+            'size': newest_version.size,
+            'downloads': self.get_download_count(),
+            'checkout': self.checkout._id if self.checkout else None,
+            'version': newest_version.identifier if newest_version else None,
+            'contentType': newest_version.content_type if newest_version else None,
+            'modified': newest_version.date_modified.isoformat() if newest_version.date_modified else None,
+            'created': self.versions.all().first().date_modified.isoformat() if self.versions.all().first().date_modified else None,
+        })
 
     def restore(self, recursive=True, parent=None, save=True, deleted_on=None):
         raise UnableToRestore('You cannot restore something that is not deleted.')
