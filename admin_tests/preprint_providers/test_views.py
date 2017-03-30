@@ -1,5 +1,4 @@
 import json
-import pytest
 
 from nose import tools as nt
 from django.test import RequestFactory
@@ -17,7 +16,6 @@ from admin_tests.utilities import setup_form_view, setup_user_view
 from admin.preprint_providers import views
 from admin.preprint_providers.forms import PreprintProviderForm
 from admin.base.forms import ImportFileForm
-
 
 
 class TestPreprintProviderList(AdminTestCase):
@@ -140,7 +138,6 @@ class TestPreprintProviderChangeForm(AdminTestCase):
         self.child_1 = SubjectFactory(parents=[self.parent_1])
         self.child_2 = SubjectFactory(parents=[self.parent_1])
         self.grandchild_1 = SubjectFactory(parents=[self.child_1])
-
 
         self.view.kwargs = {'preprint_provider_id': self.preprint_provider.id}
 

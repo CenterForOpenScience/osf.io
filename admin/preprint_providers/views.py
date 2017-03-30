@@ -157,7 +157,7 @@ class ExportPreprintProvider(PermissionRequiredMixin, View):
 
     def get(self, request, *args, **kwargs):
         preprint_provider = PreprintProvider.objects.get(id=self.kwargs['preprint_provider_id'])
-        data = serializers.serialize("json", [preprint_provider])
+        data = serializers.serialize('json', [preprint_provider])
 
         filename = '{}_export.json'.format(preprint_provider.name)
 
