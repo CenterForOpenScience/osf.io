@@ -168,10 +168,16 @@ def fix_bad_data(django_obj, dirty):
 def format_lookup_key(guid, content_type_id=None, model=None, template=None):
     if not content_type_id and model:
         content_type_id = ContentType.objects.get_for_model(model).pk
+    elif content_type_id and not model:
+        model = ContentType.objects.get_for_id(content_type_id).model_class()
     elif not content_type_id and not model:
         raise Exception('Please specify either a content_type_id or a model')
     if template:
+        if model is Tag:
+            return content_type_id, template.format(unicode(guid))
         return content_type_id, template.format(unicode(guid).lower())
+    if model is Tag:
+        return content_type_id, template.format(unicode(guid))
     return content_type_id, unicode(guid).lower()
 
 
@@ -722,7 +728,7 @@ class Command(BaseCommand):
         if options['m2m']:
             migrate_node_through_models.delay()
             migration_institutional_contributors.delay()
-            
+
         for model in models:
             do_model.delay(model, **options)
 

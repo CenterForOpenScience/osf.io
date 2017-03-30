@@ -144,7 +144,7 @@ def validate_fk_relation(field_name, django_obj, modm_obj):
 
 
 def validate_basic_field(field_name, django_obj, modm_obj):
-    if field_name in ['id', 'pk', 'object_id', 'guid_string', 'last_login', 'is_superuser', 'content_type_pk', 'content_type_id', 'type']:
+    if field_name in ['id', 'pk', 'object_id', 'guid_string', 'last_login', 'is_superuser', 'content_type_pk', 'content_type_id', 'type', 'piwik_site_id']:
         # modm doesn't have these
         return
 
@@ -156,6 +156,13 @@ def validate_basic_field(field_name, django_obj, modm_obj):
 
     if field_name == '_history':
         modm_field_name = 'history'
+
+    if field_name == '_path':
+        modm_field_name = 'path'
+
+    if field_name == '_materialized_path':
+        modm_field_name = 'materialized_path'
+
 
     if modm_field_name is False:
         return
