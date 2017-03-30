@@ -233,3 +233,10 @@ DESK_KEY = ''
 DESK_KEY_SECRET = ''
 
 OSF_URL = 'http://osf.io'
+
+if DEBUG:
+    INSTALLED_APPS += ('debug_toolbar', )
+    MIDDLEWARE_CLASSES += ('debug_toolbar.middleware.DebugToolbarMiddleware', )
+    DEBUG_TOOLBAR_CONFIG = {
+        'SHOW_TOOLBAR_CALLBACK': lambda(_): True
+    }
