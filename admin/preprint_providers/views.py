@@ -6,7 +6,6 @@ from django.core import serializers
 from django.core.urlresolvers import reverse_lazy
 from django.http import HttpResponse, JsonResponse
 from django.views.generic import ListView, DetailView, View, CreateView, DeleteView, TemplateView, UpdateView
-from django.core.exceptions import PermissionDenied
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.forms.models import model_to_dict
 from django.shortcuts import redirect
@@ -27,8 +26,6 @@ class PreprintProviderList(PermissionRequiredMixin, ListView):
     model = PreprintProvider
 
     def get_queryset(self):
-        if not self.has_permission():
-            raise PermissionDenied()
         return PreprintProvider.objects.all().sort(self.ordering)
 
     def get_context_data(self, **kwargs):
@@ -49,8 +46,6 @@ class GetSubjectDescendants(PermissionRequiredMixin, View):
     raise_exception = True
 
     def get(self, request, *args, **kwargs):
-        if not self.has_permission():
-            raise PermissionDenied()
         parent_id = request.GET['parent_id']
         direct_children = Subject.objects.get(id=parent_id).children.all()
         grandchildren = []
@@ -78,8 +73,6 @@ class PreprintProviderDisplay(PermissionRequiredMixin, DetailView):
     raise_exception = True
 
     def get_object(self, queryset=None):
-        if not self.has_permission():
-            raise PermissionDenied()
         return PreprintProvider.objects.get(id=self.kwargs.get('preprint_provider_id'))
 
     def get_context_data(self, *args, **kwargs):
@@ -147,8 +140,6 @@ class PreprintProviderChangeForm(PermissionRequiredMixin, UpdateView):
     form_class = PreprintProviderForm
 
     def get_object(self, queryset=None):
-        if not self.has_permission():
-            raise PermissionDenied()
         provider_id = self.kwargs.get('preprint_provider_id')
         return PreprintProvider.objects.get(id=provider_id)
 
@@ -181,13 +172,20 @@ class DeletePreprintProvider(PermissionRequiredMixin, DeleteView):
     template_name = 'preprint_providers/confirm_delete.html'
     success_url = reverse_lazy('preprint_providers:list')
 
+    def delete(self, request, *args, **kwargs):
+        preprint_provider = PreprintProvider.objects.get(id=self.kwargs['preprint_provider_id'])
+        if preprint_provider.preprint_services.count() > 0:
+            return redirect('preprint_providers:cannot_delete', preprint_provider_id=preprint_provider.pk)
+        return super(DeletePreprintProvider, self).delete(request, *args, **kwargs)
+
+    def get(self, request, *args, **kwargs):
+        preprint_provider = PreprintProvider.objects.get(id=self.kwargs['preprint_provider_id'])
+        if preprint_provider.preprint_services.count() > 0:
+            return redirect('preprint_providers:cannot_delete', preprint_provider_id=preprint_provider.pk)
+        return super(DeletePreprintProvider, self).get(request, *args, **kwargs)
+
     def get_object(self, queryset=None):
-        if not self.has_permission():
-            raise PermissionDenied()
-        provider = PreprintProvider.objects.get(id=self.kwargs['preprint_provider_id'])
-        if provider.preprint_services.count() > 0:
-            return redirect(reverse_lazy('preprint_providers:cannot_delete', kwargs={'preprint_provider_id': provider.pk}))
-        return provider
+        return PreprintProvider.objects.get(id=self.kwargs['preprint_provider_id'])
 
 
 class CannotDeleteProvider(TemplateView):
@@ -243,7 +241,7 @@ class SubjectDynamicUpdateView(PermissionRequiredMixin, View):
 
 
 class CreatePreprintProvider(PermissionRequiredMixin, CreateView):
-    permission_required = 'osf.change_preprint_provider'
+    permission_required = 'osf.change_preprintprovider'
     raise_exception = True
     template_name = 'preprint_providers/create.html'
     success_url = reverse_lazy('preprint_providers:list')

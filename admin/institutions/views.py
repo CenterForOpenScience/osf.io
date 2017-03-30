@@ -6,7 +6,6 @@ from django.core import serializers
 from django.shortcuts import redirect
 from django.forms.models import model_to_dict
 from django.core.urlresolvers import reverse_lazy
-from django.core.exceptions import PermissionDenied
 from django.http import HttpResponse, JsonResponse
 from django.views.generic import ListView, DetailView, View, CreateView, UpdateView, DeleteView, TemplateView
 from django.contrib.auth.mixins import PermissionRequiredMixin
@@ -26,8 +25,6 @@ class InstitutionList(PermissionRequiredMixin, ListView):
     model = Institution
 
     def get_queryset(self):
-        if not self.has_permission():
-            raise PermissionDenied()
         return Institution.objects.all().sort(self.ordering)
 
     def get_context_data(self, **kwargs):
@@ -47,8 +44,6 @@ class InstitutionDisplay(PermissionRequiredMixin, DetailView):
     raise_exception = True
 
     def get_object(self, queryset=None):
-        if not self.has_permission():
-            raise PermissionDenied()
         return Institution.objects.get(id=self.kwargs.get('institution_id'))
 
     def get_context_data(self, *args, **kwargs):
@@ -103,8 +98,6 @@ class InstitutionChangeForm(PermissionRequiredMixin, UpdateView):
     form_class = InstitutionForm
 
     def get_object(self, queryset=None):
-        if not self.has_permission():
-            raise PermissionDenied()
         provider_id = self.kwargs.get('institution_id')
         return Institution.objects.get(id=provider_id)
 
@@ -121,8 +114,6 @@ class InstitutionExport(PermissionRequiredMixin, View):
     raise_exception = True
 
     def get(self, request, *args, **kwargs):
-        if not self.has_permission():
-            raise PermissionDenied()
         institution = Institution.objects.get(id=self.kwargs['institution_id'])
         data = serializers.serialize('json', [institution])
 
@@ -142,8 +133,6 @@ class CreateInstitution(PermissionRequiredMixin, CreateView):
     form_class = InstitutionForm
 
     def get_context_data(self, *args, **kwargs):
-        if not self.has_permission():
-            raise PermissionDenied()
         kwargs['import_form'] = ImportFileForm()
         return super(CreateInstitution, self).get_context_data(*args, **kwargs)
 
@@ -157,8 +146,6 @@ class InstitutionNodeList(PermissionRequiredMixin, ListView):
     model = Node
 
     def get_queryset(self):
-        if not self.has_permission():
-            raise PermissionDenied()
         inst = self.kwargs['institution_id']
         return Node.objects.filter(affiliated_institutions=inst).sort(self.ordering)
 
@@ -192,8 +179,6 @@ class DeleteInstitution(PermissionRequiredMixin, DeleteView):
         return super(DeleteInstitution, self).get(request, *args, **kwargs)
 
     def get_object(self, queryset=None):
-        if not self.has_permission():
-            raise PermissionDenied()
         institution = Institution.objects.get(id=self.kwargs['institution_id'])
         return institution
 
