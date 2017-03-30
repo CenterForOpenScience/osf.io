@@ -231,3 +231,5 @@ ENTRY_POINTS = {'osf4m': 'osf4m', 'prereg_challenge_campaign': 'prereg',
 # Set in local.py
 DESK_KEY = ''
 DESK_KEY_SECRET = ''
+
+OSF_URL = 'http://osf.io'
