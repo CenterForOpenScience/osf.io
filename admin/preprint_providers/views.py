@@ -14,7 +14,7 @@ from admin.base import settings
 from admin.base.utils import rules_to_subjects
 from admin.base.forms import ImportFileForm
 from admin.preprint_providers.forms import PreprintProviderForm
-from osf.models import PreprintProvider, NodeLicense, Subject
+from osf.models import PreprintProvider, Subject
 
 
 class PreprintProviderList(PermissionRequiredMixin, ListView):
@@ -82,22 +82,20 @@ class PreprintProviderDisplay(PermissionRequiredMixin, DetailView):
         preprint_provider_attributes = model_to_dict(preprint_provider)
         kwargs.setdefault('page_number', self.request.GET.get('page', '1'))
 
-        # Modify licenses_acceptable to be a list of the  license name
-        preprint_licenses = [
-            NodeLicense.objects.get(id=identifier).name.encode('utf-8') for identifier in preprint_provider_attributes['licenses_acceptable']
-        ]
-        preprint_provider_attributes['licenses_acceptable'] = '; '.join(preprint_licenses)
+        preprint_provider_attributes['licenses_acceptable'] = preprint_provider.licenses_acceptable.values_list('name', flat=True)
 
         subject_html = '<ul class="three-cols">'
         for parent in preprint_provider.top_level_subjects:
             subject_html += '<li>{}</li>'.format(parent.text)
             child_html = '<ul>'
-            for child in parent.children.filter(id__in=subject_ids):
-                child_html += '<li>{}</li>'.format(child.text)
-                grandchild_html = '<ul>'
-                for grandchild in child.children.filter(id__in=subject_ids):
-                    grandchild_html += '<li>{}</li>'.format(grandchild.text)
-                grandchild_html += '</ul>'
+            for child in parent.children.all():
+                if child.id in subject_ids:
+                    child_html += '<li>{}</li>'.format(child.text)
+                    grandchild_html = '<ul>'
+                    for grandchild in child.children.all():
+                        if grandchild.id in subject_ids:
+                            grandchild_html += '<li>{}</li>'.format(grandchild.text)
+                    grandchild_html += '</ul>'
                 child_html += grandchild_html
 
             child_html += '</ul>'
