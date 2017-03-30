@@ -180,7 +180,10 @@ def get_configured_projects(user):
     :return: list of node objects for projects with no parent
     """
     configured_projects = set()
-    user_subscriptions = get_all_user_subscriptions(user)
+    user_subscriptions = get_all_user_subscriptions(user, extra=(
+        Q('node__type', 'ne', 'osf.collection') &
+        Q('node__is_deleted', 'eq', False)
+    ))
 
     for subscription in user_subscriptions:
         if subscription is None:
@@ -210,19 +213,15 @@ def check_project_subscriptions_are_all_none(user, node):
     return True
 
 
-def get_all_user_subscriptions(user):
+def get_all_user_subscriptions(user, extra=None):
     """ Get all Subscription objects that the user is subscribed to"""
     NotificationSubscription = apps.get_model('osf.NotificationSubscription')
     for notification_type in constants.NOTIFICATION_TYPES:
-        query = (
-            NotificationSubscription
-            .find(Q(notification_type, 'eq', user.pk))
-            .exclude(node__type='osf.collection')
-            .exclude(node__isnull=True)
-            .exclude(node__is_deleted=True)
-            .select_related('node')
-        )
-        for subscription in query:
+        query = Q(notification_type, 'eq', user.pk)
+        if extra:
+            query &= extra
+        queryset = NotificationSubscription.find(query)
+        for subscription in queryset:
             yield subscription
 
 
