@@ -9,6 +9,7 @@ from django.contrib.auth.models import Group, Permission
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.management import BaseCommand
+from pymongo.errors import OperationFailure
 
 from api.base.celery import app
 from osf.management.commands.migratedata import register_nonexistent_models_with_modm, get_modm_model
@@ -272,7 +273,7 @@ def validate_page_of_model_data(self, django_model, basic_fields, fk_relations, 
 
             count += 1
         logger.info('Through {} {}.{}s...'.format(count, django_model._meta.model.__module__, django_model._meta.model.__name__))
-    except Exception as ex:
+    except OperationFailure as ex:
         logger.error(
             'Retrying: Failed to validate page model: {} offset:{} limit:{} of foreign keys with exception {}'.format(
                 django_model, offset, limit, ex))
