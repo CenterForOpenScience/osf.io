@@ -179,7 +179,6 @@ def get_configured_projects(user):
     :param user: modular odm User object
     :return: list of node objects for projects with no parent
     """
-    AbstractNode = apps.get_model('osf.AbstractNode')
     configured_projects = set()
     user_subscriptions = get_all_user_subscriptions(user)
 
@@ -190,20 +189,17 @@ def get_configured_projects(user):
         node = subscription.owner
 
         if (
-            not isinstance(node, AbstractNode) or
             (subscription.none.filter(id=user.id).exists() and not node.parent_id) or
-            node._id not in user.notifications_configured or
-            node.is_collection
+            node._id not in user.notifications_configured
         ):
             continue
 
-        while node.parent_id and not node.is_deleted:
-            node = node.parent_node
+        root = node.root
 
-        if not node.is_deleted:
-            configured_projects.add(node)
+        if not root.is_deleted:
+            configured_projects.add(root)
 
-    return sorted(configured_projects, key=lambda n: n.title)
+    return sorted(configured_projects, key=lambda n: n.title.lower())
 
 
 def check_project_subscriptions_are_all_none(user, node):
@@ -218,7 +214,14 @@ def get_all_user_subscriptions(user):
     """ Get all Subscription objects that the user is subscribed to"""
     NotificationSubscription = apps.get_model('osf.NotificationSubscription')
     for notification_type in constants.NOTIFICATION_TYPES:
-        query = NotificationSubscription.find(Q(notification_type, 'eq', user.pk))
+        query = (
+            NotificationSubscription
+            .find(Q(notification_type, 'eq', user.pk))
+            .exclude(node__type='osf.collection')
+            .exclude(node__isnull=True)
+            .exclude(node__is_deleted=True)
+            .select_related('node')
+        )
         for subscription in query:
             yield subscription
 
@@ -233,6 +236,7 @@ def get_all_node_subscriptions(user, node, user_subscriptions=None):
     """
     if not user_subscriptions:
         user_subscriptions = get_all_user_subscriptions(user)
+    # TODO: Filter in database rather than in Python
     for subscription in user_subscriptions:
         if subscription and subscription.owner == node:
             yield subscription
