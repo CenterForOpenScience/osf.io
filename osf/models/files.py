@@ -1,3 +1,5 @@
+from __future__ import unicode_literals
+
 import logging
 import os
 
@@ -22,6 +24,7 @@ from website.files import utils
 from website.files.exceptions import VersionNotFoundError
 from website.util import api_v2_url, waterbutler_api_url_for
 from osf.utils.datetime_aware_jsonfield import coerce_nonnaive_datetimes
+from osf.utils.manager import IncludeQuerySet
 import pytz
 
 # TODO DELETE ME POST MIGRATION
@@ -499,27 +502,25 @@ class File(models.Model):
         newest_version = self.versions.all().last()
 
         if not newest_version:
-            return dict(
-                self._serialize(),
-                size=None,
-                version=None,
-                modified=None,
-                created=None,
-                contentType=None,
-                downloads=self.get_download_count(),
-                checkout=self.checkout._id if self.checkout else None,
-            )
+            return dict(self._serialize(), **{
+                'size': None,
+                'version': None,
+                'modified': None,
+                'created': None,
+                'contentType': None,
+                'downloads': self.get_download_count(),
+                'checkout': self.checkout._id if self.checkout else None,
+            })
 
-        return dict(
-            self._serialize(),
-            size=newest_version.size,
-            downloads=self.get_download_count(),
-            checkout=self.checkout._id if self.checkout else None,
-            version=newest_version.identifier if newest_version else None,
-            contentType=newest_version.content_type if newest_version else None,
-            modified=newest_version.date_modified.isoformat() if newest_version.date_modified else None,
-            created=self.versions.all().first().date_modified.isoformat() if self.versions.all().first().date_modified else None,
-        )
+        return dict(self._serialize(), **{
+            'size': newest_version.size,
+            'downloads': self.get_download_count(),
+            'checkout': self.checkout._id if self.checkout else None,
+            'version': newest_version.identifier if newest_version else None,
+            'contentType': newest_version.content_type if newest_version else None,
+            'modified': newest_version.date_modified.isoformat() if newest_version.date_modified else None,
+            'created': self.versions.all().first().date_modified.isoformat() if self.versions.all().first().date_modified else None,
+        })
 
     def restore(self, recursive=True, parent=None, save=True, deleted_on=None):
         raise UnableToRestore('You cannot restore something that is not deleted.')
@@ -677,6 +678,8 @@ class FileVersion(ObjectIDMixin, BaseModel):
 
     metadata = DateTimeAwareJSONField(blank=True, default=dict)
     location = DateTimeAwareJSONField(default=None, blank=True, null=True, validators=[validate_location])
+
+    includable_objects = IncludeQuerySet.as_manager()
 
     @property
     def location_hash(self):
