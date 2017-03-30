@@ -535,23 +535,22 @@ class UserPreprints(JSONAPIBaseView, generics.ListAPIView, UserMixin, DjangoFilt
         if field_name == 'id':
             operation['source_field_name'] = 'guids___id'
 
-    # overrides ODMFilterMixin
+    # overrides DjangoFilterMixin
     def get_default_django_query(self):
         # the user being viewed via the api
-        viewed_user_id = self.get_user(check_permissions=False)._id
+        viewed_user = self.get_user(check_permissions=False)
 
         auth = get_user_auth(self.request)
         # the person viewing the information
-        user_id = getattr(auth, 'user', None)._id
-
-        if not user_id:
-            return (DjangoQ(node__isnull=False, node__is_deleted=False, node__is_public=True, is_published=True, node___contributors__guids___id=viewed_user_id))
-        elif viewed_user_id == user_id:
-            return (DjangoQ(node__isnull=False, node__is_deleted=False, node___contributors__guids___id=viewed_user_id))
-        return (DjangoQ(node__isnull=False, node__is_deleted=False, node__is_public=True, node___contributors__guids___id=viewed_user_id) & 
+        user = getattr(auth, 'user', None)
+        if not user:
+            return (DjangoQ(node__isnull=False, node__is_deleted=False, node__is_public=True, is_published=True, node___contributors__guids___id=viewed_user._id))
+        elif viewed_user._id == user._id:
+            return (DjangoQ(node__isnull=False, node__is_deleted=False, node___contributors__guids___id=viewed_user._id))
+        return (DjangoQ(node__isnull=False, node__is_deleted=False, node__is_public=True, node___contributors__guids___id=viewed_user._id) & 
             (
                 DjangoQ(is_published=True) | 
-                (DjangoQ(node__contributor__admin=True, node__contributor__user_id=user_id))
+                (DjangoQ(node__contributor__admin=True, node__contributor__user_id=user.id))
             )
         )
 

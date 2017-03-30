@@ -1,9 +1,8 @@
 from nose.tools import *  # flake8: noqa
 
-
 from api.base.settings.defaults import API_BASE
 from api_tests.preprints.filters.test_filters import PreprintsListFilteringMixin
-from website.preprints.model import PreprintService
+from api_tests.preprints.views.test_preprint_list_mixin import PreprintIsPublishedListMixin
 
 from framework.auth.core import Auth
 from tests.base import ApiTestCase
@@ -35,3 +34,15 @@ class TestPreprintProviderPreprintsListFiltering(PreprintsListFilteringMixin, Ap
         res = self.app.get('{}{}'.format(self.provider_url, self.provider._id), auth=self.user.auth)
         actual = set([preprint['id'] for preprint in res.json['data']])
         assert_equal(expected, actual)
+
+
+class TestPreprintProviderPreprintIsPublishedList(PreprintIsPublishedListMixin, ApiTestCase):
+
+    def setUp(self):
+        self.admin = AuthUserFactory()
+        self.provider_one = PreprintProviderFactory()
+        self.provider_two = self.provider_one
+        self.published_project = ProjectFactory(creator=self.admin, is_public=True)
+        self.public_project = ProjectFactory(creator=self.admin, is_public=True)
+        self.url = '/{}preprint_providers/{}/preprints/'.format(API_BASE, self.provider._id)
+        super(TestPreprintProviderPreprintIsPublishedList, self).setUp()

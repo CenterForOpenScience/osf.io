@@ -104,7 +104,7 @@ from website.util.permissions import ADMIN, PERMISSIONS
 
 class NodeMixin(object):
     """Mixin with convenience methods for retrieving the current node based on the
-current URL. By default, fetches the current node based on the node_id kwarg.
+    current URL. By default, fetches the current node based on the node_id kwarg.
     """
 
     serializer_class = NodeSerializer
@@ -3407,13 +3407,13 @@ class NodePreprintsList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, Django
         user = getattr(auth, 'user', None)
         node = self.get_node(check_object_permissions=False)
         if not user:
-            return (DjangoQ(node=node, is_published=True))
+            return (DjangoQ(node=node, node__isnull=False, is_published=True))
         
         ##########################
         # check if this can be optimized to not do a join
         ##########################
         # only show unpublished preprints if admin on project
-        return (DjangoQ(node=node) & 
+        return (DjangoQ(node=node, node__isnull=False) & 
             (
                 DjangoQ(is_published=True) | 
                 DjangoQ(node__contributor__admin=True, node__contributor__user_id=user.id)
