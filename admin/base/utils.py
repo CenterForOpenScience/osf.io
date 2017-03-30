@@ -109,9 +109,8 @@ def get_subject_rules(subjects_selected):
 
 
 def get_nodelicense_choices():
-    return [(sub.id, sub.name) for sub in NodeLicense.objects.all()]
+    return NodeLicense.objects.values_list('id', 'name')
 
 
 def get_toplevel_subjects():
-    subjects = Subject.objects.filter(parents__isnull=True)
-    return [(sub.id, sub.text) for sub in subjects]
+    return Subject.objects.filter(parents__isnull=True).values_list('id', 'text')

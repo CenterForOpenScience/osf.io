@@ -77,8 +77,7 @@ class PreprintProviderDisplay(PermissionRequiredMixin, DetailView):
 
     def get_context_data(self, *args, **kwargs):
         preprint_provider = self.get_object()
-        all_subjects = preprint_provider.all_subjects
-        subject_ids = [subject.id for subject in all_subjects]
+        subject_ids = preprint_provider.all_subjects.values_list('id', flat=True)
 
         preprint_provider_attributes = model_to_dict(preprint_provider)
         kwargs.setdefault('page_number', self.request.GET.get('page', '1'))
@@ -93,15 +92,13 @@ class PreprintProviderDisplay(PermissionRequiredMixin, DetailView):
         for parent in preprint_provider.top_level_subjects:
             subject_html += '<li>{}</li>'.format(parent.text)
             child_html = '<ul>'
-            for child in parent.children.all():
-                if child in all_subjects:
-                    child_html += '<li>{}</li>'.format(child.text)
-                    grandchild_html = '<ul>'
-                    for grandchild in child.children.all():
-                        if grandchild in all_subjects:
-                            grandchild_html += '<li>{}</li>'.format(grandchild.text)
-                    grandchild_html += '</ul>'
-                    child_html += grandchild_html
+            for child in parent.children.filter(id__in=subject_ids):
+                child_html += '<li>{}</li>'.format(child.text)
+                grandchild_html = '<ul>'
+                for grandchild in child.children.filter(id__in=subject_ids):
+                    grandchild_html += '<li>{}</li>'.format(grandchild.text)
+                grandchild_html += '</ul>'
+                child_html += grandchild_html
 
             child_html += '</ul>'
             subject_html += child_html
@@ -110,10 +107,10 @@ class PreprintProviderDisplay(PermissionRequiredMixin, DetailView):
         preprint_provider_attributes['subjects_acceptable'] = subject_html
 
         kwargs['preprint_provider'] = preprint_provider_attributes
-        kwargs['subject_ids'] = subject_ids
+        kwargs['subject_ids'] = list(subject_ids)
         kwargs['logohost'] = settings.OSF_URL
         fields = model_to_dict(preprint_provider)
-        fields['toplevel_subjects'] = subject_ids
+        fields['toplevel_subjects'] = list(subject_ids)
         fields['subjects_chosen'] = ', '.join(str(i) for i in subject_ids)
         kwargs['form'] = PreprintProviderForm(initial=fields)
         kwargs['import_form'] = ImportFileForm()
