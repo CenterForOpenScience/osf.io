@@ -24,6 +24,7 @@ from website.files import utils
 from website.files.exceptions import VersionNotFoundError
 from website.util import api_v2_url, waterbutler_api_url_for
 from osf.utils.datetime_aware_jsonfield import coerce_nonnaive_datetimes
+from osf.utils.manager import IncludeQuerySet
 import pytz
 
 # TODO DELETE ME POST MIGRATION
@@ -677,6 +678,8 @@ class FileVersion(ObjectIDMixin, BaseModel):
 
     metadata = DateTimeAwareJSONField(blank=True, default=dict)
     location = DateTimeAwareJSONField(default=None, blank=True, null=True, validators=[validate_location])
+
+    includable_objects = IncludeQuerySet.as_manager()
 
     @property
     def location_hash(self):

@@ -5,8 +5,9 @@ import logging
 
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError
-from django.db import transaction
 from django.db import connection
+from django.db import transaction
+from django.db.models.expressions import RawSQL
 from modularodm import Q
 
 from flask import request
@@ -80,13 +81,24 @@ def osfstorage_update_metadata(node_addon, payload, **kwargs):
 @must_be_signed
 @decorators.autoload_filenode(must_be='file')
 def osfstorage_get_revisions(file_node, node_addon, payload, **kwargs):
+    from osf.models import PageCounter, FileVersion  # TODO Fix me onces django works
     is_anon = has_anonymous_link(node_addon.owner, Auth(private_key=request.args.get('view_only')))
+
+    counter_prefix = 'download:{}:{}:'.format(file_node.node._id, file_node._id)
+
+    version_count = file_node.versions.count()
+    # Don't worry. The only % at the end of the LIKE clause, the index is still used
+    counts = dict(PageCounter.objects.filter(_id__startswith=counter_prefix).values_list('_id', 'total'))
+    qs = FileVersion.includable_objects.filter(basefilenode__id=file_node.id).include('creator__guids').order_by('-date_created')
+
+    for i, version in enumerate(qs):
+        version._download_count = counts.get('{}{}'.format(counter_prefix, version_count - i - 1), 0)
 
     # Return revisions in descending order
     return {
         'revisions': [
-            utils.serialize_revision(node_addon.owner, file_node, version, index=file_node.versions.count() - idx - 1, anon=is_anon)
-            for idx, version in enumerate(file_node.versions.all().order_by('-date_created'))
+            utils.serialize_revision(node_addon.owner, file_node, version, index=version_count - idx - 1, anon=is_anon)
+            for idx, version in enumerate(qs)
         ]
     }
 
