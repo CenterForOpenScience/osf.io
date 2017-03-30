@@ -203,7 +203,7 @@ def get_configured_projects(user):
         if not node.is_deleted:
             configured_projects.add(node)
 
-    return list(configured_projects)
+    return sorted(configured_projects, key=lambda n: n.title)
 
 
 def check_project_subscriptions_are_all_none(user, node):
