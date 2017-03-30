@@ -170,6 +170,9 @@ class ExternalProvider(object):
             oauth = OAuth1Session(
                 client_key=self.client_id,
                 client_secret=self.client_secret,
+                callback_uri=web_url_for('oauth_callback',
+                                         service_name=self.short_name,
+                                         _absolute=True),
             )
 
             # request temporary credentials from the provider
