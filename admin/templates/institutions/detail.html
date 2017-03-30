@@ -26,7 +26,7 @@
         </div>
         <div class="row">
             <div class="col-md-12">
-                <h4><a href="{% url 'institutions:nodes' institution.id %}">Affiliated node count: {{ node_count }}</a></h4>
+                <a class="btn btn-default" href="{% url 'institutions:nodes' institution.id %}">View {{ node_count }} affiliated nodes</a>
             </div>
         </div>
         <div class="row">

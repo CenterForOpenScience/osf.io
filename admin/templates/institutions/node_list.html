@@ -1,6 +1,9 @@
 {% extends "base.html" %}
 {% load render_bundle from webpack_loader %}
 {% load node_extras %}
+{% block top_includes %}
+  <link rel="stylesheet" type="text/css" href="/static/css/institutions.css" />
+{% endblock %}
 
 {% load static %}
 {% block title %}

@@ -60,6 +60,6 @@
             'getDescendantsUrl': '{% url 'preprint_providers:get_descendants' %}',
             'rulesToSubjectsUrl': '{% url 'preprint_providers:rules_to_subjects' %}',
             'originalSubjects': {{ subject_ids | escapejs }}
-        }
+        };
     </script>
 {% endblock %}
