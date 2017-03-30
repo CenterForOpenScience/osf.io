@@ -10,7 +10,7 @@ import osf.utils.fields
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0001_initial'),
+        ('osf', '0002_add_lower_index_to_tags'),
     ]
 
     operations = [
