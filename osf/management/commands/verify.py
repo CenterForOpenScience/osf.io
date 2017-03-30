@@ -92,7 +92,7 @@ def validate_m2m_field(field_name, django_obj, modm_obj):
 
     for guid in django_guids:
         if isinstance(guid, list):
-            flat_django_guids.append(*guid)
+            flat_django_guids.extend(guid)
         else:
             flat_django_guids.append(guid)
 
@@ -104,10 +104,13 @@ def validate_m2m_field(field_name, django_obj, modm_obj):
     else:
         modm_field_name = {v: k for k, v in getattr(django_obj, 'FIELD_ALIASES', {}).iteritems()}.get(field_name, field_name)
 
-    modm_guids = [obj._id for obj in getattr(modm_obj, modm_field_name)]
+    if django_obj._meta.model is NotificationSubscription and field_name in ['user', 'node']:
+        modm_field_name = 'owner'
+
+    modm_guids = modm_obj.to_storage()[modm_field_name]
     for django_guid in django_guids:
         try:
-            assert django_guid in modm_guids, '{} for model {}.{} was not in modm guids for field {}'.format(django_guid, django_obj._meta.model.__module__, django_obj._meta.model.__name__, modm_field_name)
+            assert django_guid in modm_guids, '{} for model {}.{} with id {} was not in modm guids for field {}'.format(django_guid, django_obj._meta.model.__module__, django_obj._meta.model.__name__, modm_field_name)
         except AssertionError as ex:
             logger.error(ex)
 
@@ -117,7 +120,7 @@ def validate_fk_relation(field_name, django_obj, modm_obj):
         # modm doesn't have gfk
         return
 
-    if isinstance(modm_obj, StoredFileNode) and field_name == 'deleted_by':
+    if isinstance(modm_obj, StoredFileNode) and field_name in ['deleted_by', 'deleted_on']:
         return
 
     if django_obj._meta.model is EmbargoTerminationApproval and field_name == 'initiated_by':
@@ -130,9 +133,6 @@ def validate_fk_relation(field_name, django_obj, modm_obj):
         modm_field_name = field_name
     else:
         modm_field_name = {v: k for k, v in getattr(django_obj, 'FIELD_ALIASES', {}).iteritems()}.get(field_name, field_name)
-
-    if django_obj._meta.model is NotificationSubscription and field_name in ['user', 'node']:
-        modm_field_name = 'owner'
 
     modm_field_value = getattr(modm_obj, modm_field_name)
     if modm_field_value and django_field_value:

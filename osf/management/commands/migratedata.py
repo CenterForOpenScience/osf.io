@@ -623,10 +623,6 @@ def save_bare_models(django_model):
         count += page_size
 
 
-class DuplicateExternalAccounts(Exception):
-    pass
-
-
 @app.task()
 def save_bare_system_tags(page_size=10000):
     init_app(routes=False, attach_request_handlers=False, fixtures=False)
