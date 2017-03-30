@@ -4,6 +4,7 @@ from framework.auth.core import Auth
 from tests.base import ApiTestCase
 from api.base.settings.defaults import API_BASE
 from api_tests.preprints.filters.test_filters import PreprintsListFilteringMixin
+from api_tests.preprints.views.test_preprint_list_mixin import PreprintIsPublishedListMixin
 
 from website.preprints.model import PreprintService
 from website.files.models.osfstorage import OsfStorageFile
@@ -76,3 +77,13 @@ class TestNodePreprintsListFiltering(PreprintsListFilteringMixin, ApiTestCase):
         res = self.app.get('{}{}'.format(self.provider_url, self.provider_two._id), auth=self.user.auth)
         actual = [preprint['id'] for preprint in res.json['data']]
         assert_equal(expected, actual)
+
+class TestUserPreprintIsPublishedList(PreprintIsPublishedListMixin, ApiTestCase):
+    def setUp(self):
+        self.admin = AuthUserFactory()
+        self.provider_one = PreprintProviderFactory()
+        self.provider_two = PreprintProviderFactory()
+        self.published_project = ProjectFactory(creator=self.admin, is_public=True)
+        self.public_project = self.published_project
+        self.url = '/{}nodes/{}/preprints/'.format(API_BASE, self.admin._id)
+        super(TestUserPreprintIsPublishedList, self).setUp()

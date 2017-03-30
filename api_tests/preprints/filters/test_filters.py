@@ -1,17 +1,14 @@
 # -*- coding: utf-8 -*-
 from nose.tools import *  # flake8: noqa
-import pytest
 
 from framework.auth.core import Auth
 
-from tests.base import ApiTestCase
 from osf_tests.factories import (
     PreprintFactory,
     AuthUserFactory,
     SubjectFactory,
     PreprintProviderFactory
 )
-from website.preprints.model import PreprintService
 
 
 class PreprintsListFilteringMixin(object):
