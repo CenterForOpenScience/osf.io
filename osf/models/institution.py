@@ -43,7 +43,7 @@ class Institution(Loggable, base.ObjectIDMixin, base.BaseModel):
     def migrate_from_modm(cls, modm_obj):
         inst = cls()
         inst._id = modm_obj.institution_id
-        inst.auth_url = modm_obj.institution_auth_url
+        inst.login_url = modm_obj.institution_auth_url
         inst.banner_name = modm_obj.institution_banner_name
         inst.domains = modm_obj.institution_domains
         inst.email_domains = modm_obj.institution_email_domains

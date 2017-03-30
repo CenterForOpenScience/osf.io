@@ -1,18 +1,22 @@
 # -*- coding: utf-8 -*-
+import urllib
+import urlparse
+
+import furl
+from django.core.exceptions import ObjectDoesNotExist
 from modularodm import Q
-from modularodm.exceptions import NoResultsFound
 from rest_framework.exceptions import NotFound
 from rest_framework.reverse import reverse
-import furl
 
-from website import util as website_util  # noqa
-from website import settings as website_settings
-from framework.auth import Auth, User
 from api.base.authentication.drf import get_session_from_cookie
 from api.base.exceptions import Gone
-
-from framework.auth.oauth_scopes import ComposedScopes, normalize_scopes
+from framework.auth import Auth, User
 from framework.auth.cas import CasResponse
+from framework.auth.oauth_scopes import ComposedScopes, normalize_scopes
+from osf.models.base import GuidMixin
+from osf.modm_compat import to_django_query
+from website import settings as website_settings
+from website import util as website_util  # noqa
 
 # These values are copied from rest_framework.fields.BooleanField
 # BooleanField cannot be imported here without raising an
@@ -70,15 +74,39 @@ def absolute_reverse(view_name, query_kwargs=None, args=None, kwargs=None):
     return url
 
 
-def get_object_or_error(model_cls, query_or_pk, display_name=None, **kwargs):
+def get_object_or_error(model_cls, query_or_pk, display_name=None):
+    obj = query = None
     if isinstance(query_or_pk, basestring):
-        obj = model_cls.load(query_or_pk)
-        if obj is None:
-            raise NotFound
+        # they passed a 5-char guid as a string
+        if issubclass(model_cls, GuidMixin):
+            # if it's a subclass of GuidMixin we know it's primary_identifier_name
+            query = {'guids___id': query_or_pk}
+        else:
+            if hasattr(model_cls, 'primary_identifier_name'):
+                # primary_identifier_name gives us the natural key for the model
+                query = {model_cls.primary_identifier_name: query_or_pk}
+            else:
+                # fall back to modmcompatiblity's load method since we don't know their PIN
+                obj = model_cls.load(query_or_pk)
     else:
+        # they passed a query
+        if hasattr(model_cls, 'primary_identifier_name'):
+            query = to_django_query(query_or_pk, model_cls=model_cls)
+        else:
+            # fall back to modmcompatibility's find_one
+            obj = model_cls.find_one(query_or_pk)
+
+    if not obj:
+        if not query:
+            # if we don't have a query or an object throw 404
+            raise NotFound
         try:
-            obj = model_cls.find_one(query_or_pk, **kwargs)
-        except NoResultsFound:
+            # TODO This could be added onto with eager on the queryset and the embedded fields of the api
+            if isinstance(query, dict):
+                obj = model_cls.objects.get(**query)
+            else:
+                obj = model_cls.objects.get(query)
+        except ObjectDoesNotExist:
             raise NotFound
 
     # For objects that have been disabled (is_active is False), return a 410.
@@ -138,13 +166,20 @@ def default_node_permission_query(user):
 
     return permission_query
 
+
 def extend_querystring_params(url, params):
-    return furl.furl(url).add(args=params).url
+    scheme, netloc, path, query, _ = urlparse.urlsplit(url)
+    orig_params = urlparse.parse_qs(query)
+    orig_params.update(params)
+    query = urllib.urlencode(orig_params, True)
+    return urlparse.urlunsplit([scheme, netloc, path, query, ''])
+
 
 def extend_querystring_if_key_exists(url, request, key):
     if key in request.query_params.keys():
         return extend_querystring_params(url, {key: request.query_params.get(key)})
     return url
+
 
 def has_admin_scope(request):
     """ Helper function to determine if a request should be treated
@@ -161,6 +196,7 @@ def has_admin_scope(request):
         return False
 
     return set(ComposedScopes.ADMIN_LEVEL).issubset(normalize_scopes(token.attributes['accessTokenScope']))
+
 
 def is_deprecated(request_version, min_version, max_version):
     if request_version < min_version or request_version > max_version:

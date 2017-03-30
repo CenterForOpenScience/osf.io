@@ -17,6 +17,7 @@ from collections import defaultdict
 import progressbar
 
 from framework.celery_tasks import app as celery_app
+from osf.models import TrashedFile
 
 from website import mails
 from website.models import User
@@ -59,9 +60,9 @@ def add_to_white_list(gtg):
 
 
 def get_usage(node):
-    vids = [each for each in StoredFileNode.objects.filter(provider='osfstorage', node=node).values_list('versions', flat=True) if each]
+    vids = [each for each in StoredFileNode.active.filter(provider='osfstorage', node=node).values_list('versions', flat=True) if each]
 
-    t_vids = [each for eac in TrashedFileNode.objects.filter(provider='osfstorage', node=node, is_file=True).values_list('versions', flat=True) if each]
+    t_vids = [each for eac in TrashedFile.objects.filter(provider='osfstorage', node=node).values_list('versions', flat=True) if each]
 
     usage = sum([v.size or 0 for v in FileVersion.objects.filter(id__in=vids)])
     trashed_usage = sum([v.size or 0 for v in FileVersion.objects.filter(id__in=t_vids)])

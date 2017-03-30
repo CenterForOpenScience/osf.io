@@ -54,10 +54,10 @@ class UserDeleteView(PermissionRequiredMixin, DeleteView):
                 user.is_registered = False
                 if 'spam_flagged' in user.system_tags or 'ham_confirmed' in user.system_tags:
                     if 'spam_flagged' in user.system_tags:
-                        t = Tag.objects.get(name='spam_flagged', system=True)
+                        t = Tag.all_tags.get(name='spam_flagged', system=True)
                         user.tags.remove(t)
                     if 'ham_confirmed' in user.system_tags:
-                        t = Tag.objects.get(name='ham_confirmed', system=True)
+                        t = Tag.all_tags.get(name='ham_confirmed', system=True)
                         user.tags.remove(t)
                     if 'spam_confirmed' not in user.system_tags:
                         user.add_system_tag('spam_confirmed')
@@ -69,10 +69,10 @@ class UserDeleteView(PermissionRequiredMixin, DeleteView):
                 user.is_registered = True
                 if 'spam_flagged' in user.system_tags or 'spam_confirmed' in user.system_tags:
                     if 'spam_flagged' in user.system_tags:
-                        t = Tag.objects.get(name='spam_flagged', system=True)
+                        t = Tag.all_tags.get(name='spam_flagged', system=True)
                         user.tags.remove(t)
                     if 'spam_confirmed' in user.system_tags:
-                        t = Tag.objects.get(name='spam_confirmed', system=True)
+                        t = Tag.all_tags.get(name='spam_confirmed', system=True)
                         user.tags.remove('spam_confirmed')
                     if 'ham_confirmed' not in user.system_tags:
                         user.add_system_tag('ham_confirmed')

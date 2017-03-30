@@ -9,9 +9,29 @@ from api_tests import utils as api_utils
 from tests.base import ApiTestCase
 from osf_tests.factories import (
     ProjectFactory,
+    UserFactory,
     AuthUserFactory,
 )
 
+class TestNodeFileList(ApiTestCase):
+
+    def setUp(self):
+        super(TestNodeFileList, self).setUp()
+        self.user = AuthUserFactory()
+        self.node = ProjectFactory(creator=self.user)
+        self.file = api_utils.create_test_file(
+            self.node, self.user, filename='file1')
+        self.deleted_file = api_utils.create_test_file(
+            self.node, self.user, filename='file2')
+        self.deleted_file.delete(user=self.user, save=True)
+
+    def test_does_not_return_trashed_files(self):
+        res = self.app.get(
+            '/{}nodes/{}/files/osfstorage/'.format(API_BASE, self.node._id),
+            auth=self.user.auth
+        )
+        data = res.json.get('data')
+        nt.assert_equal(len(data), 1)
 
 class TestFileFiltering(ApiTestCase):
     def setUp(self):

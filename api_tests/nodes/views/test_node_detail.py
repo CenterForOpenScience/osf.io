@@ -940,6 +940,12 @@ class TestNodeTags(ApiTestCase):
         assert_equal(res.status_code, 200)
         assert_equal(len(res.json['data']['attributes']['tags']), 0)
 
+    def test_node_detail_does_not_expose_system_tags(self):
+        self.public_project.add_system_tag('systag', save=True)
+        res = self.app.get(self.public_url)
+        assert_equal(res.status_code, 200)
+        assert_equal(len(res.json['data']['attributes']['tags']), 0)
+
     @assert_logs(NodeLog.TAG_ADDED, 'public_project')
     def test_contributor_can_add_tag_to_public_project(self):
         res = self.app.patch_json_api(self.public_url, self.one_new_tag_json, auth=self.user.auth, expect_errors=True)

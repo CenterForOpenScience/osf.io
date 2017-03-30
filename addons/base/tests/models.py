@@ -1,5 +1,4 @@
 import abc
-import datetime
 
 import mock
 import pytest
@@ -13,6 +12,7 @@ from nose.tools import (assert_equal, assert_false, assert_in, assert_is,
 from osf_tests.factories import ProjectFactory, UserFactory
 from tests.utils import mock_auth
 from addons.base import exceptions
+from osf_tests.conftest import request_context
 
 pytestmark = pytest.mark.django_db
 
@@ -46,6 +46,35 @@ class OAuthAddonUserSettingTestSuiteMixin(OAuthAddonModelTestSuiteMixinBase):
         self.user.save()
 
         self.user_settings = self.user.get_or_add_addon(self.short_name)
+
+    def test_mergability(self):
+        assert self.user_settings.can_be_merged
+
+    def test_merge_user_settings(self):
+        other_node = ProjectFactory()
+        other_user = other_node.creator
+        other_account = self.ExternalAccountFactory()
+        other_user.external_accounts.add(other_account)
+        other_user_settings = other_user.get_or_add_addon(self.short_name)
+        other_node_settings = other_node.get_or_add_addon(self.short_name, auth=Auth(other_user))
+        other_node_settings.set_auth(
+            user=other_user,
+            external_account=other_account
+        )
+
+        assert other_node_settings.has_auth
+        assert other_node._id not in self.user_settings.oauth_grants
+        assert other_node_settings.user_settings == other_user_settings
+
+        self.user.merge_user(other_user)
+        self.user.save()
+
+        other_node_settings.reload()
+        self.user_settings.reload()
+
+        assert other_node_settings.has_auth
+        assert other_node._id in self.user_settings.oauth_grants
+        assert other_node_settings.user_settings == self.user_settings
 
     def test_grant_oauth_access_no_metadata(self):
         self.user_settings.grant_oauth_access(
@@ -200,6 +229,26 @@ class OAuthAddonNodeSettingsTestSuiteMixin(OAuthAddonModelTestSuiteMixinBase):
         self.node_settings.reload()
         assert_false(self.node_settings.has_auth)
         assert_false(self.node_settings.complete)
+        assert_equal(
+            self.user_settings.oauth_grants,
+            {self.node._id: {}}
+        )
+
+    def test_revoke_remote_access_called(self):
+
+        with mock.patch.object(self.user_settings, 'revoke_remote_oauth_access') as mock_revoke:
+            with mock_auth(self.user):
+                self.user_settings.revoke_oauth_access(self.external_account)
+        assert_equal(mock_revoke.call_count, 1)
+
+    def test_revoke_remote_access_not_called(self):
+        user2 = UserFactory()
+        user2.external_accounts.add(self.external_account)
+        user2.save()
+        with mock.patch.object(self.user_settings, 'revoke_remote_oauth_access') as mock_revoke:
+            with mock_auth(self.user):
+                self.user_settings.revoke_oauth_access(self.external_account)
+        assert_equal(mock_revoke.call_count, 0)
 
     def test_complete_auth_false(self):
         self.node_settings.user_settings = None
@@ -269,6 +318,16 @@ class OAuthAddonNodeSettingsTestSuiteMixin(OAuthAddonModelTestSuiteMixinBase):
         assert_is(self.node_settings.folder_id, None)
         assert_true(self.node_settings.deleted)
         assert_equal(list(self.node.logs.all()), list(old_logs))
+
+    def test_on_delete(self):
+        self.user.delete_addon(
+            self.user_settings.oauth_provider.short_name
+        )
+
+        self.node_settings.reload()
+
+        assert_is_none(self.node_settings.external_account)
+        assert_is_none(self.node_settings.user_settings)
 
     def test_deauthorize(self):
         assert_true(self.node_settings.user_settings)

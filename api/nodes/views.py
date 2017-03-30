@@ -11,8 +11,15 @@ from api.addons.serializers import NodeAddonFolderSerializer
 from api.addons.views import AddonSettingsMixin
 from api.base import generic_bulk_views as bulk_views
 from api.base import permissions as base_permissions
-from api.base.exceptions import InvalidModelValueError, JSONAPIException, Gone
-from api.base.exceptions import RelationshipPostMakesNoChanges, EndpointNotImplementedError
+from api.base.exceptions import (
+    InvalidModelValueError,
+    JSONAPIException,
+    Gone,
+    InvalidFilterOperator,
+    InvalidFilterValue,
+    RelationshipPostMakesNoChanges,
+    EndpointNotImplementedError,
+)
 from api.base.filters import ODMFilterMixin, ListFilterMixin
 from api.base.pagination import CommentPagination, NodeContributorPagination, MaxSizePagination
 from api.base.parsers import (
@@ -41,7 +48,7 @@ from api.identifiers.serializers import NodeIdentifierSerializer
 from api.identifiers.views import IdentifierList
 from api.institutions.serializers import InstitutionSerializer
 from api.logs.serializers import NodeLogSerializer
-from api.nodes.filters import NodePreprintsFilterMixin
+from api.nodes.filters import NodePreprintsFilterMixin, NodesListFilterMixin
 from api.nodes.permissions import (
     IsAdmin,
     IsPublic,
@@ -86,10 +93,11 @@ from osf.models import AbstractNode
 from osf.models import (Node, PrivateLink, NodeLog, Institution, Comment, DraftRegistration, PreprintService, FileNode)
 from osf.models import OSFUser as User
 from osf.models import NodeRelation, AlternativeCitation, Guid
-from osf.models import StoredFileNode
+from osf.models import BaseFileNode
+from osf.models.files import File, Folder
 from addons.wiki.models import NodeWikiPage
 from website.exceptions import NodeStateError
-from website.util.permissions import ADMIN
+from website.util.permissions import ADMIN, PERMISSIONS
 
 
 class NodeMixin(object):
@@ -101,11 +109,19 @@ class NodeMixin(object):
     node_lookup_url_kwarg = 'node_id'
 
     def get_node(self, check_object_permissions=True):
-        node = get_object_or_error(
-            Node,
-            self.kwargs[self.node_lookup_url_kwarg],
-            display_name='node'
-        )
+        node = None
+
+        if self.kwargs.get('is_embedded') is True:
+            # If this is an embedded request, the node might be cached somewhere
+            node = self.request.parents[Node].get(self.kwargs[self.node_lookup_url_kwarg])
+
+        if node is None:
+            node = get_object_or_error(
+                Node,
+                self.kwargs[self.node_lookup_url_kwarg],
+                display_name='node'
+            )
+
         # Nodes that are folders/collections are treated as a separate resource, so if the client
         # requests a collection through a node endpoint, we return a 404
         if node.is_collection or node.is_registration:
@@ -141,7 +157,7 @@ class DraftMixin(object):
             if draft.requires_approval and draft.is_approved and (not registered_and_deleted):
                 raise PermissionDenied('This draft has already been approved and cannot be modified.')
 
-        self.check_object_permissions(self.request, draft)
+        self.check_object_permissions(self.request, draft.branched_from)
         return draft
 
 
@@ -178,7 +194,7 @@ class WaterButlerMixin(object):
         return obj
 
 
-class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.BulkDestroyJSONAPIView, bulk_views.ListBulkCreateJSONAPIView, NodePreprintsFilterMixin, WaterButlerMixin):
+class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.BulkDestroyJSONAPIView, bulk_views.ListBulkCreateJSONAPIView, NodePreprintsFilterMixin, NodesListFilterMixin, WaterButlerMixin):
     """Nodes that represent projects and components. *Writeable*.
 
     Paginated list of nodes ordered by their `date_modified`.  Each resource contains the full representation of the
@@ -282,26 +298,6 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
     view_name = 'node-list'
 
     ordering = ('-date_modified', )  # default ordering
-
-    # overrides ODMFilterMixin
-    def _operation_to_query(self, operation):
-        # We special case filters on root because root isn't a field; to get the children
-        # of a root, we use a custom manager method, Node.objects.get_children, and build
-        # a query from that
-        if operation['source_field_name'] == 'root':
-            child_pks = []
-            for root_guid in operation['value']:
-                root = get_object_or_error(Node, root_guid, display_name='root')
-                child_pks.extend(Node.objects.get_children(root=root, primary_keys=True))
-            return Q('id', 'in', child_pks)
-        elif operation['source_field_name'] == 'parent_node':
-            if operation['value']:
-                parent = get_object_or_error(Node, operation['value'], display_name='parent')
-                return Q('parent_nodes', 'eq', parent.id)
-            else:
-                return Q('parent_nodes', 'isnull', True)
-        else:
-            return super(NodeList, self)._operation_to_query(operation)
 
     # overrides FilterMixin
     def postprocess_query_param(self, key, field_name, operation):
@@ -682,7 +678,23 @@ class NodeContributorsList(BaseContributorList, bulk_views.BulkUpdateJSONAPIView
     serializer_class = NodeContributorsSerializer
     view_category = 'nodes'
     view_name = 'node-contributors'
-    ordering = ('index',)  # default ordering
+    ordering = ('_order',)  # default ordering
+
+    # overrides FilterMixin
+    def postprocess_query_param(self, key, field_name, operation):
+        if field_name == 'bibliographic':
+            operation['source_field_name'] = 'visible'
+
+    # overrides FilterMixin
+    def filter_by_field(self, queryset, field_name, operation):
+        if field_name == 'permission':
+            if operation['op'] != 'eq':
+                raise InvalidFilterOperator(value=operation['op'], valid_operators=['eq'])
+            # operation['value'] should be 'admin', 'write', or 'read'
+            if operation['value'].lower().strip() not in PERMISSIONS:
+                raise InvalidFilterValue(value=operation['value'])
+            return queryset.filter(**{operation['value'].lower().strip(): True})
+        return super(NodeContributorsList, self).filter_by_field(queryset, field_name, operation)
 
     # overrides ListBulkCreateJSONAPIView, BulkUpdateJSONAPIView, BulkDeleteJSONAPIView
     def get_serializer_class(self):
@@ -709,7 +721,7 @@ class NodeContributorsList(BaseContributorList, bulk_views.BulkUpdateJSONAPIView
                     raise ValidationError('Contributor identifier not provided.')
                 except IndexError:
                     raise ValidationError('Contributor identifier incorrectly formatted.')
-            queryset = queryset.filter(guids___id__in=contrib_ids)
+            queryset = queryset.filter(user__guids___id__in=contrib_ids)
         return queryset
 
     # Overrides BulkDestroyJSONAPIView
@@ -845,7 +857,7 @@ class NodeContributorDetail(BaseContributorDetail, generics.RetrieveUpdateDestro
     def perform_destroy(self, instance):
         node = self.get_node()
         auth = get_user_auth(self.request)
-        if len(node.visible_contributors) == 1 and node.get_visible(instance):
+        if len(node.visible_contributors) == 1 and instance.visible:
             raise ValidationError('Must have at least one visible contributor')
         removed = node.remove_contributor(instance, auth)
         if not removed:
@@ -1532,7 +1544,7 @@ class NodeLinksDetail(BaseNodeLinksDetail, generics.RetrieveDestroyAPIView, Node
             self.kwargs[self.node_link_lookup_url_kwarg],
             'node link'
         )
-        self.check_object_permissions(self.request, node_link)
+        self.check_object_permissions(self.request, node_link.parent)
         return node_link
 
     # overrides DestroyAPIView
@@ -1926,15 +1938,38 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
             if operation['value'] not in (list(), tuple()):
                 operation['source_field_name'] = 'tags__name'
                 operation['op'] = 'iexact'
+        if field_name == 'path':
+            operation['source_field_name'] = '_path'
+        # NOTE: This is potentially fragile, if we ever add filtering on provider
+        # we're going to have to get a bit tricky. get_default_queryset should ramain filtering on BaseFileNode, for now
+        if field_name == 'kind':
+            if operation['value'].lower() == 'folder':
+                kind = Folder
+            else:
+                # Default to File, should probably raise an exception in the future
+                kind = File  # Default to file
+
+            operation['source_field_name'] = 'type'
+            operation['op'] = 'in'
+            operation['value'] = [
+                sub._typedmodels_type
+                for sub in kind.__subclasses__()
+                if hasattr(sub, '_typedmodels_type')
+            ]
 
     def get_default_queryset(self):
-        # Don't bother going to waterbutler for osfstorage
         files_list = self.fetch_from_waterbutler()
 
         if isinstance(files_list, list):
-            return StoredFileNode.objects.filter(id__in=[self.get_file_item(file).id for file in files_list])
+            provider = self.kwargs[self.provider_lookup_url_kwarg]
+            # Resolve to a provider-specific subclass, so that
+            # trashed file nodes are filtered out automatically
+            ConcreteFileNode = BaseFileNode.resolve_class(provider, FileNode.ANY)
+            return ConcreteFileNode.objects.filter(
+                id__in=[self.get_file_item(file).id for file in files_list],
+            )
 
-        if isinstance(files_list, dict) or getattr(files_list, 'is_file', False):
+        if isinstance(files_list, list) or not isinstance(files_list, Folder):
             # We should not have gotten a file here
             raise NotFound
 
@@ -1966,7 +2001,7 @@ class NodeFileDetail(JSONAPIBaseView, generics.RetrieveAPIView, WaterButlerMixin
         if isinstance(fobj, dict):
             return self.get_file_item(fobj)
 
-        if isinstance(fobj, list) or not getattr(fobj, 'is_file', True):
+        if isinstance(fobj, list) or not isinstance(fobj, File):
             # We should not have gotten a folder here
             raise NotFound
 
@@ -3084,9 +3119,8 @@ class LinkedNodesList(BaseLinkedList, NodeMixin):
     view_name = 'linked-nodes'
 
     def get_queryset(self):
-        return [node for node in
-            super(LinkedNodesList, self).get_queryset()
-            if not node.is_registration]
+        queryset = super(LinkedNodesList, self).get_queryset()
+        return queryset.exclude(type='osf.registration')
 
     # overrides APIView
     def get_parser_context(self, http_request):
@@ -3356,6 +3390,13 @@ class NodePreprintsList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, NodePr
 
     view_category = 'nodes'
     view_name = 'node-preprints'
+
+    def postprocess_query_param(self, key, field_name, operation):
+        if field_name == 'provider':
+            operation['source_field_name'] = 'provider___id'
+
+        if field_name == 'id':
+            operation['source_field_name'] = 'guids___id'
 
     # overrides ODMFilterMixin
     def get_default_odm_query(self):
