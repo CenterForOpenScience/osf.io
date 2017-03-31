@@ -21,7 +21,7 @@ from admin.spam.templatetags.spam_extras import reverse_spam_detail
 class EmailView(PermissionRequiredMixin, DetailView):
     template_name = 'spam/email.html'
     context_object_name = 'spam'
-    permission_required = 'common_auth.view_spam'
+    permission_required = 'osf.view_spam'
 
     def get_object(self, queryset=None):
         spam_id = self.kwargs.get('spam_id')
@@ -41,7 +41,7 @@ class SpamList(PermissionRequiredMixin, ListView):
     paginate_orphans = 1
     ordering = '-date_last_reported'
     context_object_name = 'spam'
-    permission_required = 'common_auth.view_spam'
+    permission_required = 'osf.view_spam'
     raise_exception = True
 
     def get_queryset(self):
@@ -89,7 +89,7 @@ class SpamDetail(PermissionRequiredMixin, FormView):
     """
     form_class = ConfirmForm
     template_name = 'spam/detail.html'
-    permission_required = 'common_auth.view_spam'
+    permission_required = 'osf.view_spam'
     raise_exception = True
 
     def get_context_data(self, **kwargs):

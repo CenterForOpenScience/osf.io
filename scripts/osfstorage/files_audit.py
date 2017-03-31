@@ -122,19 +122,13 @@ def ensure_backups(version, dry_run):
 
 
 def glacier_targets():
-    return models.FileVersion.find(
-        Q('status', 'ne', 'cached') &
-        Q('location.object', 'exists', True) &
-        Q('metadata.archive', 'eq', None)
-    )
+    return models.FileVersion.objects.filter(location__has_key='object', metadata__archive__isnull=True)
 
 
 def parity_targets():
     # TODO: Add metadata.parity information from wb so we do not need to check remote services
-    return models.FileVersion.find(
-        Q('location.object', 'exists', True)
-        # & Q('metadata.parity', 'eq', None)
-    )
+    return models.FileVersion.objects.filter(location__has_key='object')
+        # & metadata__parity__isnull=True
 
 
 def audit(targets, num_of_workers, worker_id, dry_run):

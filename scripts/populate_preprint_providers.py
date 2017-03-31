@@ -17,7 +17,7 @@ logging.basicConfig(level=logging.INFO)
 ENVS = ['prod', 'stage']
 SUBJECTS_CACHE = {}
 STAGING_PREPRINT_PROVIDERS = ['osf', 'psyarxiv', 'engrxiv', 'socarxiv', 'scielo', 'agrixiv', 'bitss']
-PROD_PREPRINT_PROVIDERS = ['osf', 'psyarxiv', 'engrxiv', 'socarxiv', 'agrixiv']
+PROD_PREPRINT_PROVIDERS = ['osf', 'psyarxiv', 'engrxiv', 'socarxiv', 'agrixiv', 'bitss']
 
 
 def get_subject_id(name):
@@ -113,7 +113,7 @@ def main(env):
                         <li><a href="http://directory.uark.edu/people/dcjensen">David Jensen</a>, mechanical engineer, University of Arkansas</li>
                         <li><a href="http://biomech.media.mit.edu/people/">Kevin Moerman</a>, biomechanical engineer, Massachusetts Institute of Technology</li>
                         <li><a href="http://kyleniemeyer.com/">Kyle Niemeyer</a>, mechanical engineer, Oregon State University</li>
-                        <li><a href="http://www.douglasvanbossuyt.com/">Douglas Van Bossuyt</a>, mechanical engineer, Colorado School of Mines</li>
+                        <li><a href="http://www.douglasvanbossuyt.com/">Douglas Van Bossuyt</a>, mechanical engineer, KTM Research</li>
                     </ul>
                 </div>
             ''',
@@ -1036,7 +1036,7 @@ def main(env):
             ''',
             'email_contact': 'contact+bitss@osf.io',
             'email_support': 'support+bitss@osf.io',
-            'social_twitter': 'http://twitter.com/UCBITSS',
+            'social_twitter': 'UCBITSS',
             'licenses_acceptable': ['CC-By Attribution 4.0 International', 'CC0 1.0 Universal'],
             'header_text': '',
             'subjects_acceptable': [

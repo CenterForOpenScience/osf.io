@@ -27,6 +27,9 @@ class MetaSchema(ObjectIDMixin, BaseModel):
     class Meta:
         unique_together = ('name', 'schema_version')
 
+    def __unicode__(self):
+        return '(name={}, schema_version={}, id={})'.format(self.name, self.schema_version, self.id)
+
     @property
     def _config(self):
         return self.schema.get('config', {})

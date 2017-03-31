@@ -1069,7 +1069,7 @@ class User(GuidStoredObject, AddonModelMixin):
         :return:
         """
         from website.search import search
-        search.update_contributors(self.visible_contributor_to)
+        search.update_contributors_async(self.id)
 
     def update_affiliated_institutions_by_email_domain(self):
         """

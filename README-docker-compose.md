@@ -196,7 +196,6 @@ Ubuntu: Skip install of docker-sync, fswatch, and unison. instead...
 - Run migrations:
   - After creating migrations, resetting your database, or starting on a fresh install you will need to run migrations to make the needed changes to database. This command looks at the migrations on disk and compares them to the list of migrations in the `django_migrations` database table and runs any migrations that have not been run.
     - `docker-compose run --rm web python manage.py migrate`
-    - `docker-compose run --rm admin python manage.py migrate`
 - Populate institutions:
   - After resetting your database or with a new install you will need to populate the table of institutions. **You must have run migrations first.**
     - `docker-compose run --rm web python -m scripts.populate_institutions test`
@@ -215,25 +214,38 @@ Ubuntu: Skip install of docker-sync, fswatch, and unison. instead...
     - `docker-compose run --rm web python manage.py reset_db --noinput`
 
 ## Application Debugging
-- Console Debugging with IPDB
-  - `$ docker attach [projectname]_web_1`
 
-    _NOTE: You can detach from a container and leave it running using the CTRL-p CTRL-q key sequence._
+### Console Debugging with IPDB
 
-  - `$ docker-compose up web`
+If you use the following to add a breakpoint
 
-    _NOTE: Lacks detachment key sequence, see: https://github.com/docker/compose/issues/3311_
+```python
+import ipdb; ipdb.set_trace()
+```
 
-- Remote Debugging with PyCharm
-  - Add a Python Remote Debugger per container
-    - Name: `Remote Debug (web)`
-    - Local host name: `192.168.168.167`
-    - Port: `11000`
-    - Path mappings: (It is recommended to use absolute path. `~/` may not work.)
-      - `/Users/<your username>/Projects/cos/osf : /code`
-      - (Optional) `/Users/<your username>/.virtualenvs/osf/lib/python2.7/site-packages : /usr/local/lib/python2.7/site-packages`
-    - `Single Instance only`
-  - Configure `.docker-compose.env` `<APP>_REMOTE_DEBUG` environment variables to match these settings.
+You should run the `web` and/or `api` container (depending on which codebase the breakpoint is in) using:
+
+```
+# Kill the already-running web container
+docker-compose kill web
+
+# Run a web container. App logs and breakpoints will show up here.
+docker-compose run --service-ports web
+```
+
+**IMPORTANT: While attached to the running app, CTRL-c will stop the container.** To detach from the container and leave it running, **use CTRL-p CTRL-q**. Use `docker attach` to re-attach to the container, passing the *container-name* (which you can get from `docker-compose ps`), e.g. `docker attach osf_web_run_1`.
+
+### Remote Debugging with PyCharm
+
+- Add a Python Remote Debugger per container
+  - Name: `Remote Debug (web)`
+  - Local host name: `192.168.168.167`
+  - Port: `11000`
+  - Path mappings: (It is recommended to use absolute path. `~/` may not work.)
+    - `/Users/<your username>/Projects/cos/osf : /code`
+    - (Optional) `/Users/<your username>/.virtualenvs/osf/lib/python2.7/site-packages : /usr/local/lib/python2.7/site-packages`
+  - `Single Instance only`
+- Configure `.docker-compose.env` `<APP>_REMOTE_DEBUG` environment variables to match these settings.
 
 ## Application Tests
 - Run All Tests
@@ -286,13 +298,12 @@ Delete a persistent storage volume:
 git stash # if you have any changes that need to be stashed
 git pull upstream develop # (replace upstream with the name of your remote)
 git stash pop # unstash changes
-docker-compose pull # pull the latest images
-
 # If you get an out of space error
-docker rmi $(docker images -q --filter "dangling=true") \
-  && docker-compose pull
+docker image prune
+# Pull latest images
+docker-compose pull
 
 docker-compose up requirements mfr_requirements wb_requirements
-docker-compose run --rm web python manage.py migrate # run migrations
-
+# Run db migrations
+docker-compose run --rm web python manage.py migrate
 ```

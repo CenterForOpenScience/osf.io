@@ -1,3 +1,7 @@
+<%namespace name="contributor_list" file="./contributor_list.mako" />
+## TODO: Rename summary to node
+<%def name="render_node(summary, show_path)">
+## TODO: Don't rely on ID
 <div id="render-node">
 % if summary['can_view']:
 
@@ -59,7 +63,7 @@
             % endif
         </h4>
 
-        % if summary['show_path'] and summary['node_type'] == 'component':
+        % if show_path and summary['node_type'] == 'component':
             <div style="padding-bottom: 10px">
                 % if summary['parent_is_public']:
                     ${summary['parent_title']}
@@ -74,14 +78,9 @@
 
         % if not summary['anonymous']:
         <!-- Show abbreviated contributors list -->
-        <div mod-meta='{
-                "tpl": "util/render_users_abbrev.mako",
-                "uri": "${summary['api_url']}contributors_abbrev/",
-                "kwargs": {
-                    "node_url": "${summary['url']}"
-                },
-                "replace": true
-            }'></div>
+        <div class="project-authors">
+            ${contributor_list.render_contributors(contributors=summary['contributors'], others_count=summary['others_count'], node_url=summary['url'])}
+        </div>
         % else:
             <div>Anonymous Contributors</div>
         % endif
@@ -147,3 +146,4 @@
         nodes : nodes
     });
 </script>
+</%def>

@@ -4,7 +4,7 @@ from addons.base.models import (BaseOAuthNodeSettings, BaseOAuthUserSettings,
                                 BaseStorageAddon)
 from django.db import models
 from framework.auth.core import Auth
-from osf.models.files import File, FileNode, Folder
+from osf.models.files import File, Folder, BaseFileNode
 from addons.base import exceptions
 from addons.s3.provider import S3Provider
 from addons.s3.serializer import S3Serializer
@@ -13,26 +13,26 @@ from addons.s3.settings import (BUCKET_LOCATIONS,
 from addons.s3.utils import (bucket_exists,
                                      get_bucket_location_or_error,
                                      get_bucket_names)
+# TODO DELETE ME POST MIGRATION
+from modularodm import Q as MQ
+# /TODO DELETE ME POST MIGRATION
 
+class S3FileNode(BaseFileNode):
+    _provider = 's3'
 
-class S3FileNode(FileNode):
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.files.models.s3.S3FileNode'
-    modm_query = None
-    # /TODO DELETE ME POST MIGRATION
-    provider = 's3'
 
 class S3Folder(S3FileNode, Folder):
     # TODO DELETE ME POST MIGRATION
     modm_model_path = 'website.files.models.s3.S3Folder'
-    modm_query = None
+    modm_query = MQ('is_file', 'eq', False)
     # /TODO DELETE ME POST MIGRATION
     pass
+
 
 class S3File(S3FileNode, File):
     # TODO DELETE ME POST MIGRATION
     modm_model_path = 'website.files.models.s3.S3File'
-    modm_query = None
+    modm_query = MQ('is_file', 'eq', True)
     # /TODO DELETE ME POST MIGRATION
     version_identifier = 'version'
 

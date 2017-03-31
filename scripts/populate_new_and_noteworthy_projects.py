@@ -3,13 +3,17 @@ This will update node links on POPULAR_LINKS_NODE and NEW_AND_NOTEWORTHY_LINKS_N
 """
 import sys
 import logging
-import datetime
 import dateutil
+
+import django
 from django.utils import timezone
 from django.db import transaction
-from modularodm import Q
+from django.db.models import Q
 from website.app import init_app
-from website import models
+
+django.setup()
+
+from osf.models import Node, NodeLog
 from framework.auth.core import Auth
 from scripts import utils as script_utils
 from framework.celery_tasks import app as celery_app
@@ -44,16 +48,15 @@ def filter_nodes(node_list):
             final_node_list.append(node)
     return final_node_list
 
-def get_new_and_noteworthy_nodes():
+def get_new_and_noteworthy_nodes(noteworthy_links_node):
     """ Fetches new and noteworthy nodes
 
     Mainly: public top-level projects with the greatest number of unique log actions
 
     """
-    from osf.models import Node, NodeLog
     today = timezone.now()
     last_month = (today - dateutil.relativedelta.relativedelta(months=1))
-    data = Node.objects.filter(date_created__gte=last_month, is_public=True, is_deleted=False, parent_nodes__isnull=True)
+    data = Node.objects.filter(Q(date_created__gte=last_month) & Q(is_public=True) & Q(is_deleted=False) & (Q(parent_nodes__isnull=True) | Q(parent_nodes=noteworthy_links_node)))
     nodes = []
     for node in data:
         unique_actions = NodeLog.objects.filter(node=node.pk).order_by('action').distinct('action').count()
@@ -94,7 +97,7 @@ def update_node_links(designated_node, target_node_ids, description):
         designated_node.rm_pointer(pointer, auth)
 
     for n_id in target_node_ids:
-        n = models.Node.load(n_id)
+        n = Node.load(n_id)
         if is_eligible_node(n):
             designated_node.add_pointer(n, auth, save=True)
             logger.info('Added node link {} to {}'.format(n, designated_node))
@@ -102,8 +105,8 @@ def update_node_links(designated_node, target_node_ids, description):
 def main(dry_run=True):
     init_app(routes=False)
 
-    new_and_noteworthy_links_node = models.Node.find_one(Q('_id', 'eq', NEW_AND_NOTEWORTHY_LINKS_NODE))
-    new_and_noteworthy_node_ids = get_new_and_noteworthy_nodes()
+    new_and_noteworthy_links_node = Node.objects.get(_guids___id=NEW_AND_NOTEWORTHY_LINKS_NODE)
+    new_and_noteworthy_node_ids = get_new_and_noteworthy_nodes(new_and_noteworthy_links_node)
 
     update_node_links(new_and_noteworthy_links_node, new_and_noteworthy_node_ids, 'new and noteworthy')
 
@@ -125,6 +128,6 @@ def run_main(dry_run=True):
     with transaction.atomic():
         main(dry_run=dry_run)
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     dry_run = '--dry' in sys.argv
     run_main(dry_run=dry_run)

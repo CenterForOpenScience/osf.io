@@ -179,9 +179,11 @@ def get_configured_projects(user):
     :param user: modular odm User object
     :return: list of node objects for projects with no parent
     """
-    AbstractNode = apps.get_model('osf.AbstractNode')
     configured_projects = set()
-    user_subscriptions = get_all_user_subscriptions(user)
+    user_subscriptions = get_all_user_subscriptions(user, extra=(
+        Q('node__type', 'ne', 'osf.collection') &
+        Q('node__is_deleted', 'eq', False)
+    ))
 
     for subscription in user_subscriptions:
         if subscription is None:
@@ -190,20 +192,17 @@ def get_configured_projects(user):
         node = subscription.owner
 
         if (
-            not isinstance(node, AbstractNode) or
             (subscription.none.filter(id=user.id).exists() and not node.parent_id) or
-            node._id not in user.notifications_configured or
-            node.is_collection
+            node._id not in user.notifications_configured
         ):
             continue
 
-        while node.parent_id and not node.is_deleted:
-            node = node.parent_node
+        root = node.root
 
-        if not node.is_deleted:
-            configured_projects.add(node)
+        if not root.is_deleted:
+            configured_projects.add(root)
 
-    return list(configured_projects)
+    return sorted(configured_projects, key=lambda n: n.title.lower())
 
 
 def check_project_subscriptions_are_all_none(user, node):
@@ -214,12 +213,15 @@ def check_project_subscriptions_are_all_none(user, node):
     return True
 
 
-def get_all_user_subscriptions(user):
+def get_all_user_subscriptions(user, extra=None):
     """ Get all Subscription objects that the user is subscribed to"""
     NotificationSubscription = apps.get_model('osf.NotificationSubscription')
     for notification_type in constants.NOTIFICATION_TYPES:
-        query = NotificationSubscription.find(Q(notification_type, 'eq', user.pk))
-        for subscription in query:
+        query = Q(notification_type, 'eq', user.pk)
+        if extra:
+            query &= extra
+        queryset = NotificationSubscription.find(query)
+        for subscription in queryset:
             yield subscription
 
 
@@ -233,6 +235,7 @@ def get_all_node_subscriptions(user, node, user_subscriptions=None):
     """
     if not user_subscriptions:
         user_subscriptions = get_all_user_subscriptions(user)
+    # TODO: Filter in database rather than in Python
     for subscription in user_subscriptions:
         if subscription and subscription.owner == node:
             yield subscription
@@ -246,6 +249,7 @@ def format_data(user, nodes):
     """
     items = []
 
+    user_subscriptions = get_all_user_subscriptions(user)
     for node in nodes:
         assert node, '{} is not a valid Node.'.format(node._id)
 
@@ -262,14 +266,14 @@ def format_data(user, nodes):
 
         if can_read:
             node_sub_available = list(constants.NODE_SUBSCRIPTIONS_AVAILABLE.keys())
-            subscriptions = [subscription for subscription in get_all_node_subscriptions(user, node)
+            subscriptions = [subscription for subscription in get_all_node_subscriptions(user, node, user_subscriptions=user_subscriptions)
                              if getattr(subscription, 'event_name') in node_sub_available]
             for subscription in subscriptions:
                 index = node_sub_available.index(getattr(subscription, 'event_name'))
                 children_tree.append(serialize_event(user, subscription=subscription,
                                                 node=node, event_description=node_sub_available.pop(index)))
             for node_sub in node_sub_available:
-                    children_tree.append(serialize_event(user, node=node, event_description=node_sub))
+                children_tree.append(serialize_event(user, node=node, event_description=node_sub))
             children_tree.sort(key=lambda s: s['event']['title'])
 
         children_tree.extend(format_data(user, children))
@@ -320,6 +324,9 @@ def format_file_subscription(user, node_id, path, provider):
     return serialize_event(user, node=node, event_description='file_updated')
 
 
+all_subs = constants.NODE_SUBSCRIPTIONS_AVAILABLE.copy()
+all_subs.update(constants.USER_SUBSCRIPTIONS_AVAILABLE)
+
 def serialize_event(user, subscription=None, node=None, event_description=None):
     """
     :param user: modular odm User object
@@ -328,8 +335,6 @@ def serialize_event(user, subscription=None, node=None, event_description=None):
     :param event_description: use if specific subscription is known
     :return: treebeard-formatted subscription event
     """
-    all_subs = constants.NODE_SUBSCRIPTIONS_AVAILABLE.copy()
-    all_subs.update(constants.USER_SUBSCRIPTIONS_AVAILABLE)
     if not event_description:
         event_description = getattr(subscription, 'event_name')
     # Looks at only the types available. Deals with pre-pending file names.
