@@ -197,7 +197,7 @@ class PreprintProviderPreprintList(JSONAPIBaseView, generics.ListAPIView, Django
         no_user_query = DjangoQ(is_published=True, node__is_public=True)
 
         if auth_user:
-            contrib_user_query = DjangoQ(is_published=True, node__contributor__user_id=auth_user.id, node__contributor__read=True) 
+            contrib_user_query = DjangoQ(is_published=True, node__contributor__user_id=auth_user.id, node__contributor__read=True)
             admin_user_query = DjangoQ(node__contributor__user_id=auth_user.id, node__contributor__admin=True)
             return (default_query & (no_user_query | contrib_user_query | admin_user_query))
         return (default_query & no_user_query)
