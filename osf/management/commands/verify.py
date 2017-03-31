@@ -25,6 +25,7 @@ from website.app import init_app
 from website.files.models import StoredFileNode
 from website.models import User as MUser, Node as MNode
 from .migratedata import set_backend
+
 logger = logging.getLogger('migrations')
 
 
@@ -213,6 +214,9 @@ def validate_basic_field(field_name, django_obj, modm_obj):
         if modm_value is None and django_value == '':
             return
 
+        if django_obj._meta.get_field_by_name(field_name).max_length == len(django_value) and django_value != modm_value:
+            logger.warn('{} on model {}.{} with id {} did not match modm but was field max_length'.format(field_name, django_obj._meta.model.__module__, django_obj._meta.model.__class__, django_obj._id))
+
         if modm_value is None:
             logger.error('modm value was None but django value was {} for {} on {}.{} with ID of {}'.format(django_value, field_name, django_obj._meta.model.__module__, django_obj._meta.model.__class__, getattr(django_obj, django_obj._primary_identifier_name)))
             return
@@ -269,7 +273,6 @@ class MkdirPFileHandler(logging.FileHandler):
 
 @app.task(bind=True, max_retries=None)  # retry forever because of cursor timeouts
 def validate_page_of_model_data(self, django_model, basic_fields, fk_relations, m2m_relations, offset, limit):
-    logger = logging.getLogger('migrations')
     for handler in logger.handlers[:]:
         logger.removeHandler(handler)
 
