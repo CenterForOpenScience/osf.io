@@ -4,6 +4,8 @@ from __future__ import unicode_literals
 import os
 import sys
 from datetime import datetime
+from collections import deque
+from itertools import izip_longest
 
 import errno
 
@@ -13,6 +15,7 @@ from django.contrib.auth.models import Group, Permission
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.management import BaseCommand
+from django.db import connection
 from pymongo.errors import OperationFailure
 
 from api.base.celery import app
@@ -43,7 +46,6 @@ class Command(BaseCommand):
         django_models = get_ordered_models()
 
         for django_model in django_models:
-
             if not hasattr(django_model, 'modm_model_path'):
                 logger.info('################################################\n'
                       '{} doesn\'t have a modm_model_path\n'
@@ -53,12 +55,178 @@ class Command(BaseCommand):
             elif django_model.__subclasses__() != []:
                 logger.info('Skipping {}.{}'.format(django_model.__module__, django_model))
                 continue
-            elif django_model is Tag or django_model is BlackListGuid:
+            elif django_model is Tag:
+                validate_tags.delay()
+            elif django_model is BlackListGuid:
                 # TODO we'll do this by hand because tags are special
                 # TODO we'll do blacklistguids by hand because they've got a bunch of new ones that don't exist in modm
                 # TODO specifically, from register_none_existent_models
                 continue
             do_model.delay(django_model)
+
+
+def check_tags(postgres_row, mongo_obj, model_type):
+    assert postgres_row[0] == mongo_obj['_id']
+
+    mongo_obj['tags'] = set(mongo_obj.get('tags', []))
+    mongo_obj['system_tags'] = set(mongo_obj.get('system_tags', []))
+    postgres_row = (postgres_row[0], set(postgres_row[1]), set(postgres_row[2]))
+
+    if postgres_row[1] != mongo_obj['tags']:
+        logger.error(
+            'Incorrect tags on %s %s. Difference: Postgres = %s Mongo = %s',
+            model_type,
+            postgres_row[0],
+            postgres_row[1] - mongo_obj['tags'],
+            mongo_obj['tags'] - postgres_row[1],
+        )
+
+    if postgres_row[2] != mongo_obj['system_tags'] and model_type != 'AbstractNode':
+        logger.error(
+            'Incorrect system_tags on %s %s. Difference: Postgres = %s Mongo = %s',
+            model_type,
+            postgres_row[0],
+            postgres_row[2] - mongo_obj['system_tags'],
+            mongo_obj['system_tags'] - postgres_row[2],
+        )
+
+
+def check_tags_cursors(postgres_cursor, mongo_cursor, model_type):
+    p_backlog, m_backlog = deque(), deque()
+    logger.info('Checking tags and system tags for %s', model_type)
+    for postgres_row, mongo_obj in izip_longest(postgres_cursor, mongo_cursor):
+
+        if postgres_row is not None:
+            p_backlog.append(postgres_row)
+
+        if mongo_obj is not None:
+            m_backlog.append(mongo_obj)
+
+        for i, row in enumerate(p_backlog):
+            for j, obj in enumerate(m_backlog):
+                if row[0] == obj['_id']:
+                    break
+            if row[0] == obj['_id']:
+                break
+        else:
+            continue
+
+        for _ in range(i):
+            logger.warning('Found missing %s %s from Mongo', model_type, p_backlog.popleft()[0])
+
+        for _ in range(j):
+            logger.warning('Found missing %s %s from Postgres', model_type, m_backlog.popleft()['_id'])
+
+        check_tags(p_backlog.popleft(), m_backlog.popleft(), model_type)
+
+    for mongo_obj in m_backlog:
+        logger.warning('Found missing %s %s from Postgres', model_type, mongo_obj['_id'])
+
+    for postgres_row in p_backlog:
+        logger.warning('Found missing %s %s from Mongo', model_type, postgres_row[0])
+
+
+@app.task()
+def validate_tags():
+    from osf.models import AbstractNode
+    from osf.models import BaseFileNode
+
+    set_backend()
+    init_app(routes=False, attach_request_handlers=False, fixtures=False)
+    register_nonexistent_models_with_modm()
+
+    for model in (OSFUser, AbstractNode, BaseFileNode):
+        with connection.cursor() as cursor:
+            if model is not BaseFileNode:
+                cursor.execute('''SELECT
+                    osf_guid._id
+                    , (SELECT COALESCE(array_agg(osf_tag.name), ARRAY[]::text[])
+                        FROM "{through_table}"
+                            JOIN osf_tag ON "{through_table}".tag_id = osf_tag.id
+                        WHERE "{through_table}"."{through_column}" = "{table}".id
+                        AND osf_tag.system IS FALSE
+                    ) AS tags
+                    , (SELECT COALESCE(array_agg(osf_tag.name), ARRAY[]::text[])
+                        FROM "{through_table}"
+                            JOIN osf_tag ON "{through_table}".tag_id = osf_tag.id
+                        WHERE "{through_table}"."{through_column}" = "{table}".id
+                        AND osf_tag.system IS TRUE
+                    ) AS system_tags
+                    FROM "{table}"
+                    JOIN osf_guid ON osf_guid.object_id = "{table}".id
+                    JOIN django_content_type ON osf_guid.content_type_id = django_content_type.id
+                    WHERE django_content_type.model = %s
+                    ORDER BY osf_guid._id
+                '''.format(
+                    table=model._meta.db_table,
+                    through_table=model._meta.get_field('tags').m2m_db_table(),
+                    through_column=model._meta.get_field('tags').m2m_column_name(),
+                ), [model._meta.model_name])
+
+                modm_model = get_modm_model(model)
+                mongo_cursor = modm_model._storage[0].db[modm_model._storage[0].collection].find({}, {'tags': 1, 'system_tags': 1}).sort('_id')
+
+                check_tags_cursors(cursor, mongo_cursor, model.__name__)
+                continue
+
+            # Files are special
+            cursor.execute('''SELECT
+                _id
+                , (SELECT COALESCE(array_agg(osf_tag.name), ARRAY[]::text[])
+                    FROM "{through_table}"
+                        JOIN osf_tag ON "{through_table}".tag_id = osf_tag.id
+                    WHERE "{through_table}"."{through_column}" = "{table}".id
+                    AND osf_tag.system IS FALSE
+                ) AS tags
+                , (SELECT COALESCE(array_agg(osf_tag.name), ARRAY[]::text[])
+                    FROM "{through_table}"
+                        JOIN osf_tag ON "{through_table}".tag_id = osf_tag.id
+                    WHERE "{through_table}"."{through_column}" = "{table}".id
+                    AND osf_tag.system IS TRUE
+                ) AS system_tags
+                FROM "{table}"
+                WHERE type NOT IN ('osf.trashedfile', 'osf.trashedfolder')
+                ORDER BY _id
+            '''.format(
+                table=model._meta.db_table,
+                through_table=model._meta.get_field('tags').m2m_db_table(),
+                through_column=model._meta.get_field('tags').m2m_column_name(),
+            ), [model._meta.model_name])
+
+            modm_model = get_modm_model(model)
+            mongo_cursor = modm_model._storage[0].db[modm_model._storage[0].collection].find({}, {'tags': 1, 'system_tags': 1}).sort('_id')
+
+            check_tags_cursors(cursor, mongo_cursor, model.__name__)
+
+            # Files are special
+            cursor.execute('''SELECT
+                _id
+                , (SELECT COALESCE(array_agg(osf_tag.name), ARRAY[]::text[])
+                    FROM "{through_table}"
+                        JOIN osf_tag ON "{through_table}".tag_id = osf_tag.id
+                    WHERE "{through_table}"."{through_column}" = "{table}".id
+                    AND osf_tag.system IS FALSE
+                ) AS tags
+                , (SELECT COALESCE(array_agg(osf_tag.name), ARRAY[]::text[])
+                    FROM "{through_table}"
+                        JOIN osf_tag ON "{through_table}".tag_id = osf_tag.id
+                    WHERE "{through_table}"."{through_column}" = "{table}".id
+                    AND osf_tag.system IS TRUE
+                ) AS system_tags
+                FROM "{table}"
+                WHERE type IN ('osf.trashedfile', 'osf.trashedfolder')
+                ORDER BY _id
+            '''.format(
+                table=model._meta.db_table,
+                through_table=model._meta.get_field('tags').m2m_db_table(),
+                through_column=model._meta.get_field('tags').m2m_column_name(),
+            ), [model._meta.model_name])
+
+            from website.models import TrashedFileNode
+            modm_model = TrashedFileNode
+            mongo_cursor = modm_model._storage[0].db[modm_model._storage[0].collection].find({}, {'tags': 1, 'system_tags': 1}).sort('_id')
+
+            check_tags_cursors(cursor, mongo_cursor, 'TrashedFileNode')
 
 
 @app.task()
