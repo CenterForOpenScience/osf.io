@@ -527,7 +527,7 @@ def save_page_of_bare_models(self, django_model, offset, limit):
         else:
             modm_queryset = modm_model.find(django_model.modm_query)
 
-        modm_page = modm_queryset.sort('-_id')[offset: limit]
+        modm_page = modm_queryset.sort('_id')[offset: limit]
 
         with transaction.atomic():
             django_objects = list()
@@ -631,8 +631,8 @@ def save_bare_system_tags(page_size=10000):
     start = timezone.now()
 
     things = list(MODMNode.find(MQ('system_tags', 'ne', [])).sort(
-        '-_id')) + list(MODMUser.find(MQ('system_tags', 'ne', [])).sort(
-        '-_id'))
+        '_id')) + list(MODMUser.find(MQ('system_tags', 'ne', [])).sort(
+        '_id'))
 
     system_tag_ids = []
     for thing in things:

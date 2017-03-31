@@ -483,7 +483,7 @@ def save_page_of_m2m_relationships(self, django_model, m2m_relations, offset, li
             else:
                 modm_queryset = modm_model.find(django_model.modm_query)
 
-            modm_page = modm_queryset.sort('-_id')[offset:limit]
+            modm_page = modm_queryset.sort('_id')[offset:limit]
             model_count = 0
             m2m_count = 0
             field_aliases = getattr(django_model, 'FIELD_ALIASES', {})
@@ -750,7 +750,7 @@ def migration_institutional_contributors():
     contributors = []
     contributor_hashes = set()
 # with ipdb.launch_ipdb_on_exception():
-    institutions = MODMInstitution.find(deleted=True).sort('-_id')
+    institutions = MODMInstitution.find(deleted=True).sort('_id')
     while count < total:
         with transaction.atomic():  # one transaction per page.
             for modm_obj in institutions[count:page_size + count]:
@@ -811,7 +811,7 @@ def migrate_node_through_models():
     node_rel_hashes = set()
     contributor_hashes = set()
 # with ipdb.launch_ipdb_on_exception():
-    nodes = MODMNode.find().sort('-_id')
+    nodes = MODMNode.find().sort('_id')
     while count < total:
         with transaction.atomic():  # one transaction per page.
             # is this query okay? isn't it going to catch things we don't want?
