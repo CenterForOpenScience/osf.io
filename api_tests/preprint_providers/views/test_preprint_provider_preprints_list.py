@@ -44,5 +44,13 @@ class TestPreprintProviderPreprintIsPublishedList(PreprintIsPublishedListMixin, 
         self.provider_two = self.provider_one
         self.published_project = ProjectFactory(creator=self.admin, is_public=True)
         self.public_project = ProjectFactory(creator=self.admin, is_public=True)
-        self.url = '/{}preprint_providers/{}/preprints/'.format(API_BASE, self.provider._id)
+        self.url = '/{}preprint_providers/{}/preprints/'.format(API_BASE, self.provider_one._id)
         super(TestPreprintProviderPreprintIsPublishedList, self).setUp()
+
+class TestPreprintProviderPreprintIsValidList(PreprintIsValidListMixin, ApiTestCase):
+    def setUp(self):
+        self.admin = AuthUserFactory()
+        self.provider = PreprintProviderFactory()
+        self.project = ProjectFactory(creator=self.admin, is_public=True)
+        self.url = '/{}preprint_providers/{}/preprints/'.format(API_BASE, self.provider._id)
+        super(TestPreprintProviderPreprintIsValidList, self).setUp()

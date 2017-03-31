@@ -515,7 +515,6 @@ class UserPreprints(JSONAPIBaseView, generics.ListAPIView, UserMixin, DjangoFilt
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
-        PreprintPublishedOrAdmin,
     )
 
     ordering = ('-date_created')
@@ -537,28 +536,24 @@ class UserPreprints(JSONAPIBaseView, generics.ListAPIView, UserMixin, DjangoFilt
 
     # overrides DjangoFilterMixin
     def get_default_django_query(self):
-        # the user being viewed via the api
-        viewed_user = self.get_user(check_permissions=False)
-
+        # the user who is requesting
         auth = get_user_auth(self.request)
-        # the person viewing the information
-        user = getattr(auth, 'user', None)
-        if not user:
-            return (DjangoQ(node__isnull=False, node__is_deleted=False, node__is_public=True, is_published=True, node___contributors__guids___id=viewed_user._id))
-        elif viewed_user._id == user._id:
-            return (DjangoQ(node__isnull=False, node__is_deleted=False, node___contributors__guids___id=viewed_user._id))
-        return (DjangoQ(node__isnull=False, node__is_deleted=False, node__is_public=True, node___contributors__guids___id=viewed_user._id) & 
-            (
-                DjangoQ(is_published=True) | 
-                (DjangoQ(node__contributor__admin=True, node__contributor__user_id=user.id))
-            )
-        )
+        auth_user = getattr(auth, 'user', None)
+
+        # the user data being requested
+        target_user = self.get_user(check_permissions=False)
+
+        # Permissions on the list objects are handled by the query
+        default_query = DjangoQ(node__isnull=False, node__is_deleted=False, node___contributors__guids___id=target_user._id)
+        no_user_query = DjangoQ(is_published=True, node__is_public=True)
+
+        if auth_user:
+            contrib_user_query = DjangoQ(is_published=True, node__contributor__user_id=auth_user.id, node__contributor__read=True) 
+            admin_user_query = DjangoQ(node__contributor__user_id=auth_user.id, node__contributor__admin=True)
+            return (default_query & (no_user_query | contrib_user_query | admin_user_query))
+        return (default_query & no_user_query)
 
     def get_queryset(self):
-        # TODO [OSF-7090]: Rearchitect how `.is_preprint` is determined,
-        # so that a query that is guaranteed to return only
-        # preprints can be constructed.
-        # NOTE: the above comment may not be relevant to this code anymore
         return PreprintService.objects.filter(self.get_query_from_request())
 
 

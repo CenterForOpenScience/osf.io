@@ -72,3 +72,93 @@ class PreprintIsPublishedListMixin(object):
     def test_filter_published_false_public(self):
         res = self.app.get('{}?filter[is_published]=false'.format(self.url))
         assert len(res.json['data']) == 0
+
+class PreprintIsValidListMixin(object):
+
+    def setUp(self):
+        super(PreprintIsValidListMixin, self).setUp()
+
+        self.provider = PreprintProviderFactory()
+        self.project = ProjectFactory(creator=self.admin, is_public=True)
+        self.admin = AuthUserFactory()
+        self.url = '/{}preprints/'.format(API_BASE)
+
+        assert self.admin, 'Subclasses of PreprintIsValidListMixin must define self.admin'
+        assert self.project, 'Subclasses of PreprintIsValidListMixin must define self.project'
+        assert self.provider, 'Subclasses of PreprintIsValidListMixin must define self.provider'
+        assert self.url, 'Subclasses of PreprintIsValidListMixin must define self.url'
+
+        self.write_contrib = AuthUserFactory()
+        self.non_contrib = AuthUserFactory()
+
+        self.subject = SubjectFactory()
+        self.file_one_project = test_utils.create_test_file(self.project, self.admin, 'saor.pdf')
+        self.project.add_contributor(self.write_contrib, permissions=permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS, save=True)
+        self.preprint = PreprintFactory(creator=self.admin, filename='saor.pdf', provider=self.provider, subjects=[[self.subject._id]], project=self.project, is_published=True)
+
+
+
+    # Test private
+    def test_preprint_private_invisible_no_auth(self):
+        res = self.app.get(self.url)
+        assert len(res.json['data']) == 1
+        self.project.is_public = False
+        self.project.save()
+        res = self.app.get(self.url)
+        assert len(res.json['data']) == 0
+
+    def test_preprint_private_visible_non_contributor(self):
+        res = self.app.get(self.url, auth=self.non_contrib.auth)
+        assert len(res.json['data']) == 1
+        self.project.is_public = False
+        self.project.save()
+        res = self.app.get(self.url, auth=self.non_contrib.auth)
+        assert len(res.json['data']) == 0
+
+    def test_preprint_private_visible_write(self):
+        res = self.app.get(self.url, auth=self.write_contrib.auth)
+        assert len(res.json['data']) == 1
+        self.project.is_public = False
+        self.project.save()
+        res = self.app.get(self.url, auth=self.write_contrib.auth)
+        assert len(res.json['data']) == 1
+
+    def test_preprint_private_visible_owner(self):
+        res = self.app.get(self.url, auth=self.admin.auth)
+        assert len(res.json['data']) == 1
+        self.project.is_public = False
+        self.project.save()
+        res = self.app.get(self.url, auth=self.admin.auth)
+        assert len(res.json['data']) == 1
+
+    def test_preprint_node_deleted_invisible(self):
+        self.project.is_deleted = True
+        self.project.save()
+        # no auth
+        res = self.app.get(self.url)
+        assert len(res.json['data']) == 0
+        # contrib
+        res = self.app.get(self.url, auth=self.non_contrib.auth)
+        assert len(res.json['data']) == 0
+        # write_contrib
+        res = self.app.get(self.url, auth=self.write_contrib.auth)
+        assert len(res.json['data']) == 0
+        # admin
+        res = self.app.get(self.url, auth=self.admin.auth)
+        assert len(res.json['data']) == 0
+
+    def test_preprint_node_null_invisible(self):
+        self.preprint.node = None
+        self.preprint.save()
+        # no auth
+        res = self.app.get(self.url)
+        assert len(res.json['data']) == 0
+        # contrib
+        res = self.app.get(self.url, auth=self.non_contrib.auth)
+        assert len(res.json['data']) == 0
+        # write_contrib
+        res = self.app.get(self.url, auth=self.write_contrib.auth)
+        assert len(res.json['data']) == 0
+        # admin
+        res = self.app.get(self.url, auth=self.admin.auth)
+        assert len(res.json['data']) == 0

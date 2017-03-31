@@ -3351,7 +3351,6 @@ class NodePreprintsList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, Django
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
         ContributorOrPublic,
-        PreprintPublishedOrAdmin,
     )
     parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON,)
 
@@ -3373,21 +3372,18 @@ class NodePreprintsList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, Django
     # overrides DjangoFilterMixin
     def get_default_django_query(self):
         auth = get_user_auth(self.request)
-        user = getattr(auth, 'user', None)
-        node = self.get_node(check_object_permissions=False)
-        if not user:
-            return (DjangoQ(node=node, node__isnull=False, is_published=True))
-        
-        ##########################
-        # check if this can be optimized to not do a join
-        ##########################
-        # only show unpublished preprints if admin on project
-        return (DjangoQ(node=node, node__isnull=False) & 
-            (
-                DjangoQ(is_published=True) | 
-                DjangoQ(node__contributor__admin=True, node__contributor__user_id=user.id)
-            )
-        )
+        auth_user = getattr(auth, 'user', None)
+        node = self.get_node()
+
+        # Permissions on the node are handled by the permissions_classes
+        # Permissions on the list objects are handled by the query
+        default_query = DjangoQ(node=node)
+        no_user_query = DjangoQ(is_published=True)
+
+        if auth_user:
+            admin_user_query = DjangoQ(node__contributor__user_id=auth_user.id, node__contributor__admin=True)
+            return (default_query & (no_user_query | admin_user_query))
+        return (default_query & no_user_query)
 
     # overrides ListAPIView
     def get_queryset(self):
