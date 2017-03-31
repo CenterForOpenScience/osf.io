@@ -18,6 +18,7 @@ from scripts import utils as script_utils
 logger = logging.getLogger(__name__)
 
 def creds_are_valid(ea_id):
+    logger.warn('Validating credentials for externalaccount {}'.format(ea_id))
     ea = ExternalAccount.load(ea_id)
     if ea.provider == 'github':
         try:
@@ -45,8 +46,7 @@ def swap_references_and_rm(to_keep, to_swap, provider):
         }}
     )
     us_map = {us['_id']: us['external_accounts'] for us in db['{}usersettings'.format(provider)].find({'external_accounts': to_swap})}
-    for usid in us_map.keys():
-        ealist = us_map[usid]
+    for usid, ealist in us_map.items():
         ealist.remove(to_swap)
         ealist.append(to_keep)
         db['{}usersettings'.format(provider)].find_and_modify(
@@ -56,8 +56,7 @@ def swap_references_and_rm(to_keep, to_swap, provider):
             }}
         )
     u_map = {u['_id']: u['external_accounts'] for u in db['user'].find({'external_accounts': to_swap})}
-    for uid in u_map.keys():
-        ealist = u_map[uid]
+    for uid, ealist in u_map.items():
         ealist.remove(to_swap)
         ealist.append(to_keep)
         db['user'].find_and_modify(
@@ -70,7 +69,7 @@ def swap_references_and_rm(to_keep, to_swap, provider):
     db.externalaccount.remove({'_id': to_swap})
 
 def migrate():
-    possible_collisions = db.externalaccount.aggregate([{'$match': {'provider_id': {'$type': 16}}}])['result']
+    possible_collisions = db.externalaccount.find({'provider_id': {'$type': 16}})
 
     pc_map = {'dropbox': [], 'github': [], 'figshare': []}
     for pc in possible_collisions:
@@ -80,15 +79,11 @@ def migrate():
     for provider in pc_map:
         for pc in pc_map[provider]:
             if db.externalaccount.find({'provider': provider, 'provider_id': str(pc['provider_id'])}).count():
-                collisions.append([provider, pc['_id'], db.externalaccount.find({'provider': provider, 'provider_id': str(pc['provider_id'])})[0]['_id']])
+                collisions.append([provider, pc['_id'], db.externalaccount.find_one({'provider': provider, 'provider_id': str(pc['provider_id'])})['_id']])
 
-    ns_map = {'github': db.githubnodesettings, 'dropbox': db.dropboxnodesettings}
+    ns_map = {'github': db.githubnodesettings, 'dropbox': db.dropboxnodesettings, 'figshare': db.figsharenodesettings}
     eas_no_ns = []
-    problem_ids = []
-    for cols in collisions:
-        provider = cols[0]
-        int_ea = cols[1]
-        str_ea = cols[2]
+    for provider, int_ea, str_ea in collisions:
         if ns_map[provider].find({'external_account': int_ea}).count() == 0:
             eas_no_ns.append(int_ea)
             swap_references_and_rm(str_ea, int_ea, provider)
@@ -96,11 +91,12 @@ def migrate():
             eas_no_ns.append(str_ea)
             swap_references_and_rm(int_ea, str_ea, provider)
         else:
-            problem_ids.append([int_ea, str_ea])
+            logger.info('{}nodesettings exist for both externalaccounts {} AND {}'.format(provider, int_ea, str_ea))
             if creds_are_valid(int_ea) and not creds_are_valid(str_ea):
                 swap_references_and_rm(int_ea, str_ea, provider)
             else:
                 swap_references_and_rm(str_ea, int_ea, provider)
+    logger.info('Fixed {} external account collisions'.format(len(collisions)))
 
 def main():
     dry = '--dry' in sys.argv
