@@ -70,179 +70,190 @@ def do_model(django_model):
 
 
 def validate_m2m_field(field_name, django_obj, modm_obj):
-    field = getattr(django_obj, field_name)
+    try:
+        field = getattr(django_obj, field_name)
 
-    # handle both forward and reverse rels
-    if hasattr(django_obj, field_name):
-        manager = field
-        # skip groups and permissions
-        if manager.model is Group or manager.model is Permission:
-            return
-        primary_identifier_name = manager.model.primary_identifier_name
-    else:
-        manager_name = '{}_set'.format(field.through._meta.object_name).lower()
-        manager = getattr(django_obj, manager_name)
-        try:
-            primary_identifier_name = field.through._meta.model.primary_identifier_name
-        except AttributeError:
-            primary_identifier_name = '_id'
-    django_guids = manager.all().values_list(primary_identifier_name, flat=True)
-
-    flat_django_guids = []
-
-    for guid in django_guids:
-        if isinstance(guid, list):
-            flat_django_guids.extend(guid)
+        # handle both forward and reverse rels
+        if hasattr(django_obj, field_name):
+            manager = field
+            # skip groups and permissions
+            if manager.model is Group or manager.model is Permission:
+                return
+            primary_identifier_name = manager.model.primary_identifier_name
         else:
-            flat_django_guids.append(guid)
+            manager_name = '{}_set'.format(field.through._meta.object_name).lower()
+            manager = getattr(django_obj, manager_name)
+            try:
+                primary_identifier_name = field.through._meta.model.primary_identifier_name
+            except AttributeError:
+                primary_identifier_name = '_id'
+        django_guids = manager.all().values_list(primary_identifier_name, flat=True)
 
-    django_guids = flat_django_guids
+        flat_django_guids = []
 
-    # if there's a field alias, let's use that.
-    if getattr(django_obj, 'FIELD_ALIASES', None) is None:
-        modm_field_name = field_name
-    else:
-        modm_field_name = {v: k for k, v in getattr(django_obj, 'FIELD_ALIASES', {}).iteritems()}.get(field_name, field_name)
-
-    if modm_field_name not in modm_obj.to_storage():
-        logger.error('{} was not in {} for {}.{} with id {}'.format(modm_field_name, modm_obj.to_storage(), django_obj._meta.model.__module__, django_obj._meta.model.__name__, django_obj._id))
-        return
-    modm_guids = modm_obj.to_storage()[modm_field_name]
-    for django_guid in django_guids:
-        if isinstance(django_guid, list):
-            for djg in django_guid:
-                try:
-                    assert djg in modm_guids, '{} for model {}.{} with id {} was not in modm guids for field {}'.format(django_guid, django_obj._meta.model.__module__, django_obj._meta.model.__name__, django_obj._id, modm_field_name)
-                except AssertionError as ex:
-                    logger.error(ex)
+        for guid in django_guids:
+            if isinstance(guid, list):
+                flat_django_guids.extend(guid)
             else:
-                try:
-                    assert django_guid in modm_guids, '{} for model {}.{} with id {} was not in modm guids for field {}'.format(django_guid, django_obj._meta.model.__module__, django_obj._meta.model.__name__, django_obj._id, modm_field_name)
-                except AssertionError as ex:
-                    logger.error(ex)
+                flat_django_guids.append(guid)
+
+        django_guids = flat_django_guids
+
+        # if there's a field alias, let's use that.
+        if getattr(django_obj, 'FIELD_ALIASES', None) is None:
+            modm_field_name = field_name
+        else:
+            modm_field_name = {v: k for k, v in getattr(django_obj, 'FIELD_ALIASES', {}).iteritems()}.get(field_name, field_name)
+
+        if modm_field_name not in modm_obj.to_storage():
+            logger.error('{} was not in {} for {}.{} with id {}'.format(modm_field_name, modm_obj.to_storage(), django_obj._meta.model.__module__, django_obj._meta.model.__name__, django_obj._id))
+            return
+        modm_guids = modm_obj.to_storage()[modm_field_name]
+        for django_guid in django_guids:
+            if isinstance(django_guid, list):
+                for djg in django_guid:
+                    try:
+                        assert djg in modm_guids, '{} for model {}.{} with id {} was not in modm guids for field {}'.format(django_guid, django_obj._meta.model.__module__, django_obj._meta.model.__name__, django_obj._id, modm_field_name)
+                    except AssertionError as ex:
+                        logger.error(ex)
+                else:
+                    try:
+                        assert django_guid in modm_guids, '{} for model {}.{} with id {} was not in modm guids for field {}'.format(django_guid, django_obj._meta.model.__module__, django_obj._meta.model.__name__, django_obj._id, modm_field_name)
+                    except AssertionError as ex:
+                        logger.error(ex)
+    except AttributeError as ex:
+        logger.warning('AttributeError on model {}.{} for id {} and field_name {}'.format(django_obj.__module__, django_obj.__class__, django_obj._id, field_name))
+        return
 
 
 def validate_fk_relation(field_name, django_obj, modm_obj):
-    if field_name in ['content_type', 'content_type_pk', 'content_type_id']:
-        # modm doesn't have gfk
+    try:
+        if field_name in ['content_type', 'content_type_pk', 'content_type_id']:
+            # modm doesn't have gfk
+            return
+
+        if isinstance(modm_obj, StoredFileNode) and field_name in ['deleted_by', 'deleted_on']:
+            return
+
+        if django_obj._meta.model is EmbargoTerminationApproval and field_name == 'initiated_by':
+            # EmbargoTerminationApproval didn't have an initiated_by in modm even though it was supposed to.
+            return
+
+        django_field_value = getattr(django_obj, field_name)
+        # if there's a field alias, let's use that.
+        if getattr(django_obj, 'FIELD_ALIASES', None) is None:
+            modm_field_name = field_name
+        else:
+            modm_field_name = {v: k for k, v in getattr(django_obj, 'FIELD_ALIASES', {}).iteritems()}.get(field_name, field_name)
+
+
+        if django_obj._meta.model is NotificationSubscription:
+            modm_field_name = 'owner'
+            modm_field_value = getattr(modm_obj, modm_field_name)
+
+            if isinstance(modm_field_value, MUser):
+                django_field_value = getattr(django_obj, 'user')
+            elif isinstance(modm_field_value, MNode):
+                django_field_value = getattr(django_obj, 'node')
+
+        else:
+            modm_field_value = getattr(modm_obj, modm_field_name)
+
+        if modm_field_value and django_field_value:
+            try:
+                assert modm_field_value._id == django_field_value._id, 'Modm field {} of obj {}:{} with value of {} doesn\'t equal django field with value {}'.format(field_name, type(modm_obj), modm_obj._id, modm_field_value._id, django_field_value._id)
+            except AssertionError as ex:
+                logger.error(ex)
+        elif modm_field_value is not None and django_field_value is None:
+            logger.error('{} of {!r} was None in django {} but {!r} in modm'.format(field_name, modm_obj, django_obj._id, modm_field_value))
+    except AttributeError as ex:
+        logger.warning('AttributeError on model {}.{} for id {} and field_name {}'.format(django_obj.__module__, django_obj.__class__, django_obj._id, field_name))
         return
-
-    if isinstance(modm_obj, StoredFileNode) and field_name in ['deleted_by', 'deleted_on']:
-        return
-
-    if django_obj._meta.model is EmbargoTerminationApproval and field_name == 'initiated_by':
-        # EmbargoTerminationApproval didn't have an initiated_by in modm even though it was supposed to.
-        return
-
-    django_field_value = getattr(django_obj, field_name)
-    # if there's a field alias, let's use that.
-    if getattr(django_obj, 'FIELD_ALIASES', None) is None:
-        modm_field_name = field_name
-    else:
-        modm_field_name = {v: k for k, v in getattr(django_obj, 'FIELD_ALIASES', {}).iteritems()}.get(field_name, field_name)
-
-
-    if django_obj._meta.model is NotificationSubscription:
-        modm_field_name = 'owner'
-        modm_field_value = getattr(modm_obj, modm_field_name)
-
-        if isinstance(modm_field_value, MUser):
-            django_field_value = getattr(django_obj, 'user')
-        elif isinstance(modm_field_value, MNode):
-            django_field_value = getattr(django_obj, 'node')
-
-    else:
-        modm_field_value = getattr(modm_obj, modm_field_name)
-
-    if modm_field_value and django_field_value:
-        try:
-            assert modm_field_value._id == django_field_value._id, 'Modm field {} of obj {}:{} with value of {} doesn\'t equal django field with value {}'.format(field_name, type(modm_obj), modm_obj._id, modm_field_value._id, django_field_value._id)
-        except AssertionError as ex:
-            logger.error(ex)
-    elif modm_field_value is not None and django_field_value is None:
-        logger.error('{} of {!r} was None in django {} but {!r} in modm'.format(field_name, modm_obj, django_obj._id, modm_field_value))
-
 
 def validate_basic_field(field_name, django_obj, modm_obj):
-    if field_name in ['id', 'pk', 'object_id', 'guid_string', 'last_login', 'is_superuser', 'content_type_pk', 'content_type_id', 'type', 'piwik_site_id']:
-        # modm doesn't have these
-        return
-
-    # if there's a field alias, let's use that.
-    if getattr(django_obj, 'FIELD_ALIASES', None) is None:
-        modm_field_name = field_name
-    else:
-        modm_field_name = {v: k for k, v in getattr(django_obj, 'FIELD_ALIASES', {}).iteritems()}.get(field_name, field_name)
-
-    if field_name == '_history':
-        modm_field_name = 'history'
-
-    if field_name == '_path':
-        modm_field_name = 'path'
-
-    if field_name == '_materialized_path':
-        modm_field_name = 'materialized_path'
-
-
-    if modm_field_name is False:
-        return
-
-    modm_value = getattr(modm_obj, modm_field_name)
-    django_value = getattr(django_obj, field_name)
-
-    if django_value is None and modm_value is None:
-        return
-
-    # we will never have to do this again
-    if modm_value == 'JyZND':
-        modm_value = modm_value.lower()
-
-
-    if field_name == 'password':
-        modm_value = 'bcrypt${}'.format(modm_value)
-
-    if type(django_value) != type(modm_value):
-        # jsonb fields
-        if modm_value is None and django_value == {}:
-            return
-
-        # bool defaulting to False but None in modm is falsey
-        if modm_value is None and django_value is False:
-            return
-
-        # sometimes None is an empty string because MongoDB
-        if modm_value is None and django_value == '':
-            return
-
-        if django_obj._meta.get_field_by_name(field_name).max_length == len(django_value) and django_value != modm_value:
-            logger.warn('{} on model {}.{} with id {} did not match modm but was field max_length'.format(field_name, django_obj._meta.model.__module__, django_obj._meta.model.__class__, django_obj._id))
-
-        if modm_value is None:
-            logger.error('modm value was None but django value was {} for {} on {}.{} with ID of {}'.format(django_value, field_name, django_obj._meta.model.__module__, django_obj._meta.model.__class__, getattr(django_obj, django_obj._primary_identifier_name)))
-            return
-
-        # sometimes strings used to be integers, in some documents... LicenseRecord.year
-        try:
-            assert django_value.__class__(modm_value) == django_value, 'WITH TYPECAST: {}.{} _id:{} django_field_name:{} django_value:{} modm_field_name:{} modm_value:{!r}'.format(django_obj.__module__, django_obj.__class__, django_obj._id, field_name, django_value, modm_field_name, modm_value)
-        except AssertionError as ex:
-            logger.error(ex)
-        return
-
-    if isinstance(modm_value, datetime):
-        try:
-            assert django_value.tzinfo is not None and django_value.tzinfo.utcoffset(django_value) is not None, 'Django datetime is naive for field {} on model {}.{} with id {}'.format(field_name, django_obj._meta.model.__module__, django_obj._meta.model.__class__, django_obj._id)
-        except AssertionError as ex:
-            logger.error(ex)
-
-        try:
-            assert django_value == pytz.utc.localize(modm_value), '{}.{} _id:{} django_field_name:{} django_value:{} modm_field_name:{} modm_value:{}'.format(django_obj.__module__, django_obj.__class__, django_obj._id, field_name, django_value, modm_field_name, pytz.utc.localize(modm_value))
-        except AssertionError as ex:
-            logger.error(ex)
-        return
     try:
-        assert django_value == modm_value, '{}.{} _id:{} django_field_name{} django_value:{} modm_field_name:{} modm_value:{!r}'.format(django_obj.__module__, django_obj.__class__, django_obj._id, field_name, django_value, modm_field_name, modm_value)
-    except AssertionError as ex:
-        logger.error(ex)
+        if field_name in ['id', 'pk', 'object_id', 'guid_string', 'last_login', 'is_superuser', 'content_type_pk', 'content_type_id', 'type', 'piwik_site_id']:
+            # modm doesn't have these
+            return
+
+        # if there's a field alias, let's use that.
+        if getattr(django_obj, 'FIELD_ALIASES', None) is None:
+            modm_field_name = field_name
+        else:
+            modm_field_name = {v: k for k, v in getattr(django_obj, 'FIELD_ALIASES', {}).iteritems()}.get(field_name, field_name)
+
+        if field_name == '_history':
+            modm_field_name = 'history'
+
+        if field_name == '_path':
+            modm_field_name = 'path'
+
+        if field_name == '_materialized_path':
+            modm_field_name = 'materialized_path'
+
+
+        if modm_field_name is False:
+            return
+
+        modm_value = getattr(modm_obj, modm_field_name)
+        django_value = getattr(django_obj, field_name)
+
+        if django_value is None and modm_value is None:
+            return
+
+        # we will never have to do this again
+        if modm_value == 'JyZND':
+            modm_value = modm_value.lower()
+
+
+        if field_name == 'password':
+            modm_value = 'bcrypt${}'.format(modm_value)
+
+        if type(django_value) != type(modm_value):
+            # jsonb fields
+            if modm_value is None and django_value == {}:
+                return
+
+            # bool defaulting to False but None in modm is falsey
+            if modm_value is None and django_value is False:
+                return
+
+            # sometimes None is an empty string because MongoDB
+            if modm_value is None and django_value == '':
+                return
+
+            if django_obj._meta.get_field_by_name(field_name).max_length == len(django_value) and django_value != modm_value:
+                logger.warn('{} on model {}.{} with id {} did not match modm but was field max_length'.format(field_name, django_obj._meta.model.__module__, django_obj._meta.model.__class__, django_obj._id))
+
+            if modm_value is None:
+                logger.error('modm value was None but django value was {} for {} on {}.{} with ID of {}'.format(django_value, field_name, django_obj._meta.model.__module__, django_obj._meta.model.__class__, getattr(django_obj, django_obj._primary_identifier_name)))
+                return
+
+            # sometimes strings used to be integers, in some documents... LicenseRecord.year
+            try:
+                assert django_value.__class__(modm_value) == django_value, 'WITH TYPECAST: {}.{} _id:{} django_field_name:{} django_value:{} modm_field_name:{} modm_value:{!r}'.format(django_obj.__module__, django_obj.__class__, django_obj._id, field_name, django_value, modm_field_name, modm_value)
+            except AssertionError as ex:
+                logger.error(ex)
+            return
+
+        if isinstance(modm_value, datetime):
+            try:
+                assert django_value.tzinfo is not None and django_value.tzinfo.utcoffset(django_value) is not None, 'Django datetime is naive for field {} on model {}.{} with id {}'.format(field_name, django_obj._meta.model.__module__, django_obj._meta.model.__class__, django_obj._id)
+            except AssertionError as ex:
+                logger.error(ex)
+
+            try:
+                assert django_value == pytz.utc.localize(modm_value), '{}.{} _id:{} django_field_name:{} django_value:{} modm_field_name:{} modm_value:{}'.format(django_obj.__module__, django_obj.__class__, django_obj._id, field_name, django_value, modm_field_name, pytz.utc.localize(modm_value))
+            except AssertionError as ex:
+                logger.error(ex)
+            return
+        try:
+            assert django_value == modm_value, '{}.{} _id:{} django_field_name{} django_value:{} modm_field_name:{} modm_value:{!r}'.format(django_obj.__module__, django_obj.__class__, django_obj._id, field_name, django_value, modm_field_name, modm_value)
+        except AssertionError as ex:
+            logger.error(ex)
+    except AttributeError as ex:
+        logger.warning('AttributeError on model {}.{} for id {} and field_name {}'.format(django_obj.__module__, django_obj.__class__, django_obj._id, field_name))
+        return
 
 
 def get_pk(modm_object, django_model, modm_to_django):
