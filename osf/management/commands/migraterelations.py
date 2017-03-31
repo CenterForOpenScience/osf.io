@@ -341,7 +341,7 @@ def save_page_of_fk_relationships(self, django_model, fk_relations, offset, limi
                             fk_field_value = modm_to_django[(content_type_primary_key, formatted_guid)]
                         except KeyError as ex:
                             logger.error('modm key {} not found in lookup table'.format(
-                                format_lookup_key(modm_obj._id, model=django_model)))
+                                format_lookup_key(value, model=django_model)))
                             continue
 
                         # this next line could be better if we just got all the content_types
@@ -379,7 +379,7 @@ def save_page_of_fk_relationships(self, django_model, fk_relations, offset, limi
                                         modm_to_django[format_lookup_key(value, model=field.related_model)])
                             except KeyError as ex:
                                 logger.error('modm key {} not found in lookup table'.format(
-                                    format_lookup_key(modm_obj._id, model=django_model)))
+                                    format_lookup_key(value, model=django_model)))
                                 continue
                             else:
                                 dirty = True
@@ -392,7 +392,7 @@ def save_page_of_fk_relationships(self, django_model, fk_relations, offset, limi
                                         modm_to_django[format_lookup_key(value._id, model=field.related_model)])
                             except KeyError as ex:
                                 logger.error('modm key {} not found in lookup table'.format(
-                                    format_lookup_key(modm_obj._id, model=django_model)))
+                                    format_lookup_key(value._id, model=django_model)))
                                 continue
                             dirty = True
                             fk_count += 1
@@ -558,14 +558,14 @@ def save_page_of_m2m_relationships(self, django_model, m2m_relations, offset, li
                                     remote_pks.add(modm_to_django[format_lookup_key(item, model=model, template='{}:system')])
                                 except KeyError as ex:
                                     logger.error('{} for {} at {}'.format(ex, django_model,
-                                                                    format_lookup_key(modm_obj._id, model=django_model)))
+                                                                    format_lookup_key(value, model=django_model)))
                                     continue
                             elif field_name == 'tags' and 'system_tags' in field_aliases.keys():
                                 try:
                                     remote_pks.add(modm_to_django[format_lookup_key(item, model=model, template='{}:system')])
                                 except KeyError as ex:
                                     logger.error('{} for {} at {}'.format(ex, django_model,
-                                                                    format_lookup_key(modm_obj._id, model=django_model)))
+                                                                    format_lookup_key(value, model=django_model)))
                                     continue
                             elif field_name == 'tags':
                                 try:
@@ -573,14 +573,14 @@ def save_page_of_m2m_relationships(self, django_model, m2m_relations, offset, li
                                         modm_to_django[format_lookup_key(item, model=model, template='{}:not_system')])
                                 except KeyError as ex:
                                     logger.error('{} for {} at {}'.format(ex, django_model,
-                                                                    format_lookup_key(modm_obj._id, model=django_model)))
+                                                                    format_lookup_key(value, model=django_model)))
                                     continue
                             else:
                                 try:
                                     remote_pks.add(modm_to_django[format_lookup_key(item, model=model)])
                                 except KeyError as ex:
                                     logger.error('{} for {} at {}'.format(ex, django_model,
-                                                                    format_lookup_key(modm_obj._id, model=django_model)))
+                                                                    format_lookup_key(value, model=django_model)))
                                     continue
                         # if it's a class instance
                         elif hasattr(item, '_id'):
@@ -593,7 +593,7 @@ def save_page_of_m2m_relationships(self, django_model, m2m_relations, offset, li
                                         modm_to_django[format_lookup_key(str_value, model=model, template='{}:system')])
                                 except KeyError as ex:
                                     logger.error('{} for {} at {}'.format(ex, django_model,
-                                                                    format_lookup_key(modm_obj._id, model=django_model)))
+                                                                    format_lookup_key(value, model=django_model)))
                                     continue
                             elif field_name == 'tags' and 'system_tags' in field_aliases.keys():
                                 try:
@@ -601,7 +601,7 @@ def save_page_of_m2m_relationships(self, django_model, m2m_relations, offset, li
                                         modm_to_django[format_lookup_key(str_value, model=model, template='{}:system')])
                                 except KeyError as ex:
                                     logger.error('{} for {} at {}'.format(ex, django_model,
-                                                                    format_lookup_key(modm_obj._id, model=django_model)))
+                                                                    format_lookup_key(value, model=django_model)))
                                     continue
                             elif field_name == 'tags':
                                 try:
@@ -609,14 +609,15 @@ def save_page_of_m2m_relationships(self, django_model, m2m_relations, offset, li
                                         modm_to_django[format_lookup_key(str_value, model=model, template='{}:not_system')])
                                 except KeyError as ex:
                                     logger.error('{} for {} at {}'.format(ex, django_model,
-                                                                    format_lookup_key(modm_obj._id, model=django_model)))
+                                                                    format_lookup_key(value, model=django_model)))
                                     continue
                             else:
                                 try:
                                     remote_pks.add(modm_to_django[format_lookup_key(str_value, model=model)])
                                 except KeyError as ex:
                                     logger.error('{} for {} at {}'.format(ex, django_model,
-                                                                    format_lookup_key(modm_obj._id, model=django_model)))
+                                                                    format_lookup_key(value
+                                                                                      , model=django_model)))
                                     continue
                         elif item is None:
                             continue
