@@ -3008,14 +3008,14 @@ class TestLogMethods:
         assert grandchild_log in list(logs)
 
     # copied from tests/test_models.py#TestNode
-    def test_get_aggregate_logs_queryset_doesnt_return_hidden_logs(self, parent):
-        n_orig_logs = len(parent.get_aggregate_logs_queryset(Auth(user)))
+    def test_get_aggregate_logs_queryset_doesnt_return_hidden_logs(self, parent, auth):
+        n_orig_logs = len(parent.get_aggregate_logs_queryset(auth))
 
         log = parent.logs.latest()
         log.should_hide = True
         log.save()
 
-        n_new_logs = len(parent.get_aggregate_logs_queryset(Auth(user)))
+        n_new_logs = len(parent.get_aggregate_logs_queryset(auth))
         # Hidden log is not returned
         assert n_new_logs == n_orig_logs - 1
 
