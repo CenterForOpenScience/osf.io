@@ -273,12 +273,13 @@ class MkdirPFileHandler(logging.FileHandler):
 
 @app.task(bind=True, max_retries=None)  # retry forever because of cursor timeouts
 def validate_page_of_model_data(self, django_model, basic_fields, fk_relations, m2m_relations, offset, limit):
+    logger = validate_page_of_model_data.get_logger()
     for handler in logger.handlers[:]:
         logger.removeHandler(handler)
 
     hndlr = MkdirPFileHandler('../logs/{}.{}/{}.log'.format(django_model._meta.model.__module__, django_model._meta.model.__name__, self.request.id), mode='w')
-    formatta = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    hndlr.setFormatter(formatta)
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    hndlr.setFormatter(formatter)
     logger.addHandler(hndlr)
 
     try:
