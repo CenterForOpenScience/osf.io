@@ -78,12 +78,20 @@ class TestNodePreprintsListFiltering(PreprintsListFilteringMixin, ApiTestCase):
         actual = [preprint['id'] for preprint in res.json['data']]
         assert_equal(expected, actual)
 
-class TestUserPreprintIsPublishedList(PreprintIsPublishedListMixin, ApiTestCase):
+class TestNodePreprintIsPublishedList(PreprintIsPublishedListMixin, ApiTestCase):
     def setUp(self):
         self.admin = AuthUserFactory()
         self.provider_one = PreprintProviderFactory()
         self.provider_two = PreprintProviderFactory()
         self.published_project = ProjectFactory(creator=self.admin, is_public=True)
         self.public_project = self.published_project
-        self.url = '/{}nodes/{}/preprints/'.format(API_BASE, self.admin._id)
-        super(TestUserPreprintIsPublishedList, self).setUp()
+        self.url = '/{}node/{}/preprints/'.format(API_BASE, self.published_project._id)
+        super(TestNodePreprintIsPublishedList, self).setUp()
+
+class TestNodePreprintIsValidList(PreprintIsValidListMixin, ApiTestCase):
+    def setUp(self):
+        self.admin = AuthUserFactory()
+        self.provider = PreprintProviderFactory()
+        self.project = ProjectFactory(creator=self.admin, is_public=True)
+        self.url = '/{}node/{}/preprints/'.format(API_BASE, self.project._id)
+        super(TestNodePreprintIsValidList, self).setUp()

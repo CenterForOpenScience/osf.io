@@ -82,7 +82,7 @@ class TestUserPreprintsListFiltering(PreprintsListFilteringMixin, ApiTestCase):
         self.project = ProjectFactory(creator=self.user)
         self.project_two = ProjectFactory(creator=self.user)
         self.project_three = ProjectFactory(creator=self.user)
-        self.url = '/{}preprints/?version=2.2&'.format(API_BASE)
+        self.url = '/{}/users/preprints/?version=2.2&'.format(API_BASE, self.user._id)
         super(TestUserPreprintsListFiltering, self).setUp()
 
     def test_provider_filter_equals_returns_one(self):
@@ -101,3 +101,12 @@ class TestUserPreprintIsPublishedList(PreprintIsPublishedListMixin, ApiTestCase)
         self.public_project = ProjectFactory(creator=self.admin, is_public=True)
         self.url = '/{}users/{}/preprints/'.format(API_BASE, self.admin._id)
         super(TestUserPreprintIsPublishedList, self).setUp()
+
+
+class TestUserPreprintIsValidList(PreprintIsValidListMixin, ApiTestCase):
+    def setUp(self):
+        self.admin = AuthUserFactory()
+        self.provider = PreprintProviderFactory()
+        self.project = ProjectFactory(creator=self.admin, is_public=True)
+        self.url = '/{}users/{}/preprints/'.format(API_BASE, self.admin._id)
+        super(TestUserPreprintIsValidList, self).setUp()

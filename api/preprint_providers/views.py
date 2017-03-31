@@ -190,17 +190,17 @@ class PreprintProviderPreprintList(JSONAPIBaseView, generics.ListAPIView, Django
     # overrides DjangoFilterMixin
     def get_default_django_query(self):
         auth = get_user_auth(self.request)
-        user = getattr(auth, 'user', None)
-        if not user:
-            return (DjangoQ(node__isnull=False, is_published=True, provider___id=self.kwargs['provider_id']))
+        auth_user = getattr(auth, 'user', None)
 
-        # only show unpublished preprints if admin on project
-        return (DjangoQ(node__isnull=False, provider___id=self.kwargs['provider_id']) & 
-            (
-                DjangoQ(is_published=True) | 
-                DjangoQ(node__contributor__admin=True, node__contributor__user_id=user.id)
-            )
-        )
+        # Permissions on the list objects are handled by the query
+        default_query = DjangoQ(node__isnull=False, node__is_deleted=False, provider___id=self.kwargs['provider_id'])
+        no_user_query = DjangoQ(is_published=True, node__is_public=True)
+
+        if auth_user:
+            contrib_user_query = DjangoQ(is_published=True, node__contributor__user_id=auth_user.id, node__contributor__read=True) 
+            admin_user_query = DjangoQ(node__contributor__user_id=auth_user.id, node__contributor__admin=True)
+            return (default_query & (no_user_query | contrib_user_query | admin_user_query))
+        return (default_query & no_user_query)
 
     # overrides ListAPIView
     def get_queryset(self):
