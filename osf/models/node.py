@@ -94,7 +94,7 @@ class AbstractNodeQuerySet(MODMCompatibilityQuerySet, IncludeQuerySet):
         if private_link is not None:
             if isinstance(private_link, PrivateLink):
                 private_link = private_link.key
-            if not isinstance(private_link, str):
+            if not isinstance(private_link, basestring):
                 raise TypeError('"private_link" must be either {} or {}. Got {!r}'.format(str, PrivateLink, private_link))
 
             qs |= self.filter(private_links__is_deleted=False, private_links__key=private_link)
@@ -728,8 +728,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     def get_aggregate_logs_query(self, auth):
         return (
-            (
-                Q('node_id', 'in', Node.objects.get_children(self).can_view(user=auth.user, private_link=auth.private_link).values_list('id', flat=True)) |
+            (   # TODO: remove `list` call during phase 2
+                Q('node_id', 'in', list(Node.objects.get_children(self).can_view(user=auth.user, private_link=auth.private_link).values_list('id', flat=True))) |
                 Q('node_id', 'eq', self.id)
             ) & Q('should_hide', 'eq', False)
         )
