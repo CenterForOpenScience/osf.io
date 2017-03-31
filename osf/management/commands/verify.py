@@ -1,11 +1,13 @@
 from __future__ import unicode_literals
 
-import logging
+# import logging
 import os
 import sys
 from datetime import datetime
 
 import errno
+
+import logging
 import pytz
 from django.contrib.auth.models import Group, Permission
 from django.contrib.contenttypes.models import ContentType
@@ -26,8 +28,9 @@ from website.files.models import StoredFileNode
 from website.models import User as MUser, Node as MNode
 from .migratedata import set_backend
 
-logger = logging.getLogger('migrations')
-
+# logger = logging.getLogger('migrations')
+from celery.utils.log import get_task_logger
+logger = get_task_logger(__name__)
 
 class NotGonnaDoItException(Exception):
     pass
@@ -284,6 +287,8 @@ class MkdirPFileHandler(logging.FileHandler):
 
 @app.task(bind=True, max_retries=None)  # retry forever because of cursor timeouts
 def validate_page_of_model_data(self, django_model, basic_fields, fk_relations, m2m_relations, offset, limit):
+    logger = get_task_logger(__name__)
+
     logger.level = logging.DEBUG
 
     for handler in logger.handlers[:]:
