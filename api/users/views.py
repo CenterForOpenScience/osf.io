@@ -30,9 +30,8 @@ from rest_framework import permissions as drf_permissions
 from rest_framework import generics
 from rest_framework.exceptions import NotAuthenticated, NotFound
 from website.models import ExternalAccount, Node, User
-
 from osf.models import PreprintService
-from api.preprints.permissions import PreprintPublishedOrAdmin
+
 
 class UserMixin(object):
     """Mixin with convenience methods for retrieving the current user based on the
@@ -548,7 +547,7 @@ class UserPreprints(JSONAPIBaseView, generics.ListAPIView, UserMixin, DjangoFilt
         no_user_query = DjangoQ(is_published=True, node__is_public=True)
 
         if auth_user:
-            contrib_user_query = DjangoQ(is_published=True, node__contributor__user_id=auth_user.id, node__contributor__read=True) 
+            contrib_user_query = DjangoQ(is_published=True, node__contributor__user_id=auth_user.id, node__contributor__read=True)
             admin_user_query = DjangoQ(node__contributor__user_id=auth_user.id, node__contributor__admin=True)
             return (default_query & (no_user_query | contrib_user_query | admin_user_query))
         return (default_query & no_user_query)

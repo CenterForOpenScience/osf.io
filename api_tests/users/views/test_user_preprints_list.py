@@ -15,7 +15,7 @@ from website.util import permissions
 
 from api.base.settings.defaults import API_BASE
 from api_tests.preprints.filters.test_filters import PreprintsListFilteringMixin
-from api_tests.preprints.views.test_preprint_list_mixin import PreprintIsPublishedListMixin
+from api_tests.preprints.views.test_preprint_list_mixin import PreprintIsPublishedListMixin, PreprintIsValidListMixin
 
 class TestUserPreprints(ApiTestCase):
 
@@ -99,7 +99,7 @@ class TestUserPreprintIsPublishedList(PreprintIsPublishedListMixin, ApiTestCase)
         self.provider_two = self.provider_one
         self.published_project = ProjectFactory(creator=self.admin, is_public=True)
         self.public_project = ProjectFactory(creator=self.admin, is_public=True)
-        self.url = '/{}users/{}/preprints/'.format(API_BASE, self.admin._id)
+        self.url = '/{}users/{}/preprints/?version=2.2&'.format(API_BASE, self.admin._id)
         super(TestUserPreprintIsPublishedList, self).setUp()
 
 
@@ -108,5 +108,5 @@ class TestUserPreprintIsValidList(PreprintIsValidListMixin, ApiTestCase):
         self.admin = AuthUserFactory()
         self.provider = PreprintProviderFactory()
         self.project = ProjectFactory(creator=self.admin, is_public=True)
-        self.url = '/{}users/{}/preprints/'.format(API_BASE, self.admin._id)
+        self.url = '/{}users/{}/preprints/?version=2.2&'.format(API_BASE, self.admin._id)
         super(TestUserPreprintIsValidList, self).setUp()

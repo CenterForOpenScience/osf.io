@@ -57,32 +57,26 @@ class PreprintIsPublishedListMixin(object):
         assert self.unpublished_preprint._id not in [d['id'] for d in res.json['data']]
 
     def test_filter_published_false_admin(self):
-        res = self.app.get('{}?filter[is_published]=false'.format(self.url), auth=self.admin.auth)
+        res = self.app.get('{}filter[is_published]=false'.format(self.url), auth=self.admin.auth)
         assert len(res.json['data']) == 1
         assert self.unpublished_preprint._id in [d['id'] for d in res.json['data']]
 
     def test_filter_published_false_write_contrib(self):
-        res = self.app.get('{}?filter[is_published]=false'.format(self.url), auth=self.write_contrib.auth)
+        res = self.app.get('{}filter[is_published]=false'.format(self.url), auth=self.write_contrib.auth)
         assert len(res.json['data']) == 0
 
     def test_filter_published_false_non_contrib(self):
-        res = self.app.get('{}?filter[is_published]=false'.format(self.url), auth=self.non_contrib.auth)
+        res = self.app.get('{}filter[is_published]=false'.format(self.url), auth=self.non_contrib.auth)
         assert len(res.json['data']) == 0
 
     def test_filter_published_false_public(self):
-        res = self.app.get('{}?filter[is_published]=false'.format(self.url))
+        res = self.app.get('{}filter[is_published]=false'.format(self.url))
         assert len(res.json['data']) == 0
 
 class PreprintIsValidListMixin(object):
 
     def setUp(self):
         super(PreprintIsValidListMixin, self).setUp()
-
-        self.provider = PreprintProviderFactory()
-        self.project = ProjectFactory(creator=self.admin, is_public=True)
-        self.admin = AuthUserFactory()
-        self.url = '/{}preprints/'.format(API_BASE)
-
         assert self.admin, 'Subclasses of PreprintIsValidListMixin must define self.admin'
         assert self.project, 'Subclasses of PreprintIsValidListMixin must define self.project'
         assert self.provider, 'Subclasses of PreprintIsValidListMixin must define self.provider'
@@ -96,8 +90,6 @@ class PreprintIsValidListMixin(object):
         self.project.add_contributor(self.write_contrib, permissions=permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS, save=True)
         self.preprint = PreprintFactory(creator=self.admin, filename='saor.pdf', provider=self.provider, subjects=[[self.subject._id]], project=self.project, is_published=True)
 
-
-
     # Test private
     def test_preprint_private_invisible_no_auth(self):
         res = self.app.get(self.url)
@@ -107,7 +99,7 @@ class PreprintIsValidListMixin(object):
         res = self.app.get(self.url)
         assert len(res.json['data']) == 0
 
-    def test_preprint_private_visible_non_contributor(self):
+    def test_preprint_private_invisible_non_contributor(self):
         res = self.app.get(self.url, auth=self.non_contrib.auth)
         assert len(res.json['data']) == 1
         self.project.is_public = False

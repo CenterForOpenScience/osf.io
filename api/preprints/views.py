@@ -1,6 +1,5 @@
 import re
 
-from modularodm import Q
 from django.db.models import Q as DjangoQ
 
 from rest_framework import generics
@@ -181,7 +180,7 @@ class PreprintList(JSONAPIBaseView, generics.ListCreateAPIView, DjangoFilterMixi
         default_query = DjangoQ(node__isnull=False, node__is_deleted=False)
         no_user_query = DjangoQ(is_published=True, node__is_public=True)
         if auth_user:
-            contrib_user_query = DjangoQ(is_published=True, node__contributor__user_id=auth_user.id, node__contributor__read=True) 
+            contrib_user_query = DjangoQ(is_published=True, node__contributor__user_id=auth_user.id, node__contributor__read=True)
             admin_user_query = DjangoQ(node__contributor__user_id=auth_user.id, node__contributor__admin=True)
             return (default_query & (no_user_query | contrib_user_query | admin_user_query))
         return (default_query & no_user_query)
