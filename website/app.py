@@ -30,6 +30,7 @@ from framework.transactions import handlers as transaction_handlers
 from website import maintenance
 # Imports necessary to connect signals
 from website.archiver import listeners  # noqa
+from website.files.models import FileNode
 from website.mails import listeners  # noqa
 from website.notifications import listeners  # noqa
 from website.project.licenses import ensure_licenses
@@ -193,6 +194,7 @@ def patch_models(settings):
         models.OSFUser: 'User',
         models.AbstractNode: 'Node',
         models.NodeRelation: 'Pointer',
+        models.BaseFileNode: 'StoredFileNode',
     }
     for module in sys.modules.values():
         if not module:
@@ -202,7 +204,7 @@ def patch_models(settings):
             if (
                 hasattr(module, model_name) and
                 isinstance(getattr(module, model_name), type) and
-                issubclass(getattr(module, model_name), modularodm.StoredObject)
+                (issubclass(getattr(module, model_name), modularodm.StoredObject) or issubclass(getattr(module, model_name), FileNode))
             ):
                 setattr(module, model_name, model_cls)
             # Institution is a special case because it isn't a StoredObject

@@ -3,16 +3,18 @@ from __future__ import unicode_literals
 import itsdangerous
 import mock
 import pytz
+from nose.tools import *  # flake8: noqa
+
+from addons.github.models import GithubFileNode
+from addons.osfstorage import settings as osfstorage_settings
 from api.base.settings.defaults import API_BASE
 from api_tests import utils as api_utils
 from framework.auth.core import Auth
 from framework.sessions.model import Session
-from nose.tools import *  # flake8: noqa
 from osf_tests.factories import (AuthUserFactory, CommentFactory,
                                  ProjectFactory, UserFactory)
 from tests.base import ApiTestCase, capture_signals
 from website import settings as website_settings
-from addons.osfstorage import settings as osfstorage_settings
 from website.project.model import NodeLog
 from website.project.signals import contributor_removed
 
@@ -394,7 +396,7 @@ class TestFileView(ApiTestCase):
         assert_false(self.file.is_checked_out)
 
     def test_must_be_osfstorage(self):
-        self.file.provider = 'github'
+        self.file.recast(GithubFileNode._typedmodels_type)
         self.file.save()
         res = self.app.put_json_api(
             self.file_url,

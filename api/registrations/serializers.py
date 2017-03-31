@@ -324,7 +324,7 @@ class RegistrationContributorsSerializer(NodeContributorsSerializer):
         return absolute_reverse(
             'registrations:registration-contributor-detail',
             kwargs={
-                'user_id': obj._id,
+                'user_id': obj.user._id,
                 'node_id': self.context['request'].parser_context['kwargs']['node_id'],
                 'version': self.context['request'].parser_context['kwargs']['version']
             }

@@ -121,7 +121,7 @@ install:
 
 # Run Python tests (core and addon) and JS tests
 script:
-    - invoke test_travis_$TEST_BUILD -n 6
+    - invoke test_travis_$TEST_BUILD -n 4
 
 before_cache:
   - rm -Rf $HOME/.cache/pip/http
