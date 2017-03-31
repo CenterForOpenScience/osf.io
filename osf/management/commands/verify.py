@@ -285,6 +285,8 @@ class MkdirPFileHandler(logging.FileHandler):
 @app.task(bind=True, max_retries=None)  # retry forever because of cursor timeouts
 def validate_page_of_model_data(self, django_model, basic_fields, fk_relations, m2m_relations, offset, limit):
     logger = validate_page_of_model_data.get_logger()
+    logger.level = logging.DEBUG
+    
     for handler in logger.handlers[:]:
         logger.removeHandler(handler)
 
