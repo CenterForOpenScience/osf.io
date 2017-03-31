@@ -1,6 +1,5 @@
+from dropbox.dropbox import Dropbox
 from dropbox.rest import ErrorResponse
-from dropbox.client import DropboxClient
-
 
 from website.util import api_url_for
 from addons.base.serializer import StorageAddonSerializer
@@ -11,9 +10,9 @@ class DropboxSerializer(StorageAddonSerializer):
 
     def credentials_are_valid(self, user_settings, client):
         if user_settings:
-            client = client or DropboxClient(user_settings.external_accounts[0].oauth_key)
+            client = client or Dropbox(user_settings.external_accounts[0].oauth_key)
             try:
-                client.account_info()
+                client.users_get_current_account()
             except (ValueError, IndexError, ErrorResponse):
                 return False
         return True
