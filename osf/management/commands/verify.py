@@ -145,7 +145,7 @@ def validate_fk_relation(field_name, django_obj, modm_obj):
         except AssertionError as ex:
             logger.error(ex)
     elif modm_field_value is not None and django_field_value is None:
-        logger.error('{} of {!r} was None in django {} but {} in modm'.format(field_name, modm_obj, django_obj._id, modm_field_value))
+        logger.error('{} of {!r} was None in django {} but {!r} in modm'.format(field_name, modm_obj, django_obj._id, modm_field_value))
 
 
 def validate_basic_field(field_name, django_obj, modm_obj):
@@ -205,7 +205,7 @@ def validate_basic_field(field_name, django_obj, modm_obj):
 
         # sometimes strings used to be integers, in some documents... LicenseRecord.year
         try:
-            assert django_value.__class__(modm_value) == django_value, 'WITH TYPECAST: {}.{} _id:{} django_field_name:{} django_value:{} modm_field_name:{} modm_value:{}'.format(django_obj.__module__, django_obj.__class__, django_obj._id, field_name, django_value, modm_field_name, modm_value)
+            assert django_value.__class__(modm_value) == django_value, 'WITH TYPECAST: {}.{} _id:{} django_field_name:{} django_value:{} modm_field_name:{} modm_value:{!r}'.format(django_obj.__module__, django_obj.__class__, django_obj._id, field_name, django_value, modm_field_name, modm_value)
         except AssertionError as ex:
             logger.error(ex)
         return
@@ -222,7 +222,7 @@ def validate_basic_field(field_name, django_obj, modm_obj):
             logger.error(ex)
         return
     try:
-        assert django_value == modm_value, '{}.{} _id:{} django_field_name{} django_value:{} modm_field_name:{} modm_value:{}'.format(django_obj.__module__, django_obj.__class__, django_obj._id, field_name, django_value, modm_field_name, modm_value)
+        assert django_value == modm_value, '{}.{} _id:{} django_field_name{} django_value:{} modm_field_name:{} modm_value:{!r}'.format(django_obj.__module__, django_obj.__class__, django_obj._id, field_name, django_value, modm_field_name, modm_value)
     except AssertionError as ex:
         logger.error(ex)
 
