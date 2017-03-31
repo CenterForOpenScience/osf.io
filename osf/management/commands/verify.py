@@ -103,6 +103,9 @@ def validate_m2m_field(field_name, django_obj, modm_obj):
     else:
         modm_field_name = {v: k for k, v in getattr(django_obj, 'FIELD_ALIASES', {}).iteritems()}.get(field_name, field_name)
 
+    if modm_field_name not in modm_obj.to_storage():
+        logger.error('{} was not in {} for {}.{} with id {}'.format(modm_field_name, modm_obj.to_storage(), django_obj._meta.model.__module__, django_obj._meta.model.__name__, django_obj._id))
+        return
     modm_guids = modm_obj.to_storage()[modm_field_name]
     for django_guid in django_guids:
         if isinstance(django_guid, list):
@@ -260,7 +263,7 @@ def mkdir_p(path):
 
 
 class MkdirPFileHandler(logging.FileHandler):
-    def __init__(self, filename, mode='w', encoding=None, delay=0):
+    def __init__(self, filename, mode='w+', encoding=None, delay=0):
         mkdir_p(os.path.dirname(filename))
         logging.FileHandler.__init__(self, filename, mode, encoding, delay)
 
@@ -270,7 +273,7 @@ def validate_page_of_model_data(self, django_model, basic_fields, fk_relations, 
     for handler in logger.handlers[:]:
         logger.removeHandler(handler)
 
-    hndlr = MkdirPFileHandler('../logs/{}.{}/{}'.format(django_model.__module__, django_model.__class__, self.request.id), mode='w')
+    hndlr = MkdirPFileHandler('../logs/{}.{}/{}.log'.format(django_model._meta.model.__module__, django_model._meta.model.__name__, self.request.id), mode='w')
     formatta = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     hndlr.setFormatter(formatta)
     logger.addHandler(hndlr)
