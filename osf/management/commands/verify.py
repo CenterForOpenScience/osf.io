@@ -294,7 +294,7 @@ def validate_page_of_model_data(self, django_model, basic_fields, fk_relations, 
         else:
             modm_queryset = modm_model.find(django_model.modm_query)
         count = 0
-        page_of_modm_objects = modm_queryset.sort('-_id')[offset:limit]
+        page_of_modm_objects = modm_queryset.sort('_id')[offset:limit]
         django_ids = [get_pk(modm_obj, django_model, modm_to_django) for modm_obj in page_of_modm_objects]
         django_objects = django_model.objects.filter(id__in=django_ids)
 
