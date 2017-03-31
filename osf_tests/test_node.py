@@ -2597,6 +2597,7 @@ class TestPointerMethods:
         component = NodeFactory(creator=user)
         self._fork_pointer(node=node, content=component, auth=auth)
 
+
 # copied from tests/test_models.py
 class TestForkNode:
 
@@ -3018,6 +3019,14 @@ class TestLogMethods:
         n_new_logs = len(parent.get_aggregate_logs_queryset(Auth(user)))
         # Hidden log is not returned
         assert n_new_logs == n_orig_logs - 1
+
+    def test_excludes_logs_for_linked_nodes(self, parent):
+        pointee = ProjectFactory()
+        n_logs_before = parent.get_aggregate_logs_queryset(auth=Auth(parent.creator)).count()
+        parent.add_node_link(pointee, auth=Auth(parent.creator))
+        n_logs_after = parent.get_aggregate_logs_queryset(auth=Auth(parent.creator)).count()
+        # one more log for adding the node link
+        assert n_logs_after == n_logs_before + 1
 
 # copied from tests/test_notifications.py
 class TestHasPermissionOnChildren:
