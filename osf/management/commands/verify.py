@@ -1,9 +1,11 @@
 from __future__ import unicode_literals
 
 import logging
+import os
 import sys
 from datetime import datetime
 
+import errno
 import pytz
 from django.contrib.auth.models import Group, Permission
 from django.contrib.contenttypes.models import ContentType
@@ -21,6 +23,7 @@ from osf.models import Tag
 from osf.utils.order_apps import get_ordered_models
 from website.app import init_app
 from website.files.models import StoredFileNode
+from website.models import User as MUser, Node as MNode
 from .migratedata import set_backend
 logger = logging.getLogger('migrations')
 
@@ -135,10 +138,18 @@ def validate_fk_relation(field_name, django_obj, modm_obj):
         modm_field_name = {v: k for k, v in getattr(django_obj, 'FIELD_ALIASES', {}).iteritems()}.get(field_name, field_name)
 
 
-    if django_obj._meta.model is NotificationSubscription and field_name in ['user', 'node']:
+    if django_obj._meta.model is NotificationSubscription:
         modm_field_name = 'owner'
+        modm_field_value = getattr(modm_obj, modm_field_name)
 
-    modm_field_value = getattr(modm_obj, modm_field_name)
+        if isinstance(modm_field_value, MUser):
+            django_field_value = getattr(django_obj, 'user')
+        elif isinstance(modm_field_value, MNode):
+            django_field_value = getattr(django_obj, 'node')
+
+    else:
+        modm_field_value = getattr(modm_obj, modm_field_name)
+
     if modm_field_value and django_field_value:
         try:
             assert modm_field_value._id == django_field_value._id, 'Modm field {} of obj {}:{} with value of {} doesn\'t equal django field with value {}'.format(field_name, type(modm_obj), modm_obj._id, modm_field_value._id, django_field_value._id)
@@ -235,8 +246,35 @@ def get_pk(modm_object, django_model, modm_to_django):
             format_lookup_key(modm_object._id, ContentType.objects.get_for_model(django_model).pk), ex))
 
 
+def mkdir_p(path):
+    """http://stackoverflow.com/a/600612/190597 (tzot)"""
+    try:
+        os.makedirs(path, exist_ok=True)  # Python>3.2
+    except TypeError:
+        try:
+            os.makedirs(path)
+        except OSError as exc: # Python >2.5
+            if exc.errno == errno.EEXIST and os.path.isdir(path):
+                pass
+            else: raise
+
+
+class MkdirPFileHandler(logging.FileHandler):
+    def __init__(self, filename, mode='w', encoding=None, delay=0):
+        mkdir_p(os.path.dirname(filename))
+        logging.FileHandler.__init__(self, filename, mode, encoding, delay)
+
 @app.task(bind=True, max_retries=None)  # retry forever because of cursor timeouts
 def validate_page_of_model_data(self, django_model, basic_fields, fk_relations, m2m_relations, offset, limit):
+    logger = logging.getLogger('migrations')
+    for handler in logger.handlers[:]:
+        logger.removeHandler(handler)
+
+    hndlr = MkdirPFileHandler('../logs/{}.{}/{}'.format(django_model.__module__, django_model.__class__, self.request.id), mode='w')
+    formatta = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    hndlr.setFormatter(formatta)
+    logger.addHandler(hndlr)
+
     try:
         set_backend()
         init_app(routes=False, attach_request_handlers=False, fixtures=False)
