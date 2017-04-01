@@ -21,7 +21,7 @@ from pymongo.errors import OperationFailure
 from api.base.celery import app
 from osf.management.commands.migratedata import register_nonexistent_models_with_modm, get_modm_model
 from osf.management.commands.migraterelations import build_toku_django_lookup_table_cache, format_lookup_key
-from osf.models import BlackListGuid, NotificationSubscription
+from osf.models import BlackListGuid, NotificationSubscription, PrivateLink, Registration, Node, Collection
 from osf.models import EmbargoTerminationApproval
 from osf.models import OSFUser
 from osf.models import Tag
@@ -287,11 +287,11 @@ def validate_m2m_field(field_name, django_obj, modm_obj):
                         assert djg in modm_guids, '{} for model {}.{} with id {} was not in modm guids for field {}'.format(django_guid, django_obj._meta.model.__module__, django_obj._meta.model.__name__, django_obj._id, modm_field_name)
                     except AssertionError as ex:
                         logger.error(ex)
-                else:
-                    try:
-                        assert django_guid in modm_guids, '{} for model {}.{} with id {} was not in modm guids for field {}'.format(django_guid, django_obj._meta.model.__module__, django_obj._meta.model.__name__, django_obj._id, modm_field_name)
-                    except AssertionError as ex:
-                        logger.error(ex)
+            else:
+                try:
+                    assert django_guid in modm_guids, '{} for model {}.{} with id {} was not in modm guids for field {}'.format(django_guid, django_obj._meta.model.__module__, django_obj._meta.model.__name__, django_obj._id, modm_field_name)
+                except AssertionError as ex:
+                    logger.error(ex)
     except AttributeError as ex:
         logger.warning('AttributeError on model {}.{} for id {} and field_name {}'.format(django_obj.__module__, django_obj.__class__, django_obj._id, field_name))
         return
@@ -525,6 +525,10 @@ def validate_page_of_model_data(self, django_model, basic_fields, fk_relations, 
                 django_model, offset, limit, ex))
         logger.error('{} {}'.format(ex.__dict__, ex.__class__))
         self.retry(countdown=20)  # retry in 20s
+
+    hndlr.flush()
+    if os.stat(hndlr.baseFilename).st_size == 0:
+        os.remove(hndlr.baseFilename)
 
 
 def validate_model_data(django_model, page_size=20000):
