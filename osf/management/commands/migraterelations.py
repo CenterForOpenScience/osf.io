@@ -177,7 +177,7 @@ def format_lookup_key(guid, content_type_id=None, model=None, template=None):
             return content_type_id, template.format(unicode(guid))
         return content_type_id, template.format(unicode(guid).lower())
     if model is Tag:
-        return content_type_id, template.format(unicode(guid))
+        return content_type_id, unicode(guid)
     return content_type_id, unicode(guid).lower()
 
 
