@@ -500,7 +500,11 @@ def validate_page_of_model_data(self, django_model, basic_fields, fk_relations, 
             except AssertionError as ex:
                 logger.error(ex)
                 modm_keys = set(page_of_modm_objects.get_keys())
-                django_keys = set(django_objects.values_list('guids___id', flat=True))
+                try:
+                    primary_identifier_name = django_model._meta.model.primary_identifier_name
+                except AttributeError:
+                    primary_identifier_name = '_id'
+                django_keys = set(django_objects.values_list(primary_identifier_name, flat=True))
                 missing = modm_keys - django_keys
                 logger.error('Missing Keys: {}'.format(missing))
 
