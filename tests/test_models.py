@@ -3596,6 +3596,14 @@ class TestRoot(OsfTestCase):
         grandchild_node = NodeFactory(parent=child_node)
         assert_equal(child_node.root._id, grandchild_node.root._id)
 
+    def test_root_with_deleted_parent(self):
+        child = NodeFactory(parent=self.project)
+        assert_equal(child.root._id, self.project._id)
+        self.project.is_deleted = True
+        self.project.save()
+        child.save()
+        assert_equal(child.root._id, self.project._id)
+
     def test_registration_has_own_root(self):
         assert_equal(self.registration.root._id, self.registration._id)
 
