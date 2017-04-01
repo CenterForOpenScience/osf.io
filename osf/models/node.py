@@ -178,7 +178,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         'wiki_pages_current',
         'is_retracted',
         'node_license',
-        '_affiliated_institutions',
+        'affiliated_institutions',
         'preprint_file',
     }
 
