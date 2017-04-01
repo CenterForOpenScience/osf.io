@@ -387,7 +387,8 @@ class TestNodeSanctionStates(OsfTestCase):
         with mock.patch('website.project.sanctions.Sanction.is_approved', mock.Mock(return_value=True)):
             assert_true(registration.is_retracted)
 
-    def test_is_retracted_searches_parents(self):
+    @mock.patch('website.project.tasks.on_registration_updated')
+    def test_is_retracted_searches_parents(self, mock_registration_updated):
         user = factories.AuthUserFactory()
         node = factories.NodeFactory(creator=user)
         child = factories.NodeFactory(creator=user, parent=node)
