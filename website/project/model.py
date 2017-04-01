@@ -2755,10 +2755,18 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
         parent.nodes.append(self)
         parent.save()
 
+    def _get_parent(self):
+        try:
+            return self.node__parent[0]
+        except IndexError:
+            pass
+        return None
+
     @property
     def _root(self):
-        if self._parent_node:
-            return self._parent_node._root
+        parent = self._get_parent()
+        if parent:
+            return parent._root
         else:
             return self
 
