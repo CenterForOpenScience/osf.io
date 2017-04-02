@@ -326,9 +326,6 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     #     'twitter': <twitter id>,
     # }
 
-    # hashed password used to authenticate to Piwik
-    piwik_token = models.CharField(max_length=255, blank=True)
-
     # date the user last sent a request
     date_last_login = NonNaiveDateTimeField(null=True, blank=True)
 

@@ -335,7 +335,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     # permissions = Permissions are now on contributors
     piwik_site_id = models.IntegerField(null=True, blank=True)
-    public_comments = models.BooleanField(default=True)
     suspended = models.BooleanField(default=False, db_index=True)
 
     # The node (if any) used as a template for this node's creation
