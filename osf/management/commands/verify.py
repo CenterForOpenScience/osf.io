@@ -433,7 +433,7 @@ def validate_basic_field(field_name, django_obj, modm_obj):
         except AssertionError as ex:
             logger.error(ex)
     except AttributeError as ex:
-        logger.warning('AttributeError on model {}.{} for id {} and field_name {}'.format(django_obj.__module__, django_obj.__class__, django_obj._id, field_name))
+        logger.warning('AttributeError on model {}.{} for id {} and field_name {}\n'.format(django_obj.__module__, django_obj.__class__, django_obj._id, field_name, ex))
         return
 
 
