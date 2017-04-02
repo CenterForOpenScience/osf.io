@@ -303,7 +303,7 @@ def validate_fk_relation(field_name, django_obj, modm_obj):
             # modm doesn't have gfk
             return
 
-        if isinstance(modm_obj, StoredFileNode) and field_name in ['deleted_by', 'deleted_on']:
+        if isinstance(modm_obj, StoredFileNode) and field_name == 'deleted_by':
             return
 
         if django_obj._meta.model is EmbargoTerminationApproval and field_name == 'initiated_by':
@@ -353,6 +353,8 @@ def validate_basic_field(field_name, django_obj, modm_obj):
         else:
             modm_field_name = {v: k for k, v in getattr(django_obj, 'FIELD_ALIASES', {}).iteritems()}.get(field_name, field_name)
 
+        if
+
         if field_name == '_history':
             modm_field_name = 'history'
 
@@ -362,6 +364,8 @@ def validate_basic_field(field_name, django_obj, modm_obj):
         if field_name == '_materialized_path':
             modm_field_name = 'materialized_path'
 
+        if isinstance(modm_obj, StoredFileNode) and field_name == 'deleted_on':
+            return
 
         if modm_field_name is False:
             return
@@ -457,7 +461,7 @@ class MkdirPFileHandler(logging.FileHandler):
 def validate_page_of_model_data(self, django_model, basic_fields, fk_relations, m2m_relations, offset, limit):
     logger = get_task_logger(__name__)
 
-    logger.level = logging.DEBUG
+    logger.level = logging.WARNING
 
     for handler in logger.handlers[:]:
         logger.removeHandler(handler)
