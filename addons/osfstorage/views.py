@@ -210,7 +210,7 @@ def osfstorage_get_children(file_node, **kwargs):
             AND (NOT F.type IN ('osf.trashedfilenode', 'osf.trashedfile', 'osf.trashedfolder'))
         ''', [ContentType.objects.get_for_model(User).id, file_node.node._id, file_node.id])
 
-        return cursor.fetchone() or []
+        return cursor.fetchone()[0] or []
 
 
 @must_be_signed
