@@ -10,12 +10,15 @@ from itertools import izip_longest
 import errno
 
 import logging
+
+import modularodm
 import pytz
 from django.contrib.auth.models import Group, Permission
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.management import BaseCommand
 from django.db import connection
+from django.db.models import TextField, CharField
 from pymongo.errors import OperationFailure
 
 from api.base.celery import app
@@ -384,6 +387,10 @@ def validate_basic_field(field_name, django_obj, modm_obj):
             modm_value = 'bcrypt${}'.format(modm_value)
 
         if type(django_value) != type(modm_value):
+
+            if isinstance(modm_value, modularodm.fields.lists.List):
+                modm_value = list(modm_value)
+
             # jsonb fields
             if modm_value is None and django_value == {}:
                 return
@@ -396,7 +403,7 @@ def validate_basic_field(field_name, django_obj, modm_obj):
             if modm_value is None and django_value == '':
                 return
 
-            if django_obj._meta.get_field_by_name(field_name).max_length == len(django_value) and django_value != modm_value:
+            if isinstance(django_obj._meta.get_field_by_name(field_name), (CharField, TextField)) and django_obj._meta.get_field_by_name(field_name).max_length == len(django_value) and django_value != modm_value:
                 logger.warn('{} on model {}.{} with id {} did not match modm but was field max_length'.format(field_name, django_obj._meta.model.__module__, django_obj._meta.model.__class__, django_obj._id))
 
             if modm_value is None:
