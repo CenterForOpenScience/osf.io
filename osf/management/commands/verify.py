@@ -353,7 +353,6 @@ def validate_basic_field(field_name, django_obj, modm_obj):
         else:
             modm_field_name = {v: k for k, v in getattr(django_obj, 'FIELD_ALIASES', {}).iteritems()}.get(field_name, field_name)
 
-        if
 
         if field_name == '_history':
             modm_field_name = 'history'
