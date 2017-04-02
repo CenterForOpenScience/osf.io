@@ -10,7 +10,6 @@ from framework.auth.oauth_scopes import CoreScopes
 
 from api.base.exceptions import Conflict
 from api.base.views import JSONAPIBaseView
-from api.base.filters import ODMFilterMixin
 from api.base.parsers import (
     JSONAPIMultipleRelationshipsParser,
     JSONAPIMultipleRelationshipsParserForRegularJSON,
@@ -28,6 +27,8 @@ from api.nodes.serializers import (
 )
 from api.nodes.views import NodeMixin, WaterButlerMixin
 from api.nodes.permissions import ContributorOrPublic
+from api.preprints.filters import PreprintsListFilterMixin
+from api.preprints.permissions import PreprintPublishedOrAdmin
 
 
 class PreprintMixin(NodeMixin):
@@ -49,7 +50,7 @@ class PreprintMixin(NodeMixin):
         return preprint
 
 
-class PreprintList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMixin):
+class PreprintList(JSONAPIBaseView, generics.ListCreateAPIView, PreprintsListFilterMixin):
     """Preprints that represent a special kind of preprint node. *Writeable*.
 
     Paginated list of preprints ordered by their `date_created`.  Each resource contains a representation of the
@@ -142,6 +143,7 @@ class PreprintList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMixin):
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
         ContributorOrPublic,
+        PreprintPublishedOrAdmin,
     )
 
     parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON,)
@@ -161,15 +163,16 @@ class PreprintList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMixin):
         else:
             return PreprintSerializer
 
-    # overrides ODMFilterMixin
-    def get_default_odm_query(self):
-        return (
-            Q('node', 'ne', None)
-        )
+    def get_default_queryset(self):
+        # TODO: This is terribad. It might break with a production-size database
+        # This can be done much more efficiently in SQL
+        auth = get_user_auth(self.request)
+        user = getattr(auth, 'user', None)
+        return [p for p in PreprintService.find(Q('node', 'ne', None)) if p.is_published or p.node.has_permission(user, 'admin')]
 
     # overrides ListAPIView
     def get_queryset(self):
-        return PreprintService.find(self.get_query_from_request())
+        return self.get_queryset_from_request()
 
 class PreprintDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, PreprintMixin, WaterButlerMixin):
     """Preprint Detail  *Writeable*.
@@ -237,6 +240,7 @@ class PreprintDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, Pre
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
         ContributorOrPublic,
+        PreprintPublishedOrAdmin,
     )
     parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON,)
 

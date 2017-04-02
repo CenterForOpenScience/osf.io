@@ -435,7 +435,9 @@ class ListFilterMixin(FilterMixin):
         field = self.serializer_class._declared_fields[field_name]
         source_field_name = params['source_field_name']
 
-        if isinstance(field, ser.SerializerMethodField):
+        if self.should_filter_special_param(source_field_name):
+            return_val = self.filter_special_param(params, default_queryset)
+        elif isinstance(field, ser.SerializerMethodField):
             return_val = [
                 item for item in default_queryset
                 if self.FILTERS[params['op']](self.get_serializer_method(field_name)(item), params['value'])
@@ -481,3 +483,13 @@ class ListFilterMixin(FilterMixin):
         serializer = self.get_serializer()
         serializer_method_name = 'get_' + field_name
         return getattr(serializer, serializer_method_name)
+
+    def should_filter_special_param(self, field_name):
+        """ This should be overridden in subclasses for custom filtering behavior
+        """
+        return False
+
+    def filter_special_param(self, params, filter_set):
+        """ This should be overridden in subclasses for custom filtering behavior
+        """
+        pass
