@@ -94,8 +94,14 @@ class DMPTool(object):
             else:
                 return None
 
-    def plans_owned(self):
-        return self._unroll(self.get_url('plans_owned').json())
+    def plans_owned(self, visibility_filter=('test',)):
+        """
+        by default, filter out plans that have 'test' for visibility
+        (leaving public, private, institutional )
+        https://github.com/CDLUC3/dmptool/issues/206
+        """
+        plans = self._unroll(self.get_url('plans_owned').json())
+        return [plan for plan in plans if plan['visibility'] not in visibility_filter]
 
     def plans_owned_full(self):
         return self._unroll(self.get_url('plans_owned_full').json())
