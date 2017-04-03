@@ -840,7 +840,7 @@ class TestNodeCreate(ApiTestCase):
 
         new_component_id = json_data['id']
         new_component = Node.load(new_component_id)
-        assert_in(tag, new_component.tags)
+        assert_in(tag, new_component.tags.filter())
 
     def test_create_component_inherit_contributors_with_unregistered_contributor(self):
         parent_project = ProjectFactory(creator=self.user_one)
