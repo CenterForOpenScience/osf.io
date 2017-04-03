@@ -1736,7 +1736,7 @@ def test_can_comment():
     noncontrib = UserFactory()
     assert public_node.can_comment(Auth(noncontrib)) is True
 
-    private_node = NodeFactory(is_public=False, public_comments=False)
+    private_node = NodeFactory(is_public=False)
     Contributor.objects.create(node=private_node, user=contrib, read=True)
     assert private_node.can_comment(Auth(contrib)) is True
     noncontrib = UserFactory()
