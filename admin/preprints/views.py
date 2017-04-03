@@ -1,11 +1,15 @@
 from __future__ import unicode_literals
 
-from website.preprints.model import PreprintService
-from admin.base.views import GuidFormView, GuidView
+from django.views.generic import UpdateView
+from django.core.urlresolvers import reverse_lazy
 from django.contrib.auth.mixins import PermissionRequiredMixin
 
+
+from website.preprints.model import PreprintService
+from admin.base.views import GuidFormView, GuidView
 from admin.nodes.templatetags.node_extras import reverse_preprint
-from admin.preprints.serializers import serialize_preprint
+from admin.preprints.serializers import serialize_preprint, serialize_subjects
+from admin.preprints.forms import ChangeProviderForm
 
 
 class PreprintFormView(PermissionRequiredMixin, GuidFormView):
@@ -23,7 +27,7 @@ class PreprintFormView(PermissionRequiredMixin, GuidFormView):
         return reverse_preprint(self.guid)
 
 
-class PreprintView(PermissionRequiredMixin, GuidView):
+class PreprintView(PermissionRequiredMixin, UpdateView, GuidView):
     """ Allow authorized admin user to view preprints
 
     View of OSF database. No admin models.
@@ -32,6 +36,17 @@ class PreprintView(PermissionRequiredMixin, GuidView):
     context_object_name = 'preprint'
     permission_required = 'osf.view_node'
     raise_exception = True
+    form_class = ChangeProviderForm
+
+    def get_success_url(self):
+        return reverse_lazy('preprints:preprint', kwargs={'guid': self.kwargs.get('guid')})
 
     def get_object(self, queryset=None):
-        return serialize_preprint(PreprintService.load(self.kwargs.get('guid')))
+        return PreprintService.load(self.kwargs.get('guid'))
+
+    def get_context_data(self, **kwargs):
+        preprint = PreprintService.load(self.kwargs.get('guid'))
+        kwargs['serialized_preprint'] = serialize_preprint(preprint)
+        kwargs['change_provider_form'] = ChangeProviderForm(instance=preprint)
+        kwargs['subjects'] = serialize_subjects(preprint.subjects)
+        return super(PreprintView, self).get_context_data(**kwargs)
