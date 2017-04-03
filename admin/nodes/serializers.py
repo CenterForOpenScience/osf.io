@@ -30,6 +30,7 @@ def serialize_node(node):
         'spam_pro_tip': node.spam_pro_tip,
         'spam_data': json.dumps(node.spam_data, indent=4),
         'is_public': node.is_public,
+        'registrations': [serialize_node(registration) for registration in node.registrations.all()]
     }
 
 

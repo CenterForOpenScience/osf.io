@@ -232,7 +232,28 @@
                 <td>Registration</td>
                 <td>
                     {% if not node.is_registration %}
-                        {{ node.is_registration }}
+                        <table class="table table-bordered table-hover">
+                                <thead>
+                                <tr>
+                                    <td>Registration</td>
+                                    <td>Date Created</td>
+                                    <td>Pending</td>
+                                    <td>Withdrawn</td>
+                                    <td>Embargo</td>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                {% for registration in node.registrations %}
+                                <tr>
+                                    <td><a href="{{ registration.id | reverse_node }}">{{ registration.id }}</a></td>
+                                    <td>{{ registration.date_created | date }}</td>
+                                    <td>{{ registration.pending_registration }}</td>
+                                    <td>{{ registration.withdrawn }}</td>
+                                    <td>{{ registration.embargo }}</td>
+                                </tr>
+                        {% endfor %}
+                                </tbody>
+                            </table>
                     {% else %}
                         <table class="table table-bordered table-hover">
                         <thead>
