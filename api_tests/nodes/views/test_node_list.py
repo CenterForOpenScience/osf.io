@@ -822,6 +822,7 @@ class TestNodeCreate(ApiTestCase):
     def test_create_component_inherit_tags(self):
         parent_project = ProjectFactory(creator=self.user_one)
         tag = Tag(name='Test Tag')
+        tag.save()
         parent_project.tags.add(tag)
         url = '/{}nodes/{}/children/?inherit_tags=true'.format(API_BASE, parent_project._id)
         component_data = {
