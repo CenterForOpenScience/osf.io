@@ -13,9 +13,12 @@ It provides basic logging utilities and a dry run mode
 ```python
 import sys
 import logging
-from website.app import init_app
+from website.app import setup_django
 from scripts import utils as script_utils
 from django.db import transaction
+
+setup_django()
+from osf.models import OSFUser, AbstractNode
 
 
 logger = logging.getLogger(__name__)
@@ -27,8 +30,6 @@ def do_migration():
 
 
 def main(dry=True):
-    init_app(set_backends=True, routes=False)  # Sets the storage backends on all models
-
     # Start a transaction that will be rolled back if any exceptions are un
     with transaction.atomic():
         do_migration()
