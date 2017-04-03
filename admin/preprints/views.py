@@ -46,6 +46,7 @@ class PreprintView(PermissionRequiredMixin, UpdateView, GuidView):
 
     def get_context_data(self, **kwargs):
         preprint = PreprintService.load(self.kwargs.get('guid'))
+        # TODO - we shouldn't need this serialized_preprint value -- https://openscience.atlassian.net/browse/OSF-7743
         kwargs['serialized_preprint'] = serialize_preprint(preprint)
         kwargs['change_provider_form'] = ChangeProviderForm(instance=preprint)
         kwargs['subjects'] = serialize_subjects(preprint.subjects)
