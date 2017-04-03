@@ -447,7 +447,7 @@ class TestConferenceEmailViews(OsfTestCase):
 
         url = api_url_for('conference_submissions')
         res = self.app.get(url)
-        assert_equal(len(res.json['submissions']), 5)
+        assert_equal(res.json['success'], True)
 
     def test_conference_plain_returns_200(self):
         conference = ConferenceFactory()
