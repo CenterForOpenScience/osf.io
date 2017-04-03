@@ -82,7 +82,7 @@ class TestUserPreprintsListFiltering(PreprintsListFilteringMixin, ApiTestCase):
         self.project = ProjectFactory(creator=self.user)
         self.project_two = ProjectFactory(creator=self.user)
         self.project_three = ProjectFactory(creator=self.user)
-        self.url = '/{}/users/preprints/?version=2.2&'.format(API_BASE, self.user._id)
+        self.url = '/{}users/{}/preprints/?version=2.2&'.format(API_BASE, self.user._id)
         super(TestUserPreprintsListFiltering, self).setUp()
 
     def test_provider_filter_equals_returns_one(self):
@@ -110,3 +110,12 @@ class TestUserPreprintIsValidList(PreprintIsValidListMixin, ApiTestCase):
         self.project = ProjectFactory(creator=self.admin, is_public=True)
         self.url = '/{}users/{}/preprints/?version=2.2&'.format(API_BASE, self.admin._id)
         super(TestUserPreprintIsValidList, self).setUp()
+
+    # User nodes/preprints routes do not show private nodes to anyone but the self
+    def test_preprint_private_visible_write(self):
+        res = self.app.get(self.url, auth=self.write_contrib.auth)
+        assert len(res.json['data']) == 1
+        self.project.is_public = False
+        self.project.save()
+        res = self.app.get(self.url, auth=self.write_contrib.auth)
+        assert len(res.json['data']) == 0
