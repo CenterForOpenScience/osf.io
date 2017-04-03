@@ -1,5 +1,5 @@
+from modularodm.exceptions import ValidationError
 from modularodm import Q
-from modularodm.exceptions import ValidationValueError
 from rest_framework import exceptions
 from rest_framework import serializers as ser
 
@@ -19,7 +19,7 @@ from framework.exceptions import PermissionsError
 from website.util import permissions
 from website.exceptions import NodeStateError
 from website.project import signals as project_signals
-from website.models import StoredFileNode, PreprintService, PreprintProvider, Node, NodeLicense
+from osf.models import StoredFileNode, PreprintService, PreprintProvider, Node, NodeLicense
 
 
 class PrimaryFileRelationshipField(RelationshipField):
@@ -136,7 +136,6 @@ class PreprintSerializer(JSONAPISerializer):
         save_node = False
         save_preprint = False
         recently_published = False
-
         primary_file = validated_data.pop('primary_file', None)
         if primary_file:
             self.set_field(preprint.set_primary_file, primary_file, auth)
@@ -165,9 +164,9 @@ class PreprintSerializer(JSONAPISerializer):
         if save_node:
             try:
                 preprint.node.save()
-            except ValidationValueError as e:
+            except ValidationError as e:
                 # Raised from invalid DOI
-                raise exceptions.ValidationError(detail=e.message)
+                raise exceptions.ValidationError(detail=e.messages[0])
 
         if save_preprint:
             preprint.save()
@@ -198,7 +197,7 @@ class PreprintCreateSerializer(PreprintSerializer):
     id = IDField(source='_id', required=False, allow_null=True)
 
     def create(self, validated_data):
-        node = Node.load(validated_data.pop('node', None))
+        node = validated_data.pop('node', None)
         if not node:
             raise exceptions.NotFound('Unable to find Node with specified id.')
         elif node.is_deleted:

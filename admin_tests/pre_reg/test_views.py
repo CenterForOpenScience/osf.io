@@ -5,22 +5,20 @@ from django.db import transaction
 from django.http import Http404
 
 from tests.base import AdminTestCase
-from tests.factories import (
+from osf_tests.factories import (
     DraftRegistrationFactory,
     AuthUserFactory,
-    DraftRegistration,
     ProjectFactory,
+    UserFactory
 )
-from website.files.models import (
-    OsfStorageFile,
-    OsfStorageFileNode,
-    StoredFileNode,
-)
+from osf.models.registrations import DraftRegistration
+from website.files.models import StoredFileNode
+from addons.osfstorage.models import OsfStorageFile, OsfStorageFileNode
+
 from website.project.model import ensure_schemas
 from website.prereg.utils import get_prereg_schema
 
 from admin_tests.utilities import setup_view, setup_form_view, setup_user_view
-from admin_tests.factories import UserFactory
 from admin_tests.pre_reg import utils
 
 from admin.pre_reg.views import (
@@ -32,7 +30,7 @@ from admin.pre_reg.views import (
     get_file_questions,
 )
 from admin.pre_reg.forms import DraftRegistrationForm
-from admin.common_auth.logs import OSFLogEntry
+from osf.models.admin_log_entry import AdminLogEntry
 
 
 class TestDraftListView(AdminTestCase):
@@ -144,10 +142,10 @@ class TestDraftFormView(AdminTestCase):
         view = setup_form_view(self.post_view, self.post, form,
                                draft_pk=self.dr1._id)
         view.draft = self.dr1
-        count = OSFLogEntry.objects.count()
+        count = AdminLogEntry.objects.count()
         with transaction.atomic():
             view.form_valid(form)
-        nt.assert_equal(count, OSFLogEntry.objects.count())
+        nt.assert_equal(count, AdminLogEntry.objects.count())
         self.dr1.reload()
         nt.assert_equal(self.dr1.notes, self.form_data['notes'])
 
@@ -160,11 +158,11 @@ class TestDraftFormView(AdminTestCase):
         view = setup_form_view(self.post_view, self.post, form,
                                draft_pk=self.dr1._id)
         view.draft = self.dr1
-        count = OSFLogEntry.objects.count()
+        count = AdminLogEntry.objects.count()
         with transaction.atomic():
             view.form_valid(form)
         nt.assert_true(mock_approve.called)
-        nt.assert_equal(count + 1, OSFLogEntry.objects.count())
+        nt.assert_equal(count + 1, AdminLogEntry.objects.count())
 
     @mock.patch('admin.pre_reg.views.DraftFormView.checkin_files')
     @mock.patch('admin.pre_reg.views.DraftRegistration.reject')
@@ -175,11 +173,11 @@ class TestDraftFormView(AdminTestCase):
         view = setup_form_view(self.post_view, self.post, form,
                                draft_pk=self.dr1._id)
         view.draft = self.dr1
-        count = OSFLogEntry.objects.count()
+        count = AdminLogEntry.objects.count()
         with transaction.atomic():
             view.form_valid(form)
         nt.assert_true(mock_reject.called)
-        nt.assert_equal(count + 1, OSFLogEntry.objects.count())
+        nt.assert_equal(count + 1, AdminLogEntry.objects.count())
 
 
 class TestCommentUpdateView(AdminTestCase):
@@ -200,9 +198,9 @@ class TestCommentUpdateView(AdminTestCase):
     @mock.patch('admin.pre_reg.views.json.loads')
     @mock.patch('admin.pre_reg.views.DraftRegistration.update_metadata')
     def test_post_comments(self, mock_json, mock_meta):
-        count = OSFLogEntry.objects.count()
+        count = AdminLogEntry.objects.count()
         self.view.post(self.request)
-        nt.assert_equal(OSFLogEntry.objects.count(), count + 1)
+        nt.assert_equal(AdminLogEntry.objects.count(), count + 1)
 
 
 class TestPreregFiles(AdminTestCase):
@@ -265,7 +263,7 @@ class TestPreregFiles(AdminTestCase):
             registration_metadata=data
         )
         self.prereg_user.save()
-        self.admin_user = UserFactory(osf_id=self.prereg_user.pk)
+        self.admin_user = UserFactory()
 
     def test_checkout_files(self):
         self.draft.submit_for_review(self.user, {}, save=True)
@@ -275,7 +273,8 @@ class TestPreregFiles(AdminTestCase):
                                draft_pk=self.draft._id)
         view.checkout_files(self.draft)
         for q, f in self.d_of_qs.iteritems():
-            nt.assert_equal(self.prereg_user, f.checkout)
+            f.refresh_from_db()
+            nt.assert_equal(self.admin_user, f.checkout)
 
     def test_checkin_files(self):
         self.draft.submit_for_review(self.user, {}, save=True)

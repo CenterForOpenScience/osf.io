@@ -27,7 +27,8 @@ class ApplicationMixin(object):
     def get_app(self):
         app = get_object_or_error(ApiOAuth2Application,
                                   Q('client_id', 'eq', self.kwargs['client_id']) &
-                                  Q('is_active', 'eq', True))
+                                  Q('is_active', 'eq', True)
+                                  )
 
         self.check_object_permissions(self.request, app)
         return app
@@ -55,10 +56,8 @@ class ApplicationList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMixi
     renderer_classes = [JSONRendererWithESISupport, JSONAPIRenderer, ]  # Hide from web-browsable API tool
 
     def get_default_odm_query(self):
-
-        user_id = self.request.user._id
         return (
-            Q('owner', 'eq', user_id) &
+            Q('owner', 'eq', self.request.user) &
             Q('is_active', 'eq', True)
         )
 

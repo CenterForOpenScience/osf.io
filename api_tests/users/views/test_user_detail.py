@@ -7,7 +7,7 @@ from website.util.sanitize import strip_html
 from website.views import find_bookmark_collection
 
 from tests.base import ApiTestCase
-from tests.factories import AuthUserFactory, BookmarkCollectionFactory, CollectionFactory, ProjectFactory
+from osf_tests.factories import AuthUserFactory, BookmarkCollectionFactory, CollectionFactory, ProjectFactory
 
 from api.base.settings.defaults import API_BASE
 
@@ -105,10 +105,6 @@ class TestUserRoutesNodeRoutes(ApiTestCase):
         self.folder = CollectionFactory()
         self.deleted_folder = CollectionFactory(title="Deleted Folder User One", is_public=False, creator=self.user_one, is_deleted=True)
         self.bookmark_collection = find_bookmark_collection(self.user_one)
-
-    def tearDown(self):
-        super(TestUserRoutesNodeRoutes, self).tearDown()
-        Node.remove()
 
     def test_get_200_path_users_me_userone_logged_in(self):
         url = "/{}users/me/".format(API_BASE)

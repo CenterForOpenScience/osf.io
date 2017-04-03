@@ -1,18 +1,20 @@
 # -*- coding: utf-8 -*-
-
-import datetime
 import logging
 import httplib
 import httplib as http  # TODO: Inconsistent usage of aliased import
 from dateutil.parser import parse as parse_date
 
+from django.utils import timezone
+from django.db.models import Count
 from flask import request
 import markupsafe
 import mailchimp
 from modularodm.exceptions import ValidationError, NoResultsFound, MultipleResultsFound
 from modularodm import Q
+from osf.models import Node, NodeRelation
 
 from framework import sentry
+from framework.auth import Auth
 from framework.auth import utils as auth_utils
 from framework.auth.decorators import collect_auth
 from framework.auth.decorators import must_be_logged_in
@@ -27,8 +29,7 @@ from framework.status import push_status_message
 from website import mails
 from website import mailchimp_utils
 from website import settings
-from website.project.model import Node
-from website.project.utils import PROJECT_QUERY, TOP_LEVEL_PROJECT_QUERY
+from website.project.utils import PROJECT_QUERY
 from website.models import ApiOAuth2Application, ApiOAuth2PersonalToken, User
 from website.oauth.utils import get_available_scopes
 from website.profile import utils as profile_utils
@@ -36,8 +37,8 @@ from website.util.time import throttle_period_expired
 from website.util import api_v2_url, web_url_for, paths
 from website.util.sanitize import escape_html
 from website.util.sanitize import strip_html
-from website.views import _render_nodes
-from website.addons.base import utils as addon_utils
+from website.views import serialize_node_summary
+from addons.base import utils as addon_utils
 
 logger = logging.getLogger(__name__)
 
@@ -45,31 +46,44 @@ logger = logging.getLogger(__name__)
 def get_public_projects(uid=None, user=None):
     user = user or User.load(uid)
     # In future redesign, should be limited for users with many projects / components
-    nodes = Node.find_for_user(
-        user,
-        subquery=(
-            TOP_LEVEL_PROJECT_QUERY &
-            Q('is_public', 'eq', True)
-        )
+    nodes = (
+        Node.find_for_user(user, PROJECT_QUERY)
+        .filter(is_public=True)
+        .get_roots()
+        .distinct()
+        .annotate(nlogs=Count('logs'))
+        # Defer some fields that we don't use for rendering node lists
+        .defer('child_node_subscriptions', 'date_created', 'deleted_date', 'description', 'file_guid_to_share_uuids')
+        .eager('parent_nodes', '_contributors')
+        .order_by('-date_modified')
     )
-    return _render_nodes(list(nodes))
+    return [
+        serialize_node_summary(node=node, auth=Auth(user), show_path=False)
+        for node in nodes
+    ]
 
 
 def get_public_components(uid=None, user=None):
     user = user or User.load(uid)
-    # TODO: This should use User.visible_contributor_to?
-    # In future redesign, should be limited for users with many projects / components
-    nodes = list(
-        Node.find_for_user(
-            user,
-            subquery=(
-                PROJECT_QUERY &
-                Q('parent_node', 'ne', None) &
-                Q('is_public', 'eq', True)
-            )
+    # Filtering on noderelations implicitly filters for nodes that have a parent
+    node_relations = (
+        NodeRelation.objects.filter(
+            child__is_public=True,
+            child__type='osf.node',  # nodes only (not collections or registration)
+            child___contributors=user,  # user is a contributor
+            is_node_link=False  # exclude childs by node linkage
         )
+        .exclude(parent__type='osf.collection')
+        .exclude(child__is_deleted=True)
+        .select_related('child')
+        # Defer some fields that we don't use for rendering node lists
+        .defer('child__child_node_subscriptions', 'child__date_created', 'child__deleted_date', 'child__description', 'child__file_guid_to_share_uuids')
+        .order_by('-child__date_modified')
     )
-    return _render_nodes(nodes, show_path=True)
+    return [
+        serialize_node_summary(node=each.child, auth=Auth(user), show_path=True)
+        for each in node_relations
+    ]
 
 
 @must_be_logged_in
@@ -124,7 +138,7 @@ def resend_confirmation(auth):
     # TODO: This setting is now named incorrectly.
     if settings.CONFIRM_REGISTRATIONS_BY_EMAIL:
         send_confirm_email(user, email=address)
-        user.email_last_sent = datetime.datetime.utcnow()
+        user.email_last_sent = timezone.now()
 
     user.save()
 
@@ -253,57 +267,61 @@ def update_user(auth):
     return _profile_view(user, is_profile=True)
 
 
-def _profile_view(profile, is_profile=False):
-    # TODO: Fix circular import
-    from website.addons.badges.util import get_sorted_user_badges
-
+def _profile_view(profile, is_profile=False, embed_nodes=False):
     if profile and profile.is_disabled:
         raise HTTPError(http.GONE)
-
-    if 'badges' in settings.ADDONS_REQUESTED:
-        badge_assertions = get_sorted_user_badges(profile),
-        badges = _get_user_created_badges(profile)
-    else:
-        # NOTE: While badges, are unused, 'assertions' and 'badges' can be
-        # empty lists.
-        badge_assertions = []
-        badges = []
+    # NOTE: While badges, are unused, 'assertions' and 'badges' can be
+    # empty lists.
+    badge_assertions = []
+    badges = []
 
     if profile:
         profile_user_data = profile_utils.serialize_user(profile, full=True, is_profile=is_profile)
-        return {
+        ret = {
             'profile': profile_user_data,
             'assertions': badge_assertions,
             'badges': badges,
             'user': {
+                '_id': profile._id,
                 'is_profile': is_profile,
                 'can_edit': None,  # necessary for rendering nodes
                 'permissions': [],  # necessary for rendering nodes
             },
         }
-
+        if embed_nodes:
+            ret.update({
+                'public_projects': get_public_projects(user=profile),
+                'public_components': get_public_components(user=profile),
+            })
+        return ret
     raise HTTPError(http.NOT_FOUND)
 
+@must_be_logged_in
+def profile_view_json(auth):
+    # Do NOT embed nodes, they aren't necessary
+    return _profile_view(auth.user, True, embed_nodes=False)
 
-def _get_user_created_badges(user):
-    from website.addons.badges.model import Badge
-    addon = user.get_addon('badges')
-    if addon:
-        return [badge for badge in Badge.find(Q('creator', 'eq', addon._id)) if not badge.is_system_badge]
-    return []
 
+@collect_auth
+@must_be_confirmed
+def profile_view_id_json(uid, auth):
+    user = User.load(uid)
+    is_profile = auth and auth.user == user
+    # Do NOT embed nodes, they aren't necessary
+    return _profile_view(user, is_profile, embed_nodes=False)
 
 @must_be_logged_in
 def profile_view(auth):
-    return _profile_view(auth.user, True)
-
+    # Embed node data, so profile node lists can be rendered
+    return _profile_view(auth.user, True, embed_nodes=True)
 
 @collect_auth
 @must_be_confirmed
 def profile_view_id(uid, auth):
     user = User.load(uid)
     is_profile = auth and auth.user == user
-    return _profile_view(user, is_profile)
+    # Embed node data, so profile node lists can be rendered
+    return _profile_view(user, is_profile, embed_nodes=True)
 
 
 @must_be_logged_in
@@ -420,6 +438,8 @@ def oauth_application_detail(auth, **kwargs):
         #
         record = ApiOAuth2Application.find_one(Q('client_id', 'eq', client_id))
     except NoResultsFound:
+        raise HTTPError(http.NOT_FOUND)
+    except ValueError:  # Invalid client ID -- ApiOAuth2Application will not exist
         raise HTTPError(http.NOT_FOUND)
     if record.owner != auth.user:
         raise HTTPError(http.FORBIDDEN)
@@ -745,7 +765,7 @@ def unserialize_social(auth, **kwargs):
         user.save()
     except ValidationError as exc:
         raise HTTPError(http.BAD_REQUEST, data=dict(
-            message_long=exc.args[0]
+            message_long=exc.messages[0]
         ))
 
 
@@ -816,7 +836,7 @@ def request_export(auth):
         mail=mails.REQUEST_EXPORT,
         user=auth.user,
     )
-    user.email_last_sent = datetime.datetime.utcnow()
+    user.email_last_sent = timezone.now()
     user.save()
     return {'message': 'Sent account export request'}
 
@@ -836,7 +856,7 @@ def request_deactivation(auth):
         mail=mails.REQUEST_DEACTIVATION,
         user=auth.user,
     )
-    user.email_last_sent = datetime.datetime.utcnow()
+    user.email_last_sent = timezone.now()
     user.requested_deactivation = True
     user.save()
     return {'message': 'Sent account deactivation request'}

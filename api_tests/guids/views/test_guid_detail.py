@@ -1,12 +1,14 @@
 from nose.tools import *  # flake8: noqa
 from api.base.settings.defaults import API_BASE
+import pytest
 
 from website.files.models.osfstorage import OsfStorageFile
 from website.settings import API_DOMAIN
 
 from tests.base import ApiTestCase
-from tests.factories import (AuthUserFactory, ProjectFactory, RegistrationFactory,
-                             CommentFactory, NodeWikiFactory, CollectionFactory, PrivateLinkFactory)
+from osf_tests.factories import (AuthUserFactory, ProjectFactory, RegistrationFactory,
+                                 CommentFactory, CollectionFactory, PrivateLinkFactory)
+from addons.wiki.tests.factories import NodeWikiFactory
 
 
 class TestGuidDetail(ApiTestCase):
@@ -17,7 +19,7 @@ class TestGuidDetail(ApiTestCase):
 
     def _add_private_link(self, project, anonymous=False):
         view_only_link = PrivateLinkFactory(anonymous=anonymous)
-        view_only_link.nodes.append(project)
+        view_only_link.nodes.add(project)
         view_only_link.save()
         return view_only_link
 
@@ -47,7 +49,6 @@ class TestGuidDetail(ApiTestCase):
 
     def test_redirect_to_file_view(self):
         test_file = OsfStorageFile.create(
-            is_file=True,
             node=ProjectFactory(),
             path='/test',
             name='test',
@@ -86,7 +87,6 @@ class TestGuidDetail(ApiTestCase):
     def test_redirect_when_viewing_private_project_file_through_view_only_link(self):
         project = ProjectFactory()
         test_file = OsfStorageFile.create(
-            is_file=True,
             node=project,
             path='/test',
             name='test',

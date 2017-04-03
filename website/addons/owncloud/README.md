@@ -1,4 +1,7 @@
-OSF ownCloud Addon
+# OSF ownCloud Addon
+
+## Deprecation Warning: ./website/addons has been moved to ./addons
+## Please configure in the new location
 
 
 ## Setup:

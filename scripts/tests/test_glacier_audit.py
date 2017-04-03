@@ -4,9 +4,9 @@ from nose.tools import *  # noqa
 
 from tests.base import OsfTestCase
 
-from website.addons.osfstorage.tests.factories import FileVersionFactory
+from addons.osfstorage.tests.factories import FileVersionFactory
 
-from website.addons.osfstorage import model
+from addons.osfstorage import model
 
 from scripts.osfstorage import glacier_audit
 

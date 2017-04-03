@@ -76,10 +76,8 @@ class AddonWikiNodeSettings(AddonNodeSettingsBase):
                     'node': node._primary_key,
                 },
                 auth=auth,
-                save=False,
+                save=True,
             )
-            node.save()
-
         self.save()
 
     def after_fork(self, node, fork, user, save=True):

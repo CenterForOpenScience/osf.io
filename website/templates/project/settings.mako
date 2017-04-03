@@ -1,16 +1,6 @@
 <%inherit file="project/project_base.mako"/>
 <%def name="title()">${node['title']} Settings</%def>
 
-##<!-- Show API key settings -->
-##<div mod-meta='{
-##        "tpl": "util/render_keys.mako",
-##        "uri": "${node["api_url"]}keys/",
-##        "replace": true,
-##        "kwargs": {
-##            "route": "${node["url"]}"
-##        }
-##    }'></div>
-
 <div class="page-header visible-xs">
   <h2 class="text-300">Settings</h2>
 </div>

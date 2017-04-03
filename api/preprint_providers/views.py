@@ -64,8 +64,9 @@ class PreprintProviderList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin
 
     ordering = ('name', )
 
+    # implement ODMFilterMixin
     def get_default_odm_query(self):
-        return Q('is_deleted', 'ne', True)
+        return None
 
     # overrides ListAPIView
     def get_queryset(self):
@@ -175,6 +176,13 @@ class PreprintProviderPreprintList(JSONAPIBaseView, generics.ListAPIView, ODMFil
     view_category = 'preprint_providers'
     view_name = 'preprints-list'
 
+    def postprocess_query_param(self, key, field_name, operation):
+        if field_name == 'provider':
+            operation['source_field_name'] = 'provider___id'
+
+        if field_name == 'id':
+            operation['source_field_name'] = 'guids___id'
+
     # overrides ODMFilterMixin
     def get_default_odm_query(self):
         # TODO: this will return unpublished preprints so that users
@@ -208,10 +216,10 @@ class PreprintProviderSubjectList(JSONAPIBaseView, generics.ListAPIView):
     def is_valid_subject(self, allows_children, allowed_parents, sub):
         if sub._id in allowed_parents:
             return True
-        for parent in sub.parents:
+        for parent in sub.parents.all():
             if parent._id in allows_children:
                 return True
-            for grandpa in parent.parents:
+            for grandpa in parent.parents.all():
                 if grandpa._id in allows_children:
                     return True
         return False
@@ -225,7 +233,7 @@ class PreprintProviderSubjectList(JSONAPIBaseView, generics.ListAPIView):
             #  Calculate this here to only have to do it once.
             allowed_parents = [id_ for sublist in provider.subjects_acceptable for id_ in sublist[0]]
             allows_children = [subs[0][-1] for subs in provider.subjects_acceptable if subs[1]]
-            return [sub for sub in Subject.find(Q('parents', 'eq', parent)) if provider.subjects_acceptable == [] or self.is_valid_subject(allows_children=allows_children, allowed_parents=allowed_parents, sub=sub)]
+            return [sub for sub in Subject.find(Q('parents___id', 'eq', parent)) if provider.subjects_acceptable == [] or self.is_valid_subject(allows_children=allows_children, allowed_parents=allowed_parents, sub=sub)]
         return provider.all_subjects
 
 
@@ -235,4 +243,4 @@ class PreprintProviderLicenseList(LicenseList):
 
     def get_queryset(self):
         provider = PreprintProvider.load(self.kwargs['provider_id'])
-        return provider.licenses_acceptable if len(provider.licenses_acceptable) else super(PreprintProviderLicenseList, self).get_queryset()
+        return provider.licenses_acceptable.get_queryset() if provider.licenses_acceptable.count() else super(PreprintProviderLicenseList, self).get_queryset()

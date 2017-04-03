@@ -8,7 +8,7 @@ from nose import SkipTest
 from nose.tools import *  # flake8: noqa
 
 from tests.base import ApiTestCase
-from tests import factories
+from osf_tests import factories
 
 from framework.auth.oauth_scopes import CoreScopes
 

@@ -5,9 +5,9 @@
 import logging
 import sys
 
+from django.db import transaction
 from modularodm import Q
 from modularodm.exceptions import NoResultsFound
-from framework.transactions.context import TokuTransaction
 from website.app import init_app
 from website.models import Subject, PreprintProvider, NodeLicense
 
@@ -41,12 +41,14 @@ def get_license(name):
 
 def update_or_create(provider_data):
     provider = PreprintProvider.load(provider_data['_id'])
+    licenses = [get_license(name) for name in provider_data.pop('licenses_acceptable', [])]
     if provider:
         provider_data['subjects_acceptable'] = map(
             lambda rule: (map(get_subject_id, rule[0]), rule[1]),
             provider_data['subjects_acceptable']
         )
-        provider_data['licenses_acceptable'] = [get_license(name) for name in provider_data['licenses_acceptable']]
+        if licenses:
+            provider.licenses_acceptable.add(*licenses)
         for key, val in provider_data.iteritems():
             setattr(provider, key, val)
         changed_fields = provider.save()
@@ -56,6 +58,8 @@ def update_or_create(provider_data):
     else:
         new_provider = PreprintProvider(**provider_data)
         new_provider.save()
+        if licenses:
+            new_provider.licenses_acceptable.add(*licenses)
         provider = PreprintProvider.load(new_provider._id)
         print('Added new preprint provider: {}'.format(provider._id))
         return new_provider, True
@@ -367,7 +371,7 @@ def main(env):
             '_id': 'scielo',
             'name': 'SciELO',
             'logo_name': 'scielo-logo.png',
-            'description': 'Placeholder description',
+            'description': 'Advancing Research Communication',
             'banner_name': 'scielo-logo.png',
             'external_url': 'http://scielo.org',
             'example': '', # An example guid for this provider (Will have to be updated after the provider is up)
@@ -378,7 +382,7 @@ def main(env):
             'social_twitter': 'RedeSciELO', # optional
             'social_facebook': 'SciELONetwork',
             'header_text': '',
-            'licenses_acceptable': ['CC0 1.0 Universal'],
+            'licenses_acceptable': ['CC-By Attribution 4.0 International'],
             'subjects_acceptable':[]
         },
         'agrixiv': {
@@ -1004,13 +1008,13 @@ def main(env):
                 (['Social and Behavioral Sciences', 'Other Social and Behavioral Sciences'], False)
             ]
         },
-        'bitss' : {
+        'bitss': {
             '_id': 'bitss',
             'name': 'BITSS',
             'logo_name': 'bitss-logo.png',
             'description': 'An interdisciplinary archive of articles focused on improving research transparency and reproducibility',
             'banner_name': 'bitss-banner.png',
-            'external_url': 'www.bitss.org',
+            'external_url': 'http://www.bitss.org',
             'example': '',
             'advisory_board': '''
                 <div class="col-xs-12">
@@ -1175,7 +1179,7 @@ def main(env):
     }
 
     preprint_providers_to_add = STAGING_PREPRINT_PROVIDERS if env == 'stage' else PROD_PREPRINT_PROVIDERS
-    with TokuTransaction():
+    with transaction.atomic():
         for provider_id in preprint_providers_to_add:
             update_or_create(PREPRINT_PROVIDERS[provider_id])
 
