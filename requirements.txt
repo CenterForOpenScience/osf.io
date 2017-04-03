@@ -94,4 +94,3 @@ sqlparse==0.2.2
 psycogreen==1.0
 django-bulk-update==1.1.10
 ciso8601==1.0.3
-funcy==1.7.3
