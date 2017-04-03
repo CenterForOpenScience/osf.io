@@ -240,7 +240,6 @@ def conference_submissions(**kwargs):
     The total number of submissions for each meeting is calculated and cached
     in the Conference.num_submissions field.
     """
-    submissions = []
     conferences = Conference.find(Q('is_meeting', 'ne', False))
     #  TODO: Revisit this loop, there has to be a way to optimize it
     for conf in conferences:
@@ -255,14 +254,11 @@ def conference_submissions(**kwargs):
             Q('is_deleted', 'ne', True)
         ).include('guids')
         projects.update(list(nodes))
-        for idx, node in enumerate(projects):
-            submissions.append(_render_conference_node(node, idx, conf))
         num_submissions = len(projects)
         # Cache the number of submissions
         conf.num_submissions = num_submissions
     bulk_update(conferences, update_fields=['num_submissions'])
-    submissions.sort(key=lambda submission: submission['dateCreated'], reverse=True)
-    return {'submissions': submissions}
+    return {'success': True}
 
 def conference_view(**kwargs):
     meetings = []
