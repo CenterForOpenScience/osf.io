@@ -407,7 +407,7 @@ def validate_basic_field(field_name, django_obj, modm_obj):
                 logger.warn('{} on model {}.{} with id {} did not match modm but was field max_length'.format(field_name, django_obj._meta.model.__module__, django_obj._meta.model.__class__, django_obj._id))
 
             if modm_value is None:
-                logger.error('modm value was None but django value was {} for {} on {}.{} with ID of {}'.format(django_value, field_name, django_obj._meta.model.__module__, django_obj._meta.model.__class__, getattr(django_obj, django_obj._primary_identifier_name)))
+                logger.error('modm value was None but django value was {} for {} on {}.{} with ID of {}'.format(django_value, field_name, django_obj._meta.model.__module__, django_obj._meta.model.__class__, getattr(django_obj, getattr(django_obj, '_primary_identifier_name', ''), None)))
                 return
 
             # sometimes strings used to be integers, in some documents... LicenseRecord.year
