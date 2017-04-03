@@ -1736,7 +1736,7 @@ def test_can_comment():
     noncontrib = UserFactory()
     assert public_node.can_comment(Auth(noncontrib)) is True
 
-    private_node = NodeFactory(is_public=False, public_comments=False)
+    private_node = NodeFactory(is_public=False)
     Contributor.objects.create(node=private_node, user=contrib, read=True)
     assert private_node.can_comment(Auth(contrib)) is True
     noncontrib = UserFactory()
@@ -2597,6 +2597,7 @@ class TestPointerMethods:
         component = NodeFactory(creator=user)
         self._fork_pointer(node=node, content=component, auth=auth)
 
+
 # copied from tests/test_models.py
 class TestForkNode:
 
@@ -3008,16 +3009,24 @@ class TestLogMethods:
         assert grandchild_log in list(logs)
 
     # copied from tests/test_models.py#TestNode
-    def test_get_aggregate_logs_queryset_doesnt_return_hidden_logs(self, parent):
-        n_orig_logs = len(parent.get_aggregate_logs_queryset(Auth(user)))
+    def test_get_aggregate_logs_queryset_doesnt_return_hidden_logs(self, parent, auth):
+        n_orig_logs = len(parent.get_aggregate_logs_queryset(auth))
 
         log = parent.logs.latest()
         log.should_hide = True
         log.save()
 
-        n_new_logs = len(parent.get_aggregate_logs_queryset(Auth(user)))
+        n_new_logs = len(parent.get_aggregate_logs_queryset(auth))
         # Hidden log is not returned
         assert n_new_logs == n_orig_logs - 1
+
+    def test_excludes_logs_for_linked_nodes(self, parent):
+        pointee = ProjectFactory()
+        n_logs_before = parent.get_aggregate_logs_queryset(auth=Auth(parent.creator)).count()
+        parent.add_node_link(pointee, auth=Auth(parent.creator))
+        n_logs_after = parent.get_aggregate_logs_queryset(auth=Auth(parent.creator)).count()
+        # one more log for adding the node link
+        assert n_logs_after == n_logs_before + 1
 
 # copied from tests/test_notifications.py
 class TestHasPermissionOnChildren:

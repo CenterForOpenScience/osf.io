@@ -219,8 +219,8 @@ class NodeSettings(BaseStorageAddon, BaseOAuthNodeSettings):
                 'name': item.path_display.split('/')[-1],
                 'path': item.path_display,
                 'urls': {
-                    'folders': api_v2_url('nodes/{}/addons/box/folders/'.format(self.owner._id),
-                        params={'id': item.path_display}
+                    'folders': api_v2_url('nodes/{}/addons/dropbox/folders/'.format(self.owner._id),
+                        params={'id': item['path']}
                     )
                 }
             }

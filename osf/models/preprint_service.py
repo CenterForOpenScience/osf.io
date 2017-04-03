@@ -27,7 +27,7 @@ class PreprintService(GuidMixin, BaseModel):
     # /TODO REMOVE AFTER MIGRATION
 
     date_created = NonNaiveDateTimeField(default=timezone.now)
-    date_modified = NonNaiveDateTimeField(auto_now=True)
+    date_modified = NonNaiveDateTimeField(default=timezone.now)  # auto_now=True)
     provider = models.ForeignKey('osf.PreprintProvider',
                                  on_delete=models.SET_NULL,
                                  related_name='preprint_services',
