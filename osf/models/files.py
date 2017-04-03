@@ -719,9 +719,9 @@ class FileVersion(ObjectIDMixin, BaseModel):
 
         qs = self.__class__.find(
             Q('_id', 'ne', self._id) &
-            Q('metadata.vault', 'ne', None) &
+            Q('metadata.sha256', 'eq', self.metadata['sha256']) &
             Q('metadata.archive', 'ne', None) &
-            Q('metadata.sha256', 'eq', self.metadata['sha256'])
+            Q('metadata.vault', 'ne', None)
         ).limit(1)
         if qs.count() < 1:
             return False
