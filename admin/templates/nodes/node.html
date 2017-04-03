@@ -283,6 +283,10 @@
                                 <td>Embargo</td>
                                 <td>{{ node.embargo }}</td>
                             </tr>
+                            <tr>
+                                <td>Registered From</td>
+                                <td><a href="{% url 'nodes:node' node.registered_from %}">{{ node.registered_from }}</a></td>
+                            </tr>
                         </tbody>
                         </table>
                     {% endif %}
