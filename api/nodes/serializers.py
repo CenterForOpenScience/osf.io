@@ -370,6 +370,7 @@ class NodeSerializer(JSONAPISerializer):
     def create(self, validated_data):
         request = self.context['request']
         user = request.user
+        auth = get_user_auth(request)
         Node = apps.get_model('osf.Node')
         tag_instances = []
         if 'tags' in validated_data:
@@ -387,7 +388,7 @@ class NodeSerializer(JSONAPISerializer):
 
             validated_data.pop('creator')
             changed_data = {template_from: validated_data}
-            node = template_node.use_as_template(auth=get_user_auth(request), changes=changed_data)
+            node = template_node.use_as_template(auth=auth, changes=changed_data)
         else:
             node = Node(**validated_data)
         try:
@@ -399,10 +400,11 @@ class NodeSerializer(JSONAPISerializer):
 
         if is_truthy(request.GET.get('inherit_tags')) and validated_data['parent'].has_permission(user, 'write'):
             parent = validated_data['parent']
-            node.tags.add(*parent.tags.values_list('pk', flat=True))
+            for tag in parent.tags.filter():
+                node.tags.add(tag)
+                node.add_tag_log(tag, auth)
 
         if is_truthy(request.GET.get('inherit_contributors')) and validated_data['parent'].has_permission(user, 'write'):
-            auth = get_user_auth(request)
             parent = validated_data['parent']
             contributors = []
             for contributor in parent.contributor_set.exclude(user=user):
