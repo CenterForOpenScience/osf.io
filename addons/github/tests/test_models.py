@@ -108,7 +108,6 @@ class TestUserSettings(OAuthAddonUserSettingTestSuiteMixin, unittest.TestCase):
         assert_equal(self.user.external_accounts.first().display_name, self.user_settings.public_id)
 
 
-@pytest.mark.skip('TEMPORARILY skip while before_page_load is bypassed')
 class TestCallbacks(OsfTestCase):
 
     def setUp(self):

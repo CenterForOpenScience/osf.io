@@ -2,6 +2,11 @@
 Changelog
 *********
 
+0.105.0 (2017-04-02)
+====================
+
+- Migrate from TokuMX to Postgres and ModularODM to DjangoORM. APIv1 code is monkeypatched to use Django models.
+
 0.104.0 (2016-12-19)
 ====================
 - Various APIv2 fixes and improvements to support Preprints.
