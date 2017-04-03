@@ -1,7 +1,5 @@
 __all__ = ['DMPTool']
 
-import requests
-
 DMPTOOL_HOST = 'dmptool.org'
 STAGING_DMPTOOL_HOST = 'dmp2-staging.cdlib.org'
 
@@ -45,7 +43,7 @@ def connect_from_settings_or_401(node_settings):
 
 class DMPTool(object):
     """
-    TO DO: completely eliminate DMPTool since I don't think 
+    TO DO: completely eliminate DMPTool since I don't think
     there should be any remaining API code (other than perhaps
     validate a token.  The main action has moved to WB.)
     """
