@@ -6,9 +6,9 @@ from addons.base.models import (BaseOAuthNodeSettings, BaseOAuthUserSettings,
                                 BaseStorageAddon)
 from django.db import models
 from dropbox.dropbox import Dropbox
+from dropbox.exceptions import ApiError, DropboxException
 from dropbox.files import FolderMetadata
 from dropbox.client import DropboxOAuth2Flow
-from dropbox.rest import ErrorResponse
 from flask import request
 from framework.auth import Auth
 from framework.exceptions import HTTPError
@@ -130,7 +130,7 @@ class UserSettings(BaseOAuthUserSettings):
         client = Dropbox(external_account.oauth_key)
         try:
             client.auth_token_revoke()
-        except ErrorResponse:
+        except DropboxException:
             pass
 
 
@@ -193,23 +193,21 @@ class NodeSettings(BaseStorageAddon, BaseOAuthNodeSettings):
             }]
 
         client = Dropbox(self.external_account.oauth_key)
-        file_not_found = HTTPError(http.NOT_FOUND, data={
-            'message_short': 'File not found',
-            'message_long': 'The Dropbox file you requested could not be found.'
-        })
-
-        max_retry_error = HTTPError(http.REQUEST_TIMEOUT, data={
-            'message_short': 'Request Timeout',
-            'message_long': 'Dropbox could not be reached at this time.'
-        })
 
         try:
             folder_id = '' if folder_id == '/' else folder_id
-            metadata = client.files_list_folder(folder_id)
-        except ErrorResponse:
-            raise file_not_found
-        except MaxRetryError:
-            raise max_retry_error
+            list_folder = client.files_list_folder(folder_id)
+            contents = [x for x in list_folder.entries]
+            while list_folder.has_more:
+                list_folder = client.files_list_folder_continue(list_folder.cursor)
+                contents += [x for x in list_folder.entries]
+        except ApiError as error:
+            raise HTTPError(http.BAD_REQUEST, data={
+                    'message_short': error.user_message_text,
+                    'message_long': error.user_message_text
+                })
+        except DropboxException:
+            raise HTTPError(http.BAD_REQUEST)
 
         return [
             {
@@ -220,11 +218,11 @@ class NodeSettings(BaseStorageAddon, BaseOAuthNodeSettings):
                 'path': item.path_display,
                 'urls': {
                     'folders': api_v2_url('nodes/{}/addons/dropbox/folders/'.format(self.owner._id),
-                        params={'id': item['path']}
+                        params={'id': item.path_display}
                     )
                 }
             }
-            for item in metadata.entries
+            for item in contents
             if isinstance(item, FolderMetadata)
         ]
 
