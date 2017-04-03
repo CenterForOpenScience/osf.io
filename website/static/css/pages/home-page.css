@@ -1,3 +1,7 @@
+body {
+    overflow-x: hidden;
+}
+
 h3, h4 {
     font-weight: 400;
 }
@@ -27,7 +31,7 @@ h3, h4 {
 }
 
 .prereg {
-    background: #C5D6E6 url("/static/img/bg6.jpg") no-repeat center top;
+    background: #337AB7;
     background-size: cover;
 }
 

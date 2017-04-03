@@ -358,7 +358,7 @@ class NodeSerializer(JSONAPISerializer):
                 JOIN osf_contributor ON osf_abstractnode.id = osf_contributor.node_id
                 LEFT JOIN osf_privatelink_nodes ON osf_abstractnode.id = osf_privatelink_nodes.abstractnode_id
                 LEFT JOIN osf_privatelink ON osf_privatelink_nodes.privatelink_id = osf_privatelink.id
-                WHERE parent_id = %s
+                WHERE parent_id = %s AND is_node_link IS FALSE
                 AND osf_abstractnode.is_deleted IS FALSE
                 AND (
                   osf_abstractnode.is_public

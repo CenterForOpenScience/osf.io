@@ -45,6 +45,9 @@ class CitationStyle(BaseModel):
     short_title = models.CharField(max_length=2048, null=True, blank=True)
     summary = models.CharField(max_length=4200, null=True, blank=True)  # longest value was 3,812 8/23/2016
 
+    class Meta:
+        ordering = ['_id']
+
     def to_json(self):
         return {
             'id': self._id,

@@ -191,7 +191,9 @@ class NodeView(PermissionRequiredMixin, GuidView):
         return kwargs
 
     def get_object(self, queryset=None):
-        return serialize_node(Node.load(self.kwargs.get('guid')))
+        guid = self.kwargs.get('guid')
+        node = Node.load(guid) or Registration.load(guid)
+        return serialize_node(node)
 
 
 class RegistrationListView(PermissionRequiredMixin, ListView):

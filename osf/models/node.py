@@ -94,7 +94,7 @@ class AbstractNodeQuerySet(MODMCompatibilityQuerySet, IncludeQuerySet):
         if private_link is not None:
             if isinstance(private_link, PrivateLink):
                 private_link = private_link.key
-            if not isinstance(private_link, str):
+            if not isinstance(private_link, basestring):
                 raise TypeError('"private_link" must be either {} or {}. Got {!r}'.format(str, PrivateLink, private_link))
 
             qs |= self.filter(private_links__is_deleted=False, private_links__key=private_link)
@@ -178,7 +178,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         'wiki_pages_current',
         'is_retracted',
         'node_license',
-        '_affiliated_institutions',
+        'affiliated_institutions',
         'preprint_file',
     }
 
@@ -263,6 +263,10 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     node_license = models.ForeignKey('NodeLicenseRecord', related_name='nodes',
                                      on_delete=models.SET_NULL, null=True, blank=True)
 
+    # One of 'public', 'private'
+    # TODO: Add validator
+    comment_level = models.CharField(default='public', max_length=10)
+
     root = models.ForeignKey('AbstractNode',
                                 default=None,
                                 related_name='descendants',
@@ -288,11 +292,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             parent = node_rel.parent
             if parent:
                 return parent
-        # for v1 compat: self is a forked component (the parent was not forked).
-        # In this case, the parent node is the same as the parent of the
-        # copied node
-        if self.is_fork:
-            return self.forked_from.parent_node
         return None
 
     @property
@@ -340,7 +339,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     # permissions = Permissions are now on contributors
     piwik_site_id = models.IntegerField(null=True, blank=True)
-    public_comments = models.BooleanField(default=True)
     suspended = models.BooleanField(default=False, db_index=True)
 
     # The node (if any) used as a template for this node's creation
@@ -732,30 +730,16 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         )
 
     def get_aggregate_logs_query(self, auth):
-        ids = [self._id] + [n._id for n in Node.objects.get_children(self) if n.can_view(auth)]
-        query = Q('node', 'in', ids) & Q('should_hide', 'eq', False)
-        return query
+        return (
+            (   # TODO: remove `list` call during phase 2
+                Q('node_id', 'in', list(Node.objects.get_children(self).can_view(user=auth.user, private_link=auth.private_link).values_list('id', flat=True))) |
+                Q('node_id', 'eq', self.id)
+            ) & Q('should_hide', 'eq', False)
+        )
 
     def get_aggregate_logs_queryset(self, auth):
         query = self.get_aggregate_logs_query(auth)
         return NodeLog.find(query).sort('-date')
-
-    @property
-    def comment_level(self):
-        if self.public_comments:
-            return self.PUBLIC
-        else:
-            return self.PRIVATE
-
-    @comment_level.setter
-    def comment_level(self, value):
-        if value == self.PUBLIC:
-            self.public_comments = True
-        elif value == self.PRIVATE:
-            self.public_comments = False
-        else:
-            raise ValidationError(
-                'comment_level must be either `public` or `private`')
 
     def get_absolute_url(self):
         return self.absolute_api_v2_url

@@ -102,6 +102,7 @@ class NodeWikiPage(GuidMixin, BaseModel):
     # TODO DELETE ME POST MIGRATION
     modm_model_path = 'website.addons.wiki.model.NodeWikiPage'
     modm_query = None
+    primary_identifier_name = 'guids___id'
     # /TODO DELETE ME POST MIGRATION
 
     page_name = models.CharField(max_length=200, validators=[validate_page_name, ])

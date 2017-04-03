@@ -326,9 +326,6 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     #     'twitter': <twitter id>,
     # }
 
-    # hashed password used to authenticate to Piwik
-    piwik_token = models.CharField(max_length=255, blank=True)
-
     # date the user last sent a request
     date_last_login = NonNaiveDateTimeField(null=True, blank=True)
 
@@ -555,9 +552,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     @property
     def can_be_merged(self):
         """The ability of the `merge_user` method to fully merge the user"""
-        return True
-        # TODO: Uncomment when addons are implemented
-        # return all((addon.can_be_merged for addon in self.get_addons()))
+        return all((addon.can_be_merged for addon in self.get_addons()))
 
     def merge_user(self, user):
         """Merge a registered user into this account. This user will be
