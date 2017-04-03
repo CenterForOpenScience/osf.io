@@ -396,6 +396,11 @@ class NodeSerializer(JSONAPISerializer):
             raise InvalidModelValueError(detail=e.messages[0])
         if len(tag_instances):
             node.tags.add(*tag_instances)
+
+        if is_truthy(request.GET.get('inherit_tags')) and validated_data['parent'].has_permission(user, 'write'):
+            parent = validated_data['parent']
+            node.tags.add(*parent.tags.values_list('pk', flat=True))
+
         if is_truthy(request.GET.get('inherit_contributors')) and validated_data['parent'].has_permission(user, 'write'):
             auth = get_user_auth(request)
             parent = validated_data['parent']

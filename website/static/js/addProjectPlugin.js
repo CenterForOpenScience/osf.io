@@ -41,6 +41,7 @@ var AddProject = {
         self.newProjectCategory = m.prop(self.defaultCat);
         self.newProjectTemplate = m.prop('');
         self.newProjectInheritContribs = m.prop(false);
+        self.newProjectInheritTags = m.prop(false);
         self.institutions = options.institutions || window.contextVars.currentUser.institutions || [];
         self.checkedInstitutions = {};
         self.institutions.map(
@@ -87,7 +88,7 @@ var AddProject = {
             var data;
             self.viewState('processing');
             if(self.options.parentID) {
-                url = $osf.apiV2Url('nodes/' + self.options.parentID + '/children/', { query : {'inherit_contributors' : self.newProjectInheritContribs(), 'version': '2.2'}});
+                url = $osf.apiV2Url('nodes/' + self.options.parentID + '/children/', { query : {'inherit_contributors' : self.newProjectInheritContribs(), 'inherit_tags' : self.newProjectInheritTags(), 'version': '2.2'}});
             } else {
                 url = $osf.apiV2Url('nodes/', { query : {'version': '2.2'}});
             }
@@ -233,6 +234,18 @@ var AddProject = {
                                 }), ' Add contributors from ', m('b', options.parentTitle),
                                 m('br'),
                                 m('i', ' Admins of ', m('b', options.parentTitle), ' will have read access to this component.')
+                            ),
+                            m('br'),
+                            m('label.f-w-md',
+
+                                m('input', {
+                                    type: 'checkbox',
+                                    name: 'inherit_tags',
+                                    value: true,
+                                    onchange : function() {
+                                        ctrl.newProjectInheritTags(this.checked);
+                                    }
+                                }), ' Add tags from ', m('b', options.parentTitle)
                             )
                         ]) : '',
                         m('.text-muted.pointer', { onclick : function(){
