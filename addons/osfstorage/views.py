@@ -228,7 +228,6 @@ def osfstorage_create_child(file_node, payload, node_addon, **kwargs):
 
     # Create a save point so that we can rollback and unlock
     # the parent record
-    import ipdb; ipdb.set_trace()
     with transaction.atomic():
         try:
             created, file_node = False, parent.find_child_by_name(name, kind=int(not is_folder))
