@@ -1,9 +1,9 @@
 
 version: '2'
 
-volumes:
-  emberosf-sync:
-    external: true
+#volumes:
+#  emberosf-sync:
+#    external: true
 
 services:
 
