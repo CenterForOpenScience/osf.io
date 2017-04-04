@@ -44,7 +44,7 @@ def migrate():
 
 def main():
     parser = argparse.ArgumentParser(
-        description='Ensures every confirmed user has only one bookmark collection.'
+        description='Ensures every user has only one bookmark collection.'
     )
     parser.add_argument(
         '--dry',

@@ -133,7 +133,7 @@ def add_contributor_json(user, current_user=None):
 
     return {
         'fullname': user.fullname,
-        'email': user.username,
+        'email': user.email,
         'id': user._primary_key,
         'employment': current_employment,
         'education': education,
