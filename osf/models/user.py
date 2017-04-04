@@ -797,6 +797,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         user = cls.create(username, password, fullname)
         user.is_registered = True
         user.is_claimed = True
+        user.save()  # Must save before using auto_now_add field
         user.date_confirmed = user.date_registered
         user.emails.append(username)
         return user

@@ -70,6 +70,7 @@ class TestOSFUser:
         user = User.create(
             username=email, password='foobar', fullname=name
         )
+        user.save()
         assert user.check_password('foobar') is True
         assert user._id
         assert user.given_name == impute_names_model(name)['given_name']
@@ -1447,7 +1448,6 @@ class TestUserMerging(OsfTestCase):
             'suffix',
             'timezone',
             'username',
-            'mailing_lists',
             'verification_key',
             'verification_key_v2',
             'affiliated_institutions',
