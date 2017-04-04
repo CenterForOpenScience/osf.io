@@ -26,7 +26,11 @@
   - Ubuntu
     - Add loopback alias
       `sudo ifconfig lo:0 192.168.168.167 netmask 255.255.255.255 up`
+
       - For persistance, add to /etc/network/interfaces...
+        Add lo:0 to auto line...
+        ```auto lo lo:0```
+        Add stanza for lo:0...
         ```iface lo:0 inet static
                address 192.168.168.167
                netmask 255.255.255.255
