@@ -43,7 +43,7 @@ def remove_preprintservice_permissions(*args):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0005_merge'),
+        ('osf', '0006_add_jsonb_index_for_fileversions'),
     ]
 
     operations = [
