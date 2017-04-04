@@ -6,6 +6,7 @@ from django.contrib.auth.mixins import PermissionRequiredMixin
 
 
 from website.preprints.model import PreprintService
+from framework.exceptions import PermissionsError
 from admin.base.views import GuidFormView, GuidView
 from admin.nodes.templatetags.node_extras import reverse_preprint
 from admin.preprints.serializers import serialize_preprint, serialize_subjects
@@ -34,12 +35,16 @@ class PreprintView(PermissionRequiredMixin, UpdateView, GuidView):
     """
     template_name = 'preprints/preprint.html'
     context_object_name = 'preprint'
-    permission_required = 'osf.view_node'
+    permission_required = 'osf.view_preprintservice'
     raise_exception = True
     form_class = ChangeProviderForm
 
     def get_success_url(self):
         return reverse_lazy('preprints:preprint', kwargs={'guid': self.kwargs.get('guid')})
+
+    def post(self, request, *args, **kwargs):
+        if not request.user.has_perm('osf.change_preprintservice'):
+            raise PermissionsError("This user does not have permission to update this preprint's provider.")
 
     def get_object(self, queryset=None):
         return PreprintService.load(self.kwargs.get('guid'))
