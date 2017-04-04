@@ -3,8 +3,10 @@ from __future__ import unicode_literals
 import csv
 from furl import furl
 from datetime import datetime, timedelta
+from django.views.defaults import page_not_found
 from django.views.generic import FormView, DeleteView, ListView
 from django.contrib.auth.mixins import PermissionRequiredMixin
+from django.core.urlresolvers import reverse
 from django.core.exceptions import PermissionDenied
 from django.core.mail import send_mail
 from django.http import Http404, HttpResponse
@@ -20,7 +22,7 @@ from framework.auth.core import generate_verification_key
 
 from website.mailchimp_utils import subscribe_on_confirm
 
-from admin.base.views import GuidFormView, GuidView
+from admin.base.views import GuidView
 from osf.models.admin_log_entry import (
     update_admin_log,
     USER_2_FACTOR,
@@ -30,7 +32,7 @@ from osf.models.admin_log_entry import (
     CONFIRM_SPAM)
 
 from admin.users.serializers import serialize_user
-from admin.users.forms import EmailResetForm, WorkshopForm
+from admin.users.forms import EmailResetForm, WorkshopForm, UserSearchForm
 from admin.users.templatetags.user_extras import reverse_user
 from website.settings import DOMAIN, SUPPORT_EMAIL
 
@@ -254,15 +256,57 @@ class User2FactorDeleteView(UserDeleteView):
         return redirect(reverse_user(self.kwargs.get('guid')))
 
 
-class UserFormView(PermissionRequiredMixin, GuidFormView):
+class UserFormView(PermissionRequiredMixin, FormView):
     template_name = 'users/search.html'
-    object_type = 'user'
+    object_type = 'osfuser'
     permission_required = 'osf.view_osfuser'
     raise_exception = True
+    form_class = UserSearchForm
+
+    def __init__(self, *args, **kwargs):
+        self.redirect_url = None
+        super(UserFormView, self).__init__(*args, **kwargs)
+
+    def form_valid(self, form):
+        guid = form.cleaned_data['guid']
+        name = form.cleaned_data['name']
+        email = form.cleaned_data['email']
+
+        if guid or email:
+            if email:
+                try:
+                    user = OSFUser.objects.get(emails__contains=[email])
+                    guid = user.guids.first()._id
+                except OSFUser.DoesNotExist:
+                    return page_not_found(self.request, AttributeError('User with email address {} not found.'.format(email)))
+            self.redirect_url = reverse('users:user', kwargs={'guid': guid})
+        elif name:
+            self.redirect_url = reverse('users:search_list', kwargs={'name': name})
+
+        return super(UserFormView, self).form_valid(form)
 
     @property
     def success_url(self):
-        return reverse_user(self.guid)
+        return self.redirect_url
+
+
+class UserSearchList(PermissionRequiredMixin, ListView):
+    template_name = 'users/list.html'
+    permission_required = 'osf.view_osfuser'
+    raise_exception = True
+    form_class = UserSearchForm
+    paginate_by = 25
+
+    def get_queryset(self):
+        return OSFUser.objects.filter(fullname__contains=self.kwargs['name'])
+
+    def get_context_data(self, **kwargs):
+        users = self.get_queryset()
+        page_size = self.get_paginate_by(users)
+        paginator, page, query_set, is_paginated = self.paginate_queryset(users, page_size)
+        kwargs['page'] = page
+        kwargs['users'] = map(serialize_user, query_set)
+        return super(UserSearchList, self).get_context_data(**kwargs)
 
 
 class UserView(PermissionRequiredMixin, GuidView):
