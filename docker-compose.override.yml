@@ -1,6 +1,10 @@
 
 version: '2'
 
+volumes:
+  emberosf-sync:
+    external: true
+
 services:
 
 #  fakecas:
@@ -18,10 +22,34 @@ services:
 #  preprints:
 #    volumes_from:
 #      - container:preprints-sync
-
+#########    Use this for ember-osf linked development (with docker-sync): #############
+#    depends_on:
+#      - emberosf
+#    command: /bin/bash -c "cd /ember-osf && yarn link && cd /code && yarn link ember-osf && yarn --pure-lockfile && ./node_modules/bower/bin/bower install --allow-root --config.interactive=false && ./node_modules/ember-cli/bin/ember serve --host 0.0.0.0 --port 4200"
+#    volumes:
+#      - preprints_dist_vol:/code/dist
+#      - emberosf-sync:/ember-osf
+########################################################################################
+#
 #  registries:
 #    volumes_from:
 #      - container:registries-sync
+#########    Use this for ember-osf linked development (with docker-sync): #############
+#    depends_on:
+#      - emberosf
+#    command: /bin/bash -c "cd /ember-osf && yarn link && cd /code && yarn link ember-osf && yarn --pure-lockfile && ./node_modules/bower/bin/bower install --allow-root --config.interactive=false && ./node_modules/ember-cli/bin/ember serve --host 0.0.0.0 --port 4300"
+#    volumes:
+#      - registries_dist_vol:/code/dist
+#      - emberosf-sync:/ember-osf
+########################################################################################
+#
+#########    Use this for ember-osf linked development (with docker-sync): #############
+#  emberosf:
+#    build: ../ember-osf
+#    command: /bin/bash -c "yarn --pure-lockfile && ./node_modules/bower/bin/bower install --allow-root --config.interactive=false"
+#    volumes:
+#      - emberosf-sync:/code/
+########################################################################################
 
   requirements:
     volumes_from:

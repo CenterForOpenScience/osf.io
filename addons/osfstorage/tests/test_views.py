@@ -49,6 +49,15 @@ class HookTestCase(StorageTestCase):
 @pytest.mark.django_db
 class TestGetMetadataHook(HookTestCase):
 
+    def test_empty(self):
+        res = self.send_hook(
+            'osfstorage_get_children',
+            {'fid': self.node_settings.get_root()._id},
+            {},
+        )
+        assert_true(isinstance(res.json, list))
+        assert_equal(res.json, [])
+
     def test_file_metdata(self):
         path = u'kind/of/magíc.mp3'
         record = recursively_create_file(self.node_settings, path)

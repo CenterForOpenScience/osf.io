@@ -11,7 +11,7 @@ class NodeLog(ObjectIDMixin, BaseModel):
     # TODO DELETE ME POST MIGRATION
     modm_model_path = 'website.project.model.NodeLog'
     modm_query = None
-    migration_page_size = 100000
+    migration_page_size = 10000
     # /TODO DELETE ME POST MIGRATION
 
     FIELD_ALIASES = {

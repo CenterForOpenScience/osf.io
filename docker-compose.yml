@@ -179,6 +179,9 @@ services:
     image: quay.io/centerforopenscience/ember-preprints:develop-development-local
     command: /bin/bash -c "yarn --pure-lockfile --no-progress --no-emoji && ./node_modules/bower/bin/bower install --allow-root --config.interactive=false && ./node_modules/ember-cli/bin/ember serve --host 0.0.0.0 --port 4200"
     restart: unless-stopped
+    depends_on:
+      - api
+      - web
     environment:
       - BACKEND=local
     expose:
@@ -197,6 +200,9 @@ services:
     image: quay.io/centerforopenscience/ember-osf-registries:develop-development-local
     command: /bin/bash -c "yarn --pure-lockfile --no-progress --no-emoji && ./node_modules/bower/bin/bower install --allow-root --config.interactive=false && ./node_modules/ember-cli/bin/ember serve --host 0.0.0.0 --port 4300"
     restart: unless-stopped
+    depends_on:
+      - api
+      - web
     environment:
       - BACKEND=local
     expose:
@@ -206,6 +212,7 @@ services:
     volumes:
       - registries_dist_vol:/code/dist
     stdin_open: true
+    tty: true
 
 
   #######

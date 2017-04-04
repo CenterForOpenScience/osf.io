@@ -30,40 +30,28 @@ class OsfStorageFileNode(BaseFileNode):
 
     @property
     def materialized_path(self):
-        # TODO Optimize this.
         sql = """
-            WITH RECURSIVE
-                materialized_path_cte(id, parent_id, provider, GEN_DEPTH, GEN_PATH) AS (
-                SELECT
-                  sfn.id,
-                  sfn.parent_id,
-                  sfn.provider,
-                  1 :: INT         AS depth,
-                  sfn.name :: TEXT AS GEN_PATH
-                FROM "%s" AS sfn
-                WHERE
-                  sfn.provider = 'osfstorage' AND
-                  sfn.parent_id IS NULL
-                UNION ALL
-                SELECT
-                  c.id,
-                  c.parent_id,
-                  c.provider,
-                  p.GEN_DEPTH + 1                       AS GEN_DEPTH,
-                  (p.GEN_PATH || '/' || c.name :: TEXT) AS GEN_PATH
-                FROM materialized_path_cte AS p, "%s" AS c
-                WHERE c.parent_id = p.id
-              )
+            WITH RECURSIVE materialized_path_cte(parent_id, GEN_PATH) AS (
+              SELECT
+                T.parent_id,
+                T.name :: TEXT AS GEN_PATH
+              FROM %s AS T
+              WHERE T.id = %s
+              UNION ALL
+              SELECT
+                T.parent_id,
+                (T.name || '/' || R.GEN_PATH) AS GEN_PATH
+              FROM materialized_path_cte AS R
+                JOIN %s AS T ON T.id = R.parent_id
+              WHERE R.parent_id IS NOT NULL
+            )
             SELECT gen_path
-            FROM materialized_path_cte AS n
-            WHERE
-              GEN_DEPTH > 1
-              AND
-              n.id = %s
+            FROM materialized_path_cte AS N
+            WHERE parent_id IS NULL
             LIMIT 1;
         """
         with connection.cursor() as cursor:
-            cursor.execute(sql, [AsIs(self._meta.db_table), AsIs(self._meta.db_table), self.pk])
+            cursor.execute(sql, [AsIs(self._meta.db_table), self.pk, AsIs(self._meta.db_table)])
             row = cursor.fetchone()
             if not row:
                 return '/'
@@ -238,12 +226,12 @@ class OsfStorageFile(OsfStorageFileNode, File):
             ret['fullPath'] = self.materialized_path
 
         version = self.get_version(version)
-        return dict(
-            ret,
-            version=self.versions.count(),
-            md5=version.metadata.get('md5') if version else None,
-            sha256=version.metadata.get('sha256') if version else None,
-        )
+        ret.update({
+            'version': self.versions.count(),
+            'md5': version.metadata.get('md5') if version else None,
+            'sha256': version.metadata.get('sha256') if version else None,
+        })
+        return ret
 
     def create_version(self, creator, location, metadata=None):
         latest_version = self.get_version()

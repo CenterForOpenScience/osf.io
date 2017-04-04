@@ -172,7 +172,7 @@ class BaseOAuthUserSettings(BaseUserSettings):
 
     @property
     def has_auth(self):
-        return bool(self.external_accounts)
+        return self.external_accounts.exists()
 
     @property
     def external_accounts(self):

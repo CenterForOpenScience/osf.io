@@ -71,6 +71,10 @@ def node(user):
     return NodeFactory(creator=user)
 
 @pytest.fixture()
+def project(user):
+    return ProjectFactory(creator=user)
+
+@pytest.fixture()
 def auth(user):
     return Auth(user)
 
@@ -1076,7 +1080,8 @@ class TestNodeAddContributorRegisteredOrNot:
 
     def test_add_contributor_user_id(self, user, node):
         registered_user = UserFactory()
-        contributor = node.add_contributor_registered_or_not(auth=Auth(user), user_id=registered_user._id, save=True)
+        contributor_obj = node.add_contributor_registered_or_not(auth=Auth(user), user_id=registered_user._id, save=True)
+        contributor = contributor_obj.user
         assert contributor in node.contributors
         assert contributor.is_registered is True
 
@@ -1091,18 +1096,21 @@ class TestNodeAddContributorRegisteredOrNot:
         assert 'was not found' in excinfo.value.message
 
     def test_add_contributor_fullname_email(self, user, node):
-        contributor = node.add_contributor_registered_or_not(auth=Auth(user), full_name='Jane Doe', email='jane@doe.com')
+        contributor_obj = node.add_contributor_registered_or_not(auth=Auth(user), full_name='Jane Doe', email='jane@doe.com')
+        contributor = contributor_obj.user
         assert contributor in node.contributors
         assert contributor.is_registered is False
 
     def test_add_contributor_fullname(self, user, node):
-        contributor = node.add_contributor_registered_or_not(auth=Auth(user), full_name='Jane Doe')
+        contributor_obj = node.add_contributor_registered_or_not(auth=Auth(user), full_name='Jane Doe')
+        contributor = contributor_obj.user
         assert contributor in node.contributors
         assert contributor.is_registered is False
 
     def test_add_contributor_fullname_email_already_exists(self, user, node):
         registered_user = UserFactory()
-        contributor = node.add_contributor_registered_or_not(auth=Auth(user), full_name='F Mercury', email=registered_user.username)
+        contributor_obj = node.add_contributor_registered_or_not(auth=Auth(user), full_name='F Mercury', email=registered_user.username)
+        contributor = contributor_obj.user
         assert contributor in node.contributors
         assert contributor.is_registered is True
 
@@ -1728,7 +1736,7 @@ def test_can_comment():
     noncontrib = UserFactory()
     assert public_node.can_comment(Auth(noncontrib)) is True
 
-    private_node = NodeFactory(is_public=False, public_comments=False)
+    private_node = NodeFactory(is_public=False)
     Contributor.objects.create(node=private_node, user=contrib, read=True)
     assert private_node.can_comment(Auth(contrib)) is True
     noncontrib = UserFactory()
@@ -2589,6 +2597,7 @@ class TestPointerMethods:
         component = NodeFactory(creator=user)
         self._fork_pointer(node=node, content=component, auth=auth)
 
+
 # copied from tests/test_models.py
 class TestForkNode:
 
@@ -2647,21 +2656,21 @@ class TestForkNode:
                                         child, title_prepend='')
 
     @mock.patch('framework.status.push_status_message')
-    def test_fork_recursion(self, mock_push_status_message, node, user, auth, request_context):
+    def test_fork_recursion(self, mock_push_status_message, project, user, auth, request_context):
         """Omnibus test for forking.
         """
         # Make some children
-        component = NodeFactory(creator=user, parent=node)
-        subproject = ProjectFactory(creator=user, parent=node)
+        component = NodeFactory(creator=user, parent=project)
+        subproject = ProjectFactory(creator=user, parent=project)
 
         # Add pointers to test copying
         pointee = ProjectFactory()
-        node.add_pointer(pointee, auth=auth)
+        project.add_pointer(pointee, auth=auth)
         component.add_pointer(pointee, auth=auth)
         subproject.add_pointer(pointee, auth=auth)
 
         # Add add-on to test copying
-        node.add_addon('dropbox', auth)
+        project.add_addon('dropbox', auth)
         component.add_addon('dropbox', auth)
         subproject.add_addon('dropbox', auth)
 
@@ -2670,16 +2679,10 @@ class TestForkNode:
 
         # Fork node
         with mock.patch.object(Node, 'bulk_update_search'):
-            fork = node.fork_node(auth=auth)
+            fork = project.fork_node(auth=auth)
 
         # Compare fork to original
-        self._cmp_fork_original(user, fork_date, fork, node)
-
-    def test_forked_component_has_parent_node(self, node, auth):
-        assert node.parent_node
-
-        fork = node.fork_node(auth=auth)
-        assert fork.parent_node == node.parent_node
+        self._cmp_fork_original(user, fork_date, fork, project)
 
     def test_fork_private_children(self, node, user, auth):
         """Tests that only public components are created
@@ -2878,7 +2881,7 @@ class TestContributorOrdering:
         old_order = [user_contrib_id, user1_contrib_id, user2_contrib_id]
         assert list(node.get_contributor_order()) == old_order
 
-        node.move_contributor(user=user2, auth=auth, index=0, save=True)
+        node.move_contributor(user2, auth=auth, index=0, save=True)
 
         new_order = [user2_contrib_id, user_contrib_id, user1_contrib_id]
         assert list(node.get_contributor_order()) == new_order
@@ -3006,16 +3009,24 @@ class TestLogMethods:
         assert grandchild_log in list(logs)
 
     # copied from tests/test_models.py#TestNode
-    def test_get_aggregate_logs_queryset_doesnt_return_hidden_logs(self, parent):
-        n_orig_logs = len(parent.get_aggregate_logs_queryset(Auth(user)))
+    def test_get_aggregate_logs_queryset_doesnt_return_hidden_logs(self, parent, auth):
+        n_orig_logs = len(parent.get_aggregate_logs_queryset(auth))
 
         log = parent.logs.latest()
         log.should_hide = True
         log.save()
 
-        n_new_logs = len(parent.get_aggregate_logs_queryset(Auth(user)))
+        n_new_logs = len(parent.get_aggregate_logs_queryset(auth))
         # Hidden log is not returned
         assert n_new_logs == n_orig_logs - 1
+
+    def test_excludes_logs_for_linked_nodes(self, parent):
+        pointee = ProjectFactory()
+        n_logs_before = parent.get_aggregate_logs_queryset(auth=Auth(parent.creator)).count()
+        parent.add_node_link(pointee, auth=Auth(parent.creator))
+        n_logs_after = parent.get_aggregate_logs_queryset(auth=Auth(parent.creator)).count()
+        # one more log for adding the node link
+        assert n_logs_after == n_logs_before + 1
 
 # copied from tests/test_notifications.py
 class TestHasPermissionOnChildren:

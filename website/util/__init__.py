@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 
-import collections
-import re
-import logging
-import urlparse
 from contextlib import contextmanager
+import collections
+import logging
+import re
+import urlparse
 
 from blinker import ANY
 import furl
