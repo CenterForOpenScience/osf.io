@@ -60,6 +60,7 @@ def main(env):
                 'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://osf.io/goodbye')),
                 'domains': ['osf.bu.edu'],
                 'email_domains': [],
+                'delegation_protocol': 'saml-shib',
             },
             {
                 '_id': 'busara',
@@ -107,6 +108,7 @@ def main(env):
                 'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://osf.io/goodbye')),
                 'domains': [],
                 'email_domains': [],
+                'delegation_protocol': 'saml-shib',
             },
             {
                 '_id': 'esip',
@@ -154,6 +156,7 @@ def main(env):
                 'logout_url': None,
                 'domains': ['research.mindandlife.org'],
                 'email_domains': ['mindandlife.org'],
+                'delegation_protocol': '',
             },
             {
                 '_id': 'nd',
@@ -201,6 +204,7 @@ def main(env):
                 'logout_url': None,
                 'domains': [],
                 'email_domains': ['dc.gov'],
+                'delegation_protocol': '',
             },
             {
                 '_id': 'uc',
@@ -212,6 +216,7 @@ def main(env):
                 'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://osf.io/goodbye')),
                 'domains': ['osf.uc.edu'],
                 'email_domains': [],
+                'delegation_protocol': 'saml-shib',
 
             },
             {
@@ -248,6 +253,7 @@ def main(env):
                 'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://osf.io/goodbye')),
                 'domains': ['osf.uct.ac.za'],
                 'email_domains': [],
+                'delegation_protocol': 'saml-shib',
             },
             {
                 '_id': 'ugent',
@@ -295,6 +301,7 @@ def main(env):
                 'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://osf.io/goodbye')),
                 'domains': [],
                 'email_domains': [],
+                'delegation_protocol': 'saml-shib',
             },
             {
                 '_id': 'vcu',
@@ -398,6 +405,7 @@ def main(env):
                 'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://test.osf.io/goodbye')),
                 'domains': ['osf.bu.edu'],
                 'email_domains': [],
+                'delegation_protocol': 'saml-shib',
             },
             {
                 '_id': 'busara',
@@ -445,6 +453,7 @@ def main(env):
                 'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://test.osf.io/goodbye')),
                 'domains': [],
                 'email_domains': [],
+                'delegation_protocol': 'saml-shib',
             },
             {
                 '_id': 'esip',
@@ -492,6 +501,7 @@ def main(env):
                 'logout_url': None,
                 'domains': ['research.mindandlife.org'],
                 'email_domains': ['mindandlife.org'],
+                'delegation_protocol': '',
             },
             {
                 '_id': 'nd',
@@ -539,6 +549,7 @@ def main(env):
                 'logout_url': None,
                 'domains': [],
                 'email_domains': ['dc.gov'],
+                'delegation_protocol': '',
             },
             {
                 '_id': 'uc',
@@ -550,6 +561,7 @@ def main(env):
                 'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://test.osf.io/goodbye')),
                 'domains': ['osf.uc.edu'],
                 'email_domains': [],
+                'delegation_protocol': 'saml-shib',
             },
             {
                 '_id': 'ucsd',
@@ -585,6 +597,7 @@ def main(env):
                 'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://test.osf.io/goodbye')),
                 'domains': ['osf.uct.ac.za'],
                 'email_domains': [],
+                'delegation_protocol': 'saml-shib',
             },
             {
                 '_id': 'ugent',
