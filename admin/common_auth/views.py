@@ -1,7 +1,7 @@
 from __future__ import absolute_import, unicode_literals
 
 from django.core.urlresolvers import reverse, reverse_lazy
-from django.http import Http404, HttpResponseBadRequest
+from django.http import Http404
 from django.shortcuts import redirect
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import never_cache
