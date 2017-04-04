@@ -114,11 +114,7 @@ class BaseModel(models.Model):
     @classmethod
     def load(cls, data):
         try:
-            if issubclass(cls, GuidMixin):
-                return cls.objects.get(guids___id=data)
-            elif issubclass(cls, ObjectIDMixin):
-                return cls.objects.get(_id=data)
-            elif isinstance(data, basestring):
+            if isinstance(data, basestring):
                 # Some models (CitationStyle) have an _id that is not a bson
                 # Looking up things by pk will never work with a basestring
                 return cls.objects.get(_id=data)
@@ -689,7 +685,14 @@ class GuidMixin(BaseIDMixin):
     @classmethod
     def load(cls, q):
         try:
-            return cls.objects.filter(guids___id=q)[0]
+            queryset = cls.objects.filter(guids___id=q)
+            if hasattr(queryset, 'remove_guid_annotations'):
+                # Remove annotation then re-annotate
+                # doing annotations AFTER the filter allows the
+                # JOIN to be reused
+                queryset.remove_guid_annotations()
+                queryset.annotate_query_with_guids()
+            return queryset[0]
         except IndexError:
             # modm doesn't throw exceptions when loading things that don't exist
             return None
