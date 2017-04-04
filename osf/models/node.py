@@ -105,6 +105,7 @@ class AbstractNodeQuerySet(MODMCompatibilityQuerySet, IncludeQuerySet):
             if not isinstance(user, int):
                 raise TypeError('"user" must be either {} or {}. Got {!r}'.format(int, OSFUser, user))
 
+            qs |= self.filter(contributor__user_id=user, contributor__read=True)
             qs |= self.extra(where=['''
                 "osf_abstractnode".id in (
                     WITH RECURSIVE implicit_read AS (
@@ -121,7 +122,7 @@ class AbstractNodeQuerySet(MODMCompatibilityQuerySet, IncludeQuerySet):
                 )
             '''], params=(user, ))
 
-        return qs
+        return qs.distinct()
 
 
 class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixin,
