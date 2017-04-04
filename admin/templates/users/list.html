@@ -5,4 +5,8 @@
 {% endblock title %}
 {% block content %}
   {% include 'users/user_list.html' %}
+
+    {% if not users|length %}
+     <h3>No results found</h3>
+    {% endif %}
 {% endblock content %}
