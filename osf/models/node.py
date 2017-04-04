@@ -50,6 +50,7 @@ from osf.modm_compat import Q
 from osf.utils.auth import Auth, get_user
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import NonNaiveDateTimeField
+from osf.utils.manager import IncludeQuerySet
 from website import language, settings
 from website.citations.utils import datetime_to_csl
 from website.exceptions import (InvalidTagError, NodeStateError,
@@ -59,18 +60,20 @@ from website.mails import mails
 from website.project import signals as project_signals
 from website.project import tasks as node_tasks
 from website.project.model import NodeUpdateError
+
 from website.util import (api_url_for, api_v2_url, get_headers_from_request,
                           sanitize, web_url_for)
 from website.util.permissions import (ADMIN, CREATOR_PERMISSIONS,
                                       DEFAULT_CONTRIBUTOR_PERMISSIONS, READ,
                                       WRITE, expand_permissions,
                                       reduce_permissions)
-from .base import BaseModel, Guid, GuidMixin, GuidMixinQuerySet
+from .base import BaseModel, Guid, GuidMixin, MODMCompatibilityQuerySet
+
 
 logger = logging.getLogger(__name__)
 
 
-class AbstractNodeQuerySet(GuidMixinQuerySet):
+class AbstractNodeQuerySet(MODMCompatibilityQuerySet, IncludeQuerySet):
 
     def get_roots(self):
         return self.extra(
@@ -91,7 +94,7 @@ class AbstractNodeQuerySet(GuidMixinQuerySet):
         if private_link is not None:
             if isinstance(private_link, PrivateLink):
                 private_link = private_link.key
-            if not isinstance(private_link, str):
+            if not isinstance(private_link, basestring):
                 raise TypeError('"private_link" must be either {} or {}. Got {!r}'.format(str, PrivateLink, private_link))
 
             qs |= self.filter(private_links__is_deleted=False, private_links__key=private_link)
@@ -102,6 +105,7 @@ class AbstractNodeQuerySet(GuidMixinQuerySet):
             if not isinstance(user, int):
                 raise TypeError('"user" must be either {} or {}. Got {!r}'.format(int, OSFUser, user))
 
+            qs |= self.filter(contributor__user_id=user, contributor__read=True)
             qs |= self.extra(where=['''
                 "osf_abstractnode".id in (
                     WITH RECURSIVE implicit_read AS (
@@ -118,7 +122,7 @@ class AbstractNodeQuerySet(GuidMixinQuerySet):
                 )
             '''], params=(user, ))
 
-        return qs
+        return qs.distinct()
 
 
 class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixin,
@@ -175,7 +179,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         'wiki_pages_current',
         'is_retracted',
         'node_license',
-        '_affiliated_institutions',
+        'affiliated_institutions',
         'preprint_file',
     }
 
@@ -260,6 +264,10 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     node_license = models.ForeignKey('NodeLicenseRecord', related_name='nodes',
                                      on_delete=models.SET_NULL, null=True, blank=True)
 
+    # One of 'public', 'private'
+    # TODO: Add validator
+    comment_level = models.CharField(default='public', max_length=10)
+
     root = models.ForeignKey('AbstractNode',
                                 default=None,
                                 related_name='descendants',
@@ -285,11 +293,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             parent = node_rel.parent
             if parent:
                 return parent
-        # for v1 compat: self is a forked component (the parent was not forked).
-        # In this case, the parent node is the same as the parent of the
-        # copied node
-        if self.is_fork:
-            return self.forked_from.parent_node
         return None
 
     @property
@@ -337,7 +340,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     # permissions = Permissions are now on contributors
     piwik_site_id = models.IntegerField(null=True, blank=True)
-    public_comments = models.BooleanField(default=True)
     suspended = models.BooleanField(default=False, db_index=True)
 
     # The node (if any) used as a template for this node's creation
@@ -729,35 +731,25 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         )
 
     def get_aggregate_logs_query(self, auth):
-        ids = [self._id] + [n._id for n in Node.objects.get_children(self) if n.can_view(auth)]
-        query = Q('node', 'in', ids) & Q('should_hide', 'eq', False)
-        return query
+        return (
+            (   # TODO: remove `list` call during phase 2
+                Q('node_id', 'in', list(Node.objects.get_children(self).can_view(user=auth.user, private_link=auth.private_link).values_list('id', flat=True))) |
+                Q('node_id', 'eq', self.id)
+            ) & Q('should_hide', 'eq', False)
+        )
 
     def get_aggregate_logs_queryset(self, auth):
         query = self.get_aggregate_logs_query(auth)
         return NodeLog.find(query).sort('-date')
 
-    @property
-    def comment_level(self):
-        if self.public_comments:
-            return self.PUBLIC
-        else:
-            return self.PRIVATE
-
-    @comment_level.setter
-    def comment_level(self, value):
-        if value == self.PUBLIC:
-            self.public_comments = True
-        elif value == self.PRIVATE:
-            self.public_comments = False
-        else:
-            raise ValidationError(
-                'comment_level must be either `public` or `private`')
-
     def get_absolute_url(self):
         return self.absolute_api_v2_url
 
     def get_permissions(self, user):
+        if hasattr(self.contributor_set.all(), '_result_cache'):
+            for contrib in self.contributor_set.all():
+                if contrib.user_id == user.id:
+                    return get_contributor_permissions(contrib)
         try:
             contrib = user.contributor_set.get(node=self)
         except Contributor.DoesNotExist:
@@ -850,6 +842,9 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     def set_permissions(self, user, permissions, validate=True, save=False):
         # Ensure that user's permissions cannot be lowered if they are the only admin
+        if isinstance(user, Contributor):
+            user = user.user
+
         if validate and (reduce_permissions(self.get_permissions(user)) == ADMIN and
                                  reduce_permissions(permissions) != ADMIN):
             admin_contribs = Contributor.objects.filter(node=self, admin=True)
@@ -1145,17 +1140,18 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             self.save()
 
     def add_unregistered_contributor(self, fullname, email, auth, send_email='default',
-                                     visible=True, permissions=None, save=False):
+                                     visible=True, permissions=None, save=False, existing_user=None):
         """Add a non-registered contributor to the project.
 
         :param str fullname: The full name of the person.
         :param str email: The email address of the person.
         :param Auth auth: Auth object for the user adding the contributor.
+        :param User existing_user: the unregister_contributor if it is already created, otherwise None
         :returns: The added contributor
         :raises: DuplicateEmailError if user with given email is already in the database.
         """
-        # Create a new user record
-        contributor = OSFUser.create_unregistered(fullname=fullname, email=email)
+        # Create a new user record if you weren't passed an existing user
+        contributor = existing_user if existing_user else OSFUser.create_unregistered(fullname=fullname, email=email)
 
         contributor.add_unclaimed_record(node=self, referrer=auth.user,
                                          given_name=fullname, email=email)
@@ -1209,7 +1205,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         auth.user.save()
 
         if index is not None:
-            self.move_contributor(user=contributor, index=index, auth=auth, save=True)
+            self.move_contributor(contributor=contributor, index=index, auth=auth, save=True)
 
         contributor_obj = self.contributor_set.get(user=contributor)
         contributor.permission = get_contributor_permissions(contributor_obj, as_list=False)
@@ -1221,7 +1217,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         if save:
             contributor.save()
 
-        return contributor
+        return contributor_obj
 
     def callback(self, callback, recursive=False, *args, **kwargs):
         """Invoke callbacks of attached add-ons and collect messages.
@@ -1268,6 +1264,10 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         :param contributor: User object, the contributor to be removed
         :param auth: All the auth information including user, API key.
         """
+
+        if isinstance(contributor, Contributor):
+            contributor = contributor.user
+
         # remove unclaimed record if necessary
         if self._primary_key in contributor.unclaimed_records:
             del contributor.unclaimed_records[self._primary_key]
@@ -1339,11 +1339,12 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
         return all(results)
 
-    def move_contributor(self, user, auth, index, save=False):
+    def move_contributor(self, contributor, auth, index, save=False):
         if not self.has_permission(auth.user, ADMIN):
             raise PermissionsError('Only admins can modify contributor order')
+        if isinstance(contributor, OSFUser):
+            contributor = self.contributor_set.get(user=contributor)
         contributor_ids = list(self.get_contributor_order())
-        contributor = self.contributor_set.get(user=user)
         old_index = contributor_ids.index(contributor.id)
         contributor_ids.insert(index, contributor_ids.pop(old_index))
         self.set_contributor_order(contributor_ids)
@@ -1353,7 +1354,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 'project': self.parent_id,
                 'node': self._id,
                 'contributors': [
-                    user._id
+                    contributor.user._id
                 ],
             },
             auth=auth,

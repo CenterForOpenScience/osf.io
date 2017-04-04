@@ -60,3 +60,4 @@ class Tag(BaseModel):
 
     class Meta:
         unique_together = ('name', 'system')
+        ordering = ('name', )

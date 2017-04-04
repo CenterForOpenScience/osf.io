@@ -380,6 +380,7 @@ class Migration(migrations.Migration):
             ],
             options={
                 'abstract': False,
+                'ordering': ['_id'],
             },
         ),
         migrations.CreateModel(

@@ -5,7 +5,9 @@ import logging
 
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError
+from django.db import connection
 from django.db import transaction
+from django.db.models.expressions import RawSQL
 from modularodm import Q
 
 from flask import request
@@ -79,13 +81,24 @@ def osfstorage_update_metadata(node_addon, payload, **kwargs):
 @must_be_signed
 @decorators.autoload_filenode(must_be='file')
 def osfstorage_get_revisions(file_node, node_addon, payload, **kwargs):
+    from osf.models import PageCounter, FileVersion  # TODO Fix me onces django works
     is_anon = has_anonymous_link(node_addon.owner, Auth(private_key=request.args.get('view_only')))
+
+    counter_prefix = 'download:{}:{}:'.format(file_node.node._id, file_node._id)
+
+    version_count = file_node.versions.count()
+    # Don't worry. The only % at the end of the LIKE clause, the index is still used
+    counts = dict(PageCounter.objects.filter(_id__startswith=counter_prefix).values_list('_id', 'total'))
+    qs = FileVersion.includable_objects.filter(basefilenode__id=file_node.id).include('creator__guids').order_by('-date_created')
+
+    for i, version in enumerate(qs):
+        version._download_count = counts.get('{}{}'.format(counter_prefix, version_count - i - 1), 0)
 
     # Return revisions in descending order
     return {
         'revisions': [
-            utils.serialize_revision(node_addon.owner, file_node, version, index=file_node.versions.count() - idx - 1, anon=is_anon)
-            for idx, version in enumerate(file_node.versions.all().order_by('-date_created'))
+            utils.serialize_revision(node_addon.owner, file_node, version, index=version_count - idx - 1, anon=is_anon)
+            for idx, version in enumerate(qs)
         ]
     }
 
@@ -138,10 +151,66 @@ def osfstorage_get_metadata(file_node, **kwargs):
 @must_be_signed
 @decorators.autoload_filenode(must_be='folder')
 def osfstorage_get_children(file_node, **kwargs):
-    return [
-        child.serialize()
-        for child in file_node.children.all()
-    ]
+    from django.contrib.contenttypes.models import ContentType
+    with connection.cursor() as cursor:
+        cursor.execute('''
+            SELECT json_agg(CASE
+                WHEN F.type = 'osf.osfstoragefile' THEN
+                    json_build_object(
+                        'id', F._id
+                        , 'path', '/' || F._id
+                        , 'name', F.name
+                        , 'kind', 'file'
+                        , 'size', LATEST_VERSION.size
+                        , 'downloads',  COALESCE(DOWNLOAD_COUNT, 0)
+                        , 'version', (SELECT COUNT(*) FROM osf_basefilenode_versions WHERE osf_basefilenode_versions.basefilenode_id = F.id)
+                        , 'contentType', LATEST_VERSION.content_type
+                        , 'modified', LATEST_VERSION.date_modified
+                        , 'created', EARLIEST_VERSION.date_modified
+                        , 'checkout', CHECKOUT_GUID
+                        , 'md5', LATEST_VERSION.metadata ->> 'md5'
+                        , 'sha256', LATEST_VERSION.metadata ->> 'sha256'
+                    )
+                ELSE
+                    json_build_object(
+                        'id', F._id
+                        , 'path', '/' || F._id || '/'
+                        , 'name', F.name
+                        , 'kind', 'folder'
+                    )
+                END
+            )
+            FROM osf_basefilenode AS F
+            LEFT JOIN LATERAL (
+                SELECT * FROM osf_fileversion
+                JOIN osf_basefilenode_versions ON osf_fileversion.id = osf_basefilenode_versions.fileversion_id
+                WHERE osf_basefilenode_versions.basefilenode_id = F.id
+                ORDER BY date_created DESC
+                LIMIT 1
+            ) LATEST_VERSION ON TRUE
+            LEFT JOIN LATERAL (
+                SELECT * FROM osf_fileversion
+                JOIN osf_basefilenode_versions ON osf_fileversion.id = osf_basefilenode_versions.fileversion_id
+                WHERE osf_basefilenode_versions.basefilenode_id = F.id
+                ORDER BY date_created ASC
+                LIMIT 1
+            ) EARLIEST_VERSION ON TRUE
+            LEFT JOIN LATERAL (
+                SELECT _id from osf_guid
+                WHERE object_id = F.checkout_id
+                AND content_type_id = %s
+                LIMIT 1
+            ) CHECKOUT_GUID ON TRUE
+            LEFT JOIN LATERAL (
+                SELECT P.total AS DOWNLOAD_COUNT FROM osf_pagecounter AS P
+                WHERE P._id = 'download:' || %s || ':' || F._id
+                LIMIT 1
+            ) DOWNLOAD_COUNT ON TRUE
+            WHERE parent_id = %s
+            AND (NOT F.type IN ('osf.trashedfilenode', 'osf.trashedfile', 'osf.trashedfolder'))
+        ''', [ContentType.objects.get_for_model(User).id, file_node.node._id, file_node.id])
+
+        return cursor.fetchone()[0] or []
 
 
 @must_be_signed

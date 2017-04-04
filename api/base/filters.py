@@ -47,6 +47,8 @@ class ODMOrderingFilter(OrderingFilter):
     # override
     def filter_queryset(self, request, queryset, view):
         if isinstance(queryset, DjangoQuerySet):
+            if queryset.ordered:
+                return queryset
             return super(ODMOrderingFilter, self).filter_queryset(request, queryset, view)
         ordering = self.get_ordering(request, queryset, view)
         if ordering:
@@ -440,13 +442,25 @@ class ListFilterMixin(FilterMixin):
         if filters:
             for key, field_names in filters.iteritems():
                 for field_name, data in field_names.iteritems():
-                    query_field_name = data['source_field_name']
                     if isinstance(queryset, list):
                         queryset = self.get_filtered_queryset(field_name, data, queryset)
                     else:
-                        query_field_name = '{}__{}'.format(query_field_name, data['op'])
-                        queryset = queryset.filter(**{query_field_name: data['value']})
+                        queryset = self.filter_by_field(queryset, field_name=field_name, operation=data)
         return queryset
+
+    def filter_by_field(self, queryset, field_name, operation):
+        """Override-able method that filters `queryset`, given an `operation`, which is a dict of the form:
+
+            {
+                'source_field_name': <Name of the field>,
+                'op': <Operation, e.g. 'gt', 'lt', 'eq'>,
+                'value': <Input value>
+            }
+        """
+        query_field_name = operation['source_field_name']
+        if operation['op'] != 'eq':
+            query_field_name = '{}__{}'.format(query_field_name, operation['op'])
+        return queryset.filter(**{query_field_name: operation['value']})
 
     def postprocess_query_param(self, key, field_name, operation):
         # tag queries will usually be on Tag.name,

@@ -4,6 +4,7 @@ import httplib
 import logging
 
 from django.db import transaction
+from bulk_update.helper import bulk_update
 from modularodm import Q
 from modularodm.exceptions import ModularOdmException
 
@@ -239,11 +240,9 @@ def conference_submissions(**kwargs):
     The total number of submissions for each meeting is calculated and cached
     in the Conference.num_submissions field.
     """
-    submissions = []
+    conferences = Conference.find(Q('is_meeting', 'ne', False))
     #  TODO: Revisit this loop, there has to be a way to optimize it
-    for conf in Conference.find():
-        if (hasattr(conf, 'is_meeting') and (conf.is_meeting is False)):
-            continue
+    for conf in conferences:
         # For efficiency, we filter by tag first, then node
         # instead of doing a single Node query
         projects = set()
@@ -253,19 +252,13 @@ def conference_submissions(**kwargs):
             Q('tags', 'in', tags) &
             Q('is_public', 'eq', True) &
             Q('is_deleted', 'ne', True)
-        )
+        ).include('guids')
         projects.update(list(nodes))
-
-        for idx, node in enumerate(projects):
-            submissions.append(_render_conference_node(node, idx, conf))
         num_submissions = len(projects)
         # Cache the number of submissions
         conf.num_submissions = num_submissions
-        conf.save()
-        if num_submissions < settings.CONFERENCE_MIN_COUNT:
-            continue
-    submissions.sort(key=lambda submission: submission['dateCreated'], reverse=True)
-    return {'submissions': submissions}
+    bulk_update(conferences, update_fields=['num_submissions'])
+    return {'success': True}
 
 def conference_view(**kwargs):
     meetings = []
