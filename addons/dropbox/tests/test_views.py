@@ -82,6 +82,30 @@ class TestFilebrowserViews(DropboxAddonTestCase, OsfTestCase):
             assert 'kind' in first
             assert first['path'] == contents[0].path_display
 
+    @mock.patch('addons.dropbox.models.FolderMetadata', new=MockFolderMetadata)
+    @mock.patch('addons.dropbox.models.Dropbox.files_list_folder_continue')
+    @mock.patch('addons.dropbox.models.Dropbox.files_list_folder')
+    def test_dropbox_folder_list_has_more(self, mock_list_folder, mock_list_folder_continue):
+        mock_list_folder.return_value = MockListFolderResult(has_more=True)
+        mock_list_folder_continue.return_value = MockListFolderResult()
+
+        url = self.project.api_url_for(
+            'dropbox_folder_list',
+            folder_id='/',
+        )
+        res = self.app.get(url, auth=self.user.auth)
+        contents = [
+            each for each in
+            (mock_client.files_list_folder('').entries + mock_client.files_list_folder_continue('').entries)
+            if isinstance(each, MockFolderMetadata)
+        ]
+
+        mock_list_folder.assert_called_once()
+        mock_list_folder_continue.assert_called_once()
+
+        assert len(res.json) == 2
+        assert len(res.json) == len(contents)
+
     def test_dropbox_folder_list_if_folder_is_none_and_folders_only(self):
         with patch_client('addons.dropbox.models.Dropbox'):
             self.node_settings.folder = None
