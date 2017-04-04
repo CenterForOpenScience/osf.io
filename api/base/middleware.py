@@ -1,3 +1,4 @@
+import gc
 import StringIO
 import cProfile
 import pstats
@@ -68,6 +69,8 @@ class DjangoGlobalMiddleware(object):
 
     def process_response(self, request, response):
         api_globals.request = None
+        if api_settings.DEBUG and len(gc.get_referents(request)) > 2:
+            raise Exception('You wrote a memory leak. Stop it')
         return response
 
 
