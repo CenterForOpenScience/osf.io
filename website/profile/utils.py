@@ -3,7 +3,7 @@ from framework import auth
 
 from website import settings
 from website.filters import gravatar
-from osf.models import Node
+from osf.models import Node, Contributor
 from website.util.permissions import reduce_permissions
 
 
@@ -24,6 +24,10 @@ def serialize_user(user, node=None, admin=False, full=False, is_profile=False):
     :param bool full: Include complete user properties
     """
     from website.project.utils import PROJECT_QUERY
+    contrib = None
+    if isinstance(user, Contributor):
+        contrib = user
+        user = contrib.user
     fullname = user.display_full_name(node=node)
     ret = {
         'id': str(user._primary_key),
@@ -45,7 +49,7 @@ def serialize_user(user, node=None, admin=False, full=False, is_profile=False):
             }
         else:
             flags = {
-                'visible': node.contributor_set.filter(user=user, visible=True).exists(),
+                'visible': contrib.visible if isinstance(contrib, Contributor) else node.contributor_set.filter(user=user, visible=True).exists(),
                 'permission': reduce_permissions(node.get_permissions(user)),
             }
         ret.update(flags)
@@ -107,6 +111,11 @@ def serialize_contributors(contribs, node, **kwargs):
         for contrib in contribs
     ]
 
+def serialize_visible_contributors(node):
+    # This is optimized when node has .include('contributor__user__guids')
+    return [
+        serialize_user(c, node) for c in node.contributor_set.all() if c.visible
+    ]
 
 def add_contributor_json(user, current_user=None):
     """
