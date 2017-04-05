@@ -548,6 +548,42 @@ class RegistrationWithChildNodesRetractionModelTestCase(OsfTestCase):
             assert_true(node.is_retracted)
 
 
+class RegistrationRetractionShareHook(OsfTestCase):
+    def setUp(self):
+        super(RegistrationRetractionShareHook, self).setUp()
+
+        self.user = AuthUserFactory()
+        self.auth = self.user.auth
+        self.project = ProjectFactory(is_public=True, creator=self.user)
+
+        self.registration = RegistrationFactory(project=self.project, is_public=True)
+        # Reload the registration; else tests won't catch failures to svae
+        self.registration.reload()
+
+    @mock.patch('website.project.tasks.on_registration_updated')
+    def test_approval_calls_share_hook(self, mock_on_registration_updated):
+        # Initiate retraction for parent registration
+        self.registration.retract_registration(self.user)
+        self.registration.save()
+
+        # Approve parent registration's retraction
+        approval_token = self.registration.retraction.approval_state[self.user._id]['approval_token']
+        self.registration.retraction.approve_retraction(self.user, approval_token)
+        assert_true(self.registration.is_retracted)
+        assert mock_on_registration_updated.called
+
+    @mock.patch('website.project.tasks.on_registration_updated')
+    def test_disapproval_does_not_call_share_hook(self, mock_on_registration_updated):
+        # Initiate retraction for parent registration
+        self.registration.retract_registration(self.user)
+        self.registration.save()
+
+        rejection_token = self.registration.retraction.approval_state[self.user._id]['rejection_token']
+        self.registration.retraction.disapprove_retraction(self.user, rejection_token)
+        assert_false(self.registration.is_retracted)
+        assert not mock_on_registration_updated.called
+
+
 class RegistrationRetractionApprovalDisapprovalViewsTestCase(OsfTestCase):
     def setUp(self):
         super(RegistrationRetractionApprovalDisapprovalViewsTestCase, self).setUp()
