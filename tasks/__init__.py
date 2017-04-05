@@ -109,10 +109,14 @@ def adminserver(ctx, port=8001, host='127.0.0.1', pty=True):
     ctx.run(cmd, echo=True, pty=pty)
 
 @task
-def shell(ctx, quiet=False):
-    cmd = 'DJANGO_SETTINGS_MODULE="api.base.settings" python manage.py shell_plus'
-    if not quiet:
+def shell(ctx, transaction=True, print_sql=False, notebook=False):
+    cmd = 'DJANGO_SETTINGS_MODULE="api.base.settings" python manage.py osf_shell'
+    if print_sql:
         cmd += ' --print-sql'
+    if notebook:
+        cmd += ' --notebook'
+    if not transaction:
+        cmd += ' --no-transaction'
     return ctx.run(cmd, pty=True, echo=True)
 
 @task(aliases=['mongo'])
