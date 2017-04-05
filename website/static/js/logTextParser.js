@@ -446,7 +446,10 @@ var LogPieces = {
                     'github_file_added', 'github_file_updated', 'box_file_added', 'box_file_updated', 'dropbox_file_added', 'dropbox_file_updated',
                     's3_file_added', 's3_file_updated', 'figshare_file_added', 'checked_in', 'checked_out'];
                     if (acceptableLinkedItems.indexOf(action) !== -1 && logObject.attributes.params.urls) {
-                         return logObject.attributes.params.urls.view;
+                        if (logObject.attributes.params.params_file){
+                            return logObject.attributes.params.params_file
+                        }
+                        return logObject.attributes.params.urls.view;
                     }
                 }
                 return null;

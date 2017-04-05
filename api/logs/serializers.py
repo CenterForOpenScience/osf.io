@@ -9,6 +9,7 @@ from api.base.serializers import (
     DateByVersion,
 )
 from website.project.model import Node
+from osf.models.files import File
 from website.util import permissions as osf_permissions
 from framework.auth.core import User
 from website.preprints.model import PreprintService
@@ -68,6 +69,7 @@ class NodeLogParamsSerializer(RestrictedDictSerializer):
     page_id = ser.CharField(read_only=True)
     params_node = ser.SerializerMethodField(read_only=True)
     params_project = ser.SerializerMethodField(read_only=True)
+    params_file = ser.SerializerMethodField(read_only=True)
     path = ser.CharField(read_only=True)
     pointer = ser.DictField(read_only=True)
     preprint = ser.CharField(read_only=True)
@@ -94,6 +96,16 @@ class NodeLogParamsSerializer(RestrictedDictSerializer):
             view = urls.get('view', None)
             if view:
                 return view
+        return None
+
+    def get_params_file(self, obj):
+        urls = obj.get('urls', None)
+        if urls:
+            view = urls.get('view', None)
+            if view:
+                file_id = view.split('/')[-2]
+                file_path = File.object.filter(guids___id=file_id).values('path').get()
+                return file_path
         return None
 
     def get_params_node(self, obj):
