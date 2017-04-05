@@ -9,17 +9,16 @@ from django.utils import timezone
 from elasticsearch import helpers
 from modularodm.query.querydialect import DefaultQueryDialect as Q
 
-from framework.mongo.utils import paginated
-from osf.models import OSFUser
-from website import settings
-from framework.auth import User
-from website.models import Node
-from website.app import init_app
 import website.search.search as search
+from framework.auth import User
+from framework.mongo.utils import paginated
 from scripts import utils as script_utils
+from website import settings
+from website.app import init_app
+from website.institutions.model import Institution
+from website.models import Node
 from website.search.elastic_search import client as es_client
 from website.search.search import update_institution
-from website.institutions.model import Institution
 
 logger = logging.getLogger(__name__)
 

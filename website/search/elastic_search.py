@@ -341,7 +341,7 @@ def serialize_node(node, category):
                 'url': '/{}/'.format(x['guids___id']) if x['is_active'] else None
             }
             for x in node._contributors.filter(contributor__visible=True)
-                .values('fullname', 'guids___id', 'is_active')
+            .values('fullname', 'guids___id', 'is_active')
         ],
         'title': node.title,
         'normalized_title': normalized_title,
