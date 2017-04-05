@@ -7,13 +7,25 @@ services:
 #    image: quay.io/centerforopenscience/fakecas:latest
 #    command: fakecas -host=0.0.0.0:8080 -dbaddress=172.19.0.7:27017
 
-#  wb:
-#    volumes:
-#      - ../waterbutler:/code
+# wb:
+#   volumes:
+#     - ../waterbutler:/code
 
-#  mfr:
-#    volumes:
-#      - ../modular-file-renderer:/code
+# wb_worker:
+#   volumes:
+#     - ../waterbutler:/code
+
+# wb_requirements:
+#   volumes:
+#     - ../waterbutler:/code
+
+# mfr:
+#   volumes:
+#     - ../modular-file-renderer:/code
+
+# mfr_requirements:
+#   volumes:
+#     - ../modular-file-renderer:/code
 
 #  preprints:
 #    volumes:
