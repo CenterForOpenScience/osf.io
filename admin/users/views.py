@@ -1,13 +1,16 @@
 from __future__ import unicode_literals
 
 import csv
+import pytz
 from furl import furl
 from datetime import datetime, timedelta
+from django.views.generic import FormView, DeleteView, ListView, TemplateView
 from django.views.defaults import page_not_found
 from django.views.generic import FormView, DeleteView, ListView
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.core.urlresolvers import reverse
 from django.core.exceptions import PermissionDenied
+from django.core.urlresolvers import reverse
 from django.core.mail import send_mail
 from django.http import Http404, HttpResponse
 from django.shortcuts import redirect
@@ -30,6 +33,8 @@ from osf.models.admin_log_entry import (
     USER_REMOVED,
     USER_RESTORED,
     CONFIRM_SPAM)
+
+from framework.auth.views import send_confirm_email
 
 from admin.users.serializers import serialize_user
 from admin.users.forms import EmailResetForm, WorkshopForm, UserSearchForm
@@ -431,6 +436,23 @@ class UserWorkshopFormView(PermissionRequiredMixin, FormView):
 
     def form_invalid(self, form):
         super(UserWorkshopFormView, self).form_invalid(form)
+
+
+class SendUserConfirmationLink(PermissionRequiredMixin, TemplateView):
+    permission_required = 'osf.change_osfuser'
+    template_name = 'users/send_confirmation.html'
+    raise_exception = True
+
+    def post(self, request, *args, **kwargs):
+        user = OSFUser.load(self.kwargs.get('guid'))
+
+        user.verification_key_v2 = generate_verification_key(verification_type='password')
+        # The original verification key expires in 24 hours, so let's make it 48
+        user.verification_key_v2['expires'] = datetime.utcnow().replace(tzinfo=pytz.utc) + timedelta(hours=24)
+        user.save()
+
+        send_confirm_email(user, renew=True, email=user.username)
+        return redirect(reverse('users:user', kwargs={'guid': self.kwargs.get('guid')}))
 
 
 class ResetPasswordView(PermissionRequiredMixin, FormView):
