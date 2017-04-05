@@ -298,14 +298,23 @@ class UserSearchList(PermissionRequiredMixin, ListView):
     paginate_by = 25
 
     def get_queryset(self):
-        return OSFUser.objects.filter(fullname__contains=self.kwargs['name'])
+        query = OSFUser.objects.filter(fullname__contains=self.kwargs['name']).only(
+            'guids', 'fullname', 'username', 'date_confirmed', 'date_disabled'
+        )
+        return query
 
     def get_context_data(self, **kwargs):
         users = self.get_queryset()
         page_size = self.get_paginate_by(users)
         paginator, page, query_set, is_paginated = self.paginate_queryset(users, page_size)
         kwargs['page'] = page
-        kwargs['users'] = map(serialize_user, query_set)
+        kwargs['users'] = [{
+            'name': user.fullname,
+            'username': user.username,
+            'id': user.guids.first()._id,
+            'confirmed': user.date_confirmed,
+            'disabled': user.date_disabled if user.is_disabled else None
+        } for user in query_set]
         return super(UserSearchList, self).get_context_data(**kwargs)
 
 
