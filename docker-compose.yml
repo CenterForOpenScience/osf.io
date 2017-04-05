@@ -212,8 +212,6 @@ services:
     volumes:
       - registries_dist_vol:/code/dist
     stdin_open: true
-    tty: true
-
 
   #######
   # OSF #
