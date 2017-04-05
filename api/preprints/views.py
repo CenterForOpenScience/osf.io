@@ -1,6 +1,6 @@
 import re
 
-from django.db.models import Q as DjangoQ
+from django.db.models import Q
 
 from rest_framework import generics
 from rest_framework.exceptions import NotFound, PermissionDenied, NotAuthenticated
@@ -177,11 +177,11 @@ class PreprintList(JSONAPIBaseView, generics.ListCreateAPIView, DjangoFilterMixi
         auth_user = getattr(auth, 'user', None)
 
         # Permissions on the list objects are handled by the query
-        default_query = DjangoQ(node__isnull=False, node__is_deleted=False)
-        no_user_query = DjangoQ(is_published=True, node__is_public=True)
+        default_query = Q(node__isnull=False, node__is_deleted=False)
+        no_user_query = Q(is_published=True, node__is_public=True)
         if auth_user:
-            contrib_user_query = DjangoQ(is_published=True, node__contributor__user_id=auth_user.id, node__contributor__read=True)
-            admin_user_query = DjangoQ(node__contributor__user_id=auth_user.id, node__contributor__admin=True)
+            contrib_user_query = Q(is_published=True, node__contributor__user_id=auth_user.id, node__contributor__read=True)
+            admin_user_query = Q(node__contributor__user_id=auth_user.id, node__contributor__admin=True)
             return (default_query & (no_user_query | contrib_user_query | admin_user_query))
         return (default_query & no_user_query)
 

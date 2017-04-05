@@ -440,7 +440,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     @property
     def has_published_preprint(self):
         PreprintService = apps.get_model('osf.PreprintService')
-        return PreprintService.objects.filter(node=self, is_published=True).exists()
+        return PreprintService.objects.filter(node_id=self.id, is_published=True).exists()
 
     @property
     def preprint_url(self):
@@ -2293,7 +2293,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             from website.preprints.tasks import on_preprint_updated
             PreprintService = apps.get_model('osf.PreprintService')
             # .preprints wouldn't return a single deleted preprint
-            for preprint in PreprintService.objects.filter(node=self, is_published=True):
+            for preprint in PreprintService.objects.filter(node.id=self.id, is_published=True):
                 enqueue_task(on_preprint_updated.s(preprint._id))
 
         user = User.load(user_id)
