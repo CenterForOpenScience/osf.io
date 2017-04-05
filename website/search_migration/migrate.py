@@ -5,10 +5,12 @@ from __future__ import absolute_import
 
 import logging
 
+from django.utils import timezone
 from elasticsearch import helpers
 from modularodm.query.querydialect import DefaultQueryDialect as Q
 
 from framework.mongo.utils import paginated
+from osf.models import OSFUser
 from website import settings
 from framework.auth import User
 from website.models import Node
@@ -21,13 +23,15 @@ from website.institutions.model import Institution
 
 logger = logging.getLogger(__name__)
 
-def migrate_nodes(index):
+def migrate_nodes(index, query=None):
     logger.info('Migrating nodes to index: {}'.format(index))
-    query = Q('is_public', 'eq', True) & Q('is_deleted', 'eq', False)
-    total = Node.find(query).count()
+    node_query = Q('is_public', 'eq', True) & Q('is_deleted', 'eq', False)
+    if query:
+        node_query = query & node_query
+    total = Node.find(node_query).count()
     increment = 200
     total_pages = (total // increment) + 1
-    pages = paginated(Node, query=query, increment=increment, each=False)
+    pages = paginated(Node, query=node_query, increment=increment, each=False)
 
     for page_number, page in enumerate(pages):
         logger.info('Updating page {} / {}'.format(page_number + 1, total_pages))
@@ -65,6 +69,7 @@ def migrate(delete, index=None, app=None):
     ctx.push()
 
     new_index = set_up_index(index)
+    start_time = timezone.now()
 
     if settings.ENABLE_INSTITUTIONS:
         migrate_institutions(new_index)
@@ -72,6 +77,9 @@ def migrate(delete, index=None, app=None):
     migrate_users(new_index)
 
     set_up_alias(index, new_index)
+
+    # migrate nodes modified since start
+    migrate_nodes(new_index, query=Q('date_modified', 'gte', start_time))
 
     if delete:
         delete_old(new_index)
