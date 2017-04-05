@@ -417,9 +417,9 @@ def serialize_contributors(node):
         'contributors': [
             {
                 'fullname': x['fullname'],
-                'url': '/{}/'.format(x['guids___id'])
+                'url': '/{}/'.format(x['user__guids___id'])
             } for x in
-            node.contributor_set.filter(visible=True, user__is_active=True).values('user__fullname', 'user__guids___ids')
+            node.contributor_set.filter(visible=True, user__is_active=True).values('user__fullname', 'user__guids___id')
         ]
     }
 
