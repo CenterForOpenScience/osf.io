@@ -560,6 +560,8 @@ class RegistrationRetractionShareHook(OsfTestCase):
         # Reload the registration; else tests won't catch failures to svae
         self.registration.reload()
 
+    @mock.patch('website.project.tasks.settings.SHARE_URL', 'ima_real_website')
+    @mock.patch('website.project.tasks.settings.SHARE_API_TOKEN', 'totaly_real_token')
     @mock.patch('website.project.tasks.on_registration_updated')
     def test_approval_calls_share_hook(self, mock_on_registration_updated):
         # Initiate retraction for parent registration
@@ -572,6 +574,8 @@ class RegistrationRetractionShareHook(OsfTestCase):
         assert_true(self.registration.is_retracted)
         assert mock_on_registration_updated.called
 
+    @mock.patch('website.project.tasks.settings.SHARE_URL', 'ima_real_website')
+    @mock.patch('website.project.tasks.settings.SHARE_API_TOKEN', 'totaly_real_token')
     @mock.patch('website.project.tasks.on_registration_updated')
     def test_disapproval_does_not_call_share_hook(self, mock_on_registration_updated):
         # Initiate retraction for parent registration
