@@ -46,7 +46,7 @@
             </div>
             {% endif %}
 
-            {%  if perms.osf.change_user %}
+            {%  if perms.osf.change_osfuser %}
                 <span class="col-md-2">
                 <a href="{% url 'users:reset_password' user.id %}"
                    data-toggle="modal" data-target="#resetModal"
