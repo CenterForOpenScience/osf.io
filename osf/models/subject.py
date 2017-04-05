@@ -15,7 +15,7 @@ class Subject(ObjectIDMixin, BaseModel):
     parents = models.ManyToManyField('self', symmetrical=False, related_name='children')
 
     def __unicode__(self):
-        return '{} with id {}'.format(self.name, self.id)
+        return '{} with id {}'.format(self.text, self.id)
 
     @property
     def absolute_api_v2_url(self):
