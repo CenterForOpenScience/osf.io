@@ -4,7 +4,29 @@ niceties.
 
 By default, sessions run in a transaction, so changes won't be commited until
 you execute `commit()`.
+
+All models are imported by default, as well as common OSF and Django objects.
+
+To add more objects, set the `OSF_SHELL_USER_IMPORTS` Django setting
+to a dictionary or a callable that returns a dictionary.
+
+Example: ::
+
+    from django.apps import apps
+
+    def get_user_imports():
+        User = apps.get_model('osf.OSFUser')
+        Node = apps.get_model('osf.AbstractNode')
+        me = User.objects.get(username='sloria1@gmail.com')
+        node = Node.objects.first()
+        return {
+            'me': me,
+            'node': node,
+        }
+
+    OSF_SHELL_USER_IMPORTS = get_user_imports
 """
+from django.conf import settings
 from django.db import transaction
 from django.utils.termcolors import colorize
 from django.db.models import Model
@@ -15,10 +37,10 @@ from django_extensions.management.utils import signalcommand
 def header(text):
     return colorize(text, fg='green', opts=('bold', ))
 
-def format_imported_objects(models, osf, transaction, other):
+def format_imported_objects(models, osf, transaction, other, user):
     def format_dict(d):
         return ', '.join(sorted(d.keys()))
-    return """
+    ret = """
 {models_header}
 {models}
 
@@ -39,6 +61,12 @@ def format_imported_objects(models, osf, transaction, other):
         other_header=header('Django:'),
         other=format_dict(other),
     )
+    if user:
+        ret += '\n\n{user_header}\n{user}'.format(
+            user_header=header('User Imports:'),
+            user=format_dict(user)
+        )
+    return ret
 
 
 # kwargs will be the grouped imports, e.g. {'models': {...}, 'osf': {...}}
@@ -161,6 +189,7 @@ class Command(shell_plus.Command):
                 'commit': commit,
                 'rollback': rollback,
             },
+            'user': self.get_user_imports(),
         }
         # Import models and common django imports
         shell_plus_imports = shell_plus.Command.get_imported_objects(self, options)
@@ -171,6 +200,15 @@ class Command(shell_plus.Command):
                 groups['other'][name] = object
 
         return groups
+
+    def get_user_imports(self):
+        imports = getattr(settings, 'OSF_SHELL_USER_IMPORTS', None)
+        if imports:
+            if callable(imports):
+                imports = imports()
+            return imports
+        else:
+            return {}
 
     # Override shell_plus.Command
     def get_imported_objects(self, options):
