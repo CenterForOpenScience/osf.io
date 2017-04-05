@@ -24,8 +24,8 @@ from api.users.serializers import (UserAddonSettingsSerializer,
                                    UserSerializer)
 from django.contrib.auth.models import AnonymousUser
 from framework.auth.oauth_scopes import CoreScopes
-from modularodm import Q
-from django.db.models import Q as DjangoQ
+from modularodm import Q as MQ
+from django.db.models import Q
 from rest_framework import permissions as drf_permissions
 from rest_framework import generics
 from rest_framework.exceptions import NotAuthenticated, NotFound
@@ -129,11 +129,11 @@ class UserList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
     # overrides ODMFilterMixin
     def get_default_odm_query(self):
         base_query = (
-            Q('is_registered', 'eq', True) &
-            Q('date_disabled', 'eq', None)
+            MQ('is_registered', 'eq', True) &
+            MQ('date_disabled', 'eq', None)
         )
         if self.request.version >= '2.3':
-            return base_query & Q('merged_by', 'eq', None)
+            return base_query & MQ('merged_by', 'eq', None)
         return base_query
 
     # overrides ListCreateAPIView
@@ -543,12 +543,12 @@ class UserPreprints(JSONAPIBaseView, generics.ListAPIView, UserMixin, DjangoFilt
         target_user = self.get_user(check_permissions=False)
 
         # Permissions on the list objects are handled by the query
-        default_query = DjangoQ(node__isnull=False, node__is_deleted=False, node___contributors__guids___id=target_user._id)
-        no_user_query = DjangoQ(is_published=True, node__is_public=True)
+        default_query = Q(node__isnull=False, node__is_deleted=False, node___contributors__guids___id=target_user._id)
+        no_user_query = Q(is_published=True, node__is_public=True)
 
         if auth_user:
-            contrib_user_query = DjangoQ(is_published=True, node__contributor__user_id=auth_user.id, node__contributor__read=True)
-            admin_user_query = DjangoQ(node__contributor__user_id=auth_user.id, node__contributor__admin=True)
+            contrib_user_query = Q(is_published=True, node__contributor__user_id=auth_user.id, node__contributor__read=True)
+            admin_user_query = Q(node__contributor__user_id=auth_user.id, node__contributor__admin=True)
             return (default_query & (no_user_query | contrib_user_query | admin_user_query))
         return (default_query & no_user_query)
 

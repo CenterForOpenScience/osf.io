@@ -1,8 +1,8 @@
 from rest_framework import generics
 from rest_framework import permissions as drf_permissions
 
-from modularodm import Q
-from django.db.models import Q as DjangoQ
+from modularodm import Q as MQ
+from django.db.models import Q
 
 from framework.auth.oauth_scopes import CoreScopes
 

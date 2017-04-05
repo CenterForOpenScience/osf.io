@@ -13,8 +13,8 @@ from api.base.serializers import RelationshipField, TargetField
 from dateutil import parser as date_parser
 from django.core.exceptions import ValidationError
 from django.db.models import QuerySet as DjangoQuerySet
-from django.db.models import Q as DjangoQ
-from modularodm import Q
+from django.db.models import Q
+from modularodm import Q as MQ
 from modularodm.query import queryset as modularodm_queryset
 from rest_framework import serializers as ser
 from rest_framework.filters import OrderingFilter
@@ -353,7 +353,7 @@ class ODMFilterMixin(FilterMixin):
         return query
 
     def _operation_to_query(self, operation):
-        return Q(operation['source_field_name'], operation['op'], operation['value'])
+        return MQ(operation['source_field_name'], operation['op'], operation['value'])
 
     def query_params_to_odm_query(self, query_params):
         """Convert query params to a modularodm Query object."""
@@ -450,7 +450,7 @@ class DjangoFilterMixin(FilterMixin):
         print operation
         if operation['op'] in ['lt', 'lte', 'gt', 'gte', 'in']:
             operation['source_field_name'] = '{}__{}'.format(operation['source_field_name'], operation['op'])
-        return DjangoQ(**{operation['source_field_name']: operation['value']})
+        return Q(**{operation['source_field_name']: operation['value']})
 
     def query_params_to_django_query(self, query_params):
         """Convert query params to a Django Query object."""
@@ -561,10 +561,10 @@ class ListFilterMixin(FilterMixin):
 
     def postprocess_query_param(self, key, field_name, operation):
         # tag queries will usually be on Tag.name,
-        # ?filter[tags]=foo should be translated to Q('tags__name', 'eq', 'foo')
+        # ?filter[tags]=foo should be translated to MQ('tags__name', 'eq', 'foo')
         # But queries on lists should be tags, e.g.
-        # ?filter[tags]=foo,bar should be translated to Q('tags', 'isnull', True)
-        # ?filter[tags]=[] should be translated to Q('tags', 'isnull', True)
+        # ?filter[tags]=foo,bar should be translated to MQ('tags', 'isnull', True)
+        # ?filter[tags]=[] should be translated to MQ('tags', 'isnull', True)
         if field_name == 'tags':
             if operation['value'] not in (list(), tuple()):
                 operation['source_field_name'] = 'tags__name'
