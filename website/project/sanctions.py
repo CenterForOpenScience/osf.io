@@ -28,7 +28,6 @@ from website.exceptions import (
     NodeStateError,
 )
 from website.prereg import utils as prereg_utils
-from website.project import tasks as project_tasks
 
 VIEW_PROJECT_URL_TEMPLATE = settings.DOMAIN + '{node_id}/'
 
@@ -699,8 +698,6 @@ class Retraction(EmailApprovableSanction):
 
         parent_registration.date_modified = timezone.now()
         parent_registration.save()
-        if settings.SHARE_URL and settings.SHARE_API_TOKEN:
-            project_tasks.on_registration_updated(parent_registration)
 
     def approve_retraction(self, user, token):
         self.approve(user, token)
