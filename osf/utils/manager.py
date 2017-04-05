@@ -83,8 +83,10 @@ class IncludeModelIterable(ModelIterable):
 
         if not hasattr(instance, '_prefetched_objects_cache'):
             instance._prefetched_objects_cache = {}
-        instance._prefetched_objects_cache[field.name] = field.related_model.objects.none()
+
+        instance._prefetched_objects_cache[field.name] = getattr(instance, field.get_accessor_name()).get_queryset()
         instance._prefetched_objects_cache[field.name]._result_cache = ps
+        instance._prefetched_objects_cache[field.name]._prefetch_done = True
 
     @classmethod
     def parse_includes(cls, instance, fields):
