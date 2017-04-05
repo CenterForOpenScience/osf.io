@@ -33,7 +33,7 @@ has instructions for use with ngrok, but there are other methods.
 from addons.figshare.client import FigshareClient
 from website.oauth.models import ExternalAccount
 
-me = User.find_one(Q('username', 'eq', '<your username>'))
+me = OSFUser.load('<osf_guid>')
 token = '<personal token id from figshare>'
 client = FigshareClient(token)
 
@@ -47,7 +47,7 @@ ea = ExternalAccount(
 )
 ea.save()
 fu = me.get_or_add_addon('figshare')
-me.external_accounts.append(ea)
+me.external_accounts.add(ea)
 me.save()
 
 commit()
