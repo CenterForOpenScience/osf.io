@@ -42,7 +42,7 @@ def format_imported_objects(models, osf, transaction, other):
 
 
 # kwargs will be the grouped imports, e.g. {'models': {...}, 'osf': {...}}
-def make_banner(**kwargs):
+def make_banner(auto_transact=True, **kwargs):
     logo = """
                     .+yhhys/`
                 `smmmmmmmmd:
@@ -71,18 +71,39 @@ hmmmmmmo+++++++.                .++++++++dmmmmmd`
     """
     greeting = 'Welcome to the OSF Shell. Happy hacking!'
     imported_objects = format_imported_objects(**kwargs)
+    transaction_warning = """
+*** TRANSACTION AUTOMATICALLY STARTED ***
+To persist changes, run 'commit()'.
+Keep in mind that changing documents will lock them.
+This feature can be disabled with the '--no-transaction' flag."""
+    no_transaction_warning = """
+*** AUTO-TRANSACTION DISABLED ***
+All changes will persist. Transactions must be handled manually."""
     template = """{logo}
 {greeting}
 {imported_objects}
+{warning}
 """
+    if auto_transact:
+        warning = colorize(transaction_warning, fg='yellow')
+    else:
+        warning = colorize(no_transaction_warning, fg='red')
     return template.format(
         logo=colorize(logo, fg='cyan'),
         greeting=colorize(greeting, opts=('bold', )),
-        imported_objects=imported_objects
+        imported_objects=imported_objects,
+        warning=warning,
     )
 
 
 class Command(shell_plus.Command):
+    def add_arguments(self, parser):
+        super(Command, self).add_arguments(parser)
+        parser.add_argument(
+            '--no-transaction', action='store_false', dest='transaction',
+            help="Don't run session in transaction. Transactions must be "
+                 'started manually with start_transaction()'
+        )
 
     def get_osf_imports(self):
         """Return a dictionary of common OSF objects and utilities."""
@@ -112,22 +133,24 @@ class Command(shell_plus.Command):
             'other': {...}
         }
         """
+        auto_transact = options.get('transaction', True)
         def start_transaction():
             self.atomic.__enter__()
-            print('New transaction opened')
+            print('New transaction opened.')
 
         def commit():
             self.atomic.__exit__(None, None, None)
             print('Transaction committed.')
-            self.atomic.__enter__()
-            start_transaction()
+            if auto_transact:
+                start_transaction()
 
         def rollback():
             exc_type = RuntimeError
             exc_value = exc_type('Transaction rollback')
             self.atomic.__exit__(exc_type, exc_value, None)
             print('Transaction rolled back.')
-            start_transaction()
+            if auto_transact:
+                start_transaction()
 
         groups = {
             'models': {},
@@ -162,9 +185,11 @@ class Command(shell_plus.Command):
     @signalcommand
     def handle(self, *args, **options):
         self.atomic = transaction.atomic()
+        auto_transact = options.get('transaction', True)
         options['quiet_load'] = True  # Don't show default shell_plus banner
         grouped_imports = self.get_grouped_imports(options)
-        banner = make_banner(**grouped_imports)
+        banner = make_banner(auto_transact=auto_transact, **grouped_imports)
         print(banner)
-        self.atomic.__enter__()
+        if auto_transact:
+            self.atomic.__enter__()
         super(Command, self).handle(*args, **options)
