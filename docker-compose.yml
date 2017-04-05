@@ -393,5 +393,4 @@ services:
       - osf_node_modules_vol:/code/node_modules
       - preprints_dist_vol:/preprints
       - registries_dist_vol:/registries
-      - osfstoragecache_vol:/code/website/osfstoragecache
     stdin_open: true
