@@ -148,7 +148,6 @@ class Command(shell_plus.Command):
             'fake': fake,
         }
 
-    # TODO: Make a cached property?
     def get_grouped_imports(self, options):
         """Return a dictionary of grouped import of the form:
         {
@@ -212,10 +211,9 @@ class Command(shell_plus.Command):
 
     # Override shell_plus.Command
     def get_imported_objects(self, options):
-        grouped_imports = self.get_grouped_imports(options)
         # Merge all the values of grouped_imports
         imported_objects = {}
-        for imports in grouped_imports.values():
+        for imports in self.grouped_imports.values():
             imported_objects.update(imports)
         return imported_objects
 
@@ -225,8 +223,8 @@ class Command(shell_plus.Command):
         self.atomic = transaction.atomic()
         auto_transact = options.get('transaction', True)
         options['quiet_load'] = True  # Don't show default shell_plus banner
-        grouped_imports = self.get_grouped_imports(options)
-        banner = make_banner(auto_transact=auto_transact, **grouped_imports)
+        self.grouped_imports = self.get_grouped_imports(options)
+        banner = make_banner(auto_transact=auto_transact, **self.grouped_imports)
         print(banner)
         if auto_transact:
             self.atomic.__enter__()
