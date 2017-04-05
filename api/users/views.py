@@ -500,7 +500,7 @@ class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, NodeODMFilterM
     # overrides ODMFilterMixin
     def get_default_odm_query(self):
         user = self.get_user()
-        query = Q('contributors', 'eq', user) & default_node_list_query()
+        query = MQ('contributors', 'eq', user) & default_node_list_query()
         if user != self.request.user:
             query &= default_node_permission_query(self.request.user)
         return query
@@ -673,13 +673,13 @@ class UserRegistrations(UserNodes):
         current_user = self.request.user
 
         query = (
-            Q('is_deleted', 'ne', True) &
-            Q('type', 'eq', 'osf.registration') &
-            Q('contributors', 'eq', user)
+            MQ('is_deleted', 'ne', True) &
+            MQ('type', 'eq', 'osf.registration') &
+            MQ('contributors', 'eq', user)
         )
-        permission_query = Q('is_public', 'eq', True)
+        permission_query = MQ('is_public', 'eq', True)
         if not current_user.is_anonymous():
-            permission_query = (permission_query | Q('contributors', 'eq', current_user))
+            permission_query = (permission_query | MQ('contributors', 'eq', current_user))
         query = query & permission_query
         return query
 
