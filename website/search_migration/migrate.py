@@ -30,7 +30,7 @@ def migrate_nodes(index, query=None):
     total = Node.find(node_query).count()
     increment = 200
     total_pages = (total // increment) + 1
-    pages = paginated(Node, query=node_query, increment=increment, each=False)
+    pages = paginated(Node, query=node_query, increment=increment, each=False, include=['contributor__user__guids'])
 
     for page_number, page in enumerate(pages):
         logger.info('Updating page {} / {}'.format(page_number + 1, total_pages))
