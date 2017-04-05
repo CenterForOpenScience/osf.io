@@ -1,8 +1,8 @@
 import re
 
 from django.apps import apps
-from modularodm import Q
-from django.db.models import Q as DjangoQ
+from modularodm import Q as MQ
+from django.db.models import Q
 from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import PermissionDenied, ValidationError, NotFound, MethodNotAllowed, NotAuthenticated
 from rest_framework.response import Response
@@ -303,10 +303,10 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
     # overrides FilterMixin
     def postprocess_query_param(self, key, field_name, operation):
         # tag queries will usually be on Tag.name,
-        # ?filter[tags]=foo should be translated to Q('tags__name', 'eq', 'foo')
+        # ?filter[tags]=foo should be translated to MQ('tags__name', 'eq', 'foo')
         # But queries on lists should be tags, e.g.
-        # ?filter[tags]=foo,bar should be translated to Q('tags', 'isnull', True)
-        # ?filter[tags]=[] should be translated to Q('tags', 'isnull', True)
+        # ?filter[tags]=foo,bar should be translated to MQ('tags', 'isnull', True)
+        # ?filter[tags]=[] should be translated to MQ('tags', 'isnull', True)
         if field_name == 'tags':
             if operation['value'] not in (list(), tuple()):
                 operation['source_field_name'] = 'tags__name'
@@ -328,7 +328,7 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
     def get_queryset(self):
         # For bulk requests, queryset is formed from request body.
         if is_bulk_request(self.request):
-            query = Q('_id', 'in', [node['id'] for node in self.request.data])
+            query = MQ('_id', 'in', [node['id'] for node in self.request.data])
             auth = get_user_auth(self.request)
 
             nodes = AbstractNode.find(query)
@@ -341,7 +341,7 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
                     if node.can_edit(auth):
                         has_permission.append(node)
 
-                query = Q('_id', 'in', [node._id for node in has_permission])
+                query = MQ('_id', 'in', [node._id for node in has_permission])
                 return AbstractNode.find(query)
 
             for node in nodes:
@@ -746,7 +746,7 @@ class NodeContributorsList(BaseContributorList, bulk_views.BulkUpdateJSONAPIView
             except IndexError:
                 raise ValidationError('Contributor identifier incorrectly formatted.')
 
-        resource_object_list = User.find(Q('_id', 'in', requested_ids))
+        resource_object_list = User.find(MQ('_id', 'in', requested_ids))
         for resource in resource_object_list:
             if getattr(resource, 'is_deleted', None):
                 raise Gone
@@ -951,7 +951,7 @@ class NodeDraftRegistrationsList(JSONAPIBaseView, generics.ListCreateAPIView, No
     # overrides ListCreateAPIView
     def get_queryset(self):
         node = self.get_node()
-        drafts = DraftRegistration.find(Q('branched_from', 'eq', node))
+        drafts = DraftRegistration.find(MQ('branched_from', 'eq', node))
         return [draft for draft in drafts if not draft.registered_node or draft.registered_node.is_deleted]
 
     # overrides ListBulkCreateJSONAPIView
@@ -1288,7 +1288,7 @@ class NodeChildrenList(JSONAPIBaseView, bulk_views.ListBulkCreateJSONAPIView, No
         node_pks = node.node_relations.filter(is_node_link=False).select_related('child')\
                 .values_list('child__pk', flat=True)
         query = (
-            Q('pk', 'in', node_pks) &
+            MQ('pk', 'in', node_pks) &
             req_query
         )
         nodes = Node.find(query).order_by('-date_modified')
@@ -1382,7 +1382,7 @@ class NodeCitationStyleDetail(JSONAPIBaseView, generics.RetrieveAPIView, NodeMix
 
 # TODO: Make NodeLinks filterable. They currently aren't filterable because we have can't
 # currently query on a Pointer's node's attributes.
-# e.g. Pointer.find(Q('node.title', 'eq', ...)) doesn't work
+# e.g. Pointer.find(MQ('node.title', 'eq', ...)) doesn't work
 class NodeLinksList(BaseNodeLinksList, bulk_views.BulkDestroyJSONAPIView, bulk_views.ListBulkCreateJSONAPIView, NodeMixin):
     """Node Links to other nodes. *Writeable*.
 
@@ -1931,10 +1931,10 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
     # overrides FilterMixin
     def postprocess_query_param(self, key, field_name, operation):
         # tag queries will usually be on Tag.name,
-        # ?filter[tags]=foo should be translated to Q('tags__name', 'eq', 'foo')
+        # ?filter[tags]=foo should be translated to MQ('tags__name', 'eq', 'foo')
         # But queries on lists should be tags, e.g.
-        # ?filter[tags]=foo,bar should be translated to Q('tags', 'isnull', True)
-        # ?filter[tags]=[] should be translated to Q('tags', 'isnull', True)
+        # ?filter[tags]=foo,bar should be translated to MQ('tags', 'isnull', True)
+        # ?filter[tags]=[] should be translated to MQ('tags', 'isnull', True)
         if field_name == 'tags':
             if operation['value'] not in (list(), tuple()):
                 operation['source_field_name'] = 'tags__name'
@@ -2748,7 +2748,7 @@ class NodeCommentsList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMix
 
     # overrides ODMFilterMixin
     def get_default_odm_query(self):
-        return Q('node', 'eq', self.get_node()) & Q('root_target', 'ne', None)
+        return MQ('node', 'eq', self.get_node()) & MQ('root_target', 'ne', None)
 
     # Hook to make filtering on 'target' work
     def postprocess_query_param(self, key, field_name, operation):
@@ -2993,7 +2993,7 @@ class NodeWikiList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, ODMFilterMi
     def get_default_odm_query(self):
         node = self.get_node()
         node_wiki_pages = node.wiki_pages_current.values() if node.wiki_pages_current else []
-        return Q('guids___id', 'in', node_wiki_pages)
+        return MQ('guids___id', 'in', node_wiki_pages)
 
     def get_queryset(self):
         return NodeWikiPage.find(self.get_query_from_request())
@@ -3406,10 +3406,10 @@ class NodePreprintsList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, Django
         node = self.get_node()
         # Permissions on the node are handled by the permissions_classes
         # Permissions on the list objects are handled by the query
-        default_query = DjangoQ(node__id=node.id)
-        no_user_query = DjangoQ(is_published=True)
+        default_query = Q(node__id=node.id)
+        no_user_query = Q(is_published=True)
         if auth_user:
-            admin_user_query = DjangoQ(node__contributor__user_id=auth_user.id, node__contributor__admin=True)
+            admin_user_query = Q(node__contributor__user_id=auth_user.id, node__contributor__admin=True)
             return (default_query & (no_user_query | admin_user_query))
         return (default_query & no_user_query)
 
