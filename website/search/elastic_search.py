@@ -340,7 +340,7 @@ def serialize_node(node, category):
                 'fullname': x['fullname'],
                 'url': '/{}/'.format(x['guids___id']) if x['is_active'] else None
             }
-            for x in node._contributors.filter(contributor__visible=True).order_by('contributor___order')
+            for x in node._contributors.filter(contributor__visible=True).order_by('_order')
             .values('fullname', 'guids___id', 'is_active')
         ],
         'title': node.title,
@@ -419,7 +419,7 @@ def serialize_contributors(node):
                 'fullname': x['user__fullname'],
                 'url': '/{}/'.format(x['user__guids___id'])
             } for x in
-            node.contributor_set.filter(visible=True, user__is_active=True).order_by('contributor___order').values('user__fullname', 'user__guids___id')
+            node.contributor_set.filter(visible=True, user__is_active=True).order_by('_order').values('user__fullname', 'user__guids___id')
         ]
     }
 
