@@ -34,7 +34,7 @@ from framework.sessions.utils import remove_sessions_for_user
 from framework.mongo import get_cache_key
 from modularodm.exceptions import NoResultsFound
 from osf.exceptions import reraise_django_validation_errors
-from osf.models.base import BaseModel, GuidMixin, GuidMixinQuerySet
+from osf.models.base import BaseModel, GuidMixin, GuidMixinManager
 from osf.models.contributor import RecentlyAddedContributor
 from osf.models.institution import Institution
 from osf.models.mixins import AddonModelMixin
@@ -65,7 +65,7 @@ name_formatters = {
 }
 
 
-class OSFUserManager(BaseUserManager):
+class OSFUserManager(BaseUserManager, GuidMixinManager):
 
     def create_user(self, username, password=None):
         if not username:
@@ -80,13 +80,6 @@ class OSFUserManager(BaseUserManager):
         user.set_password(password)
         user.save(using=self._db)
         return user
-
-    _queryset_class = GuidMixinQuerySet
-
-    def all(self):
-        qs = super(OSFUserManager, self).all()
-        qs.annotate_query_with_guids()
-        return qs
 
     def eager(self, *fields):
         fk_fields = set(self.model.get_fk_field_names()) & set(fields)

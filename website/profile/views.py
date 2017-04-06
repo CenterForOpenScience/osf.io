@@ -46,16 +46,19 @@ logger = logging.getLogger(__name__)
 def get_public_projects(uid=None, user=None):
     user = user or User.load(uid)
     # In future redesign, should be limited for users with many projects / components
-    nodes = (
+    node_ids = (
         Node.find_for_user(user, PROJECT_QUERY)
         .filter(is_public=True)
         .get_roots()
-        .distinct()
-        .annotate(nlogs=Count('logs'))
+        .values_list('id', flat=True)
+    )
+    nodes = (
+        Node.objects.filter(id__in=set(node_ids))
         # Defer some fields that we don't use for rendering node lists
         .defer('child_node_subscriptions', 'date_created', 'deleted_date', 'description', 'file_guid_to_share_uuids')
-        .eager('parent_nodes', '_contributors')
+        .include('guids', 'contributor__user__guids', '_parents__parent')
         .order_by('-date_modified')
+
     )
     return [
         serialize_node_summary(node=node, auth=Auth(user), show_path=False)
@@ -65,8 +68,8 @@ def get_public_projects(uid=None, user=None):
 
 def get_public_components(uid=None, user=None):
     user = user or User.load(uid)
-    # Filtering on noderelations implicitly filters for nodes that have a parent
-    node_relations = (
+
+    rel_child_ids = (
         NodeRelation.objects.filter(
             child__is_public=True,
             child__type='osf.node',  # nodes only (not collections or registration)
@@ -75,14 +78,20 @@ def get_public_components(uid=None, user=None):
         )
         .exclude(parent__type='osf.collection')
         .exclude(child__is_deleted=True)
-        .select_related('child')
-        # Defer some fields that we don't use for rendering node lists
-        .defer('child__child_node_subscriptions', 'child__date_created', 'child__deleted_date', 'child__description', 'child__file_guid_to_share_uuids')
-        .order_by('-child__date_modified')
+        .values_list('child_id', flat=True)
     )
+
+    nodes = (Node.objects.filter(id__in=rel_child_ids)
+    .include('contributor__user__guids', 'guids', '_parents__parent')
+    # Defer some fields that we don't use for rendering node lists
+    .defer('child_node_subscriptions', 'date_created', 'deleted_date', 'description',
+           'file_guid_to_share_uuids')
+    .order_by('-date_modified'))
+
+
     return [
-        serialize_node_summary(node=each.child, auth=Auth(user), show_path=True)
-        for each in node_relations
+        serialize_node_summary(node=node, auth=Auth(user), show_path=True)
+        for node in nodes
     ]
 
 

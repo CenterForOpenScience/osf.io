@@ -28,8 +28,16 @@ logger = logging.getLogger(__name__)
 
 
 def serialize_contributors_for_summary(node, max_count=3):
-    # Evaluate queryset eagerly, to avoid re-querying in the for loop below
-    users = list(node.visible_contributors)
+    # This is optimized when node has .include('contributor__user__guids')
+    users = []
+    count = 0
+    for each in node.contributor_set.select_related('user').all():
+        if count == max_count:
+            break
+        if each.visible:
+            users.append(each.user)
+            count += 1
+
     contributors = []
 
     n_contributors = len(users)
@@ -73,6 +81,7 @@ def serialize_node_summary(node, auth, primary=True, show_path=False):
         'archiving': node.archiving,
     }
     contributor_data = serialize_contributors_for_summary(node)
+
     parent_node = node.parent_node
     if node.can_view(auth):
         summary.update({
