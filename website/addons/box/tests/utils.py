@@ -2,11 +2,7 @@
 import mock
 from contextlib import contextmanager
 
-from modularodm import storage
-
-from framework.mongo import set_up_storage
-
-
+from framework.mongo import set_up_storage, storage
 from website.addons.base.testing import OAuthAddonTestCaseMixin, AddonTestCase
 from website.addons.box import MODELS
 from website.addons.box.model import Box

@@ -15,7 +15,7 @@ from website.models import Node
 from website.app import init_app
 import website.search.search as search
 from scripts import utils as script_utils
-from website.search.elastic_search import es
+from website.search.elastic_search import client as es_client
 from website.search.search import update_institution
 from website.institutions.model import Institution
 
@@ -28,10 +28,10 @@ def migrate_nodes(index):
     increment = 200
     total_pages = (total // increment) + 1
     pages = paginated(Node, query=query, increment=increment, each=False)
+
     for page_number, page in enumerate(pages):
         logger.info('Updating page {} / {}'.format(page_number + 1, total_pages))
         Node.bulk_update_search(page, index=index)
-        Node._clear_caches()
 
     logger.info('Nodes migrated: {}'.format(total))
 
@@ -40,7 +40,7 @@ def migrate_users(index):
     logger.info('Migrating users to index: {}'.format(index))
     n_migr = 0
     n_iter = 0
-    users = paginated(User, query=None, increment=1000, each=True)
+    users = paginated(User, query=None, each=True)
     for user in users:
         if user.is_active:
             search.update_user(user, index=index)
@@ -79,17 +79,17 @@ def migrate(delete, index=None, app=None):
     ctx.pop()
 
 def set_up_index(idx):
-    alias = es.indices.get_aliases(index=idx)
+    alias = es_client().indices.get_aliases(index=idx)
 
     if not alias or not alias.keys() or idx in alias.keys():
         # Deal with empty indices or the first migration
         index = '{}_v1'.format(idx)
         search.create_index(index=index)
         logger.info('Reindexing {0} to {1}_v1'.format(idx, idx))
-        helpers.reindex(es, idx, index)
+        helpers.reindex(es_client(), idx, index)
         logger.info('Deleting {} index'.format(idx))
-        es.indices.delete(index=idx)
-        es.indices.put_alias(idx, index)
+        es_client().indices.delete(index=idx)
+        es_client().indices.put_alias(idx, index)
     else:
         # Increment version
         version = int(alias.keys()[0].split('_v')[1]) + 1
@@ -101,12 +101,12 @@ def set_up_index(idx):
 
 
 def set_up_alias(old_index, index):
-    alias = es.indices.get_aliases(index=old_index)
+    alias = es_client().indices.get_aliases(index=old_index)
     if alias:
         logger.info('Removing old aliases to {}'.format(old_index))
-        es.indices.delete_alias(index=old_index, name='_all', ignore=404)
+        es_client().indices.delete_alias(index=old_index, name='_all', ignore=404)
     logger.info('Creating new alias from {0} to {1}'.format(old_index, index))
-    es.indices.put_alias(old_index, index)
+    es_client().indices.put_alias(old_index, index)
 
 
 def delete_old(index):
@@ -117,7 +117,7 @@ def delete_old(index):
     else:
         old_index = index.split('_v')[0] + '_v' + str(old_version)
         logger.info('Deleting {}'.format(old_index))
-        es.indices.delete(index=old_index, ignore=404)
+        es_client().indices.delete(index=old_index, ignore=404)
 
 
 if __name__ == '__main__':

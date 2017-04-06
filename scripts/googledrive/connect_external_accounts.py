@@ -13,7 +13,7 @@ from website.app import init_app
 from scripts import utils as script_utils
 from framework.transactions.context import TokuTransaction
 
-from website.addons.googledrive.model import GoogleDriveNodeSettings
+from addons.googledrive.model import GoogleDriveNodeSettings
 
 logger = logging.getLogger(__name__)
 

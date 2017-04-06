@@ -1,25 +1,23 @@
-import re
+import datetime
 import functools
 import operator
-from dateutil import parser as date_parser
-import datetime
+import re
 
+import pytz
+from api.base import utils
+from api.base.exceptions import (InvalidFilterComparisonType,
+                                 InvalidFilterError, InvalidFilterFieldError,
+                                 InvalidFilterMatchType, InvalidFilterOperator,
+                                 InvalidFilterValue)
+from api.base.serializers import RelationshipField, TargetField
+from dateutil import parser as date_parser
 from django.core.exceptions import ValidationError
+from django.db.models import QuerySet as DjangoQuerySet
 from modularodm import Q
 from modularodm.query import queryset as modularodm_queryset
-from rest_framework.filters import OrderingFilter
 from rest_framework import serializers as ser
+from rest_framework.filters import OrderingFilter
 
-from api.base.exceptions import (
-    InvalidFilterError,
-    InvalidFilterOperator,
-    InvalidFilterComparisonType,
-    InvalidFilterMatchType,
-    InvalidFilterValue,
-    InvalidFilterFieldError
-)
-from api.base import utils
-from api.base.serializers import RelationshipField, TargetField
 
 def lowercase(lower):
     if hasattr(lower, '__call__'):
@@ -48,6 +46,10 @@ class ODMOrderingFilter(OrderingFilter):
     """Adaptation of rest_framework.filters.OrderingFilter to work with modular-odm."""
     # override
     def filter_queryset(self, request, queryset, view):
+        if isinstance(queryset, DjangoQuerySet):
+            if queryset.ordered:
+                return queryset
+            return super(ODMOrderingFilter, self).filter_queryset(request, queryset, view)
         ordering = self.get_ordering(request, queryset, view)
         if ordering:
             if not isinstance(queryset, modularodm_queryset.BaseQuerySet) and isinstance(ordering, (list, tuple)):
@@ -105,11 +107,12 @@ class FilterMixin(object):
 
         :raises InvalidFilterError: If the filter field is not valid
         """
-        if field_name not in self.serializer_class._declared_fields:
+        serializer_class = self.serializer_class
+        if field_name not in serializer_class._declared_fields:
             raise InvalidFilterError(detail="'{0}' is not a valid field for this endpoint.".format(field_name))
-        if field_name not in getattr(self.serializer_class, 'filterable_fields', set()):
+        if field_name not in getattr(serializer_class, 'filterable_fields', set()):
             raise InvalidFilterFieldError(parameter='filter', value=field_name)
-        return self.serializer_class._declared_fields[field_name]
+        return serializer_class._declared_fields[field_name]
 
     def _validate_operator(self, field, field_name, op):
         """
@@ -210,7 +213,7 @@ class FilterMixin(object):
                         query.get(key).update({
                             field_name: self._parse_date_param(field, source_field_name, op, value)
                         })
-                    elif not isinstance(value, int) and (source_field_name == '_id' or source_field_name == 'root'):
+                    elif not isinstance(value, int) and (source_field_name in ['_id', 'root']):
                         query.get(key).update({
                             field_name: {
                                 'op': 'in',
@@ -228,8 +231,15 @@ class FilterMixin(object):
                                 'source_field_name': source_field_name
                             }
                         })
+                    self.postprocess_query_param(key, field_name, query[key][field_name])
 
         return query
+
+    def postprocess_query_param(self, key, field_name, operation):
+        """Hook to update parsed query parameters. Overrides of this method should either
+        update ``operation`` in-place or do nothing.
+        """
+        pass
 
     def should_parse_special_query_params(self, field_name):
         """ This should be overridden in subclasses for custom filtering behavior
@@ -270,7 +280,10 @@ class FilterMixin(object):
                 )
         elif isinstance(field, self.DATE_FIELDS):
             try:
-                return date_parser.parse(value)
+                ret = date_parser.parse(value, ignoretz=False)
+                if not ret.tzinfo:
+                    ret = ret.replace(tzinfo=pytz.utc)
+                return ret
             except ValueError:
                 raise InvalidFilterValue(
                     value=value,
@@ -338,6 +351,9 @@ class ODMFilterMixin(FilterMixin):
 
         return query
 
+    def _operation_to_query(self, operation):
+        return Q(operation['source_field_name'], operation['op'], operation['value'])
+
     def query_params_to_odm_query(self, query_params):
         """Convert query params to a modularodm Query object."""
         filters = self.parse_query_params(query_params)
@@ -351,11 +367,11 @@ class ODMFilterMixin(FilterMixin):
                         sub_query = self.convert_special_params_to_odm_query(field_name, query_params, key, data)
                     elif isinstance(data, list):
                         sub_query = functools.reduce(operator.and_, [
-                            Q(item['source_field_name'], item['op'], item['value'])
+                            self._operation_to_query(item)
                             for item in data
                         ])
                     else:
-                        sub_query = Q(data['source_field_name'], data['op'], data['value'])
+                        sub_query = self._operation_to_query(data)
 
                     sub_query_parts.append(sub_query)
 
@@ -421,14 +437,54 @@ class ListFilterMixin(FilterMixin):
     def param_queryset(self, query_params, default_queryset):
         """filters default queryset based on query parameters"""
         filters = self.parse_query_params(query_params)
-        queryset = set(default_queryset)
+        queryset = default_queryset
 
         if filters:
             for key, field_names in filters.iteritems():
                 for field_name, data in field_names.iteritems():
-                    queryset = queryset.intersection(set(self.get_filtered_queryset(field_name, data, default_queryset)))
+                    if isinstance(queryset, list):
+                        queryset = self.get_filtered_queryset(field_name, data, queryset)
+                    else:
+                        queryset = self.filter_by_field(queryset, field_name=field_name, operation=data)
+        return queryset
 
-        return list(queryset)
+    def filter_by_field(self, queryset, field_name, operation):
+        """Override-able method that filters `queryset`, given an `operation`, which is a dict of the form:
+
+            {
+                'source_field_name': <Name of the field>,
+                'op': <Operation, e.g. 'gt', 'lt', 'eq'>,
+                'value': <Input value>
+            }
+        """
+        query_field_name = operation['source_field_name']
+        if operation['op'] != 'eq':
+            query_field_name = '{}__{}'.format(query_field_name, operation['op'])
+        return queryset.filter(**{query_field_name: operation['value']})
+
+    def postprocess_query_param(self, key, field_name, operation):
+        # tag queries will usually be on Tag.name,
+        # ?filter[tags]=foo should be translated to Q('tags__name', 'eq', 'foo')
+        # But queries on lists should be tags, e.g.
+        # ?filter[tags]=foo,bar should be translated to Q('tags', 'isnull', True)
+        # ?filter[tags]=[] should be translated to Q('tags', 'isnull', True)
+        if field_name == 'tags':
+            if operation['value'] not in (list(), tuple()):
+                operation['source_field_name'] = 'tags__name'
+                operation['op'] = 'iexact'
+        # contributors iexact because guid matching
+        if field_name == 'contributors':
+            if operation['value'] not in (list(), tuple()):
+                operation['source_field_name'] = '_contributors__guids___id'
+                operation['op'] = 'iexact'
+        if operation['source_field_name'] == 'kind':
+            operation['source_field_name'] = 'is_file'
+            # The value should be boolean
+            operation['value'] = operation['value'] == 'file'
+        if field_name == 'bibliographic':
+            operation['op'] = 'exact'
+        if field_name == 'permission':
+            operation['op'] = 'exact'
 
     def get_filtered_queryset(self, field_name, params, default_queryset):
         """filters default queryset based on the serializer field type"""

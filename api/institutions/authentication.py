@@ -3,8 +3,6 @@ import json
 import jwe
 import jwt
 
-from datetime import datetime
-
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.authentication import BaseAuthentication
 
@@ -55,11 +53,11 @@ class InstitutionAuthentication(BaseAuthentication):
         user, created = get_or_create_user(fullname, username, reset_password=False)
 
         if created:
-            user.given_name = provider['user'].get('givenName')
-            user.middle_names = provider['user'].get('middleNames')
-            user.family_name = provider['user'].get('familyName')
-            user.suffix = provider['user'].get('suffix')
-            user.date_last_login = datetime.utcnow()
+            user.given_name = provider['user'].get('givenName') or user.given_name
+            user.middle_names = provider['user'].get('middleNames') or user.middle_names
+            user.family_name = provider['user'].get('familyName') or user.family_name
+            user.suffix = provider['user'].get('suffix') or user.suffix
+            user.update_date_last_login()
             user.save()
 
             # User must be saved in order to have a valid _id
@@ -71,8 +69,8 @@ class InstitutionAuthentication(BaseAuthentication):
                 user=user
             )
 
-        if institution not in user.affiliated_institutions:
-            user.affiliated_institutions.append(institution)
+        if not user.is_affiliated_with_institution(institution):
+            user.affiliated_institutions.add(institution)
             user.save()
 
         return user, None

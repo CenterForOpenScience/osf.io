@@ -100,7 +100,7 @@ def node_registration_retraction_post(auth, node, **kwargs):
             'message_long': 'Withdrawal of non-registrations is not permitted.'
         })
 
-    if node.root is not node:
+    if node.root_id != node.id:
         raise HTTPError(http.BAD_REQUEST, data={
             'message_short': 'Invalid Request',
             'message_long': 'Withdrawal of non-parent registrations is not permitted.'
@@ -135,7 +135,7 @@ def node_register_template_page(auth, node, metaschema_id, **kwargs):
                     'message_short': 'Invalid schema name',
                     'message_long': 'No registration schema with that name could be found.'
                 })
-        if meta_schema not in node.registered_schema:
+        if not node.registered_schema.filter(id=meta_schema.id).exists():
             raise HTTPError(http.BAD_REQUEST, data={
                 'message_short': 'Invalid schema',
                 'message_long': 'This registration has no registration supplment with that name.'
@@ -179,7 +179,7 @@ def project_before_register(auth, node, **kwargs):
     }
     errors = {}
 
-    addon_set = [n.get_addons() for n in itertools.chain([node], node.get_descendants_recursive(lambda n: n.primary))]
+    addon_set = [n.get_addons() for n in itertools.chain([node], node.get_descendants_recursive(primary_only=True))]
     for addon in itertools.chain(*addon_set):
         if not addon.complete:
             continue

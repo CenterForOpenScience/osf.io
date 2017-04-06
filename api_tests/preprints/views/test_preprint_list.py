@@ -1,7 +1,9 @@
 from nose.tools import *  # flake8: noqa
 
-from framework.auth.core import Auth, Q
+from addons.github.models import GithubFile
+from framework.auth.core import Auth
 from api.base.settings.defaults import API_BASE
+from api_tests.preprints.filters.test_filters import PreprintsListFilteringMixin
 from website.util import permissions
 from website.models import Node
 from website.preprints.model import PreprintService
@@ -9,7 +11,7 @@ from website.project import signals as project_signals
 
 
 from tests.base import ApiTestCase, capture_signals
-from tests.factories import (
+from osf_tests.factories import (
     ProjectFactory,
     PreprintFactory,
     AuthUserFactory,
@@ -61,11 +63,6 @@ class TestPreprintList(ApiTestCase):
 
         self.project = ProjectFactory(creator=self.user)
 
-    def tearDown(self):
-        super(TestPreprintList, self).tearDown()
-        Node.remove()
-        PreprintService.remove()
-
     def test_return_preprints_logged_out(self):
         res = self.app.get(self.url)
         assert_equal(len(res.json['data']), 1)
@@ -79,34 +76,25 @@ class TestPreprintList(ApiTestCase):
         assert_in(self.preprint._id, ids)
         assert_not_in(self.project._id, ids)
 
-
-class TestPreprintFiltering(ApiTestCase):
+class TestPreprintsListFiltering(PreprintsListFilteringMixin, ApiTestCase):
 
     def setUp(self):
-        super(TestPreprintFiltering, self).setUp()
         self.user = AuthUserFactory()
-        self.provider = PreprintProviderFactory(name='wwe')
-        self.provider_two = PreprintProviderFactory(name='wcw')
+        self.provider = PreprintProviderFactory(name='Sockarxiv')
+        self.provider_two = PreprintProviderFactory(name='Piratearxiv')
+        self.provider_three = self.provider
+        self.project = ProjectFactory()
+        self.project_two = ProjectFactory()
+        self.project_three = ProjectFactory()
+        self.url = '/{}preprints/?version=2.2&'.format(API_BASE)
+        super(TestPreprintsListFiltering, self).setUp()
 
-        self.subject = SubjectFactory()
-        self.subject_two = SubjectFactory()
+    def test_provider_filter_equals_returns_one(self):
+        expected = [self.preprint_two._id]
+        res = self.app.get('{}{}'.format(self.provider_url, self.provider_two._id), auth=self.user.auth)
+        actual = [preprint['id'] for preprint in res.json['data']]
+        assert_equal(expected, actual)
 
-        self.preprint = PreprintFactory(creator=self.user, provider=self.provider, subjects=[[self.subject._id]])
-        self.preprint_two = PreprintFactory(creator=self.user, filename='woo.txt', provider=self.provider_two, subjects=[[self.subject_two._id]])
-        self.preprint_three = PreprintFactory(creator=self.user, filename='stonecold.txt', provider=self.provider, subjects=[[self.subject._id], [self.subject_two._id]])
-
-    def tearDown(self):
-        super(TestPreprintFiltering, self).tearDown()
-        Node.remove()
-
-    def test_filter_by_provider(self):
-        url = '/{}preprints/?filter[provider]={}'.format(API_BASE, self.provider._id)
-        res = self.app.get(url, auth=self.user.auth)
-        ids = [datum['id'] for datum in res.json['data']]
-
-        assert_in(self.preprint._id, ids)
-        assert_not_in(self.preprint_two._id, ids)
-        assert_in(self.preprint_three._id, ids)
 
 class TestPreprintCreate(ApiTestCase):
     def setUp(self):
@@ -115,8 +103,8 @@ class TestPreprintCreate(ApiTestCase):
         self.user = AuthUserFactory()
         self.other_user = AuthUserFactory()
         self.private_project = ProjectFactory(creator=self.user)
-        self.public_project = ProjectFactory(creator=self.user, public=True)
-        self.public_project.add_contributor(self.other_user, permissions=[permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS], save=True)
+        self.public_project = ProjectFactory(creator=self.user, is_public=True)
+        self.public_project.add_contributor(self.other_user, permissions=permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS, save=True)
         self.subject = SubjectFactory()
         self.provider = PreprintProviderFactory()
 
@@ -178,7 +166,7 @@ class TestPreprintCreate(ApiTestCase):
         assert_in(self.other_user, self.public_project.contributors)
 
         preprint = PreprintFactory(creator=self.user)
-        preprint.node.add_contributor(self.other_user, permissions=[permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS], save=True)
+        preprint.node.add_contributor(self.other_user, permissions=permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS, save=True)
         file_one_preprint = test_utils.create_test_file(preprint.node, self.user, 'openupthatwindow.pdf')
 
         already_preprint_payload = build_preprint_create_payload(preprint.node._id, self.provider._id, file_one_preprint._id)
@@ -226,7 +214,7 @@ class TestPreprintCreate(ApiTestCase):
 
     def test_file_not_osfstorage(self):
         github_file = self.file_one_public_project
-        github_file.provider = 'github'
+        github_file.recast(GithubFile._typedmodels_type)
         github_file.save()
         public_project_payload = build_preprint_create_payload(self.public_project._id, self.provider._id, github_file._id)
         res = self.app.post_json_api(self.url, public_project_payload, auth=self.user.auth, expect_errors=True)
@@ -265,6 +253,6 @@ class TestPreprintCreate(ApiTestCase):
         assert_equal(res.status_code, 201)
         preprint_id = res.json['data']['id']
         preprint = PreprintService.load(preprint_id)
-        log = preprint.node.logs[-2]
+        log = preprint.node.logs.latest()
         assert_equal(log.action, 'preprint_initiated')
         assert_equal(log.params.get('preprint'), preprint_id)

@@ -52,7 +52,7 @@ def fix_duplicate_addon_node_settings():
         'osfstoragenodesettings',
         's3nodesettings',
         'zoteronodesettings',
-        'addonwikinodesettings'
+        'addonwikinodesettings',
     ]
 
     for collection in COLLECTIONS:

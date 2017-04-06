@@ -3,14 +3,15 @@ import json
 import logging
 import sys
 
+from django.db import transaction
+from django.apps import apps
 from modularodm import Q, storage
 from modularodm.exceptions import NoResultsFound
 
 from framework.mongo import set_up_storage
-from framework.transactions.context import TokuTransaction
 from scripts import utils as script_utils
+from website.app import init_app
 from website import settings
-from website.project.taxonomies import Subject
 
 
 logger = logging.getLogger(__name__)
@@ -18,6 +19,7 @@ logging.basicConfig(level=logging.INFO)
 
 
 def update_taxonomies(filename):
+    Subject = apps.get_model('osf.Subject')
     # Flat taxonomy is stored locally, read in here
     with open(
         os.path.join(
@@ -38,7 +40,7 @@ def update_taxonomies(filename):
                     parent = Subject.find_one(Q('text', 'eq', subjects[-2]))
                 except NoResultsFound:
                     pass
-
+            parents = [parent] if parent else []
             try:
                 subject = Subject.find_one(Q('text', 'eq', text))
                 logger.info('Found existing Subject "{}":{}{}'.format(
@@ -48,32 +50,28 @@ def update_taxonomies(filename):
                 ))
             except (NoResultsFound):
                 # If subject does not yet exist, create it
-                subject = Subject(
-                    text=text,
-                    parents=[parent] if parent else [],
-                )
+                subject = Subject(text=text)
+                subject.save()
                 logger.info(u'Creating Subject "{}":{}{}'.format(
                     subject.text,
                     subject._id,
                     u' with parent {}:{}'.format(parent.text, parent._id) if parent else ''
                 ))
-            else:
-                # If subject does exist, append parent_id if not already added
-                if parent and parent not in subject.parents:
-                    subject.parents.append(parent)
-                    logger.info(u'Adding parent "{}":{} to Subject "{}":{}'.format(
-                        parent.text, parent._id,
-                        subject.text, subject._id
-                    ))
-
+            if parent and not subject.parents.filter(id=parent.id).exists():
+                logger.info(u'Adding parent "{}":{} to Subject "{}":{}'.format(
+                    parent.text, parent._id,
+                    subject.text, subject._id
+                ))
+                subject.parents.add(parent)
             subject.save()
 
 def main():
+    init_app(set_backends=True, routes=False)
+    Subject = apps.get_model('osf.Subject')
     dry_run = '--dry' in sys.argv
     if not dry_run:
         script_utils.add_file_logger(logger, __file__)
-    set_up_storage([Subject], storage.MongoStorage)
-    with TokuTransaction():
+    with transaction.atomic():
         update_taxonomies('bepress_taxonomy.json')
         # Now that all subjects have been added to the db, compute and set
         # the 'children' field for every subject
@@ -81,7 +79,6 @@ def main():
         for subject in Subject.find():
             subject.children = Subject.find(Q('parents', 'eq', subject))
             subject.save()
-
         if dry_run:
             raise RuntimeError('Dry run, transaction rolled back')
 

@@ -3,17 +3,21 @@ This will update node links on POPULAR_LINKS_NODE and NEW_AND_NOTEWORTHY_LINKS_N
 """
 import sys
 import logging
-import datetime
 import dateutil
-from modularodm import Q
+
+import django
+from django.utils import timezone
+from django.db import transaction
+from django.db.models import Q
 from website.app import init_app
-from website import models
+
+django.setup()
+
+from osf.models import Node, NodeLog
 from framework.auth.core import Auth
 from scripts import utils as script_utils
-from framework.mongo import database as db
 from framework.celery_tasks import app as celery_app
 from framework.encryption import ensure_bytes
-from framework.transactions.context import TokuTransaction
 from website.settings import \
     POPULAR_LINKS_NODE, NEW_AND_NOTEWORTHY_LINKS_NODE,\
     NEW_AND_NOTEWORTHY_CONTRIBUTOR_BLACKLIST
@@ -44,21 +48,24 @@ def filter_nodes(node_list):
             final_node_list.append(node)
     return final_node_list
 
-def get_new_and_noteworthy_nodes():
+def get_new_and_noteworthy_nodes(noteworthy_links_node):
     """ Fetches new and noteworthy nodes
 
     Mainly: public top-level projects with the greatest number of unique log actions
 
     """
-    today = datetime.datetime.now()
+    today = timezone.now()
     last_month = (today - dateutil.relativedelta.relativedelta(months=1))
-    data = db.node.find({'date_created': {'$gt': last_month}, 'is_public': True, 'is_registration': False, 'parent_node': None,
-                         'is_deleted': False, 'is_collection': False})
+    data = Node.objects.filter(Q(date_created__gte=last_month) & Q(is_public=True) & Q(is_deleted=False) & (Q(parent_nodes__isnull=True) | Q(parent_nodes=noteworthy_links_node)))
     nodes = []
     for node in data:
-        unique_actions = len(db.nodelog.find({'node': node['_id']}).distinct('action'))
-        node['unique_actions'] = unique_actions
-        nodes.append(node)
+        unique_actions = NodeLog.objects.filter(node=node.pk).order_by('action').distinct('action').count()
+        n = {}
+        n['unique_actions'] = unique_actions
+        n['contributors'] = [c._id for c in node.contributors]
+        n['_id'] = node._id
+        n['title'] = node.title
+        nodes.append(n)
 
     noteworthy_nodes = sorted(nodes, key=lambda node: node.get('unique_actions'), reverse=True)[:25]
     filtered_new_and_noteworthy = filter_nodes(noteworthy_nodes)
@@ -90,7 +97,7 @@ def update_node_links(designated_node, target_node_ids, description):
         designated_node.rm_pointer(pointer, auth)
 
     for n_id in target_node_ids:
-        n = models.Node.load(n_id)
+        n = Node.load(n_id)
         if is_eligible_node(n):
             designated_node.add_pointer(n, auth, save=True)
             logger.info('Added node link {} to {}'.format(n, designated_node))
@@ -98,8 +105,8 @@ def update_node_links(designated_node, target_node_ids, description):
 def main(dry_run=True):
     init_app(routes=False)
 
-    new_and_noteworthy_links_node = models.Node.find_one(Q('_id', 'eq', NEW_AND_NOTEWORTHY_LINKS_NODE))
-    new_and_noteworthy_node_ids = get_new_and_noteworthy_nodes()
+    new_and_noteworthy_links_node = Node.objects.get(_guids___id=NEW_AND_NOTEWORTHY_LINKS_NODE)
+    new_and_noteworthy_node_ids = get_new_and_noteworthy_nodes(new_and_noteworthy_links_node)
 
     update_node_links(new_and_noteworthy_links_node, new_and_noteworthy_node_ids, 'new and noteworthy')
 
@@ -118,9 +125,9 @@ def main(dry_run=True):
 def run_main(dry_run=True):
     if not dry_run:
         script_utils.add_file_logger(logger, __file__)
-    with TokuTransaction():
+    with transaction.atomic():
         main(dry_run=dry_run)
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     dry_run = '--dry' in sys.argv
     run_main(dry_run=dry_run)

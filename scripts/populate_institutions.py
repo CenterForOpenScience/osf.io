@@ -6,10 +6,11 @@ import logging
 import sys
 import urllib
 
+import django
+from django.db import transaction
 from modularodm import Q
+django.setup()
 
-
-from framework.transactions.context import TokuTransaction
 from website import settings
 from website.app import init_app
 from website.models import Institution, Node
@@ -31,21 +32,17 @@ def update_or_create(inst_data):
     inst = Institution.load(inst_data['_id'])
     if inst:
         for key, val in inst_data.iteritems():
-            setattr(inst.node, inst.attribute_map[key], val)
-        changed_fields = inst.node.save()
-        if changed_fields:
-            print('Updated {}: {}'.format(inst.name, changed_fields))
+            setattr(inst, key, val)
+        inst.save()
+        print('Updated {}'.format(inst.name))
         update_institution(inst)
         return inst, False
     else:
-        inst = Institution(None)
-        inst_data = {inst.attribute_map[k]: v for k, v in inst_data.iteritems()}
-        new_inst = Node(**inst_data)
-        new_inst.save()
-        inst = Institution.load(new_inst.institution_id)
-        print('Added new institution: {}'.format(new_inst.institution_id))
+        inst = Institution(**inst_data)
+        inst.save()
+        print('Added new institution: {}'.format(inst._id))
         update_institution(inst)
-        return new_inst, True
+        return inst, True
 
 
 def main(env):
@@ -54,12 +51,23 @@ def main(env):
     if env == 'prod':
         INSTITUTIONS = [
             {
+                '_id': 'bu',
+                'name': 'Boston University',
+                'description': 'A Research Project Management Tool for BU',
+                'banner_name': 'bu-banner.png',
+                'logo_name': 'bu-shield.png',
+                'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://shib.bu.edu/idp/shibboleth')),
+                'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://osf.io/goodbye')),
+                'domains': ['osf.bu.edu'],
+                'email_domains': [],
+            },
+            {
                 '_id': 'busara',
                 'name': 'Busara Center for Behavioral Economics',
                 'description': 'The <a href="http://www.busaracenter.org/">Busara Center</a> for Behavioral Economics',
                 'banner_name': 'busara-banner.png',
                 'logo_name': 'busara-shield.png',
-                'auth_url': None,
+                'login_url': None,
                 'logout_url': None,
                 'domains': [],
                 'email_domains': ['busaracenter.org'],
@@ -70,7 +78,7 @@ def main(env):
                 'description': 'This service is supported by the Center for Research Data and Digital Scholarship, which is led by <a href="https://www.rc.colorado.edu/">Research Computing</a> and the <a href="http://www.colorado.edu/libraries/">University Libraries</a>.',
                 'banner_name': 'colorado-banner.png',
                 'logo_name': 'colorado-shield.png',
-                'auth_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://fedauth.colorado.edu/idp/shibboleth')),
+                'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://fedauth.colorado.edu/idp/shibboleth')),
                 'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://osf.io/goodbye')),
                 'domains': [],
                 'email_domains': [],
@@ -81,10 +89,21 @@ def main(env):
                 'description': 'COS is a non-profit technology company providing free and open services to increase inclusivity and transparency of research. Find out more at <a href="https://cos.io">cos.io</a>.',
                 'banner_name': 'cos-banner.png',
                 'logo_name': 'cos-shield.png',
-                'auth_url': None,
+                'login_url': None,
                 'logout_url': None,
                 'domains': ['osf.cos.io'],
                 'email_domains': ['cos.io'],
+            },
+            {
+                '_id': 'duke',
+                'name': 'Duke University',
+                'description': 'A research data service provided by <a href="https://library.duke.edu/data/data-management">Duke Libraries</a>.',
+                'banner_name': 'duke-banner.png',
+                'logo_name': 'duke-shield.png',
+                'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('urn:mace:incommon:duke.edu')),
+                'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://osf.io/goodbye')),
+                'domains': [],
+                'email_domains': [],
             },
             {
                 '_id': 'esip',
@@ -92,7 +111,7 @@ def main(env):
                 'description': '<a href="http://www.esipfed.org/">ESIP\'s</a> mission is to support the networking and data dissemination needs of our members and the global Earth science data community by linking the functional sectors of observation, research, application, education and use of Earth science.',
                 'banner_name': 'esip-banner.png',
                 'logo_name': 'esip-shield.png',
-                'auth_url': None,
+                'login_url': None,
                 'logout_url': None,
                 'domains': [],
                 'email_domains': ['esipfed.org'],
@@ -103,7 +122,7 @@ def main(env):
                 'description': 'A research data service provided by the <a href="https://www.library.jhu.edu/">Sheridan Libraries</a>.',
                 'banner_name': 'jhu-banner.png',
                 'logo_name': 'jhu-shield.png',
-                'auth_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('urn:mace:incommon:johnshopkins.edu')),
+                'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('urn:mace:incommon:johnshopkins.edu')),
                 'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://osf.io/goodbye')),
                 'domains': ['osf.data.jhu.edu'],
                 'email_domains': [],
@@ -114,7 +133,7 @@ def main(env):
                 'description': 'Projects listed below are for grants awarded by the Foundation. Please see the <a href="http://www.arnoldfoundation.org/wp-content/uploads/Guidelines-for-Investments-in-Research.pdf">LJAF Guidelines for Investments in Research</a> for more information and requirements.',
                 'banner_name': 'ljaf-banner.png',
                 'logo_name': 'ljaf-shield.png',
-                'auth_url': None,
+                'login_url': None,
                 'logout_url': None,
                 'domains': [],
                 'email_domains': ['arnoldfoundation.org'],
@@ -125,7 +144,7 @@ def main(env):
                 'description': 'Funding rigorous research in the field of contemplative science to understand the human mind for the purpose of reducing suffering. Learn more about <a href="https://www.mindandlife.org">Mind & Life research funding and other programs</a>.',
                 'banner_name': 'mli-banner.png',
                 'logo_name': 'mli-shield.png',
-                'auth_url': None,
+                'login_url': None,
                 'logout_url': None,
                 'domains': ['research.mindandlife.org'],
                 'email_domains': ['mindandlife.org'],
@@ -136,7 +155,7 @@ def main(env):
                 'description': 'In <a href="https://research.nd.edu/news/64035-notre-dame-center-for-open-science-partner-to-advance-open-science-initiatives/">partnership</a> with the <a href="https://crc.nd.edu">Center for Research Computing</a>, <a href="http://esc.nd.edu">Engineering &amp; Science Computing</a>, and the <a href="https://library.nd.edu">Hesburgh Libraries</a>',
                 'banner_name': 'nd-banner.png',
                 'logo_name': 'nd-shield.png',
-                'auth_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://login.nd.edu/idp/shibboleth')),
+                'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://login.nd.edu/idp/shibboleth')),
                 'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://osf.io/goodbye')),
                 'domains': ['osf.nd.edu'],
                 'email_domains': [],
@@ -147,7 +166,7 @@ def main(env):
                 'description': 'A Research Project and File Management Tool for the NYU Community: <a href="https://www.nyu.edu/research.html">Research at NYU</a> | <a href="http://guides.nyu.edu/data_management">Research Data Management Planning</a> | <a href="https://library.nyu.edu/services/research/">NYU Library Research Services</a> | <a href="https://nyu.qualtrics.com/jfe6/form/SV_8dFc5TpA1FgLUMd">Get Help</a>',
                 'banner_name': 'nyu-banner.png',
                 'logo_name': 'nyu-shield.png',
-                'auth_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('urn:mace:incommon:nyu.edu')),
+                'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('urn:mace:incommon:nyu.edu')),
                 'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://shibboleth.nyu.edu/idp/profile/Logout')),
                 'domains': ['osf.nyu.edu'],
                 'email_domains': [],
@@ -158,7 +177,7 @@ def main(env):
                 'description': '<a href="http://www.library.okstate.edu/research-support/research-data-services/">OSU Library Research Data Services</a>',
                 'banner_name': 'okstate-banner.png',
                 'logo_name': 'okstate-shield.png',
-                'auth_url': None,  # https://stwcas.okstate.edu/cas/login?service=...
+                'login_url': None,  # https://stwcas.okstate.edu/cas/login?service=...
                 'logout_url': None,
                 'domains': ['osf.library.okstate.edu'],
                 'email_domains': [],
@@ -169,10 +188,22 @@ def main(env):
                 'description': 'The Lab @ DC is an entity of the <a href="https://mayor.dc.gov/">Executive Office of the Mayor of the District of Columbia Government</a>. We work in the <a href="https://oca.dc.gov/">Office of the City Administrator</a> and in partnership with a network of universities and research centers to apply the scientific method into day-to-day governance.',
                 'banner_name': 'thelabatdc-banner.png',
                 'logo_name': 'thelabatdc-shield.png',
-                'auth_url': None,
+                'login_url': None,
                 'logout_url': None,
                 'domains': [],
                 'email_domains': ['dc.gov'],
+            },
+            {
+                '_id': 'uc',
+                'name': 'University of Cincinnati',
+                'description': 'In partnership with the <a href="https://research.uc.edu/home/officeofresearch/administrativeoffices.aspx">Office of Research</a>, <a href="https://www.libraries.uc.edu/">UC Libraries</a> and <a href="https://www.uc.edu/ucit.html">IT&#64;UC</a>. Projects must abide by the University Security and Data Protection Policies depending on approval from OoR. Learn more by visiting <a href="https://libraries.uc.edu/digital-scholarship/data-services.html">Research Data & GIS services</a>.',
+                'banner_name': 'uc-banner.png',
+                'logo_name': 'uc-shield.png',
+                'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://login.uc.edu/idp/shibboleth')),
+                'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://osf.io/goodbye')),
+                'domains': ['osf.uc.edu'],
+                'email_domains': [],
+
             },
             {
                 '_id': 'ucsd',
@@ -180,7 +211,7 @@ def main(env):
                 'description': 'This service is supported on campus by the UC San Diego Library for our research community. Do not use this service to store or transfer personally identifiable information, personal health information, or any other controlled unclassified information. For assistance please contact the Library\'s Research Data Curation Program at <a href="mailto:research-data-curation@ucsd.edu">research-data-curation@ucsd.edu</a>.',
                 'banner_name': 'ucsd-banner.png',
                 'logo_name': 'ucsd-shield.png',
-                'auth_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('urn:mace:incommon:ucsd.edu')),
+                'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('urn:mace:incommon:ucsd.edu')),
                 'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://osf.io/goodbye')),
                 'domains': ['osf.ucsd.edu'],
                 'email_domains': [],
@@ -191,7 +222,7 @@ def main(env):
                 'description': 'Policy prohibits storing PII or HIPAA data on this site, please see C&amp;C\'s <a href="http://cnc.ucr.edu/security/researchers.html">security site</a> for more information.',
                 'banner_name': 'ucr-banner.png',
                 'logo_name': 'ucr-shield.png',
-                'auth_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('urn:mace:incommon:ucr.edu')),
+                'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('urn:mace:incommon:ucr.edu')),
                 'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://osf.io/goodbye')),
                 'domains': ['osf.ucr.edu'],
                 'email_domains': [],
@@ -202,7 +233,7 @@ def main(env):
                 'description': '<a href="http://www.lib.uct.ac.za/">UCT Libraries</a>, <a href="http://www.eresearch.uct.ac.za/">UCT eResearch</a> &amp; <a href="http://www.icts.uct.ac.za/">ICTS</a> present the UCT OSF institutional service to UCT affiliated students, staff and researchers. The UCT OSF facility should be used in conjunction with the institution\'s <a href="http://www.digitalservices.lib.uct.ac.za/dls/rdm-policy">Research Data Management (RDM) Policy</a>, <a href="https://www.uct.ac.za/downloads/uct.ac.za/about/policies/UCTOpenAccessPolicy.pdf">Open Access Policy</a> and <a href="https://www.uct.ac.za/downloads/uct.ac.za/about/policies/UCTOpenAccessPolicy.pdf">IP Policy</a>. Visit the <a href="http://www.digitalservices.lib.uct.ac.za/">UCT Digital Library Services</a> for more information and/or assistance with <a href="http://www.digitalservices.lib.uct.ac.za/dls/rdm">RDM</a> and <a href="http://www.digitalservices.lib.uct.ac.za/dls/data-sharing-guidelines">data sharing</a>. We also encourage the use of UCT Libraries\'s Data Management Planning tool, <a href="http://dmp.lib.uct.ac.za/about_us">DMPonline</a>',
                 'banner_name': 'uct-banner.png',
                 'logo_name': 'uct-shield.png',
-                'auth_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('http://adfs.uct.ac.za/adfs/services/trust')),
+                'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('http://adfs.uct.ac.za/adfs/services/trust')),
                 'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://osf.io/goodbye')),
                 'domains': ['osf.uct.ac.za'],
                 'email_domains': [],
@@ -213,7 +244,7 @@ def main(env):
                 'description': None,
                 'banner_name': 'ugent-banner.png',
                 'logo_name': 'ugent-shield.png',
-                'auth_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://identity.ugent.be/simplesaml/saml2/idp/metadata.php')),
+                'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://identity.ugent.be/simplesaml/saml2/idp/metadata.php')),
                 'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://osf.io/goodbye')),
                 'domains': ['osf.ugent.be'],
                 'email_domains': [],
@@ -224,7 +255,7 @@ def main(env):
                 'description': 'Projects must abide by <a href="http://policy.usc.edu/info-security/">USC\'s Information Security Policy</a>. Data stored for human subject research repositories must abide by <a href="http://policy.usc.edu/biorepositories/">USC\'s Biorepository Policy</a>. The OSF may not be used for storage of Personal Health Information that is subject to <a href="http://policy.usc.edu/hipaa/">HIPPA regulations</a>.',
                 'banner_name': 'usc-banner.png',
                 'logo_name': 'usc-shield.png',
-                'auth_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('urn:mace:incommon:usc.edu')),
+                'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('urn:mace:incommon:usc.edu')),
                 'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://osf.io/goodbye')),
                 'domains': ['osf.usc.edu'],
                 'email_domains': [],
@@ -235,7 +266,7 @@ def main(env):
                 'description': 'In partnership with the <a href="http://www.virginia.edu/vpr/">Vice President for Research</a>, <a href="http://dsi.virginia.edu">Data Science Institute</a>, <a href="https://www.hsl.virginia.edu">Health Sciences Library</a>, and <a href="http://data.library.virginia.edu">University Library</a>. Learn more about <a href="http://cadre.virginia.edu">UVA resources for computational and data-driven research</a>. Projects must abide by the <a href="http://www.virginia.edu/informationpolicy/security.html">University Security and Data Protection Policies</a>.',
                 'banner_name': 'uva-banner.png',
                 'logo_name': 'uva-shield.png',
-                'auth_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('urn:mace:incommon:virginia.edu')),
+                'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('urn:mace:incommon:virginia.edu')),
                 'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://osf.io/goodbye')),
                 'domains': ['osf.virginia.edu'],
                 'email_domains': [],
@@ -246,7 +277,7 @@ def main(env):
                 'description': 'This service is supported by the University of Washington Libraries. Do not use this service to store or transfer personally identifiable information or personal health information. Questions? Email the Libraries Research Data Services Unit at <a href="mailto:libdata@uw.edu">libdata@uw.edu</a>.',
                 'banner_name': 'uw-banner.png',
                 'logo_name': 'uw-shield.png',
-                'auth_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('urn:mace:incommon:washington.edu')),
+                'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('urn:mace:incommon:washington.edu')),
                 'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://osf.io/goodbye')),
                 'domains': [],
                 'email_domains': [],
@@ -257,7 +288,7 @@ def main(env):
                 'description': 'This service is supported by the VCU Libraries and the VCU Office of Research and Innovation for our research community. Do not use this service to store or transfer personally identifiable information (PII), personal health information (PHI), or any other controlled unclassified information (CUI). VCU\'s policy entitled "<a href="http://www.policy.vcu.edu/sites/default/files/Research%20Data%20Ownership,%20Retention,%20Access%20and%20Securty.pdf">Research Data Ownership, Retention, Access and Security</a>" applies. For assistance please contact the <a href="https://www.library.vcu.edu/services/data/">VCU Libraries Research Data Management Program</a>.',
                 'banner_name': 'vcu-banner.png',
                 'logo_name': 'vcu-shield.png',
-                'auth_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://shibboleth.vcu.edu/idp/shibboleth')),
+                'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://shibboleth.vcu.edu/idp/shibboleth')),
                 'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://osf.io/goodbye')),
                 'domains': ['osf.research.vcu.edu'],
                 'email_domains': [],
@@ -265,12 +296,12 @@ def main(env):
             {
                 '_id': 'vt',
                 'name': 'Virginia Tech',
-                'description': None,
+                'description': 'Made possible by the <a href="https://www.lib.vt.edu">University Libraries</a> in partnership with <a href="https://secure.hosting.vt.edu/www.arc.vt.edu/">Advanced Research Computing</a> and the <a href="https://research.vt.edu/">Office of the Vice President for Research</a>. Using the Virginia Tech login to OSF provides your name and VT email address to the Center for Open Science. Please see their <a href="https://github.com/CenterForOpenScience/cos.io/blob/master/TERMS_OF_USE.md">terms of service</a>.',
                 'banner_name': 'vt-banner.png',
                 'logo_name': 'vt-shield.png',
-                'auth_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('urn:mace:incommon:vt.edu')),
+                'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('urn:mace:incommon:vt.edu')),
                 'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://osf.io/goodbye')),
-                'domains': ['osf.vt.edu'],
+                'domains': [],
                 'email_domains': [],
             },
         ]
@@ -282,7 +313,7 @@ def main(env):
                 'description': 'Center for Open Science [Stage]',
                 'banner_name': 'cos-banner.png',
                 'logo_name': 'cos-shield.png',
-                'auth_url': None,
+                'login_url': None,
                 'logout_url': None,
                 'domains': ['staging-osf.cos.io'],
                 'email_domains': ['cos.io'],
@@ -293,7 +324,7 @@ def main(env):
                 'description': 'University of Notre Dame [Stage]',
                 'banner_name': 'nd-banner.png',
                 'logo_name': 'nd-shield.png',
-                'auth_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://login-test.cc.nd.edu/idp/shibboleth')),
+                'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://login-test.cc.nd.edu/idp/shibboleth')),
                 'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://staging.osf.io/goodbye')),
                 'domains': ['staging-osf-nd.cos.io'],
                 'email_domains': [],
@@ -304,7 +335,7 @@ def main(env):
                 'description': 'Google [Stage]',
                 'banner_name': 'google-banner.png',
                 'logo_name': 'google-shield.png',
-                'auth_url': None,
+                'login_url': None,
                 'logout_url': None,
                 'domains': [],
                 'email_domains': ['gmail.com'],
@@ -315,7 +346,7 @@ def main(env):
                 'description': 'Yahoo [Stage]',
                 'banner_name': 'yahoo-banner.png',
                 'logo_name': 'yahoo-shield.png',
-                'auth_url': None,
+                'login_url': None,
                 'domains': [],
                 'email_domains': ['yahoo.com'],
             },
@@ -328,7 +359,7 @@ def main(env):
                 'description': 'Center for Open Science [Stage2]',
                 'banner_name': 'cos-banner.png',
                 'logo_name': 'cos-shield.png',
-                'auth_url': None,
+                'login_url': None,
                 'logout_url': None,
                 'domains': ['staging2-osf.cos.io'],
                 'email_domains': ['cos.io'],
@@ -337,12 +368,23 @@ def main(env):
     elif env == 'test':
         INSTITUTIONS = [
             {
+                '_id': 'bu',
+                'name': 'Boston University [Test]',
+                'description': 'A Research Project Management Tool for BU',
+                'banner_name': 'bu-banner.png',
+                'logo_name': 'bu-shield.png',
+                'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://shib.bu.edu/idp/shibboleth')),
+                'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://test.osf.io/goodbye')),
+                'domains': ['osf.bu.edu'],
+                'email_domains': [],
+            },
+            {
                 '_id': 'busara',
                 'name': 'Busara Center for Behavioral Economics [Test]',
                 'description': 'The <a href="http://www.busaracenter.org/">Busara Center</a> for Behavioral Economics',
                 'banner_name': 'busara-banner.png',
                 'logo_name': 'busara-shield.png',
-                'auth_url': None,
+                'login_url': None,
                 'logout_url': None,
                 'domains': [],
                 'email_domains': ['busaracenter.org'],
@@ -353,7 +395,7 @@ def main(env):
                 'description': 'This service is supported by the Center for Research Data and Digital Scholarship, which is led by <a href="https://www.rc.colorado.edu/">Research Computing</a> and the <a href="http://www.colorado.edu/libraries/">University Libraries</a>.',
                 'banner_name': 'colorado-banner.png',
                 'logo_name': 'colorado-shield.png',
-                'auth_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://fedauth.colorado.edu/idp/shibboleth')),
+                'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://fedauth.colorado.edu/idp/shibboleth')),
                 'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://test.osf.io/goodbye')),
                 'domains': [],
                 'email_domains': [],
@@ -364,10 +406,21 @@ def main(env):
                 'description': 'COS is a non-profit technology company providing free and open services to increase inclusivity and transparency of research. Find out more at <a href="https://cos.io">cos.io</a>.',
                 'banner_name': 'cos-banner.png',
                 'logo_name': 'cos-shield.png',
-                'auth_url': None,
+                'login_url': None,
                 'logout_url': None,
                 'domains': ['test-osf.cos.io'],
                 'email_domains': ['cos.io'],
+            },
+            {
+                '_id': 'duke',
+                'name': 'Duke University [Test]',
+                'description': 'A research data service provided by <a href="https://library.duke.edu/data/data-management">Duke Libraries</a>.',
+                'banner_name': 'duke-banner.png',
+                'logo_name': 'duke-shield.png',
+                'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('urn:mace:incommon:duke.edu')),
+                'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://test.osf.io/goodbye')),
+                'domains': [],
+                'email_domains': [],
             },
             {
                 '_id': 'esip',
@@ -375,7 +428,7 @@ def main(env):
                 'description': '<a href="http://www.esipfed.org/">ESIP\'s</a> mission is to support the networking and data dissemination needs of our members and the global Earth science data community by linking the functional sectors of observation, research, application, education and use of Earth science.',
                 'banner_name': 'esip-banner.png',
                 'logo_name': 'esip-shield.png',
-                'auth_url': None,
+                'login_url': None,
                 'logout_url': None,
                 'domains': [],
                 'email_domains': ['esipfed.org'],
@@ -386,7 +439,7 @@ def main(env):
                 'description': 'A research data service provided by the <a href="https://www.library.jhu.edu/">Sheridan Libraries</a>.',
                 'banner_name': 'jhu-banner.png',
                 'logo_name': 'jhu-shield.png',
-                'auth_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('urn:mace:incommon:johnshopkins.edu')),
+                'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('urn:mace:incommon:johnshopkins.edu')),
                 'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://test.osf.io/goodbye')),
                 'domains': ['osf.data.jhu.edu'],
                 'email_domains': [],
@@ -397,7 +450,7 @@ def main(env):
                 'description': 'Projects listed below are for grants awarded by the Foundation. Please see the <a href="http://www.arnoldfoundation.org/wp-content/uploads/Guidelines-for-Investments-in-Research.pdf">LJAF Guidelines for Investments in Research</a> for more information and requirements.',
                 'banner_name': 'ljaf-banner.png',
                 'logo_name': 'ljaf-shield.png',
-                'auth_url': None,
+                'login_url': None,
                 'logout_url': None,
                 'domains': [],
                 'email_domains': ['arnoldfoundation.org'],
@@ -408,7 +461,7 @@ def main(env):
                 'description': 'Funding rigorous research in the field of contemplative science to understand the human mind for the purpose of reducing suffering. Learn more about <a href="https://www.mindandlife.org">Mind & Life research funding and other programs</a>.',
                 'banner_name': 'mli-banner.png',
                 'logo_name': 'mli-shield.png',
-                'auth_url': None,
+                'login_url': None,
                 'logout_url': None,
                 'domains': ['research.mindandlife.org'],
                 'email_domains': ['mindandlife.org'],
@@ -419,7 +472,7 @@ def main(env):
                 'description': 'In <a href="https://research.nd.edu/news/64035-notre-dame-center-for-open-science-partner-to-advance-open-science-initiatives/">partnership</a> with the <a href="https://crc.nd.edu">Center for Research Computing</a>, <a href="http://esc.nd.edu">Engineering &amp; Science Computing</a>, and the <a href="https://library.nd.edu">Hesburgh Libraries</a>',
                 'banner_name': 'nd-banner.png',
                 'logo_name': 'nd-shield.png',
-                'auth_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://login-test.cc.nd.edu/idp/shibboleth')),
+                'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://login-test.cc.nd.edu/idp/shibboleth')),
                 'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://test.osf.io/goodbye')),
                 'domains': ['test-osf-nd.cos.io'],
                 'email_domains': [],
@@ -430,7 +483,7 @@ def main(env):
                 'description': 'A Research Project and File Management Tool for the NYU Community: <a href="https://www.nyu.edu/research.html">Research at NYU</a> | <a href="http://guides.nyu.edu/data_management">Research Data Management Planning</a> | <a href="https://library.nyu.edu/services/research/">NYU Library Research Services</a> | <a href="https://nyu.qualtrics.com/jfe6/form/SV_8dFc5TpA1FgLUMd">Get Help</a>',
                 'banner_name': 'nyu-banner.png',
                 'logo_name': 'nyu-shield.png',
-                'auth_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://shibbolethqa.es.its.nyu.edu/idp/shibboleth')),
+                'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://shibbolethqa.es.its.nyu.edu/idp/shibboleth')),
                 'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://shibbolethqa.es.its.nyu.edu/idp/profile/Logout')),
                 'domains': ['test-osf-nyu.cos.io'],
                 'email_domains': [],
@@ -441,7 +494,7 @@ def main(env):
                 'description': '<a href="http://www.library.okstate.edu/research-support/research-data-services/">OSU Library Research Data Services</a>',
                 'banner_name': 'okstate-banner.png',
                 'logo_name': 'okstate-shield.png',
-                'auth_url': None,  # https://stwcas.okstate.edu/cas/login?service=...
+                'login_url': None,  # https://stwcas.okstate.edu/cas/login?service=...
                 'logout_url': None,
                 'domains': ['test-osf-library-okstate.cos.io'],
                 'email_domains': [],
@@ -452,10 +505,21 @@ def main(env):
                 'description': 'The Lab @ DC is an entity of the <a href="https://mayor.dc.gov/">Executive Office of the Mayor of the District of Columbia Government</a>. We work in the <a href="https://oca.dc.gov/">Office of the City Administrator</a> and in partnership with a network of universities and research centers to apply the scientific method into day-to-day governance.',
                 'banner_name': 'thelabatdc-banner.png',
                 'logo_name': 'thelabatdc-shield.png',
-                'auth_url': None,
+                'login_url': None,
                 'logout_url': None,
                 'domains': [],
                 'email_domains': ['dc.gov'],
+            },
+            {
+                '_id': 'uc',
+                'name': 'University of Cincinnati [Test]',
+                'description': 'In partnership with the <a href="https://research.uc.edu/home/officeofresearch/administrativeoffices.aspx">Office of Research</a>, <a href="https://www.libraries.uc.edu/">UC Libraries</a> and <a href="https://www.uc.edu/ucit.html">IT&#64;UC</a>. Projects must abide by the University Security and Data Protection Policies depending on approval from OoR. Learn more by visiting <a href="https://libraries.uc.edu/digital-scholarship/data-services.html">Research Data & GIS services</a>.',
+                'banner_name': 'uc-banner.png',
+                'logo_name': 'uc-shield.png',
+                'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://login.uc.edu/idp/shibboleth')),
+                'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://test.osf.io/goodbye')),
+                'domains': ['osf.uc.edu'],
+                'email_domains': [],
             },
             {
                 '_id': 'ucsd',
@@ -463,18 +527,18 @@ def main(env):
                 'description': 'This service is supported on campus by the UC San Diego Library for our research community. Do not use this service to store or transfer personally identifiable information, personal health information, or any other controlled unclassified information. For assistance please contact the Library\'s Research Data Curation Program at <a href="mailto:research-data-curation@ucsd.edu">research-data-curation@ucsd.edu</a>.',
                 'banner_name': 'ucsd-banner.png',
                 'logo_name': 'ucsd-shield.png',
-                'auth_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('urn:mace:incommon:ucsd.edu')),
+                'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('urn:mace:incommon:ucsd.edu')),
                 'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://test.osf.io/goodbye')),
                 'domains': ['test-osf-ucsd.cos.io'],
                 'email_domains': [],
-            }, 
+            },
             {
                 '_id': 'ucr',
                 'name': 'University of California Riverside [Test]',
                 'description': 'Policy prohibits storing PII or HIPAA data on this site, please see C&amp;C\'s <a href="http://cnc.ucr.edu/security/researchers.html">security site</a> for more information.',
                 'banner_name': 'ucr-banner.png',
                 'logo_name': 'ucr-shield.png',
-                'auth_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('urn:mace:incommon:ucr.edu')),
+                'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('urn:mace:incommon:ucr.edu')),
                 'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://test.osf.io/goodbye')),
                 'domains': ['test-osf-ucr.cos.io'],
                 'email_domains': [],
@@ -485,7 +549,7 @@ def main(env):
                 'description': '<a href="http://www.lib.uct.ac.za/">UCT Libraries</a>, <a href="http://www.eresearch.uct.ac.za/">UCT eResearch</a> &amp; <a href="http://www.icts.uct.ac.za/">ICTS</a> present the UCT OSF institutional service to UCT affiliated students, staff and researchers. The UCT OSF facility should be used in conjunction with the institution\'s <a href="http://www.digitalservices.lib.uct.ac.za/dls/rdm-policy">Research Data Management (RDM) Policy</a>, <a href="https://www.uct.ac.za/downloads/uct.ac.za/about/policies/UCTOpenAccessPolicy.pdf">Open Access Policy</a> and <a href="https://www.uct.ac.za/downloads/uct.ac.za/about/policies/UCTOpenAccessPolicy.pdf">IP Policy</a>. Visit the <a href="http://www.digitalservices.lib.uct.ac.za/">UCT Digital Library Services</a> for more information and/or assistance with <a href="http://www.digitalservices.lib.uct.ac.za/dls/rdm">RDM</a> and <a href="http://www.digitalservices.lib.uct.ac.za/dls/data-sharing-guidelines">data sharing</a>. We also encourage the use of UCT Libraries\'s Data Management Planning tool, <a href="http://dmp.lib.uct.ac.za/about_us">DMPonline</a>',
                 'banner_name': 'uct-banner.png',
                 'logo_name': 'uct-shield.png',
-                'auth_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('http://adfs.uct.ac.za/adfs/services/trust')),
+                'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('http://adfs.uct.ac.za/adfs/services/trust')),
                 'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://test.osf.io/goodbye')),
                 'domains': ['osf.uct.ac.za'],
                 'email_domains': [],
@@ -496,7 +560,7 @@ def main(env):
                 'description': 'Universiteit Gent [Test]',
                 'banner_name': 'ugent-banner.png',
                 'logo_name': 'ugent-shield.png',
-                'auth_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://identity.ugent.be/simplesaml/saml2/idp/metadata.php')),
+                'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://identity.ugent.be/simplesaml/saml2/idp/metadata.php')),
                 'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://test.osf.io/goodbye')),
                 'domains': ['test-osf-ugent.cos.io'],
                 'email_domains': [],
@@ -507,7 +571,7 @@ def main(env):
                 'description': 'Projects must abide by <a href="http://policy.usc.edu/info-security/">USC\'s Information Security Policy</a>. Data stored for human subject research repositories must abide by <a href="http://policy.usc.edu/biorepositories/">USC\'s Biorepository Policy</a>. The OSF may not be used for storage of Personal Health Information that is subject to <a href="http://policy.usc.edu/hipaa/">HIPPA regulations</a>.',
                 'banner_name': 'usc-banner.png',
                 'logo_name': 'usc-shield.png',
-                'auth_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('urn:mace:incommon:usc.edu')),
+                'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('urn:mace:incommon:usc.edu')),
                 'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://test.osf.io/goodbye')),
                 'domains': ['test-osf-usc.cos.io'],
                 'email_domains': [],
@@ -518,7 +582,7 @@ def main(env):
                 'description': 'In partnership with the <a href="http://www.virginia.edu/vpr/">Vice President for Research</a>, <a href="http://dsi.virginia.edu">Data Science Institute</a>, <a href="https://www.hsl.virginia.edu">Health Sciences Library</a>, and <a href="http://data.library.virginia.edu">University Library</a>. Learn more about <a href="http://cadre.virginia.edu">UVA resources for computational and data-driven research</a>. Projects must abide by the <a href="http://www.virginia.edu/informationpolicy/security.html">University Security and Data Protection Policies</a>.',
                 'banner_name': 'uva-banner.png',
                 'logo_name': 'uva-shield.png',
-                'auth_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://shibidp-test.its.virginia.edu/idp/shibboleth')),
+                'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://shibidp-test.its.virginia.edu/idp/shibboleth')),
                 'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://test.osf.io/goodbye')),
                 'domains': ['test-osf-virginia.cos.io'],
                 'email_domains': [],
@@ -529,7 +593,7 @@ def main(env):
                 'description': 'This service is supported by the University of Washington Libraries. Do not use this service to store or transfer personally identifiable information or personal health information. Questions? Email the Libraries Research Data Services Unit at <a href="mailto:libdata@uw.edu">libdata@uw.edu</a>.',
                 'banner_name': 'uw-banner.png',
                 'logo_name': 'uw-shield.png',
-                'auth_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('urn:mace:incommon:washington.edu')),
+                'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('urn:mace:incommon:washington.edu')),
                 'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://test.osf.io/goodbye')),
                 'domains': [],
                 'email_domains': [],
@@ -540,7 +604,7 @@ def main(env):
                 'description': 'This service is supported by the VCU Libraries and the VCU Office of Research and Innovation for our research community. Do not use this service to store or transfer personally identifiable information (PII), personal health information (PHI), or any other controlled unclassified information (CUI). VCU\'s policy entitled "<a href="http://www.policy.vcu.edu/sites/default/files/Research%20Data%20Ownership,%20Retention,%20Access%20and%20Securty.pdf">Research Data Ownership, Retention, Access and Security</a>" applies. For assistance please contact the <a href="https://www.library.vcu.edu/services/data/">VCU Libraries Research Data Management Program</a>.',
                 'banner_name': 'vcu-banner.png',
                 'logo_name': 'vcu-shield.png',
-                'auth_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://shibboleth.vcu.edu/idp/shibboleth')),
+                'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://shibboleth.vcu.edu/idp/shibboleth')),
                 'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://test.osf.io/goodbye')),
                 'domains': ['test-osf-research-vcu.cos.io'],
                 'email_domains': [],
@@ -548,18 +612,18 @@ def main(env):
             {
                 '_id': 'vt',
                 'name': 'Virginia Tech [Test]',
-                'description': None,
+                'description':'Made possible by the <a href="https://www.lib.vt.edu">University Libraries</a> in partnership with <a href="https://secure.hosting.vt.edu/www.arc.vt.edu/">Advanced Research Computing</a> and the <a href="https://research.vt.edu/">Office of the Vice President for Research</a>. Using the Virginia Tech login to OSF provides your name and VT email address to the Center for Open Science. Please see their <a href="https://github.com/CenterForOpenScience/cos.io/blob/master/TERMS_OF_USE.md">terms of service</a>.',
                 'banner_name': 'vt-banner.png',
                 'logo_name': 'vt-shield.png',
-                'auth_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://shib-pprd.middleware.vt.edu')),
+                'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('urn:mace:incommon:vt.edu')),
                 'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://test.osf.io/goodbye')),
-                'domains': ['osf.vt.edu'],
+                'domains': [],
                 'email_domains': [],
             },
         ]
 
     init_app(routes=False)
-    with TokuTransaction():
+    with transaction.atomic():
         for inst_data in INSTITUTIONS:
             new_inst, inst_created = update_or_create(inst_data)
             # update the nodes elastic docs, to have current names of institutions. This will
@@ -568,7 +632,7 @@ def main(env):
                 nodes = Node.find_by_institutions(new_inst, query=Q('is_deleted', 'ne', True))
                 for node in nodes:
                     update_node(node, async=False)
-        for extra_inst in Institution.find(Q('_id', 'nin', [x['_id'] for x in INSTITUTIONS])):
+        for extra_inst in Institution.objects.exclude(_id__in=[x['_id'] for x in INSTITUTIONS]):
             logger.warn('Extra Institution : {} - {}'.format(extra_inst._id, extra_inst.name))
 
 

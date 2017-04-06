@@ -2,23 +2,22 @@
 import abc
 from nose.tools import *  # flake8: noqa
 import re
+import pytest
 
 from api.base.settings.defaults import API_BASE
 
 from tests.base import ApiAddonTestCase
-from tests.factories import AuthUserFactory
-from tests.utils import mock_auth
+from osf_tests.factories import AuthUserFactory
 
-from website.addons.box.tests.factories import BoxAccountFactory
-from website.addons.dataverse.tests.factories import DataverseAccountFactory
-from website.addons.dropbox.tests.factories import DropboxAccountFactory
-from website.addons.figshare.tests.factories import FigshareAccountFactory
-from website.addons.github.tests.factories import GitHubAccountFactory
-from website.addons.googledrive.tests.factories import GoogleDriveAccountFactory
-from website.addons.mendeley.tests.factories import MendeleyAccountFactory
-from website.addons.s3.tests.factories import S3AccountFactory
-from website.addons.zotero.tests.factories import ZoteroAccountFactory
-from website.addons.owncloud.tests.factories import OwnCloudAccountFactory
+from addons.box.tests.factories import BoxAccountFactory
+from addons.dataverse.tests.factories import DataverseAccountFactory
+from addons.dropbox.tests.factories import DropboxAccountFactory
+from addons.github.tests.factories import GitHubAccountFactory
+from addons.googledrive.tests.factories import GoogleDriveAccountFactory
+from addons.mendeley.tests.factories import MendeleyAccountFactory
+from addons.owncloud.tests.factories import OwnCloudAccountFactory
+from addons.s3.tests.factories import S3AccountFactory
+from addons.zotero.tests.factories import ZoteroAccountFactory
 
 class UserAddonListMixin(object):
     def set_setting_list_url(self):
@@ -42,8 +41,8 @@ class UserAddonListMixin(object):
 
     def test_settings_list_GET_returns_none_if_absent(self):
         try:
-            if self.user.external_accounts:
-                self.user.external_accounts.pop()
+            if self.user.external_accounts.count():
+                self.user.external_accounts.clear()
             self.user.delete_addon(self.short_name, auth=self.auth)
         except ValueError:
             # If addon was mandatory -- OSFStorage
@@ -117,8 +116,8 @@ class UserAddonDetailMixin(object):
     def test_settings_detail_GET_raises_error_if_absent(self):
         wrong_type = self.should_expect_errors()
         try:
-            if self.user.external_accounts:
-                self.user.external_accounts.pop()
+            if self.user.external_accounts.count():
+                self.user.external_accounts.clear()
             self.user.delete_addon(self.short_name, auth=self.auth)
         except ValueError:
             # If addon was mandatory -- OSFStorage
@@ -198,8 +197,8 @@ class UserAddonAccountListMixin(object):
     def test_account_list_raises_error_if_absent(self):
         wrong_type = self.should_expect_errors()
         try:
-            if self.user.external_accounts:
-                self.user.external_accounts.pop()
+            if self.user.external_accounts.count():
+                self.user.external_accounts.clear()
             self.user.delete_addon(self.short_name, auth=self.auth)
         except ValueError:
             # If addon was mandatory -- OSFStorage
@@ -279,8 +278,8 @@ class UserAddonAccountDetailMixin(object):
     def test_account_detail_raises_error_if_not_found(self):
         wrong_type = self.should_expect_errors()
         try:
-            if self.user.external_accounts:
-                self.user.external_accounts.pop()
+            if self.user.external_accounts.count():
+                self.user.external_accounts.clear()
             self.user.delete_addon(self.short_name, auth=self.auth)
         except ValueError:
             # If addon was mandatory -- OSFStorage
@@ -400,16 +399,13 @@ class TestUserGoogleDriveAddon(UserOAuthAddonTestSuiteMixin, ApiAddonTestCase):
     short_name = 'googledrive'
     AccountFactory = GoogleDriveAccountFactory
 
-
 class TestUserMendeleyAddon(UserOAuthAddonTestSuiteMixin, ApiAddonTestCase):
     short_name = 'mendeley'
     AccountFactory = MendeleyAccountFactory
 
-
 class TestUserS3Addon(UserOAuthAddonTestSuiteMixin, ApiAddonTestCase):
     short_name = 's3'
     AccountFactory = S3AccountFactory
-
 
 class TestUserZoteroAddon(UserOAuthAddonTestSuiteMixin, ApiAddonTestCase):
     short_name = 'zotero'
@@ -420,9 +416,10 @@ class TestUserOwnCloudAddon(UserOAuthAddonTestSuiteMixin, ApiAddonTestCase):
     AccountFactory = OwnCloudAccountFactory
 
 
+@pytest.mark.skip('Unskip when figshare v2 addon is ported')
 class TestUserFigshareAddon(UserOAuthAddonTestSuiteMixin, ApiAddonTestCase):
     short_name = 'figshare'
-    AccountFactory = FigshareAccountFactory
+    # AccountFactory = FigshareAccountFactory
 
 class TestUserInvalidAddon(UserAddonTestSuiteMixin, ApiAddonTestCase):
     addon_type = 'INVALID'

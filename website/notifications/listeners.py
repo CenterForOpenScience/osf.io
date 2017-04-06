@@ -8,7 +8,7 @@ logger = logging.getLogger(__name__)
 
 @project_created.connect
 def subscribe_creator(node):
-    if node.institution_id or node.is_collection or node.is_deleted:
+    if node.is_collection or node.is_deleted:
         return None
     try:
         subscribe_user_to_notifications(node, node.creator)

@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from __future__ import absolute_import
 import os
 import httplib as http
 
@@ -40,7 +41,7 @@ from website.search import views as search_views
 from website.oauth import views as oauth_views
 from website.profile import views as profile_views
 from website.project import views as project_views
-from website.addons.base import views as addon_views
+from addons.base import views as addon_views
 from website.discovery import views as discovery_views
 from website.conferences import views as conference_views
 from website.preprints import views as preprint_views
@@ -54,8 +55,7 @@ def get_globals():
     OSFWebRenderer.
     """
     user = _get_current_user()
-
-    user_institutions = [{'id': inst._id, 'name': inst.name, 'logo_path': inst.logo_path_rounded_corners} for inst in user.affiliated_institutions] if user else []
+    user_institutions = [{'id': inst._id, 'name': inst.name, 'logo_path': inst.logo_path_rounded_corners} for inst in user.affiliated_institutions.all()] if user else []
     location = geolite2.lookup(request.remote_addr) if request.remote_addr else None
     if request.host_url != settings.DOMAIN:
         try:
@@ -69,7 +69,7 @@ def get_globals():
         'private_link_anonymous': is_private_link_anonymous_view(),
         'user_name': user.username if user else '',
         'user_full_name': user.fullname if user else '',
-        'user_id': user._primary_key if user else '',
+        'user_id': user._id if user else '',
         'user_locale': user.locale if user and user.locale else '',
         'user_timezone': user.timezone if user and user.timezone else '',
         'user_url': user.url if user else '',
@@ -126,7 +126,7 @@ def get_globals():
 def is_private_link_anonymous_view():
     try:
         # Avoid circular import
-        from website.project.model import PrivateLink
+        from osf.models import PrivateLink
         return PrivateLink.find_one(
             Q('key', 'eq', request.args.get('view_only'))
         ).anonymous
@@ -169,6 +169,20 @@ def robots():
         settings.STATIC_FOLDER,
         robots_file,
         mimetype='text/plain'
+    )
+
+def sitemap_file(path):
+    """Serves the sitemap/* files."""
+    if path.endswith('.xml.gz'):
+        mime = 'application/x-gzip'
+    elif path.endswith('.xml'):
+        mime = 'text/xml'
+    else:
+        raise HTTPError(http.NOT_FOUND)
+    return send_from_directory(
+        settings.STATIC_FOLDER + '/sitemaps/',
+        path,
+        mimetype=mime
     )
 
 def ember_app(path=None):
@@ -251,6 +265,7 @@ def make_url_map(app):
     process_rules(app, [
         Rule('/favicon.ico', 'get', favicon, json_renderer),
         Rule('/robots.txt', 'get', robots, json_renderer),
+        Rule('/sitemaps/<path>', 'get', sitemap_file, json_renderer),
     ])
 
     if settings.USE_EXTERNAL_EMBER:
@@ -773,18 +788,13 @@ def make_url_map(app):
 
     process_rules(app, [
 
-        Rule('/profile/', 'get', profile_views.profile_view, json_renderer),
+        Rule('/profile/', 'get', profile_views.profile_view_json, json_renderer),
         Rule('/profile/', 'put', profile_views.update_user, json_renderer),
         Rule('/resend/', 'put', profile_views.resend_confirmation, json_renderer),
-        Rule('/profile/<uid>/', 'get', profile_views.profile_view_id, json_renderer),
+        Rule('/profile/<uid>/', 'get', profile_views.profile_view_id_json, json_renderer),
 
         # Used by profile.html
         Rule('/profile/<uid>/edit/', 'post', profile_views.edit_profile, json_renderer),
-        Rule('/profile/<uid>/public_projects/', 'get',
-             profile_views.get_public_projects, json_renderer),
-        Rule('/profile/<uid>/public_components/', 'get',
-             profile_views.get_public_components, json_renderer),
-
         Rule('/profile/<user_id>/summary/', 'get',
              profile_views.get_profile_summary, json_renderer),
         Rule('/user/<uid>/<pid>/claim/email/', 'post',
@@ -1314,25 +1324,6 @@ def make_url_map(app):
             project_views.node.remove_pointer_from_folder,
             json_renderer,
         ),
-        Rule([
-            '/project/<pid>/get_summary/',
-            '/project/<pid>/node/<nid>/get_summary/',
-        ], 'get', project_views.node.get_summary, json_renderer),
-        # TODO: [#OSF-6557] Route "get_children" is deprecated. Use get_readable_descendants.
-        Rule([
-            '/project/<pid>/get_children/',
-            '/project/<pid>/node/<nid>/get_children/',
-            '/project/<pid>/get_readable_descendants/',
-            '/project/<pid>/node/<nid>/get_readable_descendants/',
-        ], 'get', project_views.node.get_readable_descendants, json_renderer),
-        Rule([
-            '/project/<pid>/get_forks/',
-            '/project/<pid>/node/<nid>/get_forks/',
-        ], 'get', project_views.node.get_forks, json_renderer),
-        Rule([
-            '/project/<pid>/get_registrations/',
-            '/project/<pid>/node/<nid>/get_registrations/',
-        ], 'get', project_views.node.get_registrations, json_renderer),
 
         # Draft Registrations
         Rule([
@@ -1703,7 +1694,7 @@ def make_url_map(app):
 
     # Set up static routing for addons
     # NOTE: We use nginx to serve static addon assets in production
-    addon_base_path = os.path.abspath('website/addons')
+    addon_base_path = os.path.abspath('addons')
     if settings.DEV_MODE:
         @app.route('/static/addons/<addon>/<path:filename>')
         def addon_static(addon, filename):

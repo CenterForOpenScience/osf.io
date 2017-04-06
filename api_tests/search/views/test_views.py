@@ -7,12 +7,12 @@ from api_tests import utils
 from framework.auth.core import Auth
 
 from tests.base import ApiTestCase
-from tests.factories import (
+from osf_tests.factories import (
     AuthUserFactory,
     NodeFactory,
     ProjectFactory,
 )
-from tests.utils import mock_archive
+from osf_tests.utils import mock_archive
 
 from website.models import MetaSchema
 from website.project.model import ensure_schemas
@@ -86,7 +86,7 @@ class TestSearch(ApiSearchTestCase):
         assert_equal(registrations_found, 0)
 
     def test_search_auth(self):
-        res = self.app.get(self.url, auth=self.user)
+        res = self.app.get(self.url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
 
         search_fields = res.json['search_fields']
@@ -113,11 +113,11 @@ class TestSearch(ApiSearchTestCase):
         components_link = search_fields['components']['related']['href']
         registrations_link = search_fields['registrations']['related']['href']
 
-        assert_in('/{}search/users/?q=*'.format(API_BASE), users_link)
-        assert_in('/{}search/files/?q=*'.format(API_BASE), files_link)
-        assert_in('/{}search/projects/?q=*'.format(API_BASE), projects_link)
-        assert_in('/{}search/components/?q=*'.format(API_BASE), components_link)
-        assert_in('/{}search/registrations/?q=*'.format(API_BASE), registrations_link)
+        assert_in('/{}search/users/?q=%2A'.format(API_BASE), users_link)
+        assert_in('/{}search/files/?q=%2A'.format(API_BASE), files_link)
+        assert_in('/{}search/projects/?q=%2A'.format(API_BASE), projects_link)
+        assert_in('/{}search/components/?q=%2A'.format(API_BASE), components_link)
+        assert_in('/{}search/registrations/?q=%2A'.format(API_BASE), registrations_link)
 
     def test_search_fields_links_with_query(self):
         url = '{}?q=science'.format(self.url)
@@ -361,7 +361,7 @@ class TestSearchProjects(ApiSearchTestCase):
         assert_equal(self.project.title, res.json['data'][0]['attributes']['title'])
 
     def test_search_project_by_tags(self):
-        url = '{}?q={}'.format(self.url, 'yeezus')
+        url = '{}?q={}'.format(self.url, 'Yeezus')
         res = self.app.get(url)
         assert_equal(res.status_code, 200)
         num_results = len(res.json['data'])
@@ -418,6 +418,8 @@ class TestSearchRegistrations(ApiSearchTestCase):
 
         self.private_registration.is_public = False
         self.private_registration.save()
+        # TODO: This shouldn't be necessary, but tests fail if we don't do this. Investigate further.
+        self.private_registration.update_search()
 
     def test_search_public_registration_no_auth(self):
         res = self.app.get(self.url)

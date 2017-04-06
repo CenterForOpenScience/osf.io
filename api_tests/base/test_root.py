@@ -5,7 +5,7 @@ from nose.tools import *  # flake8: noqa
 import unittest
 
 from tests.base import ApiTestCase
-from tests.factories import (
+from osf_tests.factories import (
     AuthUserFactory
 )
 

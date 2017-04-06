@@ -155,6 +155,13 @@ class PreprintList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMixin):
     view_category = 'preprints'
     view_name = 'preprint-list'
 
+    # overrides FilterMixin
+    def postprocess_query_param(self, key, field_name, operation):
+        if field_name == 'provider':
+            operation['source_field_name'] = 'provider___id'
+        if field_name == 'id':
+            operation['source_field_name'] = 'guids___id'
+
     def get_serializer_class(self):
         if self.request.method == 'POST':
             return PreprintCreateSerializer

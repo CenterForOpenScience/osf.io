@@ -1,18 +1,15 @@
 # -*- coding: utf-8 -*-
 import abc
-import datetime
 
 import mock
-from nose.tools import *  # noqa (PEP8 asserts)
-
+from django.utils import timezone
 from framework.auth import Auth
 from framework.exceptions import HTTPError
-
-from website.addons.base import exceptions
-from website.addons.base.testing.utils import MockFolder
-
+from nose.tools import *  # noqa (PEP8 asserts)
 from tests.factories import ProjectFactory, UserFactory
 from tests.utils import mock_auth
+from website.addons.base import exceptions
+from website.addons.base.testing.utils import MockFolder
 
 
 class OAuthAddonModelTestSuiteMixinBase(object):
@@ -272,7 +269,7 @@ class OAuthAddonNodeSettingsTestSuiteMixin(OAuthAddonModelTestSuiteMixinBase):
         assert_is(self.node_settings.user_settings, None)
         assert_is(self.node_settings.folder_id, None)
 
-        last_log = self.node.logs[-1]
+        last_log = self.node.logs.latest()
         assert_equal(last_log.action, '{0}_node_deauthorized'.format(self.short_name))
         params = last_log.params
         assert_in('node', params)
@@ -285,7 +282,7 @@ class OAuthAddonNodeSettingsTestSuiteMixin(OAuthAddonModelTestSuiteMixinBase):
         # Folder was set
         assert_equal(self.node_settings.folder_id, folder_id)
         # Log was saved
-        last_log = self.node.logs[-1]
+        last_log = self.node.logs.latest()
         assert_equal(last_log.action, '{0}_folder_selected'.format(self.short_name))
 
     def test_set_user_auth(self):
@@ -303,7 +300,7 @@ class OAuthAddonNodeSettingsTestSuiteMixin(OAuthAddonModelTestSuiteMixinBase):
         assert_true(node_settings.has_auth)
         assert_equal(node_settings.user_settings._id, user_settings._id)
         # A log was saved
-        last_log = node_settings.owner.logs[-1]
+        last_log = node_settings.owner.logs.latest()
         assert_equal(last_log.action, '{0}_node_authorized'.format(self.short_name))
         log_params = last_log.params
         assert_equal(log_params['node'], node_settings.owner._primary_key)
@@ -346,11 +343,11 @@ class OAuthAddonNodeSettingsTestSuiteMixin(OAuthAddonModelTestSuiteMixinBase):
         self.node.reload()
         assert_equal(len(self.node.logs), nlog + 1)
         assert_equal(
-            self.node.logs[-1].action,
+            self.node.logs.latest().action,
             '{0}_{1}'.format(self.short_name, action),
         )
         assert_equal(
-            self.node.logs[-1].params['path'],
+            self.node.logs.latest().params['path'],
             path
         )
 
@@ -533,7 +530,7 @@ class OAuthCitationsNodeSettingsTestSuiteMixin(OAuthAddonNodeSettingsTestSuiteMi
             )
         )
 
-        log = self.node.logs[-1]
+        log = self.node.logs.latest()
         assert_equal(log.action, '{}_folder_selected'.format(self.short_name))
         assert_equal(log.params['folder_id'], folder_id)
         assert_equal(log.params['folder_name'], folder_name)
@@ -604,7 +601,7 @@ class CitationAddonProviderTestSuiteMixin(OAuthCitationsTestSuiteMixinBase):
         # The first call to .client returns a new client
         with mock.patch.object(self.OAuthProviderClass, '_get_client') as mock_get_client:
             mock_account = mock.Mock()
-            mock_account.expires_at = datetime.datetime.now()
+            mock_account.expires_at = timezone.now()
             self.provider.account = mock_account
             self.provider.client
             mock_get_client.assert_called

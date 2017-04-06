@@ -1,55 +1,57 @@
 # -*- coding: utf-8 -*-
 
-from datetime import datetime
-
 import markdown
-import pytz
+from django.utils import timezone
 from flask import request
 
 from api.caching.tasks import ban_url
-from framework.guid.model import Guid
+from osf.models import Guid
 from framework.postcommit_tasks.handlers import enqueue_postcommit_task
 from modularodm import Q
 from website import settings
-from website.addons.base.signals import file_updated
-from website.files.models import FileNode, TrashedFileNode
-from website.models import Comment
+from addons.base.signals import file_updated
+from osf.models import FileNode, TrashedFileNode
+from osf.models import Comment
 from website.notifications.constants import PROVIDERS
 from website.notifications.emails import notify, notify_mentions
 from website.project.decorators import must_be_contributor_or_public
-from website.project.model import Node
+from osf.models import Node
 from website.project.signals import comment_added, mention_added
 
 
 @file_updated.connect
 def update_file_guid_referent(self, node, event_type, payload, user=None):
-    if event_type == 'addon_file_moved' or event_type == 'addon_file_renamed':
-        source = payload['source']
-        destination = payload['destination']
-        source_node = Node.load(source['node']['_id'])
-        destination_node = node
-        file_guids = FileNode.resolve_class(source['provider'], FileNode.ANY).get_file_guids(
-            materialized_path=source['materialized'] if source['provider'] != 'osfstorage' else source['path'],
-            provider=source['provider'],
-            node=source_node)
+    if event_type not in ('addon_file_moved', 'addon_file_renamed'):
+        return  # Nothing to do
 
-        if event_type == 'addon_file_renamed' and source['provider'] in settings.ADDONS_BASED_ON_IDS:
-            return
-        if event_type == 'addon_file_moved' and (source['provider'] == destination['provider'] and
-                                                 source['provider'] in settings.ADDONS_BASED_ON_IDS) and source_node == destination_node:
-            return
+    source, destination = payload['source'], payload['destination']
+    source_node, destination_node = Node.load(source['node']['_id']), Node.load(destination['node']['_id'])
 
-        for guid in file_guids:
-            obj = Guid.load(guid)
-            if source_node != destination_node and Comment.find(Q('root_target', 'eq', guid)).count() != 0:
-                update_comment_node(guid, source_node, destination_node)
+    if source['provider'] in settings.ADDONS_BASED_ON_IDS:
+        if event_type == 'addon_file_renamed':
+            return  # Node has not changed and provider has not changed
 
-            if source['provider'] != destination['provider'] or source['provider'] != 'osfstorage':
-                old_file = FileNode.load(obj.referent._id)
-                obj.referent = create_new_file(obj, source, destination, destination_node)
-                obj.save()
-                if old_file and not TrashedFileNode.load(old_file._id):
-                    old_file.delete()
+        # Must be a move
+        if source['provider'] == destination['provider'] and source_node == destination_node:
+            return  # Node has not changed and provider has not changed
+
+    file_guids = FileNode.resolve_class(source['provider'], FileNode.ANY).get_file_guids(
+        materialized_path=source['materialized'] if source['provider'] != 'osfstorage' else source['path'],
+        provider=source['provider'],
+        node=source_node
+    )
+
+    for guid in file_guids:
+        obj = Guid.load(guid)
+        if source_node != destination_node and Comment.find(Q('root_target._id', 'eq', guid)).count() != 0:
+            update_comment_node(guid, source_node, destination_node)
+
+        if source['provider'] != destination['provider'] or source['provider'] != 'osfstorage':
+            old_file = FileNode.load(obj.referent._id)
+            obj.referent = create_new_file(obj, source, destination, destination_node)
+            obj.save()
+            if old_file and not TrashedFileNode.load(old_file._id):
+                old_file.delete()
 
 
 def create_new_file(obj, source, destination, destination_node):
@@ -74,7 +76,7 @@ def create_new_file(obj, source, destination, destination_node):
             new_file = FileNode.resolve_class(destination['provider'], FileNode.FILE).get_or_create(destination_node, new_path)
             new_file.name = new_path.split('/')[-1]
             new_file.materialized_path = new_path
-            new_file.save()
+    new_file.save()
     return new_file
 
 
@@ -99,7 +101,7 @@ def find_and_create_file_from_metadata(children, source, destination, destinatio
 
 
 def update_comment_node(root_target_id, source_node, destination_node):
-    Comment.update(Q('root_target', 'eq', root_target_id), data={'node': destination_node})
+    Comment.objects.filter(root_target___id=root_target_id).update(node=destination_node)
     source_node.save()
     destination_node.save()
 
@@ -123,7 +125,7 @@ def send_comment_added_notification(comment, auth):
         parent_comment=target.referent.content if is_reply(target) else '',
         url=comment.get_comment_page_url()
     )
-    time_now = datetime.utcnow().replace(tzinfo=pytz.utc)
+    time_now = timezone.now()
     sent_subscribers = notify(
         event='comments',
         user=auth.user,
@@ -159,7 +161,7 @@ def send_mention_added_notification(comment, new_mentions, auth):
         new_mentions=new_mentions,
         url=comment.get_comment_page_url()
     )
-    time_now = datetime.utcnow().replace(tzinfo=pytz.utc)
+    time_now = timezone.now()
     notify_mentions(
         event='global_mentions',
         user=auth.user,
@@ -184,7 +186,7 @@ def _update_comments_timestamp(auth, node, page=Comment.OVERVIEW, root_id=None):
         # update node timestamp
         if page == Comment.OVERVIEW:
             root_id = node._id
-        auth.user.comments_viewed_timestamp[root_id] = datetime.utcnow()
+        auth.user.comments_viewed_timestamp[root_id] = timezone.now()
         auth.user.save()
         return {root_id: auth.user.comments_viewed_timestamp[root_id].isoformat()}
     else:
