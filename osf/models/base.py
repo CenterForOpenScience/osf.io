@@ -11,6 +11,8 @@ from django.core.exceptions import MultipleObjectsReturned
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import models
 from django.db.models import ForeignKey
+from django.db.models.expressions import F
+from django.db.models.query_utils import Q
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from osf.utils.caching import cached_property
