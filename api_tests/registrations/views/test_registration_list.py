@@ -13,8 +13,8 @@ from website.views import find_bookmark_collection
 from framework.auth.core import Auth, Q
 from api.base.settings.defaults import API_BASE
 
+from api_tests.registrations.filters.test_filters import RegistrationListFilteringMixin
 from api_tests.nodes.views.test_node_draft_registration_list import DraftRegistrationTestCase
-
 
 from tests.base import ApiTestCase
 from osf_tests.factories import (
@@ -23,7 +23,8 @@ from osf_tests.factories import (
     AuthUserFactory,
     CollectionFactory,
     BookmarkCollectionFactory,
-    DraftRegistrationFactory
+    DraftRegistrationFactory,
+    NodeFactory
 )
 
 
@@ -833,3 +834,8 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
             res = self.app.post_json_api(self.url, self.payload, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
         assert_equal(res.json['errors'][0]['detail'], 'This draft has already been approved and cannot be modified.')
+
+
+class TestRegistrationListFiltering(RegistrationListFilteringMixin, ApiTestCase):
+
+    url = '/{}registrations/?'.format(API_BASE)

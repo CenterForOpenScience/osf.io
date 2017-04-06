@@ -176,6 +176,13 @@ class PreprintProviderPreprintList(JSONAPIBaseView, generics.ListAPIView, ODMFil
     view_category = 'preprint_providers'
     view_name = 'preprints-list'
 
+    def postprocess_query_param(self, key, field_name, operation):
+        if field_name == 'provider':
+            operation['source_field_name'] = 'provider___id'
+
+        if field_name == 'id':
+            operation['source_field_name'] = 'guids___id'
+
     # overrides ODMFilterMixin
     def get_default_odm_query(self):
         # TODO: this will return unpublished preprints so that users

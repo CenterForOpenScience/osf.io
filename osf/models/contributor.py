@@ -27,8 +27,24 @@ class AbstractBaseContributor(models.Model):
     class Meta:
         abstract = True
 
+    @property
+    def bibliographic(self):
+        return self.visible
+
+    @property
+    def permission(self):
+        if self.admin:
+            return 'admin'
+        if self.write:
+            return 'write'
+        return 'read'
+
 class Contributor(AbstractBaseContributor):
     node = models.ForeignKey('AbstractNode')
+
+    @property
+    def _id(self):
+        return '{}-{}'.format(self.node._id, self.user._id)
 
     class Meta:
         unique_together = ('user', 'node')

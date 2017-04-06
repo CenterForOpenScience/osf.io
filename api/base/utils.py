@@ -1,4 +1,7 @@
 # -*- coding: utf-8 -*-
+import urllib
+import urlparse
+
 import furl
 from django.core.exceptions import ObjectDoesNotExist
 from modularodm import Q
@@ -71,7 +74,7 @@ def absolute_reverse(view_name, query_kwargs=None, args=None, kwargs=None):
     return url
 
 
-def get_object_or_error(model_cls, query_or_pk, display_name=None, prefetch_fields=()):
+def get_object_or_error(model_cls, query_or_pk, display_name=None):
     obj = query = None
     if isinstance(query_or_pk, basestring):
         # they passed a 5-char guid as a string
@@ -163,13 +166,20 @@ def default_node_permission_query(user):
 
     return permission_query
 
+
 def extend_querystring_params(url, params):
-    return furl.furl(url).add(args=params).url
+    scheme, netloc, path, query, _ = urlparse.urlsplit(url)
+    orig_params = urlparse.parse_qs(query)
+    orig_params.update(params)
+    query = urllib.urlencode(orig_params, True)
+    return urlparse.urlunsplit([scheme, netloc, path, query, ''])
+
 
 def extend_querystring_if_key_exists(url, request, key):
     if key in request.query_params.keys():
         return extend_querystring_params(url, {key: request.query_params.get(key)})
     return url
+
 
 def has_admin_scope(request):
     """ Helper function to determine if a request should be treated
@@ -186,6 +196,7 @@ def has_admin_scope(request):
         return False
 
     return set(ComposedScopes.ADMIN_LEVEL).issubset(normalize_scopes(token.attributes['accessTokenScope']))
+
 
 def is_deprecated(request_version, min_version, max_version):
     if request_version < min_version or request_version > max_version:

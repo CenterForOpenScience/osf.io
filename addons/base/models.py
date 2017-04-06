@@ -172,7 +172,7 @@ class BaseOAuthUserSettings(BaseUserSettings):
 
     @property
     def has_auth(self):
-        return bool(self.external_accounts)
+        return self.external_accounts.exists()
 
     @property
     def external_accounts(self):
@@ -819,6 +819,7 @@ class BaseOAuthNodeSettings(BaseNodeSettings):
                 category=fork.project_or_component,
             )
         else:
+            clone.clear_settings()
             message = (
                 u'{addon} authorization not copied to forked {category}. You may '
                 u'authorize this fork on the <u><a href="{url}">Settings</a></u> '

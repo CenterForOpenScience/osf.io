@@ -10,7 +10,7 @@ from api.base.utils import (default_node_list_query,
                             default_node_permission_query, get_object_or_error)
 from api.base.views import JSONAPIBaseView
 from api.institutions.serializers import InstitutionSerializer
-from api.nodes.filters import NodePreprintsFilterMixin
+from api.nodes.filters import NodePreprintsFilterMixin, NodesListFilterMixin
 from api.nodes.serializers import NodeSerializer
 from api.preprints.serializers import PreprintSerializer
 from api.registrations.serializers import RegistrationSerializer
@@ -39,6 +39,11 @@ class UserMixin(object):
 
     def get_user(self, check_permissions=True):
         key = self.kwargs[self.user_lookup_url_kwarg]
+
+        if self.kwargs.get('is_embedded') is True:
+            if key in self.request.parents[User]:
+                return self.request.parents[key]
+
         current_user = self.request.user
 
         if key == 'me':
@@ -47,7 +52,7 @@ class UserMixin(object):
             else:
                 return self.request.user
 
-        obj = get_object_or_error(User, key, 'user', prefetch_fields=self.serializer_class().model_field_names)
+        obj = get_object_or_error(User, key, 'user')
         if check_permissions:
             # May raise a permission denied
             self.check_object_permissions(self.request, obj)
@@ -419,7 +424,7 @@ class UserAddonAccountDetail(JSONAPIBaseView, generics.RetrieveAPIView, UserMixi
         return account
 
 
-class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, NodePreprintsFilterMixin):
+class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, NodePreprintsFilterMixin, NodesListFilterMixin):
     """List of nodes that the user contributes to. *Read-only*.
 
     Paginated list of nodes that the user contributes to ordered by `date_modified`.  User registrations are not available
@@ -498,7 +503,7 @@ class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, NodePreprintsF
 
     # overrides ListAPIView
     def get_queryset(self):
-        return Node.find(self.get_query_from_request()).select_related('root')
+        return Node.find(self.get_query_from_request()).select_related('node_license').include('guids', 'contributor__user__guids', 'root__guids', limit_includes=10)
 
 
 class UserPreprints(UserNodes):

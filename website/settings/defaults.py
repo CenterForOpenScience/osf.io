@@ -43,6 +43,9 @@ CITATION_STYLES_PATH = os.path.join(BASE_PATH, 'static', 'vendor', 'bower_compon
 # Minimum seconds between forgot password email attempts
 SEND_EMAIL_THROTTLE = 30
 
+# Seconds that must elapse before updating a user's date_last_login field
+DATE_LAST_LOGIN_THROTTLE = 60
+
 # Hours before pending embargo/retraction/registration automatically becomes active
 RETRACTION_PENDING_TIME = datetime.timedelta(days=2)
 EMBARGO_PENDING_TIME = datetime.timedelta(days=2)
@@ -288,9 +291,6 @@ CONTRIBUTOR_ADDED_EMAIL_THROTTLE = 24 * 3600
 # Google Analytics
 GOOGLE_ANALYTICS_ID = None
 GOOGLE_SITE_VERIFICATION = None
-
-# Pingdom
-PINGDOM_ID = None
 
 DEFAULT_HMAC_SECRET = 'changeme'
 DEFAULT_HMAC_ALGORITHM = hashlib.sha256

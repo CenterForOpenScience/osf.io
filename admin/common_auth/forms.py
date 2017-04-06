@@ -23,7 +23,8 @@ class UserRegistrationForm(forms.Form):
 
     group_perms = forms.ModelMultipleChoiceField(
         queryset=Group.objects.all(),
-        required=False
+        required=False,
+        widget=forms.CheckboxSelectMultiple
     )
 
 

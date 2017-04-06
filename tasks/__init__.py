@@ -5,7 +5,6 @@ commands, run ``$ invoke --list``.
 """
 import os
 import sys
-import code
 import json
 import platform
 import subprocess
@@ -109,152 +108,16 @@ def adminserver(ctx, port=8001, host='127.0.0.1', pty=True):
         cmd += ' --certificate {} --key {}'.format(settings.OSF_SERVER_CERT, settings.OSF_SERVER_KEY)
     ctx.run(cmd, echo=True, pty=pty)
 
-
-SHELL_BANNER = """
-{version}
-
-+--------------------------------------------------+
-|cccccccccccccccccccccccccccccccccccccccccccccccccc|
-|ccccccccccccccccccccccOOOOOOOccccccccccccccccccccc|
-|ccccccccccccccccccccOOOOOOOOOOcccccccccccccccccccc|
-|cccccccccccccccccccOOOOOOOOOOOOccccccccccccccccccc|
-|cccccccccOOOOOOOcccOOOOOOOOOOOOcccOOOOOOOccccccccc|
-|cccccccOOOOOOOOOOccOOOOOsssOOOOcOOOOOOOOOOOccccccc|
-|ccccccOOOOOOOOOOOOccOOssssssOOccOOOOOOOOOOOccccccc|
-|ccccccOOOOOOOOOOOOOcOssssssssOcOOOOOOOOOOOOOcccccc|
-|ccccccOOOOOOOOOOOOsOcOssssssOOOOOOOOOOOOOOOccccccc|
-|cccccccOOOOOOOOOOOssccOOOOOOcOssOOOOOOOOOOcccccccc|
-|cccccccccOOOOOOOsssOccccccccccOssOOOOOOOcccccccccc|
-|cccccOOOccccOOssssOccccccccccccOssssOccccOOOcccccc|
-|ccOOOOOOOOOOOOOccccccccccccccccccccOOOOOOOOOOOOccc|
-|cOOOOOOOOssssssOcccccccccccccccccOOssssssOOOOOOOOc|
-|cOOOOOOOssssssssOccccccccccccccccOsssssssOOOOOOOOc|
-|cOOOOOOOOsssssssOccccccccccccccccOsssssssOOOOOOOOc|
-|cOOOOOOOOOssssOOccccccccccccccccccOsssssOOOOOOOOcc|
-|cccOOOOOOOOOOOOOOOccccccccccccccOOOOOOOOOOOOOOOccc|
-|ccccccccccccOOssssOOccccccccccOssssOOOcccccccccccc|
-|ccccccccOOOOOOOOOssOccccOOcccOsssOOOOOOOOccccccccc|
-|cccccccOOOOOOOOOOOsOcOOssssOcOssOOOOOOOOOOOccccccc|
-|ccccccOOOOOOOOOOOOOOOsssssssOcOOOOOOOOOOOOOOcccccc|
-|ccccccOOOOOOOOOOOOOcOssssssssOcOOOOOOOOOOOOOcccccc|
-|ccccccOOOOOOOOOOOOcccOssssssOcccOOOOOOOOOOOccccccc|
-|ccccccccOOOOOOOOOcccOOOOOOOOOOcccOOOOOOOOOcccccccc|
-|ccccccccccOOOOcccccOOOOOOOOOOOcccccOOOOccccccccccc|
-|ccccccccccccccccccccOOOOOOOOOOcccccccccccccccccccc|
-|cccccccccccccccccccccOOOOOOOOOcccccccccccccccccccc|
-|cccccccccccccccccccccccOOOOccccccccccccccccccccccc|
-|cccccccccccccccccccccccccccccccccccccccccccccccccc|
-+--------------------------------------------------+
-
-Welcome to the OSF Python Shell. Happy hacking!
-
-{transaction}
-Available variables:
-
-{context}
-"""
-
-TRANSACTION_WARNING = """
-*** TRANSACTION AUTOMATICALLY STARTED ***
-
-To persist changes run 'commit()'.
-Keep in mind that changing documents will lock them.
-
-This feature can be disabled with the '--no-transaction' flag.
-
-"""
-
-
-def make_shell_context(auto_transact=True):
-    from modularodm import Q
-    from framework.auth import User, Auth
-    from framework.mongo import database
-    from website.app import init_app
-    from website.project.model import Node
-    from website import models  # all models
-    from website import settings
-    import requests
-    from framework.transactions import commands
-    from framework.transactions import context as tcontext
-    app = init_app()
-
-    def commit():
-        commands.commit()
-        print('Transaction committed.')
-        if auto_transact:
-            commands.begin()
-            print('New transaction opened.')
-
-    def rollback():
-        commands.rollback()
-        print('Transaction rolled back.')
-        if auto_transact:
-            commands.begin()
-            print('New transaction opened.')
-
-    context = {
-        'transaction': tcontext.TokuTransaction,
-        'start_transaction': commands.begin,
-        'commit': commit,
-        'rollback': rollback,
-        'app': app,
-        'db': database,
-        'User': User,
-        'Auth': Auth,
-        'Node': Node,
-        'Q': Q,
-        'models': models,
-        'run_tests': test,
-        'rget': requests.get,
-        'rpost': requests.post,
-        'rdelete': requests.delete,
-        'rput': requests.put,
-        'settings': settings,
-    }
-    try:  # Add a fake factory for generating fake names, emails, etc.
-        from faker import Factory
-        fake = Factory.create()
-        context['fake'] = fake
-    except ImportError:
-        pass
-    if auto_transact:
-        commands.begin()
-    return context
-
-
-def format_context(context):
-    lines = []
-    for name, obj in context.items():
-        line = '{name}: {obj!r}'.format(**locals())
-        lines.append(line)
-    return '\n'.join(lines)
-
-
-# Shell command adapted from Flask-Script. See NOTICE for license info.
 @task
-def shell(ctx, transaction=True):
-    context = make_shell_context(auto_transact=transaction)
-    banner = SHELL_BANNER.format(version=sys.version,
-        context=format_context(context),
-        transaction=TRANSACTION_WARNING if transaction else ''
-    )
-    try:
-        try:
-            # 0.10.x
-            from IPython.Shell import IPShellEmbed
-            ipshell = IPShellEmbed(banner=banner)
-            ipshell(global_ns={}, local_ns=context)
-        except ImportError:
-            # 0.12+
-            from IPython import embed
-            embed(banner1=banner, user_ns=context)
-        return
-    except ImportError:
-        pass
-    # fallback to basic python shell
-    code.interact(banner, local=context)
-    return
-
+def shell(ctx, transaction=True, print_sql=False, notebook=False):
+    cmd = 'DJANGO_SETTINGS_MODULE="api.base.settings" python manage.py osf_shell'
+    if print_sql:
+        cmd += ' --print-sql'
+    if notebook:
+        cmd += ' --notebook'
+    if not transaction:
+        cmd += ' --no-transaction'
+    return ctx.run(cmd, pty=True, echo=True)
 
 @task(aliases=['mongo'])
 def mongoserver(ctx, daemon=False, config=None):
@@ -520,6 +383,7 @@ def requirements(ctx, base=False, addons=False, release=False, dev=False, quick=
     ctx.run('pip uninstall uritemplate.py --yes || true')
     ctx.run('pip install --no-cache-dir uritemplate.py==0.3.0')
 
+
 @task
 def test_module(ctx, module=None, numprocesses=None, params=None):
     """Helper for running tests.
@@ -533,7 +397,7 @@ def test_module(ctx, module=None, numprocesses=None, params=None):
     # https://github.com/gabrielfalcao/HTTPretty/issues/209#issue-54090252
     args = ['-s']
     if numprocesses > 1:
-        args += ['-n {}'.format(numprocesses)]
+        args += ['-n {}'.format(numprocesses), '--max-slave-restart=0']
     modules = [module] if isinstance(module, basestring) else module
     args.extend(modules)
     if params:

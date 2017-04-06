@@ -514,7 +514,7 @@ class PreprintFactory(DjangoModelFactory):
         model = models.PreprintService
 
     @classmethod
-    def _create(cls, target_class, project=None, filename='preprint_file.txt', provider=None,
+    def _build(cls, target_class, project=None, filename='preprint_file.txt', provider=None,
                 doi=None, external_url=None, is_published=True, subjects=None, finish=True, *args, **kwargs):
         user = None
         if project:
@@ -533,7 +533,6 @@ class PreprintFactory(DjangoModelFactory):
             )
 
         file = OsfStorageFile.create(
-            is_file=True,
             node=project,
             path='/{}'.format(filename),
             name=filename,
@@ -555,10 +554,19 @@ class PreprintFactory(DjangoModelFactory):
 
         project.preprint_article_doi = doi
         project.save()
-        preprint.save()
-
         return preprint
 
+    @classmethod
+    def _create(cls, target_class, project=None, filename='preprint_file.txt', provider=None,
+                doi=None, external_url=None, is_published=True, subjects=None, finish=True, *args, **kwargs):
+        instance = cls._build(
+            target_class=target_class,
+            project=project, filename=filename, provider=provider,
+            doi=doi, external_url=external_url, is_published=is_published, subjects=subjects,
+            finish=finish, *args, **kwargs
+        )
+        instance.save()
+        return instance
 
 class TagFactory(DjangoModelFactory):
     class Meta:

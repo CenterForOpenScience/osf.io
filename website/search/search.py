@@ -57,14 +57,25 @@ def delete_node(node, index=None):
         doc_type = 'registration'
     search_engine.delete_doc(node._id, node, index=index, category=doc_type)
 
-def update_contributors(nodes):
-    search_engine.bulk_update_contributors(nodes)
-
+@requires_search
+def update_contributors_async(user_id):
+    """Async version of update_contributors above"""
+    if settings.USE_CELERY:
+        enqueue_task(search_engine.update_contributors_async.s(user_id))
+    else:
+        search_engine.update_contributors_async(user_id)
 
 @requires_search
-def update_user(user, index=None):
+def update_user(user, index=None, async=True):
     index = index or settings.ELASTIC_INDEX
-    search_engine.update_user(user, index=index)
+    if async:
+        user_id = user.id
+        if settings.USE_CELERY:
+            enqueue_task(search_engine.update_user_async.s(user_id, index=index))
+        else:
+            search_engine.update_user_async(user_id, index=index)
+    else:
+        search_engine.update_user(user, index=index)
 
 @requires_search
 def update_file(file_, index=None, delete=False):

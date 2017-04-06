@@ -469,13 +469,12 @@ class FileCommentMoveRenameTestMixin(object):
 
     def _create_file_with_comment(self, node, path, user):
         self.file = self.ProviderFile.create(
-            is_file=True,
             node=node,
             path=path,
             name=path.strip('/'),
             materialized_path=path)
-        self.guid = self.file.get_guid(create=True)
         self.file.save()
+        self.guid = self.file.get_guid(create=True)
         self.comment = CommentFactory(user=user, node=node, target=self.guid)
 
     def test_comments_move_on_file_rename(self, project, user):
@@ -1002,7 +1001,6 @@ class TestBoxFileCommentMoveRename(FileCommentMoveRenameTestMixin):
 
     def _create_file_with_comment(self, node, path, user):
         self.file = self.ProviderFile.create(
-            is_file=True,
             node=node,
             path=self._format_path(path),
             name=path.strip('/'),
@@ -1024,7 +1022,6 @@ class TestDropboxFileCommentMoveRename(FileCommentMoveRenameTestMixin):
 
     def _create_file_with_comment(self, node, path, user):
         self.file = self.ProviderFile.create(
-            is_file=True,
             node=node,
             path='{}{}'.format(node.get_addon(self.provider).folder, path),
             name=path.strip('/'),

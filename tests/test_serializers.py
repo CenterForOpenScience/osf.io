@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+import mock
+import datetime as dt
 from nose.tools import *  # noqa (PEP8 asserts)
 
 import pytest
@@ -11,12 +13,14 @@ from osf_tests.factories import (
     CollectionFactory,
     BookmarkCollectionFactory,
 )
-from tests.base import OsfTestCase
+from osf.models import NodeRelation
+from tests.base import OsfTestCase, get_default_metaschema
 
 from framework.auth import Auth
 from framework import utils as framework_utils
-from website.project.views.node import _get_summary, _view_project, _serialize_node_search, _get_children
-from website.views import _render_node
+from website.project.views.node import _view_project, _serialize_node_search, _get_children, _get_readable_descendants
+from website.profile.views import get_public_projects, get_public_components
+from website.views import serialize_node_summary
 from website.profile import utils
 from website import filters, settings
 from website.util import permissions
@@ -83,66 +87,38 @@ class TestNodeSerializers(OsfTestCase):
 
     # Regression test for #489
     # https://github.com/CenterForOpenScience/openscienceframework.org/issues/489
-    def test_get_summary_private_node_should_include_id_and_primary_boolean_reg_and_fork(self):
+    def test_serialize_node_summary_private_node_should_include_id_and_primary_boolean_reg_and_fork(self):
         user = UserFactory()
         # user cannot see this node
         node = ProjectFactory(is_public=False)
-        result = _get_summary(
+        result = serialize_node_summary(
             node, auth=Auth(user),
             primary=True,
         )
 
         # serialized result should have id and primary
-        assert_equal(result['summary']['id'], node._primary_key)
-        assert_true(result['summary']['primary'], True)
-        assert_equal(result['summary']['is_registration'], node.is_registration)
-        assert_equal(result['summary']['is_fork'], node.is_fork)
+        assert_equal(result['id'], node._primary_key)
+        assert_true(result['primary'], True)
+        assert_equal(result['is_registration'], node.is_registration)
+        assert_equal(result['is_fork'], node.is_fork)
 
     # https://github.com/CenterForOpenScience/openscienceframework.org/issues/668
-    def test_get_summary_for_registration_uses_correct_date_format(self):
+    def test_serialize_node_summary_for_registration_uses_correct_date_format(self):
         reg = RegistrationFactory()
-        res = _get_summary(reg, auth=Auth(reg.creator))
-        assert_equal(res['summary']['registered_date'],
+        res = serialize_node_summary(reg, auth=Auth(reg.creator))
+        assert_equal(res['registered_date'],
                 reg.registered_date.strftime('%Y-%m-%d %H:%M UTC'))
 
     # https://github.com/CenterForOpenScience/openscienceframework.org/issues/858
-    def test_get_summary_private_registration_should_include_is_registration(self):
+    def test_serialize_node_summary_private_registration_should_include_is_registration(self):
         user = UserFactory()
         # non-contributor cannot see private registration of public project
         node = ProjectFactory(is_public=True)
         reg = RegistrationFactory(project=node, user=node.creator)
-        res = _get_summary(reg, auth=Auth(user))
+        res = serialize_node_summary(reg, auth=Auth(user))
 
         # serialized result should have is_registration
-        assert_true(res['summary']['is_registration'])
-
-    def test_render_node(self):
-        node = ProjectFactory()
-        res = _render_node(node)
-        assert_equal(res['title'], node.title)
-        assert_equal(res['id'], node._primary_key)
-        assert_equal(res['url'], node.url)
-        assert_equal(res['api_url'], node.api_url)
-        assert_equal(res['primary'], node.primary)
-        assert_equal(res['date_modified'], framework_utils.iso8601format(node.date_modified))
-        assert_equal(res['category'], 'project')
-        assert_false(res['is_registration'])
-        assert_false(res['is_retracted'])
-
-    def test_render_node_returns_permissions(self):
-        node = ProjectFactory()
-        admin = UserFactory()
-        node.add_contributor(admin, auth=Auth(node.creator),
-            permissions=permissions.expand_permissions(permissions.ADMIN))
-        writer = UserFactory()
-        node.add_contributor(writer, auth=Auth(node.creator),
-            permissions=permissions.expand_permissions(permissions.WRITE))
-        node.save()
-
-        res_admin = _render_node(node, Auth(admin))
-        assert_equal(res_admin['permissions'], 'admin')
-        res_writer = _render_node(node, Auth(writer))
-        assert_equal(res_writer['permissions'], 'write')
+        assert_true(res['is_registration'])
 
     # https://openscience.atlassian.net/browse/OSF-4618
     def test_get_children_only_returns_child_nodes_with_admin_permissions(self):
@@ -170,21 +146,21 @@ class TestNodeSerializers(OsfTestCase):
         components = _get_children(admin_project, Auth(user))
         assert_equal(len(components), 1)
 
-    def test_get_summary_private_fork_should_include_is_fork(self):
+    def test_serialize_node_summary_private_fork_should_include_is_fork(self):
         user = UserFactory()
         # non-contributor cannot see private fork of public project
         node = ProjectFactory(is_public=True)
         consolidated_auth = Auth(user=node.creator)
         fork = node.fork_node(consolidated_auth)
 
-        res = _get_summary(
+        res = serialize_node_summary(
             fork, auth=Auth(user),
             primary=True,
         )
         # serialized result should have is_fork
-        assert_true(res['summary']['is_fork'])
+        assert_true(res['is_fork'])
 
-    def test_get_summary_private_fork_private_project_should_include_is_fork(self):
+    def test_serialize_node_summary_private_fork_private_project_should_include_is_fork(self):
         # contributor on a private project
         user = UserFactory()
         node = ProjectFactory(is_public=False)
@@ -194,13 +170,13 @@ class TestNodeSerializers(OsfTestCase):
         consolidated_auth = Auth(user=node.creator)
         fork = node.fork_node(consolidated_auth)
 
-        res = _get_summary(
+        res = serialize_node_summary(
             fork, auth=Auth(user),
             primary=True,
         )
         # serialized result should have is_fork
-        assert_false(res['summary']['can_view'])
-        assert_true(res['summary']['is_fork'])
+        assert_false(res['can_view'])
+        assert_true(res['is_fork'])
 
     def test_serialize_node_search_returns_only_visible_contributors(self):
         node = NodeFactory()
@@ -253,6 +229,208 @@ class TestViewProject(OsfTestCase):
 
         assert_equal(result['node']['disapproval_link'], '')
         pending_reg.remove()
+
+
+class TestViewProjectEmbeds(OsfTestCase):
+
+    def setUp(self):
+        super(TestViewProjectEmbeds, self).setUp()
+        self.user = UserFactory()
+        self.project = ProjectFactory(creator=self.user)
+
+    def test_view_project_embed_forks_excludes_registrations(self):
+        project = ProjectFactory()
+        fork = project.fork_node(Auth(project.creator))
+        reg = RegistrationFactory(project=fork)
+
+        res = _view_project(project, auth=Auth(project.creator), embed_forks=True)
+
+        assert_in('forks', res['node'])
+        assert_equal(len(res['node']['forks']), 1)
+
+        assert_equal(res['node']['forks'][0]['id'], fork._id)
+
+    # Regression test for https://github.com/CenterForOpenScience/osf.io/issues/1478
+    @mock.patch('website.archiver.tasks.archive')
+    def test_view_project_embed_registrations_includes_contribution_count(self, mock_archive):
+        self.project.register_node(get_default_metaschema(), Auth(user=self.project.creator), '', None)
+        data = _view_project(node=self.project, auth=Auth(self.project.creator), embed_registrations=True)
+        assert_is_not_none(data['node']['registrations'][0]['nlogs'])
+
+    # Regression test
+    def test_view_project_embed_registrations_sorted_by_registered_date_descending(self):
+        # register a project several times, with various registered_dates
+        registrations = []
+        for days_ago in (21, 3, 2, 8, 13, 5, 1):
+            registration = RegistrationFactory(project=self.project)
+            reg_date = registration.registered_date - dt.timedelta(days_ago)
+            registration.registered_date = reg_date
+            registration.save()
+            registrations.append(registration)
+
+        registrations.sort(key=lambda r: r.registered_date, reverse=True)
+        expected = [r._id for r in registrations]
+
+        data = _view_project(node=self.project, auth=Auth(self.project.creator), embed_registrations=True)
+        actual = [n['id'] for n in data['node']['registrations']]
+        assert_equal(actual, expected)
+
+    def test_view_project_embed_descendants(self):
+        child = NodeFactory(parent=self.project, creator=self.user)
+        res = _view_project(self.project, auth=Auth(self.project.creator), embed_descendants=True)
+        assert_in('descendants', res['node'])
+        assert_equal(len(res['node']['descendants']), 1)
+        assert_equal(res['node']['descendants'][0]['id'], child._id)
+
+
+class TestGetReadableDescendants(OsfTestCase):
+
+    def setUp(self):
+        OsfTestCase.setUp(self)
+        self.user = UserFactory()
+
+    def test__get_readable_descendants(self):
+        project = ProjectFactory(creator=self.user)
+        child = NodeFactory(parent=project, creator=self.user)
+        nodes, all_readable = _get_readable_descendants(auth=Auth(project.creator), node=project)
+        assert_equal(nodes[0]._id, child._id)
+        assert_true(all_readable)
+
+    def test__get_readable_descendants_includes_pointers(self):
+        project = ProjectFactory(creator=self.user)
+        pointed = ProjectFactory()
+        node_relation = project.add_pointer(pointed, auth=Auth(self.user))
+        project.save()
+
+        nodes, all_readable = _get_readable_descendants(auth=Auth(project.creator), node=project)
+
+        assert_equal(len(nodes), 1)
+        assert_equal(nodes[0].title, pointed.title)
+        assert_equal(nodes[0]._id, pointed._id)
+        assert_true(all_readable)
+
+    def test__get_readable_descendants_masked_by_permissions(self):
+        # Users should be able to see through components they do not have
+        # permissions to.
+        # Users should not be able to see through links to nodes they do not
+        # have permissions to.
+        #
+        #                   1(AB)
+        #                  /  |  \
+        #                 *   |   \
+        #                /    |    \
+        #             2(A)  4(B)    7(A)
+        #               |     |     |    \
+        #               |     |     |     \
+        #             3(AB) 5(B)    8(AB) 9(B)
+        #                     |
+        #                     |
+        #                   6(A)
+        #
+        #
+        userA = UserFactory(fullname='User A')
+        userB = UserFactory(fullname='User B')
+
+        project1 = ProjectFactory(creator=self.user, title='One')
+        project1.add_contributor(userA, auth=Auth(self.user), permissions=['read'])
+        project1.add_contributor(userB, auth=Auth(self.user), permissions=['read'])
+
+        component2 = ProjectFactory(creator=self.user, title='Two')
+        component2.add_contributor(userA, auth=Auth(self.user), permissions=['read'])
+
+        component3 = ProjectFactory(creator=self.user, title='Three')
+        component3.add_contributor(userA, auth=Auth(self.user), permissions=['read'])
+        component3.add_contributor(userB, auth=Auth(self.user), permissions=['read'])
+
+        component4 = ProjectFactory(creator=self.user, title='Four')
+        component4.add_contributor(userB, auth=Auth(self.user), permissions=['read'])
+
+        component5 = ProjectFactory(creator=self.user, title='Five')
+        component5.add_contributor(userB, auth=Auth(self.user), permissions=['read'])
+
+        component6 = ProjectFactory(creator=self.user, title='Six')
+        component6.add_contributor(userA, auth=Auth(self.user), permissions=['read'])
+
+        component7 = ProjectFactory(creator=self.user, title='Seven')
+        component7.add_contributor(userA, auth=Auth(self.user), permissions=['read'])
+
+        component8 = ProjectFactory(creator=self.user, title='Eight')
+        component8.add_contributor(userA, auth=Auth(self.user), permissions=['read'])
+        component8.add_contributor(userB, auth=Auth(self.user), permissions=['read'])
+
+        component9 = ProjectFactory(creator=self.user, title='Nine')
+        component9.add_contributor(userB, auth=Auth(self.user), permissions=['read'])
+
+        project1.add_pointer(component2, Auth(self.user))
+        NodeRelation.objects.create(parent=project1, child=component4)
+        NodeRelation.objects.create(parent=project1, child=component7)
+        NodeRelation.objects.create(parent=component2, child=component3)
+        NodeRelation.objects.create(parent=component4, child=component5)
+        NodeRelation.objects.create(parent=component5, child=component6)
+        NodeRelation.objects.create(parent=component7, child=component8)
+        NodeRelation.objects.create(parent=component7, child=component9)
+
+        nodes, all_readable = _get_readable_descendants(auth=Auth(userA), node=project1)
+        assert_equal(len(nodes), 3)
+        assert_false(all_readable)
+
+        for node in nodes:
+            assert_in(node.title, ['Two', 'Six', 'Seven'])
+
+        nodes, all_readable = _get_readable_descendants(auth=Auth(userB), node=project1)
+        assert_equal(len(nodes), 3)
+        assert_false(all_readable)
+        for node in nodes:
+            assert_in(node.title, ['Four', 'Eight', 'Nine'])
+
+
+class TestProfileNodeList(OsfTestCase):
+
+    def setUp(self):
+        OsfTestCase.setUp(self)
+        self.user = UserFactory()
+
+        self.public = ProjectFactory(is_public=True)
+        self.public_component = NodeFactory(parent=self.public, is_public=True)
+        self.private = ProjectFactory(is_public=False)
+        self.deleted = ProjectFactory(is_public=True, is_deleted=True)
+
+        for node in (self.public, self.public_component, self.private, self.deleted):
+            node.add_contributor(self.user, auth=Auth(node.creator))
+            node.save()
+
+    def test_get_public_projects(self):
+        res = get_public_projects(uid=self.user._id)
+        node_ids = [each['id'] for each in res]
+        assert_in(self.public._id, node_ids)
+        assert_not_in(self.private._id, node_ids)
+        assert_not_in(self.deleted._id, node_ids)
+        assert_not_in(self.public_component._id, node_ids)
+
+    def test_get_public_components(self):
+        res = get_public_components(uid=self.user._id)
+        node_ids = [each['id'] for each in res]
+        assert_in(self.public_component._id, node_ids)
+        assert_not_in(self.public._id, node_ids)
+        assert_not_in(self.private._id, node_ids)
+        assert_not_in(self.deleted._id, node_ids)
+
+    def test_get_public_components_excludes_linked_noncontributor_projects(self):
+        # self.user is not a contributor to linked project
+        pointee = ProjectFactory(is_public=True)
+        self.public.add_node_link(pointee, auth=Auth(self.public.creator), save=True)
+        res = get_public_components(uid=self.user._id)
+        node_ids = [each['id'] for each in res]
+        assert_not_in(pointee._id, node_ids)
+
+    def test_get_public_components_excludes_linked_contributor_projects(self):
+        # self.user is a contributor to linked project
+        pointee = ProjectFactory(is_public=True)
+        pointee.add_contributor(self.user, auth=Auth(pointee.creator))
+        self.public.add_node_link(pointee, auth=Auth(self.public.creator), save=True)
+        res = get_public_components(uid=self.user._id)
+        node_ids = [each['id'] for each in res]
+        assert_not_in(pointee._id, node_ids)
 
 
 class TestNodeLogSerializers(OsfTestCase):

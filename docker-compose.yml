@@ -13,13 +13,15 @@ volumes:
     external: false
   preprints_dist_vol:
     external: false
-  # registries_dist_vol:
-  #   external: false
+  registries_dist_vol:
+    external: false
   mfr_requirements_vol:
     external: false
   wb_requirements_vol:
     external: false
-  wb_osfstoragecache_vol:
+  wb_tmp_vol:
+    external: false
+  osfstoragecache_vol:
     external: false
   osf_requirements_vol:
     external: false
@@ -46,7 +48,6 @@ services:
     volumes:
       - elasticsearch_data_vol:/usr/share/elasticsearch/data
     stdin_open: true
-    tty: true
 
   postgres:
     image: postgres:9.6
@@ -66,7 +67,6 @@ services:
     volumes:
       - postgres_data_vol:/var/lib/postgresql/data/
     stdin_open: true
-    tty: true
 
   tokumx:
     image: quay.io/centerforopenscience/tokumx:latest
@@ -78,7 +78,6 @@ services:
     volumes:
       - tokumx_data_vol:/data/db
     stdin_open: true
-    tty: true
 
   rabbitmq:
     image: rabbitmq:3-management
@@ -88,22 +87,6 @@ services:
     volumes:
       - rabbitmq_vol:/var/lib/rabbitmq
     stdin_open: true
-    tty: true
-
-  redis:
-    image: redis
-    command: |-
-      /bin/bash -c "
-        mkdir -p /usr/local/etc/redis &&
-        echo \"maxmemory 100mb\" > /usr/local/etc/redis/redis.conf &&
-        echo \"maxmemory-policy allkeys-lru\" >> /usr/local/etc/redis/redis.conf &&
-        echo \"tcp-backlog 128\" >> /usr/local/etc/redis/redis.conf &&
-        /usr/local/bin/docker-entrypoint.sh redis-server /usr/local/etc/redis/redis.conf
-      "
-    ports:
-      - 6379:6379
-    stdin_open: true
-    tty: true
 
 #  flower:
 #    image: quay.io/centerforopenscience/osf:develop
@@ -144,7 +127,6 @@ services:
     volumes:
       - mfr_requirements_vol:/usr/local/lib/python3.5
     stdin_open: true
-    tty: true
 
   ###############
   # WaterButler #
@@ -173,9 +155,26 @@ services:
       - .docker-compose.wb.env
     volumes:
       - wb_requirements_vol:/usr/local/lib/python3.5
-      - wb_osfstoragecache_vol:/code/website/osfstoragecache
+      - osfstoragecache_vol:/code/website/osfstoragecache
+      - wb_tmp_vol:/tmp
     stdin_open: true
-    tty: true
+
+  wb_worker:
+    image: quay.io/centerforopenscience/waterbutler:develop
+    command: invoke celery
+    restart: unless-stopped
+    depends_on:
+      - wb
+      - rabbitmq
+    environment:
+      C_FORCE_ROOT: 1
+    env_file:
+      - .docker-compose.wb.env
+    volumes:
+      - wb_requirements_vol:/usr/local/lib/python3.5
+      - osfstoragecache_vol:/code/website/osfstoragecache
+      - wb_tmp_vol:/tmp
+    stdin_open: true
 
   ##################################
   # Central Authentication Service #
@@ -190,7 +189,6 @@ services:
     depends_on:
       - postgres
     stdin_open: true
-    tty: true
 
 
   #############
@@ -201,6 +199,9 @@ services:
     image: quay.io/centerforopenscience/ember-preprints:develop-development-local
     command: /bin/bash -c "yarn --pure-lockfile --no-progress --no-emoji && ./node_modules/bower/bin/bower install --allow-root --config.interactive=false && ./node_modules/ember-cli/bin/ember serve --host 0.0.0.0 --port 4200"
     restart: unless-stopped
+    depends_on:
+      - api
+      - web
     environment:
       - BACKEND=local
     expose:
@@ -210,28 +211,27 @@ services:
     volumes:
       - preprints_dist_vol:/code/dist
     stdin_open: true
-    tty: true
 
   ##############
   # Registries #
   ##############
 
-  # registries:
-  #   # image: quay.io/centerforopenscience/ember-preprints:develop-development-local
-  #   build: ../ember-osf-registries
-  #   command: /bin/bash -c "yarn --pure-lockfile --no-progress --no-emoji && ./node_modules/bower/bin/bower install --allow-root --config.interactive=false && ./node_modules/ember-cli/bin/ember serve --host 0.0.0.0 --port 4300"
-  #   restart: unless-stopped
-  #   environment:
-  #     - BACKEND=local
-  #   expose:
-  #     - 4300
-  #   ports:
-  #     - 4300:4300
-  #   volumes:
-  #     - registries_dist_vol:/code/dist
-  #   stdin_open: true
-  #   tty: true
-
+  registries:
+    image: quay.io/centerforopenscience/ember-osf-registries:develop-development-local
+    command: /bin/bash -c "yarn --pure-lockfile --no-progress --no-emoji && ./node_modules/bower/bin/bower install --allow-root --config.interactive=false && ./node_modules/ember-cli/bin/ember serve --host 0.0.0.0 --port 4300"
+    restart: unless-stopped
+    depends_on:
+      - api
+      - web
+    environment:
+      - BACKEND=local
+    expose:
+      - 4300
+    ports:
+      - 4300:4300
+    volumes:
+      - registries_dist_vol:/code/dist
+    stdin_open: true
 
   #######
   # OSF #
@@ -263,7 +263,6 @@ services:
       - osf_bower_components_vol:/code/website/static/vendor/bower_components
       - osf_node_modules_vol:/code/node_modules
     stdin_open: true
-    tty: true
 
   admin_assets:
     image: quay.io/centerforopenscience/osf:develop
@@ -278,7 +277,6 @@ services:
       - osf_admin_bower_components_vol:/code/admin/static/vendor/bower_components
       - osf_admin_node_modules_vol:/code/admin/node_modules
     stdin_open: true
-    tty: true
 
   sharejs:
     image: quay.io/centerforopenscience/osf:develop
@@ -294,7 +292,6 @@ services:
       - osf_requirements_vol:/usr/local/lib/python2.7
       - osf_node_modules_vol:/code/node_modules
     stdin_open: true
-    tty: true
 
 #  beat:
 #    image: quay.io/centerforopenscience/osf:develop
@@ -318,7 +315,6 @@ services:
     restart: unless-stopped
     depends_on:
       - postgres
-      - redis
       - rabbitmq
       - elasticsearch
     environment:
@@ -331,7 +327,6 @@ services:
       - osf_bower_components_vol:/code/website/static/vendor/bower_components
       - osf_node_modules_vol:/code/node_modules
     stdin_open: true
-    tty: true
 
   admin:
     image: quay.io/centerforopenscience/osf:develop
@@ -343,14 +338,12 @@ services:
       - 8001:8001
     depends_on:
       - postgres
-      - redis
       - tokumx
       - rabbitmq
       - elasticsearch
     env_file:
       - .docker-compose.env
     stdin_open: true
-    tty: true
     volumes:
       - osf_requirements_vol:/usr/local/lib/python2.7
       - osf_bower_components_vol:/code/website/static/vendor/bower_components
@@ -367,7 +360,6 @@ services:
     depends_on:
       - postgres
       - tokumx
-      - redis
       - rabbitmq
       - elasticsearch
     environment:
@@ -379,7 +371,6 @@ services:
       - osf_bower_components_vol:/code/website/static/vendor/bower_components
       - osf_node_modules_vol:/code/node_modules
     stdin_open: true
-    tty: true
 
   web:
     image: quay.io/centerforopenscience/osf:develop
@@ -390,7 +381,6 @@ services:
     depends_on:
       - postgres
       - tokumx
-      - redis
       - rabbitmq
       - elasticsearch
     environment:
@@ -402,6 +392,5 @@ services:
       - osf_bower_components_vol:/code/website/static/vendor/bower_components
       - osf_node_modules_vol:/code/node_modules
       - preprints_dist_vol:/preprints
-      # - registries_dist_vol:/registries
+      - registries_dist_vol:/registries
     stdin_open: true
-    tty: true

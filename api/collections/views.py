@@ -44,8 +44,7 @@ class CollectionMixin(object):
         node = get_object_or_error(
             Collection,
             self.kwargs[self.node_lookup_url_kwarg],
-            display_name='collection',
-            prefetch_fields=self.serializer_class().model_field_names
+            display_name='collection'
         )
         # Nodes that are folders/collections are treated as a separate resource, so if the client
         # requests a non-collection through a collection endpoint, we return a 404
@@ -351,9 +350,7 @@ class LinkedNodesList(BaseLinkedList, CollectionMixin):
     view_name = 'linked-nodes'
 
     def get_queryset(self):
-        return [node for node in
-            super(LinkedNodesList, self).get_queryset()
-            if not node.is_registration]
+        return super(LinkedNodesList, self).get_queryset().exclude(type='osf.registration')
 
     # overrides APIView
     def get_parser_context(self, http_request):
@@ -589,8 +586,7 @@ class NodeLinksDetail(JSONAPIBaseView, generics.RetrieveDestroyAPIView, Collecti
         node_link = get_object_or_error(
             NodeRelation,
             self.kwargs[node_link_lookup_url_kwarg],
-            'node link',
-            prefetch_fields=self.serializer_class().model_field_names
+            'node link'
         )
         # May raise a permission denied
         self.kwargs['node_id'] = self.kwargs['collection_id']

@@ -12,36 +12,39 @@ from framework.auth import Auth
 from framework.exceptions import HTTPError
 from framework.sessions import session
 from osf.models.external import ExternalProvider
-from osf.models.files import File, FileNode, Folder
+from osf.models.files import File, Folder, BaseFileNode
 from urllib3.exceptions import MaxRetryError
 from addons.base import exceptions
 from addons.dropbox import settings
 from addons.dropbox.serializer import DropboxSerializer
 from website.util import api_v2_url, web_url_for
 
+# TODO DELETE ME POST MIGRATION
+from modularodm import Q as MQ
+# /TODO DELETE ME POST MIGRATION
+
 logger = logging.getLogger(__name__)
 
 
-class DropboxFileNode(FileNode):
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.files.models.dropbox.DropboxFileNode'
-    modm_query = None
-    # /TODO DELETE ME POST MIGRATION
-    provider = 'dropbox'
+class DropboxFileNode(BaseFileNode):
+    _provider = 'dropbox'
+
 
 class DropboxFolder(DropboxFileNode, Folder):
     # TODO DELETE ME POST MIGRATION
     modm_model_path = 'website.files.models.dropbox.DropboxFolder'
-    modm_query = None
+    modm_query = MQ('is_file', 'eq', False)
     # /TODO DELETE ME POST MIGRATION
     pass
+
 
 class DropboxFile(DropboxFileNode, File):
     # TODO DELETE ME POST MIGRATION
     modm_model_path = 'website.files.models.dropbox.DropboxFile'
-    modm_query = None
+    modm_query = MQ('is_file', 'eq', True)
     # /TODO DELETE ME POST MIGRATION
     pass
+
 
 class Provider(ExternalProvider):
     name = 'Dropbox'
@@ -127,6 +130,7 @@ class UserSettings(BaseOAuthUserSettings):
             client.disable_access_token()
         except ErrorResponse:
             pass
+
 
 class NodeSettings(BaseStorageAddon, BaseOAuthNodeSettings):
     # TODO DELETE ME POST MIGRATION
@@ -216,7 +220,7 @@ class NodeSettings(BaseStorageAddon, BaseOAuthNodeSettings):
                 'name': item['path'].split('/')[-1],
                 'path': item['path'],
                 'urls': {
-                    'folders': api_v2_url('nodes/{}/addons/box/folders/'.format(self.owner._id),
+                    'folders': api_v2_url('nodes/{}/addons/dropbox/folders/'.format(self.owner._id),
                         params={'id': item['path']}
                     )
                 }

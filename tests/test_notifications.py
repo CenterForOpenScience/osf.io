@@ -208,6 +208,13 @@ class TestNotificationsModels(OsfTestCase):
         assert_in('global_comment_replies', event_types)
         assert_in('global_mentions', event_types)
 
+    def test_subscribe_user_to_global_notfiications(self):
+        user = factories.UserFactory()
+        utils.subscribe_user_to_global_notifications(user)
+        subscription_event_names = list(user.notification_subscriptions.values_list('event_name', flat=True))
+        for event_name in constants.USER_SUBSCRIPTIONS_AVAILABLE:
+            assert_in(event_name, subscription_event_names)
+
     def test_new_project_creator_is_subscribed_with_default_global_settings(self):
         user = factories.UserFactory()
 

@@ -39,6 +39,7 @@ from .factories import (
     NodeFactory,
     InstitutionFactory,
     SessionFactory,
+    TagFactory,
     UserFactory,
     UnregUserFactory,
     UnconfirmedUserFactory
@@ -944,16 +945,27 @@ class TestTagging:
 
         assert len(user.system_tags) == 1
 
-        tag = Tag.objects.get(name=tag_name, system=True)
-        assert tag in user.tags.all()
+        tag = Tag.all_tags.get(name=tag_name, system=True)
+        assert tag in user.all_tags.all()
+
+    def test_add_system_tag_instance(self, user):
+        tag = TagFactory(system=True)
+        user.add_system_tag(tag)
+        assert tag in user.all_tags.all()
+
+    def test_add_system_tag_with_non_system_instance(self, user):
+        tag = TagFactory(system=False)
+        with pytest.raises(ValueError):
+            user.add_system_tag(tag)
+        assert tag not in user.all_tags.all()
 
     def test_tags_get_lowercased(self, user):
         tag_name = 'NeOn'
         user.add_system_tag(tag_name)
         user.save()
 
-        tag = Tag.objects.get(name=tag_name.lower(), system=True)
-        assert tag in user.tags.all()
+        tag = Tag.all_tags.get(name=tag_name.lower(), system=True)
+        assert tag in user.all_tags.all()
 
     def test_system_tags_property(self, user):
         tag_name = fake.word()
@@ -1485,7 +1497,6 @@ class TestUserMerging(OsfTestCase):
                 'other': today,
                 'shared': today,
             },
-            'tags': [Tag.load('user').id, Tag.load('shared').id, Tag.load('other').id],
             'unclaimed_records': {},
         }
 
@@ -1519,6 +1530,9 @@ class TestUserMerging(OsfTestCase):
                 assert list(getattr(self.user, k).all().values_list('id', flat=True)) == v, '{} doesn\'t match expectations'.format(k)
             else:
                 assert getattr(self.user, k) == v, '{} doesn\'t match expectation'.format(k)
+
+
+        assert sorted(self.user.system_tags) == ['other', 'shared', 'user']
 
         # check fields set on merged user
         assert other_user.merged_by == self.user

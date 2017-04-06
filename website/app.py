@@ -30,6 +30,7 @@ from framework.transactions import handlers as transaction_handlers
 from website import maintenance
 # Imports necessary to connect signals
 from website.archiver import listeners  # noqa
+from website.files.models import FileNode
 from website.mails import listeners  # noqa
 from website.notifications import listeners  # noqa
 from website.project.licenses import ensure_licenses
@@ -99,6 +100,11 @@ def do_set_backends(settings):
         addons=settings.ADDONS_AVAILABLE,
     )
 
+def setup_django():
+    # Django App config
+    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'api.base.settings')
+    django.setup()
+
 
 def init_app(settings_module='website.settings', set_backends=True, routes=True,
              attach_request_handlers=True, fixtures=True):
@@ -118,9 +124,7 @@ def init_app(settings_module='website.settings', set_backends=True, routes=True,
     logger.info('Initializing the application from process {}, thread {}.'.format(
         os.getpid(), thread.get_ident()
     ))
-    # Django App config
-    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'api.base.settings')
-    django.setup()
+    setup_django()
 
     # The settings module
     settings = importlib.import_module(settings_module)
@@ -193,6 +197,7 @@ def patch_models(settings):
         models.OSFUser: 'User',
         models.AbstractNode: 'Node',
         models.NodeRelation: 'Pointer',
+        models.BaseFileNode: 'StoredFileNode',
     }
     for module in sys.modules.values():
         if not module:
@@ -202,7 +207,7 @@ def patch_models(settings):
             if (
                 hasattr(module, model_name) and
                 isinstance(getattr(module, model_name), type) and
-                issubclass(getattr(module, model_name), modularodm.StoredObject)
+                (issubclass(getattr(module, model_name), modularodm.StoredObject) or issubclass(getattr(module, model_name), FileNode))
             ):
                 setattr(module, model_name, model_cls)
             # Institution is a special case because it isn't a StoredObject

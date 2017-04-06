@@ -20,7 +20,8 @@ from api.base.celery import app
 from osf import models
 from osf.models import (ApiOAuth2Scope, BlackListGuid, CitationStyle, Guid,
                         Institution, NodeRelation, NotificationSubscription,
-                        RecentlyAddedContributor, StoredFileNode, Tag)
+                        RecentlyAddedContributor, StoredFileNode, Tag, NodeLog)
+from osf.models import BaseFileNode
 from osf.models import OSFUser
 from osf.models.contributor import (AbstractBaseContributor, Contributor,
                                     InstitutionalContributor)
@@ -75,10 +76,10 @@ def build_toku_django_lookup_table_cache():
     # add the "special" ones
     lookups.update(
         {format_lookup_key(x['name'], ContentType.objects.get_for_model(Tag).pk, template='{}:not_system'): x['pk'] for x in
-         Tag.objects.filter(system=False).values('name', 'pk')})
+         Tag.all_tags.filter(system=False).values('name', 'pk')})
     lookups.update(
         {format_lookup_key(x['name'], ContentType.objects.get_for_model(Tag).pk, template='{}:system'): x['pk'] for x in
-         Tag.objects.filter(system=True).values('name', 'pk')})
+         Tag.all_tags.filter(system=True).values('name', 'pk')})
 
     lookups.update({format_lookup_key(x['_id'], ContentType.objects.get_for_model(CitationStyle).pk): x['pk']
                     for x in CitationStyle.objects.all().values('_id', 'pk')})
@@ -102,8 +103,12 @@ def build_toku_django_lookup_table_cache():
 
 
 def do_model_lookup(model):
-    if issubclass(model, AbstractNode) and model is not AbstractNode:
+    if (issubclass(model, AbstractNode) and model is not AbstractNode):
         return
+
+    if (issubclass(model, BaseFileNode) and model is not BaseFileNode):
+        return
+
     lookup_string = model.primary_identifier_name
     lookup_dict = {}
 
@@ -163,10 +168,16 @@ def fix_bad_data(django_obj, dirty):
 def format_lookup_key(guid, content_type_id=None, model=None, template=None):
     if not content_type_id and model:
         content_type_id = ContentType.objects.get_for_model(model).pk
+    elif content_type_id and not model:
+        model = ContentType.objects.get_for_id(content_type_id).model_class()
     elif not content_type_id and not model:
         raise Exception('Please specify either a content_type_id or a model')
     if template:
+        if model is Tag:
+            return content_type_id, template.format(unicode(guid))
         return content_type_id, template.format(unicode(guid).lower())
+    if model is Tag:
+        return content_type_id, unicode(guid)
     return content_type_id, unicode(guid).lower()
 
 
@@ -196,6 +207,7 @@ def do_model(django_model, *args, **options):
     if issubclass(django_model, AbstractBaseContributor) \
             or django_model is ApiOAuth2Scope or \
             (issubclass(django_model, AbstractNode) and django_model is not AbstractNode) or \
+            (issubclass(django_model, BaseFileNode) and django_model.__subclasses__() != []) or \
             not hasattr(django_model, 'modm_model_path'):
         return
 
@@ -222,6 +234,10 @@ def save_page_of_fk_relationships(self, django_model, fk_relations, offset, limi
     register_nonexistent_models_with_modm()
     # Disable typedmodel auto-recasting to prevent migration from missing fields h/t @chrisseto
     AbstractNode._auto_recast = False
+    BaseFileNode._auto_recast = False
+
+    field_names = set()
+
     try:
         with transaction.atomic():  # one transaction per page
             bad_fields = []
@@ -308,6 +324,10 @@ def save_page_of_fk_relationships(self, django_model, fk_relations, offset, limi
                         field_name = field.name
                         ct_field_name = field.ct_field
                         fk_field_name = field.fk_field
+
+                        field_names.add(ct_field_name)
+                        field_names.add(fk_field_name)
+
                         value = getattr(modm_obj, field_name)
                         if value is None:
                             continue
@@ -321,7 +341,7 @@ def save_page_of_fk_relationships(self, django_model, fk_relations, offset, limi
                             fk_field_value = modm_to_django[(content_type_primary_key, formatted_guid)]
                         except KeyError as ex:
                             logger.error('modm key {} not found in lookup table'.format(
-                                format_lookup_key(modm_obj._id, model=django_model)))
+                                format_lookup_key(value, model=django_model)))
                             continue
 
                         # this next line could be better if we just got all the content_types
@@ -334,6 +354,7 @@ def save_page_of_fk_relationships(self, django_model, fk_relations, offset, limi
                         field_name = field.attname
                         if field_name in bad_fields:
                             continue
+                        field_names.add(field_name)
                         try:
                             value = getattr(modm_obj, field_name.replace('_id', ''))
                         except AttributeError:
@@ -358,7 +379,7 @@ def save_page_of_fk_relationships(self, django_model, fk_relations, offset, limi
                                         modm_to_django[format_lookup_key(value, model=field.related_model)])
                             except KeyError as ex:
                                 logger.error('modm key {} not found in lookup table'.format(
-                                    format_lookup_key(modm_obj._id, model=django_model)))
+                                    format_lookup_key(value, model=django_model)))
                                 continue
                             else:
                                 dirty = True
@@ -371,7 +392,7 @@ def save_page_of_fk_relationships(self, django_model, fk_relations, offset, limi
                                         modm_to_django[format_lookup_key(value._id, model=field.related_model)])
                             except KeyError as ex:
                                 logger.error('modm key {} not found in lookup table'.format(
-                                    format_lookup_key(modm_obj._id, model=django_model)))
+                                    format_lookup_key(value._id, model=django_model)))
                                 continue
                             dirty = True
                             fk_count += 1
@@ -398,26 +419,33 @@ def save_page_of_fk_relationships(self, django_model, fk_relations, offset, limi
                         batch_size = n_objects_to_update // 5
                     else:
                         batch_size = None
-                    bulk_update(django_objects_to_update, batch_size=batch_size)
+                    bulk_update(django_objects_to_update, batch_size=batch_size, update_fields=list(field_names))
 
             modm_obj._cache.clear()
             modm_obj._object_cache.clear()
 
     except Exception as ex:
-        logger.error('Retrying: Failed to save page model: {} offset:{} limit:{} of foreign keys with exception {}'.format(django_model, offset, limit, ex.message))
+        logger.error('Retrying: Failed to save page model: {} offset:{} limit:{} of foreign keys with exception {}'.format(django_model, offset, limit, ex))
+        logger.error('{} {}'.format(ex.__dict__, ex.__class__))
         self.retry(countdown=60)  # retry in 1m
     finally:
         # Disable typedmodel auto-recasting to prevent migration from missing fields h/t @chrisseto
         AbstractNode._auto_recast = True
+        BaseFileNode._auto_recast = True
 
 
 @app.task()
 def save_fk_relationships(django_model, page_size):
+    kwargs = {}
     logger.info(
         'Starting {} on {}...'.format(sys._getframe().f_code.co_name, django_model._meta.model.__module__))
     init_app(routes=False, attach_request_handlers=False, fixtures=False)
     set_backend()
     register_nonexistent_models_with_modm()
+
+    if django_model is NodeLog:
+        kwargs.update(dict(queue='nodelogs'))
+
     fk_relations = [field for field in django_model._meta.get_fields() if
                     field.is_relation and not field.auto_created and (field.many_to_one or field.one_to_one)]
 
@@ -438,12 +466,14 @@ def save_fk_relationships(django_model, page_size):
 
     while model_count < model_total:
         logger.info('{}.{} starting'.format(django_model._meta.model.__module__, django_model._meta.model.__name__))
-        save_page_of_fk_relationships.delay(django_model, fk_relations, model_count, model_count+page_size)
+        save_page_of_fk_relationships.apply_async((django_model, fk_relations, model_count, model_count+page_size), {}, **kwargs)
         model_count += page_size
 
 
 @app.task(bind=True)
 def save_page_of_m2m_relationships(self, django_model, m2m_relations, offset, limit):
+    init_app(routes=False, attach_request_handlers=False, fixtures=False)
+
     try:
         with transaction.atomic():  # one transaction per page
             modm_model = get_modm_model(django_model)
@@ -453,7 +483,7 @@ def save_page_of_m2m_relationships(self, django_model, m2m_relations, offset, li
             else:
                 modm_queryset = modm_model.find(django_model.modm_query)
 
-            modm_page = modm_queryset.sort('-_id')[offset:limit]
+            modm_page = modm_queryset.sort('_id')[offset:limit]
             model_count = 0
             m2m_count = 0
             field_aliases = getattr(django_model, 'FIELD_ALIASES', {})
@@ -528,14 +558,14 @@ def save_page_of_m2m_relationships(self, django_model, m2m_relations, offset, li
                                     remote_pks.add(modm_to_django[format_lookup_key(item, model=model, template='{}:system')])
                                 except KeyError as ex:
                                     logger.error('{} for {} at {}'.format(ex, django_model,
-                                                                    format_lookup_key(modm_obj._id, model=django_model)))
+                                                                    format_lookup_key(value, model=django_model)))
                                     continue
                             elif field_name == 'tags' and 'system_tags' in field_aliases.keys():
                                 try:
                                     remote_pks.add(modm_to_django[format_lookup_key(item, model=model, template='{}:system')])
                                 except KeyError as ex:
                                     logger.error('{} for {} at {}'.format(ex, django_model,
-                                                                    format_lookup_key(modm_obj._id, model=django_model)))
+                                                                    format_lookup_key(value, model=django_model)))
                                     continue
                             elif field_name == 'tags':
                                 try:
@@ -543,14 +573,14 @@ def save_page_of_m2m_relationships(self, django_model, m2m_relations, offset, li
                                         modm_to_django[format_lookup_key(item, model=model, template='{}:not_system')])
                                 except KeyError as ex:
                                     logger.error('{} for {} at {}'.format(ex, django_model,
-                                                                    format_lookup_key(modm_obj._id, model=django_model)))
+                                                                    format_lookup_key(value, model=django_model)))
                                     continue
                             else:
                                 try:
                                     remote_pks.add(modm_to_django[format_lookup_key(item, model=model)])
                                 except KeyError as ex:
                                     logger.error('{} for {} at {}'.format(ex, django_model,
-                                                                    format_lookup_key(modm_obj._id, model=django_model)))
+                                                                    format_lookup_key(value, model=django_model)))
                                     continue
                         # if it's a class instance
                         elif hasattr(item, '_id'):
@@ -563,7 +593,7 @@ def save_page_of_m2m_relationships(self, django_model, m2m_relations, offset, li
                                         modm_to_django[format_lookup_key(str_value, model=model, template='{}:system')])
                                 except KeyError as ex:
                                     logger.error('{} for {} at {}'.format(ex, django_model,
-                                                                    format_lookup_key(modm_obj._id, model=django_model)))
+                                                                    format_lookup_key(value, model=django_model)))
                                     continue
                             elif field_name == 'tags' and 'system_tags' in field_aliases.keys():
                                 try:
@@ -571,7 +601,7 @@ def save_page_of_m2m_relationships(self, django_model, m2m_relations, offset, li
                                         modm_to_django[format_lookup_key(str_value, model=model, template='{}:system')])
                                 except KeyError as ex:
                                     logger.error('{} for {} at {}'.format(ex, django_model,
-                                                                    format_lookup_key(modm_obj._id, model=django_model)))
+                                                                    format_lookup_key(value, model=django_model)))
                                     continue
                             elif field_name == 'tags':
                                 try:
@@ -579,14 +609,15 @@ def save_page_of_m2m_relationships(self, django_model, m2m_relations, offset, li
                                         modm_to_django[format_lookup_key(str_value, model=model, template='{}:not_system')])
                                 except KeyError as ex:
                                     logger.error('{} for {} at {}'.format(ex, django_model,
-                                                                    format_lookup_key(modm_obj._id, model=django_model)))
+                                                                    format_lookup_key(value, model=django_model)))
                                     continue
                             else:
                                 try:
                                     remote_pks.add(modm_to_django[format_lookup_key(str_value, model=model)])
                                 except KeyError as ex:
                                     logger.error('{} for {} at {}'.format(ex, django_model,
-                                                                    format_lookup_key(modm_obj._id, model=django_model)))
+                                                                    format_lookup_key(value
+                                                                                      , model=django_model)))
                                     continue
                         elif item is None:
                             continue
@@ -695,11 +726,13 @@ class Command(BaseCommand):
         if not options['m2m'] and not options['fk']:
             return
 
-        for model in models:
-            do_model.delay(model, **options)
         if options['m2m']:
             migrate_node_through_models.delay()
             migration_institutional_contributors.delay()
+
+        for model in models:
+            do_model.delay(model, **options)
+
 
 
 @app.task()
@@ -717,7 +750,7 @@ def migration_institutional_contributors():
     contributors = []
     contributor_hashes = set()
 # with ipdb.launch_ipdb_on_exception():
-    institutions = MODMInstitution.find(deleted=True).sort('-_id')
+    institutions = MODMInstitution.find(deleted=True).sort('_id')
     while count < total:
         with transaction.atomic():  # one transaction per page.
             for modm_obj in institutions[count:page_size + count]:
@@ -778,7 +811,7 @@ def migrate_node_through_models():
     node_rel_hashes = set()
     contributor_hashes = set()
 # with ipdb.launch_ipdb_on_exception():
-    nodes = MODMNode.find().sort('-_id')
+    nodes = MODMNode.find().sort('_id')
     while count < total:
         with transaction.atomic():  # one transaction per page.
             # is this query okay? isn't it going to catch things we don't want?

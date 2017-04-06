@@ -14,6 +14,7 @@ from django.db import IntegrityError, connection, transaction
 from django.utils import timezone
 from modularodm import Q as MQ
 from psycopg2._psycopg import AsIs
+from pymongo.errors import OperationFailure
 from typedmodels.models import TypedModel
 
 from addons.wiki.models import NodeWikiPage
@@ -27,7 +28,7 @@ from framework.transactions.context import transaction as modm_transaction
 from osf.models import Comment
 from osf.models import Institution
 from osf.models import (NodeLog, OSFUser,
-                        PageCounter, StoredFileNode, Tag, UserActivityCounter)
+                        PageCounter, StoredFileNode, BaseFileNode, Tag, UserActivityCounter)
 from osf.models.base import Guid, GuidMixin, OptionalGuidMixin
 from osf.models.node import AbstractNode
 from osf.utils.order_apps import get_ordered_models
@@ -74,6 +75,8 @@ def get_modm_model(django_model):
 
 @app.task()
 def migrate_page_counters(page_size=20000):
+    init_app(routes=False, attach_request_handlers=False, fixtures=False)
+
     logger.info('Starting {}...'.format(sys._getframe().f_code.co_name))
     collection = database['pagecounters']
 
@@ -110,6 +113,8 @@ def migrate_page_counters(page_size=20000):
 
 @app.task()
 def migrate_user_activity_counters(page_size=20000):
+    init_app(routes=False, attach_request_handlers=False, fixtures=False)
+
     logger.info('Starting {}...'.format(sys._getframe().f_code.co_name))
     collection = database['useractivitycounters']
 
@@ -146,9 +151,11 @@ def migrate_user_activity_counters(page_size=20000):
 
 @app.task()
 def make_guids():
+    init_app(routes=False, attach_request_handlers=False, fixtures=False)
+
     logger.info('Starting {}...'.format(sys._getframe().f_code.co_name))
 
-    guid_models = [model for model in get_ordered_models() if (issubclass(model, GuidMixin) or issubclass(model, OptionalGuidMixin)) and (not issubclass(model, AbstractNode) or model is AbstractNode)]
+    guid_models = [model for model in get_ordered_models() if (issubclass(model, GuidMixin) or issubclass(model, OptionalGuidMixin)) and not issubclass(model, (AbstractNode, BaseFileNode)) or model is AbstractNode or model is BaseFileNode]
 
     with connection.cursor() as cursor:
         with transaction.atomic():
@@ -288,7 +295,7 @@ def validate_guid_referents_against_ids():
     set_backend()
     register_nonexistent_models_with_modm()
     with ipdb.launch_ipdb_on_exception():
-        for django_model in [model for model in get_ordered_models() if (issubclass(model, GuidMixin) or issubclass(model, OptionalGuidMixin)) and (not issubclass(model, AbstractNode) or model is AbstractNode)]:
+        for django_model in [model for model in get_ordered_models() if (issubclass(model, GuidMixin) or issubclass(model, OptionalGuidMixin)) and not issubclass(model, (AbstractNode, BaseFileNode)) or model is AbstractNode or model is BaseFileNode]:
             if not hasattr(django_model, 'modm_model_path'):
                 logger.info('################################################\n'
                             '{} doesn\'t have a modm_model_path\n'
@@ -338,6 +345,8 @@ def validate_guid_referents_against_ids():
 
 @app.task()
 def fix_guids():
+    init_app(routes=False, attach_request_handlers=False, fixtures=False)
+
     modm_guids = MGuid.find().get_keys()
     dj_guids = Guid.objects.all().values_list('_id', flat=True)
     set_of_modm_guids = set(modm_guids)
@@ -502,91 +511,95 @@ def fix_guids():
     logger.info('Updated referents: {}'.format(updated_referents))
 
 
-@app.task()
-def save_page_of_bare_models(django_model, offset, limit):
-    init_app(routes=False, attach_request_handlers=False, fixtures=False)
-    set_backend()
-    register_nonexistent_models_with_modm()
+@app.task(bind=True)
+def save_page_of_bare_models(self, django_model, offset, limit):
+    try:
+        init_app(routes=False, attach_request_handlers=False, fixtures=False)
+        set_backend()
+        register_nonexistent_models_with_modm()
 
-    hashes = set()
-    count = 0
+        hashes = set()
+        count = 0
 
-    modm_model = get_modm_model(django_model)
-    if isinstance(django_model.modm_query, dict):
-        modm_queryset = modm_model.find(**django_model.modm_query)
-    else:
-        modm_queryset = modm_model.find(django_model.modm_query)
-
-    modm_page = modm_queryset.sort('-_id')[offset: limit]
-
-    with transaction.atomic():
-        django_objects = list()
-        if not hasattr(django_model, '_natural_key'):
-            logger.info('{}.{} is missing a natural key!'.format(django_model._meta.model.__module__,
-                                                                 django_model._meta.model.__name__))
-
-        for modm_obj in modm_page:
-            # TODO should we do the same for files relating to an institution?
-            # If we're migrating a NodeSetting pointing at an institution continue
-            if isinstance(modm_obj, (AddonWikiNodeSettings,
-                                     OsfStorageNodeSettings)) and modm_obj.owner is not None and modm_obj.owner.institution_id is not None:
-                continue
-            django_instance = django_model.migrate_from_modm(modm_obj)
-            if django_instance is None:
-                continue
-            if django_instance._natural_key() is not None:
-                # if there's a natural key
-                if isinstance(django_instance._natural_key(), list):
-                    found = []
-                    for nk in django_instance._natural_key():
-                        if nk not in hashes:
-                            hashes.add(nk)
-                        else:
-                            found.append(nk)
-                    if not found:
-                        django_objects.append(django_instance)
-                    else:
-                        count += 1
-                        logger.info(
-                            '{}.{} with guids {} was already in hashes'.format(django_instance._meta.model.__module__,
-                                                                               django_instance._meta.model.__name__,
-                                                                               found))
-                        continue
-                else:
-                    if django_instance._natural_key() not in hashes:
-                        # and that natural key doesn't exist in hashes
-                        # add it to hashes and append the object
-                        hashes.add(django_instance._natural_key())
-                        django_objects.append(django_instance)
-                    else:
-                        count += 1
-                        continue
-            else:
-                django_objects.append(django_instance)
-
-            count += 1
-        page_finish_time = timezone.now()
-        logger.info(
-            'Saving {} of {}.{}...'.format(count, django_model._meta.model.__module__, django_model._meta.model.__name__))
-        if len(django_objects) > 1000:
-            batch_size = len(django_objects) // 5
+        modm_model = get_modm_model(django_model)
+        if isinstance(django_model.modm_query, dict):
+            modm_queryset = modm_model.find(**django_model.modm_query)
         else:
-            batch_size = len(django_objects)
-        saved_django_objects = django_model.objects.bulk_create(django_objects, batch_size=batch_size)
+            modm_queryset = modm_model.find(django_model.modm_query)
 
-        logger.info('Done with {} {}.{} in {} seconds...'.format(len(saved_django_objects),
-                                                                 django_model._meta.model.__module__,
-                                                                 django_model._meta.model.__name__, (
-                                                                     timezone.now() -
-                                                                     page_finish_time).total_seconds()))
-        modm_obj._cache.clear()
-        modm_obj._object_cache.clear()
-        saved_django_objects = []
-        page_of_modm_objects = []
-    total = None
-    count = None
-    hashes = None
+        modm_page = modm_queryset.sort('_id')[offset: limit]
 
+        with transaction.atomic():
+            django_objects = list()
+            if not hasattr(django_model, '_natural_key'):
+                logger.info('{}.{} is missing a natural key!'.format(django_model._meta.model.__module__,
+                                                                     django_model._meta.model.__name__))
+
+            for modm_obj in modm_page:
+                # TODO should we do the same for files relating to an institution?
+                # If we're migrating a NodeSetting pointing at an institution continue
+                if isinstance(modm_obj, (AddonWikiNodeSettings,
+                                         OsfStorageNodeSettings)) and modm_obj.owner is not None and modm_obj.owner.institution_id is not None:
+                    continue
+                django_instance = django_model.migrate_from_modm(modm_obj)
+                if django_instance is None:
+                    continue
+                if django_instance._natural_key() is not None:
+                    # if there's a natural key
+                    if isinstance(django_instance._natural_key(), list):
+                        found = []
+                        for nk in django_instance._natural_key():
+                            if nk not in hashes:
+                                hashes.add(nk)
+                            else:
+                                found.append(nk)
+                        if not found:
+                            django_objects.append(django_instance)
+                        else:
+                            count += 1
+                            logger.info(
+                                '{}.{} with guids {} was already in hashes'.format(django_instance._meta.model.__module__,
+                                                                                   django_instance._meta.model.__name__,
+                                                                                   found))
+                            continue
+                    else:
+                        if django_instance._natural_key() not in hashes:
+                            # and that natural key doesn't exist in hashes
+                            # add it to hashes and append the object
+                            hashes.add(django_instance._natural_key())
+                            django_objects.append(django_instance)
+                        else:
+                            count += 1
+                            continue
+                else:
+                    django_objects.append(django_instance)
+
+                count += 1
+            page_finish_time = timezone.now()
+            logger.info(
+                'Saving {} of {}.{}...'.format(count, django_model._meta.model.__module__, django_model._meta.model.__name__))
+            if len(django_objects) > 1000:
+                batch_size = len(django_objects) // 5
+            else:
+                batch_size = len(django_objects)
+            saved_django_objects = django_model.objects.bulk_create(django_objects, batch_size=batch_size)
+
+            logger.info('Done with {} {}.{} in {} seconds...'.format(len(saved_django_objects),
+                                                                     django_model._meta.model.__module__,
+                                                                     django_model._meta.model.__name__, (
+                                                                         timezone.now() -
+                                                                         page_finish_time).total_seconds()))
+            modm_obj._cache.clear()
+            modm_obj._object_cache.clear()
+            saved_django_objects = []
+            page_of_modm_objects = []
+        total = None
+        count = None
+        hashes = None
+    except OperationFailure as ex:
+        retry_offset = 60
+        logger.error('{}; Retrying in {} seconds'.format(ex, retry_offset))
+        self.retry(countdown=retry_offset)  # retry in 1m
 
 @app.task()
 def save_bare_models(django_model):
@@ -610,18 +623,16 @@ def save_bare_models(django_model):
         count += page_size
 
 
-class DuplicateExternalAccounts(Exception):
-    pass
-
-
 @app.task()
 def save_bare_system_tags(page_size=10000):
+    init_app(routes=False, attach_request_handlers=False, fixtures=False)
+
     logger.info('Starting save_bare_system_tags...')
     start = timezone.now()
 
     things = list(MODMNode.find(MQ('system_tags', 'ne', [])).sort(
-        '-_id')) + list(MODMUser.find(MQ('system_tags', 'ne', [])).sort(
-        '-_id'))
+        '_id')) + list(MODMUser.find(MQ('system_tags', 'ne', [])).sort(
+        '_id'))
 
     system_tag_ids = []
     for thing in things:
@@ -640,7 +651,7 @@ def save_bare_system_tags(page_size=10000):
     Tag.objects.bulk_create(system_tags)
 
     logger.info('MODM System Tags: {}'.format(total))
-    logger.info('django system tags: {}'.format(Tag.objects.filter(system=True).count()))
+    logger.info('django system tags: {}'.format(Tag.all_tags.filter(system=True).count()))
     logger.info('Done with {} in {} seconds...'.format(
         sys._getframe().f_code.co_name,
         (timezone.now() - start).total_seconds()))
@@ -878,7 +889,7 @@ class Command(BaseCommand):
                 continue
             elif (options['nodelogs'] or options['nodelogsguids']) and django_model is not NodeLog:
                 continue
-            elif django_model is AbstractNode:
+            elif django_model.__subclasses__() != []:
                 continue
 
             if not hasattr(django_model, 'modm_model_path'):
