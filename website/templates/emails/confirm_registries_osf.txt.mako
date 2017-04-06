@@ -6,4 +6,4 @@ ${confirmation_url}
 
 
 Sincerely,
-From the team at the Center for Open Science
+Open Science Framework Robot
