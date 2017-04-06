@@ -111,7 +111,9 @@ def render_email_markdown(content):
 
 
 @comment_added.connect
-def send_comment_added_notification(comment, auth, new_mentions):
+def send_comment_added_notification(comment, auth, new_mentions=None):
+    if not new_mentions:
+        new_mentions = []
     node = comment.node
     target = comment.target
 
