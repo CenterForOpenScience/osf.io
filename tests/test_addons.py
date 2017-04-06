@@ -123,7 +123,7 @@ class TestAddonAuth(OsfTestCase):
         assert_equal(data['auth'], views.make_auth(self.user))
         assert_equal(data['credentials'], self.node_addon.serialize_waterbutler_credentials())
         assert_equal(data['settings'], self.node_addon.serialize_waterbutler_settings())
-        expected_url = furl.furl(self.node.api_url_for('create_waterbutler_log', _absolute=True))
+        expected_url = furl.furl(self.node.api_url_for('create_waterbutler_log', _absolute=True, _internal=True))
         observed_url = furl.furl(data['callback_url'])
         observed_url.port = expected_url.port
         assert_equal(expected_url, observed_url)
@@ -141,7 +141,7 @@ class TestAddonAuth(OsfTestCase):
         assert_equal(data['auth'], views.make_auth(self.user))
         assert_equal(data['credentials'], self.node_addon.serialize_waterbutler_credentials())
         assert_equal(data['settings'], self.node_addon.serialize_waterbutler_settings())
-        expected_url = furl.furl(self.node.api_url_for('create_waterbutler_log', _absolute=True))
+        expected_url = furl.furl(self.node.api_url_for('create_waterbutler_log', _absolute=True, _internal=True))
         observed_url = furl.furl(data['callback_url'])
         observed_url.port = expected_url.port
         assert_equal(expected_url, observed_url)

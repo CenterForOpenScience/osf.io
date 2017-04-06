@@ -26,7 +26,11 @@
   - Ubuntu
     - Add loopback alias
       `sudo ifconfig lo:0 192.168.168.167 netmask 255.255.255.255 up`
+
       - For persistance, add to /etc/network/interfaces...
+        Add lo:0 to auto line...
+        ```auto lo lo:0```
+        Add stanza for lo:0...
         ```iface lo:0 inet static
                address 192.168.168.167
                netmask 255.255.255.255
@@ -93,6 +97,8 @@
       wb:
         volumes_from:
           - container:wb-sync
+
+    ...
     ```
 
   - In `docker-sync.yml`:
@@ -106,6 +112,8 @@
         sync_excludes_type: 'Name'
         sync_excludes: ['.DS_Store', '*.pyc', '*.tmp', '.git', '.idea']
         watch_excludes: ['.*\.DS_Store', '.*\.pyc', '.*\.tmp', '.*/\.git', '.*/\.idea']
+
+    ...
     ```
   
   Modifying these files will show up as changes in git. To avoid committing these files, run:
