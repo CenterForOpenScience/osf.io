@@ -55,7 +55,7 @@ def get_public_projects(uid=None, user=None):
         Node.objects.filter(id__in=set(node_ids))
         # Defer some fields that we don't use for rendering node lists
         .defer('child_node_subscriptions', 'date_created', 'deleted_date', 'description', 'file_guid_to_share_uuids')
-        .include('guids', 'contributor__user__guids', '_parents__parent')
+        .include('guids', 'contributor__user__guids', '_parents__parent__guids')
         .order_by('-date_modified')
 
     )
@@ -81,7 +81,7 @@ def get_public_components(uid=None, user=None):
     )
 
     nodes = (Node.objects.filter(id__in=rel_child_ids)
-    .include('contributor__user__guids', 'guids', '_parents__parent')
+    .include('contributor__user__guids', 'guids', '_parents__parent__guids')
     # Defer some fields that we don't use for rendering node lists
     .defer('child_node_subscriptions', 'date_created', 'deleted_date', 'description',
            'file_guid_to_share_uuids')

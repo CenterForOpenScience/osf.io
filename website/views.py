@@ -31,7 +31,7 @@ def serialize_contributors_for_summary(node, max_count=3):
     # This is optimized when node has .include('contributor__user__guids')
     users = []
     count = 0
-    for each in node.contributor_set.select_related('user').all():
+    for each in node.contributor_set.all():
         if count == max_count:
             break
         if each.visible:
