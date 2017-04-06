@@ -19,10 +19,6 @@ from addons.dropbox import settings
 from addons.dropbox.serializer import DropboxSerializer
 from website.util import api_v2_url, web_url_for
 
-# TODO DELETE ME POST MIGRATION
-from modularodm import Q as MQ
-# /TODO DELETE ME POST MIGRATION
-
 logger = logging.getLogger(__name__)
 
 
@@ -31,18 +27,10 @@ class DropboxFileNode(BaseFileNode):
 
 
 class DropboxFolder(DropboxFileNode, Folder):
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.files.models.dropbox.DropboxFolder'
-    modm_query = MQ('is_file', 'eq', False)
-    # /TODO DELETE ME POST MIGRATION
     pass
 
 
 class DropboxFile(DropboxFileNode, File):
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.files.models.dropbox.DropboxFile'
-    modm_query = MQ('is_file', 'eq', True)
-    # /TODO DELETE ME POST MIGRATION
     pass
 
 
@@ -113,10 +101,6 @@ class UserSettings(BaseOAuthUserSettings):
     """Stores user-specific dropbox information.
     token.
     """
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.addons.dropbox.model.DropboxUserSettings'
-    modm_query = None
-    # /TODO DELETE ME POST MIGRATION
     oauth_provider = Provider
     serializer = DropboxSerializer
 
@@ -133,10 +117,6 @@ class UserSettings(BaseOAuthUserSettings):
 
 
 class NodeSettings(BaseStorageAddon, BaseOAuthNodeSettings):
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.addons.dropbox.model.DropboxNodeSettings'
-    modm_query = None
-    # /TODO DELETE ME POST MIGRATION
     oauth_provider = Provider
     serializer = DropboxSerializer
 
