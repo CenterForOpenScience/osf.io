@@ -25,30 +25,6 @@ def get_unconfirmed_emails_exclude_external_identity(user):
     return unconfirmed_emails
 
 
-def get_projects(user):
-    """Return a list of user's projects, excluding registrations and folders."""
-    # Note: If the user is a contributor to a child (but does not have access to the parent), it will be
-    # excluded from this view
-    # Avoid circular import
-    from website.project.utils import TOP_LEVEL_PROJECT_QUERY
-
-    return Node.find_for_user(user, subquery=TOP_LEVEL_PROJECT_QUERY)
-
-
-def get_public_projects(user):
-    """Return a list of a user's public projects."""
-    # Avoid circular import
-    from website.project.utils import TOP_LEVEL_PROJECT_QUERY
-
-    return Node.find_for_user(
-        user,
-        subquery=(
-            Q('is_public', 'eq', True) &
-            TOP_LEVEL_PROJECT_QUERY
-        )
-    )
-
-
 def get_gravatar(user, size=None):
     if size is None:
         size = settings.PROFILE_IMAGE_LARGE
