@@ -3682,7 +3682,6 @@ class TestAuthLoginAndRegisterLogic(OsfTestCase):
         assert_equal(data['next_url'], redirect_url)
         assert_equal(data['campaign'], None)
 
-
     # The following two tests handles the special case for `claim_user_registered`
     # When an authenticated user clicks the claim confirmation clink, there are two ways to trigger this flow:
     # 1. If the authenticated user is already a contributor to the project, OSF will ask the user to sign out

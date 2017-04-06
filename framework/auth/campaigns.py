@@ -70,6 +70,7 @@ def get_campaigns():
                 })
 
             # Proxy campaigns: Registries, OSF only
+            # TODO: refactor for futher branded registries when there is a model for registries providers
             newest_campaigns.update({
                 'osf-registries': {
                     'system_tag': 'osf_registries',
