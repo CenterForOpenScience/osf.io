@@ -7,24 +7,6 @@ from osf.models import Node, Contributor
 from website.util.permissions import reduce_permissions
 
 
-# TODO: make this a method in `OSFUser` model after Django-OSF is released and update tests
-def get_unconfirmed_emails_exclude_external_identity(user):
-    """
-    Obtain a list of unconfirmed emails that are not related to external identity.
-
-    :param user: the user
-    :return: a list of unconfirmed emails
-    """
-
-    unconfirmed_emails = []
-    email_verifications = user.email_verifications
-    if email_verifications:
-        for token, value in email_verifications.iteritems():
-            if not value.get('external_identity'):
-                unconfirmed_emails.append(value.get('email'))
-    return unconfirmed_emails
-
-
 def get_gravatar(user, size=None):
     if size is None:
         size = settings.PROFILE_IMAGE_LARGE
@@ -94,7 +76,7 @@ def serialize_user(user, node=None, admin=False, full=False, is_profile=False, i
                     'primary': each.strip().lower() == user.username.strip().lower(),
                     'confirmed': False
                 }
-                for each in get_unconfirmed_emails_exclude_external_identity(user)
+                for each in user.get_unconfirmed_emails_exclude_external_identity()
             ]
 
         if user.is_merged:

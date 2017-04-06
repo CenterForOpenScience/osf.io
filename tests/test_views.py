@@ -41,7 +41,7 @@ from website import mailchimp_utils
 from website import mails, settings
 from addons.osfstorage import settings as osfstorage_settings
 from website.models import Node, NodeLog, Pointer
-from website.profile.utils import add_contributor_json, get_unconfirmed_emails_exclude_external_identity, serialize_unregistered
+from website.profile.utils import add_contributor_json, serialize_unregistered
 from website.profile.views import fmt_date_or_none, update_osf_help_mails_subscription
 from website.project.decorators import check_can_access
 from website.project.model import has_anonymous_link
@@ -1680,7 +1680,7 @@ class TestUserAccount(OsfTestCase):
         self.user.add_unconfirmed_email("james@steward.com")
         self.user.add_unconfirmed_email("stweard@james.com", external_identity=external_identity)
         self.user.save()
-        unconfirmed_emails = get_unconfirmed_emails_exclude_external_identity(self.user)
+        unconfirmed_emails = self.user.get_unconfirmed_emails_exclude_external_identity()
         assert_in("james@steward.com", unconfirmed_emails)
         assert_not_in("stweard@james.com", unconfirmed_emails)
 
