@@ -21,23 +21,23 @@ class Institution(Loggable, base.ObjectIDMixin, base.BaseModel):
     # e.g. CharFields should never be null=True
 
     name = models.CharField(max_length=255)
-    description = models.TextField(blank=True, null=True, default='')
+    description = models.TextField(blank=True, null=True)
 
     # TODO Could `banner_name` and `logo_name` be a FilePathField?
-    # The image files for banners and shields must exists for OSF dashboard page to load.
+    # The image files for banners and shields must exist for OSF dashboard page to load.
     banner_name = models.CharField(max_length=255, blank=True, null=True)
     logo_name = models.CharField(max_length=255, blank=True, null=True)
 
     # The protocol used to delegate authentication: `CAS`, `SAML`, `OAuth`, e.t.c
-    # We use shibbloeth's implementation for SAML and pac4j's implementation for CAS and OAuth
-    # Only institutions with a valid delegation protocol shows up on institution login page
+    # We use Shibboleth's implementation for SAML and pac4j's implementation for CAS and OAuth
+    # Only institutions with a valid delegation protocol show up on institution login page
     DELEGATION_PROTOCOL_CHOICES = (
         ('cas-pac4j', 'CAS by pac4j'),
         ('oauth-pac4j', 'OAuth by pac4j'),
         ('saml-shib', 'SAML by shibboleth'),
         ('', 'No Delegation Protocol'),
     )
-    delegation_protocol = models.CharField(max_length=15, choices=DELEGATION_PROTOCOL_CHOICES, blank=True, default='')
+    delegation_protocol = models.CharField(max_length=15, choices=DELEGATION_PROTOCOL_CHOICES, blank=True)
 
     # login_url and logout_url can be null or empty
     login_url = models.URLField(null=True, blank=True)

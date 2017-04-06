@@ -283,6 +283,7 @@ def make_response_from_ticket(ticket, service_url):
                 )))
 
             # if user is authenticated by CAS
+            # TODO [CAS-27]: Remove Access Token From Service Validation
             return authenticate(
                 user,
                 cas_resp.attributes.get('accessToken', ''),
@@ -295,6 +296,7 @@ def make_response_from_ticket(ticket, service_url):
             fullname = u'{} {}'.format(cas_resp.attributes.get('given-names', ''), cas_resp.attributes.get('family-name', '')).strip()
             if not fullname:
                 fullname = external_credential['id']
+            # TODO [CAS-27]: Remove Access Token From Service Validation
             user = {
                 'external_id_provider': external_credential['provider'],
                 'external_id': external_credential['id'],
