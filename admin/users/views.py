@@ -66,8 +66,9 @@ class UserDeleteView(PermissionRequiredMixin, DeleteView):
                     if 'ham_confirmed' in user.system_tags:
                         t = Tag.all_tags.get(name='ham_confirmed', system=True)
                         user.tags.remove(t)
-                    if 'spam_confirmed' not in user.system_tags:
-                        user.add_system_tag('spam_confirmed')
+
+                if kwargs.get('is_spam') and 'spam_confirmed' not in user.system_tags:
+                    user.add_system_tag('spam_confirmed')
                 flag = USER_REMOVED
                 message = 'User account {} disabled'.format(user.pk)
             else:
@@ -80,7 +81,7 @@ class UserDeleteView(PermissionRequiredMixin, DeleteView):
                         user.tags.remove(t)
                     if 'spam_confirmed' in user.system_tags:
                         t = Tag.all_tags.get(name='spam_confirmed', system=True)
-                        user.tags.remove('spam_confirmed')
+                        user.tags.remove(t)
                     if 'ham_confirmed' not in user.system_tags:
                         user.add_system_tag('ham_confirmed')
                 flag = USER_RESTORED
