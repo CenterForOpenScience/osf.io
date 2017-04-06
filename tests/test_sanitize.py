@@ -73,6 +73,48 @@ class TestSanitize(unittest.TestCase):
             '&lt;&gt;&'
         )
 
+    def test_unescape_html_additional_safe_characters(self):
+        assert_equal(
+            sanitize.unescape_entities(
+                '&lt;&gt; diamonds &amp; diamonds &lt;&gt;',
+                {
+                    '&lt;': '<',
+                    '&gt;': '>'
+                }
+            ),
+            '<> diamonds & diamonds <>'
+        )
+        assert_equal(
+            sanitize.unescape_entities(
+                ['&lt;&gt;&amp;'],
+                {
+                    '&lt;': '<',
+                    '&gt;': '>'
+                }
+            )[0],
+            '<>&'
+        )
+        assert_equal(
+            sanitize.unescape_entities(
+                ('&lt;&gt;&amp;', ),
+                {
+                    '&lt;': '<',
+                    '&gt;': '>'
+                }
+            )[0],
+            '<>&'
+        )
+        assert_equal(
+            sanitize.unescape_entities(
+                {'key': '&lt;&gt;&amp;'},
+                {
+                    '&lt;': '<',
+                    '&gt;': '>'
+                }
+            )['key'],
+            '<>&'
+        )
+
     def test_safe_json(self):
         """Add escaping of forward slashes, but only where string literal contains closing markup"""
         assert_equal(

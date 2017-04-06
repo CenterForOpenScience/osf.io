@@ -78,7 +78,7 @@ def assert_clean(data):
 
 
 # TODO: Remove unescape_entities when mako html safe comes in
-def unescape_entities(value):
+def unescape_entities(value, safe=None):
     """
     Convert HTML-encoded data (stored in the database) to literal characters.
 
@@ -91,15 +91,18 @@ def unescape_entities(value):
         '&amp;': '&',
     }
 
+    if safe and isinstance(safe, dict):
+        safe_characters.update(safe)
+
     if isinstance(value, dict):
         return {
-            key: unescape_entities(value)
+            key: unescape_entities(value, safe=safe_characters)
             for (key, value) in value.iteritems()
         }
 
     if is_iterable_but_not_string(value):
         return [
-            unescape_entities(each)
+            unescape_entities(each, safe=safe_characters)
             for each in value
         ]
     if isinstance(value, basestring):
