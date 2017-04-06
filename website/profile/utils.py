@@ -16,7 +16,7 @@ def get_gravatar(user, size=None):
     )
 
 
-def serialize_user(user, node=None, admin=False, full=False, is_profile=False):
+def serialize_user(user, node=None, admin=False, full=False, is_profile=False, include_node_counts=False):
     """
     Return a dictionary representation of a registered user.
 
@@ -91,8 +91,6 @@ def serialize_user(user, node=None, admin=False, full=False, is_profile=False):
 
         projects = Node.find_for_user(user, PROJECT_QUERY).get_roots()
         ret.update({
-            'number_projects': projects.count(),
-            'number_public_projects': projects.filter(is_public=True).count(),
             'activity_points': user.get_activity_points(),
             'gravatar_url': gravatar(
                 user, use_ssl=True,
@@ -101,6 +99,11 @@ def serialize_user(user, node=None, admin=False, full=False, is_profile=False):
             'is_merged': user.is_merged,
             'merged_by': merged_by,
         })
+        if include_node_counts:
+            ret.update({
+                'number_projects': projects.count(),
+                'number_public_projects': projects.filter(is_public=True).count(),
+            })
 
     return ret
 
