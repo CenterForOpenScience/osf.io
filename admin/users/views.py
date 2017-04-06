@@ -10,7 +10,6 @@ from django.views.generic import FormView, DeleteView, ListView
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.core.urlresolvers import reverse
 from django.core.exceptions import PermissionDenied
-from django.core.urlresolvers import reverse
 from django.core.mail import send_mail
 from django.http import Http404, HttpResponse
 from django.shortcuts import redirect
@@ -33,8 +32,6 @@ from osf.models.admin_log_entry import (
     USER_REMOVED,
     USER_RESTORED,
     CONFIRM_SPAM)
-
-from framework.auth.views import send_confirm_email
 
 from admin.users.serializers import serialize_user
 from admin.users.forms import EmailResetForm, WorkshopForm, UserSearchForm
@@ -62,6 +59,7 @@ class UserDeleteView(PermissionRequiredMixin, DeleteView):
                 if 'spam_flagged' in user.system_tags or 'ham_confirmed' in user.system_tags:
                     if 'spam_flagged' in user.system_tags:
                         t = Tag.all_tags.get(name='spam_flagged', system=True)
+                        # TODO: removing system tags this way does not currently work -- https://openscience.atlassian.net/browse/OSF-7760
                         user.tags.remove(t)
                     if 'ham_confirmed' in user.system_tags:
                         t = Tag.all_tags.get(name='ham_confirmed', system=True)
@@ -439,21 +437,47 @@ class UserWorkshopFormView(PermissionRequiredMixin, FormView):
         super(UserWorkshopFormView, self).form_invalid(form)
 
 
-class SendUserConfirmationLink(PermissionRequiredMixin, TemplateView):
+class GetUserLink(PermissionRequiredMixin, TemplateView):
     permission_required = 'osf.change_osfuser'
-    template_name = 'users/send_confirmation.html'
+    template_name = 'users/get_link.html'
     raise_exception = True
 
-    def post(self, request, *args, **kwargs):
+    def get_link(self, user):
+        raise NotImplementedError()
+
+    def get_link_type(self):
+        raise NotImplementedError()
+
+    def get_context_data(self, **kwargs):
         user = OSFUser.load(self.kwargs.get('guid'))
 
+        kwargs['user_link'] = self.get_link(user)
+        kwargs['username'] = user.username
+        kwargs['title'] = self.get_link_type()
+
+        return super(GetUserLink, self).get_context_data(**kwargs)
+
+
+class GetUserConfirmationLink(GetUserLink):
+    def get_link(self, user):
+        return user.get_confirmation_url(user.username, force=True)
+
+    def get_link_type(self):
+        return 'User Confirmation'
+
+
+class GetPasswordResetLink(GetUserLink):
+    def get_link(self, user):
         user.verification_key_v2 = generate_verification_key(verification_type='password')
-        # The original verification key expires in 24 hours, so let's make it 48
-        user.verification_key_v2['expires'] = datetime.utcnow().replace(tzinfo=pytz.utc) + timedelta(hours=24)
+        user.verification_key_v2['expires'] = datetime.utcnow().replace(tzinfo=pytz.utc) + timedelta(hours=48)
         user.save()
 
-        send_confirm_email(user, renew=True, email=user.username)
-        return redirect(reverse('users:user', kwargs={'guid': self.kwargs.get('guid')}))
+        reset_abs_url = furl(DOMAIN)
+        reset_abs_url.path.add(('resetpassword/{}/{}'.format(user._id, user.verification_key_v2['token'])))
+        return reset_abs_url
+
+    def get_link_type(self):
+        return 'Password Reset'
 
 
 class ResetPasswordView(PermissionRequiredMixin, FormView):

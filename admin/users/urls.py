@@ -17,5 +17,5 @@ urlpatterns = [
     url(r'^(?P<guid>[a-z0-9]+)/reactivate/$', views.UserDeleteView.as_view(), name='reactivate'),
     url(r'^(?P<guid>[a-z0-9]+)/two-factor/disable/$', views.User2FactorDeleteView.as_view(), name='remove2factor'),
     url(r'^(?P<guid>[a-z0-9]+)/send_confirmation/$', views.SendUserConfirmationLink.as_view(), name='send_confirmation'),
+    url(r'^(?P<guid>[a-z0-9]+)/get_reset_password/$', views.GetPasswordResetLink.as_view(), name='get_reset_password'),
 ]
-
