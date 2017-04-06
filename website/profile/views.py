@@ -276,7 +276,7 @@ def _profile_view(profile, is_profile=False, embed_nodes=False):
     badges = []
 
     if profile:
-        profile_user_data = profile_utils.serialize_user(profile, full=True, is_profile=is_profile)
+        profile_user_data = profile_utils.serialize_user(profile, full=True, is_profile=is_profile, include_node_counts=embed_nodes)
         ret = {
             'profile': profile_user_data,
             'assertions': badge_assertions,

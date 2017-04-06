@@ -1,17 +1,13 @@
 import functools
 import itertools
 import logging
-import operator
 import re
 import urlparse
 import warnings
-from datetime import datetime
 
-import pytz
 from dirtyfields import DirtyFieldsMixin
 from django.apps import apps
 from django.contrib.contenttypes.fields import GenericRelation
-from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.core.urlresolvers import reverse
 from django.db import models, transaction, connection
@@ -20,7 +16,6 @@ from django.dispatch import receiver
 from django.utils import timezone
 from django.utils.functional import cached_property
 from keen import scoped_keys
-from modularodm import Q as MQ
 from psycopg2._psycopg import AsIs
 from typedmodels.models import TypedModel
 
@@ -133,11 +128,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     the same table and will be differentiated by the `type` column.
     """
 
-    primary_identifier_name = 'guid_string'
-    modm_model_path = 'website.models.Node'
-    modm_query = None
-    migration_page_size = 10000
-
     #: Whether this is a pointer or not
     primary = True
     settings_type = 'node'  # Needed for addons
@@ -247,9 +237,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                                 related_name='created',
                                 on_delete=models.SET_NULL,
                                 null=True, blank=True)
-    # TODO: Uncomment auto_* attributes after migration is complete
-    date_created = NonNaiveDateTimeField(default=timezone.now)  # auto_now_add=True)
-    date_modified = NonNaiveDateTimeField(db_index=True, null=True, blank=True)  # auto_now=True)
+    date_created = NonNaiveDateTimeField(auto_now_add=True)
+    date_modified = NonNaiveDateTimeField(db_index=True, auto_now=True)
     deleted_date = NonNaiveDateTimeField(null=True, blank=True)
     description = models.TextField(blank=True, default='')
     file_guid_to_share_uuids = DateTimeAwareJSONField(default=dict, blank=True)
@@ -2369,13 +2358,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         if save:
             self.save()
 
-    @classmethod
-    def migrate_from_modm(cls, modm_obj):
-        django_obj = super(AbstractNode, cls).migrate_from_modm(modm_obj)
-        # force order, fix in subsequent pass
-        django_obj._order = 0
-        return django_obj
-
     def resolve(self):
         """For compat with v1 Pointers."""
         return self
@@ -2850,54 +2832,6 @@ class Node(AbstractNode):
     FYI: Behaviors common between Registration and Node should be on the parent class.
     """
 
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.project.model.Node'
-    modm_query = functools.reduce(operator.and_, [
-        MQ('is_registration', 'eq', False),
-        MQ('is_collection', 'eq', False),
-    ])
-
-    @classmethod
-    def migrate_from_modm(cls, modm_obj):
-        """
-        Given a modm node, make a django object with the same local fields.
-
-        :param modm_obj:
-        :return:
-        """
-
-        django_obj = cls()
-        content_type_pk = ContentType.objects.get_for_model(cls).pk
-
-        bad_names = ['institution_logo_name', '_id']
-        local_django_fields = set(
-            [x.name for x in django_obj._meta.get_fields() if not x.is_relation and x.name not in bad_names])
-
-        intersecting_fields = set(modm_obj.to_storage().keys()).intersection(
-            set(local_django_fields))
-
-        for field in intersecting_fields:
-            modm_value = getattr(modm_obj, field)
-            if modm_value is None:
-                continue
-            if isinstance(modm_value, datetime):
-                modm_value = pytz.utc.localize(modm_value)
-            setattr(django_obj, field, modm_value)
-        django_obj._order = 0
-        from website.models import Guid as MODMGuid
-        from modularodm import Q as MODMQ
-
-        guids = MODMGuid.find(MODMQ('referent', 'eq', modm_obj._id)).get_keys()
-        guids.append(modm_obj._id)
-        g_set = set(guids)
-
-        setattr(django_obj, 'guid_string', list(g_set))
-        setattr(django_obj, 'content_type_pk', content_type_pk)
-        django_obj.title = django_obj.title[:200]
-        return django_obj
-
-    # /TODO DELETE ME POST MIGRATION
-
     @property
     def api_v2_url(self):
         return reverse('nodes:node-detail', kwargs={'node_id': self._id, 'version': 'v2'})
@@ -2915,13 +2849,6 @@ class Node(AbstractNode):
 
 
 class Collection(AbstractNode):
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.project.model.Node'
-    modm_query = functools.reduce(operator.and_, [
-        MQ('is_registration', 'eq', False),
-        MQ('is_collection', 'eq', True),
-    ])
-    # /TODO DELETE ME POST MIGRATION
     is_bookmark_collection = models.NullBooleanField(default=False, db_index=True)
 
     @property

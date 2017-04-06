@@ -19,7 +19,9 @@ volumes:
     external: false
   wb_requirements_vol:
     external: false
-  wb_osfstoragecache_vol:
+  wb_tmp_vol:
+    external: false
+  osfstoragecache_vol:
     external: false
   osf_requirements_vol:
     external: false
@@ -153,7 +155,25 @@ services:
       - .docker-compose.wb.env
     volumes:
       - wb_requirements_vol:/usr/local/lib/python3.5
-      - wb_osfstoragecache_vol:/code/website/osfstoragecache
+      - osfstoragecache_vol:/code/website/osfstoragecache
+      - wb_tmp_vol:/tmp
+    stdin_open: true
+
+  wb_worker:
+    image: quay.io/centerforopenscience/waterbutler:develop
+    command: invoke celery
+    restart: unless-stopped
+    depends_on:
+      - wb
+      - rabbitmq
+    environment:
+      C_FORCE_ROOT: 1
+    env_file:
+      - .docker-compose.wb.env
+    volumes:
+      - wb_requirements_vol:/usr/local/lib/python3.5
+      - osfstoragecache_vol:/code/website/osfstoragecache
+      - wb_tmp_vol:/tmp
     stdin_open: true
 
   ##################################
@@ -212,8 +232,6 @@ services:
     volumes:
       - registries_dist_vol:/code/dist
     stdin_open: true
-    tty: true
-
 
   #######
   # OSF #

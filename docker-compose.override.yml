@@ -1,9 +1,9 @@
 
 version: '2'
 
-volumes:
-  emberosf-sync:
-    external: true
+#volumes:
+#  emberosf-sync:
+#    external: true
 
 services:
 
@@ -15,7 +15,19 @@ services:
 #    volumes_from:
 #      - container:wb-sync
 
+#  wb_worker:
+#    volumes_from:
+#      - container:wb-sync
+
+#  wb_requirements:
+#    volumes_from:
+#      - container:wb-sync
+
 #  mfr:
+#    volumes_from:
+#      - container:mfr-sync
+
+#  mfr_requirements:
 #    volumes_from:
 #      - container:mfr-sync
 

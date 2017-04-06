@@ -23,13 +23,7 @@ from osf.utils.fields import NonNaiveDateTimeField
 from website.files import utils
 from website.files.exceptions import VersionNotFoundError
 from website.util import api_v2_url, waterbutler_api_url_for
-from osf.utils.datetime_aware_jsonfield import coerce_nonnaive_datetimes
 from osf.utils.manager import IncludeQuerySet
-import pytz
-
-# TODO DELETE ME POST MIGRATION
-from modularodm import Q as MQ
-# /TODO DELETE ME POST MIGRATION
 
 __all__ = (
     'File',
@@ -83,16 +77,6 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
     Also, calling ``.load`` may return a `TrashedFileNode`.
     Use the ``BaseFileNode.active`` manager when you want to filter out TrashedFileNodes.
     """
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.files.models.base.StoredFileNode'
-    modm_query = None
-    migration_page_size = 10000
-    FIELD_ALIASES = {
-        'path': '_path',
-        'history': '_history',
-        'materialized_path': '_materialized_path',
-    }
-    # /TODO DELETE ME POST MIGRATION]
     version_identifier = 'revision'  # For backwards compatibility
     FOLDER, FILE, ANY = 0, 1, 2
 
@@ -471,16 +455,6 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
             self.node
         )
 
-    @classmethod
-    def migrate_from_modm(cls, modm_obj):
-        django_obj = super(BaseFileNode, cls).migrate_from_modm(modm_obj)
-        django_obj._history = coerce_nonnaive_datetimes(modm_obj.history)
-        django_obj._materialized_path = modm_obj.materialized_path
-        django_obj._path = modm_obj.path
-        if hasattr(modm_obj, 'deleted_on'):
-            django_obj.deleted_on = pytz.utc.localize(modm_obj.deleted_on)
-        return django_obj
-
 
 # TODO Refactor code pointing at FileNode to point to StoredFileNode
 FileNode = StoredFileNode = BaseFileNode
@@ -606,20 +580,12 @@ class TrashedFileNode(BaseFileNode):
 
 
 class TrashedFile(TrashedFileNode):
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.files.models.base.TrashedFileNode'
-    modm_query = MQ('is_file', 'eq', True)
-    # /TODO DELETE ME POST MIGRATION
     @property
     def kind(self):
         return 'file'
 
 
 class TrashedFolder(TrashedFileNode):
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.files.models.base.TrashedFileNode'
-    modm_query = MQ('is_file', 'eq', False)
-    # /TODO DELETE ME POST MIGRATION
     @property
     def kind(self):
         return 'folder'
@@ -655,18 +621,12 @@ class FileVersion(ObjectIDMixin, BaseModel):
     about where the file is located, hashes and datetimes
     """
 
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.files.models.base.FileVersion'
-    modm_query = None
-    migration_page_size = 100000
-    # /TODO DELETE ME POST MIGRATION
-
     creator = models.ForeignKey('OSFUser', null=True, blank=True)
 
     identifier = models.CharField(max_length=100, blank=False, null=False)  # max length on staging was 51
 
     # Date version record was created. This is the date displayed to the user.
-    date_created = NonNaiveDateTimeField(default=timezone.now)  # auto_now_add=True)
+    date_created = NonNaiveDateTimeField(auto_now_add=True)
 
     size = models.BigIntegerField(default=-1, blank=True)
 
