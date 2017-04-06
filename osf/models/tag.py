@@ -16,7 +16,7 @@ class Tag(BaseModel):
     modm_model_path = 'website.project.model.Tag'
     modm_query = None
     # /TODO DELETE ME POST MIGRATION
-    name = models.CharField(db_index=True, max_length=1024)
+    name = models.CharField(db_index=True, max_length=1024)  # TODO: Use LowercaseCharField?
     system = models.BooleanField(default=False)
 
     objects = TagManager()
