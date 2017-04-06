@@ -138,15 +138,20 @@ class Command(shell_plus.Command):
         from osf.management.utils import print_sql
         from website import settings as website_settings
         from framework.auth import Auth, get_user
-        from faker import Factory
-        fake = Factory.create()
-        return {
+        ret = {
             'print_sql': print_sql,
             'Auth': Auth,
             'get_user': get_user,
             'website_settings': website_settings,
-            'fake': fake,
         }
+        try:  # faker isn't a prod requirement
+            from faker import Factory
+        except ImportError:
+            pass
+        else:
+            fake = Factory.create()
+            ret['fake'] = fake
+        return ret
 
     def get_grouped_imports(self, options):
         """Return a dictionary of grouped import of the form:
