@@ -5,7 +5,6 @@ import httplib as http  # TODO: Inconsistent usage of aliased import
 from dateutil.parser import parse as parse_date
 
 from django.utils import timezone
-from django.db.models import Count
 from flask import request
 import markupsafe
 import mailchimp
@@ -86,14 +85,12 @@ def get_public_components(uid=None, user=None):
     # Defer some fields that we don't use for rendering node lists
     .defer('child_node_subscriptions', 'date_created', 'deleted_date', 'description',
            'file_guid_to_share_uuids')
-    .order_by('-date_modified'))
-
+        .order_by('-date_modified'))
 
     return [
         serialize_node_summary(node=node, auth=Auth(user), show_path=True)
         for node in nodes
     ]
-
 
 @must_be_logged_in
 def current_user_gravatar(size=None, **kwargs):
