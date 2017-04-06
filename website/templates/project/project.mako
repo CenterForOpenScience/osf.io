@@ -243,7 +243,7 @@
             This project represents a preprint. <a href="http://help.osf.io/m/preprints">Learn more</a> about how to work with preprint files.
             <a href="${node['preprint_url']}" class="btn btn-default btn-sm m-r-xs pull-right">View preprint</a>
             % if user['is_admin']:
-                <a href="${node['preprint_url']}?edit" class="btn btn-default btn-sm m-r-xs pull-right">Edit preprint</a>
+                <a href="${node['preprint_url']}/edit" class="btn btn-default btn-sm m-r-xs pull-right">Edit preprint</a>
             % endif
         </div>
     </div>
