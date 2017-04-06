@@ -632,28 +632,6 @@ class TestProject:
         assert linked_node in project.nodes_active
         assert deleted_linked_node not in project.nodes_active
 
-    def test_date_modified(self, node, auth):
-        contrib = UserFactory()
-        node.add_contributor(contrib, auth=auth)
-        node.save()
-
-        assert node.date_modified == node.logs.latest().date
-        assert node.date_modified != node.date_created
-
-    def test_date_modified_create_registration(self, node):
-        RegistrationFactory(project=node)
-        node.reload()
-
-        assert node.date_modified == node.logs.latest().date
-        assert node.date_modified != node.date_created
-
-    def test_date_modified_create_component(self, node, user):
-        NodeFactory(creator=user, parent=node)
-        node.save()
-
-        assert node.date_modified == node.date_created
-
-
 class TestLogging:
 
     def test_add_log(self, node, auth):

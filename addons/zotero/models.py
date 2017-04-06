@@ -100,19 +100,11 @@ class Zotero(CitationsOauthProvider):
 
 
 class UserSettings(BaseOAuthUserSettings):
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.addons.zotero.model.ZoteroUserSettings'
-    modm_query = None
-    # /TODO DELETE ME POST MIGRATION
     oauth_provider = Zotero
     serializer = ZoteroSerializer
 
 
 class NodeSettings(BaseCitationsNodeSettings):
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.addons.zotero.model.ZoteroNodeSettings'
-    modm_query = None
-    # /TODO DELETE ME POST MIGRATION
     provider_name = 'zotero'
     oauth_provider = Zotero
     serializer = ZoteroSerializer

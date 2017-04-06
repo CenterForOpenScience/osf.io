@@ -6,19 +6,15 @@ from django.apps import apps
 from django.db import models, connection
 from modularodm import Q
 from psycopg2._psycopg import AsIs
-from typedmodels.models import TypedModel
 
 from addons.base.models import BaseNodeSettings, BaseStorageAddon
 from osf.exceptions import InvalidTagError, NodeStateError, TagNotFoundError
 from osf.models import (File, FileVersion, Folder, Guid,
-                        TrashedFileNode, TrashedFile, TrashedFolder, BaseFileNode)
+                        TrashedFileNode, BaseFileNode)
 from osf.utils.auth import Auth
 from website.files import exceptions
 from website.files import utils as files_utils
 from website.util import permissions
-# TODO DELETE ME POST MIGRATION
-from modularodm import Q as MQ
-# /TODO DELETE ME POST MIGRATION
 
 settings = apps.get_app_config('addons_osfstorage')
 
@@ -198,10 +194,6 @@ class OsfStorageFileNode(BaseFileNode):
 
 
 class OsfStorageFile(OsfStorageFileNode, File):
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.files.models.osfstorage.OsfStorageFile'
-    modm_query = MQ('is_file', 'eq', True)
-    # /TODO DELETE ME POST MIGRATION
 
     def touch(self, bearer, version=None, revision=None, **kwargs):
         try:
@@ -330,10 +322,6 @@ class OsfStorageFile(OsfStorageFileNode, File):
 
 
 class OsfStorageFolder(OsfStorageFileNode, Folder):
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.files.models.osfstorage.OsfStorageFolder'
-    modm_query = MQ('is_file', 'eq', False)
-    # /TODO DELETE ME POST MIGRATION
 
     @property
     def is_checked_out(self):
@@ -360,10 +348,6 @@ class OsfStorageFolder(OsfStorageFileNode, Folder):
 
 
 class NodeSettings(BaseStorageAddon, BaseNodeSettings):
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.addons.osfstorage.model.OsfStorageNodeSettings'
-    modm_query = None
-    # /TODO DELETE ME POST MIGRATION
     # Required overrides
     complete = True
     has_auth = True
