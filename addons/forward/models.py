@@ -8,10 +8,6 @@ from osf.models.validators import validate_no_html
 
 
 class NodeSettings(DirtyFieldsMixin, BaseNodeSettings):
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.addons.forward.model.ForwardNodeSettings'
-    modm_query = None
-    # /TODO DELETE ME POST MIGRATION
     complete = True
     has_auth = True
 

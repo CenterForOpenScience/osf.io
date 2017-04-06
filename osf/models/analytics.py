@@ -63,11 +63,6 @@ class PageCounter(BaseModel):
     total = models.PositiveIntegerField(default=0)
     unique = models.PositiveIntegerField(default=0)
 
-    @classmethod
-    def migrate_from_modm(cls, modm_obj):
-        # TODO do this
-        pass
-
     @staticmethod
     def clean_page(page):
         return page.replace(

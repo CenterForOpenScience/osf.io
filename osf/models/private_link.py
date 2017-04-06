@@ -9,10 +9,6 @@ from osf.models.base import BaseModel, ObjectIDMixin
 
 
 class PrivateLink(ObjectIDMixin, BaseModel):
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.project.model.PrivateLink'
-    modm_query = None
-    # /TODO DELETE ME POST MIGRATION
     date_created = NonNaiveDateTimeField(default=timezone.now)
     key = models.CharField(max_length=512, null=False, unique=True, blank=False)
     name = models.CharField(max_length=255, blank=True, null=True)
@@ -46,8 +42,3 @@ class PrivateLink(ObjectIDMixin, BaseModel):
                       for x in self.nodes.filter(is_deleted=False)],
             'anonymous': self.anonymous
         }
-
-    @classmethod
-    def migrate_from_modm(cls, modm_obj):
-        modm_obj.name = modm_obj.name[:255]
-        return super(PrivateLink, cls).migrate_from_modm(modm_obj)

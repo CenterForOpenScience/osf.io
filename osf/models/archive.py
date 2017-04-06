@@ -19,12 +19,6 @@ from website.archiver import (
 class ArchiveTarget(ObjectIDMixin, BaseModel):
     """Stores the results of archiving a single addon
     """
-
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.archiver.model.ArchiveTarget'
-    modm_query = None
-    # /TODO DELETE ME POST MIGRATION
-
     # addon_short_name of target addon
     name = models.CharField(max_length=2048)
 
@@ -50,11 +44,6 @@ class ArchiveTarget(ObjectIDMixin, BaseModel):
 
 
 class ArchiveJob(ObjectIDMixin, BaseModel):
-
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.archiver.model.ArchiveJob'
-    modm_query = None
-    # /TODO DELETE ME POST MIGRATION
 
     # whether or not the ArchiveJob is complete (success or fail)
     done = models.BooleanField(default=False, verbose_name='completed')
