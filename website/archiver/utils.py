@@ -209,7 +209,7 @@ def find_registration_file(value, node):
     orig_sha256 = value['sha256']
     orig_name = sanitize.unescape_entities(
         value['selectedFileName'],
-        {
+        safe={
             '&lt;': '<',
             '&gt;': '>'
         }

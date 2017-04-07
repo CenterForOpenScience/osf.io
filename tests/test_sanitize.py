@@ -77,7 +77,7 @@ class TestSanitize(unittest.TestCase):
         assert_equal(
             sanitize.unescape_entities(
                 '&lt;&gt; diamonds &amp; diamonds &lt;&gt;',
-                {
+                safe={
                     '&lt;': '<',
                     '&gt;': '>'
                 }
@@ -87,7 +87,7 @@ class TestSanitize(unittest.TestCase):
         assert_equal(
             sanitize.unescape_entities(
                 ['&lt;&gt;&amp;'],
-                {
+                safe={
                     '&lt;': '<',
                     '&gt;': '>'
                 }
@@ -97,7 +97,7 @@ class TestSanitize(unittest.TestCase):
         assert_equal(
             sanitize.unescape_entities(
                 ('&lt;&gt;&amp;', ),
-                {
+                safe={
                     '&lt;': '<',
                     '&gt;': '>'
                 }
@@ -107,7 +107,7 @@ class TestSanitize(unittest.TestCase):
         assert_equal(
             sanitize.unescape_entities(
                 {'key': '&lt;&gt;&amp;'},
-                {
+                safe={
                     '&lt;': '<',
                     '&gt;': '>'
                 }

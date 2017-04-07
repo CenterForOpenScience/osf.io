@@ -85,6 +85,9 @@ def unescape_entities(value, safe=None):
     Intended primarily for endpoints consumed by frameworks that handle their own escaping (eg Knockout)
 
     :param value: A string, dict, or list
+    :param safe: A dict of escape sequences and characters that can be used to extend the set of
+        characters that this function will unescape. Use with caution as there are few cases in which
+        there will be reason to unescape characters beyond '&'.
     :return: A string or list or dict without html escape characters
     """
     safe_characters = {
