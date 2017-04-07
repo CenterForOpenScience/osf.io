@@ -46,17 +46,13 @@ def init_addons(settings, routes=True):
     :param module settings: The settings module.
     :param bool routes: Add each addon's routing rules to the URL map.
     """
-    from website.addons.base import init_addon
     settings.ADDONS_AVAILABLE = getattr(settings, 'ADDONS_AVAILABLE', [])
     settings.ADDONS_AVAILABLE_DICT = getattr(settings, 'ADDONS_AVAILABLE_DICT', OrderedDict())
     for addon_name in settings.ADDONS_REQUESTED:
-        if settings.USE_POSTGRES:
-            try:
-                addon = apps.get_app_config('addons_{}'.format(addon_name))
-            except LookupError:
-                addon = None
-        else:
-            addon = init_addon(app, addon_name, routes=routes)
+        try:
+            addon = apps.get_app_config('addons_{}'.format(addon_name))
+        except LookupError:
+            addon = None
         if addon:
             if addon not in settings.ADDONS_AVAILABLE:
                 settings.ADDONS_AVAILABLE.append(addon)

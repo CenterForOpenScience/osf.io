@@ -14,7 +14,7 @@ from addons.mendeley.tests.factories import MendeleyAccountFactory, MendeleyNode
 from addons.owncloud.tests.factories import OwnCloudAccountFactory, OwnCloudNodeSettingsFactory
 from addons.s3.tests.factories import S3AccountFactory, S3NodeSettingsFactory
 from addons.zotero.tests.factories import ZoteroAccountFactory, ZoteroNodeSettingsFactory
-# from addons.figshare.tests.factories import FigshareAccountFactory, FigshareNodeSettingsFactory
+from addons.figshare.tests.factories import FigshareAccountFactory, FigshareNodeSettingsFactory
 from api.base.settings.defaults import API_BASE
 from osf_tests.factories import AuthUserFactory
 from tests.base import ApiAddonTestCase
@@ -666,11 +666,10 @@ class TestNodeZoteroAddon(NodeOAuthCitationAddonTestSuiteMixin, ApiAddonTestCase
 # CONFIGURABLE
 
 
-@pytest.mark.skip('Unskip when the figshare addon is ported')
 class TestNodeFigshareAddon(NodeConfigurableAddonTestSuiteMixin, ApiAddonTestCase):
     short_name = 'figshare'
-    # AccountFactory = FigshareAccountFactory
-    # NodeSettingsFactory = FigshareNodeSettingsFactory
+    AccountFactory = FigshareAccountFactory
+    NodeSettingsFactory = FigshareNodeSettingsFactory
 
     def _settings_kwargs(self, node, user_settings):
         return {
@@ -690,12 +689,12 @@ class TestNodeFigshareAddon(NodeConfigurableAddonTestSuiteMixin, ApiAddonTestCas
         }
 
 
-    @mock.patch('website.addons.figshare.client.FigshareClient.get_folders')
+    @mock.patch('addons.figshare.client.FigshareClient.get_folders')
     def test_folder_list_GET_expected_behavior(self, mock_folders):
         mock_folders.return_value = [self._mock_folder_result]
         super(TestNodeFigshareAddon, self).test_folder_list_GET_expected_behavior()
 
-    @mock.patch('website.addons.figshare.client.FigshareClient.get_linked_folder_info')
+    @mock.patch('addons.figshare.client.FigshareClient.get_linked_folder_info')
     def test_settings_detail_PUT_all_sets_settings(self, mock_info):
         mock_info.return_value = self._mock_folder_result
         super(TestNodeFigshareAddon, self).test_settings_detail_PUT_all_sets_settings
