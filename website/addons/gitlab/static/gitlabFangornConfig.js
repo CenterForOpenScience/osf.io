@@ -15,8 +15,7 @@ var commandKeys = [224, 17, 91, 93];
 
 function _getCurrentBranch(item) {
     var branch;
-    alert(typeof item.data.path);
-    if (item.kind === 'folder' && item.data.path === '/'){
+    if (item.data.isAddonRoot){
         branch = item.data.default_branch;
     } else {
         branch = item.data.extra.ref || item.data.extra.fileSha;
