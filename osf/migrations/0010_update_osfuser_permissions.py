@@ -28,7 +28,7 @@ def revert_user_permissions(*args):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0008_merge'),
+        ('osf', '0009_auto_20170406_1614'),
     ]
 
     operations = [
