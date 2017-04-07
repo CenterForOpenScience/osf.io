@@ -183,7 +183,10 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
 
     @classmethod
     def get_or_create(cls, node, path):
-        obj, _ = cls.objects.get_or_create(node=node, _path='/' + path.lstrip('/'))
+        try:
+            obj = cls.objects.get(node=node, _path='/' + path.lstrip('/'))
+        except cls.DoesNotExist:
+            obj = cls(node=node, _path='/' + path.lstrip('/'))
         return obj
 
     @classmethod
