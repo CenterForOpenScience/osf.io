@@ -74,16 +74,13 @@ class InstitutionAuthentication(BaseAuthentication):
 
         # institution must provide `fullname`, otherwise we fail the authentication and inform sentry
         if not fullname:
-            sentry.log_message(
-                'Institution login failed: fullname required for user {} from institution {}'.format(
-                    username,
-                    provider['id']
-                )
-            )
-            return None, None
+            message = 'Institution login failed: fullname required' \
+                      ' for user {} from institution {}'.format(username, provider['id'])
+            sentry.log_message(message)
+            raise AuthenticationFailed(message)
 
         # `get_or_create_user()` guesses names from fullname
-        # replace the guessed ones if the names are provided from the authentication request
+        # replace the guessed ones if the names are provided from the authentication
         user, created = get_or_create_user(fullname, username, reset_password=False)
         if created:
             if given_name:
