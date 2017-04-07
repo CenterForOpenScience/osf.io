@@ -332,6 +332,13 @@ class TestParentNode:
         assert len(template.nodes) == 1
         assert deleted_child.title not in new_nodes
 
+    def test_parent_node_doesnt_return_link_parent(self, project):
+        linker = ProjectFactory(title='Linker')
+        linker.add_node_link(project, auth=Auth(linker.creator), save=True)
+        # Prevent cached parent_node property from being used
+        project = Node.objects.get(id=project.id)
+        assert project.parent_node is None
+
 
 class TestRoot:
     @pytest.fixture()
