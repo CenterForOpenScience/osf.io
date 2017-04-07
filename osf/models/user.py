@@ -365,7 +365,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     discourse_user_id = models.IntegerField(default=None, null=True, blank=True)
     discourse_user_created = models.BooleanField(default=False)
     discourse_apikey = models.TextField(default='', blank=True)
-    discourse_apikey_date_created = NonNaiveDatetimeField(default=None, null=True, blank=True)
+    discourse_apikey_date_created = NonNaiveDateTimeField(default=None, null=True, blank=True)
 
     @property
     def deep_url(self):

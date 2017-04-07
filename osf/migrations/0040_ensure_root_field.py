@@ -23,6 +23,7 @@ def reset_root(*args):
 class Migration(migrations.Migration):
 
     dependencies = [
+        ('osf', '0029_auto_20170113_1732'),
         ('osf', '0039_merge'),
     ]
 

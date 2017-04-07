@@ -1,10 +1,10 @@
 import logging
 
-import requests
-
 import framework.discourse.common
 import framework.discourse.topics
 from framework.discourse import common, users
+
+import requests
 
 logger = logging.getLogger(__name__)
 
@@ -17,6 +17,7 @@ def sync_project_details(project_node, should_save=True):
     view_only_keys = [a.key for a in project_node.private_links_active if not a.anonymous]
 
     contributors = [users.get_discourse_username(osf_user) for osf_user in project_node.contributors if osf_user.username]
+    contributors = [c for c in contributors if c]
 
     # check if there are any changes that need a resync.
     # we check the difference of the lists because migrations might report

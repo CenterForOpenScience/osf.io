@@ -72,7 +72,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='osfuser',
             name='discourse_apikey_date_created',
-            field=osf.utils.fields.NonNaiveDatetimeField(blank=True, default=None, null=True),
+            field=osf.utils.fields.NonNaiveDateTimeField(blank=True, default=None, null=True),
         ),
         migrations.AddField(
             model_name='osfuser',
