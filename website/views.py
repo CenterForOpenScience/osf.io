@@ -28,10 +28,9 @@ logger = logging.getLogger(__name__)
 
 
 def serialize_contributors_for_summary(node, max_count=3):
-    # Evaluate queryset eagerly, to avoid re-querying in the for loop below
-    users = list(node.visible_contributors)
+    # # TODO: Use .filter(visible=True) when chaining is fixed in django-include
+    users = [contrib.user for contrib in node.contributor_set.all() if contrib.visible]
     contributors = []
-
     n_contributors = len(users)
     others_count = ''
 
@@ -73,6 +72,7 @@ def serialize_node_summary(node, auth, primary=True, show_path=False):
         'archiving': node.archiving,
     }
     contributor_data = serialize_contributors_for_summary(node)
+
     parent_node = node.parent_node
     if node.can_view(auth):
         summary.update({
