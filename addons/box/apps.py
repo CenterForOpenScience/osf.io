@@ -1,6 +1,6 @@
-from addons.base.apps import BaseAddonAppConfig
+from addons.base.apps import BaseAddonAppConfig, generic_root_folder
 
-from addons.box.views import box_root_folder
+box_root_folder = generic_root_folder('box')
 
 class BoxAddonAppConfig(BaseAddonAppConfig):
 

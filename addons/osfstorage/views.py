@@ -7,7 +7,6 @@ from django.core.exceptions import ValidationError
 from django.db import IntegrityError
 from django.db import connection
 from django.db import transaction
-from django.db.models.expressions import RawSQL
 from modularodm import Q
 
 from flask import request
@@ -18,11 +17,9 @@ from framework.exceptions import HTTPError
 from framework.auth.decorators import must_be_signed
 
 from osf.exceptions import InvalidTagError, TagNotFoundError
-from website.models import User
 from website.project.decorators import (
     must_not_be_registration, must_have_addon, must_have_permission
 )
-from website.util import rubeus
 from website.project.model import has_anonymous_link
 
 from website.files import models
@@ -33,22 +30,6 @@ from addons.osfstorage import settings as osf_storage_settings
 
 
 logger = logging.getLogger(__name__)
-
-
-def osf_storage_root(addon_config, node_settings, auth, **kwargs):
-    """Build HGrid JSON for root node. Note: include node URLs for client-side
-    URL creation for uploaded files.
-    """
-    node = node_settings.owner
-    root = rubeus.build_addon_root(
-        node_settings=node_settings,
-        name='',
-        permissions=auth,
-        user=auth.user,
-        nodeUrl=node.url,
-        nodeApiUrl=node.api_url,
-    )
-    return [root]
 
 
 def make_error(code, message_short=None, message_long=None):
@@ -151,7 +132,7 @@ def osfstorage_get_metadata(file_node, **kwargs):
 @must_be_signed
 @decorators.autoload_filenode(must_be='folder')
 def osfstorage_get_children(file_node, **kwargs):
-    from django.contrib.contenttypes.models import ContentType
+    from django.contrib.contenttypes.models import ContentType, OSFUser
     with connection.cursor() as cursor:
         cursor.execute('''
             SELECT json_agg(CASE
@@ -208,7 +189,7 @@ def osfstorage_get_children(file_node, **kwargs):
             ) DOWNLOAD_COUNT ON TRUE
             WHERE parent_id = %s
             AND (NOT F.type IN ('osf.trashedfilenode', 'osf.trashedfile', 'osf.trashedfolder'))
-        ''', [ContentType.objects.get_for_model(User).id, file_node.node._id, file_node.id])
+        ''', [ContentType.objects.get_for_model(OSFUser).id, file_node.node._id, file_node.id])
 
         return cursor.fetchone()[0] or []
 
@@ -217,9 +198,10 @@ def osfstorage_get_children(file_node, **kwargs):
 @must_not_be_registration
 @decorators.autoload_filenode(must_be='folder')
 def osfstorage_create_child(file_node, payload, node_addon, **kwargs):
+    from osf.models import OSFUser
     parent = file_node  # Just for clarity
     name = payload.get('name')
-    user = User.load(payload.get('user'))
+    user = OSFUser.load(payload.get('user'))
     is_folder = payload.get('kind') == 'folder'
 
     if not (name or user) or '/' in name:
@@ -281,7 +263,8 @@ def osfstorage_create_child(file_node, payload, node_addon, **kwargs):
 @must_not_be_registration
 @decorators.autoload_filenode()
 def osfstorage_delete(file_node, payload, node_addon, **kwargs):
-    user = User.load(payload['user'])
+    from osf.models import OSFUser
+    user = OSFUser.load(payload['user'])
     auth = Auth(user)
 
     #TODO Auth check?

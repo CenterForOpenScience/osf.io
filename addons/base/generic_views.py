@@ -9,7 +9,7 @@ from framework.auth.decorators import must_be_logged_in
 
 from website.oauth.models import ExternalAccount
 
-from website.util import permissions, rubeus
+from website.util import permissions
 from website.project.decorators import (
     must_have_addon, must_be_addon_authorizer,
     must_have_permission, must_not_be_registration,
@@ -66,26 +66,6 @@ def folder_list(addon_short_name, addon_full_name, get_folders):
         return get_folders(node_addon, folder_id)
     _folder_list.__name__ = '{0}_folder_list'.format(addon_short_name)
     return _folder_list
-
-def root_folder(addon_short_name):
-    def _root_folder(node_settings, auth, **kwargs):
-        """Return the Rubeus/HGrid-formatted response for the root folder only."""
-        # Quit if node settings does not have authentication
-        if not node_settings.has_auth or not node_settings.folder_id:
-            return None
-        node = node_settings.owner
-        root = rubeus.build_addon_root(
-            node_settings=node_settings,
-            name=node_settings.fetch_folder_name(),
-            permissions=auth,
-            nodeUrl=node.url,
-            nodeApiUrl=node.api_url,
-            private_key=kwargs.get('view_only', None),
-        )
-        return [root]
-    _root_folder.__name__ = '{0}_root_folder'.format(addon_short_name)
-    return _root_folder
-
 
 def get_config(addon_short_name, Serializer):
     @must_be_logged_in
