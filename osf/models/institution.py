@@ -9,22 +9,13 @@ from osf.models.mixins import Loggable
 
 class Institution(Loggable, base.ObjectIDMixin, base.BaseModel):
 
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.project.model.Node'
-    modm_query = dict(query=MQ('institution_id', 'ne', None), allow_institution=True)
-    FIELD_ALIASES = {
-        'auth_url': 'login_url'
-    }
-    # /TODO DELETE ME POST MIGRATION
-
-    # TODO Remove null=True for things that shouldn't be nullable POST MIGRATION
+    # TODO Remove null=True for things that shouldn't be nullable
     # e.g. CharFields should never be null=True
 
     name = models.CharField(max_length=255)
     description = models.TextField(blank=True, null=True)
 
     # TODO Could `banner_name` and `logo_name` be a FilePathField?
-    # The image files for banners and shields must exist for OSF dashboard page to load.
     banner_name = models.CharField(max_length=255, blank=True, null=True)
     logo_name = models.CharField(max_length=255, blank=True, null=True)
 
@@ -52,7 +43,6 @@ class Institution(Loggable, base.ObjectIDMixin, base.BaseModel):
         related_name='institutions'
     )
 
-    # This field is kept for backwards compatibility with Institutions in modm that were built off the Node model.
     is_deleted = models.BooleanField(default=False, db_index=True)
 
     def __init__(self, *args, **kwargs):
