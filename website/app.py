@@ -22,11 +22,9 @@ from framework.flask import add_handlers, app
 # Import necessary to initialize the root logger
 from framework.logging import logger as root_logger  # noqa
 from framework.mongo import handlers as mongo_handlers
-from framework.mongo import set_up_storage, storage
 from framework.postcommit_tasks import handlers as postcommit_handlers
 from framework.sentry import sentry
 from framework.transactions import handlers as transaction_handlers
-from website import maintenance
 # Imports necessary to connect signals
 from website.archiver import listeners  # noqa
 from website.files.models import FileNode

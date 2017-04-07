@@ -8,7 +8,6 @@ from website.archiver import (
     ARCHIVER_SIZE_EXCEEDED,
     ARCHIVER_FILE_NOT_FOUND,
 )
-from website.archiver.model import ArchiveJob
 
 from website import (
     mails,
@@ -158,6 +157,7 @@ def aggregate_file_tree_metadata(addon_short_name, fileobj_metadata, user):
         )
 
 def before_archive(node, user):
+    from website.archiver.model import ArchiveJob
     link_archive_provider(node, user)
     job = ArchiveJob.objects.create(
         src_node=node.registered_from,
