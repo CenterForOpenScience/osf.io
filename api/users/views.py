@@ -1,7 +1,7 @@
 
 from api.addons.views import AddonSettingsMixin
 from api.base import permissions as base_permissions
-from api.base.exceptions import Conflict
+from api.base.exceptions import Conflict, UserGone
 from api.base.filters import ListFilterMixin, ODMFilterMixin, DjangoFilterMixin
 from api.base.parsers import (JSONAPIRelationshipParser,
                               JSONAPIRelationshipParserForRegularJSON)
@@ -29,6 +29,7 @@ from django.db.models import Q
 from rest_framework import permissions as drf_permissions
 from rest_framework import generics
 from rest_framework.exceptions import NotAuthenticated, NotFound
+from osf.models import Contributor
 from website.models import ExternalAccount, Node, User
 from osf.models import PreprintService
 
@@ -43,6 +44,21 @@ class UserMixin(object):
 
     def get_user(self, check_permissions=True):
         key = self.kwargs[self.user_lookup_url_kwarg]
+        # If Contributor is in self.request.parents,
+        # then this view is getting called due to an embedded request (contributor embedding user)
+        # We prefer to access the user from the contributor object and take advantage
+        # of the query cache
+        if hasattr(self.request, 'parents') and len(self.request.parents.get(Contributor, {})) == 1:
+            # We expect one parent contributor view, so index into the first item
+            contrib_id, contrib = self.request.parents[Contributor].items()[0]
+            user = contrib.user
+            if user.is_disabled:
+                raise UserGone(user=user)
+            # Make sure that the contributor ID is correct
+            if user._id == key:
+                if check_permissions:
+                    self.check_object_permissions(self.request, user)
+                return user
 
         if self.kwargs.get('is_embedded') is True:
             if key in self.request.parents[User]:

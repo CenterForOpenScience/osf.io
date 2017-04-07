@@ -116,6 +116,11 @@ class Gone(JSONAPIException):
     default_detail = ('The requested resource is no longer available.')
 
 
+def UserGone(user):
+    return Gone(detail='The requested user is no longer available.',
+            meta={'full_name': user.fullname, 'family_name': user.family_name, 'given_name': user.given_name,
+                    'middle_names': user.middle_names, 'profile_image': user.profile_image_url()})
+
 class Conflict(JSONAPIException):
     status_code = status.HTTP_409_CONFLICT
     default_detail = ('Resource identifier does not match server endpoint.')
