@@ -338,7 +338,6 @@ services:
       - 8001:8001
     depends_on:
       - postgres
-      - tokumx
       - rabbitmq
       - elasticsearch
     env_file:
@@ -359,7 +358,6 @@ services:
       - 8000:8000
     depends_on:
       - postgres
-      - tokumx
       - rabbitmq
       - elasticsearch
     environment:
@@ -380,7 +378,6 @@ services:
       - 5000:5000
     depends_on:
       - postgres
-      - tokumx
       - rabbitmq
       - elasticsearch
     environment:
