@@ -22,7 +22,6 @@ from website.models import Tag
 from website.files import models
 from addons.osfstorage.apps import osf_storage_root
 from addons.osfstorage import utils
-from addons.osfstorage import views
 from addons.base.views import make_auth
 from addons.osfstorage import settings as storage_settings
 

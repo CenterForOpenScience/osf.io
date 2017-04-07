@@ -17,6 +17,7 @@ from framework.exceptions import HTTPError
 from framework.auth.decorators import must_be_signed
 
 from osf.exceptions import InvalidTagError, TagNotFoundError
+from osf.models import OSFUser
 from website.project.decorators import (
     must_not_be_registration, must_have_addon, must_have_permission
 )
@@ -132,7 +133,7 @@ def osfstorage_get_metadata(file_node, **kwargs):
 @must_be_signed
 @decorators.autoload_filenode(must_be='folder')
 def osfstorage_get_children(file_node, **kwargs):
-    from django.contrib.contenttypes.models import ContentType, OSFUser
+    from django.contrib.contenttypes.models import ContentType
     with connection.cursor() as cursor:
         cursor.execute('''
             SELECT json_agg(CASE
@@ -198,7 +199,6 @@ def osfstorage_get_children(file_node, **kwargs):
 @must_not_be_registration
 @decorators.autoload_filenode(must_be='folder')
 def osfstorage_create_child(file_node, payload, node_addon, **kwargs):
-    from osf.models import OSFUser
     parent = file_node  # Just for clarity
     name = payload.get('name')
     user = OSFUser.load(payload.get('user'))
@@ -263,7 +263,6 @@ def osfstorage_create_child(file_node, payload, node_addon, **kwargs):
 @must_not_be_registration
 @decorators.autoload_filenode()
 def osfstorage_delete(file_node, payload, node_addon, **kwargs):
-    from osf.models import OSFUser
     user = OSFUser.load(payload['user'])
     auth = Auth(user)
 
