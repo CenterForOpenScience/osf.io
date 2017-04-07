@@ -19,13 +19,15 @@ class Institution(Loggable, base.ObjectIDMixin, base.BaseModel):
     banner_name = models.CharField(max_length=255, blank=True, null=True)
     logo_name = models.CharField(max_length=255, blank=True, null=True)
 
-    # The protocol used to delegate authentication: `CAS`, `SAML`, `OAuth`, e.t.c
-    # We use Shibboleth's implementation for SAML and pac4j's implementation for CAS and OAuth
-    # Only institutions with a valid delegation protocol show up on institution login page
+    # The protocol which is used to delegate authentication.
+    # Currently, we have `CAS`, `SAML`, `OAuth` available.
+    # For `SAML`, we use Shibboleth.
+    # For `CAS` and `OAuth`, we use pac4j.
+    # Only institutions with a valid delegation protocol show up on the institution login page.
     DELEGATION_PROTOCOL_CHOICES = (
-        ('cas-pac4j', 'CAS by pac4j'),
-        ('oauth-pac4j', 'OAuth by pac4j'),
-        ('saml-shib', 'SAML by shibboleth'),
+        ('CAS_PAC4J', 'CAS by pac4j'),
+        ('OAUTH_PAC4J', 'OAuth by pac4j'),
+        ('SAML_SHIB', 'SAML by Shibboleth'),
         ('', 'No Delegation Protocol'),
     )
     delegation_protocol = models.CharField(max_length=15, choices=DELEGATION_PROTOCOL_CHOICES, blank=True)
