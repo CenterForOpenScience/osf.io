@@ -28,18 +28,9 @@ logger = logging.getLogger(__name__)
 
 
 def serialize_contributors_for_summary(node, max_count=3):
-    # This is optimized when node has .include('contributor__user__guids')
-    users = []
-    count = 0
-    for each in node.contributor_set.all():
-        if count == max_count:
-            break
-        if each.visible:
-            users.append(each.user)
-            count += 1
-
+    # # TODO: Use .filter(visible=True) when chaining is fixed in django-include
+    users = [contrib.user for contrib in node.contributor_set.all() if contrib.visible]
     contributors = []
-
     n_contributors = len(users)
     others_count = ''
 
