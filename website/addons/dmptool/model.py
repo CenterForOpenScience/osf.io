@@ -43,7 +43,7 @@ class AddonDmptoolNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
 
     folder_id = fields.StringField(default=ROOT_FOLDER_NAME)
     folder_name = fields.StringField(default=ROOT_FOLDER_NAME)
-    folder_path = fields.StringField(default=ROOT_FOLDER_NAME)
+    # folder_path = fields.StringField(default=ROOT_FOLDER_NAME)
 
     def set_user_auth(self, user_settings):
 
@@ -57,7 +57,7 @@ class AddonDmptoolNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
 
         self.folder_id = str(folder_id)
         self.folder_name = ROOT_FOLDER_NAME
-        self.folder_path = ROOT_FOLDER_NAME
+        # self.folder_path = ROOT_FOLDER_NAME
         self.save()
 
         if not self.complete:
@@ -72,14 +72,13 @@ class AddonDmptoolNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
 
     # based on https://github.com/CenterForOpenScience/osf.io/blob/4a5d4e5a887c944174694300c42b399638184722/website/addons/box/model.py#L105-L107
     def fetch_full_folder_path(self):
-        # don't know why this would be needed for Evernote
 
-        return self.folder_path
+        return self.folder_id
 
     def fetch_folder_name(self):
         # don't know why this would be needed for Evernote
 
-        return self.folder_path
+        return self.folder_name
 
     def clear_settings(self):
         """
@@ -87,7 +86,7 @@ class AddonDmptoolNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         """
         self.folder_id = ROOT_FOLDER_NAME
         self.folder_name = ROOT_FOLDER_NAME
-        self.folder_path = ROOT_FOLDER_NAME
+        # self.folder_path = ROOT_FOLDER_NAME
 
     def deauthorize(self, auth=None, add_log=True):
         """Remove user authorization from this node and log the event."""

@@ -165,11 +165,11 @@
             },
             "Delete files": {
                 "status": "none",
- +              "text": "The DMPTool add-on is read-only."
+                "text": "The DMPTool add-on is read-only."
             },
             "Logs": {
                 "status": "partial",
- +              "text": "OSF keeps track of changes you make to your DMPTool add-on configuration.  It does not track changes to DMPTool content."
+                "text": "OSF keeps track of changes you make to your DMPTool add-on configuration.  It does not track changes to DMPTool content."
             },
             "Forking": {
                 "status": "partial",
