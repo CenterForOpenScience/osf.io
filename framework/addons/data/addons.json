@@ -156,16 +156,20 @@
                 "text": "Making an OSF project public or private is independent of making an DMPTool document public or private. The OSF does not alter the permissions of a linked DMPTool document."
             },
             "View / download file versions": {
-                "status": "NA"
+                "status": "full",
+                "text": "DMPTool plans can be viewed/downloaded via OSF."
             },
             "Add / update files": {
-                "status": "NA"
+                "status": "none",
+                 "text": "The DMPTool add-on is read-only."
             },
             "Delete files": {
-                "status": "NA"
+                "status": "none",
+ +              "text": "The DMPTool add-on is read-only."
             },
             "Logs": {
-                "status": "NA"
+                "status": "partial",
+ +              "text": "OSF keeps track of changes you make to your DMPTool add-on configuration.  It does not track changes to DMPTool content."
             },
             "Forking": {
                 "status": "partial",
