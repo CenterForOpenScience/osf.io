@@ -12,7 +12,8 @@ from website.addons.base import StorageAddonBase
 
 from website.addons.dmptool.serializer import DmptoolSerializer
 
-ROOT_FOLDER_NAME = '/'
+ROOT_FOLDER_ID = '/'
+ROOT_FOLDER_NAME = '/ (Full DMPTool)'
 
 
 class DmptoolProvider(object):
@@ -41,9 +42,9 @@ class AddonDmptoolNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
     oauth_provider = DmptoolProvider
     serializer = DmptoolSerializer
 
-    folder_id = fields.StringField(default=ROOT_FOLDER_NAME)
+    folder_id = fields.StringField(default=ROOT_FOLDER_ID)
     folder_name = fields.StringField(default=ROOT_FOLDER_NAME)
-    folder_path = fields.StringField(default=ROOT_FOLDER_NAME)
+    folder_path = fields.StringField(default=ROOT_FOLDER_ID)
 
     def set_user_auth(self, user_settings):
 
@@ -57,7 +58,7 @@ class AddonDmptoolNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
 
         self.folder_id = str(folder_id)
         self.folder_name = ROOT_FOLDER_NAME
-        self.folder_path = ROOT_FOLDER_NAME
+        self.folder_path = ROOT_FOLDER_ID
         self.save()
 
         if not self.complete:
@@ -79,15 +80,15 @@ class AddonDmptoolNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
     def fetch_folder_name(self):
         # don't know why this would be needed for Evernote
 
-        return self.folder_path
+        return self.folder_name
 
     def clear_settings(self):
         """
         TO DO: deal with this hack.  For the dmptool, there is no folder per se, just plans.
         """
-        self.folder_id = ROOT_FOLDER_NAME
+        self.folder_id = ROOT_FOLDER_ID
         self.folder_name = ROOT_FOLDER_NAME
-        self.folder_path = ROOT_FOLDER_NAME
+        self.folder_path = ROOT_FOLDER_ID
 
     def deauthorize(self, auth=None, add_log=True):
         """Remove user authorization from this node and log the event."""
