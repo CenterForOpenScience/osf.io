@@ -32,6 +32,8 @@ from osf.models import (
     DraftRegistration,
 )
 
+from website.util import waterbutler_api_url_for
+
 def create_app_context():
     try:
         init_addons(settings)
@@ -190,7 +192,7 @@ def archive_addon(addon_short_name, job_pk, stat_result):
     logger.info('Archiving addon: {0} on node: {1}'.format(addon_short_name, src._id))
 
     cookie = user.get_or_create_cookie()
-    params = '?cookie={}'.format(cookie)
+    params = {'cookie': cookie}
     rename_suffix = ''
     # The dataverse API will not differentiate between published and draft files
     # unless expcicitly asked. We need to create seperate folders for published and
@@ -200,14 +202,13 @@ def archive_addon(addon_short_name, job_pk, stat_result):
     # condition that non-deterministically caused archive jobs to fail.
     if 'dataverse' in addon_short_name:
         revision = 'latest' if addon_short_name.split('-')[-1] == 'draft' else 'latest-published'
-        params += '&revision={}'.format(revision)
+        params['revision'] = revision
         rename_suffix = ' (draft)' if addon_short_name.split('-')[-1] == 'draft' else ' (published)'
         addon_short_name = 'dataverse'
     src_provider = src.get_addon(addon_short_name)
     folder_name = src_provider.archive_folder_name
     rename = '{}{}'.format(folder_name, rename_suffix)
-
-    url = '{}/v1/resources/{}/providers/{}/{}'.format(settings.WATERBUTLER_INTERNAL_URL, src._id, addon_short_name, params)
+    waterbutler_api_url_for(src._id, addon_short_name, kwargs=params):
     data = make_waterbutler_payload(dst._id, rename)
     make_copy_request.delay(job_pk=job_pk, url=url, data=data)
 
