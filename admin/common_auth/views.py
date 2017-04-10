@@ -1,7 +1,7 @@
 from __future__ import absolute_import, unicode_literals
 
 from django.core.urlresolvers import reverse, reverse_lazy
-from django.http import Http404, HttpResponseBadRequest
+from django.http import Http404
 from django.shortcuts import redirect
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import never_cache
@@ -74,11 +74,8 @@ class RegisterUser(PermissionRequiredMixin, FormView):
 
         # create AdminProfile for this new user
         profile, created = AdminProfile.objects.get_or_create(user=osf_user)
-        if not created:
-            return HttpResponseBadRequest(
-                'This user is already able to access the OSF Admin - please update their permissions with a superuser'
-            )
 
+        osf_user.groups.clear()
         prereg_admin_group = Group.objects.get(name='prereg_admin')
         for group in form.cleaned_data.get('group_perms'):
             osf_user.groups.add(group)
@@ -87,7 +84,10 @@ class RegisterUser(PermissionRequiredMixin, FormView):
 
         osf_user.save()
 
-        messages.success(self.request, 'Registration successful for OSF User {}!'.format(osf_user.username))
+        if created:
+            messages.success(self.request, 'Registration successful for OSF User {}!'.format(osf_user.username))
+        else:
+            messages.success(self.request, 'Permissions update successful for OSF User {}!'.format(osf_user.username))
         return super(RegisterUser, self).form_valid(form)
 
     def get_success_url(self):

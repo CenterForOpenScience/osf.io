@@ -21,13 +21,8 @@ from osf.models.base import BaseModel, GuidMixin
 from osf.models.subject import Subject
 
 class PreprintService(GuidMixin, BaseModel):
-    # TODO REMOVE AFTER MIGRATION
-    modm_model_path = 'website.preprints.model.PreprintService'
-    modm_query = None
-    # /TODO REMOVE AFTER MIGRATION
-
-    date_created = NonNaiveDateTimeField(default=timezone.now)
-    date_modified = NonNaiveDateTimeField(default=timezone.now)  # auto_now=True)
+    date_created = NonNaiveDateTimeField(auto_now_add=True)
+    date_modified = NonNaiveDateTimeField(auto_now=True)
     provider = models.ForeignKey('osf.PreprintProvider',
                                  on_delete=models.SET_NULL,
                                  related_name='preprint_services',
@@ -49,6 +44,9 @@ class PreprintService(GuidMixin, BaseModel):
 
     class Meta:
         unique_together = ('node', 'provider')
+        permissions = (
+            ('view_preprintservice', 'Can view preprint service details in the admin app.'),
+        )
 
     def __unicode__(self):
         return '{} preprint (guid={}) of {}'.format('published' if self.is_published else 'unpublished', self._id, self.node.__unicode__())

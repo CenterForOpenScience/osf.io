@@ -8,12 +8,6 @@ from website.util import api_v2_url
 
 
 class NodeLog(ObjectIDMixin, BaseModel):
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.project.model.NodeLog'
-    modm_query = None
-    migration_page_size = 10000
-    # /TODO DELETE ME POST MIGRATION
-
     FIELD_ALIASES = {
         # TODO: Find a better way
         'node': 'node__guids___id',
@@ -138,8 +132,7 @@ class NodeLog(ObjectIDMixin, BaseModel):
                     config.actions for config in apps.get_app_configs() if config.name.startswith('addons.')
                 ], tuple())))
     action_choices = [(action, action.upper()) for action in actions]
-    date = NonNaiveDateTimeField(default=timezone.now, db_index=True,
-                                null=True, blank=True)  # auto_now_add=True)
+    date = NonNaiveDateTimeField(db_index=True, null=True, blank=True, default=timezone.now)
     # TODO build action choices on the fly with the addon stuff
     action = models.CharField(max_length=255, db_index=True)  # , choices=action_choices)
     params = DateTimeAwareJSONField(default=dict)
@@ -187,17 +180,6 @@ class NodeLog(ObjectIDMixin, BaseModel):
         log_clone.user = original_log.user
         log_clone.save()
         return log_clone
-
-    @classmethod
-    def migrate_from_modm(cls, modm_obj):
-        django_obj = super(NodeLog, cls).migrate_from_modm(modm_obj)
-
-        # No logs for institution
-        if modm_obj.node and modm_obj.node.institution_id is not None:
-            print('Institution nodelog {}, skipping...'.format(modm_obj._id))
-            return None
-
-        return django_obj
 
     def _natural_key(self):
         return self._id

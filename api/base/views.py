@@ -1,5 +1,3 @@
-import weakref
-
 from django.conf import settings as django_settings
 from django.db import transaction
 from django.http import JsonResponse
@@ -31,8 +29,6 @@ from osf.models.contributor import Contributor
 from website.models import Pointer
 from website import maintenance
 
-CACHE = weakref.WeakKeyDictionary()
-
 
 class JSONAPIBaseView(generics.GenericAPIView):
 
@@ -58,10 +54,15 @@ class JSONAPIBaseView(generics.GenericAPIView):
             v, view_args, view_kwargs = field.resolve(item, field_name, self.request)
             if not v:
                 return None
-            if isinstance(self.request._request, EmbeddedRequest):
-                request = self.request._request
+
+            if isinstance(self.request, EmbeddedRequest):
+                request = EmbeddedRequest(self.request._request)
             else:
                 request = EmbeddedRequest(self.request)
+
+            if not hasattr(request._request._request, '_embed_cache'):
+                request._request._request._embed_cache = {}
+            cache = request._request._request._embed_cache
 
             request.parents.setdefault(type(item), {})[item._id] = item
 
@@ -88,15 +89,15 @@ class JSONAPIBaseView(generics.GenericAPIView):
                     return ret
 
             _cache_key = (v.cls, field_name, view.get_serializer_class(), (type(item), item.id))
-            if _cache_key in CACHE.setdefault(self.request._request, {}):
+            if _cache_key in cache:
                 # We already have the result for this embed, return it
-                return CACHE[self.request._request][_cache_key]
+                return cache[_cache_key]
 
             # Cache serializers. to_representation of a serializer should NOT augment it's fields so resetting the context
             # should be sufficient for reuse
-            if not view.get_serializer_class() in CACHE.setdefault(self.request._request, {}):
-                CACHE[self.request._request][view.get_serializer_class()] = view.get_serializer_class()(many=isinstance(view, ListModelMixin))
-            ser = CACHE[self.request._request][view.get_serializer_class()]
+            if not view.get_serializer_class() in cache:
+                cache[view.get_serializer_class()] = view.get_serializer_class()(many=isinstance(view, ListModelMixin))
+            ser = cache[view.get_serializer_class()]
 
             try:
                 ser._context = view.get_serializer_context()
@@ -122,7 +123,7 @@ class JSONAPIBaseView(generics.GenericAPIView):
             ser._context = None
 
             # Cache our final result
-            CACHE[self.request._request][_cache_key] = ret
+            cache[_cache_key] = ret
 
             return ret
 
@@ -851,11 +852,4 @@ class BaseLinkedList(JSONAPIBaseView, generics.ListAPIView):
     def get_queryset(self):
         auth = get_user_auth(self.request)
 
-        linked_node_ids = [
-            each.id for each in self.get_node().linked_nodes
-            .filter(is_deleted=False)
-            .exclude(type='osf.collection')
-            .order_by('-date_modified')
-            if each.can_view(auth)
-        ]
-        return self.get_node().linked_nodes.filter(id__in=linked_node_ids)
+        return self.get_node().linked_nodes.filter(is_deleted=False).exclude(type='osf.collection').can_view(user=auth.user, private_link=auth.private_link).order_by('-date_modified')

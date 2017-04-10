@@ -209,6 +209,14 @@ class TestParentNode:
 
         assert 0 == len(Node.objects.get_children(root))
 
+    def test_get_children_with_nested_projects(self):
+        root = ProjectFactory()
+        child = NodeFactory(parent=root)
+        grandchild = NodeFactory(parent=child)
+        result = Node.objects.get_children(child)
+        assert result.count() == 1
+        assert grandchild in result
+
     def test_get_children_with_links(self):
         root = ProjectFactory()
         child = NodeFactory(parent=root)
@@ -331,6 +339,13 @@ class TestParentNode:
         new_nodes = [node.title for node in template.nodes]
         assert len(template.nodes) == 1
         assert deleted_child.title not in new_nodes
+
+    def test_parent_node_doesnt_return_link_parent(self, project):
+        linker = ProjectFactory(title='Linker')
+        linker.add_node_link(project, auth=Auth(linker.creator), save=True)
+        # Prevent cached parent_node property from being used
+        project = Node.objects.get(id=project.id)
+        assert project.parent_node is None
 
 
 class TestRoot:
@@ -631,28 +646,6 @@ class TestProject:
 
         assert linked_node in project.nodes_active
         assert deleted_linked_node not in project.nodes_active
-
-    def test_date_modified(self, node, auth):
-        contrib = UserFactory()
-        node.add_contributor(contrib, auth=auth)
-        node.save()
-
-        assert node.date_modified == node.logs.latest().date
-        assert node.date_modified != node.date_created
-
-    def test_date_modified_create_registration(self, node):
-        RegistrationFactory(project=node)
-        node.reload()
-
-        assert node.date_modified == node.logs.latest().date
-        assert node.date_modified != node.date_created
-
-    def test_date_modified_create_component(self, node, user):
-        NodeFactory(creator=user, parent=node)
-        node.save()
-
-        assert node.date_modified == node.date_created
-
 
 class TestLogging:
 

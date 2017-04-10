@@ -18,9 +18,6 @@ from addons.base import exceptions
 from addons.box import settings
 from addons.box.serializer import BoxSerializer
 from website.util import api_v2_url
-# TODO DELETE ME POST MIGRATION
-from modularodm import Q as MQ
-# /TODO DELETE ME POST MIGRATION
 
 logger = logging.getLogger(__name__)
 
@@ -30,18 +27,10 @@ class BoxFileNode(BaseFileNode):
 
 
 class BoxFolder(BoxFileNode, Folder):
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.files.models.box.BoxFolder'
-    modm_query = MQ('is_file', 'eq', False)
-    # /TODO DELETE ME POST MIGRATION
     pass
 
 
 class BoxFile(BoxFileNode, File):
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.files.models.box.BoxFile'
-    modm_query = MQ('is_file', 'eq', True)
-    # /TODO DELETE ME POST MIGRATION
     pass
 
 
@@ -83,10 +72,6 @@ class Provider(ExternalProvider):
 class UserSettings(BaseOAuthUserSettings):
     """Stores user-specific box information
     """
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.addons.box.model.BoxUserSettings'
-    modm_query = None
-    # /TODO DELETE ME POST MIGRATION
 
     oauth_provider = Provider
     serializer = BoxSerializer
@@ -108,10 +93,6 @@ class UserSettings(BaseOAuthUserSettings):
 
 
 class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.addons.box.model.BoxNodeSettings'
-    modm_query = None
-    # /TODO DELETE ME POST MIGRATION
     oauth_provider = Provider
     serializer = BoxSerializer
 

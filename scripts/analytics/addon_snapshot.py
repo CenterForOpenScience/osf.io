@@ -43,6 +43,7 @@ def get_enabled_authorized_linked(user_settings_list, has_external_account, shor
 
     else:
         for user_settings in paginated(user_settings_list):
+            node_settings_list = []
             if has_external_account:
                 if user_settings.has_auth:
                     num_enabled += 1
