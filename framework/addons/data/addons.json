@@ -30,6 +30,36 @@
                 "text": "GitHub content will be registered, but version history will not be copied to the registration."
             }
         },
+        "GitLab": {
+            "Permissions": {
+                "status": "partial",
+                "text": "Making an OSF project public or private is independent of making a GitLab repo public or private. The OSF does not alter the permissions of linked GitLab repos."
+            },
+            "View / download file versions": {
+                "status": "full",
+                "text": "GitLab files and their versions can be viewed/downloaded via OSF."
+            },
+            "Add / update files": {
+                "status": "none",
+                "text": "Adding/updating files in the project via OSF is not implemented yet."
+            },
+            "Delete files": {
+                "status": "none",
+                "text": "Deleting files via OSF is not implemented yet."
+            },
+            "Logs": {
+                "status": "full",
+                "text": "GitLab dynamically updates OSF logs when files are modified outside the OSF. Changes to GitLab repos made before the repo is linked to the OSF will not be reflected in OSF logs."
+            },
+            "Forking": {
+                "status": "none",
+                "text": "Forking a project is not implemented yet."
+            },
+            "Registering": {
+                "status": "none",
+                "text": "Registration on Gitlab is not implemented yet."
+            }
+        },
         "Amazon S3": {
             "Permissions": {
                 "status": "partial",

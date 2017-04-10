@@ -717,6 +717,7 @@ def root(request, format=None, **kwargs):
         dropbox      Dropbox
         figshare     figshare
         github       GitHub
+        gitlab       GitLab
         googledrive  Google Drive
         osfstorage   OSF Storage
         s3           Amazon S3

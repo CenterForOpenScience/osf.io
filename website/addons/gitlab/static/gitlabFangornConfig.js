@@ -23,111 +23,6 @@ function _getCurrentBranch(item) {
     return branch;
 }
 
-function _uploadUrl(item, file) {
-    var branch = _getCurrentBranch(item);
-    return waterbutler.buildTreeBeardUpload(item, file, {branch: branch });
-}
-
-function _removeEvent (event, items) {
-    var tb = this;
-    function cancelDelete() {
-        tb.modal.dismiss();
-    }
-
-    function runDelete (item) {
-        // delete from server, if successful delete from view
-        tb.select('.modal-footer .btn-danger').html('<i> Deleting...</i>').removeClass('btn-danger').addClass('btn-default disabled');
-        var branch = $osf.urlParams().branch || _getCurrentBranch(item);
-
-        $.ajax({
-            url: waterbutler.buildTreeBeardDelete(item, {branch: branch}),
-            type : 'DELETE',
-            beforeSend: $osf.setXHRAuthorization
-        }).done(function (data) {
-                // delete view
-                tb.deleteNode(item.parentID, item.id);
-                Fangorn.Utils.dismissToolbar.call(tb);
-                tb.modal.dismiss();
-                tb.clearMultiselect();
-
-        }).fail(function (data) {
-                tb.modal.dismiss();
-                Fangorn.Utils.dismissToolbar.call(tb);
-                item.notify.update('Delete failed.', 'danger', undefined, 3000);
-                tb.clearMultiselect();
-        });
-    }
-
-    function runDeleteMultiple(items){
-        items.forEach(function(item){
-            runDelete(item);
-        });
-    }
-
-    // If there is only one item being deleted, don't complicate the issue:
-    if(items.length === 1) {
-        var parent = items[0].parent();
-        var mithrilContentSingle = m('div', [
-            m('p', 'This action is irreversible.'),
-            parent.children.length < 2 ? m('p', 'If a folder in GitLab has no children it will automatically be removed.') : ''
-        ]);
-        var mithrilButtonsSingle = m('div', [
-            m('span.btn.btn-default', { onclick : function() { cancelDelete(); } }, 'Cancel'),
-            m('span.btn.btn-danger', { onclick : function() { runDelete(items[0]); }  }, 'Delete')
-        ]);
-        // This is already being checked before this step but will keep this edit permission check
-        if(items[0].data.permissions.edit){
-            tb.modal.update(mithrilContentSingle, mithrilButtonsSingle, m('h3.break-word.modal-title', 'Delete "' + items[0].data.name + '"?'));
-        }
-    } else {
-        // Check if all items can be deleted
-        var canDelete = true;
-        var deleteList = [];
-        var noDeleteList = [];
-        var mithrilContentMultiple;
-        var mithrilButtonsMultiple;
-        items.forEach(function(item, index, arr){
-            if(!item.data.permissions.edit){
-                canDelete = false;
-                noDeleteList.push(item);
-            } else {
-                deleteList.push(item);
-            }
-        });
-        // If all items can be deleted
-        if(canDelete){
-            mithrilContentMultiple = m('div', [
-                    m('p', 'This action is irreversible.'),
-                    deleteList.map(function(item){
-                        return m('.fangorn-canDelete.text-success', item.data.name);
-                    })
-                ]);
-            mithrilButtonsMultiple =  m('div', [
-                    m('span.btn.btn-default', { 'class' : 'text-default', onclick : function() { cancelDelete(); } }, 'Cancel'),
-                    m('span.btn.btn-danger', {  'class' : 'text-danger', onclick : function() { runDeleteMultiple.call(tb, deleteList); }  }, 'Delete All')
-                ]);
-        } else {
-            mithrilContentMultiple = m('div', [
-                    m('p', 'Some of these files can\'t be deleted but you can delete the ones highlighted with green. This action is irreversible.'),
-                    deleteList.map(function(n){
-                        return m('.fangorn-canDelete.text-success', n.data.name);
-                    }),
-                    noDeleteList.map(function(n){
-                        return m('.fangorn-noDelete.text-warning', n.data.name);
-                    })
-                ]);
-            mithrilButtonsMultiple =  m('div', [
-                    m('span.btn.btn-default', { 'class' : 'text-default', onclick : function() { cancelDelete(); } }, 'Cancel'),
-                    m('span.btn.btn-danger', { 'class' : 'text-danger', onclick : function() { runDeleteMultiple.call(tb, deleteList); }  }, 'Delete Some')
-                ]);
-        }
-        tb.modal.update(mithrilContentMultiple, mithrilButtonsMultiple, m('h3.break-word.modal-title', 'Delete multiple files?'));
-    }
-
-    return true; // Let fangorn know this config option was used.
-}
-
-
 // Define Fangorn Button Actions
 var _gitlabItemButtons = {
     view: function (ctrl, args, children) {
@@ -165,34 +60,6 @@ var _gitlabItemButtons = {
                 );
             }
             if (tb.options.placement !== 'fileview') {
-                // If File and FileRead are not defined dropzone is not supported and neither is uploads
-                if (window.File && window.FileReader && item.data.permissions && item.data.permissions.edit) {
-                    buttons.push(
-                        m.component(Fangorn.Components.button, {
-                            onclick: function (event) {
-                                Fangorn.ButtonEvents._uploadEvent.call(tb, event, item);
-                            },
-                            icon: 'fa fa-upload',
-                            className: 'text-success'
-                        }, 'Upload'),
-                        m.component(Fangorn.Components.button, {
-                            onclick: function (event) {
-                                tb.toolbarMode(Fangorn.Components.toolbarModes.ADDFOLDER);
-                            },
-                            icon: 'fa fa-plus',
-                            className: 'text-success'
-                        }, 'Create Folder')
-                    );
-                    if(!item.data.isAddonRoot){
-                        buttons.push(m.component(Fangorn.Components.button, {
-                            onclick: function (event) {
-                                _removeEvent.call(tb, event, [item]);
-                            },
-                            icon: 'fa fa-trash',
-                            className: 'text-danger'
-                        }, 'Delete Folder'));
-                    }
-                }
                 if (item.data.addonFullname) {
                     var branch = _getCurrentBranch(item);
                     var branchParamUrl = '?ref=' + branch;
@@ -234,17 +101,6 @@ var _gitlabItemButtons = {
                         icon: 'fa fa-file-o',
                         className : 'text-info'
                     }, 'View'));
-            }
-            if (item.data.permissions && item.data.permissions.edit) {
-                buttons.push(
-                    m.component(Fangorn.Components.button, {
-                        onclick: function (event) {
-                            _removeEvent.call(tb, event, [item]);
-                        },
-                        icon: 'fa fa-trash',
-                        className: 'text-danger'
-                    }, 'Delete')
-                );
             }
             if (item.data.permissions && item.data.permissions.view && !item.data.permissions.private) {
                 buttons.push(
@@ -405,7 +261,6 @@ function _fangornUploadSuccess(file, item, response) {
 // Register configuration
 Fangorn.config.gitlab = {
     // Handle changing the branch select
-    uploadUrl: _uploadUrl,
     lazyload: _resolveLazyLoad,
     resolveRows: _fangornColumns,
     folderIcon: _fangornFolderIcons,
@@ -413,5 +268,4 @@ Fangorn.config.gitlab = {
     lazyLoadOnLoad: _fangornLazyLoadOnLoad,
     uploadSuccess: _fangornUploadSuccess,
     itemButtons: _gitlabItemButtons,
-    removeEvent : _removeEvent
 };
