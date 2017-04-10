@@ -8,7 +8,7 @@ from api_tests.preprints.views.test_preprint_list_mixin import PreprintIsPublish
 from website.util import permissions
 from osf.models import PreprintService, Node
 from website.project import signals as project_signals
-
+import mock
 
 from tests.base import ApiTestCase, capture_signals
 from osf_tests.factories import (
@@ -256,6 +256,24 @@ class TestPreprintCreate(ApiTestCase):
         log = preprint.node.logs.latest()
         assert_equal(log.action, 'preprint_initiated')
         assert_equal(log.params.get('preprint'), preprint_id)
+
+    @mock.patch('website.preprints.tasks.on_preprint_updated.s')
+    def test_create_preprint_from_project_published_hits_update(self, mock_on_preprint_updated):
+        private_project_payload = build_preprint_create_payload(self.private_project._id, self.provider._id, self.file_one_private_project._id, attrs={
+                'subjects': [[SubjectFactory()._id]],
+                'is_published': True
+            })
+        res = self.app.post_json_api(self.url, private_project_payload, auth=self.user.auth)
+        assert mock_on_preprint_updated.called
+
+    @mock.patch('website.preprints.tasks.on_preprint_updated.s')
+    def test_create_preprint_from_project_unpublished_does_not_hit_update(self, mock_on_preprint_updated):
+        private_project_payload = build_preprint_create_payload(self.private_project._id, self.provider._id, self.file_one_private_project._id, attrs={
+                'subjects': [[SubjectFactory()._id]],
+                'is_published': False
+            })
+        res = self.app.post_json_api(self.url, private_project_payload, auth=self.user.auth)
+        assert not mock_on_preprint_updated.called
 
 
 class TestPreprintIsPublishedList(PreprintIsPublishedListMixin, ApiTestCase):
