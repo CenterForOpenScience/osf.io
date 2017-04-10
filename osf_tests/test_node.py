@@ -33,6 +33,7 @@ from osf.models import (
     DraftRegistration,
     DraftRegistrationApproval,
 )
+from osf.models.node import AbstractNodeQuerySet
 from osf.models.spam import SpamStatus
 from addons.wiki.models import NodeWikiPage
 from osf.exceptions import ValidationError, ValidationValueError
@@ -197,17 +198,25 @@ class TestParentNode:
         greatgrandchild_1 = NodeFactory(parent=grandchild_1, is_deleted=True)
 
         assert 20 == Node.objects.get_children(root).count()
-        pks = Node.objects.get_children(root, primary_keys=True)
+        pks = Node.objects.get_children(root).values_list('id', flat=True)
         assert 20 == len(pks)
         assert set(pks) == set(Node.objects.exclude(id=root.id).values_list('id', flat=True))
 
         assert greatgrandchild_1 in Node.objects.get_children(root).all()
         assert greatgrandchild_1 not in Node.objects.get_children(root, active=True).all()
 
-    def test_get_children_with_barren_parent(self):
+    def test_get_children_root_with_no_children(self):
         root = ProjectFactory()
 
         assert 0 == len(Node.objects.get_children(root))
+        assert isinstance(Node.objects.get_children(root), AbstractNodeQuerySet)
+
+    def test_get_children_child_with_no_children(self):
+        root = ProjectFactory()
+        child = ProjectFactory(parent=root)
+
+        assert 0 == Node.objects.get_children(child).count()
+        assert isinstance(Node.objects.get_children(child), AbstractNodeQuerySet)
 
     def test_get_children_with_nested_projects(self):
         root = ProjectFactory()
