@@ -209,6 +209,14 @@ class TestParentNode:
 
         assert 0 == len(Node.objects.get_children(root))
 
+    def test_get_children_with_nested_projects(self):
+        root = ProjectFactory()
+        child = NodeFactory(parent=root)
+        grandchild = NodeFactory(parent=child)
+        result = Node.objects.get_children(child)
+        assert result.count() == 1
+        assert grandchild in result
+
     def test_get_children_with_links(self):
         root = ProjectFactory()
         child = NodeFactory(parent=root)
