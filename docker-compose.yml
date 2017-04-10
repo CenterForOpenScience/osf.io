@@ -48,6 +48,7 @@ services:
     volumes:
       - elasticsearch_data_vol:/usr/share/elasticsearch/data
     stdin_open: true
+    tty: true
 
   postgres:
     image: postgres:9.6
@@ -67,6 +68,7 @@ services:
     volumes:
       - postgres_data_vol:/var/lib/postgresql/data/
     stdin_open: true
+    tty: true
 
   tokumx:
     image: quay.io/centerforopenscience/tokumx:latest
@@ -78,6 +80,7 @@ services:
     volumes:
       - tokumx_data_vol:/data/db
     stdin_open: true
+    tty: true
 
   rabbitmq:
     image: rabbitmq:3-management
@@ -87,6 +90,7 @@ services:
     volumes:
       - rabbitmq_vol:/var/lib/rabbitmq
     stdin_open: true
+    tty: true
 
 #  flower:
 #    image: quay.io/centerforopenscience/osf:develop
@@ -127,6 +131,7 @@ services:
     volumes:
       - mfr_requirements_vol:/usr/local/lib/python3.5
     stdin_open: true
+    tty: true
 
   ###############
   # WaterButler #
@@ -175,6 +180,7 @@ services:
       - osfstoragecache_vol:/code/website/osfstoragecache
       - wb_tmp_vol:/tmp
     stdin_open: true
+    tty: true
 
   ##################################
   # Central Authentication Service #
@@ -189,6 +195,7 @@ services:
     depends_on:
       - postgres
     stdin_open: true
+    tty: true
 
 
   #############
@@ -211,6 +218,7 @@ services:
     volumes:
       - preprints_dist_vol:/code/dist
     stdin_open: true
+    tty: true
 
   ##############
   # Registries #
@@ -263,6 +271,7 @@ services:
       - osf_bower_components_vol:/code/website/static/vendor/bower_components
       - osf_node_modules_vol:/code/node_modules
     stdin_open: true
+    tty: true
 
   admin_assets:
     image: quay.io/centerforopenscience/osf:develop
@@ -277,6 +286,7 @@ services:
       - osf_admin_bower_components_vol:/code/admin/static/vendor/bower_components
       - osf_admin_node_modules_vol:/code/admin/node_modules
     stdin_open: true
+    tty: true
 
   sharejs:
     image: quay.io/centerforopenscience/osf:develop
@@ -292,6 +302,7 @@ services:
       - osf_requirements_vol:/usr/local/lib/python2.7
       - osf_node_modules_vol:/code/node_modules
     stdin_open: true
+    tty: true
 
 #  beat:
 #    image: quay.io/centerforopenscience/osf:develop
@@ -327,6 +338,7 @@ services:
       - osf_bower_components_vol:/code/website/static/vendor/bower_components
       - osf_node_modules_vol:/code/node_modules
     stdin_open: true
+    tty: true
 
   admin:
     image: quay.io/centerforopenscience/osf:develop
@@ -344,6 +356,7 @@ services:
     env_file:
       - .docker-compose.env
     stdin_open: true
+    tty: true
     volumes:
       - osf_requirements_vol:/usr/local/lib/python2.7
       - osf_bower_components_vol:/code/website/static/vendor/bower_components
@@ -371,6 +384,7 @@ services:
       - osf_bower_components_vol:/code/website/static/vendor/bower_components
       - osf_node_modules_vol:/code/node_modules
     stdin_open: true
+    tty: true
 
   web:
     image: quay.io/centerforopenscience/osf:develop
@@ -394,3 +408,4 @@ services:
       - preprints_dist_vol:/preprints
       - registries_dist_vol:/registries
     stdin_open: true
+    tty: true
