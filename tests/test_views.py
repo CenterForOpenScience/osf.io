@@ -1802,6 +1802,54 @@ class TestAddingContributorViews(OsfTestCase):
         assert_equal(rec['name'], name)
         assert_equal(rec['email'], email)
 
+    def test_unconfirmed_user_added_as_unregistered_contributor(self):
+        unconfirmed_user = UnconfirmedUserFactory()
+        assert_false(self.project.is_contributor(unconfirmed_user))
+
+        pseudouser = {
+            'active': False,
+            'email': unconfirmed_user.username,
+            'fullname': unconfirmed_user.fullname,
+            'id': None,
+            'permission': 'write',
+            'registered': False,
+            'visible': True,
+        }
+        payload = {
+            'users': [pseudouser],
+            'node_ids': []
+        }
+
+        url = self.project.api_url_for('project_contributors_post')
+        self.app.post_json(url, payload).maybe_follow()
+
+        assert_true(self.project.is_contributor(unconfirmed_user))
+
+    def test_confirmed_user_added_as_unregistered_contributor(self):
+        confirmed_user = UserFactory()
+        assert_true(confirmed_user.is_registered)
+        assert_false(self.project.is_contributor(confirmed_user))
+
+        pseudouser = {
+            'active': False,
+            'email': confirmed_user.username,
+            'fullname': confirmed_user.fullname,
+            'id': None,
+            'permission': 'write',
+            'registered': False,
+            'visible': True,
+        }
+        payload = {
+            'users': [pseudouser],
+            'node_ids': []
+        }
+
+        url = self.project.api_url_for('project_contributors_post')
+        self.app.post_json(url, payload).maybe_follow()
+
+        assert_true(self.project.is_contributor(confirmed_user))
+
+
     @mock.patch('website.project.views.contributor.send_claim_email')
     def test_add_contributors_post_only_sends_one_email_to_unreg_user(
             self, mock_send_claim_email):
