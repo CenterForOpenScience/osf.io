@@ -75,15 +75,13 @@ class AbstractNodeQuerySet(MODMCompatibilityQuerySet, IncludeQuerySet):
             where=['"osf_abstractnode".id in (SELECT id FROM osf_abstractnode WHERE id NOT IN (SELECT child_id FROM '
                    'osf_noderelation WHERE is_node_link IS false))'])
 
-    def get_children(self, root, primary_keys=False, active=False):
+    def get_children(self, root, active=False):
         # If `root` is a root node, we can use the 'descendants' related name
         # rather than doing a recursive query
         if root.id == root.root_id:
             query = root.descendants.exclude(id=root.id)
             if active:
                 query = query.filter(is_deleted=False)
-            if primary_keys:
-                query = query.values_list('id', flat=True)
             return query
         else:
             sql = """
@@ -117,10 +115,9 @@ class AbstractNodeQuerySet(MODMCompatibilityQuerySet, IncludeQuerySet):
                     node_relation_table,
                     root.pk])
                 row = cursor.fetchone()[0]
-                if row is None or primary_keys:
-                    return row or []
-                else:
-                    return AbstractNode.objects.filter(id__in=row)       # return query
+                if not row:
+                    return AbstractNode.objects.none()
+                return AbstractNode.objects.filter(id__in=row)
 
     def can_view(self, user=None, private_link=None):
         qs = self.filter(is_public=True)
