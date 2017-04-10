@@ -199,14 +199,13 @@ def archive_addon(addon_short_name, job_pk, stat_result):
     # Additionally trying to run the archive without this distinction creates a race
     # condition that non-deterministically caused archive jobs to fail.
     if 'dataverse' in addon_short_name:
-        revision = 'latest' if addon_short_name.split('-')[-1] == 'draft' else 'latest-published'
-        params['revision'] = revision
+        params['revision'] = 'latest' if addon_short_name.split('-')[-1] == 'draft' else 'latest-published'
         rename_suffix = ' (draft)' if addon_short_name.split('-')[-1] == 'draft' else ' (published)'
         addon_short_name = 'dataverse'
     src_provider = src.get_addon(addon_short_name)
     folder_name = src_provider.archive_folder_name
     rename = '{}{}'.format(folder_name, rename_suffix)
-    waterbutler_api_url_for(src._id, addon_short_name, kwargs=params):
+    url = waterbutler_api_url_for(src._id, addon_short_name, _internal=True, kwargs=params)
     data = make_waterbutler_payload(dst._id, rename)
     make_copy_request.delay(job_pk=job_pk, url=url, data=data)
 
