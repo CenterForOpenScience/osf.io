@@ -296,7 +296,7 @@ function _fangornLazyLoadOnLoad (tree, event) {
 
 function gotoFile (item) {
     var tb = this;
-    var branch = item.data.extra.ref || item.data.extra.fileSha;
+    var branch = _getCurrentBranch(item);
     var fileurl = new URI(item.data.nodeUrl)
         .segment('files')
         .segment(item.data.provider)
@@ -315,17 +315,15 @@ function _fangornGitLabTitle(item, col)  {
     if (item.data.isAddonRoot && item.connected === false) { // as opposed to undefined, avoids unnecessary setting of this value
         return Fangorn.Utils.connectCheckTemplate.call(this, item);
     }
-    
+
     if (item.data.addonFullname) {
         var urlParams = $osf.urlParams();
-        
-        if (!item.data.branch) {
-            if (urlParams.branch && urlParams.branch != item.data.branch) {
-                item.data.branch = urlParams.branch;
-            }
+
+        if (!item.data.branch && urlParams.branch) {
+            item.data.branch = urlParams.branch;
         }
-        var branch = item.data.branch || item.data.extra.ref || item.data.extra.fileSha;
-        
+        var branch = item.data.branch || item.data.defaultBranch;
+
         return m('span',[
             m('gitlab-name', item.data.name + ' (' + branch + ')')
         ]);
@@ -345,7 +343,6 @@ function _fangornGitLabTitle(item, col)  {
 
 function _fangornColumns (item) {
     var tb = this;
-    var selectClass = '';
     var node = item.parent().parent();
     var columns = [];
     columns.push({
@@ -358,13 +355,35 @@ function _fangornColumns (item) {
     if(tb.options.placement === 'project-files') {
         columns.push(
         {
-            data  : 'downloads',
+            data  : 'size',
+            sortInclude : false,
             filter : false,
-            css : ''
+            custom : function() {return item.data.size ? $osf.humanFileSize(item.data.size, true) : '';}
+        });
+        columns.push(
+        {
+            data  : 'downloads',
+            sortInclude : false,
+            filter : false,
+            custom : function() {return m('');}
+        });
+        columns.push({
+            data: 'version',
+            filter: false,
+            sortInclude : false,
+            custom: function() {return m('');}
+        });
+    }
+    if(tb.options.placement !== 'fileview') {
+        columns.push({
+            data : 'modified',
+            filter: false,
+            custom : function() {return m('');}
         });
     }
     return columns;
 }
+
 
 function _fangornFolderIcons(item){
     if(item.data.iconUrl){
