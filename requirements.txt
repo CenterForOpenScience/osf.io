@@ -87,11 +87,10 @@ python-geoip-geolite2==2015.0303
 # OSF models
 git+https://github.com/cos-forks/django-typed-models@0.5.2
 git+https://github.com/cos-forks/django-dirtyfields@develop
-django-extensions==1.6.1
+git+https://github.com/cos-forks/django-extensions@master
 psycopg2==2.6.2
 ujson==1.35
 sqlparse==0.2.2
 psycogreen==1.0
 django-bulk-update==1.1.10
 ciso8601==1.0.3
-funcy==1.7.3

@@ -566,3 +566,9 @@ class TestDraftRegistrations:
         draft.update_metadata(new_data)
         draft.save()
         assert draft.registration_metadata['foo']['comments'] == comments
+
+    def test_draft_registration_url(self):
+        project = factories.ProjectFactory()
+        draft = factories.DraftRegistrationFactory(branched_from=project)
+
+        assert draft.url == settings.DOMAIN + 'project/{}/drafts/{}'.format(project._id, draft._id)
