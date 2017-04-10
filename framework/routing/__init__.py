@@ -32,7 +32,7 @@ _TPL_LOOKUP = TemplateLookup(
     ],
     directories=[
         TEMPLATE_DIR,
-        os.path.join(settings.BASE_PATH, 'addons/'),
+        settings.ADDON_PATH,
     ],
     module_directory='/tmp/mako_modules'
 )
@@ -48,7 +48,7 @@ _TPL_LOOKUP_SAFE = TemplateLookup(
     ],
     directories=[
         TEMPLATE_DIR,
-        os.path.join(settings.BASE_PATH, 'addons/'),
+        settings.ADDON_PATH,
     ],
     module_directory='/tmp/mako_modules',
 )

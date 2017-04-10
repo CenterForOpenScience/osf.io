@@ -2,14 +2,12 @@
 Routes associated with the wiki page
 """
 
-import os
-
 from framework.routing import Rule, json_renderer
 from website.routes import OsfWebRenderer
 
 from . import views
 
-TEMPLATE_DIR = '../addons/wiki/templates/'
+TEMPLATE_DIR = './addons/wiki/templates/'
 
 settings_routes = {
     'rules': [],
@@ -39,7 +37,7 @@ page_routes = {
             ],
             'get',
             views.project_wiki_home,
-            OsfWebRenderer(os.path.join(TEMPLATE_DIR, 'edit.mako'), trust=False)
+            OsfWebRenderer('edit.mako', trust=False, template_dir=TEMPLATE_DIR)
         ),
 
         # View (Id) | GET
@@ -50,7 +48,7 @@ page_routes = {
             ],
             'get',
             views.project_wiki_id_page,
-            OsfWebRenderer(os.path.join(TEMPLATE_DIR, 'edit.mako'), trust=False)
+            OsfWebRenderer('edit.mako', trust=False, template_dir=TEMPLATE_DIR)
         ),
 
         # Wiki | GET
@@ -61,7 +59,7 @@ page_routes = {
             ],
             'get',
             views.project_wiki_view,
-            OsfWebRenderer(os.path.join(TEMPLATE_DIR, 'edit.mako'), trust=False)
+            OsfWebRenderer('edit.mako', trust=False, template_dir=TEMPLATE_DIR)
         ),
 
         # Edit | GET (legacy url, trigger redirect)
@@ -72,7 +70,7 @@ page_routes = {
             ],
             'get',
             views.project_wiki_edit,
-            OsfWebRenderer(os.path.join(TEMPLATE_DIR, 'edit.mako'), trust=False)
+            OsfWebRenderer('edit.mako', trust=False, template_dir=TEMPLATE_DIR)
         ),
 
         # Compare | GET (legacy url, trigger redirect)
@@ -83,7 +81,7 @@ page_routes = {
             ],
             'get',
             views.project_wiki_compare,
-            OsfWebRenderer(os.path.join(TEMPLATE_DIR, 'edit.mako'), trust=False)
+            OsfWebRenderer('edit.mako', trust=False, template_dir=TEMPLATE_DIR)
         ),
 
         # Edit | POST
@@ -94,7 +92,7 @@ page_routes = {
             ],
             'post',
             views.project_wiki_edit_post,
-            OsfWebRenderer(os.path.join(TEMPLATE_DIR, 'edit.mako'), trust=False)
+            OsfWebRenderer('edit.mako', trust=False, template_dir=TEMPLATE_DIR)
         ),
     ]
 }

@@ -266,7 +266,7 @@
 
         %if user['show_wiki_widget']:
             <div id="addonWikiWidget" class="" mod-meta='{
-            "tpl": "../addons/wiki/templates/wiki_widget.mako",
+              "tpl": "../../addons/wiki/templates/wiki_widget.mako",
             "uri": "${node['api_url']}wiki/widget/"
         }'></div>
         %endif

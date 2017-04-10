@@ -1,12 +1,8 @@
 # -*- coding: utf-8 -*-
-import glob
-import importlib
-import mimetypes
 import os
 from time import sleep
 
 from bson import ObjectId
-from mako.lookup import TemplateLookup
 import markupsafe
 import requests
 
@@ -22,245 +18,12 @@ from framework.exceptions import (
 from framework.mongo import StoredObject
 
 from website import settings
-from website.addons.base import serializer, logger
+from addons.base import serializer, logger
 from website.project.model import Node, User
 from website.util import waterbutler_url_for
 
 from website.oauth.signals import oauth_complete
 
-NODE_SETTINGS_TEMPLATE_DEFAULT = os.path.join(
-    settings.TEMPLATES_PATH,
-    'project',
-    'addon',
-    'node_settings_default.mako',
-)
-
-USER_SETTINGS_TEMPLATE_DEFAULT = os.path.join(
-    settings.TEMPLATES_PATH,
-    'profile',
-    'user_settings_default.mako',
-)
-
-lookup = TemplateLookup(
-    directories=[
-        settings.TEMPLATES_PATH
-    ],
-    default_filters=[
-        'unicode',  # default filter; must set explicitly when overriding
-        'temp_ampersand_fixer',  # FIXME: Temporary workaround for data stored in wrong format in DB. Unescape it before it gets re-escaped by Markupsafe. See [#OSF-4432]
-        'h',
-    ],
-    imports=[
-        'from website.util.sanitize import temp_ampersand_fixer',  # FIXME: Temporary workaround for data stored in wrong format in DB. Unescape it before it gets re-escaped by Markupsafe. See [#OSF-4432]
-    ]
-)
-
-
-def _is_image(filename):
-    mtype, _ = mimetypes.guess_type(filename)
-    return mtype and mtype.startswith('image')
-
-
-class AddonConfig(object):
-
-    def __init__(self, short_name, full_name, owners, categories,
-                 added_default=None, added_mandatory=None,
-                 node_settings_model=None, user_settings_model=None, include_js=None, include_css=None,
-                 widget_help=None, views=None, configs=None, models=None,
-                 has_hgrid_files=False, get_hgrid_data=None, max_file_size=None, high_max_file_size=None,
-                 accept_extensions=True, description='', url=None,
-                 node_settings_template=None, user_settings_template=None,
-                 **kwargs):
-
-        self.models = models
-        self.settings_models = {}
-
-        if settings.USE_POSTGRES:
-            from django.apps import apps
-            try:
-                app = apps.get_app_config('addons_{}'.format(short_name))
-            except LookupError:
-                app = None
-
-            if app and app.node_settings:
-                self.settings_models['node'] = app.node_settings
-
-            if app and app.user_settings:
-                self.settings_models['user'] = app.user_settings
-        else:
-            if node_settings_model:
-                node_settings_model.config = self
-                self.settings_models['node'] = node_settings_model
-            if user_settings_model:
-                user_settings_model.config = self
-                self.settings_models['user'] = user_settings_model
-
-        self.short_name = short_name
-        self.full_name = full_name
-        self.description = description
-        self.url = url
-        self.owners = owners
-        self.categories = categories
-
-        self.added_default = added_default or []
-        self.added_mandatory = added_mandatory or []
-        if set(self.added_mandatory).difference(self.added_default):
-            raise ValueError('All mandatory targets must also be defaults.')
-
-        self.include_js = self._include_to_static(include_js or {})
-        self.include_css = self._include_to_static(include_css or {})
-
-        self.widget_help = widget_help
-
-        self.views = views or []
-        self.configs = configs or []
-
-        self.has_hgrid_files = has_hgrid_files
-        # WARNING: get_hgrid_data can return None if the addon is added but has no credentials.
-        self.get_hgrid_data = get_hgrid_data  # if has_hgrid_files and not get_hgrid_data rubeus.make_dummy()
-        self.max_file_size = max_file_size
-        self.high_max_file_size = high_max_file_size
-        self.accept_extensions = accept_extensions
-
-        # Provide the path the the user_settings template
-        self.user_settings_template = user_settings_template
-        if not user_settings_template or not os.path.exists(os.path.dirname(user_settings_template)):
-            # Use the default template (ATM for OAuth addons)
-            self.user_settings_template = USER_SETTINGS_TEMPLATE_DEFAULT
-
-        # Provide the path the the node_settings template
-        self.node_settings_template = node_settings_template
-        if not node_settings_template or not os.path.exists(os.path.dirname(node_settings_template)):
-            # Use the default template
-            self.node_settings_template = NODE_SETTINGS_TEMPLATE_DEFAULT
-
-        # Build template lookup
-        template_dirs = list(
-            set(
-                [
-                    path
-                    for path in [os.path.dirname(self.user_settings_template), os.path.dirname(self.node_settings_template), settings.TEMPLATES_PATH]
-                    if os.path.exists(path)
-                ]
-            )
-        )
-        if template_dirs:
-            self.template_lookup = TemplateLookup(
-                directories=template_dirs,
-                default_filters=[
-                    'unicode',  # default filter; must set explicitly when overriding
-                    'temp_ampersand_fixer',
-                    # FIXME: Temporary workaround for data stored in wrong format in DB. Unescape it before it gets re-escaped by Markupsafe. See [#OSF-4432]
-                    'h',
-                ],
-                imports=[
-                    'from website.util.sanitize import temp_ampersand_fixer',
-                    # FIXME: Temporary workaround for data stored in wrong format in DB. Unescape it before it gets re-escaped by Markupsafe. See [#OSF-4432]
-                ]
-            )
-        else:
-            self.template_lookup = None
-
-    def _static_url(self, filename):
-        """Build static URL for file; use the current addon if relative path,
-        else the global static directory.
-
-        :param str filename: Local path to file
-        :return str: Static URL for file
-
-        """
-        if filename.startswith('/'):
-            return filename
-        return '/static/addons/{addon}/{filename}'.format(
-            addon=self.short_name,
-            filename=filename,
-        )
-
-    def _include_to_static(self, include):
-        """
-
-        """
-        # TODO: minify static assets
-        return {
-            key: [
-                self._static_url(item)
-                for item in value
-            ]
-            for key, value in include.iteritems()
-        }
-
-    # TODO: Make INCLUDE_JS and INCLUDE_CSS one option
-
-    @property
-    def icon(self):
-
-        try:
-            return self._icon
-        except:
-            static_path = os.path.join('website', 'addons', self.short_name, 'static')
-            static_files = glob.glob(os.path.join(static_path, 'comicon.*'))
-            image_files = [
-                os.path.split(filename)[1]
-                for filename in static_files
-                if _is_image(filename)
-            ]
-            if len(image_files) == 1:
-                self._icon = image_files[0]
-            else:
-                self._icon = None
-            return self._icon
-
-    @property
-    def icon_url(self):
-        return self._static_url(self.icon) if self.icon else None
-
-    def to_json(self):
-        return {
-            'short_name': self.short_name,
-            'full_name': self.full_name,
-            'capabilities': self.short_name in settings.ADDON_CAPABILITIES,
-            'addon_capabilities': settings.ADDON_CAPABILITIES.get(self.short_name),
-            'icon': self.icon_url,
-            'has_page': 'page' in self.views,
-            'has_widget': 'widget' in self.views,
-        }
-
-    @property
-    def path(self):
-        return os.path.join(settings.BASE_PATH, self.short_name)
-
-# NOTE: This only exists for the modm -> django migration
-# TODO: Delete this after the migration
-def init_addon(app, addon_name, routes=True):
-    """Load addon module return its create configuration object.
-
-    If `log_fp` is provided, the addon's log templates will be appended
-    to the file.
-
-    :param app: Flask app object
-    :param addon_name: Name of addon directory
-    :param file log_fp: File pointer for the built logs file.
-    :param bool routes: Add routes
-    :return AddonConfig: AddonConfig configuration object if module found,
-        else None
-
-    """
-    import_path = 'website.addons.{0}'.format(addon_name)
-
-    # Import addon module
-    addon_module = importlib.import_module(import_path)
-
-    data = vars(addon_module)
-    data['description'] = settings.ADDONS_DESCRIPTION.get(addon_name, '')
-    data['url'] = settings.ADDONS_URL.get(addon_name, None)
-
-    # Build AddonConfig object
-    return AddonConfig(
-        **{
-            key.lower(): value
-            for key, value in data.iteritems()
-        }
-    )
 
 class AddonSettingsBase(StoredObject):
 
@@ -624,16 +387,7 @@ class AddonNodeSettingsBase(AddonSettingsBase):
         return ret
 
     def render_config_error(self, data):
-        """
-
-        """
-        # Note: `config` is added to `self` in `AddonConfig::__init__`.
-        template = lookup.get_template('project/addon/config_error.mako')
-        return template.get_def('config_error').render(
-            title=self.config.full_name,
-            name=self.config.short_name,
-            **data
-        )
+        pass
 
     #############
     # Callbacks #
