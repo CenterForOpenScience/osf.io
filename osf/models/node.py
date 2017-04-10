@@ -71,9 +71,7 @@ logger = logging.getLogger(__name__)
 class AbstractNodeQuerySet(MODMCompatibilityQuerySet, IncludeQuerySet):
 
     def get_roots(self):
-        return self.extra(
-            where=['"osf_abstractnode".id in (SELECT id FROM osf_abstractnode WHERE id NOT IN (SELECT child_id FROM '
-                   'osf_noderelation WHERE is_node_link IS false))'])
+        return self.filter(id__in=self.exclude(type='osf.collection').values_list('root_id', flat=True))
 
     def get_children(self, root, active=False):
         # If `root` is a root node, we can use the 'descendants' related name
