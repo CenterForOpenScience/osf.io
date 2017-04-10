@@ -514,6 +514,20 @@ class TestPreprintSaveShareHook(OsfTestCase):
         self.preprint.set_published(True, auth=self.auth, save=True)
         assert mock_on_preprint_updated.called
 
+    # This covers an edge case where a preprint is forced back to unpublished
+    # that it sends the information back to share
+    @mock.patch('website.preprints.tasks.on_preprint_updated.s')
+    def test_save_unpublished_called_forced(self, mock_on_preprint_updated):
+        self.preprint.set_published(True, auth=self.auth, save=True)
+        self.preprint.published = False
+        self.preprint.save(**{'force_update': True})
+        assert_equal(mock_on_preprint_updated.call_count, 2)
+
+    @mock.patch('website.preprints.tasks.on_preprint_updated.s')
+    def test_save_published_called(self, mock_on_preprint_updated):
+        self.preprint.set_published(True, auth=self.auth, save=True)
+        assert mock_on_preprint_updated.called
+
     @mock.patch('website.preprints.tasks.on_preprint_updated.s')
     def test_save_published_subject_change_called(self, mock_on_preprint_updated):
         self.preprint.is_published = True
