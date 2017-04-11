@@ -287,6 +287,15 @@ class TestParentNode:
         assert child1 not in public_results2
         assert child2 not in public_results2
 
+    def test_get_roots_distinct(self):
+        top_level = ProjectFactory()
+        child1 = ProjectFactory(parent=top_level)
+        child2 = ProjectFactory(parent=top_level)
+        child3 = ProjectFactory(parent=top_level)
+
+        assert AbstractNode.objects.get_roots().count() == 1
+        assert top_level in AbstractNode.objects.get_roots()
+
     def test_license_searches_parent_nodes(self):
         license_record = NodeLicenseRecordFactory()
         project = ProjectFactory(node_license=license_record)
