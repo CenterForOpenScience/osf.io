@@ -19,34 +19,7 @@ from api.preprints.serializers import PreprintSerializer
 
 
 class PreprintProviderList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
-    """
-    Paginated list of verified PreprintProviders available. *Read-only*
-
-    Assume undocumented fields are unstable.
-
-    ##PreprintProvider Attributes
-
-    OSF Preprint Providers have the "preprint_providers" `type`.
-
-        name           type               description
-        =========================================================================
-        name           string             name of the preprint provider
-        logo_path      string             a path to the preprint provider's static logo
-        banner_path    string             a path to the preprint provider's banner
-        description    string             description of the preprint provider
-
-    ##Relationships
-
-    ###Preprints
-    Link to the list of preprints from this given preprint provider.
-
-    ##Links
-
-        self: the canonical api endpoint of this preprint provider
-        preprints: link to the provider's preprints
-        external_url: link to the preprint provider's external URL (e.g. https://socarxiv.org)
-
-    #This Request/Response
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#Preprint_Providers_preprint_provider_list).
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -74,34 +47,7 @@ class PreprintProviderList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin
 
 
 class PreprintProviderDetail(JSONAPIBaseView, generics.RetrieveAPIView):
-    """ Details about a given preprint provider. *Read-only*
-
-    Assume undocumented fields are unstable.
-
-    ##PreprintProvider Attributes
-
-    OSF Preprint Providers have the "preprint_providers" `type`.
-
-        name           type               description
-        =========================================================================
-        name           string             name of the preprint provider
-        logo_path      string             a path to the preprint provider's static logo
-        banner_path    string             a path to the preprint provider's banner
-        description    string             description of the preprint provider
-
-    ##Relationships
-
-    ###Preprints
-    Link to the list of preprints from this given preprint provider.
-
-    ##Links
-
-        self: the canonical api endpoint of this preprint provider
-        preprints: link to the provider's preprints
-        external_url: link to the preprint provider's external URL (e.g. https://socarxiv.org)
-
-    #This Request/Response
-
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#Preprint_Providers_preprint_provider_detail).
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -121,44 +67,7 @@ class PreprintProviderDetail(JSONAPIBaseView, generics.RetrieveAPIView):
 
 
 class PreprintProviderPreprintList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
-    """Preprints from a given preprint_provider. *Read Only*
-
-    To update preprints with a given preprint_provider, see the `<node_id>/relationships/preprint_provider` endpoint
-
-    ##Preprint Attributes
-
-    OSF Preprint entities have the "preprints" `type`.
-
-        name                            type                                description
-        ====================================================================================
-        date_created                    iso8601 timestamp                   timestamp that the preprint was created
-        date_modified                   iso8601 timestamp                   timestamp that the preprint was last modified
-        date_published                  iso8601 timestamp                   timestamp when the preprint was published
-        is_published                    boolean                             whether or not this preprint is published
-        is_preprint_orphan              boolean                             whether or not this preprint is orphaned
-        subjects                        array of tuples of dictionaries     ids of Subject in the PLOS taxonomy. Dictionary, containing the subject text and subject ID
-        doi                             string                              bare DOI for the manuscript, as entered by the user
-
-    ##Relationships
-
-    ###Node
-    The node that this preprint was created for
-
-    ###Primary File
-    The file that is designated as the preprint's primary file, or the manuscript of the preprint.
-
-    ###Provider
-    Link to preprint_provider detail for this preprint
-
-    ##Links
-    - `self` -- Preprint detail page for the current preprint
-    - `html` -- Project on the OSF corresponding to the current preprint
-    - `doi` -- URL representation of the DOI entered by the user for the preprint manuscript
-
-    See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
-
-    #This Request/Response
-
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#Preprint_Providers_preprint_providers_preprints_list).
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -200,6 +109,8 @@ class PreprintProviderPreprintList(JSONAPIBaseView, generics.ListAPIView, ODMFil
 
 
 class PreprintProviderSubjectList(JSONAPIBaseView, generics.ListAPIView):
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#Preprint_Providers_preprint_provider_taxonomies_list).
+    """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
@@ -238,6 +149,8 @@ class PreprintProviderSubjectList(JSONAPIBaseView, generics.ListAPIView):
 
 
 class PreprintProviderLicenseList(LicenseList):
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#Preprint_Providers_preprint_provider_licenses_list)
+    """
     ordering = ()
     view_category = 'preprint_providers'
 
