@@ -43,6 +43,24 @@
         </div>
     %endif
 
+    %if campaign == "agrixiv-preprints":
+        <div class="text-center m-t-lg">
+            <h3>AgriXiv Preprints</h3><hr>
+        </div>
+    %endif
+
+    %if campaign == "bitss-preprints":
+        <div class="text-center m-t-lg">
+            <h3>BITSS Preprints</h3><hr>
+        </div>
+    %endif
+
+    %if campaign == "scielo-preprints":
+        <div class="text-center m-t-lg">
+            <h3>SciELO Preprints</h3><hr>
+        </div>
+    %endif
+
     <div class="row m-t-xl">
     %if campaign != "institution" or not enable_institutions:
         <div id="signUpScope" class="col-sm-10 col-sm-offset-1 col-md-9 col-md-offset-2 col-lg-8 signup-form p-b-md m-b-m bg-color-light">
@@ -74,6 +92,27 @@
                         <tr>
                             <td><img src="/static/img/preprint_providers/psyarxiv-login.png" style="width: 150px; background: #a9a9a9; padding: 0 10px 0 10px;" /></td>
                             <td><h3>Create a free OSF account to contribute to PsyArXiv</h3></td>
+                        </tr>
+                    </table>
+                %elif campaign == "scielo-preprints":
+                    <table style="border-collapse: separate; border-spacing: 30px 0; margin-top: 20px;  margin-bottom: 10px;">
+                        <tr>
+                            <td><img src="/static/img/preprint_providers/scielo-login.png" style="width: 150px; padding: 0 10px 0 10px;" /></td>
+                            <td><h3>Create a free OSF account to contribute to SciELO</h3></td>
+                        </tr>
+                    </table>
+                %elif campaign == "agrixiv-preprints":
+                    <table style="border-collapse: separate; border-spacing: 30px 0; margin-top: 20px; margin-bottom: 10px;">
+                        <tr>
+                            <td><img src="/static/img/preprint_providers/agrixiv-login.svg" style="width: 150px; padding: 0 10px 0 10px;" /></td>
+                            <td><h3>Create a free OSF account to contribute to AgriXiv</h3></td>
+                        </tr>
+                    </table>
+                %elif campaign == "bitss-preprints":
+                    <table style="border-collapse: separate; border-spacing: 30px 0; margin-top: 20px;  margin-bottom: 10px;">
+                        <tr>
+                            <td><img src="/static/img/preprint_providers/bitss-login.png" style="width: 150px; background: #a9a9a9; padding: 0 10px 0 10px;" /></td>
+                            <td><h3>Create a free OSF account to contribute to BITSS</h3></td>
                         </tr>
                     </table>
                 %else:

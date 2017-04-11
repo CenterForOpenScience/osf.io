@@ -8,7 +8,8 @@ from framework.auth.core import Auth
 from osf_tests.factories import PreprintFactory, AuthUserFactory, ProjectFactory, SubjectFactory, PreprintProviderFactory
 from osf.models import PreprintService, NodeLicense
 from website.project.licenses import ensure_licenses
-from tests.base import ApiTestCase
+from website.project.signals import contributor_added
+from tests.base import ApiTestCase, fake, capture_signals
 
 ensure_licenses = functools.partial(ensure_licenses, warn=False)
 
@@ -227,7 +228,6 @@ class TestPreprintUpdate(ApiTestCase):
         self.preprint.node.add_contributor(user_two, permissions=['read', 'write'], auth=Auth(self.user), save=True)
 
         assert_not_equal(self.preprint.subjects[0][0], self.subject._id)
-
         update_subjects_payload = build_preprint_update_payload(self.preprint._id, attributes={"subjects": [[self.subject._id]]})
 
         res = self.app.patch_json_api(self.url, update_subjects_payload, auth=user_two.auth, expect_errors=True)
@@ -247,6 +247,30 @@ class TestPreprintUpdate(ApiTestCase):
         assert_equal(res.status_code, 403)
 
         assert_not_equal(self.preprint.subjects[0], self.subject._id)
+
+    def test_update_published(self):
+        unpublished = PreprintFactory(creator=self.user, is_published=False)
+        url = '/{}preprints/{}/'.format(API_BASE, unpublished._id)
+        payload = build_preprint_update_payload(unpublished._id, attributes={'is_published': True})
+        res = self.app.patch_json_api(url, payload, auth=self.user.auth)
+        unpublished.reload()
+        assert_true(unpublished.is_published)
+
+    # Regression test for https://openscience.atlassian.net/browse/OSF-7630
+    def test_update_published_does_not_send_contributor_added_for_inactive_users(self):
+        unpublished = PreprintFactory(creator=self.user, is_published=False)
+        unpublished.node.add_unregistered_contributor(
+            fullname=fake.name(),
+            email=fake.email(),
+            auth=Auth(self.user),
+            save=True
+        )
+        url = '/{}preprints/{}/'.format(API_BASE, unpublished._id)
+        payload = build_preprint_update_payload(unpublished._id, attributes={'is_published': True})
+        with capture_signals() as captured:
+            res = self.app.patch_json_api(url, payload, auth=self.user.auth)
+            # Signal not sent, because contributor is not registered
+            assert_false(captured[contributor_added])
 
 
 class TestPreprintUpdateLicense(ApiTestCase):
@@ -322,6 +346,21 @@ class TestPreprintUpdateLicense(ApiTestCase):
 
     def make_request(self, url, data, auth=None, expect_errors=False):
         return self.app.patch_json_api(url, data, auth=auth, expect_errors=expect_errors)
+
+    def test_admin_update_license_with_invalid_id(self):
+        data = self.make_payload(
+            node_id=self.preprint._id,
+            license_id='thisisafakelicenseid'
+        )
+
+        assert_equal(self.preprint.license, None)
+
+        res = self.make_request(self.url, data, auth=self.admin_contributor.auth, expect_errors=True)
+        assert_equal(res.status_code, 404)
+        assert_equal(res.json['errors'][0]['detail'], 'Unable to find specified license.')
+
+        self.preprint.reload()
+        assert_equal(self.preprint.license, None)
 
     def test_admin_can_update_license(self):
         data = self.make_payload(
@@ -603,3 +642,37 @@ class TestPreprintUpdateLicense(ApiTestCase):
         assert_equal(res.status_code, 200)
         assert_equal(before_num_logs, after_num_logs)
         assert_equal(before_update_log._id, after_update_log._id)
+
+
+class TestPreprintIsPublishedDetail(ApiTestCase):
+    def setUp(self):
+        super(TestPreprintIsPublishedDetail, self).setUp()
+        self.admin= AuthUserFactory()
+        self.write_contrib = AuthUserFactory()
+        self.non_contrib = AuthUserFactory()
+
+        self.public_project = ProjectFactory(creator=self.admin, is_public=True)
+        self.public_project.add_contributor(self.write_contrib, permissions=['read', 'write'], save=True)
+        self.subject = SubjectFactory()
+        self.provider = PreprintProviderFactory()
+        self.file_one_public_project = test_utils.create_test_file(self.public_project, self.admin, 'mgla.pdf')
+
+        self.unpublished_preprint = PreprintFactory(creator=self.admin, filename='mgla.pdf', provider=self.provider, subjects=[[self.subject._id]], project=self.public_project, is_published=False)
+
+        self.url = '/{}preprints/{}/'.format(API_BASE, self.unpublished_preprint._id)
+
+    def test_unpublished_visible_to_admins(self):
+        res = self.app.get(self.url, auth=self.admin.auth)
+        assert res.json['data']['id'] == self.unpublished_preprint._id
+
+    def test_unpublished_invisible_to_write_contribs(self):
+        res = self.app.get(self.url, auth=self.write_contrib.auth, expect_errors=True)
+        assert res.status_code == 403
+
+    def test_unpublished_invisible_to_non_contribs(self):
+        res = self.app.get(self.url, auth=self.non_contrib.auth, expect_errors=True)
+        assert res.status_code == 403
+
+    def test_unpublished_invisible_to_public(self):
+        res = self.app.get(self.url, expect_errors=True)
+        assert res.status_code == 401

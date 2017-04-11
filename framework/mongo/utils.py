@@ -3,6 +3,7 @@ import functools
 import httplib as http
 
 from django.core.paginator import Paginator
+from django.db.models import QuerySet
 
 import markupsafe
 import pymongo
@@ -150,6 +151,12 @@ def paginated(model, query=None, increment=200, each=True):
         are yielded.
     """
     queryset = model.find(query)
+
+    # Pagination requires an order by clause, especially when using Postgres.
+    # see: https://docs.djangoproject.com/en/1.10/topics/pagination/#required-arguments
+    if isinstance(queryset, QuerySet) and not queryset.ordered:
+        queryset = queryset.order_by(queryset.model._meta.pk.name)
+
     paginator = Paginator(queryset.all(), increment)
     for page_num in paginator.page_range:
         page = paginator.page(page_num)

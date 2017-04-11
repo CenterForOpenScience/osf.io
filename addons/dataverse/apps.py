@@ -1,24 +1,27 @@
 import os
 
-from addons.base.apps import BaseAddonConfig
+from addons.base.apps import BaseAddonAppConfig
 
-from website.settings import BASE_PATH
-
+HERE = os.path.dirname(os.path.abspath(__file__))
 TEMPLATE_PATH = os.path.join(
-    BASE_PATH,
-    'addons',
-    'dataverse',
+    HERE,
     'templates'
 )
 
-class DataverseAddonConfig(BaseAddonConfig):
+class DataverseAddonAppConfig(BaseAddonAppConfig):
 
     name = 'addons.dataverse'
     label = 'addons_dataverse'
     full_name = 'Dataverse'
     short_name = 'dataverse'
+    owners = ['user', 'node']
     configs = ['accounts', 'node']
     views = ['widget']
+    categories = ['storage']
+    include_css = {
+        'widget': ['dataverse.css'],
+        'page': [],
+    }
     has_hgrid_files = True
     node_settings_template = os.path.join(TEMPLATE_PATH, 'dataverse_node_settings.mako')
     user_settings_template = os.path.join(TEMPLATE_PATH, 'dataverse_user_settings.mako')
@@ -26,7 +29,7 @@ class DataverseAddonConfig(BaseAddonConfig):
     @property
     def get_hgrid_data(self):
         # Avoid circular import
-        from website.addons.dataverse.views import _dataverse_root_folder
+        from addons.dataverse.views import _dataverse_root_folder
         return _dataverse_root_folder
 
     FILE_ADDED = 'dataverse_file_added'
@@ -40,6 +43,11 @@ class DataverseAddonConfig(BaseAddonConfig):
     NODE_DEAUTHORIZED_NO_USER = 'dataverse_node_deauthorized_no_user'
 
     actions = (FILE_ADDED, FILE_REMOVED, DATASET_LINKED, DATASET_PUBLISHED, STUDY_LINKED, STUDY_RELEASED, NODE_AUTHORIZED, NODE_DEAUTHORIZED, NODE_DEAUTHORIZED_NO_USER)
+
+    @property
+    def routes(self):
+        from .routes import api_routes
+        return [api_routes]
 
     @property
     def user_settings(self):

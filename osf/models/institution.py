@@ -2,21 +2,12 @@ from django.conf import settings
 from django.contrib.postgres import fields
 from django.core.urlresolvers import reverse
 from django.db import models
-from modularodm import Q as MQ
 from osf.models import base
 from osf.models.contributor import InstitutionalContributor
 from osf.models.mixins import Loggable
 
 
 class Institution(Loggable, base.ObjectIDMixin, base.BaseModel):
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.project.model.Node'
-    modm_query = dict(query=MQ('institution_id', 'ne', None), allow_institution=True)
-    FIELD_ALIASES = {
-        'auth_url': 'login_url'
-    }
-    # /TODO DELETE ME POST MIGRATION
-
     # TODO Remove null=True for things that shouldn't be nullable
     banner_name = models.CharField(max_length=255, null=True, blank=True)
     login_url = models.URLField(null=True, blank=True)
@@ -38,21 +29,6 @@ class Institution(Loggable, base.ObjectIDMixin, base.BaseModel):
 
     def __unicode__(self):
         return u'{} : ({})'.format(self.name, self._id)
-
-    @classmethod
-    def migrate_from_modm(cls, modm_obj):
-        inst = cls()
-        inst._id = modm_obj.institution_id
-        inst.auth_url = modm_obj.institution_auth_url
-        inst.banner_name = modm_obj.institution_banner_name
-        inst.domains = modm_obj.institution_domains
-        inst.email_domains = modm_obj.institution_email_domains
-        inst.logo_name = modm_obj.institution_logo_name
-        inst.logout_url = modm_obj.institution_logout_url
-        inst.name = modm_obj.title
-        inst.description = modm_obj.description
-        inst.is_deleted = modm_obj.is_deleted
-        return inst
 
     @property
     def api_v2_url(self):

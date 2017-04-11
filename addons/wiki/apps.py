@@ -1,7 +1,7 @@
-from addons.base.apps import BaseAddonConfig
+from addons.base.apps import BaseAddonAppConfig
 
 
-class WikiAddonConfig(BaseAddonConfig):
+class WikiAddonAppConfig(BaseAddonAppConfig):
 
     name = 'addons.wiki'
     label = 'addons_wiki'
@@ -28,6 +28,11 @@ class WikiAddonConfig(BaseAddonConfig):
         'widget': [],
         'page': [],
     }
+
+    @property
+    def routes(self):
+        from addons.wiki import routes
+        return [routes.widget_routes, routes.page_routes, routes.api_routes]
 
     @property
     def node_settings(self):

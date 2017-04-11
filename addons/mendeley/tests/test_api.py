@@ -9,7 +9,7 @@ import mendeley
 
 from addons.mendeley import models
 from tests.base import OsfTestCase
-from website.addons.mendeley.api import APISession
+from addons.mendeley.api import APISession
 
 pytestmark = pytest.mark.django_db
 
@@ -30,7 +30,7 @@ class MendeleyApiTestCase(OsfTestCase):
             'token_type': 'bearer',
         }
 
-    @mock.patch('website.addons.mendeley.api.MendeleySession.request')
+    @mock.patch('addons.mendeley.api.MendeleySession.request')
     def test_request_params(self, mock_request):
         # All GET requests to Mendeley should have the param "view=all"
         client = APISession(self.mock_partial, self.mock_credentials)

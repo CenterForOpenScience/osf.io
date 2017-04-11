@@ -3,14 +3,13 @@
 import httplib as http
 
 from flask import request
-from modularodm import Q
 from modularodm.exceptions import ValidationError, ValidationValueError
 
 from framework import forms, status
 from framework.auth import cas
 from framework.auth import User
 from framework.auth.core import get_user, generate_verification_key
-from framework.auth.decorators import collect_auth, must_be_logged_in
+from framework.auth.decorators import block_bing_preview, collect_auth, must_be_logged_in
 from framework.auth.forms import PasswordForm, SetEmailAndPasswordForm
 from framework.auth.signals import user_registered
 from framework.auth.utils import validate_email, validate_recaptcha
@@ -567,7 +566,7 @@ def find_preprint_provider(node):
     """
 
     try:
-        preprint = PreprintService.find_one(Q('node', 'eq', node._id))
+        preprint = PreprintService.objects.get(node=node)
         provider = preprint.provider
         if provider._id == 'osf':
             return 'osf', provider.name
@@ -594,6 +593,7 @@ def verify_claim_token(user, token, pid):
     return True
 
 
+@block_bing_preview
 @collect_auth
 @must_be_valid_project
 def claim_user_registered(auth, node, **kwargs):
@@ -681,6 +681,7 @@ def replace_unclaimed_user_with_registered(user):
             'Successfully claimed contributor.', kind='success', trust=False)
 
 
+@block_bing_preview
 @collect_auth
 def claim_user_form(auth, **kwargs):
     """

@@ -8,26 +8,22 @@ import logging
 import math
 import re
 import unicodedata
+from framework import sentry
 
-from django.apps import apps
-from elasticsearch import (
-    ConnectionError,
-    Elasticsearch,
-    NotFoundError,
-    RequestError,
-    TransportError,
-    helpers,
-)
-from modularodm import Q
 import six
 
-from framework import sentry
+from django.apps import apps
+from django.core.paginator import Paginator
+from elasticsearch import (ConnectionError, Elasticsearch, NotFoundError,
+                           RequestError, TransportError, helpers)
 from framework.celery_tasks import app as celery_app
 from framework.mongo.utils import paginated
-
+from modularodm import Q
+from osf.models import AbstractNode as Node
+from osf.models import OSFUser as User
+from osf.models import FileNode
 from website import settings
 from website.filters import gravatar
-from osf.models import OSFUser as User, FileNode, AbstractNode as Node
 from website.project.licenses import serialize_node_license_record
 from website.search import exceptions
 from website.search.util import build_query, clean_splitters
@@ -73,7 +69,8 @@ def client():
         try:
             CLIENT = Elasticsearch(
                 settings.ELASTIC_URI,
-                request_timeout=settings.ELASTIC_TIMEOUT
+                request_timeout=settings.ELASTIC_TIMEOUT,
+                retry_on_timeout=True
             )
             logging.getLogger('elasticsearch').setLevel(logging.WARN)
             logging.getLogger('elasticsearch.trace').setLevel(logging.WARN)
@@ -108,8 +105,15 @@ def requires_search(func):
             except NotFoundError as e:
                 raise exceptions.IndexNotFoundError(e.error)
             except RequestError as e:
-                if 'ParseException' in e.error:
+                if 'ParseException' in e.error:  # ES 1.5
                     raise exceptions.MalformedQueryError(e.error)
+                if type(e.error) == dict:  # ES 2.0
+                    try:
+                        root_cause = e.error['root_cause'][0]
+                        if root_cause['type'] == 'query_parsing_exception':
+                            raise exceptions.MalformedQueryError(root_cause['reason'])
+                    except (AttributeError, KeyError):
+                        pass
                 raise exceptions.SearchException(e.error)
             except TransportError as e:
                 # Catch and wrap generic uncaught ES error codes. TODO: Improve fix for https://openscience.atlassian.net/browse/OSF-4538
@@ -308,6 +312,15 @@ def update_node_async(self, node_id, index=None, bulk=False):
     except Exception as exc:
         self.retry(exc=exc)
 
+@celery_app.task(bind=True, max_retries=5, default_retry_delay=60)
+def update_user_async(self, user_id, index=None):
+    OSFUser = apps.get_model('osf.OSFUser')
+    user = OSFUser.objects.get(id=user_id)
+    try:
+        update_user(user, index)
+    except Exception as exc:
+        self.retry(exc)
+
 def serialize_node(node, category):
     NodeWikiPage = apps.get_model('addons_wiki.NodeWikiPage')
 
@@ -333,7 +346,7 @@ def serialize_node(node, category):
         'normalized_title': normalized_title,
         'category': category,
         'public': node.is_public,
-        'tags': list(node.tags.values_list('name', flat=True)),
+        'tags': list(node.tags.filter(system=False).values_list('name', flat=True)),
         'description': node.description,
         'url': node.url,
         'is_registration': node.is_registration,
@@ -365,7 +378,7 @@ def update_node(node, index=None, bulk=False, async=False):
     from addons.osfstorage.models import OsfStorageFile
     index = index or INDEX
     for file_ in paginated(OsfStorageFile, Q('node', 'eq', node)):
-        update_file(file_.wrapped(), index=index)
+        update_file(file_, index=index)
 
     if node.is_deleted or not node.is_public or node.archiving or (node.is_spammy and settings.SPAM_FLAGGED_REMOVE_FROM_SEARCH):
         delete_doc(node._id, node, index=index)
@@ -415,6 +428,14 @@ def serialize_contributors(node):
 
 bulk_update_contributors = functools.partial(bulk_update_nodes, serialize_contributors)
 
+
+@celery_app.task(bind=True, max_retries=5, default_retry_delay=60)
+def update_contributors_async(self, user_id):
+    OSFUser = apps.get_model('osf.OSFUser')
+    user = OSFUser.objects.get(id=user_id)
+    p = Paginator(user.visible_contributor_to.order_by('id'), 100)
+    for page_num in p.page_range:
+        bulk_update_contributors(p.page(page_num).object_list)
 
 @requires_search
 def update_user(user, index=None):
@@ -467,7 +488,8 @@ def update_user(user, index=None):
 def update_file(file_, index=None, delete=False):
     index = index or INDEX
 
-    if not file_.node.is_public or delete or file_.node.is_deleted or file_.node.archiving:
+    # TODO: Can remove 'not file_.name' if we remove all base file nodes with name=None
+    if not file_.name or not file_.node.is_public or delete or file_.node.is_deleted or file_.node.archiving:
         client().delete(
             index=index,
             doc_type='file',
@@ -494,7 +516,7 @@ def update_file(file_, index=None, delete=False):
         'id': file_._id,
         'deep_url': file_deep_url,
         'guid_url': guid_url,
-        'tags': list(file_.tags.values_list('name', flat=True)),
+        'tags': list(file_.tags.filter(system=False).values_list('name', flat=True)),
         'name': file_.name,
         'category': 'file',
         'node_url': node_url,

@@ -7,7 +7,8 @@ from modularodm import Q
 from website.models import Node
 from website.util import permissions as osf_permissions
 
-from api.base.serializers import JSONAPISerializer, RelationshipField, LinksField, JSONAPIRelationshipSerializer
+from api.base.serializers import JSONAPISerializer, RelationshipField, LinksField, JSONAPIRelationshipSerializer, \
+    PrefetchRelationshipsSerializer
 from api.base.exceptions import RelationshipPostMakesNoChanges
 
 
@@ -56,7 +57,7 @@ class NodeRelated(JSONAPIRelationshipSerializer):
     class Meta:
         type_ = 'nodes'
 
-class InstitutionNodesRelationshipSerializer(ser.Serializer):
+class InstitutionNodesRelationshipSerializer(PrefetchRelationshipsSerializer):
     data = ser.ListField(child=NodeRelated())
     links = LinksField({'self': 'get_self_url',
                         'html': 'get_related_url'})

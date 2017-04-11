@@ -19,7 +19,7 @@ from github3.repos import Repository
 from tests.base import OsfTestCase, get_default_metaschema
 
 from framework.auth import Auth
-from website.addons.github.exceptions import NotFoundError
+from addons.github.exceptions import NotFoundError
 
 from .utils import create_mock_github
 mock_github = create_mock_github()
@@ -65,15 +65,15 @@ class TestNodeSettings(OAuthAddonNodeSettingsTestSuiteMixin, unittest.TestCase):
     def test_complete_has_auth_not_verified(self):
         super(TestNodeSettings, self).test_complete_has_auth_not_verified()
 
-    @mock.patch('website.addons.github.api.GitHubClient.repos')
-    @mock.patch('website.addons.github.api.GitHubClient.my_org_repos')
+    @mock.patch('addons.github.api.GitHubClient.repos')
+    @mock.patch('addons.github.api.GitHubClient.my_org_repos')
     def test_to_json(self, mock_org, mock_repos):
         mock_repos.return_value = {}
         mock_org.return_value = {}
         super(TestNodeSettings, self).test_to_json()
 
-    @mock.patch('website.addons.github.api.GitHubClient.repos')
-    @mock.patch('website.addons.github.api.GitHubClient.my_org_repos')
+    @mock.patch('addons.github.api.GitHubClient.repos')
+    @mock.patch('addons.github.api.GitHubClient.my_org_repos')
     def test_to_json_user_is_owner(self, mock_org, mock_repos):
         mock_repos.return_value = {}
         mock_org.return_value = {}
@@ -84,8 +84,8 @@ class TestNodeSettings(OAuthAddonNodeSettingsTestSuiteMixin, unittest.TestCase):
         assert_true(result['valid_credentials'])
         assert_equal(result.get('repo_names', None), [])
 
-    @mock.patch('website.addons.github.api.GitHubClient.repos')
-    @mock.patch('website.addons.github.api.GitHubClient.my_org_repos')
+    @mock.patch('addons.github.api.GitHubClient.repos')
+    @mock.patch('addons.github.api.GitHubClient.my_org_repos')
     def test_to_json_user_is_not_owner(self, mock_org, mock_repos):
         mock_repos.return_value = {}
         mock_org.return_value = {}
@@ -138,15 +138,17 @@ class TestCallbacks(OsfTestCase):
         self.node_settings.external_account = self.external_account
         self.node_settings.save()
         self.node_settings.set_auth
+        self.user_settings.oauth_grants[self.project._id] = {self.external_account._id: []}
+        self.user_settings.save()
 
-    @mock.patch('website.addons.github.api.GitHubClient.repo')
+    @mock.patch('addons.github.api.GitHubClient.repo')
     def test_before_make_public(self, mock_repo):
         mock_repo.side_effect = NotFoundError
 
         result = self.node_settings.before_make_public(self.project)
         assert_is(result, None)
 
-    @mock.patch('website.addons.github.api.GitHubClient.repo')
+    @mock.patch('addons.github.api.GitHubClient.repo')
     def test_before_page_load_osf_public_gh_public(self, mock_repo):
         self.project.is_public = True
         self.project.save()
@@ -158,7 +160,7 @@ class TestCallbacks(OsfTestCase):
         )
         assert_false(message)
 
-    @mock.patch('website.addons.github.api.GitHubClient.repo')
+    @mock.patch('addons.github.api.GitHubClient.repo')
     def test_before_page_load_osf_public_gh_private(self, mock_repo):
         self.project.is_public = True
         self.project.save()
@@ -170,7 +172,7 @@ class TestCallbacks(OsfTestCase):
         )
         assert_true(message)
 
-    @mock.patch('website.addons.github.api.GitHubClient.repo')
+    @mock.patch('addons.github.api.GitHubClient.repo')
     def test_before_page_load_osf_private_gh_public(self, mock_repo):
         mock_repo.return_value = Repository.from_json({'private': False})
         message = self.node_settings.before_page_load(self.project, self.project.creator)
@@ -180,7 +182,7 @@ class TestCallbacks(OsfTestCase):
         )
         assert_true(message)
 
-    @mock.patch('website.addons.github.api.GitHubClient.repo')
+    @mock.patch('addons.github.api.GitHubClient.repo')
     def test_before_page_load_osf_private_gh_private(self, mock_repo):
         mock_repo.return_value = Repository.from_json({'private': True})
         message = self.node_settings.before_page_load(self.project, self.project.creator)
@@ -219,7 +221,7 @@ class TestCallbacks(OsfTestCase):
             None
         )
         assert_true(message)
-        assert_not_in("You can re-authenticate", message)
+        assert_not_in('You can re-authenticate', message)
 
     def test_after_remove_contributor_authenticator_not_self(self):
         auth = Auth(user=self.non_authenticator)
@@ -231,7 +233,7 @@ class TestCallbacks(OsfTestCase):
             None
         )
         assert_true(message)
-        assert_in("You can re-authenticate", message)
+        assert_in('You can re-authenticate', message)
 
     def test_after_remove_contributor_not_authenticator(self):
         self.node_settings.after_remove_contributor(
@@ -290,7 +292,7 @@ class TestGithubNodeSettings(unittest.TestCase):
         self.user_settings.owner.save()
         self.node_settings = factories.GitHubNodeSettingsFactory(user_settings=self.user_settings)
 
-    @mock.patch('website.addons.github.api.GitHubClient.delete_hook')
+    @mock.patch('addons.github.api.GitHubClient.delete_hook')
     def test_delete_hook(self, mock_delete_hook):
         self.node_settings.hook_id = 'hook'
         self.node_settings.save()
@@ -303,13 +305,13 @@ class TestGithubNodeSettings(unittest.TestCase):
         assert_true(res)
         mock_delete_hook.assert_called_with(*args)
 
-    @mock.patch('website.addons.github.api.GitHubClient.delete_hook')
+    @mock.patch('addons.github.api.GitHubClient.delete_hook')
     def test_delete_hook_no_hook(self, mock_delete_hook):
         res = self.node_settings.delete_hook()
         assert_false(res)
         assert_false(mock_delete_hook.called)
 
-    @mock.patch('website.addons.github.api.GitHubClient.delete_hook')
+    @mock.patch('addons.github.api.GitHubClient.delete_hook')
     def test_delete_hook_not_found(self, mock_delete_hook):
         self.node_settings.hook_id = 'hook'
         self.node_settings.save()
@@ -323,7 +325,7 @@ class TestGithubNodeSettings(unittest.TestCase):
         assert_false(res)
         mock_delete_hook.assert_called_with(*args)
 
-    @mock.patch('website.addons.github.api.GitHubClient.delete_hook')
+    @mock.patch('addons.github.api.GitHubClient.delete_hook')
     def test_delete_hook_error(self, mock_delete_hook):
         self.node_settings.hook_id = 'hook'
         self.node_settings.save()

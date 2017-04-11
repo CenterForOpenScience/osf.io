@@ -76,7 +76,8 @@ def new_bookmark_collection(user):
     Collection = apps.get_model('osf.Collection')
     existing_bookmark_collection = Collection.find(
         Q('is_bookmark_collection', 'eq', True) &
-        Q('creator', 'eq', user)
+        Q('creator', 'eq', user) &
+        Q('is_deleted', 'eq', False)
     )
 
     if existing_bookmark_collection.count() > 0:

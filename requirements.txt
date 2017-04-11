@@ -1,15 +1,14 @@
 # Base requirements for running the OSF.
-# NOTE: This does not include addon, development, metrics or release requirements.
+# NOTE: This does not include addon, development or release requirements.
 # NOTE: When updating pinned version, you may also need to update constraints.txt
 # To install addon requirements: inv requirements --addons
 # To install dev requirements: inv requirements --dev
-# To install metrics requirements: inv requirements --metrics
 # To install release requirements: inv requirements --release
 
-invoke==0.13.0
+invoke==0.15.0
 Werkzeug==0.10.4
 Flask==0.10.1
-gevent==1.0.2
+gevent==1.2.1
 Mako==1.0.0
 Markdown==2.4.1
 Pygments==1.6
@@ -60,7 +59,7 @@ requests==2.5.3
 urllib3==1.10.4
 oauthlib==1.1.2
 requests-oauthlib==0.5.0
-raven==5.10.2
+raven==5.32.0
 webcolors==1.4
 
 # API requirements
@@ -86,7 +85,12 @@ keen==0.3.21
 python-geoip-geolite2==2015.0303
 
 # OSF models
-git+https://github.com/cwisecarver/django-typed-models@0.5.2
-django-dirtyfields==1.2
-django-extensions==1.6.1
+git+https://github.com/cos-forks/django-typed-models@0.5.2
+git+https://github.com/cos-forks/django-dirtyfields@develop
+git+https://github.com/cos-forks/django-extensions@master
 psycopg2==2.6.2
+ujson==1.35
+sqlparse==0.2.2
+psycogreen==1.0
+django-bulk-update==1.1.10
+ciso8601==1.0.3
