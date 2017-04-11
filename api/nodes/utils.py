@@ -29,7 +29,7 @@ def get_file_object(node, path, provider, request):
     if not node.get_addon(provider) or not node.get_addon(provider).configured:
         raise NotFound('The {} provider is not configured for this project.'.format(provider))
 
-    url = waterbutler_api_url_for(node._id, provider, path, meta=True)
+    url = waterbutler_api_url_for(node._id, provider, path, _internal=True, meta=True)
     waterbutler_request = requests.get(
         url,
         cookies=request.COOKIES,
