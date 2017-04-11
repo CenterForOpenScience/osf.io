@@ -1,3 +1,4 @@
+import logging
 from django.conf import settings
 from django.contrib.postgres import fields
 from django.core.urlresolvers import reverse
@@ -5,6 +6,8 @@ from django.db import models
 from osf.models import base
 from osf.models.contributor import InstitutionalContributor
 from osf.models.mixins import Loggable
+
+logger = logging.getLogger(__name__)
 
 
 class Institution(Loggable, base.ObjectIDMixin, base.BaseModel):
@@ -68,3 +71,15 @@ class Institution(Loggable, base.ObjectIDMixin, base.BaseModel):
             return '/static/img/institutions/banners/{}'.format(self.banner_name)
         else:
             return None
+
+    def update_search(self):
+        from website.search.search import update_institution
+        from website.search.exceptions import SearchUnavailableError
+        try:
+            update_institution(self)
+        except SearchUnavailableError as e:
+            logger.exception(e)
+
+    def save(self, *args, **kwargs):
+        self.update_search()
+        return super(Institution, self).save(*args, **kwargs)
