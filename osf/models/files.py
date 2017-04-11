@@ -3,7 +3,6 @@ from __future__ import unicode_literals
 import logging
 import os
 
-import datetime
 import requests
 from dateutil.parser import parse as parse_date
 from django.core.exceptions import ObjectDoesNotExist
@@ -524,7 +523,7 @@ class Folder(models.Model):
         """
         self.name = data['name']
         self.materialized_path = data['materialized']
-        self.last_touched = datetime.datetime.utcnow()
+        self.last_touched = timezone.now()
         if save:
             self.save()
 
