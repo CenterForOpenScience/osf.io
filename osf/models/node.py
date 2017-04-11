@@ -439,8 +439,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     @property
     def has_published_preprint(self):
-        PreprintService = apps.get_model('osf.PreprintService')
-        return PreprintService.objects.filter(node_id=self.id, is_published=True).exists()
+        return self.preprints.filter(is_published=True).exists()
 
     @property
     def preprint_url(self):
