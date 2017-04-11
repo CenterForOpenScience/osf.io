@@ -27,6 +27,7 @@ from osf_tests.factories import (
     SubjectFactory
 )
 from tests.utils import assert_logs, assert_not_logs
+from api_tests import utils as api_test_utils
 from website.project.views.contributor import find_preprint_provider
 
 
@@ -58,7 +59,6 @@ class TestSetPreprintFile(OsfTestCase):
 
         self.project = ProjectFactory(creator=self.user)
         self.file = OsfStorageFile.create(
-            is_file=True,
             node=self.project,
             path='/panda.txt',
             name='panda.txt',
@@ -66,7 +66,6 @@ class TestSetPreprintFile(OsfTestCase):
         self.file.save()
 
         self.file_two = OsfStorageFile.create(
-            is_file=True,
             node=self.project,
             path='/pandapanda.txt',
             name='pandapanda.txt',
@@ -112,13 +111,13 @@ class TestSetPreprintFile(OsfTestCase):
 
     def test_add_primary_file(self):
         self.preprint.set_primary_file(self.file, auth=self.auth, save=True)
-        assert_equal(self.project.preprint_file.wrapped(), self.file)
+        assert_equal(self.project.preprint_file, self.file)
         assert_equal(type(self.project.preprint_file), type(self.file.stored_object))
 
     @assert_logs(NodeLog.PREPRINT_FILE_UPDATED, 'project')
     def test_change_primary_file(self):
         self.preprint.set_primary_file(self.file, auth=self.auth, save=True)
-        assert_equal(self.project.preprint_file.wrapped(), self.file)
+        assert_equal(self.project.preprint_file, self.file)
 
         self.preprint.set_primary_file(self.file_two, auth=self.auth, save=True)
         assert_equal(self.project.preprint_file._id, self.file_two._id)
@@ -165,7 +164,6 @@ class TestPreprintServicePermissions(OsfTestCase):
     def test_nonadmin_cannot_set_file(self):
         initial_file = self.preprint.primary_file
         file = OsfStorageFile.create(
-            is_file=True,
             node=self.project,
             path='/panda.txt',
             name='panda.txt',
@@ -197,7 +195,6 @@ class TestPreprintServicePermissions(OsfTestCase):
     def test_admin_can_set_file(self):
         initial_file = self.preprint.primary_file
         file = OsfStorageFile.create(
-            is_file=True,
             node=self.project,
             path='/panda.txt',
             name='panda.txt',
@@ -493,3 +490,51 @@ class TestOnPreprintUpdatedTask(OsfTestCase):
         res = format_preprint(self.preprint)
         preprint = next(v for v in res if v['@type'] == 'preprint')
         assert preprint['is_deleted'] is True
+
+
+class TestPreprintSaveShareHook(OsfTestCase):
+    def setUp(self):
+        super(TestPreprintSaveShareHook, self).setUp()
+        self.admin = AuthUserFactory()
+        self.auth = Auth(user=self.admin)
+        self.provider = PreprintProviderFactory(name='Lars Larson Snowmobiling Experience')
+        self.project = ProjectFactory(creator=self.admin, is_public=True)
+        self.subject = SubjectFactory()
+        self.subject_two = SubjectFactory()
+        self.file = api_test_utils.create_test_file(self.project, self.admin, 'second_place.pdf')
+        self.preprint = PreprintFactory(creator=self.admin, filename='second_place.pdf', provider=self.provider, subjects=[[self.subject._id]], project=self.project, is_published=False)
+
+    @mock.patch('website.preprints.tasks.on_preprint_updated.s')
+    def test_save_unpublished_not_called(self, mock_on_preprint_updated):
+        self.preprint.save()
+        assert not mock_on_preprint_updated.called
+
+    @mock.patch('website.preprints.tasks.on_preprint_updated.s')
+    def test_save_published_called(self, mock_on_preprint_updated):
+        self.preprint.set_published(True, auth=self.auth, save=True)
+        assert mock_on_preprint_updated.called
+
+    # This covers an edge case where a preprint is forced back to unpublished
+    # that it sends the information back to share
+    @mock.patch('website.preprints.tasks.on_preprint_updated.s')
+    def test_save_unpublished_called_forced(self, mock_on_preprint_updated):
+        self.preprint.set_published(True, auth=self.auth, save=True)
+        self.preprint.published = False
+        self.preprint.save(**{'force_update': True})
+        assert_equal(mock_on_preprint_updated.call_count, 2)
+
+    @mock.patch('website.preprints.tasks.on_preprint_updated.s')
+    def test_save_published_called(self, mock_on_preprint_updated):
+        self.preprint.set_published(True, auth=self.auth, save=True)
+        assert mock_on_preprint_updated.called
+
+    @mock.patch('website.preprints.tasks.on_preprint_updated.s')
+    def test_save_published_subject_change_called(self, mock_on_preprint_updated):
+        self.preprint.is_published = True
+        self.preprint.set_subjects([[self.subject_two._id]], auth=self.auth, save=True)
+        assert mock_on_preprint_updated.called
+
+    @mock.patch('website.preprints.tasks.on_preprint_updated.s')
+    def test_save_unpublished_subject_change_not_called(self, mock_on_preprint_updated):
+        self.preprint.set_subjects([[self.subject_two._id]], auth=self.auth, save=True)
+        assert not mock_on_preprint_updated.called

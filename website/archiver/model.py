@@ -12,7 +12,7 @@ from website.archiver import (
     ARCHIVER_FAILURE_STATUSES
 )
 
-from website.addons.base import StorageAddonBase
+from addons.base.models import BaseStorageAddon
 from website import settings
 
 
@@ -160,7 +160,7 @@ class ArchiveJob(StoredObject):
         for addon in [self.src_node.get_addon(name)
                       for name in settings.ADDONS_ARCHIVABLE
                       if settings.ADDONS_ARCHIVABLE[name] != 'none']:
-            if not addon or not addon.complete or not isinstance(addon, StorageAddonBase):
+            if not addon or not addon.complete or not isinstance(addon, BaseStorageAddon):
                 continue
             archive_errors = getattr(addon, 'archive_errors', None)
             if not archive_errors or (archive_errors and not archive_errors()):

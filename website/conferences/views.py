@@ -4,7 +4,7 @@ import httplib
 import logging
 
 from django.db import transaction
-from django.utils import timezone
+from bulk_update.helper import bulk_update
 from modularodm import Q
 from modularodm.exceptions import ModularOdmException
 
@@ -12,18 +12,15 @@ from framework.auth import get_or_create_user
 from framework.exceptions import HTTPError
 from framework.flask import redirect
 from framework.transactions.handlers import no_auto_transaction
-
 from website import settings
-from website.models import Node, Tag
-from website.util import web_url_for
-from website.mails import send_mail
-from website.files.models import StoredFileNode
-from website.mails import CONFERENCE_SUBMITTED, CONFERENCE_INACTIVE, CONFERENCE_FAILED
-
 from website.conferences import utils, signals
 from website.conferences.message import ConferenceMessage, ConferenceError
 from website.conferences.model import Conference
-
+from website.files.models import OsfStorageFile
+from website.mails import CONFERENCE_SUBMITTED, CONFERENCE_INACTIVE, CONFERENCE_FAILED
+from website.mails import send_mail
+from website.models import Node, Tag
+from website.util import web_url_for
 
 logger = logging.getLogger(__name__)
 
@@ -84,8 +81,9 @@ def add_poster_by_email(conference, message):
             user.save()  # need to save in order to access m2m fields (e.g. tags)
             users_created.append(user)
             user.add_system_tag('osf4m')
-            user.date_last_login = timezone.now()
+            user.update_date_last_login()
             user.save()
+
             # must save the user first before accessing user._id
             set_password_url = web_url_for(
                 'reset_password_get',
@@ -143,16 +141,13 @@ def add_poster_by_email(conference, message):
 
 
 def _render_conference_node(node, idx, conf):
-    try:
-        record = next(
-            x for x in
-            StoredFileNode.find(
-                Q('node', 'eq', node) &
-                Q('is_file', 'eq', True)
-            ).limit(1)
-        ).wrapped()
-        download_count = record.get_download_count()
+    record = OsfStorageFile.objects.filter(node=node).first()
 
+    if not record:
+        download_url = ''
+        download_count = 0
+    else:
+        download_count = record.get_download_count()
         download_url = node.web_url_for(
             'addon_view_or_download_file',
             path=record.path.strip('/'),
@@ -160,9 +155,6 @@ def _render_conference_node(node, idx, conf):
             action='download',
             _absolute=True,
         )
-    except StopIteration:
-        download_url = ''
-        download_count = 0
 
     author = node.visible_contributors[0]
     tags = list(node.tags.filter(system=False).values_list('name', flat=True))
@@ -248,11 +240,9 @@ def conference_submissions(**kwargs):
     The total number of submissions for each meeting is calculated and cached
     in the Conference.num_submissions field.
     """
-    submissions = []
+    conferences = Conference.find(Q('is_meeting', 'ne', False))
     #  TODO: Revisit this loop, there has to be a way to optimize it
-    for conf in Conference.find():
-        if (hasattr(conf, 'is_meeting') and (conf.is_meeting is False)):
-            continue
+    for conf in conferences:
         # For efficiency, we filter by tag first, then node
         # instead of doing a single Node query
         projects = set()
@@ -262,19 +252,13 @@ def conference_submissions(**kwargs):
             Q('tags', 'in', tags) &
             Q('is_public', 'eq', True) &
             Q('is_deleted', 'ne', True)
-        )
+        ).include('guids')
         projects.update(list(nodes))
-
-        for idx, node in enumerate(projects):
-            submissions.append(_render_conference_node(node, idx, conf))
         num_submissions = len(projects)
         # Cache the number of submissions
         conf.num_submissions = num_submissions
-        conf.save()
-        if num_submissions < settings.CONFERENCE_MIN_COUNT:
-            continue
-    submissions.sort(key=lambda submission: submission['dateCreated'], reverse=True)
-    return {'submissions': submissions}
+    bulk_update(conferences, update_fields=['num_submissions'])
+    return {'success': True}
 
 def conference_view(**kwargs):
     meetings = []

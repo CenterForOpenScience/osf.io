@@ -152,7 +152,7 @@ def patch_client(target, mock_client=None):
 
     Usage: ::
 
-        with patch_client('website.addons.dropbox.view.config.get_client') as client:
+        with patch_client('addons.dropbox.view.config.get_client') as client:
             # test view that uses the dropbox client.
     """
     with mock.patch(target) as client_getter:

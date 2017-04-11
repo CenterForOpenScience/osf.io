@@ -120,7 +120,7 @@ install:
 
 # Run Python tests (core and addon) and JS tests
 script:
-    - invoke test_travis_$TEST_BUILD -n 6
+    - invoke test_travis_$TEST_BUILD -n 4
 
 before_cache:
   - rm -Rf $HOME/.cache/pip/http
@@ -138,6 +138,10 @@ before_cache:
   - kill -9 $POSTGRES_PID
   - kill -9 $ELASTICSEARCH_PID
   - kill -9 $VARNISH_PID
+
+branches:
+  except:
+    - /^[0-9]/
 
 notifications:
   flowdock: 0221882cdda034c0e9ac2a0e766053dd

@@ -16,7 +16,7 @@ from osf_tests.factories import AuthUserFactory
 
 from framework.auth import Auth
 from addons.dropbox.serializer import DropboxSerializer
-from addons.dropbox.views import dropbox_root_folder
+from addons.dropbox.apps import dropbox_root_folder
 
 mock_client = MockDropbox()
 pytestmark = pytest.mark.django_db

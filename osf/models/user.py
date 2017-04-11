@@ -103,11 +103,6 @@ class OSFUserManager(BaseUserManager):
 
 
 class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, PermissionsMixin, AddonModelMixin):
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'framework.auth.core.User'
-    modm_query = None
-    # /TODO DELETE ME POST MIGRATION
-
     FIELD_ALIASES = {
         '_id': 'guids___id',
         'system_tags': 'tags',
@@ -129,6 +124,8 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         'schools',
         'social',
     }
+    TRACK_FIELDS = SEARCH_UPDATE_FIELDS.copy()
+    TRACK_FIELDS.update({'password', 'last_login'})
 
     # TODO: Add SEARCH_UPDATE_NODE_FIELDS, for fields that should trigger a
     #   search update for all nodes to which the user is a contributor.
@@ -238,10 +235,6 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     #              'expiration': <datetime>}
     # }
 
-    # TODO remove this field once migration (scripts/migration/migrate_mailing_lists_to_mailchimp_fields.py)
-    # has been run. This field is deprecated and replaced with mailchimp_mailing_lists
-    mailing_lists = DateTimeAwareJSONField(default=dict, blank=True)
-
     # email lists to which the user has chosen a subscription setting
     mailchimp_mailing_lists = DateTimeAwareJSONField(default=dict, blank=True)
     # Format: {
@@ -260,7 +253,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     # }
 
     # the date this user was registered
-    date_registered = NonNaiveDateTimeField(db_index=True, default=timezone.now)  # auto_now_add=True)
+    date_registered = NonNaiveDateTimeField(db_index=True, auto_now_add=True)
 
     # list of collaborators that this user recently added to nodes as a contributor
     # recently_added = fields.ForeignField("user", list=True)
@@ -324,9 +317,6 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     #     'twitter': <twitter id>,
     # }
 
-    # hashed password used to authenticate to Piwik
-    piwik_token = models.CharField(max_length=255, blank=True)
-
     # date the user last sent a request
     date_last_login = NonNaiveDateTimeField(null=True, blank=True)
 
@@ -360,6 +350,9 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
     is_active = models.BooleanField(default=False)
     is_staff = models.BooleanField(default=False)
+
+    def __repr__(self):
+        return '<OSFUser({0!r}) with guid {1!r}>'.format(self.username, self._id)
 
     @property
     def deep_url(self):
@@ -455,12 +448,18 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             return None
 
     @property
+    def all_tags(self):
+        """Return a queryset containing all of this user's tags (incl. system tags)."""
+        # Tag's default manager only returns non-system tags, so we can't use self.tags
+        return Tag.all_tags.filter(osfuser=self)
+
+    @property
     def system_tags(self):
-        """The system tags associated with this user. This currently returns a list of string
+        """The system tags associated with this node. This currently returns a list of string
         names for the tags, for compatibility with v1. Eventually, we can just return the
         QuerySet.
         """
-        return self.tags.filter(system=True).values_list('name', flat=True)
+        return self.all_tags.filter(system=True).values_list('name', flat=True)
 
     @property
     def csl_given_name(self):
@@ -521,22 +520,6 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     def __str__(self):
         return self.get_short_name()
 
-    @classmethod
-    def migrate_from_modm(cls, modm_obj):
-        django_obj = super(OSFUser, cls).migrate_from_modm(modm_obj)
-
-        # filter out None values
-        django_obj.emails = [x for x in django_obj.emails if x is not None]
-
-        if django_obj.password == '' or django_obj.password is None:
-            # password is blank=False, null=False
-            # make them have a password
-            django_obj.set_unusable_password()
-        else:
-            # django thinks bcrypt should start with bcrypt...
-            django_obj.password = 'bcrypt${}'.format(django_obj.password)
-        return django_obj
-
     @property
     def contributed(self):
         return self.nodes.all()
@@ -544,9 +527,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     @property
     def can_be_merged(self):
         """The ability of the `merge_user` method to fully merge the user"""
-        return True
-        # TODO: Uncomment when addons are implemented
-        # return all((addon.can_be_merged for addon in self.get_addons()))
+        return all((addon.can_be_merged for addon in self.get_addons()))
 
     def merge_user(self, user):
         """Merge a registered user into this account. This user will be
@@ -668,12 +649,12 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
                 node.contributor_set.filter(user=user).delete()
             else:
-                node.contributor_set.filter(user=user).invalidated_update(user=self)
+                node.contributor_set.filter(user=user).update(user=self)
 
             node.save()
 
         # - projects where the user was the creator
-        user.created.filter(is_bookmark_collection=False).invalidated_update(creator=self)
+        user.created.filter(is_bookmark_collection=False).update(creator=self)
 
         # - file that the user has checked_out, import done here to prevent import error
         from osf.models import FileNode
@@ -816,6 +797,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         user = cls.create(username, password, fullname)
         user.is_registered = True
         user.is_claimed = True
+        user.save()  # Must save before using auto_now_add field
         user.date_confirmed = user.date_registered
         user.emails.append(username)
         return user
@@ -1070,7 +1052,6 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         except NoResultsFound:
             user_to_merge = None
 
-        # TODO: Implement merging
         if user_to_merge and merge:
             self.merge_user(user_to_merge)
         elif user_to_merge:
@@ -1133,6 +1114,9 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         """
         for node in self.contributed:
             node.update_search()
+
+    def update_date_last_login(self):
+        self.date_last_login = timezone.now()
 
     def get_summary(self, formatter='long'):
         return {
@@ -1221,10 +1205,12 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
     def add_system_tag(self, tag):
         if not isinstance(tag, Tag):
-            tag_instance, created = Tag.objects.get_or_create(name=tag.lower(), system=True)
+            tag_instance, created = Tag.all_tags.get_or_create(name=tag.lower(), system=True)
         else:
             tag_instance = tag
-        if not self.tags.filter(id=tag_instance.id).exists():
+        if not tag_instance.system:
+            raise ValueError('Non-system tag passed to add_system_tag')
+        if not self.all_tags.filter(id=tag_instance.id).exists():
             self.tags.add(tag_instance)
         return tag_instance
 
@@ -1401,7 +1387,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     class Meta:
         # custom permissions for use in the OSF Admin App
         permissions = (
-            ('view_user', 'Can view user details'),
+            ('view_osfuser', 'Can view user details'),
         )
 
 @receiver(post_save, sender=OSFUser)

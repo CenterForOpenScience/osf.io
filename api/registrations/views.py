@@ -32,6 +32,8 @@ from api.registrations.serializers import (
     RegistrationProviderSerializer
 )
 
+from api.nodes.filters import NodesListFilterMixin
+
 from api.nodes.views import (
     NodeMixin, ODMFilterMixin, NodeRegistrationsList,
     NodeCommentsList, NodeProvidersList, NodeFilesList, NodeFileDetail,
@@ -71,7 +73,7 @@ class RegistrationMixin(NodeMixin):
         return node
 
 
-class RegistrationList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
+class RegistrationList(JSONAPIBaseView, generics.ListAPIView, NodesListFilterMixin):
     """Node Registrations.
 
     Registrations are read-only snapshots of a project. This view is a list of all current registrations for which a user
@@ -405,17 +407,7 @@ class RegistrationContributorsList(BaseContributorList, RegistrationMixin, UserM
 
     def get_default_queryset(self):
         node = self.get_node(check_object_permissions=False)
-        visible_contributors = set(node.visible_contributor_ids)
-        contributors = []
-        index = 0
-        for contributor in node.contributors:
-            contributor.index = index
-            contributor.bibliographic = contributor._id in visible_contributors
-            contributor.permission = node.get_permissions(contributor)[-1]
-            contributor.node_id = node._id
-            contributors.append(contributor)
-            index += 1
-        return contributors
+        return node.contributor_set.all()
 
 
 class RegistrationContributorDetail(BaseContributorDetail, RegistrationMixin, UserMixin):

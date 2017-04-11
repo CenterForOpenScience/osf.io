@@ -65,10 +65,6 @@ github_deauthorize_node = generic_views.deauthorize_node(
     SHORT_NAME
 )
 
-github_root_folder = generic_views.root_folder(
-    SHORT_NAME
-)
-
 #################
 # Special Cased #
 #################

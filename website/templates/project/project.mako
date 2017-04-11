@@ -243,7 +243,7 @@
             This project represents a preprint. <a href="http://help.osf.io/m/preprints">Learn more</a> about how to work with preprint files.
             <a href="${node['preprint_url']}" class="btn btn-default btn-sm m-r-xs pull-right">View preprint</a>
             % if user['is_admin']:
-                <a href="${node['preprint_url']}?edit" class="btn btn-default btn-sm m-r-xs pull-right">Edit preprint</a>
+                <a href="${node['preprint_url']}edit" class="btn btn-default btn-sm m-r-xs pull-right">Edit preprint</a>
             % endif
         </div>
     </div>
@@ -266,7 +266,7 @@
 
         %if user['show_wiki_widget']:
             <div id="addonWikiWidget" class="" mod-meta='{
-            "tpl": "../addons/wiki/templates/wiki_widget.mako",
+              "tpl": "../../addons/wiki/templates/wiki_widget.mako",
             "uri": "${node['api_url']}wiki/widget/"
         }'></div>
         %endif
@@ -440,7 +440,7 @@
         <div class="panel-body">
             % if node['children']:
                 <div id="containment">
-                    ${render_nodes.render_nodes(nodes=node['descendants'], sortable=True, user=user, pluralized_node_type='components', show_path=False, include_js=True)}
+                    ${render_nodes.render_nodes(nodes=node['descendants'], sortable=user['can_sort'], user=user, pluralized_node_type='components', show_path=False, include_js=True)}
                 </div>
             % else:
               <p>No components have been added to this ${node['node_type']}.</p>
