@@ -631,7 +631,7 @@ class FileVersion(ObjectIDMixin, BaseModel):
     # Date version record was created. This is the date displayed to the user.
     date_created = NonNaiveDateTimeField(auto_now_add=True)
 
-    size = models.BigIntegerField(default=-1, blank=True)
+    size = models.BigIntegerField(default=-1, blank=True, null=True)
 
     content_type = models.CharField(max_length=100, blank=True, null=True)  # was 24 on staging
     # Date file modified on third-party backend. Not displayed to user, since
