@@ -25,7 +25,7 @@ from website.archiver import signals as archiver_signals
 
 from website.project import signals as project_signals
 from website import settings
-from website.app import init_addons, do_set_backends
+from website.app import init_addons
 from osf.models import (
     ArchiveJob,
     AbstractNode as Node,
@@ -35,7 +35,6 @@ from osf.models import (
 def create_app_context():
     try:
         init_addons(settings)
-        do_set_backends(settings)
     except AssertionError:  # ignore AssertionErrors
         pass
 
@@ -210,7 +209,7 @@ def archive_addon(addon_short_name, job_pk, stat_result):
     src_provider = src.get_addon(addon_name)
     folder_name = src_provider.archive_folder_name
     cookie = user.get_or_create_cookie()
-    copy_url = settings.WATERBUTLER_URL + '/ops/copy'
+    copy_url = settings.WATERBUTLER_INTERNAL_URL + '/ops/copy'
     if addon_name == 'dataverse':
         # The dataverse API will not differentiate between published and draft files
         # unless expcicitly asked. We need to create seperate folders for published and

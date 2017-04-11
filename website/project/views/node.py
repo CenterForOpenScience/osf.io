@@ -8,6 +8,7 @@ from flask import request
 from modularodm import Q
 from modularodm.exceptions import ModularOdmException, ValidationError
 from django.apps import apps
+from django.db.models import Count
 
 from framework import status
 from framework.utils import iso8601format
@@ -32,12 +33,13 @@ from website.project.decorators import (
 from website.tokens import process_token_or_pass
 from website.util.permissions import ADMIN, READ, WRITE, CREATOR_PERMISSIONS
 from website.util.rubeus import collect_addon_js
-from website.project.model import has_anonymous_link, get_pointer_parent, NodeUpdateError, validate_title
+from website.project.model import has_anonymous_link, NodeUpdateError, validate_title
 from website.project.forms import NewNodeForm
 from website.project.metadata.utils import serialize_meta_schemas
-from website.models import Node, Pointer, WatchConfig, PrivateLink, Comment
+from website.models import Node, WatchConfig, PrivateLink, Comment
 from website import settings
-from website.views import _render_nodes, find_bookmark_collection, validate_page_num
+from website.views import find_bookmark_collection, validate_page_num
+from website.views import serialize_node_summary
 from website.profile import utils
 from website.project.licenses import serialize_node_license_record
 from website.util.sanitize import strip_html
@@ -182,7 +184,7 @@ def project_new_node(auth, node, **kwargs):
                 if contributor._id == user._id and not contributor.is_registered:
                     new_component.add_unregistered_contributor(
                         fullname=contributor.fullname, email=contributor.email,
-                        permissions=perm, auth=auth
+                        permissions=perm, auth=auth, existing_user=contributor
                     )
                 else:
                     new_component.add_contributor(contributor, permissions=perm, auth=auth)
@@ -256,13 +258,13 @@ def node_fork_page(auth, node, **kwargs):
 @must_be_valid_project
 @must_be_contributor_or_public_but_not_anonymized
 def node_registrations(auth, node, **kwargs):
-    return _view_project(node, auth, primary=True)
+    return _view_project(node, auth, primary=True, embed_registrations=True)
 
 
 @must_be_valid_project
 @must_be_contributor_or_public_but_not_anonymized
 def node_forks(auth, node, **kwargs):
-    return _view_project(node, auth, primary=True)
+    return _view_project(node, auth, primary=True, embed_forks=True)
 
 
 @must_be_valid_project
@@ -369,7 +371,11 @@ def configure_comments(node, **kwargs):
 @process_token_or_pass
 def view_project(auth, node, **kwargs):
     primary = '/api/v1' not in request.path
-    ret = _view_project(node, auth, primary=primary)
+    ret = _view_project(node, auth,
+                        primary=primary,
+                        embed_contributors=True,
+                        embed_descendants=True
+                        )
 
     ret['addon_capabilities'] = settings.ADDON_CAPABILITIES
     # Collect the URIs to the static assets for addons that have widgets
@@ -388,36 +394,33 @@ def view_project(auth, node, **kwargs):
 def project_reorder_components(node, **kwargs):
     """Reorders the components in a project's component list.
 
-    :param-json list new_list: List of strings that include node IDs and
-        node type delimited by ':'.
-
+    :param-json list new_list: List of strings that include node GUIDs.
     """
-    NodeRelation = apps.get_model('osf.NodeRelation')
-    # TODO(sloria): Change new_list parameter to be an array of objects
-    # {
-    #   'newList': {
-    #       {'key': 'abc123', 'type': 'node'}
-    #   }
-    # }
-    new_node_guids = [
-        each.split(':')
-        for each in request.get_json().get('new_list', [])
-    ]
-    # TODO: Optimize me. This is doing n queries. Ew.
+    ordered_guids = request.get_json().get('new_list', [])
+    node_relations = (
+        node.node_relations
+            .select_related('child')
+            .filter(child__is_deleted=False)
+    )
+    deleted_node_relation_ids = list(
+        node.node_relations.select_related('child')
+        .filter(child__is_deleted=True)
+        .values_list('pk', flat=True)
+    )
+
+    if len(ordered_guids) > len(node_relations):
+        raise HTTPError(http.BAD_REQUEST, data=dict(message_long='Too many node IDs'))
+
+    # Ordered NodeRelation pks, sorted according the order of guids passed in the request payload
     new_node_relation_ids = [
-        NodeRelation.load(id_).id if type_ == 'pointer'
-        else node.node_relations.get(child__guids___id=id_).id
-        for id_, type_ in new_node_guids
+        each.id for each in sorted(node_relations,
+                                   key=lambda nr: ordered_guids.index(nr.child._id))
     ]
 
-    node_relations = node.node_relations.select_related('child').all()
-    valid_node_relation_ids = [each.id for each in node_relations if not each.child.is_deleted]
-    deleted_node_relation_ids = [each.id for each in node_relations if each.child.is_deleted]
-
-    if len(valid_node_relation_ids) == len(new_node_guids) and set(valid_node_relation_ids) == set(new_node_relation_ids):
+    if len(node_relations) == len(ordered_guids):
         node.set_noderelation_order(new_node_relation_ids + deleted_node_relation_ids)
         node.save()
-        return {}
+        return {'nodes': ordered_guids}
 
     logger.error('Got invalid node list in reorder components')
     raise HTTPError(http.BAD_REQUEST)
@@ -645,10 +648,13 @@ def _should_show_wiki_widget(node, user):
         return has_wiki
 
 
-def _view_project(node, auth, primary=False):
+def _view_project(node, auth, primary=False,
+                  embed_contributors=False, embed_descendants=False,
+                  embed_registrations=False, embed_forks=False):
     """Build a JSON object containing everything needed to render
     project.view.mako.
     """
+    node = Node.objects.filter(pk=node.pk).include('contributor__user__guids').get()
     user = auth.user
 
     parent = node.find_readable_antecedent(auth)
@@ -697,8 +703,8 @@ def _view_project(node, auth, primary=False):
             'is_public': node.is_public,
             'is_archiving': node.archiving,
             'date_created': iso8601format(node.date_created),
-            'date_modified': iso8601format(node.logs.latest().date) if node.logs else '',
-            'tags': list(node.tags.values_list('name', flat=True)),
+            'date_modified': iso8601format(node.logs.latest().date) if node.logs.exists() else '',
+            'tags': list(node.tags.filter(system=False).values_list('name', flat=True)),
             'children': bool(node.nodes_active),
             'is_registration': node.is_registration,
             'is_pending_registration': node.is_pending_registration,
@@ -785,6 +791,25 @@ def _view_project(node, auth, primary=False):
             for key, value in settings.NODE_CATEGORY_MAP.iteritems()
         ]
     }
+    if embed_contributors and not anonymous:
+        data['node']['contributors'] = utils.serialize_visible_contributors(node)
+    if embed_descendants:
+        descendants, all_readable = _get_readable_descendants(auth=auth, node=node)
+        data['user']['can_sort'] = all_readable
+        data['node']['descendants'] = [
+            serialize_node_summary(node=each, auth=auth, primary=not node.has_node_link_to(each), show_path=False)
+            for each in descendants
+        ]
+    if embed_registrations:
+        data['node']['registrations'] = [
+            serialize_node_summary(node=each, auth=auth, show_path=False)
+            for each in node.registrations_all.sort('-registered_date').exclude(is_deleted=True).annotate(nlogs=Count('logs'))
+        ]
+    if embed_forks:
+        data['node']['forks'] = [
+            serialize_node_summary(node=each, auth=auth, show_path=False)
+            for each in node.forks.exclude(type='osf.registration').exclude(is_deleted=True).sort('-forked_date').annotate(nlogs=Count('logs'))
+        ]
     return data
 
 def get_affiliated_institutions(obj):
@@ -857,79 +882,14 @@ def get_recent_logs(node, **kwargs):
     return {'logs': logs}
 
 
-def _get_summary(node, auth, primary=True, link_id=None, show_path=False):
-    # TODO(sloria): Refactor this or remove (lots of duplication with _view_project)
-    summary = {
-        'id': link_id if link_id else node._id,
-        'primary': primary,
-        'is_registration': node.is_registration,
-        'is_fork': node.is_fork,
-        'is_pending_registration': node.is_pending_registration,
-        'is_retracted': node.is_retracted,
-        'is_pending_retraction': node.is_pending_retraction,
-        'embargo_end_date': node.embargo_end_date.strftime('%A, %b. %d, %Y') if node.embargo_end_date else False,
-        'is_pending_embargo': node.is_pending_embargo,
-        'is_embargoed': node.is_embargoed,
-        'archiving': node.archiving,
-    }
-
-    if node.can_view(auth):
-        summary.update({
-            'can_view': True,
-            'can_edit': node.can_edit(auth),
-            'primary_id': node._id,
-            'url': node.url,
-            'primary': primary,
-            'api_url': node.api_url,
-            'title': node.title,
-            'category': node.category,
-            'node_type': node.project_or_component,
-            'is_fork': node.is_fork,
-            'is_registration': node.is_registration,
-            'anonymous': has_anonymous_link(node, auth),
-            'registered_date': node.registered_date.strftime('%Y-%m-%d %H:%M UTC')
-            if node.is_registration
-            else None,
-            'forked_date': node.forked_date.strftime('%Y-%m-%d %H:%M UTC')
-            if node.is_fork
-            else None,
-            'ua_count': None,
-            'ua': None,
-            'non_ua': None,
-            'addons_enabled': node.get_addon_names(),
-            'is_public': node.is_public,
-            'parent_title': node.parent_node.title if node.parent_node else None,
-            'parent_is_public': node.parent_node.is_public if node.parent_node else False,
-            'show_path': show_path,
-            'nlogs': node.logs.count(),
-        })
-    else:
-        summary['can_view'] = False
-
-    # TODO: Make output format consistent with _view_project
-    return {
-        'summary': summary,
-    }
-
-
-@collect_auth
-@must_be_valid_project(retractions_valid=True)
-def get_summary(auth, node, **kwargs):
-    primary = kwargs.get('primary')
-    link_id = kwargs.get('link_id')
-    show_path = kwargs.get('show_path', False)
-
-    return _get_summary(
-        node, auth, primary=primary, link_id=link_id, show_path=show_path
-    )
-
-@must_be_contributor_or_public
-def get_readable_descendants(auth, node, **kwargs):
+def _get_readable_descendants(auth, node, permission=None):
     descendants = []
+    all_readable = True
     for child in node.get_nodes(is_deleted=False):
-        if request.args.get('permissions'):
-            perm = request.args['permissions'].lower().strip()
-            if perm not in child.get_permissions(auth.user):
+        if permission:
+            perm = permission.lower().strip()
+            if not child.has_permission(auth.user, perm):
+                all_readable = False
                 continue
         # User can view child
         if child.can_view(auth):
@@ -938,19 +898,24 @@ def get_readable_descendants(auth, node, **kwargs):
         elif node.linked_nodes.filter(id=child.id).exists():
             if node.has_permission(auth.user, 'write'):
                 descendants.append(child)
+            else:
+                all_readable = False
         else:
+            all_readable = False
             for descendant in child.find_readable_descendants(auth):
                 descendants.append(descendant)
-    return _render_nodes(descendants, auth=auth, parent_node=node)
+    return descendants, all_readable
 
-def node_child_tree(user, node_ids):
+def node_child_tree(user, nodes):
     """ Format data to test for node privacy settings for use in treebeard.
+    :param user: modular odm User object
+    :param nodes: list of parent project node objects
+    :return: treebeard-formatted data
     """
     items = []
 
-    for node_id in node_ids:
-        node = Node.load(node_id)
-        assert node, '{} is not a valid Node.'.format(node_id)
+    for node in nodes:
+        assert node, '{} is not a valid Node.'.format(node._id)
 
         can_read = node.has_permission(user, READ)
         can_read_children = node.has_permission_on_children(user, 'read')
@@ -970,18 +935,15 @@ def node_child_tree(user, node_ids):
             'name': affiliated_institution.name
         } for affiliated_institution in node.affiliated_institutions.all()]
 
-        children = []
+        children = node.get_nodes(**{'is_deleted': False, 'is_node_link': False})
+        children_tree = []
         # List project/node if user has at least 'read' permissions (contributor or admin viewer) or if
         # user is contributor on a component of the project/node
-        children.extend(node_child_tree(
-            user,
-            list(node.node_relations.select_related('child')
-                 .exclude(child__is_deleted=True)
-                 .values_list('child__guids___id', flat=True))
-        ))
+        children_tree.extend(node_child_tree(user, children))
+
         item = {
             'node': {
-                'id': node_id,
+                'id': node._id,
                 'url': node.url if can_read else '',
                 'title': node.title if can_read else 'Private Project',
                 'is_public': node.is_public,
@@ -991,7 +953,7 @@ def node_child_tree(user, node_ids):
                 'affiliated_institutions': affiliated_institutions
             },
             'user_id': user._id,
-            'children': children,
+            'children': children_tree,
             'kind': 'folder' if not node.parent_node or not node.parent_node.has_permission(user, 'read') else 'node',
             'nodeType': node.project_or_component,
             'category': node.category,
@@ -1010,22 +972,8 @@ def node_child_tree(user, node_ids):
 @must_be_valid_project
 def get_node_tree(auth, **kwargs):
     node = kwargs.get('node') or kwargs['project']
-    tree = node_child_tree(auth.user, [node._id])
+    tree = node_child_tree(auth.user, [node])
     return tree
-
-@must_be_contributor_or_public
-def get_forks(auth, node, **kwargs):
-    fork_list = node.forks.exclude(type='osf.registration').sort('-forked_date')
-    return _render_nodes(nodes=fork_list, auth=auth)
-
-
-@must_be_contributor_or_public
-def get_registrations(auth, node, **kwargs):
-    # get all undeleted registrations, including archiving
-    sorted_registrations = node.registrations_all.sort('-registered_date')
-    undeleted_registrations = [n for n in sorted_registrations if not n.is_deleted]
-    return _render_nodes(undeleted_registrations, auth)
-
 
 @must_be_valid_project
 @must_have_permission(ADMIN)
@@ -1265,7 +1213,7 @@ def remove_pointer(auth, node, **kwargs):
     if pointer_id is None:
         raise HTTPError(http.BAD_REQUEST)
 
-    pointer = Pointer.load(pointer_id)
+    pointer = Node.load(pointer_id)
     if pointer is None:
         raise HTTPError(http.BAD_REQUEST)
 
@@ -1290,7 +1238,7 @@ def remove_pointer_from_folder(auth, node, pointer_id, **kwargs):
 
     pointer_id = node.pointing_at(pointer_id)
 
-    pointer = Pointer.load(pointer_id)
+    pointer = Node.load(pointer_id)
 
     if pointer is None:
         raise HTTPError(http.BAD_REQUEST)
@@ -1328,14 +1276,12 @@ def fork_pointer(auth, node, **kwargs):
 def abbrev_authors(node):
     lead_author = node.visible_contributors[0]
     ret = lead_author.family_name or lead_author.given_name or lead_author.fullname
-    if len(node.visible_contributors.count()) > 1:
+    if node.visible_contributors.count() > 1:
         ret += ' et al.'
     return ret
 
 
-def serialize_pointer(pointer, auth):
-    node = get_pointer_parent(pointer)
-
+def serialize_pointer(node, auth):
     if node.can_view(auth):
         return {
             'id': node._id,
@@ -1353,9 +1299,9 @@ def serialize_pointer(pointer, auth):
 @must_be_contributor_or_public
 def get_pointed(auth, node, **kwargs):
     """View that returns the pointers for a project."""
+    NodeRelation = apps.get_model('osf.NodeRelation')
     # exclude folders
     return {'pointed': [
-        serialize_pointer(each, auth)
-        for each in node.pointed
-        if not get_pointer_parent(each).is_collection
+        serialize_pointer(each.parent, auth)
+        for each in NodeRelation.objects.filter(child=node, is_node_link=True).exclude(parent__type='osf.collection')
     ]}

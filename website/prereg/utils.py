@@ -6,6 +6,7 @@ PREREG_CAMPAIGNS = {
     'erpc': 'Election Research Preacceptance Competition',
 }
 
+
 def drafts_for_user(user, campaign):
     from website import models  # noqa
 

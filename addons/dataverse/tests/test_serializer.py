@@ -1,21 +1,16 @@
 # -*- coding: utf-8 -*-
-
 from nose.tools import *  # noqa
 import mock
 import pytest
-import unittest
 
-from framework.auth import Auth
 
 from addons.base.tests.serializers import OAuthAddonSerializerTestSuiteMixin
-from addons.dataverse.tests.utils import (
-    create_mock_connection, DataverseAddonTestCase
-)
+from addons.dataverse.tests.utils import create_mock_connection
 from addons.dataverse.models import DataverseProvider
 from addons.dataverse.tests.factories import DataverseAccountFactory
 from tests.base import OsfTestCase
 
-from website.addons.dataverse.serializer import DataverseSerializer
+from addons.dataverse.serializer import DataverseSerializer
 
 pytestmark = pytest.mark.django_db
 
@@ -35,7 +30,7 @@ class TestDataverseSerializer(OAuthAddonSerializerTestSuiteMixin, OsfTestCase):
             user_settings=self.user_settings,
             node_settings=self.node_settings
         )
-        self.mock_api = mock.patch('website.addons.dataverse.serializer.client.connect_from_settings')
+        self.mock_api = mock.patch('addons.dataverse.serializer.client.connect_from_settings')
         self.mock_api.return_value = create_mock_connection()
         self.mock_api.start()
 

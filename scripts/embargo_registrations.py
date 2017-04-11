@@ -11,7 +11,6 @@ from django.db import transaction
 from modularodm import Q
 
 from framework.celery_tasks import app as celery_app
-from framework.transactions.context import TokuTransaction
 
 from website.app import init_app
 from website import models, settings
@@ -42,7 +41,7 @@ def main(dry_run=True):
                     embargo.save()
                     continue
 
-                with TokuTransaction():
+                with transaction.atomic():
                     try:
                         embargo.state = models.Embargo.APPROVED
                         parent_registration.registered_from.add_log(

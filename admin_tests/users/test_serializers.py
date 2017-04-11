@@ -4,7 +4,7 @@ from django.utils import timezone
 from nose import tools as nt
 
 from tests.base import AdminTestCase
-from tests.factories import NodeFactory, UserFactory
+from osf_tests.factories import NodeFactory, UserFactory
 
 from admin.users.serializers import serialize_user, serialize_simple_node
 

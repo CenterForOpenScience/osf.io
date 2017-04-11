@@ -16,7 +16,7 @@ from osf.models.user import OSFUser
 from osf.modm_compat import Q
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from website import settings
-from website.addons.base import logger, serializer
+from addons.base import logger, serializer
 from website.oauth.signals import oauth_complete
 from website.util import waterbutler_url_for
 
@@ -172,7 +172,7 @@ class BaseOAuthUserSettings(BaseUserSettings):
 
     @property
     def has_auth(self):
-        return bool(self.external_accounts)
+        return self.external_accounts.exists()
 
     @property
     def external_accounts(self):
@@ -216,15 +216,13 @@ class BaseOAuthUserSettings(BaseUserSettings):
         """
         for node in self.get_nodes_with_oauth_grants(external_account):
             try:
-                addon_settings = node.get_addon(external_account.provider, deleted=True)
+                node.get_addon(external_account.provider, deleted=True).deauthorize(auth=auth)
             except AttributeError:
                 # No associated addon settings despite oauth grant
                 pass
-            else:
-                addon_settings.deauthorize(auth=auth)
 
         if external_account.osfuser_set.count() == 1 and \
-                external_account.osfuser_set.filter(osfuser=auth.user).count() == 1:
+                external_account.osfuser_set.filter(id=auth.user.id).exists():
             # Only this user is using the account, so revoke remote access as well.
             self.revoke_remote_oauth_access(external_account)
 
@@ -317,7 +315,7 @@ class BaseOAuthUserSettings(BaseUserSettings):
             config = settings.ADDONS_AVAILABLE_DICT[
                 self.oauth_provider.short_name
             ]
-            Model = config.settings_models['node']
+            Model = config.models['nodesettings']
         except KeyError:
             pass
         else:
@@ -587,7 +585,7 @@ class BaseStorageAddon(BaseModel):
             kwargs['cookie'] = cookie
         if version:
             kwargs['version'] = version
-        metadata_url = waterbutler_url_for('metadata', **kwargs)
+        metadata_url = waterbutler_url_for('metadata', _internal=True, **kwargs)
 
         res = requests.get(metadata_url)
         if res.status_code != 200:
@@ -821,6 +819,7 @@ class BaseOAuthNodeSettings(BaseNodeSettings):
                 category=fork.project_or_component,
             )
         else:
+            clone.clear_settings()
             message = (
                 u'{addon} authorization not copied to forked {category}. You may '
                 u'authorize this fork on the <u><a href="{url}">Settings</a></u> '

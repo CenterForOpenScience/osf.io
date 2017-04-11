@@ -1,4 +1,6 @@
 <%inherit file="project/project_base.mako"/>
+<%namespace name="render_nodes" file="util/render_nodes.mako" />
+<%namespace name="contributor_list" file="util/contributor_list.mako" />
 <%include file="project/nodes_privacy.mako"/>
 
 <%
@@ -113,11 +115,7 @@
                     <ol>Anonymous Contributors</ol>
                 % else:
                     <ol>
-                        <div mod-meta='{
-                            "tpl": "util/render_contributors.mako",
-                            "uri": "${node["api_url"]}get_contributors/",
-                            "replace": true
-                        }'></div>
+                        ${contributor_list.render_contributors_full(contributors=node['contributors'])}
                     </ol>
                 % endif
                 </div>
@@ -245,7 +243,7 @@
             This project represents a preprint. <a href="http://help.osf.io/m/preprints">Learn more</a> about how to work with preprint files.
             <a href="${node['preprint_url']}" class="btn btn-default btn-sm m-r-xs pull-right">View preprint</a>
             % if user['is_admin']:
-                <a href="${node['preprint_url']}?edit" class="btn btn-default btn-sm m-r-xs pull-right">Edit preprint</a>
+                <a href="${node['preprint_url']}edit" class="btn btn-default btn-sm m-r-xs pull-right">Edit preprint</a>
             % endif
         </div>
     </div>
@@ -257,7 +255,7 @@
     <div class="col-xs-12">
         <div class="pp-notice pp-warning m-b-md p-md clearfix">
             This project used to represent a preprint, but the primary preprint file has been moved or deleted. <a href="/preprints/submit/" class="btn btn-default btn-sm m-r-xs pull-right">Create a new preprint</a>
-        </div> 
+        </div>
     </div>
 </div>
 % endif
@@ -268,7 +266,7 @@
 
         %if user['show_wiki_widget']:
             <div id="addonWikiWidget" class="" mod-meta='{
-            "tpl": "../addons/wiki/templates/wiki_widget.mako",
+              "tpl": "../../addons/wiki/templates/wiki_widget.mako",
             "uri": "${node['api_url']}wiki/widget/"
         }'></div>
         %endif
@@ -308,7 +306,7 @@
                 % if addons[addon]['has_widget']:
                     %if addon != 'wiki': ## We already show the wiki widget at the top
                     <div class="addon-widget-container" mod-meta='{
-                            "tpl": "../addons/${addon}/templates/${addon}_widget.mako",
+                            "tpl": "../../addons/${addon}/templates/${addon}_widget.mako",
                             "uri": "${node['api_url']}${addon}/widget/"
                         }'></div>
                     %endif
@@ -442,16 +440,8 @@
         <div class="panel-body">
             % if node['children']:
                 <div id="containment">
-                    <div mod-meta='{
-                        "tpl": "util/render_nodes.mako",
-                        "uri": "${node["api_url"]}get_readable_descendants/",
-                        "replace": true,
-                        "kwargs": {
-                          "sortable" : ${'true' if not node['is_registration'] else 'false'},
-                          "pluralized_node_type": "components"
-                        }
-                      }'></div>
-                </div><!-- end containment -->
+                    ${render_nodes.render_nodes(nodes=node['descendants'], sortable=user['can_sort'], user=user, pluralized_node_type='components', show_path=False, include_js=True)}
+                </div>
             % else:
               <p>No components have been added to this ${node['node_type']}.</p>
             % endif

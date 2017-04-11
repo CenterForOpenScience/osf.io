@@ -7,8 +7,8 @@ from addons.base.tests.views import OAuthAddonAuthViewsTestCaseMixin, OAuthAddon
 from addons.googledrive.tests.utils import mock_folders as sample_folder_data
 from addons.googledrive.tests.utils import GoogleDriveAddonTestCase
 from tests.base import OsfTestCase
-from website.addons.googledrive.client import GoogleDriveClient
-from website.addons.googledrive.serializer import GoogleDriveSerializer
+from addons.googledrive.client import GoogleDriveClient
+from addons.googledrive.serializer import GoogleDriveSerializer
 
 pytestmark = pytest.mark.django_db
 
