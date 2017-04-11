@@ -17,7 +17,7 @@ from addons.zotero.tests.factories import (
     ZoteroNodeSettingsFactory,
     ZoteroUserSettingsFactory,
 )
-from website.addons.zotero.provider import ZoteroCitationsProvider
+from addons.zotero.provider import ZoteroCitationsProvider
 
 pytestmark = pytest.mark.django_db
 

@@ -6,9 +6,9 @@ from nose.tools import *  # noqa
 
 from tests.base import OsfTestCase
 
-from website.addons.box.tests.factories import BoxAccountFactory
-from website.addons.googledrive.tests.factories import GoogleDriveAccountFactory
-from website.addons.mendeley.tests.factories import MendeleyAccountFactory
+from addons.box.tests.factories import BoxAccountFactory
+from addons.googledrive.tests.factories import GoogleDriveAccountFactory
+from addons.mendeley.tests.factories import MendeleyAccountFactory
 
 import datetime
 

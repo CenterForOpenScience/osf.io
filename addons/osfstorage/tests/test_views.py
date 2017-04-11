@@ -9,21 +9,21 @@ from nose.tools import *  # noqa
 
 from addons.osfstorage.models import OsfStorageFileNode
 from framework.auth.core import Auth
-from website.addons.osfstorage.tests.utils import (
+from addons.osfstorage.tests.utils import (
     StorageTestCase, Delta, AssertDeltas,
     recursively_create_file,
 )
-from website.addons.osfstorage.tests import factories
+from addons.osfstorage.tests import factories
 
 from framework.auth import signing
 from website.util import rubeus
 
 from website.models import Tag
 from website.files import models
-from website.addons.osfstorage import utils
-from website.addons.osfstorage import views
-from website.addons.base.views import make_auth
-from website.addons.osfstorage import settings as storage_settings
+from addons.osfstorage.apps import osf_storage_root
+from addons.osfstorage import utils
+from addons.base.views import make_auth
+from addons.osfstorage import settings as storage_settings
 
 
 def create_record_with_version(path, node_settings, **kwargs):
@@ -48,6 +48,15 @@ class HookTestCase(StorageTestCase):
 
 @pytest.mark.django_db
 class TestGetMetadataHook(HookTestCase):
+
+    def test_empty(self):
+        res = self.send_hook(
+            'osfstorage_get_children',
+            {'fid': self.node_settings.get_root()._id},
+            {},
+        )
+        assert_true(isinstance(res.json, list))
+        assert_equal(res.json, [])
 
     def test_file_metdata(self):
         path = u'kind/of/magíc.mp3'
@@ -82,7 +91,7 @@ class TestGetMetadataHook(HookTestCase):
 
     def test_osf_storage_root(self):
         auth = Auth(self.project.creator)
-        result = views.osf_storage_root(self.node_settings.config, self.node_settings, auth)
+        result = osf_storage_root(self.node_settings.config, self.node_settings, auth)
         node = self.project
         expected = rubeus.build_addon_root(
             node_settings=self.node_settings,
@@ -326,7 +335,7 @@ class TestUploadFileHook(HookTestCase):
         assert_equal(res.json['status'], 'success')
         assert_is(res.json['archive'], True)
 
-        self.send_hook(
+        res = self.send_hook(
             'osfstorage_update_metadata',
             {},
             payload={'metadata': {

@@ -169,7 +169,7 @@ class BaseRegistrationSerializer(NodeSerializer):
 
     preprints = HideIfWithdrawal(HideIfRegistration(RelationshipField(
         related_view='nodes:node-preprints',
-        related_view_kwargs={'node_id': '<pk>'}
+        related_view_kwargs={'node_id': '<_id>'}
     )))
 
     identifiers = HideIfWithdrawal(RelationshipField(
@@ -280,6 +280,8 @@ class BaseRegistrationSerializer(NodeSerializer):
                 registration.update(validated_data)
             except NodeUpdateError as err:
                 raise exceptions.ValidationError(err.reason)
+            except NodeStateError as err:
+                raise exceptions.ValidationError(err.message)
         else:
             raise exceptions.ValidationError('Registrations can only be turned from private to public.')
         return registration
@@ -322,7 +324,7 @@ class RegistrationContributorsSerializer(NodeContributorsSerializer):
         return absolute_reverse(
             'registrations:registration-contributor-detail',
             kwargs={
-                'user_id': obj._id,
+                'user_id': obj.user._id,
                 'node_id': self.context['request'].parser_context['kwargs']['node_id'],
                 'version': self.context['request'].parser_context['kwargs']['version']
             }

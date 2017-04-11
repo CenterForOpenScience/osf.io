@@ -5,10 +5,8 @@ import threading
 
 import pymongo
 from pymongo.errors import ConnectionFailure
-from werkzeug.local import LocalProxy
-
 from website import settings
-
+from werkzeug.local import LocalProxy
 
 logger = logging.getLogger(__name__)
 
@@ -120,7 +118,7 @@ def set_up_storage(schemas, storage_class, prefix='', addons=None, **kwargs):
     ::
 
         >>> from pymongo import MongoClient
-        >>> from modularodm.storage import MongoStorage
+        >>> from framework.mongo.storage import MongoStorage
         >>> from models import User, Node, Tag
         >>> client = MongoClient(port=20771)
         >>> db = client['mydb']

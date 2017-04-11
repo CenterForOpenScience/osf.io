@@ -10,15 +10,14 @@ from django.db import models
 from framework.auth import Auth
 from framework.exceptions import HTTPError
 from osf.models.external import ExternalProvider
-from osf.models.files import File, FileNode, Folder
-from website.addons.base import exceptions
-from website.addons.googledrive import settings as drive_settings
-from website.addons.googledrive.client import (GoogleAuthClient,
+from osf.models.files import File, Folder, BaseFileNode
+from addons.base import exceptions
+from addons.googledrive import settings as drive_settings
+from addons.googledrive.client import (GoogleAuthClient,
                                                GoogleDriveClient)
-from website.addons.googledrive.serializer import GoogleDriveSerializer
-from website.addons.googledrive.utils import to_hgrid
+from addons.googledrive.serializer import GoogleDriveSerializer
+from addons.googledrive.utils import to_hgrid
 from website.util import api_v2_url
-
 
 # from website.files.models.ext import PathFollowingFileNode
 
@@ -27,26 +26,16 @@ from website.util import api_v2_url
 # A migration will need to be run that concats
 # folder_path and filenode.path
 # class GoogleDriveFileNode(PathFollowingFileNode):
-class GoogleDriveFileNode(FileNode):
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.files.models.googledrive.GoogleDriveFileNode'
-    modm_query = None
-    # /TODO DELETE ME POST MIGRATION
-    provider = 'googledrive'
+class GoogleDriveFileNode(BaseFileNode):
+    _provider = 'googledrive'
     FOLDER_ATTR_NAME = 'folder_path'
 
+
 class GoogleDriveFolder(GoogleDriveFileNode, Folder):
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.files.models.googledrive.GoogleDriveFolder'
-    modm_query = None
-    # /TODO DELETE ME POST MIGRATION
     pass
 
+
 class GoogleDriveFile(GoogleDriveFileNode, File):
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.files.models.googledrive.GoogleDriveFile'
-    modm_query = None
-    # /TODO DELETE ME POST MIGRATION
     pass
 
 
@@ -81,20 +70,12 @@ class GoogleDriveProvider(ExternalProvider):
         return self.account.oauth_key
 
 
-class UserSettings(BaseStorageAddon, BaseOAuthUserSettings):
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.addons.googledrive.model.GoogleDriveUserSettings'
-    modm_query = None
-    # /TODO DELETE ME POST MIGRATION
+class UserSettings(BaseOAuthUserSettings):
     oauth_provider = GoogleDriveProvider
     serializer = GoogleDriveSerializer
 
 
 class NodeSettings(BaseStorageAddon, BaseOAuthNodeSettings):
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.addons.googledrive.model.GoogleDriveNodeSettings'
-    modm_query = None
-    # /TODO DELETE ME POST MIGRATION
     oauth_provider = GoogleDriveProvider
     provider_name = 'googledrive'
 

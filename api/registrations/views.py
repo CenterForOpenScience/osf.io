@@ -32,6 +32,8 @@ from api.registrations.serializers import (
     RegistrationProviderSerializer
 )
 
+from api.nodes.filters import NodesListFilterMixin
+
 from api.nodes.views import (
     NodeMixin, ODMFilterMixin, NodeRegistrationsList,
     NodeCommentsList, NodeProvidersList, NodeFilesList, NodeFileDetail,
@@ -60,6 +62,7 @@ class RegistrationMixin(NodeMixin):
             Node,
             self.kwargs[self.node_lookup_url_kwarg],
             display_name='node'
+
         )
         # Nodes that are folders/collections are treated as a separate resource, so if the client
         # requests a collection through a node endpoint, we return a 404
@@ -71,7 +74,7 @@ class RegistrationMixin(NodeMixin):
         return node
 
 
-class RegistrationList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
+class RegistrationList(JSONAPIBaseView, generics.ListAPIView, NodesListFilterMixin):
     """Node Registrations.
 
     Registrations are read-only snapshots of a project. This view is a list of all current registrations for which a user
@@ -175,7 +178,7 @@ class RegistrationList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
     def get_queryset(self):
         query = self.get_query_from_request()
         blacklisted = self.is_blacklisted(query)
-        nodes = Node.find(query)
+        nodes = Node.find(query).distinct()
         # If attempting to filter on a blacklisted field, exclude withdrawals.
         if blacklisted:
             non_withdrawn_list = [node._id for node in nodes if not node.is_retracted]
@@ -193,7 +196,11 @@ class RegistrationList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
         if field_name == 'tags':
             if operation['value'] not in (list(), tuple()):
                 operation['source_field_name'] = 'tags__name'
-
+                operation['op'] = 'iexact'
+        if field_name == 'contributors':
+            if operation['value'] not in (list(), tuple()):
+                operation['source_field_name'] = '_contributors__guids___id'
+                operation['op'] = 'iexact'
 
 class RegistrationDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, RegistrationMixin, WaterButlerMixin):
     """Node Registrations.
@@ -401,17 +408,7 @@ class RegistrationContributorsList(BaseContributorList, RegistrationMixin, UserM
 
     def get_default_queryset(self):
         node = self.get_node(check_object_permissions=False)
-        visible_contributors = set(node.visible_contributor_ids)
-        contributors = []
-        index = 0
-        for contributor in node.contributors:
-            contributor.index = index
-            contributor.bibliographic = contributor._id in visible_contributors
-            contributor.permission = node.get_permissions(contributor)[-1]
-            contributor.node_id = node._id
-            contributors.append(contributor)
-            index += 1
-        return contributors
+        return node.contributor_set.all()
 
 
 class RegistrationContributorDetail(BaseContributorDetail, RegistrationMixin, UserMixin):

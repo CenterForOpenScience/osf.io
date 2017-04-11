@@ -15,20 +15,20 @@ from addons.base.tests.views import (
     OAuthAddonConfigViewsTestCaseMixin
 )
 from addons.s3.tests.utils import S3AddonTestCase
-from website.addons.s3.utils import validate_bucket_name, validate_bucket_location
+from addons.s3.utils import validate_bucket_name, validate_bucket_location
 from website.util import api_url_for
 
 pytestmark = pytest.mark.django_db
 
 class TestS3Views(S3AddonTestCase, OAuthAddonConfigViewsTestCaseMixin, OsfTestCase):
     def setUp(self):
-        self.mock_can_list = mock.patch('website.addons.s3.views.utils.can_list')
+        self.mock_can_list = mock.patch('addons.s3.views.utils.can_list')
         self.mock_can_list.return_value = True
         self.mock_can_list.start()
-        self.mock_uid = mock.patch('website.addons.s3.views.utils.get_user_info')
+        self.mock_uid = mock.patch('addons.s3.views.utils.get_user_info')
         self.mock_uid.return_value = {'id': '1234567890', 'display_name': 's3.user'}
         self.mock_uid.start()
-        self.mock_exists = mock.patch('website.addons.s3.views.utils.bucket_exists')
+        self.mock_exists = mock.patch('addons.s3.views.utils.bucket_exists')
         self.mock_exists.return_value = True
         self.mock_exists.start()
         super(TestS3Views, self).setUp()
@@ -101,7 +101,7 @@ class TestS3Views(S3AddonTestCase, OAuthAddonConfigViewsTestCaseMixin, OsfTestCa
 
         assert_equal(res.status_code, http.BAD_REQUEST)
 
-    @mock.patch('website.addons.s3.views.utils.can_list', return_value=False)
+    @mock.patch('addons.s3.views.utils.can_list', return_value=False)
     def test_user_settings_cant_list(self, mock_can_list):
         url = api_url_for('s3_add_user_account')
         rv = self.app.post_json(url, {
@@ -245,8 +245,8 @@ class TestCreateBucket(S3AddonTestCase, OsfTestCase):
         assert_true(validate_bucket_location('sa-east-1'))
         assert_true(validate_bucket_location('eu-west-1'))
 
-    @mock.patch('website.addons.s3.views.utils.create_bucket')
-    @mock.patch('website.addons.s3.views.utils.get_bucket_names')
+    @mock.patch('addons.s3.views.utils.create_bucket')
+    @mock.patch('addons.s3.views.utils.get_bucket_names')
     def test_create_bucket_pass(self, mock_names, mock_make):
         mock_make.return_value = True
         mock_names.return_value = [
@@ -267,7 +267,7 @@ class TestCreateBucket(S3AddonTestCase, OsfTestCase):
         assert_equal(ret.status_int, http.OK)
         assert_equal(ret.json, {})
 
-    @mock.patch('website.addons.s3.views.utils.create_bucket')
+    @mock.patch('addons.s3.views.utils.create_bucket')
     def test_create_bucket_fail(self, mock_make):
         error = S3ResponseError(418, 'because Im a test')
         error.message = 'This should work'
@@ -278,7 +278,7 @@ class TestCreateBucket(S3AddonTestCase, OsfTestCase):
 
         assert_equals(ret.body, '{"message": "This should work", "title": "Problem connecting to S3"}')
 
-    @mock.patch('website.addons.s3.views.utils.create_bucket')
+    @mock.patch('addons.s3.views.utils.create_bucket')
     def test_bad_location_fails(self, mock_make):
         url = "/api/v1/project/{0}/s3/newbucket/".format(self.project._id)
         ret = self.app.post_json(

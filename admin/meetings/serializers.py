@@ -11,7 +11,7 @@ def serialize_meeting(meeting):
         'homepage_link_text': meeting.field_names.get('homepage_link_text', DEFAULT_FIELD_NAMES.get('homepage_link_text', '')),
         'logo_url': meeting.logo_url,
         'active': meeting.active,
-        'admins': ', '.join([u.username for u in meeting.admins]),
+        'admins': meeting.admins.all().values_list('username', flat=True),
         'public_projects': meeting.public_projects,
         'poster': meeting.poster,
         'talk': meeting.talk,

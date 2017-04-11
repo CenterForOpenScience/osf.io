@@ -12,14 +12,14 @@ from framework.transactions.context import TokuTransaction
 from framework.guid.model import Guid
 
 from website.files import models
-from website.addons.box.model import BoxFile
-from website.addons.s3.model import S3GuidFile
-from website.addons.dropbox.model import DropboxFile
-from website.addons.github.model import GithubGuidFile
-from website.addons.dataverse.model import DataverseFile
-from website.addons.figshare.model import FigShareGuidFile
-from website.addons.osfstorage.model import OsfStorageGuidFile
-from website.addons.googledrive.model import GoogleDriveGuidFile
+from addons.box.model import BoxFile
+from addons.s3.model import S3GuidFile
+from addons.dropbox.model import DropboxFile
+from addons.github.model import GithubGuidFile
+from addons.dataverse.model import DataverseFile
+from addons.figshare.model import FigShareGuidFile
+from addons.osfstorage.model import OsfStorageGuidFile
+from addons.googledrive.model import GoogleDriveGuidFile
 
 logger = logging.getLogger(__name__)
 

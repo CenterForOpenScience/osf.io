@@ -17,7 +17,7 @@ from framework.exceptions import HTTPError, PermissionsError
 from framework.sessions import session
 from osf.models import base
 from osf.modm_compat import Q
-from osf.utils.fields import EncryptedTextField
+from osf.utils.fields import EncryptedTextField, NonNaiveDateTimeField
 from website.oauth.utils import PROVIDER_LOOKUP
 from website.security import random_string
 from website.util import web_url_for
@@ -41,11 +41,6 @@ class ExternalAccount(base.ObjectIDMixin, base.BaseModel):
     object, as providers are not stored in the database.
     """
 
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.oauth.models.ExternalAccount'
-    modm_query = None
-    # /TODO DELETE ME POST MIGRATION
-
     # The OAuth credentials. One or both of these fields should be populated.
     # For OAuth1, this is usually the "oauth_token"
     # For OAuth2, this is usually the "access_token"
@@ -57,7 +52,8 @@ class ExternalAccount(base.ObjectIDMixin, base.BaseModel):
 
     # Used for OAuth2 only
     refresh_token = EncryptedTextField(blank=True, null=True)
-    expires_at = models.DateTimeField(blank=True, null=True)
+    date_last_refreshed = NonNaiveDateTimeField(blank=True, null=True)
+    expires_at = NonNaiveDateTimeField(blank=True, null=True)
     scopes = ArrayField(models.CharField(max_length=128), default=list, blank=True)
 
     # The `name` of the service
@@ -304,6 +300,7 @@ class ExternalProvider(object):
         # only for OAuth2
         self.account.expires_at = info.get('expires_at')
         self.account.refresh_token = info.get('refresh_token')
+        self.account.date_last_refreshed = timezone.now()
 
         # additional information
         self.account.display_name = info.get('display_name')
@@ -431,6 +428,7 @@ class ExternalProvider(object):
         self.account.oauth_key = token[resp_auth_token_key]
         self.account.refresh_token = token[resp_refresh_token_key]
         self.account.expires_at = resp_expiry_fn(token)
+        self.account.date_last_refreshed = timezone.now()
         self.account.save()
         return True
 

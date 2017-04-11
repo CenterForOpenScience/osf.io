@@ -4,25 +4,26 @@ from rest_framework.exceptions import PermissionDenied, NotFound
 from rest_framework.status import is_server_error
 import requests
 
-from website.files.models import OsfStorageFileNode
+from website.files.models import OsfStorageFile
+from website.files.models import OsfStorageFolder
 from website.util import waterbutler_api_url_for
 
 from api.base.exceptions import ServiceUnavailableError
 from api.base.utils import get_object_or_error
 
 def get_file_object(node, path, provider, request):
+    # Don't bother going to waterbutler for osfstorage
     if provider == 'osfstorage':
         # Kinda like /me for a user
         # The one odd case where path is not really path
         if path == '/':
             obj = node.get_addon('osfstorage').get_root()
         else:
-            obj = get_object_or_error(
-                OsfStorageFileNode,
-                Q('node', 'eq', node.pk) &
-                Q('_id', 'eq', path.strip('/')) &
-                Q('is_file', 'eq', not path.endswith('/'))
-            )
+            if path.endswith('/'):
+                model = OsfStorageFolder
+            else:
+                model = OsfStorageFile
+            obj = get_object_or_error(model, Q('node', 'eq', node.pk) & Q('_id', 'eq', path.strip('/')))
         return obj
 
     if not node.get_addon(provider) or not node.get_addon(provider).configured:

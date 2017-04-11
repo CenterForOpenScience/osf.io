@@ -53,7 +53,7 @@ class WikiSerializer(JSONAPISerializer):
         return obj.get_absolute_url()
 
     def get_path(self, obj):
-        return '/{}'.format(obj)
+        return '/{}'.format(obj._id)
 
     def get_kind(self, obj):
         return 'file'

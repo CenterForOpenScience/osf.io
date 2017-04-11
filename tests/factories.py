@@ -30,8 +30,8 @@ from framework.mongo import StoredObject
 from framework.sessions.model import Session
 from tests.base import fake
 from tests.base import get_default_metaschema
-from website.addons import base as addons_base
-from website.addons.wiki.model import NodeWikiPage
+from tests import mock_addons as addons_base
+from addons.wiki.models import NodeWikiPage
 from website.oauth.models import (
     ApiOAuth2Application,
     ApiOAuth2PersonalToken,
@@ -57,9 +57,8 @@ from website.identifiers.model import Identifier
 from website.archiver import ARCHIVER_SUCCESS
 from website.project.licenses import NodeLicense, NodeLicenseRecord, ensure_licenses
 from website.util import permissions
-from website.files.models.osfstorage import OsfStorageFile, FileVersion
+from website.files.models.osfstorage import OsfStorageFile
 from website.exceptions import InvalidSanctionApprovalToken
-
 
 ensure_licenses = functools.partial(ensure_licenses, warn=False)
 
@@ -280,7 +279,6 @@ class PreprintFactory(ModularOdmFactory):
         project.reload()
 
         file = OsfStorageFile.create(
-            is_file=True,
             node=project,
             path='/{}'.format(filename),
             name=filename,

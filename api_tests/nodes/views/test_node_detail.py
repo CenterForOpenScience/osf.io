@@ -940,6 +940,12 @@ class TestNodeTags(ApiTestCase):
         assert_equal(res.status_code, 200)
         assert_equal(len(res.json['data']['attributes']['tags']), 0)
 
+    def test_node_detail_does_not_expose_system_tags(self):
+        self.public_project.add_system_tag('systag', save=True)
+        res = self.app.get(self.public_url)
+        assert_equal(res.status_code, 200)
+        assert_equal(len(res.json['data']['attributes']['tags']), 0)
+
     @assert_logs(NodeLog.TAG_ADDED, 'public_project')
     def test_contributor_can_add_tag_to_public_project(self):
         res = self.app.patch_json_api(self.public_url, self.one_new_tag_json, auth=self.user.auth, expect_errors=True)
@@ -1196,6 +1202,21 @@ class TestNodeUpdateLicense(ApiTestCase):
 
     def make_request(self, url, data, auth=None, expect_errors=False):
         return self.app.patch_json_api(url, data, auth=auth, expect_errors=expect_errors)
+
+    def test_admin_update_license_with_invalid_id(self):
+        data = self.make_payload(
+            node_id=self.node._id,
+            license_id='thisisafakelicenseid'
+        )
+
+        assert_equal(self.node.node_license, None)
+
+        res = self.make_request(self.url, data, auth=self.admin_contributor.auth, expect_errors=True)
+        assert_equal(res.status_code, 404)
+        assert_equal(res.json['errors'][0]['detail'], 'Unable to find specified license.')
+
+        self.node.reload()
+        assert_equal(self.node.node_license, None)
 
     def test_admin_can_update_license(self):
         data = self.make_payload(

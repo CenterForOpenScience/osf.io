@@ -4,7 +4,7 @@ from django.db.models.query import QuerySet as DjangoQuerySet
 from modularodm import Q
 from modularodm.exceptions import NoResultsFound
 from modularodm.query.query import RawQuery
-from framework.mongo.storage import MongoQuerySet
+from modularodm.storage.mongostorage import MongoQuerySet
 
 
 class AffiliatedInstitutionsList(list):

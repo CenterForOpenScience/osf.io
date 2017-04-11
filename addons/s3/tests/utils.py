@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 from addons.base.tests.base import OAuthAddonTestCaseMixin, AddonTestCase
 from addons.s3.tests.factories import S3AccountFactory
-from website.addons.s3.provider import S3Provider
-from website.addons.s3.serializer import S3Serializer
+from addons.s3.provider import S3Provider
+from addons.s3.serializer import S3Serializer
 
 class S3AddonTestCase(OAuthAddonTestCaseMixin, AddonTestCase):
 

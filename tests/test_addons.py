@@ -3,7 +3,6 @@
 import datetime
 import httplib as http
 import time
-import unittest
 
 import furl
 import itsdangerous
@@ -22,48 +21,16 @@ from tests.base import OsfTestCase, get_default_metaschema
 from osf_tests.factories import (AuthUserFactory, ProjectFactory,
                              RegistrationFactory)
 from website import settings
-from website.addons.base import AddonConfig, AddonNodeSettingsBase, views
-from website.addons.github.exceptions import ApiError
+from addons.base import views
+from addons.github.exceptions import ApiError
 from addons.github.models import GithubFolder, GithubFile, GithubFileNode
 from addons.github.tests.factories import GitHubAccountFactory
 from osf.models import files as file_models
-from osf.models.files import (PROVIDER_MAP, StoredFileNode,
-                                       TrashedFileNode)
+from osf.models.files import StoredFileNode, TrashedFileNode
 from website.project import new_private_link
 from website.project.model import MetaSchema, ensure_schemas
 from website.project.views.node import _view_project as serialize_node
 from website.util import api_url_for, rubeus
-
-
-class TestAddonConfig(unittest.TestCase):
-
-    def setUp(self):
-        self.addon_config = AddonConfig(
-            short_name='test', full_name='test', owners=['node'],
-            added_to={'node': False}, categories=[],
-            settings_model=AddonNodeSettingsBase,
-        )
-
-    def test_static_url_relative(self):
-        url = self.addon_config._static_url('foo')
-        assert_equal(
-            url,
-            '/static/addons/test/foo'
-        )
-
-    def test_deleted_defaults_to_false(self):
-        class MyAddonSettings(AddonNodeSettingsBase):
-            pass
-
-        config = MyAddonSettings()
-        assert_is(config.deleted, False)
-
-    def test_static_url_absolute(self):
-        url = self.addon_config._static_url('/foo')
-        assert_equal(
-            url,
-            '/foo'
-        )
 
 
 class SetEnvironMiddleware(object):
@@ -104,6 +71,8 @@ class TestAddonAuth(OsfTestCase):
         self.node_addon.user_settings = self.user_addon
         self.node_addon.external_account = self.oauth_settings
         self.node_addon.save()
+        self.user_addon.oauth_grants[self.node._id] = {self.oauth_settings._id: []}
+        self.user_addon.save()
 
     def build_url(self, **kwargs):
         options = {'payload': jwe.encrypt(jwt.encode({'data': dict(dict(
@@ -121,7 +90,7 @@ class TestAddonAuth(OsfTestCase):
         assert_equal(data['auth'], views.make_auth(self.user))
         assert_equal(data['credentials'], self.node_addon.serialize_waterbutler_credentials())
         assert_equal(data['settings'], self.node_addon.serialize_waterbutler_settings())
-        expected_url = furl.furl(self.node.api_url_for('create_waterbutler_log', _absolute=True))
+        expected_url = furl.furl(self.node.api_url_for('create_waterbutler_log', _absolute=True, _internal=True))
         observed_url = furl.furl(data['callback_url'])
         observed_url.port = expected_url.port
         assert_equal(expected_url, observed_url)
@@ -139,7 +108,7 @@ class TestAddonAuth(OsfTestCase):
         assert_equal(data['auth'], views.make_auth(self.user))
         assert_equal(data['credentials'], self.node_addon.serialize_waterbutler_credentials())
         assert_equal(data['settings'], self.node_addon.serialize_waterbutler_settings())
-        expected_url = furl.furl(self.node.api_url_for('create_waterbutler_log', _absolute=True))
+        expected_url = furl.furl(self.node.api_url_for('create_waterbutler_log', _absolute=True, _internal=True))
         observed_url = furl.furl(data['callback_url'])
         observed_url.port = expected_url.port
         assert_equal(expected_url, observed_url)
@@ -154,7 +123,7 @@ class TestAddonAuth(OsfTestCase):
         res = self.app.get(url, expect_errors=True, auth=self.user.auth)
         assert_equal(res.status_code, 400)
 
-    @mock.patch('website.addons.base.views.cas.get_client')
+    @mock.patch('addons.base.views.cas.get_client')
     def test_auth_bad_bearer_token(self, mock_cas_client):
         mock_cas_client.return_value = mock.Mock(profile=mock.Mock(return_value=cas.CasResponse(authenticated=False)))
         url = self.build_url()
@@ -188,6 +157,8 @@ class TestAddonLogs(OsfTestCase):
         self.node_addon.user_settings = self.user_addon
         self.node_addon.external_account = self.oauth_settings
         self.node_addon.save()
+        self.user_addon.oauth_grants[self.node._id] = {self.oauth_settings._id: []}
+        self.user_addon.save()
 
     def build_payload(self, metadata, **kwargs):
         options = dict(
@@ -541,37 +512,21 @@ def assert_urls_equal(url1, url2):
     assert_equal(furl1, furl2)
 
 
-class MockFileNode(file_models.FileNode):
-    provider = 'test_addons'
-
-    def touch(self, bearer, version=None, revision=None, **kwargs):
-        if version:
-            if self.versions:
-                try:
-                    return self.versions[int(version) - 1]
-                except (IndexError, ValueError):
-                    return None
-            else:
+def mock_touch(self, bearer, version=None, revision=None, **kwargs):
+    if version:
+        if self.versions:
+            try:
+                return self.versions[int(version) - 1]
+            except (IndexError, ValueError):
                 return None
-        return file_models.FileVersion()
+        else:
+            return None
+    return file_models.FileVersion()
 
 
-class MockFile(MockFileNode, file_models.File):
-    pass
-
-
-class MockFolder(MockFileNode, file_models.Folder):
-    pass
-
-
+@mock.patch('addons.github.models.GithubFileNode.touch', mock_touch)
 @mock.patch('addons.github.models.GitHubClient.repo', mock.Mock(side_effect=ApiError))
 class TestAddonFileViews(OsfTestCase):
-
-    @classmethod
-    def setUpClass(cls):
-        super(TestAddonFileViews, cls).setUpClass()
-        PROVIDER_MAP['github'] = [MockFolder, MockFile, MockFileNode]
-        MockFileNode.provider = 'github'
 
     def setUp(self):
         super(TestAddonFileViews, self).setUp()
@@ -595,16 +550,13 @@ class TestAddonFileViews(OsfTestCase):
         self.node_addon.user = 'E'
         self.node_addon.save()
 
-    @classmethod
-    def tearDownClass(cls):
-        super(TestAddonFileViews, cls).tearDownClass()
-        PROVIDER_MAP['github'] = [GithubFolder, GithubFile, GithubFileNode]
-        del PROVIDER_MAP['test_addons']
+        self.user_addon.oauth_grants[self.project._id] = {self.oauth._id: []}
+        self.user_addon.save()
 
     def get_test_file(self):
         version = file_models.FileVersion(identifier='1')
         version.save()
-        ret = MockFile(
+        ret = GithubFile(
             name='Test',
             node=self.project,
             path='/test/Test',
@@ -617,7 +569,7 @@ class TestAddonFileViews(OsfTestCase):
     def get_second_test_file(self):
         version = file_models.FileVersion(identifier='1')
         version.save()
-        ret = MockFile(
+        ret = GithubFile(
             name='Test2',
             node=self.project,
             path='/test/Test2',
@@ -690,7 +642,7 @@ class TestAddonFileViews(OsfTestCase):
         # Note: version is added but us but all other url params are added as well
         assert_urls_equal(location.url, file_node.generate_waterbutler_url(action='download', direct=None, revision=1, version=''))
 
-    @mock.patch('website.addons.base.views.addon_view_file')
+    @mock.patch('addons.base.views.addon_view_file')
     def test_action_view_calls_view_file(self, mock_view_file):
         self.user.reload()
         self.project.reload()
@@ -709,7 +661,7 @@ class TestAddonFileViews(OsfTestCase):
         assert_equals(args[2], file_node)
         assert_true(isinstance(args[3], file_node.touch(None).__class__))
 
-    @mock.patch('website.addons.base.views.addon_view_file')
+    @mock.patch('addons.base.views.addon_view_file')
     def test_no_action_calls_view_file(self, mock_view_file):
         self.user.reload()
         self.project.reload()
@@ -859,12 +811,12 @@ class TestAddonFileViews(OsfTestCase):
             }
         }
         views.addon_delete_file_node(self=None, node=self.project, user=self.user, event_type='file_removed', payload=payload)
-        assert_false(StoredFileNode.load(file_node._id))
+        assert_false(GithubFileNode.load(file_node._id))
         assert_true(TrashedFileNode.load(file_node._id))
 
     def test_delete_action_for_folder_deletes_subfolders_and_creates_trashed_file_nodes(self):
         file_node = self.get_test_file()
-        subfolder = MockFolder(
+        subfolder = GithubFolder(
             name='folder',
             node=self.project,
             path='/test/folder/',
@@ -879,9 +831,8 @@ class TestAddonFileViews(OsfTestCase):
             }
         }
         views.addon_delete_file_node(self=None, node=self.project, user=self.user, event_type='file_removed', payload=payload)
-        assert_false(StoredFileNode.load(file_node._id))
+        assert_false(GithubFileNode.load(subfolder._id))
         assert_true(TrashedFileNode.load(file_node._id))
-        assert_false(StoredFileNode.load(subfolder._id))
 
     @mock.patch('website.archiver.tasks.archive')
     def test_archived_from_url(self, mock_archive):

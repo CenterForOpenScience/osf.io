@@ -1,12 +1,29 @@
-import os
-
-from addons.base.apps import BaseAddonConfig
+from addons.base.apps import BaseAddonAppConfig
 from website import settings
-from website.addons.osfstorage import settings as addon_settings
-from website.addons.osfstorage import views
+from website.util import rubeus
+from addons.osfstorage import settings as addon_settings
+
+# Ensure blinker signal listeners are connected
+import addons.osfstorage.listeners  # noqa
+
+# This is defined here to avoid `AppRegistryNotReady: Apps aren't loaded yet` errors
+def osf_storage_root(addon_config, node_settings, auth, **kwargs):
+    """Build HGrid JSON for root node. Note: include node URLs for client-side
+    URL creation for uploaded files.
+    """
+    node = node_settings.owner
+    root = rubeus.build_addon_root(
+        node_settings=node_settings,
+        name='',
+        permissions=auth,
+        user=auth.user,
+        nodeUrl=node.url,
+        nodeApiUrl=node.api_url,
+    )
+    return [root]
 
 
-class OSFStorageAddonConfig(BaseAddonConfig):
+class OSFStorageAddonAppConfig(BaseAddonAppConfig):
     name = 'addons.osfstorage'
     label = 'addons_osfstorage'
     full_name = 'OSF Storage'
@@ -14,11 +31,16 @@ class OSFStorageAddonConfig(BaseAddonConfig):
     added_default = ['node']
     added_mandatory = ['node']
 
+    categories = ['storage']
+
     has_hgrid_files = True
 
-    get_hgrid_data = views.osf_storage_root
+    get_hgrid_data = osf_storage_root
 
-    OWNERS = ['node']
+    max_file_size = 5 * 1024  # 5 GB
+    high_max_file_size = 5 * 1024  # 5 GB
+
+    owners = ['node']
 
     WATERBUTLER_CREDENTIALS = addon_settings.WATERBUTLER_CREDENTIALS
 
@@ -33,6 +55,11 @@ class OSFStorageAddonConfig(BaseAddonConfig):
     NODE_DEAUTHORIZED = 'osfstorage_node_deauthorized'
 
     actions = (FOLDER_SELECTED, NODE_AUTHORIZED, NODE_DEAUTHORIZED, )
+
+    @property
+    def routes(self):
+        from addons.osfstorage import routes
+        return [routes.api_routes]
 
     @property
     def node_settings(self):

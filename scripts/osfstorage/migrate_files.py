@@ -21,11 +21,11 @@ from website import settings
 from website.app import init_app
 from website.models import Node
 
-from website.addons.osffiles.model import NodeFile
+from addons.osffiles.model import NodeFile
 
-from website.addons.osfstorage import model
-from website.addons.osfstorage import utils
-from website.addons.osfstorage import errors
+from addons.osfstorage import model
+from addons.osfstorage import utils
+from addons.osfstorage import errors
 
 from scripts import utils as script_utils
 from scripts.osfstorage.utils import ensure_osf_files
