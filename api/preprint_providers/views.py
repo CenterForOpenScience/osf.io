@@ -213,6 +213,19 @@ class PreprintProviderSubjectList(JSONAPIBaseView, generics.ListAPIView):
 
     serializer_class = TaxonomySerializer
 
+    def preprare_subjects(self, provider):
+        final_subjects = set()
+        for i in provider.all_subjects:
+            final_subjects.add(i._id)
+        return final_subjects
+
+    def check_child_count(self, sub, final_form):
+        num_children = 0
+        for child in sub.children.all():
+            if child._id in final_form:
+                num_children += 1
+        setattr(sub, 'child_count_provider', num_children)
+
     def is_valid_subject(self, allows_children, allowed_parents, sub):
         if sub._id in allowed_parents:
             return True
@@ -233,7 +246,10 @@ class PreprintProviderSubjectList(JSONAPIBaseView, generics.ListAPIView):
             #  Calculate this here to only have to do it once.
             allowed_parents = [id_ for sublist in provider.subjects_acceptable for id_ in sublist[0]]
             allows_children = [subs[0][-1] for subs in provider.subjects_acceptable if subs[1]]
-            return [sub for sub in Subject.find(Q('parents___id', 'eq', parent)) if provider.subjects_acceptable == [] or self.is_valid_subject(allows_children=allows_children, allowed_parents=allowed_parents, sub=sub)]
+            subjects = [sub for sub in Subject.find(Q('parents___id', 'eq', parent)) if provider.subjects_acceptable == [] or self.is_valid_subject(allows_children=allows_children, allowed_parents=allowed_parents, sub=sub)]
+            final_form = self.preprare_subjects(provider=provider)
+            [self.check_child_count(sub=sub, final_form=final_form) for sub in subjects]
+            return subjects
         return provider.all_subjects
 
 
