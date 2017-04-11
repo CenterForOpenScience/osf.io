@@ -7,7 +7,8 @@ from api.base.exceptions import InvalidFilterError, InvalidFilterValue
 from api.base.filters import ODMFilterMixin
 from api.base import utils
 
-from osf.models import AbstractNode
+from website.models import Node
+
 
 class NodesListFilterMixin(ODMFilterMixin):
 
@@ -18,10 +19,10 @@ class NodesListFilterMixin(ODMFilterMixin):
             return Q('root__guids___id', 'in', operation['value'])
         if operation['source_field_name'] == 'parent_node':
             if operation['value']:
-                parent = utils.get_object_or_error(AbstractNode, operation['value'], display_name='parent')
+                parent = utils.get_object_or_error(Node, operation['value'], display_name='parent')
                 return Q('_id', 'in', [node._id for node in parent.get_nodes(is_node_link=False)])
             else:
-                return Q('parent_nodes__guids___id', operation['op'], None)
+                raise InvalidFilterValue()
         return super(NodesListFilterMixin, self)._operation_to_query(operation)
 
 

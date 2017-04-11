@@ -1,7 +1,7 @@
 
 from api.addons.views import AddonSettingsMixin
 from api.base import permissions as base_permissions
-from api.base.exceptions import Conflict
+from api.base.exceptions import Conflict, InvalidFilterValue
 from api.base.filters import ListFilterMixin, ODMFilterMixin
 from api.base.parsers import (JSONAPIRelationshipParser,
                               JSONAPIRelationshipParserForRegularJSON)
@@ -23,6 +23,7 @@ from api.users.serializers import (UserAddonSettingsSerializer,
 from django.contrib.auth.models import AnonymousUser
 from framework.auth.oauth_scopes import CoreScopes
 from modularodm import Q
+from osf.models import NodeRelation
 from rest_framework import permissions as drf_permissions
 from rest_framework import generics
 from rest_framework.exceptions import NotAuthenticated, NotFound
@@ -491,8 +492,6 @@ class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, NodePreprintsF
     view_category = 'users'
     view_name = 'user-nodes'
 
-    ordering = ('-date_modified',)
-
     # overrides ODMFilterMixin
     def get_default_odm_query(self):
         user = self.get_user()
@@ -503,7 +502,41 @@ class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, NodePreprintsF
 
     # overrides ListAPIView
     def get_queryset(self):
-        return Node.find(self.get_query_from_request()).select_related('node_license').include('guids', 'contributor__user__guids', 'root__guids', limit_includes=10)
+        node_ids = []
+        user = self.get_user()
+        parent_filter = 'filter[parent]'
+        parent_ne_filter = 'filter[parent][ne]'
+        self.request.GET._mutable = True
+
+        if parent_filter in self.request.query_params:
+            parent_filter_key = self.request.query_params[parent_filter]
+            if parent_filter_key == 'null':
+                self.request.query_params.pop(parent_filter)
+                node_ids = Node.find(self.get_query_from_request()).get_roots().values_list('id', flat=True)
+            else:
+                node_ids = Node.find(self.get_query_from_request()).values_list('id', flat=True)
+        elif parent_ne_filter in self.request.query_params:
+            parent_ne_filter_key = self.request.query_params[parent_ne_filter]
+            if parent_ne_filter_key == 'null':
+                self.request.query_params.pop(parent_ne_filter)
+                child_ids = [each.child.id for each in (
+                    NodeRelation.objects.filter(is_node_link=False, child___contributors=user)
+                    .exclude(parent__type='osf.collection')
+                    .exclude(child__is_deleted=True)
+                )]
+                node_ids = Node.find(self.get_query_from_request()).filter(id__in=set(child_ids)).values_list('id', flat=True)
+            else:
+                # filter[parent][ne]=<node_id> not allowed for now
+                raise InvalidFilterValue()
+        else:
+            node_ids = Node.find(self.get_query_from_request()).values_list('id', flat=True)
+
+        return (
+            Node.objects.filter(id__in=set(node_ids))
+            .select_related('node_license')
+            .order_by('-date_modified', )
+            .include('guids', 'contributor__user__guids', 'root__guids', limit_includes=10)
+        )
 
 
 class UserPreprints(UserNodes):
