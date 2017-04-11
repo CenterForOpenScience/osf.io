@@ -170,8 +170,8 @@ def make_waterbutler_payload(dst_id, rename):
         'action': 'copy',
         'path': '/',
         'rename': rename.replace('/', '-'),
-        "resource": dst_id,
-        "provider": settings.ARCHIVE_PROVIDER,
+        'resource': dst_id,
+        'provider': settings.ARCHIVE_PROVIDER,
     }
 
 @celery_app.task(base=ArchiverTask, ignore_result=False)
