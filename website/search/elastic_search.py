@@ -488,7 +488,8 @@ def update_user(user, index=None):
 def update_file(file_, index=None, delete=False):
     index = index or INDEX
 
-    if not file_.node.is_public or delete or file_.node.is_deleted or file_.node.archiving:
+    # TODO: Can remove 'not file_.name' if we remove all base file nodes with name=None
+    if not file_.name or not file_.node.is_public or delete or file_.node.is_deleted or file_.node.archiving:
         client().delete(
             index=index,
             doc_type='file',
