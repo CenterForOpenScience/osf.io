@@ -5,8 +5,10 @@ import os
 from addons.base.models import (BaseOAuthNodeSettings, BaseOAuthUserSettings,
                                 BaseStorageAddon)
 from django.db import models
-from dropbox.client import DropboxClient, DropboxOAuth2Flow
-from dropbox.rest import ErrorResponse
+from dropbox.dropbox import Dropbox
+from dropbox.exceptions import ApiError, DropboxException
+from dropbox.files import FolderMetadata
+from dropbox.client import DropboxOAuth2Flow
 from flask import request
 from framework.auth import Auth
 from framework.exceptions import HTTPError
@@ -84,15 +86,15 @@ class Provider(ExternalProvider):
         except DropboxOAuth2Flow.BadRequestException:
             raise HTTPError(http.BAD_REQUEST)
 
-        self.client = DropboxClient(access_token)
+        self.client = Dropbox(access_token)
 
-        info = self.client.account_info()
+        info = self.client.users_get_current_account()
         return self._set_external_account(
             user,
             {
                 'key': access_token,
-                'provider_id': info['uid'],
-                'display_name': info['display_name'],
+                'provider_id': info.account_id,
+                'display_name': info.name.display_name,
             }
         )
 
@@ -109,10 +111,10 @@ class UserSettings(BaseOAuthUserSettings):
 
         Tells Dropbox to remove the grant for the OSF associated with this account.
         """
-        client = DropboxClient(external_account.oauth_key)
+        client = Dropbox(external_account.oauth_key)
         try:
-            client.disable_access_token()
-        except ErrorResponse:
+            client.auth_token_revoke()
+        except DropboxException:
             pass
 
 
@@ -170,43 +172,38 @@ class NodeSettings(BaseStorageAddon, BaseOAuthNodeSettings):
                 }
             }]
 
-        client = DropboxClient(self.external_account.oauth_key)
-        file_not_found = HTTPError(http.NOT_FOUND, data={
-            'message_short': 'File not found',
-            'message_long': 'The Dropbox file you requested could not be found.'
-        })
-
-        max_retry_error = HTTPError(http.REQUEST_TIMEOUT, data={
-            'message_short': 'Request Timeout',
-            'message_long': 'Dropbox could not be reached at this time.'
-        })
+        client = Dropbox(self.external_account.oauth_key)
 
         try:
-            metadata = client.metadata(folder_id)
-        except ErrorResponse:
-            raise file_not_found
-        except MaxRetryError:
-            raise max_retry_error
-
-        # Raise error if folder was deleted
-        if metadata.get('is_deleted'):
-            raise file_not_found
+            folder_id = '' if folder_id == '/' else folder_id
+            list_folder = client.files_list_folder(folder_id)
+            contents = [x for x in list_folder.entries]
+            while list_folder.has_more:
+                list_folder = client.files_list_folder_continue(list_folder.cursor)
+                contents += [x for x in list_folder.entries]
+        except ApiError as error:
+            raise HTTPError(http.BAD_REQUEST, data={
+                    'message_short': error.user_message_text,
+                    'message_long': error.user_message_text
+                })
+        except DropboxException:
+            raise HTTPError(http.BAD_REQUEST)
 
         return [
             {
                 'addon': 'dropbox',
                 'kind': 'folder',
-                'id': item['path'],
-                'name': item['path'].split('/')[-1],
-                'path': item['path'],
+                'id': item.path_display,
+                'name': item.path_display.split('/')[-1],
+                'path': item.path_display,
                 'urls': {
                     'folders': api_v2_url('nodes/{}/addons/dropbox/folders/'.format(self.owner._id),
-                        params={'id': item['path']}
+                        params={'id': item.path_display}
                     )
                 }
             }
-            for item in metadata['contents']
-            if item['is_dir']
+            for item in contents
+            if isinstance(item, FolderMetadata)
         ]
 
     def set_folder(self, folder, auth):
