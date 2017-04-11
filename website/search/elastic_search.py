@@ -1,3 +1,4 @@
+
 # -*- coding: utf-8 -*-
 
 from __future__ import division
@@ -338,11 +339,11 @@ def serialize_node(node, category):
         'id': node._id,
         'contributors': [
             {
-                'fullname': x.fullname,
-                'url': x.profile_url if x.is_active else None
+                'fullname': x['fullname'],
+                'url': '/{}/'.format(x['guids___id']) if x['is_active'] else None
             }
-            for x in node.visible_contributors
-            if x is not None
+            for x in node._contributors.filter(contributor__visible=True).order_by('contributor___order')
+            .values('fullname', 'guids___id', 'is_active')
         ],
         'title': node.title,
         'normalized_title': normalized_title,
@@ -367,10 +368,7 @@ def serialize_node(node, category):
         'extra_search_terms': clean_splitters(node.title),
     }
     if not node.is_retracted:
-        for wiki in [
-            NodeWikiPage.load(x)
-            for x in node.wiki_pages_current.values()
-        ]:
+        for wiki in NodeWikiPage.objects.filter(guids___id__in=node.wiki_pages_current.values()):
             elastic_document['wikis'][wiki.page_name] = wiki.raw_text(node)
 
     return elastic_document
@@ -420,11 +418,10 @@ def serialize_contributors(node):
     return {
         'contributors': [
             {
-                'fullname': user.fullname,
-                'url': user.profile_url if user.is_active else None
-            } for user in node.visible_contributors
-            if user is not None
-            and user.is_active
+                'fullname': x['user__fullname'],
+                'url': '/{}/'.format(x['user__guids___id'])
+            } for x in
+            node.contributor_set.filter(visible=True, user__is_active=True).order_by('_order').values('user__fullname', 'user__guids___id')
         ]
     }
 
