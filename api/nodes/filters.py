@@ -25,7 +25,7 @@ class NodesListFilterMixin(ODMFilterMixin):
         return super(NodesListFilterMixin, self)._operation_to_query(operation)
 
 
-class NodePreprintsFilterMixin(ODMFilterMixin):
+class NodeODMFilterMixin(ODMFilterMixin):
 
     def should_parse_special_query_params(self, field_name):
         return field_name == 'preprint'

@@ -420,7 +420,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         if not self.preprint_file_id or not self.is_public:
             return False
         if self.preprint_file.node_id == self.id:
-            return True
+            return self.has_published_preprint
         else:
             self._is_preprint_orphan = True
             return False
@@ -431,6 +431,10 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         if (not self.is_preprint) and self._is_preprint_orphan:
             return True
         return False
+
+    @property
+    def has_published_preprint(self):
+        return self.preprints.filter(is_published=True).exists()
 
     @property
     def preprint_url(self):
@@ -2283,7 +2287,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             from website.preprints.tasks import on_preprint_updated
             PreprintService = apps.get_model('osf.PreprintService')
             # .preprints wouldn't return a single deleted preprint
-            for preprint in PreprintService.find(Q('node', 'eq', self)):
+            for preprint in PreprintService.objects.filter(node_id=self.id, is_published=True):
                 enqueue_task(on_preprint_updated.s(preprint._id))
 
         user = User.load(user_id)
