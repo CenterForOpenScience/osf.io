@@ -295,7 +295,7 @@ class TestOnPreprintUpdatedTask(OsfTestCase):
     def test_format_preprint(self):
         res = format_preprint(self.preprint)
 
-        assert set(gn['@type'] for gn in res) == {'creator', 'contributor', 'throughsubjects', 'subject', 'throughtags', 'tag', 'workidentifier', 'agentidentifier', 'person', 'preprint'}
+        assert set(gn['@type'] for gn in res) == {'creator', 'contributor', 'throughsubjects', 'subject', 'throughtags', 'tag', 'workidentifier', 'agentidentifier', 'person', 'preprint', 'workrelation', 'creativework'}
 
         nodes = dict(enumerate(res))
         preprint = nodes.pop(next(k for k, v in nodes.items() if v['@type'] == 'preprint'))
@@ -368,17 +368,24 @@ class TestOnPreprintUpdatedTask(OsfTestCase):
             self.preprint.node.creator.profile_image_url(),
         ]) | set(urlparse.urljoin(settings.DOMAIN, user.profile_url) for user in self.preprint.node.contributors if user.is_registered)
 
-        workidentifiers = {nodes.pop(k)['uri'] for k, v in nodes.items() if v['@type'] == 'workidentifier'}
-        assert workidentifiers == set([
-            'http://dx.doi.org/{}'.format(self.preprint.article_doi),
-            urlparse.urljoin(settings.DOMAIN, self.preprint.url)
-        ])
+        related_work = next(nodes.pop(k) for k, v in nodes.items() if v['@type'] == 'creativework')
+        assert set(related_work.keys()) == {'@id', '@type'}  # Empty except @id and @type
+
+        doi = next(nodes.pop(k) for k, v in nodes.items() if v['@type'] == 'workidentifier' and 'doi' in v['uri'])
+        assert doi['creative_work'] == related_work
+
+        workidentifiers = [nodes.pop(k)['uri'] for k, v in nodes.items() if v['@type'] == 'workidentifier']
+        assert workidentifiers == [urlparse.urljoin(settings.DOMAIN, self.preprint.url)]
+
+        relation = nodes.pop(nodes.keys()[0])
+        assert relation == {'@id': relation['@id'], '@type': 'workrelation', 'related': {'@id': related_work['@id'], '@type': related_work['@type']}, 'subject': {'@id': preprint['@id'], '@type': preprint['@type']}}
 
         assert nodes == {}
 
     def test_format_preprint_nones(self):
         self.preprint.node.tags = []
         self.preprint.date_published = None
+        self.preprint.node.preprint_article_doi = None
         self.preprint.set_subjects([], auth=Auth(self.preprint.node.creator), save=False)
 
         res = format_preprint(self.preprint)
@@ -447,10 +454,7 @@ class TestOnPreprintUpdatedTask(OsfTestCase):
         ]) | set(urlparse.urljoin(settings.DOMAIN, user.profile_url) for user in self.preprint.node.contributors if user.is_registered)
 
         workidentifiers = {nodes.pop(k)['uri'] for k, v in nodes.items() if v['@type'] == 'workidentifier'}
-        assert workidentifiers == set([
-            'http://dx.doi.org/{}'.format(self.preprint.article_doi),
-            urlparse.urljoin(settings.DOMAIN, self.preprint.url)
-        ])
+        assert workidentifiers == set([urlparse.urljoin(settings.DOMAIN, self.preprint.url)])
 
         assert nodes == {}
 
