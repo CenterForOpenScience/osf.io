@@ -16,11 +16,11 @@ from framework.mongo import StoredObject
 from website.app import init_app
 from website.models import Node
 
-from website.addons.github.api import GitHub
-from website.addons.github import utils
-from website.addons.github import settings as github_settings
-from website.addons.github.model import AddonGitHubNodeSettings
-from website.addons.github.exceptions import ApiError
+from addons.github.api import GitHub
+from addons.github import utils
+from addons.github import settings as github_settings
+from addons.github.model import AddonGitHubNodeSettings
+from addons.github.exceptions import ApiError
 
 
 logger = logging.getLogger(__name__)
@@ -92,8 +92,8 @@ class TestHookMigration(OsfTestCase):
         self.node_addon.user_settings = self.user_addon
         self.node_addon.save()
 
-    @mock.patch('website.addons.github.utils.make_hook_secret')
-    @mock.patch('website.addons.github.api.GitHub.repo')
+    @mock.patch('addons.github.utils.make_hook_secret')
+    @mock.patch('addons.github.api.GitHub.repo')
     def test_update_hook(self, mock_repo, mock_make_secret):
         mock_make_secret.return_value = 'shh'
         update_hook(self.node_addon)

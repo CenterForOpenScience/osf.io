@@ -2,6 +2,7 @@ from django.utils import six
 from collections import OrderedDict
 from django.core.urlresolvers import reverse
 from django.core.paginator import InvalidPage, Paginator as DjangoPaginator
+from django.db.models import QuerySet
 
 from rest_framework import pagination
 from rest_framework.exceptions import NotFound
@@ -134,6 +135,11 @@ class JSONAPIPagination(pagination.PageNumberPagination):
         If this is an embedded resource, returns first page, ignoring query params.
         """
         if request.parser_context['kwargs'].get('is_embedded'):
+            # Pagination requires an order by clause, especially when using Postgres.
+            # see: https://docs.djangoproject.com/en/1.10/topics/pagination/#required-arguments
+            if isinstance(queryset, QuerySet) and not queryset.ordered:
+                queryset = queryset.order_by(queryset.model._meta.pk.name)
+
             paginator = DjangoPaginator(queryset, self.page_size)
             page_number = 1
             try:
@@ -261,6 +267,11 @@ class SearchPagination(JSONAPIPagination):
         if not page_size:
             return None
 
+        # Pagination requires an order by clause, especially when using Postgres.
+        # see: https://docs.djangoproject.com/en/1.10/topics/pagination/#required-arguments
+        if isinstance(queryset, QuerySet) and not queryset.ordered:
+            queryset = queryset.order_by(queryset.model._meta.pk.name)
+
         self.paginator = SearchPaginator(queryset, page_size)
         model = getattr(request.parser_context['view'], 'model_class', None)
         if model:
@@ -323,6 +334,7 @@ class SearchPagination(JSONAPIPagination):
                     ('components', self.get_search_field('component', query)),
                     ('registrations', self.get_search_field('registration', query)),
                     ('users', self.get_search_field('user', query)),
+                    ('institutions', self.get_search_field('institution', query)),
                 ])),
                 ('meta', OrderedDict([
                     ('total', self.page.paginator.count),
@@ -350,6 +362,7 @@ class SearchPagination(JSONAPIPagination):
                     ('components', self.get_search_field('component', query)),
                     ('registrations', self.get_search_field('registration', query)),
                     ('users', self.get_search_field('user', query)),
+                    ('institutions', self.get_search_field('institution', query)),
                 ])),
                 ('links', OrderedDict([
                     ('first', self.get_first_real_link(url)),

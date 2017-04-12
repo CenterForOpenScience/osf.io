@@ -8,10 +8,10 @@ from django.db import models
 from framework.exceptions import HTTPError
 from mendeley.exception import MendeleyApiException
 from oauthlib.oauth2 import InvalidGrantError
-from website.addons.mendeley import \
+from addons.mendeley import \
     settings  # TODO: Move `settings` to `apps.py` when deleting
-from website.addons.mendeley.api import APISession
-from website.addons.mendeley.serializer import MendeleySerializer
+from addons.mendeley.api import APISession
+from addons.mendeley.serializer import MendeleySerializer
 from website.citations.providers import CitationsOauthProvider
 from website.util import web_url_for
 
@@ -250,19 +250,11 @@ class Mendeley(CitationsOauthProvider):
 
 
 class UserSettings(BaseOAuthUserSettings):
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.addons.mendeley.model.MendeleyUserSettings'
-    modm_query = None
-    # /TODO DELETE ME POST MIGRATION
     oauth_provider = Mendeley
     serializer = MendeleySerializer
 
 
 class NodeSettings(BaseCitationsNodeSettings):
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.addons.mendeley.model.MendeleyNodeSettings'
-    modm_query = None
-    # /TODO DELETE ME POST MIGRATION
     provider_name = 'mendeley'
     oauth_provider = Mendeley
     serializer = MendeleySerializer

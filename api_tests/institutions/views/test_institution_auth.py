@@ -24,15 +24,20 @@ class TestInstitutionAuth(ApiTestCase):
         self.institution.save()
         self.url = '/{0}institutions/auth/'.format(API_BASE)
 
-    def build_payload(self, username):
+    def tearDown(self):
+        super(TestInstitutionAuth, self).tearDown()
+        self.institution.remove()
+        User.remove()
+
+    def build_payload(self, username, fullname='Fake User', given_name='', family_name=''):
         data = {
             'provider': {
                 'id': self.institution._id,
                 'user': {
                     'middleNames': '',
-                    'familyName': '',
-                    'givenName': '',
-                    'fullname': 'Fake User',
+                    'familyName': family_name,
+                    'givenName': given_name,
+                    'fullname': fullname,
                     'suffix': '',
                     'username': username
                 }
@@ -89,3 +94,29 @@ class TestInstitutionAuth(ApiTestCase):
     def test_bad_token(self):
         res = self.app.post(self.url, 'al;kjasdfljadf', expect_errors=True)
         assert_equal(res.status_code, 403)
+
+    def test_user_names_guessed_if_not_provided(self):
+        # Regression for https://openscience.atlassian.net/browse/OSF-7212
+        username = 'fake@user.edu'
+        res = self.app.post(self.url, self.build_payload(username))
+
+        assert_equal(res.status_code, 204)
+        user = User.find_one(Q('username', 'eq', username))
+
+        assert_true(user)
+        assert_equal(user.fullname, 'Fake User')
+        assert_equal(user.given_name, 'Fake')
+        assert_equal(user.family_name, 'User')
+
+    def test_user_names_used_when_provided(self):
+        # Regression for https://openscience.atlassian.net/browse/OSF-7212
+        username = 'fake@user.edu'
+        res = self.app.post(self.url, self.build_payload(username, family_name='West', given_name='Kanye'))
+
+        assert_equal(res.status_code, 204)
+        user = User.find_one(Q('username', 'eq', username))
+
+        assert_true(user)
+        assert_equal(user.fullname, 'Fake User')
+        assert_equal(user.given_name, 'Kanye')
+        assert_equal(user.family_name, 'West')

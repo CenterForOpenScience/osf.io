@@ -16,7 +16,7 @@ from framework.transactions import handlers as transaction_handlers
 
 import website.models
 from website.routes import make_url_map
-from website.addons.base import init_addon
+from addons.base import init_addon
 
 
 def init_addons(settings, routes=True):

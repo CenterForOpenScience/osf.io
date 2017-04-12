@@ -11,7 +11,7 @@ from website.project.model import MetaSchema
 from website.project.model import ensure_schemas
 from website.project.metadata.schemas import OSF_META_SCHEMAS
 
-from tests.base import DbIsolationMixin, OsfTestCase
+from tests.base import OsfTestCase
 
 
 class TestMetaData(OsfTestCase):

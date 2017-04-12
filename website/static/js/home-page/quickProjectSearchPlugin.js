@@ -52,6 +52,7 @@ var QuickSearchProject = {
         promise.then(function(result) {
             self.countDisplayed(result.data.length);
             result.data.forEach(function (node) {
+                node.attributes.title = $osf.decodeText(node.attributes.title);
                 self.nodes().push(node);
                 self.retrieveContributors(node);
             });
@@ -87,6 +88,7 @@ var QuickSearchProject = {
                     // This redraw allows the "load more" button to be displayed
                     m.redraw();
                     result.data.forEach(function(node){
+                        node.attributes.title = $osf.decodeText(node.attributes.title);
                         self.nodes().push(node);
                         self.retrieveContributors(node);
                     });
@@ -491,9 +493,29 @@ var QuickSearchProject = {
             })))];
         }
 
+        function preregBanner() {
+            return m ('.prereg.banner',
+                m('.row',
+                    [
+                        m('.col-md-9.m-v-sm',
+                            m('div.conference-centering',
+                                m('p', 'Improve your next study. Enter the Prereg Challenge and you could win $1,000.')
+                            )
+                        ),
+                        m('.col-md-3.text-center.m-v-sm',
+                            m('div',  m('a.btn.btn-success.btn-success-high-contrast.f-w-xl', { type:'button',  href:'/prereg/', onclick: function() {
+                                $osf.trackClick('prereg', 'navigate', 'navigate-to-begin-prereg');
+                            }}, 'Start Prereg Challenge'))
+                        )
+                    ]
+                )
+            );
+        }
+
         if (ctrl.eligibleNodes().length === 0 && ctrl.filter() == null) {
             return m('.row',
                 m('.col-xs-12',[
+                    preregBanner(),
                     headerTemplate(),
                     m('.row.quick-project',
                         m('.col-sm-12.text-center', [
@@ -507,7 +529,10 @@ var QuickSearchProject = {
         }
         else {
             return m('.row',
-                m('.col-xs-12', headerTemplate()),
+                m('.col-xs-12', [
+                    preregBanner(),
+                    headerTemplate()
+                ]),
                 m('.col-xs-12',[
                     m('.row.quick-project', m('.col-xs-12',
                     m('.m-b-sm.text-center', [
@@ -548,7 +573,7 @@ var QuickSearchProject = {
 
 function getAncestorDescriptor(node, nodeID, ancestor, ancestorID) {
     var ancestorDescriptor;
-    var ancestorTitleRequest = lodashGet(node, 'embeds.' + ancestor + '.data.attributes.title', '');
+    var ancestorTitleRequest = $osf.decodeText(lodashGet(node, 'embeds.' + ancestor + '.data.attributes.title', ''));
     var errorRequest = lodashGet(node, 'embeds.' + ancestor + '.errors[0].detail', '');
     switch(errorRequest) {
         case '':

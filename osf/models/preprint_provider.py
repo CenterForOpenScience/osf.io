@@ -11,11 +11,6 @@ from osf.models.licenses import NodeLicense
 from osf.models.subject import Subject
 
 class PreprintProvider(ObjectIDMixin, BaseModel):
-    # TODO REMOVE AFTER MIGRATION
-    modm_model_path = 'website.preprints.model.PreprintProvider'
-    modm_query = None
-    # /TODO REMOVE AFTER MIGRATION
-
     name = models.CharField(null=False, max_length=128)  # max length on prod: 22
     logo_name = models.CharField(null=True, blank=True, max_length=128)  # max length on prod: 17
     header_text = models.TextField(default='', blank=True)
@@ -33,6 +28,9 @@ class PreprintProvider(ObjectIDMixin, BaseModel):
 
     subjects_acceptable = DateTimeAwareJSONField(blank=True, default=list)
     licenses_acceptable = models.ManyToManyField(NodeLicense, blank=True)
+
+    def __unicode__(self):
+        return '{} with id {}'.format(self.name, self.id)
 
     @property
     def top_level_subjects(self):

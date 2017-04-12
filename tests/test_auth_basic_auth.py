@@ -4,11 +4,12 @@
 
 from __future__ import absolute_import
 
+from django.db import connection
 from django.utils import timezone
 from nose.tools import *  # noqa PEP8 asserts
 from datetime import timedelta
 
-from website.addons.twofactor.tests import _valid_code
+from addons.twofactor.tests import _valid_code
 from website import settings
 
 from tests.base import OsfTestCase
@@ -88,7 +89,13 @@ class TestAuthBasicAuthentication(OsfTestCase):
         assert_equal(res.status_code, 200)
 
     def test_expired_cookie(self):
-        self.session = SessionFactory(user=self.user1, date_created=(timezone.now() - timedelta(seconds=settings.OSF_SESSION_TIMEOUT)))
+        self.session = SessionFactory(user=self.user1)
+        with connection.cursor() as cursor:
+            cursor.execute("""
+                UPDATE osf_session
+                SET date_created = %s
+                WHERE id = %s
+            """, [(timezone.now() - timedelta(seconds=settings.OSF_SESSION_TIMEOUT)), self.session.id])
         cookie = self.user1.get_or_create_cookie()
         self.app.set_cookie(settings.COOKIE_NAME, str(cookie))
         res = self.app.get(self.reachable_url)

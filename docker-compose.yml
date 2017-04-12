@@ -9,19 +9,29 @@ volumes:
     external: false
   elasticsearch_data_vol:
     external: false
+  rabbitmq_vol:
+    external: false
   preprints_dist_vol:
+    external: false
+  registries_dist_vol:
     external: false
   mfr_requirements_vol:
     external: false
   wb_requirements_vol:
     external: false
-  wb_osfstoragecache_vol:
+  wb_tmp_vol:
+    external: false
+  osfstoragecache_vol:
     external: false
   osf_requirements_vol:
     external: false
   osf_node_modules_vol:
     external: false
   osf_bower_components_vol:
+    external: false
+  osf_admin_node_modules_vol:
+    external: false
+  osf_admin_bower_components_vol:
     external: false
 
 
@@ -37,16 +47,26 @@ services:
       - 9200:9200
     volumes:
       - elasticsearch_data_vol:/usr/share/elasticsearch/data
+    stdin_open: true
 
   postgres:
-   image: postgres:9.6
-   command: /bin/bash -c "sed -i -e 's/max_connections.*/max_connections = 5000/' /var/lib/postgresql/data/postgresql.conf || true && sed -i -e 's/#log_min_duration_statement = .*/log_min_duration_statement = 0/' /var/lib/postgresql/data/postgresql.conf || true && /docker-entrypoint.sh postgres"
-   ports:
-     - 5432:5432
-   environment:
-     POSTGRES_DB: osf
-   volumes:
-     - postgres_data_vol:/var/lib/postgresql/data/
+    image: postgres:9.6
+    command: |-
+      /bin/bash -c "
+        echo \"$$POSTGRES_INITDB\" > /docker-entrypoint-initdb.d/commands.sh &&
+        chmod +x /docker-entrypoint-initdb.d/commands.sh &&
+        /docker-entrypoint.sh postgres
+      "
+    ports:
+      - 5432:5432
+    environment:
+      POSTGRES_DB: osf
+      POSTGRES_INITDB: |
+        sed -i -e 's/max_connections.*/max_connections = 5000/' /var/lib/postgresql/data/postgresql.conf
+        sed -i -e 's/#log_min_duration_statement = .*/log_min_duration_statement = 0/' /var/lib/postgresql/data/postgresql.conf
+    volumes:
+      - postgres_data_vol:/var/lib/postgresql/data/
+    stdin_open: true
 
   tokumx:
     image: quay.io/centerforopenscience/tokumx:latest
@@ -57,95 +77,16 @@ services:
       TOKU_HUGE_PAGES_OK: 1
     volumes:
       - tokumx_data_vol:/data/db
+    stdin_open: true
 
-
-  #########################
-  # Modular File Renderer #
-  #########################
-
-  mfr_requirements:
-    image: quay.io/centerforopenscience/mfr:develop
-    command: /bin/bash -c "invoke install --develop && cp -Rf /usr/local/lib/python3.5/site-packages /"
-    restart: 'no'
-    volumes:
-      - mfr_requirements_vol:/site-packages
-
-  mfr:
-    image: quay.io/centerforopenscience/mfr:develop
-    command: invoke server
-    restart: unless-stopped
+  rabbitmq:
+    image: rabbitmq:3-management
     ports:
-      - 7778:7778
-    env_file:
-      - .docker-compose.mfr.env
+      - 5672:5672
+      - 15672:15672
     volumes:
-      - mfr_requirements_vol:/usr/local/lib/python3.5/site-packages
-
-  ###############
-  # WaterButler #
-  ###############
-
-  wb_requirements:
-    image: quay.io/centerforopenscience/waterbutler:develop
-    command: /bin/bash -c "invoke install --develop && cp -Rf /usr/local/lib/python3.5/site-packages /"
-    restart: 'no'
-    volumes:
-      - wb_requirements_vol:/site-packages
-
-  wb:
-    image: quay.io/centerforopenscience/waterbutler:develop
-    command: invoke server
-    restart: unless-stopped
-    ports:
-      - 7777:7777
-    env_file:
-      - .docker-compose.wb.env
-    volumes:
-      - wb_requirements_vol:/usr/local/lib/python3.5/site-packages
-      - wb_osfstoragecache_vol:/code/website/osfstoragecache
-
-
-  ##################################
-  # Central Authentication Service #
-  ##################################
-
-  fakecas:
-    image: quay.io/centerforopenscience/fakecas:master
-    command: fakecas -host=0.0.0.0:8080 -osfhost=192.168.168.167:5000 -dbaddress=postgres://postgres@postgres:5432/osf?sslmode=disable
-    restart: unless-stopped
-    ports:
-      - 8080:8080
-    depends_on:
-      - postgres
-
-
-  #############
-  # Preprints #
-  #############
-
-  preprints:
-    image: quay.io/centerforopenscience/ember-preprints:develop
-    command: /bin/bash -c "npm install && ./node_modules/bower/bin/bower install --allow-root --config.intedractive=false && ./node_modules/ember-cli/bin/ember serve --host 0.0.0.0 --port 4200"
-    restart: unless-stopped
-    environment:
-      - BACKEND=local
-    expose:
-      - 4200
-    ports:
-      - 4200:4200
-    volumes:
-      - preprints_dist_vol:/code/dist
-
-
-  #######
-  # OSF #
-  #######
-
-#  rabbitmq:
-#    image: rabbitmq:management
-#    ports:
-#      - 5672:5672
-#      - 15672:15672
+      - rabbitmq_vol:/var/lib/rabbitmq
+    stdin_open: true
 
 #  flower:
 #    image: quay.io/centerforopenscience/osf:develop
@@ -157,72 +98,258 @@ services:
 #    environment:
 #      BROKER_URL: amqp://guest:guest@rabbitmq:5672/
 
+
+  #########################
+  # Modular File Renderer #
+  #########################
+
+  mfr_requirements:
+    image: quay.io/centerforopenscience/mfr:develop
+    command: |-
+      /bin/bash -c "
+        invoke install --develop &&
+        (python -m compileall /usr/local/lib/python3.5 || true) &&
+        rm -Rf /python3.5/* &&
+        cp -Rf -p /usr/local/lib/python3.5 /
+      "
+    restart: 'no'
+    volumes:
+      - mfr_requirements_vol:/python3.5
+
+  mfr:
+    image: quay.io/centerforopenscience/mfr:develop
+    command: invoke server
+    restart: unless-stopped
+    ports:
+      - 7778:7778
+    env_file:
+      - .docker-compose.mfr.env
+    volumes:
+      - mfr_requirements_vol:/usr/local/lib/python3.5
+    stdin_open: true
+
+  ###############
+  # WaterButler #
+  ###############
+
+  wb_requirements:
+    image: quay.io/centerforopenscience/waterbutler:develop
+    command: |-
+      /bin/bash -c "
+        invoke install --develop &&
+        (python -m compileall /usr/local/lib/python3.5 || true) &&
+        rm -Rf /python3.5/* &&
+        cp -Rf -p /usr/local/lib/python3.5 /
+      "
+    restart: 'no'
+    volumes:
+      - wb_requirements_vol:/python3.5
+
+  wb:
+    image: quay.io/centerforopenscience/waterbutler:develop
+    command: invoke server
+    restart: unless-stopped
+    ports:
+      - 7777:7777
+    env_file:
+      - .docker-compose.wb.env
+    volumes:
+      - wb_requirements_vol:/usr/local/lib/python3.5
+      - osfstoragecache_vol:/code/website/osfstoragecache
+      - wb_tmp_vol:/tmp
+    stdin_open: true
+
+  wb_worker:
+    image: quay.io/centerforopenscience/waterbutler:develop
+    command: invoke celery
+    restart: unless-stopped
+    depends_on:
+      - wb
+      - rabbitmq
+    environment:
+      C_FORCE_ROOT: 1
+    env_file:
+      - .docker-compose.wb.env
+    volumes:
+      - wb_requirements_vol:/usr/local/lib/python3.5
+      - osfstoragecache_vol:/code/website/osfstoragecache
+      - wb_tmp_vol:/tmp
+    stdin_open: true
+
+  ##################################
+  # Central Authentication Service #
+  ##################################
+
+  fakecas:
+    image: quay.io/centerforopenscience/fakecas:master
+    command: fakecas -host=0.0.0.0:8080 -osfhost=localhost:5000 -dbaddress=postgres://postgres@postgres:5432/osf?sslmode=disable
+    restart: unless-stopped
+    ports:
+      - 8080:8080
+    depends_on:
+      - postgres
+    stdin_open: true
+
+
+  #############
+  # Preprints #
+  #############
+
+  preprints:
+    image: quay.io/centerforopenscience/ember-preprints:develop-development-local
+    command: /bin/bash -c "yarn --pure-lockfile --no-progress --no-emoji && ./node_modules/bower/bin/bower install --allow-root --config.interactive=false && ./node_modules/ember-cli/bin/ember serve --host 0.0.0.0 --port 4200"
+    restart: unless-stopped
+    depends_on:
+      - api
+      - web
+    environment:
+      - BACKEND=local
+    expose:
+      - 4200
+    ports:
+      - 4200:4200
+    volumes:
+      - preprints_dist_vol:/code/dist
+    stdin_open: true
+
+  ##############
+  # Registries #
+  ##############
+
+  registries:
+    image: quay.io/centerforopenscience/ember-osf-registries:develop-development-local
+    command: /bin/bash -c "yarn --pure-lockfile --no-progress --no-emoji && ./node_modules/bower/bin/bower install --allow-root --config.interactive=false && ./node_modules/ember-cli/bin/ember serve --host 0.0.0.0 --port 4300"
+    restart: unless-stopped
+    depends_on:
+      - api
+      - web
+    environment:
+      - BACKEND=local
+    expose:
+      - 4300
+    ports:
+      - 4300:4300
+    volumes:
+      - registries_dist_vol:/code/dist
+    stdin_open: true
+
+  #######
+  # OSF #
+  #######
+
+  requirements:
+    image: quay.io/centerforopenscience/osf:develop
+    command: |-
+      /bin/bash -c "
+        invoke requirements --quick &&
+        (python -m compileall /usr/local/lib/python2.7 || true) &&
+        rm -Rf /python2.7/* &&
+        cp -Rf -p /usr/local/lib/python2.7 /
+      "
+    restart: 'no'
+    environment:
+      DJANGO_SETTINGS_MODULE: api.base.settings
+    volumes:
+      - osf_requirements_vol:/python2.7
+
+  assets:
+    image: quay.io/centerforopenscience/osf:develop
+    command: invoke assets -dw
+    restart: unless-stopped
+    environment:
+      DJANGO_SETTINGS_MODULE: api.base.settings
+    volumes:
+      - osf_requirements_vol:/usr/local/lib/python2.7
+      - osf_bower_components_vol:/code/website/static/vendor/bower_components
+      - osf_node_modules_vol:/code/node_modules
+    stdin_open: true
+
+  admin_assets:
+    image: quay.io/centerforopenscience/osf:develop
+    command: invoke admin.assets -dw
+    restart: unless-stopped
+    environment:
+      DJANGO_SETTINGS_MODULE: admin.base.settings
+    volumes:
+      - osf_requirements_vol:/usr/local/lib/python2.7
+      - osf_node_modules_vol:/code/node_modules  # needed due to admin references of ../webpack.<...>.js configurations.
+      - osf_bower_components_vol:/code/website/static/vendor/bower_components
+      - osf_admin_bower_components_vol:/code/admin/static/vendor/bower_components
+      - osf_admin_node_modules_vol:/code/admin/node_modules
+    stdin_open: true
+
+  sharejs:
+    image: quay.io/centerforopenscience/osf:develop
+    command: invoke sharejs
+    restart: unless-stopped
+    ports:
+      - 7007:7007
+    depends_on:
+      - tokumx
+    env_file:
+      - .docker-compose.sharejs.env
+    volumes:
+      - osf_requirements_vol:/usr/local/lib/python2.7
+      - osf_node_modules_vol:/code/node_modules
+    stdin_open: true
+
 #  beat:
 #    image: quay.io/centerforopenscience/osf:develop
 #    command: invoke celery_beat
 #    depends_on:
 #      - postgres
 #      - rabbitmq
-#      - elasticsearch
-#    volumes:
-#      - osf_requirements_vol:/usr/local/lib/python2.7/site-packages
-#      - ./:/code
-#    environment:
-#      DB_HOST: postgres
-#      ELASTIC_URI: elasticsearch:9200
-#      BROKER_URL: amqp://guest:guest@rabbitmq:5672/
-
-#  worker:
-#    image: quay.io/centerforopenscience/osf:develop
-#    command: invoke celery_worker
-#    restart: unless-stopped
-#    depends_on:
-#      - postgres
-#      - tokumx
-#      - rabbitmq
-#      - elasticsearch
-#    volumes:
-#      - osf_requirements_vol:/usr/local/lib/python2.7/site-packages
-#      - ./:/code
 #    environment:
 #      C_FORCE_ROOT: 1
-#      DB_HOST: postgres
-#      ELASTIC_URI: elasticsearch:9200
-#      BROKER_URL: amqp://guest:guest@rabbitmq:5672/
-
-  requirements:
-    image: quay.io/centerforopenscience/osf:develop
-    command: /bin/bash -c "invoke requirements --quick && cp -Rf /usr/local/lib/python2.7/site-packages /"
-    restart: 'no'
-    volumes:
-      - osf_requirements_vol:/site-packages
-
-  assets:
-    image: quay.io/centerforopenscience/osf:develop
-    command: invoke assets -dw
-    restart: unless-stopped
-    volumes:
-      - osf_requirements_vol:/usr/local/lib/python2.7/site-packages
-      - osf_bower_components_vol:/code/website/static/vendor/bower_components
-      - osf_node_modules_vol:/code/node_modules
-
-#  admin:
-#    image: quay.io/centerforopenscience/osf:develop
-#    command: invoke adminserver -h 0.0.0.0
-#    restart: unless-stopped
-#    ports:
-#      - 8001:8001
-#    depends_on:
-#      - tokumx
-##      - rabbitmq
-#      - elasticsearch
+#      DJANGO_SETTINGS_MODULE: api.base.settings
 #    env_file:
 #      - .docker-compose.env
-#    stdin_open: true
-#    tty: true
 #    volumes:
-#      - osf_requirements_vol:/usr/local/lib/python2.7/site-packages
+#      - osf_requirements_vol:/usr/local/lib/python2.7
+#      - osf_bower_components_vol:/code/website/static/vendor/bower_components
 #      - osf_node_modules_vol:/code/node_modules
+
+  worker:
+    image: quay.io/centerforopenscience/osf:develop
+    command: invoke celery_worker
+    restart: unless-stopped
+    depends_on:
+      - postgres
+      - rabbitmq
+      - elasticsearch
+    environment:
+      C_FORCE_ROOT: 1
+      DJANGO_SETTINGS_MODULE: api.base.settings
+    env_file:
+      - .docker-compose.env
+    volumes:
+      - osf_requirements_vol:/usr/local/lib/python2.7
+      - osf_bower_components_vol:/code/website/static/vendor/bower_components
+      - osf_node_modules_vol:/code/node_modules
+    stdin_open: true
+
+  admin:
+    image: quay.io/centerforopenscience/osf:develop
+    command: invoke adminserver -h 0.0.0.0
+    restart: unless-stopped
+    environment:
+      DJANGO_SETTINGS_MODULE: admin.base.settings
+    ports:
+      - 8001:8001
+    depends_on:
+      - postgres
+      - tokumx
+      - rabbitmq
+      - elasticsearch
+    env_file:
+      - .docker-compose.env
+    stdin_open: true
+    volumes:
+      - osf_requirements_vol:/usr/local/lib/python2.7
+      - osf_bower_components_vol:/code/website/static/vendor/bower_components
+      - osf_node_modules_vol:/code/node_modules
+      - osf_admin_bower_components_vol:/code/admin/static/vendor/bower_components
+      - osf_admin_node_modules_vol:/code/admin/node_modules
 
   api:
     image: quay.io/centerforopenscience/osf:develop
@@ -233,14 +360,17 @@ services:
     depends_on:
       - postgres
       - tokumx
-#      - rabbitmq
+      - rabbitmq
       - elasticsearch
+    environment:
+      DJANGO_SETTINGS_MODULE: api.base.settings
     env_file:
       - .docker-compose.env
     volumes:
-      - osf_requirements_vol:/usr/local/lib/python2.7/site-packages
+      - osf_requirements_vol:/usr/local/lib/python2.7
       - osf_bower_components_vol:/code/website/static/vendor/bower_components
       - osf_node_modules_vol:/code/node_modules
+    stdin_open: true
 
   web:
     image: quay.io/centerforopenscience/osf:develop
@@ -251,12 +381,16 @@ services:
     depends_on:
       - postgres
       - tokumx
-#      - rabbitmq
+      - rabbitmq
       - elasticsearch
+    environment:
+      DJANGO_SETTINGS_MODULE: api.base.settings
     env_file:
       - .docker-compose.env
     volumes:
-      - osf_requirements_vol:/usr/local/lib/python2.7/site-packages
+      - osf_requirements_vol:/usr/local/lib/python2.7
       - osf_bower_components_vol:/code/website/static/vendor/bower_components
       - osf_node_modules_vol:/code/node_modules
       - preprints_dist_vol:/preprints
+      - registries_dist_vol:/registries
+    stdin_open: true

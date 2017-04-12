@@ -1,6 +1,6 @@
 import mock
 import github3
-from website.addons.github.api import GitHubClient
+from addons.github.api import GitHubClient
 from github3.repos.branch import Branch
 
 from addons.base.tests.base import OAuthAddonTestCaseMixin, AddonTestCase
