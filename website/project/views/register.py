@@ -100,7 +100,7 @@ def node_registration_retraction_post(auth, node, **kwargs):
             'message_long': 'Withdrawal of non-registrations is not permitted.'
         })
 
-    if node.root is not node:
+    if node.root_id != node.id:
         raise HTTPError(http.BAD_REQUEST, data={
             'message_short': 'Invalid Request',
             'message_long': 'Withdrawal of non-parent registrations is not permitted.'
@@ -179,7 +179,7 @@ def project_before_register(auth, node, **kwargs):
     }
     errors = {}
 
-    addon_set = [n.get_addons() for n in itertools.chain([node], node.get_descendants_recursive(lambda n: n.primary))]
+    addon_set = [n.get_addons() for n in itertools.chain([node], node.get_descendants_recursive(primary_only=True))]
     for addon in itertools.chain(*addon_set):
         if not addon.complete:
             continue
@@ -250,6 +250,13 @@ def _get_or_create_identifiers(node):
             'doi': doi.replace('doi:', ''),
             'ark': '{0}{1}'.format(settings.ARK_NAMESPACE.replace('ark:', ''), suffix),
         }
+
+
+def osf_admin_change_status_identifier(node, status):
+    if node.get_identifier_value('doi') and node.get_identifier_value('ark'):
+        doi, metadata = _build_ezid_metadata(node)
+        client = EzidClient(settings.EZID_USERNAME, settings.EZID_PASSWORD)
+        client.change_status_identifier(status, doi, metadata)
 
 
 @must_be_valid_project

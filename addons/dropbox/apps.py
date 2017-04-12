@@ -1,9 +1,9 @@
-from addons.base.apps import BaseAddonConfig
-
-from website.addons.dropbox.views import dropbox_root_folder
+from addons.base.apps import BaseAddonAppConfig, generic_root_folder
 
 
-class DropboxAddonConfig(BaseAddonConfig):
+dropbox_root_folder = generic_root_folder('dropbox')
+
+class DropboxAddonAppConfig(BaseAddonAppConfig):
 
     name = 'addons.dropbox'
     label = 'addons_dropbox'
@@ -12,10 +12,17 @@ class DropboxAddonConfig(BaseAddonConfig):
     configs = ['accounts', 'node']
     has_hgrid_files = True
     max_file_size = 150  # MB
+    owners = ['user', 'node']
+    categories = ['storage']
 
     @property
     def get_hgrid_data(self):
         return dropbox_root_folder
+
+    @property
+    def routes(self):
+        from . import routes
+        return [routes.auth_routes, routes.api_routes]
 
     FOLDER_SELECTED = 'dropbox_folder_selected'
     NODE_AUTHORIZED = 'dropbox_node_authorized'

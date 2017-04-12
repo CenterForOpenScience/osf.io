@@ -10,7 +10,7 @@ from addons.base.tests.views import (
 )
 from addons.owncloud.models import OwnCloudProvider
 from tests.base import OsfTestCase
-from website.addons.owncloud.serializer import OwnCloudSerializer
+from addons.owncloud.serializer import OwnCloudSerializer
 from addons.owncloud.tests.utils import OwnCloudAddonTestCase
 
 pytestmark = pytest.mark.django_db
@@ -46,7 +46,7 @@ class TestConfigViews(OwnCloudAddonTestCase, OAuthAddonConfigViewsTestCaseMixin,
         self.mock_ser_api.stop()
         super(TestConfigViews, self).tearDown()
 
-    @mock.patch('website.addons.owncloud.model.AddonOwnCloudNodeSettings.get_folders')
+    @mock.patch('addons.owncloud.models.NodeSettings.get_folders')
     def test_folder_list(self, mock_connection):
         #test_get_datasets
         mock_connection.return_value = ['/Documents/', '/Pictures/', '/Videos/']

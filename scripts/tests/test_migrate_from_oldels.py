@@ -7,7 +7,7 @@ from scripts.osfstorage import finish_oldel_migration as finishm
 from scripts.osfstorage import migrate_from_oldels as migration
 from tests.base import OsfTestCase
 from tests.factories import ProjectFactory
-from website.addons.osfstorage import model, oldels, utils
+from addons.osfstorage import model, oldels, utils
 
 
 class TestMigrateOldels(OsfTestCase):

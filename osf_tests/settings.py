@@ -1,5 +1,5 @@
-# Use API defaults. This allows these settings to work with API tests
-from api.base.settings.defaults import *  # noqa
+# Use API settings.
+from api.base.settings import *  # noqa
 
 DEBUG_PROPAGATE_EXCEPTIONS = True
 #DATABASES = {
@@ -18,14 +18,5 @@ SITE_ID = 1
 # SECRET_KEY = 'not very secret in tests'
 PASSWORD_HASHERS = (
     'django.contrib.auth.hashers.MD5PasswordHasher',
+    'django.contrib.auth.hashers.SHA1PasswordHasher',
 )
-
-REST_FRAMEWORK['ALLOWED_VERSIONS'] = (
-        '2.0',
-        '2.0.1',
-        '2.1',
-        '2.2',
-        '2.3',
-        '3.0',
-        '3.0.1',
-    )

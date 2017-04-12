@@ -17,8 +17,8 @@ from scripts import utils as scripts_utils
 
 from website.app import init_app
 from website.project.model import NodeLog
-from website.addons.osfstorage import model
-from website.addons.osfstorage import oldels
+from addons.osfstorage import model
+from addons.osfstorage import oldels
 
 logger = logging.getLogger(__name__)
 

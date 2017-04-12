@@ -12,8 +12,7 @@ from website import mails
 
 @pytest.fixture()
 def user():
-    # TODO: Remove date_registered after migration is complete
-    return UserFactory(is_registered=True, date_registered=timezone.now())
+    return UserFactory(is_registered=True)
 
 @pytest.mark.django_db
 class TestQueuedMail:

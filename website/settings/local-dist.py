@@ -29,11 +29,16 @@ EXTERNAL_EMBER_APPS = {
         'server': 'http://localhost:4200',
         'path': '/preprints/'
     },
+    'registries': {
+        'url': '/registries/',
+        'server': 'http://localhost:4300',
+        'path': '/registries/'
+    }
     # 'meetings': {
     #     'url': '/meetings/',
     #     'server': 'http://localhost:4201',
     #     'path': '../osf-meetings/dist/'
-    # }
+    # },
 }
 
 SEARCH_ENGINE = 'elastic'

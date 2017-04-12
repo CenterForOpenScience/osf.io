@@ -28,7 +28,6 @@ class FixMaterializedPathTestMixin(object):
 
     def test_exclude_correct_file_materialized_path(self):
         test_file = self.ProviderFile.create(
-            is_file=True,
             node=self.project,
             path='/test',
             name='test',
@@ -40,7 +39,6 @@ class FixMaterializedPathTestMixin(object):
 
     def test_fix_incorrect_file_materialized_path(self):
         test_file = self.ProviderFile.create(
-            is_file=True,
             node=self.project,
             path='/path',
             name='path',

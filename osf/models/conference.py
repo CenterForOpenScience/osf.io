@@ -1,10 +1,8 @@
 # -*- coding: utf-8 -*-
-import json
-import re
-
 from django.db import models
 from osf.models.base import BaseModel, ObjectIDMixin
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
+from osf.utils.fields import NonNaiveDateTimeField
 
 from website.conferences.exceptions import ConferenceError
 
@@ -38,10 +36,6 @@ class ConferenceManager(models.Manager):
 
 
 class Conference(ObjectIDMixin, BaseModel):
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.conferences.model.Conference'
-    modm_query = None
-    # /TODO DELETE ME POST MIGRATION
     #: Determines the email address for submission and the OSF url
     # Example: If endpoint is spsp2014, then submission email will be
     # spsp2014-talk@osf.io or spsp2014-poster@osf.io and the OSF url will
@@ -52,8 +46,8 @@ class Conference(ObjectIDMixin, BaseModel):
     info_url = models.URLField(blank=True)
     logo_url = models.URLField(blank=True)
     location = models.CharField(max_length=2048, null=True, blank=True)
-    start_date = models.DateTimeField(blank=True, null=True)
-    end_date = models.DateTimeField(blank=True, null=True)
+    start_date = NonNaiveDateTimeField(blank=True, null=True)
+    end_date = NonNaiveDateTimeField(blank=True, null=True)
     is_meeting = models.BooleanField(default=True)
     active = models.BooleanField()
     admins = models.ManyToManyField('OSFUser')
@@ -79,18 +73,14 @@ class Conference(ObjectIDMixin, BaseModel):
     def get_by_endpoint(cls, endpoint, active):
         return cls.objects.get_by_endpoint(endpoint, active)
 
+    class Meta:
+        # custom permissions for use in the OSF Admin App
+        permissions = (
+            ('view_conference', 'Can view conference details in the admin app.'),
+        )
+
 
 class MailRecord(ObjectIDMixin, BaseModel):
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.conferences.model.MailRecord'
-    modm_query = None
-    # /TODO DELETE ME POST MIGRATION
     data = DateTimeAwareJSONField()
     nodes_created = models.ManyToManyField('Node')
     users_created = models.ManyToManyField('OSFUser')
-
-    @classmethod
-    def migrate_from_modm(cls, modm_obj):
-        cmp = re.compile(ur'\\+u0000')
-        modm_obj.data = json.loads(re.sub(cmp, '', json.dumps(modm_obj.data)))
-        return super(MailRecord, cls).migrate_from_modm(modm_obj)

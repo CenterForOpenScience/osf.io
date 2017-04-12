@@ -14,9 +14,9 @@ import logging
 import sys
 
 from django.utils import timezone
+from django.db import transaction
 from modularodm import Q
 
-from framework.transactions.context import TokuTransaction
 from framework.celery_tasks import app as celery_app
 
 from website import models, settings
@@ -67,7 +67,7 @@ def run_main(dry_run=True):
     if not dry_run:
         scripts_utils.add_file_logger(logger, __file__)
     init_app(routes=False)
-    with TokuTransaction():
+    with transaction.atomic():
         main()
         if dry_run:
             raise RuntimeError("Dry run, rolling back transaction")

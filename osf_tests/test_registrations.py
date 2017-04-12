@@ -191,21 +191,25 @@ class TestRegisterNode:
         # Create some nodes
         # component
         comp1 = factories.NodeFactory(  # noqa
+            title='Comp1',
             creator=user,
             parent=project,
         )
         # subproject
         comp2 = factories.ProjectFactory(  # noqa
+            title='Comp1',
             creator=user,
             parent=project,
         )
 
         # Create some nodes to share
         shared_component = factories.NodeFactory(
+            title='Shared Component',
             creator=user,
             parent=project,
         )
         shared_subproject = factories.ProjectFactory(
+            title='Shared Subproject',
             creator=user,
             parent=project,
         )
@@ -374,8 +378,9 @@ class TestNodeSanctionStates:
         registration = Registration.find_one(Q('retraction', 'eq', retraction))
         assert registration.is_retracted
 
+    @mock.patch('website.project.tasks.on_registration_updated')
     @mock.patch('osf.models.node.AbstractNode.update_search')
-    def test_is_retracted_searches_parents(self, mock_update_search):
+    def test_is_retracted_searches_parents(self, mock_registration_updated, mock_update_search):
         user = factories.UserFactory()
         node = factories.ProjectFactory(creator=user)
         child = factories.NodeFactory(creator=user, parent=node)
@@ -562,3 +567,9 @@ class TestDraftRegistrations:
         draft.update_metadata(new_data)
         draft.save()
         assert draft.registration_metadata['foo']['comments'] == comments
+
+    def test_draft_registration_url(self):
+        project = factories.ProjectFactory()
+        draft = factories.DraftRegistrationFactory(branched_from=project)
+
+        assert draft.url == settings.DOMAIN + 'project/{}/drafts/{}'.format(project._id, draft._id)

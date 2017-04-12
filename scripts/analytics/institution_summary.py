@@ -25,6 +25,7 @@ class InstitutionSummary(SummaryAnalytics):
 
     def get_events(self, date):
         super(InstitutionSummary, self).get_events(date)
+        from osf.models import AbstractNode, Registration
 
         institutions = self.get_institutions()
         counts = []
@@ -34,27 +35,19 @@ class InstitutionSummary(SummaryAnalytics):
         query_datetime = timestamp_datetime + timedelta(1)
 
         for institution in institutions:
-            user_query = Q('_affiliated_institutions', 'eq', institution.node)
+            user_query = Q('affiliated_institutions', 'eq', institution)
             node_query = (
                 Q('is_deleted', 'ne', True) &
-                Q('is_folder', 'ne', True) &
                 Q('date_created', 'lt', query_datetime)
             )
 
-            registration_query = node_query & Q('is_registration', 'eq', True)
-            non_registration_query = node_query & Q('is_registration', 'eq', False)
-            project_query = non_registration_query & Q('parent_node', 'eq', None)
-            registered_project_query = registration_query & Q('parent_node', 'eq', None)
+            project_query = node_query & Q('parent_nodes', 'eq', None)
             public_query = Q('is_public', 'eq', True)
             private_query = Q('is_public', 'eq', False)
-            node_public_query = non_registration_query & public_query
-            node_private_query = non_registration_query & private_query
+            node_public_query = node_query & public_query
+            node_private_query = node_query & private_query
             project_public_query = project_query & public_query
             project_private_query = project_query & private_query
-            registered_node_public_query = registration_query & public_query
-            registered_node_private_query = registration_query & private_query
-            registered_project_public_query = registered_project_query & public_query
-            registered_project_private_query = registered_project_query & private_query
             count = {
                 'institution':{
                     'id': institution._id,
@@ -64,9 +57,9 @@ class InstitutionSummary(SummaryAnalytics):
                     'total': User.find(user_query).count(),
                 },
                 'nodes': {
-                    'total':Node.find_by_institutions(institution, node_query).count(),
-                    'public': Node.find_by_institutions(institution, node_public_query).count(),
-                    'private': Node.find_by_institutions(institution, node_private_query).count(),
+                    'total':AbstractNode.find_by_institutions(institution, node_query).count(),
+                    'public': AbstractNode.find_by_institutions(institution, node_public_query).count(),
+                    'private': AbstractNode.find_by_institutions(institution, node_private_query).count(),
                 },
                 'projects': {
                     'total': Node.find_by_institutions(institution, project_query).count(),
@@ -74,14 +67,14 @@ class InstitutionSummary(SummaryAnalytics):
                     'private': Node.find_by_institutions(institution, project_private_query).count(),
                 },
                 'registered_nodes': {
-                    'total': Node.find_by_institutions(institution, registration_query).count(),
-                    'public': Node.find_by_institutions(institution, registered_node_public_query).count(),
-                    'embargoed': Node.find_by_institutions(institution, registered_node_private_query).count(),
+                    'total': Registration.find_by_institutions(institution, node_query).count(),
+                    'public': Registration.find_by_institutions(institution, node_public_query).count(),
+                    'embargoed': Registration.find_by_institutions(institution, node_private_query).count(),
                 },
                 'registered_projects': {
-                    'total': Node.find_by_institutions(institution, registered_project_query).count(),
-                    'public': Node.find_by_institutions(institution, registered_project_public_query).count(),
-                    'embargoed': Node.find_by_institutions(institution, registered_project_private_query).count(),
+                    'total': Registration.find_by_institutions(institution, project_query).count(),
+                    'public': Registration.find_by_institutions(institution, project_public_query).count(),
+                    'embargoed': Registration.find_by_institutions(institution, project_private_query).count(),
                 },
                 'keen': {
                     'timestamp': timestamp_datetime.isoformat()

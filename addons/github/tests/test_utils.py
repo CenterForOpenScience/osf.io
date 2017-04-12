@@ -9,8 +9,8 @@ import pytest
 from tests.base import OsfTestCase
 
 from addons.github.models import NodeSettings
-from website.addons.github import utils
-from website.addons.base.exceptions import HookError
+from addons.github import utils
+from addons.base.exceptions import HookError
 
 pytestmark = pytest.mark.django_db
 

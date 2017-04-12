@@ -58,13 +58,13 @@ class TestNodeLicenses(OsfTestCase):
     def test_serialize_node_license(self):
         serialized = serialize_node_license(self.node_license)
         assert_equal(serialized['name'], self.LICENSE_NAME)
-        assert_equal(serialized['_id'], self.node_license._id)
+        assert_equal(serialized['id'], self.node_license.license_id)
         assert_equal(serialized['text'], self.node_license.text)
 
     def test_serialize_node_license_record(self):
         serialized = serialize_node_license_record(self.node.node_license)
         assert_equal(serialized['name'], self.LICENSE_NAME)
-        assert_equal(serialized['_id'], self.node_license._id)
+        assert_equal(serialized['id'], self.node_license.license_id)
         assert_equal(serialized['text'], self.node_license.text)
         assert_equal(serialized['year'], self.YEAR)
         assert_equal(serialized['copyright_holders'], self.COPYRIGHT_HOLDERS)

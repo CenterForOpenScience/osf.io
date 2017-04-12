@@ -31,6 +31,7 @@ def get_or_create_node(title, user):
     try:
         node = Node.find_one(
             Q('title', 'iexact', title)
+            & Q('is_deleted', 'ne', True)
             & Q('contributors', 'eq', user)
         )
         return node, False
@@ -49,7 +50,8 @@ def provision_node(conference, message, node, user):
     auth = Auth(user=user)
 
     node.update_node_wiki('home', message.text, auth)
-    node.add_contributors(prepare_contributors(conference.admins.all()), log=False)
+    if conference.admins.exists():
+        node.add_contributors(prepare_contributors(conference.admins.all()), log=False)
 
     if not message.is_spam and conference.public_projects:
         node.set_privacy('public', meeting_creation=True, auth=auth)

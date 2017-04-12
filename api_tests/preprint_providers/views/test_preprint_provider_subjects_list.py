@@ -93,23 +93,23 @@ class TestPreprintProviderSubjects(ApiTestCase):
         assert_not_in('O', texts)
 
     def test_no_rules_with_parent_filter(self):
-        res = self.app.get(self.lawless_url + 'filter[parents]={}'.format(self.subB.pk))
+        res = self.app.get(self.lawless_url + 'filter[parents]={}'.format(self.subB._id))
 
         assert_equal(res.status_code, 200)
         assert_equal(res.json['links']['meta']['total'], 2)
 
-        res = self.app.get(self.lawless_url + 'filter[parents]={}'.format(self.subI.pk))
+        res = self.app.get(self.lawless_url + 'filter[parents]={}'.format(self.subI._id))
 
         assert_equal(res.status_code, 200)
         assert_equal(res.json['links']['meta']['total'], 2)
 
-        res = self.app.get(self.lawless_url + 'filter[parents]={}'.format(self.subM.pk))
+        res = self.app.get(self.lawless_url + 'filter[parents]={}'.format(self.subM._id))
 
         assert_equal(res.status_code, 200)
         assert_equal(res.json['links']['meta']['total'], 2)
 
     def test_rules_enforced_with_parent_filter(self):
-        res = self.app.get(self.ruled_url + 'filter[parents]={}'.format(self.subB.pk))
+        res = self.app.get(self.ruled_url + 'filter[parents]={}'.format(self.subB._id))
 
         assert_equal(res.status_code, 200)
         assert_equal(res.json['links']['meta']['total'], 1)
@@ -117,7 +117,7 @@ class TestPreprintProviderSubjects(ApiTestCase):
         assert_in('E', texts)
         assert_not_in('F', texts)
 
-        res = self.app.get(self.ruled_url + 'filter[parents]={}'.format(self.subI.pk))
+        res = self.app.get(self.ruled_url + 'filter[parents]={}'.format(self.subI._id))
 
         assert_equal(res.status_code, 200)
         assert_equal(res.json['links']['meta']['total'], 1)
@@ -125,7 +125,7 @@ class TestPreprintProviderSubjects(ApiTestCase):
         assert_in('J', texts)
         assert_not_in('K', texts)
 
-        res = self.app.get(self.ruled_url + 'filter[parents]={}'.format(self.subM.pk))
+        res = self.app.get(self.ruled_url + 'filter[parents]={}'.format(self.subM._id))
 
         assert_equal(res.status_code, 200)
         assert_equal(res.json['links']['meta']['total'], 2)
@@ -134,13 +134,13 @@ class TestPreprintProviderSubjects(ApiTestCase):
         assert_in('E', texts)
 
     def test_no_rules_with_grandparent_filter(self):
-        res = self.app.get(self.lawless_url + 'filter[parents]={}'.format(self.subA.pk))
+        res = self.app.get(self.lawless_url + 'filter[parents]={}'.format(self.subA._id))
 
         assert_equal(res.status_code, 200)
         assert_equal(res.json['links']['meta']['total'], 3)
 
     def test_rules_enforced_with_grandparent_filter(self):
-        res = self.app.get(self.ruled_url + 'filter[parents]={}'.format(self.subA.pk))
+        res = self.app.get(self.ruled_url + 'filter[parents]={}'.format(self.subA._id))
 
         assert_equal(res.status_code, 200)
         assert_equal(res.json['links']['meta']['total'], 2)
