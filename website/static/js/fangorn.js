@@ -2474,7 +2474,7 @@ function showDeleteMultiple(items) {
     // Only show delete button if user has edit permissions on at least one selected file
     for (var i = 0; i < items.length; i++) {
         var each = items[i].data;
-        if (each.permissions.edit && !each.isAddonRoot && !each.nodeType) {
+        if (typeof each.permissions !== 'undefined' && each.permissions.edit && !each.isAddonRoot && !each.nodeType) {
             return true;
         }
     }    
