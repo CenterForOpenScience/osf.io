@@ -58,7 +58,7 @@ def get_campaigns():
                     template = 'branded'
                     name = provider.name
                     url_path = 'preprints/{}'.format(provider._id)
-                    external_url = provider.get_provider_external_domain()
+                    external_url = provider.domain
                 campaign = '{}-preprints'.format(provider._id)
                 system_tag = '{}_preprints'.format(provider._id)
                 newest_campaigns.update({

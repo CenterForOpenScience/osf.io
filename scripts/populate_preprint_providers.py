@@ -9,6 +9,7 @@ from django.db import transaction
 from modularodm import Q
 from modularodm.exceptions import NoResultsFound
 from website.app import init_app
+from website.settings import PREPRINT_PROVIDER_DOMAINS, DOMAIN
 import django
 django.setup()
 
@@ -24,7 +25,7 @@ PROD_PREPRINT_PROVIDERS = ['osf', 'psyarxiv', 'engrxiv', 'socarxiv', 'agrixiv', 
 
 
 def get_subject_id(name):
-    if not name in SUBJECTS_CACHE:
+    if name not in SUBJECTS_CACHE:
         subject = None
         try:
             subject = Subject.find_one(Q('text', 'eq', name))
@@ -35,12 +36,14 @@ def get_subject_id(name):
 
     return SUBJECTS_CACHE[name]
 
+
 def get_license(name):
     try:
         license = NodeLicense.find_one(Q('name', 'eq', name))
     except NoResultsFound:
         raise Exception('License: "{}" not found'.format(name))
     return license
+
 
 def update_or_create(provider_data):
     provider = PreprintProvider.load(provider_data['_id'])
@@ -67,6 +70,12 @@ def update_or_create(provider_data):
         print('Added new preprint provider: {}'.format(provider._id))
         return new_provider, True
 
+
+def format_domain_url(domain):
+    return ''.join((PREPRINT_PROVIDER_DOMAINS['prefix'], str(domain), PREPRINT_PROVIDER_DOMAINS['suffix'])) if \
+        PREPRINT_PROVIDER_DOMAINS['enabled'] else None
+
+
 def main(env):
     PREPRINT_PROVIDERS = {
         'osf': {
@@ -75,7 +84,7 @@ def main(env):
             'logo_name': 'cos-logo.png',
             'description': 'A scholarly commons to connect the entire research cycle',
             'banner_name': 'cos-banner.png',
-            'domain': 'osf.io',
+            'domain': DOMAIN,
             'external_url': 'https://osf.io/preprints/',
             'example': 'khbvy',
             'advisory_board': '',
@@ -94,7 +103,7 @@ def main(env):
             'logo_name': 'engrxiv-logo.png',
             'description': 'The open archive of engineering.',
             'banner_name': 'engrxiv-banner.png',
-            'domain': 'engrxiv.org',
+            'domain': format_domain_url('engrxiv.org'),
             'external_url': 'http://engrxiv.com',
             'example': 'k7fgk',
             'advisory_board': '''
@@ -234,7 +243,7 @@ def main(env):
             'logo_name': 'psyarxiv-logo.png',
             'description': 'A free preprint service for the psychological sciences.',
             'banner_name': 'psyarxiv-banner.png',
-            'domain': 'psyarxiv.com',
+            'domain': format_domain_url('psyarxiv.com'),
             'external_url': 'http://psyarxiv.org',
             'example': 'k9mn3',
             'advisory_board': '''
@@ -320,7 +329,7 @@ def main(env):
             'logo_name': 'socarxiv-logo.png',
             'description': 'Open archive of the social sciences',
             'banner_name': 'socarxiv-banner.png',
-            'domain': 'socarxiv.org',
+            'domain': format_domain_url('socarxiv.org'),
             'external_url': 'http://socarxiv.org',
             'example': 'qmdc4',
             'advisory_board': '''
@@ -366,7 +375,7 @@ def main(env):
             'logo_name': 'scielo-logo.png',
             'description': 'Advancing Research Communication',
             'banner_name': 'scielo-logo.png',
-            # 'domain': 'scielo.org', # Temporarily disabling until ready
+            # 'domain': format_domain_url('scielo.org'), # Temporarily disabling until ready
             'external_url': 'http://scielo.org',
             'example': '',  # An example guid for this provider (Will have to be updated after the provider is up)
             # Advisory board should be valid html string in triple quotes
@@ -385,7 +394,7 @@ def main(env):
             'logo_name': 'agrixiv-logo.svg',
             'description': 'Preprints for Agriculture and Allied Sciences',
             'banner_name': 'agrixiv-banner.svg',
-            'domain': 'agrixiv.org',
+            'domain': format_domain_url('agrixiv.org'),
             'external_url': '',
             'example': '8whkp',
             'advisory_board': '''
@@ -1009,7 +1018,7 @@ def main(env):
             'logo_name': 'bitss-logo.png',
             'description': 'An interdisciplinary archive of articles focused on improving research transparency and reproducibility',
             'banner_name': 'bitss-banner.png',
-            #'domain': 'bitss.org', Not using domain
+            #'domain': format_domain_url('bitss.org'), Not using domain
             'external_url': 'http://www.bitss.org',
             'example': '',
             'advisory_board': '''

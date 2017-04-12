@@ -21,12 +21,11 @@ from website.institutions.views import serialize_institution
 
 from website.models import Guid
 from website.models import Institution, PreprintService
-from website.settings import EXTERNAL_EMBER_APPS, PREPRINT_PROVIDER_DOMAINS
+from website.settings import EXTERNAL_EMBER_APPS
 from website.project.model import has_anonymous_link
 
 logger = logging.getLogger(__name__)
 preprints_dir = os.path.abspath(os.path.join(os.getcwd(), EXTERNAL_EMBER_APPS['preprints']['path']))
-domains_disabled = not PREPRINT_PROVIDER_DOMAINS['enabled']
 
 def serialize_contributors_for_summary(node, max_count=3):
     # # TODO: Use .filter(visible=True) when chaining is fixed in django-include
@@ -242,7 +241,7 @@ def resolve_guid(guid, suffix=None):
         if not referent.deep_url:
             raise HTTPError(http.NOT_FOUND)
         if isinstance(referent, PreprintService):
-            if domains_disabled or referent.provider._id == 'osf' or not referent.provider.domain:
+            if referent.provider._id == 'osf' or not referent.provider.domain:
                 return send_from_directory(preprints_dir, 'index.html')
 
             return redirect(referent.absolute_url, 301)

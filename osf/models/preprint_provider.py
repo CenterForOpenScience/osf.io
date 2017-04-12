@@ -9,7 +9,6 @@ from osf.models.subject import Subject
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import EncryptedTextField
 
-from website import settings
 from website.util import api_v2_url
 
 
@@ -19,7 +18,7 @@ class PreprintProvider(ObjectIDMixin, BaseModel):
     header_text = models.TextField(default='', blank=True)
     description = models.CharField(null=True, blank=True, max_length=256)  # max length on prod: 56
     banner_name = models.CharField(null=True, blank=True, max_length=128)  # max length on prod: 19
-    domain = models.CharField(null=True, blank=True, max_length=253)  #
+    domain = models.URLField(null=True, blank=True, max_length=200)  #
     external_url = models.URLField(null=True, blank=True, max_length=200)  # max length on prod: 25
     email_contact = models.CharField(null=True, blank=True, max_length=200)  # max length on prod: 23
     email_support = models.CharField(null=True, blank=True, max_length=200)  # max length on prod: 23
@@ -78,13 +77,3 @@ class PreprintProvider(ObjectIDMixin, BaseModel):
             return '/static/img/preprint_providers/{}'.format(self.logo_name)
         else:
             return None
-
-    def get_provider_external_domain(self):
-        """
-        Return the provider's external domain.
-        """
-        if settings.DEV_MODE:
-            domain_settings = settings.PREPRINT_PROVIDER_DOMAINS
-            return ''.join((domain_settings['prefix'], str(self.domain), domain_settings['suffix'], '/'))
-        else:
-            return settings.PROTOCOL + self.domain + '/'

@@ -4731,23 +4731,18 @@ class TestResolveGuid(OsfTestCase):
         )
 
     def test_preprint_provider_with_domain(self):
-        domain = 'test.com'
+        domain = 'https://test.com/'
         provider = PreprintProviderFactory(_id='test', domain=domain)
         preprint = PreprintFactory(provider=provider)
         url = web_url_for('resolve_guid', _guid=True, guid=preprint._id)
         res = self.app.get(url)
 
-        if settings.PREPRINT_PROVIDER_DOMAINS['enabled']:
-            assert_is_redirect(res)
-            assert_equal(res.status_code, 301)
-            location = settings.PREPRINT_PROVIDER_DOMAINS['prefix'] + '{}' + \
-                settings.PREPRINT_PROVIDER_DOMAINS['suffix'] + '/{}/' if settings.DEV_MODE else 'https://{}/{}/'
-            assert_equal(
-                res.headers['location'],
-                location.format(domain, preprint._id)
-            )
-        else:
-            assert_equal(res.status_code, 200)
+        assert_is_redirect(res)
+        assert_equal(res.status_code, 301)
+        assert_equal(
+            res.headers['location'],
+            '{}{}/'.format(domain, preprint._id)
+        )
 
         assert_equal(
             res.request.path,
@@ -4755,7 +4750,7 @@ class TestResolveGuid(OsfTestCase):
         )
 
     def test_preprint_provider_with_osf_domain(self):
-        provider = PreprintProviderFactory(_id='osf', domain='osf.io')
+        provider = PreprintProviderFactory(_id='osf', domain='https://osf.io/')
         preprint = PreprintFactory(provider=provider)
         url = web_url_for('resolve_guid', _guid=True, guid=preprint._id)
         res = self.app.get(url)

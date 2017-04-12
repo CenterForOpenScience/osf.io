@@ -26,7 +26,7 @@ LIVE_RELOAD_DOMAIN = 'http://localhost:4200'
 PREPRINT_PROVIDER_DOMAINS = {
     'enabled': False,
     'prefix': 'http://local.',
-    'suffix': ':4200'
+    'suffix': ':4200/'
 }
 USE_EXTERNAL_EMBER = True
 EXTERNAL_EMBER_APPS = {

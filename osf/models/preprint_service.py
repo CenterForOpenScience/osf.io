@@ -43,8 +43,6 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, BaseModel):
     # Format: [[root_subject._id, ..., child_subject._id], ...]
     subjects = DateTimeAwareJSONField(default=list, null=True, blank=True)
 
-    domains_disabled = not settings.PREPRINT_PROVIDER_DOMAINS['enabled']
-
     class Meta:
         unique_together = ('node', 'provider')
         permissions = (
@@ -79,25 +77,14 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, BaseModel):
 
     @property
     def url(self):
-        if self.provider._id == 'osf' or self.provider.domain:
+        if self.provider.domain:
             return '/{}/'.format(self._id)
 
         return '/preprints/{}/{}/'.format(self.provider._id, self._id)
 
-    if settings.DEV_MODE:
-        def get_provider_domain(self):
-            domain_settings = settings.PREPRINT_PROVIDER_DOMAINS
-            return ''.join((domain_settings['prefix'], str(self.provider.domain), domain_settings['suffix']))
-    else:
-        def get_provider_domain(self):
-            return settings.PROTOCOL + self.provider.domain
-
     @property
     def absolute_url(self):
-        use_osf_domain = self.domains_disabled or self.provider._id == 'osf' or not self.provider.domain
-        host = settings.DOMAIN if use_osf_domain else self.get_provider_domain()
-
-        return urlparse.urljoin(host, self.url)
+        return urlparse.urljoin(self.provider.domain or settings.DOMAIN, self.url)
 
     @property
     def absolute_api_v2_url(self):
