@@ -7,6 +7,10 @@
         "fullName": "Dataverse",
         "externalView": false
     },
+    "dmptool": {
+        "fullName": "DMPTool",
+        "externalView": false
+    },
     "dropbox": {
         "fullName": "Dropbox",
         "externalView": false
