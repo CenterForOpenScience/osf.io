@@ -15,7 +15,6 @@ from framework.exceptions import HTTPError
 from framework.sessions import session
 from osf.models.external import ExternalProvider
 from osf.models.files import File, Folder, BaseFileNode
-from urllib3.exceptions import MaxRetryError
 from addons.base import exceptions
 from addons.dropbox import settings
 from addons.dropbox.serializer import DropboxSerializer
@@ -183,8 +182,8 @@ class NodeSettings(BaseStorageAddon, BaseOAuthNodeSettings):
                 contents += [x for x in list_folder.entries]
         except ApiError as error:
             raise HTTPError(http.BAD_REQUEST, data={
-                    'message_short': error.user_message_text,
-                    'message_long': error.user_message_text
+                'message_short': error.user_message_text,
+                'message_long': error.user_message_text
                 })
         except DropboxException:
             raise HTTPError(http.BAD_REQUEST)
