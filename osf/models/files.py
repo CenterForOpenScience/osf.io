@@ -98,7 +98,7 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
 
     provider = models.CharField(max_length=25, blank=False, null=False, db_index=True)
 
-    name = models.TextField(blank=True, null=True)
+    name = models.TextField(blank=True)
     _path = models.TextField(blank=True, null=True)  # 1950 on prod
     _materialized_path = models.TextField(blank=True, null=True)  # 482 on staging
 
