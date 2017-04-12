@@ -1805,6 +1805,8 @@ class TestAddingContributorViews(OsfTestCase):
     def test_unconfirmed_user_added_as_unregistered_contributor(self):
         unconfirmed_user = UnconfirmedUserFactory()
         assert_false(self.project.is_contributor(unconfirmed_user))
+        project2 = ProjectFactory(creator=self.creator)
+        project3 = ProjectFactory(creator=self.creator, parent=project2)
 
         pseudouser = {
             'active': False,
@@ -1817,18 +1819,111 @@ class TestAddingContributorViews(OsfTestCase):
         }
         payload = {
             'users': [pseudouser],
-            'node_ids': []
+            'node_ids': [
+                self.project._id,
+                project2._id,
+                project3._id
+            ]
         }
 
         url = self.project.api_url_for('project_contributors_post')
         self.app.post_json(url, payload).maybe_follow()
 
         assert_true(self.project.is_contributor(unconfirmed_user))
+        assert_true(project2.is_contributor(unconfirmed_user))
+        assert_true(project3.is_contributor(unconfirmed_user))
+
+
+    def test_add_unregistered_contributor_to_projects_already_contributed(self):
+        unconfirmed_user = UnconfirmedUserFactory()
+
+        project_1 = ProjectFactory(creator=self.creator)
+        child_1 = ProjectFactory(creator=self.creator, parent=project_1)
+        project_2 = ProjectFactory(creator=self.creator)
+
+        # Add the unconfirmed user to parent and child
+        pseudouser = {
+            'active': False,
+            'email': unconfirmed_user.username,
+            'fullname': unconfirmed_user.fullname,
+            'id': None,
+            'permission': 'write',
+            'registered': False,
+            'visible': True,
+        }
+        payload = {
+            'users': [pseudouser],
+            'node_ids': [
+                project_1._id,
+                child_1._id
+            ]
+        }
+
+        url = self.project.api_url_for('project_contributors_post')
+        self.app.post_json(url, payload).maybe_follow()
+
+        assert_true(project_1.is_contributor(unconfirmed_user))
+        assert_true(child_1.is_contributor(unconfirmed_user))
+        assert_false(project_2.is_contributor(unconfirmed_user))
+
+        # Make a second payload of just a child and a new unrelated parent
+        payload = {
+            'users': [pseudouser],
+            'node_ids': [
+                child_1._id,
+                project_2._id
+            ]
+        }
+
+        self.app.post_json(url, payload).maybe_follow()
+
+        # Make sure all projects now have the unconfirmed user
+        assert_true(project_1.is_contributor(unconfirmed_user))
+        assert_true(project_2.is_contributor(unconfirmed_user))
+        assert_true(child_1.is_contributor(unconfirmed_user))
+
+
+    def test_unconfirmed_merged_email_added(self):
+        user = UnconfirmedUserFactory()
+        user_to_be_merged = UnconfirmedUserFactory()
+        user.add_unconfirmed_email(user_to_be_merged.username)
+        user.save()
+
+        project2 = ProjectFactory(creator=self.creator)
+        project3 = ProjectFactory(creator=self.creator, parent=project2)
+
+        pseudouser = {
+            'active': False,
+            'email': user_to_be_merged.username,
+            'fullname': 'Whatever Whateverson',
+            'id': None,
+            'permission': 'write',
+            'registered': False,
+            'visible': True,
+        }
+        payload = {
+            'users': [pseudouser],
+            'node_ids': [
+                self.project._id,
+                project2._id,
+                project3._id
+            ]
+        }
+
+        url = self.project.api_url_for('project_contributors_post')
+        self.app.post_json(url, payload).maybe_follow()
+
+        assert_true(self.project.is_contributor(user_to_be_merged))
+        assert_true(project2.is_contributor(user_to_be_merged))
+        assert_true(project3.is_contributor(user_to_be_merged))
+
 
     def test_confirmed_user_added_as_unregistered_contributor(self):
         confirmed_user = UserFactory()
         assert_true(confirmed_user.is_registered)
         assert_false(self.project.is_contributor(confirmed_user))
+        project2 = ProjectFactory(creator=self.creator)
+        project3 = ProjectFactory(creator=self.creator, parent=project2)
 
         pseudouser = {
             'active': False,
@@ -1841,13 +1936,19 @@ class TestAddingContributorViews(OsfTestCase):
         }
         payload = {
             'users': [pseudouser],
-            'node_ids': []
+            'node_ids': [
+                self.project._id,
+                project2._id,
+                project3._id
+            ]
         }
 
         url = self.project.api_url_for('project_contributors_post')
         self.app.post_json(url, payload).maybe_follow()
 
         assert_true(self.project.is_contributor(confirmed_user))
+        assert_true(project2.is_contributor(confirmed_user))
+        assert_true(project3.is_contributor(confirmed_user))
 
 
     @mock.patch('website.project.views.contributor.send_claim_email')
