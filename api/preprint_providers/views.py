@@ -12,8 +12,7 @@ from api.base import permissions as base_permissions
 from api.base.filters import DjangoFilterMixin, ODMFilterMixin
 from api.base.views import JSONAPIBaseView
 from api.base.pagination import MaxSizePagination
-from api.base.utils import get_user_auth
-
+from api.base.utils import get_object_or_error, get_user_auth
 from api.licenses.views import LicenseList
 from api.taxonomies.serializers import TaxonomySerializer
 from api.preprint_providers.serializers import PreprintProviderSerializer
@@ -138,7 +137,7 @@ class PreprintProviderDetail(JSONAPIBaseView, generics.RetrieveAPIView):
     view_name = 'preprint_provider-detail'
 
     def get_object(self):
-        return PreprintProvider.load(self.kwargs['provider_id'])
+        return get_object_or_error(PreprintProvider, self.kwargs['provider_id'], display_name='PreprintProvider')
 
 
 class PreprintProviderPreprintList(JSONAPIBaseView, generics.ListAPIView, DjangoFilterMixin):
@@ -209,9 +208,10 @@ class PreprintProviderPreprintList(JSONAPIBaseView, generics.ListAPIView, Django
     def get_default_django_query(self):
         auth = get_user_auth(self.request)
         auth_user = getattr(auth, 'user', None)
+        provider = get_object_or_error(PreprintProvider, self.kwargs['provider_id'], display_name='PreprintProvider')
 
         # Permissions on the list objects are handled by the query
-        default_query = Q(node__isnull=False, node__is_deleted=False, provider___id=self.kwargs['provider_id'])
+        default_query = Q(node__isnull=False, node__is_deleted=False, provider___id=provider._id)
         no_user_query = Q(is_published=True, node__is_public=True)
 
         if auth_user:
@@ -252,7 +252,7 @@ class PreprintProviderSubjectList(JSONAPIBaseView, generics.ListAPIView):
 
     def get_queryset(self):
         parent = self.request.query_params.get('filter[parents]', None)
-        provider = PreprintProvider.load(self.kwargs['provider_id'])
+        provider = get_object_or_error(PreprintProvider, self.kwargs['provider_id'], display_name='PreprintProvider')
         if parent:
             if parent == 'null':
                 return provider.top_level_subjects
@@ -268,5 +268,5 @@ class PreprintProviderLicenseList(LicenseList):
     view_category = 'preprint_providers'
 
     def get_queryset(self):
-        provider = PreprintProvider.load(self.kwargs['provider_id'])
+        provider = get_object_or_error(PreprintProvider, self.kwargs['provider_id'], display_name='PreprintProvider')
         return provider.licenses_acceptable.get_queryset() if provider.licenses_acceptable.count() else super(PreprintProviderLicenseList, self).get_queryset()

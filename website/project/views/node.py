@@ -14,7 +14,7 @@ from framework import status
 from framework.utils import iso8601format
 from framework.flask import redirect
 from framework.auth.decorators import must_be_logged_in, collect_auth
-from framework.exceptions import HTTPError, PermissionsError
+from framework.exceptions import HTTPError
 
 from website import language
 
@@ -28,7 +28,6 @@ from website.project.decorators import (
     must_be_valid_project,
     must_have_permission,
     must_not_be_registration,
-    http_error_if_disk_saving_mode
 )
 from website.tokens import process_token_or_pass
 from website.util.permissions import ADMIN, READ, WRITE, CREATOR_PERMISSIONS
@@ -235,24 +234,6 @@ def project_before_template(auth, node, **kwargs):
                 prompts.append(addon.to_json(auth.user)['addon_full_name'])
 
     return {'prompts': prompts}
-
-
-@must_be_logged_in
-@must_be_valid_project
-@http_error_if_disk_saving_mode
-def node_fork_page(auth, node, **kwargs):
-    try:
-        fork = node.fork_node(auth)
-    except PermissionsError:
-        raise HTTPError(
-            http.FORBIDDEN,
-            redirect_url=node.url
-        )
-    message = '{} has been successfully forked.'.format(
-        node.project_or_component.capitalize()
-    )
-    status.push_status_message(message, kind='success', trust=False)
-    return fork.url
 
 
 @must_be_valid_project
