@@ -183,8 +183,8 @@ class NodeSettings(BaseStorageAddon, BaseOAuthNodeSettings):
         except ApiError as error:
             raise HTTPError(http.BAD_REQUEST, data={
                 'message_short': error.user_message_text,
-                'message_long': error.user_message_text
-                })
+                'message_long': error.user_message_text,
+            })
         except DropboxException:
             raise HTTPError(http.BAD_REQUEST)
 
