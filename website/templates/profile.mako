@@ -164,9 +164,6 @@
                    <p class="m-t-sm fg-load-message"> Loading components...  </p>
               </div>
             </div>
-            ## <div class="panel-body">
-            ##   ${ render_nodes.render_nodes(nodes=public_components, sortable=False, user=user, pluralized_node_type='components', show_path=True, include_js=True) }
-            ## </div>
         </div>
     </div>
 </div><!-- end row -->

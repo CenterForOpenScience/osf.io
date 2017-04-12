@@ -37,8 +37,8 @@ class RegistrationListFilteringMixin(object):
     def test_parent_filter_null(self):
         expected = [self.node_A._id, self.node_B2._id]
         res = self.app.get('{}null'.format(self.parent_url), auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['source']['parameter'], 'filter')
+        actual = [node['id'] for node in res.json['data']]
+        assert_equal(set(expected), set(actual))
 
     def test_parent_filter_equals_returns_one(self):
         expected = [n._id for n in self.node_B2.get_nodes()]

@@ -114,9 +114,3 @@ class TestUserRegistrations(ApiTestCase):
 class TestRegistrationListFiltering(RegistrationListFilteringMixin, ApiTestCase):
 
     url = '/{}users/me/registrations/?'.format(API_BASE)
-
-    def test_parent_filter_null(self):
-        expected = [self.node_A._id, self.node_B2._id]
-        res = self.app.get('{}null'.format(self.parent_url), auth=self.user.auth)
-        actual = [node['id'] for node in res.json['data']]
-        assert_equal(set(expected), set(actual))

@@ -33,8 +33,8 @@ class NodesListFilteringMixin(object):
     def test_parent_filter_null(self):
         expected = [self.node_A._id]
         res = self.app.get('{}null'.format(self.parent_url), auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['source']['parameter'], 'filter')
+        actual = [node['id'] for node in res.json['data']]
+        assert_equal(expected, actual)
 
     def test_parent_filter_excludes_linked_nodes(self):
         linked_node = NodeFactory()

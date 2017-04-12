@@ -1,7 +1,7 @@
 
 from api.addons.views import AddonSettingsMixin
 from api.base import permissions as base_permissions
-from api.base.exceptions import Conflict, InvalidFilterValue
+from api.base.exceptions import Conflict
 from api.base.filters import ListFilterMixin, ODMFilterMixin, DjangoFilterMixin
 from api.base.parsers import (JSONAPIRelationshipParser,
                               JSONAPIRelationshipParserForRegularJSON)
@@ -12,7 +12,7 @@ from api.base.utils import (default_node_list_query,
                             get_user_auth)
 from api.base.views import JSONAPIBaseView
 from api.institutions.serializers import InstitutionSerializer
-from api.nodes.filters import NodeODMFilterMixin, NodesListFilterMixin
+from api.nodes.filters import NodesFilterMixin, NodesListFilterMixin, NodeODMFilterMixin
 from api.nodes.serializers import NodeSerializer
 from api.preprints.serializers import PreprintSerializer
 from api.registrations.serializers import RegistrationSerializer
@@ -30,7 +30,6 @@ from rest_framework import permissions as drf_permissions
 from rest_framework import generics
 from rest_framework.exceptions import NotAuthenticated, NotFound
 from website.models import ExternalAccount, Node, User
-from osf.models import NodeRelation
 from osf.models import PreprintService
 
 
@@ -429,7 +428,7 @@ class UserAddonAccountDetail(JSONAPIBaseView, generics.RetrieveAPIView, UserMixi
         return account
 
 
-class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, NodeODMFilterMixin, NodesListFilterMixin):
+class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, NodesFilterMixin):
     """List of nodes that the user contributes to. *Read-only*.
 
     Paginated list of nodes that the user contributes to ordered by `date_modified`.  User registrations are not available
@@ -496,47 +495,18 @@ class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, NodeODMFilterM
     view_category = 'users'
     view_name = 'user-nodes'
 
-    # overrides ODMFilterMixin
-    def get_default_odm_query(self):
+    # overrides NodesFilterMixin
+    def get_default_queryset(self):
         user = self.get_user()
         query = MQ('contributors', 'eq', user) & default_node_list_query()
         if user != self.request.user:
             query &= default_node_permission_query(self.request.user)
-        return query
+        return Node.find(query)
 
     # overrides ListAPIView
     def get_queryset(self):
-        node_ids = []
-        user = self.get_user()
-        parent_filter = 'filter[parent]'
-        parent_ne_filter = 'filter[parent][ne]'
-        self.request.GET._mutable = True
-
-        if parent_filter in self.request.query_params:
-            parent_filter_key = self.request.query_params[parent_filter]
-            if parent_filter_key == 'null':
-                self.request.query_params.pop(parent_filter)
-                node_ids = Node.find(self.get_query_from_request()).get_roots().values_list('id', flat=True)
-            else:
-                node_ids = Node.find(self.get_query_from_request()).values_list('id', flat=True)
-        elif parent_ne_filter in self.request.query_params:
-            parent_ne_filter_key = self.request.query_params[parent_ne_filter]
-            if parent_ne_filter_key == 'null':
-                self.request.query_params.pop(parent_ne_filter)
-                child_ids = [each.child.id for each in (
-                    NodeRelation.objects.filter(is_node_link=False, child___contributors=user)
-                    .exclude(parent__type='osf.collection')
-                    .exclude(child__is_deleted=True)
-                )]
-                node_ids = Node.find(self.get_query_from_request()).filter(id__in=set(child_ids)).values_list('id', flat=True)
-            else:
-                # filter[parent][ne]=<node_id> not allowed for now
-                raise InvalidFilterValue()
-        else:
-            node_ids = Node.find(self.get_query_from_request()).values_list('id', flat=True)
-
         return (
-            Node.objects.filter(id__in=set(node_ids))
+            Node.objects.filter(id__in=set(self.get_queryset_from_request().values_list('id', flat=True)))
             .select_related('node_license')
             .order_by('-date_modified', )
             .include('guids', 'contributor__user__guids', 'root__guids', limit_includes=10)
@@ -610,7 +580,7 @@ class UserInstitutions(JSONAPIBaseView, generics.ListAPIView, UserMixin):
         return user.affiliated_institutions.all()
 
 
-class UserRegistrations(UserNodes):
+class UserRegistrations(JSONAPIBaseView, generics.ListAPIView, UserMixin, NodeODMFilterMixin, NodesListFilterMixin):
     """List of registrations that the user contributes to. *Read-only*.
 
     Paginated list of registrations that the user contributes to.  Each resource contains the full representation of the
@@ -693,6 +663,11 @@ class UserRegistrations(UserNodes):
     #This Request/Response
 
     """
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+    )
+
     required_read_scopes = [CoreScopes.USERS_READ, CoreScopes.NODE_REGISTRATIONS_READ]
     required_write_scopes = [CoreScopes.USERS_WRITE, CoreScopes.NODE_REGISTRATIONS_WRITE]
 
@@ -715,6 +690,10 @@ class UserRegistrations(UserNodes):
             permission_query = (permission_query | MQ('contributors', 'eq', current_user))
         query = query & permission_query
         return query
+
+    # overrides ListAPIView
+    def get_queryset(self):
+        return Node.find(self.get_query_from_request()).select_related('node_license').include('guids', 'contributor__user__guids', 'root__guids', limit_includes=10)
 
 
 class UserInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveDestroyAPIView, UserMixin):

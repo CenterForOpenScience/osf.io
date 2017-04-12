@@ -447,7 +447,6 @@ class DjangoFilterMixin(FilterMixin):
         return query
 
     def _operation_to_query(self, operation):
-        print operation
         if operation['op'] in ['lt', 'lte', 'gt', 'gte', 'in']:
             operation['source_field_name'] = '{}__{}'.format(operation['source_field_name'], operation['op'])
         return Q(**{operation['source_field_name']: operation['value']})

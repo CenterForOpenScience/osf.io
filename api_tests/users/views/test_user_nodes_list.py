@@ -148,9 +148,3 @@ class TestUserNodesPreprintsFiltering(ApiTestCase):
 class TestNodeListFiltering(NodesListFilteringMixin, ApiTestCase):
 
     url = '/{}users/me/nodes/?'.format(API_BASE)
-
-    def test_parent_filter_null(self):
-        expected = [self.node_A._id]
-        res = self.app.get('{}null'.format(self.parent_url), auth=self.user.auth)
-        actual = [node['id'] for node in res.json['data']]
-        assert_equal(expected, actual)

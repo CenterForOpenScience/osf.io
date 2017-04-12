@@ -1,12 +1,14 @@
 import functools
 import operator
 
-from modularodm import Q
+from django.db.models import Q
+from modularodm import Q as MQ
 
-from api.base.exceptions import InvalidFilterError, InvalidFilterValue
-from api.base.filters import ODMFilterMixin
+from api.base.exceptions import InvalidFilterError, InvalidFilterOperator, InvalidFilterValue
+from api.base.filters import ListFilterMixin, ODMFilterMixin
 from api.base import utils
 
+from osf.models import NodeRelation
 from website.models import Node
 
 
@@ -16,13 +18,13 @@ class NodesListFilterMixin(ODMFilterMixin):
         if operation['source_field_name'] == 'root':
             if None in operation['value']:
                 raise InvalidFilterValue()
-            return Q('root__guids___id', 'in', operation['value'])
+            return MQ('root__guids___id', 'in', operation['value'])
         if operation['source_field_name'] == 'parent_node':
             if operation['value']:
                 parent = utils.get_object_or_error(Node, operation['value'], display_name='parent')
-                return Q('_id', 'in', [node._id for node in parent.get_nodes(is_node_link=False)])
+                return MQ('_id', 'in', [node._id for node in parent.get_nodes(is_node_link=False)])
             else:
-                raise InvalidFilterValue()
+                return MQ('parent_nodes__guids___id', 'eq', None)
         return super(NodesListFilterMixin, self)._operation_to_query(operation)
 
 
@@ -58,14 +60,59 @@ class NodeODMFilterMixin(ODMFilterMixin):
             if utils.is_falsy(query_params[key]):
                 # Use `or` when looking for not-preprints, to include both no file and is_orphaned
                 sub_query = functools.reduce(operator.or_, [
-                    Q(item['source_field_name'], item['op'], item['value'])
+                    MQ(item['source_field_name'], item['op'], item['value'])
                     for item in data
                 ])
             else:
                 sub_query = functools.reduce(operator.and_, [
-                    Q(item['source_field_name'], item['op'], item['value'])
+                    MQ(item['source_field_name'], item['op'], item['value'])
                     for item in data
                 ])
             return sub_query
         else:
             raise InvalidFilterError('Expected type list for field {}, got {}'.format(field_name, type(data)))
+
+
+class NodesFilterMixin(ListFilterMixin):
+
+    def postprocess_query_param(self, key, field_name, operation):
+        pass
+
+    def filter_by_field(self, queryset, field_name, operation):
+        if field_name == 'parent':
+            if operation['op'] == 'eq':
+                if operation['value']:
+                    # filter[parent]=<nid>
+                    parent = utils.get_object_or_error(Node, operation['value'], display_name='parent')
+                    return queryset.filter(guids___id__in=[node._id for node in parent.get_nodes(is_node_link=False)])
+                # else filter[parent]=null
+                return queryset.get_roots()
+            elif operation['op'] == 'ne':
+                if not operation['value']:
+                    # filter[parent][ne]=null
+                    child_ids = [each.child.id for each in (
+                        NodeRelation.objects.filter(is_node_link=False, child___contributors=self.get_user())
+                        .exclude(parent__type='osf.collection')
+                        .exclude(child__is_deleted=True)
+                    )]
+                    return queryset.filter(id__in=set(child_ids))
+                # else filter[parent][ne]=<nid>
+                raise InvalidFilterValue()
+            else:
+                # filter[parent][gte]=''
+                raise InvalidFilterOperator()
+
+        if field_name == 'root':
+            if None in operation['value']:
+                raise InvalidFilterValue()
+            return queryset.filter(root__guids___id__in=operation['value'])
+
+        if field_name == 'preprint':
+            preprint_filters = (
+                Q(preprint_file=None) |
+                Q(_is_preprint_orphan=True) |
+                Q(_has_abandoned_preprint=True)
+            )
+            return queryset.exclude(preprint_filters) if utils.is_truthy(operation['value']) else queryset.filter(preprint_filters)
+
+        return super(NodesFilterMixin, self).filter_by_field(queryset, field_name, operation)
