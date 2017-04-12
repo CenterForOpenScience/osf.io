@@ -13,27 +13,16 @@ from addons.figshare import settings as figshare_settings
 from addons.figshare import messages
 from addons.figshare.client import FigshareClient
 from addons.figshare.serializer import FigshareSerializer
-# TODO DELETE ME POST MIGRATION
-from modularodm import Q as MQ
-# /TODO DELETE ME POST MIGRATION
 
 class FigshareFileNode(BaseFileNode):
     _provider = 'figshare'
 
 
 class FigshareFolder(FigshareFileNode, Folder):
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.files.models.figshare.FigshareFolder'
-    modm_query = MQ('is_file', 'eq', False)
-    # /TODO DELETE ME POST MIGRATION
     pass
 
 
 class FigshareFile(FigshareFileNode, File):
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.files.models.figshare.FigshareFile'
-    modm_query = MQ('is_file', 'eq', True)
-    # /TODO DELETE ME POST MIGRATION
     version_identifier = 'ref'
 
     def touch(self, bearer, revision=None, **kwargs):
@@ -98,19 +87,11 @@ class FigshareProvider(ExternalProvider):
 class UserSettings(BaseStorageAddon, BaseOAuthUserSettings):
     """Stores user-specific figshare information
     """
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.addons.figshare.model.FigshareUserSettings'
-    modm_query = None
-    # /TODO DELETE ME POST MIGRATION
     oauth_provider = FigshareProvider
     serializer = FigshareSerializer
 
 
 class NodeSettings(BaseStorageAddon, BaseOAuthNodeSettings):
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.addons.figshare.model.FigshareNodeSettings'
-    modm_query = None
-    # /TODO DELETE ME POST MIGRATION
     oauth_provider = FigshareProvider
     serializer = FigshareSerializer
 
@@ -234,9 +215,6 @@ class NodeSettings(BaseStorageAddon, BaseOAuthNodeSettings):
         :param User user:
         :return str: Alert message
         """
-        ## TEMPORARY bypass to allow accessing projects with figshare on staging
-        return []
-        ## /TEMPORARY bypass
         if not self.configured:
             return []
         figshare = node.get_addon('figshare')

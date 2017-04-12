@@ -654,6 +654,7 @@ def _view_project(node, auth, primary=False,
     """Build a JSON object containing everything needed to render
     project.view.mako.
     """
+    node = Node.objects.filter(pk=node.pk).include('contributor__user__guids').get()
     user = auth.user
 
     parent = node.find_readable_antecedent(auth)
@@ -791,7 +792,7 @@ def _view_project(node, auth, primary=False,
         ]
     }
     if embed_contributors and not anonymous:
-        data['node']['contributors'] = utils.serialize_contributors(node.visible_contributors, node=node)
+        data['node']['contributors'] = utils.serialize_visible_contributors(node)
     if embed_descendants:
         descendants, all_readable = _get_readable_descendants(auth=auth, node=node)
         data['user']['can_sort'] = all_readable

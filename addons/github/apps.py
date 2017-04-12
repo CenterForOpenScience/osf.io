@@ -1,7 +1,7 @@
 import os
-from addons.base.apps import BaseAddonAppConfig
+from addons.base.apps import BaseAddonAppConfig, generic_root_folder
 
-from addons.github.views import github_hgrid_data
+github_hgrid_data = generic_root_folder('github')
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 NODE_SETTINGS_TEMPLATE = os.path.join(

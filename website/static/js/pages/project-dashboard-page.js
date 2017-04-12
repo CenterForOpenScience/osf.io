@@ -282,7 +282,7 @@ $(document).ready(function () {
         });
     }
 
-    if (window.contextVars.node.isPublic) {
+    if (window.contextVars.node.isPublic && window.contextVars.node.isRetracted !== true) {
         m.mount(document.getElementById('shareButtonsPopover'),
                 m.component(SocialShare.ShareButtonsPopover,
                     {title: window.contextVars.node.title, url: window.location.href}));

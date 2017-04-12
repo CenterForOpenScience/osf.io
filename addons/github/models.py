@@ -21,9 +21,6 @@ from addons.github.api import GitHubClient
 from addons.github.exceptions import ApiError, NotFoundError
 from addons.github.serializer import GitHubSerializer
 from website.util import web_url_for
-# TODO DELETE ME POST MIGRATION
-from modularodm import Q as MQ
-# /TODO DELETE ME POST MIGRATION
 hook_domain = github_settings.HOOK_DOMAIN or settings.DOMAIN
 
 
@@ -32,18 +29,10 @@ class GithubFileNode(BaseFileNode):
 
 
 class GithubFolder(GithubFileNode, Folder):
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.files.models.github.GithubFolder'
-    modm_query = MQ('is_file', 'eq', False)
-    # /TODO DELETE ME POST MIGRATION
     pass
 
 
 class GithubFile(GithubFileNode, File):
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.files.models.github.GithubFile'
-    modm_query = MQ('is_file', 'eq', True)
-    # /TODO DELETE ME POST MIGRATION
     version_identifier = 'ref'
 
     def touch(self, auth_header, revision=None, ref=None, branch=None, **kwargs):
@@ -82,10 +71,6 @@ class GitHubProvider(ExternalProvider):
 class UserSettings(BaseStorageAddon, BaseOAuthUserSettings):
     """Stores user-specific github information
     """
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.addons.github.model.GitHubUserSettings'
-    modm_query = None
-    # /TODO DELETE ME POST MIGRATION
     oauth_provider = GitHubProvider
     serializer = GitHubSerializer
 
@@ -111,10 +96,6 @@ class UserSettings(BaseStorageAddon, BaseOAuthUserSettings):
 
 
 class NodeSettings(BaseStorageAddon, BaseOAuthNodeSettings):
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.addons.github.model.GitHubNodeSettings'
-    modm_query = None
-    # /TODO DELETE ME POST MIGRATION
     oauth_provider = GitHubProvider
     serializer = GitHubSerializer
 
@@ -301,9 +282,6 @@ class NodeSettings(BaseStorageAddon, BaseOAuthNodeSettings):
         :param User user:
         :return str: Alert message
         """
-        ## TEMPORARY bypass to allow accessing projects with figshare on staging
-        return []
-        ## /TEMPORARY bypass
         messages = []
 
         # Quit if not contributor

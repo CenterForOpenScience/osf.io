@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import urlparse
 
+from dirtyfields import DirtyFieldsMixin
 from django.db import models
 from django.utils import timezone
 
@@ -20,13 +21,8 @@ from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.models.base import BaseModel, GuidMixin
 from osf.models.subject import Subject
 
-class PreprintService(GuidMixin, BaseModel):
-    # TODO REMOVE AFTER MIGRATION
-    modm_model_path = 'website.preprints.model.PreprintService'
-    modm_query = None
-    # /TODO REMOVE AFTER MIGRATION
-
-    date_created = NonNaiveDateTimeField(default=timezone.now)
+class PreprintService(DirtyFieldsMixin, GuidMixin, BaseModel):
+    date_created = NonNaiveDateTimeField(auto_now_add=True)
     date_modified = NonNaiveDateTimeField(auto_now=True)
     provider = models.ForeignKey('osf.PreprintProvider',
                                  on_delete=models.SET_NULL,
@@ -51,6 +47,9 @@ class PreprintService(GuidMixin, BaseModel):
 
     class Meta:
         unique_together = ('node', 'provider')
+        permissions = (
+            ('view_preprintservice', 'Can view preprint service details in the admin app.'),
+        )
 
     def __unicode__(self):
         return '{} preprint (guid={}) of {}'.format('published' if self.is_published else 'unpublished', self._id, self.node.__unicode__())
@@ -221,6 +220,10 @@ class PreprintService(GuidMixin, BaseModel):
             self.save()
 
     def save(self, *args, **kwargs):
-        saved_fields = super(PreprintService, self).save(*args, **kwargs)
-        if saved_fields:
+        first_save = not bool(self.pk)
+        saved_fields = self.get_dirty_fields() or []
+        ret = super(PreprintService, self).save(*args, **kwargs)
+
+        if (not first_save and 'is_published' in saved_fields) or self.is_published:
             enqueue_task(on_preprint_updated.s(self._id))
+        return ret

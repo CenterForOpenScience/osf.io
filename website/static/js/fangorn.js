@@ -891,7 +891,12 @@ function _fangornDropzoneError(treebeard, file, message, xhr) {
     // On Chrome we can check if a directory is being uploaded
     var msgText;
     var isChrome = !!window.chrome && !!window.chrome.webstore;
-
+    // Unpatched Dropzone silently does nothing when folders are uploaded on Windows IE and Firefox
+    // Patched Dropzone.prototype.drop to emit error with file = 'None' to catch the error
+    if (file === 'None'){
+        $osf.growl('Error', 'Cannot upload folders.');
+        return;
+    }
     if (isChrome && file.isDirectory) {
         msgText = 'Cannot upload folders.';
     } else if(!isChrome && file.treebeardParent.kind === 'folder') {

@@ -1,22 +1,25 @@
 from rest_framework import generics
 from rest_framework import permissions as drf_permissions
 
-from modularodm import Q
+from modularodm import Q as MQ
+from django.db.models import Q
 
 from framework.auth.oauth_scopes import CoreScopes
 
 from website.models import Node, Subject, PreprintService, PreprintProvider
 
 from api.base import permissions as base_permissions
-from api.base.filters import ODMFilterMixin
+from api.base.filters import DjangoFilterMixin, ODMFilterMixin
 from api.base.views import JSONAPIBaseView
 from api.base.pagination import MaxSizePagination
+from api.base.utils import get_user_auth
 
 from api.licenses.views import LicenseList
 from api.taxonomies.serializers import TaxonomySerializer
 from api.preprint_providers.serializers import PreprintProviderSerializer
 from api.preprints.serializers import PreprintSerializer
 
+from api.preprints.permissions import PreprintPublishedOrAdmin
 
 class PreprintProviderList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
     """
@@ -138,7 +141,7 @@ class PreprintProviderDetail(JSONAPIBaseView, generics.RetrieveAPIView):
         return PreprintProvider.load(self.kwargs['provider_id'])
 
 
-class PreprintProviderPreprintList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
+class PreprintProviderPreprintList(JSONAPIBaseView, generics.ListAPIView, DjangoFilterMixin):
     """Preprints from a given preprint_provider. *Read Only*
 
     To update preprints with a given preprint_provider, see the `<node_id>/relationships/preprint_provider` endpoint
@@ -181,6 +184,7 @@ class PreprintProviderPreprintList(JSONAPIBaseView, generics.ListAPIView, ODMFil
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
+        PreprintPublishedOrAdmin,
     )
 
     ordering = ('-date_created')
@@ -201,20 +205,24 @@ class PreprintProviderPreprintList(JSONAPIBaseView, generics.ListAPIView, ODMFil
         if field_name == 'id':
             operation['source_field_name'] = 'guids___id'
 
-    # overrides ODMFilterMixin
-    def get_default_odm_query(self):
-        # TODO: this will return unpublished preprints so that users
-        # can find and resume the publishing workflow, but filtering
-        # public preprints should filter for `is_published`
-        provider = PreprintProvider.find_one(Q('_id', 'eq', self.kwargs['provider_id']))
-        return (
-            Q('provider', 'eq', provider)
-        )
+    # overrides DjangoFilterMixin
+    def get_default_django_query(self):
+        auth = get_user_auth(self.request)
+        auth_user = getattr(auth, 'user', None)
+
+        # Permissions on the list objects are handled by the query
+        default_query = Q(node__isnull=False, node__is_deleted=False, provider___id=self.kwargs['provider_id'])
+        no_user_query = Q(is_published=True, node__is_public=True)
+
+        if auth_user:
+            contrib_user_query = Q(is_published=True, node__contributor__user_id=auth_user.id, node__contributor__read=True)
+            admin_user_query = Q(node__contributor__user_id=auth_user.id, node__contributor__admin=True)
+            return (default_query & (no_user_query | contrib_user_query | admin_user_query))
+        return (default_query & no_user_query)
 
     # overrides ListAPIView
     def get_queryset(self):
-        query = self.get_query_from_request()
-        return PreprintService.find(query)
+        return PreprintService.objects.filter(self.get_query_from_request())
 
 
 class PreprintProviderSubjectList(JSONAPIBaseView, generics.ListAPIView):
@@ -251,7 +259,7 @@ class PreprintProviderSubjectList(JSONAPIBaseView, generics.ListAPIView):
             #  Calculate this here to only have to do it once.
             allowed_parents = [id_ for sublist in provider.subjects_acceptable for id_ in sublist[0]]
             allows_children = [subs[0][-1] for subs in provider.subjects_acceptable if subs[1]]
-            return [sub for sub in Subject.find(Q('parents___id', 'eq', parent)) if provider.subjects_acceptable == [] or self.is_valid_subject(allows_children=allows_children, allowed_parents=allowed_parents, sub=sub)]
+            return [sub for sub in Subject.find(MQ('parents___id', 'eq', parent)) if provider.subjects_acceptable == [] or self.is_valid_subject(allows_children=allows_children, allowed_parents=allowed_parents, sub=sub)]
         return provider.all_subjects
 
 

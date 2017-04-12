@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import datetime as dt
+
 import framework
 import itertools
 import logging
@@ -117,7 +118,11 @@ def get_current_user_id():
 
 # TODO - rename to _get_current_user_from_session /HRYBACKI
 def _get_current_user():
-    return User.load(get_current_user_id())
+    current_user_id = get_current_user_id()
+    if current_user_id:
+        return User.load(current_user_id)
+    else:
+        return None
 
 
 # TODO: This should be a class method of User?

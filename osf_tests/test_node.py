@@ -33,6 +33,7 @@ from osf.models import (
     DraftRegistration,
     DraftRegistrationApproval,
 )
+from osf.models.node import AbstractNodeQuerySet
 from osf.models.spam import SpamStatus
 from addons.wiki.models import NodeWikiPage
 from osf.exceptions import ValidationError, ValidationValueError
@@ -197,17 +198,33 @@ class TestParentNode:
         greatgrandchild_1 = NodeFactory(parent=grandchild_1, is_deleted=True)
 
         assert 20 == Node.objects.get_children(root).count()
-        pks = Node.objects.get_children(root, primary_keys=True)
+        pks = Node.objects.get_children(root).values_list('id', flat=True)
         assert 20 == len(pks)
         assert set(pks) == set(Node.objects.exclude(id=root.id).values_list('id', flat=True))
 
         assert greatgrandchild_1 in Node.objects.get_children(root).all()
         assert greatgrandchild_1 not in Node.objects.get_children(root, active=True).all()
 
-    def test_get_children_with_barren_parent(self):
+    def test_get_children_root_with_no_children(self):
         root = ProjectFactory()
 
         assert 0 == len(Node.objects.get_children(root))
+        assert isinstance(Node.objects.get_children(root), AbstractNodeQuerySet)
+
+    def test_get_children_child_with_no_children(self):
+        root = ProjectFactory()
+        child = ProjectFactory(parent=root)
+
+        assert 0 == Node.objects.get_children(child).count()
+        assert isinstance(Node.objects.get_children(child), AbstractNodeQuerySet)
+
+    def test_get_children_with_nested_projects(self):
+        root = ProjectFactory()
+        child = NodeFactory(parent=root)
+        grandchild = NodeFactory(parent=child)
+        result = Node.objects.get_children(child)
+        assert result.count() == 1
+        assert grandchild in result
 
     def test_get_children_with_links(self):
         root = ProjectFactory()
@@ -270,6 +287,15 @@ class TestParentNode:
         assert child1 not in public_results2
         assert child2 not in public_results2
 
+    def test_get_roots_distinct(self):
+        top_level = ProjectFactory()
+        child1 = ProjectFactory(parent=top_level)
+        child2 = ProjectFactory(parent=top_level)
+        child3 = ProjectFactory(parent=top_level)
+
+        assert AbstractNode.objects.get_roots().count() == 1
+        assert top_level in AbstractNode.objects.get_roots()
+
     def test_license_searches_parent_nodes(self):
         license_record = NodeLicenseRecordFactory()
         project = ProjectFactory(node_license=license_record)
@@ -331,6 +357,13 @@ class TestParentNode:
         new_nodes = [node.title for node in template.nodes]
         assert len(template.nodes) == 1
         assert deleted_child.title not in new_nodes
+
+    def test_parent_node_doesnt_return_link_parent(self, project):
+        linker = ProjectFactory(title='Linker')
+        linker.add_node_link(project, auth=Auth(linker.creator), save=True)
+        # Prevent cached parent_node property from being used
+        project = Node.objects.get(id=project.id)
+        assert project.parent_node is None
 
 
 class TestRoot:
@@ -631,28 +664,6 @@ class TestProject:
 
         assert linked_node in project.nodes_active
         assert deleted_linked_node not in project.nodes_active
-
-    def test_date_modified(self, node, auth):
-        contrib = UserFactory()
-        node.add_contributor(contrib, auth=auth)
-        node.save()
-
-        assert node.date_modified == node.logs.latest().date
-        assert node.date_modified != node.date_created
-
-    def test_date_modified_create_registration(self, node):
-        RegistrationFactory(project=node)
-        node.reload()
-
-        assert node.date_modified == node.logs.latest().date
-        assert node.date_modified != node.date_created
-
-    def test_date_modified_create_component(self, node, user):
-        NodeFactory(creator=user, parent=node)
-        node.save()
-
-        assert node.date_modified == node.date_created
-
 
 class TestLogging:
 
@@ -1736,7 +1747,7 @@ def test_can_comment():
     noncontrib = UserFactory()
     assert public_node.can_comment(Auth(noncontrib)) is True
 
-    private_node = NodeFactory(is_public=False, public_comments=False)
+    private_node = NodeFactory(is_public=False)
     Contributor.objects.create(node=private_node, user=contrib, read=True)
     assert private_node.can_comment(Auth(contrib)) is True
     noncontrib = UserFactory()
@@ -2597,6 +2608,7 @@ class TestPointerMethods:
         component = NodeFactory(creator=user)
         self._fork_pointer(node=node, content=component, auth=auth)
 
+
 # copied from tests/test_models.py
 class TestForkNode:
 
@@ -3008,16 +3020,24 @@ class TestLogMethods:
         assert grandchild_log in list(logs)
 
     # copied from tests/test_models.py#TestNode
-    def test_get_aggregate_logs_queryset_doesnt_return_hidden_logs(self, parent):
-        n_orig_logs = len(parent.get_aggregate_logs_queryset(Auth(user)))
+    def test_get_aggregate_logs_queryset_doesnt_return_hidden_logs(self, parent, auth):
+        n_orig_logs = len(parent.get_aggregate_logs_queryset(auth))
 
         log = parent.logs.latest()
         log.should_hide = True
         log.save()
 
-        n_new_logs = len(parent.get_aggregate_logs_queryset(Auth(user)))
+        n_new_logs = len(parent.get_aggregate_logs_queryset(auth))
         # Hidden log is not returned
         assert n_new_logs == n_orig_logs - 1
+
+    def test_excludes_logs_for_linked_nodes(self, parent):
+        pointee = ProjectFactory()
+        n_logs_before = parent.get_aggregate_logs_queryset(auth=Auth(parent.creator)).count()
+        parent.add_node_link(pointee, auth=Auth(parent.creator))
+        n_logs_after = parent.get_aggregate_logs_queryset(auth=Auth(parent.creator)).count()
+        # one more log for adding the node link
+        assert n_logs_after == n_logs_before + 1
 
 # copied from tests/test_notifications.py
 class TestHasPermissionOnChildren:

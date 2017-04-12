@@ -120,20 +120,6 @@
 
     ${self.footer()}
     <%include file="copyright.mako"/>
-        % if settings.PINGDOM_ID:
-            <script>
-            var _prum = [['id', ${ settings.PINGDOM_ID | sjson, n }],
-                            ['mark', 'firstbyte', (new Date()).getTime()]];
-            (function() {
-                var s = document.getElementsByTagName('script')[0]
-                    , p = document.createElement('script');
-                p.async = 'async';
-                p.src = '//rum-static.pingdom.net/prum.min.js';
-                s.parentNode.insertBefore(p, s);
-            })();
-            </script>
-        % endif
-
         <%!
             import hashlib
 

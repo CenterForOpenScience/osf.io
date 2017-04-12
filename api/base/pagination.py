@@ -334,6 +334,7 @@ class SearchPagination(JSONAPIPagination):
                     ('components', self.get_search_field('component', query)),
                     ('registrations', self.get_search_field('registration', query)),
                     ('users', self.get_search_field('user', query)),
+                    ('institutions', self.get_search_field('institution', query)),
                 ])),
                 ('meta', OrderedDict([
                     ('total', self.page.paginator.count),
@@ -361,6 +362,7 @@ class SearchPagination(JSONAPIPagination):
                     ('components', self.get_search_field('component', query)),
                     ('registrations', self.get_search_field('registration', query)),
                     ('users', self.get_search_field('user', query)),
+                    ('institutions', self.get_search_field('institution', query)),
                 ])),
                 ('links', OrderedDict([
                     ('first', self.get_first_real_link(url)),

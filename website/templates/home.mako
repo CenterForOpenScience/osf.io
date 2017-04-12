@@ -33,6 +33,7 @@
 
 <%def name="stylesheets()">
   <link rel="stylesheet" href="/static/css/pages/home-page.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, minimum-scale=1">
 </%def>
 
 <%def name="javascript_bottom()">

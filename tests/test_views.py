@@ -273,15 +273,6 @@ class TestViewingProjectWithPrivateLink(OsfTestCase):
 
 class TestProjectViews(OsfTestCase):
 
-    ADDONS_UNDER_TEST = {
-        'addon1': {
-            'node_settings': Addon,
-        },
-        'addon2': {
-            'node_settings': Addon2,
-        },
-    }
-
     def setUp(self):
         super(TestProjectViews, self).setUp()
         self.user1 = AuthUserFactory()

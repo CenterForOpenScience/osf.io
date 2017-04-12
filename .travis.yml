@@ -140,5 +140,9 @@ before_cache:
   - kill -9 $ELASTICSEARCH_PID
   - kill -9 $VARNISH_PID
 
+branches:
+  except:
+    - /^[0-9]/
+
 notifications:
   flowdock: 0221882cdda034c0e9ac2a0e766053dd
