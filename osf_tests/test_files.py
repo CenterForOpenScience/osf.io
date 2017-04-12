@@ -1,8 +1,7 @@
 import pytest
-from django.utils import timezone
 
 from addons.osfstorage import settings as osfstorage_settings
-from osf.models import BaseFileNode, Folder
+from osf.models import BaseFileNode, Folder, File
 from osf_tests.factories import (
     UserFactory,
     ProjectFactory,
@@ -53,15 +52,12 @@ def test_active_manager_does_not_return_trashed_file_nodes(project, create_test_
     # root folder + file = 2 BaseFileNodes
     assert BaseFileNode.active.filter(node=project).count() == 2
 
-def test_folder_update_calls_folder_update_method(project, create_test_file, monkeypatch):
+def test_folder_update_calls_folder_update_method(project, create_test_file):
     file = create_test_file(node=project)
     parent_folder = file.parent
-    def fake_update(*args, **kwargs):
-        return 'patched'
-
-    monkeypatch.setattr(Folder, 'update', fake_update)
-    folder_retval = parent_folder.update()
-    assert folder_retval == 'patched'
-
-    file_retval = file.update(revision='wot', data=dict(name='huh', materialized='/yes', modified=None))
-    assert file_retval != 'patched'
+    # the folder update method should be the Folder.update method
+    assert parent_folder.__class__.update == Folder.update
+    # the folder update method should not be the File update method
+    assert parent_folder.__class__.update != File.update
+    # the file update method should be the File update method
+    assert file.__class__.update == File.update
