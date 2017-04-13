@@ -124,7 +124,7 @@
                 %elif campaign == "lawarxiv-preprints":
                     <table style="border-collapse: separate; border-spacing: 30px 0; margin-top: 20px;  margin-bottom: 10px;">
                         <tr>
-                            <td><img src="/static/img/preprint_providers/lawarxiv-logo.jpg" style="width: 150px; background: #a9a9a9; padding: 0 10px 0 10px;" /></td>
+                            <td><img src="/static/img/preprint_providers/lawarxiv-logo.png" style="width: 150px; background: #a9a9a9; padding: 0 10px 0 10px;" /></td>
                             <td><h3>Create a free OSF account to contribute to LawArXiv</h3></td>
                         </tr>
                     </table>
