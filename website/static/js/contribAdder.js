@@ -490,8 +490,7 @@ AddContributorViewModel = oop.extend(Paginator, {
         // Update error message
         this.inviteError(response.message);
         $('.btn-add').removeAttr('disabled');;
-    }
-    ,
+    },
     hasChildren: function() {
         var self = this;
         return (Object.keys(self.nodesOriginal).length > 1);
