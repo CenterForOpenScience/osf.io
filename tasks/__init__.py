@@ -628,8 +628,6 @@ def karma(ctx, single=False, sauce=False, browsers=None):
         HERE, 'node_modules', 'karma', 'bin', 'karma'
     )
     cmd = '{} start'.format(karma_bin)
-    if sauce:
-        cmd += ' karma.saucelabs.conf.js'
     if single:
         cmd += ' --single-run'
     # Use browsers if specified on the command-line, otherwise default
