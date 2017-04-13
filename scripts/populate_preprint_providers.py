@@ -19,7 +19,7 @@ logging.basicConfig(level=logging.INFO)
 
 ENVS = ['prod', 'stage']
 SUBJECTS_CACHE = {}
-STAGING_PREPRINT_PROVIDERS = ['osf', 'psyarxiv', 'engrxiv', 'socarxiv', 'scielo', 'agrixiv', 'bitss']
+STAGING_PREPRINT_PROVIDERS = ['osf', 'psyarxiv', 'engrxiv', 'socarxiv', 'scielo', 'agrixiv', 'bitss', 'fusfoundation']
 PROD_PREPRINT_PROVIDERS = ['osf', 'psyarxiv', 'engrxiv', 'socarxiv', 'agrixiv', 'bitss']
 
 
@@ -1178,7 +1178,33 @@ def main(env):
                 (['Medicine and Health Sciences', 'Other Medicine and Health Sciences'], False),
                 (['Social and Behavioral Sciences', 'Other Social and Behavioral Sciences'], False)
             ]
-        }
+        },
+        'fusfoundation': {
+            '_id': 'fusfoundation',
+            'name': 'Focused Ultrasound Foundation',
+            'logo_name': 'fusf_logo.jpeg',
+            'description': 'A free preprint service for the focused ultrasound research community.',
+            'banner_name': 'fusf.png',
+            'external_url': 'https://www.fusfoundation.org/',
+            'example': '',
+            'advisory_board': '',
+            'email_contact': 'contact+fusfoundation@osf.io',
+            'email_support': 'support+fusfoundation@osf.io',
+            'social_twitter': 'fusfoundation',
+            'social_facebook': 'focusedultrasound',
+            'licenses_acceptable': ['CC-By Attribution 4.0 International'],
+            'header_text': '',
+            'subjects_acceptable': [
+                (['Medicine and Health Sciences', 'Analytical, Diagnostic and Therapeutic Techniques and Equipment',
+                  'Surgical Procedures, Operative'], False),
+                (['Medicine and Health Sciences', 'Analytical, Diagnostic and Therapeutic Techniques and Equipment',
+                  'Therapeutics'], False),
+                (['Engineering', 'Biomedical Engineering and Bioengineering',
+                  'Biomechanics and Biotransport'], False),
+                (['Engineering', 'Biomedical Engineering and Bioengineering',
+                  'Biomedical Devices and Instrumentation'], False),
+            ]
+        },
     }
 
     preprint_providers_to_add = STAGING_PREPRINT_PROVIDERS if env == 'stage' else PROD_PREPRINT_PROVIDERS
