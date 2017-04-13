@@ -536,6 +536,17 @@ var LogPieces = {
         }
     },
 
+    fedora_folder: {
+        view: function(ctrl, logObject) {
+            var folder = logObject.attributes.params.folder_name;
+
+            if(paramIsReturned(folder, logObject)){
+                return m('span', folder === 'All Files' ? '/ (Full Fedora)' : folder);
+            }
+            return m('span', '');
+        }
+    },
+
     citation: {
         view: function(ctrl, logObject) {
             return returnTextParams('citation_name', '', logObject);
