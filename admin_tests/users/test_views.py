@@ -13,7 +13,11 @@ from django.utils import timezone
 from django.core.urlresolvers import reverse
 from django.core.exceptions import PermissionDenied
 from django.contrib.auth.models import Permission
-
+from nose import tools as nt
+import mock
+import csv
+import os
+from datetime import timedelta
 
 from tests.base import AdminTestCase
 from website import settings
@@ -88,6 +92,7 @@ class TestUserView(AdminTestCase):
 class TestResetPasswordView(AdminTestCase):
     def test_reset_password_context(self):
         user = UserFactory()
+
         guid = user._id
         request = RequestFactory().get('/fake_path')
         view = views.ResetPasswordView(initial={})
@@ -267,7 +272,7 @@ class SpamUserListMixin(object):
         request.user = user
 
         with self.assertRaises(PermissionDenied):
-            self.view.as_view()(request, guid=guid)
+            self.plain_view.as_view()(request, guid=guid)
 
     def test_correct_view_permissions(self):
         user = UserFactory()
@@ -280,19 +285,19 @@ class SpamUserListMixin(object):
         request = RequestFactory().get(self.url)
         request.user = user
 
-        response = self.view.as_view()(request, guid=guid)
+        response = self.plain_view.as_view()(request, guid=guid)
         self.assertEqual(response.status_code, 200)
 
 
 class TestFlaggedSpamUserList(SpamUserListMixin):
     def setUp(self):
         super(TestFlaggedSpamUserList, self).setUp()
-        self.view = views.UserFlaggedSpamList
-        self.view = setup_log_view(self.view(), self.request)
+        self.plain_view = views.UserFlaggedSpamList
+        self.view = setup_log_view(self.plain_view(), self.request)
         self.url = reverse('users:flagged-spam')
 
     def test_get_queryset(self):
-        qs = self.view().get_queryset()
+        qs = self.view.get_queryset()
         nt.assert_equal(qs.count(), 1)
         nt.assert_equal(qs[0]._id, self.flagged_user._id)
 
@@ -300,7 +305,7 @@ class TestFlaggedSpamUserList(SpamUserListMixin):
 class TestConfirmedSpamUserList(SpamUserListMixin):
     def setUp(self):
         super(TestConfirmedSpamUserList, self).setUp()
-        self.view = views.UserKnownSpamList
+        self.plain_view = views.UserKnownSpamList
         self.view = setup_log_view(self.view(), self.request)
 
         self.url = reverse('users:known-spam')
@@ -314,7 +319,7 @@ class TestConfirmedSpamUserList(SpamUserListMixin):
 class TestConfirmedHamUserList(SpamUserListMixin):
     def setUp(self):
         super(TestConfirmedHamUserList, self).setUp()
-        self.view = views.UserKnownHamList
+        self.plain_view = views.UserKnownHamList
         self.view = setup_log_view(self.view(), self.request)
 
         self.url = reverse('users:known-ham')
