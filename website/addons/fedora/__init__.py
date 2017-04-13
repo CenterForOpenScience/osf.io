@@ -16,7 +16,7 @@ ADDED_DEFAULT = []
 ADDED_MANDATORY = []
 
 SHORT_NAME = 'fedora'
-FULL_NAME = 'fedora'
+FULL_NAME = 'Fedora'
 OWNERS = ['user', 'node']
 VIEWS = []
 CONFIGS = ['accounts', 'node']

@@ -19,7 +19,7 @@ from website.addons.fedora.serializer import FedoraSerializer
 from website.addons.fedora import settings
 
 SHORT_NAME = 'fedora'
-FULL_NAME = 'fedora'
+FULL_NAME = 'Fedora'
 
 fedora_account_list = generic_views.account_list(
     SHORT_NAME,
