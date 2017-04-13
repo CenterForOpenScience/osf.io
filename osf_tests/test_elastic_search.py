@@ -900,7 +900,7 @@ class TestSearchFiles(OsfTestCase):
 
     def test_add_tag(self):
         file_ = self.root.append_file('That\'s How Strong My Love Is.mp3')
-        tag = Tag(_id='Redding', name='Redding')
+        tag = Tag(name='Redding')
         tag.save()
         file_.tags.add(tag)
         file_.save()
@@ -909,7 +909,7 @@ class TestSearchFiles(OsfTestCase):
 
     def test_remove_tag(self):
         file_ = self.root.append_file('I\'ve Been Loving You Too Long.mp3')
-        tag = Tag(_id='Blue', name='Blue')
+        tag = Tag(name='Blue')
         tag.save()
         file_.tags.add(tag)
         file_.save()
