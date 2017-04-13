@@ -715,6 +715,7 @@ def root(request, format=None, **kwargs):
         box          Box.com
         dataverse    Dataverse
         dropbox      Dropbox
+        fedora       Fedora
         figshare     figshare
         github       GitHub
         googledrive  Google Drive
