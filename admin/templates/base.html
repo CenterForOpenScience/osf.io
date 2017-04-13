@@ -107,7 +107,7 @@
               </ul>
             </li>
             {% endif %}
-            {% if perms.osf.view_preprint %}
+            {% if perms.osf.view_preprintservice %}
             <li><a href="{% url 'preprints:search' %}"><i class='fa fa-link'></i><span>Preprints</span> </a></li>
             {% endif %}
               {% if perms.osf.view_osfuser %}
