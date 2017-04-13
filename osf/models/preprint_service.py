@@ -5,6 +5,7 @@ from dirtyfields import DirtyFieldsMixin
 from django.db import models
 from django.utils import timezone
 from django.utils.functional import cached_property
+from django.contrib.contenttypes.fields import GenericRelation
 
 from framework.celery_tasks.handlers import enqueue_task
 from framework.exceptions import PermissionsError
@@ -14,13 +15,16 @@ from website.preprints.tasks import on_preprint_updated
 from website.project.model import NodeLog
 from website.project.licenses import set_license
 from website.project.taxonomies import validate_subject_hierarchy
+from website.project.views.register import _get_or_create_identifiers
 from website.util import api_v2_url
 from website.util.permissions import ADMIN
 from website import settings
 
 from osf.models.base import BaseModel, GuidMixin
+from osf.models.subject import Subject
+from osf.models.identifiers import IdentifierMixin, Identifier
 
-class PreprintService(DirtyFieldsMixin, GuidMixin, BaseModel):
+class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, BaseModel):
     date_created = NonNaiveDateTimeField(auto_now_add=True)
     date_modified = NonNaiveDateTimeField(auto_now=True)
     provider = models.ForeignKey('osf.PreprintProvider',
@@ -36,6 +40,8 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, BaseModel):
                                 on_delete=models.SET_NULL, null=True, blank=True)
 
     subjects = models.ManyToManyField(blank=True, to='osf.Subject', related_name='preprint_services')
+
+    identifiers = GenericRelation(Identifier, related_query_name='preprintservices')
 
     class Meta:
         unique_together = ('node', 'provider')
@@ -57,6 +63,10 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, BaseModel):
         if not self.node:
             return
         return self.node.preprint_article_doi
+
+    @property
+    def preprint_doi(self):
+        return self.get_identifier_value('doi')
 
     @property
     def is_preprint_orphan(self):
@@ -185,9 +195,17 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, BaseModel):
                     log=True
                 )
 
+            if not self.get_identifier_value('doi'):
+                new_identifiers = self.get_ezid_idenfifiers()
+                self.set_identifier_value('doi', new_identifiers['doi'])
+                self.set_identifier_value('ark', new_identifiers['ark'])
+
         if save:
             self.node.save()
             self.save()
+
+    def get_ezid_idenfifiers(self):
+        return _get_or_create_identifiers(self)
 
     def set_preprint_license(self, license_detail, auth, save=False):
         license_record, license_changed = set_license(self, license_detail, auth, node_type='preprint')
