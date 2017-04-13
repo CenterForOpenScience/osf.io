@@ -221,6 +221,19 @@ class PreprintProviderSubjectList(JSONAPIBaseView, generics.ListAPIView):
 
     serializer_class = TaxonomySerializer
 
+    def preprare_subjects(self, provider):
+        final_subjects = set()
+        for i in provider.all_subjects:
+            final_subjects.add(i.text)
+        return final_subjects
+
+    def get_children(self, sub, final_form):
+        subject_children = []
+        for child in sub.children.all():
+            if child.text in final_form:
+                subject_children.append({'text': child.text, 'id': child._id})
+        setattr(sub, 'child_list_provider', subject_children)
+
     def is_valid_subject(self, allows_children, allowed_parents, sub):
         if sub._id in allowed_parents:
             return True
@@ -237,11 +250,17 @@ class PreprintProviderSubjectList(JSONAPIBaseView, generics.ListAPIView):
         provider = get_object_or_error(PreprintProvider, self.kwargs['provider_id'], display_name='PreprintProvider')
         if parent:
             if parent == 'null':
-                return provider.top_level_subjects
+                subjects = provider.top_level_subjects
+                final_form = self.preprare_subjects(provider=provider)
+                [self.get_children(sub=sub, final_form=final_form) for sub in subjects]
+                return subjects
             #  Calculate this here to only have to do it once.
             allowed_parents = [id_ for sublist in provider.subjects_acceptable for id_ in sublist[0]]
             allows_children = [subs[0][-1] for subs in provider.subjects_acceptable if subs[1]]
-            return [sub for sub in Subject.find(MQ('parents___id', 'eq', parent)) if provider.subjects_acceptable == [] or self.is_valid_subject(allows_children=allows_children, allowed_parents=allowed_parents, sub=sub)]
+            subjects = [sub for sub in Subject.find(MQ('parents___id', 'eq', parent)) if provider.subjects_acceptable == [] or self.is_valid_subject(allows_children=allows_children, allowed_parents=allowed_parents, sub=sub)]
+            final_form = self.preprare_subjects(provider=provider)
+            [self.get_children(sub=sub, final_form=final_form) for sub in subjects]
+            return subjects
         return provider.all_subjects
 
 
