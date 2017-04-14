@@ -296,36 +296,6 @@
                 "text": "ownCloud content will be registered, but version history will not be copied to the registration."
             }
         },
-        "Fedora": {
-            "Permissions": {
-                "status": "partial",
-                "text": "Making an OSF project public or private is independent of Fedora privacy. The OSF does not alter the permissions of linked Fedora folders."
-            },
-            "View / download file versions": {
-                "status": "partial",
-                "text": "Fedora files can be viewed/downloaded via OSF, but version history is not supported."
-            },
-            "Add / update files": {
-                "status": "full",
-                "text": "Adding/updating files in the project via OSF will be reflected in Fedora."
-            },
-            "Delete files": {
-                "status": "full",
-                "text": "Files deleted via OSF will be deleted in Fedora."
-            },
-            "Logs": {
-                "status": "partial",
-                "text": "OSF keeps track of changes you make to your Fedora content through OSF, but not for changes made using Fedora directly."
-            },
-            "Forking": {
-                "status": "partial",
-                "text": "Forking a project or component does not copy Fedora authorization unless the user forking the project is the same user who authorized the Fedora add-on in the source project being forked."
-            },
-            "Registering": {
-                "status": "partial",
-                "text": "Fedora content will be registered, but version history will not be copied to the registration."
-            }
-        },
         "Zotero": {
             "Permissions": {
                 "status": "partial",
