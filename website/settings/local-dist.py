@@ -17,8 +17,21 @@ API_DOMAIN = PROTOCOL + 'localhost:8000/'
 
 USE_EXTERNAL_EMBER = True
 EXTERNAL_EMBER_APPS = {
-    # '/preprints/': 'http://localhost:4200',
-    # '/meetings/': 'http://localhost:4201',
+    'preprints': {
+        'url': '/preprints/',
+        'server': 'http://localhost:4200',
+        'path': '/preprints/'
+    },
+    # 'meetings': {
+    #     'url': '/meetings/',
+    #     'server': 'http://localhost:4201',
+    #     'path': '../osf-meetings/dist/'
+    # },
+    # 'registries': {
+    #     'url': '/registries/',
+    #     'server': 'http://localhost:4200',
+    #     'path': '../ember-osf-registries/dist/'
+    # }
 }
 
 SEARCH_ENGINE = 'elastic'

@@ -59,11 +59,13 @@ from website.addons.wiki.exceptions import (
     PageConflictError,
     PageNotFoundError,
 )
+from website.project.sanctions import Sanction, DraftRegistrationApproval
+from website.views import find_bookmark_collection
 
 from tests.base import OsfTestCase, Guid, fake, capture_signals, get_default_metaschema
 from tests.factories import (
     UserFactory, ApiOAuth2ApplicationFactory, NodeFactory, PointerFactory,
-    ProjectFactory, NodeLogFactory, WatchConfigFactory,
+    ProjectFactory, NodeLogFactory, WatchConfigFactory, DraftRegistrationFactory,
     NodeWikiFactory, RegistrationFactory, UnregUserFactory,
     ProjectWithAddonFactory, UnconfirmedUserFactory, PrivateLinkFactory,
     AuthUserFactory, BookmarkCollectionFactory, CollectionFactory,
@@ -513,8 +515,8 @@ class TestUser(OsfTestCase):
     def test_get_confirmation_url_for_external_service(self, random_string):
         random_string.return_value = 'abcde'
         u = UnconfirmedUserFactory()
-        assert_equal(u.get_confirmation_url(u.username, external_id_provider='service'),
-                '{0}confirm/external/{1}/{2}/'.format(settings.DOMAIN, u._id, 'abcde'))
+        assert_equal(u.get_confirmation_url(u.username, external_id_provider='service', destination='dashboard'),
+                '{0}confirm/external/{1}/{2}/?destination={3}'.format(settings.DOMAIN, u._id, 'abcde', 'dashboard'))
 
 
     def test_get_confirmation_url_when_token_is_expired_raises_error(self):
@@ -774,6 +776,7 @@ class TestUser(OsfTestCase):
             if node.category == 'project'
             and not node.is_registration
             and not node.is_deleted
+            and not node.is_collection
         ]
         public_projects = [p for p in projects if p.is_public]
         assert_equal(d['number_projects'], len(projects))
@@ -1032,7 +1035,7 @@ class TestMergingUsers(OsfTestCase):
         self.master.save()
 
     def test_bookmark_collection_nodes_arent_merged(self):
-        dashnode = ProjectFactory(creator=self.dupe, is_bookmark_collection=True)
+        dashnode = find_bookmark_collection(self.dupe)
 
         self._merge_dupe()
 
@@ -1613,17 +1616,17 @@ class TestNode(OsfTestCase):
 
     def test_validate_bad_doi(self):
         with assert_raises(ValidationError):
-            Node(preprint_doi='nope').save()
+            Node(preprint_article_doi='nope').save()
         with assert_raises(ValidationError):
-            Node(preprint_doi='https://dx.doi.org/10.123.456').save()  # should save the bare DOI, not a URL
+            Node(preprint_article_doi='https://dx.doi.org/10.123.456').save()  # should save the bare DOI, not a URL
         with assert_raises(ValidationError):
-            Node(preprint_doi='doi:10.10.1038/nwooo1170').save()  # should save without doi: prefix
+            Node(preprint_article_doi='doi:10.10.1038/nwooo1170').save()  # should save without doi: prefix
 
     def test_validate_good_doi(self):
-        doi = '10.10.1038/nwooo1170'
-        self.node.preprint_doi = doi
+        doi = '10.11038/nwooo1170'
+        self.node.preprint_article_doi = doi
         self.node.save()
-        assert_equal(self.node.preprint_doi, doi)
+        assert_equal(self.node.preprint_article_doi, doi)
 
     def test_web_url_for(self):
         result = self.parent.web_url_for('view_project')
@@ -2259,6 +2262,22 @@ class TestNodeTraversals(OsfTestCase):
         reg.delete_registration_tree(save=True)
         assert_false(Node.find(Q('_id', 'in', reg_ids) & Q('is_deleted', 'eq', False)).count())
 
+    def test_delete_registration_tree_sets_draft_registration_approvals_to_none(self):
+        ensure_schemas()
+        reg = RegistrationFactory()
+
+        dr = DraftRegistrationFactory(initiator=self.user)
+        approval = DraftRegistrationApproval(state=Sanction.APPROVED)
+        approval.save()
+        dr.approval = approval
+        dr.registered_node = reg
+        dr.save()
+
+        reg.delete_registration_tree(save=True)
+
+        dr.reload()
+        assert_is_none(dr.approval)
+
     def test_delete_registration_tree_deletes_backrefs(self):
         proj = NodeFactory()
         NodeFactory(parent=proj)
@@ -2454,7 +2473,7 @@ class TestBookmarkCollection(OsfTestCase):
         # Create project with component
         self.user = UserFactory()
         self.auth = Auth(user=self.user)
-        self.project = BookmarkCollectionFactory(creator=self.user)
+        self.project = find_bookmark_collection(self.user)
 
     def test_bookmark_collection_is_bookmark_collection(self):
         assert_equal(self.project.is_bookmark_collection, True)
@@ -4913,11 +4932,11 @@ class TestOnNodeUpdate(OsfTestCase):
         on_node_updated(self.node._id, self.user._id, False, {'is_public'})
 
         kwargs = requests.post.call_args[1]
-        graph = kwargs['json']['normalized_data']['@graph']
+        graph = kwargs['json']['data']['attributes']['data']['@graph']
 
         assert_true(requests.post.called)
         assert_equals(kwargs['headers']['Authorization'], 'Bearer Token')
-        assert_equals(graph[0]['url'], '{}{}/'.format(settings.DOMAIN, self.node._id))
+        assert_equals(graph[0]['uri'], '{}{}/'.format(settings.DOMAIN, self.node._id))
 
     @mock.patch('website.project.tasks.requests')
     def test_update_share_correctly(self, requests):
@@ -4947,8 +4966,8 @@ class TestOnNodeUpdate(OsfTestCase):
             on_node_updated(self.node._id, self.user._id, False, {'is_public'})
 
             kwargs = requests.post.call_args[1]
-            graph = kwargs['json']['normalized_data']['@graph']
-            assert_equals(graph[2]['is_deleted'], case['is_deleted'])
+            graph = kwargs['json']['data']['attributes']['data']['@graph']
+            assert_equals(graph[1]['is_deleted'], case['is_deleted'])
 
 
 

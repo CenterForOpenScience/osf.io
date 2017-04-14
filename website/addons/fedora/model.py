@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 class FedoraProvider(BasicAuthProviderMixin):
     """An alternative to `ExternalProvider` not tied to OAuth"""
 
-    name = 'fedora'
+    name = 'Fedora'
     short_name = 'fedora'
 
     def __repr__(self):

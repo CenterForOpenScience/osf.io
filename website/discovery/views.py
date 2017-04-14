@@ -2,8 +2,6 @@ from website import settings
 from website.project import Node
 from website.project import utils
 
-from modularodm.query.querydialect import DefaultQueryDialect as Q
-
 
 def activity():
     """Reads node activity from pre-generated popular projects and registrations.
@@ -12,14 +10,23 @@ def activity():
     """
 
     # New and Noreworthy Projects
-    new_and_noteworthy_pointers = Node.find_one(Q('_id', 'eq', settings.NEW_AND_NOTEWORTHY_LINKS_NODE)).nodes_pointer
-    new_and_noteworthy_projects = [pointer.node for pointer in new_and_noteworthy_pointers]
+    try:
+        new_and_noteworthy_pointers = Node.load(settings.NEW_AND_NOTEWORTHY_LINKS_NODE).nodes_pointer
+        new_and_noteworthy_projects = [pointer.node for pointer in new_and_noteworthy_pointers]
+    except AttributeError:
+        new_and_noteworthy_projects = []
 
     # Popular Projects
-    popular_public_projects = Node.find_one(Q('_id', 'eq', settings.POPULAR_LINKS_NODE)).nodes_pointer
+    try:
+        popular_public_projects = Node.load(settings.POPULAR_LINKS_NODE).nodes_pointer
+    except AttributeError:
+        popular_public_projects = []
 
     # Popular Registrations
-    popular_public_registrations = Node.find_one(Q('_id', 'eq', settings.POPULAR_LINKS_REGISTRATIONS)).nodes_pointer
+    try:
+        popular_public_registrations = Node.load(settings.POPULAR_LINKS_REGISTRATIONS).nodes_pointer
+    except AttributeError:
+        popular_public_registrations = []
 
     return {
         'new_and_noteworthy_projects': new_and_noteworthy_projects,

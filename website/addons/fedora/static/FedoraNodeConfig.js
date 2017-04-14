@@ -10,13 +10,15 @@ var osfHelpers = require('js/osfHelpers');
 var OauthAddonFolderPicker = require('js/oauthAddonNodeConfig')._OauthAddonNodeConfigViewModel;
 var language = require('js/osfLanguage').Addons.fedora;
 
-var FedoraViewModel = oop.extend(OauthAddonFolderPicker,{
+var ViewModel = oop.extend(OauthAddonFolderPicker,{
     constructor: function(addonName, url, selector, folderPicker, opts, tbOpts) {
         var self = this;
+
+        // TODO: [OSF-7069]
         self.super.super.constructor.call(self, addonName, url, selector, folderPicker, tbOpts);
         self.super.construct.call(self, addonName, url, selector, folderPicker, opts, tbOpts);
 
-         // Non-Oauth fields:
+        // Non-Oauth fields:
         self.username = ko.observable('');
         self.password = ko.observable('');
         self.hosts = ko.observableArray([]);
@@ -120,7 +122,7 @@ var FedoraViewModel = oop.extend(OauthAddonFolderPicker,{
 
 function FedoraNodeConfig(selector, url) {
     var self = this;
-    self.viewModel = new FedoraViewModel('fedora', url, selector, '#fedoraGrid', {});
+    self.viewModel = new ViewModel('fedora', url, selector, '#fedoraGrid', {});
     self.viewModel.updateFromData();
     $osf.applyBindings(self.viewModel, selector);
 }

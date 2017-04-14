@@ -14,7 +14,8 @@
         "s3",
         "twofactor",
         "wiki",
-        "googledrive"
+        "googledrive",
+	"fedora"
     ],
     "addons_archivable": {
         "osfstorage": "full",
@@ -57,7 +58,7 @@
         "zotero": "Zotero is a reference management tool. Connecting Zotero folders to OSF projects allows you and others to view, copy, and download citations that are relevant to your project from the Project Overview page.",
         "osfstorage": "OSF Storage is the default storage provider for OSF projects.",
         "owncloud": "ownCloud is an open source, self-hosted file sync and share app platform. Connect your ownCloud account to an OSF project to interact with files hosted on ownCloud via the OSF.",
-        "fedora": "Fedora is an open source repository.",	
+        "fedora": "Fedora is the flexible, modular, open source repository platform with native linked data support. Connect a Fedora repository to an OSF project to interact with files hosted on the Fedora repository.",
         "s3": "Amazon S3 is a file storage add-on. Connect your S3 account to an OSF project to interact with files hosted on S3 via the OSF.",
         "twofactor": "Two-factor authentication is a security add-on. By using two-factor authentication, you'll protect your OSF account with both your password and your mobile phone.",
         "wiki": "The wiki is a versatile communication tool. Wikis can be used to explain the main points of your project and can contain information like lab notes or contact information.",
@@ -71,7 +72,7 @@
         "github": "http://www.github.com",
         "mendeley": "http://www.mendeley.com",
         "owncloud": "https://owncloud.org/",
-        "fedora": "http://fedorarepository.org/",	
+        "fedora": "http://fedorarepository.org/",
         "zotero": "http://www.zotero.org",
         "s3": "https://aws.amazon.com/s3/",
         "googledrive": "https://drive.google.com"

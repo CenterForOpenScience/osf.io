@@ -18,6 +18,13 @@
 .more-link-node{
     margin-top: 5px;
 }
+.private-link-list-node {
+    width: 100px;
+    margin-left: -40px;
+    overflow: hidden; 
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
 
 .link-url{
     padding: 3px 0px;
