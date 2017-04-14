@@ -15,10 +15,14 @@ var commandKeys = [224, 17, 91, 93];
 
 function _getCurrentBranch(item) {
     var branch;
-    if (item.data.isAddonRoot){
-        branch = item.data.default_branch;
+    if (item.data.branch === undefined) {
+        if (item.data.isAddonRoot){
+            branch = item.data.default_branch;
+        } else {
+            branch = item.data.extra.ref || item.data.extra.fileSha;
+        }
     } else {
-        branch = item.data.extra.ref || item.data.extra.fileSha;
+        branch = item.data.branch;
     }
     return branch;
 }
@@ -178,7 +182,7 @@ function _fangornGitLabTitle(item, col)  {
         if (!item.data.branch && urlParams.branch) {
             item.data.branch = urlParams.branch;
         }
-        var branch = item.data.branch || item.data.defaultBranch;
+        var branch = _getCurrentBranch(item);
 
         return m('span',[
             m('gitlab-name', item.data.name + ' (' + branch + ')')
