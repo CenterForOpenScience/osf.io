@@ -15,7 +15,6 @@
         "twofactor",
         "wiki",
         "googledrive",
-	"fedora"
     ],
     "addons_archivable": {
         "osfstorage": "full",
@@ -27,7 +26,7 @@
         "googledrive": "partial",
         "github": "partial",
         "owncloud": "partial",
-        "fedora": "partial",	
+        "fedora": "partial",
         "s3": "partial",
         "wiki": "full"
     },
@@ -40,7 +39,7 @@
         "github",
         "googledrive",
         "owncloud",
-        "fedora",	
+        "fedora",
         "s3"
     ],
     "addons_based_on_ids": [
