@@ -1,0 +1,12 @@
+#!/bin/bash
+_invoke ()
+{       
+  local cur prev opts
+  cur="${COMP_WORDS[COMP_CWORD]}"
+  prev="${COMP_WORDS[COMP_CWORD-1]}"
+  opts="__OPTS__"
+  
+  COMPREPLY=( $(compgen -W "${opts}" -- ${cur}) )
+  return 0
+}
+complete -F _invoke invoke
