@@ -485,6 +485,10 @@ def update_user(user, index=None):
         'degree': user.schools[0]['degree'] if user.schools else '',
         'social': user.social_links,
         'boost': 2,  # TODO(fabianvf): Probably should make this a constant or something
+        'dateRegistered': user.date_registered,
+        'activtyPoints': user.get_activity_points(),
+        'recentlyAdded': user.recently_added,
+        'nodes': map(lambda x: x._id, filter(lambda x: x.is_public, user.node__contributed))
     }
 
     client().index(index=index, doc_type='user', body=user_doc, id=user._id, refresh=True)
