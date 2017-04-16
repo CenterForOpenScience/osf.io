@@ -247,3 +247,5 @@ $(function() {
     // END Maintenance alert
 
 });
+
+$("input.password").on('keyup',function(e){$("#"+e.currentTarget.id).next().show().text('hello!');});
