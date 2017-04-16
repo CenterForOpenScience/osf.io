@@ -909,6 +909,16 @@ MEETING_DATA = {
         'poster': True,
         'talk': True,
     },
+    'TeaP2015': {
+        'name': 'Tagung experimentell arbeitender Psychologen 2015',
+        'info_url': 'http://www.teap.de/index.php/teap/hildesheim',
+        'logo_url': None,
+        'active': True,
+        'admins': [
+            'sara.d.bowman@gmail.com',
+        ],
+        'public_projects': True,
+    },
 }
 
 
