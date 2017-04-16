@@ -1310,6 +1310,7 @@ class User(GuidStoredObject, AddonModelMixin):
         from website import search
         try:
             search.search.update_user(self)
+            self.update_search_nodes()
         except search.exceptions.SearchUnavailableError as e:
             logger.exception(e)
             log_exception()
