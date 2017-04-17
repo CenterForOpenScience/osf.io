@@ -313,6 +313,9 @@ BaseViewModel.prototype.handleError = function(response) {
     this.saving(false);
     var defaultMsg = 'Could not update settings';
     var msg = response.message_long || defaultMsg;
+
+ 
+
     this.changeMessage(
         msg,
         'text-danger',
@@ -389,6 +392,7 @@ BaseViewModel.prototype.submit = function() {
     } else {
         this.showMessages(true);
     }
+
 };
 
 var NameViewModel = function(urls, modes, preventUnsaved, fetchCallback) {
