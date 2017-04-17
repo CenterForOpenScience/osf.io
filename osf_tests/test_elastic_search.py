@@ -259,8 +259,9 @@ class TestRegistrationRetractions(OsfTestCase):
         )
         self.registration = factories.RegistrationFactory(project=self.project, is_public=True)
 
+    @mock.patch('website.project.tasks.on_registration_updated')
     @mock.patch('osf.models.registrations.Registration.archiving', mock.PropertyMock(return_value=False))
-    def test_retraction_is_searchable(self):
+    def test_retraction_is_searchable(self, mock_registration_updated):
         self.registration.retract_registration(self.user)
         self.registration.retraction.state = Retraction.APPROVED
         self.registration.retraction.save()

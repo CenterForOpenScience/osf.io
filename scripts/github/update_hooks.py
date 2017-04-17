@@ -92,8 +92,8 @@ class TestHookMigration(OsfTestCase):
         self.node_addon.user_settings = self.user_addon
         self.node_addon.save()
 
-    @mock.patch('website.addons.github.utils.make_hook_secret')
-    @mock.patch('website.addons.github.api.GitHub.repo')
+    @mock.patch('addons.github.utils.make_hook_secret')
+    @mock.patch('addons.github.api.GitHub.repo')
     def test_update_hook(self, mock_repo, mock_make_secret):
         mock_make_secret.return_value = 'shh'
         update_hook(self.node_addon)

@@ -1,3 +1,4 @@
+
 # -*- coding: utf-8 -*-
 
 from __future__ import division
@@ -22,6 +23,7 @@ from modularodm import Q
 from osf.models import AbstractNode as Node
 from osf.models import OSFUser as User
 from osf.models import FileNode
+from osf.models import Institution
 from website import settings
 from website.filters import gravatar
 from website.project.licenses import serialize_node_license_record
@@ -42,6 +44,7 @@ ALIASES = {
     'total': 'Total',
     'file': 'Files',
     'institution': 'Institutions',
+    'preprint': 'Preprints',
 }
 
 DOC_TYPE_TO_MODEL = {
@@ -50,6 +53,8 @@ DOC_TYPE_TO_MODEL = {
     'registration': Node,
     'user': User,
     'file': FileNode,
+    'preprint': Node,
+    'institution': Institution
 }
 
 # Prevent tokenizing and stop word removal.
@@ -235,7 +240,7 @@ def format_results(results):
             parent_info = load_parent(result.get('parent_id'))
             result['parent_url'] = parent_info.get('url') if parent_info else None
             result['parent_title'] = parent_info.get('title') if parent_info else None
-        elif result.get('category') in {'project', 'component', 'registration'}:
+        elif result.get('category') in {'project', 'component', 'registration', 'preprint'}:
             result = format_result(result, result.get('parent_id'))
         elif not result.get('category'):
             continue
@@ -267,6 +272,7 @@ def format_result(result, parent_id=None):
         'n_wikis': len(result['wikis']),
         'license': result.get('license'),
         'affiliated_institutions': result.get('affiliated_institutions'),
+        'preprint_url': result.get('preprint_url'),
     }
 
     return formatted_result
@@ -295,6 +301,8 @@ COMPONENT_CATEGORIES = set(settings.NODE_CATEGORY_MAP.keys())
 def get_doctype_from_node(node):
     if node.is_registration:
         return 'registration'
+    elif node.is_preprint:
+        return 'preprint'
     elif node.parent_node is None:
         # ElasticSearch categorizes top-level projects differently than children
         return 'project'
@@ -336,11 +344,11 @@ def serialize_node(node, category):
         'id': node._id,
         'contributors': [
             {
-                'fullname': x.fullname,
-                'url': x.profile_url if x.is_active else None
+                'fullname': x['fullname'],
+                'url': '/{}/'.format(x['guids___id']) if x['is_active'] else None
             }
-            for x in node.visible_contributors
-            if x is not None
+            for x in node._contributors.filter(contributor__visible=True).order_by('contributor___order')
+            .values('fullname', 'guids___id', 'is_active')
         ],
         'title': node.title,
         'normalized_title': normalized_title,
@@ -363,12 +371,10 @@ def serialize_node(node, category):
         'affiliated_institutions': list(node.affiliated_institutions.values_list('name', flat=True)),
         'boost': int(not node.is_registration) + 1,  # This is for making registered projects less relevant
         'extra_search_terms': clean_splitters(node.title),
+        'preprint_url': node.preprint_url,
     }
     if not node.is_retracted:
-        for wiki in [
-            NodeWikiPage.load(x)
-            for x in node.wiki_pages_current.values()
-        ]:
+        for wiki in NodeWikiPage.objects.filter(guids___id__in=node.wiki_pages_current.values()):
             elastic_document['wikis'][wiki.page_name] = wiki.raw_text(node)
 
     return elastic_document
@@ -394,7 +400,7 @@ def bulk_update_nodes(serialize, nodes, index=None):
     """Updates the list of input projects
 
     :param function Node-> dict serialize:
-    :param Node[] nodes: Projects, components or registrations
+    :param Node[] nodes: Projects, components, registrations, or preprints
     :param str index: Index of the nodes
     :return:
     """
@@ -418,11 +424,10 @@ def serialize_contributors(node):
     return {
         'contributors': [
             {
-                'fullname': user.fullname,
-                'url': user.profile_url if user.is_active else None
-            } for user in node.visible_contributors
-            if user is not None
-            and user.is_active
+                'fullname': x['user__fullname'],
+                'url': '/{}/'.format(x['user__guids___id'])
+            } for x in
+            node.contributor_set.filter(visible=True, user__is_active=True).order_by('_order').values('user__fullname', 'user__guids___id')
         ]
     }
 
@@ -564,12 +569,13 @@ def delete_index(index):
 
 @requires_search
 def create_index(index=None):
-    '''Creates index with some specified mappings to begin with,
-    all of which are applied to all projects, components, and registrations.
-    '''
+    """
+    Creates index with some specified mappings to begin with,
+    all of which are applied to all projects, components, preprints and registrations.
+    """
     index = index or INDEX
-    document_types = ['project', 'component', 'registration', 'user', 'file', 'institution']
-    project_like_types = ['project', 'component', 'registration']
+    document_types = ['project', 'component', 'registration', 'user', 'file', 'institution', 'preprint']
+    project_like_types = ['project', 'component', 'registration', 'preprint']
     analyzed_fields = ['title', 'description']
 
     client().indices.create(index, ignore=[400])  # HTTP 400 if index already exists
@@ -615,7 +621,13 @@ def create_index(index=None):
 @requires_search
 def delete_doc(elastic_document_id, node, index=None, category=None):
     index = index or INDEX
-    category = category or 'registration' if node.is_registration else node.project_or_component
+    if not category:
+        if node.is_registration:
+            category = 'registration'
+        elif node.is_preprint:
+            category = 'preprint'
+        else:
+            category = node.project_or_component
     client().delete(index=index, doc_type=category, id=elastic_document_id, refresh=True, ignore=[404])
 
 

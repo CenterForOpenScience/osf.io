@@ -71,19 +71,15 @@ logger = logging.getLogger(__name__)
 class AbstractNodeQuerySet(MODMCompatibilityQuerySet, IncludeQuerySet):
 
     def get_roots(self):
-        return self.extra(
-            where=['"osf_abstractnode".id in (SELECT id FROM osf_abstractnode WHERE id NOT IN (SELECT child_id FROM '
-                   'osf_noderelation WHERE is_node_link IS false))'])
+        return self.filter(id__in=self.exclude(type='osf.collection').values_list('root_id', flat=True))
 
-    def get_children(self, root, primary_keys=False, active=False):
+    def get_children(self, root, active=False):
         # If `root` is a root node, we can use the 'descendants' related name
         # rather than doing a recursive query
         if root.id == root.root_id:
             query = root.descendants.exclude(id=root.id)
             if active:
                 query = query.filter(is_deleted=False)
-            if primary_keys:
-                query = query.values_list('id', flat=True)
             return query
         else:
             sql = """
@@ -117,10 +113,9 @@ class AbstractNodeQuerySet(MODMCompatibilityQuerySet, IncludeQuerySet):
                     node_relation_table,
                     root.pk])
                 row = cursor.fetchone()[0]
-                if row is None or primary_keys:
-                    return row or []
-                else:
-                    return AbstractNode.objects.filter(id__in=row)       # return query
+                if not row:
+                    return AbstractNode.objects.none()
+                return AbstractNode.objects.filter(id__in=row)
 
     def can_view(self, user=None, private_link=None):
         qs = self.filter(is_public=True)
@@ -425,7 +420,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         if not self.preprint_file_id or not self.is_public:
             return False
         if self.preprint_file.node_id == self.id:
-            return True
+            return self.has_published_preprint
         else:
             self._is_preprint_orphan = True
             return False
@@ -436,6 +431,10 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         if (not self.is_preprint) and self._is_preprint_orphan:
             return True
         return False
+
+    @property
+    def has_published_preprint(self):
+        return self.preprints.filter(is_published=True).exists()
 
     @property
     def preprint_url(self):
@@ -1942,9 +1941,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
         # After fork callback
         for addon in original.get_addons():
-            _, message = addon.after_fork(original, forked, user)
-            if message:
-                status.push_status_message(message, kind='info', trust=True)
+            addon.after_fork(original, forked, user)
 
         return forked
 
@@ -2288,7 +2285,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             from website.preprints.tasks import on_preprint_updated
             PreprintService = apps.get_model('osf.PreprintService')
             # .preprints wouldn't return a single deleted preprint
-            for preprint in PreprintService.find(Q('node', 'eq', self)):
+            for preprint in PreprintService.objects.filter(node_id=self.id, is_published=True):
                 enqueue_task(on_preprint_updated.s(preprint._id))
 
         user = User.load(user_id)
