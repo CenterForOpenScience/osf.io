@@ -367,7 +367,8 @@ def serialize_node(node, category):
     }
     if not node.is_retracted:
         for wiki in NodeWikiPage.objects.filter(guids___id__in=node.wiki_pages_current.values()):
-            elastic_document['wikis'][wiki.page_name] = wiki.raw_text(node)
+            # '.' is not allowed in field names in ES2
+            elastic_document['wikis'][wiki.page_name.replace('.', ' ')] = wiki.raw_text(node)
 
     return elastic_document
 
