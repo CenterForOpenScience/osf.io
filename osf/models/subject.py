@@ -1,9 +1,13 @@
 # -*- coding: utf-8 -*-
 from django.db import models
+#from django.core.exceptions import ValidationError
 
 from website.util import api_v2_url
 
 from osf.models.base import BaseModel, ObjectIDMixin
+from osf.models.preprint_provider import PreprintProvider
+#from osf.models.preprint_service import PreprintService
+from osf.models.validators import validate_subject_hierarchy_length, validate_subject_provider_mapping
 
 
 class Subject(ObjectIDMixin, BaseModel):
@@ -12,7 +16,9 @@ class Subject(ObjectIDMixin, BaseModel):
     modm_query = None
 
     text = models.CharField(null=False, max_length=256, unique=True)  # max length on prod: 73
-    parents = models.ManyToManyField('self', symmetrical=False, related_name='children')
+    parent = models.ForeignKey('self', related_name='children', null=True, blank=True, on_delete=models.SET_NULL)
+    bepress_subject = models.ForeignKey('self', related_name='aliases', null=True, blank=True)
+    provider = models.ForeignKey(PreprintProvider, related_name='subjects')
 
     def __unicode__(self):
         return '{} with id {}'.format(self.text, self.id)
@@ -31,6 +37,31 @@ class Subject(ObjectIDMixin, BaseModel):
 
     @property
     def hierarchy(self):
-        if self.parents.exists():
-            return self.parents.first().hierarchy + [self._id]
+        if self.parent:
+            return self.parent.hierarchy + [self._id]
         return [self._id]
+
+    @property
+    def object_hierarchy(self):
+        if self.parent:
+            return self.parent.object_hierarchy + [self]
+        return [self]
+
+    @classmethod
+    def create(cls, text, provider, parent=None, bepress_subject=None):
+        validate_subject_hierarchy_length(parent)
+        validate_subject_provider_mapping(provider, bepress_subject)
+        subject = cls(text=text, provider=provider, parent=parent, bepress_subject=bepress_subject)
+        subject.save()
+        return subject
+
+    # TODO: uncomment after PPS model changes
+    # def save(self, *args, **kwargs):
+    #     if PreprintService.objects.filter(subjects=self.id).exists():
+    #         raise ValidationError('Cannot edit a used Subject')
+    #     return super(Subject, self).save()
+    #
+    # def delete(self, *args, **kwargs):
+    #     if PreprintService.objects.filter(subjects=self.id).exists():
+    #         raise ValidationError('Cannot delete a used Subject')
+    #     return super(Subject, self).delete()
