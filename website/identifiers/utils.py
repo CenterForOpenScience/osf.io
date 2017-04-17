@@ -1,13 +1,11 @@
 # -*- coding: utf-8 -*-
 
 import re
-import furl
+from tld import get_tld
 
 from framework.exceptions import HTTPError
-
-
 from website import settings
-from website.identifiers.metadata import datacite_metadata_for_node, datacite_metadata
+from website.identifiers.metadata import datacite_metadata_for_node
 
 
 FIELD_SEPARATOR = '\n'
@@ -61,12 +59,12 @@ def get_doi_and_node_for_object(target_object):
     from osf.models import PreprintService
 
     node = target_object
-    host = 'osf.io'
+    domain = 'osf.io'
     if isinstance(target_object, PreprintService):
-        host = furl.furl(target_object.provider.external_url).host
+        domain = get_tld(target_object.provider.external_url)
         node = target_object.node
 
-    doi = settings.EZID_FORMAT.format(namespace=settings.DOI_NAMESPACE, host=host, guid=target_object._id)
+    doi = settings.EZID_FORMAT.format(namespace=settings.DOI_NAMESPACE, domain=domain, guid=target_object._id)
 
     return doi, node
 
