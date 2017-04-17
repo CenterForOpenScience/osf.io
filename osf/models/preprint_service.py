@@ -15,7 +15,7 @@ from website.preprints.tasks import on_preprint_updated
 from website.project.model import NodeLog
 from website.project.licenses import set_license
 from website.project.taxonomies import validate_subject_hierarchy
-from website.project.views.register import _get_or_create_identifiers
+from website.identifiers.utils import get_or_create_identifiers
 from website.util import api_v2_url
 from website.util.permissions import ADMIN
 from website import settings
@@ -195,17 +195,13 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, BaseModel):
                     log=True
                 )
 
-            if not self.get_identifier_value('doi'):
-                new_identifiers = self.get_ezid_idenfifiers()
-                self.set_identifier_value('doi', new_identifiers['doi'])
-                self.set_identifier_value('ark', new_identifiers['ark'])
+            new_identifiers = get_or_create_identifiers(self)
+            self.set_identifier_value('doi', new_identifiers['doi'])
+            self.set_identifier_value('ark', new_identifiers['ark'])
 
         if save:
             self.node.save()
             self.save()
-
-    def get_ezid_idenfifiers(self):
-        return _get_or_create_identifiers(self)
 
     def set_preprint_license(self, license_detail, auth, save=False):
         license_record, license_changed = set_license(self, license_detail, auth, node_type='preprint')
