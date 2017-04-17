@@ -92,6 +92,14 @@ def validate_email(value):
     if value.split('@')[1].lower() in settings.BLACKLISTED_DOMAINS:
         raise ValidationError('Invalid Email')
 
+def validate_subject_hierarchy_length(parent):
+    if parent and len(parent.hierarchy) >= 3:
+        raise DjangoValidationError('Invalid hierarchy')
+
+def validate_subject_provider_mapping(provider, mapping):
+    if not mapping and provider._id is not 'osf':
+        raise DjangoValidationError('Invalid PreprintProvider / Subject alias mapping.')
+
 
 @deconstructible
 class CommentMaxLength(object):

@@ -5,7 +5,6 @@ from modularodm import Q
 
 from osf.models.base import BaseModel, ObjectIDMixin
 from osf.models.licenses import NodeLicense
-from osf.models.subject import Subject
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import EncryptedTextField
 
@@ -38,6 +37,7 @@ class PreprintProvider(ObjectIDMixin, BaseModel):
 
     @property
     def top_level_subjects(self):
+        from osf.models.subject import Subject
         if len(self.subjects_acceptable) == 0:
             return Subject.find(Q('parents', 'isnull', True))
         tops = set([sub[0][0] for sub in self.subjects_acceptable])
@@ -45,6 +45,7 @@ class PreprintProvider(ObjectIDMixin, BaseModel):
 
     @property
     def all_subjects(self):
+        from osf.models.subject import Subject
         q = []
         for rule in self.subjects_acceptable:
             if rule[1]:
