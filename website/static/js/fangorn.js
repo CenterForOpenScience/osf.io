@@ -883,8 +883,8 @@ function _fangornDropzoneRemovedFile(treebeard, file, message, xhr) {
  * @param message Error message returned
  * @private
  */
-var DEFAULT_ERROR_MESSAGE = 'Could not upload file. The file may be invalid ' +
-    'or the file folder has been deleted.';
+var DEFAULT_ERROR_MESSAGE = 'Unable to reach the provider, please try again ' +
+    'later. If the problem persists, please contact support@osf.io.';
 function _fangornDropzoneError(treebeard, file, message, xhr) {
     var tb = treebeard;
     // File may either be a webkit Entry or a file object, depending on the browser
@@ -904,8 +904,7 @@ function _fangornDropzoneError(treebeard, file, message, xhr) {
     } else if (xhr && xhr.status === 507) {
         msgText = 'Cannot upload file due to insufficient storage.';
     } else if (xhr && xhr.status === 0) {
-        msgText = 'Unable to reach the provider, please try again later. If the ' +
-            'problem persists, please contact support@osf.io.';
+        msgText = DEFAULT_ERROR_MESSAGE;
     } else {
         //Osfstorage and most providers store message in {Object}message.{string}message,
         //but some, like Dataverse, have it in {string} message.
