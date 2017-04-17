@@ -63,6 +63,13 @@
             </table>
         </td>
     </tr>
+    <tr style="border-collapse: collapse;" align="left">
+        <br>
+        Center for Open Science<br>
+        210 Ridge McIntire Road<br>
+        Suite 500<br>
+        Charlottesville, VA 22903-5083<br>
+    </tr>
     <tr>
         <td style="border-collapse: collapse; padding-top: 15px;">
             <table width="80%" border="0" cellpadding="10" cellspacing="0" align="center" class="footer" style="margin-top: 45px;padding: 25px 0 35px;background-color: rgb(244, 244, 244);border-top: 1px solid #E5E5E5;border-bottom: 1px solid #E5E5E5;width: 100%;color: #555;">

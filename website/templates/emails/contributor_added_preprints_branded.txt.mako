@@ -15,6 +15,11 @@ Sincerely,
 
 Your ${branded_service_name} and OSF teams
 
+Center for Open Science
+210 Ridge McIntire Road
+Suite 500
+Charlottesville, VA 22903-5083
+Privacy Policy: https://github.com/CenterForOpenScience/cos.io/blob/master/PRIVACY_POLICY.md
 
 Want more information? Visit https://osf.io/preprints/${branded_service_name.lower()} to learn about ${branded_service_name} or https://osf.io/ to learn about the Open Science Framework, or https://cos.io/ for information about its supporting organization, the Center for Open Science.
 

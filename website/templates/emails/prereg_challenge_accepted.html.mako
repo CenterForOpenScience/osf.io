@@ -22,3 +22,8 @@ Thank you for entering the Preregistration Challenge. Feel free to submit anothe
 Sincerely,
 <br />
 The team at the Center for Open Science
+<br>
+Center for Open Science<br>
+210 Ridge McIntire Road<br>
+Suite 500<br>
+Charlottesville, VA 22903-5083<br>

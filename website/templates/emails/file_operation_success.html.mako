@@ -58,6 +58,13 @@
                           The ${'folder' if source_path.endswith('/') else 'file'} "${source_path.strip('/')}" has been successfully ${'moved' if action == 'move' else 'copied'} from ${source_addon} in ${source_node.title} to ${destination_addon}.
                         </td>
                     </tr>
+                    <tr style="border-collapse: collapse;" align="left">
+                        <br>
+                        Center for Open Science<br>
+                        210 Ridge McIntire Road<br>
+                        Suite 500<br>
+                        Charlottesville, VA 22903-5083<br>
+                    </tr>
                 </tbody>
             </table>
         </td>
