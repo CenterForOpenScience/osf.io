@@ -12,7 +12,8 @@ from framework.auth import Auth
 from framework.exceptions import PermissionsError
 
 from website import settings
-from osf.models import NodeLog, Subject
+from osf.models import NodeLog, Subject, Identifier
+from osf.exceptions import NodeStateError
 
 from tests.base import OsfTestCase
 from osf_tests.factories import (
@@ -281,6 +282,27 @@ class TestPreprintProvider(OsfTestCase):
 
 
         assert set(self.provider.all_subjects) == set([subj_a, subj_b, subj_aa, subj_ab, subj_ba, subj_bb, subj_aaa])
+
+class TestPreprintIdentifiers(OsfTestCase):
+    def setUp(self):
+        super(TestPreprintIdentifiers, self).setUp()
+        self.user = AuthUserFactory()
+        self.auth = Auth(user=self.user)
+        self.preprint = PreprintFactory(is_published=False, creator=self.user)
+
+    @mock.patch('website.identifiers.client.EzidClient.create_identifier')
+    def test_identifiers_added_on_publish(self, mock_create_identifier):
+        mock_create_identifier.return_value = {
+            'success': 'doi:10.5072/FK2OSF.IO/{0} | ark:/b5072/fk2osf.io/{0}'.format(self.preprint._id)
+        }
+        assert self.preprint.identifiers.count() == 0
+        self.preprint.set_published(True, auth=self.auth, save=True)
+
+        assert mock_create_identifier.called
+        assert self.preprint.get_identifier_value('doi') == '10.5072/FK2OSF.IO/{}'.format(self.preprint._id)
+        assert self.preprint.get_identifier_value('ark') == 'b5072/fk2osf.io/{}'.format(self.preprint._id)
+        assert self.preprint.identifiers.count() == 2
+
 
 class TestOnPreprintUpdatedTask(OsfTestCase):
     def setUp(self):
