@@ -13,7 +13,7 @@ class Institution(Loggable, base.ObjectIDMixin, base.BaseModel):
     # e.g. CharFields should never be null=True
 
     name = models.CharField(max_length=255)
-    description = models.TextField(blank=True, null=True)
+    description = models.TextField(blank=True, default='', null=True)
 
     # TODO Could `banner_name` and `logo_name` be a FilePathField?
     banner_name = models.CharField(max_length=255, blank=True, null=True)
@@ -30,7 +30,7 @@ class Institution(Loggable, base.ObjectIDMixin, base.BaseModel):
         ('saml-shib', 'SAML by Shibboleth'),
         ('', 'No Delegation Protocol'),
     )
-    delegation_protocol = models.CharField(max_length=15, choices=DELEGATION_PROTOCOL_CHOICES, blank=True)
+    delegation_protocol = models.CharField(max_length=15, choices=DELEGATION_PROTOCOL_CHOICES, blank=True, default='')
 
     # login_url and logout_url can be null or empty
     login_url = models.URLField(null=True, blank=True)
