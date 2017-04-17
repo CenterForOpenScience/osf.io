@@ -17,7 +17,6 @@ from website.util import api_v2_url
 from website.util.permissions import ADMIN
 from website import settings
 
-from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.models.base import BaseModel, GuidMixin
 from osf.models.subject import Subject
 
@@ -36,12 +35,7 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, BaseModel):
     license = models.ForeignKey('osf.NodeLicenseRecord',
                                 on_delete=models.SET_NULL, null=True, blank=True)
 
-    # This is a list of tuples of Subject id's. MODM doesn't do schema
-    # validation for DictionaryFields, but would unsuccessfully attempt
-    # to validate the schema for a list of lists of ForeignFields.
-    #
-    # Format: [[root_subject._id, ..., child_subject._id], ...]
-    subjects = DateTimeAwareJSONField(default=list, null=True, blank=True)
+    subjects = models.ManyToManyField(blank=True, to='osf.Subject')
 
     class Meta:
         unique_together = ('node', 'provider')
@@ -71,6 +65,12 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, BaseModel):
         return self.node.is_preprint_orphan
 
     @property
+    def subject_hierarchy(self):
+        return [
+            s.object_hierarchy for s in self.subjects.exclude(children__in=self.subjects.all())
+        ]
+
+    @property
     def deep_url(self):
         # Required for GUID routing
         return '/preprints/{}/'.format(self._primary_key)
@@ -93,12 +93,11 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, BaseModel):
 
     def get_subjects(self):
         ret = []
-        for subj_list in self.subjects:
+        for subj_list in self.subject_hierarchy:
             subj_hierarchy = []
-            for subj_id in subj_list:
-                subj = Subject.load(subj_id)
+            for subj in subj_list:
                 if subj:
-                    subj_hierarchy += ({'id': subj_id, 'text': subj.text}, )
+                    subj_hierarchy += ({'id': subj._id, 'text': subj.text}, )
             if subj_hierarchy:
                 ret.append(subj_hierarchy)
         return ret
@@ -107,14 +106,15 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, BaseModel):
         if not self.node.has_permission(auth.user, ADMIN):
             raise PermissionsError('Only admins can change a preprint\'s subjects.')
 
-        self.subjects = []
+        self.subjects.clear()
         for subj_list in preprint_subjects:
             subj_hierarchy = []
             for s in subj_list:
                 subj_hierarchy.append(s)
             if subj_hierarchy:
                 validate_subject_hierarchy(subj_hierarchy)
-                self.subjects.append(subj_hierarchy)
+                for s_id in subj_hierarchy:
+                    self.subjects.add(Subject.load(s_id))
 
         if save:
             self.save()
