@@ -28,9 +28,9 @@ class Institution(Loggable, base.ObjectIDMixin, base.BaseModel):
     # For `CAS` and `OAuth`, we use pac4j.
     # Only institutions with a valid delegation protocol show up on the institution login page.
     DELEGATION_PROTOCOL_CHOICES = (
-        ('CAS_PAC4J', 'CAS by pac4j'),
-        ('OAUTH_PAC4J', 'OAuth by pac4j'),
-        ('SAML_SHIB', 'SAML by Shibboleth'),
+        ('cas-pac4j', 'CAS by pac4j'),
+        ('oauth-pac4j', 'OAuth by pac4j'),
+        ('saml-shib', 'SAML by Shibboleth'),
         ('', 'No Delegation Protocol'),
     )
     delegation_protocol = models.CharField(max_length=15, choices=DELEGATION_PROTOCOL_CHOICES, blank=True)
