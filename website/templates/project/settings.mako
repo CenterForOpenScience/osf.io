@@ -35,6 +35,8 @@
 
                         <li><a href="#configureNotificationsAnchor">Email Notifications</a></li>
 
+                         <li><a href="#downloadOsfOffline">Download OSF-Offline</a></li>
+
                     % endif
 
                     % if node['is_registration']:
@@ -387,6 +389,26 @@
             %endif
 
         % endif ## End Configure Email Notifications
+
+        ### download OSF-Offline
+        <div class="panel panel-default">
+            <span id="downloadOsfOffline" class="anchor"></span>
+            <div class="panel-heading clearfix">
+                <h3 class="panel-title">Download OSF-Offline</h3>
+            </div>
+            <div class="panel-body">
+                <label>For Windows users</label>
+                <span class="help-block">Please click <a url="">here</a> to download</span>
+                </br>
+                <label>For Mac users</label>
+                <span class="help-block">Please click <a url="">here</a> to download</span>
+                </br>
+                <div class="help-block" style="padding-left: 15px">
+                    <p class="text-info">This is an Alpha version of OSF-Offline.
+                        Any feedback are welcome, please let us know at contact@cos.io.</p>
+                </div>
+            </div>
+        </div>
 
         % if 'admin' in user['permissions']:  ## Begin Retract Registration
 
