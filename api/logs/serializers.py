@@ -1,5 +1,8 @@
 from rest_framework import serializers as ser
 
+from modularodm import Q
+from modularodm.exceptions import NoResultsFound
+
 from api.base.serializers import (
     JSONAPISerializer,
     RelationshipField,
@@ -9,7 +12,7 @@ from api.base.serializers import (
     DateByVersion,
 )
 from website.project.model import Node
-from osf.models.files import File
+from website.files.models import FileNode
 from website.util import permissions as osf_permissions
 from framework.auth.core import User
 from website.preprints.model import PreprintService
@@ -104,8 +107,15 @@ class NodeLogParamsSerializer(RestrictedDictSerializer):
             view = urls.get('view', None)
             if view:
                 file_id = view.split('/')[-2]
-                file_path = File.object.filter(guids___id=file_id).values('path').get()
-                return file_path
+                provider = 'osfstorage'
+                try:
+                    file_node = FileNode.resolve_class(provider, FileNode.ANY).find_one(
+                                    Q('id', 'eq', file_id)
+                                )
+                except NoResultsFound:
+                    file_node = None
+                if file_node:
+                    return file_node.path
         return None
 
     def get_params_node(self, obj):
