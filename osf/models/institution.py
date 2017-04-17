@@ -11,19 +11,43 @@ logger = logging.getLogger(__name__)
 
 
 class Institution(Loggable, base.ObjectIDMixin, base.BaseModel):
+
     # TODO Remove null=True for things that shouldn't be nullable
-    banner_name = models.CharField(max_length=255, null=True, blank=True)
+    # e.g. CharFields should never be null=True
+
+    name = models.CharField(max_length=255)
+    description = models.TextField(blank=True, null=True)
+
+    # TODO Could `banner_name` and `logo_name` be a FilePathField?
+    banner_name = models.CharField(max_length=255, blank=True, null=True)
+    logo_name = models.CharField(max_length=255, blank=True, null=True)
+
+    # The protocol which is used to delegate authentication.
+    # Currently, we have `CAS`, `SAML`, `OAuth` available.
+    # For `SAML`, we use Shibboleth.
+    # For `CAS` and `OAuth`, we use pac4j.
+    # Only institutions with a valid delegation protocol show up on the institution login page.
+    DELEGATION_PROTOCOL_CHOICES = (
+        ('cas-pac4j', 'CAS by pac4j'),
+        ('oauth-pac4j', 'OAuth by pac4j'),
+        ('saml-shib', 'SAML by Shibboleth'),
+        ('', 'No Delegation Protocol'),
+    )
+    delegation_protocol = models.CharField(max_length=15, choices=DELEGATION_PROTOCOL_CHOICES, blank=True)
+
+    # login_url and logout_url can be null or empty
     login_url = models.URLField(null=True, blank=True)
-    contributors = models.ManyToManyField(settings.AUTH_USER_MODEL,
-                                          through=InstitutionalContributor,
-                                          related_name='institutions')
+    logout_url = models.URLField(null=True, blank=True)
+
     domains = fields.ArrayField(models.CharField(max_length=255), db_index=True, null=True, blank=True)
     email_domains = fields.ArrayField(models.CharField(max_length=255), db_index=True, null=True, blank=True)
-    logo_name = models.CharField(max_length=255, null=True)  # TODO: Could this be a FilePathField?
-    logout_url = models.URLField(null=True, blank=True)
-    name = models.CharField(max_length=255)
 
-    description = models.TextField(blank=True, default='', null=True)
+    contributors = models.ManyToManyField(
+        settings.AUTH_USER_MODEL,
+        through=InstitutionalContributor,
+        related_name='institutions'
+    )
+
     is_deleted = models.BooleanField(default=False, db_index=True)
 
     def __init__(self, *args, **kwargs):
