@@ -1678,11 +1678,11 @@ class TestUserAccount(OsfTestCase):
             }
         }
         self.user.add_unconfirmed_email("james@steward.com")
-        self.user.add_unconfirmed_email("stweard@james.com", external_identity=external_identity)
+        self.user.add_unconfirmed_email("steward@james.com", external_identity=external_identity)
         self.user.save()
         unconfirmed_emails = self.user.get_unconfirmed_emails_exclude_external_identity()
         assert_in("james@steward.com", unconfirmed_emails)
-        assert_not_in("stweard@james.com", unconfirmed_emails)
+        assert_not_in("steward@james.com", unconfirmed_emails)
 
 
 class TestAddingContributorViews(OsfTestCase):
