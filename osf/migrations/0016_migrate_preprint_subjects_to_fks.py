@@ -17,7 +17,7 @@ def migrate_data(state, schema):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0014_migrate_subject_parents_to_parent'),
+        ('osf', '0015_migrate_subject_parents_to_parent'),
     ]
 
     operations = [
