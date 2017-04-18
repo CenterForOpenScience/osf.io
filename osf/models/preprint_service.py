@@ -167,7 +167,7 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, BaseModel):
                 raise ValueError('Preprint node is not a valid preprint; cannot publish.')
             if not self.provider:
                 raise ValueError('Preprint provider not specified; cannot publish.')
-            if not self.subjects:
+            if not self.subjects.exists():
                 raise ValueError('Preprint must have at least one subject to be published.')
             self.date_published = timezone.now()
             self.node._has_abandoned_preprint = False
