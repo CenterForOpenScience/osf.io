@@ -79,7 +79,7 @@ class OsfStorageFileNode(BaseFileNode):
             return inst
 
         # Dont raise anything a 404 will be raised later
-        return cls.create(node=node, path=path)
+        return cls(node=node, path=path)
 
     @classmethod
     def get_file_guids(cls, materialized_path, provider, node=None):

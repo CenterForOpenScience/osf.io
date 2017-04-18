@@ -71,17 +71,51 @@ logger = logging.getLogger(__name__)
 class AbstractNodeQuerySet(MODMCompatibilityQuerySet, IncludeQuerySet):
 
     def get_roots(self):
-        return self.extra(
-            where=['"osf_abstractnode".id in (SELECT id FROM osf_abstractnode WHERE id NOT IN (SELECT child_id FROM '
-                   'osf_noderelation WHERE is_node_link IS false))'])
+        return self.filter(id__in=self.exclude(type='osf.collection').values_list('root_id', flat=True))
 
-    def get_children(self, root, primary_keys=False, active=False):
-        query = root.descendants.exclude(id=root.id)
-        if active:
-            query = query.filter(is_deleted=False)
-        if primary_keys:
-            query = query.values_list('id', flat=True)
-        return query
+    def get_children(self, root, active=False):
+        # If `root` is a root node, we can use the 'descendants' related name
+        # rather than doing a recursive query
+        if root.id == root.root_id:
+            query = root.descendants.exclude(id=root.id)
+            if active:
+                query = query.filter(is_deleted=False)
+            return query
+        else:
+            sql = """
+                WITH RECURSIVE descendants AS (
+                SELECT
+                    parent_id,
+                    child_id,
+                    1 AS LEVEL
+                FROM %s
+                %s
+                WHERE is_node_link IS FALSE %s
+                UNION ALL
+                SELECT
+                    s.parent_id,
+                    d.child_id,
+                    d.level + 1
+                FROM descendants AS d
+                    JOIN %s AS s
+                    ON d.parent_id = s.child_id
+                WHERE s.is_node_link IS FALSE
+                ) SELECT array_agg(DISTINCT child_id)
+                FROM descendants
+                WHERE parent_id = %s;
+            """
+            with connection.cursor() as cursor:
+                node_relation_table = AsIs(NodeRelation._meta.db_table)
+                cursor.execute(sql, [
+                    node_relation_table,
+                    AsIs('LEFT JOIN osf_abstractnode ON {}.child_id = osf_abstractnode.id'.format(node_relation_table) if active else ''),
+                    AsIs('AND osf_abstractnode.is_deleted IS FALSE' if active else ''),
+                    node_relation_table,
+                    root.pk])
+                row = cursor.fetchone()[0]
+                if not row:
+                    return AbstractNode.objects.none()
+                return AbstractNode.objects.filter(id__in=row)
 
     def can_view(self, user=None, private_link=None):
         qs = self.filter(is_public=True)
@@ -274,10 +308,11 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     @cached_property
     def parent_node(self):
-        node_rel = NodeRelation.objects.filter(
-            child=self,
-            is_node_link=False
-        ).select_related('parent').first()
+        # TODO: Use .filter when chaining is fixed in django-include
+        try:
+            node_rel = next(parent for parent in self._parents.all() if not parent.is_node_link)
+        except StopIteration:
+            node_rel = None
         if node_rel:
             parent = node_rel.parent
             if parent:
@@ -385,7 +420,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         if not self.preprint_file_id or not self.is_public:
             return False
         if self.preprint_file.node_id == self.id:
-            return True
+            return self.has_published_preprint
         else:
             self._is_preprint_orphan = True
             return False
@@ -396,6 +431,10 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         if (not self.is_preprint) and self._is_preprint_orphan:
             return True
         return False
+
+    @property
+    def has_published_preprint(self):
+        return self.preprints.filter(is_published=True).exists()
 
     @property
     def preprint_url(self):
@@ -2248,7 +2287,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             from website.preprints.tasks import on_preprint_updated
             PreprintService = apps.get_model('osf.PreprintService')
             # .preprints wouldn't return a single deleted preprint
-            for preprint in PreprintService.find(Q('node', 'eq', self)):
+            for preprint in PreprintService.objects.filter(node_id=self.id, is_published=True):
                 enqueue_task(on_preprint_updated.s(preprint._id))
 
         user = User.load(user_id)

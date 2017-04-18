@@ -183,7 +183,10 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
 
     @classmethod
     def get_or_create(cls, node, path):
-        obj, _ = cls.objects.get_or_create(node=node, _path='/' + path.lstrip('/'))
+        try:
+            obj = cls.objects.get(node=node, _path='/' + path.lstrip('/'))
+        except cls.DoesNotExist:
+            obj = cls(node=node, _path='/' + path.lstrip('/'))
         return obj
 
     @classmethod
@@ -318,44 +321,6 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
         # TODO Switch back to head requests
         # return self.update(revision, json.loads(resp.headers['x-waterbutler-metadata']))
 
-    def update(self, revision, data, user=None):
-        """Using revision and data update all data pretaining to self
-        :param str or None revision: The revision that data points to
-        :param dict data: Metadata recieved from waterbutler
-        :returns: FileVersion
-        """
-        self.name = data['name']
-        self.materialized_path = data['materialized']
-
-        version = FileVersion(identifier=revision)
-        version.update_metadata(data, save=False)
-
-        # Transform here so it can be sortted on later
-        if data['modified'] is not None and data['modified'] != '':
-            data['modified'] = parse_date(
-                data['modified'],
-                ignoretz=True,
-                default=timezone.now()  # Just incase nothing can be parsed
-            )
-
-        # if revision is none then version is the latest version
-        # Dont save the latest information
-        if revision is not None:
-            version.save()
-            self.versions.add(version)
-        for entry in self.history:
-            if ('etag' in entry and 'etag' in data) and (entry['etag'] == data['etag']):
-                break
-        else:
-            # Insert into history if there is no matching etag
-            utils.insort(self.history, data, lambda x: x['modified'])
-
-        # Finally update last touched
-        self.last_touched = timezone.now()
-
-        self.save()
-        return version
-
     def get_download_count(self, version=None):
         """Pull the download count from the pagecounter collection
         Limit to version if specified.
@@ -472,6 +437,44 @@ class File(models.Model):
     def kind(self):
         return 'file'
 
+    def update(self, revision, data, user=None):
+        """Using revision and data update all data pretaining to self
+        :param str or None revision: The revision that data points to
+        :param dict data: Metadata recieved from waterbutler
+        :returns: FileVersion
+        """
+        self.name = data['name']
+        self.materialized_path = data['materialized']
+
+        version = FileVersion(identifier=revision)
+        version.update_metadata(data, save=False)
+
+        # Transform here so it can be sortted on later
+        if data['modified'] is not None and data['modified'] != '':
+            data['modified'] = parse_date(
+                data['modified'],
+                ignoretz=True,
+                default=timezone.now()  # Just incase nothing can be parsed
+            )
+
+        # if revision is none then version is the latest version
+        # Dont save the latest information
+        if revision is not None:
+            version.save()
+            self.versions.add(version)
+        for entry in self.history:
+            if ('etag' in entry and 'etag' in data) and (entry['etag'] == data['etag']):
+                break
+        else:
+            # Insert into history if there is no matching etag
+            utils.insort(self.history, data, lambda x: x['modified'])
+
+        # Finally update last touched
+        self.last_touched = timezone.now()
+
+        self.save()
+        return version
+
     def serialize(self):
         newest_version = self.versions.all().last()
 
@@ -512,6 +515,17 @@ class Folder(models.Model):
     @property
     def children(self):
         return self._children.exclude(type__in=TrashedFileNode._typedmodels_subtypes)
+
+    def update(self, revision, data, save=True, user=None):
+        """Note: User is a kwargs here because of special requirements of
+        dataverse and django
+        See dataversefile.update
+        """
+        self.name = data['name']
+        self.materialized_path = data['materialized']
+        self.last_touched = timezone.now()
+        if save:
+            self.save()
 
     def append_file(self, name, path=None, materialized_path=None, save=True):
         return self._create_child(name, File, path=path, materialized_path=materialized_path, save=save)
@@ -628,7 +642,7 @@ class FileVersion(ObjectIDMixin, BaseModel):
     # Date version record was created. This is the date displayed to the user.
     date_created = NonNaiveDateTimeField(auto_now_add=True)
 
-    size = models.BigIntegerField(default=-1, blank=True)
+    size = models.BigIntegerField(default=-1, blank=True, null=True)
 
     content_type = models.CharField(max_length=100, blank=True, null=True)  # was 24 on staging
     # Date file modified on third-party backend. Not displayed to user, since

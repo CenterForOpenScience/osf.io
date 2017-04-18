@@ -34,7 +34,7 @@ class PreprintView(PermissionRequiredMixin, UpdateView, GuidView):
     View of OSF database. No admin models.
     """
     template_name = 'preprints/preprint.html'
-    context_object_name = 'preprint'
+    context_object_name = 'preprintservice'
     permission_required = 'osf.view_preprintservice'
     raise_exception = True
     form_class = ChangeProviderForm
@@ -45,6 +45,7 @@ class PreprintView(PermissionRequiredMixin, UpdateView, GuidView):
     def post(self, request, *args, **kwargs):
         if not request.user.has_perm('osf.change_preprintservice'):
             raise PermissionsError("This user does not have permission to update this preprint's provider.")
+        return super(PreprintView, self).post(request, *args, **kwargs)
 
     def get_object(self, queryset=None):
         return PreprintService.load(self.kwargs.get('guid'))

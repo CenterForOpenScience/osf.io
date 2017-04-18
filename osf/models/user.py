@@ -1398,7 +1398,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     class Meta:
         # custom permissions for use in the OSF Admin App
         permissions = (
-            ('view_user', 'Can view user details'),
+            ('view_osfuser', 'Can view user details'),
         )
 
 @receiver(post_save, sender=OSFUser)

@@ -33,6 +33,7 @@ from osf.models import (
     DraftRegistration,
     DraftRegistrationApproval,
 )
+from osf.models.node import AbstractNodeQuerySet
 from osf.models.spam import SpamStatus
 from addons.wiki.models import NodeWikiPage
 from osf.exceptions import ValidationError, ValidationValueError
@@ -197,17 +198,33 @@ class TestParentNode:
         greatgrandchild_1 = NodeFactory(parent=grandchild_1, is_deleted=True)
 
         assert 20 == Node.objects.get_children(root).count()
-        pks = Node.objects.get_children(root, primary_keys=True)
+        pks = Node.objects.get_children(root).values_list('id', flat=True)
         assert 20 == len(pks)
         assert set(pks) == set(Node.objects.exclude(id=root.id).values_list('id', flat=True))
 
         assert greatgrandchild_1 in Node.objects.get_children(root).all()
         assert greatgrandchild_1 not in Node.objects.get_children(root, active=True).all()
 
-    def test_get_children_with_barren_parent(self):
+    def test_get_children_root_with_no_children(self):
         root = ProjectFactory()
 
         assert 0 == len(Node.objects.get_children(root))
+        assert isinstance(Node.objects.get_children(root), AbstractNodeQuerySet)
+
+    def test_get_children_child_with_no_children(self):
+        root = ProjectFactory()
+        child = ProjectFactory(parent=root)
+
+        assert 0 == Node.objects.get_children(child).count()
+        assert isinstance(Node.objects.get_children(child), AbstractNodeQuerySet)
+
+    def test_get_children_with_nested_projects(self):
+        root = ProjectFactory()
+        child = NodeFactory(parent=root)
+        grandchild = NodeFactory(parent=child)
+        result = Node.objects.get_children(child)
+        assert result.count() == 1
+        assert grandchild in result
 
     def test_get_children_with_links(self):
         root = ProjectFactory()
@@ -270,6 +287,15 @@ class TestParentNode:
         assert child1 not in public_results2
         assert child2 not in public_results2
 
+    def test_get_roots_distinct(self):
+        top_level = ProjectFactory()
+        child1 = ProjectFactory(parent=top_level)
+        child2 = ProjectFactory(parent=top_level)
+        child3 = ProjectFactory(parent=top_level)
+
+        assert AbstractNode.objects.get_roots().count() == 1
+        assert top_level in AbstractNode.objects.get_roots()
+
     def test_license_searches_parent_nodes(self):
         license_record = NodeLicenseRecordFactory()
         project = ProjectFactory(node_license=license_record)
@@ -331,6 +357,13 @@ class TestParentNode:
         new_nodes = [node.title for node in template.nodes]
         assert len(template.nodes) == 1
         assert deleted_child.title not in new_nodes
+
+    def test_parent_node_doesnt_return_link_parent(self, project):
+        linker = ProjectFactory(title='Linker')
+        linker.add_node_link(project, auth=Auth(linker.creator), save=True)
+        # Prevent cached parent_node property from being used
+        project = Node.objects.get(id=project.id)
+        assert project.parent_node is None
 
 
 class TestRoot:
