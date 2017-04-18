@@ -904,6 +904,10 @@ var RegistrationEditor = function(urls, editorId, preview) {
                     value = question.preview();
                 } else {
                     value = $osf.htmlEscape(question.value() || '');
+                    // preserve user's paragraph formatting
+                    while (value.indexOf('\n') > -1)
+                        value = value.replace('\n', '<br>');
+
                 }
 		$elem.append(
 		    $('<span class="col-md-12">').append(
