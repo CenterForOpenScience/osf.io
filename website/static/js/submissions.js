@@ -69,8 +69,6 @@ function Submissions(data) {
                     filter : false,
                     custom: function() {
                         var dateCreated = new osfHelpers.FormattableDate(item.data.dateCreated);
-                        // Assign dateCreated with the format of date usable in all browsers
-                        item.data.dateCreated = dateCreated.date;
                         return m('', dateCreated.local);
                     }
                 },
