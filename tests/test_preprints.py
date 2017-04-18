@@ -154,12 +154,12 @@ class TestPreprintServicePermissions(OsfTestCase):
 
 
     def test_nonadmin_cannot_set_subjects(self):
-        initial_subjects = self.preprint.subjects
+        initial_subjects = list(self.preprint.subjects.all())
         with assert_raises(PermissionsError):
             self.preprint.set_subjects([[SubjectFactory()._id]], auth=Auth(self.write_contrib), save=True)
 
         self.preprint.reload()
-        assert_equal(initial_subjects, self.preprint.subjects)
+        assert_equal(initial_subjects, list(self.preprint.subjects.all()))
 
     def test_nonadmin_cannot_set_file(self):
         initial_file = self.preprint.primary_file
@@ -169,7 +169,7 @@ class TestPreprintServicePermissions(OsfTestCase):
             name='panda.txt',
             materialized_path='/panda.txt')
         file.save()
-        
+
         with assert_raises(PermissionsError):
             self.preprint.set_primary_file(file, auth=Auth(self.write_contrib), save=True)
 
@@ -186,11 +186,11 @@ class TestPreprintServicePermissions(OsfTestCase):
         assert_false(self.preprint.is_published)
 
     def test_admin_can_set_subjects(self):
-        initial_subjects = self.preprint.subjects
+        initial_subjects = list(self.preprint.subjects.all())
         self.preprint.set_subjects([[SubjectFactory()._id]], auth=Auth(self.user), save=True)
 
         self.preprint.reload()
-        assert_not_equal(initial_subjects, self.preprint.subjects)
+        assert_not_equal(initial_subjects, list(self.preprint.subjects.all()))
 
     def test_admin_can_set_file(self):
         initial_file = self.preprint.primary_file
@@ -200,7 +200,7 @@ class TestPreprintServicePermissions(OsfTestCase):
             name='panda.txt',
             materialized_path='/panda.txt')
         file.save()
-        
+
         self.preprint.set_primary_file(file, auth=Auth(self.user), save=True)
 
         self.preprint.reload()
@@ -313,7 +313,7 @@ class TestOnPreprintUpdatedTask(OsfTestCase):
         subjects = [nodes.pop(k) for k, v in nodes.items() if v['@type'] == 'subject']
         through_subjects = [nodes.pop(k) for k, v in nodes.items() if v['@type'] == 'throughsubjects']
         assert sorted(subject['@id'] for subject in subjects) == sorted(tt['subject']['@id'] for tt in through_subjects)
-        assert sorted(subject['name'] for subject in subjects) == [Subject.load(s).text for h in self.preprint.subjects for s in h]
+        assert sorted(subject['name'] for subject in subjects) == [s.text for h in self.preprint.subject_hierarchy for s in h]
 
         people = sorted([nodes.pop(k) for k, v in nodes.items() if v['@type'] == 'person'], key=lambda x: x['given_name'])
         expected_people = sorted([{

@@ -11,9 +11,9 @@ class TestPreprintProviderSubjects(ApiTestCase):
         '''
         Subject Hierarchy
         +-----------------------------+
-        |                    +-->E    |
-        |      +-------->B+--+        |
-        |      |             +-->F    |
+        |                             |
+        |      +-------->B+----->F    |
+        |      |                      |
         |  A+----------->C            |
         |      |                      |
         |      +-------->D+----->G    |
@@ -30,19 +30,19 @@ class TestPreprintProviderSubjects(ApiTestCase):
         +-----------------------------+
         '''
         self.subA = SubjectFactory(text='A')
-        self.subB = SubjectFactory(text='B', parents=[self.subA])
-        self.subC = SubjectFactory(text='C', parents=[self.subA])
-        self.subD = SubjectFactory(text='D', parents=[self.subA])
-        self.subF = SubjectFactory(text='F', parents=[self.subB])
-        self.subG = SubjectFactory(text='G', parents=[self.subD])
+        self.subB = SubjectFactory(text='B', parent=self.subA)
+        self.subC = SubjectFactory(text='C', parent=self.subA)
+        self.subD = SubjectFactory(text='D', parent=self.subA)
+        self.subF = SubjectFactory(text='F', parent=self.subB)
+        self.subG = SubjectFactory(text='G', parent=self.subD)
         self.subH = SubjectFactory(text='H')
-        self.subI = SubjectFactory(text='I', parents=[self.subH])
-        self.subJ = SubjectFactory(text='J', parents=[self.subI])
-        self.subK = SubjectFactory(text='K', parents=[self.subI])
+        self.subI = SubjectFactory(text='I', parent=self.subH)
+        self.subJ = SubjectFactory(text='J', parent=self.subI)
+        self.subK = SubjectFactory(text='K', parent=self.subI)
         self.subL = SubjectFactory(text='L')
-        self.subM = SubjectFactory(text='M', parents=[self.subL])
-        self.subE = SubjectFactory(text='E', parents=[self.subB, self.subM])
-        self.subN = SubjectFactory(text='N', parents=[self.subM])
+        self.subM = SubjectFactory(text='M', parent=self.subL)
+        self.subE = SubjectFactory(text='E', parent=self.subM)
+        self.subN = SubjectFactory(text='N', parent=self.subM)
         self.subO = SubjectFactory(text='O')
         rules = [
             ([self.subA._id, self.subB._id], False),
@@ -96,7 +96,8 @@ class TestPreprintProviderSubjects(ApiTestCase):
         res = self.app.get(self.lawless_url + 'filter[parents]={}'.format(self.subB._id))
 
         assert_equal(res.status_code, 200)
-        assert_equal(res.json['links']['meta']['total'], 2)
+        assert_equal(res.json['links']['meta']['total'], 1)
+        assert_equal(res.json['data'][0]['attributes']['text'], 'F')
 
         res = self.app.get(self.lawless_url + 'filter[parents]={}'.format(self.subI._id))
 
@@ -112,9 +113,8 @@ class TestPreprintProviderSubjects(ApiTestCase):
         res = self.app.get(self.ruled_url + 'filter[parents]={}'.format(self.subB._id))
 
         assert_equal(res.status_code, 200)
-        assert_equal(res.json['links']['meta']['total'], 1)
+        assert_equal(res.json['links']['meta']['total'], 0)
         texts = [item['attributes']['text'] for item in res.json['data']]
-        assert_in('E', texts)
         assert_not_in('F', texts)
 
         res = self.app.get(self.ruled_url + 'filter[parents]={}'.format(self.subI._id))

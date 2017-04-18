@@ -57,11 +57,11 @@ class Subject(ObjectIDMixin, BaseModel):
         return subject
 
     def save(self, *args, **kwargs):
-        if PreprintService.objects.filter(subjects=self.id).exists():
+        if PreprintService.objects.filter(subjects=self).exists():
             raise ValidationError('Cannot edit a used Subject')
         return super(Subject, self).save()
 
     def delete(self, *args, **kwargs):
-        if PreprintService.objects.filter(subjects=self.id).exists():
+        if PreprintService.objects.filter(subjects=self).exists():
             raise ValidationError('Cannot delete a used Subject')
         return super(Subject, self).delete()
