@@ -152,9 +152,6 @@ class NodeSettings(BaseStorageAddon, BaseOAuthNodeSettings):
     def clear_settings(self):
         self.folder = None
 
-    def fetch_folder_name(self):
-        return self.folder_name
-
     def get_folders(self, **kwargs):
         folder_id = kwargs.get('folder_id')
         if folder_id is None:

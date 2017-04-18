@@ -654,6 +654,9 @@ class BaseOAuthNodeSettings(BaseNodeSettings):
             "BaseOAuthNodeSettings subclasses must expose a 'folder_path' property."
         )
 
+    def fetch_folder_name(self):
+        return self.folder_name
+
     @property
     def nodelogger(self):
         auth = None

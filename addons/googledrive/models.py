@@ -113,9 +113,6 @@ class NodeSettings(BaseStorageAddon, BaseOAuthNodeSettings):
         else:
             return '/ (Full Google Drive)'
 
-    def fetch_folder_name(self):
-        return self.folder_name
-
     def clear_settings(self):
         self.folder_id = None
         self.folder_path = None
