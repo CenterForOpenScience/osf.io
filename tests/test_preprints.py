@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from nose.tools import *  # flake8: noqa (PEP8 asserts)
+from tld import get_tld
 import mock
 import urlparse
 
@@ -12,6 +13,7 @@ from framework.auth import Auth
 from framework.exceptions import PermissionsError
 
 from website import settings
+from website.identifiers.utils import get_doi_and_node_for_object
 from osf.models import NodeLog, Subject, Identifier
 from osf.exceptions import NodeStateError
 
@@ -292,16 +294,28 @@ class TestPreprintIdentifiers(OsfTestCase):
 
     @mock.patch('website.identifiers.client.EzidClient.create_identifier')
     def test_identifiers_added_on_publish(self, mock_create_identifier):
-        mock_create_identifier.return_value = {
-            'success': 'doi:10.5072/FK2OSF.IO/{0} | ark:/b5072/fk2osf.io/{0}'.format(self.preprint._id)
-        }
         assert self.preprint.identifiers.count() == 0
+        ideal_doi = '10.5072/OSF.IO/{}'.format(self.preprint._id)
+        ideal_ark = 'b5072/osf.io/{0}'.format(self.preprint._id)
+        mock_create_identifier.return_value = {
+            'success': 'doi:{} | ark:/{}'.format(ideal_doi, ideal_ark)
+        }
         self.preprint.set_published(True, auth=self.auth, save=True)
 
         assert mock_create_identifier.called
-        assert self.preprint.get_identifier_value('doi') == '10.5072/FK2OSF.IO/{}'.format(self.preprint._id)
-        assert self.preprint.get_identifier_value('ark') == 'b5072/fk2osf.io/{}'.format(self.preprint._id)
+        assert self.preprint.get_identifier_value('doi') == ideal_doi
+        assert self.preprint.get_identifier_value('ark') == ideal_ark
         assert self.preprint.identifiers.count() == 2
+
+    def test_get_doi_and_node_for_preprint(self):
+        new_provider = PreprintProviderFactory(external_url='http://www.hello.com')
+        preprint = PreprintFactory(provider=new_provider)
+        ideal_doi = '{}hello.com/{}'.format(settings.DOI_NAMESPACE, preprint._id)
+
+        doi, node = get_doi_and_node_for_object(preprint)
+
+        assert doi == ideal_doi
+        assert node == preprint.node
 
 
 class TestOnPreprintUpdatedTask(OsfTestCase):
