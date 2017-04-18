@@ -484,13 +484,14 @@ class SubjectFactory(DjangoModelFactory):
         model = models.Subject
 
     @classmethod
-    def _create(cls, target_class, parents=None, *args, **kwargs):
+    def _create(cls, target_class, parent=None, provider=None, *args, **kwargs):
+        provider = provider or models.PreprintProvider.objects.first() or PreprintProviderFactory()
         try:
-            ret = super(SubjectFactory, cls)._create(target_class, *args, **kwargs)
+            ret = super(SubjectFactory, cls)._create(target_class, parent=parent, provider=provider, *args, **kwargs)
         except IntegrityError:
             ret = models.Subject.objects.get(text=kwargs['text'])
-        if parents:
-            ret.parents.add(*parents)
+            if parent:
+                ret.parent = parent
         return ret
 
 
@@ -546,6 +547,7 @@ class PreprintFactory(DjangoModelFactory):
         if finish:
             preprint.set_primary_file(file, auth=auth)
             subjects = subjects or [[SubjectFactory()._id]]
+            preprint.save()
             preprint.set_subjects(subjects, auth=auth)
             preprint.set_published(is_published, auth=auth)
 
