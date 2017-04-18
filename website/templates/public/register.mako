@@ -124,8 +124,8 @@
                 %elif campaign == "fusfoundation-preprints":
                     <table style="border-collapse: separate; border-spacing: 30px 0; margin-top: 20px;  margin-bottom: 10px;">
                         <tr>
-                            <td><img src="/static/img/preprint_providers/fusf_logo.jpg" style="width: 150px; background: #a9a9a9; padding: 0 10px 0 10px;" /></td>
-                            <td><h3>Create a free OSF account to contribute to FUSF</h3></td>
+                            <td><img src="/static/img/preprint_providers/fusf_logo.png"></td>
+                            <td><h3>Create a free OSF account to contribute to Focused Ultrasound Foundation</h3></td>
                         </tr>
                     </table>
                 %else:
