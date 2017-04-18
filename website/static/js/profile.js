@@ -723,6 +723,8 @@ SocialViewModel.prototype.serialize = function() {
             return value;
         }
     );
+    var twitter = serializedData.twitter;
+    //serializedData.twitter = twitter.replace(/@/g, '');
     return serializedData;
 };
 
