@@ -685,6 +685,8 @@ class NodeContributorsList(BaseContributorList, bulk_views.BulkUpdateJSONAPIView
         base_permissions.TokenHasScope,
     )
 
+    ordering = ('family_name',)
+
     required_read_scopes = [CoreScopes.NODE_CONTRIBUTORS_READ]
     required_write_scopes = [CoreScopes.NODE_CONTRIBUTORS_WRITE]
     model_class = User
