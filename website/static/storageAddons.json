@@ -19,6 +19,10 @@
         "fullName": "GitHub",
         "externalView": true
     },
+    "gitlab": {
+        "fullName": "GitLab",
+        "externalView": true
+    },
     "googledrive": {
         "fullName": "Google Drive",
         "externalView": true

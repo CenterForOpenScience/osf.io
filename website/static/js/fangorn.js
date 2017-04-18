@@ -375,7 +375,7 @@ function inheritFromParent(item, parent, fields) {
         item.data[field] = item.data[field] || parent.data[field];
     });
 
-    if(item.data.provider === 'github'){
+    if(item.data.provider === 'github' || item.data.provider === 'gitlab'){
         item.data.branch = parent.data.branch;
     }
 }
@@ -525,7 +525,7 @@ function doItemOp(operation, to, from, rename, conflict) {
     }
 
     var options = {};
-    if(from.data.provider === 'github'){
+    if(from.data.provider === 'github' || from.data.provider === 'gitlab'){
         options.branch = from.data.branch;
         moveSpec.branch = from.data.branch;
     }
@@ -2450,7 +2450,8 @@ function allowedToMove(folder, item, mustBeIntra) {
     return (
         item.data.permissions.edit &&
         (!mustBeIntra || (item.data.provider === folder.data.provider && item.data.nodeId === folder.data.nodeId)) &&
-            !(item.data.provider === 'figshare' && item.data.extra && item.data.extra.status === 'public')
+            !(item.data.provider === 'figshare' && item.data.extra && item.data.extra.status === 'public') &&
+            (item.data.provider !== 'gitlab')
     );
 }
 

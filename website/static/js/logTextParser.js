@@ -676,7 +676,7 @@ var LogPieces = {
         view: function(ctrl, logObject){
             var gitlab_user = logObject.attributes.params.gitlab_user;
             var gitlab_repo = logObject.attributes.params.gitlab_repo;
-            if (paramIsReturned(gitlab_repo, logObject) && (gitlab_user, logObject)) {
+            if (paramIsReturned(gitlab_repo, logObject) && paramIsReturned(gitlab_user, logObject)) {
                 return m('span', gitlab_user + '/' + gitlab_repo);
             }
             return m('span', '');

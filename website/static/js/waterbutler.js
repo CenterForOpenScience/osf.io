@@ -5,6 +5,9 @@ var $osf = require('./osfHelpers');
 
 function buildUrl(path, provider, nid, options) {
     path = path || '/';
+    if(path.charAt(0) !== '/'){
+        path = '/' + path;
+    }
     var baseUrl = window.contextVars.waterbutlerURL + 'v1/resources/' + nid + '/providers/' + provider + path + '?';
     return baseUrl + $.param($.extend(getDefaultOptions(), options));
 }

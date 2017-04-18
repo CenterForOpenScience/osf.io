@@ -19,7 +19,7 @@ function _getCurrentBranch(item) {
         if (item.data.isAddonRoot){
             branch = item.data.default_branch;
         } else {
-            branch = item.data.extra.ref || item.data.extra.fileSha;
+            branch = item.data.extra.ref;
         }
     } else {
         branch = item.data.branch;
