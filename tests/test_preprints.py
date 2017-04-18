@@ -13,7 +13,7 @@ from framework.auth import Auth
 from framework.exceptions import PermissionsError
 
 from website import settings
-from website.identifiers.utils import get_doi_and_node_for_object
+from website.identifiers.utils import get_doi_and_metadata_for_object
 from osf.models import NodeLog, Subject, Identifier
 from osf.exceptions import NodeStateError
 
@@ -307,15 +307,14 @@ class TestPreprintIdentifiers(OsfTestCase):
         assert self.preprint.get_identifier_value('ark') == ideal_ark
         assert self.preprint.identifiers.count() == 2
 
-    def test_get_doi_and_node_for_preprint(self):
+    def test_get_doi_for_preprint(self):
         new_provider = PreprintProviderFactory(external_url='http://www.hello.com')
         preprint = PreprintFactory(provider=new_provider)
         ideal_doi = '{}hello.com/{}'.format(settings.DOI_NAMESPACE, preprint._id)
 
-        doi, node = get_doi_and_node_for_object(preprint)
+        doi, metadata = get_doi_and_metadata_for_object(preprint)
 
         assert doi == ideal_doi
-        assert node == preprint.node
 
 
 class TestOnPreprintUpdatedTask(OsfTestCase):

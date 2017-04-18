@@ -5,7 +5,7 @@ from tld import get_tld
 
 from framework.exceptions import HTTPError
 from website import settings
-from website.identifiers.metadata import datacite_metadata_for_node
+from website.identifiers.metadata import datacite_metadata_for_node, datacite_metadata_for_preprint
 
 
 FIELD_SEPARATOR = '\n'
@@ -55,18 +55,19 @@ def merge_dicts(*dicts):
     return dict(sum((each.items() for each in dicts), []))
 
 
-def get_doi_and_node_for_object(target_object):
+def get_doi_and_metadata_for_object(target_object):
     from osf.models import PreprintService
 
-    node = target_object
     domain = 'osf.io'
+    metadata_function = datacite_metadata_for_node
     if isinstance(target_object, PreprintService):
         domain = get_tld(target_object.provider.external_url)
-        node = target_object.node
+        metadata_function = datacite_metadata_for_preprint
 
     doi = settings.EZID_FORMAT.format(namespace=settings.DOI_NAMESPACE, domain=domain, guid=target_object._id)
+    datacite_metadata = metadata_function(target_object, doi)
 
-    return doi, node
+    return doi, datacite_metadata
 
 
 def build_ezid_metadata(target_object):
@@ -74,12 +75,18 @@ def build_ezid_metadata(target_object):
     http://ezid.cdlib.org/doc/apidoc.html for details.
     Moved from website/project/views/register.py for use by other modules
     """
-    doi, node = get_doi_and_node_for_object(target_object)
+    doi, datacite_metadata = get_doi_and_metadata_for_object(target_object)
     metadata = {
         '_target': target_object.absolute_url,
-        'datacite': datacite_metadata_for_node(node=node, doi=doi)
+        'datacite': datacite_metadata
     }
     return doi, metadata
+
+
+def get_ezid_client():
+    from website.identifiers.client import EzidClient
+
+    return EzidClient(settings.EZID_USERNAME, settings.EZID_PASSWORD)
 
 
 def get_or_create_identifiers(target_object):
@@ -89,10 +96,8 @@ def get_or_create_identifiers(target_object):
     that build ARK URLs is responsible for adding the leading slash.
     Moved from website/project/views/register.py for use by other modules
     """
-    from website.identifiers.client import EzidClient
-
     doi, metadata = build_ezid_metadata(target_object)
-    client = EzidClient(settings.EZID_USERNAME, settings.EZID_PASSWORD)
+    client = get_ezid_client()
     try:
         resp = client.create_identifier(doi, metadata)
         return dict(
@@ -109,3 +114,10 @@ def get_or_create_identifiers(target_object):
             'doi': doi.replace('doi:', ''),
             'ark': '{0}{1}'.format(settings.ARK_NAMESPACE.replace('ark:', ''), suffix),
         }
+
+
+def update_ezid_metadata_on_change(target_object, status):
+    client = get_ezid_client()
+
+    doi, metadata = build_ezid_metadata(target_object)
+    client.change_status_identifier(status, doi, metadata)

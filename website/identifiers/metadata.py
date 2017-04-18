@@ -38,6 +38,10 @@ def datacite_metadata(doi, title, creators, publisher, publication_year, pretty_
     return lxml.etree.tostring(root, pretty_print=pretty_print)
 
 
+def format_contributor(contributor):
+    return u'{}, {}'.format(contributor.family_name, contributor.given_name)
+
+
 # This function is OSF specific.
 def datacite_metadata_for_node(node, doi, pretty_print=False):
     """Return the datacite metadata XML document for a given node as a string.
@@ -45,15 +49,30 @@ def datacite_metadata_for_node(node, doi, pretty_print=False):
     :param Node node
     :param str doi
     """
-    def format_contrib(contributor):
-        return u'{}, {}'.format(contributor.family_name, contributor.given_name)
-    creators = [format_contrib(each)
-                for each in node.visible_contributors]
+    creators = [format_contributor(each) for each in node.visible_contributors]
     return datacite_metadata(
         doi=doi,
         title=node.title,
         creators=creators,
         publisher='Open Science Framework',
         publication_year=getattr(node.registered_date or node.date_created, 'year'),
+        pretty_print=pretty_print
+    )
+
+
+# This function is OSF specific.
+def datacite_metadata_for_preprint(preprint, doi, pretty_print=False):
+    """Return the datacite metadata XML document for a given preprint as a string.
+
+    :param preprint -- the preprint
+    :param str doi
+    """
+    creators = [format_contributor(each) for each in preprint.node.visible_contributors]
+    return datacite_metadata(
+        doi=doi,
+        title=preprint.node.title,
+        creators=creators,
+        publisher=preprint.provider.name,
+        publication_year=getattr(preprint.date_published, 'year'),
         pretty_print=pretty_print
     )
