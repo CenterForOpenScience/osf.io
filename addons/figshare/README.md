@@ -29,8 +29,9 @@ has instructions for use with ngrok, but there are other methods.
 1. Go to [figshare](http://figshare.com), create an account, and login
 2. Click the dropdown with your name and select **Applications** and click **Create Personal Token**
 3. `invoke shell`, then run:
-```
+```python
 from addons.figshare.client import FigshareClient
+from osf.models.user import OSFUser
 from website.oauth.models import ExternalAccount
 
 me = OSFUser.load('<osf_guid>')
