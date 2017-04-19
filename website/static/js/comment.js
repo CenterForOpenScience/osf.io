@@ -187,6 +187,8 @@ var BaseComment = function() {
 
     self.loadingComments = ko.observable(true);
 
+    self.currentChars = ko.observable(0);
+
     self.underMaxLength = ko.observable(true);
 
     self.replyNotEmpty = ko.pureComputed(function() {
@@ -195,15 +197,29 @@ var BaseComment = function() {
     self.commentButtonText = ko.computed(function() {
         return self.submittingReply() ? 'Commenting' : 'Comment';
     });
-    self.validateReply = ko.pureComputed(function() {
-        return self.replyNotEmpty() && self.underMaxLength();
+    //Calculates the remaining character length
+    self.remainingLength = ko.computed(function() {
+        if (self.replyContent() === null) {
+            return 500;
+        } else {
+            return 500 - self.currentChars();
+        }
     });
-
+    //submittingReply ensures that user does not click comment button twice and submit comment twice
+    //remainingLength grays out comment button if less than 0
+    self.replyValid = ko.computed(function() {
+        return self.submittingReply() || self.remainingLength() < 0;
+    });
 };
 
 BaseComment.prototype.handleEditableUpdate = function(element, underMaxLength, charLimit) {
     var self = this;
-    self.underMaxLength(underMaxLength);
+    if (element.innerText.length >= 3) {
+        self.currentChars(element.innerText.length - 1);
+    } else {
+        self.currentChars(element.innerText.length);
+    }
+    self.underMaxLength(underMaxLength + 1);
     self.errorMessage(underMaxLength ? '' : 'Exceeds character limit. Please reduce to ' + charLimit + ' characters or less.');
 };
 
