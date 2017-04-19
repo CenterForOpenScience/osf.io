@@ -398,10 +398,12 @@ function _fangornResolveToggle(item) {
         if(!item.data.permissions.view){
             return '';
         }
-        if (item.open) {
-            return toggleMinus;
+       if (item.children.length !== 0) {
+          if(item.open) {
+              return toggleMinus;
+          }
+        return togglePlus;  // check if children
         }
-        return togglePlus;
     }
     if (item.data.provider === 'osfstorage' && item.kind === 'file') {
         if (item.data.extra && item.data.extra.checkout) {
@@ -1259,11 +1261,25 @@ function reapplyTooltips () {
 function _fangornLazyLoadOnLoad (tree, event) {
     tree.children.forEach(function(item) {
         inheritFromParent(item, tree);
+        // if this is a folder
+        if (item.kind === 'folder' && item.depth > 1) {
+          var i, child;
+          console.log(item.data);
+          for (i = 0; i < item.data.children; i++) {
+            child = self.buildTree(data[i], item.parent());
+            console.log(child);
+            item.parent().add(child);
+            // console.log(item.parent());
+          }
+        // get folder children, update folder children array -- lazy load URL --  make own call -- AJAX call -- build tree
+// if UI changed
+// m.redraw();
+      }
     });
     resolveconfigOption.call(this, tree, 'lazyLoadOnLoad', [tree, event]);
     reapplyTooltips();
 
-    if (tree.depth > 1) {
+    if (this && tree.depth > 1) {
         orderFolder.call(this, tree);
     }
 }
@@ -2758,6 +2774,36 @@ tbOptions = {
         var tb = this;
         var item = tb.find(row.id);
         _fangornMultiselect.call(tb, null, item);
+    },
+    get: function(id) {
+      if (!this._cache[id])
+        return this.fetch(id);
+      var deferred = m.deferred();
+      deferred.resolve(this._cache[id]);
+      return deferred.promise;
+    },
+    getChildren: function(id) {
+    //TODO Load via rootNode
+      if (this._cache[id].relationships.children.links.related.meta.count !== this._cache[id].children.length) {
+        return this.fetchChildren(this._cache[id]);
+      }
+      var deferred = m.deferred();
+      deferred.resolve(this._cache[id].children);
+      return deferred.promise;
+    },
+    fetch: function(id) {
+      // TODO This method is currently untested
+      var url =  $osf.apiV2Url(this.type + '/' + id + '/', {query: {related_counts: 'children', embed: 'contributors' }});
+      return m.request({method: 'GET', url: url, config: mHelpers.apiV2Config({withCredentials: window.contextVars.isOnRootDomain}), background: true})
+      .then((function(result) {
+        this.add(result.data);
+        return result.data;
+      }).bind(this), this._fail.bind(this));
+    },
+    fetchChildren: function(parent, link) {
+      //TODO Allow suspending of children
+      return m.request({method: 'GET', url: link || parent.relationships.children.links.related.href + '?embed=contributors&related_counts=children', config: mHelpers.apiV2Config({withCredentials: window.contextVars.isOnRootDomain}), background: true})
+      .then(this._childrenSuccess.bind(this, parent), this._fail.bind(this));
     },
     hScroll : null,
     naturalScrollLimit : 0
