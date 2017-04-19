@@ -1,0 +1,4 @@
+--ignore-directory=admin/static/public
+--ignore-directory=admin/static/vendor
+--ignore-directory=website/static/public
+--ignore-directory=website/static/vendor
