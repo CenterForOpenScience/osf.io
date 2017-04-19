@@ -34,6 +34,7 @@ var ProjectViewModel = function(data, options) {
     self.ark = ko.observable(data.node.identifiers.ark);
     self.idCreationInProgress = ko.observable(false);
     self.dateRegistered = new $osf.FormattableDate(data.node.registered_date);
+    self.dateWithdrawn = new $osf.FormattableDate(data.node.withdrawl_date);
     self.inDashboard = ko.observable(data.node.in_dashboard);
     self.dashboard = data.user.dashboard_id;
     self.userCanEdit = data.user.can_edit;

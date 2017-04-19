@@ -52,6 +52,7 @@ class BaseRegistrationSerializer(NodeSerializer):
 
     date_registered = DateByVersion(source='registered_date', read_only=True, help_text='Date time of registration.')
     embargo_end_date = HideIfWithdrawal(ser.SerializerMethodField(help_text='When the embargo on this registration will be lifted.'))
+    date_withdrawn = ser.DateTimeField(source='withdrawl_date', read_only=True, help_text='Date time of withdrawl.')
 
     withdrawal_justification = ser.CharField(source='retraction.justification', read_only=True)
     template_from = HideIfWithdrawal(ser.CharField(read_only=True, allow_blank=False, allow_null=False,

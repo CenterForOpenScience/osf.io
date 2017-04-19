@@ -876,6 +876,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
     is_registration = fields.BooleanField(default=False, index=True)
     registered_date = fields.DateTimeField(index=True)
     registered_user = fields.ForeignField('user')
+    withdrawl_date = fields.DateTimeField(index=True)
 
     # Preprint fields
     preprint_file = fields.ForeignField('StoredFileNode')
@@ -3775,6 +3776,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
         self.retraction = retraction
         if save:
             self.save()
+        self.withdrawl_date = datetime.datetime.utcnow()
         return retraction
 
     def _is_embargo_date_valid(self, end_date):
