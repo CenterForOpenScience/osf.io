@@ -234,7 +234,7 @@ class PreprintProviderSubjectList(JSONAPIBaseView, generics.ListAPIView):
         return False
 
     def get_queryset(self):
-        parent = self.request.query_params.get('filter[parents]', None)
+        parent = self.request.query_params.get('filter[parents]', None) or self.request.query_params.get('filter[parent]', None)
         provider = get_object_or_error(PreprintProvider, self.kwargs['provider_id'], display_name='PreprintProvider')
         if parent:
             if parent == 'null':
