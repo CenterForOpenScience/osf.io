@@ -1,7 +1,10 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
+import logging
 
 from django.db import connection, migrations, models
+
+logger = logging.getLogger(__name__)
 
 def add_custom_mapping_constraint(state, schema):
     sql = """
@@ -13,6 +16,7 @@ def add_custom_mapping_constraint(state, schema):
         osf_id = state.get_model('osf', 'preprintprovider').objects.get(_id='osf').id
     except models.ObjectDoesNotExist:
         # Allow test / local dev DBs to pass
+        logger.warn('Unable to create contraint - assuming test environment.')
         pass
     else:
         with connection.cursor() as cursor:
