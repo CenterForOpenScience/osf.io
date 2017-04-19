@@ -14,6 +14,14 @@ def migrate_data(state, schema):
             pp._subjects.add(s)
         pp.save()
 
+def unmigrate_data(state, scheme):
+    PreprintService = state.get_model('osf', 'preprintservice')
+    for pp in PreprintService.objects.all():
+        pp.subjects = [
+            [s._id for s in hier] for hier in pp.subject_hierarchy
+        ]
+        pp.save()
+
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -27,6 +35,6 @@ class Migration(migrations.Migration):
             field=models.ManyToManyField(blank=True, to='osf.Subject')
         ),
         migrations.RunPython(
-            migrate_data
+            migrate_data, unmigrate_data
         ),
     ]
