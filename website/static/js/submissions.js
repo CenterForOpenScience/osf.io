@@ -53,9 +53,8 @@ function Submissions(data) {
                     data : 'title',  // Data field name
                     sortInclude : true,
                     filter : true,
-                    custom : function() {
-                        return m('a', { href : item.data.nodeUrl, target : '_blank' }, item.data.title ); }
-
+                    custom : function() { return m('a', { href : item.data.nodeUrl, target : '_blank' }, item.data.title ); },
+                    show : function() { return (item.data.confName !== 'Time-sharing Experiments for the Social Sciences' && item.data.confName !== 'Psi Chi'); }
                 },
                 {
                     data: 'author',  // Data field name
