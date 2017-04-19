@@ -1,2 +1,2 @@
-DEFAULT_HOSTS = ['https://localhost/fedora']
+DEFAULT_HOSTS = []
 USE_SSL = True
