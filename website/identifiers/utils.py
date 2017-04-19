@@ -61,7 +61,8 @@ def get_doi_and_metadata_for_object(target_object):
     domain = 'osf.io'
     metadata_function = datacite_metadata_for_node
     if isinstance(target_object, PreprintService):
-        domain = get_tld(target_object.provider.external_url)
+        if target_object.provider.external_url:
+            domain = get_tld(target_object.provider.external_url)
         metadata_function = datacite_metadata_for_preprint
 
     doi = settings.EZID_FORMAT.format(namespace=settings.DOI_NAMESPACE, domain=domain, guid=target_object._id)
