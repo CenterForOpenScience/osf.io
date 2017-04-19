@@ -1,10 +1,9 @@
 import logging
 import os
 
-from addons.base.apps import BaseAddonAppConfig, generic_root_folder
+from addons.base.apps import BaseAddonAppConfig
 from addons.github.api import GitHubClient, ref_to_params
 from addons.github.exceptions import NotFoundError, GitHubError
-from addons.github.serializer import GitHubSerializer
 from addons.github.utils import get_refs, check_permissions
 from website.util import rubeus
 
@@ -31,8 +30,6 @@ def github_hgrid_data(node_settings, auth, **kwargs):
         try:
             repo = connection.repo(node_settings.user, node_settings.repo)
         except NotFoundError:
-            # TODO: Test me @jmcarp
-            # TODO: Add warning message
             logger.error('Could not access GitHub repo')
             return None
         if repo.private:

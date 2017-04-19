@@ -9,14 +9,11 @@ from flask import request, make_response
 from framework.exceptions import HTTPError
 
 from addons.base import generic_views
-from addons.github.api import GitHubClient, ref_to_params
+from addons.github.api import GitHubClient
 from addons.github.apps import github_hgrid_data
-from addons.github.exceptions import NotFoundError, GitHubError
+from addons.github.exceptions import GitHubError
 from addons.github.serializer import GitHubSerializer
-from addons.github.utils import (
-    get_refs, check_permissions,
-    verify_hook_signature, MESSAGES
-)
+from addons.github.utils import verify_hook_signature, MESSAGES
 
 from website.models import NodeLog
 from website.project.decorators import (
