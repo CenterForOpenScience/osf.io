@@ -18,7 +18,7 @@ new profile.Jobs('#jobs', ctx.jobsUrls, ['view'], false);
 new profile.Schools('#schools', ctx.schoolsUrls, ['view'], false);
 
 $(document).ready(function () {
-    m.mount(document.getElementById('publicProjects'), m.component(publicNodes.PublicProjects, {user: ctx.user, nodeType: 'projects'}));
-    m.mount(document.getElementById('publicComponents'), m.component(publicNodes.PublicProjects, {user: ctx.user, nodeType: 'components'}));
+    m.mount(document.getElementById('publicProjects'), m.component(publicNodes.PublicNodes, {user: ctx.user, nodeType: 'projects'}));
+    m.mount(document.getElementById('publicComponents'), m.component(publicNodes.PublicNodes, {user: ctx.user, nodeType: 'components'}));
 });
 

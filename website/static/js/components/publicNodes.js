@@ -88,12 +88,43 @@ function _formatContributors(item) {
     });
 }
 
-var PublicProjects = {
+var PublicNode = {
+
+    controller: function(options) {
+        var self = this;
+        self.node = options.node;
+        self.nodeType = options.nodeType;
+
+        self.icon =  iconmap.projectComponentIcons[self.node.attributes.category];
+        self.parent = self.nodeType === 'components' && self.node.embeds.parent.data ? self.node.embeds.parent.data.attributes : null;
+    },
+
+    view: function(ctrl)  {
+        return m('div', [
+            m('li.project list-group-item list-group-item-node cite-container', [
+                m('h4.list-group-item-heading', [
+                    m('span.component-overflow.f-w-lg', {style: 'line-height: 1.5;'}, [
+                        m('span.project-statuses-lg'),
+                        m('span', {class: ctrl.icon, style: 'padding-right: 5px;'}, ''),
+                        m('a', {'href': ctrl.node.links.html}, ctrl.node.attributes.title)
+                    ])
+                ]),
+                ctrl.nodeType === 'components' ? m('div', {style: 'padding-bottom: 10px;'}, [
+                    ctrl.parent ? ctrl.parent.title + ' / ': m('em', '-- private project -- / '),
+                    m('b', ctrl.node.attributes.title)
+                ]) : '',
+                m('div.project-authors', {}, _formatContributors(ctrl.node)),
+            ])
+        ]);
+    }
+};
+
+var PublicNodes = {
 
     controller: function(options) {
         var self = this;
         self.user = options.user._id;
-        self.is_profile = options.user.is_profile;
+        self.isProfile = options.user.is_profile;
         self.nodeType = options.nodeType;
 
         self.publicProjects = m.prop([]);
@@ -272,37 +303,14 @@ var PublicProjects = {
                 ' if the problem persists.'
             ]) :
 
-            // Show OSF spinner while there is a pending request
-            ctrl.requestPending() ?  m('.spinner-loading-wrapper', [
-                m('.logo-spin.logo-lg'),
-                m('p.m-t-sm.fg-load-message', 'Loading ' + ctrl.nodeType + '...')
-            ]) :
+            // Show laoding icon while there is a pending request
+            ctrl.requestPending() ?  m('.ball-scale.ball-scale-blue.text-center', m('')) :
 
             // Display each project
             [
-                ctrl.publicProjects().length !== 0 ? ctrl.publicProjects().map(function(item) {
-
-                    var parent = ctrl.nodeType === 'components' && item.embeds.parent.data ? item.embeds.parent.data.attributes : null;
-                    var category = item.attributes.category;
-                    var icon =  iconmap.projectComponentIcons[category];
-
-                    return m('div', [
-                        m('li.project list-group-item list-group-item-node cite-container', [
-                            m('h4.list-group-item-heading', [
-                                m('span.component-overflow.f-w-lg', {style: 'line-height: 1.5;'}, [
-                                    m('span.project-statuses-lg'),
-                                    m('span', {class: icon, style: 'padding-right: 5px;'}, ''),
-                                    m('a', {'href': item.links.html}, item.attributes.title)
-                                ])
-                            ]),
-                            ctrl.nodeType === 'components' ? m('div', {style: 'padding-bottom: 10px;'}, [
-                                parent ? parent.title + ' / ': m('em', '-- private project -- / '),
-                                m('b', item.attributes.title)
-                            ]) : '',
-                            m('div.project-authors', {}, _formatContributors(item)),
-                        ])
-                    ]);
-                }) : ctrl.is_profile ?
+                ctrl.publicProjects().length !== 0 ? ctrl.publicProjects().map(function(node) {
+                    return m.component(PublicNode, {nodeType: ctrl.nodeType, node: node});
+                }) : ctrl.isProfile ?
                     m('div.help-block', {}, [
                         'You have no public ' + ctrl.nodeType + '.',
                         m('p', {}, [
@@ -328,5 +336,5 @@ var PublicProjects = {
 };
 
 module.exports = {
-    PublicProjects: PublicProjects
+    PublicNodes: PublicNodes
 };

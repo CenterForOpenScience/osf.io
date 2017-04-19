@@ -145,11 +145,8 @@
             <div class="panel-heading clearfix">
               <h3 class="panel-title" >Public projects</h3>
             </div>
-            <div class="panel-body" id="publicProjects">
-              <div class="spinner-loading-wrapper">
-                  <div class="logo-spin logo-lg"></div>
-                   <p class="m-t-sm fg-load-message"> Loading projects...  </p>
-              </div>
+            <div class="panel-body clearfix" id="publicProjects">
+                <div class="ball-scale ball-scale-blue text-center"><div></div></div>
             </div>
         </div>
     </div>
@@ -158,11 +155,8 @@
             <div class="panel-heading clearfix">
                 <h3 class="panel-title">Public components</h3>
             </div>
-            <div class="panel-body" id="publicComponents">
-              <div class="spinner-loading-wrapper">
-                  <div class="logo-spin logo-lg"></div>
-                   <p class="m-t-sm fg-load-message"> Loading components...  </p>
-              </div>
+            <div class="panel-body clearfix" id="publicComponents">
+              <div class="ball-scale ball-scale-blue text-center"><div></div></div>
             </div>
         </div>
     </div>
