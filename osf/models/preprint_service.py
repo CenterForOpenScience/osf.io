@@ -18,7 +18,6 @@ from website.util.permissions import ADMIN
 from website import settings
 
 from osf.models.base import BaseModel, GuidMixin
-from osf.models.subject import Subject
 
 class PreprintService(DirtyFieldsMixin, GuidMixin, BaseModel):
     date_created = NonNaiveDateTimeField(auto_now_add=True)
@@ -109,6 +108,7 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, BaseModel):
         return ret
 
     def set_subjects(self, preprint_subjects, auth, save=False):
+        from osf.models.subject import Subject  # Avoid circular import
         if not self.node.has_permission(auth.user, ADMIN):
             raise PermissionsError('Only admins can change a preprint\'s subjects.')
 
