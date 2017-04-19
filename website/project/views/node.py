@@ -189,12 +189,6 @@ def project_new_node(auth, node, **kwargs):
                     new_component.add_contributor(contributor, permissions=perm, auth=auth)
 
             new_component.save()
-            redirect_url = new_component.url + 'contributors/'
-            message = (
-                'Your component was created successfully. You can edit the contributor permissions below, '
-                'work on your <u><a href={component_url}>component</a></u> or return to the <u> '
-                '<a href="{project_url}">project page</a></u>.'
-            ).format(component_url=new_component.url, project_url=node.url)
         status.push_status_message(message, kind='info', trust=True)
 
         return {

@@ -4245,7 +4245,7 @@ class TestProjectCreation(OsfTestCase):
         assert_in(self.user1, child.contributors)
         assert_in(self.user2, child.contributors)
         # check redirect url
-        assert_in('/contributors/', res.location)
+        assert_not_in('/contributors/', res.location)
 
     def test_create_component_with_contributors_read_write(self):
         url = web_url_for('project_new_node', pid=self.project._id)
@@ -4262,7 +4262,7 @@ class TestProjectCreation(OsfTestCase):
         assert_in(self.user2, child.contributors)
         assert_equal(child.get_permissions(non_admin), ['read', 'write', 'admin'])
         # check redirect url
-        assert_in('/contributors/', res.location)
+        assert_not_in('/contributors/', res.location)
 
     def test_create_component_with_contributors_read(self):
         url = web_url_for('project_new_node', pid=self.project._id)
