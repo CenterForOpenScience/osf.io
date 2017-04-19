@@ -1,3 +1,4 @@
+import mock
 import functools
 from modularodm import Q
 from nose.tools import *  # flake8: noqa
@@ -9,6 +10,7 @@ from osf_tests.factories import PreprintFactory, AuthUserFactory, ProjectFactory
 from osf.models import PreprintService, NodeLicense
 from website.project.licenses import ensure_licenses
 from website.project.signals import contributor_added
+from website.identifiers.utils import build_ezid_metadata
 from tests.base import ApiTestCase, fake, capture_signals
 
 ensure_licenses = functools.partial(ensure_licenses, warn=False)
@@ -255,6 +257,30 @@ class TestPreprintUpdate(ApiTestCase):
         res = self.app.patch_json_api(url, payload, auth=self.user.auth)
         unpublished.reload()
         assert_true(unpublished.is_published)
+
+    # Regression test for https://openscience.atlassian.net/browse/OSF-7630
+    def test_update_published_does_not_send_contributor_added_for_inactive_users(self):
+        unpublished = PreprintFactory(creator=self.user, is_published=False)
+        unpublished.node.add_unregistered_contributor(
+            fullname=fake.name(),
+            email=fake.email(),
+            auth=Auth(self.user),
+            save=True
+        )
+        url = '/{}preprints/{}/'.format(API_BASE, unpublished._id)
+        payload = build_preprint_update_payload(unpublished._id, attributes={'is_published': True})
+        with capture_signals() as captured:
+            res = self.app.patch_json_api(url, payload, auth=self.user.auth)
+            # Signal not sent, because contributor is not registered
+            assert_false(captured[contributor_added])
+
+    @mock.patch('website.identifiers.client.EzidClient.change_status_identifier')
+    def test_update_ezid_metadata_on_update(self, mock_change_status_identifier):
+        update_doi_payload = build_preprint_update_payload(self.preprint._id, attributes={'doi': '10.1234/ASDFASDF'})
+
+        self.app.patch_json_api(self.url, update_doi_payload, auth=self.user.auth)
+        doi, metadata = build_ezid_metadata(self.preprint)
+        mock_change_status_identifier.assert_called_with('public', doi, metadata)
 
 
 class TestPreprintUpdateLicense(ApiTestCase):
