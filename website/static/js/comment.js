@@ -195,16 +195,21 @@ var BaseComment = function() {
     self.commentButtonText = ko.computed(function() {
         return self.submittingReply() ? 'Commenting' : 'Comment';
     });
-    self.validateReply = ko.pureComputed(function() {
-        return self.replyNotEmpty() && self.underMaxLength();
+
+    //Calculates the remaining character length
+    self.remainingLength = ko.computed(function() {
+        if (self.replyContent() == null) {
+            return 500;
+        } else {
+            return 500 - self.replyContent().length;
+        }
     });
 
-};
-
-BaseComment.prototype.handleEditableUpdate = function(element, underMaxLength, charLimit) {
-    var self = this;
-    self.underMaxLength(underMaxLength);
-    self.errorMessage(underMaxLength ? '' : 'Exceeds character limit. Please reduce to ' + charLimit + ' characters or less.');
+    //submittingReply ensures that user does not click Comment button twice and submit comment twice
+    //remainingLength grays out Comment button if less than 0
+    self.replyValid = ko.computed(function() {
+        return self.submittingReply() || self.remainingLength() < 0;
+    });
 };
 
 BaseComment.prototype.abuseLabel = function(item) {
