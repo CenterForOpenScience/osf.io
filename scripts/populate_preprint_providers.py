@@ -73,7 +73,7 @@ def update_or_create(provider_data):
 
 def format_domain_url(domain):
     return ''.join((PREPRINT_PROVIDER_DOMAINS['prefix'], str(domain), PREPRINT_PROVIDER_DOMAINS['suffix'])) if \
-        PREPRINT_PROVIDER_DOMAINS['enabled'] else None
+        PREPRINT_PROVIDER_DOMAINS['enabled'] else ''
 
 
 def main(env):
@@ -85,6 +85,7 @@ def main(env):
             'description': 'A scholarly commons to connect the entire research cycle',
             'banner_name': 'cos-banner.png',
             'domain': DOMAIN,
+            'domain_redirect_enabled': False,  # Never change this
             'external_url': 'https://osf.io/preprints/',
             'example': 'khbvy',
             'advisory_board': '',
@@ -104,6 +105,7 @@ def main(env):
             'description': 'The open archive of engineering.',
             'banner_name': 'engrxiv-banner.png',
             'domain': format_domain_url('engrxiv.org'),
+            'domain_redirect_enabled': False,
             'external_url': 'http://engrxiv.com',
             'example': 'k7fgk',
             'advisory_board': '''
@@ -244,6 +246,7 @@ def main(env):
             'description': 'A free preprint service for the psychological sciences.',
             'banner_name': 'psyarxiv-banner.png',
             'domain': format_domain_url('psyarxiv.com'),
+            'domain_redirect_enabled': False,
             'external_url': 'http://psyarxiv.org',
             'example': 'k9mn3',
             'advisory_board': '''
@@ -330,6 +333,7 @@ def main(env):
             'description': 'Open archive of the social sciences',
             'banner_name': 'socarxiv-banner.png',
             'domain': format_domain_url('socarxiv.org'),
+            'domain_redirect_enabled': False,
             'external_url': 'http://socarxiv.org',
             'example': 'qmdc4',
             'advisory_board': '''
@@ -375,7 +379,8 @@ def main(env):
             'logo_name': 'scielo-logo.png',
             'description': 'Advancing Research Communication',
             'banner_name': 'scielo-logo.png',
-            # 'domain': format_domain_url('scielo.org'), # Temporarily disabling until ready
+            'domain': format_domain_url('scielo.org'),
+            'domain_redirect_enabled': False,
             'external_url': 'http://scielo.org',
             'example': '',  # An example guid for this provider (Will have to be updated after the provider is up)
             # Advisory board should be valid html string in triple quotes
@@ -395,6 +400,7 @@ def main(env):
             'description': 'Preprints for Agriculture and Allied Sciences',
             'banner_name': 'agrixiv-banner.svg',
             'domain': format_domain_url('agrixiv.org'),
+            'domain_redirect_enabled': False,
             'external_url': '',
             'example': '8whkp',
             'advisory_board': '''
@@ -1018,7 +1024,8 @@ def main(env):
             'logo_name': 'bitss-logo.png',
             'description': 'An interdisciplinary archive of articles focused on improving research transparency and reproducibility',
             'banner_name': 'bitss-banner.png',
-            #'domain': format_domain_url('bitss.org'), Not using domain
+            'domain': '',  # Not using domain
+            'domain_redirect_enabled': False,
             'external_url': 'http://www.bitss.org',
             'example': '',
             'advisory_board': '''

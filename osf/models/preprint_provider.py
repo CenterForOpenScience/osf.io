@@ -18,7 +18,8 @@ class PreprintProvider(ObjectIDMixin, BaseModel):
     header_text = models.TextField(default='', blank=True)
     description = models.CharField(null=True, blank=True, max_length=256)  # max length on prod: 56
     banner_name = models.CharField(null=True, blank=True, max_length=128)  # max length on prod: 19
-    domain = models.URLField(null=True, blank=True, max_length=200)  #
+    domain = models.URLField(null=True, blank=True, default='', max_length=200)
+    domain_redirect_enabled = models.BooleanField(default=False)
     external_url = models.URLField(null=True, blank=True, max_length=200)  # max length on prod: 25
     email_contact = models.CharField(null=True, blank=True, max_length=200)  # max length on prod: 23
     email_support = models.CharField(null=True, blank=True, max_length=200)  # max length on prod: 23
