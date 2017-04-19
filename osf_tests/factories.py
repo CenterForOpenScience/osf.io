@@ -3,7 +3,6 @@ import functools
 
 import datetime
 import mock
-from tld import get_tld
 from factory import SubFactory
 from factory.fuzzy import FuzzyDateTime, FuzzyAttribute, FuzzyChoice
 from mock import patch, Mock
@@ -557,6 +556,15 @@ class PreprintFactory(DjangoModelFactory):
         }).save()
 
         preprint = target_class(node=project, provider=provider)
+        preprint.save()
+
+        create_identifier_patcher = mock.patch("website.identifiers.client.EzidClient.create_identifier")
+        mock_create_identifier = create_identifier_patcher.start()
+        mock_create_identifier.return_value = {
+            'success': '{doi}/{guid} | {ark}/{guid}'.format(
+                doi=settings.DOI_NAMESPACE, ark=settings.ARK_NAMESPACE, guid=preprint._id
+            )
+        }
 
         auth = Auth(project.creator)
 
@@ -565,13 +573,7 @@ class PreprintFactory(DjangoModelFactory):
             subjects = subjects or [[SubjectFactory()._id]]
             preprint.save()
             preprint.set_subjects(subjects, auth=auth)
-            preprint.set_published(is_published, auth=auth, save=True, get_identifiers=False)
-
-            domain = get_tld(preprint.provider.external_url)
-            preprint_doi = '{}{}/{}'.format(settings.DOI_NAMESPACE, domain, preprint._id)
-            preprint_ark = '{}{}/{}'.format(settings.ARK_NAMESPACE, domain, preprint._id)
-            identifiers = {'doi': preprint_doi, 'ark': preprint_ark}
-            preprint.set_preprint_identifiers(identifiers)
+            preprint.set_published(is_published, auth=auth)
 
         if not preprint.is_published:
             project._has_abandoned_preprint = True

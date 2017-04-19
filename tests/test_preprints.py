@@ -292,19 +292,12 @@ class TestPreprintIdentifiers(OsfTestCase):
         self.auth = Auth(user=self.user)
         self.preprint = PreprintFactory(is_published=False, creator=self.user)
 
-    @mock.patch('website.identifiers.client.EzidClient.create_identifier')
-    def test_identifiers_added_on_publish(self, mock_create_identifier):
+    def test_identifiers_added_on_publish(self):
         assert self.preprint.identifiers.count() == 0
-        ideal_doi = '10.5072/OSF.IO/{}'.format(self.preprint._id)
-        ideal_ark = 'b5072/osf.io/{0}'.format(self.preprint._id)
-        mock_create_identifier.return_value = {
-            'success': 'doi:{} | ark:/{}'.format(ideal_doi, ideal_ark)
-        }
         self.preprint.set_published(True, auth=self.auth, save=True)
 
-        assert mock_create_identifier.called
-        assert self.preprint.get_identifier_value('doi') == ideal_doi
-        assert self.preprint.get_identifier_value('ark') == ideal_ark
+        assert self.preprint.get_identifier_value('doi')
+        assert self.preprint.get_identifier_value('ark')
         assert self.preprint.identifiers.count() == 2
 
     def test_get_doi_for_preprint(self):
