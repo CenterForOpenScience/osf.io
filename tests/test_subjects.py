@@ -1,16 +1,17 @@
 # -*- coding: utf-8 -*-
+from django.core.exceptions import ValidationError
 from nose.tools import *  # flake8: noqa (PEP8 asserts)
 from modularodm.exceptions import NoResultsFound, ValidationValueError
 
 from tests.base import OsfTestCase
-from osf_tests.factories import SubjectFactory
+from osf_tests.factories import SubjectFactory, PreprintFactory
 
 from website.project.taxonomies import validate_subject_hierarchy
 
 
-class TestSubjectValidation(OsfTestCase):
+class TestSubjectTreeValidation(OsfTestCase):
     def setUp(self):
-        super(TestSubjectValidation, self).setUp()
+        super(TestSubjectTreeValidation, self).setUp()
 
         self.root_subject = SubjectFactory()
         self.one_level_root = SubjectFactory()
@@ -108,3 +109,27 @@ class TestSubjectValidation(OsfTestCase):
             validate_subject_hierarchy(self.invalid_ids)
 
         assert_in('could not be found', e.exception.message)
+
+class TestSubjectEditValidation(OsfTestCase):
+    def setUp(self):
+        super(TestSubjectEditValidation, self).setUp()
+        self.subject = SubjectFactory()
+
+    def test_edit_unused_subject(self):
+        self.subject.text = 'asdfg'
+        self.subject.save()
+
+    def test_edit_used_subject(self):
+        preprint = PreprintFactory(subjects=[[self.subject._id]])
+        self.subject.text = 'asdfg'
+        with assert_raises(ValidationError):
+            self.subject.save()
+
+    def test_delete_unused_subject(self):
+        self.subject.delete()
+
+    def test_delete_used_subject(self):
+        preprint = PreprintFactory(subjects=[[self.subject._id]])
+        with assert_raises(ValidationError):
+            self.subject.delete()
+
