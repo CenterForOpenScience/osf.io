@@ -160,7 +160,7 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, BaseModel):
             self.save()
             self.node.save()
 
-    def set_published(self, published, auth, save=False):
+    def set_published(self, published, auth, save=False, get_identifiers=True):
         if not self.node.has_permission(auth.user, ADMIN):
             raise PermissionsError('Only admins can publish a preprint.')
 
@@ -195,9 +195,9 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, BaseModel):
                     log=True
                 )
 
-            new_identifiers = get_or_create_identifiers(self)
-            self.set_identifier_value('doi', new_identifiers['doi'])
-            self.set_identifier_value('ark', new_identifiers['ark'])
+            if get_identifiers:
+                new_identifiers = get_or_create_identifiers(self)
+                self.set_preprint_identifiers(new_identifiers)
 
         if save:
             self.node.save()
@@ -219,6 +219,10 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, BaseModel):
 
         if save:
             self.save()
+
+    def set_preprint_identifiers(self, new_identifiers):
+        self.set_identifier_value('doi', new_identifiers['doi'])
+        self.set_identifier_value('ark', new_identifiers['ark'])
 
     def save(self, *args, **kwargs):
         first_save = not bool(self.pk)

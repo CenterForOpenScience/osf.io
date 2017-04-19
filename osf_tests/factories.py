@@ -3,6 +3,7 @@ import functools
 
 import datetime
 import mock
+from tld import get_tld
 from factory import SubFactory
 from factory.fuzzy import FuzzyDateTime, FuzzyAttribute, FuzzyChoice
 from mock import patch, Mock
@@ -15,6 +16,7 @@ from django.db.utils import IntegrityError
 from faker import Factory
 from modularodm.exceptions import NoResultsFound
 
+from website import settings
 from website.notifications.constants import NOTIFICATION_TYPES
 from website.util import permissions
 from website.project.licenses import ensure_licenses
@@ -563,7 +565,13 @@ class PreprintFactory(DjangoModelFactory):
             subjects = subjects or [[SubjectFactory()._id]]
             preprint.save()
             preprint.set_subjects(subjects, auth=auth)
-            preprint.set_published(is_published, auth=auth)
+            preprint.set_published(is_published, auth=auth, save=True, get_identifiers=False)
+
+            domain = get_tld(preprint.provider.external_url)
+            preprint_doi = '{}{}/{}'.format(settings.DOI_NAMESPACE, domain, preprint._id)
+            preprint_ark = '{}{}/{}'.format(settings.ARK_NAMESPACE, domain, preprint._id)
+            identifiers = {'doi': preprint_doi, 'ark': preprint_ark}
+            preprint.set_preprint_identifiers(identifiers)
 
         if not preprint.is_published:
             project._has_abandoned_preprint = True
