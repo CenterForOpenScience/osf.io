@@ -32,7 +32,7 @@ class NodesListFilteringMixin(object):
 
     def test_parent_filter_null(self):
         expected = [self.node_A._id]
-        res = self.app.get('{}null'.format(self.parent_url), auth=self.user.auth, expect_errors=True)
+        res = self.app.get('{}null'.format(self.parent_url), auth=self.user.auth)
         actual = [node['id'] for node in res.json['data']]
         assert_equal(expected, actual)
 

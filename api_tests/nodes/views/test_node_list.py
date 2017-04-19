@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 from nose.tools import *  # flake8: noqa
 import pytest
-import unittest
 
 from django.db.models import F
 from modularodm import Q
@@ -536,7 +535,6 @@ class TestNodeFiltering(ApiTestCase):
         assert_not_in(parent._id, guids)
         assert_not_in(parent2._id, guids)
 
-    @unittest.skip('Fix filter[parent]=null for NodesList')
     def test_filtering_on_null_parent(self):
         # add some nodes TO be included
         new_user = AuthUserFactory()

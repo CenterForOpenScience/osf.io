@@ -14,6 +14,8 @@ from website.models import Node
 
 class NodesListFilterMixin(ODMFilterMixin):
 
+    # TODO: This mixin should be replaced with NodesFilterMixin on all views.
+
     def _operation_to_query(self, operation):
         if operation['source_field_name'] == 'root':
             if None in operation['value']:
@@ -90,21 +92,26 @@ class NodesFilterMixin(ListFilterMixin):
             elif operation['op'] == 'ne':
                 if not operation['value']:
                     # filter[parent][ne]=null
-                    child_ids = [each.child.id for each in (
-                        NodeRelation.objects.filter(is_node_link=False, child___contributors=self.get_user())
+                    child_ids = (
+                        NodeRelation.objects.filter(
+                            is_node_link=False,
+                            child___contributors=self.get_user()
+                        )
                         .exclude(parent__type='osf.collection')
                         .exclude(child__is_deleted=True)
-                    )]
+                        .values_list('child_id', flat=True)
+                    )
                     return queryset.filter(id__in=set(child_ids))
+                # TODO: support this case in the future:
                 # else filter[parent][ne]=<nid>
-                raise InvalidFilterValue()
+                raise InvalidFilterValue(detail='Only "null" is accepted as valid input to "filter[parent][ne]"')
             else:
                 # filter[parent][gte]=''
-                raise InvalidFilterOperator()
+                raise InvalidFilterOperator(value=operation['op'], valid_operators=['eq', 'ne'])
 
         if field_name == 'root':
             if None in operation['value']:
-                raise InvalidFilterValue()
+                raise InvalidFilterValue(value=operation['value'])
             return queryset.filter(root__guids___id__in=operation['value'])
 
         if field_name == 'preprint':
