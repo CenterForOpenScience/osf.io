@@ -49,7 +49,7 @@ class Subject(ObjectIDMixin, BaseModel):
 
     def save(self, *args, **kwargs):
         validate_subject_provider_mapping(self.provider, self.bepress_subject)
-        if self.preprint_services.exists():
+        if self.pk and self.preprint_services.exists():
             raise ValidationError('Cannot edit a used Subject')
         return super(Subject, self).save()
 

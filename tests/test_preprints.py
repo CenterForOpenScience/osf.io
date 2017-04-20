@@ -228,9 +228,9 @@ class TestPreprintServicePermissions(OsfTestCase):
         assert_in('Cannot unpublish', e.exception.message)
 
 
-class TestPreprintProviders(OsfTestCase):
+class TestPreprintProvider(OsfTestCase):
     def setUp(self):
-        super(TestPreprintProviders, self).setUp()
+        super(TestPreprintProvider, self).setUp()
         self.preprint = PreprintFactory(provider=None, is_published=False)
         self.provider = PreprintProviderFactory(name='WWEArxiv')
 
@@ -257,6 +257,34 @@ class TestPreprintProviders(OsfTestCase):
 
         assert ('branded', 'WWEArxiv') == find_preprint_provider(self.preprint.node)
 
+    def test_top_level_subjects(self):
+        subj_a = SubjectFactory(provider=self.provider, text='A')
+        subj_b = SubjectFactory(provider=self.provider, text='B')
+        subj_aa = SubjectFactory(provider=self.provider, text='AA', parent=subj_a)
+        subj_ab = SubjectFactory(provider=self.provider, text='AB', parent=subj_a)
+        subj_ba = SubjectFactory(provider=self.provider, text='BA', parent=subj_b)
+        subj_bb = SubjectFactory(provider=self.provider, text='BB', parent=subj_b)
+        subj_aaa = SubjectFactory(provider=self.provider, text='AAA', parent=subj_aa)
+
+        some_other_provider = PreprintProviderFactory(name='asdfArxiv')
+        subj_asdf = SubjectFactory(provider=some_other_provider)
+
+        assert set(self.provider.top_level_subjects) == set([subj_a, subj_b])
+
+    def test_all_subjects(self):
+        subj_a = SubjectFactory(provider=self.provider, text='A')
+        subj_b = SubjectFactory(provider=self.provider, text='B')
+        subj_aa = SubjectFactory(provider=self.provider, text='AA', parent=subj_a)
+        subj_ab = SubjectFactory(provider=self.provider, text='AB', parent=subj_a)
+        subj_ba = SubjectFactory(provider=self.provider, text='BA', parent=subj_b)
+        subj_bb = SubjectFactory(provider=self.provider, text='BB', parent=subj_b)
+        subj_aaa = SubjectFactory(provider=self.provider, text='AAA', parent=subj_aa)
+
+        some_other_provider = PreprintProviderFactory(name='asdfArxiv')
+        subj_asdf = SubjectFactory(provider=some_other_provider)
+
+
+        assert set(self.provider.all_subjects) == set([subj_a, subj_b, subj_aa, subj_ab, subj_ba, subj_bb, subj_aaa])
 
 class TestOnPreprintUpdatedTask(OsfTestCase):
     def setUp(self):

@@ -484,10 +484,13 @@ class SubjectFactory(DjangoModelFactory):
         model = models.Subject
 
     @classmethod
-    def _create(cls, target_class, parent=None, provider=None, *args, **kwargs):
-        provider = provider or models.PreprintProvider.objects.first() or PreprintProviderFactory()
+    def _create(cls, target_class, parent=None, provider=None, bepress_subject=None, *args, **kwargs):
+        provider = provider or models.PreprintProvider.objects.first() or PreprintProviderFactory(_id='osf')
+        if provider._id != 'osf' and not bepress_subject:
+            osf = models.PreprintProvider.load('osf') or PreprintProviderFactory(_id='osf')
+            bepress_subject = SubjectFactory(provider=osf)
         try:
-            ret = super(SubjectFactory, cls)._create(target_class, parent=parent, provider=provider, *args, **kwargs)
+            ret = super(SubjectFactory, cls)._create(target_class, parent=parent, provider=provider, bepress_subject=bepress_subject, *args, **kwargs)
         except IntegrityError:
             ret = models.Subject.objects.get(text=kwargs['text'])
             if parent:
