@@ -2,16 +2,20 @@
 import lxml.etree
 import lxml.builder
 
-NAMESPACE = 'http://datacite.org/schema/kernel-3'
+from website import settings
+
+NAMESPACE = 'http://datacite.org/schema/kernel-4'
 XSI = 'http://www.w3.org/2001/XMLSchema-instance'
-SCHEMA_LOCATION = 'http://datacite.org/schema/kernel-3 http://schema.datacite.org/meta/kernel-3/metadata.xsd'
+SCHEMA_LOCATION = 'http://datacite.org/schema/kernel-4 http://schema.datacite.org/meta/kernel-4/metadata.xsd'
 E = lxml.builder.ElementMaker(nsmap={
     None: NAMESPACE,
     'xsi': XSI},
 )
+DOI_URL_PREFIX = 'https://dx.doi.org/'
 
 CREATOR = E.creator
 CREATOR_NAME = E.creatorName
+SUBJECT_SCHEME = 'bepress Digital Commons Three-Tiered Taxonomy'
 
 
 # This function is not OSF-specific
@@ -27,6 +31,7 @@ def datacite_metadata(doi, title, creators, publisher, publication_year, pretty_
     """
     creators = [CREATOR(CREATOR_NAME(each)) for each in creators]
     root = E.resource(
+        E.resourceType('Project', resourceTypeGeneral='Text'),
         E.identifier(doi, identifierType='DOI'),
         E.creators(*creators),
         E.titles(E.title(title)),
@@ -60,6 +65,33 @@ def datacite_metadata_for_node(node, doi, pretty_print=False):
     )
 
 
+def format_creators(preprint):
+    creators = []
+    for contributor in preprint.node.visible_contributors:
+        creator = CREATOR(E.creatorName(u'{}, {}'.format(contributor.family_name, contributor.given_name)))
+        creator.append(E.givenName(contributor.given_name))
+        creator.append(E.familyName(contributor.family_name))
+
+        # contributor.external_identity = {'ORCID': {'1234-1234-1234-1234': 'VERIFIED'}}
+        if contributor.external_identity.get('ORCID'):
+            orcid_value = contributor.external_identity['ORCID'].keys()[0]
+            if contributor.external_identity['ORCID'][orcid_value] == 'VERIFIED':
+                creator.append(E.nameIdentifier(orcid_value, nameIdentifierScheme='ORCID', schemeURI='http://orcid.org/'))
+
+        creators.append(creator)
+
+    return creators
+
+
+def format_subjects(preprint):
+    subject_names = set()
+    for subject_list in preprint.get_subjects():
+        for subject in subject_list:
+            subject_names.add(subject['text'])
+
+    return [E.subject(subject, subjectScheme=SUBJECT_SCHEME) for subject in subject_names]
+
+
 # This function is OSF specific.
 def datacite_metadata_for_preprint(preprint, doi, pretty_print=False):
     """Return the datacite metadata XML document for a given preprint as a string.
@@ -67,12 +99,24 @@ def datacite_metadata_for_preprint(preprint, doi, pretty_print=False):
     :param preprint -- the preprint
     :param str doi
     """
-    creators = [format_contributor(each) for each in preprint.node.visible_contributors]
-    return datacite_metadata(
-        doi=doi,
-        title=preprint.node.title,
-        creators=creators,
-        publisher=preprint.provider.name,
-        publication_year=getattr(preprint.date_published, 'year'),
-        pretty_print=pretty_print
+    root = E.resource(
+        E.resourceType('Preprint', resourceTypeGeneral='Text'),
+        E.identifier(doi, identifierType='DOI'),
+        E.subjects(*format_subjects(preprint)),
+        E.creators(*format_creators(preprint)),
+        E.titles(E.title(preprint.node.title)),
+        E.publisher(preprint.provider.name),
+        E.publicationYear(str(getattr(preprint.date_published, 'year'))),
+        E.dates(E.date(preprint.date_modified.isoformat(), dateType='Updated')),
+        E.alternateIdentifiers(E.alternateIdentifier(settings.DOMAIN + preprint._id, alternateIdentifierType='URL')),
+        E.descriptions(E.description(preprint.node.description, descriptionType='Abstract')),
     )
+
+    if preprint.license:
+        root.append(E.rightsList(E.rights(preprint.license.name)))
+
+    if preprint.article_doi:
+        root.append(E.relatedIdentifiers(E.relatedIdentifier(DOI_URL_PREFIX + preprint.article_doi, relatedIdentifierType='URL', relationType='IsPreviousVersionOf'))),
+    # set xsi:schemaLocation
+    root.attrib['{%s}schemaLocation' % XSI] = SCHEMA_LOCATION
+    return lxml.etree.tostring(root, pretty_print=pretty_print)
