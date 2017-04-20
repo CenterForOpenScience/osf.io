@@ -1,5 +1,5 @@
 from website.addons.base.serializer import StorageAddonSerializer
-from website.addons.fedora.settings import DEFAULT_HOSTS, USE_SSL
+from website.addons.fedora.settings import DEFAULT_HOSTS
 from website.util import web_url_for
 
 
@@ -14,12 +14,7 @@ class FedoraSerializer(StorageAddonSerializer):
         }
 
     def credentials_are_valid(self, user_settings, client=None):
-        node = self.node_settings
-        external_account = node.external_account
-        provider = self.node_settings.oauth_provider(external_account)
-
         return True
-
 
     @property
     def addon_serialized_urls(self):

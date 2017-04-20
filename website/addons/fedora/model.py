@@ -9,10 +9,8 @@ from website.addons.base import (
 )
 from website.addons.fedora.serializer import FedoraSerializer
 from website.addons.fedora.settings import DEFAULT_HOSTS, USE_SSL
-from website.addons.fedora import settings
 
 from website.oauth.models import BasicAuthProviderMixin
-from website.util import api_v2_url
 
 logger = logging.getLogger(__name__)
 
@@ -125,7 +123,6 @@ class AddonFedoraNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         self.save()
 
     def get_folders(self, **kwargs):
-        path = kwargs.get('path')
         return [{
             'addon': 'fedora',
             'path': '/',

@@ -1,9 +1,6 @@
 """Views for the node settings page."""
 # -*- coding: utf-8 -*-
-import httplib as http
-
 from furl import furl
-import requests
 from flask import request
 from modularodm import Q
 from modularodm.storage.base import KeyExistsException
@@ -16,7 +13,6 @@ from website.project.decorators import (
 
 from website.addons.fedora.model import FedoraProvider
 from website.addons.fedora.serializer import FedoraSerializer
-from website.addons.fedora import settings
 
 SHORT_NAME = 'fedora'
 FULL_NAME = 'Fedora'
