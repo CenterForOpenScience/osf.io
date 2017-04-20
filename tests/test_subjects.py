@@ -59,6 +59,21 @@ class TestSubjectTreeValidation(OsfTestCase):
         self.invalid_root_leaf = [self.outside_root._id, self.parent_subj_0._id, self.child_subj_00._id]
         self.invalid_ids = ['notarealsubjectid', 'thisisalsoafakeid']
 
+    def test_hiarachy_property(self):
+        assert_equal(self.child_subj_00.hierarchy, [self.root_subject._id, self.parent_subj_0._id, self.child_subj_00._id])
+        assert_equal(self.two_level_parent.hierarchy, [self.two_level_root._id, self.two_level_parent._id])
+        assert_equal(self.one_level_root.hierarchy, [self.one_level_root._id])
+        assert_equal(self.parent_subj_1.hierarchy, [self.root_subject._id, self.parent_subj_1._id])
+        assert_equal(self.root_subject.hierarchy, [self.root_subject._id])
+
+
+    def test_object_hierarchy_property(self):
+        assert_equal(self.child_subj_00.object_hierarchy, [self.root_subject, self.parent_subj_0, self.child_subj_00])
+        assert_equal(self.two_level_parent.object_hierarchy, [self.two_level_root, self.two_level_parent])
+        assert_equal(self.one_level_root.object_hierarchy, [self.one_level_root])
+        assert_equal(self.parent_subj_1.object_hierarchy, [self.root_subject, self.parent_subj_1])
+        assert_equal(self.root_subject.object_hierarchy, [self.root_subject])
+
     def test_validation_full_hierarchy(self):
         assert_equal(validate_subject_hierarchy(self.valid_full_hierarchy), None)
 
@@ -132,4 +147,3 @@ class TestSubjectEditValidation(OsfTestCase):
         preprint = PreprintFactory(subjects=[[self.subject._id]])
         with assert_raises(ValidationError):
             self.subject.delete()
-

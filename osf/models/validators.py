@@ -93,11 +93,13 @@ def validate_email(value):
         raise ValidationError('Invalid Email')
 
 def validate_subject_hierarchy_length(parent):
+    from osf.models import Subject
+    parent = Subject.objects.get(id=parent)
     if parent and len(parent.hierarchy) >= 3:
         raise DjangoValidationError('Invalid hierarchy')
 
 def validate_subject_provider_mapping(provider, mapping):
-    if not mapping and provider._id is not 'osf':
+    if not mapping and provider._id != 'osf':
         raise DjangoValidationError('Invalid PreprintProvider / Subject alias mapping.')
 
 
