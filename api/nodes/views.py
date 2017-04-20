@@ -357,6 +357,16 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
                     raise PermissionDenied
             return nodes
         else:
+            if self.request.query_params.get('filter[preprint]'):
+                preprints = True if self.request.query_params.get('filter[preprint]') == 'true' else False
+                query = self.get_query_from_request()
+                if preprints:
+                    nodes = Node.find(query)
+                    return (node for node in nodes if node.is_preprint)
+                else:
+                    query.nodes = [node for node in query.nodes if hasattr(node, 'attribute') and node.attribute != 'preprint_file']
+                    nodes = Node.find(query)
+                    return (node for node in nodes if not node.is_preprint)
             query = self.get_query_from_request()
             return AbstractNode.find(query).distinct()
 
