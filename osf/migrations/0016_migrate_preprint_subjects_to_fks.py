@@ -32,7 +32,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='preprintservice',
             name='_subjects',
-            field=models.ManyToManyField(blank=True, to='osf.Subject')
+            field=models.ManyToManyField(blank=True, related_name='preprint_services', to='osf.Subject'),
         ),
         migrations.RunPython(
             migrate_data, unmigrate_data
