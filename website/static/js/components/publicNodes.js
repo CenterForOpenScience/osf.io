@@ -139,7 +139,14 @@ var PublicNodes = {
         self.pageToGet = m.prop(0);
 
         self.getProjects = function _getProjects (url) {
+
+            if(self.requestPending()) {
+                return;
+            }
+
             self.publicProjects([]);
+            self.requestPending(true);
+            m.redraw();
 
             function _processResults (result){
 
@@ -152,17 +159,14 @@ var PublicNodes = {
 
                 self.currentPage(parseInt(page));
                 self.totalPages(Math.ceil(result.meta.total / result.meta.per_page));
-                m.redraw();
             }
-
-            self.requestPending(true);
 
             var promise = m.request({method : 'GET', url : url, config: mHelpers.apiV2Config({withCredentials: window.contextVars.isOnRootDomain})});
 
             promise.then(
                 function(result) {
-                    _processResults(result);
                     self.requestPending(false);
+                    _processResults(result);
                     return promise;
                 }, function(xhr, textStatus, error) {
                     self.failed = true;
