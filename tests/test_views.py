@@ -121,6 +121,7 @@ def no_auto_transact():
     UserFactory()
     return 'error', 500
 
+@pytest.mark.django_transactional_db
 class TestViewsAreAtomic(OsfTestCase):
     def test_error_response_rolls_back_transaction(self):
         assert_equal(User.objects.count(), 0)

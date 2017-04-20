@@ -78,6 +78,7 @@ class TestStoredFileNode(FilesTestCase):
         assert_equal(self.test_file.get_guid(), guid)
 
 
+@pytest.mark.django_transactional_db
 class TestFileNodeObj(FilesTestCase):
 
     def test_create(self):
