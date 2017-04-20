@@ -88,6 +88,13 @@ class TestPreprintUpdate(ApiTestCase):
 
         self.subject = SubjectFactory()
 
+        self.mock_change_identifier = mock.patch('website.identifiers.client.EzidClient.change_status_identifier')
+        self.mock_change_identifier.start()
+
+    def tearDown(self):
+        self.mock_change_identifier.stop()
+        super(TestPreprintUpdate, self).tearDown()
+
     def test_update_preprint_permission_denied(self):
         update_doi_payload = build_preprint_update_payload(self.preprint._id, attributes={'article_doi': '10.123/456/789'})
 
@@ -279,6 +286,8 @@ class TestPreprintUpdate(ApiTestCase):
         update_doi_payload = build_preprint_update_payload(self.preprint._id, attributes={'doi': '10.1234/ASDFASDF'})
 
         self.app.patch_json_api(self.url, update_doi_payload, auth=self.user.auth)
+        self.preprint.node.reload()
+
         doi, metadata = build_ezid_metadata(self.preprint)
         mock_change_status_identifier.assert_called_with('public', doi, metadata)
 
@@ -310,6 +319,14 @@ class TestPreprintUpdateLicense(ApiTestCase):
         self.preprint_provider.save()
 
         self.url = '/{}preprints/{}/'.format(API_BASE, self.preprint._id)
+
+        self.mock_change_identifier = mock.patch('website.identifiers.client.EzidClient.change_status_identifier')
+        self.mock_change_identifier.start()
+
+    def tearDown(self):
+        self.mock_change_identifier.stop()
+        super(TestPreprintUpdateLicense, self).tearDown()
+
 
     def make_payload(self, node_id, license_id=None, license_year=None, copyright_holders=None):
         attributes = {}
