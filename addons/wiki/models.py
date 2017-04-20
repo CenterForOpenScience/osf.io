@@ -2,7 +2,6 @@
 import datetime
 import functools
 import logging
-import urllib
 
 import markdown
 import pytz
@@ -115,11 +114,11 @@ class NodeWikiPage(GuidMixin, BaseModel):
 
     @property
     def deep_url(self):
-        return '{}wiki/{}/'.format(self.node.deep_url, urllib.quote(self.page_name))
+        return u'{}wiki/{}/'.format(self.node.deep_url, self.page_name)
 
     @property
     def url(self):
-        return '{}wiki/{}/'.format(self.node.url, urllib.quote(self.page_name))
+        return u'{}wiki/{}/'.format(self.node.url, self.page_name)
 
     @property
     def rendered_before_update(self):

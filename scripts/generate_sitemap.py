@@ -114,9 +114,9 @@ class Sitemap(object):
             loc_text = self.doc.createTextNode(urlparse.urljoin(settings.DOMAIN, 'sitemaps/sitemap_{}.xml.gz'.format(str(f))))
             loc.appendChild(loc_text)
 
-            datemod = doc.createElement('datemod')
+            datemod = doc.createElement('lastmod')
             sitemap.appendChild(datemod)
-            datemod_text = self.doc.createTextNode(datetime.datetime.now().isoformat())
+            datemod_text = self.doc.createTextNode(datetime.datetime.now().strftime('%Y-%m-%d'))
             datemod.appendChild(datemod_text)
 
         print('Writing `sitemap_index.xml`')
@@ -168,7 +168,7 @@ class Sitemap(object):
             try:
                 config = settings.SITEMAP_NODE_CONFIG
                 config['loc'] = urlparse.urljoin(settings.DOMAIN, obj.url)
-                config['lastmod'] = obj.date_modified.isoformat()
+                config['lastmod'] = obj.date_modified.strftime('%Y-%m-%d')
                 self.add_url(config)
             except Exception as e:
                 self.log_errors(obj, obj._id, e)
@@ -180,7 +180,7 @@ class Sitemap(object):
         progress.start(objs.count() * 2, 'PREP: ')
         for obj in objs.iterator():
             try:
-                preprint_date = obj.date_modified.isoformat()
+                preprint_date = obj.date_modified.strftime('%Y-%m-%d')
                 config = settings.SITEMAP_PREPRINT_CONFIG
                 config['loc'] = urlparse.urljoin(settings.DOMAIN, obj.url)
                 config['lastmod'] = preprint_date
