@@ -26,7 +26,7 @@ def remove_identifiers_from_preprints(*args):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0013_auto_20170412_0957'),
+        ('osf', '0014_merge'),
     ]
 
     operations = [
