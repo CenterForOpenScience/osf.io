@@ -4,6 +4,8 @@ import logging
 
 from django.db import connection, migrations, models
 
+from osf.models.validators import validate_subject_hierarchy_length
+
 logger = logging.getLogger(__name__)
 
 def add_custom_mapping_constraint(state, schema):
@@ -40,7 +42,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='subject',
             name='parent',
-            field=models.ForeignKey(blank=True, null=True, on_delete=models.deletion.SET_NULL, to='osf.Subject')
+            field=models.ForeignKey(blank=True, null=True, on_delete=models.deletion.SET_NULL, related_name='children', to='osf.Subject', validators=[validate_subject_hierarchy_length]),
         ),
         migrations.AddField(
             model_name='subject',
@@ -84,7 +86,7 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='subject',
             name='parent',
-            field=models.ForeignKey(blank=True, null=True, on_delete=models.deletion.SET_NULL, to='osf.Subject', related_name='children')
+            field=models.ForeignKey(blank=True, null=True, on_delete=models.deletion.SET_NULL, related_name='children', to='osf.Subject', validators=[validate_subject_hierarchy_length]),
         ),
         migrations.AlterField(
             model_name='subject',

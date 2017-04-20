@@ -4,9 +4,11 @@ import urlparse
 from dirtyfields import DirtyFieldsMixin
 from django.db import models
 from django.utils import timezone
+from django.utils.functional import cached_property
 
 from framework.celery_tasks.handlers import enqueue_task
 from framework.exceptions import PermissionsError
+from osf.models.subject import Subject
 from osf.utils.fields import NonNaiveDateTimeField
 from website.files.models import StoredFileNode
 from website.preprints.tasks import on_preprint_updated
@@ -34,7 +36,7 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, BaseModel):
     license = models.ForeignKey('osf.NodeLicenseRecord',
                                 on_delete=models.SET_NULL, null=True, blank=True)
 
-    subjects = models.ManyToManyField(blank=True, to='osf.Subject')
+    subjects = models.ManyToManyField(blank=True, to='osf.Subject', related_name='preprint_services')
 
     class Meta:
         unique_together = ('node', 'provider')
@@ -63,7 +65,7 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, BaseModel):
             return
         return self.node.is_preprint_orphan
 
-    @property
+    @cached_property
     def subject_hierarchy(self):
         return [
             s.object_hierarchy for s in self.subjects.exclude(children__in=self.subjects.all())
@@ -108,7 +110,6 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, BaseModel):
         return ret
 
     def set_subjects(self, preprint_subjects, auth, save=False):
-        from osf.models.subject import Subject  # Avoid circular import
         if not self.node.has_permission(auth.user, ADMIN):
             raise PermissionsError('Only admins can change a preprint\'s subjects.')
 
