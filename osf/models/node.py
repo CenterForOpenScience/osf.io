@@ -18,6 +18,7 @@ from django.utils.functional import cached_property
 from keen import scoped_keys
 from psycopg2._psycopg import AsIs
 from typedmodels.models import TypedModel
+from include import IncludeQuerySet
 
 from framework import status
 from framework.celery_tasks.handlers import enqueue_task
@@ -45,7 +46,6 @@ from osf.modm_compat import Q
 from osf.utils.auth import Auth, get_user
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import NonNaiveDateTimeField
-from osf.utils.manager import IncludeQuerySet
 from website import language, settings
 from website.citations.utils import datetime_to_csl
 from website.exceptions import (InvalidTagError, NodeStateError,

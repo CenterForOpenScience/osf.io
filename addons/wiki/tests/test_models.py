@@ -1,5 +1,4 @@
 import pytest
-from urllib import quote
 
 from modularodm.exceptions import ValidationValueError
 
@@ -70,12 +69,12 @@ class TestNodeWikiPage(OsfTestCase):
 
     def test_url_for_wiki_page_name_with_spaces(self):
         wiki = NodeWikiFactory(user=self.user, node=self.project, page_name='Test Wiki')
-        url = '{}wiki/{}/'.format(self.project.url, quote(wiki.page_name))
+        url = '{}wiki/{}/'.format(self.project.url, wiki.page_name)
         assert wiki.url == url
 
     def test_url_for_wiki_page_name_with_special_characters(self):
         wiki = NodeWikiFactory(user=self.user, node=self.project)
         wiki.page_name = 'Wiki!@#$%^&*()+'
         wiki.save()
-        url = '{}wiki/{}/'.format(self.project.url, quote(wiki.page_name))
+        url = '{}wiki/{}/'.format(self.project.url, wiki.page_name)
         assert wiki.url == url
