@@ -489,7 +489,7 @@ AddContributorViewModel = oop.extend(Paginator, {
         var response = JSON.parse(xhr.responseText);
         // Update error message
         this.inviteError(response.message);
-        $('.btn-add').removeAttr('disabled');;
+        $('.btn-add').removeAttr('disabled');
     },
     hasChildren: function() {
         var self = this;
