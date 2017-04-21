@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+import random
+
 import mock
 
 import time
@@ -84,6 +86,33 @@ class TestNodeContributorList(NodeCRUDTestCase):
 
         assert_equal(res.json['data'][0]['id'].split('-')[0], self.public_project._id)
         assert_equal(res.json['data'][0]['id'].split('-')[1], self.user._id)
+
+    def test_permissions_work_with_many_users(self):
+        users = {
+            'admin': [self.user._id],
+            'write': [],
+            'read': []
+        }
+        for i in range(0, 25):
+            perm = random.choice(users.keys())
+            perms = []
+            if perm == 'admin':
+                perms = ['read', 'write', 'admin', ]
+            elif perm == 'write':
+                perms = ['read', 'write', ]
+            elif perm == 'read':
+                perms = ['read', ]
+            user = AuthUserFactory()
+
+            self.private_project.add_contributor(user, permissions=perms)
+            users[perm].append(user._id)
+
+        res = self.app.get(self.private_url, auth=self.user.auth)
+        data = res.json['data']
+        for user in data:
+            api_perm = user['attributes']['permission']
+            user_id = user['id'].split('-')[1]
+            assert user_id in users[api_perm], 'Permissions incorrect for {}. Should not have {} permission.'.format(user_id, api_perm)
 
     def test_return_public_contributor_list_logged_out(self):
         self.public_project.add_contributor(self.user_two, save=True)

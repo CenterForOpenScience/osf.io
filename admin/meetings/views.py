@@ -10,16 +10,17 @@ from framework.auth.core import get_user
 from osf.models.conference import Conference, DEFAULT_FIELD_NAMES
 from website.conferences.exceptions import ConferenceError
 
-from admin.base.utils import NodesAndUsers
 from admin.meetings.forms import MeetingForm
 from admin.meetings.serializers import serialize_meeting
 
 
-class MeetingListView(NodesAndUsers, ListView):
+class MeetingListView(PermissionRequiredMixin, ListView):
     template_name = 'meetings/list.html'
     paginate_by = 10
     paginate_orphans = 1
     context_object_name = 'meeting'
+    permission_required = 'osf.view_conference'
+    raise_exception = True
 
     def get_queryset(self):
         return Conference.find()
@@ -35,13 +36,14 @@ class MeetingListView(NodesAndUsers, ListView):
         return super(MeetingListView, self).get_context_data(**kwargs)
 
 
-class MeetingFormView(NodesAndUsers, FormView, PermissionRequiredMixin):
+class MeetingFormView(PermissionRequiredMixin, FormView):
     template_name = 'meetings/detail.html'
     form_class = MeetingForm
-    permission_required = 'auth.admin'
+    permission_required = 'osf.change_conference'
+    raise_exception = True
 
     def dispatch(self, request, *args, **kwargs):
-        endpoint = self.kwargs.get('endpoint')
+        endpoint = kwargs.get('endpoint')
         try:
             self.conf = Conference.get_by_endpoint(endpoint, active=False)
         except ConferenceError:
@@ -85,10 +87,11 @@ class MeetingFormView(NodesAndUsers, FormView, PermissionRequiredMixin):
                        kwargs={'endpoint': self.kwargs.get('endpoint')})
 
 
-class MeetingCreateFormView(NodesAndUsers, FormView, PermissionRequiredMixin):
+class MeetingCreateFormView(PermissionRequiredMixin, FormView):
     template_name = 'meetings/create.html'
     form_class = MeetingForm
-    permission_required = 'auth.admin'
+    permission_required = ('osf.view_conference', 'osf.change_conference')
+    raise_exception = True
 
     def get_initial(self):
         self.initial.update(DEFAULT_FIELD_NAMES)

@@ -289,6 +289,7 @@ def get_auth(auth, **kwargs):
             'callback_url': node.api_url_for(
                 ('create_waterbutler_log' if not node.is_registration else 'registration_callbacks'),
                 _absolute=True,
+                _internal=True
             ),
         }
     }, settings.WATERBUTLER_JWT_SECRET, algorithm=settings.WATERBUTLER_JWT_ALGORITHM), WATERBUTLER_JWE_KEY)}
@@ -624,6 +625,7 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
             'message_long': 'The {} add-on containing {} is no longer configured.'.format(provider_safe, path_safe)
         })
 
+    savepoint_id = transaction.savepoint()
     file_node = FileNode.resolve_class(provider, FileNode.FILE).get_or_create(node, path)
 
     # Note: Cookie is provided for authentication to waterbutler
@@ -638,7 +640,17 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
     )
 
     if version is None:
+        # File is either deleted or unable to be found in the provider location
+        # Rollback the insertion of the file_node
+        transaction.savepoint_rollback(savepoint_id)
+        if not file_node.pk:
+            raise HTTPError(httplib.NOT_FOUND, data={
+                'message_short': 'File Not Found',
+                'message_long': 'The requested file could not be found.'
+            })
         return addon_deleted_file(file_node=file_node, path=path, **kwargs)
+    else:
+        transaction.savepoint_commit(savepoint_id)
 
     # TODO clean up these urls and unify what is used as a version identifier
     if request.method == 'HEAD':

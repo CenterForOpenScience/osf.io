@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import datetime as dt
+
 import framework
 import itertools
 import logging
@@ -112,10 +113,16 @@ def validate_social(value):
     validate_profile_websites(value.get('profileWebsites'))
 
 
+def get_current_user_id():
+    return session._get_current_object() and session.data.get('auth_user_id')
+
 # TODO - rename to _get_current_user_from_session /HRYBACKI
 def _get_current_user():
-    uid = session._get_current_object() and session.data.get('auth_user_id')
-    return User.load(uid)
+    current_user_id = get_current_user_id()
+    if current_user_id:
+        return User.load(current_user_id)
+    else:
+        return None
 
 
 # TODO: This should be a class method of User?
@@ -1020,7 +1027,6 @@ class User(GuidStoredObject, AddonModelMixin):
         if unregistered_user:
             self.merge_user(unregistered_user)
             self.save()
-            unregistered_user.username = None
 
         if email not in self.emails:
             self.emails.append(email)
@@ -1068,7 +1074,7 @@ class User(GuidStoredObject, AddonModelMixin):
         :return:
         """
         from website.search import search
-        search.update_contributors(self.visible_contributor_to)
+        search.update_contributors_async(self.id)
 
     def update_affiliated_institutions_by_email_domain(self):
         """
@@ -1289,11 +1295,15 @@ class User(GuidStoredObject, AddonModelMixin):
     def save(self, *args, **kwargs):
         # TODO: Update mailchimp subscription on username change
         # Avoid circular import
+        first_save = not self._is_loaded
         self.username = self.username.lower().strip() if self.username else None
         ret = super(User, self).save(*args, **kwargs)
         if self.SEARCH_UPDATE_FIELDS.intersection(ret) and self.is_confirmed:
             self.update_search()
             self.update_search_nodes_contributors()
+        if first_save:
+            from website.project import new_bookmark_collection  # Avoid circular import
+            new_bookmark_collection(self)
         return ret
 
     def update_search(self):
@@ -1466,7 +1476,9 @@ class User(GuidStoredObject, AddonModelMixin):
             elif timestamp > self.comments_viewed_timestamp[target_id]:
                 self.comments_viewed_timestamp[target_id] = timestamp
 
-        self.emails.extend(user.emails)
+        for email in user.emails:
+            if email not in self.emails:
+                self.emails.append(email)
         user.emails = []
 
         for k, v in user.email_verifications.iteritems():
@@ -1578,9 +1590,8 @@ class User(GuidStoredObject, AddonModelMixin):
 
         remove_sessions_for_user(user)
 
-        # - username is set to None so the resultant user can set it primary
-        #   in the future.
-        user.username = None
+        # - username is set to _id to ensure uniqueness
+        user.username = user._id
         user.password = None
         user.verification_key = None
         user.osf_mailing_lists = {}

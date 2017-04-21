@@ -878,7 +878,7 @@ class TestWikiUuid(OsfTestCase):
 
     @mock.patch('addons.wiki.utils.broadcast_to_sharejs')
     def test_uuid_persists_after_rename(self, mock_sharejs):
-        new_wname = 'bar.baz'
+        new_wname = 'barbaz'
         new_wkey = to_mongo_key(new_wname)
         assert_is_none(self.project.wiki_private_uuids.get(self.wkey))
         assert_is_none(self.project.wiki_private_uuids.get(new_wkey))

@@ -12,16 +12,22 @@ from website.project.views.contributor import notify_added_contributor
 
 # Silence some 3rd-party logging and some "loud" internal loggers
 SILENT_LOGGERS = [
+    'api.caching.tasks',
     'factory.generate',
     'factory.containers',
-    'website.search.elastic_search',
     'framework.analytics',
     'framework.auth.core',
+    'framework.celery_tasks.signals',
+    'website.app',
+    'website.archiver.tasks',
     'website.mails',
+    'website.notifications.listeners',
+    'website.search.elastic_search',
     'website.search_migration.migrate',
     'website.util.paths',
-    'api.caching.tasks',
-    'website.notifications.listeners',
+    'requests_oauthlib.oauth2_session',
+    'raven.base.Client',
+    'raven.contrib.django.client.DjangoClient',
 ]
 for logger_name in SILENT_LOGGERS:
     logging.getLogger(logger_name).setLevel(logging.CRITICAL)
