@@ -398,8 +398,8 @@ class NodeSerializer(JSONAPISerializer):
         if len(tag_instances):
             node.tags.add(*tag_instances)
 
-        parent = validated_data['parent']
-        if parent.has_permission(user, 'write'):
+        parent = validated_data.get('parent')
+        if parent and parent.has_permission(user, 'write'):
             if is_truthy(request.GET.get('inherit_tags')):
                 for tag in parent.tags.all():
                     node.add_tag(tag, auth)
