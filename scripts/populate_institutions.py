@@ -51,6 +51,18 @@ def main(env):
     if env == 'prod':
         INSTITUTIONS = [
             {
+                '_id': 'brown',
+                'name': 'Brown University',
+                'description': 'A Research Project Management and Publication Tool for the Brown University Research Community in partnership with <a href="http://library.brown.edu/info/data_management">Brown University Library Research Data Management Services</a> | <a href="https://www.brown.edu/research/home">Research at Brown</a> | <a href="https://it.brown.edu/computing-policies/policy-handling-brown-restricted-information">Brown Restricted Information Handling Policy</a> | <a href="https://www.brown.edu/about/administration/provost/policies/privacy">Research Privacy Policy</a>',
+                'banner_name': 'brown-banner.png',
+                'logo_name': 'brown-shield.png',
+                'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://shib.bu.edu/idp/shibboleth')),
+                'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://osf.io/goodbye')),
+                'domains': ['https://sso.brown.edu/idp/shibboleth'],
+                'email_domains': [],
+                'delegation_protocol': 'saml-shib',
+            },
+            {
                 '_id': 'bu',
                 'name': 'Boston University',
                 'description': 'A Research Project Management Tool for BU',
@@ -395,6 +407,18 @@ def main(env):
         ]
     elif env == 'test':
         INSTITUTIONS = [
+            {
+                '_id': 'brown',
+                'name': 'Brown University',
+                'description': 'A Research Project Management and Publication Tool for the Brown University Research Community in partnership with <a href="http://library.brown.edu/info/data_management">Brown University Library Research Data Management Services</a> | <a href="https://www.brown.edu/research/home">Research at Brown</a> | <a href="https://it.brown.edu/computing-policies/policy-handling-brown-restricted-information">Brown Restricted Information Handling Policy</a> | <a href="https://www.brown.edu/about/administration/provost/policies/privacy">Research Privacy Policy</a>',
+                'banner_name': 'brown-banner.png',
+                'logo_name': 'brown-shield.png',
+                'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://shib.bu.edu/idp/shibboleth')),
+                'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://test.osf.io/goodbye')),
+                'domains': ['https://sso.brown.edu/idp/shibboleth'],
+                'email_domains': [],
+                'delegation_protocol': 'saml-shib',
+            },
             {
                 '_id': 'bu',
                 'name': 'Boston University [Test]',
