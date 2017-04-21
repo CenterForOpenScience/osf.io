@@ -22,3 +22,6 @@
     </p>
 </%def>
 
+<%def name="steps()">
+
+</%def>
