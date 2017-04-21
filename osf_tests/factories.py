@@ -528,6 +528,7 @@ class PreprintFactory(DjangoModelFactory):
         kwargs['creator'] = user
         # Original project to be converted to a preprint
         project = project or ProjectFactory(*args, **kwargs)
+        project.preprint_article_doi = doi
         project.save()
         if not project.is_contributor(user):
             project.add_contributor(
@@ -580,7 +581,6 @@ class PreprintFactory(DjangoModelFactory):
         if not preprint.is_published:
             project._has_abandoned_preprint = True
 
-        project.preprint_article_doi = doi
         project.save()
         return preprint
 
