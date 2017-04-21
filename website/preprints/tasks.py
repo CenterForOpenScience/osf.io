@@ -55,7 +55,10 @@ def format_preprint(preprint):
     ]
 
     if preprint.article_doi:
-        to_visit.append(GraphNode('workidentifier', creative_work=preprint_graph, uri='http://dx.doi.org/{}'.format(preprint.article_doi)))
+        # Article DOI refers to a clone of this preprint on another system and therefore does not qualify as an identifier for this preprint
+        related_work = GraphNode('creativework')
+        to_visit.append(GraphNode('workrelation', subject=preprint_graph, related=related_work))
+        to_visit.append(GraphNode('workidentifier', creative_work=related_work, uri='http://dx.doi.org/{}'.format(preprint.article_doi)))
 
     preprint_graph.attrs['tags'] = [
         GraphNode('throughtags', creative_work=preprint_graph, tag=GraphNode('tag', name=tag))

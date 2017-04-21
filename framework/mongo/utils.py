@@ -141,7 +141,7 @@ def autoload(Model, extract_key, inject_key, func):
     return wrapper
 
 
-def paginated(model, query=None, increment=200, each=True):
+def paginated(model, query=None, increment=200, each=True, include=None):
     """Paginate a MODM query.
 
     :param StoredObject model: Model to query.
@@ -150,7 +150,10 @@ def paginated(model, query=None, increment=200, each=True):
     :param bool each: If True, each record is yielded. If False, pages
         are yielded.
     """
-    queryset = model.find(query)
+    if include:
+        queryset = model.find(query).include(*include)
+    else:
+        queryset = model.find(query)
 
     # Pagination requires an order by clause, especially when using Postgres.
     # see: https://docs.djangoproject.com/en/1.10/topics/pagination/#required-arguments

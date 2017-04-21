@@ -11,6 +11,7 @@ from django.db.models import Manager
 from django.utils import timezone
 from modularodm.exceptions import NoResultsFound
 from typedmodels.models import TypedModel
+from include import IncludeManager
 
 from framework.analytics import get_basic_counters
 from osf.models.base import BaseModel, OptionalGuidMixin, ObjectIDMixin
@@ -23,13 +24,6 @@ from osf.utils.fields import NonNaiveDateTimeField
 from website.files import utils
 from website.files.exceptions import VersionNotFoundError
 from website.util import api_v2_url, waterbutler_api_url_for
-from osf.utils.datetime_aware_jsonfield import coerce_nonnaive_datetimes
-from osf.utils.manager import IncludeQuerySet
-import pytz
-
-# TODO DELETE ME POST MIGRATION
-from modularodm import Q as MQ
-# /TODO DELETE ME POST MIGRATION
 
 __all__ = (
     'File',
@@ -83,16 +77,6 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
     Also, calling ``.load`` may return a `TrashedFileNode`.
     Use the ``BaseFileNode.active`` manager when you want to filter out TrashedFileNodes.
     """
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.files.models.base.StoredFileNode'
-    modm_query = None
-    migration_page_size = 10000
-    FIELD_ALIASES = {
-        'path': '_path',
-        'history': '_history',
-        'materialized_path': '_materialized_path',
-    }
-    # /TODO DELETE ME POST MIGRATION]
     version_identifier = 'revision'  # For backwards compatibility
     FOLDER, FILE, ANY = 0, 1, 2
 
@@ -114,7 +98,7 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
 
     provider = models.CharField(max_length=25, blank=False, null=False, db_index=True)
 
-    name = models.TextField(blank=True, null=True)
+    name = models.TextField(blank=True)
     _path = models.TextField(blank=True, null=True)  # 1950 on prod
     _materialized_path = models.TextField(blank=True, null=True)  # 482 on staging
 
@@ -199,7 +183,10 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
 
     @classmethod
     def get_or_create(cls, node, path):
-        obj, _ = cls.objects.get_or_create(node=node, _path='/' + path.lstrip('/'))
+        try:
+            obj = cls.objects.get(node=node, _path='/' + path.lstrip('/'))
+        except cls.DoesNotExist:
+            obj = cls(node=node, _path='/' + path.lstrip('/'))
         return obj
 
     @classmethod
@@ -334,44 +321,6 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
         # TODO Switch back to head requests
         # return self.update(revision, json.loads(resp.headers['x-waterbutler-metadata']))
 
-    def update(self, revision, data, user=None):
-        """Using revision and data update all data pretaining to self
-        :param str or None revision: The revision that data points to
-        :param dict data: Metadata recieved from waterbutler
-        :returns: FileVersion
-        """
-        self.name = data['name']
-        self.materialized_path = data['materialized']
-
-        version = FileVersion(identifier=revision)
-        version.update_metadata(data, save=False)
-
-        # Transform here so it can be sortted on later
-        if data['modified'] is not None and data['modified'] != '':
-            data['modified'] = parse_date(
-                data['modified'],
-                ignoretz=True,
-                default=timezone.now()  # Just incase nothing can be parsed
-            )
-
-        # if revision is none then version is the latest version
-        # Dont save the latest information
-        if revision is not None:
-            version.save()
-            self.versions.add(version)
-        for entry in self.history:
-            if ('etag' in entry and 'etag' in data) and (entry['etag'] == data['etag']):
-                break
-        else:
-            # Insert into history if there is no matching etag
-            utils.insort(self.history, data, lambda x: x['modified'])
-
-        # Finally update last touched
-        self.last_touched = timezone.now()
-
-        self.save()
-        return version
-
     def get_download_count(self, version=None):
         """Pull the download count from the pagecounter collection
         Limit to version if specified.
@@ -471,16 +420,6 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
             self.node
         )
 
-    @classmethod
-    def migrate_from_modm(cls, modm_obj):
-        django_obj = super(BaseFileNode, cls).migrate_from_modm(modm_obj)
-        django_obj._history = coerce_nonnaive_datetimes(modm_obj.history)
-        django_obj._materialized_path = modm_obj.materialized_path
-        django_obj._path = modm_obj.path
-        if hasattr(modm_obj, 'deleted_on'):
-            django_obj.deleted_on = pytz.utc.localize(modm_obj.deleted_on)
-        return django_obj
-
 
 # TODO Refactor code pointing at FileNode to point to StoredFileNode
 FileNode = StoredFileNode = BaseFileNode
@@ -497,6 +436,48 @@ class File(models.Model):
     @property
     def kind(self):
         return 'file'
+
+    def update(self, revision, data, user=None):
+        """Using revision and data update all data pretaining to self
+        :param str or None revision: The revision that data points to
+        :param dict data: Metadata recieved from waterbutler
+        :returns: FileVersion
+        """
+        self.name = data['name']
+        self.materialized_path = data['materialized']
+
+        version = FileVersion(identifier=revision)
+        version.update_metadata(data, save=False)
+
+        # Transform here so it can be sortted on later
+        if data['modified'] is not None and data['modified'] != '':
+            data['modified'] = parse_date(
+                data['modified'],
+                ignoretz=True,
+                default=timezone.now()  # Just incase nothing can be parsed
+            )
+
+        # if revision is none then version is the latest version
+        # Dont save the latest information
+        if revision is not None:
+            version.save()
+            self.versions.add(version)
+        for entry in self.history:
+            if ('etag' in entry and 'etag' in data) and (entry['etag'] == data['etag']):
+                break
+        else:
+            # Insert into history if there is no matching etag
+            if data.get('modified'):
+                utils.insort(self.history, data, lambda x: x['modified'])
+            # If modified not included in the metadata, insert at the end of the history
+            else:
+                self.history.append(data)
+
+        # Finally update last touched
+        self.last_touched = timezone.now()
+
+        self.save()
+        return version
 
     def serialize(self):
         newest_version = self.versions.all().last()
@@ -538,6 +519,17 @@ class Folder(models.Model):
     @property
     def children(self):
         return self._children.exclude(type__in=TrashedFileNode._typedmodels_subtypes)
+
+    def update(self, revision, data, save=True, user=None):
+        """Note: User is a kwargs here because of special requirements of
+        dataverse and django
+        See dataversefile.update
+        """
+        self.name = data['name']
+        self.materialized_path = data['materialized']
+        self.last_touched = timezone.now()
+        if save:
+            self.save()
 
     def append_file(self, name, path=None, materialized_path=None, save=True):
         return self._create_child(name, File, path=path, materialized_path=materialized_path, save=save)
@@ -606,20 +598,12 @@ class TrashedFileNode(BaseFileNode):
 
 
 class TrashedFile(TrashedFileNode):
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.files.models.base.TrashedFileNode'
-    modm_query = MQ('is_file', 'eq', True)
-    # /TODO DELETE ME POST MIGRATION
     @property
     def kind(self):
         return 'file'
 
 
 class TrashedFolder(TrashedFileNode):
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.files.models.base.TrashedFileNode'
-    modm_query = MQ('is_file', 'eq', False)
-    # /TODO DELETE ME POST MIGRATION
     @property
     def kind(self):
         return 'folder'
@@ -655,20 +639,14 @@ class FileVersion(ObjectIDMixin, BaseModel):
     about where the file is located, hashes and datetimes
     """
 
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.files.models.base.FileVersion'
-    modm_query = None
-    migration_page_size = 100000
-    # /TODO DELETE ME POST MIGRATION
-
     creator = models.ForeignKey('OSFUser', null=True, blank=True)
 
     identifier = models.CharField(max_length=100, blank=False, null=False)  # max length on staging was 51
 
     # Date version record was created. This is the date displayed to the user.
-    date_created = NonNaiveDateTimeField(default=timezone.now)  # auto_now_add=True)
+    date_created = NonNaiveDateTimeField(auto_now_add=True)
 
-    size = models.BigIntegerField(default=-1, blank=True)
+    size = models.BigIntegerField(default=-1, blank=True, null=True)
 
     content_type = models.CharField(max_length=100, blank=True, null=True)  # was 24 on staging
     # Date file modified on third-party backend. Not displayed to user, since
@@ -679,7 +657,7 @@ class FileVersion(ObjectIDMixin, BaseModel):
     metadata = DateTimeAwareJSONField(blank=True, default=dict)
     location = DateTimeAwareJSONField(default=None, blank=True, null=True, validators=[validate_location])
 
-    includable_objects = IncludeQuerySet.as_manager()
+    includable_objects = IncludeManager()
 
     @property
     def location_hash(self):

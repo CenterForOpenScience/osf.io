@@ -27,6 +27,7 @@ from osf_tests.factories import (
     SubjectFactory
 )
 from tests.utils import assert_logs, assert_not_logs
+from api_tests import utils as api_test_utils
 from website.project.views.contributor import find_preprint_provider
 
 
@@ -294,7 +295,7 @@ class TestOnPreprintUpdatedTask(OsfTestCase):
     def test_format_preprint(self):
         res = format_preprint(self.preprint)
 
-        assert set(gn['@type'] for gn in res) == {'creator', 'contributor', 'throughsubjects', 'subject', 'throughtags', 'tag', 'workidentifier', 'agentidentifier', 'person', 'preprint'}
+        assert set(gn['@type'] for gn in res) == {'creator', 'contributor', 'throughsubjects', 'subject', 'throughtags', 'tag', 'workidentifier', 'agentidentifier', 'person', 'preprint', 'workrelation', 'creativework'}
 
         nodes = dict(enumerate(res))
         preprint = nodes.pop(next(k for k, v in nodes.items() if v['@type'] == 'preprint'))
@@ -367,21 +368,29 @@ class TestOnPreprintUpdatedTask(OsfTestCase):
             self.preprint.node.creator.profile_image_url(),
         ]) | set(urlparse.urljoin(settings.DOMAIN, user.profile_url) for user in self.preprint.node.contributors if user.is_registered)
 
-        workidentifiers = {nodes.pop(k)['uri'] for k, v in nodes.items() if v['@type'] == 'workidentifier'}
-        assert workidentifiers == set([
-            'http://dx.doi.org/{}'.format(self.preprint.article_doi),
-            urlparse.urljoin(settings.DOMAIN, self.preprint.url)
-        ])
+        related_work = next(nodes.pop(k) for k, v in nodes.items() if v['@type'] == 'creativework')
+        assert set(related_work.keys()) == {'@id', '@type'}  # Empty except @id and @type
+
+        doi = next(nodes.pop(k) for k, v in nodes.items() if v['@type'] == 'workidentifier' and 'doi' in v['uri'])
+        assert doi['creative_work'] == related_work
+
+        workidentifiers = [nodes.pop(k)['uri'] for k, v in nodes.items() if v['@type'] == 'workidentifier']
+        assert workidentifiers == [urlparse.urljoin(settings.DOMAIN, self.preprint.url)]
+
+        relation = nodes.pop(nodes.keys()[0])
+        assert relation == {'@id': relation['@id'], '@type': 'workrelation', 'related': {'@id': related_work['@id'], '@type': related_work['@type']}, 'subject': {'@id': preprint['@id'], '@type': preprint['@type']}}
 
         assert nodes == {}
 
     def test_format_preprint_nones(self):
         self.preprint.node.tags = []
         self.preprint.date_published = None
+        self.preprint.node.preprint_article_doi = None
         self.preprint.set_subjects([], auth=Auth(self.preprint.node.creator), save=False)
 
         res = format_preprint(self.preprint)
 
+        assert self.preprint.provider != 'osf'
         assert set(gn['@type'] for gn in res) == {'creator', 'contributor', 'workidentifier', 'agentidentifier', 'person', 'preprint'}
 
         nodes = dict(enumerate(res))
@@ -446,10 +455,8 @@ class TestOnPreprintUpdatedTask(OsfTestCase):
         ]) | set(urlparse.urljoin(settings.DOMAIN, user.profile_url) for user in self.preprint.node.contributors if user.is_registered)
 
         workidentifiers = {nodes.pop(k)['uri'] for k, v in nodes.items() if v['@type'] == 'workidentifier'}
-        assert workidentifiers == set([
-            'http://dx.doi.org/{}'.format(self.preprint.article_doi),
-            urlparse.urljoin(settings.DOMAIN, self.preprint.url)
-        ])
+        # URLs should *always* be osf.io/guid/
+        assert workidentifiers == set([urlparse.urljoin(settings.DOMAIN, self.preprint._id) + '/'])
 
         assert nodes == {}
 
@@ -489,3 +496,51 @@ class TestOnPreprintUpdatedTask(OsfTestCase):
         res = format_preprint(self.preprint)
         preprint = next(v for v in res if v['@type'] == 'preprint')
         assert preprint['is_deleted'] is True
+
+
+class TestPreprintSaveShareHook(OsfTestCase):
+    def setUp(self):
+        super(TestPreprintSaveShareHook, self).setUp()
+        self.admin = AuthUserFactory()
+        self.auth = Auth(user=self.admin)
+        self.provider = PreprintProviderFactory(name='Lars Larson Snowmobiling Experience')
+        self.project = ProjectFactory(creator=self.admin, is_public=True)
+        self.subject = SubjectFactory()
+        self.subject_two = SubjectFactory()
+        self.file = api_test_utils.create_test_file(self.project, self.admin, 'second_place.pdf')
+        self.preprint = PreprintFactory(creator=self.admin, filename='second_place.pdf', provider=self.provider, subjects=[[self.subject._id]], project=self.project, is_published=False)
+
+    @mock.patch('website.preprints.tasks.on_preprint_updated.s')
+    def test_save_unpublished_not_called(self, mock_on_preprint_updated):
+        self.preprint.save()
+        assert not mock_on_preprint_updated.called
+
+    @mock.patch('website.preprints.tasks.on_preprint_updated.s')
+    def test_save_published_called(self, mock_on_preprint_updated):
+        self.preprint.set_published(True, auth=self.auth, save=True)
+        assert mock_on_preprint_updated.called
+
+    # This covers an edge case where a preprint is forced back to unpublished
+    # that it sends the information back to share
+    @mock.patch('website.preprints.tasks.on_preprint_updated.s')
+    def test_save_unpublished_called_forced(self, mock_on_preprint_updated):
+        self.preprint.set_published(True, auth=self.auth, save=True)
+        self.preprint.published = False
+        self.preprint.save(**{'force_update': True})
+        assert_equal(mock_on_preprint_updated.call_count, 2)
+
+    @mock.patch('website.preprints.tasks.on_preprint_updated.s')
+    def test_save_published_called(self, mock_on_preprint_updated):
+        self.preprint.set_published(True, auth=self.auth, save=True)
+        assert mock_on_preprint_updated.called
+
+    @mock.patch('website.preprints.tasks.on_preprint_updated.s')
+    def test_save_published_subject_change_called(self, mock_on_preprint_updated):
+        self.preprint.is_published = True
+        self.preprint.set_subjects([[self.subject_two._id]], auth=self.auth, save=True)
+        assert mock_on_preprint_updated.called
+
+    @mock.patch('website.preprints.tasks.on_preprint_updated.s')
+    def test_save_unpublished_subject_change_not_called(self, mock_on_preprint_updated):
+        self.preprint.set_subjects([[self.subject_two._id]], auth=self.auth, save=True)
+        assert not mock_on_preprint_updated.called

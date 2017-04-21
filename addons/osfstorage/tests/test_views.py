@@ -20,8 +20,8 @@ from website.util import rubeus
 
 from website.models import Tag
 from website.files import models
+from addons.osfstorage.apps import osf_storage_root
 from addons.osfstorage import utils
-from addons.osfstorage import views
 from addons.base.views import make_auth
 from addons.osfstorage import settings as storage_settings
 
@@ -91,7 +91,7 @@ class TestGetMetadataHook(HookTestCase):
 
     def test_osf_storage_root(self):
         auth = Auth(self.project.creator)
-        result = views.osf_storage_root(self.node_settings.config, self.node_settings, auth)
+        result = osf_storage_root(self.node_settings.config, self.node_settings, auth)
         node = self.project
         expected = rubeus.build_addon_root(
             node_settings=self.node_settings,

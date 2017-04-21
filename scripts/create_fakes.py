@@ -329,7 +329,7 @@ def create_fake_project(creator, n_users, privacy, n_components, name, n_tags, p
         node.add_contributor(contrib, auth=auth)
     if isinstance(n_components, int):
         for _ in range(n_components):
-            NodeFactory(project=node, title=fake.science_sentence(), description=fake.science_paragraph(),
+            NodeFactory(parent=node, title=fake.science_sentence(), description=fake.science_paragraph(),
                         creator=creator)
     elif isinstance(n_components, list):
         render_generations_from_node_structure_list(node, creator, n_components)

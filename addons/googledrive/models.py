@@ -18,9 +18,6 @@ from addons.googledrive.client import (GoogleAuthClient,
 from addons.googledrive.serializer import GoogleDriveSerializer
 from addons.googledrive.utils import to_hgrid
 from website.util import api_v2_url
-# TODO DELETE ME POST MIGRATION
-from modularodm import Q as MQ
-# /TODO DELETE ME POST MIGRATION
 
 # from website.files.models.ext import PathFollowingFileNode
 
@@ -35,18 +32,10 @@ class GoogleDriveFileNode(BaseFileNode):
 
 
 class GoogleDriveFolder(GoogleDriveFileNode, Folder):
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.files.models.googledrive.GoogleDriveFolder'
-    modm_query = MQ('is_file', 'eq', False)
-    # /TODO DELETE ME POST MIGRATION
     pass
 
 
 class GoogleDriveFile(GoogleDriveFileNode, File):
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.files.models.googledrive.GoogleDriveFile'
-    modm_query = MQ('is_file', 'eq', True)
-    # /TODO DELETE ME POST MIGRATION
     pass
 
 
@@ -82,19 +71,11 @@ class GoogleDriveProvider(ExternalProvider):
 
 
 class UserSettings(BaseOAuthUserSettings):
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.addons.googledrive.model.GoogleDriveUserSettings'
-    modm_query = None
-    # /TODO DELETE ME POST MIGRATION
     oauth_provider = GoogleDriveProvider
     serializer = GoogleDriveSerializer
 
 
 class NodeSettings(BaseStorageAddon, BaseOAuthNodeSettings):
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.addons.googledrive.model.GoogleDriveNodeSettings'
-    modm_query = None
-    # /TODO DELETE ME POST MIGRATION
     oauth_provider = GoogleDriveProvider
     provider_name = 'googledrive'
 
@@ -131,9 +112,6 @@ class NodeSettings(BaseStorageAddon, BaseOAuthNodeSettings):
             return urllib.unquote(os.path.split(self.folder_path)[1].encode('utf-8')).decode('utf-8')
         else:
             return '/ (Full Google Drive)'
-
-    def fetch_folder_name(self):
-        return self.folder_name
 
     def clear_settings(self):
         self.folder_id = None
