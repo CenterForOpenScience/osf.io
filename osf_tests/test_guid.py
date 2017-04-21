@@ -1,11 +1,13 @@
 import mock
 import pytest
+import urllib
 from django.core.exceptions import MultipleObjectsReturned
 
 from osf.models import Guid, NodeLicenseRecord, OSFUser
 from osf.modm_compat import Q
-from osf_tests.factories import UserFactory, NodeFactory, NodeLicenseRecordFactory, RegistrationFactory
+from osf_tests.factories import UserFactory, NodeFactory, NodeLicenseRecordFactory, RegistrationFactory, PreprintFactory
 from tests.base import OsfTestCase
+from website.settings import MFR_SERVER_URL
 
 @pytest.mark.django_db
 class TestGuid:
@@ -160,3 +162,31 @@ class TestResolveGuid(OsfTestCase):
             expect_errors=True,
         )
         assert res.status_code == 404
+
+    def test_resolve_guid_download_file(self):
+        pp = PreprintFactory(finish=True)
+        res = self.app.get(pp.url + 'download')
+        assert res.status_code == 302
+        assert '/project/{}/files/{}{}?action=download'.format(pp.node._id, pp.primary_file.provider, pp.primary_file.path) in res.location
+
+        res = self.app.get('/{}/download'.format(pp.primary_file.get_guid(create=True)._id))
+        assert res.status_code == 302
+        assert '/project/{}/files/{}{}?action=download'.format(pp.node._id, pp.primary_file.provider, pp.primary_file.path) in res.location
+
+    def test_resolve_guid_download_file_export(self):
+        pp = PreprintFactory(finish=True)
+        res = self.app.get(pp.url + 'download?format=asdf')
+        assert res.status_code == 302
+        assert '/project/{}/files/{}{}?action=export&format=asdf'.format(pp.node._id, pp.primary_file.provider, pp.primary_file.path) in res.location
+
+        res = self.app.get(pp.url + 'download/?format=asdf')
+        assert res.status_code == 302
+        assert '/project/{}/files/{}{}?action=export&format=asdf'.format(pp.node._id, pp.primary_file.provider, pp.primary_file.path) in res.location
+
+        res = self.app.get('/{}/download?format=asdf'.format(pp.primary_file.get_guid(create=True)._id))
+        assert res.status_code == 302
+        assert '/project/{}/files/{}{}?action=export&format=asdf'.format(pp.node._id, pp.primary_file.provider, pp.primary_file.path) in res.location
+
+        res = self.app.get('/{}/download/?format=asdf'.format(pp.primary_file.get_guid(create=True)._id))
+        assert res.status_code == 302
+        assert '/project/{}/files/{}{}?action=export&format=asdf'.format(pp.node._id, pp.primary_file.provider, pp.primary_file.path) in res.location
