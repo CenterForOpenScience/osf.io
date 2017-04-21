@@ -8,6 +8,7 @@ import urllib
 
 from django.apps import apps
 from flask import request, send_from_directory
+import furl
 
 from framework import sentry
 from framework.auth.decorators import must_be_logged_in
@@ -19,6 +20,7 @@ from framework.routing import proxy_url
 from framework.auth.core import get_current_user_id
 from website.institutions.views import serialize_institution
 
+from osf.models import BaseFileNode
 from website.models import Guid
 from website.models import Institution, PreprintService
 from website.settings import EXTERNAL_EMBER_APPS
@@ -204,6 +206,14 @@ def _build_guid_url(base, suffix=None):
         url = url.decode('utf-8')
     return u'/{0}/'.format(url)
 
+def _download_file(file):
+    action = 'download'
+    if request.args.get('format'):
+        action = 'export'
+    url = furl.furl('/project/{}/files/{}{}'.format(file.node._id, file.provider, file.path))
+    url.args.update({'action': action})
+    url.args.update(request.args.to_dict())
+    return redirect(url)
 
 def resolve_guid(guid, suffix=None):
     """Load GUID by primary key, look up the corresponding view function in the
@@ -241,10 +251,15 @@ def resolve_guid(guid, suffix=None):
         if not referent.deep_url:
             raise HTTPError(http.NOT_FOUND)
         if isinstance(referent, PreprintService):
+            if isinstance(suffix, basestring) and suffix.startswith('download') and referent.primary_file:
+                return _download_file(referent.primary_file)
             return send_from_directory(
                 os.path.abspath(os.path.join(os.getcwd(), EXTERNAL_EMBER_APPS['preprints']['path'])),
                 'index.html'
             )
+        if isinstance(referent, BaseFileNode):
+            if isinstance(suffix, basestring) and suffix.startswith('download') and referent.is_file:
+                return _download_file(referent)
         url = _build_guid_url(urllib.unquote(referent.deep_url), suffix)
         return proxy_url(url)
 

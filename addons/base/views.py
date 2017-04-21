@@ -3,6 +3,7 @@ import httplib
 import os
 import uuid
 import markupsafe
+import urllib
 from django.utils import timezone
 
 from flask import make_response
@@ -37,6 +38,7 @@ from website.project import decorators
 from website.project.decorators import must_be_contributor_or_public, must_be_valid_project
 from website.project.model import DraftRegistration, MetaSchema
 from website.project.utils import serialize_node
+from website.settings import MFR_SERVER_URL
 from website.util import rubeus
 
 # import so that associated listener is instantiated and gets emails
@@ -660,6 +662,10 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
 
     if action == 'download':
         return redirect(file_node.generate_waterbutler_url(**dict(extras, direct=None, version=version.identifier, _internal=extras.get('mode') == 'render')))
+
+    if action == 'export':
+        extras['action'] = 'download'
+        return redirect('{}/export?format={}&url={}'.format(MFR_SERVER_URL, request.args['format'], urllib.quote(file.generate_waterbutler_url(**dict(extras, direct=None, version=version.identifier, _internal=extras.get('mode') == 'render')))))
 
     if action == 'get_guid':
         draft_id = extras.get('draft')
