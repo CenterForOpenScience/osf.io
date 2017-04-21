@@ -43,7 +43,7 @@ class UserDeleteView(PermissionRequiredMixin, DeleteView):
     template_name = 'users/remove_user.html'
     context_object_name = 'user'
     object = None
-    permission_required = 'osf.change_user'
+    permission_required = 'osf.change_osfuser'
     raise_exception = True
 
     def delete(self, request, *args, **kwargs):
@@ -174,8 +174,8 @@ class UserSpamList(PermissionRequiredMixin, ListView):
     paginate_by = 25
     paginate_orphans = 1
     ordering = ('date_disabled')
-    context_object_name = '-user'
-    permission_required = ('osf.view_spam', 'osf.view_user')
+    context_object_name = '-osfuser'
+    permission_required = ('osf.view_spam', 'osf.view_osfuser')
     raise_exception = True
 
     def get_queryset(self):
@@ -257,7 +257,7 @@ class User2FactorDeleteView(UserDeleteView):
 class UserFormView(PermissionRequiredMixin, GuidFormView):
     template_name = 'users/search.html'
     object_type = 'user'
-    permission_required = 'osf.view_user'
+    permission_required = 'osf.view_osfuser'
     raise_exception = True
 
     @property
@@ -268,7 +268,7 @@ class UserFormView(PermissionRequiredMixin, GuidFormView):
 class UserView(PermissionRequiredMixin, GuidView):
     template_name = 'users/user.html'
     context_object_name = 'user'
-    permission_required = 'osf.view_user'
+    permission_required = 'osf.view_osfuser'
     raise_exception = True
 
     def get_context_data(self, **kwargs):
@@ -284,7 +284,7 @@ class UserWorkshopFormView(PermissionRequiredMixin, FormView):
     form_class = WorkshopForm
     object_type = 'user'
     template_name = 'users/workshop.html'
-    permission_required = 'osf.view_user'
+    permission_required = 'osf.view_osfuser'
     raise_exception = True
 
     def form_valid(self, form):
@@ -384,7 +384,7 @@ class ResetPasswordView(PermissionRequiredMixin, FormView):
     form_class = EmailResetForm
     template_name = 'users/reset.html'
     context_object_name = 'user'
-    permission_required = 'osf.change_user'
+    permission_required = 'osf.change_osfuser'
     raise_exception = True
 
     def get_context_data(self, **kwargs):

@@ -1,7 +1,8 @@
 import re
 
 from django.apps import apps
-from modularodm import Q
+from modularodm import Q as MQ
+from django.db.models import Q
 from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import PermissionDenied, ValidationError, NotFound, MethodNotAllowed, NotAuthenticated
 from rest_framework.response import Response
@@ -20,7 +21,7 @@ from api.base.exceptions import (
     RelationshipPostMakesNoChanges,
     EndpointNotImplementedError,
 )
-from api.base.filters import ODMFilterMixin, ListFilterMixin
+from api.base.filters import ODMFilterMixin, ListFilterMixin, DjangoFilterMixin
 from api.base.pagination import CommentPagination, NodeContributorPagination, MaxSizePagination
 from api.base.parsers import (
     JSONAPIRelationshipParser,
@@ -37,7 +38,15 @@ from api.base.throttling import (
 from api.base.utils import default_node_list_query, default_node_permission_query
 from api.base.utils import get_object_or_error, is_bulk_request, get_user_auth, is_truthy
 from api.base.views import JSONAPIBaseView
-from api.base.views import LinkedNodesRelationship, BaseContributorDetail, BaseContributorList, BaseNodeLinksDetail, BaseNodeLinksList, BaseLinkedList
+from api.base.views import (
+    BaseContributorDetail,
+    BaseContributorList,
+    BaseLinkedList,
+    BaseNodeLinksDetail,
+    BaseNodeLinksList,
+    LinkedNodesRelationship,
+    LinkedRegistrationsRelationship
+)
 from api.caching.tasks import ban_url
 from api.citations.utils import render_citation
 from api.comments.permissions import CanCommentOrPublic
@@ -48,7 +57,7 @@ from api.identifiers.serializers import NodeIdentifierSerializer
 from api.identifiers.views import IdentifierList
 from api.institutions.serializers import InstitutionSerializer
 from api.logs.serializers import NodeLogSerializer
-from api.nodes.filters import NodePreprintsFilterMixin, NodesListFilterMixin
+from api.nodes.filters import NodeODMFilterMixin, NodesListFilterMixin
 from api.nodes.permissions import (
     IsAdmin,
     IsPublic,
@@ -194,7 +203,7 @@ class WaterButlerMixin(object):
         return obj
 
 
-class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.BulkDestroyJSONAPIView, bulk_views.ListBulkCreateJSONAPIView, NodePreprintsFilterMixin, NodesListFilterMixin, WaterButlerMixin):
+class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.BulkDestroyJSONAPIView, bulk_views.ListBulkCreateJSONAPIView, NodeODMFilterMixin, NodesListFilterMixin, WaterButlerMixin):
     """Nodes that represent projects and components. *Writeable*.
 
     Paginated list of nodes ordered by their `date_modified`.  Each resource contains the full representation of the
@@ -302,10 +311,10 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
     # overrides FilterMixin
     def postprocess_query_param(self, key, field_name, operation):
         # tag queries will usually be on Tag.name,
-        # ?filter[tags]=foo should be translated to Q('tags__name', 'eq', 'foo')
+        # ?filter[tags]=foo should be translated to MQ('tags__name', 'eq', 'foo')
         # But queries on lists should be tags, e.g.
-        # ?filter[tags]=foo,bar should be translated to Q('tags', 'isnull', True)
-        # ?filter[tags]=[] should be translated to Q('tags', 'isnull', True)
+        # ?filter[tags]=foo,bar should be translated to MQ('tags', 'isnull', True)
+        # ?filter[tags]=[] should be translated to MQ('tags', 'isnull', True)
         if field_name == 'tags':
             if operation['value'] not in (list(), tuple()):
                 operation['source_field_name'] = 'tags__name'
@@ -327,7 +336,7 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
     def get_queryset(self):
         # For bulk requests, queryset is formed from request body.
         if is_bulk_request(self.request):
-            query = Q('_id', 'in', [node['id'] for node in self.request.data])
+            query = MQ('_id', 'in', [node['id'] for node in self.request.data])
             auth = get_user_auth(self.request)
 
             nodes = AbstractNode.find(query)
@@ -340,7 +349,7 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
                     if node.can_edit(auth):
                         has_permission.append(node)
 
-                query = Q('_id', 'in', [node._id for node in has_permission])
+                query = MQ('_id', 'in', [node._id for node in has_permission])
                 return AbstractNode.find(query)
 
             for node in nodes:
@@ -496,6 +505,14 @@ class NodeDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, NodeMix
 
     Returns the top-level node associated with the current node.  If the current node is the top-level node, the root is
     the current node.
+
+    ### Linked Nodes
+
+    List of nodes linked to the current node.
+
+    ### Linked Registrations
+
+    List of registrations linked to the current node.
 
     ##Links
 
@@ -745,7 +762,7 @@ class NodeContributorsList(BaseContributorList, bulk_views.BulkUpdateJSONAPIView
             except IndexError:
                 raise ValidationError('Contributor identifier incorrectly formatted.')
 
-        resource_object_list = User.find(Q('_id', 'in', requested_ids))
+        resource_object_list = User.find(MQ('_id', 'in', requested_ids))
         for resource in resource_object_list:
             if getattr(resource, 'is_deleted', None):
                 raise Gone
@@ -950,7 +967,7 @@ class NodeDraftRegistrationsList(JSONAPIBaseView, generics.ListCreateAPIView, No
     # overrides ListCreateAPIView
     def get_queryset(self):
         node = self.get_node()
-        drafts = DraftRegistration.find(Q('branched_from', 'eq', node))
+        drafts = DraftRegistration.find(MQ('branched_from', 'eq', node))
         return [draft for draft in drafts if not draft.registered_node or draft.registered_node.is_deleted]
 
     # overrides ListBulkCreateJSONAPIView
@@ -1185,7 +1202,7 @@ class NodeRegistrationsList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMix
         serializer.save(draft=draft)
 
 
-class NodeChildrenList(JSONAPIBaseView, bulk_views.ListBulkCreateJSONAPIView, NodeMixin, NodePreprintsFilterMixin):
+class NodeChildrenList(JSONAPIBaseView, bulk_views.ListBulkCreateJSONAPIView, NodeMixin, NodeODMFilterMixin):
     """Children of the current node. *Writeable*.
 
     This will get the next level of child nodes for the selected node if the current user has read access for those
@@ -1275,7 +1292,7 @@ class NodeChildrenList(JSONAPIBaseView, bulk_views.ListBulkCreateJSONAPIView, No
     view_category = 'nodes'
     view_name = 'node-children'
 
-    # overrides NodePreprintsFilterMixin
+    # overrides NodeODMFilterMixin
     def get_default_odm_query(self):
         return default_node_list_query()
 
@@ -1287,7 +1304,7 @@ class NodeChildrenList(JSONAPIBaseView, bulk_views.ListBulkCreateJSONAPIView, No
         node_pks = node.node_relations.filter(is_node_link=False).select_related('child')\
                 .values_list('child__pk', flat=True)
         query = (
-            Q('pk', 'in', node_pks) &
+            MQ('pk', 'in', node_pks) &
             req_query
         )
         nodes = Node.find(query).order_by('-date_modified')
@@ -1381,7 +1398,7 @@ class NodeCitationStyleDetail(JSONAPIBaseView, generics.RetrieveAPIView, NodeMix
 
 # TODO: Make NodeLinks filterable. They currently aren't filterable because we have can't
 # currently query on a Pointer's node's attributes.
-# e.g. Pointer.find(Q('node.title', 'eq', ...)) doesn't work
+# e.g. Pointer.find(MQ('node.title', 'eq', ...)) doesn't work
 class NodeLinksList(BaseNodeLinksList, bulk_views.BulkDestroyJSONAPIView, bulk_views.ListBulkCreateJSONAPIView, NodeMixin):
     """Node Links to other nodes. *Writeable*.
 
@@ -1559,7 +1576,7 @@ class NodeLinksDetail(BaseNodeLinksDetail, generics.RetrieveDestroyAPIView, Node
         node.save()
 
 
-class NodeForksList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin, NodePreprintsFilterMixin):
+class NodeForksList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin, NodeODMFilterMixin):
     """Forks of the current node. *Writeable*.
 
     Paginated list of the current node's forks ordered by their `forked_date`. Forks are copies of projects that you can
@@ -1930,10 +1947,10 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
     # overrides FilterMixin
     def postprocess_query_param(self, key, field_name, operation):
         # tag queries will usually be on Tag.name,
-        # ?filter[tags]=foo should be translated to Q('tags__name', 'eq', 'foo')
+        # ?filter[tags]=foo should be translated to MQ('tags__name', 'eq', 'foo')
         # But queries on lists should be tags, e.g.
-        # ?filter[tags]=foo,bar should be translated to Q('tags', 'isnull', True)
-        # ?filter[tags]=[] should be translated to Q('tags', 'isnull', True)
+        # ?filter[tags]=foo,bar should be translated to MQ('tags', 'isnull', True)
+        # ?filter[tags]=[] should be translated to MQ('tags', 'isnull', True)
         if field_name == 'tags':
             if operation['value'] not in (list(), tuple()):
                 operation['source_field_name'] = 'tags__name'
@@ -2747,7 +2764,7 @@ class NodeCommentsList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMix
 
     # overrides ODMFilterMixin
     def get_default_odm_query(self):
-        return Q('node', 'eq', self.get_node()) & Q('root_target', 'ne', None)
+        return MQ('node', 'eq', self.get_node()) & MQ('root_target', 'ne', None)
 
     # Hook to make filtering on 'target' work
     def postprocess_query_param(self, key, field_name, operation):
@@ -2992,7 +3009,7 @@ class NodeWikiList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, ODMFilterMi
     def get_default_odm_query(self):
         node = self.get_node()
         node_wiki_pages = node.wiki_pages_current.values() if node.wiki_pages_current else []
-        return Q('guids___id', 'in', node_wiki_pages)
+        return MQ('guids___id', 'in', node_wiki_pages)
 
     def get_queryset(self):
         return NodeWikiPage.find(self.get_query_from_request())
@@ -3128,6 +3145,158 @@ class LinkedNodesList(BaseLinkedList, NodeMixin):
         Tells parser that we are creating a relationship
         """
         res = super(LinkedNodesList, self).get_parser_context(http_request)
+        res['is_relationship'] = True
+        return res
+
+
+class NodeLinkedRegistrationsRelationship(LinkedRegistrationsRelationship, NodeMixin):
+    """ Relationship Endpoint for Node -> Linked Registration relationships
+
+    Used to set, remove, update and retrieve the ids of the linked registrations attached to this node. For each id, there
+    exists a node link that contains that node.
+
+    ##Actions
+
+    ###Create
+
+        Method:        POST
+        URL:           /links/self
+        Query Params:  <none>
+        Body (JSON):   {
+                         "data": [{
+                           "type": "linked_registrations",   # required
+                           "id": <node_id>   # required
+                         }]
+                       }
+        Success:       201
+
+    This requires both edit permission on the node, and for the user that is
+    making the request to be able to read the registrations requested. Data can contain any number of
+    node identifiers. This will create a node_link for all node_ids in the request that
+    do not currently have a corresponding node_link in this node.
+
+    ###Update
+
+        Method:        PUT || PATCH
+        URL:           /links/self
+        Query Params:  <none>
+        Body (JSON):   {
+                         "data": [{
+                           "type": "linked_registrations",   # required
+                           "id": <node_id>   # required
+                         }]
+                       }
+        Success:       200
+
+    This requires both edit permission on the node, and for the user that is
+    making the request to be able to read the registrations requested. Data can contain any number of
+    node identifiers. This will replace the contents of the node_links for this node with
+    the contents of the request. It will delete all node links that don't have a node_id in the data
+    array, create node links for the node_ids that don't currently have a node id, and do nothing
+    for node_ids that already have a corresponding node_link. This means a update request with
+    {"data": []} will remove all node_links in this node.
+
+    ###Destroy
+
+        Method:        DELETE
+        URL:           /links/self
+        Query Params:  <none>
+        Body (JSON):   {
+                         "data": [{
+                           "type": "linked_registrations",   # required
+                           "id": <node_id>   # required
+                         }]
+                       }
+        Success:       204
+
+    This requires edit permission on the node. This will delete any node_links that have a
+    corresponding node_id in the request.
+    """
+
+    view_category = 'nodes'
+    view_name = 'node-registration-pointer-relationship'
+
+
+class NodeLinkedRegistrationsList(BaseLinkedList, NodeMixin):
+    """List of registrations linked to this node. *Read-only*.
+
+    Linked registrations are the registration nodes pointed to by node links.
+
+    <!--- Copied Spiel from RegistrationDetail -->
+    Registrations are read-only snapshots of a project. This view shows details about the given registration.
+
+    Each resource contains the full representation of the registration, meaning additional requests to an individual
+    registration's detail view are not necessary. A withdrawn registration will display a limited subset of information,
+    namely, title, description, date_created, registration, withdrawn, date_registered, withdrawal_justification, and
+    registration supplement. All other fields will be displayed as null. Additionally, the only relationships permitted
+    to be accessed for a withdrawn registration are the contributors - other relationships will return a 403.
+
+    ##Linked Registration Attributes
+
+    <!--- Copied Attributes from RegistrationDetail -->
+
+    Registrations have the "registrations" `type`.
+
+        name                            type               description
+        =======================================================================================================
+        title                           string             title of the registered project or component
+        description                     string             description of the registered node
+        category                        string             bode category, must be one of the allowed values
+        date_created                    iso8601 timestamp  timestamp that the node was created
+        date_modified                   iso8601 timestamp  timestamp when the node was last updated
+        tags                            array of strings   list of tags that describe the registered node
+        current_user_can_comment        boolean            Whether the current user is allowed to post comments
+        current_user_permissions        array of strings   list of strings representing the permissions for the current user on this node
+        fork                            boolean            is this project a fork?
+        registration                    boolean            has this project been registered? (always true - may be deprecated in future versions)
+        collection                      boolean            is this registered node a collection? (always false - may be deprecated in future versions)
+        node_license                    object             details of the license applied to the node
+        year                            string             date range of the license
+        copyright_holders               array of strings   holders of the applied license
+        public                          boolean            has this registration been made publicly-visible?
+        withdrawn                       boolean            has this registration been withdrawn?
+        date_registered                 iso8601 timestamp  timestamp that the registration was created
+        embargo_end_date                iso8601 timestamp  when the embargo on this registration will be lifted (if applicable)
+        withdrawal_justification        string             reasons for withdrawing the registration
+        pending_withdrawal              boolean            is this registration pending withdrawal?
+        pending_withdrawal_approval     boolean            is this registration pending approval?
+        pending_embargo_approval        boolean            is the associated Embargo awaiting approval by project admins?
+        registered_meta                 dictionary         registration supplementary information
+        registration_supplement         string             registration template
+
+    ##Links
+
+    See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
+
+    ##Query Params
+
+    + `page=<Int>` -- page number of results to view, default 1
+
+    + `filter[<fieldname>]=<Str>` -- fields and values to filter the search results on.
+
+    Nodes may be filtered by their `title`, `category`, `description`, `public`, `registration`, or `tags`.  `title`,
+    `description`, and `category` are string fields and will be filtered using simple substring matching.  `public` and
+    `registration` are booleans, and can be filtered using truthy values, such as `true`, `false`, `0`, or `1`.  Note
+    that quoting `true` or `false` in the query will cause the match to fail regardless.  `tags` is an array of simple strings.
+
+    #This Request/Response
+    """
+    serializer_class = RegistrationSerializer
+    view_category = 'nodes'
+    view_name = 'linked-registrations'
+
+    def get_queryset(self):
+        ret = [node for node in
+            super(NodeLinkedRegistrationsList, self).get_queryset()
+            if node.is_registration]
+        return ret
+
+    # overrides APIView
+    def get_parser_context(self, http_request):
+        """
+        Tells parser that we are creating a relationship
+        """
+        res = super(NodeLinkedRegistrationsList, self).get_parser_context(http_request)
         res['is_relationship'] = True
         return res
 
@@ -3327,7 +3496,7 @@ class NodeIdentifierList(NodeMixin, IdentifierList):
     serializer_class = NodeIdentifierSerializer
 
 
-class NodePreprintsList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, NodePreprintsFilterMixin):
+class NodePreprintsList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, DjangoFilterMixin):
     """List of preprints for a node. *Read-only*.
 
     ##Note
@@ -3398,12 +3567,20 @@ class NodePreprintsList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, NodePr
         if field_name == 'id':
             operation['source_field_name'] = 'guids___id'
 
-    # overrides ODMFilterMixin
-    def get_default_odm_query(self):
-        return (
-            Q('node', 'eq', self.get_node())
-        )
+    # overrides DjangoFilterMixin
+    def get_default_django_query(self):
+        auth = get_user_auth(self.request)
+        auth_user = getattr(auth, 'user', None)
+        node = self.get_node()
+        # Permissions on the node are handled by the permissions_classes
+        # Permissions on the list objects are handled by the query
+        default_query = Q(node__id=node.id)
+        no_user_query = Q(is_published=True)
+        if auth_user:
+            admin_user_query = Q(node__contributor__user_id=auth_user.id, node__contributor__admin=True)
+            return (default_query & (no_user_query | admin_user_query))
+        return (default_query & no_user_query)
 
     # overrides ListAPIView
     def get_queryset(self):
-        return PreprintService.find(self.get_query_from_request())
+        return PreprintService.objects.filter(self.get_query_from_request())

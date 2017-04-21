@@ -9,6 +9,9 @@ from django.db import transaction
 from modularodm import Q
 from modularodm.exceptions import NoResultsFound
 from website.app import init_app
+import django
+django.setup()
+
 from website.models import Subject, PreprintProvider, NodeLicense
 
 logger = logging.getLogger(__name__)
