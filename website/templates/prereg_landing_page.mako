@@ -80,7 +80,11 @@
 
 <%def name="content()">
 <div class="prereg-container">
-    <h1 class="m-t-xl m-b-lg text-center">Welcome to the ${campaign_long}!</h1>
+    % if campaign_short == 'erpc':
+        <h1 class="m-t-xl m-b-lg text-center">The Election Research Preacceptance Competition is Now Closed</h1>
+    % else:
+        <h1 class="m-t-xl m-b-lg text-center">Welcome to the ${campaign_long}!</h1>
+    % endif
     <p>${description()}</p>
     % if campaign_short != 'erpc':
         <p class="m-t-lg f-w-lg">Ready for the ${challenge_word()}? Please follow these steps:</p>
