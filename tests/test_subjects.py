@@ -4,7 +4,7 @@ from nose.tools import *  # flake8: noqa (PEP8 asserts)
 from modularodm.exceptions import NoResultsFound, ValidationValueError
 
 from tests.base import OsfTestCase
-from osf_tests.factories import SubjectFactory, PreprintFactory
+from osf_tests.factories import SubjectFactory, PreprintFactory, PreprintProviderFactory
 
 from website.project.taxonomies import validate_subject_hierarchy
 
@@ -147,3 +147,13 @@ class TestSubjectEditValidation(OsfTestCase):
         preprint = PreprintFactory(subjects=[[self.subject._id]])
         with assert_raises(ValidationError):
             self.subject.delete()
+
+class TestSubjectProperties(OsfTestCase):
+    def test_bepress_text(self):
+        osf_provider = PreprintProviderFactory(_id='osf')
+        asdf_provider = PreprintProviderFactory(_id='asdf')
+        bepress_subj = SubjectFactory(text='BePress Text', provider=osf_provider)
+        other_subj = SubjectFactory(text='Other Text', bepress_subject=bepress_subj, provider=asdf_provider)
+
+        assert other_subj.bepress_text == 'BePress Text'
+        assert bepress_subj.bepress_text == 'BePress Text'
