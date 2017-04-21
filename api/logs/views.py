@@ -96,7 +96,7 @@ class NodeLogDetail(JSONAPIBaseView, generics.RetrieveAPIView, LogMixin):
     ---
     * 'node_created': A Node is created (_deprecated_)
 
-   ##Log Attributes
+    ##Log Attributes
 
     <!--- Copied Attributes from LogList -->
 
