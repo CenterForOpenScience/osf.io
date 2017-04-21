@@ -241,7 +241,6 @@ var AddProject = {
                                 m('input', {
                                     type: 'checkbox',
                                     name: 'inherit_tags',
-                                    value: true,
                                     onchange : function() {
                                         ctrl.newProjectInheritTags(this.checked);
                                     }

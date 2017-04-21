@@ -398,27 +398,26 @@ class NodeSerializer(JSONAPISerializer):
         if len(tag_instances):
             node.tags.add(*tag_instances)
 
-        if is_truthy(request.GET.get('inherit_tags')) and validated_data['parent'].has_permission(user, 'write'):
-            parent = validated_data['parent']
-            for tag in parent.tags.filter():
-                node.tags.add(tag)
-                node.add_tag_log(tag, auth)
+        parent = validated_data['parent']
+        if parent.has_permission(user, 'write'):
+            if is_truthy(request.GET.get('inherit_tags')):
+                for tag in parent.tags.all():
+                    node.add_tag(tag, auth)
 
-        if is_truthy(request.GET.get('inherit_contributors')) and validated_data['parent'].has_permission(user, 'write'):
-            parent = validated_data['parent']
-            contributors = []
-            for contributor in parent.contributor_set.exclude(user=user):
-                contributors.append({
-                    'user': contributor.user,
-                    'permissions': parent.get_permissions(contributor.user),
-                    'visible': contributor.visible
-                })
-                if not contributor.user.is_registered:
-                    node.add_unregistered_contributor(
-                        fullname=contributor.user.fullname, email=contributor.user.email, auth=auth,
-                        permissions=parent.get_permissions(contributor.user)
-                    )
-            node.add_contributors(contributors, auth=auth, log=True, save=True)
+            if is_truthy(request.GET.get('inherit_contributors')):
+                contributors = []
+                for contributor in parent.contributor_set.exclude(user=user):
+                    contributors.append({
+                        'user': contributor.user,
+                        'permissions': parent.get_permissions(contributor.user),
+                        'visible': contributor.visible
+                    })
+                    if not contributor.user.is_registered:
+                        node.add_unregistered_contributor(
+                            fullname=contributor.user.fullname, email=contributor.user.email, auth=auth,
+                            permissions=parent.get_permissions(contributor.user)
+                        )
+                node.add_contributors(contributors, auth=auth, log=True, save=True)
         return node
 
     def update(self, node, validated_data):
