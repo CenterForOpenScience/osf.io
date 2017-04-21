@@ -1,10 +1,19 @@
 from nose.tools import *  # flake8: noqa
 
 from tests.base import ApiTestCase
-from osf_tests.factories import InstitutionFactory, AuthUserFactory, RegistrationFactory, WithdrawnRegistrationFactory
+from osf_tests.factories import (
+    AuthUserFactory,
+    InstitutionFactory,
+    NodeFactory,
+    ProjectFactory,
+    RegistrationFactory,
+    WithdrawnRegistrationFactory
+)
 
 from framework.auth import Auth
 from api.base.settings.defaults import API_BASE
+from api_tests.registrations.filters.test_filters import RegistrationListFilteringMixin
+from osf.models import Node
 
 class TestInstitutionRegistrationList(ApiTestCase):
     def setUp(self):
@@ -69,3 +78,28 @@ class TestInstitutionRegistrationList(ApiTestCase):
         ids = [each['id'] for each in res.json['data']]
 
         assert_not_in(self.registration2._id, ids)
+
+
+class TestRegistrationListFiltering(RegistrationListFilteringMixin, ApiTestCase):
+
+    def setUp(self):
+        self.institution = InstitutionFactory()
+        self.url = '/{}institutions/{}/registrations/?version=2.2&'.format(API_BASE, self.institution._id)
+
+        super(TestRegistrationListFiltering, self).setUp()
+
+        A_children = [child for child in Node.objects.get_children(self.node_A)]
+        B2_children = [child for child in Node.objects.get_children(self.node_B2)]
+
+        for child in (A_children + B2_children):
+            child.affiliated_institutions.add(self.institution)
+            child.is_public = True
+            child.save()
+
+        self.node_A.is_public = True
+        self.node_B2.is_public = True
+        self.node_A.affiliated_institutions.add(self.institution)
+        self.node_B2.affiliated_institutions.add(self.institution)
+
+        self.node_A.save()
+        self.node_B2.save()

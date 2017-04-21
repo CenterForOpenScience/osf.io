@@ -1695,12 +1695,12 @@ class TestManualCitationCorrections(ApiTestCase):
     def test_mla_citation(self):
         csl = self.project.csl
         citation = citation_utils.render_citation(self.project, 'modern-language-association')
-        expected_citation = csl['author'][0]['family'] + ', ' + csl['author'][0]['given'] + '. ' + u"\u201c" + csl['title'] + '.' + u"\u201d" + ' ' +\
+        expected_citation = csl['author'][0]['family'] + ', ' + csl['author'][0]['given'] + '. ' + u"\u201c" + csl['title'] + u"\u201d" + '. ' +\
                             csl['publisher'] + ', ' + self.project.date_created.strftime("%-d %b. %Y. Web.")
         assert_equal(citation, expected_citation)
 
     def test_chicago_citation(self):
         csl = self.project.csl
         citation = citation_utils.render_citation(self.project, 'chicago-author-date')
-        expected_citation = csl['author'][0]['family'] + ', ' + csl['author'][0]['given'] + '. ' + str(csl['issued']['date-parts'][0][0]) + '. ' + u"\u201c" + csl['title'] + '.' + u"\u201d" + ' ' +  csl['publisher'] +'. ' + self.project.date_created.strftime("%B %-d") + '. ' + csl['URL'] + '.'
+        expected_citation = csl['author'][0]['family'] + ', ' + csl['author'][0]['given'] + '. ' + str(csl['issued']['date-parts'][0][0]) + '. ' + u"\u201c" + csl['title'] + u"\u201d" + '. ' +  csl['publisher'] +'. ' + self.project.date_created.strftime("%B %-d") + '. ' + csl['URL'] + '.'
         assert_equal(citation, expected_citation)

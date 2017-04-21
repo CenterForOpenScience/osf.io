@@ -32,7 +32,7 @@
                         </div>
                         <div class="support-item">
                             <h5 class="support-head f-w-xl"><i class="fa fa-angle-right"></i> What if you run out of funding? What happens to my data?</h5>
-                            <div class="support-body">Data stored on the OSF is backed by a $250,000 preservation fund that will provide for persistence of your data, even if the Center for Open Science runs out of funding. The code base for the OSF is entirely <a href="https://github.com/CenterForOpenScience/osf.io">open source</a>, which enables other groups to continue maintaining and expanding it if we aren’t able to.</div>
+                            <div class="support-body">COS established a $250,000 preservation fund for hosted data in the event that COS had to curtail or close its offices. If activated, the preservation fund will preserve and maintain read access to hosted data. This fund is sufficient for 50+ years of read access hosting at present costs. COS will incorporate growth of the preservation fund as part of its funding model as data storage scales. For information about OSF backups and technical preservation details, see the OSF Backup and Preservation Policy.</div>
                         </div>
                         <div class="support-item">
                             <h5 class="support-head f-w-xl"><i class="fa fa-angle-right"></i> How will the OSF be useful to my research?</h5>
@@ -80,8 +80,28 @@
                             <div class="support-body">Registering is an optional feature of the OSF.</div>
                         </div>
                         <div class="support-item">
-                            <h5 class="support-head f-w-xl"><i class="fa fa-angle-right"></i> What is the cap on data per user?</h5>
-                            <div class="support-body">There is a limit on the size of individual files uploaded to the OSF. This limit is 5 GB. If you have larger files to upload, you might consider utilizing add-ons. When archiving files during the registration process, there is a 5 GB total limit per registration across all storage being archived (OSF Storage plus Add-ons).</div>
+                            <h5 class="support-head f-w-xl"><i class="fa fa-angle-right"></i> What is the cap on data per user or per project?</h5>
+                            <div class="support-body">There is no currently no applied limit on storage per project. There is no applied overall cap on the amount of OSF storage per user. Each project is created with a default OSF Storage enabled. Each project can additionally have any number of add-ons connected to their project to extend its usability and allow access to existing data/materials. The limit of add-on storage options varies by provider. We recommend users utilize the storage option that is ideal for their data (e.g., with respect to accessibility or security) and connect that service to their OSF project(s) rather than transfer the data to OSF storage. As of 1/2017 the storage add-on options and their respective limits are:<br>
+                            <ul>
+                                <li><a href="https://aws.amazon.com/s3/pricing/">Amazon S3:</a> 5GB free for 12 months</li>
+                                <li><a href="https://www.box.com/pricing/individual">Box:</a> 10GB free, may be more for Box for Education users</li>
+                                <li><a href="https://www.dropbox.com/en/help/73">Dropbox:</a> 2GB free</li>
+                                <li><a href="https://figshare.com/features">figshare:</a> 20GB free private storage, unlimited public</li>
+                                <li><a href="https://support.google.com/drive/answer/2375123?co=GENIE.Platform%3DDesktop&hl=en">Google Drive:</a> 15GB free, unlimited for G Suite for Education users</li>
+                                <li><a href="https://github.com/pricing">Github:</a> open source repos are free, $7/month for private and 10MB per repository limit</li>
+                                <li><a href="https://owncloud.org/install/">ownCloud:</a> free, unlimited cloud-accessible stroage on your own servers</li>
+                                <li><a href="http://dataverse.org/">Dataverse:</a> free, 1TB storage on Harvard Dataverse; other Dataverses set alternate limits</li>
+                                <li>More add-ons will be available soon. Many academic research institutions may offer enterprise licenses for the tools above that provide increased storage limits. Institutions may also offer access to locally available storage options for users that have <a href="https://osf.io/ba3dy/wiki/home/">OSF Institutions.</a></li>
+                            </ul>
+                            There is no limit imposed by the OSF for the amount of storage used across add-ons connected to a given project. OSF storage is offered as a complement to these options and to allow complete documentation of a research project’s lifecycle. Please see the COS <a href="https://github.com/CenterForOpenScience/cos.io/blob/master/TERMS_OF_USE.md">Terms of Use</a> for details.</div>
+                        </div>
+                        <div class="support-item">
+                            <h5 class="support-head f-w-xl"><i class="fa fa-angle-right"></i> What is the individual file size limit?</h5>
+                            <div class="support-body">Individual files must be 5GB or less to be uploaded to OSF Storage. Larger files can be stored in an add-on. </div>
+                        </div>
+                        <div class="support-item">
+                            <h5 class="support-head f-w-xl"><i class="fa fa-angle-right"></i> What is the size limit for a registration?</h5>
+                            <div class="support-body"> Registrations archive and preserve both OSF Storage and add-ons connected to projects. Registrations must be 5GB or less across all storage being registered. If you need to create a registration larger than 5GB, email us at <a href="mailto:support@osf.io">support@osf.io</a>. </div>
                         </div>
                         <div class="support-item">
                             <h5 class="support-head f-w-xl"><i class="fa fa-angle-right"></i> How do I get a DOI or ARK for my project?</h5>
@@ -108,7 +128,7 @@
                         </div>
                         <div class="support-item">
                             <h5 class="support-head f-w-xl"><i class="fa fa-angle-right"></i> Is data stored on OSF Storage encrypted? What are my options?</h5>
-                            <div class="support-body">Transfer of data to OSF storage is encrypted with SSL. If you would like your data to be encrypted at rest, you can encrypt it before uploading to OSF Storage. You can also use the Amazon S3 add-on and implement server-side encryption to encrypt your data before saving it on S3 servers and decrypt it when you download it. Otherwise, data at rest is not encrypted on OSF Storage.</div>
+                            <div class="support-body">Transfer of data to OSF Storage is encrypted with SSL (external storage add-ons may have their own policies). Data at rest is not encrypted on OSF Storage. If you would like your data to be encrypted at rest, you can encrypt it before uploading to OSF Storage. You can also use the Amazon S3 add-on and implement server-side encryption on S3. </div>
                         </div>
                         <div class="support-item">
                             <h5 class="support-head f-w-xl"><i class="fa fa-angle-right"></i> How do I report a potential security issue?</h5>
@@ -122,6 +142,10 @@
                             <h5 class="support-head f-w-xl"><i class="fa fa-angle-right"></i> How can I license my data/code/etc.?</h5>
                             <div class="support-body">To apply a license to your OSF project, visit the project's overview page and select one from the "License picker," below the project's description. You can select from a variety of commonly used licenses or upload your own.</div>
                         </div>
+                         <div class="support-item">
+                            <h5 class="support-head f-w-xl"><i class="fa fa-angle-right"></i> I found content on the OSF that I believe infringes on my copyright. What should I do?</h5>
+                            <div class="support-body">The Center for Open Science acts in accordance with the Digital Millennium Copyright Act (17 USC § 512). Please refer to Section 20, “PROCEDURE FOR MAKING CLAIMS OF COPYRIGHT INFRINGEMENT”, of the <a href="https://github.com/CenterForOpenScience/cos.io/blob/master/TERMS_OF_USE.md">Terms of Use</a> for more information.</div>
+                        </div>
                         <div class="support-item">
                             <h5 class="support-head f-w-xl"><i class="fa fa-angle-right"></i> Does the OSF have a public API?</h5>
                             <div class="support-body">Yes! Read more on the <a href="https://api.osf.io/v2/docs/">API docs</a></div>
@@ -133,12 +157,10 @@
                         <div class="support-item">
                             <h5 class="support-head f-w-xl"><i class="fa fa-angle-right"></i> How does the OSF store and backup files that I upload to the site?</h5>
                             <div class="support-body">
-                                <p> The OSF stores files with <a href="http://www.rackspace.com/">Rackspace</a>
-                                    via an open source sponsorship, and has backups on
-                                    <a href="http://aws.amazon.com/glacier/">Amazon's Glacier platform</a>.
-                                    The OSF maintains several backup schemes, including off-site backups and
-                                    automated backups performed by our host every day, week, and fortnight.</p>1
-                                <p>Rackspace and Amazon Glacier have their own methods to support data integrity (e.g., redundancy across 5+ locations), but the Open Science Framework takes the extra step of calculating multiple <a href="https://en.wikipedia.org/wiki/Checksum">checksums</a> and <a href="https://en.wikipedia.org/wiki/Parchive">parity archives</a> to account for even the most improbable errors.</p>
+                                <p>For OSF Storage, files are stored in multiple locations and on multiple media types. We keep three types of hashes (MD5, SHA-1, SHA-256) for files. We keep parity archive files to recover from up to 5% bit error. We use <a href="http://www.rackspace.com/">Rackspace</a> for active storage and <a href="http://aws.amazon.com/glacier/">Amazon Glacier</a> as a backup location. Full backups are hosted at Glacier (including parity files), and there are daily backups on Rackspace Backups for 60 days. Please refer to <a href="http://www.rackspace.com/">Rackspace</a> and <a href="http://aws.amazon.com/glacier/">Glacier</a> documentation for details about the other robustness features they provide.</p>
+                                <p>The OSF database is backed up daily in encrypted form by Rackspace Backups for 60 days. Further, the OSF database are backed up incrementally twice a day and in full weekly; these backups are encrypted and kept indefinitely on Amazon S3. Database backups are verified monthly.</p>
+                                <p>Operational data (e.g., config files) for other OSF services is backed up in primary cloud file storage for 60 days.</p>
+                                <p>Logs are stored in a third party aggregation service for 90 days and are then backed up to Amazon S3 indefinitely.</p>
                             </div>
                         </div>
                         <div class="support-item">
@@ -164,6 +186,14 @@
                         <div class="support-item">
                             <h5 class="support-head f-w-xl"><i class="fa fa-angle-right"></i> How do I delete a project or component?</h5>
                             <div class="support-body">To delete a project or component, navigate to the project or component and click on "Settings" in the gray navigation bar. There you will see a red "delete" button. You can only delete a project or component that does not contain other components, so you must delete any nested components first.</div>
+                        </div>
+                        <div class="support-item">
+                            <h5 class="support-head f-w-xl"><i class="fa fa-angle-right"></i> I accidentally deleted a file from my project. Can I get it back?</h5>
+                            <div class="support-body">Unfortunately, no. When a user deletes a file from the OSF, access to the file is removed for all users.</div>
+                        </div>
+                        <div class="support-item">
+                            <h5 class="support-head f-w-xl"><i class="fa fa-angle-right"></i> What's a globally unique identifier (GUID)? What metadata is maintained about them?</h5>
+                            <div class="support-body">A globally unique identifier, or GUID, is a unique string only assigned to one object on the OSF. All files, projects, registrations and users on the OSF receive a GUID. Privacy settings of the project, component, or registration dictate who can see the metadata about files, projects, components, or registrations. If a file is deleted, the GUID will always resolve to a page that provides metadata about the removed file (file name, storage provider, if the deletion occurred on the OSF or on an add-on service, name/GUID of user who deleted the file, and timestamp of file deletion). For projects, components, registrations and users the GUID will resolve and inform that the content has been removed. Non-deleted or withdrawn files, links, and metadata are persistent as described above.</div>
                         </div>
                         <div class="support-item">
                             <h5 class="support-head f-w-xl"><i class="fa fa-angle-right"></i> How do I move a file from one storage add-on to another? Or one component to another?</h5>

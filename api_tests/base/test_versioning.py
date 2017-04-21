@@ -37,8 +37,17 @@ class VersioningTestCase(ApiTestCase):
         self.valid_query_parameter_version_url = '/v2/?version={}'.format(self.valid_query_parameter_version)
         self.invalid_query_parameter_version_url = '/v2/?version={}'.format(self.invalid_query_parameter_version)
 
+        self._ALLOWED_VERSIONS = settings.REST_FRAMEWORK['ALLOWED_VERSIONS']
+        self._DEFAULT_VERSION = settings.REST_FRAMEWORK['DEFAULT_VERSION']
+
         settings.REST_FRAMEWORK['ALLOWED_VERSIONS'] = TESTING_ALLOWED_VERSIONS
         settings.REST_FRAMEWORK['DEFAULT_VERSION'] = DEFAULT_VERSION
+
+    def tearDown(self):
+        super(VersioningTestCase, self).tearDown()
+        settings.REST_FRAMEWORK['ALLOWED_VERSIONS'] = self._ALLOWED_VERSIONS
+        settings.REST_FRAMEWORK['DEFAULT_VERSION'] = self._DEFAULT_VERSION
+
 
 
 class TestBaseVersioning(VersioningTestCase):

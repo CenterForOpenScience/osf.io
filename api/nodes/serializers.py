@@ -1,3 +1,5 @@
+from django.db import connection
+
 from api.base.exceptions import (Conflict, EndpointNotImplementedError,
                                  InvalidModelValueError,
                                  RelationshipPostMakesNoChanges)
@@ -7,7 +9,7 @@ from api.base.serializers import (DateByVersion, HideIfRegistration, IDField,
                                   JSONAPISerializer, LinksField,
                                   NodeFileHyperLinkField, RelationshipField,
                                   ShowIfVersion, TargetTypeField, TypeField,
-                                  WaterbutlerLink, relationship_diff)
+                                  WaterbutlerLink, relationship_diff, PrefetchRelationshipsSerializer)
 from api.base.settings import ADDONS_FOLDER_CONFIGURABLE
 from api.base.utils import (absolute_reverse, get_object_or_error,
                             get_user_auth, is_truthy)
@@ -44,7 +46,7 @@ class NodeTagField(ser.Field):
         return data
 
 
-class NodeLicenseSerializer(ser.Serializer):
+class NodeLicenseSerializer(PrefetchRelationshipsSerializer):
 
     copyright_holders = ser.ListField(allow_empty=True)
     year = ser.CharField(allow_blank=True)
@@ -294,6 +296,15 @@ class NodeSerializer(JSONAPISerializer):
         self_meta={'count': 'get_node_links_count'}
     )
 
+    linked_registrations = RelationshipField(
+        related_view='nodes:linked-registrations',
+        related_view_kwargs={'node_id': '<_id>'},
+        related_meta={'count': 'get_registration_links_count'},
+        self_view='nodes:node-registration-pointer-relationship',
+        self_view_kwargs={'node_id': '<_id>'},
+        self_meta={'count': 'get_node_links_count'}
+    )
+
     view_only_links = RelationshipField(
         related_view='nodes:node-view-only-links',
         related_view_kwargs={'node_id': '<_id>'},
@@ -336,9 +347,37 @@ class NodeSerializer(JSONAPISerializer):
 
     def get_node_count(self, obj):
         auth = get_user_auth(self.context['request'])
-        return len([node_relation
-                    for node_relation in obj.node_relations.filter(child__is_deleted=False, is_node_link=False)
-                    if node_relation.child.can_view(auth)])
+        user_id = getattr(auth.user, 'id', None)
+        with connection.cursor() as cursor:
+            cursor.execute('''
+                WITH RECURSIVE parents AS (
+                  SELECT parent_id, child_id
+                  FROM osf_noderelation
+                  WHERE child_id = %s AND is_node_link IS FALSE
+                UNION ALL
+                  SELECT osf_noderelation.parent_id, parents.parent_id AS child_id
+                  FROM parents JOIN osf_noderelation ON parents.PARENT_ID = osf_noderelation.child_id
+                  WHERE osf_noderelation.is_node_link IS FALSE
+                ), has_admin AS (SELECT * FROM osf_contributor WHERE (node_id IN (SELECT parent_id FROM parents) OR node_id = %s) AND user_id = %s AND admin IS TRUE LIMIT 1)
+                SELECT DISTINCT
+                  COUNT(child_id)
+                FROM
+                  osf_noderelation
+                JOIN osf_abstractnode ON osf_noderelation.child_id = osf_abstractnode.id
+                JOIN osf_contributor ON osf_abstractnode.id = osf_contributor.node_id
+                LEFT JOIN osf_privatelink_nodes ON osf_abstractnode.id = osf_privatelink_nodes.abstractnode_id
+                LEFT JOIN osf_privatelink ON osf_privatelink_nodes.privatelink_id = osf_privatelink.id
+                WHERE parent_id = %s AND is_node_link IS FALSE
+                AND osf_abstractnode.is_deleted IS FALSE
+                AND (
+                  osf_abstractnode.is_public
+                  OR (TRUE IN (SELECT TRUE FROM has_admin))
+                  OR (osf_contributor.user_id = %s AND osf_contributor.read IS TRUE)
+                  OR (osf_privatelink.key = %s AND osf_privatelink.is_deleted = FALSE)
+                );
+            ''', [obj.id, obj.id, user_id, obj.id, user_id, auth.private_key])
+
+            return int(cursor.fetchone()[0])
 
     def get_contrib_count(self, obj):
         return len(obj.contributors)
@@ -354,7 +393,15 @@ class NodeSerializer(JSONAPISerializer):
     def get_node_links_count(self, obj):
         count = 0
         auth = get_user_auth(self.context['request'])
-        for pointer in obj.linked_nodes.filter(is_deleted=False).exclude(type='osf.collection'):
+        for pointer in obj.linked_nodes.filter(is_deleted=False).exclude(type='osf.collection').exclude(type='osf.registration'):
+            if pointer.can_view(auth):
+                count += 1
+        return count
+
+    def get_registration_links_count(self, obj):
+        count = 0
+        auth = get_user_auth(self.context['request'])
+        for pointer in obj.linked_nodes.filter(is_deleted=False, type='osf.registration').exclude(type='osf.collection'):
             if pointer.can_view(auth):
                 count += 1
         return count
@@ -714,9 +761,9 @@ class NodeContributorsSerializer(JSONAPISerializer):
         'index'
     ])
 
-    id = ContributorIDField(read_only=True, source='_id')
+    id = IDField(source='_id', read_only=True)
     type = TypeField()
-    index = ser.IntegerField(required=False, read_only=True)
+    index = ser.IntegerField(required=False, read_only=True, source='_order')
 
     bibliographic = ser.BooleanField(help_text='Whether the user will be included in citations for this node or not.',
                                      default=True)
@@ -731,13 +778,13 @@ class NodeContributorsSerializer(JSONAPISerializer):
 
     users = RelationshipField(
         related_view='users:user-detail',
-        related_view_kwargs={'user_id': '<_id>'},
+        related_view_kwargs={'user_id': '<user._id>'},
         always_embed=True
     )
 
     node = RelationshipField(
         related_view='nodes:node-detail',
-        related_view_kwargs={'node_id': '<node_id>'}
+        related_view_kwargs={'node_id': '<node._id>'}
     )
 
     class Meta:
@@ -747,14 +794,14 @@ class NodeContributorsSerializer(JSONAPISerializer):
         return absolute_reverse(
             'nodes:node-contributor-detail',
             kwargs={
-                'user_id': obj._id,
+                'user_id': obj.user._id,
                 'node_id': self.context['request'].parser_context['kwargs']['node_id'],
                 'version': self.context['request'].parser_context['kwargs']['version']
             }
         )
 
     def get_unregistered_contributor(self, obj):
-        unclaimed_records = obj.unclaimed_records.get(obj.node_id, None)
+        unclaimed_records = obj.user.unclaimed_records.get(obj.node._id, None)
         if unclaimed_records:
             return unclaimed_records.get('name', None)
 
@@ -764,14 +811,14 @@ class NodeContributorsCreateSerializer(NodeContributorsSerializer):
     Overrides NodeContributorsSerializer to add email, full_name, send_email, and non-required index and users field.
     """
 
-    id = ContributorIDField(source='_id', required=False, allow_null=True)
+    id = IDField(source='_id', required=False, allow_null=True)
     full_name = ser.CharField(required=False)
-    email = ser.EmailField(required=False)
-    index = ser.IntegerField(required=False)
+    email = ser.EmailField(required=False, source='user.email')
+    index = ser.IntegerField(required=False, source='_order')
 
     users = RelationshipField(
         related_view='users:user-detail',
-        related_view_kwargs={'user_id': '<_id>'},
+        related_view_kwargs={'user_id': '<user._id>'},
         required=False
     )
 
@@ -787,8 +834,10 @@ class NodeContributorsCreateSerializer(NodeContributorsSerializer):
 
     def create(self, validated_data):
         id = validated_data.get('_id')
-        email = validated_data.get('email')
-        index = validated_data.get('index')
+        email = validated_data.get('user', {}).get('email', None)
+        index = None
+        if '_order' in validated_data:
+            index = validated_data.pop('_order')
         node = self.context['view'].get_node()
         auth = Auth(self.context['request'].user)
         full_name = validated_data.get('full_name')
@@ -802,7 +851,7 @@ class NodeContributorsCreateSerializer(NodeContributorsSerializer):
             raise exceptions.ValidationError(detail='{} is not a valid email preference.'.format(send_email))
 
         try:
-            contributor = node.add_contributor_registered_or_not(
+            contributor_obj = node.add_contributor_registered_or_not(
                 auth=auth, user_id=id, email=email, full_name=full_name, send_email=send_email,
                 permissions=permissions, bibliographic=bibliographic, index=index, save=True
             )
@@ -810,46 +859,39 @@ class NodeContributorsCreateSerializer(NodeContributorsSerializer):
             raise exceptions.ValidationError(detail=e.messages[0])
         except ValueError as e:
             raise exceptions.NotFound(detail=e.args[0])
-
-        return contributor
+        return contributor_obj
 
 
 class NodeContributorDetailSerializer(NodeContributorsSerializer):
     """
     Overrides node contributor serializer to add additional methods
     """
-    id = ContributorIDField(required=True, source='_id')
-    index = ser.IntegerField(required=False, read_only=False)
-    # index = ser.IntegerField(required=False)
+    id = IDField(required=True, source='_id')
+    index = ser.IntegerField(required=False, read_only=False, source='_order')
 
     def update(self, instance, validated_data):
         index = None
-        if 'index' in validated_data:
-            index = validated_data.pop('index')
+        if '_order' in validated_data:
+            index = validated_data.pop('_order')
 
-        contributor = instance
         auth = Auth(self.context['request'].user)
         node = self.context['view'].get_node()
 
         if 'bibliographic' in validated_data:
             bibliographic = validated_data.get('bibliographic')
         else:
-            bibliographic = node.get_visible(contributor)
-        permission = validated_data.get('permission') or contributor.permission
+            bibliographic = node.get_visible(instance.user)
+        permission = validated_data.get('permission') or instance.permission
         try:
             if index is not None:
-                node.move_contributor(contributor, auth, index, save=True)
-            node.update_contributor(contributor, permission, bibliographic, auth, save=True)
+                node.move_contributor(instance.user, auth, index, save=True)
+            node.update_contributor(instance.user, permission, bibliographic, auth, save=True)
         except NodeStateError as e:
             raise exceptions.ValidationError(detail=e.message)
         except ValueError as e:
             raise exceptions.ValidationError(detail=e.message)
-        contributor.permission = osf_permissions.reduce_permissions(node.get_permissions(contributor))
-        contributor.bibliographic = node.get_visible(contributor)
-        contributor.node_id = node._id
-        if index is not None:
-            contributor.index = index
-        return contributor
+        instance.refresh_from_db()
+        return instance
 
 
 class NodeLinksSerializer(JSONAPISerializer):
@@ -963,7 +1005,7 @@ class InstitutionRelated(JSONAPIRelationshipSerializer):
     class Meta:
         type_ = 'institutions'
 
-class NodeInstitutionsRelationshipSerializer(ser.Serializer):
+class NodeInstitutionsRelationshipSerializer(PrefetchRelationshipsSerializer):
     data = ser.ListField(child=InstitutionRelated())
     links = LinksField({'self': 'get_self_url',
                         'html': 'get_related_url'})

@@ -31,22 +31,31 @@ class EncryptedTextField(models.TextField):
     def get_db_prep_value(self, value, **kwargs):
         if value and not value.startswith(self.prefix):
             value = ensure_bytes(value)
-            value = self.prefix + jwe.encrypt(bytes(value), SENSITIVE_DATA_KEY)
+            if not settings.RUNNING_MIGRATION:
+                # don't encrypt things if we're migrating.
+                value = self.prefix + jwe.encrypt(bytes(value), SENSITIVE_DATA_KEY)
+            else:
+                # just prefix them
+                return u'jwe:::{}'.format(value)
         return value
 
     def to_python(self, value):
         if value and value.startswith(self.prefix):
             value = ensure_bytes(value)
-            value = jwe.decrypt(bytes(value[len(self.prefix):]), SENSITIVE_DATA_KEY)
+            if not settings.RUNNING_MIGRATION:
+                # don't decrypt things if we're migrating.
+                value = jwe.decrypt(bytes(value[len(self.prefix):]), SENSITIVE_DATA_KEY)
+            else:
+                return value[6:]
         return value
 
     def from_db_value(self, value, expression, connection, context):
         return self.to_python(value)
 
 
-class NonNaiveDatetimeField(models.DateTimeField):
+class NonNaiveDateTimeField(models.DateTimeField):
     def get_prep_value(self, value):
-        value = super(NonNaiveDatetimeField, self).get_prep_value(value)
+        value = super(NonNaiveDateTimeField, self).get_prep_value(value)
         if value is not None and (value.tzinfo is None or value.tzinfo.utcoffset(value) is None):
             raise NaiveDatetimeException('Tried to encode a naive datetime.')
         return value

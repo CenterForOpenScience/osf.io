@@ -7,7 +7,7 @@ from api.citations.serializers import CitationSerializer
 from framework.auth.oauth_scopes import CoreScopes
 from rest_framework import permissions as drf_permissions
 from rest_framework import generics
-from website.models import CitationStyle
+from osf.models.citation import CitationStyle
 
 
 class CitationStyleList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):

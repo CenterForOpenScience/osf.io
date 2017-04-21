@@ -28,6 +28,7 @@ def serialize_node(node):
         'spam_status': node.spam_status,
         'spam_pro_tip': node.spam_pro_tip,
         'spam_data': json.dumps(node.spam_data, indent=4),
+        'is_public': node.is_public,
     }
 
 

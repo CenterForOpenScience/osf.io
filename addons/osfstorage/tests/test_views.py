@@ -20,8 +20,8 @@ from website.util import rubeus
 
 from website.models import Tag
 from website.files import models
+from addons.osfstorage.apps import osf_storage_root
 from addons.osfstorage import utils
-from addons.osfstorage import views
 from addons.base.views import make_auth
 from addons.osfstorage import settings as storage_settings
 
@@ -48,6 +48,15 @@ class HookTestCase(StorageTestCase):
 
 @pytest.mark.django_db
 class TestGetMetadataHook(HookTestCase):
+
+    def test_empty(self):
+        res = self.send_hook(
+            'osfstorage_get_children',
+            {'fid': self.node_settings.get_root()._id},
+            {},
+        )
+        assert_true(isinstance(res.json, list))
+        assert_equal(res.json, [])
 
     def test_file_metdata(self):
         path = u'kind/of/magíc.mp3'
@@ -82,7 +91,7 @@ class TestGetMetadataHook(HookTestCase):
 
     def test_osf_storage_root(self):
         auth = Auth(self.project.creator)
-        result = views.osf_storage_root(self.node_settings.config, self.node_settings, auth)
+        result = osf_storage_root(self.node_settings.config, self.node_settings, auth)
         node = self.project
         expected = rubeus.build_addon_root(
             node_settings=self.node_settings,
@@ -326,7 +335,7 @@ class TestUploadFileHook(HookTestCase):
         assert_equal(res.json['status'], 'success')
         assert_is(res.json['archive'], True)
 
-        self.send_hook(
+        res = self.send_hook(
             'osfstorage_update_metadata',
             {},
             payload={'metadata': {

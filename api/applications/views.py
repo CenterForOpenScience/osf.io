@@ -27,7 +27,8 @@ class ApplicationMixin(object):
     def get_app(self):
         app = get_object_or_error(ApiOAuth2Application,
                                   Q('client_id', 'eq', self.kwargs['client_id']) &
-                                  Q('is_active', 'eq', True))
+                                  Q('is_active', 'eq', True)
+                                  )
 
         self.check_object_permissions(self.request, app)
         return app

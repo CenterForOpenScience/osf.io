@@ -1,11 +1,13 @@
 import os
-from addons.base.apps import BaseAddonAppConfig
+from addons.base.apps import BaseAddonAppConfig, generic_root_folder
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 TEMPLATE_PATH = os.path.join(
     HERE,
     'templates'
 )
+
+owncloud_root_folder = generic_root_folder('owncloud')
 
 class OwnCloudAddonAppConfig(BaseAddonAppConfig):
 
@@ -22,8 +24,6 @@ class OwnCloudAddonAppConfig(BaseAddonAppConfig):
 
     @property
     def get_hgrid_data(self):
-        # Import here to avoid AppRegistryNotReady error
-        from addons.owncloud.views import owncloud_root_folder
         return owncloud_root_folder
 
     actions = ()
