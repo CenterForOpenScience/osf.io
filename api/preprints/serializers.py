@@ -169,16 +169,16 @@ class PreprintSerializer(JSONAPISerializer):
         if preprint.get_identifier_value('doi') and preprint.get_identifier_value('ark'):
             update_ezid_metadata_on_change(preprint, status='public')
 
+        if 'license_type' in validated_data or 'license' in validated_data:
+            license_details = get_license_details(preprint, validated_data)
+            self.set_field(preprint.set_preprint_license, license_details, auth)
+            save_preprint = True
+
         published = validated_data.pop('is_published', None)
         if published is not None:
             self.set_field(preprint.set_published, published, auth)
             save_preprint = True
             recently_published = published
-
-        if 'license_type' in validated_data or 'license' in validated_data:
-            license_details = get_license_details(preprint, validated_data)
-            self.set_field(preprint.set_preprint_license, license_details, auth)
-            save_preprint = True
 
         if save_node:
             try:
