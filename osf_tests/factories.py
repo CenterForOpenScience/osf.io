@@ -520,7 +520,7 @@ class PreprintFactory(DjangoModelFactory):
 
     @classmethod
     def _build(cls, target_class, project=None, filename='preprint_file.txt', provider=None,
-                doi=None, external_url=None, is_published=True, subjects=None, finish=True, *args, **kwargs):
+                doi=None, external_url=None, is_published=True, subjects=None, license_details=None, finish=True, *args, **kwargs):
         user = None
         if project:
             user = project.creator
@@ -573,6 +573,8 @@ class PreprintFactory(DjangoModelFactory):
             subjects = subjects or [[SubjectFactory()._id]]
             preprint.save()
             preprint.set_subjects(subjects, auth=auth)
+            if license_details:
+                preprint.set_preprint_license(license_details, auth=auth)
             preprint.set_published(is_published, auth=auth)
 
         if not preprint.is_published:
