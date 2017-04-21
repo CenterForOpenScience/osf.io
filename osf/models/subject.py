@@ -36,6 +36,12 @@ class Subject(ObjectIDMixin, BaseModel):
         return self.absolute_api_v2_url
 
     @cached_property
+    def bepress_text(self):
+        if self.bepress_subject:
+            return self.bepress_subject.text
+        return self.text
+
+    @cached_property
     def hierarchy(self):
         if self.parent:
             return self.parent.hierarchy + [self._id]
