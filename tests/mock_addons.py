@@ -1,57 +1,38 @@
-import abc
+# -*- coding: utf-8 -*-
 import os
-import time
+from time import sleep
 
+from bson import ObjectId
 import markupsafe
 import requests
-from django.db import models
+
+from modularodm import fields
+from modularodm import Q
+
 from framework.auth import Auth
 from framework.auth.decorators import must_be_logged_in
-from framework.exceptions import HTTPError, PermissionsError
-from mako.lookup import TemplateLookup
-from osf.models.base import BaseModel, ObjectIDMixin
-from osf.models.external import ExternalAccount
-from osf.models.node import AbstractNode
-from osf.models.user import OSFUser
-from osf.modm_compat import Q
-from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
+from framework.exceptions import (
+    PermissionsError,
+    HTTPError,
+)
+from framework.mongo import StoredObject
+
 from website import settings
-from addons.base import logger, serializer
-from website.oauth.signals import oauth_complete
+from addons.base import serializer, logger
+from website.project.model import Node, User
 from website.util import waterbutler_url_for
 
-lookup = TemplateLookup(
-    directories=[
-        settings.TEMPLATES_PATH
-    ],
-    default_filters=[
-        'unicode',  # default filter; must set explicitly when overriding
-        # FIXME: Temporary workaround for data stored in wrong format in DB. Unescape it before it
-        # gets re-escaped by Markupsafe. See [#OSF-4432]
-        'temp_ampersand_fixer',
-        'h',
-    ],
-    imports=[
-        # FIXME: Temporary workaround for data stored in wrong format in DB. Unescape it before it
-        # gets re-escaped by Markupsafe. See [#OSF-4432]
-        'from website.util.sanitize import temp_ampersand_fixer',
-    ]
-)
+from website.oauth.signals import oauth_complete
 
 
-class BaseAddonSettings(ObjectIDMixin, BaseModel):
-    deleted = models.BooleanField(default=False)
+class AddonSettingsBase(StoredObject):
 
-    class Meta:
-        abstract = True
+    _id = fields.StringField(default=lambda: str(ObjectId()))
+    deleted = fields.BooleanField(default=False)
 
-    @property
-    def config(self):
-        return self._meta.app_config
-
-    @property
-    def short_name(self):
-        return self.config.short_name
+    _meta = {
+        'abstract': True,
+    }
 
     def delete(self, save=True):
         self.deleted = True
@@ -84,11 +65,19 @@ class BaseAddonSettings(ObjectIDMixin, BaseModel):
         pass
 
 
-class BaseUserSettings(BaseAddonSettings):
-    owner = models.OneToOneField(OSFUser, blank=True, null=True, related_name='%(app_label)s_user_settings')
+class AddonUserSettingsBase(AddonSettingsBase):
 
-    class Meta:
-        abstract = True
+    owner = fields.ForeignField('user', index=True)
+
+    _meta = {
+        'abstract': True,
+    }
+
+    def __repr__(self):
+        if self.owner:
+            return '<{cls} owned by user {uid}>'.format(cls=self.__class__.__name__, uid=self.owner._id)
+        else:
+            return '<{cls} with no owner>'.format(cls=self.__class__.__name__)
 
     @property
     def public_id(self):
@@ -104,18 +93,24 @@ class BaseUserSettings(BaseAddonSettings):
     def nodes_authorized(self):
         """Get authorized, non-deleted nodes. Returns an empty list if the
         attached add-on does not include a node model.
+
         """
-        model = self.config.node_settings
-        if not model:
+        try:
+            schema = self.config.settings_models['node']
+        except KeyError:
             return []
-        return [obj.owner for obj in model.objects.filter(user_settings=self, owner__is_deleted=False).select_related('owner')]
+        return [
+            node_addon.owner
+            for node_addon in schema.find(Q('user_settings', 'eq', self))
+            if node_addon.owner and not node_addon.owner.is_deleted
+        ]
 
     @property
     def can_be_merged(self):
         return hasattr(self, 'merge')
 
     def to_json(self, user):
-        ret = super(BaseUserSettings, self).to_json(user)
+        ret = super(AddonUserSettingsBase, self).to_json(user)
         ret['has_auth'] = self.has_auth
         ret.update({
             'nodes': [
@@ -131,24 +126,23 @@ class BaseUserSettings(BaseAddonSettings):
         })
         return ret
 
-    def __repr__(self):
-        if self.owner:
-            return '<{cls} owned by user {uid}>'.format(cls=self.__class__.__name__, uid=self.owner._id)
-        return '<{cls} with no owner>'.format(cls=self.__class__.__name__)
-
 
 @oauth_complete.connect
 def oauth_complete(provider, account, user):
     if not user or not account:
         return
-    user.add_addon(account.provider)
+    user.add_addon(account.provider, Auth(user))
     user.save()
 
 
-class BaseOAuthUserSettings(BaseUserSettings):
+class AddonOAuthUserSettingsBase(AddonUserSettingsBase):
+    _meta = {
+        'abstract': True,
+    }
+
     # Keeps track of what nodes have been given permission to use external
     #   accounts belonging to the user.
-    oauth_grants = DateTimeAwareJSONField(default=dict, blank=True)
+    oauth_grants = fields.DictionaryField()
     # example:
     # {
     #     '<Node._id>': {
@@ -167,22 +161,22 @@ class BaseOAuthUserSettings(BaseUserSettings):
 
     serializer = serializer.OAuthAddonSerializer
 
-    class Meta:
-        abstract = True
-
     @property
     def has_auth(self):
-        return self.external_accounts.exists()
+        return bool(self.external_accounts)
 
     @property
     def external_accounts(self):
         """The user's list of ``ExternalAccount`` instances for this provider"""
-        return self.owner.external_accounts.filter(provider=self.oauth_provider.short_name)
+        return [
+            x for x in self.owner.external_accounts.all()
+            if x.provider == self.oauth_provider.short_name
+        ]
 
     def delete(self, save=True):
-        for account in self.external_accounts.filter(provider=self.config.short_name):
+        for account in self.external_accounts.all():
             self.revoke_oauth_access(account, save=False)
-        super(BaseOAuthUserSettings, self).delete(save=save)
+        super(AddonOAuthUserSettingsBase, self).delete(save=save)
 
     def grant_oauth_access(self, node, external_account, metadata=None):
         """Give a node permission to use an ``ExternalAccount`` instance."""
@@ -219,10 +213,10 @@ class BaseOAuthUserSettings(BaseUserSettings):
                 node.get_addon(external_account.provider, deleted=True).deauthorize(auth=auth)
             except AttributeError:
                 # No associated addon settings despite oauth grant
+                # Remove grant in `for` loop below
                 pass
 
-        if external_account.osfuser_set.count() == 1 and \
-                external_account.osfuser_set.filter(id=auth.user.id).exists():
+        if User.find(Q('external_accounts', 'eq', external_account._id)).count() == 1:
             # Only this user is using the account, so revoke remote access as well.
             self.revoke_remote_oauth_access(external_account)
 
@@ -274,7 +268,7 @@ class BaseOAuthUserSettings(BaseUserSettings):
     def get_nodes_with_oauth_grants(self, external_account):
         # Generator of nodes which have grants for this external account
         for node_id, grants in self.oauth_grants.iteritems():
-            node = AbstractNode.load(node_id)
+            node = Node.load(node_id)
             if external_account._id in grants.keys() and not node.is_deleted:
                 yield node
 
@@ -315,7 +309,7 @@ class BaseOAuthUserSettings(BaseUserSettings):
             config = settings.ADDONS_AVAILABLE_DICT[
                 self.oauth_provider.short_name
             ]
-            Model = config.models['nodesettings']
+            Model = config.settings_models['node']
         except KeyError:
             pass
         else:
@@ -327,7 +321,7 @@ class BaseOAuthUserSettings(BaseUserSettings):
         self.save()
 
     def to_json(self, user):
-        ret = super(BaseOAuthUserSettings, self).to_json(user)
+        ret = super(AddonOAuthUserSettingsBase, self).to_json(user)
 
         ret['accounts'] = self.serializer(
             user_settings=self
@@ -342,19 +336,20 @@ class BaseOAuthUserSettings(BaseUserSettings):
     def on_delete(self):
         """When the user deactivates the addon, clear auth for connected nodes.
         """
-        super(BaseOAuthUserSettings, self).on_delete()
-        nodes = [AbstractNode.load(node_id) for node_id in self.oauth_grants.keys()]
+        super(AddonOAuthUserSettingsBase, self).on_delete()
+        nodes = [Node.load(node_id) for node_id in self.oauth_grants.keys()]
         for node in nodes:
             node_addon = node.get_addon(self.oauth_provider.short_name)
             if node_addon and node_addon.user_settings == self:
                 node_addon.clear_auth()
 
+class AddonNodeSettingsBase(AddonSettingsBase):
 
-class BaseNodeSettings(BaseAddonSettings):
-    owner = models.OneToOneField(AbstractNode, null=True, blank=True, related_name='%(app_label)s_node_settings')
+    owner = fields.ForeignField('node', index=True)
 
-    class Meta:
-        abstract = True
+    _meta = {
+        'abstract': True,
+    }
 
     @property
     def complete(self):
@@ -376,7 +371,7 @@ class BaseNodeSettings(BaseAddonSettings):
         return False
 
     def to_json(self, user):
-        ret = super(BaseNodeSettings, self).to_json(user)
+        ret = super(AddonNodeSettingsBase, self).to_json(user)
         ret.update({
             'user': {
                 'permissions': self.owner.get_permissions(user)
@@ -392,16 +387,7 @@ class BaseNodeSettings(BaseAddonSettings):
         return ret
 
     def render_config_error(self, data):
-        """
-
-        """
-        # Note: `config` is added to `self` in `AddonConfig::__init__`.
-        template = lookup.get_template('project/addon/config_error.mako')
-        return template.get_def('config_error').render(
-            title=self.config.full_name,
-            name=self.config.short_name,
-            **data
-        )
+        pass
 
     #############
     # Callbacks #
@@ -468,9 +454,9 @@ class BaseNodeSettings(BaseAddonSettings):
         if hasattr(self, 'user_settings'):
             if self.user_settings is None:
                 return (
-                    u'Because you have not configured the {addon} add-on, your authentication will not be '
-                    u'transferred to the forked {category}. You may authorize and configure the {addon} add-on '
-                    u'in the new fork on the settings page.'
+                    u'Because you have not configured the authorization for this {addon} add-on, this '
+                    u'{category} will not transfer your authentication to '
+                    u'the forked {category}.'
                 ).format(
                     addon=self.config.full_name,
                     category=node.project_or_component,
@@ -489,8 +475,7 @@ class BaseNodeSettings(BaseAddonSettings):
                 return (
                     u'Because the {addon} add-on has been authorized by a different '
                     u'user, forking it will not transfer authentication to the forked '
-                    u'{category}. You may authorize and configure the {addon} add-on '
-                    u'in the new fork on the settings page.'
+                    u'{category}.'
                 ).format(
                     addon=self.config.full_name,
                     category=node.project_or_component,
@@ -503,17 +488,16 @@ class BaseNodeSettings(BaseAddonSettings):
         :param Node fork:
         :param User user:
         :param bool save:
-        :returns: cloned settings
+        :returns: Tuple of cloned settings and alert message
 
         """
         clone = self.clone()
-        clone.user_settings = None
         clone.owner = fork
 
         if save:
             clone.save()
 
-        return clone
+        return clone, None
 
     def before_register(self, node, user):
         """
@@ -546,25 +530,19 @@ class BaseNodeSettings(BaseAddonSettings):
         """
         pass
 
-
 ############
 # Archiver #
 ############
-
 class GenericRootNode(object):
     path = '/'
     name = ''
 
-
-class BaseStorageAddon(BaseModel):
+class StorageAddonBase(object):
     """
     Mixin class for traversing file trees of addons with files
     """
 
     root_node = GenericRootNode()
-
-    class Meta:
-        abstract = True
 
     @property
     def archive_folder_name(self):
@@ -586,14 +564,18 @@ class BaseStorageAddon(BaseModel):
             kwargs['cookie'] = cookie
         if version:
             kwargs['version'] = version
-        metadata_url = waterbutler_url_for('metadata', _internal=True, **kwargs)
-
+        metadata_url = waterbutler_url_for(
+            'metadata',
+            _internal=True,
+            **kwargs
+        )
         res = requests.get(metadata_url)
         if res.status_code != 200:
-            raise HTTPError(res.status_code, data={'error': res.json()})
-
+            raise HTTPError(res.status_code, data={
+                'error': res.json(),
+            })
         # TODO: better throttling?
-        time.sleep(1.0 / 5.0)
+        sleep(1.0 / 5.0)
         return res.json().get('data', [])
 
     def _get_file_tree(self, filenode=None, user=None, cookie=None, version=None):
@@ -605,9 +587,10 @@ class BaseStorageAddon(BaseModel):
             'kind': 'folder',
             'name': self.root_node.name,
         }
-        if filenode.get('kind') == 'file' or 'size' in filenode:
+        if filenode.get('kind') == 'file':
             return filenode
-
+        elif 'size' in filenode:
+            return filenode
         kwargs = {
             'version': version,
             'cookie': cookie,
@@ -618,44 +601,40 @@ class BaseStorageAddon(BaseModel):
         ]
         return filenode
 
+class AddonOAuthNodeSettingsBase(AddonNodeSettingsBase):
+    _meta = {
+        'abstract': True,
+    }
 
-class BaseOAuthNodeSettings(BaseNodeSettings):
     # TODO: Validate this field to be sure it matches the provider's short_name
     # NOTE: Do not set this field directly. Use ``set_auth()``
-    external_account = models.ForeignKey(ExternalAccount, null=True, blank=True,
-                                         related_name='%(app_label)s_node_settings')
+    external_account = fields.ForeignField('externalaccount')
 
     # NOTE: Do not set this field directly. Use ``set_auth()``
-    # user_settings = fields.AbstractForeignField()
+    user_settings = fields.AbstractForeignField()
 
     # The existence of this property is used to determine whether or not
     #   an addon instance is an "OAuth addon" in
     #   AddonModelMixin.get_oauth_addons().
     oauth_provider = None
 
-    class Meta:
-        abstract = True
-
-    @abc.abstractproperty
+    @property
     def folder_id(self):
         raise NotImplementedError(
-            "BaseOAuthNodeSettings subclasses must expose a 'folder_id' property."
+            "AddonOAuthNodeSettingsBase subclasses must expose a 'folder_id' property."
         )
 
-    @abc.abstractproperty
+    @property
     def folder_name(self):
         raise NotImplementedError(
-            "BaseOAuthNodeSettings subclasses must expose a 'folder_name' property."
+            "AddonOAuthNodeSettingsBase subclasses must expose a 'folder_name' property."
         )
 
-    @abc.abstractproperty
+    @property
     def folder_path(self):
         raise NotImplementedError(
-            "BaseOAuthNodeSettings subclasses must expose a 'folder_path' property."
+            "AddonOAuthNodeSettingsBase subclasses must expose a 'folder_path' property."
         )
-
-    def fetch_folder_name(self):
-        return self.folder_name
 
     @property
     def nodelogger(self):
@@ -667,7 +646,7 @@ class BaseOAuthNodeSettings(BaseNodeSettings):
             '_logger_class',
             type(
                 '{0}NodeLogger'.format(self.config.short_name.capitalize()),
-                (logger.AddonNodeLogger,),
+                (logger.AddonNodeLogger, ),
                 {'addon_short_name': self.config.short_name}
             )
         )
@@ -708,7 +687,7 @@ class BaseOAuthNodeSettings(BaseNodeSettings):
 
     def clear_settings(self):
         raise NotImplementedError(
-            "BaseOAuthNodeSettings subclasses must expose a 'clear_settings' method."
+            "AddonOAuthNodeSettingsBase subclasses must expose a 'clear_settings' method."
         )
 
     def set_auth(self, external_account, user, metadata=None, log=True):
@@ -778,7 +757,6 @@ class BaseOAuthNodeSettings(BaseNodeSettings):
 
             # Delete OAuth tokens
             self.user_settings.oauth_grants[self.owner._id].pop(self.external_account._id)
-            self.user_settings.save()
             self.clear_auth()
             message = (
                 u'Because the {addon} add-on for {category} "{title}" was authenticated '
@@ -802,9 +780,9 @@ class BaseOAuthNodeSettings(BaseNodeSettings):
         """After forking, copy user settings if the user is the one who authorized
         the addon.
 
-        :return: the cloned settings
+        :return: A tuple of the form (cloned_settings, message)
         """
-        clone = super(BaseOAuthNodeSettings, self).after_fork(
+        clone, _ = super(AddonOAuthNodeSettingsBase, self).after_fork(
             node=node,
             fork=fork,
             user=user,
@@ -818,11 +796,23 @@ class BaseOAuthNodeSettings(BaseNodeSettings):
                 except (KeyError, AttributeError):
                     pass
             clone.set_auth(self.external_account, user, metadata=metadata, log=False)
+            message = '{addon} authorization copied to forked {category}.'.format(
+                addon=self.config.full_name,
+                category=fork.project_or_component,
+            )
         else:
-            clone.clear_settings()
+            message = (
+                u'{addon} authorization not copied to forked {category}. You may '
+                u'authorize this fork on the <u><a href="{url}">Settings</a></u> '
+                u'page.'
+            ).format(
+                addon=self.config.full_name,
+                url=fork.web_url_for('node_setting'),
+                category=fork.project_or_component,
+            )
         if save:
             clone.save()
-        return clone
+        return clone, message
 
     def before_register_message(self, node, user):
         """Return warning text to display if user auth will be copied to a
@@ -842,106 +832,11 @@ class BaseOAuthNodeSettings(BaseNodeSettings):
     before_register = before_register_message
 
     def serialize_waterbutler_credentials(self):
-        raise NotImplementedError("BaseOAuthNodeSettings subclasses must implement a \
-            'serialize_waterbutler_credentials' method.")
+        raise NotImplementedError(
+            "AddonOAuthNodeSettingsBase subclasses must implement a 'serialize_waterbutler_credentials' method."
+        )
 
     def serialize_waterbutler_settings(self):
-        raise NotImplementedError("BaseOAuthNodeSettings subclasses must implement a \
-            'serialize_waterbutler_settings' method.")
-
-
-class BaseCitationsNodeSettings(BaseOAuthNodeSettings):
-    class Meta:
-        abstract = True
-
-    def serialize_waterbutler_settings(self, *args, **kwargs):
-        # required by superclass, not actually used
-        pass
-
-    def serialize_waterbutler_credentials(self, *args, **kwargs):
-        # required by superclass, not actually used
-        pass
-
-    def create_waterbutler_log(self, *args, **kwargs):
-        # required by superclass, not actually used
-        pass
-
-    @property
-    def api(self):
-        """authenticated ExternalProvider instance"""
-        if self._api is None:
-            self._api = self.oauth_provider(account=self.external_account)
-        return self._api
-
-    @property
-    def complete(self):
-        """Boolean indication of addon completeness"""
-        return bool(self.has_auth and self.user_settings.verify_oauth_access(
-            node=self.owner,
-            external_account=self.external_account,
-            metadata={'folder': self.list_id},
-        ))
-
-    @property
-    def root_folder(self):
-        """Serialized representation of root folder"""
-        return self.serializer.serialized_root_folder
-
-    @property
-    def folder_id(self):
-        return self.list_id
-
-    @property
-    def folder_name(self):
-        return self.fetch_folder_name
-
-    @property
-    def folder_path(self):
-        return self.fetch_folder_name
-
-    @property
-    def fetch_folder_name(self):
-        """Returns a displayable folder name"""
-        if self.list_id is None:
-            return ''
-        elif self.list_id == 'ROOT':
-            return 'All Documents'
-        else:
-            return self._fetch_folder_name
-
-    def clear_settings(self):
-        """Clears selected folder configuration"""
-        self.list_id = None
-
-    def set_auth(self, *args, **kwargs):
-        """Connect the node addon to a user's external account.
-
-        This method also adds the permission to use the account in the user's
-        addon settings.
-        """
-        self.list_id = None
-        self.save()
-
-        return super(BaseCitationsNodeSettings, self).set_auth(*args, **kwargs)
-
-    def deauthorize(self, auth=None, add_log=True):
-        """Remove user authorization from this node and log the event."""
-        if add_log:
-            self.owner.add_log(
-                '{0}_node_deauthorized'.format(self.provider_name),
-                params={
-                    'project': self.owner.parent_id,
-                    'node': self.owner._id,
-                },
-                auth=auth,
-            )
-
-        self.clear_settings()
-        self.clear_auth()
-        self.save()
-
-    def after_delete(self, node=None, user=None):
-        self.deauthorize(Auth(user=user), add_log=True)
-
-    def on_delete(self):
-        self.deauthorize(add_log=False)
+        raise NotImplementedError(
+            "AddonOAuthNodeSettingsBase subclasses must implement a 'serialize_waterbutler_settings' method."
+        )

@@ -23,7 +23,6 @@ from website.project.sanctions import (
 )
 from website.oauth.models import ApiOAuth2Application, ExternalAccount, ApiOAuth2PersonalToken
 from website.identifiers.model import Identifier
-from website.citations.models import CitationStyle
 from website.institutions.model import Institution  # flake8: noqa
 
 from website.mails import QueuedMail
@@ -45,8 +44,8 @@ MODELS = (
     NodeLog, StoredFileNode, TrashedFileNode, FileVersion,
     Tag, WatchConfig, Session, Guid, MetaSchema, Pointer,
     MailRecord, Comment, PrivateLink, MetaData, Conference,
-    NotificationSubscription, NotificationDigest, CitationStyle,
-    CitationStyle, ExternalAccount, Identifier,
+    NotificationSubscription, NotificationDigest,
+    ExternalAccount, Identifier,
     Embargo, Retraction, RegistrationApproval, EmbargoTerminationApproval,
     ArchiveJob, ArchiveTarget, BlacklistGuid,
     QueuedMail, AlternativeCitation,

@@ -5,7 +5,7 @@ import json
 import bleach
 
 
-def strip_html(unclean):
+def strip_html(unclean, tags=[]):
     """Sanitize a string, removing (as opposed to escaping) HTML tags
 
     :param unclean: A string to be stripped of HTML tags
@@ -17,7 +17,7 @@ def strip_html(unclean):
     # functions, such as rapply (recursively applies a function to collections)
     if not isinstance(unclean, basestring) and not is_iterable(unclean) and unclean is not None:
         return unclean
-    return bleach.clean(unclean, strip=True, tags=[], attributes=[], styles=[])
+    return bleach.clean(unclean, strip=True, tags=tags, attributes=[], styles=[])
 
 
 # TODO: Not used anywhere except unit tests? Review for deletion

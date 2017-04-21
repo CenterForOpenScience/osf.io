@@ -13,7 +13,6 @@ from collections import OrderedDict
 
 import django
 import modularodm
-import website.models
 from api.caching import listeners  # noqa
 from django.apps import apps
 from framework.addons.utils import render_addon_capabilities
@@ -23,11 +22,9 @@ from framework.flask import add_handlers, app
 # Import necessary to initialize the root logger
 from framework.logging import logger as root_logger  # noqa
 from framework.mongo import handlers as mongo_handlers
-from framework.mongo import set_up_storage, storage
 from framework.postcommit_tasks import handlers as postcommit_handlers
 from framework.sentry import sentry
 from framework.transactions import handlers as transaction_handlers
-from website import maintenance
 # Imports necessary to connect signals
 from website.archiver import listeners  # noqa
 from website.files.models import FileNode
@@ -46,17 +43,13 @@ def init_addons(settings, routes=True):
     :param module settings: The settings module.
     :param bool routes: Add each addon's routing rules to the URL map.
     """
-    from website.addons.base import init_addon
     settings.ADDONS_AVAILABLE = getattr(settings, 'ADDONS_AVAILABLE', [])
     settings.ADDONS_AVAILABLE_DICT = getattr(settings, 'ADDONS_AVAILABLE_DICT', OrderedDict())
     for addon_name in settings.ADDONS_REQUESTED:
-        if settings.USE_POSTGRES:
-            try:
-                addon = apps.get_app_config('addons_{}'.format(addon_name))
-            except LookupError:
-                addon = None
-        else:
-            addon = init_addon(app, addon_name, routes=routes)
+        try:
+            addon = apps.get_app_config('addons_{}'.format(addon_name))
+        except LookupError:
+            addon = None
         if addon:
             if addon not in settings.ADDONS_AVAILABLE:
                 settings.ADDONS_AVAILABLE.append(addon)
@@ -88,18 +81,6 @@ def attach_handlers(app, settings):
     return app
 
 
-def do_set_backends(settings):
-    if settings.USE_POSTGRES:
-        logger.debug('Not setting storage backends because USE_POSTGRES = True')
-        return
-    logger.debug('Setting storage backends')
-    maintenance.ensure_maintenance_collection()
-    set_up_storage(
-        website.models.MODELS,
-        storage.MongoStorage,
-        addons=settings.ADDONS_AVAILABLE,
-    )
-
 def setup_django():
     # Django App config
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'api.base.settings')
@@ -113,7 +94,7 @@ def init_app(settings_module='website.settings', set_backends=True, routes=True,
     a single app instance (rather than creating multiple instances).
 
     :param settings_module: A string, the settings module to use.
-    :param set_backends: Whether to set the database storage backends.
+    :param set_backends: Deprecated.
     :param routes: Whether to set the url map.
 
     """
@@ -141,8 +122,6 @@ def init_app(settings_module='website.settings', set_backends=True, routes=True,
     app.config['SESSION_COOKIE_SECURE'] = settings.SESSION_COOKIE_SECURE
     app.config['SESSION_COOKIE_HTTPONLY'] = settings.SESSION_COOKIE_HTTPONLY
 
-    if set_backends:
-        do_set_backends(settings)
     if routes:
         try:
             from website.routes import make_url_map
