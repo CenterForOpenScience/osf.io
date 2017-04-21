@@ -53,9 +53,10 @@ NodeActions.forkNode = function() {
             }
         };
         // Fork node
+        var nodeType = ctx.node.isRegistration ? 'registrations' : 'nodes';
         $osf.ajaxJSON(
             'POST',
-            $osf.apiV2Url('nodes/' + ctx.node.id + '/forks/'),
+            $osf.apiV2Url(nodeType + '/' + ctx.node.id + '/forks/'),
             {
                 isCors: true,
                 data: payload
