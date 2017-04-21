@@ -16,11 +16,4 @@
             <a href="${url}" style="padding: 0;margin: 0;border: none;list-style: none;color: #008de5;text-decoration: none;">&#10095;</a>
         </td>
     </tr>
-    <tr style="border-collapse: collapse;" align="left">
-        <br>
-        Center for Open Science<br>
-        210 Ridge McIntire Road<br>
-        Suite 500<br>
-        Charlottesville, VA 22903-5083<br>
-    </tr>
 </table>
