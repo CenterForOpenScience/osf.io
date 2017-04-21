@@ -282,16 +282,8 @@ var ViewModel = function(params) {
         self.searchStarted(false);
         self.currentPage(1);
         self.category(alias);
-        var win = null;
         if (alias.name === 'SHARE') {
-            win = window.open(window.contextVars.shareUrl + 'discover?' + $.param({q: self.query()}), '_blank');
-            win.opener = null;
-            win.focus();
-        } else if (alias.name === 'preprint') {
-            win = window.open(
-                window.location.origin + '/preprints/discover?' + $.param(
-                    {q: self.query(), provider: 'OSF'}
-                ), '_blank');
+            var win = window.open(window.contextVars.shareUrl + 'discover?' + $.param({q: self.query()}), '_blank');
             win.opener = null;
             win.focus();
         } else {
@@ -419,8 +411,6 @@ var ViewModel = function(params) {
                 }
                 if(result.category === 'registration'){
                     result.dateRegistered = new $osf.FormattableDate(result.date_registered);
-                } else if (result.category === 'preprint') {
-                    result.preprintUrl = result.preprint_url;
                 }
             });
 

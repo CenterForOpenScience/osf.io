@@ -123,9 +123,9 @@ def no_auto_transact():
 
 class TestViewsAreAtomic(OsfTestCase):
     def test_error_response_rolls_back_transaction(self):
-        assert_equal(User.objects.count(), 0)
+        original_user_count  = User.objects.count()
         self.app.get('/error500', expect_errors=True)
-        assert_equal(User.objects.count(), 0)
+        assert_equal(User.objects.count(), original_user_count)
 
         # Need to set debug = False in order to rollback transactions in transaction_teardown_request
         mock_app.debug = False
@@ -135,10 +135,8 @@ class TestViewsAreAtomic(OsfTestCase):
             pass
         mock_app.debug = True
 
-        assert_equal(User.objects.count(), 0)
-
         self.app.get('/noautotransact', expect_errors=True)
-        assert_equal(User.objects.count(), 1)
+        assert_equal(User.objects.count(), original_user_count + 1)
 
 
 class TestViewingProjectWithPrivateLink(OsfTestCase):

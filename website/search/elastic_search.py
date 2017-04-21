@@ -44,7 +44,6 @@ ALIASES = {
     'total': 'Total',
     'file': 'Files',
     'institution': 'Institutions',
-    'preprint': 'Preprints',
 }
 
 DOC_TYPE_TO_MODEL = {
@@ -53,7 +52,6 @@ DOC_TYPE_TO_MODEL = {
     'registration': Node,
     'user': User,
     'file': FileNode,
-    'preprint': Node,
     'institution': Institution
 }
 
@@ -240,7 +238,7 @@ def format_results(results):
             parent_info = load_parent(result.get('parent_id'))
             result['parent_url'] = parent_info.get('url') if parent_info else None
             result['parent_title'] = parent_info.get('title') if parent_info else None
-        elif result.get('category') in {'project', 'component', 'registration', 'preprint'}:
+        elif result.get('category') in {'project', 'component', 'registration'}:
             result = format_result(result, result.get('parent_id'))
         elif not result.get('category'):
             continue
@@ -272,7 +270,6 @@ def format_result(result, parent_id=None):
         'n_wikis': len(result['wikis']),
         'license': result.get('license'),
         'affiliated_institutions': result.get('affiliated_institutions'),
-        'preprint_url': result.get('preprint_url'),
     }
 
     return formatted_result
@@ -301,8 +298,6 @@ COMPONENT_CATEGORIES = set(settings.NODE_CATEGORY_MAP.keys())
 def get_doctype_from_node(node):
     if node.is_registration:
         return 'registration'
-    elif node.is_preprint:
-        return 'preprint'
     elif node.parent_node is None:
         # ElasticSearch categorizes top-level projects differently than children
         return 'project'
@@ -371,11 +366,11 @@ def serialize_node(node, category):
         'affiliated_institutions': list(node.affiliated_institutions.values_list('name', flat=True)),
         'boost': int(not node.is_registration) + 1,  # This is for making registered projects less relevant
         'extra_search_terms': clean_splitters(node.title),
-        'preprint_url': node.preprint_url,
     }
     if not node.is_retracted:
         for wiki in NodeWikiPage.objects.filter(guids___id__in=node.wiki_pages_current.values()):
-            elastic_document['wikis'][wiki.page_name] = wiki.raw_text(node)
+            # '.' is not allowed in field names in ES2
+            elastic_document['wikis'][wiki.page_name.replace('.', ' ')] = wiki.raw_text(node)
 
     return elastic_document
 
@@ -400,7 +395,7 @@ def bulk_update_nodes(serialize, nodes, index=None):
     """Updates the list of input projects
 
     :param function Node-> dict serialize:
-    :param Node[] nodes: Projects, components, registrations, or preprints
+    :param Node[] nodes: Projects, components or registrations
     :param str index: Index of the nodes
     :return:
     """
@@ -569,13 +564,12 @@ def delete_index(index):
 
 @requires_search
 def create_index(index=None):
-    """
-    Creates index with some specified mappings to begin with,
-    all of which are applied to all projects, components, preprints and registrations.
-    """
+    '''Creates index with some specified mappings to begin with,
+    all of which are applied to all projects, components, and registrations.
+    '''
     index = index or INDEX
-    document_types = ['project', 'component', 'registration', 'user', 'file', 'institution', 'preprint']
-    project_like_types = ['project', 'component', 'registration', 'preprint']
+    document_types = ['project', 'component', 'registration', 'user', 'file', 'institution']
+    project_like_types = ['project', 'component', 'registration']
     analyzed_fields = ['title', 'description']
 
     client().indices.create(index, ignore=[400])  # HTTP 400 if index already exists
@@ -621,13 +615,7 @@ def create_index(index=None):
 @requires_search
 def delete_doc(elastic_document_id, node, index=None, category=None):
     index = index or INDEX
-    if not category:
-        if node.is_registration:
-            category = 'registration'
-        elif node.is_preprint:
-            category = 'preprint'
-        else:
-            category = node.project_or_component
+    category = category or 'registration' if node.is_registration else node.project_or_component
     client().delete(index=index, doc_type=category, id=elastic_document_id, refresh=True, ignore=[404])
 
 
