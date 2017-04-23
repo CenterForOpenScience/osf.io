@@ -10,6 +10,7 @@ from django.db import transaction
 from modularodm import Q
 
 from flask import request
+from modularodm.exceptions import NoResultsFound
 
 from framework.auth import Auth
 from framework.sessions import get_session
@@ -207,16 +208,16 @@ def osfstorage_create_child(file_node, payload, node_addon, **kwargs):
     if not (name or user) or '/' in name:
         raise HTTPError(httplib.BAD_REQUEST)
 
-    try:
-        # Create a save point so that we can rollback and unlock
-        # the parent record
-        with transaction.atomic():
+    # Create a save point so that we can rollback and unlock
+    # the parent record
+    with transaction.atomic():
+        try:
+            created, file_node = False, parent.find_child_by_name(name, kind=int(not is_folder))
+        except NoResultsFound:
             if is_folder:
                 created, file_node = True, parent.append_folder(name)
             else:
                 created, file_node = True, parent.append_file(name)
-    except (ValidationError, IntegrityError):
-        created, file_node = False, parent.find_child_by_name(name, kind=int(not is_folder))
 
     if not created and is_folder:
         raise HTTPError(httplib.CONFLICT, data={
