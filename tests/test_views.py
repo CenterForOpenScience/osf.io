@@ -1660,6 +1660,19 @@ class TestUserAccount(OsfTestCase):
         assert_equal(res.status_code, 400)
         assert_equal(send_mail.call_count, 1)
 
+    def test_get_unconfirmed_emails_exclude_external_identity(self):
+        external_identity = {
+            'service': {
+                'AFI': 'LINK'
+            }
+        }
+        self.user.add_unconfirmed_email("james@steward.com")
+        self.user.add_unconfirmed_email("steward@james.com", external_identity=external_identity)
+        self.user.save()
+        unconfirmed_emails = self.user.get_unconfirmed_emails_exclude_external_identity()
+        assert_in("james@steward.com", unconfirmed_emails)
+        assert_not_in("steward@james.com", unconfirmed_emails)
+
 
 class TestAddingContributorViews(OsfTestCase):
 
