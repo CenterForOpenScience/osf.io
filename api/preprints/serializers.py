@@ -71,13 +71,18 @@ class PreprintSerializer(JSONAPISerializer):
     date_created = DateByVersion(read_only=True)
     date_modified = DateByVersion(read_only=True)
     date_published = DateByVersion(read_only=True)
-    doi = ser.CharField(source='article_doi', required=False, allow_null=True)
+    article_doi = ser.CharField(required=False, allow_null=True)
     is_published = ser.BooleanField(required=False)
     is_preprint_orphan = ser.BooleanField(read_only=True)
     license_record = NodeLicenseSerializer(required=False, source='license')
 
     citation = RelationshipField(
         related_view='preprints:preprint-citation',
+        related_view_kwargs={'preprint_id': '<_id>'}
+    )
+
+    identifiers = RelationshipField(
+        related_view='preprints:identifier-list',
         related_view_kwargs={'preprint_id': '<_id>'}
     )
 
@@ -110,6 +115,7 @@ class PreprintSerializer(JSONAPISerializer):
         {
             'self': 'get_preprint_url',
             'html': 'get_absolute_html_url',
+            'article_doi': 'get_article_doi_url',
             'doi': 'get_doi_url'
         }
     )
@@ -130,7 +136,7 @@ class PreprintSerializer(JSONAPISerializer):
     def get_absolute_url(self, obj):
         return self.get_preprint_url(obj)
 
-    def get_doi_url(self, obj):
+    def get_article_doi_url(self, obj):
         return 'https://dx.doi.org/{}'.format(obj.article_doi) if obj.article_doi else None
 
     def run_validation(self, *args, **kwargs):
@@ -140,6 +146,10 @@ class PreprintSerializer(JSONAPISerializer):
         if 'subjects' in self.initial_data:
             _validated_data['subjects'] = self.initial_data['subjects']
         return _validated_data
+
+    def get_doi_url(self, obj):
+        doi_identifier = obj.get_identifier('doi')
+        return 'https://dx.doi.org/{}'.format(doi_identifier.value) if doi_identifier else None
 
     def update(self, preprint, validated_data):
         assert isinstance(preprint, PreprintService), 'You must specify a valid preprint to be updated'

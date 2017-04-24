@@ -45,3 +45,11 @@ class NodeIdentifierSerializer(RegistrationIdentifierSerializer):
         related_view='nodes:node-detail',
         related_view_kwargs={'node_id': '<referent._id>'},
     )
+
+
+class PreprintIdentifierSerializer(RegistrationIdentifierSerializer):
+
+    referent = RelationshipField(
+        related_view='preprints:preprint-detail',
+        related_view_kwargs={'preprint_id': '<referent._id>'},
+    )

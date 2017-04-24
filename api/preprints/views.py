@@ -6,12 +6,14 @@ from rest_framework import generics
 from rest_framework.exceptions import NotFound, PermissionDenied, NotAuthenticated
 from rest_framework import permissions as drf_permissions
 
-from website.models import PreprintService
+# from website.models import PreprintService
+from modularodm import Q as MODMQ
 from framework.auth.oauth_scopes import CoreScopes
+from osf.models import PreprintService, Identifier
 
 from api.base.exceptions import Conflict
 from api.base.views import JSONAPIBaseView
-from api.base.filters import DjangoFilterMixin
+from api.base.filters import DjangoFilterMixin, ODMFilterMixin
 from api.base.parsers import (
     JSONAPIMultipleRelationshipsParser,
     JSONAPIMultipleRelationshipsParserForRegularJSON,
@@ -27,6 +29,8 @@ from api.preprints.serializers import (
 from api.nodes.serializers import (
     NodeCitationStyleSerializer,
 )
+
+from api.identifiers.serializers import PreprintIdentifierSerializer
 from api.nodes.views import NodeMixin, WaterButlerMixin
 from api.nodes.permissions import ContributorOrPublic
 
@@ -350,3 +354,72 @@ class PreprintCitationStyleDetail(JSONAPIBaseView, generics.RetrieveAPIView, Pre
             return {'citation': citation, 'id': style}
 
         raise PermissionDenied if auth.user else NotAuthenticated
+
+
+class PreprintIdentifierList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin, PreprintMixin):
+    """List of identifiers for a specified preprint. *Read-only*.
+
+    ##Identifier Attributes
+
+    OSF Identifier entities have the "identifiers" `type`.
+
+        name           type                   description
+        ----------------------------------------------------------------------------
+        category       string                 e.g. 'ark', 'doi'
+        value          string                 the identifier value itself
+
+    ##Links
+
+        self: this identifier's detail page
+
+    ##Relationships
+
+    ###Referent
+
+    The identifier is refers to this preprint.
+
+    ##Actions
+
+    *None*.
+
+    ##Query Params
+
+     Identifiers may be filtered by their category.
+
+    #This Request/Response
+
+    """
+
+    permission_classes = (
+        PreprintPublishedOrAdmin,
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+    )
+    serializer_class = PreprintIdentifierSerializer
+    required_read_scopes = [CoreScopes.IDENTIFIERS_READ]
+    required_write_scopes = [CoreScopes.NULL]
+
+    preprint_lookup_url_kwarg = 'preprint_id'
+
+    view_category = 'identifiers'
+    view_name = 'identifier-list'
+
+    def get_preprint(self, check_object_permissions=True):
+        preprint = get_object_or_error(
+            PreprintService,
+            self.kwargs[self.preprint_lookup_url_kwarg],
+            display_name='preprint'
+        )
+
+        # May raise a permission denied
+        if check_object_permissions:
+            self.check_object_permissions(self.request, preprint)
+        return preprint
+
+    # overrides ODMFilterMixin
+    def get_default_odm_query(self):
+        return MODMQ('pk', 'in', self.get_preprint().identifiers.values_list('pk', flat=True))
+
+    # overrides ListCreateAPIView
+    def get_queryset(self):
+        return Identifier.find(self.get_query_from_request())
