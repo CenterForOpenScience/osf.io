@@ -92,6 +92,26 @@ class TestConferenceUtils(OsfTestCase):
         assert_true(created)
         assert_not_equal(node._id, fetched._id)
 
+    def test_get_or_create_node_title_exists_deleted(self):
+        title = 'Night at the Opera'
+        creator = UserFactory()
+        node = ProjectFactory(title=title)
+        node.is_deleted = True
+        node.save()
+        fetched, created = utils.get_or_create_node(title, creator)
+        assert_true(created)
+        assert_not_equal(node._id, fetched._id)
+
+    def test_get_or_create_node_title_exists_not_deleted(self):
+        title = 'Night at the Opera'
+        creator = UserFactory()
+        node = ProjectFactory(title=title, creator=creator)
+        node.is_deleted = False
+        node.save()
+        fetched, created = utils.get_or_create_node(title, creator)
+        assert_false(created)
+        assert_equal(node._id, fetched._id)
+
     def test_get_or_create_node_user_not_exists(self):
         title = 'Night at the Opera'
         creator = UserFactory()
@@ -211,6 +231,7 @@ class TestProvisionNode(ContextTestCase):
             'osfstorage',
             '/' + self.attachment.filename,
             self.node,
+            _internal=True,
             user=self.user,
         )
         mock_put.assert_called_with(
@@ -230,6 +251,7 @@ class TestProvisionNode(ContextTestCase):
             'osfstorage',
             '/' + settings.MISSING_FILE_NAME,
             self.node,
+            _internal=True,
             user=self.user,
         )
         mock_put.assert_called_with(
@@ -445,7 +467,7 @@ class TestConferenceEmailViews(OsfTestCase):
 
         url = api_url_for('conference_submissions')
         res = self.app.get(url)
-        assert_equal(len(res.json['submissions']), 5)
+        assert_equal(res.json['success'], True)
 
     def test_conference_plain_returns_200(self):
         conference = ConferenceFactory()

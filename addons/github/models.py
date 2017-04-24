@@ -11,40 +11,28 @@ from django.db import models
 from framework.auth import Auth
 from github3 import GitHubError
 from osf.models.external import ExternalProvider
-from osf.models.files import File, FileNode, Folder
+from osf.models.files import File, Folder, BaseFileNode
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from website import settings
-from website.addons.base import exceptions
-from website.addons.github import settings as github_settings
-from website.addons.github import utils
-from website.addons.github.api import GitHubClient
-from website.addons.github.exceptions import ApiError, NotFoundError
-from website.addons.github.serializer import GitHubSerializer
+from addons.base import exceptions
+from addons.github import settings as github_settings
+from addons.github import utils
+from addons.github.api import GitHubClient
+from addons.github.exceptions import ApiError, NotFoundError
+from addons.github.serializer import GitHubSerializer
 from website.util import web_url_for
-
 hook_domain = github_settings.HOOK_DOMAIN or settings.DOMAIN
 
 
-class GithubFileNode(FileNode):
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.files.models.github.GithubFileNode'
-    modm_query = None
-    # /TODO DELETE ME POST MIGRATION
-    provider = 'github'
+class GithubFileNode(BaseFileNode):
+    _provider = 'github'
 
 
 class GithubFolder(GithubFileNode, Folder):
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.files.models.github.GithubFolder'
-    modm_query = None
-    # /TODO DELETE ME POST MIGRATION
     pass
 
+
 class GithubFile(GithubFileNode, File):
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.files.models.github.GithubFile'
-    modm_query = None
-    # /TODO DELETE ME POST MIGRATION
     version_identifier = 'ref'
 
     def touch(self, auth_header, revision=None, ref=None, branch=None, **kwargs):
@@ -83,10 +71,6 @@ class GitHubProvider(ExternalProvider):
 class UserSettings(BaseStorageAddon, BaseOAuthUserSettings):
     """Stores user-specific github information
     """
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.addons.github.model.GitHubUserSettings'
-    modm_query = None
-    # /TODO DELETE ME POST MIGRATION
     oauth_provider = GitHubProvider
     serializer = GitHubSerializer
 
@@ -112,10 +96,6 @@ class UserSettings(BaseStorageAddon, BaseOAuthUserSettings):
 
 
 class NodeSettings(BaseStorageAddon, BaseOAuthNodeSettings):
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.addons.github.model.GitHubNodeSettings'
-    modm_query = None
-    # /TODO DELETE ME POST MIGRATION
     oauth_provider = GitHubProvider
     serializer = GitHubSerializer
 
@@ -139,10 +119,6 @@ class NodeSettings(BaseStorageAddon, BaseOAuthNodeSettings):
     @property
     def folder_path(self):
         return self.repo or None
-
-    @property
-    def has_auth(self):
-        return bool(self.user_settings and self.user_settings.has_auth)
 
     @property
     def complete(self):
@@ -214,7 +190,7 @@ class NodeSettings(BaseStorageAddon, BaseOAuthNodeSettings):
             'user_has_auth': user_settings and user_settings.has_auth,
             'is_registration': self.owner.is_registration,
         })
-        if self.user_settings and self.user_settings.has_auth:
+        if self.has_auth:
             valid_credentials = False
             owner = self.user_settings.owner
             connection = GitHubClient(external_account=self.external_account)
@@ -410,34 +386,20 @@ class NodeSettings(BaseStorageAddon, BaseOAuthNodeSettings):
         :param Node fork: Forked node
         :param User user: User creating fork
         :param bool save: Save settings after callback
-        :return tuple: Tuple of cloned settings and alert message
+        :return the cloned settings
         """
-        clone, _ = super(NodeSettings, self).after_fork(
+        clone = super(NodeSettings, self).after_fork(
             node, fork, user, save=False
         )
 
         # Copy authentication if authenticated by forking user
         if self.user_settings and self.user_settings.owner == user:
             clone.user_settings = self.user_settings
-            message = (
-                'GitHub authorization copied to forked {cat}.'
-            ).format(
-                cat=markupsafe.escape(fork.project_or_component),
-            )
-        else:
-            message = (
-                'GitHub authorization not copied to forked {cat}. You may '
-                'authorize this fork on the <u><a href={url}>Settings</a></u> '
-                'page.'
-            ).format(
-                cat=markupsafe.escape(fork.project_or_component),
-                url=fork.url + 'settings/'
-            )
 
         if save:
             clone.save()
 
-        return clone, message
+        return clone
 
     def before_make_public(self, node):
         try:

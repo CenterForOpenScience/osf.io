@@ -202,8 +202,11 @@ class CitationsProvider(object):
             if not folder.get('parent_list_id'):
                 folder['parent_list_id'] = 'ROOT'
 
-        node_account = node_addon.external_account
-        user_is_owner = user.external_accounts.filter(id=node_account.id).exists()
+        if user:
+            node_account = node_addon.external_account
+            user_is_owner = user.external_accounts.filter(id=node_account.id).exists()
+        else:
+            user_is_owner = False
 
         # verify this list is the attached list or its descendant
         if not user_is_owner and (list_id != attached_list_id and attached_list_id is not None):

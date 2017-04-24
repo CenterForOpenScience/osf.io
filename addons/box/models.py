@@ -12,36 +12,27 @@ from framework.auth import Auth
 from framework.exceptions import HTTPError
 from oauthlib.oauth2 import InvalidGrantError
 from osf.models.external import ExternalProvider
-from osf.models.files import File, FileNode, Folder
+from osf.models.files import File, Folder, BaseFileNode
 from urllib3.exceptions import MaxRetryError
-from website.addons.base import exceptions
-from website.addons.box import settings
-from website.addons.box.serializer import BoxSerializer
+from addons.base import exceptions
+from addons.box import settings
+from addons.box.serializer import BoxSerializer
 from website.util import api_v2_url
 
 logger = logging.getLogger(__name__)
 
 
-class BoxFileNode(FileNode):
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.files.models.box.BoxFileNode'
-    modm_query = None
-    # /TODO DELETE ME POST MIGRATION
-    provider = 'box'
+class BoxFileNode(BaseFileNode):
+    _provider = 'box'
+
 
 class BoxFolder(BoxFileNode, Folder):
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.files.models.box.BoxFolder'
-    modm_query = None
-    # /TODO DELETE ME POST MIGRATION
     pass
 
+
 class BoxFile(BoxFileNode, File):
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.files.models.box.BoxFile'
-    modm_query = None
-    # /TODO DELETE ME POST MIGRATION
     pass
+
 
 class Provider(ExternalProvider):
     name = 'Box'
@@ -81,10 +72,6 @@ class Provider(ExternalProvider):
 class UserSettings(BaseOAuthUserSettings):
     """Stores user-specific box information
     """
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.addons.box.model.BoxUserSettings'
-    modm_query = None
-    # /TODO DELETE ME POST MIGRATION
 
     oauth_provider = Provider
     serializer = BoxSerializer
@@ -106,10 +93,6 @@ class UserSettings(BaseOAuthUserSettings):
 
 
 class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.addons.box.model.BoxNodeSettings'
-    modm_query = None
-    # /TODO DELETE ME POST MIGRATION
     oauth_provider = Provider
     serializer = BoxSerializer
 
@@ -130,9 +113,6 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
     @property
     def display_name(self):
         return '{0}: {1}'.format(self.config.full_name, self.folder_id)
-
-    def fetch_folder_name(self):
-        return self.folder_name
 
     def fetch_full_folder_path(self):
         return self.folder_path

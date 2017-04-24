@@ -3,7 +3,7 @@ import pytest
 
 from tests.base import OsfTestCase
 
-from website.addons.dropbox.serializer import DropboxSerializer
+from addons.dropbox.serializer import DropboxSerializer
 
 from addons.base.tests.serializers import StorageAddonSerializerTestSuiteMixin
 from addons.dropbox.tests.factories import DropboxAccountFactory

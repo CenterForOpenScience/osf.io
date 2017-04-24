@@ -6,7 +6,7 @@ from api.base.serializers import (
     JSONAPISerializer, IDField, RelationshipField,
     JSONAPIRelationshipSerializer, LinksField, relationship_diff,
     DateByVersion,
-)
+    PrefetchRelationshipsSerializer)
 from api.base.utils import absolute_reverse
 
 from website.project.model import Node
@@ -51,7 +51,7 @@ class VOLNode(JSONAPIRelationshipSerializer):
         type_ = 'nodes'
 
 
-class ViewOnlyLinkNodesSerializer(ser.Serializer):
+class ViewOnlyLinkNodesSerializer(PrefetchRelationshipsSerializer):
     data = ser.ListField(child=VOLNode())
     links = LinksField({
         'self': 'get_self_url',

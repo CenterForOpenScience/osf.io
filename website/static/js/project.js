@@ -6,13 +6,17 @@
 var $ = require('jquery');
 var bootbox = require('bootbox');
 var Raven = require('raven-js');
+var m = require('mithril');
 var ko = require('knockout');
+var LogFeed = require('js/components/logFeed.js');
+
 
 var $osf = require('js/osfHelpers');
 
 var ctx = window.contextVars;
 var NodeActions = {}; // Namespace for NodeActions
 require('loaders.css/loaders.min.css');
+require('css/add-project-plugin.css');
 
 
 // TODO: move me to the NodeControl or separate module
@@ -43,16 +47,47 @@ NodeActions.forkNode = function() {
     NodeActions.beforeForkNode(ctx.node.urls.api + 'fork/before/', function() {
         // Block page
         $osf.block();
+        var payload = {
+            data: {
+                type: 'nodes'
+            }
+        };
         // Fork node
-        $osf.postJSON(
-            ctx.node.urls.api + 'fork/',
-            {}
+        var nodeType = ctx.node.isRegistration ? 'registrations' : 'nodes';
+        $osf.ajaxJSON(
+            'POST',
+            $osf.apiV2Url(nodeType + '/' + ctx.node.id + '/forks/'),
+            {
+                isCors: true,
+                data: payload
+            }
         ).done(function(response) {
-            window.location = response;
+            $osf.unblock();
+            bootbox.confirm({
+                message: '<h4 class="add-project-success text-success">Fork created successfully!</h4>',
+                callback: function(result) {
+                    if(result) {
+                        window.location = response.data.links.html;
+                    }
+                },
+                buttons: {
+                    confirm: {
+                        label: 'Go to new fork',
+                        className: 'btn-success'
+                    },
+                    cancel: {
+                        label: 'Keep working here'
+                    }
+                },
+                closeButton: false
+            });
         }).fail(function(response) {
             $osf.unblock();
             if (response.status === 403) {
                 $osf.growl('Sorry:', 'you do not have permission to fork this project');
+            } else if (response.status === 504) {
+                $osf.growl('Sorry:', 'This is taking longer than normal. </br>' +
+                    'Please check back later to access your new fork and if still unavailable, contact support@cos.io');
             } else {
                 $osf.growl('Error:', 'Forking failed');
                 Raven.captureMessage('Error occurred during forking');
@@ -145,11 +180,24 @@ NodeActions.openCloseNode = function(nodeId) {
     var body = $('#body-' + nodeId);
 
     body.toggleClass('hide');
+    var node = null;
+
+    if (document.getElementById('logFeed-' + nodeId).children[0].classList.item(0) === 'spinner-loading-wrapper') {
+        for (var i = 0; i < window.contextVars.nodes.length; ++i){
+            if (window.contextVars.nodes[i].id === nodeId) {
+                node = window.contextVars.nodes[i].node;
+            }
+        }
+    }
 
     if (body.hasClass('hide')) {
         icon.removeClass('fa fa-angle-up');
         icon.addClass('fa fa-angle-down');
     } else {
+        if (node && node.can_view && !node.archiving && !node.is_retracted) {
+            var nodeLogFeed = 'logFeed-' + node.primary_id;
+            m.mount(document.getElementById(nodeLogFeed), m.component(LogFeed.LogFeed, {node: node, limitLogs: true}));
+        }
         icon.removeClass('fa fa-angle-down');
         icon.addClass('fa fa-angle-up');
     }

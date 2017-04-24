@@ -72,6 +72,11 @@ class TestContributorDetail(NodeCRUDTestCase):
         assert_equal(res.status_code, 200)
         assert_equal(res.json['data']['id'], '{}-{}'.format(self.public_project._id, self.user._id))
 
+    # regression test
+    def test_get_public_contributor_detail_is_viewable_through_browsable_api(self):
+        res = self.app.get(self.public_url + '?format=api')
+        assert_equal(res.status_code, 200)
+
     def test_get_private_node_contributor_detail_contributor_auth(self):
         res = self.app.get(self.private_url, auth=self.user.auth)
         assert_equal(res.status_code, 200)

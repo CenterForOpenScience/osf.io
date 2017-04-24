@@ -1,37 +1,27 @@
 # -*- coding: utf-8 -*-
-import unittest
-import functools
-import json
 # Python 3.x incompatible, use import builtins instead
 import __builtin__ as builtins
+import functools
+import json
+import unittest
 
-from nose.tools import *  # flake8: noqa (PEP8 asserts)
 import mock
+from framework.auth import Auth
 from modularodm import Q
 from modularodm.exceptions import NoResultsFound, ValidationError
-
-from framework.auth import Auth
-
+from nose.tools import *  # flake8: noqa (PEP8 asserts)
+from osf_tests.factories import (AuthUserFactory, NodeLicenseRecordFactory,
+                                 ProjectFactory)
+from tests.base import OsfTestCase
+from tests.utils import assert_logs, assert_not_logs
 from website import settings
-from website.project.model import (
-    NodeLog,
-    NodeStateError
-)
-from website.project.licenses import (
-    ensure_licenses,
-    NodeLicense,
-    serialize_node_license,
-    serialize_node_license_record
-)
+from website.project.licenses import (NodeLicense, ensure_licenses,
+                                      serialize_node_license,
+                                      serialize_node_license_record)
+from website.project.model import NodeLog, NodeStateError
+
 ensure_licenses = functools.partial(ensure_licenses, warn=False)
 
-from tests.base import OsfTestCase
-from osf_tests.factories import (
-    AuthUserFactory,
-    ProjectFactory,
-    NodeLicenseRecordFactory
-)
-from tests.utils import assert_logs, assert_not_logs
 
 CHANGED_NAME = 'FOO BAR'
 CHANGED_TEXT = 'Some good new text'
@@ -68,13 +58,13 @@ class TestNodeLicenses(OsfTestCase):
     def test_serialize_node_license(self):
         serialized = serialize_node_license(self.node_license)
         assert_equal(serialized['name'], self.LICENSE_NAME)
-        assert_equal(serialized['id'], self.node_license.id)
+        assert_equal(serialized['id'], self.node_license.license_id)
         assert_equal(serialized['text'], self.node_license.text)
 
     def test_serialize_node_license_record(self):
         serialized = serialize_node_license_record(self.node.node_license)
         assert_equal(serialized['name'], self.LICENSE_NAME)
-        assert_equal(serialized['id'], self.node_license.id)
+        assert_equal(serialized['id'], self.node_license.license_id)
         assert_equal(serialized['text'], self.node_license.text)
         assert_equal(serialized['year'], self.YEAR)
         assert_equal(serialized['copyright_holders'], self.COPYRIGHT_HOLDERS)

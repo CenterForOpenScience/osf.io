@@ -111,9 +111,9 @@ Normally you don't need to run celery_beat. If you work on tasks that are dispat
 ```
 invoke celery_beat
 ```
-Some beat-dispatched tasks require metrics and release requirements. If needed:
+Some beat-dispatched tasks require release requirements. If needed:
 ```
-invoke requirements --metrics
+invoke requirements --release
 ```
 
 #### Sharejs
@@ -456,12 +456,6 @@ By default, Karma will run tests using a PhantomJS headless browser. You can run
 $ inv karma -b Firefox
 ```
 
-If you want to run cross browser tests with SauceLabs, use "sauce" parameter:
-
-```bash
-$ inv karma --sauce
-```
-
 #### Testing Addons
 
 Addons tests are not run by default. To execute addons tests, run
@@ -508,7 +502,7 @@ built when a file changes.
 ### Getting application credentials
 
 Many addons require application credentials (typically an app key and secret) to be able to authenticate through the
-OSF. These credentials go in each addon's `local.py` settings file (e.g. `website/addons/dropbox/settings/local.py`).
+OSF. These credentials go in each addon's `local.py` settings file (e.g. `addons/dropbox/settings/local.py`).
 
 ### COS is Hiring!
 

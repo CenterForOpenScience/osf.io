@@ -10,10 +10,10 @@ from scripts.analytics.addon_snapshot import AddonSnapshot
 from website.models import Node
 from framework.auth.core import User
 from website.settings import ADDONS_AVAILABLE
-from website.addons.github.tests.factories import GitHubAccountFactory
-from website.addons.github.model import GitHubNodeSettings, GitHubUserSettings
-from website.addons.googledrive.tests.factories import GoogleDriveAccountFactory
-from website.addons.googledrive.model import GoogleDriveNodeSettings, GoogleDriveUserSettings
+from addons.github.tests.factories import GitHubAccountFactory
+from addons.github.model import GitHubNodeSettings, GitHubUserSettings
+from addons.googledrive.tests.factories import GoogleDriveAccountFactory
+from addons.googledrive.model import GoogleDriveNodeSettings, GoogleDriveUserSettings
 
 
 class TestAddonCount(OsfTestCase):
@@ -227,7 +227,6 @@ class TestAddonCount(OsfTestCase):
         assert_equal(storage_res['nodes']['connected'], 0)
 
     def test_bookmark_collection_not_counted(self):
-        BookmarkCollectionFactory(creator=self.user)
         all_node_count = Node.find().count()
 
         results = AddonSnapshot().get_events()

@@ -142,11 +142,12 @@ var FileViewPage = {
                         '. It needs to be checked in before any changes can be made.'
                     ])));
                 }
+                self.enableEditing();
             });
         };
         if (self.file.provider === 'osfstorage'){
             self.canEdit = function() {
-                return ((!self.file.checkoutUser) || (self.file.checkoutUser === self.context.currentUser.id)) ? self.context.currentUser.canEdit : false;
+                return (self.requestDone && ((!self.file.checkoutUser) || (self.file.checkoutUser === self.context.currentUser.id))) ? self.context.currentUser.canEdit : false;
             };
             self.isCheckoutUser();
         } else {
@@ -372,9 +373,9 @@ var FileViewPage = {
                 return;
             }
             var fileType = mime.lookup(self.file.name.toLowerCase());
-            // Only allow files < 64k to be editable
+            // Only allow files < 200kb to be editable (should sync with MFR limit)
             // No files on figshare are editable.
-            if (self.file.size < 65536 && fileType && self.file.provider !== 'figshare') { //May return false
+            if (self.file.size < 204800 && fileType && self.file.provider !== 'figshare') { //May return false
                 var editor = EDITORS[fileType.split('/')[0]];
                 if (editor) {
                     self.editor = new Panel('Edit', self.editHeader, editor, [self.file.urls.content, self.file.urls.sharejs, self.editorMeta, self.shareJSObservables], false);

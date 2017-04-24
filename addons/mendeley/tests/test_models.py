@@ -13,7 +13,7 @@ from addons.base.tests.models import (
 from addons.mendeley.models import (
     Mendeley, NodeSettings,
 )
-from website.addons.mendeley.provider import MendeleyCitationsProvider
+from addons.mendeley.provider import MendeleyCitationsProvider
 from addons.mendeley.tests.factories import (
     MendeleyAccountFactory,
     MendeleyUserSettingsFactory,
