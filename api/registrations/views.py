@@ -676,7 +676,92 @@ class RegistrationForksList(NodeForksList, RegistrationMixin):
     view_name = 'registration-forks'
 
 class RegistrationCommentsList(NodeCommentsList, RegistrationMixin):
-    """List of comments for a registration."""
+    """List of comments on a registration. *Writeable*.
+
+    Paginated list of comments ordered by their `date_created.` Each resource contains the full representation of the
+    comment, meaning additional requests to an individual comment's detail view are not necessary.
+
+    Note that if an anonymous view_only key is being used, the user relationship will not be exposed.
+
+    ###Permissions
+
+    Comments on registrations are given read-only access to everyone. If the node comment-level is "private",
+    only contributors have permission to comment. If the comment-level is "public" any logged-in OSF user can comment.
+
+    ##Attributes
+
+    OSF comment entities have the "comments" `type`.
+
+        name           type               description
+        =================================================================================
+        content        string             content of the comment
+        date_created   iso8601 timestamp  timestamp that the comment was created
+        date_modified  iso8601 timestamp  timestamp when the comment was last updated
+        modified       boolean            has this comment been edited?
+        deleted        boolean            is this comment deleted?
+        is_abuse       boolean            has this comment been reported by the current user?
+        has_children   boolean            does this comment have replies?
+        can_edit       boolean            can the current user edit this comment?
+
+    ##Links
+
+    See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
+
+    ##Actions
+
+    ###Create
+
+        Method:        POST
+        URL:           /links/self
+        Query Params:  <none>
+        Body (JSON):   {
+                         "data": {
+                           "type": "comments",   # required
+                           "attributes": {
+                             "content":       {content},        # mandatory
+                           },
+                           "relationships": {
+                             "target": {
+                               "data": {
+                                  "type": {target type}         # mandatory
+                                  "id": {target._id}            # mandatory
+                               }
+                             }
+                           }
+                         }
+                       }
+        Success:       201 CREATED + comment representation
+
+    To create a comment on this node, issue a POST request against this endpoint. The comment target id and target type
+    must be specified. To create a comment on the node overview page, the target `type` would be "nodes" and the `id`
+    would be the node id. To reply to a comment on this node, the target `type` would be "comments" and the `id` would
+    be the id of the comment to reply to. The `content` field is mandatory.
+
+    If the comment creation is successful the API will return
+    a 201 response with the representation of the new comment in the body. For the new comment's canonical URL, see the
+    `/links/self` field of the response.
+
+    ##Query Params
+
+    + `filter[deleted]=True|False` -- filter comments based on whether or not they are deleted.
+
+    The list of node comments includes deleted comments by default. The `deleted` field is a boolean and can be
+    filtered using truthy values, such as `true`, `false`, `0`, or `1`. Note that quoting `true` or `false` in
+    the query will cause the match to fail regardless.
+
+    + `filter[date_created][comparison_operator]=YYYY-MM-DDTH:M:S` -- filter comments based on date created.
+
+    Comments can also be filtered based on their `date_created` and `date_modified` fields. Possible comparison
+    operators include 'gt' (greater than), 'gte'(greater than or equal to), 'lt' (less than) and 'lte'
+    (less than or equal to). The date must be in the format YYYY-MM-DD and the time is optional.
+
+    + `filter[target]=target_id` -- filter comments based on their target id.
+
+    The list of comments can be filtered by target id. For example, to get all comments with target = project,
+    the target_id would be the project_id.
+
+    #This Request/Response
+    """
     serializer_class = RegistrationCommentSerializer
     view_category = 'registrations'
     view_name = 'registration-comments'
@@ -689,13 +774,202 @@ class RegistrationCommentsList(NodeCommentsList, RegistrationMixin):
 
 
 class RegistrationLogList(NodeLogList, RegistrationMixin):
-    """List of logs for a registration."""
+    """List of logs associated with a given registration. *Read-only*.
+
+    <!--- Copied Description from NodeLogDetail -->
+
+    Paginated list of logs ordered by their `date`. This includes the logs of the specified node,
+    as well as the logs of that node's children.
+
+    Note that if an anonymous view_only key is being used, the user relationship will not be exposed.
+
+    On the front end, logs show record and show actions done on the OSF.
+    The complete list of loggable actions (in the format {identifier}: {description}) is as follows:
+
+    * 'project_created': A Node is created
+    * 'project_registered': A Node is registered
+    * 'project_deleted': A Node is deleted
+    * 'created_from': A Node is created using an existing Node as a template
+    * 'pointer_created': A Pointer is created
+    * 'pointer_forked': A Pointer is forked
+    * 'pointer_removed': A Pointer is removed
+    * 'node_removed': A component is deleted
+    * 'node_forked': A Node is forked
+    ===
+    * 'made_public': A Node is made public
+    * 'made_private': A Node is made private
+    * 'tag_added': A tag is added to a Node
+    * 'tag_removed': A tag is removed from a Node
+    * 'edit_title': A Node's title is changed
+    * 'edit_description': A Node's description is changed
+    * 'updated_fields': One or more of a Node's fields are changed
+    * 'external_ids_added': An external identifier is added to a Node (e.g. DOI, ARK)
+    ===
+    * 'contributor_added': A Contributor is added to a Node
+    * 'contributor_removed': A Contributor is removed from a Node
+    * 'contributors_reordered': A Contributor's position in a Node's bibliography is changed
+    * 'permissions_updated': A Contributor's permissions on a Node are changed
+    * 'made_contributor_visible': A Contributor is made bibliographically visible on a Node
+    * 'made_contributor_invisible': A Contributor is made bibliographically invisible on a Node
+    ===
+    * 'wiki_updated': A Node's wiki is updated
+    * 'wiki_deleted': A Node's wiki is deleted
+    * 'wiki_renamed': A Node's wiki is renamed
+    * 'made_wiki_public': A Node's wiki is made public
+    * 'made_wiki_private': A Node's wiki is made private
+    ===
+    * 'addon_added': An add-on is linked to a Node
+    * 'addon_removed': An add-on is unlinked from a Node
+    * 'addon_file_moved': A File in a Node's linked add-on is moved
+    * 'addon_file_copied': A File in a Node's linked add-on is copied
+    * 'addon_file_renamed': A File in a Node's linked add-on is renamed
+    * 'node_authorized': An addon is authorized for a project
+    * 'node_deauthorized': An addon is deauthorized for a project
+    * 'folder_created': A Folder is created in a Node's linked add-on
+    * 'file_added': A File is added to a Node's linked add-on
+    * 'file_updated': A File is updated on a Node's linked add-on
+    * 'file_removed': A File is removed from a Node's linked add-on
+    * 'file_restored': A File is restored in a Node's linked add-on
+    ===
+    * 'comment_added': A Comment is added to some item
+    * 'comment_removed': A Comment is removed from some item
+    * 'comment_updated': A Comment is updated on some item
+    ===
+    * 'embargo_initiated': An embargoed Registration is proposed on a Node
+    * 'embargo_approved': A proposed Embargo of a Node is approved
+    * 'embargo_cancelled': A proposed Embargo of a Node is cancelled
+    * 'embargo_completed': A proposed Embargo of a Node is completed
+    * 'retraction_initiated': A Withdrawal of a Registration is proposed
+    * 'retraction_approved': A Withdrawal of a Registration is approved
+    * 'retraction_cancelled': A Withdrawal of a Registration is cancelled
+    * 'registration_initiated': A Registration of a Node is proposed
+    * 'registration_approved': A proposed Registration is approved
+    * 'registration_cancelled': A proposed Registration is cancelled
+    ===
+    * 'node_created': A Node is created (_deprecated_)
+
+   ##Log Attributes
+
+    <!--- Copied Attributes from LogList -->
+
+    OSF Log entities have the "logs" `type`.
+
+        name           type                   description
+        ============================================================================
+        date           iso8601 timestamp      timestamp of Log creation
+        action         string                 Log action (see list above)
+
+    ##Relationships
+
+    ###Node
+
+    The node this log belongs to.
+
+    ###User
+
+    The user who performed the logged action.
+
+    ##Links
+
+    See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
+
+    ##Actions
+
+    ##Query Params
+
+    <!--- Copied Query Params from LogList -->
+
+    Logs may be filtered by their `action` and `date`.
+
+    #This Request/Response
+
+    """
     view_category = 'registrations'
     view_name = 'registration-logs'
 
 
 class RegistrationProvidersList(NodeProvidersList, RegistrationMixin):
-    """List of providers for a registration."""
+    """List of storage providers enabled for this registration. *Read-only*.
+
+    Users of the OSF may access their data on a [number of cloud-storage](/v2/#storage-providers) services that have
+    integrations with the OSF.  We call these "providers".  By default every node has access to the OSF-provided
+    storage but may use as many of the supported providers as desired.  This endpoint lists all of the providers that are
+    configured for this node.  If you want to add more, you will need to do that in the Open Science Framework front end
+    for now.
+
+    In the OSF filesystem model, providers are treated as folders, but with special properties that distinguish them
+    from regular folders.  Every provider folder is considered a root folder, and may not be deleted through the regular
+    file API.  To see the contents of the provider, issue a GET request to the `/relationships/files/links/related/href`
+    attribute of the provider resource.  The `new_folder` and `upload` actions are handled by another service called
+    WaterButler, whose response format differs slightly from the OSF's.
+
+    <!--- Copied from FileDetail.Spiel -->
+
+    ###Waterbutler Entities
+
+    When an action is performed against a WaterButler endpoint, it will generally respond with a file entity, a folder
+    entity, or no content.
+
+    ####File Entity
+
+        name          type       description
+        =========================================================================
+        name          string     name of the file
+        path          string     unique identifier for this file entity for this
+                                 project and storage provider. may not end with '/'
+        materialized  string     the full path of the file relative to the storage
+                                 root.  may not end with '/'
+        kind          string     "file"
+        etag          string     etag - http caching identifier w/o wrapping quotes
+        modified      timestamp  last modified timestamp - format depends on provider
+        contentType   string     MIME-type when available
+        provider      string     id of provider e.g. "osfstorage", "s3", "googledrive".
+                                 equivalent to addon_short_name on the OSF
+        size          integer    size of file in bytes
+        extra         object     may contain additional data beyond what's described here,
+                                 depending on the provider
+          version     integer    version number of file. will be 1 on initial upload
+          downloads   integer    count of the number times the file has been downloaded
+          hashes      object
+            md5       string     md5 hash of file
+            sha256    string     SHA-256 hash of file
+
+    ####Folder Entity
+
+        name          type    description
+        ======================================================================
+        name          string  name of the folder
+        path          string  unique identifier for this folder entity for this
+                              project and storage provider. must end with '/'
+        materialized  string  the full path of the folder relative to the storage
+                              root.  must end with '/'
+        kind          string  "folder"
+        etag          string  etag - http caching identifier w/o wrapping quotes
+        extra         object  varies depending on provider
+
+    ##Provider Attributes
+
+    `type` is "files"
+
+        name      type    description
+        =================================================================================
+        name      string  name of the provider
+        kind      string  type of this file/folder.  always "folder"
+        path      path    relative path of this folder within the provider filesys. always "/"
+        node      string  node this provider belongs to
+        provider  string  provider id, same as "name"
+
+    ##Links
+
+    See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
+
+    ##Query Params
+
+    + `page=<Int>` -- page number of results to view, default 1
+
+    #This Request/Response
+
+    """
     serializer_class = RegistrationProviderSerializer
 
     view_category = 'registrations'
@@ -843,39 +1117,251 @@ class RegistrationRegistrationsList(NodeRegistrationsList, RegistrationMixin):
 
 
 class RegistrationFilesList(NodeFilesList, RegistrationMixin):
-    """List of files for a registration."""
+    """Files attached to a registration for a given provider. *Read-only*.
+
+    This gives a list of all of the files and folders that are attached to your registration for the given storage provider.
+    If the provider is not "osfstorage", the metadata for the files in the storage will be retrieved and cached whenever
+    this endpoint is accessed.  To see the cached metadata, GET the endpoint for the file directly (available through
+    its `/links/info` attribute).
+
+    ##Links
+
+    See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
+
+    ##Query Params
+
+    + `page=<Int>` -- page number of results to view, default 1
+
+    + `filter[<fieldname>]=<Str>` -- fields and values to filter the search results on.
+
+    Node files may be filtered by `id`, `name`, `node`, `kind`, `path`, `provider`, `size`, and `last_touched`.
+
+    #This Request/Response
+
+    """
     view_category = 'registrations'
     view_name = 'registration-files'
     serializer_class = RegistrationFileSerializer
 
 
 class RegistrationFileDetail(NodeFileDetail, RegistrationMixin):
-    """Detail of a file for a registration."""
+    """
+    Details about a registration file. *Read-only*
+
+    <!--- Copied from FileDetail.Spiel -->
+
+    ###Waterbutler Entities
+
+    When an action is performed against a WaterButler endpoint, it will generally respond with a file entity, a folder
+    entity, or no content.
+
+    ####File Entity
+
+        name                        type              description
+        ==========================================================================================================
+        name                        string            name of the file
+        path                        string            unique identifier for this file entity for this
+                                                        project and storage provider. may not end with '/'
+        materialized                string            the full path of the file relative to the storage
+                                                        root.  may not end with '/'
+        kind                        string            "file"
+        etag                        string            etag - http caching identifier w/o wrapping quotes
+        modified                    timestamp         last modified timestamp - format depends on provider
+        contentType                 string            MIME-type when available
+        provider                    string            id of provider e.g. "osfstorage", "s3", "googledrive".
+                                                        equivalent to addon_short_name on the OSF
+        size                        integer           size of file in bytes
+        current_version             integer           current file version
+
+        current_user_can_comment    boolean           Whether the current user is allowed to post comments
+
+        tags                        array of strings  list of tags that describes the file (osfstorage only)
+        extra                       object            may contain additional data beyond what's described here,
+                                                       depending on the provider
+        version                     integer           version number of file. will be 1 on initial upload
+        hashes                      object
+        md5                         string            md5 hash of file
+        sha256                      string            SHA-256 hash of file
+
+    ####Folder Entity
+
+        name          type    description
+        ======================================================================
+        name          string  name of the folder
+        path          string  unique identifier for this folder entity for this
+                              project and storage provider. must end with '/'
+        materialized  string  the full path of the folder relative to the storage
+                              root.  must end with '/'
+        kind          string  "folder"
+        etag          string  etag - http caching identifier w/o wrapping quotes
+        extra         object  varies depending on provider
+
+    ##File Attributes
+
+    <!--- Copied Attributes from FileDetail -->
+
+    For an OSF File entity, the `type` is "files" regardless of whether the entity is actually a file or folder.  They
+    can be distinguished by the `kind` attribute.  Files and folders use the same representation, but some attributes may
+    be null for one kind but not the other. `size` will be null for folders.  A list of storage provider keys can be
+    found [here](/v2/#storage-providers).
+
+        name          type               description
+        ===================================================================================================
+        guid              string             OSF GUID for this file (if one has been assigned)
+        name              string             name of the file or folder; used for display
+        kind              string             "file" or "folder"
+        path              string             same as for corresponding WaterButler entity
+        materialized_path string             the unix-style path to the file relative to the provider root
+        size              integer            size of file in bytes, null for folders
+        provider          string             storage provider for this file. "osfstorage" if stored on the
+                                             OSF.  other examples include "s3" for Amazon S3, "googledrive"
+                                             for Google Drive, "box" for Box.com.
+        last_touched      iso8601 timestamp  last time the metadata for the file was retrieved. only
+                                             applies to non-OSF storage providers.
+        date_modified     iso8601 timestamp  timestamp of when this file was last updated*
+        date_created      iso8601 timestamp  timestamp of when this file was created*
+        extra             object             may contain additional data beyond what's described here,
+                                             depending on the provider
+          hashes          object
+            md5           string             md5 hash of file, null for folders
+            sha256        string             SHA-256 hash of file, null for folders
+          downloads       integer            number of times the file has been downloaded (for osfstorage files)
+
+    * A note on timestamps: for files stored in osfstorage, `date_created` refers to the time the file was
+    first uploaded to osfstorage, and `date_modified` is the time the file was last updated while in osfstorage.
+    Other providers may or may not provide this information, but if they do it will correspond to the provider's
+    semantics for created/modified times.  These timestamps may also be stale; metadata retrieved via the File Detail
+    endpoint is cached.  The `last_touched` field describes the last time the metadata was retrieved from the external
+    provider.  To force a metadata update, access the parent folder via its Node Files List endpoint.
+
+    """
+
     view_category = 'registrations'
     view_name = 'registration-file-detail'
     serializer_class = RegistrationFileSerializer
 
 
 class RegistrationAlternativeCitationsList(NodeAlternativeCitationsList, RegistrationMixin):
-    """List of Alternative Citations for a registration."""
+    """List of alternative citations for a registration.
+
+    ##Actions
+
+    ###Create Alternative Citation
+
+        Method:         POST
+        Body (JSON):    {
+                            "data": {
+                                "type": "citations",    # required
+                                "attributes": {
+                                    "name": {name},     # mandatory
+                                    "text": {text}      # mandatory
+                                }
+                            }
+                        }
+        Success:        201 Created + new citation representation
+    """
+
     view_category = 'registrations'
     view_name = 'registration-alternative-citations'
 
 
 class RegistrationAlternativeCitationDetail(NodeAlternativeCitationDetail, RegistrationMixin):
-    """Detail of a citations for a registration."""
+    """Details about an alternative citations for a registration.
+
+    ##Actions
+
+    ###Update Alternative Citation
+
+        Method:         PUT
+        Body (JSON):    {
+                            "data": {
+                                "type": "citations",    # required
+                                "id": {{id}}            # required
+                                "attributes": {
+                                    "name": {name},     # mandatory
+                                    "text": {text}      # mandatory
+                                }
+                            }
+                        }
+        Success:        200 Ok + updated citation representation
+
+    ###Delete Alternative Citation
+
+        Method:         DELETE
+        Success:        204 No content
+    """
     view_category = 'registrations'
     view_name = 'registration-alternative-citation-detail'
 
 
 class RegistrationInstitutionsList(NodeInstitutionsList, RegistrationMixin):
-    """List of the Institutions for a registration."""
+    """ Detail of the affiliated institutions a registration has, if any. Returns [] if the node has no
+    affiliated institution.
+
+    ##Attributes
+
+    OSF Institutions have the "institutions" `type`.
+
+        name           type               description
+        =========================================================================
+        name           string             title of the institution
+        id             string             unique identifier in the OSF
+        logo_path      string             a path to the institution's static logo
+
+
+
+    #This Request/Response
+
+    """
     view_category = 'registrations'
     view_name = 'registration-institutions'
 
 
 class RegistrationWikiList(NodeWikiList, RegistrationMixin):
-    """List of wikis for a registration."""
+    """List of wiki pages on a registration. *Read only*.
+
+    Paginated list of the registration's current wiki page versions ordered by their `date_modified.` Each resource contains the
+    full representation of the wiki, meaning additional requests to an individual wiki's detail view are not necessary.
+
+    Note that if an anonymous view_only key is being used, the user relationship will not be exposed.
+
+    ###Permissions
+
+    Wiki pages on registrations are given read-only access to everyone.
+
+    ##Attributes
+
+    OSF wiki entities have the "wikis" `type`.
+
+        name                    type               description
+        ======================================================================================================
+        name                        string             name of the wiki pag
+        path                        string             the path of the wiki page
+        materialized_path           string             the path of the wiki page
+        date_modified               iso8601 timestamp  timestamp when the wiki was last updated
+        content_type                string             MIME-type
+        current_user_can_comment    boolean            Whether the current user is allowed to post comments
+        extra                       object
+        version                     integer            version number of the wiki
+
+
+    ##Links
+
+    See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
+
+    ##Query Params
+
+    + `filter[name]=<Str>` -- filter wiki pages by name
+
+    + `filter[date_modified][comparison_operator]=YYYY-MM-DDTH:M:S` -- filter wiki pages based on date modified.
+
+    Wiki pages can be filtered based on their `date_modified` fields. Possible comparison
+    operators include 'gt' (greater than), 'gte'(greater than or equal to), 'lt' (less than) and 'lte'
+    (less than or equal to). The date must be in the format YYYY-MM-DD and the time is optional.
+
+
+    #This Request/Response
+    """
     view_category = 'registrations'
     view_name = 'registration-wikis'
 
@@ -883,7 +1369,53 @@ class RegistrationWikiList(NodeWikiList, RegistrationMixin):
 
 
 class RegistrationLinkedNodesList(LinkedNodesList, RegistrationMixin):
-    """List of linked nodes for a registration."""
+    """List of nodes linked to this registration. *Read-only*.
+
+    Linked nodes are the nodes pointed to by node links. This view will probably replace node_links in the near future.
+
+    <!--- Copied Spiel from NodeDetail -->
+
+    On the front end, nodes are considered 'projects' or 'components'. The difference between a project and a component
+    is that a project is the top-level node, and components are children of the project. There is also a [category
+    field](/v2/#osf-node-categories) that includes 'project' as an option. The categorization essentially determines
+    which icon is displayed by the node in the front-end UI and helps with search organization. Top-level nodes may have
+    a category other than project, and children nodes may have a category of project.
+
+    ##Linked Node Attributes
+
+    <!--- Copied Attributes from NodeDetail -->
+
+    OSF Node entities have the "nodes" `type`.
+
+        name           type               description
+        =================================================================================
+        title          string             title of project or component
+        description    string             description of the node
+        category       string             node category, must be one of the allowed values
+        date_created   iso8601 timestamp  timestamp that the node was created
+        date_modified  iso8601 timestamp  timestamp when the node was last updated
+        tags           array of strings   list of tags that describe the node
+        registration   boolean            is this is a registration?
+        collection     boolean            is this node a collection of other nodes?
+        public         boolean            has this node been made publicly-visible?
+
+    ##Links
+
+    See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
+
+    ##Query Params
+
+    + `page=<Int>` -- page number of results to view, default 1
+
+    + `filter[<fieldname>]=<Str>` -- fields and values to filter the search results on.
+
+    Nodes may be filtered by their `title`, `category`, `description`, `public`, `registration`, or `tags`.  `title`,
+    `description`, and `category` are string fields and will be filtered using simple substring matching.  `public` and
+    `registration` are booleans, and can be filtered using truthy values, such as `true`, `false`, `0`, or `1`.  Note
+    that quoting `true` or `false` in the query will cause the match to fail regardless.  `tags` is an array of simple strings.
+
+    #This Request/Response
+    """
     view_category = 'registrations'
     view_name = 'linked-nodes'
 
@@ -1034,6 +1566,57 @@ class RegistrationLinkedRegistrationsList(NodeLinkedRegistrationsList, Registrat
 
 
 class RegistrationViewOnlyLinksList(NodeViewOnlyLinksList, RegistrationMixin):
+    """
+    List of view only links on a registration. *Writeable*.
+
+    ###Permissions
+
+    View only links on a node, public or private, are readable and writeable only by users that are
+    administrators on the node.
+
+    ##Attributes
+
+        name            type                    description
+        =================================================================================
+        name            string                  name of the view only link
+        anonymous       boolean                 whether the view only link has anonymized contributors
+        date_created    iso8601 timestamp       timestamp when the view only link was created
+        key             string                  the view only link key
+
+
+    ##Relationships
+
+    ###Creator
+
+    The user who created the view only link.
+
+    ###Nodes
+
+    The nodes which this view only link key gives read-only access to.
+
+    ##Actions
+
+    ###Create
+
+        Method:        POST
+        Body (JSON): {
+                        "data": {
+                            "attributes": {
+                                "name": {string},              #optional
+                                "anonymous": true|false,        #optional
+                            }
+                        }
+                    }
+        Success:       201 CREATED + VOL representation
+
+    ##Query Params
+
+    + `filter[<fieldname>]=<Str>` -- fields and values to filter the search results on.
+
+    View only links may be filtered by their `name`, `anonymous`, and `date_created` attributes.
+
+    #This Request/Response
+    """
 
     required_read_scopes = [CoreScopes.REGISTRATION_VIEW_ONLY_LINKS_READ]
     required_write_scopes = [CoreScopes.REGISTRATION_VIEW_ONLY_LINKS_WRITE]
@@ -1043,7 +1626,57 @@ class RegistrationViewOnlyLinksList(NodeViewOnlyLinksList, RegistrationMixin):
 
 
 class RegistrationViewOnlyLinkDetail(NodeViewOnlyLinkDetail, RegistrationMixin):
+    """
+    Detail of a specific view only link on a registration. *Writeable*.
 
+    ###Permissions
+
+    View only links on a node, public or private, are only readable and writeable by users that are
+    administrators on the node.
+
+    ##Attributes
+
+        name            type                    description
+        =================================================================================
+        name            string                  name of the view only link
+        anonymous       boolean                 whether the view only link has anonymized contributors
+        date_created    iso8601 timestamp       timestamp when the view only link was created
+        key             string                  the view only key
+
+
+    ##Relationships
+
+    ###Creator
+
+    The user who created the view only link.
+
+    ###Nodes
+
+    The nodes which this view only link key gives read-only access to.
+
+    ##Actions
+
+    ###Update
+
+        Method:        PUT
+        Body (JSON):   {
+                         "data": {
+                           "attributes": {
+                             "name": {string},               #optional
+                             "anonymous": true|false,        #optional
+                           },
+                         }
+                       }
+        Success:       200 OK + VOL representation
+
+    ###Delete
+
+        Method:        DELETE
+        Body (JSON):   <none>
+        Success:       204 NO CONTENT
+
+    #This Request/Response
+    """
     required_read_scopes = [CoreScopes.REGISTRATION_VIEW_ONLY_LINKS_READ]
     required_write_scopes = [CoreScopes.REGISTRATION_VIEW_ONLY_LINKS_WRITE]
 
