@@ -826,9 +826,8 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         """Return a list of unconfirmed emails that are not related to external identity."""
 
         unconfirmed_emails = []
-        email_verifications = self.email_verifications
-        if email_verifications:
-            for token, value in email_verifications.iteritems():
+        if self.email_verifications:
+            for token, value in self.email_verifications.iteritems():
                 if not value.get('external_identity'):
                     unconfirmed_emails.append(value.get('email'))
         return unconfirmed_emails
