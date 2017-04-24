@@ -6,7 +6,7 @@ from django.db.models import F
 from modularodm import Q
 from framework.auth.core import Auth
 
-from website.models import Node, NodeLog, Tag
+from website.models import Node, NodeLog
 from website.util import permissions
 from website.util.sanitize import strip_html
 from website.views import find_bookmark_collection
