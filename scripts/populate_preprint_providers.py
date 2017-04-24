@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""Populate development database with Preprint Provicer elements"""
+"""Populate development database with Preprint Provider elements"""
 
 import logging
 import sys
@@ -19,7 +19,7 @@ logging.basicConfig(level=logging.INFO)
 
 ENVS = ['prod', 'stage']
 SUBJECTS_CACHE = {}
-STAGING_PREPRINT_PROVIDERS = ['osf', 'psyarxiv', 'engrxiv', 'socarxiv', 'scielo', 'agrixiv', 'bitss']
+STAGING_PREPRINT_PROVIDERS = ['osf', 'psyarxiv', 'engrxiv', 'socarxiv', 'scielo', 'agrixiv', 'bitss', 'lawarxiv']
 PROD_PREPRINT_PROVIDERS = ['osf', 'psyarxiv', 'engrxiv', 'socarxiv', 'agrixiv', 'bitss']
 
 
@@ -387,6 +387,45 @@ def main(env):
             'header_text': '',
             'licenses_acceptable': ['CC-By Attribution 4.0 International'],
             'subjects_acceptable':[]
+        },
+        'lawarxiv': {
+            '_id': 'lawarxiv',
+            'name': 'LawArXiv',
+            'logo_name': 'lawarxiv-logo.png',
+            'description': 'Legal Scholarship in the Open',
+            'banner_name': 'lawarxiv-logo.png',
+            'external_url': '',
+            'example': '',  # An example guid for this provider (Will have to be updated after the provider is up)
+            # Advisory board should be valid html string in triple quotes
+            'advisory_board': '''
+                <div class="col-xs-6">
+                    <ul>
+                        <li> <b>Timothy Armstrong</b>, University of Cincinnati College of Law</li>
+                        <li> <b>Barbara Bintliff</b>, Texas Law </li>
+                        <li> <b>Femi Cadmus</b>, Cornell Law School </li>
+                        <li> <b>Kyle Courtney</b>, Harvard University, Copyright Advisor </li>
+                        <li> <b>Corie Dugas</b>, Mid-America Law Library Consortium </li>
+                        <li> <b>James Grimmelmann</b>, Cornell Tech and Cornell Law School </li>
+                    </ul>
+                </div>
+                <div class="col-xs-6">
+                    <ul>
+                        <li> <b>Lydia Loren</b>, Lewis & Clark Law School </li>
+                        <li> <b>Margaret Maes</b>, Legal Information Preservation Alliance </li>
+                        <li> <b>Susan Nevelow Mart</b>, University of Colorado Law School </li>
+                        <li> <b>Roger Skalbeck</b>, University of Richmond School of Law </li>
+                        <li> <b>Tracy Thompson</b>, NELLCO Law Library Consortium </li>
+                        <li> <b>Siva Vaidhyanathan</b>, University of Virginia Department of Media Studies </li>
+                    </ul>
+                </div>
+            ''',
+            'email_contact': 'contact+lawarxiv@osf.io',
+            'email_support': 'support+lawarxiv@osf.io',
+            'social_twitter': 'lawarxiv',
+            'social_facebook': '',
+            'header_text': '',
+            'licenses_acceptable': ['CC0 1.0 Universal', 'CC-By Attribution 4.0 International'],
+            'subjects_acceptable': []
         },
         'agrixiv': {
             '_id': 'agrixiv',
