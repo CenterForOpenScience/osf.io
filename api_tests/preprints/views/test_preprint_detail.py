@@ -29,6 +29,8 @@ def build_preprint_update_payload(node_id, attributes=None, relationships=None):
 class TestPreprintDetail(ApiTestCase):
     def setUp(self):
         super(TestPreprintDetail, self).setUp()
+        self.mock_change_identifier = mock.patch('website.identifiers.client.EzidClient.change_status_identifier')
+        self.mock_change_identifier.start()
 
         self.user = AuthUserFactory()
         self.preprint = PreprintFactory(creator=self.user)
@@ -44,13 +46,25 @@ class TestPreprintDetail(ApiTestCase):
         assert_equal(self.data['type'], 'preprints')
         assert_equal(self.data['id'], self.preprint._id)
 
+    def tearDown(self):
+        self.mock_change_identifier.stop()
+        super(TestPreprintDetail, self).tearDown()
+
 class TestPreprintDelete(ApiTestCase):
     def setUp(self):
         super(TestPreprintDelete, self).setUp()
         self.user = AuthUserFactory()
+
+        self.mock_change_identifier = mock.patch('website.identifiers.client.EzidClient.change_status_identifier')
+        self.mock_change_identifier.start()
+
         self.unpublished_preprint = PreprintFactory(creator=self.user, is_published=False)
         self.published_preprint = PreprintFactory(creator=self.user)
         self.url = '/{}preprints/{{}}/'.format(API_BASE)
+
+    def tearDown(self):
+        self.mock_change_identifier.stop()
+        super(TestPreprintDelete, self).tearDown()
 
     def test_can_delete_unpublished(self):
         previous_ids = list(PreprintService.objects.all().values_list('pk', flat=True))
@@ -81,15 +95,15 @@ class TestPreprintDelete(ApiTestCase):
 class TestPreprintUpdate(ApiTestCase):
     def setUp(self):
         super(TestPreprintUpdate, self).setUp()
+        self.mock_change_identifier = mock.patch('website.identifiers.client.EzidClient.change_status_identifier')
+        self.mock_change_identifier.start()
+
         self.user = AuthUserFactory()
 
         self.preprint = PreprintFactory(creator=self.user)
         self.url = '/{}preprints/{}/'.format(API_BASE, self.preprint._id)
 
         self.subject = SubjectFactory()
-
-        self.mock_change_identifier = mock.patch('website.identifiers.client.EzidClient.change_status_identifier')
-        self.mock_change_identifier.start()
 
     def tearDown(self):
         self.mock_change_identifier.stop()
@@ -171,10 +185,10 @@ class TestPreprintUpdate(ApiTestCase):
         self.preprint.reload()
         assert_not_equal(self.preprint.primary_file, file_for_project)
 
-    def test_update_doi(self):
+    def test_update_article_doi(self):
         new_doi = '10.1234/ASDFASDF'
         assert_not_equal(self.preprint.article_doi, new_doi)
-        update_subjects_payload = build_preprint_update_payload(self.preprint._id, attributes={"doi": new_doi})
+        update_subjects_payload = build_preprint_update_payload(self.preprint._id, attributes={"article_doi": new_doi})
 
         res = self.app.patch_json_api(self.url, update_subjects_payload, auth=self.user.auth)
         assert_equal(res.status_code, 200)
@@ -183,7 +197,7 @@ class TestPreprintUpdate(ApiTestCase):
         assert_equal(self.preprint.article_doi, new_doi)
 
         preprint_detail = self.app.get(self.url, auth=self.user.auth).json['data']
-        assert_equal(preprint_detail['links']['doi'], 'https://dx.doi.org/{}'.format(new_doi))
+        assert_equal(preprint_detail['links']['article_doi'], 'https://dx.doi.org/{}'.format(new_doi))
 
     def test_write_contrib_cannot_set_primary_file(self):
         user_two = AuthUserFactory()
@@ -304,6 +318,9 @@ class TestPreprintUpdateLicense(ApiTestCase):
         self.read_contributor = AuthUserFactory()
         self.non_contributor = AuthUserFactory()
 
+        self.mock_change_identifier = mock.patch('website.identifiers.client.EzidClient.change_status_identifier')
+        self.mock_change_identifier.start()
+
         self.preprint_provider = PreprintProviderFactory()
         self.preprint = PreprintFactory(creator=self.admin_contributor, provider=self.preprint_provider)
 
@@ -320,8 +337,6 @@ class TestPreprintUpdateLicense(ApiTestCase):
 
         self.url = '/{}preprints/{}/'.format(API_BASE, self.preprint._id)
 
-        self.mock_change_identifier = mock.patch('website.identifiers.client.EzidClient.change_status_identifier')
-        self.mock_change_identifier.start()
 
     def tearDown(self):
         self.mock_change_identifier.stop()
