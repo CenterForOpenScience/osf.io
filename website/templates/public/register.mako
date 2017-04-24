@@ -18,6 +18,12 @@
         </div>
     %endif
 
+    %if campaign == "osf-registries":
+        <div class="text-center m-t-lg">
+            <h3>OSF Registries</h3><hr>
+            <p>Please login to the Open Science Framework or create a free account to continue.</p>
+    %endif
+
     %if campaign == "osf-preprints":
         <div class="text-center m-t-lg">
             <h3>OSF Preprints</h3><hr>
@@ -61,10 +67,9 @@
         </div>
     %endif
 
-    %if campaign == "osf-registries":
+    %if campaign == "lawarxiv-preprints":
         <div class="text-center m-t-lg">
-            <h3>OSF Registries</h3><hr>
-            <p>Please login to the Open Science Framework or create a free account to continue.</p>
+            <h3>LawArXiv Preprints</h3><hr>
         </div>
     %endif
 
@@ -127,6 +132,13 @@
                         <tr>
                             <td><img src="/static/img/preprint_providers/bitss-login.png" style="width: 150px; background: #a9a9a9; padding: 0 10px 0 10px;" /></td>
                             <td><h3>Create a free OSF account to contribute to BITSS</h3></td>
+                        </tr>
+                    </table>
+                %elif campaign == "lawarxiv-preprints":
+                    <table style="border-collapse: separate; border-spacing: 30px 0; margin-top: 20px;  margin-bottom: 10px;">
+                        <tr>
+                            <td><img src="/static/img/preprint_providers/lawarxiv-logo.png" style="width: 150px; background: #a9a9a9; padding: 0 10px 0 10px;" /></td>
+                            <td><h3>Create a free OSF account to contribute to LawArXiv</h3></td>
                         </tr>
                     </table>
                 %else:
