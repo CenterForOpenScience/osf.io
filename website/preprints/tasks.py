@@ -7,6 +7,7 @@ from framework.celery_tasks import app as celery_app
 
 from website import settings
 from website.util.share import GraphNode, format_contributor
+from website.identifiers.utils import update_ezid_metadata_on_change
 
 logger = logging.getLogger(__name__)
 
@@ -17,6 +18,9 @@ def on_preprint_updated(preprint_id):
     # transactions are implemented in View and Task application layers.
     from osf.models import PreprintService
     preprint = PreprintService.load(preprint_id)
+
+    status = 'public' if preprint.node.is_public else 'unavailable'
+    update_ezid_metadata_on_change(preprint, status=status)
 
     if settings.SHARE_URL:
         if not preprint.provider.access_token:

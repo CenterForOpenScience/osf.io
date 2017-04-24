@@ -97,28 +97,30 @@ def get_or_create_identifiers(target_object):
     that build ARK URLs is responsible for adding the leading slash.
     Moved from website/project/views/register.py for use by other modules
     """
-    doi, metadata = build_ezid_metadata(target_object)
-    client = get_ezid_client()
-    try:
-        resp = client.create_identifier(doi, metadata)
-        return dict(
-            [each.strip('/') for each in pair.strip().split(':')]
-            for pair in resp['success'].split('|')
-        )
-    except HTTPError as error:
-        if 'identifier already exists' not in error.message.lower():
-            raise
-        resp = client.get_identifier(doi)
-        doi = resp['success']
-        suffix = doi.strip(settings.DOI_NAMESPACE)
-        return {
-            'doi': doi.replace('doi:', ''),
-            'ark': '{0}{1}'.format(settings.ARK_NAMESPACE.replace('ark:', ''), suffix),
-        }
+    if settings.EZID_USERNAME and settings.EZID_PASSWORD:
+        doi, metadata = build_ezid_metadata(target_object)
+        client = get_ezid_client()
+        try:
+            resp = client.create_identifier(doi, metadata)
+            return dict(
+                [each.strip('/') for each in pair.strip().split(':')]
+                for pair in resp['success'].split('|')
+            )
+        except HTTPError as error:
+            if 'identifier already exists' not in error.message.lower():
+                raise
+            resp = client.get_identifier(doi)
+            doi = resp['success']
+            suffix = doi.strip(settings.DOI_NAMESPACE)
+            return {
+                'doi': doi.replace('doi:', ''),
+                'ark': '{0}{1}'.format(settings.ARK_NAMESPACE.replace('ark:', ''), suffix),
+            }
 
 
 def update_ezid_metadata_on_change(target_object, status):
-    client = get_ezid_client()
+    if settings.EZID_USERNAME and settings.EZID_PASSWORD:
+        client = get_ezid_client()
 
-    doi, metadata = build_ezid_metadata(target_object)
-    client.change_status_identifier(status, doi, metadata)
+        doi, metadata = build_ezid_metadata(target_object)
+        client.change_status_identifier(status, doi, metadata)

@@ -55,6 +55,7 @@ from website.mails import mails
 from website.project import signals as project_signals
 from website.project import tasks as node_tasks
 from website.project.model import NodeUpdateError
+from website.identifiers.utils import update_ezid_metadata_on_change
 
 from website.util import (api_url_for, api_v2_url, get_headers_from_request,
                           sanitize, web_url_for)
@@ -1484,14 +1485,20 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                     return False
             self.is_public = True
             self.keenio_read_key = self.generate_keenio_read_key()
+            status = 'public'
         elif permissions == 'private' and self.is_public:
             if self.is_registration and not self.is_pending_embargo:
                 raise NodeStateError('Public registrations must be withdrawn, not made private.')
             else:
                 self.is_public = False
                 self.keenio_read_key = ''
+                status = 'unavailable'
         else:
             return False
+
+        for preprint in self.preprints.all():
+            if preprint.is_published:
+                update_ezid_metadata_on_change(preprint, status=status)
 
         # After set permissions callback
         for addon in self.get_addons():
@@ -2310,7 +2317,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             }
         enqueue_task(node_tasks.on_node_updated.s(self._id, user_id, first_save, saved_fields, request_headers))
 
-        if self.preprint_file and bool(self.SEARCH_UPDATE_FIELDS.intersection(saved_fields)):
+        if self.preprint_file:
             # avoid circular imports
             from website.preprints.tasks import on_preprint_updated
             PreprintService = apps.get_model('osf.PreprintService')
@@ -2598,6 +2605,9 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 status.push_status_message(message, kind='info', trust=False)
 
         log_date = date or timezone.now()
+
+        for preprint in self.preprints.all():
+            update_ezid_metadata_on_change(preprint, status='unavailable')
 
         # Add log to parent
         if self.parent_node:
