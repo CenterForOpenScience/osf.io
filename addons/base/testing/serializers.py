@@ -109,7 +109,7 @@ class OAuthAddonSerializerTestSuiteMixin(AddonSerializerTestSuiteMixin):
 
     def test_user_is_owner_node_authorized_user_is_not_owner(self):
         self.node_settings.external_account = self.ExternalAccountFactory()
-        with mock.patch('website.addons.base.AddonOAuthUserSettingsBase.verify_oauth_access', return_value=True):
+        with mock.patch('addons.base.models.BaseOAuthUserSettings.verify_oauth_access', return_value=True):
             self.user.external_accounts = []
             assert_false(self.ser.user_is_owner)
 
