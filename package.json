@@ -1,6 +1,6 @@
 {
   "name": "OSF",
-  "version": "0.105.0",
+  "version": "0.106.0",
   "description": "Facilitating Open Science",
   "repository": "https://github.com/CenterForOpenScience/osf.io",
   "author": "Center for Open Science",
@@ -16,7 +16,7 @@
     "c3": "^0.4.10",
     "css-loader": "^0.9.1",
     "diff": "~2.2.2",
-    "dropzone": "git://github.com/CenterForOpenScience/dropzone.git#69be796e4d66d97dd098322505837f06aa47575c",
+    "dropzone": "git://github.com/CenterForOpenScience/dropzone.git#aba21eb6b82cc823ac7a7a53d6e035791c082bae",
     "exports-loader": "0.6.3",
     "express": "~4.10.0",
     "file-loader": "^0.8.1",

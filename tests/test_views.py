@@ -123,9 +123,9 @@ def no_auto_transact():
 
 class TestViewsAreAtomic(OsfTestCase):
     def test_error_response_rolls_back_transaction(self):
-        assert_equal(User.objects.count(), 0)
+        original_user_count  = User.objects.count()
         self.app.get('/error500', expect_errors=True)
-        assert_equal(User.objects.count(), 0)
+        assert_equal(User.objects.count(), original_user_count)
 
         # Need to set debug = False in order to rollback transactions in transaction_teardown_request
         mock_app.debug = False
@@ -135,10 +135,8 @@ class TestViewsAreAtomic(OsfTestCase):
             pass
         mock_app.debug = True
 
-        assert_equal(User.objects.count(), 0)
-
         self.app.get('/noautotransact', expect_errors=True)
-        assert_equal(User.objects.count(), 1)
+        assert_equal(User.objects.count(), original_user_count + 1)
 
 
 class TestViewingProjectWithPrivateLink(OsfTestCase):
@@ -270,15 +268,6 @@ class TestViewingProjectWithPrivateLink(OsfTestCase):
 
 
 class TestProjectViews(OsfTestCase):
-
-    ADDONS_UNDER_TEST = {
-        'addon1': {
-            'node_settings': Addon,
-        },
-        'addon2': {
-            'node_settings': Addon2,
-        },
-    }
 
     def setUp(self):
         super(TestProjectViews, self).setUp()
@@ -4162,44 +4151,6 @@ class TestWikiWidgetViews(OsfTestCase):
     def test_show_wiki_is_false_for_noncontributors_when_no_wiki_or_content(self):
         assert_false(_should_show_wiki_widget(self.project, self.noncontributor))
         assert_false(_should_show_wiki_widget(self.project2, self.read_only_contrib))
-
-
-class TestForkViews(OsfTestCase):
-
-    def setUp(self):
-        super(TestForkViews, self).setUp()
-        self.user = AuthUserFactory()
-        self.project = ProjectFactory.build(creator=self.user, is_public=True)
-        self.consolidated_auth = Auth(user=self.project.creator)
-        self.user.save()
-        self.project.save()
-
-    def test_fork_private_project_non_contributor(self):
-        self.project.set_privacy("private")
-        self.project.save()
-
-        url = self.project.api_url_for('node_fork_page')
-        non_contributor = AuthUserFactory()
-        res = self.app.post_json(url,
-                                 auth=non_contributor.auth,
-                                 expect_errors=True)
-        assert_equal(res.status_code, http.FORBIDDEN)
-
-    def test_fork_public_project_non_contributor(self):
-        url = self.project.api_url_for('node_fork_page')
-        non_contributor = AuthUserFactory()
-        res = self.app.post_json(url, auth=non_contributor.auth)
-        assert_equal(res.status_code, 200)
-
-    def test_fork_project_contributor(self):
-        contributor = AuthUserFactory()
-        self.project.set_privacy("private")
-        self.project.add_contributor(contributor)
-        self.project.save()
-
-        url = self.project.api_url_for('node_fork_page')
-        res = self.app.post_json(url, auth=contributor.auth)
-        assert_equal(res.status_code, 200)
 
 
 class TestProjectCreation(OsfTestCase):

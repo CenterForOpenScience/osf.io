@@ -57,7 +57,7 @@ class TestUserSerializers(OsfTestCase):
         NodeFactory(creator=user)
         ProjectFactory(creator=user, is_public=True)
         CollectionFactory(creator=user)
-        d = utils.serialize_user(user, full=True)
+        d = utils.serialize_user(user, full=True, include_node_counts=True)
         gravatar = filters.gravatar(
             user,
             use_ssl=True,

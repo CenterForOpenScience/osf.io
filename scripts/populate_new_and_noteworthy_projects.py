@@ -105,7 +105,7 @@ def update_node_links(designated_node, target_node_ids, description):
 def main(dry_run=True):
     init_app(routes=False)
 
-    new_and_noteworthy_links_node = Node.objects.get(_guids___id=NEW_AND_NOTEWORTHY_LINKS_NODE)
+    new_and_noteworthy_links_node = Node.objects.get(guids___id=NEW_AND_NOTEWORTHY_LINKS_NODE)
     new_and_noteworthy_node_ids = get_new_and_noteworthy_nodes(new_and_noteworthy_links_node)
 
     update_node_links(new_and_noteworthy_links_node, new_and_noteworthy_node_ids, 'new and noteworthy')
