@@ -1504,7 +1504,8 @@ class TestUserMerging(OsfTestCase):
                 expected[key] = getattr(self.user, key)
 
         # ensure all fields of the user object have an explicit expectation
-        assert set(expected.keys()).issubset(set(self.user._meta.get_all_field_names()))
+        all_field_names = {each.name for each in self.user._meta.get_fields()}
+        assert set(expected.keys()).issubset(all_field_names)
 
         # mock mailchimp
         mock_client = mock.MagicMock()
