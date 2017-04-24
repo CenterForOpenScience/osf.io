@@ -247,6 +247,10 @@
                                 <td>{{ node.date_created | date }}</td>
                             </tr>
                             <tr>
+                                <td>Datetime Registered (UTC)</td>
+                                <td>{{ node.registered_date | date:"F j, Y P" }}</td>
+                            </tr>
+                            <tr>
                                 <td>Pending</td>
                                 <td>{{ node.pending_registration }}</td>
                             </tr>
