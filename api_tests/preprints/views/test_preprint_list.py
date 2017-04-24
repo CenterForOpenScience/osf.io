@@ -52,7 +52,20 @@ def build_preprint_create_payload(node_id=None, provider_id=None, file_id=None, 
         }
     return payload
 
-class TestPreprintList(ApiTestCase):
+
+class PreprintApiTestCase(ApiTestCase):
+    def setUp(self):
+        super(PreprintApiTestCase, self).setUp()
+
+        self.mock_change_identifier = mock.patch('website.identifiers.client.EzidClient.change_status_identifier')
+        self.mock_change_identifier.start()
+
+    def tearDown(self):
+        self.mock_change_identifier.stop()
+        super(PreprintApiTestCase, self).tearDown()
+
+
+class TestPreprintList(PreprintApiTestCase):
 
     def setUp(self):
         super(TestPreprintList, self).setUp()
@@ -76,10 +89,13 @@ class TestPreprintList(ApiTestCase):
         assert_in(self.preprint._id, ids)
         assert_not_in(self.project._id, ids)
 
-class TestPreprintsListFiltering(PreprintsListFilteringMixin, ApiTestCase):
+class TestPreprintsListFiltering(PreprintsListFilteringMixin, PreprintApiTestCase):
 
     def setUp(self):
+        self.mock_change_identifier = mock.patch('website.identifiers.client.EzidClient.change_status_identifier')
+        self.mock_change_identifier.start()
         self.user = AuthUserFactory()
+
         self.provider = PreprintProviderFactory(name='Sockarxiv')
         self.provider_two = PreprintProviderFactory(name='Piratearxiv')
         self.provider_three = self.provider
@@ -96,7 +112,7 @@ class TestPreprintsListFiltering(PreprintsListFilteringMixin, ApiTestCase):
         assert_equal(expected, actual)
 
 
-class TestPreprintCreate(ApiTestCase):
+class TestPreprintCreate(PreprintApiTestCase):
     def setUp(self):
         super(TestPreprintCreate, self).setUp()
 
@@ -276,7 +292,7 @@ class TestPreprintCreate(ApiTestCase):
         assert not mock_on_preprint_updated.called
 
 
-class TestPreprintIsPublishedList(PreprintIsPublishedListMixin, ApiTestCase):
+class TestPreprintIsPublishedList(PreprintIsPublishedListMixin, PreprintApiTestCase):
     def setUp(self):
         self.admin = AuthUserFactory()
         self.provider_one = PreprintProviderFactory()
@@ -286,7 +302,7 @@ class TestPreprintIsPublishedList(PreprintIsPublishedListMixin, ApiTestCase):
         self.url = '/{}preprints/?version=2.2&'.format(API_BASE)
         super(TestPreprintIsPublishedList, self).setUp()
 
-class TestPreprintIsValidList(PreprintIsValidListMixin, ApiTestCase):
+class TestPreprintIsValidList(PreprintIsValidListMixin, PreprintApiTestCase):
     def setUp(self):
         self.admin = AuthUserFactory()
         self.provider = PreprintProviderFactory()
