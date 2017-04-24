@@ -54,6 +54,9 @@ def format_preprint(preprint):
         GraphNode('workidentifier', creative_work=preprint_graph, uri=urlparse.urljoin(settings.DOMAIN, preprint.url))
     ]
 
+    if preprint.provider.domain_redirect_enabled:
+        to_visit.append(GraphNode('workidentifier', creative_work=preprint_graph, uri=preprint.absolute_url))
+
     if preprint.article_doi:
         # Article DOI refers to a clone of this preprint on another system and therefore does not qualify as an identifier for this preprint
         related_work = GraphNode('creativework')
