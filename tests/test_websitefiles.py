@@ -135,6 +135,14 @@ class TestFileNodeObj(FilesTestCase):
         assert_equals(TestFolder().kind, 'folder')
 
     def test_find(self):
+        original_testfile_count = TestFile.objects.count()
+        original_testfolder_count = TestFolder.objects.count()
+        original_testfilenode_count = TestFileNode.objects.count()
+        original_osfstoragefilenode_count = OsfStorageFileNode.objects.count()
+        original_osfstoragefile_count= OsfStorageFile.objects.count()
+        original_osfstoragefolder_count = OsfStorageFolder.objects.count()
+        original_basefilenode_count = BaseFileNode.objects.count()
+
         TestFile.objects.create(
             _path='afile',
             name='name',
@@ -149,23 +157,13 @@ class TestFileNodeObj(FilesTestCase):
             materialized_path='/long/path/to/name2/',
         )
 
-        import logging
-        logger = logging.getLogger(__name__)
-
-        # Temporary debugging on Travis
-        logger.info('TESTFILES!!!')
-        logger.info([repr(x) for x in TestFile.objects.all()])
-        logger.info('OSFSTORAGEFILES!!!')
-        logger.info([repr(x) for x in OsfStorageFileNode.objects.all()])
-        logger.info('BASEFILES!!!')
-        logger.info([repr(x) for x in BaseFileNode.objects.all()])
-        assert_equal(TestFile.objects.count(), 1)
-        assert_equal(TestFolder.objects.count(), 1)
-        assert_equal(TestFileNode.objects.count(), 2)
-        assert_equal(OsfStorageFileNode.objects.count(), 2)
-        assert_equal(OsfStorageFile.objects.count(), 0)
-        assert_equal(OsfStorageFolder.objects.count(), 2)
-        assert_equal(BaseFileNode.objects.count(), 4)  # roots of things
+        assert_equal(TestFile.objects.count(), original_testfile_count + 1)
+        assert_equal(TestFolder.objects.count(), original_testfolder_count + 1)
+        assert_equal(TestFileNode.objects.count(), original_testfilenode_count + 2)
+        assert_equal(OsfStorageFileNode.objects.count(), original_osfstoragefilenode_count)
+        assert_equal(OsfStorageFile.objects.count(), original_osfstoragefile_count)
+        assert_equal(OsfStorageFolder.objects.count(), original_osfstoragefolder_count)
+        assert_equal(BaseFileNode.objects.count(), original_osfstoragefilenode_count + original_testfilenode_count + 2)  # roots of things
 
     def test_find_one(self):
         item = TestFile(

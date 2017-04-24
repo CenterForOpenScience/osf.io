@@ -138,7 +138,7 @@ class CollectionList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_vie
             Q('is_deleted', 'ne', True)
         )
         user = self.request.user
-        if not user.is_anonymous():
+        if not user.is_anonymous:
             permission_query = Q('creator', 'eq', user)
         else:
             permission_query = Q('is_public', 'eq', True)

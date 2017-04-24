@@ -17,7 +17,8 @@ from django.utils import timezone
 from django.utils.functional import cached_property
 from keen import scoped_keys
 from psycopg2._psycopg import AsIs
-from typedmodels.models import TypedModel
+from typedmodels.models import TypedModel, TypedModelManager
+from include import IncludeQuerySet, IncludeManager
 
 from framework import status
 from framework.celery_tasks.handlers import enqueue_task
@@ -45,7 +46,6 @@ from osf.modm_compat import Q
 from osf.utils.auth import Auth, get_user
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import NonNaiveDateTimeField
-from osf.utils.manager import IncludeQuerySet
 from website import language, settings
 from website.citations.utils import datetime_to_csl
 from website.exceptions import (InvalidTagError, NodeStateError,
@@ -152,6 +152,35 @@ class AbstractNodeQuerySet(MODMCompatibilityQuerySet, IncludeQuerySet):
             '''], params=(user, ))
 
         return qs.distinct()
+
+class AbstractNodeManager(TypedModelManager, IncludeManager):
+
+    def get_queryset(self):
+        qs = AbstractNodeQuerySet(self.model, using=self._db)
+        # Filter by typedmodels type
+        return self._filter_by_type(qs)
+
+    # MODMCompatibilityQuerySet methods
+
+    def eager(self, *fields):
+        return self.get_queryset().eager(*fields)
+
+    def sort(self, *fields):
+        return self.get_queryset().sort(*fields)
+
+    def limit(self, n):
+        return self.get_queryset().limit(n)
+
+    # AbstractNodeQuerySet methods
+
+    def get_roots(self):
+        return self.get_queryset().get_roots()
+
+    def get_children(self, root, active=False):
+        return self.get_queryset().get_children(root, active=active)
+
+    def can_view(self, user=None, private_link=None):
+        return self.get_queryset().can_view(user=user, private_link=private_link)
 
 
 class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixin,
@@ -302,9 +331,10 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                                     related_name='parent_nodes')
 
     class Meta:
+        base_manager_name = 'objects'
         index_together = (('is_public', 'is_deleted', 'type'))
 
-    objects = AbstractNodeQuerySet.as_manager()
+    objects = AbstractNodeManager()
 
     @cached_property
     def parent_node(self):

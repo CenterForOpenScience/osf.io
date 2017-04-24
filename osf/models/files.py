@@ -10,7 +10,8 @@ from django.db import models
 from django.db.models import Manager
 from django.utils import timezone
 from modularodm.exceptions import NoResultsFound
-from typedmodels.models import TypedModel
+from typedmodels.models import TypedModel, TypedModelManager
+from include import IncludeManager
 
 from framework.analytics import get_basic_counters
 from osf.models.base import BaseModel, OptionalGuidMixin, ObjectIDMixin
@@ -23,7 +24,6 @@ from osf.utils.fields import NonNaiveDateTimeField
 from website.files import utils
 from website.files.exceptions import VersionNotFoundError
 from website.util import api_v2_url, waterbutler_api_url_for
-from osf.utils.manager import IncludeQuerySet
 
 __all__ = (
     'File',
@@ -38,8 +38,7 @@ PROVIDER_MAP = {}
 logger = logging.getLogger(__name__)
 
 
-class BaseFileNodeManager(Manager):
-    use_for_related_fields = True
+class BaseFileNodeManager(TypedModelManager):
 
     def get_queryset(self):
         qs = super(BaseFileNodeManager, self).get_queryset()
@@ -108,7 +107,9 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
 
     objects = BaseFileNodeManager()
     active = ActiveFileNodeManager()
-    _base_manager = BaseFileNodeManager()
+
+    class Meta:
+        base_manager_name = 'objects'
 
     @property
     def history(self):
@@ -657,7 +658,7 @@ class FileVersion(ObjectIDMixin, BaseModel):
     metadata = DateTimeAwareJSONField(blank=True, default=dict)
     location = DateTimeAwareJSONField(default=None, blank=True, null=True, validators=[validate_location])
 
-    includable_objects = IncludeQuerySet.as_manager()
+    includable_objects = IncludeManager()
 
     @property
     def location_hash(self):

@@ -38,7 +38,7 @@ var _dataverseItemButtons = {
             // Set the modal content to reflect the file's external host
             var modalContent = [
                 // for now, only display custom publish text for UVA's dataverse
-                m('p.m-md', item.data.host == 'dataverse.lib.virginia.edu' ? item.data.hostCustomPublishText : ''),
+                m('p.m-md', item.data.host == 'dataverse.lib.virginia.edu' ? m.trust(item.data.hostCustomPublishText) : ''),
                 m('p.m-md', both ? 'This dataset cannot be published until the ' + item.data.dataverse + ' Dataverse is published. ' : ''),
                 m('p.m-md', 'By publishing this ' + toPublish + ', all content will be made available through ' + host + ' using their internal privacy settings, regardless of your OSF project settings. '),
                 m('p.font-thick.m-md', both ? 'Do you want to publish this Dataverse AND this dataset?' : 'Are you sure you want to publish this dataset?')

@@ -1,6 +1,6 @@
 # Reference README-docker-compose.md for instructions.
 
-version: '2'
+version: '2.1'
 
 volumes:
   postgres_data_vol:
@@ -65,7 +65,7 @@ services:
         sed -i -e 's/max_connections.*/max_connections = 5000/' /var/lib/postgresql/data/postgresql.conf
         sed -i -e 's/#log_min_duration_statement = .*/log_min_duration_statement = 0/' /var/lib/postgresql/data/postgresql.conf
     volumes:
-      - postgres_data_vol:/var/lib/postgresql/data/
+      - "${POSTGRES_DATA_VOL:-postgres_data_vol}:/var/lib/postgresql/data/"
     stdin_open: true
 
   tokumx:
@@ -340,7 +340,6 @@ services:
       - 8001:8001
     depends_on:
       - postgres
-      - tokumx
       - rabbitmq
       - elasticsearch
     env_file:
@@ -361,7 +360,6 @@ services:
       - 8000:8000
     depends_on:
       - postgres
-      - tokumx
       - rabbitmq
       - elasticsearch
     environment:
@@ -382,7 +380,6 @@ services:
       - 5000:5000
     depends_on:
       - postgres
-      - tokumx
       - rabbitmq
       - elasticsearch
     environment:
