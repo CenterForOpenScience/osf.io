@@ -2934,7 +2934,7 @@ class TestPointerViews(OsfTestCase):
     def test_fork_pointer_not_in_nodes(self):
         url = self.project.api_url + 'pointer/fork/'
         node = NodeFactory()
-        pointer = Pointer(node=node)
+        pointer = Pointer()
         res = self.app.post_json(
             url,
             {'pointerId': pointer._id},
