@@ -882,29 +882,6 @@ class TestNodeCreate(ApiTestCase):
         assert_equal(len(new_component.contributors), 2)
         assert_equal(len(new_component.contributors), len(parent_project.contributors))
 
-    def test_create_component_inherit_tags(self):
-        parent_project = ProjectFactory(creator=self.user_one)
-        tag = Tag(name='Test Tag')
-        tag.save()
-        parent_project.tags.add(tag)
-        url = '/{}nodes/{}/children/?inherit_tags=true'.format(API_BASE, parent_project._id)
-        component_data = {
-            'data': {
-                'type': 'nodes',
-                'attributes': {
-                    'title': self.title,
-                    'category': self.category,
-                }
-            }
-        }
-        res = self.app.post_json_api(url, component_data, auth=self.user_one.auth)
-        assert_equal(res.status_code, 201)
-        json_data = res.json['data']
-
-        new_component_id = json_data['id']
-        new_component = Node.load(new_component_id)
-        assert_in(tag, new_component.tags.all())
-
     def test_create_component_inherit_contributors_with_unregistered_contributor(self):
         parent_project = ProjectFactory(creator=self.user_one)
         parent_project.add_unregistered_contributor(
