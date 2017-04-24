@@ -1662,6 +1662,19 @@ class TestUserAccount(OsfTestCase):
         assert_equal(res.status_code, 400)
         assert_equal(send_mail.call_count, 1)
 
+    def test_get_unconfirmed_emails_exclude_external_identity(self):
+        external_identity = {
+            'service': {
+                'AFI': 'LINK'
+            }
+        }
+        self.user.add_unconfirmed_email("james@steward.com")
+        self.user.add_unconfirmed_email("steward@james.com", external_identity=external_identity)
+        self.user.save()
+        unconfirmed_emails = self.user.get_unconfirmed_emails_exclude_external_identity()
+        assert_in("james@steward.com", unconfirmed_emails)
+        assert_not_in("steward@james.com", unconfirmed_emails)
+
 
 class TestAddingContributorViews(OsfTestCase):
 
@@ -3479,6 +3492,7 @@ class TestAuthLoginAndRegisterLogic(OsfTestCase):
         self.user_auth = AuthUserFactory()
         self.auth = Auth(user=self.user_auth)
         self.next_url = web_url_for('my_projects', _absolute=True)
+        self.invalid_campaign = 'invalid_campaign'
 
     def test_osf_login_with_auth(self):
         # login: user with auth
@@ -3591,7 +3605,7 @@ class TestAuthLoginAndRegisterLogic(OsfTestCase):
             assert_equal(data.get('status_code'), http.FOUND)
             assert_equal(data.get('next_url'), campaign_url_for(campaign))
 
-    def test_campaign_register_without_campaign(self):
+    def test_campaign_register_without_auth(self):
         for campaign in get_campaigns():
             if is_institution_login(campaign):
                 continue
@@ -3658,6 +3672,30 @@ class TestAuthLoginAndRegisterLogic(OsfTestCase):
                     data.get('next_url'),
                     web_url_for('auth_login', next= next_url, _absolute=True)
                 )
+
+    def test_invalid_campaign_login_without_auth(self):
+        data = login_and_register_handler(
+            self.no_auth,
+            login=True,
+            campaign=self.invalid_campaign,
+            next_url=self.next_url
+        )
+        redirect_url = web_url_for('auth_login', campaigns=None, next=self.next_url)
+        assert_equal(data['status_code'], http.FOUND)
+        assert_equal(data['next_url'], redirect_url)
+        assert_equal(data['campaign'], None)
+
+    def test_invalid_campaign_register_without_auth(self):
+        data = login_and_register_handler(
+            self.no_auth,
+            login=False,
+            campaign=self.invalid_campaign,
+            next_url=self.next_url
+        )
+        redirect_url = web_url_for('auth_register', campaigns=None, next=self.next_url)
+        assert_equal(data['status_code'], http.FOUND)
+        assert_equal(data['next_url'], redirect_url)
+        assert_equal(data['campaign'], None)
 
     # The following two tests handles the special case for `claim_user_registered`
     # When an authenticated user clicks the claim confirmation clink, there are two ways to trigger this flow:

@@ -13,7 +13,7 @@ from modularodm.exceptions import NoResultsFound
 from modularodm.exceptions import ValidationError
 from modularodm.exceptions import ValidationValueError
 
-from framework import forms, status
+from framework import forms, sentry, status
 from framework import auth as framework_auth
 from framework.auth import exceptions
 from framework.auth import cas, campaigns
@@ -261,8 +261,14 @@ def login_and_register_handler(auth, login=True, campaign=None, next_url=None, l
                         else:
                             data['next_url'] = destination
         else:
-            # invalid campaign
-            raise HTTPError(http.BAD_REQUEST)
+            # invalid campaign, inform sentry and redirect to non-campaign sign up or sign in
+            redirect_view = 'auth_login' if login else 'auth_register'
+            data['status_code'] = http.FOUND
+            data['next_url'] = web_url_for(redirect_view, campaigns=None, next=next_url)
+            data['campaign'] = None
+            sentry.log_message(
+                '{} is not a valid campaign. Please add it if this is a new one'.format(campaign)
+            )
     # login or register with next parameter
     elif next_url:
         if logout:

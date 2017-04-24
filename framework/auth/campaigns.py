@@ -72,6 +72,18 @@ def get_campaigns():
                     }
                 })
 
+            # Proxy campaigns: Registries, OSF only
+            # TODO: refactor for futher branded registries when there is a model for registries providers
+            newest_campaigns.update({
+                'osf-registries': {
+                    'system_tag': 'osf_registries',
+                    'redirect_url': furl.furl(DOMAIN).add(path='registries/').url,
+                    'confirmation_email_template': mails.CONFIRM_EMAIL_REGISTRIES_OSF,
+                    'login_type': 'proxy',
+                    'provider': 'osf',
+                }
+            })
+
             CAMPAIGNS = newest_campaigns
             CAMPAIGNS_LAST_REFRESHED = timezone.now()
 
