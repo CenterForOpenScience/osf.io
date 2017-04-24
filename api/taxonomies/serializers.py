@@ -1,6 +1,6 @@
 from rest_framework import serializers as ser
 
-from api.base.serializers import JSONAPISerializer, LinksField
+from api.base.serializers import JSONAPISerializer, LinksField, ShowIfVersion
 from website.models import Subject
 
 class TaxonomyField(ser.Field):
@@ -24,7 +24,11 @@ class TaxonomySerializer(JSONAPISerializer):
     ])
     id = ser.CharField(source='_id', required=True)
     text = ser.CharField(max_length=200)
-    parents = ser.SerializerMethodField()
+    parents = ShowIfVersion(
+        ser.SerializerMethodField(),
+        min_version='2.0',
+        max_version='2.3',
+    )
     parent = TaxonomyField()
     child_count = ser.IntegerField()
 
