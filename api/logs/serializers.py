@@ -110,8 +110,8 @@ class NodeLogParamsSerializer(RestrictedDictSerializer):
                 provider = 'osfstorage'
                 try:
                     file_node = FileNode.resolve_class(provider, FileNode.ANY).find_one(
-                                    Q('id', 'eq', file_id)
-                                )
+                        Q('id', 'eq', file_id)
+                    )
                 except NoResultsFound:
                     file_node = None
                 if file_node:
