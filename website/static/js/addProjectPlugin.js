@@ -104,7 +104,7 @@ var AddProject = {
                 };
 
             if(self.newProjectInheritTags()){
-                data['data']['attributes']['tags'] = contextVars.node.tags;
+                data.data.attributes.tags = window.contextVars.node.tags;
             }
 
             if (self.newProjectTemplate()) {
