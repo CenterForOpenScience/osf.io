@@ -21,6 +21,7 @@ from website.util import permissions
 from website.project.licenses import ensure_licenses
 from website.project.model import ensure_schemas
 from website.archiver import ARCHIVER_SUCCESS
+from website.identifiers.utils import get_subdomain
 from framework.auth.core import Auth
 
 from osf import models
@@ -521,6 +522,9 @@ class PreprintFactory(DjangoModelFactory):
     @classmethod
     def _build(cls, target_class, project=None, filename='preprint_file.txt', provider=None,
                 doi=None, external_url=None, is_published=True, subjects=None, license_details=None, finish=True, *args, **kwargs):
+        patch_change_status = mock.patch("website.identifiers.client.EzidClient.change_status_identifier")
+        patch_change_status.start()
+
         user = None
         if project:
             user = project.creator
@@ -559,24 +563,25 @@ class PreprintFactory(DjangoModelFactory):
         preprint = target_class(node=project, provider=provider)
         preprint.save()
 
-        create_identifier_patcher = mock.patch("website.identifiers.client.EzidClient.create_identifier")
-        mock_create_identifier = create_identifier_patcher.start()
-        mock_create_identifier.return_value = {
-            'success': '{doi}/{guid} | {ark}/{guid}'.format(
-                doi=settings.DOI_NAMESPACE, ark=settings.ARK_NAMESPACE, guid=preprint._id
-            )
-        }
-
         auth = Auth(project.creator)
 
         if finish:
             preprint.set_primary_file(file, auth=auth)
             subjects = subjects or [[SubjectFactory()._id]]
+            preprint.set_subjects(subjects, auth=auth, save=True)
             preprint.save()
-            preprint.set_subjects(subjects, auth=auth)
             if license_details:
                 preprint.set_preprint_license(license_details, auth=auth)
+            create_identifier_patcher = mock.patch("website.identifiers.client.EzidClient.create_identifier")
+            mock_create_identifier = create_identifier_patcher.start()
+            domain = get_subdomain(preprint)
+            mock_create_identifier.return_value = {
+                'success': '{doi}{domain}/{guid} | {ark}{domain}/{guid}'.format(
+                    doi=settings.DOI_NAMESPACE, domain=domain, ark=settings.ARK_NAMESPACE, guid=preprint._id
+                )
+            }
             preprint.set_published(is_published, auth=auth)
+            create_identifier_patcher.stop()
 
         if not preprint.is_published:
             project._has_abandoned_preprint = True
