@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import re
-from tld import get_tld
+import furl
 
 from framework.exceptions import HTTPError
 from website import settings
@@ -10,6 +10,9 @@ from website.identifiers.metadata import datacite_metadata_for_node, datacite_me
 
 FIELD_SEPARATOR = '\n'
 PAIR_SEPARATOR = ': '
+
+# subdomains to remove when constructing TLDs for DOI namespace creation
+SUBDOMAINS = ['www']
 
 
 def encode(match):
@@ -62,7 +65,8 @@ def get_doi_and_metadata_for_object(target_object):
     metadata_function = datacite_metadata_for_node
     if isinstance(target_object, PreprintService):
         if target_object.provider.external_url:
-            domain = get_tld(target_object.provider.external_url)
+            host = furl.furl(target_object.provider.external_url).host
+            domain = '.'.join([part for part in host.split('.') if part not in SUBDOMAINS])
         metadata_function = datacite_metadata_for_preprint
 
     doi = settings.EZID_FORMAT.format(namespace=settings.DOI_NAMESPACE, domain=domain, guid=target_object._id)

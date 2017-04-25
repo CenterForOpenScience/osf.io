@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 from nose.tools import *  # flake8: noqa (PEP8 asserts)
-from tld import get_tld
 import mock
 import urlparse
 
@@ -14,8 +13,7 @@ from framework.exceptions import PermissionsError
 
 from website import settings
 from website.identifiers.utils import get_doi_and_metadata_for_object
-from osf.models import NodeLog, Subject, Identifier
-from osf.exceptions import NodeStateError
+from osf.models import NodeLog, Subject
 
 from tests.base import OsfTestCase
 from osf_tests.factories import (
