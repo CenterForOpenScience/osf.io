@@ -34,7 +34,7 @@ from framework.sessions.utils import remove_sessions_for_user
 from framework.mongo import get_cache_key
 from modularodm.exceptions import NoResultsFound
 from osf.exceptions import reraise_django_validation_errors
-from osf.models.base import BaseModel, GuidMixin, GuidMixinQuerySet
+from osf.models.base import BaseModel, GuidMixin, GuidMixinQuerySet, ObjectIDMixin
 from osf.models.contributor import RecentlyAddedContributor
 from osf.models.institution import Institution
 from osf.models.mixins import AddonModelMixin
@@ -63,6 +63,25 @@ name_formatters = {
         initial=user.given_name_initial,
     ),
 }
+
+EMAIL_TYPES = [
+    ('contact', 'Contact'),
+    ('support', 'Support')
+]
+
+class Email(ObjectIDMixin, BaseModel):
+    email = models.EmailField()
+    email_type = models.CharField(choices=EMAIL_TYPES, null=True, blank=True, max_length=50)
+
+
+class SocialNetwork(ObjectIDMixin, BaseModel):
+    name = models.CharField(max_length=200)
+    base_url = models.URLField(null=True, blank=True)
+
+
+class SocialAccount(ObjectIDMixin, BaseModel):
+    username = models.CharField(max_length=200)
+    network = models.ForeignKey(SocialNetwork, on_delete=models.CASCADE)
 
 
 class OSFUserManager(BaseUserManager):

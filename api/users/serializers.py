@@ -13,6 +13,23 @@ from api.base.serializers import (
 )
 from api.base.utils import absolute_reverse, get_user_auth
 
+from osf.models.user import Email, SocialAccount
+
+
+class EmailSerializer(ser.ModelSerializer):
+
+    class Meta:
+        model = Email
+        fields = ('email', 'email_type',)
+
+
+class SocialAccountSerializer(ser.ModelSerializer):
+
+    class Meta:
+        model = SocialAccount
+        fields = ('network', 'username',)
+
+
 class UserSerializer(JSONAPISerializer):
     filterable_fields = frozenset([
         'full_name',

@@ -9,6 +9,15 @@ from osf.utils.fields import EncryptedTextField
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.models.licenses import NodeLicense
 from osf.models.subject import Subject
+from osf.models.user import Email, SocialAccount
+
+
+class PreprintProviderLink(ObjectIDMixin, BaseModel):
+    # external_url, about_link, blog_url, description_link
+    url = models.URLField(max_length=200)
+    description = models.CharField(max_length=200)
+    linked_text = models.TextField(null=True, blank=True)
+
 
 class PreprintProvider(ObjectIDMixin, BaseModel):
     name = models.CharField(null=False, max_length=128)  # max length on prod: 22
@@ -16,15 +25,24 @@ class PreprintProvider(ObjectIDMixin, BaseModel):
     header_text = models.TextField(default='', blank=True)
     description = models.CharField(null=True, blank=True, max_length=256)  # max length on prod: 56
     banner_name = models.CharField(null=True, blank=True, max_length=128)  # max length on prod: 19
-    external_url = models.URLField(null=True, blank=True, max_length=200)  # max length on prod: 25
-    email_contact = models.CharField(null=True, blank=True, max_length=200)  # max length on prod: 23
-    email_support = models.CharField(null=True, blank=True, max_length=200)  # max length on prod: 23
     example = models.CharField(null=True, blank=True, max_length=20)  # max length on prod: 5
     access_token = EncryptedTextField(null=True, blank=True)
     advisory_board = models.TextField(null=True, blank=True)
+
+    emails = models.ManyToManyField(Email, blank=True)
+    # TODO: Remove email fields in favor of emails
+    email_contact = models.CharField(null=True, blank=True, max_length=200)  # max length on prod: 23
+    email_support = models.CharField(null=True, blank=True, max_length=200)  # max length on prod: 23
+
+    social_accounts = models.ManyToManyField(SocialAccount, blank=True)
+    # TODO: Remove social fields in favor of social_accounts
     social_twitter = models.CharField(null=True, blank=True, max_length=200)  # max length on prod: 8
     social_facebook = models.CharField(null=True, blank=True, max_length=200)  # max length on prod: 8
     social_instagram = models.CharField(null=True, blank=True, max_length=200)  # max length on prod: 8
+
+    links = models.ManyToManyField(PreprintProviderLink, blank=True)
+    # TODO: Remove external_url in favor of links
+    external_url = models.URLField(null=True, blank=True, max_length=200)  # max length on prod: 25
 
     subjects_acceptable = DateTimeAwareJSONField(blank=True, default=list)
     licenses_acceptable = models.ManyToManyField(NodeLicense, blank=True)
