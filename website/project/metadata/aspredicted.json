@@ -1,5 +1,6 @@
 {
     "name": "AsPredicted Preregistration",
+    "category": "registration",
     "version": 2,
     "description": "You will be asked to answer 8 questions about your study. This registration form uses the content recommended on the website AsPredicted.org.",
     "pages": [{

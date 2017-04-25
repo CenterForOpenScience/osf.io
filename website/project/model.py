@@ -136,13 +136,14 @@ class MetaSchema(StoredObject):
         return
 
 
-def ensure_schema(schema, name, version=1):
+def ensure_schema(schema, name, category, version=1):
     MetaSchema = apps.get_model('osf.MetaSchema')
     try:
         MetaSchema(
             name=name,
             schema_version=version,
-            schema=schema
+            schema=schema,
+            category=category
         ).save()
     except (KeyExistsException, ValidationError):
         schema_obj = MetaSchema.find_one(
@@ -150,6 +151,7 @@ def ensure_schema(schema, name, version=1):
             Q('schema_version', 'eq', version)
         )
         schema_obj.schema = schema
+        schema_obj.category = category
         schema_obj.save()
 
 
@@ -157,7 +159,7 @@ def ensure_schemas():
     """Import meta-data schemas from JSON to database if not already loaded
     """
     for schema in OSF_META_SCHEMAS:
-        ensure_schema(schema, schema['name'], version=schema.get('version', 1))
+        ensure_schema(schema, schema['name'], category=schema.get('category'), version=schema.get('version', 1))
 
 
 class MetaData(GuidStoredObject):

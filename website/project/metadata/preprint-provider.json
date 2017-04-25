@@ -1,0 +1,101 @@
+{
+    "name": "Preprint Provider",
+    "version": 1,
+    "category": "preprintprovider",
+    "schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+            "about_link": {
+                "type": "string"
+            },
+            "advisory_board": {
+                "type": "object",
+                "properties": {
+                    "groups": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "group_name": {
+                                    "type": "string"
+                                },
+                                "members": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "object",
+                                        "properties": {
+                                            "name": {
+                                                "type": "string"
+                                            },
+                                            "url": {
+                                                "type": "string"
+                                            },
+                                            "role": {
+                                                "type": "string"
+                                            },
+                                            "affiliation": {
+                                                "type": "string"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "banner_name": {
+                "type": "string"
+            },
+            "blog_url": {
+                "type": "string"
+            },
+            "description": {
+                "type": "string"
+            },
+            "description-link": {
+                "type": "object",
+                "properties": {
+                    "url": {
+                        "type": "string"
+                    },
+                    "text": {
+                        "type": "string"
+                    }
+                }
+            },
+            "emails": {
+                "type": "object",
+                "properties": {
+                    "contact": {
+                        "type": "string"
+                    },
+                    "support": {
+                        "type": "string"
+                    }
+                }
+            },
+            "example": {
+                "type": "string"
+            },
+            "header_text": {
+                "type": "string"
+            },
+            "social": {
+                "type": "object",
+                "properties": {
+                    "facebook": {
+                        "type": "string"
+                    },
+                    "instagram": {
+                        "type": "string"
+                    },
+                    "twitter": {
+                        "type": "string"
+                    }
+                }
+            }
+        }
+    }
+}

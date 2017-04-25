@@ -6,6 +6,7 @@ from framework.auth.oauth_scopes import CoreScopes
 
 from website.project.metadata.schemas import ACTIVE_META_SCHEMAS, LATEST_SCHEMA_VERSION
 from api.base import permissions as base_permissions
+from api.base.filters import ODMFilterMixin
 from api.base.views import JSONAPIBaseView
 from api.base.utils import get_object_or_error
 
@@ -13,7 +14,7 @@ from website.models import MetaSchema
 from api.metaschemas.serializers import MetaSchemaSerializer
 
 
-class MetaSchemasList(JSONAPIBaseView, generics.ListAPIView):
+class MetaSchemasList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
     """
      <!--- Copied from MetaSchemaDetail -->
 
@@ -50,11 +51,17 @@ class MetaSchemasList(JSONAPIBaseView, generics.ListAPIView):
     view_category = 'metaschemas'
     view_name = 'metaschema-list'
 
+    # implement ODMFilterMixin
+    def get_default_odm_query(self):
+        return (
+            Q('name', 'in', ACTIVE_META_SCHEMAS) &
+            Q('schema_version', 'eq', LATEST_SCHEMA_VERSION) |
+            Q('name', 'eq', 'Preprint Provider')
+        )
+
     # overrides ListCreateAPIView
     def get_queryset(self):
-        schemas = MetaSchema.find(Q('name', 'in', ACTIVE_META_SCHEMAS) &
-                                  Q('schema_version', 'eq', LATEST_SCHEMA_VERSION))
-        return schemas
+        return MetaSchema.find(self.get_query_from_request())
 
 
 class MetaSchemaDetail(JSONAPIBaseView, generics.RetrieveAPIView):

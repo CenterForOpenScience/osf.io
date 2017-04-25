@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import jsonschema
 import re
 
 from django.core.validators import URLValidator, validate_email as django_validate_email
@@ -10,6 +11,7 @@ from website.util.sanitize import strip_html
 from website import settings
 
 from osf.exceptions import ValidationError, ValidationValueError, reraise_django_validation_errors
+from osf.models import MetaSchema
 
 
 def validate_history_item(items):
@@ -136,4 +138,15 @@ def validate_location(value):
     for key in ('service', settings.WATERBUTLER_RESOURCE, 'object'):
         if key not in value:
             raise ValidationValueError('Location {} missing key "{}"'.format(value, key))
+    return True
+
+
+def validate_preprint_provider_extra(value):
+    schema = MetaSchema.objects.get(name='Preprint Provider')
+    try:
+        jsonschema.validate(value, schema.schema.get('schema'))
+    except jsonschema.ValidationError as e:
+        raise ValidationValueError(e.message)
+    except jsonschema.SchemaError as e:
+        raise ValidationValueError(e.message)
     return True

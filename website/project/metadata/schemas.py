@@ -36,6 +36,7 @@ OSF_META_SCHEMAS = [
     ensure_schema_structure(from_json('egap-project-2.json')),
     ensure_schema_structure(from_json('veer-1.json')),
     ensure_schema_structure(from_json('aspredicted.json')),
+    ensure_schema_structure(from_json('preprint-provider.json')),
 ]
 
 ACTIVE_META_SCHEMAS = (
@@ -47,4 +48,5 @@ ACTIVE_META_SCHEMAS = (
     'Replication Recipe (Brandt et al., 2013): Post-Completion',
     "Pre-Registration in Social Psychology (van 't Veer & Giner-Sorolla, 2016): Pre-Registration",
     'Election Research Preacceptance Competition',
+    'Preprint Provider',
 )
