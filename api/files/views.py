@@ -41,12 +41,11 @@ class FileMixin(object):
             obj = utils.get_object_or_error(Guid, self.kwargs[self.file_lookup_url_kwarg]).referent
             if not isinstance(obj, StoredFileNode):
                 raise NotFound
-            obj = obj.wrapped()
 
         if check_permissions:
             # May raise a permission denied
             self.check_object_permissions(self.request, obj)
-        return obj.wrapped()
+        return obj
 
 
 class FileDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, FileMixin):

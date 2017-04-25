@@ -965,7 +965,7 @@ class TestSearchFiles(OsfTestCase):
 
     def test_file_download_url_no_guid(self):
         file_ = self.root.append_file('Timber.mp3')
-        path = OsfStorageFile.find_one( Q('node', 'eq', file_.node_id)).wrapped().path
+        path = OsfStorageFile.find_one( Q('node', 'eq', file_.node_id)).path
         deep_url = '/' + file_.node._id + '/files/osfstorage' + path + '/'
         find = query_file('Timber.mp3')['results']
         assert_not_equal(file_.path, '')
