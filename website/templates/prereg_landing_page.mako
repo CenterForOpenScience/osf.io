@@ -88,10 +88,10 @@
     <p>${description()}</p>
     % if campaign_short != 'erpc':
         <p class="m-t-lg f-w-lg">Ready for the ${challenge_word()}? Please follow these steps:</p>
+    % endif
         <p>
             ${steps()}
         </p>
-    % endif
     <div class="col-md-12 visible-xs">                  
       ## Always displayed
       <div class="row">

@@ -5,6 +5,9 @@
 <%def name="challenge_word()">competition</%def>
 
 <%def name="description()">
+</%def>
+
+<%def name="steps()">
     <p>With the release of the <a href="http://www.electionstudies.org/">American National Election Studies</a>
         2016 survey dataset, no additional preregistrations are being accepted for this competition.
         To read more about this competition and its current status, please visit <a href="www.erpc2016.com">www.erpc2016.com</a>.</p>
@@ -20,8 +23,4 @@
         <a href="https://cos.io/prereg/">information page</a> or get started on your next preregistration
         <a href="https://osf.io/prereg/">now</a>.
     </p>
-</%def>
-
-<%def name="steps()">
-
 </%def>
