@@ -8,7 +8,6 @@ import urllib
 
 from django.apps import apps
 from flask import request, send_from_directory
-import furl
 
 from framework import sentry
 from framework.auth.decorators import must_be_logged_in
@@ -206,14 +205,6 @@ def _build_guid_url(base, suffix=None):
         url = url.decode('utf-8')
     return u'/{0}/'.format(url)
 
-def _download_file(file):
-    action = 'download'
-    if request.args.get('format'):
-        action = 'export'
-    url = furl.furl('/project/{}/files/{}{}'.format(file.node._id, file.provider, file.path))
-    url.args.update({'action': action})
-    url.args.update(request.args.to_dict())
-    return redirect(url)
 
 def resolve_guid(guid, suffix=None):
     """Load GUID by primary key, look up the corresponding view function in the
@@ -233,7 +224,6 @@ def resolve_guid(guid, suffix=None):
         else:
             raise e
     if guid_object:
-
         # verify that the object implements a GuidStoredObject-like interface. If a model
         #   was once GuidStoredObject-like but that relationship has changed, it's
         #   possible to have referents that are instances of classes that don't
@@ -250,16 +240,30 @@ def resolve_guid(guid, suffix=None):
             raise HTTPError(http.NOT_FOUND)
         if not referent.deep_url:
             raise HTTPError(http.NOT_FOUND)
+
+        # Handle file `/download` shortcut with supported types.
+        if suffix and suffix.rstrip('/').lower() == 'download':
+            file_referent = None
+            if isinstance(referent, PreprintService) and referent.primary_file:
+                file_referent = referent.primary_file
+            elif isinstance(referent, BaseFileNode) and referent.is_file:
+                file_referent = referent
+
+            if file_referent:
+                # Extend `request.args` adding `action=download`.
+                request.args = request.args.copy()
+                request.args.update({'action': 'download'})
+                # Do not include the `download` suffix in the url rebuild.
+                url = _build_guid_url(urllib.unquote(file_referent.deep_url))
+                return proxy_url(url)
+
+        # Handle Ember Applications
         if isinstance(referent, PreprintService):
-            if isinstance(suffix, basestring) and suffix.startswith('download') and referent.primary_file:
-                return _download_file(referent.primary_file)
             return send_from_directory(
                 os.path.abspath(os.path.join(os.getcwd(), EXTERNAL_EMBER_APPS['preprints']['path'])),
                 'index.html'
             )
-        if isinstance(referent, BaseFileNode):
-            if isinstance(suffix, basestring) and suffix.startswith('download') and referent.is_file:
-                return _download_file(referent)
+
         url = _build_guid_url(urllib.unquote(referent.deep_url), suffix)
         return proxy_url(url)
 
