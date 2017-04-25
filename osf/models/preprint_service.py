@@ -9,20 +9,20 @@ from django.contrib.contenttypes.fields import GenericRelation
 
 from framework.celery_tasks.handlers import enqueue_task
 from framework.exceptions import PermissionsError
-from osf.models.subject import Subject
 from osf.utils.fields import NonNaiveDateTimeField
+from website.files.models import StoredFileNode
+from website.preprints.tasks import on_preprint_updated, get_and_set_preprint_identifiers
 from website.preprints.tasks import on_preprint_updated
 from website.project.model import NodeLog
 from website.project.licenses import set_license
 from website.project.taxonomies import validate_subject_hierarchy
-from website.identifiers.utils import get_or_create_identifiers
 from website.util import api_v2_url
 from website.util.permissions import ADMIN
 from website import settings
 
 from osf.models.base import BaseModel, GuidMixin
 from osf.models.subject import Subject
-from osf.models.identifiers import IdentifierMixin, Identifier
+from osf.models.identifiers import IdentifierMixin
 
 class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, BaseModel):
     date_created = NonNaiveDateTimeField(auto_now_add=True)
@@ -193,8 +193,7 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, BaseModel):
                     log=True
                 )
 
-            new_identifiers = get_or_create_identifiers(self)
-            self.set_preprint_identifiers(new_identifiers)
+            enqueue_task(get_and_set_preprint_identifiers.s(self))
 
         if save:
             self.node.save()

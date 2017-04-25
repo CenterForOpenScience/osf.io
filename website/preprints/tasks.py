@@ -7,7 +7,7 @@ from framework.celery_tasks import app as celery_app
 
 from website import settings
 from website.util.share import GraphNode, format_contributor
-from website.identifiers.utils import update_ezid_metadata_on_change
+from website.identifiers.utils import update_ezid_metadata_on_change, get_or_create_identifiers
 
 logger = logging.getLogger(__name__)
 
@@ -95,3 +95,12 @@ def format_preprint(preprint):
         to_visit.extend(list(n.get_related()))
 
     return [node.serialize() for node in visited]
+
+
+@celery_app.task(ignore_results=True)
+def get_and_set_preprint_identifiers(preprint_id):
+    from osf.models import PreprintService
+
+    preprint = PreprintService.load(preprint_id)
+    new_identifiers = get_or_create_identifiers(preprint)
+    preprint.set_preprint_identifiers(new_identifiers)
