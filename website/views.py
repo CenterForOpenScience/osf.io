@@ -241,10 +241,10 @@ def resolve_guid(guid, suffix=None):
         if not referent.deep_url:
             raise HTTPError(http.NOT_FOUND)
         if isinstance(referent, PreprintService):
-            if referent.provider._id == 'osf' or not referent.provider.domain:
-                return send_from_directory(preprints_dir, 'index.html')
+            if referent.provider.domain_redirect_enabled:
+                return redirect(referent.absolute_url, 301)
 
-            return redirect(referent.absolute_url, 301)
+            return send_from_directory(preprints_dir, 'index.html')
         url = _build_guid_url(urllib.unquote(referent.deep_url), suffix)
         return proxy_url(url)
 

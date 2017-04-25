@@ -4766,9 +4766,21 @@ class TestResolveGuid(OsfTestCase):
             '/{}/'.format(preprint._id)
         )
 
-    def test_preprint_provider_with_domain(self):
+    def test_preprint_provider_with_domain_without_redirect(self):
         domain = 'https://test.com/'
-        provider = PreprintProviderFactory(_id='test', domain=domain)
+        provider = PreprintProviderFactory(_id='test', domain=domain, domain_redirect_enabled=False)
+        preprint = PreprintFactory(provider=provider)
+        url = web_url_for('resolve_guid', _guid=True, guid=preprint._id)
+        res = self.app.get(url)
+        assert_equal(res.status_code, 200)
+        assert_equal(
+            res.request.path,
+            '/{}/'.format(preprint._id)
+        )
+
+    def test_preprint_provider_with_domain_with_redirect(self):
+        domain = 'https://test.com/'
+        provider = PreprintProviderFactory(_id='test', domain=domain, domain_redirect_enabled=True)
         preprint = PreprintFactory(provider=provider)
         url = web_url_for('resolve_guid', _guid=True, guid=preprint._id)
         res = self.app.get(url)
@@ -4784,6 +4796,8 @@ class TestResolveGuid(OsfTestCase):
             res.request.path,
             '/{}/'.format(preprint._id)
         )
+
+
 
     def test_preprint_provider_with_osf_domain(self):
         provider = PreprintProviderFactory(_id='osf', domain='https://osf.io/')
