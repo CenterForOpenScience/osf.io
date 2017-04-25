@@ -24,7 +24,7 @@ def block_bing_preview(func):
     def wrapped(*args, **kwargs):
         user_agent = request.headers.get('User-Agent')
         if user_agent and ('BingPreview' in user_agent or 'MSIE 9.0' in user_agent):
-            return HTTPError(httplib.FORBIDDEN, data={'message_long': 'Internet Explorer 9 and BingPreview are not allowed to access this page for security reasons. If this should not have occurred and the issue persists, please report it to <a href="mailto: support@osf.io">support@osf.io</a>.'})
+            return HTTPError(httplib.FORBIDDEN, data={'message_long': 'Internet Explorer 9 and BingPreview cannot be used to access this page for security reasons. Please use another browser. If this should not have occurred and the issue persists, please report it to <a href="mailto: support@osf.io">support@osf.io</a>.'})
         return func(*args, **kwargs)
 
     return wrapped
