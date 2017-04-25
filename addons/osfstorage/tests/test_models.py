@@ -221,7 +221,7 @@ class TestOsfstorageFileNode(StorageTestCase):
 
     def test_delete_file(self):
         child = self.node_settings.get_root().append_file('Test')
-        field_names = [f.name for f in child._meta.get_fields() if not f.is_relation and f.name not in ['id', 'guid_string', 'content_type_pk']]
+        field_names = [f.name for f in child._meta.get_fields() if not f.is_relation and f.name not in ['id', 'content_type_pk']]
         child_data = {f: getattr(child, f) for f in field_names}
         child.delete()
 
@@ -233,7 +233,7 @@ class TestOsfstorageFileNode(StorageTestCase):
         child_storage['materialized_path'] = child.materialized_path
         assert_equal(trashed.path, '/' + child._id)
         trashed_field_names = [f.name for f in child._meta.get_fields() if not f.is_relation and
-                               f.name not in ['id', 'guid_string', '_materialized_path', 'content_type_pk', '_path', 'deleted_on', 'deleted_by', 'type']]
+                               f.name not in ['id', '_materialized_path', 'content_type_pk', '_path', 'deleted_on', 'deleted_by', 'type']]
         for f, value in child_data.iteritems():
             if f in trashed_field_names:
                 assert_equal(getattr(trashed, f), value)
