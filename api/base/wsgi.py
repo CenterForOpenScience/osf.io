@@ -58,6 +58,6 @@ Request.__getattribute__ = object.__getattribute__
 ############# /monkeys ####################
 
 init_app(set_backends=True, routes=False, attach_request_handlers=False)
-api_settings.load_institutions()
+api_settings.load_origins_whitelist()
 
 application = get_wsgi_application()
