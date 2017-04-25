@@ -58,6 +58,12 @@ def merge_dicts(*dicts):
     return dict(sum((each.items() for each in dicts), []))
 
 
+def get_subdomain(preprint):
+    furled = furl.furl(preprint.provider.external_url)
+    url = furled.host or furled.url
+    return '.'.join([part for part in url.split('.') if part not in SUBDOMAINS])
+
+
 def get_doi_and_metadata_for_object(target_object):
     from osf.models import PreprintService
 
@@ -65,8 +71,7 @@ def get_doi_and_metadata_for_object(target_object):
     metadata_function = datacite_metadata_for_node
     if isinstance(target_object, PreprintService):
         if target_object.provider.external_url:
-            host = furl.furl(target_object.provider.external_url).host
-            domain = '.'.join([part for part in host.split('.') if part not in SUBDOMAINS])
+            domain = get_subdomain(target_object)
         metadata_function = datacite_metadata_for_preprint
 
     doi = settings.EZID_FORMAT.format(namespace=settings.DOI_NAMESPACE, domain=domain, guid=target_object._id)
@@ -123,7 +128,7 @@ def get_or_create_identifiers(target_object):
 
 
 def update_ezid_metadata_on_change(target_object, status):
-    if settings.EZID_USERNAME and settings.EZID_PASSWORD:
+    if (settings.EZID_USERNAME and settings.EZID_PASSWORD) and target_object.get_identifier('doi'):
         client = get_ezid_client()
 
         doi, metadata = build_ezid_metadata(target_object)
