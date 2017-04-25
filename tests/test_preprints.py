@@ -12,7 +12,7 @@ from framework.auth import Auth
 from framework.exceptions import PermissionsError
 
 from website import settings
-from website.identifiers.utils import get_doi_and_metadata_for_object, get_subdomain
+from website.identifiers.utils import get_doi_and_metadata_for_object, get_top_level_domain
 from osf.models import NodeLog, Subject
 
 from tests.base import OsfTestCase
@@ -307,7 +307,7 @@ class TestPreprintIdentifiers(OsfTestCase):
 
         assert doi == ideal_doi
 
-    def test_get_subdomain(self):
+    def test_get_top_level_domain(self):
         domains = ['https://www.broken-m-hardy.woo', 'https://broken-m-hardy.woo', 'broken-m-hardy.woo', 'www.broken-m-hardy.woo']
         ideal = 'broken-m-hardy.woo'
 
@@ -315,7 +315,7 @@ class TestPreprintIdentifiers(OsfTestCase):
             self.preprint.provider.external_url = domain
             self.preprint.save()
 
-            sub = get_subdomain(self.preprint)
+            sub = get_top_level_domain(self.preprint)
             assert sub == ideal
 
 

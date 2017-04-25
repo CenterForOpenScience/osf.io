@@ -21,7 +21,7 @@ from website.util import permissions
 from website.project.licenses import ensure_licenses
 from website.project.model import ensure_schemas
 from website.archiver import ARCHIVER_SUCCESS
-from website.identifiers.utils import get_subdomain
+from website.identifiers.utils import get_top_level_domain
 from framework.auth.core import Auth
 
 from osf import models
@@ -574,7 +574,7 @@ class PreprintFactory(DjangoModelFactory):
                 preprint.set_preprint_license(license_details, auth=auth)
             create_identifier_patcher = mock.patch("website.identifiers.client.EzidClient.create_identifier")
             mock_create_identifier = create_identifier_patcher.start()
-            domain = get_subdomain(preprint)
+            domain = get_top_level_domain(preprint)
             mock_create_identifier.return_value = {
                 'success': '{doi}{domain}/{guid} | {ark}{domain}/{guid}'.format(
                     doi=settings.DOI_NAMESPACE, domain=domain, ark=settings.ARK_NAMESPACE, guid=preprint._id

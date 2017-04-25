@@ -2,7 +2,7 @@ import logging
 import time
 
 from website.app import init_app
-from website.identifiers.utils import get_or_create_identifiers, get_subdomain
+from website.identifiers.utils import get_or_create_identifiers, get_top_level_domain
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -21,7 +21,7 @@ def add_identifiers_to_preprints():
         preprint.save()
 
         doi = preprint.get_identifier('doi')
-        subdomain = get_subdomain(preprint)
+        subdomain = get_top_level_domain(preprint)
         assert subdomain.upper() in doi.value
         assert preprint._id.upper() in doi.value
 
