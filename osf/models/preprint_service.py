@@ -41,8 +41,6 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, BaseModel):
 
     subjects = models.ManyToManyField(blank=True, to='osf.Subject', related_name='preprint_services')
 
-    identifiers = GenericRelation(Identifier, related_query_name='preprintservices')
-
     class Meta:
         unique_together = ('node', 'provider')
         permissions = (
