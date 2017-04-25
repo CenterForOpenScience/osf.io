@@ -19,7 +19,7 @@ logging.basicConfig(level=logging.INFO)
 
 ENVS = ['prod', 'stage']
 SUBJECTS_CACHE = {}
-STAGING_PREPRINT_PROVIDERS = ['osf', 'psyarxiv', 'engrxiv', 'socarxiv', 'scielo', 'agrixiv', 'bitss', 'fusfoundation']
+STAGING_PREPRINT_PROVIDERS = ['osf', 'psyarxiv', 'engrxiv', 'socarxiv', 'scielo', 'agrixiv', 'bitss', 'focusarchive']
 PROD_PREPRINT_PROVIDERS = ['osf', 'psyarxiv', 'engrxiv', 'socarxiv', 'agrixiv', 'bitss']
 
 
@@ -1179,9 +1179,9 @@ def main(env):
                 (['Social and Behavioral Sciences', 'Other Social and Behavioral Sciences'], False)
             ]
         },
-        'fusfoundation': {
-            '_id': 'fusfoundation',
-            'name': 'Focused Ultrasound Foundation',
+        'focusarchive': {
+            '_id': 'focusarchive',
+            'name': 'FocUS Archive',
             'logo_name': 'fusf_logo.jpg',
             'description': 'A free preprint service for the focused ultrasound research community.',
             'banner_name': 'fusf_logo_on_transparent.png',
