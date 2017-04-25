@@ -51,7 +51,7 @@ def format_preprint(preprint):
 
     to_visit = [
         preprint_graph,
-        GraphNode('workidentifier', creative_work=preprint_graph, uri=urlparse.urljoin(settings.DOMAIN, preprint.url))
+        GraphNode('workidentifier', creative_work=preprint_graph, uri=urlparse.urljoin(settings.DOMAIN, preprint._id + '/'))
     ]
 
     if preprint.provider.domain_redirect_enabled:

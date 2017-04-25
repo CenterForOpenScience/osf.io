@@ -77,7 +77,7 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, BaseModel):
 
     @property
     def url(self):
-        if self.provider.domain_redirect_enabled:
+        if self.provider.domain_redirect_enabled or self.provider._id == 'osf':
             return '/{}/'.format(self._id)
 
         return '/preprints/{}/{}/'.format(self.provider._id, self._id)
