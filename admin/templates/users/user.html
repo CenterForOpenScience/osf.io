@@ -105,6 +105,19 @@
                         </div>
                     </div>
                     {% endif %}
+                    <span class="col-md-2">
+                        <a href="{% url 'users:reindex-elastic-user' guid=user.id %}"
+                        data-toggle="modal" data-target="#confirmReindexElasticUser"
+                        class="btn btn-default">
+                            Elastic Reindex
+                        </a>
+                    </span>
+                    <div class="modal" id="confirmReindexElasticUser">
+                        <div class="modal-dialog">
+                            <div class="modal-content"></div>
+                            {# Data from above link #}
+                        </div>
+                    </div>
                 </span>
             {% endif %}
         </div>

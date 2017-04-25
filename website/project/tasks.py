@@ -38,28 +38,31 @@ def on_node_updated(node_id, user_id, first_save, saved_fields, request_headers=
             if node.is_registration:
                 on_registration_updated(node)
             else:
-                resp = requests.post('{}api/normalizeddata/'.format(settings.SHARE_URL), json={
-                    'data': {
-                        'type': 'NormalizedData',
-                        'attributes': {
-                            'tasks': [],
-                            'raw': None,
-                            'data': {'@graph': [{
-                                '@id': '_:123',
-                                '@type': 'workidentifier',
-                                'creative_work': {'@id': '_:789', '@type': 'project'},
-                                'uri': '{}{}/'.format(settings.DOMAIN, node._id),
-                            }, {
-                                '@id': '_:789',
-                                '@type': 'project',
-                                'is_deleted': not node.is_public or node.is_deleted or node.is_spammy,
-                            }]}
-                        }
-                    }
-                }, headers={'Authorization': 'Bearer {}'.format(settings.SHARE_API_TOKEN), 'Content-Type': 'application/vnd.api+json'})
-                logger.debug(resp.content)
-                resp.raise_for_status()
+                update_node_share(node)
 
+def update_node_share(node):
+    resp = requests.post('{}api/normalizeddata/'.format(settings.SHARE_URL),
+        json={
+            'data': {
+                'type': 'NormalizedData',
+                'attributes': {
+                    'tasks': [],
+                    'raw': None,
+                    'data': {'@graph': [{
+                        '@id': '_:123',
+                        '@type': 'workidentifier',
+                        'creative_work': {'@id': '_:789', '@type': 'project'},
+                        'uri': '{}{}/'.format(settings.DOMAIN, node._id),
+                    }, {
+                        '@id': '_:789',
+                        '@type': 'project',
+                        'is_deleted': not node.is_public or node.is_deleted or node.is_spammy,
+                    }]}
+                }
+            }
+        }, headers={'Authorization': 'Bearer {}'.format(settings.SHARE_API_TOKEN), 'Content-Type': 'application/vnd.api+json'})
+    logger.debug(resp.content)
+    resp.raise_for_status()
 
 def on_registration_updated(node):
     resp = requests.post('{}api/v2/normalizeddata/'.format(settings.SHARE_URL), json={

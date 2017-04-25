@@ -19,6 +19,7 @@ from framework.auth.utils import impute_names
 from framework.auth.core import generate_verification_key
 
 from website.mailchimp_utils import subscribe_on_confirm
+from website import search
 
 from admin.base.views import GuidFormView, GuidView
 from osf.models.admin_log_entry import (
@@ -27,7 +28,9 @@ from osf.models.admin_log_entry import (
     USER_EMAILED,
     USER_REMOVED,
     USER_RESTORED,
-    CONFIRM_SPAM)
+    CONFIRM_SPAM,
+    REINDEX_ELASTIC,
+    )
 
 from admin.users.serializers import serialize_user
 from admin.users.forms import EmailResetForm, WorkshopForm
@@ -439,3 +442,19 @@ class ResetPasswordView(PermissionRequiredMixin, FormView):
     @property
     def success_url(self):
         return reverse_user(self.kwargs.get('guid'))
+
+
+class UserReindexElastic(UserDeleteView):
+    template_name = 'users/reindex_user_elastic.html'
+
+    def delete(self, request, *args, **kwargs):
+        user = self.get_object()
+        search.search.update_user(user, async=False)
+        update_admin_log(
+            user_id=self.request.user.id,
+            object_id=user._id,
+            object_repr='User',
+            message='User Reindexed (Elastic): {}'.format(user._id),
+            action_flag=REINDEX_ELASTIC
+        )
+        return redirect(reverse_user(self.kwargs.get('guid')))

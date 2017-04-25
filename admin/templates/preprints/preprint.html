@@ -39,6 +39,19 @@
                     </span>
                 {% endif %}
                 {% endif %}
+            <span class="col-md-2">
+                <a href="{% url 'preprints:reindex-share-preprint' guid=serialized_preprint.id %}"
+                   data-toggle="modal" data-target="#confirmReindexSharePreprint"
+                   class="btn btn-default">
+                    SHARE Reindex
+                </a>
+            </span>
+            <div class="modal" id="confirmReindexSharePreprint">
+                <div class="modal-dialog">
+                    <div class="modal-content"></div>
+                    {# Data from above link #}
+                </div>
+            </div>
             </div>
         </div>
         <div class="row">

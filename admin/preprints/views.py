@@ -1,11 +1,14 @@
 from __future__ import unicode_literals
 
-from django.views.generic import UpdateView
+from django.views.generic import UpdateView, DeleteView
 from django.core.urlresolvers import reverse_lazy
 from django.contrib.auth.mixins import PermissionRequiredMixin
+from django.shortcuts import redirect
 
-
+from osf.models.admin_log_entry import update_admin_log, REINDEX_SHARE
+from website import settings, search
 from website.preprints.model import PreprintService
+from website.preprints.tasks import on_preprint_updated
 from framework.exceptions import PermissionsError
 from admin.base.views import GuidFormView, GuidView
 from admin.nodes.templatetags.node_extras import reverse_preprint
@@ -57,3 +60,32 @@ class PreprintView(PermissionRequiredMixin, UpdateView, GuidView):
         kwargs['change_provider_form'] = ChangeProviderForm(instance=preprint)
         kwargs['subjects'] = serialize_subjects(preprint.subjects)
         return super(PreprintView, self).get_context_data(**kwargs)
+
+
+class PreprintReindexShare(PermissionRequiredMixin, DeleteView):
+    template_name = 'preprints/reindex_preprint_share.html'
+    context_object_name = 'preprintservice'
+    object = None
+    permission_required = 'osf.view_preprintservice'
+    raise_exception = True
+
+    def get_context_data(self, **kwargs):
+        context = {}
+        context.setdefault('guid', kwargs.get('object')._id)
+        return super(PreprintReindexShare, self).get_context_data(**context)
+
+    def get_object(self, queryset=None):
+        return PreprintService.load(self.kwargs.get('guid'))
+
+    def delete(self, request, *args, **kwargs):
+        preprint = self.get_object()
+        if settings.SHARE_URL and settings.SHARE_API_TOKEN:
+            on_preprint_updated(preprint._id)
+            update_admin_log(
+                user_id=self.request.user.id,
+                object_id=preprint._id,
+                object_repr='Preprint',
+                message='Preprint Reindexed (SHARE): {}'.format(preprint._id),
+                action_flag=REINDEX_SHARE
+            )
+        return redirect(reverse_preprint(self.kwargs.get('guid')))
