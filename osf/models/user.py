@@ -14,6 +14,7 @@ import itsdangerous
 import pytz
 from dirtyfields import DirtyFieldsMixin
 
+from django.apps import apps
 from django.conf import settings
 from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
 from django.contrib.auth.hashers import check_password
@@ -51,9 +52,10 @@ from website.project import new_bookmark_collection
 
 logger = logging.getLogger(__name__)
 
-
-def get_default_mailing_lists():
-    return {'Open Science Framework Help': True}
+EMAIL_TYPES = [
+    ('contact', 'Contact'),
+    ('support', 'Support')
+]
 
 name_formatters = {
     'long': lambda user: user.fullname,
@@ -64,14 +66,16 @@ name_formatters = {
     ),
 }
 
-EMAIL_TYPES = [
-    ('contact', 'Contact'),
-    ('support', 'Support')
-]
+def get_default_mailing_lists():
+    return {'Open Science Framework Help': True}
+
 
 class Email(ObjectIDMixin, BaseModel):
-    email = models.EmailField()
+    email = models.EmailField(validators=[validate_email])
     email_type = models.CharField(choices=EMAIL_TYPES, null=True, blank=True, max_length=50)
+
+    class Meta:
+        unique_together = ('email', 'email_type')
 
 
 class SocialNetwork(ObjectIDMixin, BaseModel):
@@ -82,6 +86,9 @@ class SocialNetwork(ObjectIDMixin, BaseModel):
 class SocialAccount(ObjectIDMixin, BaseModel):
     username = models.CharField(max_length=200)
     network = models.ForeignKey(SocialNetwork, on_delete=models.CASCADE)
+
+    class Meta:
+        unique_together = ('username', 'network')
 
 
 class OSFUserManager(BaseUserManager):
@@ -242,7 +249,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     # confirmed emails
     #   emails should be stripped of whitespace and lower-cased before appending
     # TODO: Add validator to ensure an email address only exists once across
-    # TODO: Change to m2m field per @sloria
+    # TODO: Change to M2M(Email, ...) field
     # all User's email lists
     emails = fields.ArrayField(models.CharField(max_length=255), default=list, blank=True)
 
@@ -330,6 +337,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     # }
 
     # Social links
+    # TODO: Change to M2MField(SocialAccount, ...) -- may need to separate profileWebsites
     social = DateTimeAwareJSONField(default=dict, blank=True, validators=[validate_social])
     # Format: {
     #     'profileWebsites': <list of profile websites>

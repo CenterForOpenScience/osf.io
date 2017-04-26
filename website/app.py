@@ -25,6 +25,7 @@ from framework.mongo import handlers as mongo_handlers
 from framework.postcommit_tasks import handlers as postcommit_handlers
 from framework.sentry import sentry
 from framework.transactions import handlers as transaction_handlers
+from osf.utils.social import ensure_social_networks
 # Imports necessary to connect signals
 from website.archiver import listeners  # noqa
 from website.files.models import FileNode
@@ -141,6 +142,7 @@ def init_app(settings_module='website.settings', set_backends=True, routes=True,
     if set_backends and fixtures:
         ensure_schemas()
         ensure_licenses()
+        ensure_social_networks()
     apply_middlewares(app, settings)
 
     app.config['IS_INITIALIZED'] = True

@@ -13,7 +13,7 @@ from api.base.serializers import (
 )
 from api.base.utils import absolute_reverse, get_user_auth
 
-from osf.models.user import Email, SocialAccount
+from osf.models.user import Email, SocialAccount, SocialNetwork
 
 
 class EmailSerializer(ser.ModelSerializer):
@@ -23,7 +23,16 @@ class EmailSerializer(ser.ModelSerializer):
         fields = ('email', 'email_type',)
 
 
+class SocialNetworkSerializer(ser.ModelSerializer):
+
+    class Meta:
+        model = SocialNetwork
+        fields = ('base_url', 'name',)
+
+
 class SocialAccountSerializer(ser.ModelSerializer):
+
+    network = SocialNetworkSerializer(read_only=True)
 
     class Meta:
         model = SocialAccount
