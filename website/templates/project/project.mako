@@ -492,6 +492,7 @@ ${parent.javascript_bottom()}
                 public: true,
             },
         },
+        customCitations: ${ custom_citations | sjson, n }
     });
 </script>
 
