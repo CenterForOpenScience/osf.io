@@ -30,6 +30,7 @@ from admin.users.views import (
     UserKnownSpamList,
     UserKnownHamList,
     UserWorkshopFormView,
+    UserReindexElastic,
 )
 from admin.users.forms import WorkshopForm
 from osf.models.admin_log_entry import AdminLogEntry
@@ -404,3 +405,21 @@ class TestUserWorkshopFormView(AdminTestCase):
     def tearDown(self):
         if os.path.isfile('test.csv'):
             os.remove('test.csv')
+
+
+class TestUserReindex(AdminTestCase):
+    def setUp(self):
+        super(TestUserReindex, self).setUp()
+        self.request = RequestFactory().post('/fake_path')
+
+        self.user = AuthUserFactory()
+
+    @mock.patch('website.search.search.update_user')
+    def test_reindex_user_elastic(self, mock_reindex_elastic):
+        count = AdminLogEntry.objects.count()
+        view = UserReindexElastic()
+        view = setup_log_view(view, self.request, guid=self.user._id)
+        view.delete(self.request)
+
+        nt.assert_true(mock_reindex_elastic.called)
+        nt.assert_equal(AdminLogEntry.objects.count(), count + 1)

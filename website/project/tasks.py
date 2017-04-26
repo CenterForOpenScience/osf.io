@@ -61,9 +61,7 @@ def update_node_share(node):
                 }]}
             }
         }
-    }, 
-        headers={'Authorization': 'Bearer {}'.format(settings.SHARE_API_TOKEN), 'Content-Type': 'application/vnd.api+json'}
-    )
+    }, headers={'Authorization': 'Bearer {}'.format(settings.SHARE_API_TOKEN), 'Content-Type': 'application/vnd.api+json'})
     logger.debug(resp.content)
     resp.raise_for_status()
 
