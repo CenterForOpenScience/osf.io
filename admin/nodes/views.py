@@ -27,7 +27,7 @@ from osf.models.admin_log_entry import (
 from admin.nodes.templatetags.node_extras import reverse_node
 from admin.nodes.serializers import serialize_node, serialize_simple_user_and_node_permissions
 from website.project.spam.model import SpamStatus
-from website.project.tasks import update_share, on_registration_updated
+from website.project.tasks import update_share
 from website.project.views.register import osf_admin_change_status_identifier
 
 

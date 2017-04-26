@@ -1,7 +1,7 @@
 import mock
 from osf.models.admin_log_entry import AdminLogEntry
 from admin.nodes.views import (
-    NodeDeleteView, 
+    NodeDeleteView,
     NodeRemoveContributorView,
     NodeView,
     NodeReindexShare,
@@ -184,7 +184,7 @@ class TestNodeReindex(AdminTestCase):
         view = NodeReindexShare()
         view = setup_log_view(view, self.request, guid=self.registration._id)
         view.delete(self.request)
-    
+
         nt.assert_false(self.mock_reindex_node.called)
         nt.assert_true(self.mock_reindex_registration.called)
         nt.assert_equal(AdminLogEntry.objects.count(), count + 1)

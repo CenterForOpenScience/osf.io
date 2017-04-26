@@ -43,26 +43,26 @@ def update_share(node):
             update_node_share(node)
 
 def update_node_share(node):
-    resp = requests.post('{}api/normalizeddata/'.format(settings.SHARE_URL),
-        json={
-            'data': {
-                'type': 'NormalizedData',
-                'attributes': {
-                    'tasks': [],
-                    'raw': None,
-                    'data': {'@graph': [{
-                        '@id': '_:123',
-                        '@type': 'workidentifier',
-                        'creative_work': {'@id': '_:789', '@type': 'project'},
-                        'uri': '{}{}/'.format(settings.DOMAIN, node._id),
-                    }, {
-                        '@id': '_:789',
-                        '@type': 'project',
-                        'is_deleted': not node.is_public or node.is_deleted or node.is_spammy,
-                    }]}
-                }
+    resp = requests.post('{}api/normalizeddata/'.format(settings.SHARE_URL), json={
+        'data': {
+            'type': 'NormalizedData',
+            'attributes': {
+                'tasks': [],
+                'raw': None,
+                'data': {'@graph': [{
+                    '@id': '_:123',
+                    '@type': 'workidentifier',
+                    'creative_work': {'@id': '_:789', '@type': 'project'},
+                    'uri': '{}{}/'.format(settings.DOMAIN, node._id),
+                }, {
+                    '@id': '_:789',
+                    '@type': 'project',
+                    'is_deleted': not node.is_public or node.is_deleted or node.is_spammy,
+                }]}
             }
-        }, headers={'Authorization': 'Bearer {}'.format(settings.SHARE_API_TOKEN), 'Content-Type': 'application/vnd.api+json'}
+        }
+    }, 
+        headers={'Authorization': 'Bearer {}'.format(settings.SHARE_API_TOKEN), 'Content-Type': 'application/vnd.api+json'}
     )
     logger.debug(resp.content)
     resp.raise_for_status()
