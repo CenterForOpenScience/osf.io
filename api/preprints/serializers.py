@@ -71,7 +71,7 @@ class PreprintSerializer(JSONAPISerializer):
     date_created = DateByVersion(read_only=True)
     date_modified = DateByVersion(read_only=True)
     date_published = DateByVersion(read_only=True)
-    article_doi = ser.CharField(required=False, allow_null=True)
+    doi = ser.CharField(source='article_doi', required=False, allow_null=True)
     is_published = ser.BooleanField(required=False)
     is_preprint_orphan = ser.BooleanField(read_only=True)
     license_record = NodeLicenseSerializer(required=False, source='license')
@@ -115,8 +115,8 @@ class PreprintSerializer(JSONAPISerializer):
         {
             'self': 'get_preprint_url',
             'html': 'get_absolute_html_url',
-            'article_doi': 'get_article_doi_url',
-            'doi': 'get_doi_url'
+            'doi': 'get_article_doi_url',
+            'preprint_doi': 'get_preprint_doi_url'
         }
     )
 
@@ -139,6 +139,10 @@ class PreprintSerializer(JSONAPISerializer):
     def get_article_doi_url(self, obj):
         return 'https://dx.doi.org/{}'.format(obj.article_doi) if obj.article_doi else None
 
+    def get_preprint_doi_url(self, obj):
+        doi_identifier = obj.get_identifier('doi')
+        return 'https://dx.doi.org/{}'.format(doi_identifier.value) if doi_identifier else None
+
     def run_validation(self, *args, **kwargs):
         # Overrides construtor for validated_data to allow writes to a SerializerMethodField
         # Validation for `subjects` happens in the model
@@ -146,10 +150,6 @@ class PreprintSerializer(JSONAPISerializer):
         if 'subjects' in self.initial_data:
             _validated_data['subjects'] = self.initial_data['subjects']
         return _validated_data
-
-    def get_doi_url(self, obj):
-        doi_identifier = obj.get_identifier('doi')
-        return 'https://dx.doi.org/{}'.format(doi_identifier.value) if doi_identifier else None
 
     def update(self, preprint, validated_data):
         assert isinstance(preprint, PreprintService), 'You must specify a valid preprint to be updated'
