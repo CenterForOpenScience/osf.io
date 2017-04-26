@@ -74,9 +74,9 @@ class TestMetadataGeneration(OsfTestCase):
         provider = PreprintProviderFactory()
         license = NodeLicense.objects.get(name="CC-By Attribution 4.0 International")
         license_details = {
-                'id': license.license_id,
-                'year': '2017',
-                'copyrightHolders': ['Jeff Hardy', 'Matt Hardy']
+            'id': license.license_id,
+            'year': '2017',
+            'copyrightHolders': ['Jeff Hardy', 'Matt Hardy']
         }
         preprint = PreprintFactory(provider=provider, project=self.node, is_published=True, license_details=license_details)
         metadata_xml = metadata.datacite_metadata_for_preprint(preprint, doi=preprint.get_identifier('doi').value, pretty_print=True)

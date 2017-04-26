@@ -21,7 +21,7 @@ from website.util import permissions
 from website.project.licenses import ensure_licenses
 from website.project.model import ensure_schemas
 from website.archiver import ARCHIVER_SUCCESS
-from website.identifiers.utils import get_top_level_domain
+from website.identifiers.utils import get_top_level_domain, parse_identifiers
 from framework.auth.core import Auth
 
 from osf import models
@@ -511,6 +511,19 @@ class PreprintProviderFactory(DjangoModelFactory):
         model = models.PreprintProvider
 
 
+def sync_set_identifiers(preprint):
+    domain = get_top_level_domain(preprint.provider.external_url)
+    ezid_return_value ={
+        'response': {
+            'success': '{doi}{domain}/{guid} | {ark}{domain}/{guid}'.format(
+                doi=settings.DOI_NAMESPACE, domain=domain, ark=settings.ARK_NAMESPACE, guid=preprint._id
+            )
+        },
+        'already_exists': False
+    }
+    preprint.set_preprint_identifiers(ezid_return_value)
+
+
 class PreprintFactory(DjangoModelFactory):
     doi = factory.Sequence(lambda n: '10.123/{}'.format(n))
     provider = factory.SubFactory(PreprintProviderFactory)
@@ -572,36 +585,28 @@ class PreprintFactory(DjangoModelFactory):
             preprint.save()
             if license_details:
                 preprint.set_preprint_license(license_details, auth=auth)
-            create_identifier_patcher = mock.patch("website.identifiers.client.EzidClient.create_identifier")
-            mock_create_identifier = create_identifier_patcher.start()
-            domain = get_top_level_domain(preprint)
-            mock_create_identifier.return_value = {
-                'success': '{doi}{domain}/{guid} | {ark}{domain}/{guid}'.format(
-                    doi=settings.DOI_NAMESPACE, domain=domain, ark=settings.ARK_NAMESPACE, guid=preprint._id
-                )
-            }
-
-            create_task_patch = mock.patch('website.preprints.tasks.get_and_set_preprint_identifiers.s', side_effect=cls.sync_set_identifiers)
-            create_task_patch.start()
+            # create_identifier_patcher = mock.patch("website.identifiers.client.EzidClient.create_identifier")
+            # mock_create_identifier = create_identifier_patcher.start()
+            # domain = get_top_level_domain(preprint)
+            # mock_create_identifier.return_value = {
+            #     'success': '{doi}{domain}/{guid} | {ark}{domain}/{guid}'.format(
+            #         doi=settings.DOI_NAMESPACE, domain=domain, ark=settings.ARK_NAMESPACE, guid=preprint._id
+            #     )
+            # }
+            if is_published:
+                create_task_patcher = mock.patch('website.preprints.tasks.get_and_set_preprint_identifiers.s')
+                mock_create_identifier = create_task_patcher.start()
+                mock_create_identifier.side_effect = sync_set_identifiers(preprint)
 
             preprint.set_published(is_published, auth=auth)
-            create_task_patch.stop()
+
+            if is_published:
+                create_task_patcher.stop()
 
         if not preprint.is_published:
             project._has_abandoned_preprint = True
         project.save()
         return preprint
-
-    def sync_set_identifiers(self, preprint_id):
-        preprint = models.PreprintService.load(preprint_id)
-        domain = get_top_level_domain(preprint)
-
-        created_identifiers = {
-            'doi': '{doi}{domain}/{guid}'.format(doi=settings.DOI_NAMESPACE, domain=domain, guid=preprint._id),
-            'ark': '{ark}{domain}/{guid}'.format(domain=domain, ark=settings.ARK_NAMESPACE, guid=preprint._id)
-        }
-
-        preprint.set_identifiers(created_identifiers)
 
     @classmethod
     def _create(cls, target_class, project=None, filename='preprint_file.txt', provider=None,

@@ -231,6 +231,12 @@ class TestPreprintProvider(OsfTestCase):
         self.preprint = PreprintFactory(provider=None, is_published=False)
         self.provider = PreprintProviderFactory(name='WWEArxiv')
 
+        self.patch_toplevel = mock.patch('website.identifiers.utils.get_top_level_domain')
+        self.patch_toplevel.start()
+
+    def tearDown(self):
+        self.patch_toplevel.stop()
+
     def test_add_provider(self):
         assert_not_equal(self.preprint.provider, self.provider)
 
@@ -290,13 +296,13 @@ class TestPreprintIdentifiers(OsfTestCase):
         self.auth = Auth(user=self.user)
         self.preprint = PreprintFactory(is_published=False, creator=self.user)
 
-    def test_identifiers_added_on_publish(self):
+    @mock.patch('website.preprints.tasks.get_and_set_preprint_identifiers.s')
+    def test_identifiers_task_called_on_publish(self, mock_get_and_set_identifiers):
         assert self.preprint.identifiers.count() == 0
         self.preprint.set_published(True, auth=self.auth, save=True)
 
-        assert self.preprint.get_identifier_value('doi')
-        assert self.preprint.get_identifier_value('ark')
-        assert self.preprint.identifiers.count() == 2
+        assert mock_get_and_set_identifiers.called
+
 
     def test_get_doi_for_preprint(self):
         new_provider = PreprintProviderFactory(external_url='http://www.hello.com')
@@ -308,14 +314,11 @@ class TestPreprintIdentifiers(OsfTestCase):
         assert doi == ideal_doi
 
     def test_get_top_level_domain(self):
-        domains = ['https://www.broken-m-hardy.woo', 'https://broken-m-hardy.woo', 'broken-m-hardy.woo', 'www.broken-m-hardy.woo']
+        urls = ['https://www.broken-m-hardy.woo', 'https://broken-m-hardy.woo', 'broken-m-hardy.woo', 'www.broken-m-hardy.woo']
         ideal = 'broken-m-hardy.woo'
 
-        for domain in domains:
-            self.preprint.provider.external_url = domain
-            self.preprint.save()
-
-            sub = get_top_level_domain(self.preprint)
+        for url in urls:
+            sub = get_top_level_domain(url)
             assert sub == ideal
 
 
@@ -436,7 +439,7 @@ class TestOnPreprintUpdatedTask(OsfTestCase):
         assert doi['creative_work'] == related_work
 
         workidentifiers = [nodes.pop(k)['uri'] for k, v in nodes.items() if v['@type'] == 'workidentifier']
-        assert workidentifiers == [urlparse.urljoin(settings.DOMAIN, self.preprint._id + '/')]
+        assert workidentifiers == [urlparse.urljoin(settings.DOMAIN, self.preprint._id + '/'), 'http://dx.doi.org/{}'.format(self.preprint.get_identifier('doi').value)]
 
         relation = nodes.pop(nodes.keys()[0])
         assert relation == {'@id': relation['@id'], '@type': 'workrelation', 'related': {'@id': related_work['@id'], '@type': related_work['@type']}, 'subject': {'@id': preprint['@id'], '@type': preprint['@type']}}
@@ -517,7 +520,7 @@ class TestOnPreprintUpdatedTask(OsfTestCase):
 
         workidentifiers = {nodes.pop(k)['uri'] for k, v in nodes.items() if v['@type'] == 'workidentifier'}
         # URLs should *always* be osf.io/guid/
-        assert workidentifiers == set([urlparse.urljoin(settings.DOMAIN, self.preprint._id) + '/'])
+        assert workidentifiers == set([urlparse.urljoin(settings.DOMAIN, self.preprint._id) + '/', 'http://dx.doi.org/{}'.format(self.preprint.get_identifier('doi').value)])
 
         assert nodes == {}
 

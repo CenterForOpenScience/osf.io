@@ -188,7 +188,7 @@ class TestPreprintUpdate(ApiTestCase):
     def test_update_article_doi(self):
         new_doi = '10.1234/ASDFASDF'
         assert_not_equal(self.preprint.article_doi, new_doi)
-        update_subjects_payload = build_preprint_update_payload(self.preprint._id, attributes={"article_doi": new_doi})
+        update_subjects_payload = build_preprint_update_payload(self.preprint._id, attributes={"doi": new_doi})
 
         res = self.app.patch_json_api(self.url, update_subjects_payload, auth=self.user.auth)
         assert_equal(res.status_code, 200)
@@ -197,7 +197,7 @@ class TestPreprintUpdate(ApiTestCase):
         assert_equal(self.preprint.article_doi, new_doi)
 
         preprint_detail = self.app.get(self.url, auth=self.user.auth).json['data']
-        assert_equal(preprint_detail['links']['article_doi'], 'https://dx.doi.org/{}'.format(new_doi))
+        assert_equal(preprint_detail['links']['doi'], 'https://dx.doi.org/{}'.format(new_doi))
 
     def test_write_contrib_cannot_set_primary_file(self):
         user_two = AuthUserFactory()

@@ -16,12 +16,12 @@ def add_identifiers_to_preprints():
 
     for preprint in preprints_without_identifiers:
         new_identifiers = get_or_create_identifiers(preprint)
-        logger.info('Saving identifier for preprint {} from source {}'.format(preprint.node.title, preprint.provider.name))
+        logger.info('Saving identifier for preprint {} from source {}'.format(preprint._id, preprint.provider.name))
         preprint.set_preprint_identifiers(new_identifiers)
         preprint.save()
 
         doi = preprint.get_identifier('doi')
-        subdomain = get_top_level_domain(preprint)
+        subdomain = get_top_level_domain(preprint.provider.external_url)
         assert subdomain.upper() in doi.value
         assert preprint._id.upper() in doi.value
 
