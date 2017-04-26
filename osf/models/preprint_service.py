@@ -22,7 +22,7 @@ from website import settings
 
 from osf.models.base import BaseModel, GuidMixin
 from osf.models.subject import Subject
-from osf.models.identifiers import IdentifierMixin
+from osf.models.identifiers import IdentifierMixin, Identifier
 
 class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, BaseModel):
     date_created = NonNaiveDateTimeField(auto_now_add=True)
@@ -40,6 +40,8 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, BaseModel):
                                 on_delete=models.SET_NULL, null=True, blank=True)
 
     subjects = models.ManyToManyField(blank=True, to='osf.Subject', related_name='preprint_services')
+
+    identifiers = GenericRelation(Identifier, related_query_name='preprintservices')
 
     class Meta:
         unique_together = ('node', 'provider')
@@ -193,7 +195,7 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, BaseModel):
                     log=True
                 )
 
-            enqueue_task(get_and_set_preprint_identifiers.s(self))
+            enqueue_task(get_and_set_preprint_identifiers.s(self._id))
 
         if save:
             self.node.save()
