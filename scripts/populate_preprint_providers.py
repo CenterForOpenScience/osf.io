@@ -12,6 +12,9 @@ from website.app import init_app
 import django
 django.setup()
 
+from osf.exceptions import ValidationError
+from osf.models.preprint_provider import PreprintProviderLink
+from osf.models.user import Email, SocialAccount, SocialNetwork
 from website.models import Subject, PreprintProvider, NodeLicense
 
 logger = logging.getLogger(__name__)
@@ -44,16 +47,42 @@ def get_license(name):
 
 def update_or_create(provider_data):
     provider = PreprintProvider.load(provider_data['_id'])
+
+    emails = provider_data.pop('emails', [])
     licenses = [get_license(name) for name in provider_data.pop('licenses_acceptable', [])]
+    links = provider_data.pop('links', [])
+    social_accounts = provider_data.pop('social_accounts', [])
+
     if provider:
         provider_data['subjects_acceptable'] = map(
             lambda rule: (map(get_subject_id, rule[0]), rule[1]),
             provider_data['subjects_acceptable']
         )
+
+        for e in emails:
+            email = Email(**e)
+            email.save()
+            provider.emails.add(email)
+
         if licenses:
             provider.licenses_acceptable.add(*licenses)
+
+        for l in links:
+            link = PreprintProviderLink(**l)
+            link.save()
+            provider.links.add(link)
+
+        for social_account in social_accounts:
+            account = SocialAccount(**social_account)
+            try:
+                account.save()
+            except ValidationError:
+                continue
+            provider.social_accounts.add(account)
+
         for key, val in provider_data.iteritems():
             setattr(provider, key, val)
+
         changed_fields = provider.save()
         if changed_fields:
             print('Updated {}: {}'.format(provider.name, changed_fields))
@@ -89,6 +118,36 @@ def main(env):
             'licenses_acceptable': ['CC0 1.0 Universal', 'CC-By Attribution 4.0 International', 'No license'],
             'header_text': '',
             'subjects_acceptable': [],
+            'emails': [
+                {
+                    'email': 'contact@osf.io',
+                    'email_type': 'contact'
+                },
+                {
+                    'email': 'support@osf.io',
+                    'email_type': 'support'
+                }
+            ],
+            'social_accounts': [
+                {
+                    'network': SocialNetwork.objects.get(name='Facebook'),
+                    'username': 'Center for Open Science'
+                },
+                {
+                    'network': SocialNetwork.objects.get(name='Instagram'),
+                    'username': 'osframework'
+                },
+                {
+                    'network': SocialNetwork.objects.get(name='Twitter'),
+                    'username': 'osframework'
+                }
+            ],
+            'links': [
+                {
+                    'url': 'https://osf.io',
+                    'description': 'external'
+                }
+            ]
         },
         'engrxiv': {
             '_id': 'engrxiv',
@@ -127,6 +186,36 @@ def main(env):
             'social_instagram': 'engrxiv',
             'licenses_acceptable': ['CC0 1.0 Universal', 'CC-By Attribution 4.0 International', 'No license'],
             'header_text': '',
+            'emails': [
+                {
+                    'email': 'contact+engrxiv@osf.io',
+                    'email_type': 'contact'
+                },
+                {
+                    'email': 'support+engrxiv@osf.io',
+                    'email_type': 'support'
+                }
+            ],
+            'social_accounts': [
+                {
+                    'network': SocialNetwork.objects.get(name='Facebook'),
+                    'username': 'engrXiv'
+                },
+                {
+                    'network': SocialNetwork.objects.get(name='Instagram'),
+                    'username': 'engrxiv'
+                },
+                {
+                    'network': SocialNetwork.objects.get(name='Twitter'),
+                    'username': 'engrxiv'
+                }
+            ],
+            'links': [
+                {
+                    'url': 'http://engrxiv.org',
+                    'description': 'external'
+                }
+            ],
             'subjects_acceptable': [
                 (['Computer and information sciences', 'Software engineering'], True),
                 (['Engineering and technology'], True),
@@ -272,6 +361,36 @@ def main(env):
             'social_instagram': 'psyarxiv',
             'licenses_acceptable': ['CC0 1.0 Universal', 'CC-By Attribution 4.0 International', 'No license'],
             'header_text': '',
+            'emails': [
+                {
+                    'email': 'contact+psyarxiv@osf.io',
+                    'email_type': 'contact'
+                },
+                {
+                    'email': 'support+psyarxiv@osf.io',
+                    'email_type': 'support'
+                }
+            ],
+            'social_accounts': [
+                {
+                    'network': SocialNetwork.objects.get(name='Facebook'),
+                    'username': 'PsyArXiv'
+                },
+                {
+                    'network': SocialNetwork.objects.get(name='Instagram'),
+                    'username': 'psyarxiv'
+                },
+                {
+                    'network': SocialNetwork.objects.get(name='Twitter'),
+                    'username': 'psyarxiv'
+                }
+            ],
+            'links': [
+                {
+                    'url': 'http://psyarxiv.com',
+                    'description': 'external'
+                }
+            ],
             'subjects_acceptable': [
                 (['Social and behavioral sciences'], True),
                 (['Arts and Humanities'], True),
@@ -358,6 +477,36 @@ def main(env):
             'social_instagram': 'socarxiv',
             'licenses_acceptable': ['CC0 1.0 Universal', 'CC-By Attribution 4.0 International', 'No license'],
             'header_text': '',
+            'emails': [
+                {
+                    'email': 'contact+socarxiv@osf.io',
+                    'email_type': 'contact'
+                },
+                {
+                    'email': 'support+socarxiv@osf.io',
+                    'email_type': 'support'
+                }
+            ],
+            'social_accounts': [
+                {
+                    'network': SocialNetwork.objects.get(name='Facebook'),
+                    'username': 'socarxiv'
+                },
+                {
+                    'network': SocialNetwork.objects.get(name='Instagram'),
+                    'username': 'socarxiv'
+                },
+                {
+                    'network': SocialNetwork.objects.get(name='Twitter'),
+                    'username': 'socarxiv'
+                }
+            ],
+            'links': [
+                {
+                    'url': 'http://socarxiv.org',
+                    'description': 'external'
+                }
+            ],
             'subjects_acceptable': [
                 (['Arts and Humanities'], True),
                 (['Education'], True),
@@ -386,6 +535,32 @@ def main(env):
             'social_facebook': 'SciELONetwork',
             'header_text': '',
             'licenses_acceptable': ['CC-By Attribution 4.0 International'],
+            'emails': [
+                {
+                    'email': 'contact+scielo@osf.io',
+                    'email_type': 'contact'
+                },
+                {
+                    'email': 'support+scielo@osf.io',
+                    'email_type': 'support'
+                }
+            ],
+            'social_accounts': [
+                {
+                    'network': SocialNetwork.objects.get(name='Facebook'),
+                    'username': 'SciELONetwork'
+                },
+                {
+                    'network': SocialNetwork.objects.get(name='Twitter'),
+                    'username': 'RedeSciELO'
+                }
+            ],
+            'links': [
+                {
+                    'url': 'http://scielo.org',
+                    'description': 'external'
+                }
+            ],
             'subjects_acceptable':[]
         },
         'lawarxiv': {
@@ -425,6 +600,22 @@ def main(env):
             'social_facebook': '',
             'header_text': '',
             'licenses_acceptable': ['CC0 1.0 Universal', 'CC-By Attribution 4.0 International'],
+            'emails': [
+                {
+                    'email': 'contact+lawarxiv@osf.io',
+                    'email_type': 'contact'
+                },
+                {
+                    'email': 'support+lawarxiv@osf.io',
+                    'email_type': 'support'
+                }
+            ],
+            'social_accounts': [
+                {
+                    'network': SocialNetwork.objects.get(name='Twitter'),
+                    'username': 'lawarxiv'
+                }
+            ],
             'subjects_acceptable': []
         },
         'agrixiv': {
@@ -478,6 +669,30 @@ def main(env):
             'social_instagram': 'agrixiv',
             'licenses_acceptable': ['CC0 1.0 Universal', 'CC-By Attribution 4.0 International'],
             'header_text': '',
+            'emails': [
+                {
+                    'email': 'contact+agrixiv@osf.io',
+                    'email_type': 'contact'
+                },
+                {
+                    'email': 'support+agrixiv@osf.io',
+                    'email_type': 'support'
+                }
+            ],
+            'social_accounts': [
+                {
+                    'network': SocialNetwork.objects.get(name='Facebook'),
+                    'username': 'agrixiv'
+                },
+                {
+                    'network': SocialNetwork.objects.get(name='Instagram'),
+                    'username': 'agrixiv'
+                },
+                {
+                    'network': SocialNetwork.objects.get(name='Twitter'),
+                    'username': 'AgriXiv'
+                }
+            ],
             'subjects_acceptable': [
                 (['Business', 'Business Administration, Management, and Operations'], False),
                 (['Business', 'Business and Corporate Communications'], False),
@@ -1081,6 +1296,28 @@ def main(env):
             'social_twitter': 'UCBITSS',
             'licenses_acceptable': ['CC-By Attribution 4.0 International', 'CC0 1.0 Universal'],
             'header_text': '',
+            'emails': [
+                {
+                    'email': 'contact+bitss@osf.io',
+                    'email_type': 'contact'
+                },
+                {
+                    'email': 'support+bitss@osf.io',
+                    'email_type': 'support'
+                }
+            ],
+            'social_accounts': [
+                {
+                    'network': SocialNetwork.objects.get(name='Twitter'),
+                    'username': 'UCBITSS'
+                }
+            ],
+            'links': [
+                {
+                    'url': 'http://www.bitss.org',
+                    'description': 'external'
+                }
+            ],
             'subjects_acceptable': [
                 (['Medicine and Health Sciences', 'Health Information Technology'], False),
                 (['Medicine and Health Sciences', 'Mental and Social Health'], False),
