@@ -5,7 +5,7 @@ from django.test import RequestFactory
 from admin.preprints.views import PreprintReindexShare
 from admin_tests.utilities import setup_log_view
 from osf.models.admin_log_entry import AdminLogEntry
-from osf_tests.factories import AuthUserFactory, ProjectFactory, PreprintFactory
+from osf_tests.factories import AuthUserFactory, PreprintFactory
 from tests.base import AdminTestCase
 
 
