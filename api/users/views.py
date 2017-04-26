@@ -678,7 +678,7 @@ class UserRegistrations(UserNodes):
             MQ('contributors', 'eq', user)
         )
         permission_query = MQ('is_public', 'eq', True)
-        if not current_user.is_anonymous():
+        if not current_user.is_anonymous:
             permission_query = (permission_query | MQ('contributors', 'eq', current_user))
         query = query & permission_query
         return query

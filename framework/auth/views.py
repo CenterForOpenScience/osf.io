@@ -13,7 +13,7 @@ from modularodm.exceptions import NoResultsFound
 from modularodm.exceptions import ValidationError
 from modularodm.exceptions import ValidationValueError
 
-from framework import forms, status
+from framework import forms, sentry, status
 from framework import auth as framework_auth
 from framework.auth import exceptions
 from framework.auth import cas, campaigns
@@ -28,11 +28,11 @@ from framework.exceptions import HTTPError
 from framework.flask import redirect  # VOL-aware redirect
 from framework.sessions.utils import remove_sessions_for_user, remove_session
 from framework.sessions import get_session
-from website import settings, mails, language
 
-from website.util.time import throttle_period_expired
+from website import settings, mails, language
 from website.models import User
 from website.util import web_url_for
+from website.util.time import throttle_period_expired
 from website.util.sanitize import strip_html
 
 
@@ -261,8 +261,14 @@ def login_and_register_handler(auth, login=True, campaign=None, next_url=None, l
                         else:
                             data['next_url'] = destination
         else:
-            # invalid campaign
-            raise HTTPError(http.BAD_REQUEST)
+            # invalid campaign, inform sentry and redirect to non-campaign sign up or sign in
+            redirect_view = 'auth_login' if login else 'auth_register'
+            data['status_code'] = http.FOUND
+            data['next_url'] = web_url_for(redirect_view, campaigns=None, next=next_url)
+            data['campaign'] = None
+            sentry.log_message(
+                '{} is not a valid campaign. Please add it if this is a new one'.format(campaign)
+            )
     # login or register with next parameter
     elif next_url:
         if logout:
@@ -500,7 +506,11 @@ def external_login_confirm_email_get(auth, uid, token):
         # if it is the expected user
         new = request.args.get('new', None)
         if destination in campaigns.get_campaigns():
-            return redirect(campaigns.campaign_url_for(destination))
+            # external domain takes priority
+            campaign_url = campaigns.external_campaign_url_for(destination)
+            if not campaign_url:
+                campaign_url = campaigns.campaign_url_for(destination)
+            return redirect(campaign_url)
         if new:
             status.push_status_message(language.WELCOME_MESSAGE, kind='default', jumbotron=True, trust=True)
         return redirect(web_url_for('dashboard'))
@@ -930,9 +940,10 @@ def external_login_email_post():
             # `urlparse/urllib` to generate service url. `furl` handles `urlparser/urllib` generated urls while ` but
             # not vice versa.
             campaign_url = furl.furl(campaigns.campaign_url_for(campaign)).url
+            external_campaign_url = furl.furl(campaigns.external_campaign_url_for(campaign)).url
             if campaigns.is_proxy_login(campaign):
                 # proxy campaigns: OSF Preprints and branded ones
-                if check_service_url_with_proxy_campaign(str(service_url), campaign_url):
+                if check_service_url_with_proxy_campaign(str(service_url), campaign_url, external_campaign_url):
                     destination = campaign
                     # continue to check branded preprints even service url matches osf preprints
                     if campaign != 'osf-preprints':
@@ -1043,27 +1054,42 @@ def validate_next_url(next_url):
     # like http:// or https:// depending on the use of SSL on the page already.
     if next_url.startswith('//'):
         return False
-    # only OSF, MFR and CAS domains are allowed
-    if not (next_url[0] == '/' or
-            next_url.startswith(settings.DOMAIN) or
-            next_url.startswith(settings.CAS_SERVER_URL) or
-            next_url.startswith(settings.MFR_SERVER_URL)):
-        return False
-    return True
+
+    # only OSF, MFR, CAS and Branded Preprints domains are allowed
+    if next_url[0] == '/' or next_url.startswith(settings.DOMAIN):
+        # OSF
+        return True
+    if next_url.startswith(settings.CAS_SERVER_URL) or next_url.startswith(settings.MFR_SERVER_URL):
+        # CAS or MFR
+        return True
+    for url in campaigns.get_external_domains():
+        # Branded Preprints Phase 2
+        if next_url.startswith(url):
+            return True
+
+    return False
 
 
-def check_service_url_with_proxy_campaign(service_url, campaign_url):
+def check_service_url_with_proxy_campaign(service_url, campaign_url, external_campaign_url=None):
     """
     Check if service url belongs to proxy campaigns: OSF Preprints and branded ones.
     Both service_url and campaign_url are parsed using `furl` encoding scheme.
 
     :param service_url: the `furl` formatted service url
     :param campaign_url: the `furl` formatted campaign url
+    :param external_campaign_url: the `furl` formatted external campaign url
     :return: the matched object or None
     """
 
     prefix_1 = settings.DOMAIN + 'login/?next=' + campaign_url
     prefix_2 = settings.DOMAIN + 'login?next=' + campaign_url
-    if service_url.startswith(prefix_1) or service_url.startswith(prefix_2):
-        return True
-    return False
+
+    valid = service_url.startswith(prefix_1) or service_url.startswith(prefix_2)
+    valid_external = False
+
+    if external_campaign_url:
+        prefix_3 = settings.DOMAIN + 'login/?next=' + external_campaign_url
+        prefix_4 = settings.DOMAIN + 'login?next=' + external_campaign_url
+        valid_external = service_url.startswith(prefix_3) or service_url.startswith(prefix_4)
+
+    return valid or valid_external

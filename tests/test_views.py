@@ -86,6 +86,8 @@ from osf_tests.factories import (
     ApiOAuth2ApplicationFactory,
     ApiOAuth2PersonalTokenFactory,
     ProjectWithAddonFactory,
+    PreprintFactory,
+    PreprintProviderFactory,
 )
 
 class Addon(MockAddonNodeSettings):
@@ -1660,6 +1662,19 @@ class TestUserAccount(OsfTestCase):
         assert_equal(res.status_code, 400)
         assert_equal(send_mail.call_count, 1)
 
+    def test_get_unconfirmed_emails_exclude_external_identity(self):
+        external_identity = {
+            'service': {
+                'AFI': 'LINK'
+            }
+        }
+        self.user.add_unconfirmed_email("james@steward.com")
+        self.user.add_unconfirmed_email("steward@james.com", external_identity=external_identity)
+        self.user.save()
+        unconfirmed_emails = self.user.get_unconfirmed_emails_exclude_external_identity()
+        assert_in("james@steward.com", unconfirmed_emails)
+        assert_not_in("steward@james.com", unconfirmed_emails)
+
 
 class TestAddingContributorViews(OsfTestCase):
 
@@ -2934,7 +2949,7 @@ class TestPointerViews(OsfTestCase):
     def test_fork_pointer_not_in_nodes(self):
         url = self.project.api_url + 'pointer/fork/'
         node = NodeFactory()
-        pointer = Pointer(node=node)
+        pointer = Pointer()
         res = self.app.post_json(
             url,
             {'pointerId': pointer._id},
@@ -3477,6 +3492,7 @@ class TestAuthLoginAndRegisterLogic(OsfTestCase):
         self.user_auth = AuthUserFactory()
         self.auth = Auth(user=self.user_auth)
         self.next_url = web_url_for('my_projects', _absolute=True)
+        self.invalid_campaign = 'invalid_campaign'
 
     def test_osf_login_with_auth(self):
         # login: user with auth
@@ -3589,7 +3605,7 @@ class TestAuthLoginAndRegisterLogic(OsfTestCase):
             assert_equal(data.get('status_code'), http.FOUND)
             assert_equal(data.get('next_url'), campaign_url_for(campaign))
 
-    def test_campaign_register_without_campaign(self):
+    def test_campaign_register_without_auth(self):
         for campaign in get_campaigns():
             if is_institution_login(campaign):
                 continue
@@ -3656,6 +3672,30 @@ class TestAuthLoginAndRegisterLogic(OsfTestCase):
                     data.get('next_url'),
                     web_url_for('auth_login', next= next_url, _absolute=True)
                 )
+
+    def test_invalid_campaign_login_without_auth(self):
+        data = login_and_register_handler(
+            self.no_auth,
+            login=True,
+            campaign=self.invalid_campaign,
+            next_url=self.next_url
+        )
+        redirect_url = web_url_for('auth_login', campaigns=None, next=self.next_url)
+        assert_equal(data['status_code'], http.FOUND)
+        assert_equal(data['next_url'], redirect_url)
+        assert_equal(data['campaign'], None)
+
+    def test_invalid_campaign_register_without_auth(self):
+        data = login_and_register_handler(
+            self.no_auth,
+            login=False,
+            campaign=self.invalid_campaign,
+            next_url=self.next_url
+        )
+        redirect_url = web_url_for('auth_register', campaigns=None, next=self.next_url)
+        assert_equal(data['status_code'], http.FOUND)
+        assert_equal(data['next_url'], redirect_url)
+        assert_equal(data['campaign'], None)
 
     # The following two tests handles the special case for `claim_user_registered`
     # When an authenticated user clicks the claim confirmation clink, there are two ways to trigger this flow:
@@ -4709,6 +4749,66 @@ class TestIndexView(OsfTestCase):
         assert_not_equal(dashboard_institutions[0]['id'], self.inst_three._id)
         assert_not_equal(dashboard_institutions[0]['id'], self.inst_four._id)
         assert_not_equal(dashboard_institutions[0]['id'], self.inst_five._id)
+
+
+class TestResolveGuid(OsfTestCase):
+    def setUp(self):
+        super(TestResolveGuid, self).setUp()
+
+    def test_preprint_provider_without_domain(self):
+        provider = PreprintProviderFactory(domain='')
+        preprint = PreprintFactory(provider=provider)
+        url = web_url_for('resolve_guid', _guid=True, guid=preprint._id)
+        res = self.app.get(url)
+        assert_equal(res.status_code, 200)
+        assert_equal(
+            res.request.path,
+            '/{}/'.format(preprint._id)
+        )
+
+    def test_preprint_provider_with_domain_without_redirect(self):
+        domain = 'https://test.com/'
+        provider = PreprintProviderFactory(_id='test', domain=domain, domain_redirect_enabled=False)
+        preprint = PreprintFactory(provider=provider)
+        url = web_url_for('resolve_guid', _guid=True, guid=preprint._id)
+        res = self.app.get(url)
+        assert_equal(res.status_code, 200)
+        assert_equal(
+            res.request.path,
+            '/{}/'.format(preprint._id)
+        )
+
+    def test_preprint_provider_with_domain_with_redirect(self):
+        domain = 'https://test.com/'
+        provider = PreprintProviderFactory(_id='test', domain=domain, domain_redirect_enabled=True)
+        preprint = PreprintFactory(provider=provider)
+        url = web_url_for('resolve_guid', _guid=True, guid=preprint._id)
+        res = self.app.get(url)
+
+        assert_is_redirect(res)
+        assert_equal(res.status_code, 301)
+        assert_equal(
+            res.headers['location'],
+            '{}{}/'.format(domain, preprint._id)
+        )
+
+        assert_equal(
+            res.request.path,
+            '/{}/'.format(preprint._id)
+        )
+
+
+
+    def test_preprint_provider_with_osf_domain(self):
+        provider = PreprintProviderFactory(_id='osf', domain='https://osf.io/')
+        preprint = PreprintFactory(provider=provider)
+        url = web_url_for('resolve_guid', _guid=True, guid=preprint._id)
+        res = self.app.get(url)
+        assert_equal(res.status_code, 200)
+        assert_equal(
+            res.request.path,
+            '/{}/'.format(preprint._id)
+        )
 
 
 class TestConfirmationViewBlockBingPreview(OsfTestCase):

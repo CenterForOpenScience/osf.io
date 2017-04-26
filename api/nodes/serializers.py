@@ -322,7 +322,7 @@ class NodeSerializer(JSONAPISerializer):
 
     def get_current_user_permissions(self, obj):
         user = self.context['request'].user
-        if user.is_anonymous():
+        if user.is_anonymous:
             return ['read']
         permissions = obj.get_permissions(user=user)
         if not permissions:
@@ -331,7 +331,7 @@ class NodeSerializer(JSONAPISerializer):
 
     def get_current_user_can_comment(self, obj):
         user = self.context['request'].user
-        auth = Auth(user if not user.is_anonymous() else None)
+        auth = Auth(user if not user.is_anonymous else None)
         return obj.can_comment(auth)
 
     class Meta:
