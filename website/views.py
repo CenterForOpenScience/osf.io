@@ -25,7 +25,7 @@ from website.settings import EXTERNAL_EMBER_APPS
 from website.project.model import has_anonymous_link
 
 logger = logging.getLogger(__name__)
-
+preprints_dir = os.path.abspath(os.path.join(os.getcwd(), EXTERNAL_EMBER_APPS['preprints']['path']))
 
 def serialize_contributors_for_summary(node, max_count=3):
     # # TODO: Use .filter(visible=True) when chaining is fixed in django-include
@@ -241,10 +241,10 @@ def resolve_guid(guid, suffix=None):
         if not referent.deep_url:
             raise HTTPError(http.NOT_FOUND)
         if isinstance(referent, PreprintService):
-            return send_from_directory(
-                os.path.abspath(os.path.join(os.getcwd(), EXTERNAL_EMBER_APPS['preprints']['path'])),
-                'index.html'
-            )
+            if referent.provider.domain_redirect_enabled:
+                return redirect(referent.absolute_url, 301)
+
+            return send_from_directory(preprints_dir, 'index.html')
         url = _build_guid_url(urllib.unquote(referent.deep_url), suffix)
         return proxy_url(url)
 

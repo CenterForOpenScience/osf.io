@@ -109,7 +109,7 @@
                 %elif campaign == "psyarxiv-preprints":
                     <table style="border-collapse: separate; border-spacing: 30px 0; margin-top: 20px;  margin-bottom: 10px;">
                         <tr>
-                            <td><img src="/static/img/preprint_providers/psyarxiv-login.png" style="width: 150px; background: #a9a9a9; padding: 0 10px 0 10px;" /></td>
+                            <td><img src="/static/img/preprint_providers/psyarxiv-login.png" style="width: 150px; background: #062F4F; padding: 0 10px 0 10px;" /></td>
                             <td><h3>Create a free OSF account to contribute to PsyArXiv</h3></td>
                         </tr>
                     </table>
