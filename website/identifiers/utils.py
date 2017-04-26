@@ -58,8 +58,8 @@ def merge_dicts(*dicts):
     return dict(sum((each.items() for each in dicts), []))
 
 
-def get_top_level_domain(preprint):
-    furled = furl.furl(preprint.provider.external_url)
+def get_top_level_domain(url):
+    furled = furl.furl(url)
     url = furled.host or furled.url
     return '.'.join([part for part in url.split('.') if part not in SUBDOMAINS])
 
@@ -71,7 +71,7 @@ def get_doi_and_metadata_for_object(target_object):
     metadata_function = datacite_metadata_for_node
     if isinstance(target_object, PreprintService):
         if target_object.provider.external_url:
-            domain = get_top_level_domain(target_object)
+            domain = get_top_level_domain(target_object.provider.external_url)
         metadata_function = datacite_metadata_for_preprint
 
     doi = settings.EZID_FORMAT.format(namespace=settings.DOI_NAMESPACE, domain=domain, guid=target_object._id)
@@ -99,6 +99,48 @@ def get_ezid_client():
     return EzidClient(settings.EZID_USERNAME, settings.EZID_PASSWORD)
 
 
+def request_identifiers_from_ezid(target_object):
+    if settings.EZID_USERNAME and settings.EZID_PASSWORD:
+        doi, metadata = build_ezid_metadata(target_object)
+
+        client = get_ezid_client()
+        already_exists = False
+        try:
+            resp = client.create_identifier(doi, metadata)
+        except HTTPError as error:
+            already_exists = True
+            if 'identifier already exists' not in error.message.lower():
+                raise
+            resp = client.get_identifier(doi)
+
+        return {
+            'response': resp,
+            'already_exists': already_exists
+        }
+
+def parse_identifiers(ezid_response):
+    """
+    Note: ARKs include a leading slash. This is stripped here to avoid multiple
+    consecutive slashes in internal URLs (e.g. /ids/ark/<ark>/). Frontend code
+    that build ARK URLs is responsible for adding the leading slash.
+    Moved from website/project/views/register.py for use by other modules
+    """
+    resp = ezid_response['response']
+    exists = ezid_response['already_exists']
+
+    if exists:
+        doi = resp['success']
+        suffix = doi.strip(settings.DOI_NAMESPACE)
+        return {
+            'doi': doi.replace('doi:', ''),
+            'ark': '{0}{1}'.format(settings.ARK_NAMESPACE.replace('ark:', ''), suffix),
+        }
+    else:
+        return dict(
+            [each.strip('/') for each in pair.strip().split(':')]
+            for pair in resp['success'].split('|')
+        )
+
 def get_or_create_identifiers(target_object):
     """
     Note: ARKs include a leading slash. This is stripped here to avoid multiple
@@ -107,24 +149,25 @@ def get_or_create_identifiers(target_object):
     Moved from website/project/views/register.py for use by other modules
     """
     if settings.EZID_USERNAME and settings.EZID_PASSWORD:
-        doi, metadata = build_ezid_metadata(target_object)
-        client = get_ezid_client()
-        try:
-            resp = client.create_identifier(doi, metadata)
-            return dict(
-                [each.strip('/') for each in pair.strip().split(':')]
-                for pair in resp['success'].split('|')
-            )
-        except HTTPError as error:
-            if 'identifier already exists' not in error.message.lower():
-                raise
-            resp = client.get_identifier(doi)
+        # doi, metadata = build_ezid_metadata(target_object)
+
+        response_dict = request_identifiers_from_ezid(target_object)
+
+        resp = response_dict['response']
+        exists = response_dict['already_exists']
+
+        if exists:
             doi = resp['success']
             suffix = doi.strip(settings.DOI_NAMESPACE)
             return {
                 'doi': doi.replace('doi:', ''),
                 'ark': '{0}{1}'.format(settings.ARK_NAMESPACE.replace('ark:', ''), suffix),
             }
+        else:
+            return dict(
+                [each.strip('/') for each in pair.strip().split(':')]
+                for pair in resp['success'].split('|')
+            )
 
 
 def update_ezid_metadata_on_change(target_object, status):

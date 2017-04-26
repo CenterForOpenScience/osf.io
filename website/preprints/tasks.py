@@ -7,7 +7,7 @@ from framework.celery_tasks import app as celery_app
 
 from website import settings
 from website.util.share import GraphNode, format_contributor
-from website.identifiers.utils import update_ezid_metadata_on_change, get_or_create_identifiers
+from website.identifiers.utils import update_ezid_metadata_on_change, request_identifiers_from_ezid
 
 logger = logging.getLogger(__name__)
 
@@ -19,8 +19,9 @@ def on_preprint_updated(preprint_id):
     from osf.models import PreprintService
     preprint = PreprintService.load(preprint_id)
 
-    status = 'public' if preprint.node.is_public else 'unavailable'
-    update_ezid_metadata_on_change(preprint, status=status)
+    if preprint.node:
+        status = 'public' if preprint.node.is_public else 'unavailable'
+        update_ezid_metadata_on_change(preprint, status=status)
 
     if settings.SHARE_URL:
         if not preprint.provider.access_token:
@@ -102,5 +103,6 @@ def get_and_set_preprint_identifiers(preprint_id):
     from osf.models import PreprintService
 
     preprint = PreprintService.load(preprint_id)
-    new_identifiers = get_or_create_identifiers(preprint)
-    preprint.set_preprint_identifiers(new_identifiers)
+    ezid_response = request_identifiers_from_ezid(preprint)
+
+    preprint.set_preprint_identifiers(ezid_response)

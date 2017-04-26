@@ -16,6 +16,7 @@ from website.preprints.tasks import on_preprint_updated
 from website.project.model import NodeLog
 from website.project.licenses import set_license
 from website.project.taxonomies import validate_subject_hierarchy
+from website.identifiers.utils import parse_identifiers
 from website.util import api_v2_url
 from website.util.permissions import ADMIN
 from website import settings
@@ -218,7 +219,9 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, BaseModel):
         if save:
             self.save()
 
-    def set_preprint_identifiers(self, new_identifiers):
+    def set_preprint_identifiers(self, ezid_response):
+        new_identifiers = parse_identifiers(ezid_response)
+
         self.set_identifier_value('doi', new_identifiers['doi'])
         self.set_identifier_value('ark', new_identifiers['ark'])
 
