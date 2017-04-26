@@ -1,13 +1,18 @@
 import mock
 from osf.models.admin_log_entry import AdminLogEntry
-from admin.nodes.views import (NodeDeleteView, NodeRemoveContributorView,
-                               NodeView)
+from admin.nodes.views import (
+    NodeDeleteView, 
+    NodeRemoveContributorView,
+    NodeView,
+    NodeReindexShare,
+    NodeReindexElastic,
+)
 from admin_tests.utilities import setup_log_view, setup_view
 from django.test import RequestFactory
 from framework.auth import User
 from nose import tools as nt
 from tests.base import AdminTestCase
-from tests.factories import AuthUserFactory, ProjectFactory
+from osf_tests.factories import AuthUserFactory, ProjectFactory, RegistrationFactory
 from website.project.model import Node, NodeLog
 
 
@@ -135,3 +140,69 @@ class TestRemoveContributor(AdminTestCase):
                               user_id=self.user_2._id)
         view.delete(self.request)
         nt.assert_not_equal(self.node.logs.latest().action, NodeLog.CONTRIB_REMOVED)
+
+class TestNodeReindex(AdminTestCase):
+    def setUp(self):
+        super(TestNodeReindex, self).setUp()
+        self.request = RequestFactory().post('/fake_path')
+
+        self.user = AuthUserFactory()
+        self.node = ProjectFactory(creator=self.user)
+        self.registration = RegistrationFactory(project=self.node, creator=self.user)
+
+        self.patcher_share_url = mock.patch('website.settings.SHARE_URL', 'ima_real_website')
+        self.patcher_share_token = mock.patch('website.settings.SHARE_API_TOKEN', 'ima_real_token')
+        self.patcher_mock_reindex_node = mock.patch('website.project.tasks.update_node_share')
+        self.patcher_mock_reindex_registration = mock.patch('website.project.tasks.on_registration_updated')
+        self.patcher_mock_reindex_elastic = mock.patch('website.search.search.update_node')
+
+        self.patcher_share_url.start()
+        self.patcher_share_token.start()
+        self.mock_reindex_node = self.patcher_mock_reindex_node.start()
+        self.mock_reindex_registration = self.patcher_mock_reindex_registration.start()
+        self.mock_reindex_elastic = self.patcher_mock_reindex_elastic.start()
+
+    def tearDown(self):
+        super(TestNodeReindex, self).tearDown()
+        self.patcher_share_url.stop()
+        self.patcher_share_token.stop()
+        self.patcher_mock_reindex_node.stop()
+        self.patcher_mock_reindex_registration.stop()
+
+    def test_reindex_node_share(self):
+        count = AdminLogEntry.objects.count()
+        view = NodeReindexShare()
+        view = setup_log_view(view, self.request, guid=self.node._id)
+        view.delete(self.request)
+
+        nt.assert_true(self.mock_reindex_node.called)
+        nt.assert_false(self.mock_reindex_registration.called)
+        nt.assert_equal(AdminLogEntry.objects.count(), count + 1)
+
+    def test_reindex_registration_share(self):
+        count = AdminLogEntry.objects.count()
+        view = NodeReindexShare()
+        view = setup_log_view(view, self.request, guid=self.registration._id)
+        view.delete(self.request)
+    
+        nt.assert_false(self.mock_reindex_node.called)
+        nt.assert_true(self.mock_reindex_registration.called)
+        nt.assert_equal(AdminLogEntry.objects.count(), count + 1)
+
+    def test_reindex_node_elastic(self):
+        count = AdminLogEntry.objects.count()
+        view = NodeReindexElastic()
+        view = setup_log_view(view, self.request, guid=self.node._id)
+        view.delete(self.request)
+
+        nt.assert_true(self.mock_reindex_elastic.called)
+        nt.assert_equal(AdminLogEntry.objects.count(), count + 1)
+
+    def test_reindex_registration_elastic(self):
+        count = AdminLogEntry.objects.count()
+        view = NodeReindexElastic()
+        view = setup_log_view(view, self.request, guid=self.registration._id)
+        view.delete(self.request)
+
+        nt.assert_true(self.mock_reindex_elastic.called)
+        nt.assert_equal(AdminLogEntry.objects.count(), count + 1)

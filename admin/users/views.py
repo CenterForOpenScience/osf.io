@@ -30,7 +30,7 @@ from osf.models.admin_log_entry import (
     USER_RESTORED,
     CONFIRM_SPAM,
     REINDEX_ELASTIC,
-    )
+)
 
 from admin.users.serializers import serialize_user
 from admin.users.forms import EmailResetForm, WorkshopForm

@@ -8,7 +8,7 @@ from django.views.defaults import page_not_found
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from modularodm import Q
 
-from website import settings, search
+from website import search
 from website.models import NodeLog
 from osf.models.user import OSFUser
 from osf.models.node import Node
@@ -19,15 +19,15 @@ from osf.models.admin_log_entry import (
     NODE_REMOVED,
     NODE_RESTORED,
     CONTRIBUTOR_REMOVED,
-    CONFIRM_SPAM, 
+    CONFIRM_SPAM,
     CONFIRM_HAM,
     REINDEX_SHARE,
     REINDEX_ELASTIC,
-    )
+)
 from admin.nodes.templatetags.node_extras import reverse_node
 from admin.nodes.serializers import serialize_node, serialize_simple_user_and_node_permissions
 from website.project.spam.model import SpamStatus
-from website.project.tasks import update_node_share, on_registration_updated
+from website.project.tasks import update_share, on_registration_updated
 from website.project.views.register import osf_admin_change_status_identifier
 
 
@@ -335,18 +335,14 @@ class NodeReindexShare(PermissionRequiredMixin, NodeDeleteBase):
 
     def delete(self, request, *args, **kwargs):
         node = self.get_object()
-        if settings.SHARE_URL and settings.SHARE_API_TOKEN:
-            if node.is_registration:
-                on_registration_updated(node)
-            else:
-                update_node_share(node)
-            update_admin_log(
-                user_id=self.request.user.id,
-                object_id=node._id,
-                object_repr='Node',
-                message='Node Reindexed (SHARE): {}'.format(node._id),
-                action_flag=REINDEX_SHARE
-            )
+        update_share(node)
+        update_admin_log(
+            user_id=self.request.user.id,
+            object_id=node._id,
+            object_repr='Node',
+            message='Node Reindexed (SHARE): {}'.format(node._id),
+            action_flag=REINDEX_SHARE
+        )
         return redirect(reverse_node(self.kwargs.get('guid')))
 
 class NodeReindexElastic(PermissionRequiredMixin, NodeDeleteBase):
@@ -365,6 +361,6 @@ class NodeReindexElastic(PermissionRequiredMixin, NodeDeleteBase):
             object_id=node._id,
             object_repr='Node',
             message='Node Reindexed (Elastic): {}'.format(node._id),
-            action_flag=REINDEX_SHARE
+            action_flag=REINDEX_ELASTIC
         )
         return redirect(reverse_node(self.kwargs.get('guid')))

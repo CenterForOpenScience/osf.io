@@ -6,7 +6,7 @@ from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.shortcuts import redirect
 
 from osf.models.admin_log_entry import update_admin_log, REINDEX_SHARE
-from website import settings, search
+from website import settings
 from website.preprints.model import PreprintService
 from website.preprints.tasks import on_preprint_updated
 from framework.exceptions import PermissionsError

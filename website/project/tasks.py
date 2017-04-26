@@ -31,14 +31,16 @@ def on_node_updated(node_id, user_id, first_save, saved_fields, request_headers=
 
     if need_update:
         node.update_search()
+        update_share(node)
 
-        if settings.SHARE_URL:
-            if not settings.SHARE_API_TOKEN:
-                return logger.warning('SHARE_API_TOKEN not set. Could not send %s to SHARE.'.format(node))
-            if node.is_registration:
-                on_registration_updated(node)
-            else:
-                update_node_share(node)
+def update_share(node):
+    if settings.SHARE_URL:
+        if not settings.SHARE_API_TOKEN:
+            return logger.warning('SHARE_API_TOKEN not set. Could not send %s to SHARE.'.format(node))
+        if node.is_registration:
+            on_registration_updated(node)
+        else:
+            update_node_share(node)
 
 def update_node_share(node):
     resp = requests.post('{}api/normalizeddata/'.format(settings.SHARE_URL),
@@ -60,7 +62,8 @@ def update_node_share(node):
                     }]}
                 }
             }
-        }, headers={'Authorization': 'Bearer {}'.format(settings.SHARE_API_TOKEN), 'Content-Type': 'application/vnd.api+json'})
+        }, headers={'Authorization': 'Bearer {}'.format(settings.SHARE_API_TOKEN), 'Content-Type': 'application/vnd.api+json'}
+    )
     logger.debug(resp.content)
     resp.raise_for_status()
 
