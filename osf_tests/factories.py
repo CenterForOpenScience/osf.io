@@ -580,14 +580,28 @@ class PreprintFactory(DjangoModelFactory):
                     doi=settings.DOI_NAMESPACE, domain=domain, ark=settings.ARK_NAMESPACE, guid=preprint._id
                 )
             }
+
+            create_task_patch = mock.patch('website.preprints.tasks.get_and_set_preprint_identifiers.s', side_effect=cls.sync_set_identifiers)
+            create_task_patch.start()
+
             preprint.set_published(is_published, auth=auth)
-            create_identifier_patcher.stop()
+            create_task_patch.stop()
 
         if not preprint.is_published:
             project._has_abandoned_preprint = True
-
         project.save()
         return preprint
+
+    def sync_set_identifiers(self, preprint_id):
+        preprint = models.PreprintService.load(preprint_id)
+        domain = get_top_level_domain(preprint)
+
+        created_identifiers = {
+            'doi': '{doi}{domain}/{guid}'.format(doi=settings.DOI_NAMESPACE, domain=domain, guid=preprint._id),
+            'ark': '{ark}{domain}/{guid}'.format(domain=domain, ark=settings.ARK_NAMESPACE, guid=preprint._id)
+        }
+
+        preprint.set_identifiers(created_identifiers)
 
     @classmethod
     def _create(cls, target_class, project=None, filename='preprint_file.txt', provider=None,
