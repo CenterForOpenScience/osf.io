@@ -10,6 +10,7 @@ from django.apps import apps
 from flask import request, send_from_directory
 
 from framework import sentry
+from framework.auth import Auth
 from framework.auth.decorators import must_be_logged_in
 from framework.auth.forms import SignInForm, ForgotPasswordForm
 from framework.exceptions import HTTPError
@@ -24,6 +25,7 @@ from website.models import Guid
 from website.models import Institution, PreprintService
 from website.settings import EXTERNAL_EMBER_APPS
 from website.project.model import has_anonymous_link
+from website.util import permissions
 
 logger = logging.getLogger(__name__)
 
@@ -245,6 +247,10 @@ def resolve_guid(guid, suffix=None):
         if suffix and suffix.rstrip('/').lower() == 'download':
             file_referent = None
             if isinstance(referent, PreprintService) and referent.primary_file:
+                if not referent.is_published:
+                    auth = Auth.from_kwargs(request.args.to_dict(), {})
+                    if not referent.node.has_permission(auth.user, permissions.ADMIN):
+                        raise HTTPError(http.NOT_FOUND)
                 file_referent = referent.primary_file
             elif isinstance(referent, BaseFileNode) and referent.is_file:
                 file_referent = referent
