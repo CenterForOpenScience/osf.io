@@ -661,11 +661,12 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
         }))
 
     if action == 'download':
+        format = extras.get('format')
+        if format:
+            return redirect('{}/export?format={}&url={}'.format(MFR_SERVER_URL, format, urllib.quote(file_node.generate_waterbutler_url(
+                **dict(extras, direct=None, version=version.identifier, _internal=extras.get('mode') == 'render')
+            ))))
         return redirect(file_node.generate_waterbutler_url(**dict(extras, direct=None, version=version.identifier, _internal=extras.get('mode') == 'render')))
-
-    if action == 'export':
-        extras['action'] = 'download'
-        return redirect('{}/export?format={}&url={}'.format(MFR_SERVER_URL, request.args['format'], urllib.quote(file.generate_waterbutler_url(**dict(extras, direct=None, version=version.identifier, _internal=extras.get('mode') == 'render')))))
 
     if action == 'get_guid':
         draft_id = extras.get('draft')

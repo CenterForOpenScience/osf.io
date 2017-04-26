@@ -165,28 +165,38 @@ class TestResolveGuid(OsfTestCase):
 
     def test_resolve_guid_download_file(self):
         pp = PreprintFactory(finish=True)
+
         res = self.app.get(pp.url + 'download')
         assert res.status_code == 302
-        assert '/project/{}/files/{}{}?action=download'.format(pp.node._id, pp.primary_file.provider, pp.primary_file.path) in res.location
+        assert '/v1/resources/{}/providers/{}{}?action=download&version=1&direct'.format(pp.node._id, pp.primary_file.provider, pp.primary_file.path) in res.location
+
+        res = self.app.get(pp.url + 'download/')
+        assert res.status_code == 302
+        assert '/v1/resources/{}/providers/{}{}?action=download&version=1&direct'.format(pp.node._id, pp.primary_file.provider, pp.primary_file.path) in res.location
 
         res = self.app.get('/{}/download'.format(pp.primary_file.get_guid(create=True)._id))
         assert res.status_code == 302
-        assert '/project/{}/files/{}{}?action=download'.format(pp.node._id, pp.primary_file.provider, pp.primary_file.path) in res.location
+        assert '/v1/resources/{}/providers/{}{}?action=download&version=1&direct'.format(pp.node._id, pp.primary_file.provider, pp.primary_file.path) in res.location
 
     def test_resolve_guid_download_file_export(self):
         pp = PreprintFactory(finish=True)
+
         res = self.app.get(pp.url + 'download?format=asdf')
         assert res.status_code == 302
-        assert '/project/{}/files/{}{}?action=export&format=asdf'.format(pp.node._id, pp.primary_file.provider, pp.primary_file.path) in res.location
+        assert '/export?format=asdf&url=' in res.location
+        assert '/v1/resources/{}/providers/{}{}%3Faction%3Ddownload'.format(pp.node._id, pp.primary_file.provider, pp.primary_file.path) in res.location
 
         res = self.app.get(pp.url + 'download/?format=asdf')
         assert res.status_code == 302
-        assert '/project/{}/files/{}{}?action=export&format=asdf'.format(pp.node._id, pp.primary_file.provider, pp.primary_file.path) in res.location
+        assert '/export?format=asdf&url=' in res.location
+        assert '/v1/resources/{}/providers/{}{}%3Faction%3Ddownload'.format(pp.node._id, pp.primary_file.provider, pp.primary_file.path) in res.location
 
         res = self.app.get('/{}/download?format=asdf'.format(pp.primary_file.get_guid(create=True)._id))
         assert res.status_code == 302
-        assert '/project/{}/files/{}{}?action=export&format=asdf'.format(pp.node._id, pp.primary_file.provider, pp.primary_file.path) in res.location
+        assert '/export?format=asdf&url=' in res.location
+        assert '/v1/resources/{}/providers/{}{}%3Faction%3Ddownload'.format(pp.node._id, pp.primary_file.provider, pp.primary_file.path) in res.location
 
         res = self.app.get('/{}/download/?format=asdf'.format(pp.primary_file.get_guid(create=True)._id))
         assert res.status_code == 302
-        assert '/project/{}/files/{}{}?action=export&format=asdf'.format(pp.node._id, pp.primary_file.provider, pp.primary_file.path) in res.location
+        assert '/export?format=asdf&url=' in res.location
+        assert '/v1/resources/{}/providers/{}{}%3Faction%3Ddownload'.format(pp.node._id, pp.primary_file.provider, pp.primary_file.path) in res.location
