@@ -10,6 +10,7 @@ from django.apps import apps
 from flask import request, send_from_directory
 
 from framework import sentry
+from framework.auth import Auth
 from framework.auth.decorators import must_be_logged_in
 from framework.auth.forms import SignInForm, ForgotPasswordForm
 from framework.exceptions import HTTPError
@@ -19,10 +20,12 @@ from framework.routing import proxy_url
 from framework.auth.core import get_current_user_id
 from website.institutions.views import serialize_institution
 
+from osf.models import BaseFileNode
 from website.models import Guid
 from website.models import Institution, PreprintService
 from website.settings import EXTERNAL_EMBER_APPS
 from website.project.model import has_anonymous_link
+from website.util import permissions
 
 logger = logging.getLogger(__name__)
 
@@ -223,7 +226,6 @@ def resolve_guid(guid, suffix=None):
         else:
             raise e
     if guid_object:
-
         # verify that the object implements a GuidStoredObject-like interface. If a model
         #   was once GuidStoredObject-like but that relationship has changed, it's
         #   possible to have referents that are instances of classes that don't
@@ -240,11 +242,38 @@ def resolve_guid(guid, suffix=None):
             raise HTTPError(http.NOT_FOUND)
         if not referent.deep_url:
             raise HTTPError(http.NOT_FOUND)
+
+        # Handle file `/download` shortcut with supported types.
+        if suffix and suffix.rstrip('/').lower() == 'download':
+            file_referent = None
+            if isinstance(referent, PreprintService) and referent.primary_file:
+                if not referent.is_published:
+                    # TODO: Ideally, permissions wouldn't be checked here.
+                    # This is necessary to prevent a logical inconsistency with
+                    # the routing scheme - if a preprint is not published, only
+                    # admins should be able to know it exists.
+                    auth = Auth.from_kwargs(request.args.to_dict(), {})
+                    if not referent.node.has_permission(auth.user, permissions.ADMIN):
+                        raise HTTPError(http.NOT_FOUND)
+                file_referent = referent.primary_file
+            elif isinstance(referent, BaseFileNode) and referent.is_file:
+                file_referent = referent
+
+            if file_referent:
+                # Extend `request.args` adding `action=download`.
+                request.args = request.args.copy()
+                request.args.update({'action': 'download'})
+                # Do not include the `download` suffix in the url rebuild.
+                url = _build_guid_url(urllib.unquote(file_referent.deep_url))
+                return proxy_url(url)
+
+        # Handle Ember Applications
         if isinstance(referent, PreprintService):
             return send_from_directory(
                 os.path.abspath(os.path.join(os.getcwd(), EXTERNAL_EMBER_APPS['preprints']['path'])),
                 'index.html'
             )
+
         url = _build_guid_url(urllib.unquote(referent.deep_url), suffix)
         return proxy_url(url)
 
