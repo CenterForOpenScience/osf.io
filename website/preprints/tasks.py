@@ -19,8 +19,9 @@ def on_preprint_updated(preprint_id):
     from osf.models import PreprintService
     preprint = PreprintService.load(preprint_id)
 
-    status = 'public' if preprint.node.is_public else 'unavailable'
-    update_ezid_metadata_on_change(preprint, status=status)
+    if preprint.node:
+        status = 'public' if preprint.node.is_public else 'unavailable'
+        update_ezid_metadata_on_change(preprint, status=status)
 
     if settings.SHARE_URL:
         if not preprint.provider.access_token:
