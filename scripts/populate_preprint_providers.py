@@ -429,7 +429,14 @@ def main(env):
             'social_facebook': '',
             'header_text': '',
             'licenses_acceptable': ['CC0 1.0 Universal', 'CC-By Attribution 4.0 International'],
-            'subjects_acceptable': []
+            'subjects_acceptable': [
+                (['Arts and Humanities'], True),
+                (['Business'], True),
+                (['Education'], True),
+                (['Law'], True),
+                (['Medicine and Health Sciences'], True),
+                (['Social and Behavioral Sciences'], True),
+            ]
         },
         'agrixiv': {
             '_id': 'agrixiv',
