@@ -613,7 +613,7 @@ def main(env):
             {
                 '_id': 'uc',
                 'name': 'University of Cincinnati [Test]',
-                'description': 'In partnership with the <a href="https://research.uc.edu/home/officeofresearch/administrativeoffices.aspx">Office of Research</a>, <a href="https://www.libraries.uc.edu/">UC Libraries</a> and <a href="https://www.uc.edu/ucit.html">IT&#64;UC</a>. Projects must abide by the University Security and Data Protection Policies depending on approval from OoR. Learn more by visiting <a href="https://libraries.uc.edu/digital-scholarship/data-services.html">Research Data & GIS services</a>.',
+                'description': 'In partnership with the <a href="https://research.uc.edu/home/officeofresearch/administrativeoffices.aspx">Office of Research</a>, <a href="https://www.libraries.uc.edu/">UC Libraries</a> and <a href="https://www.uc.edu/ucit.html">IT&#64;UC</a>. Projects must abide by <a href="http://www.uc.edu/infosec/policies.html">Security (9.1.27) and Data Protection (9.1.1) Policies.</a> Learn more by visiting <a href="https://libraries.uc.edu/digital-scholarship/data-services.html">Research Data & GIS services</a>.',
                 'banner_name': 'uc-banner.png',
                 'logo_name': 'uc-shield.png',
                 'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://login.uc.edu/idp/shibboleth')),
