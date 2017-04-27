@@ -13,10 +13,12 @@ from osf.models.user import Email, SocialAccount
 
 
 class PreprintProviderLink(ObjectIDMixin, BaseModel):
-    # external_url, about_link, blog_url, description_link
     url = models.URLField(max_length=200)
     description = models.CharField(max_length=200)
     linked_text = models.TextField(null=True, blank=True)
+
+    class Meta:
+        unique_together = ('url', 'description')
 
 
 class PreprintProvider(ObjectIDMixin, BaseModel):

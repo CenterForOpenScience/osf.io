@@ -2,22 +2,27 @@ from django.apps import apps
 
 SOCIAL_NETWORKS = [
     {
+        '_id': 'twitter',
         'name': 'Twitter',
         'base_url': 'https://twitter.com/'
     },
     {
+        '_id': 'facebook',
         'name': 'Facebook',
         'base_url': 'https://www.facebook.com/'
     },
     {
+        '_id': 'instagram',
         'name': 'Instagram',
         'base_url': 'https://instagram.com/'
     },
     {
+        '_id': 'linkedin',
         'name': 'LinkedIn',
         'base_url': 'https://www.linkedin.com/'
     },
     {
+        '_id': 'youtube',
         'name': 'YouTube',
         'base_url': 'https://www.youtube.com/'
     }
