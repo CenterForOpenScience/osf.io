@@ -26,8 +26,8 @@
                     </div>
                     <div class="support-col-body clearfix">
                         <p> How can it be free? How will the OSF be useful to my research? What is a registration?
-                        Get your questions about the Open Science Framework answered on our <a href="/faq"> FAQ page. </a></p>
-                        <a href="/faq" class="btn btn-info m-t-lg pull-right" > Visit FAQ <i class="fa fa-angle-right"></i></a>
+                        Get your questions about the Open Science Framework answered on our <a href="http://help.osf.io/m/faqs"> FAQ page. </a></p>
+                        <a href="http://help.osf.io/m/faqs" class="btn btn-info m-t-lg pull-right" > Visit FAQ <i class="fa fa-angle-right"></i></a>
                     </div>
 
                </div>
