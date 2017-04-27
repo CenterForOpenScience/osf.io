@@ -24,7 +24,7 @@ logging.basicConfig(level=logging.INFO)
 ENVS = ['prod', 'stage']
 SUBJECTS_CACHE = {}
 STAGING_PREPRINT_PROVIDERS = ['osf', 'psyarxiv', 'engrxiv', 'socarxiv', 'scielo', 'agrixiv', 'bitss', 'lawarxiv']
-PROD_PREPRINT_PROVIDERS = ['osf', 'psyarxiv', 'engrxiv', 'socarxiv', 'agrixiv', 'bitss']
+PROD_PREPRINT_PROVIDERS = ['osf', 'psyarxiv', 'engrxiv', 'socarxiv', 'agrixiv', 'bitss', 'lawarxiv']
 
 FACEBOOK = SocialNetwork.objects.get(_id='facebook')
 INSTAGRAM = SocialNetwork.objects.get(_id='instagram')
@@ -598,12 +598,16 @@ def main(env):
             'example': '',  # An example guid for this provider (Will have to be updated after the provider is up)
             # Advisory board should be valid html string in triple quotes
             'advisory_board': '''
+                <div class="col-xs-12">
+                    <h2>Legal Scholarship Advisory Board</h2>
+                    <p class="m-b-lg"></p>
+                </div>
                 <div class="col-xs-6">
                     <ul>
                         <li> <b>Timothy Armstrong</b>, University of Cincinnati College of Law</li>
                         <li> <b>Barbara Bintliff</b>, Texas Law </li>
                         <li> <b>Femi Cadmus</b>, Cornell Law School </li>
-                        <li> <b>Kyle Courtney</b>, Harvard University, Copyright Advisor </li>
+                        <li> <b>Kyle Courtney</b>, Harvard University </li>
                         <li> <b>Corie Dugas</b>, Mid-America Law Library Consortium </li>
                         <li> <b>James Grimmelmann</b>, Cornell Tech and Cornell Law School </li>
                     </ul>
@@ -641,7 +645,14 @@ def main(env):
                     'username': 'lawarxiv'
                 }
             ],
-            'subjects_acceptable': []
+            'subjects_acceptable': [
+                (['Arts and Humanities'], True),
+                (['Business'], True),
+                (['Education'], True),
+                (['Law'], True),
+                (['Medicine and Health Sciences'], True),
+                (['Social and Behavioral Sciences'], True),
+            ]
         },
         'agrixiv': {
             '_id': 'agrixiv',
