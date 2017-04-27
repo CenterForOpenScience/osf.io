@@ -9,11 +9,10 @@ from rest_framework.exceptions import AuthenticationFailed
 from api.base import settings
 
 from framework import sentry
-
 from framework.auth import get_or_create_user
 
-from website.models import Institution
 from website.mails import send_mail, WELCOME_OSF4I
+from website.models import Institution
 
 
 class InstitutionAuthentication(BaseAuthentication):
@@ -82,7 +81,6 @@ class InstitutionAuthentication(BaseAuthentication):
 
         # `get_or_create_user()` guesses names from fullname
         # replace the guessed ones if the names are provided from the authentication
-
         user, created = get_or_create_user(fullname, username, reset_password=False)
         if created:
             if given_name:
