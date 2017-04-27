@@ -76,7 +76,7 @@ jsonschema==2.5.1
 
 # Admin requirements
 django-webpack-loader==0.2.3
-django-nose==1.4.3
+django-nose==1.4.4
 django-password-reset==0.8.2
 sendgrid-django==2.0.0
 

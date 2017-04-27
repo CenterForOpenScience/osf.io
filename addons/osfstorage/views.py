@@ -135,6 +135,7 @@ def osfstorage_get_metadata(file_node, **kwargs):
 def osfstorage_get_children(file_node, **kwargs):
     from django.contrib.contenttypes.models import ContentType
     with connection.cursor() as cursor:
+        # Read the documentation on FileVersion's fields before reading this code
         cursor.execute('''
             SELECT json_agg(CASE
                 WHEN F.type = 'osf.osfstoragefile' THEN
@@ -147,8 +148,8 @@ def osfstorage_get_children(file_node, **kwargs):
                         , 'downloads',  COALESCE(DOWNLOAD_COUNT, 0)
                         , 'version', (SELECT COUNT(*) FROM osf_basefilenode_versions WHERE osf_basefilenode_versions.basefilenode_id = F.id)
                         , 'contentType', LATEST_VERSION.content_type
-                        , 'modified', LATEST_VERSION.date_modified
-                        , 'created', EARLIEST_VERSION.date_modified
+                        , 'modified', LATEST_VERSION.date_created
+                        , 'created', EARLIEST_VERSION.date_created
                         , 'checkout', CHECKOUT_GUID
                         , 'md5', LATEST_VERSION.metadata ->> 'md5'
                         , 'sha256', LATEST_VERSION.metadata ->> 'sha256'

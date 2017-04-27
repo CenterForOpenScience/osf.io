@@ -27,6 +27,8 @@ class PreprintProviderSerializer(JSONAPISerializer):
     id = ser.CharField(max_length=200, source='_id')
     advisory_board = ser.CharField(required=False, allow_null=True)
     example = ser.CharField(required=False, allow_null=True)
+    domain = ser.CharField(required=False, allow_null=False)
+    domain_redirect_enabled = ser.CharField(required=False, allow_null=False)
     header_text = ser.CharField(required=False, allow_null=True)
     subjects_acceptable = ser.JSONField(required=False, allow_null=True)
     logo_path = ser.CharField(read_only=True)

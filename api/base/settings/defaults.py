@@ -187,7 +187,7 @@ CORS_ORIGIN_WHITELIST = (urlparse(osf_settings.DOMAIN).netloc,
 # use cookies.
 CORS_ALLOW_CREDENTIALS = True
 # Set dynamically on app init
-INSTITUTION_ORIGINS_WHITELIST = ()
+ORIGINS_WHITELIST = ()
 
 MIDDLEWARE_CLASSES = (
     'api.base.middleware.DjangoGlobalMiddleware',

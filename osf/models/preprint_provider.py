@@ -1,15 +1,16 @@
 # -*- coding: utf-8 -*-
 from django.db import models
 
-from website.util import api_v2_url
 from modularodm import Q
 
 from osf.models.base import BaseModel, ObjectIDMixin
-from osf.utils.fields import EncryptedTextField
-from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.models.licenses import NodeLicense
 from osf.models.subject import Subject
 from osf.models.user import Email, SocialAccount
+from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
+from osf.utils.fields import EncryptedTextField
+
+from website.util import api_v2_url
 
 
 class PreprintProviderLink(ObjectIDMixin, BaseModel):
@@ -27,6 +28,8 @@ class PreprintProvider(ObjectIDMixin, BaseModel):
     header_text = models.TextField(default='', blank=True)
     description = models.CharField(null=True, blank=True, max_length=256)  # max length on prod: 56
     banner_name = models.CharField(null=True, blank=True, max_length=128)  # max length on prod: 19
+    domain = models.URLField(blank=True, default='', max_length=200)
+    domain_redirect_enabled = models.BooleanField(default=False)
     example = models.CharField(null=True, blank=True, max_length=20)  # max length on prod: 5
     access_token = EncryptedTextField(null=True, blank=True)
     advisory_board = models.TextField(null=True, blank=True)

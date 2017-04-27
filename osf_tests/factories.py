@@ -570,6 +570,17 @@ class PreprintFactory(DjangoModelFactory):
             materialized_path='/{}'.format(filename))
         file.save()
 
+        from addons.osfstorage import settings as osfstorage_settings
+
+        file.create_version(user, {
+            'object': '06d80e',
+            'service': 'cloud',
+            osfstorage_settings.WATERBUTLER_RESOURCE: 'osf',
+        }, {
+            'size': 1337,
+            'contentType': 'img/png'
+        }).save()
+
         preprint = target_class(node=project, provider=provider)
 
         auth = Auth(project.creator)

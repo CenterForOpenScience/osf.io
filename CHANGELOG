@@ -2,6 +2,15 @@
 Changelog
 *********
 
+0.107.0 (unreleased)
+====================
+
+- Upgrade to Django 1.11.
+- Remove BaseFileNode.wrapped() method.
+- Remove guid_string field from models.
+- Admin: Add Date Registration Initiated to node view.
+- Admin: Add link between projects and registrations.
+
 0.106.0 (2017-04-21)
 ====================
 

@@ -76,7 +76,7 @@ def serialize_user(user, node=None, admin=False, full=False, is_profile=False, i
                     'primary': each.strip().lower() == user.username.strip().lower(),
                     'confirmed': False
                 }
-                for each in user.unconfirmed_emails
+                for each in user.get_unconfirmed_emails_exclude_external_identity()
             ]
 
         if user.is_merged:
@@ -114,11 +114,13 @@ def serialize_contributors(contribs, node, **kwargs):
         for contrib in contribs
     ]
 
+
 def serialize_visible_contributors(node):
     # This is optimized when node has .include('contributor__user__guids')
     return [
         serialize_user(c, node) for c in node.contributor_set.all() if c.visible
     ]
+
 
 def add_contributor_json(user, current_user=None):
     """
@@ -158,6 +160,7 @@ def add_contributor_json(user, current_user=None):
         ),
         'profile_url': user.profile_url
     }
+
 
 def serialize_unregistered(fullname, email):
     """Serializes an unregistered user."""
