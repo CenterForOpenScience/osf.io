@@ -248,6 +248,10 @@ def resolve_guid(guid, suffix=None):
             file_referent = None
             if isinstance(referent, PreprintService) and referent.primary_file:
                 if not referent.is_published:
+                    # TODO: Ideally, permissions wouldn't be checked here.
+                    # This is necessary to prevent a logical inconsistency with
+                    # the routing scheme - if a preprint is not published, only
+                    # admins should be able to know it exists.
                     auth = Auth.from_kwargs(request.args.to_dict(), {})
                     if not referent.node.has_permission(auth.user, permissions.ADMIN):
                         raise HTTPError(http.NOT_FOUND)
