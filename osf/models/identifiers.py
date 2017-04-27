@@ -7,11 +7,6 @@ from osf.models.base import BaseModel, ObjectIDMixin
 class Identifier(ObjectIDMixin, BaseModel):
     """A persistent identifier model for DOIs, ARKs, and the like."""
 
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.identifiers.model.Identifier'
-    modm_query = None
-    # /TODO DELETE ME POST MIGRATION
-
     # object to which the identifier points
     object_id = models.PositiveIntegerField(null=True, blank=True)
     content_type = models.ForeignKey(ContentType, null=True, blank=True)

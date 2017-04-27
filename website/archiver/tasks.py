@@ -25,7 +25,7 @@ from website.archiver import signals as archiver_signals
 
 from website.project import signals as project_signals
 from website import settings
-from website.app import init_addons, do_set_backends
+from website.app import init_addons
 from osf.models import (
     ArchiveJob,
     AbstractNode as Node,
@@ -35,7 +35,6 @@ from osf.models import (
 def create_app_context():
     try:
         init_addons(settings)
-        do_set_backends(settings)
     except AssertionError:  # ignore AssertionErrors
         pass
 

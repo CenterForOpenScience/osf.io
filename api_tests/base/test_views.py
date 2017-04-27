@@ -16,6 +16,7 @@ from api.base.settings.defaults import API_BASE
 from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated
 from api.base.permissions import TokenHasScope
 from website.settings import DEBUG_MODE
+from website import maintenance
 
 from django.contrib.auth.models import User
 
@@ -99,6 +100,22 @@ class TestApiBaseViews(ApiTestCase):
 
         res = self.app.get('/{}nodes/'.format(API_BASE), auth=user.auth, expect_errors=True)
         assert_equal(res.status_code, http.BAD_REQUEST)
+
+
+class TestStatusView(ApiTestCase):
+
+    def test_status_view(self):
+        url = '/{}status/'.format(API_BASE)
+        res = self.app.get(url)
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json, {'maintenance': None})
+
+    def test_status_view_with_maintenance(self):
+        maintenance.set_maintenance()
+        url = '/{}status/'.format(API_BASE)
+        res = self.app.get(url)
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json, {'maintenance': maintenance.get_maintenance()})
 
 
 class TestJSONAPIBaseView(ApiTestCase):

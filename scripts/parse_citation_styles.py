@@ -7,7 +7,7 @@ from lxml import etree
 
 from website import settings
 from website.app import init_app
-from website.models import CitationStyle
+from osf.models.citation import CitationStyle
 
 
 def main():
