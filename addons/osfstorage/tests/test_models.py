@@ -92,13 +92,13 @@ class TestOsfstorageFileNode(StorageTestCase):
         assert_equals(file.serialize(), {
             u'id': file._id,
             u'path': file.path,
-            u'created': None,
+            u'created': version.date_created.isoformat(),
             u'name': u'MOAR PYLONS',
             u'kind': u'file',
             u'version': 1,
             u'downloads': 0,
             u'size': 1234L,
-            u'modified': None,
+            u'modified': version.date_created.isoformat(),
             u'contentType': u'text/plain',
             u'checkout': None,
             u'md5': None,
@@ -113,13 +113,15 @@ class TestOsfstorageFileNode(StorageTestCase):
         assert_equals(file.serialize(), {
             u'id': file._id,
             u'path': file.path,
-            u'created': date.isoformat(),
+            u'created': version.date_created.isoformat(),
             u'name': u'MOAR PYLONS',
             u'kind': u'file',
             u'version': 1,
             u'downloads': 0,
             u'size': 1234L,
-            u'modified': date.isoformat(),
+            # modified date is the creation date of latest version
+            # see https://github.com/CenterForOpenScience/osf.io/pull/7155
+            u'modified': version.date_created.isoformat(),
             u'contentType': u'text/plain',
             u'checkout': None,
             u'md5': None,
