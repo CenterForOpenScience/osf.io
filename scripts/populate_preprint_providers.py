@@ -25,6 +25,11 @@ SUBJECTS_CACHE = {}
 STAGING_PREPRINT_PROVIDERS = ['osf', 'psyarxiv', 'engrxiv', 'socarxiv', 'scielo', 'agrixiv', 'bitss', 'lawarxiv']
 PROD_PREPRINT_PROVIDERS = ['osf', 'psyarxiv', 'engrxiv', 'socarxiv', 'agrixiv', 'bitss']
 
+FACEBOOK = SocialNetwork.objects.get(_id='facebook')
+INSTAGRAM = SocialNetwork.objects.get(_id='instagram')
+LINKEDIN = SocialNetwork.objects.get(_id='linkedin')
+TWITTER = SocialNetwork.objects.get(_id='twitter')
+YOUTUBE = SocialNetwork.objects.get(_id='youtube')
 
 def get_subject_id(name):
     if not name in SUBJECTS_CACHE:
@@ -45,13 +50,43 @@ def get_license(name):
         raise Exception('License: "{}" not found'.format(name))
     return license
 
+def set_or_update_m2m_fields(provider, emails, licenses, links, social_accounts):
+    for email in emails:
+        try:
+            provider_email = Email.objects.get(email=email['email'], email_type=email['email_type'])
+        except Email.DoesNotExist:
+            provider_email = Email(**email)
+            provider_email.save()
+        provider.emails.add(provider_email)
+
+    if licenses:
+        provider.licenses_acceptable.add(*licenses)
+
+    for link in links:
+        try:
+            provider_link = PreprintProviderLink.objects.get(url=link['url'], description=link['description'])
+        except PreprintProviderLink.DoesNotExist:
+            provider_link = PreprintProviderLink(**link)
+            provider_link.save()
+        provider.links.add(provider_link)
+
+    for account in social_accounts:
+        try:
+            social_account = SocialAccount.objects.get(network=account['network'], username=account['username'])
+        except SocialAccount.DoesNotExist:
+            social_account = SocialAccount(**account)
+            social_account.save()
+        provider.social_accounts.add(social_account)
+
+    return provider
+
 def update_or_create(provider_data):
     provider = PreprintProvider.load(provider_data['_id'])
 
-    emails = provider_data.pop('emails', [])
-    licenses = [get_license(name) for name in provider_data.pop('licenses_acceptable', [])]
     links = provider_data.pop('links', [])
+    emails = provider_data.pop('emails', [])
     social_accounts = provider_data.pop('social_accounts', [])
+    licenses = [get_license(name) for name in provider_data.pop('licenses_acceptable', [])]
 
     if provider:
         provider_data['subjects_acceptable'] = map(
@@ -59,26 +94,7 @@ def update_or_create(provider_data):
             provider_data['subjects_acceptable']
         )
 
-        for e in emails:
-            email = Email(**e)
-            email.save()
-            provider.emails.add(email)
-
-        if licenses:
-            provider.licenses_acceptable.add(*licenses)
-
-        for l in links:
-            link = PreprintProviderLink(**l)
-            link.save()
-            provider.links.add(link)
-
-        for social_account in social_accounts:
-            account = SocialAccount(**social_account)
-            try:
-                account.save()
-            except ValidationError:
-                continue
-            provider.social_accounts.add(account)
+        provider = set_or_update_m2m_fields(provider, emails, licenses, links, social_accounts)
 
         for key, val in provider_data.iteritems():
             setattr(provider, key, val)
@@ -90,8 +106,7 @@ def update_or_create(provider_data):
     else:
         new_provider = PreprintProvider(**provider_data)
         new_provider.save()
-        if licenses:
-            new_provider.licenses_acceptable.add(*licenses)
+        new_provider = set_or_update_m2m_fields(new_provider, emails, licenses, links, social_accounts)
         provider = PreprintProvider.load(new_provider._id)
         print('Added new preprint provider: {}'.format(provider._id))
         return new_provider, True
@@ -118,30 +133,6 @@ def main(env):
             'licenses_acceptable': ['CC0 1.0 Universal', 'CC-By Attribution 4.0 International', 'No license'],
             'header_text': '',
             'subjects_acceptable': [],
-            'emails': [
-                {
-                    'email': 'contact@osf.io',
-                    'email_type': 'contact'
-                },
-                {
-                    'email': 'support@osf.io',
-                    'email_type': 'support'
-                }
-            ],
-            'social_accounts': [
-                {
-                    'network': SocialNetwork.objects.get(name='Facebook'),
-                    'username': 'Center for Open Science'
-                },
-                {
-                    'network': SocialNetwork.objects.get(name='Instagram'),
-                    'username': 'osframework'
-                },
-                {
-                    'network': SocialNetwork.objects.get(name='Twitter'),
-                    'username': 'osframework'
-                }
-            ],
             'links': [
                 {
                     'url': 'https://osf.io',
@@ -198,19 +189,27 @@ def main(env):
             ],
             'social_accounts': [
                 {
-                    'network': SocialNetwork.objects.get(name='Facebook'),
+                    'network': FACEBOOK,
                     'username': 'engrXiv'
                 },
                 {
-                    'network': SocialNetwork.objects.get(name='Instagram'),
+                    'network': INSTAGRAM,
                     'username': 'engrxiv'
                 },
                 {
-                    'network': SocialNetwork.objects.get(name='Twitter'),
+                    'network': TWITTER,
                     'username': 'engrxiv'
                 }
             ],
             'links': [
+                {
+                    'url': 'http://blog.engrxiv.org/about/',
+                    'description': 'about'
+                },
+                {
+                    'url': 'http://blog.engrxiv.org/',
+                    'description': 'blog'
+                },
                 {
                     'url': 'http://engrxiv.org',
                     'description': 'external'
@@ -373,22 +372,35 @@ def main(env):
             ],
             'social_accounts': [
                 {
-                    'network': SocialNetwork.objects.get(name='Facebook'),
+                    'network': FACEBOOK,
                     'username': 'PsyArXiv'
                 },
                 {
-                    'network': SocialNetwork.objects.get(name='Instagram'),
+                    'network': INSTAGRAM,
                     'username': 'psyarxiv'
                 },
                 {
-                    'network': SocialNetwork.objects.get(name='Twitter'),
+                    'network': TWITTER,
                     'username': 'psyarxiv'
                 }
             ],
             'links': [
                 {
+                    'url': 'http://blog.psyarxiv.com/psyarxiv/about-psyarxiv/',
+                    'description': 'about'
+                },
+                {
+                    'url': 'http://blog.psyarxiv.com/psyarxiv/',
+                    'description': 'blog'
+                },
+                {
                     'url': 'http://psyarxiv.com',
                     'description': 'external'
+                },
+                {
+                    'url': 'http://improvingpsych.org',
+                    'description': 'description',
+                    'linked_text': 'The Society for the Improvement of Psychological Science'
                 }
             ],
             'subjects_acceptable': [
@@ -489,19 +501,27 @@ def main(env):
             ],
             'social_accounts': [
                 {
-                    'network': SocialNetwork.objects.get(name='Facebook'),
+                    'network': FACEBOOK,
                     'username': 'socarxiv'
                 },
                 {
-                    'network': SocialNetwork.objects.get(name='Instagram'),
+                    'network': INSTAGRAM,
                     'username': 'socarxiv'
                 },
                 {
-                    'network': SocialNetwork.objects.get(name='Twitter'),
+                    'network': TWITTER,
                     'username': 'socarxiv'
                 }
             ],
             'links': [
+                {
+                    'url': 'https://socopen.org/welcome/',
+                    'description': 'about'
+                },
+                {
+                    'url': 'https://socopen.org',
+                    'description': 'blog'
+                },
                 {
                     'url': 'http://socarxiv.org',
                     'description': 'external'
@@ -547,11 +567,11 @@ def main(env):
             ],
             'social_accounts': [
                 {
-                    'network': SocialNetwork.objects.get(name='Facebook'),
+                    'network': FACEBOOK,
                     'username': 'SciELONetwork'
                 },
                 {
-                    'network': SocialNetwork.objects.get(name='Twitter'),
+                    'network': TWITTER,
                     'username': 'RedeSciELO'
                 }
             ],
@@ -612,7 +632,7 @@ def main(env):
             ],
             'social_accounts': [
                 {
-                    'network': SocialNetwork.objects.get(name='Twitter'),
+                    'network': TWITTER,
                     'username': 'lawarxiv'
                 }
             ],
@@ -681,16 +701,22 @@ def main(env):
             ],
             'social_accounts': [
                 {
-                    'network': SocialNetwork.objects.get(name='Facebook'),
+                    'network': FACEBOOK,
                     'username': 'agrixiv'
                 },
                 {
-                    'network': SocialNetwork.objects.get(name='Instagram'),
+                    'network': INSTAGRAM,
                     'username': 'agrixiv'
                 },
                 {
-                    'network': SocialNetwork.objects.get(name='Twitter'),
+                    'network': TWITTER,
                     'username': 'AgriXiv'
+                }
+            ],
+            'links': [
+                {
+                    'url': 'https://agrixiv.wordpress.com/about/',
+                    'description': 'about'
                 }
             ],
             'subjects_acceptable': [
@@ -1308,7 +1334,7 @@ def main(env):
             ],
             'social_accounts': [
                 {
-                    'network': SocialNetwork.objects.get(name='Twitter'),
+                    'network': TWITTER,
                     'username': 'UCBITSS'
                 }
             ],
@@ -1316,6 +1342,11 @@ def main(env):
                 {
                     'url': 'http://www.bitss.org',
                     'description': 'external'
+                },
+                {
+                    'url': 'http://www.bitss.org',
+                    'description': 'description',
+                    'linked_text': 'The Berkeley Initiative for Transparency in the Social Sciences (BITSS)'
                 }
             ],
             'subjects_acceptable': [
