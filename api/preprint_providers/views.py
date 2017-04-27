@@ -204,7 +204,7 @@ class PreprintProviderPreprintList(JSONAPIBaseView, generics.ListAPIView, Django
 
     # overrides ListAPIView
     def get_queryset(self):
-        return PreprintService.objects.filter(self.get_query_from_request())
+        return PreprintService.objects.filter(self.get_query_from_request()).distinct()
 
 
 class PreprintProviderSubjectList(JSONAPIBaseView, generics.ListAPIView):
