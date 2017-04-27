@@ -119,7 +119,8 @@ def get_globals():
             },
         },
         'maintenance': maintenance.get_maintenance(),
-        'recaptcha_site_key': settings.RECAPTCHA_SITE_KEY
+        'recaptcha_site_key': settings.RECAPTCHA_SITE_KEY,
+        'custom_citations': settings.CUSTOM_CITATIONS
     }
 
 
