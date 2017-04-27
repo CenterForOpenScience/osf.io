@@ -1,4 +1,5 @@
 import jwe
+from cryptography.exceptions import InvalidTag
 from django.db import models
 from website import settings
 
@@ -31,22 +32,27 @@ class EncryptedTextField(models.TextField):
     def get_db_prep_value(self, value, **kwargs):
         if value and not value.startswith(self.prefix):
             value = ensure_bytes(value)
-            if not settings.RUNNING_MIGRATION:
-                # don't encrypt things if we're migrating.
+            try:
                 value = self.prefix + jwe.encrypt(bytes(value), SENSITIVE_DATA_KEY)
-            else:
-                # just prefix them
-                return u'jwe:::{}'.format(value)
+            except InvalidTag:
+                # Allow use of an encrypted DB locally without encrypting fields
+                if settings.DEBUG_MODE:
+                    pass
+                else:
+                    raise
         return value
 
     def to_python(self, value):
         if value and value.startswith(self.prefix):
             value = ensure_bytes(value)
-            if not settings.RUNNING_MIGRATION:
-                # don't decrypt things if we're migrating.
+            try:
                 value = jwe.decrypt(bytes(value[len(self.prefix):]), SENSITIVE_DATA_KEY)
-            else:
-                return value[6:]
+            except InvalidTag:
+                # Allow use of an encrypted DB locally without decrypting fields
+                if settings.DEBUG_MODE:
+                    pass
+                else:
+                    raise
         return value
 
     def from_db_value(self, value, expression, connection, context):
