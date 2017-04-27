@@ -15,6 +15,7 @@ urlpatterns = [
         include(
             [
                 url(r'^$', views.root, name='root'),
+                url(r'^status/', views.status_check, name='status_check'),
                 url(r'^addons/', include('api.addons.urls', namespace='addons')),
                 url(r'^applications/', include('api.applications.urls', namespace='applications')),
                 url(r'^cas/', include('api.cas.urls', namespace='cas')),

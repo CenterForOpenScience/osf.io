@@ -1,3 +1,4 @@
+import gc
 import StringIO
 import cProfile
 import pstats
@@ -68,6 +69,8 @@ class DjangoGlobalMiddleware(object):
 
     def process_response(self, request, response):
         api_globals.request = None
+        if api_settings.DEBUG and len(gc.get_referents(request)) > 2:
+            raise Exception('You wrote a memory leak. Stop it')
         return response
 
 
@@ -82,7 +85,7 @@ class CorsMiddleware(corsheaders.middleware.CorsMiddleware):
         not_found = super(CorsMiddleware, self).origin_not_found_in_white_lists(origin, url)
         if not_found:
             # Check if origin is in the dynamic Institutions whitelist
-            if url.netloc.lower() in api_settings.INSTITUTION_ORIGINS_WHITELIST:
+            if url.netloc.lower() in api_settings.ORIGINS_WHITELIST:
                 return
             # Check if a cross-origin request using the Authorization header
             elif not self._context.request.COOKIES:
@@ -120,9 +123,10 @@ class PostcommitTaskMiddleware(object):
         return response
 
 
-# Orignal version taken from http://www.djangosnippets.org/snippets/186/
+# Adapted from http://www.djangosnippets.org/snippets/186/
 # Original author: udfalkso
 # Modified by: Shwagroo Team and Gun.io
+# Modified by: COS
 class ProfileMiddleware(object):
     """
     Displays hotshot profiling for any view.
@@ -144,7 +148,6 @@ class ProfileMiddleware(object):
         if (settings.DEBUG or request.user.is_superuser) and 'prof' in request.GET:
             self.prof.disable()
 
-            self.prof.dump_stats('request.profile')
             s = StringIO.StringIO()
             ps = pstats.Stats(self.prof, stream=s).sort_stats('cumtime')
             ps.print_stats()

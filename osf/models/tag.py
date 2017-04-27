@@ -11,11 +11,6 @@ class TagManager(models.Manager):
         return super(TagManager, self).get_queryset().filter(system=False)
 
 class Tag(BaseModel):
-    # TODO DELETE ME POST MIGRATION
-    primary_identifier_name = 'name'
-    modm_model_path = 'website.project.model.Tag'
-    modm_query = None
-    # /TODO DELETE ME POST MIGRATION
     name = models.CharField(db_index=True, max_length=1024)
     system = models.BooleanField(default=False)
 
@@ -44,19 +39,6 @@ class Tag(BaseModel):
         except cls.DoesNotExist:
             return None
 
-    @classmethod
-    def migrate_from_modm(cls, modm_obj):
-        """
-        Given a modm object, make a django object with the same local fields.
-
-        :param modm_obj:
-        :return:
-        """
-        django_obj = cls()
-
-        setattr(django_obj, 'name', modm_obj._id)
-
-        return django_obj
-
     class Meta:
         unique_together = ('name', 'system')
+        ordering = ('name', )

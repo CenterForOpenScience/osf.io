@@ -8,6 +8,8 @@ from rest_framework.exceptions import AuthenticationFailed
 
 from api.base import settings
 
+from framework import sentry
+
 from framework.auth import get_or_create_user
 
 from website.models import Institution
@@ -71,12 +73,16 @@ class InstitutionAuthentication(BaseAuthentication):
         if given_name and family_name and not fullname:
             fullname = given_name + ' ' + family_name
 
-        # use username if no names are provided
+        # institution must provide `fullname`, otherwise we fail the authentication and inform sentry
         if not fullname:
-            fullname = username
+            message = 'Institution login failed: fullname required' \
+                      ' for user {} from institution {}'.format(username, provider['id'])
+            sentry.log_message(message)
+            raise AuthenticationFailed(message)
 
         # `get_or_create_user()` guesses names from fullname
-        # replace the guessed ones if the names are provided from the authentication request
+        # replace the guessed ones if the names are provided from the authentication
+
         user, created = get_or_create_user(fullname, username, reset_password=False)
         if created:
             if given_name:

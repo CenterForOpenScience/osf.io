@@ -4,7 +4,6 @@ import re
 import furl
 from django.core.urlresolvers import resolve, reverse, NoReverseMatch
 from django.core.exceptions import ImproperlyConfigured
-from funcy.calc import memoize
 from rest_framework import exceptions
 from rest_framework import serializers as ser
 from rest_framework.fields import SkipField
@@ -53,10 +52,12 @@ def format_relationship_links(related_link=None, self_link=None, rel_meta=None, 
     return ret
 
 
-@memoize
 def is_anonymized(request):
+    if hasattr(request, '_is_anonymized'):
+        return request._is_anonymized
     private_key = request.query_params.get('view_only', None)
-    return website_utils.check_private_key_for_anonymized_link(private_key)
+    request._is_anonymized = website_utils.check_private_key_for_anonymized_link(private_key)
+    return request._is_anonymized
 
 
 class ShowIfVersion(ser.Field):
@@ -1382,7 +1383,7 @@ class LinkedRegistrationsRelationshipSerializer(PrefetchRelationshipsSerializer)
     def get_pointers_to_add_remove(self, pointers, new_pointers):
         diff = relationship_diff(
             current_items={pointer._id: pointer for pointer in pointers},
-            new_items={val['node']['_id']: val for val in new_pointers}
+            new_items={val['_id']: val for val in new_pointers}
         )
 
         nodes_to_add = []

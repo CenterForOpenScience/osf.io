@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 
-import collections
-import re
-import logging
-import urlparse
 from contextlib import contextmanager
+import collections
+import logging
+import re
+import urlparse
 
 from blinker import ANY
 import furl
@@ -122,7 +122,7 @@ def api_v2_url(path_str,
     return x
 
 
-def web_url_for(view_name, _absolute=False, _guid=False, *args, **kwargs):
+def web_url_for(view_name, _absolute=False, _internal=False, _guid=False, *args, **kwargs):
     """Reverse URL lookup for web routes (those that use the OsfWebRenderer).
     Takes the same arguments as Flask's url_for, with the addition of
     `_absolute`, which will make an absolute URL with the correct HTTP scheme
@@ -135,7 +135,8 @@ def web_url_for(view_name, _absolute=False, _guid=False, *args, **kwargs):
     if _absolute:
         # We do NOT use the url_for's _external kwarg because app.config['SERVER_NAME'] alters
         # behavior in an unknown way (currently breaks tests). /sloria /jspies
-        return urlparse.urljoin(website_settings.DOMAIN, url)
+        domain = website_settings.INTERNAL_DOMAIN if _internal else website_settings.DOMAIN
+        return urlparse.urljoin(domain, url)
     return url
 
 

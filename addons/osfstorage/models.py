@@ -6,19 +6,15 @@ from django.apps import apps
 from django.db import models, connection
 from modularodm import Q
 from psycopg2._psycopg import AsIs
-from typedmodels.models import TypedModel
 
 from addons.base.models import BaseNodeSettings, BaseStorageAddon
 from osf.exceptions import InvalidTagError, NodeStateError, TagNotFoundError
 from osf.models import (File, FileVersion, Folder, Guid,
-                        TrashedFileNode, TrashedFile, TrashedFolder, BaseFileNode)
+                        TrashedFileNode, BaseFileNode)
 from osf.utils.auth import Auth
 from website.files import exceptions
 from website.files import utils as files_utils
 from website.util import permissions
-# TODO DELETE ME POST MIGRATION
-from modularodm import Q as MQ
-# /TODO DELETE ME POST MIGRATION
 
 settings = apps.get_app_config('addons_osfstorage')
 
@@ -30,40 +26,28 @@ class OsfStorageFileNode(BaseFileNode):
 
     @property
     def materialized_path(self):
-        # TODO Optimize this.
         sql = """
-            WITH RECURSIVE
-                materialized_path_cte(id, parent_id, provider, GEN_DEPTH, GEN_PATH) AS (
-                SELECT
-                  sfn.id,
-                  sfn.parent_id,
-                  sfn.provider,
-                  1 :: INT         AS depth,
-                  sfn.name :: TEXT AS GEN_PATH
-                FROM "%s" AS sfn
-                WHERE
-                  sfn.provider = 'osfstorage' AND
-                  sfn.parent_id IS NULL
-                UNION ALL
-                SELECT
-                  c.id,
-                  c.parent_id,
-                  c.provider,
-                  p.GEN_DEPTH + 1                       AS GEN_DEPTH,
-                  (p.GEN_PATH || '/' || c.name :: TEXT) AS GEN_PATH
-                FROM materialized_path_cte AS p, "%s" AS c
-                WHERE c.parent_id = p.id
-              )
+            WITH RECURSIVE materialized_path_cte(parent_id, GEN_PATH) AS (
+              SELECT
+                T.parent_id,
+                T.name :: TEXT AS GEN_PATH
+              FROM %s AS T
+              WHERE T.id = %s
+              UNION ALL
+              SELECT
+                T.parent_id,
+                (T.name || '/' || R.GEN_PATH) AS GEN_PATH
+              FROM materialized_path_cte AS R
+                JOIN %s AS T ON T.id = R.parent_id
+              WHERE R.parent_id IS NOT NULL
+            )
             SELECT gen_path
-            FROM materialized_path_cte AS n
-            WHERE
-              GEN_DEPTH > 1
-              AND
-              n.id = %s
+            FROM materialized_path_cte AS N
+            WHERE parent_id IS NULL
             LIMIT 1;
         """
         with connection.cursor() as cursor:
-            cursor.execute(sql, [AsIs(self._meta.db_table), AsIs(self._meta.db_table), self.pk])
+            cursor.execute(sql, [AsIs(self._meta.db_table), self.pk, AsIs(self._meta.db_table)])
             row = cursor.fetchone()
             if not row:
                 return '/'
@@ -95,7 +79,7 @@ class OsfStorageFileNode(BaseFileNode):
             return inst
 
         # Dont raise anything a 404 will be raised later
-        return cls.create(node=node, path=path)
+        return cls(node=node, path=path)
 
     @classmethod
     def get_file_guids(cls, materialized_path, provider, node=None):
@@ -210,10 +194,6 @@ class OsfStorageFileNode(BaseFileNode):
 
 
 class OsfStorageFile(OsfStorageFileNode, File):
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.files.models.osfstorage.OsfStorageFile'
-    modm_query = MQ('is_file', 'eq', True)
-    # /TODO DELETE ME POST MIGRATION
 
     def touch(self, bearer, version=None, revision=None, **kwargs):
         try:
@@ -238,12 +218,15 @@ class OsfStorageFile(OsfStorageFileNode, File):
             ret['fullPath'] = self.materialized_path
 
         version = self.get_version(version)
-        return dict(
-            ret,
-            version=self.versions.count(),
-            md5=version.metadata.get('md5') if version else None,
-            sha256=version.metadata.get('sha256') if version else None,
-        )
+        earliest_version = self.versions.order_by('date_created').first()
+        ret.update({
+            'version': self.versions.count(),
+            'md5': version.metadata.get('md5') if version else None,
+            'sha256': version.metadata.get('sha256') if version else None,
+            'modified': version.date_created.isoformat() if version else None,
+            'created': earliest_version.date_created.isoformat() if version else None,
+        })
+        return ret
 
     def create_version(self, creator, location, metadata=None):
         latest_version = self.get_version()
@@ -342,10 +325,6 @@ class OsfStorageFile(OsfStorageFileNode, File):
 
 
 class OsfStorageFolder(OsfStorageFileNode, Folder):
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.files.models.osfstorage.OsfStorageFolder'
-    modm_query = MQ('is_file', 'eq', False)
-    # /TODO DELETE ME POST MIGRATION
 
     @property
     def is_checked_out(self):
@@ -372,10 +351,6 @@ class OsfStorageFolder(OsfStorageFileNode, Folder):
 
 
 class NodeSettings(BaseStorageAddon, BaseNodeSettings):
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.addons.osfstorage.model.OsfStorageNodeSettings'
-    modm_query = None
-    # /TODO DELETE ME POST MIGRATION
     # Required overrides
     complete = True
     has_auth = True

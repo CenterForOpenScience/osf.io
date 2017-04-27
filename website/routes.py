@@ -119,7 +119,8 @@ def get_globals():
             },
         },
         'maintenance': maintenance.get_maintenance(),
-        'recaptcha_site_key': settings.RECAPTCHA_SITE_KEY
+        'recaptcha_site_key': settings.RECAPTCHA_SITE_KEY,
+        'custom_citations': settings.CUSTOM_CITATIONS
     }
 
 
@@ -1470,12 +1471,6 @@ def make_url_map(app):
         ),
         Rule(
             [
-                '/project/<pid>/fork/',
-                '/project/<pid>/node/<nid>/fork/',
-            ], 'post', project_views.node.node_fork_page, json_renderer,
-        ),
-        Rule(
-            [
                 '/project/<pid>/pointer/fork/',
                 '/project/<pid>/node/<nid>/pointer/fork/',
             ], 'post', project_views.node.fork_pointer, json_renderer,
@@ -1696,7 +1691,15 @@ def make_url_map(app):
     # NOTE: We use nginx to serve static addon assets in production
     addon_base_path = os.path.abspath('addons')
     if settings.DEV_MODE:
+        from flask import stream_with_context, Response
+        import requests
+
         @app.route('/static/addons/<addon>/<path:filename>')
         def addon_static(addon, filename):
             addon_path = os.path.join(addon_base_path, addon, 'static')
             return send_from_directory(addon_path, filename)
+
+        @app.route('/ember-cli-live-reload.js')
+        def ember_cli_live_reload():
+            req = requests.get('{}/ember-cli-live-reload.js'.format(settings.LIVE_RELOAD_DOMAIN), stream=True)
+            return Response(stream_with_context(req.iter_content()), content_type=req.headers['content-type'])
