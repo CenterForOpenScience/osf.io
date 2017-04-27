@@ -151,7 +151,7 @@ var NewAndNoteworthy = {
         }
 
         function findMoreProjectsButton () {
-            return m('a.btn.btn-default.m-v-lg', {type:'button', href:'/search', onclick: function() {
+            return m('a.btn.btn-default.m-v-lg', {type:'button', href:'/search/?q=* ', onclick: function() {
                 $osf.trackClick('discoverPublicProjects', 'navigate', 'navigate-to-search-for-more-projects');
             }}, 'Search for more projects');
         }
