@@ -494,6 +494,37 @@ class SubjectFactory(DjangoModelFactory):
         return ret
 
 
+class EmailFactory(DjangoModelFactory):
+    email = factory.Faker('email')
+
+    class Meta:
+        model = models.Email
+
+
+class SocialNetworkFactory(DjangoModelFactory):
+    name = factory.Faker('company')
+    base_url = factory.Faker('url')
+
+    class Meta:
+        model = models.SocialNetwork
+
+
+class SocialAccountFactory(DjangoModelFactory):
+    network = factory.SubFactory(SocialNetworkFactory)
+    username = factory.Faker('word')
+
+    class Meta:
+        model = models.SocialAccount
+
+
+class PreprintProviderLinkFactory(DjangoModelFactory):
+    url = factory.Faker('url')
+    description = factory.Faker('word')
+
+    class Meta:
+        model = models.PreprintProviderLink
+
+
 class PreprintProviderFactory(DjangoModelFactory):
     name = factory.Faker('company')
     description = factory.Faker('bs')

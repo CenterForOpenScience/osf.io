@@ -14,7 +14,6 @@ import itsdangerous
 import pytz
 from dirtyfields import DirtyFieldsMixin
 
-from django.apps import apps
 from django.conf import settings
 from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
 from django.contrib.auth.hashers import check_password

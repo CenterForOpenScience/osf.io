@@ -1,6 +1,6 @@
 from osf.models.metaschema import MetaSchema  # noqa
 from osf.models.base import Guid, BlackListGuid  # noqa
-from osf.models.user import OSFUser  # noqa
+from osf.models.user import Email, OSFUser, SocialAccount, SocialNetwork  # noqa
 from osf.models.contributor import Contributor, RecentlyAddedContributor  # noqa
 from osf.models.session import Session  # noqa
 from osf.models.institution import Institution  # noqa
@@ -20,7 +20,7 @@ from osf.models.licenses import NodeLicense, NodeLicenseRecord  # noqa
 from osf.models.private_link import PrivateLink  # noqa
 from osf.models.notifications import NotificationDigest, NotificationSubscription  # noqa
 from osf.models.subject import Subject  # noqa
-from osf.models.preprint_provider import PreprintProvider  # noqa
+from osf.models.preprint_provider import PreprintProvider, PreprintProviderLink  # noqa
 from osf.models.preprint_service import PreprintService  # noqa
 from osf.models.identifiers import Identifier  # noqa
 from osf.models.files import (  # noqa
