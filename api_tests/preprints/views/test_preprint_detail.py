@@ -29,8 +29,6 @@ def build_preprint_update_payload(node_id, attributes=None, relationships=None):
 class TestPreprintDetail(ApiTestCase):
     def setUp(self):
         super(TestPreprintDetail, self).setUp()
-        self.mock_change_identifier = mock.patch('website.identifiers.client.EzidClient.change_status_identifier')
-        self.mock_change_identifier.start()
 
         self.user = AuthUserFactory()
         self.preprint = PreprintFactory(creator=self.user)
@@ -46,25 +44,15 @@ class TestPreprintDetail(ApiTestCase):
         assert_equal(self.data['type'], 'preprints')
         assert_equal(self.data['id'], self.preprint._id)
 
-    def tearDown(self):
-        self.mock_change_identifier.stop()
-        super(TestPreprintDetail, self).tearDown()
 
 class TestPreprintDelete(ApiTestCase):
     def setUp(self):
         super(TestPreprintDelete, self).setUp()
         self.user = AuthUserFactory()
 
-        self.mock_change_identifier = mock.patch('website.identifiers.client.EzidClient.change_status_identifier')
-        self.mock_change_identifier.start()
-
         self.unpublished_preprint = PreprintFactory(creator=self.user, is_published=False)
         self.published_preprint = PreprintFactory(creator=self.user)
         self.url = '/{}preprints/{{}}/'.format(API_BASE)
-
-    def tearDown(self):
-        self.mock_change_identifier.stop()
-        super(TestPreprintDelete, self).tearDown()
 
     def test_can_delete_unpublished(self):
         previous_ids = list(PreprintService.objects.all().values_list('pk', flat=True))
@@ -95,8 +83,6 @@ class TestPreprintDelete(ApiTestCase):
 class TestPreprintUpdate(ApiTestCase):
     def setUp(self):
         super(TestPreprintUpdate, self).setUp()
-        self.mock_change_identifier = mock.patch('website.identifiers.client.EzidClient.change_status_identifier')
-        self.mock_change_identifier.start()
 
         self.user = AuthUserFactory()
 
@@ -104,10 +90,6 @@ class TestPreprintUpdate(ApiTestCase):
         self.url = '/{}preprints/{}/'.format(API_BASE, self.preprint._id)
 
         self.subject = SubjectFactory()
-
-    def tearDown(self):
-        self.mock_change_identifier.stop()
-        super(TestPreprintUpdate, self).tearDown()
 
     def test_update_preprint_permission_denied(self):
         update_doi_payload = build_preprint_update_payload(self.preprint._id, attributes={'article_doi': '10.123/456/789'})
@@ -295,15 +277,14 @@ class TestPreprintUpdate(ApiTestCase):
             # Signal not sent, because contributor is not registered
             assert_false(captured[contributor_added])
 
-    @mock.patch('website.identifiers.client.EzidClient.change_status_identifier')
-    def test_update_ezid_metadata_on_update(self, mock_change_status_identifier):
+    @mock.patch('website.preprints.tasks.on_preprint_updated.s')
+    def test_update_preprint_task_called_on_api_update(self, mock_on_preprint_updated):
         update_doi_payload = build_preprint_update_payload(self.preprint._id, attributes={'doi': '10.1234/ASDFASDF'})
 
         self.app.patch_json_api(self.url, update_doi_payload, auth=self.user.auth)
         self.preprint.node.reload()
 
-        doi, metadata = build_ezid_metadata(self.preprint)
-        mock_change_status_identifier.assert_called_with('public', doi, metadata)
+        assert mock_on_preprint_updated.called
 
 
 class TestPreprintUpdateLicense(ApiTestCase):
@@ -317,9 +298,6 @@ class TestPreprintUpdateLicense(ApiTestCase):
         self.rw_contributor = AuthUserFactory()
         self.read_contributor = AuthUserFactory()
         self.non_contributor = AuthUserFactory()
-
-        self.mock_change_identifier = mock.patch('website.identifiers.client.EzidClient.change_status_identifier')
-        self.mock_change_identifier.start()
 
         self.preprint_provider = PreprintProviderFactory()
         self.preprint = PreprintFactory(creator=self.admin_contributor, provider=self.preprint_provider)
@@ -336,12 +314,6 @@ class TestPreprintUpdateLicense(ApiTestCase):
         self.preprint_provider.save()
 
         self.url = '/{}preprints/{}/'.format(API_BASE, self.preprint._id)
-
-
-    def tearDown(self):
-        self.mock_change_identifier.stop()
-        super(TestPreprintUpdateLicense, self).tearDown()
-
 
     def make_payload(self, node_id, license_id=None, license_year=None, copyright_holders=None):
         attributes = {}

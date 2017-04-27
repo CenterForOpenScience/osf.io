@@ -53,19 +53,7 @@ def build_preprint_create_payload(node_id=None, provider_id=None, file_id=None, 
     return payload
 
 
-class PreprintApiTestCase(ApiTestCase):
-    def setUp(self):
-        super(PreprintApiTestCase, self).setUp()
-
-        self.mock_change_identifier = mock.patch('website.identifiers.client.EzidClient.change_status_identifier')
-        self.mock_change_identifier.start()
-
-    def tearDown(self):
-        self.mock_change_identifier.stop()
-        super(PreprintApiTestCase, self).tearDown()
-
-
-class TestPreprintList(PreprintApiTestCase):
+class TestPreprintList(ApiTestCase):
 
     def setUp(self):
         super(TestPreprintList, self).setUp()
@@ -89,7 +77,7 @@ class TestPreprintList(PreprintApiTestCase):
         assert_in(self.preprint._id, ids)
         assert_not_in(self.project._id, ids)
 
-class TestPreprintsListFiltering(PreprintsListFilteringMixin, PreprintApiTestCase):
+class TestPreprintsListFiltering(PreprintsListFilteringMixin, ApiTestCase):
 
     def setUp(self):
         self.mock_change_identifier = mock.patch('website.identifiers.client.EzidClient.change_status_identifier')
@@ -112,7 +100,7 @@ class TestPreprintsListFiltering(PreprintsListFilteringMixin, PreprintApiTestCas
         assert_equal(expected, actual)
 
 
-class TestPreprintCreate(PreprintApiTestCase):
+class TestPreprintCreate(ApiTestCase):
     def setUp(self):
         super(TestPreprintCreate, self).setUp()
 
@@ -292,7 +280,7 @@ class TestPreprintCreate(PreprintApiTestCase):
         assert not mock_on_preprint_updated.called
 
 
-class TestPreprintIsPublishedList(PreprintIsPublishedListMixin, PreprintApiTestCase):
+class TestPreprintIsPublishedList(PreprintIsPublishedListMixin, ApiTestCase):
     def setUp(self):
         self.admin = AuthUserFactory()
         self.provider_one = PreprintProviderFactory()
@@ -302,7 +290,7 @@ class TestPreprintIsPublishedList(PreprintIsPublishedListMixin, PreprintApiTestC
         self.url = '/{}preprints/?version=2.2&'.format(API_BASE)
         super(TestPreprintIsPublishedList, self).setUp()
 
-class TestPreprintIsValidList(PreprintIsValidListMixin, PreprintApiTestCase):
+class TestPreprintIsValidList(PreprintIsValidListMixin, ApiTestCase):
     def setUp(self):
         self.admin = AuthUserFactory()
         self.provider = PreprintProviderFactory()
