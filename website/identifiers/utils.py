@@ -2,11 +2,15 @@
 
 import re
 import furl
+import logging
 
 from framework.exceptions import HTTPError
 from website import settings
+from website.project import signals
 from website.identifiers.metadata import datacite_metadata_for_node, datacite_metadata_for_preprint
+from framework.celery_tasks.handlers import enqueue_task
 
+logger = logging.getLogger(__name__)
 
 FIELD_SEPARATOR = '\n'
 PAIR_SEPARATOR = ': '
@@ -169,10 +173,9 @@ def get_or_create_identifiers(target_object):
                 for pair in resp['success'].split('|')
             )
 
+@signals.node_deleted.connect
+def update_status_on_delete(node):
+    from website.preprints.tasks import update_ezid_metadata_on_change
 
-def update_ezid_metadata_on_change(target_object, status):
-    if (settings.EZID_USERNAME and settings.EZID_PASSWORD) and target_object.get_identifier('doi'):
-        client = get_ezid_client()
-
-        doi, metadata = build_ezid_metadata(target_object)
-        client.change_status_identifier(status, doi, metadata)
+    for preprint in node.preprints.all():
+        enqueue_task(update_ezid_metadata_on_change.s(preprint, status='unavailable'))

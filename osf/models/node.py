@@ -55,7 +55,6 @@ from website.mails import mails
 from website.project import signals as project_signals
 from website.project import tasks as node_tasks
 from website.project.model import NodeUpdateError
-from website.identifiers.utils import update_ezid_metadata_on_change
 
 from website.util import (api_url_for, api_v2_url, get_headers_from_request,
                           sanitize, web_url_for)
@@ -1496,10 +1495,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         else:
             return False
 
-        for preprint in self.preprints.all():
-            if preprint.is_published:
-                update_ezid_metadata_on_change(preprint, status=status)
-
         # After set permissions callback
         for addon in self.get_addons():
             message = addon.after_set_privacy(self, permissions)
@@ -2605,9 +2600,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 status.push_status_message(message, kind='info', trust=False)
 
         log_date = date or timezone.now()
-
-        for preprint in self.preprints.all():
-            update_ezid_metadata_on_change(preprint, status='unavailable')
 
         # Add log to parent
         if self.parent_node:

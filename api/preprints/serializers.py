@@ -19,7 +19,6 @@ from framework.exceptions import PermissionsError
 from website.util import permissions
 from website.exceptions import NodeStateError
 from website.project import signals as project_signals
-from website.identifiers.utils import update_ezid_metadata_on_change
 from osf.models import StoredFileNode, PreprintService, PreprintProvider, Node, NodeLicense
 
 
@@ -175,9 +174,6 @@ class PreprintSerializer(JSONAPISerializer):
         if 'article_doi' in validated_data:
             preprint.node.preprint_article_doi = validated_data['article_doi']
             save_node = True
-
-        if preprint.get_identifier_value('doi') and preprint.get_identifier_value('ark'):
-            update_ezid_metadata_on_change(preprint, status='public')
 
         if 'license_type' in validated_data or 'license' in validated_data:
             license_details = get_license_details(preprint, validated_data)

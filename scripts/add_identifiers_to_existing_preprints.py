@@ -2,7 +2,7 @@ import logging
 import time
 
 from website.app import init_app
-from website.identifiers.utils import get_or_create_identifiers, get_top_level_domain
+from website.identifiers.utils import get_top_level_domain, request_identifiers_from_ezid
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -15,9 +15,10 @@ def add_identifiers_to_preprints():
     logger.info('About to add identifiers to {} preprints.'.format(preprints_without_identifiers.count()))
 
     for preprint in preprints_without_identifiers:
-        new_identifiers = get_or_create_identifiers(preprint)
         logger.info('Saving identifier for preprint {} from source {}'.format(preprint._id, preprint.provider.name))
-        preprint.set_preprint_identifiers(new_identifiers)
+
+        ezid_response = request_identifiers_from_ezid(preprint)
+        preprint.set_preprint_identifiers(ezid_response)
         preprint.save()
 
         doi = preprint.get_identifier('doi')
