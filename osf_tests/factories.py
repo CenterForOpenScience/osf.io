@@ -585,14 +585,7 @@ class PreprintFactory(DjangoModelFactory):
             preprint.save()
             if license_details:
                 preprint.set_preprint_license(license_details, auth=auth)
-            # create_identifier_patcher = mock.patch("website.identifiers.client.EzidClient.create_identifier")
-            # mock_create_identifier = create_identifier_patcher.start()
-            # domain = get_top_level_domain(preprint)
-            # mock_create_identifier.return_value = {
-            #     'success': '{doi}{domain}/{guid} | {ark}{domain}/{guid}'.format(
-            #         doi=settings.DOI_NAMESPACE, domain=domain, ark=settings.ARK_NAMESPACE, guid=preprint._id
-            #     )
-            # }
+
             if is_published:
                 create_task_patcher = mock.patch('website.preprints.tasks.get_and_set_preprint_identifiers.s')
                 mock_create_identifier = create_task_patcher.start()
