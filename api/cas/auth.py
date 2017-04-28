@@ -4,10 +4,10 @@ from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.authentication import BaseAuthentication
 
 from django.db.models import Q
-from django.utils import timezone
 
 from api.cas import util
 
+from framework import sentry
 from framework.auth import register_unconfirmed, get_or_create_user
 from framework.auth import campaigns
 from framework.auth.exceptions import DuplicateEmailError
@@ -209,30 +209,35 @@ def handle_institution_authenticate(provider):
     fullname = provider['user'].get('fullname')
     given_name = provider['user'].get('givenName')
     family_name = provider['user'].get('familyName')
+    middle_names = provider['user'].get('middleNames')
+    suffix = provider['user'].get('suffix')
 
     # use given name and family name to build full name if not provided
     if given_name and family_name and not fullname:
         fullname = given_name + ' ' + family_name
 
-    # use username if no names are provided
+    # institution must provide `fullname`, otherwise we fail the authentication and inform sentry
     if not fullname:
-        fullname = username
+        message = 'Institution login failed: fullname required' \
+                  ' for user {} from institution {}'.format(username, provider['id'])
+        sentry.log_message(message)
+        raise AuthenticationFailed(message)
 
+    # `get_or_create_user()` guesses names from fullname
+    # replace the guessed ones if the names are provided from the authentication
     user, created = get_or_create_user(fullname, username, reset_password=False)
-
     if created:
-        # `get_or_create_user()` guesses given name and family name from fullname
-        # update them if they are provided from the authentication request
         if given_name:
             user.given_name = given_name
         if family_name:
             user.family_name = family_name
-        user.middle_names = provider['user'].get('middleNames')
-        user.suffix = provider['user'].get('suffix')
-        user.date_last_login = timezone.now()
+        if middle_names:
+            user.middle_names = middle_names
+        if suffix:
+            user.suffix = suffix
+        user.update_date_last_login()
 
         # save and register user
-        # a user must be saved in order to have a valid `guid___id`
         user.save()
         user.register(username)
 

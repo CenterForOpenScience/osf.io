@@ -47,11 +47,6 @@ def decrypt_payload(body):
     :return: the decrypted json payload
     """
 
-    if not settings.API_CAS_ENCRYPTION:
-        try:
-            return json.loads(body)
-        except TypeError:
-            raise AuthenticationFailed(detail=INVALID_REQUEST_BODY)
     try:
         payload = jwt.decode(
             jwe.decrypt(body, settings.JWE_SECRET),
