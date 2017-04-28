@@ -553,7 +553,7 @@ class UserPreprints(JSONAPIBaseView, generics.ListAPIView, UserMixin, DjangoFilt
         return (default_query & no_user_query)
 
     def get_queryset(self):
-        return PreprintService.objects.filter(self.get_query_from_request())
+        return PreprintService.objects.filter(self.get_query_from_request()).distinct()
 
 
 class UserInstitutions(JSONAPIBaseView, generics.ListAPIView, UserMixin):
