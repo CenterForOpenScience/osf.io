@@ -29,7 +29,7 @@ var ProjectSettings = oop.extend(
             self.categoryOptions = params.categoryOptions;
             self.categoryPlaceholder = params.category;
             self.selectedCategory = ko.observable(params.category);
-            
+
             if (!params.updateUrl) {
                 throw new Error(language.instantiationErrorMessage);
             }
@@ -79,7 +79,7 @@ var ProjectSettings = oop.extend(
                     xhrFields: {withCredentials: true},
                     processData: false,
                     data: requestPayload
-                });            
+                });
             request.done(function(response) {
                 self.categoryPlaceholder = response.data.attributes.category;
                 self.titlePlaceholder = response.data.attributes.title;
@@ -152,7 +152,7 @@ request.fail(function(xhr, textStatus, err) {
  * Pulls a random name from the scientist list to use as confirmation string
  *  Ignores case and whitespace
  */
-var getConfirmationCode = function(nodeType, isPreprint) {
+var getConfirmationCode = function(nodeType, isPreprint, nodeApiUrl=nodeApiUrl) {
 
     var preprint_message = '<p class="danger">This ' + nodeType + ' contains a preprint. Deleting this ' +
         nodeType + ' will also delete your preprint. This action is irreversible.</p>';
