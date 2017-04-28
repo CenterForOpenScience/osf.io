@@ -3583,4 +3583,4 @@ class NodePreprintsList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, Django
 
     # overrides ListAPIView
     def get_queryset(self):
-        return PreprintService.objects.filter(self.get_query_from_request())
+        return PreprintService.objects.filter(self.get_query_from_request()).distinct()
