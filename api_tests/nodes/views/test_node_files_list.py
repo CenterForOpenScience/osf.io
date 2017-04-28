@@ -490,4 +490,26 @@ class TestNodeFilesListPagination(ApiTestCase):
         res = self.app.get(url, auth=self.user.auth)
         self.check_file_order(res)
 
+class TestNodeProviderDetail(ApiTestCase):
 
+    def setUp(self):
+        super(TestNodeProviderDetail, self).setUp()
+        self.user = AuthUserFactory()
+        self.public_project = ProjectFactory(is_public=True)
+        self.private_project = ProjectFactory(creator=self.user)
+        self.public_url = '/{}nodes/{}/files/providers/osfstorage/'.format(API_BASE, self.public_project._id)
+        self.private_url = '/{}nodes/{}/files/providers/osfstorage/'.format(API_BASE, self.private_project._id)
+
+    def test_can_view_if_contributor(self):
+        res = self.app.get(self.private_url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json['data']['id'], '{}:osfstorage'.format(self.private_project._id))
+
+    def test_can_view_if_public(self):
+        res = self.app.get(self.public_url)
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json['data']['id'], '{}:osfstorage'.format(self.public_project._id))
+
+    def test_cannot_view_if_private(self):
+        res = self.app.get(self.private_url, expect_errors=True)
+        assert_equal(res.status_code, 401)
