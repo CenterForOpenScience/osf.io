@@ -119,7 +119,8 @@ def get_globals():
             },
         },
         'maintenance': maintenance.get_maintenance(),
-        'recaptcha_site_key': settings.RECAPTCHA_SITE_KEY
+        'recaptcha_site_key': settings.RECAPTCHA_SITE_KEY,
+        'custom_citations': settings.CUSTOM_CITATIONS
     }
 
 
@@ -268,17 +269,35 @@ def make_url_map(app):
         Rule('/sitemaps/<path>', 'get', sitemap_file, json_renderer),
     ])
 
+    # Ember Applications
     if settings.USE_EXTERNAL_EMBER:
         # Routes that serve up the Ember application. Hide behind feature flag.
-        rules = []
         for prefix in settings.EXTERNAL_EMBER_APPS.keys():
-            rules += [
-                '/{}/'.format(prefix),
-                '/{}/<path:path>'.format(prefix),
-            ]
-        process_rules(app, [
-            Rule(rules, 'get', ember_app, json_renderer),
-        ])
+            process_rules(app, [
+                Rule(
+                    [
+                        '/<provider>/<guid>/download',
+                        '/<provider>/<guid>/download/',
+                    ],
+                    ['get', 'post', 'put', 'patch', 'delete'],
+                    website_views.resolve_guid_download,
+                    notemplate,
+                    endpoint_suffix='__' + prefix
+                ),
+            ], prefix='/' + prefix)
+
+            process_rules(app, [
+                Rule(
+                    [
+                        '/',
+                        '/<path:path>',
+                    ],
+                    'get',
+                    ember_app,
+                    json_renderer,
+                    endpoint_suffix='__' + prefix
+                ),
+            ], prefix='/' + prefix)
 
     ### Base ###
 
