@@ -501,9 +501,11 @@ class User(GuidStoredObject, AddonModelMixin):
     def email(self):
         return self.username
 
+    @property
     def is_authenticated(self):  # Needed for django compat
         return True
 
+    @property
     def is_anonymous(self):
         return False
 

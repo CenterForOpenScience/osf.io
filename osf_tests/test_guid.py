@@ -209,14 +209,15 @@ class TestResolveGuid(OsfTestCase):
         },
     })
     def test_resolve_guid_download_file_from_emberapp_preprints(self):
-        provider = PreprintProviderFactory(name='Sockarxiv')
+        provider = PreprintProviderFactory(_id='sockarxiv', name='Sockarxiv')
         pp = PreprintFactory(finish=True, provider=provider)
+        assert pp.url.startswith('/preprints/sockarxiv')
 
-        res = self.app.get('/preprints/sockarxiv' + pp.url + 'download')
+        res = self.app.get(pp.url + 'download')
         assert res.status_code == 302
         assert '{}/v1/resources/{}/providers/{}{}?action=download&version=1&direct'.format(WATERBUTLER_URL, pp.node._id, pp.primary_file.provider, pp.primary_file.path) in res.location
 
-        res = self.app.get('/preprints/sockarxiv' + pp.url + 'download/')
+        res = self.app.get(pp.url + 'download/')
         assert res.status_code == 302
         assert '{}/v1/resources/{}/providers/{}{}?action=download&version=1&direct'.format(WATERBUTLER_URL, pp.node._id, pp.primary_file.provider, pp.primary_file.path) in res.location
 

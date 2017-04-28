@@ -9,6 +9,7 @@ from django.db import transaction
 from modularodm import Q
 from modularodm.exceptions import NoResultsFound
 from website.app import init_app
+from website.settings import PREPRINT_PROVIDER_DOMAINS, DOMAIN
 import django
 django.setup()
 
@@ -24,7 +25,7 @@ PROD_PREPRINT_PROVIDERS = ['osf', 'psyarxiv', 'engrxiv', 'socarxiv', 'agrixiv', 
 
 
 def get_subject_id(name):
-    if not name in SUBJECTS_CACHE:
+    if name not in SUBJECTS_CACHE:
         subject = None
         try:
             subject = Subject.find_one(Q('text', 'eq', name))
@@ -35,12 +36,14 @@ def get_subject_id(name):
 
     return SUBJECTS_CACHE[name]
 
+
 def get_license(name):
     try:
         license = NodeLicense.find_one(Q('name', 'eq', name))
     except NoResultsFound:
         raise Exception('License: "{}" not found'.format(name))
     return license
+
 
 def update_or_create(provider_data):
     provider = PreprintProvider.load(provider_data['_id'])
@@ -67,10 +70,13 @@ def update_or_create(provider_data):
         print('Added new preprint provider: {}'.format(provider._id))
         return new_provider, True
 
+
+def format_domain_url(domain):
+    return ''.join((PREPRINT_PROVIDER_DOMAINS['prefix'], str(domain), PREPRINT_PROVIDER_DOMAINS['suffix'])) if \
+        PREPRINT_PROVIDER_DOMAINS['enabled'] else ''
+
+
 def main(env):
-    use_plos = '--plos' in sys.argv
-
-
     PREPRINT_PROVIDERS = {
         'osf': {
             '_id': 'osf',
@@ -78,6 +84,8 @@ def main(env):
             'logo_name': 'cos-logo.png',
             'description': 'A scholarly commons to connect the entire research cycle',
             'banner_name': 'cos-banner.png',
+            'domain': DOMAIN,
+            'domain_redirect_enabled': False,  # Never change this
             'external_url': 'https://osf.io/preprints/',
             'example': 'khbvy',
             'advisory_board': '',
@@ -96,7 +104,9 @@ def main(env):
             'logo_name': 'engrxiv-logo.png',
             'description': 'The open archive of engineering.',
             'banner_name': 'engrxiv-banner.png',
-            'external_url': 'http://engrxiv.org',
+            'domain': format_domain_url('engrxiv.org'),
+            'domain_redirect_enabled': False,
+            'external_url': 'http://engrxiv.com',
             'example': 'k7fgk',
             'advisory_board': '''
                 <div class="col-xs-12">
@@ -128,9 +138,6 @@ def main(env):
             'licenses_acceptable': ['CC0 1.0 Universal', 'CC-By Attribution 4.0 International', 'No license'],
             'header_text': '',
             'subjects_acceptable': [
-                (['Computer and information sciences', 'Software engineering'], True),
-                (['Engineering and technology'], True),
-            ] if use_plos else [
                 (['Architecture', 'Architectural Engineering'], True),
                 (['Engineering', 'Aerospace Engineering', 'Aerodynamics and Fluid Mechanics'], False),
                 (['Engineering', 'Aerospace Engineering', 'Aeronautical Vehicles'], False),
@@ -238,7 +245,9 @@ def main(env):
             'logo_name': 'psyarxiv-logo.png',
             'description': 'A free preprint service for the psychological sciences.',
             'banner_name': 'psyarxiv-banner.png',
-            'external_url': 'http://psyarxiv.com',
+            'domain': format_domain_url('psyarxiv.com'),
+            'domain_redirect_enabled': False,
+            'external_url': 'http://psyarxiv.org',
             'example': 'k9mn3',
             'advisory_board': '''
                 <div class="col-xs-12">
@@ -273,9 +282,6 @@ def main(env):
             'licenses_acceptable': ['CC0 1.0 Universal', 'CC-By Attribution 4.0 International', 'No license'],
             'header_text': '',
             'subjects_acceptable': [
-                (['Social and behavioral sciences'], True),
-                (['Arts and Humanities'], True),
-            ] if use_plos else [
                 (['Engineering', 'Operations Research, Systems Engineering and Industrial Engineering', 'Ergonomics'], False),
                 (['Life Sciences', 'Neuroscience and Neurobiology', 'Behavioral Neurobiology'], False),
                 (['Life Sciences', 'Neuroscience and Neurobiology', 'Cognitive Neuroscience'], False),
@@ -326,6 +332,8 @@ def main(env):
             'logo_name': 'socarxiv-logo.png',
             'description': 'Open archive of the social sciences',
             'banner_name': 'socarxiv-banner.png',
+            'domain': format_domain_url('socarxiv.org'),
+            'domain_redirect_enabled': False,
             'external_url': 'http://socarxiv.org',
             'example': 'qmdc4',
             'advisory_board': '''
@@ -362,31 +370,28 @@ def main(env):
                 (['Arts and Humanities'], True),
                 (['Education'], True),
                 (['Law'], True),
-                (['Social and behavioral sciences'], True),
-            ] if use_plos else [
-                (['Arts and Humanities'], True),
-                (['Education'], True),
-                (['Law'], True),
                 (['Social and Behavioral Sciences'], True),
             ],
         },
-        'scielo' : {
+        'scielo': {
             '_id': 'scielo',
             'name': 'SciELO',
             'logo_name': 'scielo-logo.png',
             'description': 'Advancing Research Communication',
             'banner_name': 'scielo-logo.png',
+            'domain': format_domain_url('scielo.org'),
+            'domain_redirect_enabled': False,
             'external_url': 'http://scielo.org',
-            'example': '', # An example guid for this provider (Will have to be updated after the provider is up)
+            'example': '',  # An example guid for this provider (Will have to be updated after the provider is up)
             # Advisory board should be valid html string in triple quotes
             'advisory_board': '',
             'email_contact': 'contact+scielo@osf.io',
             'email_support': 'support+scielo@osf.io',
-            'social_twitter': 'RedeSciELO', # optional
+            'social_twitter': 'RedeSciELO',  # optional
             'social_facebook': 'SciELONetwork',
             'header_text': '',
             'licenses_acceptable': ['CC-By Attribution 4.0 International'],
-            'subjects_acceptable':[]
+            'subjects_acceptable': []
         },
         'lawarxiv': {
             '_id': 'lawarxiv',
@@ -394,6 +399,8 @@ def main(env):
             'logo_name': 'lawarxiv-logo.png',
             'description': 'Legal Scholarship in the Open',
             'banner_name': 'lawarxiv-logo.png',
+            'domain': '',  # No domain information yet
+            'domain_redirect_enabled': False,
             'external_url': '',
             'example': '',  # An example guid for this provider (Will have to be updated after the provider is up)
             # Advisory board should be valid html string in triple quotes
@@ -444,6 +451,8 @@ def main(env):
             'logo_name': 'agrixiv-logo.svg',
             'description': 'Preprints for Agriculture and Allied Sciences',
             'banner_name': 'agrixiv-banner.svg',
+            'domain': format_domain_url('agrixiv.org'),
+            'domain_redirect_enabled': False,
             'external_url': '',
             'example': '8whkp',
             'advisory_board': '''
@@ -1067,6 +1076,8 @@ def main(env):
             'logo_name': 'bitss-logo.png',
             'description': 'An interdisciplinary archive of articles focused on improving research transparency and reproducibility',
             'banner_name': 'bitss-banner.png',
+            'domain': '',  # Not using domain
+            'domain_redirect_enabled': False,
             'external_url': 'http://www.bitss.org',
             'example': '',
             'advisory_board': '''
@@ -1243,6 +1254,6 @@ if __name__ == '__main__':
     if not env:
         env = 'prod'
     elif env not in ENVS:
-        print 'A specified environment must be one of: {}'.format(ENVS)
+        print('A specified environment must be one of: {}'.format(ENVS))
         sys.exit(1)
     main(env)

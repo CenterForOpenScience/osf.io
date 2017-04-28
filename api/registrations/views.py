@@ -158,7 +158,7 @@ class RegistrationList(JSONAPIBaseView, generics.ListAPIView, NodesListFilterMix
         )
         user = self.request.user
         permission_query = Q('is_public', 'eq', True)
-        if not user.is_anonymous():
+        if not user.is_anonymous:
             permission_query = (permission_query | Q('contributors', 'eq', user))
 
         query = base_query & permission_query
@@ -537,7 +537,7 @@ class RegistrationChildrenList(JSONAPIBaseView, generics.ListAPIView, ODMFilterM
         )
         user = self.request.user
         permission_query = Q('is_public', 'eq', True)
-        if not user.is_anonymous():
+        if not user.is_anonymous:
             permission_query = (permission_query | Q('contributors', 'eq', user))
 
         query = base_query & permission_query

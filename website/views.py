@@ -28,7 +28,7 @@ from website.project.model import has_anonymous_link
 from website.util import permissions
 
 logger = logging.getLogger(__name__)
-
+preprints_dir = os.path.abspath(os.path.join(os.getcwd(), EXTERNAL_EMBER_APPS['preprints']['path']))
 
 def serialize_contributors_for_summary(node, max_count=3):
     # # TODO: Use .filter(visible=True) when chaining is fixed in django-include
@@ -273,11 +273,12 @@ def resolve_guid(guid, suffix=None):
 
         # Handle Ember Applications
         if isinstance(referent, PreprintService):
-            return send_from_directory(
-                os.path.abspath(os.path.join(os.getcwd(), EXTERNAL_EMBER_APPS['preprints']['path'])),
-                'index.html'
-            )
+            if referent.provider.domain_redirect_enabled:
+                # This route should always be intercepted by nginx for the branded domain,
+                # w/ the exception of `<guid>/download` handled above.
+                return redirect(referent.absolute_url, http.MOVED_PERMANENTLY)
 
+            return send_from_directory(preprints_dir, 'index.html')
         url = _build_guid_url(urllib.unquote(referent.deep_url), suffix)
         return proxy_url(url)
 

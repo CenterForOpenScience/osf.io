@@ -498,9 +498,11 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     def has_usable_username(self):
         return '@' in self.username
 
+    @property
     def is_authenticated(self):  # Needed for django compat
         return True
 
+    @property
     def is_anonymous(self):
         return False
 

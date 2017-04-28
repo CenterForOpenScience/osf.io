@@ -86,6 +86,8 @@ from osf_tests.factories import (
     ApiOAuth2ApplicationFactory,
     ApiOAuth2PersonalTokenFactory,
     ProjectWithAddonFactory,
+    PreprintFactory,
+    PreprintProviderFactory,
 )
 
 class Addon(MockAddonNodeSettings):
@@ -2947,7 +2949,7 @@ class TestPointerViews(OsfTestCase):
     def test_fork_pointer_not_in_nodes(self):
         url = self.project.api_url + 'pointer/fork/'
         node = NodeFactory()
-        pointer = Pointer(node=node)
+        pointer = Pointer()
         res = self.app.post_json(
             url,
             {'pointerId': pointer._id},
@@ -3714,6 +3716,58 @@ class TestAuthLoginAndRegisterLogic(OsfTestCase):
         assert_equal(data.get('status_code'), http.OK)
         assert_equal(data.get('next_url'), self.next_url)
         assert_true(data.get('must_login_warning'))
+
+
+class TestAuthLogout(OsfTestCase):
+
+    def setUp(self):
+        super(TestAuthLogout, self).setUp()
+        self.goodbye_url = web_url_for('goodbye', _absolute=True)
+        self.redirect_url = web_url_for('forgot_password_get', _absolute=True)
+        self.valid_next_url = web_url_for('dashboard', _absolute=True)
+        self.invalid_next_url = 'http://localhost:1234/abcde'
+        self.auth_user = AuthUserFactory()
+
+    def tearDown(self):
+        super(TestAuthLogout, self).tearDown()
+        User.objects.all().delete()
+        assert_equal(User.objects.count(), 0)
+
+    def test_logout_with_valid_next_url_logged_in(self):
+        logout_url = web_url_for('auth_logout', _absolute=True, next=self.valid_next_url)
+        resp = self.app.get(logout_url, auth=self.auth_user.auth)
+        assert_equal(resp.status_code, http.FOUND)
+        assert_equal(cas.get_logout_url(logout_url), resp.headers['Location'])
+
+    def test_logout_with_valid_next_url_logged_out(self):
+        logout_url = web_url_for('auth_logout', _absolute=True, next=self.valid_next_url)
+        resp = self.app.get(logout_url, auth=None)
+        assert_equal(resp.status_code, http.FOUND)
+        assert_equal(self.valid_next_url, resp.headers['Location'])
+
+    def test_logout_with_invalid_next_url_logged_in(self):
+        logout_url = web_url_for('auth_logout', _absolute=True, next=self.invalid_next_url)
+        resp = self.app.get(logout_url, auth=self.auth_user.auth)
+        assert_equal(resp.status_code, http.FOUND)
+        assert_equal(cas.get_logout_url(self.goodbye_url), resp.headers['Location'])
+
+    def test_logout_with_invalid_next_url_logged_out(self):
+        logout_url = web_url_for('auth_logout', _absolute=True, next=self.invalid_next_url)
+        resp = self.app.get(logout_url, auth=None)
+        assert_equal(resp.status_code, http.FOUND)
+        assert_equal(cas.get_logout_url(self.goodbye_url), resp.headers['Location'])
+
+    def test_logout_with_redirect_url(self):
+        logout_url = web_url_for('auth_logout', _absolute=True, redirect_url=self.redirect_url)
+        resp = self.app.get(logout_url, auth=self.auth_user.auth)
+        assert_equal(resp.status_code, http.FOUND)
+        assert_equal(cas.get_logout_url(self.redirect_url), resp.headers['Location'])
+
+    def test_logout_with_no_parameter(self):
+        logout_url = web_url_for('auth_logout', _absolute=True)
+        resp = self.app.get(logout_url, auth=None)
+        assert_equal(resp.status_code, http.FOUND)
+        assert_equal(cas.get_logout_url(self.goodbye_url), resp.headers['Location'])
 
 
 class TestExternalAuthViews(OsfTestCase):
@@ -4695,6 +4749,66 @@ class TestIndexView(OsfTestCase):
         assert_not_equal(dashboard_institutions[0]['id'], self.inst_three._id)
         assert_not_equal(dashboard_institutions[0]['id'], self.inst_four._id)
         assert_not_equal(dashboard_institutions[0]['id'], self.inst_five._id)
+
+
+class TestResolveGuid(OsfTestCase):
+    def setUp(self):
+        super(TestResolveGuid, self).setUp()
+
+    def test_preprint_provider_without_domain(self):
+        provider = PreprintProviderFactory(domain='')
+        preprint = PreprintFactory(provider=provider)
+        url = web_url_for('resolve_guid', _guid=True, guid=preprint._id)
+        res = self.app.get(url)
+        assert_equal(res.status_code, 200)
+        assert_equal(
+            res.request.path,
+            '/{}/'.format(preprint._id)
+        )
+
+    def test_preprint_provider_with_domain_without_redirect(self):
+        domain = 'https://test.com/'
+        provider = PreprintProviderFactory(_id='test', domain=domain, domain_redirect_enabled=False)
+        preprint = PreprintFactory(provider=provider)
+        url = web_url_for('resolve_guid', _guid=True, guid=preprint._id)
+        res = self.app.get(url)
+        assert_equal(res.status_code, 200)
+        assert_equal(
+            res.request.path,
+            '/{}/'.format(preprint._id)
+        )
+
+    def test_preprint_provider_with_domain_with_redirect(self):
+        domain = 'https://test.com/'
+        provider = PreprintProviderFactory(_id='test', domain=domain, domain_redirect_enabled=True)
+        preprint = PreprintFactory(provider=provider)
+        url = web_url_for('resolve_guid', _guid=True, guid=preprint._id)
+        res = self.app.get(url)
+
+        assert_is_redirect(res)
+        assert_equal(res.status_code, 301)
+        assert_equal(
+            res.headers['location'],
+            '{}{}/'.format(domain, preprint._id)
+        )
+
+        assert_equal(
+            res.request.path,
+            '/{}/'.format(preprint._id)
+        )
+
+
+
+    def test_preprint_provider_with_osf_domain(self):
+        provider = PreprintProviderFactory(_id='osf', domain='https://osf.io/')
+        preprint = PreprintFactory(provider=provider)
+        url = web_url_for('resolve_guid', _guid=True, guid=preprint._id)
+        res = self.app.get(url)
+        assert_equal(res.status_code, 200)
+        assert_equal(
+            res.request.path,
+            '/{}/'.format(preprint._id)
+        )
 
 
 class TestConfirmationViewBlockBingPreview(OsfTestCase):
