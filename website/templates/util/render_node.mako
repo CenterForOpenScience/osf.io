@@ -58,7 +58,22 @@
                     <i class="fa fa-times remove-pointer" data-id="${summary['id']}" data-toggle="tooltip" title="Remove link"></i>
                     <i class="fa fa-code-fork" onclick="NodeActions.forkPointer('${summary['id']}', '${summary['primary_id']}');" data-toggle="tooltip" title="Fork this ${summary['node_type']} into ${node['node_type']} ${node['title']}"></i>
                 % endif
-                <i id="icon-${summary['id']}" class="pointer fa fa-angle-down" onclick="NodeActions.openCloseNode('${summary['id']}');" style="font-weight:bold;"></i>
+                <div id="projectSettings" class="dropdown">
+                  <button class="btn btn-default btn-sm dropdown-toggle" type="button" id="commonActions" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+                    <span class="glyphicon glyphicon-option-horizontal"></span>
+                  </button>
+                  <ul class="dropdown-menu dropdown-menu-right" aria-labelledby="commonActions">
+                    <li><a type="button">Upload</a></li>
+                    <li><a href="${domain}${summary['id']}/settings/">Settings</a></li>
+                    <li><a href="${domain}${summary['id']}/contributors/">Manage Contributors</a></li>
+                    % if 'admin' in user['permissions']:
+                        <li><a class="deleteComponent" type="button">Delete</a></li>
+                        <script type="text/javascript">
+                            $(".deleteComponent").data("summary", ${summary | sjson, n}) ;
+                        </script>
+                    % endif
+                  </ul>
+                </div>
             </div>
             % endif
         </h4>
@@ -137,6 +152,10 @@
 </div>
 <script type="text/javascript">
     window.contextVars = window.contextVars || {};
+    window.contextVars.node = window.contextVars.node || {};
+    window.contextVars.node.urls = window.contextVars.node.urls || {};
+    window.contextVars.node.urls.api = window.contextVars.node.urls.api || '';
+
     var nodes = window.contextVars.nodes || [];
     nodes.push({
         node : ${summary | sjson, n},
@@ -146,4 +165,7 @@
         nodes : nodes
     });
 </script>
+
+<script type="text/javascript" src=${"/static/public/js/component-settings-page.js" | webpack_asset}></script>
+
 </%def>
