@@ -9,7 +9,9 @@ class PreprintProviderSerializer(JSONAPISerializer):
     filterable_fields = frozenset([
         'name',
         'description',
-        'id'
+        'id',
+        'domain',
+        'domain_redirect_enabled'
     ])
 
     name = ser.CharField(required=True)
