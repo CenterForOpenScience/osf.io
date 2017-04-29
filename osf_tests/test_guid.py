@@ -280,6 +280,14 @@ class TestResolveGuid(OsfTestCase):
         assert 'version%3D1' in quarams
         assert 'direct' in quarams
 
+    def test_resolve_guid_download_file_export_same_format_optimization(self):
+        pp = PreprintFactory(filename='test.pdf', finish=True)
+
+        res = self.app.get(pp.url + 'download/?format=pdf')
+        assert res.status_code == 302
+        assert '{}/export?'.format(MFR_SERVER_URL) not in res.location
+        assert '{}/v1/resources/{}/providers/{}{}?action=download&version=1&direct'.format(WATERBUTLER_URL, pp.node._id, pp.primary_file.provider, pp.primary_file.path) in res.location
+
     def test_resolve_guid_download_errors(self):
         testfile = TestFile.get_or_create(self.node, 'folder/path')
         testfile.name = 'asdf'
