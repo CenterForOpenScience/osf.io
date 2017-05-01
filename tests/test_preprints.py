@@ -434,11 +434,14 @@ class TestOnPreprintUpdatedTask(OsfTestCase):
         related_work = next(nodes.pop(k) for k, v in nodes.items() if v['@type'] == 'creativework')
         assert set(related_work.keys()) == {'@id', '@type'}  # Empty except @id and @type
 
-        doi = next(nodes.pop(k) for k, v in nodes.items() if v['@type'] == 'workidentifier' and 'doi' in v['uri'])
-        assert doi['creative_work'] == related_work
+        osf_doi = next(nodes.pop(k) for k, v in nodes.items() if v['@type'] == 'workidentifier' and 'doi' in v['uri'] and 'osf.io' in v['uri'])
+        assert osf_doi['creative_work'] == {'@id': preprint['@id'], '@type': preprint['@type']}
+
+        related_doi = next(nodes.pop(k) for k, v in nodes.items() if v['@type'] == 'workidentifier' and 'doi' in v['uri'])
+        assert related_doi['creative_work'] == related_work
 
         workidentifiers = [nodes.pop(k)['uri'] for k, v in nodes.items() if v['@type'] == 'workidentifier']
-        assert workidentifiers == [urlparse.urljoin(settings.DOMAIN, self.preprint._id + '/'), 'http://dx.doi.org/{}'.format(self.preprint.get_identifier('doi').value)]
+        assert workidentifiers == [urlparse.urljoin(settings.DOMAIN, self.preprint._id + '/')]
 
         relation = nodes.pop(nodes.keys()[0])
         assert relation == {'@id': relation['@id'], '@type': 'workrelation', 'related': {'@id': related_work['@id'], '@type': related_work['@type']}, 'subject': {'@id': preprint['@id'], '@type': preprint['@type']}}
