@@ -134,7 +134,7 @@ class TestPreprintUpdate(ApiTestCase):
         assert_equal(res.status_code, 200)
 
         self.preprint.node.reload()
-        assert_equal(self.preprint.primary_file.wrapped(), new_file)
+        assert_equal(self.preprint.primary_file, new_file)
 
         # check logs
         log = self.preprint.node.logs.latest()
@@ -160,7 +160,7 @@ class TestPreprintUpdate(ApiTestCase):
         assert_equal(res.status_code, 400)
 
         self.preprint.reload()
-        assert_not_equal(self.preprint.primary_file.wrapped(), file_for_project)
+        assert_not_equal(self.preprint.primary_file, file_for_project)
 
     def test_update_doi(self):
         new_doi = '10.1234/ASDFASDF'

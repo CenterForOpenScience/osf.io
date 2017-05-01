@@ -218,10 +218,13 @@ class OsfStorageFile(OsfStorageFileNode, File):
             ret['fullPath'] = self.materialized_path
 
         version = self.get_version(version)
+        earliest_version = self.versions.order_by('date_created').first()
         ret.update({
             'version': self.versions.count(),
             'md5': version.metadata.get('md5') if version else None,
             'sha256': version.metadata.get('sha256') if version else None,
+            'modified': version.date_created.isoformat() if version else None,
+            'created': earliest_version.date_created.isoformat() if version else None,
         })
         return ret
 

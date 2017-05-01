@@ -30,12 +30,22 @@ class PreprintProviderList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin
 
     OSF Preprint Providers have the "preprint_providers" `type`.
 
-        name           type               description
-        =========================================================================
-        name           string             name of the preprint provider
-        logo_path      string             a path to the preprint provider's static logo
-        banner_path    string             a path to the preprint provider's banner
-        description    string             description of the preprint provider
+        name                     type                description
+        =============================================================================================================
+        name                     string              name of the preprint provider
+        logo_path                string              a path to the preprint provider's static logo
+        banner_path              string              a path to the preprint provider's banner
+        description              string              description of the preprint provider
+        advisory_board           string              HTML for the advisory board/steering committee section
+        email_contact            string              the contact email for the preprint provider
+        email_support            string              the support email for the preprint provider
+        subjects_acceptable      [[string],boolean]  the list of acceptable subjects for the preprint provider
+        social_facebook          string              the preprint provider's Facebook account
+        social_instagram         string              the preprint provider's Instagram account
+        social_twitter           string              the preprint provider's Twitter account
+        domain                   string              the domain name of the preprint provider
+        domain_redirect_enabled  boolean             whether or not redirects are enabled for the provider's domain
+        example                  string              an example guid for a preprint created for the preprint provider
 
     ##Relationships
 
@@ -84,12 +94,22 @@ class PreprintProviderDetail(JSONAPIBaseView, generics.RetrieveAPIView):
 
     OSF Preprint Providers have the "preprint_providers" `type`.
 
-        name           type               description
-        =========================================================================
-        name           string             name of the preprint provider
-        logo_path      string             a path to the preprint provider's static logo
-        banner_path    string             a path to the preprint provider's banner
-        description    string             description of the preprint provider
+        name                     type                description
+        =============================================================================================================
+        name                     string              name of the preprint provider
+        logo_path                string              a path to the preprint provider's static logo
+        banner_path              string              a path to the preprint provider's banner
+        description              string              description of the preprint provider
+        advisory_board           string              HTML for the advisory board/steering committee section
+        email_contact            string              the contact email for the preprint provider
+        email_support            string              the support email for the preprint provider
+        subjects_acceptable      [[string],boolean]  the list of acceptable subjects for the preprint provider
+        social_facebook          string              the preprint provider's Facebook account
+        social_instagram         string              the preprint provider's Instagram account
+        social_twitter           string              the preprint provider's Twitter account
+        domain                   string              the domain name of the preprint provider
+        domain_redirect_enabled  boolean             whether or not redirects are enabled for the provider's domain
+        example                  string              an example guid for a preprint created for the preprint provider
 
     ##Relationships
 
@@ -204,7 +224,7 @@ class PreprintProviderPreprintList(JSONAPIBaseView, generics.ListAPIView, Django
 
     # overrides ListAPIView
     def get_queryset(self):
-        return PreprintService.objects.filter(self.get_query_from_request())
+        return PreprintService.objects.filter(self.get_query_from_request()).distinct()
 
 
 class PreprintProviderSubjectList(JSONAPIBaseView, generics.ListAPIView):

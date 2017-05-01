@@ -333,7 +333,7 @@ var MyProjects = {
         self.logUrlCache = {}; // dictionary of load urls to avoid multiple calls with little refactor
         self.nodeUrlCache = {}; // Cached returns of the project related urls
         // VIEW STATES
-        self.showInfo = m.prop(true); // Show the info panel
+        self.showInfo = m.prop(false); // Show the info panel
         self.showSidebar = m.prop(false); // Show the links with collections etc. used in narrow views
         self.allProjectsLoaded = m.prop(false);
         self.categoryList = [];

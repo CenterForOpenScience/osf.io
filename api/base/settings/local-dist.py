@@ -17,6 +17,7 @@ if DEBUG:
     DEBUG_TOOLBAR_CONFIG = {
         'SHOW_TOOLBAR_CALLBACK': lambda(_): True
     }
+    ALLOWED_HOSTS.append('localhost')
 
 REST_FRAMEWORK['ALLOWED_VERSIONS'] = (
     '2.0',
