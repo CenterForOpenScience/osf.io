@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
-import datetime
 import furl
 import httplib as http
+import urllib
 
 import markupsafe
+from django.utils import timezone
 from flask import request
 import uuid
 
@@ -12,7 +13,7 @@ from modularodm.exceptions import NoResultsFound
 from modularodm.exceptions import ValidationError
 from modularodm.exceptions import ValidationValueError
 
-from framework import forms, status
+from framework import forms, sentry, status
 from framework import auth as framework_auth
 from framework.auth import exceptions
 from framework.auth import cas, campaigns
@@ -20,21 +21,22 @@ from framework.auth import logout as osf_logout
 from framework.auth import get_user
 from framework.auth.exceptions import DuplicateEmailError, ExpiredTokenError, InvalidTokenError
 from framework.auth.core import generate_verification_key
-from framework.auth.decorators import collect_auth, must_be_logged_in
+from framework.auth.decorators import block_bing_preview, collect_auth, must_be_logged_in
 from framework.auth.forms import ResendConfirmationForm, ForgotPasswordForm, ResetPasswordForm
 from framework.auth.utils import ensure_external_identity_uniqueness, validate_recaptcha
 from framework.exceptions import HTTPError
 from framework.flask import redirect  # VOL-aware redirect
 from framework.sessions.utils import remove_sessions_for_user, remove_session
 from framework.sessions import get_session
-from website import settings, mails, language
 
-from website.util.time import throttle_period_expired
+from website import settings, mails, language
 from website.models import User
 from website.util import web_url_for
+from website.util.time import throttle_period_expired
 from website.util.sanitize import strip_html
 
 
+@block_bing_preview
 @collect_auth
 def reset_password_get(auth, uid=None, token=None):
     """
@@ -178,7 +180,7 @@ def forgot_password_post():
                 else:
                     # new random verification key (v2)
                     user_obj.verification_key_v2 = generate_verification_key(verification_type='password')
-                    user_obj.email_last_sent = datetime.datetime.utcnow()
+                    user_obj.email_last_sent = timezone.now()
                     user_obj.save()
                     reset_link = furl.urljoin(
                         settings.DOMAIN,
@@ -212,12 +214,8 @@ def login_and_register_handler(auth, login=True, campaign=None, next_url=None, l
     :raises: http.BAD_REQUEST
     """
 
-    # set target page to `dashboard` if no service url is specified
-    if not next_url:
-        next_url = web_url_for('dashboard', _absolute=True)
-
     # Only allow redirects which are relative root or full domain. Disallows external redirects.
-    if not validate_next_url(next_url):
+    if next_url and not validate_next_url(next_url):
         raise HTTPError(http.BAD_REQUEST)
 
     data = {
@@ -226,8 +224,8 @@ def login_and_register_handler(auth, login=True, campaign=None, next_url=None, l
         'campaign': None,
         'must_login_warning': False,
     }
-    service_url = None
 
+    # login or register with campaign parameter
     if campaign:
         if validate_campaign(campaign):
             # GET `/register` or '/login` with `campaign=institution`
@@ -235,35 +233,71 @@ def login_and_register_handler(auth, login=True, campaign=None, next_url=None, l
             if campaign == 'institution':
                 next_url = web_url_for('dashboard', _absolute=True)
                 data['status_code'] = http.FOUND
-                data['next_url'] = cas.get_login_url(next_url, campaign='institution')
-                service_url = next_url
-            # For all other non-institution campaigns
-            else:
-                # `GET /login?campaign=...`
-                if login:
-                    data['next_url'] = web_url_for('auth_register', campaign=campaign)
-                # `GET /register?campaign=...`
+                if auth.logged_in:
+                    data['next_url'] = next_url
                 else:
-                    data['campaign'] = campaign
-                    data['next_url'] = campaigns.campaign_url_for(campaign)
-                service_url = campaigns.campaign_url_for(campaign)
+                    data['next_url'] = cas.get_login_url(next_url, campaign='institution')
+            # for non-institution campaigns
+            else:
+                destination = next_url if next_url else campaigns.campaign_url_for(campaign)
+                if auth.logged_in:
+                    # if user is already logged in, go to the campaign landing page
+                    data['status_code'] = http.FOUND
+                    data['next_url'] = destination
+                else:
+                    # if user is logged out, go to the osf register page with campaign context
+                    if login:
+                        # `GET /login?campaign=...`
+                        data['next_url'] = web_url_for('auth_register', campaign=campaign, next=destination)
+                    else:
+                        # `GET /register?campaign=...`
+                        data['campaign'] = campaign
+                        if campaigns.is_proxy_login(campaign):
+                            data['next_url'] = web_url_for(
+                                'auth_login',
+                                next=destination,
+                                _absolute=True
+                            )
+                        else:
+                            data['next_url'] = destination
         else:
-            # invalid campaign
-            raise HTTPError(http.BAD_REQUEST)
-
-    # if user is already logged in, override `data['next_url']` with `service_url` (if any)
-    # and redirect to it directly, bypassing cas-login or osf-register process
-    if not logout and auth.logged_in:
-        data['status_code'] = http.FOUND
-        if service_url:
-            data['next_url'] = service_url
-
-    # handle `claim_user_registered`
-    # TODO [#OSF-6998]: talk to product about the `must_login_warning`
-    if logout and auth.logged_in:
-        data['status_code'] = 'auth_logout'
-        data['next_url'] = request.url
-        data['must_login_warning'] = True
+            # invalid campaign, inform sentry and redirect to non-campaign sign up or sign in
+            redirect_view = 'auth_login' if login else 'auth_register'
+            data['status_code'] = http.FOUND
+            data['next_url'] = web_url_for(redirect_view, campaigns=None, next=next_url)
+            data['campaign'] = None
+            sentry.log_message(
+                '{} is not a valid campaign. Please add it if this is a new one'.format(campaign)
+            )
+    # login or register with next parameter
+    elif next_url:
+        if logout:
+            # handle `claim_user_registered`
+            data['next_url'] = next_url
+            if auth.logged_in:
+                # log user out and come back
+                data['status_code'] = 'auth_logout'
+            else:
+                # after logout, land on the register page with "must_login" warning
+                data['status_code'] = http.OK
+                data['must_login_warning'] = True
+        elif auth.logged_in:
+            # if user is already logged in, redirect to `next_url`
+            data['status_code'] = http.FOUND
+            data['next_url'] = next_url
+        elif login:
+            # `/login?next=next_url`: go to CAS login page with current request url as service url
+            data['status_code'] = http.FOUND
+            data['next_url'] = cas.get_login_url(request.url)
+        else:
+            # `/register?next=next_url`: land on OSF register page with request url as next url
+            data['status_code'] = http.OK
+            data['next_url'] = request.url
+    else:
+        # `/login/` or `/register/` without any parameter
+        if auth.logged_in:
+            data['status_code'] = http.FOUND
+        data['next_url'] = web_url_for('dashboard', _absolute=True)
 
     return data
 
@@ -274,16 +308,22 @@ def auth_login(auth):
     View (no template) for OSF Login.
     Redirect user based on `data` returned from `login_and_register_handler`.
 
+    `/login` only takes valid campaign, valid next, or no query parameter
+    `login_and_register_handler()` handles the following cases:
+        if campaign and logged in, go to campaign landing page (or valid next_url if presents)
+        if campaign and logged out, go to campaign register page (with next_url if presents)
+        if next_url and logged in, go to next url
+        if next_url and logged out, go to cas login page with current request url as service parameter
+        if none, go to `/dashboard` which is decorated by `@must_be_logged_in`
+
     :param auth: the auth context
     :return: redirects
     """
 
     campaign = request.args.get('campaign')
-    # `/login` only takes valid campaign or none query parameter, and `login_and_register_handler` builds the next url
-    # if campaign and logged in, go to campaign landing page
-    # if campaign and logged out, go to register page with campaign title
-    # if not campaign, go to `/dashboard` which is decorated by `@must_be_logged_in`
-    data = login_and_register_handler(auth, login=True, campaign=campaign)
+    next_url = request.args.get('next')
+
+    data = login_and_register_handler(auth, login=True, campaign=campaign, next_url=next_url)
     if data['status_code'] == http.FOUND:
         return redirect(data['next_url'])
 
@@ -293,6 +333,15 @@ def auth_register(auth):
     """
     View for OSF register. Land on the register page, redirect or go to `auth_logout`
     depending on `data` returned by `login_and_register_handler`.
+
+    `/register` only takes a valid campaign, a valid next, the logout flag or no query parameter
+    `login_and_register_handler()` handles the following cases:
+        if campaign and logged in, go to campaign landing page (or valid next_url if presents)
+        if campaign and logged out, go to campaign register page (with next_url if presents)
+        if next_url and logged in, go to next url
+        if next_url and logged out, go to cas login page with current request url as service parameter
+        if next_url and logout flag, log user out first and then go to the next_url
+        if none, go to `/dashboard` which is decorated by `@must_be_logged_in`
 
     :param auth: the auth context
     :return: land, redirect or `auth_logout`
@@ -307,13 +356,22 @@ def auth_register(auth):
     # used only for `claim_user_registered`
     logout = request.args.get('logout')
 
+    # logout must have next_url
+    if logout and not next_url:
+        raise HTTPError(http.BAD_REQUEST)
+
     data = login_and_register_handler(auth, login=False, campaign=campaign, next_url=next_url, logout=logout)
 
     # land on register page
     if data['status_code'] == http.OK:
         if data['must_login_warning']:
             status.push_status_message(language.MUST_LOGIN, trust=False)
-        context['non_institution_login_url'] = cas.get_login_url(data['next_url'])
+        destination = cas.get_login_url(data['next_url'])
+        # "Already have and account?" link
+        context['non_institution_login_url'] = destination
+        # "Sign In" button in navigation bar, overwrite the default value set in routes.py
+        context['login_url'] = destination
+        # "Login through your institution" link
         context['institution_login_url'] = cas.get_login_url(data['next_url'], campaign='institution')
         context['campaign'] = data['campaign']
         return context, http.OK
@@ -326,30 +384,58 @@ def auth_register(auth):
 
     raise HTTPError(http.BAD_REQUEST)
 
-
-def auth_logout(redirect_url=None):
+@collect_auth
+def auth_logout(auth, redirect_url=None, next_url=None):
     """
     Log out, delete current session and remove OSF cookie.
-    Redirect to CAS logout which clears sessions and cookies for CAS and Shibboleth (if any).
-    Final landing page may vary.
+    If next url is valid and auth is logged in, redirect to CAS logout endpoint with the current request url as service.
+    If next url is valid and auth is logged out, redirect directly to the next url.
+    Otherwise, redirect to CAS logout or login endpoint with redirect url as service.
+    The CAS logout endpoint which clears sessions and cookies for CAS and Shibboleth.
     HTTP Method: GET
 
-    :param redirect_url: url to redirect user after CAS logout, default is 'goodbye'
-    :return:
+    Note 1: OSF tells CAS where it wants to be redirected back after successful logout. However, CAS logout flow may not
+    respect this url if user is authenticated through remote identity provider.
+    Note 2: The name of the query parameter is `next`, `next_url` is used to avoid python reserved word.
+
+    :param auth: the authentication context
+    :param redirect_url: url to DIRECTLY redirect after CAS logout, default is `OSF/goodbye`
+    :param next_url: url to redirect after OSF logout, which is after CAS logout
+    :return: the response
     """
 
-    # OSF tells CAS where it wants to be redirected back after successful logout.
-    # However, CAS logout flow may not respect this url if user is authenticated through remote identity provider.
-    redirect_url = redirect_url or request.args.get('redirect_url') or web_url_for('goodbye', _absolute=True)
-    # OSF log out, remove current OSF session
-    osf_logout()
-    # set redirection to CAS log out (or log in if `reauth` is present)
-    if 'reauth' in request.args:
-        cas_endpoint = cas.get_login_url(redirect_url)
+    # For `?next=`:
+    #   takes priority
+    #   the url must be a valid OSF next url,
+    #   the full request url is set to CAS service url,
+    #   does not support `reauth`
+    # For `?redirect_url=`:
+    #   the url must be valid CAS service url
+    #   the redirect url is set to CAS service url.
+    #   support `reauth`
+
+    # logout/?next=<an OSF verified next url>
+    next_url = next_url or request.args.get('next', None)
+    if next_url and validate_next_url(next_url):
+        cas_logout_endpoint = cas.get_logout_url(request.url)
+        if auth.logged_in:
+            resp = redirect(cas_logout_endpoint)
+        else:
+            resp = redirect(next_url)
+    # logout/ or logout/?redirect_url=<a CAS verified redirect url>
     else:
-        cas_endpoint = cas.get_logout_url(redirect_url)
-    resp = redirect(cas_endpoint)
-    # delete OSF cookie
+        redirect_url = redirect_url or request.args.get('redirect_url') or web_url_for('goodbye', _absolute=True)
+        # set redirection to CAS log out (or log in if `reauth` is present)
+        if 'reauth' in request.args:
+            cas_endpoint = cas.get_login_url(redirect_url)
+        else:
+            cas_endpoint = cas.get_logout_url(redirect_url)
+        resp = redirect(cas_endpoint)
+
+    # perform OSF logout
+    osf_logout()
+
+    # set response to delete OSF cookie
     resp.delete_cookie(settings.COOKIE_NAME, domain=settings.OSF_COOKIE_DOMAIN)
 
     return resp
@@ -388,6 +474,7 @@ def auth_email_logout(token, user):
     return resp
 
 
+@block_bing_preview
 @collect_auth
 def external_login_confirm_email_get(auth, uid, token):
     """
@@ -402,20 +489,31 @@ def external_login_confirm_email_get(auth, uid, token):
     :param uid: the user's primary key
     :param token: the verification token
     """
+
     user = User.load(uid)
     if not user:
         raise HTTPError(http.BAD_REQUEST)
 
+    destination = request.args.get('destination')
+    if not destination:
+        raise HTTPError(http.BAD_REQUEST)
+
     # if user is already logged in
     if auth and auth.user:
-        # if it is the expected user
-        if auth.user._id == user._id:
-            new = request.args.get('new', None)
-            if new:
-                status.push_status_message(language.WELCOME_MESSAGE, kind='default', jumbotron=True, trust=True)
-            return redirect(web_url_for('index'))
         # if it is a wrong user
-        return auth_logout(redirect_url=request.url)
+        if auth.user._id != user._id:
+            return auth_logout(redirect_url=request.url)
+        # if it is the expected user
+        new = request.args.get('new', None)
+        if destination in campaigns.get_campaigns():
+            # external domain takes priority
+            campaign_url = campaigns.external_campaign_url_for(destination)
+            if not campaign_url:
+                campaign_url = campaigns.campaign_url_for(destination)
+            return redirect(campaign_url)
+        if new:
+            status.push_status_message(language.WELCOME_MESSAGE, kind='default', jumbotron=True, trust=True)
+        return redirect(web_url_for('dashboard'))
 
     # token is invalid
     if token not in user.email_verifications:
@@ -435,13 +533,12 @@ def external_login_confirm_email_get(auth, uid, token):
         raise HTTPError(http.FORBIDDEN, e.message)
 
     if not user.is_registered:
-        user.set_password(uuid.uuid4(), notify=False)
         user.register(email)
 
     if email.lower() not in user.emails:
         user.emails.append(email.lower())
 
-    user.date_last_logged_in = datetime.datetime.utcnow()
+    user.date_last_logged_in = timezone.now()
     user.external_identity[provider][provider_id] = 'VERIFIED'
     user.social[provider.lower()] = provider_id
     del user.email_verifications[token]
@@ -457,7 +554,7 @@ def external_login_confirm_email_get(auth, uid, token):
             mimetype='html',
             user=user
         )
-        service_url = service_url + '?new=true'
+        service_url += '&{}'.format(urllib.urlencode({'new': 'true'}))
     elif external_status == 'LINK':
         mails.send_mail(
             user=user,
@@ -474,6 +571,7 @@ def external_login_confirm_email_get(auth, uid, token):
     ))
 
 
+@block_bing_preview
 @collect_auth
 def confirm_email_get(token, auth=None, **kwargs):
     """
@@ -520,7 +618,7 @@ def confirm_email_get(token, auth=None, **kwargs):
         })
 
     if is_initial_confirmation:
-        user.date_last_login = datetime.datetime.utcnow()
+        user.update_date_last_login()
         user.save()
 
         # send out our welcome message
@@ -601,7 +699,7 @@ def unconfirmed_email_add(auth=None):
     }, 200
 
 
-def send_confirm_email(user, email, renew=False, external_id_provider=None, external_id=None):
+def send_confirm_email(user, email, renew=False, external_id_provider=None, external_id=None, destination=None):
     """
     Sends `user` a confirmation to the given `email`.
 
@@ -611,6 +709,7 @@ def send_confirm_email(user, email, renew=False, external_id_provider=None, exte
     :param renew: refresh the token
     :param external_id_provider: user's external id provider
     :param external_id: user's external id
+    :param destination: the destination page to redirect after confirmation
     :return:
     :raises: KeyError if user does not have a confirmation token for the given email.
     """
@@ -620,32 +719,40 @@ def send_confirm_email(user, email, renew=False, external_id_provider=None, exte
         external=True,
         force=True,
         renew=renew,
-        external_id_provider=external_id_provider
+        external_id_provider=external_id_provider,
+        destination=destination
     )
 
     try:
         merge_target = User.find_one(Q('emails', 'eq', email))
     except NoResultsFound:
         merge_target = None
+
     campaign = campaigns.campaign_for_user(user)
+    branded_preprints_provider = None
 
     # Choose the appropriate email template to use and add existing_user flag if a merge or adding an email.
-    if external_id_provider and external_id:  # first time login through external identity provider
+    if external_id_provider and external_id:
+        # First time login through external identity provider, link or create an OSF account confirmation
         if user.external_identity[external_id_provider][external_id] == 'CREATE':
             mail_template = mails.EXTERNAL_LOGIN_CONFIRM_EMAIL_CREATE
         elif user.external_identity[external_id_provider][external_id] == 'LINK':
             mail_template = mails.EXTERNAL_LOGIN_CONFIRM_EMAIL_LINK
-    elif merge_target:  # merge account
+    elif merge_target:
+        # Merge account confirmation
         mail_template = mails.CONFIRM_MERGE
         confirmation_url = '{}?logout=1'.format(confirmation_url)
-    elif user.is_active:  # add email
+    elif user.is_active:
+        # Add email confirmation
         mail_template = mails.CONFIRM_EMAIL
         confirmation_url = '{}?logout=1'.format(confirmation_url)
-    elif campaign:  # campaign
-        # TODO: In the future, we may want to make confirmation email configurable as well (send new user to
-        #   appropriate landing page or with redirect after)
+    elif campaign:
+        # Account creation confirmation: from campaign
         mail_template = campaigns.email_template_for_campaign(campaign)
-    else:  # account creation
+        if campaigns.is_proxy_login(campaign) and campaigns.get_service_provider(campaign) != 'OSF':
+            branded_preprints_provider = campaigns.get_service_provider(campaign)
+    else:
+        # Account creation confirmation: from OSF
         mail_template = mails.INITIAL_CONFIRM_EMAIL
 
     mails.send_mail(
@@ -657,6 +764,7 @@ def send_confirm_email(user, email, renew=False, external_id_provider=None, exte
         email=email,
         merge_target=merge_target,
         external_id_provider=external_id_provider,
+        branded_preprints_provider=branded_preprints_provider
     )
 
 
@@ -696,7 +804,7 @@ def register_user(**kwargs):
         full_name = strip_html(full_name)
 
         campaign = json_data.get('campaign')
-        if campaign and campaign not in campaigns.CAMPAIGNS:
+        if campaign and campaign not in campaigns.get_campaigns():
             campaign = None
 
         user = framework_auth.register_unconfirmed(
@@ -774,7 +882,7 @@ def resend_confirmation_post(auth):
                     # already confirmed, redirect to dashboard
                     status_message = 'This email {0} has already been confirmed.'.format(clean_email)
                     kind = 'warning'
-                user.email_last_sent = datetime.datetime.utcnow()
+                user.email_last_sent = timezone.now()
                 user.save()
             else:
                 status_message = ('You have recently requested to resend your confirmation email. '
@@ -821,6 +929,29 @@ def external_login_email_post():
     external_id_provider = session.data['auth_user_external_id_provider']
     external_id = session.data['auth_user_external_id']
     fullname = session.data['auth_user_fullname']
+    service_url = session.data['service_url']
+
+    # TODO: @cslzchen use user tags instead of destination
+    destination = 'dashboard'
+    for campaign in campaigns.get_campaigns():
+        if campaign != 'institution':
+            # Handle different url encoding schemes between `furl` and `urlparse/urllib`.
+            # OSF use `furl` to parse service url during service validation with CAS. However, `web_url_for()` uses
+            # `urlparse/urllib` to generate service url. `furl` handles `urlparser/urllib` generated urls while ` but
+            # not vice versa.
+            campaign_url = furl.furl(campaigns.campaign_url_for(campaign)).url
+            external_campaign_url = furl.furl(campaigns.external_campaign_url_for(campaign)).url
+            if campaigns.is_proxy_login(campaign):
+                # proxy campaigns: OSF Preprints and branded ones
+                if check_service_url_with_proxy_campaign(str(service_url), campaign_url, external_campaign_url):
+                    destination = campaign
+                    # continue to check branded preprints even service url matches osf preprints
+                    if campaign != 'osf-preprints':
+                        break
+            elif service_url.startswith(campaign_url):
+                # osf campaigns: OSF Prereg and ERPC
+                destination = campaign
+                break
 
     if form.validate():
         clean_email = form.email.data
@@ -844,7 +975,13 @@ def external_login_email_post():
             # 2. add unconfirmed email and send confirmation email
             user.add_unconfirmed_email(clean_email, external_identity=external_identity)
             user.save()
-            send_confirm_email(user, clean_email, external_id_provider=external_id_provider, external_id=external_id)
+            send_confirm_email(
+                user,
+                clean_email,
+                external_id_provider=external_id_provider,
+                external_id=external_id,
+                destination=destination
+            )
             # 3. notify user
             message = language.EXTERNAL_LOGIN_EMAIL_LINK_SUCCESS.format(
                 external_id_provider=external_id_provider,
@@ -866,7 +1003,13 @@ def external_login_email_post():
             # TODO: [#OSF-6934] update social fields, verified social fields cannot be modified
             user.save()
             # 3. send confirmation email
-            send_confirm_email(user, user.username, external_id_provider=external_id_provider, external_id=external_id)
+            send_confirm_email(
+                user,
+                user.username,
+                external_id_provider=external_id_provider,
+                external_id=external_id,
+                destination=destination
+            )
             # 4. notify user
             message = language.EXTERNAL_LOGIN_EMAIL_CREATE_SUCCESS.format(
                 external_id_provider=external_id_provider,
@@ -894,7 +1037,7 @@ def validate_campaign(campaign):
     :return: True if valid, False otherwise
     """
 
-    return campaign and campaign in campaigns.CAMPAIGNS
+    return campaign and campaign in campaigns.get_campaigns()
 
 
 def validate_next_url(next_url):
@@ -911,10 +1054,42 @@ def validate_next_url(next_url):
     # like http:// or https:// depending on the use of SSL on the page already.
     if next_url.startswith('//'):
         return False
-    # only OSF, MFR and CAS domains are allowed
-    if not (next_url[0] == '/' or
-            next_url.startswith(settings.DOMAIN) or
-            next_url.startswith(settings.CAS_SERVER_URL) or
-            next_url.startswith(settings.MFR_SERVER_URL)):
-        return False
-    return True
+
+    # only OSF, MFR, CAS and Branded Preprints domains are allowed
+    if next_url[0] == '/' or next_url.startswith(settings.DOMAIN):
+        # OSF
+        return True
+    if next_url.startswith(settings.CAS_SERVER_URL) or next_url.startswith(settings.MFR_SERVER_URL):
+        # CAS or MFR
+        return True
+    for url in campaigns.get_external_domains():
+        # Branded Preprints Phase 2
+        if next_url.startswith(url):
+            return True
+
+    return False
+
+
+def check_service_url_with_proxy_campaign(service_url, campaign_url, external_campaign_url=None):
+    """
+    Check if service url belongs to proxy campaigns: OSF Preprints and branded ones.
+    Both service_url and campaign_url are parsed using `furl` encoding scheme.
+
+    :param service_url: the `furl` formatted service url
+    :param campaign_url: the `furl` formatted campaign url
+    :param external_campaign_url: the `furl` formatted external campaign url
+    :return: the matched object or None
+    """
+
+    prefix_1 = settings.DOMAIN + 'login/?next=' + campaign_url
+    prefix_2 = settings.DOMAIN + 'login?next=' + campaign_url
+
+    valid = service_url.startswith(prefix_1) or service_url.startswith(prefix_2)
+    valid_external = False
+
+    if external_campaign_url:
+        prefix_3 = settings.DOMAIN + 'login/?next=' + external_campaign_url
+        prefix_4 = settings.DOMAIN + 'login?next=' + external_campaign_url
+        valid_external = service_url.startswith(prefix_3) or service_url.startswith(prefix_4)
+
+    return valid or valid_external

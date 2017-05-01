@@ -4,4 +4,6 @@ Welcome to the Open Science Framework and OSF Preprints. To continue, please ver
 
 ${confirmation_url}
 
-From the team at the Center for Open Science
+
+Sincerely,
+Open Science Framework Robot

@@ -15,12 +15,13 @@ urlpatterns = [
         include(
             [
                 url(r'^$', views.root, name='root'),
+                url(r'^status/', views.status_check, name='status_check'),
                 url(r'^addons/', include('api.addons.urls', namespace='addons')),
                 url(r'^applications/', include('api.applications.urls', namespace='applications')),
                 url(r'^citations/', include('api.citations.urls', namespace='citations')),
                 url(r'^collections/', include('api.collections.urls', namespace='collections')),
                 url(r'^comments/', include('api.comments.urls', namespace='comments')),
-                url(r'^docs/', include('rest_framework_swagger.urls')),
+                url(r'^docs/', RedirectView.as_view(pattern_name=views.root), name='redirect-to-root', kwargs={'version': default_version}),
                 url(r'^files/', include('api.files.urls', namespace='files')),
                 url(r'^guids/', include('api.guids.urls', namespace='guids')),
                 url(r'^identifiers/', include('api.identifiers.urls', namespace='identifiers')),

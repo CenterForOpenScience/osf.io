@@ -439,7 +439,7 @@ var LogPieces = {
     path: {
         controller: function(logObject){
             var self = this;
-            self.returnLinkForPath = function() {
+            self.returnLinkForPath = function(logObject) {
                 if (logObject) {
                     var action = logObject.attributes.action;
                     var acceptableLinkedItems = ['osf_storage_file_added', 'osf_storage_file_updated', 'file_tag_added', 'file_tag_removed',
@@ -453,7 +453,7 @@ var LogPieces = {
             };
         },
         view: function (ctrl, logObject) {
-            var url = ctrl.returnLinkForPath();
+            var url = ctrl.returnLinkForPath(logObject);
             return returnTextParams('path', 'a file', logObject, url);
         }
     },
@@ -461,7 +461,7 @@ var LogPieces = {
     filename: {
         controller: function(logObject) {
             var self = this;
-            self.returnLinkForPath = function(){
+            self.returnLinkForPath = function(logObject){
                 if (logObject){
                     var action = logObject.attributes.action;
                     var acceptableLinkedItems = ['dataverse_file_added'];
@@ -473,7 +473,7 @@ var LogPieces = {
             };
         },
         view: function (ctrl, logObject) {
-            var url = ctrl.returnLinkForPath();
+            var url = ctrl.returnLinkForPath(logObject);
             return returnTextParams('filename', 'a title', logObject, url);
         }
     },
@@ -504,12 +504,6 @@ var LogPieces = {
     bucket: {
         view: function(ctrl, logObject) {
             return returnTextParams('bucket', 'a bucket', logObject);
-        }
-    },
-
-    figshare_title: {
-        view: function(ctrl, logObject) {
-            return returnTextParams('figshare_title', '', logObject);
         }
     },
 
@@ -563,7 +557,7 @@ var LogPieces = {
     googledrive_path: {
         controller: function(logObject){
             var self = this;
-            self.returnLinkForPath = function() {
+            self.returnLinkForPath = function(logObject) {
                 if (logObject) {
                     var action = logObject.attributes.action;
                     var acceptableLinkedItems = ['googledrive_file_added', 'googledrive_file_updated'];
@@ -575,7 +569,7 @@ var LogPieces = {
             };
         },
         view: function (ctrl, logObject) {
-            var url = ctrl.returnLinkForPath();
+            var url = ctrl.returnLinkForPath(logObject);
             var path = logObject.attributes.params.path;
             if(paramIsReturned(path, logObject)){
                 path = stripBackslash(decodeURIComponent(path));
@@ -640,12 +634,43 @@ var LogPieces = {
             }
             // Comment left on wiki
             if (wiki) {
-                return m('span', ['on wiki page ', m('a', {href: $osf.toRelativeUrl(wiki.url, window)}, wiki.name)]);
+                var name = (wiki.name === 'home') ? 'Home' : wiki.name;
+                return m('span', ['on wiki page ', m('a', {href: $osf.toRelativeUrl(wiki.url, window)}, name)]);
             }
             // Comment left on project
             return m('span', '');
         }
-    }
+    },
+
+    preprint: {
+        view: function(ctrl, logObject){
+            var preprint = logObject.attributes.params.preprint;
+            if (paramIsReturned(preprint, logObject)) {
+                return m('a', {href: '/' + preprint}, 'preprint');
+            }
+            return m('span', 'preprint');
+        }
+    },
+
+    preprint_provider: {
+        view: function(ctrl, logObject){
+            var preprint_provider = logObject.attributes.params.preprint_provider;
+            if (paramIsReturned(preprint_provider, logObject)) {
+                return m('a', {href: preprint_provider.url}, preprint_provider.name);
+            }
+            return m('span', '');
+        }
+    },
+
+    license: {
+        view: function(ctrl, logObject){
+            var license_name = logObject.attributes.params.license;
+            if (license_name) {
+                return m('span', 'to ' + license_name);
+            }
+            return m('span', '');
+        }
+    },
 };
 
 module.exports = LogText;

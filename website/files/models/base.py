@@ -4,10 +4,10 @@ import os
 import bson
 import logging
 import pymongo
-import datetime
 import requests
 import functools
 
+from django.utils import timezone
 from modularodm import fields, Q
 from modularodm.exceptions import NoResultsFound
 from dateutil.parser import parse as parse_date
@@ -217,7 +217,7 @@ class StoredFileNode(StoredObject, Commentable):
 
     @property
     def deep_url(self):
-        return self.wrapped().deep_url
+        return self.deep_url
 
     @property
     def absolute_api_v2_url(self):
@@ -402,7 +402,7 @@ class FileNode(object):
         """A proxy for StoredFileNode.find_one but applies class based contraints.
         :rtype: cls
         """
-        return StoredFileNode.find_one(cls._filter(qs)).wrapped()
+        return StoredFileNode.find_one(cls._filter(qs))
 
     @classmethod
     def files_checked_out(cls, user):
@@ -421,7 +421,6 @@ class FileNode(object):
         inst = StoredFileNode.load(_id)
         if not inst:
             return None
-        inst = inst.wrapped()
         assert isinstance(inst, cls), 'Loaded object {} is not of type {}'.format(inst, cls)
         return inst
 
@@ -430,7 +429,7 @@ class FileNode(object):
         """A proxy to self.stored_object.parent but forces it to be wrapped.
         """
         if self.stored_object.parent:
-            return self.stored_object.parent.wrapped()
+            return self.stored_object.parent
         return None
 
     @parent.setter
@@ -540,7 +539,7 @@ class FileNode(object):
         """
         self.name = data['name']
         self.materialized_path = data['materialized']
-        self.last_touched = datetime.datetime.utcnow()
+        self.last_touched = timezone.now()
         if save:
             self.save()
 
@@ -648,6 +647,8 @@ class File(FileNode):
         :param str or None auth_header: If truthy it will set as the Authorization header
         :returns: None if the file is not found otherwise FileVersion or (version, Error HTML)
         """
+        # Resvolve primary key on first touch
+        self.save()
         # For backwards compatability
         revision = revision or kwargs.get(self.version_identifier)
 
@@ -688,24 +689,23 @@ class File(FileNode):
             data['modified'] = parse_date(
                 data['modified'],
                 ignoretz=True,
-                default=datetime.datetime.utcnow()  # Just incase nothing can be parsed
+                default=timezone.now()  # Just incase nothing can be parsed
             )
 
         # if revision is none then version is the latest version
         # Dont save the latest information
         if revision is not None:
             version.save()
-            self.versions.append(version)
-
+            self.versions.add(version)
         for entry in self.history:
-            if entry['etag'] == data['etag']:
+            if ('etag' in entry and 'etag' in data) and (entry['etag'] == data['etag']):
                 break
         else:
             # Insert into history if there is no matching etag
             utils.insort(self.history, data, lambda x: x['modified'])
 
         # Finally update last touched
-        self.last_touched = datetime.datetime.utcnow()
+        self.last_touched = timezone.now()
 
         self.save()
         return version
@@ -730,6 +730,7 @@ class File(FileNode):
                 size=None,
                 version=None,
                 modified=None,
+                created=None,
                 contentType=None,
                 downloads=self.get_download_count(),
                 checkout=self.checkout._id if self.checkout else None,
@@ -744,6 +745,7 @@ class File(FileNode):
             version=version.identifier if self.versions else None,
             contentType=version.content_type if self.versions else None,
             modified=version.date_modified.isoformat() if version.date_modified else None,
+            created=self.versions[0].date_modified.isoformat() if self.versions[0].date_modified else None,
         )
 
 
@@ -781,7 +783,7 @@ class Folder(FileNode):
             parent=self.stored_object,
             materialized_path=materialized_path or
             os.path.join(self.materialized_path, name) + '/' if not kind else ''
-        ).wrapped()
+        )
         if save:
             child.save()
         return child

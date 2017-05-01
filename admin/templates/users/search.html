@@ -7,6 +7,9 @@
 {% block content %}
     <div class="container-fluid">
         <div class="row">
+            <h3>User Search</h3>
+        </div>
+        <div class="row">
             <form action="{% url 'users:search' %}" method="post">
                 {% csrf_token %}
                 {% if form.errors %}
@@ -26,6 +29,14 @@
                 </div>
                 <input type="submit" class="btn btn-primary" value="Submit" />
             </form>
+        </div>
+        <div class="row">
+            <h3>User Workshop Follow-up</h3>
+        </div>
+        <div class="row">
+            <a href="{% url 'users:workshop' %}" class="btn btn-default">
+                Go
+            </a>
         </div>
     </div>
 {% endblock content %}

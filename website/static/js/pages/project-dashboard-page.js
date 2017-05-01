@@ -7,7 +7,7 @@ require('bootstrap-editable');
 require('js/osfToggleHeight');
 
 var m = require('mithril');
-var Fangorn = require('js/fangorn');
+var Fangorn = require('js/fangorn').Fangorn;
 var Raven = require('raven-js');
 var lodashGet  = require('lodash.get');
 require('truncate');
@@ -126,7 +126,7 @@ $(document).ready(function () {
         m.mount(newComponentElem, AddComponentButton);
     }
 
-    if (ctx.node.institutions.length && !ctx.node.anonymous){
+    if (ctx.node.institutions.length && !ctx.node.anonymous && !ctx.node.isRetracted) {
         m.mount(document.getElementById('instLogo'), m.component(institutionLogos, {institutions: window.contextVars.node.institutions}));
     }
     $('#contributorsList').osfToggleHeight();
@@ -282,7 +282,7 @@ $(document).ready(function () {
         });
     }
 
-    if (window.contextVars.node.isPublic) {
+    if (window.contextVars.node.isPublic && !window.contextVars.node.isRetracted) {
         m.mount(document.getElementById('shareButtonsPopover'),
                 m.component(SocialShare.ShareButtonsPopover,
                     {title: window.contextVars.node.title, url: window.location.href}));

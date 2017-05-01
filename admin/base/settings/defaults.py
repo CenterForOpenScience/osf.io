@@ -6,8 +6,13 @@ import os
 from urlparse import urlparse
 from website import settings as osf_settings
 from django.contrib import messages
+from api.base.settings import *  # noqa
+# TODO ALL SETTINGS FROM API WILL BE IMPORTED AND WILL NEED TO BE OVERRRIDEN
+# TODO THIS IS A STEP TOWARD INTEGRATING ADMIN & API INTO ONE PROJECT
 
 # import local  # Build own local.py (used with postgres)
+
+# TODO - remove duplicated items, as this is now using settings from the API
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 # Quick-start development settings - unsuitable for production
@@ -17,6 +22,9 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__fil
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = osf_settings.SECRET_KEY
 
+
+# Don't allow migrations
+DATABASE_ROUTERS = ['admin.base.db.router.NoMigrationRouter']
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = osf_settings.DEBUG_MODE
@@ -50,6 +58,8 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+USE_L10N = False
+
 # Email settings. Account created for testing. Password shouldn't be hardcoded
 # [DEVOPS] this should be set to 'django.core.mail.backends.smtp.EmailBackend' in the > dev local.py.
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
@@ -72,6 +82,22 @@ INSTALLED_APPS = (
     'django.contrib.messages',
     'django.contrib.sessions',
     'django.contrib.staticfiles',
+
+    # 3rd party
+    'raven.contrib.django.raven_compat',
+    'webpack_loader',
+    'django_nose',
+    'password_reset',
+
+    # OSF
+    'osf',
+
+    # Addons
+    'addons.osfstorage',
+    'addons.wiki',
+    'addons.twofactor',
+
+    # Internal apps
     'admin.common_auth',
     'admin.base',
     'admin.pre_reg',
@@ -79,23 +105,26 @@ INSTALLED_APPS = (
     'admin.metrics',
     'admin.nodes',
     'admin.users',
+    'admin.desk',
     'admin.meetings',
-    'admin.sales_analytics',
 
-    # 3rd party
-    'raven.contrib.django.raven_compat',
-    'webpack_loader',
-    'django_nose',
-    'ckeditor',
-    'password_reset',
 )
+
+MIGRATION_MODULES = {
+    'osf': None,
+    'addons_osfstorage': None,
+    'addons_wiki': None,
+    'addons_twofactor': None,
+}
+
+USE_TZ = True
 
 # local development using https
 if osf_settings.SECURE_MODE and osf_settings.DEBUG_MODE:
     INSTALLED_APPS += ('sslserver',)
 
 # Custom user model (extends AbstractBaseUser)
-AUTH_USER_MODEL = 'common_auth.MyUser'
+AUTH_USER_MODEL = 'osf.OSFUser'
 
 # TODO: Are there more granular ways to configure reporting specifically related to the API?
 RAVEN_CONFIG = {
@@ -118,9 +147,7 @@ MIDDLEWARE_CLASSES = (
     # even in the event of a redirect. CommonMiddleware may cause other middlewares'
     # process_request to be skipped, e.g. when a trailing slash is omitted
     'api.base.middleware.DjangoGlobalMiddleware',
-    'api.base.middleware.MongoConnectionMiddleware',
     'api.base.middleware.CeleryTaskMiddleware',
-    'api.base.middleware.TokuTransactionMiddleware',
 
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -153,28 +180,6 @@ TEMPLATES = [
         }
     }]
 
-# Database
-# Postgres:
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.postgresql_psycopg2',
-#         'NAME': local.POSTGRES_NAME,
-#         'USER': local.POSTGRES_USER,
-#         'PASSWORD': local.POSTGRES_PASSWORD,
-#         'HOST': local.POSTGRES_HOST,
-#         'PORT': '',
-#     }
-# }
-# Postgres settings in local.py
-
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
-    }
-}
-# https://docs.djangoproject.com/en/1.8/ref/settings/#databases
-
 ROOT_URLCONF = 'admin.base.urls'
 WSGI_APPLICATION = 'admin.base.wsgi.application'
 ADMIN_BASE = ''
@@ -204,18 +209,6 @@ WEBPACK_LOADER = {
 TEST_RUNNER = 'django_nose.NoseTestSuiteRunner'
 NOSE_ARGS = ['--verbosity=2']
 
-CKEDITOR_CONFIGS = {
-    'default': {
-        'toolbar': 'Custom',
-        'toolbar_Custom': [
-            ['Source'],
-            ['Bold', 'Italic', 'Underline'],
-            ['NumberedList', 'BulletedList'],
-            ['Link']
-        ]
-    },
-}
-
 # Keen.io settings in local.py
 KEEN_PROJECT_ID = osf_settings.KEEN['private']['project_id']
 KEEN_READ_KEY = osf_settings.KEEN['private']['read_key']
@@ -235,3 +228,7 @@ if KEEN_CREDENTIALS['keen_ready']:
 
 ENTRY_POINTS = {'osf4m': 'osf4m', 'prereg_challenge_campaign': 'prereg',
                 'institution_campaign': 'institution'}
+
+# Set in local.py
+DESK_KEY = ''
+DESK_KEY_SECRET = ''

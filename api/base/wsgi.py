@@ -14,12 +14,20 @@ if not settings.DEBUG_MODE:
     monkey.patch_all()
     # PATCH: avoid deadlock on getaddrinfo, this patch is necessary while waiting for
     # the final gevent 1.1 release (https://github.com/gevent/gevent/issues/349)
-    unicode('foo').encode('idna')  # noqa
+    # unicode('foo').encode('idna')  # noqa
+
+    from psycogreen.gevent import patch_psycopg  # noqa
+    patch_psycopg()
 
 
 import os  # noqa
 from django.core.wsgi import get_wsgi_application  # noqa
 from website.app import init_app  # noqa
+
+if os.environ.get('API_REMOTE_DEBUG', None):
+    import pydevd
+    remote_parts = os.environ.get('API_REMOTE_DEBUG').split(':')
+    pydevd.settrace(remote_parts[0], port=int(remote_parts[1]), suspend=False, stdoutToServer=True, stderrToServer=True, trace_only_current_thread=False)
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'api.base.settings')
 
@@ -47,10 +55,9 @@ def __getattr__(self, attr):
 Field.context = context
 Request.__getattr__ = __getattr__
 Request.__getattribute__ = object.__getattribute__
-
 ############# /monkeys ####################
 
 init_app(set_backends=True, routes=False, attach_request_handlers=False)
-api_settings.load_institutions()
+api_settings.load_origins_whitelist()
 
 application = get_wsgi_application()

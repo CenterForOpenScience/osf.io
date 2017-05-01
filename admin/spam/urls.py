@@ -11,7 +11,7 @@ urlpatterns = [
     ),
     url(
         r'^(?P<spam_id>[a-z0-9]+)/email/$',
-        views.EmailFormView.as_view(),
+        views.EmailView.as_view(),
         name='email'
     ),
     url(

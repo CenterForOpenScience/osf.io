@@ -3,6 +3,17 @@
 
 <%def name="content_wrap()">
     <div class="watermarked">
+        ## Maintenance alert
+        % if maintenance:
+        <div id="maintenance" class="scripted alert alert-info alert-dismissible" role="alert">
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span></button>
+            <strong>Notice:</strong> The site will undergo maintenance between
+            <span id="maintenanceTime"></span>.
+            Thank you for your patience.
+        </div>
+        % endif
+        ## End Maintenance alert
         <div class="home-page-alert">
             % if status:
                 ${self.alert()}
@@ -26,5 +37,10 @@
 
 <%def name="javascript_bottom()">
     ${parent.javascript_bottom()}
+    <script type="text/javascript">
+        window.contextVars = $.extend(true, {}, window.contextVars, {
+            dashboardInstitutions: ${ dashboard_institutions | sjson, n},
+        });
+    </script>
     <script src=${"/static/public/js/home-page.js" | webpack_asset}></script>
 </%def>

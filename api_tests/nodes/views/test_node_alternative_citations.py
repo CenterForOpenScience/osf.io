@@ -3,10 +3,11 @@ from nose.tools import *  # flake8: noqa
 from website.util import permissions
 
 from api.base.settings.defaults import API_BASE
+from api.citations import utils as citation_utils
 
 from tests.base import ApiTestCase
 
-from tests.factories import (
+from osf_tests.factories import (
     ProjectFactory,
     RegistrationFactory,
     AuthUserFactory,
@@ -30,12 +31,12 @@ def payload(name=None, text=None, _id=None):
 def set_up_citation_and_project(admin, public=True, registration=False, contrib=None, citation2=False, for_delete=False, bad=False):
     project = ProjectFactory(creator=admin, is_public=public)
     citation = AlternativeCitationFactory(name='name', text='text')
-    project.alternative_citations.append(citation)
+    project.alternative_citations.add(citation)
     if contrib:
         project.add_contributor(contrib, permissions=[permissions.READ, permissions.WRITE], visible=True)
     if citation2:
         citation2 = AlternativeCitationFactory(name='name2', text='text2')
-        project.alternative_citations.append(citation2)
+        project.alternative_citations.add(citation2)
     project.save()
     slug = 1 if bad else citation._id
     if registration:
@@ -1251,14 +1252,14 @@ class TestDeleteAlternativeCitations(ApiTestCase):
         res, project = self.request(is_admin=True)
         assert_equal(res.status_code, 204)
         project.reload()
-        assert_equal(len(project.alternative_citations), 0)
+        assert_equal(project.alternative_citations.count(), 0)
 
     def test_delete_citation_admin_private(self):
         res, project = self.request(public=False,
                                     is_admin=True)
         assert_equal(res.status_code, 204)
         project.reload()
-        assert_equal(len(project.alternative_citations), 0)
+        assert_equal(project.alternative_citations.count(), 0)
 
     def test_delete_citation_non_admin_public(self):
         res, project = self.request(errors=True)
@@ -1266,7 +1267,7 @@ class TestDeleteAlternativeCitations(ApiTestCase):
         assert_equal(len(res.json['errors']), 1)
         assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
         project.reload()
-        assert_equal(len(project.alternative_citations), 1)
+        assert_equal(project.alternative_citations.count(), 1)
 
     def test_delete_citation_non_admin_private(self):
         res, project = self.request(public=False,
@@ -1275,7 +1276,7 @@ class TestDeleteAlternativeCitations(ApiTestCase):
         assert_equal(len(res.json['errors']), 1)
         assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
         project.reload()
-        assert_equal(len(project.alternative_citations), 1)
+        assert_equal(project.alternative_citations.count(), 1)
 
     def test_delete_citation_non_contrib_public(self):
         res, project = self.request(is_contrib=False,
@@ -1284,7 +1285,7 @@ class TestDeleteAlternativeCitations(ApiTestCase):
         assert_equal(len(res.json['errors']), 1)
         assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
         project.reload()
-        assert_equal(len(project.alternative_citations), 1)
+        assert_equal(project.alternative_citations.count(), 1)
 
     def test_delete_citation_non_contrib_private(self):
         res, project = self.request(public=False,
@@ -1294,7 +1295,7 @@ class TestDeleteAlternativeCitations(ApiTestCase):
         assert_equal(len(res.json['errors']), 1)
         assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
         project.reload()
-        assert_equal(len(project.alternative_citations), 1)
+        assert_equal(project.alternative_citations.count(), 1)
 
     def test_delete_citation_logged_out_public(self):
         res, project = self.request(logged_out=True,
@@ -1303,7 +1304,7 @@ class TestDeleteAlternativeCitations(ApiTestCase):
         assert_equal(len(res.json['errors']), 1)
         assert_equal(res.json['errors'][0]['detail'], 'Authentication credentials were not provided.')
         project.reload()
-        assert_equal(len(project.alternative_citations), 1)
+        assert_equal(project.alternative_citations.count(), 1)
 
     def test_delete_citation_logged_out_private(self):
         res, project = self.request(public=False,
@@ -1313,7 +1314,7 @@ class TestDeleteAlternativeCitations(ApiTestCase):
         assert_equal(len(res.json['errors']), 1)
         assert_equal(res.json['errors'][0]['detail'], 'Authentication credentials were not provided.')
         project.reload()
-        assert_equal(len(project.alternative_citations), 1)
+        assert_equal(project.alternative_citations.count(), 1)
 
     def test_delete_citation_admin_not_found_public(self):
         res, project = self.request(is_admin=True,
@@ -1323,7 +1324,7 @@ class TestDeleteAlternativeCitations(ApiTestCase):
         assert_equal(len(res.json['errors']), 1)
         assert_equal(res.json['errors'][0]['detail'], 'Not found.')
         project.reload()
-        assert_equal(len(project.alternative_citations), 1)
+        assert_equal(project.alternative_citations.count(), 1)
 
     def test_delete_citation_admin_not_found_private(self):
         res, project = self.request(public=False,
@@ -1334,7 +1335,7 @@ class TestDeleteAlternativeCitations(ApiTestCase):
         assert_equal(len(res.json['errors']), 1)
         assert_equal(res.json['errors'][0]['detail'], 'Not found.')
         project.reload()
-        assert_equal(len(project.alternative_citations), 1)
+        assert_equal(project.alternative_citations.count(), 1)
 
     def test_delete_citation_non_admin_not_found_public(self):
         res, project = self.request(bad=True,
@@ -1343,7 +1344,7 @@ class TestDeleteAlternativeCitations(ApiTestCase):
         assert_equal(len(res.json['errors']), 1)
         assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
         project.reload()
-        assert_equal(len(project.alternative_citations), 1)
+        assert_equal(project.alternative_citations.count(), 1)
 
     def test_delete_citation_non_admin_not_found_private(self):
         res, project = self.request(public=False,
@@ -1353,7 +1354,7 @@ class TestDeleteAlternativeCitations(ApiTestCase):
         assert_equal(len(res.json['errors']), 1)
         assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
         project.reload()
-        assert_equal(len(project.alternative_citations), 1)
+        assert_equal(project.alternative_citations.count(), 1)
 
     def test_delete_citation_non_contrib_not_found_public(self):
         res, project = self.request(is_contrib=False,
@@ -1363,7 +1364,7 @@ class TestDeleteAlternativeCitations(ApiTestCase):
         assert_equal(len(res.json['errors']), 1)
         assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
         project.reload()
-        assert_equal(len(project.alternative_citations), 1)
+        assert_equal(project.alternative_citations.count(), 1)
 
     def test_delete_citation_non_contrib_not_found_private(self):
         res, project = self.request(public=False,
@@ -1374,7 +1375,7 @@ class TestDeleteAlternativeCitations(ApiTestCase):
         assert_equal(len(res.json['errors']), 1)
         assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
         project.reload()
-        assert_equal(len(project.alternative_citations), 1)
+        assert_equal(project.alternative_citations.count(), 1)
 
     def test_delete_citation_logged_out_not_found_public(self):
         res, project = self.request(logged_out=True,
@@ -1384,7 +1385,7 @@ class TestDeleteAlternativeCitations(ApiTestCase):
         assert_equal(len(res.json['errors']), 1)
         assert_equal(res.json['errors'][0]['detail'], 'Authentication credentials were not provided.')
         project.reload()
-        assert_equal(len(project.alternative_citations), 1)
+        assert_equal(project.alternative_citations.count(), 1)
 
     def test_delete_citation_logged_out_not_found_private(self):
         res, project = self.request(public=False,
@@ -1395,7 +1396,7 @@ class TestDeleteAlternativeCitations(ApiTestCase):
         assert_equal(len(res.json['errors']), 1)
         assert_equal(res.json['errors'][0]['detail'], 'Authentication credentials were not provided.')
         project.reload()
-        assert_equal(len(project.alternative_citations), 1)
+        assert_equal(project.alternative_citations.count(), 1)
 
     def test_delete_citation_admin_public_reg(self):
         res, registration = self.request(registration=True,
@@ -1404,7 +1405,7 @@ class TestDeleteAlternativeCitations(ApiTestCase):
         assert_equal(res.status_code, 403)
         assert_equal(len(res.json['errors']), 1)
         assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
-        assert_equal(len(registration.alternative_citations), 1)
+        assert_equal(registration.alternative_citations.count(), 1)
 
     def test_delete_citation_admin_private_reg(self):
         res, registration = self.request(public=False,
@@ -1414,7 +1415,7 @@ class TestDeleteAlternativeCitations(ApiTestCase):
         assert_equal(res.status_code, 403)
         assert_equal(len(res.json['errors']), 1)
         assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
-        assert_equal(len(registration.alternative_citations), 1)
+        assert_equal(registration.alternative_citations.count(), 1)
 
     def test_delete_citation_non_admin_public_reg(self):
         res, registration = self.request(registration=True,
@@ -1422,7 +1423,7 @@ class TestDeleteAlternativeCitations(ApiTestCase):
         assert_equal(res.status_code, 403)
         assert_equal(len(res.json['errors']), 1)
         assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
-        assert_equal(len(registration.alternative_citations), 1)
+        assert_equal(registration.alternative_citations.count(), 1)
 
     def test_delete_citation_non_admin_private_reg(self):
         res, registration = self.request(public=False,
@@ -1431,7 +1432,7 @@ class TestDeleteAlternativeCitations(ApiTestCase):
         assert_equal(res.status_code, 403)
         assert_equal(len(res.json['errors']), 1)
         assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
-        assert_equal(len(registration.alternative_citations), 1)
+        assert_equal(registration.alternative_citations.count(), 1)
 
     def test_delete_citation_non_contrib_public_reg(self):
         res, registration = self.request(registration=True,
@@ -1440,7 +1441,7 @@ class TestDeleteAlternativeCitations(ApiTestCase):
         assert_equal(res.status_code, 403)
         assert_equal(len(res.json['errors']), 1)
         assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
-        assert_equal(len(registration.alternative_citations), 1)
+        assert_equal(registration.alternative_citations.count(), 1)
 
     def test_delete_citation_non_contrib_private_reg(self):
         res, registration = self.request(public=False,
@@ -1450,7 +1451,7 @@ class TestDeleteAlternativeCitations(ApiTestCase):
         assert_equal(res.status_code, 403)
         assert_equal(len(res.json['errors']), 1)
         assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
-        assert_equal(len(registration.alternative_citations), 1)
+        assert_equal(registration.alternative_citations.count(), 1)
 
     def test_delete_citation_logged_out_public_reg(self):
         res, registration = self.request(registration=True,
@@ -1459,7 +1460,7 @@ class TestDeleteAlternativeCitations(ApiTestCase):
         assert_equal(res.status_code, 401)
         assert_equal(len(res.json['errors']), 1)
         assert_equal(res.json['errors'][0]['detail'], 'Authentication credentials were not provided.')
-        assert_equal(len(registration.alternative_citations), 1)
+        assert_equal(registration.alternative_citations.count(), 1)
 
     def test_delete_citation_logged_out_private_reg(self):
         res, registration = self.request(public=False,
@@ -1469,7 +1470,7 @@ class TestDeleteAlternativeCitations(ApiTestCase):
         assert_equal(res.status_code, 401)
         assert_equal(len(res.json['errors']), 1)
         assert_equal(res.json['errors'][0]['detail'], 'Authentication credentials were not provided.')
-        assert_equal(len(registration.alternative_citations), 1)
+        assert_equal(registration.alternative_citations.count(), 1)
 
 class TestGetAlternativeCitations(ApiTestCase):
     def request(self, is_admin=False, is_contrib=True, logged_out=False, errors=False, **kwargs):
@@ -1676,3 +1677,30 @@ class TestGetAlternativeCitations(ApiTestCase):
         assert_equal(res.status_code, 401)
         assert_equal(len(res.json['errors']), 1)
         assert_equal(res.json['errors'][0]['detail'], 'Authentication credentials were not provided.')
+
+
+class TestManualCitationCorrections(ApiTestCase):
+    def setUp(self):
+        super(TestManualCitationCorrections, self).setUp()
+        self.user = AuthUserFactory()
+        self.project = ProjectFactory(creator=self.user, is_public=True, title="My Project")
+
+    def test_apa_citation(self):
+        citation = citation_utils.render_citation(self.project, 'apa')
+        expected_citation = self.user.family_name + ', ' + self.user.given_name_initial + '. (' + \
+                            self.project.date_created.strftime("%Y, %B %-d") + '). ' + self.project.title + \
+                            '. Retrieved from ' + self.project.display_absolute_url
+        assert_equal(citation, expected_citation)
+
+    def test_mla_citation(self):
+        csl = self.project.csl
+        citation = citation_utils.render_citation(self.project, 'modern-language-association')
+        expected_citation = csl['author'][0]['family'] + ', ' + csl['author'][0]['given'] + '. ' + u"\u201c" + csl['title'] + u"\u201d" + '. ' +\
+                            csl['publisher'] + ', ' + self.project.date_created.strftime("%-d %b. %Y. Web.")
+        assert_equal(citation, expected_citation)
+
+    def test_chicago_citation(self):
+        csl = self.project.csl
+        citation = citation_utils.render_citation(self.project, 'chicago-author-date')
+        expected_citation = csl['author'][0]['family'] + ', ' + csl['author'][0]['given'] + '. ' + str(csl['issued']['date-parts'][0][0]) + '. ' + u"\u201c" + csl['title'] + u"\u201d" + '. ' +  csl['publisher'] +'. ' + self.project.date_created.strftime("%B %-d") + '. ' + csl['URL'] + '.'
+        assert_equal(citation, expected_citation)

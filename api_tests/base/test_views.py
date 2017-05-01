@@ -8,7 +8,7 @@ from nose import SkipTest
 from nose.tools import *  # flake8: noqa
 
 from tests.base import ApiTestCase
-from tests import factories
+from osf_tests import factories
 
 from framework.auth.oauth_scopes import CoreScopes
 
@@ -16,6 +16,7 @@ from api.base.settings.defaults import API_BASE
 from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated
 from api.base.permissions import TokenHasScope
 from website.settings import DEBUG_MODE
+from website import maintenance
 
 from django.contrib.auth.models import User
 
@@ -28,7 +29,7 @@ for loader, name, _ in pkgutil.iter_modules(['api']):
             URLS_MODULES.append(importlib.import_module('api.{}.urls'.format(name)))
         except ImportError:
             pass
-        
+
 VIEW_CLASSES = []
 for mod in URLS_MODULES:
     urlpatterns = mod.urlpatterns
@@ -101,6 +102,22 @@ class TestApiBaseViews(ApiTestCase):
         assert_equal(res.status_code, http.BAD_REQUEST)
 
 
+class TestStatusView(ApiTestCase):
+
+    def test_status_view(self):
+        url = '/{}status/'.format(API_BASE)
+        res = self.app.get(url)
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json, {'maintenance': None})
+
+    def test_status_view_with_maintenance(self):
+        maintenance.set_maintenance()
+        url = '/{}status/'.format(API_BASE)
+        res = self.app.get(url)
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json, {'maintenance': maintenance.get_maintenance()})
+
+
 class TestJSONAPIBaseView(ApiTestCase):
 
     def setUp(self):
@@ -125,6 +142,8 @@ class TestJSONAPIBaseView(ApiTestCase):
 
 
 class TestSwaggerDocs(ApiTestCase):
-    def test_swagger_doc_json_route(self):
-        res = self.app.get('/v2/docs/api-docs/v2')
-        assert_equal(res.status_code, 200)
+
+    def test_swagger_docs_redirect_to_root(self):
+        res = self.app.get('/v2/docs/')
+        assert_equal(res.status_code, 302)
+        assert_equal(res.location, '/v2/')

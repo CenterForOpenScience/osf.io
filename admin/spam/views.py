@@ -1,94 +1,37 @@
 from __future__ import unicode_literals
 
-from django.shortcuts import render
-from django.core.mail import send_mail
-from django.views.generic import FormView, ListView
+from django.views.generic import FormView, ListView, DetailView
+from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.http import Http404
 
-from modularodm import Q
-from website.project.model import Comment
+from osf.models.comment import Comment
+from osf.models.user import OSFUser
 from website.project.spam.model import SpamStatus
-from website.settings import SUPPORT_EMAIL
 
-from admin.base.utils import OSFAdmin
-from admin.common_auth.logs import (
+from osf.models.admin_log_entry import (
     update_admin_log,
     CONFIRM_HAM,
     CONFIRM_SPAM,
-    USER_EMAILED,
 )
 from admin.spam.serializers import serialize_comment
-from admin.spam.forms import EmailForm, ConfirmForm
+from admin.spam.forms import ConfirmForm
 from admin.spam.templatetags.spam_extras import reverse_spam_detail
 
 
-class EmailFormView(OSFAdmin, FormView):
-    """ Allow authorized admin user to Email spammers, use judiciously
-
-    Gets user data and supplies email template. Logs mail sent to user.
-    """
-    form_class = EmailForm
+class EmailView(PermissionRequiredMixin, DetailView):
     template_name = 'spam/email.html'
+    context_object_name = 'spam'
+    permission_required = 'osf.view_spam'
 
-    def get_context_data(self, **kwargs):
+    def get_object(self, queryset=None):
         spam_id = self.kwargs.get('spam_id')
         try:
-            kwargs.setdefault('comment',
-                              serialize_comment(Comment.load(spam_id)))
+            return serialize_comment(Comment.load(spam_id))
         except AttributeError:
             raise Http404('Spam with id {} not found.'.format(spam_id))
-        kwargs.setdefault('page_number', self.request.GET.get('page', '1'))
-        kwargs.setdefault('status', self.request.GET.get('status', '1'))
-        return super(EmailFormView, self).get_context_data(**kwargs)
-
-    def get_initial(self):
-        spam_id = self.kwargs.get('spam_id')
-        try:
-            spam = serialize_comment(Comment.load(spam_id))
-        except AttributeError:
-            raise Http404('Spam with id {} not found.'.format(spam_id))
-        self.initial = {
-            'author': spam['author'].fullname,
-            'email': [(r, r) for r in spam['author'].emails],
-            'subject': 'Reports of spam',
-            'message': render(
-                None,
-                'spam/email_template.html',
-                {'item': spam}
-            ).content,
-        }
-        return super(EmailFormView, self).get_initial()
-
-    def form_valid(self, form):
-        message = form.cleaned_data.get('message')
-        email = form.cleaned_data.get('email')
-        send_mail(
-            subject=form.cleaned_data.get('subject').strip(),
-            message=message,
-            from_email=SUPPORT_EMAIL,
-            recipient_list=[email]
-        )
-        update_admin_log(
-            user_id=self.request.user.id,
-            object_id=self.kwargs.get('spam_id'),
-            object_repr='Comment',
-            message='User with email {} sent this message: {}'.format(
-                email, message
-            ),
-            action_flag=USER_EMAILED
-        )
-        return super(EmailFormView, self).form_valid(form)
-
-    @property
-    def success_url(self):
-        return reverse_spam_detail(
-            self.kwargs.get('spam_id'),
-            page=self.request.GET.get('page', '1'),
-            status=self.request.GET.get('status', '1')
-        )
 
 
-class SpamList(OSFAdmin, ListView):
+class SpamList(PermissionRequiredMixin, ListView):
     """ Allow authorized admin user to see the things people have marked as spam
 
     Interface with OSF database. No admin models.
@@ -98,14 +41,13 @@ class SpamList(OSFAdmin, ListView):
     paginate_orphans = 1
     ordering = '-date_last_reported'
     context_object_name = 'spam'
+    permission_required = 'osf.view_spam'
+    raise_exception = True
 
     def get_queryset(self):
-        query = (
-            Q('reports', 'ne', {}) &
-            Q('reports', 'ne', None) &
-            Q('spam_status', 'eq', int(self.request.GET.get('status', '1')))
-        )
-        return Comment.find(query).sort(self.ordering)
+        return Comment.objects.filter(
+            spam_status=int(self.request.GET.get('status', '1'))
+        ).exclude(reports={}).exclude(reports=None)
 
     def get_context_data(self, **kwargs):
         queryset = kwargs.pop('object_list', self.object_list)
@@ -128,26 +70,27 @@ class UserSpamList(SpamList):
     template_name = 'spam/user.html'
 
     def get_queryset(self):
-        query = (
-            Q('reports', 'ne', {}) &
-            Q('reports', 'ne', None) &
-            Q('user', 'eq', self.kwargs.get('user_id', None)) &
-            Q('spam_status', 'eq', int(self.request.GET.get('status', '1')))
-        )
-        return Comment.find(query).sort(self.ordering)
+        user = OSFUser.load(self.kwargs.get('user_id', None))
+
+        return Comment.objects.filter(
+            spam_status=int(self.request.GET.get('status', '1')),
+            user=user
+        ).exclude(reports={}).exclude(reports=None).order_by(self.ordering)
 
     def get_context_data(self, **kwargs):
         kwargs.setdefault('user_id', self.kwargs.get('user_id', None))
         return super(UserSpamList, self).get_context_data(**kwargs)
 
 
-class SpamDetail(OSFAdmin, FormView):
+class SpamDetail(PermissionRequiredMixin, FormView):
     """ Allow authorized admin user to see details of reported spam.
 
     Interface with OSF database. Logs action (confirming spam) on admin db.
     """
     form_class = ConfirmForm
     template_name = 'spam/detail.html'
+    permission_required = 'osf.view_spam'
+    raise_exception = True
 
     def get_context_data(self, **kwargs):
         spam_id = self.kwargs.get('spam_id')

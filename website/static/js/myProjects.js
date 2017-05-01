@@ -71,7 +71,9 @@ function NodeFetcher(type, link, handleOrphans, regType, regLink) {
     children: [],
     fetch : []
   };
-  this.nextLink = link || $osf.apiV2Url('users/me/' + this.type + '/', { query : { 'related_counts' : 'children', 'embed' : 'contributors' }});
+  this.nextLink = link ?
+    link + '&version=2.2' :
+    $osf.apiV2Url('users/me/' + this.type + '/', { query: {'related_counts' : 'children', 'embed' : 'contributors', 'version': '2.2'}});
 }
 
 NodeFetcher.prototype = {
@@ -151,7 +153,7 @@ NodeFetcher.prototype = {
   },
   fetch: function(id) {
     // TODO This method is currently untested
-    var url =  $osf.apiV2Url(this.type + '/' + id + '/', {query: {related_counts: 'children', embed: 'contributors' }});
+    var url =  $osf.apiV2Url(this.type + '/' + id + '/', {query: {related_counts: 'children', embed: 'contributors', version: '2.2'}});
     return m.request({method: 'GET', url: url, config: mHelpers.apiV2Config({withCredentials: window.contextVars.isOnRootDomain}), background: true})
       .then((function(result) {
         this.add(result.data);
@@ -160,13 +162,13 @@ NodeFetcher.prototype = {
   },
   fetchChildren: function(parent, link) {
     //TODO Allow suspending of children
-    return m.request({method: 'GET', url: link || parent.relationships.children.links.related.href + '?embed=contributors&related_counts=children', config: mHelpers.apiV2Config({withCredentials: window.contextVars.isOnRootDomain}), background: true})
+    return m.request({method: 'GET', url: link || parent.relationships.children.links.related.href + '&embed=contributors&related_counts=children', config: mHelpers.apiV2Config({withCredentials: window.contextVars.isOnRootDomain}), background: true})
       .then(this._childrenSuccess.bind(this, parent), this._fail.bind(this));
   },
   _success: function(results) {
     // Only reset if we're lower as loading children will increment this number
-    if (this.total < results.links.meta.total)
-        this.total = results.links.meta.total;
+    if (this.total < results.meta.total)
+        this.total = results.meta.total;
 
     this.nextLink = results.links.next;
     this.loaded += results.data.length;
@@ -206,7 +208,7 @@ NodeFetcher.prototype = {
   },
   _childrenSuccess: function(parent, results) {
     if (!results.links.prev)
-      this.total += results.links.meta.total;
+      this.total += results.meta.total;
 
     this.loaded += results.data.length;
     var finder = function(id, item) {return item.id === id;};
@@ -262,7 +264,7 @@ function getUID() {
 function _formatDataforPO(item) {
     item.kind = 'folder';
     item.uid = item.id;
-    item.name = item.attributes.title;
+    item.name = $osf.decodeText(item.attributes.title);
     item.tags = item.attributes.tags.toString();
     item.contributors = '';
     var contributorsData = lodashGet(item, 'embeds.contributors.data', null);
@@ -331,7 +333,7 @@ var MyProjects = {
         self.logUrlCache = {}; // dictionary of load urls to avoid multiple calls with little refactor
         self.nodeUrlCache = {}; // Cached returns of the project related urls
         // VIEW STATES
-        self.showInfo = m.prop(true); // Show the info panel
+        self.showInfo = m.prop(false); // Show the info panel
         self.showSidebar = m.prop(false); // Show the links with collections etc. used in narrow views
         self.allProjectsLoaded = m.prop(false);
         self.categoryList = [];
@@ -357,7 +359,7 @@ var MyProjects = {
         self.systemCollections = options.systemCollections || [
             new LinkObject('collection', { nodeType : 'projects'}, 'All my projects'),
             new LinkObject('collection', { nodeType : 'registrations'}, 'All my registrations'),
-            new LinkObject('collection', { nodeType : 'preprints', link: $osf.apiV2Url('users/me/nodes/', { query : { 'filter[preprint]': true, 'related_counts' : 'children', 'embed' : 'contributors'}})}, 'All my preprints')
+            new LinkObject('collection', { nodeType : 'preprints', link: $osf.apiV2Url('users/me/nodes/', { query : { 'filter[preprint]': true, 'related_counts' : 'children', 'embed' : ['contributors', 'preprints']}})}, 'All my preprints')
         ];
 
         self.fetchers = {};
@@ -366,9 +368,9 @@ var MyProjects = {
           self.fetchers[self.systemCollections[1].id] = new NodeFetcher('registrations');
           self.fetchers[self.systemCollections[2].id] = new NodeFetcher('preprints', self.systemCollections[2].data.link);
         } else {
+            // TODO: This assumes that there are two systemcolelctiosn passes and what they are. It should ideally loop through passed collections.
           self.fetchers[self.systemCollections[0].id] = new NodeFetcher('nodes', self.systemCollections[0].data.link);
           self.fetchers[self.systemCollections[1].id] = new NodeFetcher('registrations', self.systemCollections[1].data.link);
-          self.fetchers[self.systemCollections[2].id] = new NodeFetcher('preprints', self.systemCollections[2].data.link);
         }
 
         // Initial Breadcrumb for All my projects
@@ -647,7 +649,7 @@ var MyProjects = {
                             m('a', {href: 'http://help.osf.io/m/registrations'}, 'Getting Started'), ' to learn how registrations work.' );
                         }
                     } else if (lastcrumb.data.nodeType === 'preprints'){
-                        template = m('.db-non-load-template.m-md.p-md.osf-box', [m('span', 'You have no preprints yet. '), m('a[href="/preprints/submit/"]', 'Add one now!')]);
+                        template = m('.db-non-load-template.m-md.p-md.osf-box', [m('span', 'You have not made any preprints yet. Learn more about preprints in the '), m('a[href="http://help.osf.io/m/preprints"]', 'OSF Guides'), m('span', ' or '), m('a[href="/preprints/"]', 'make one now.')]);
                     } else if (lodashGet(lastcrumb, 'data.node.attributes.bookmarks')) {
                         template = m('.db-non-load-template.m-md.p-md.osf-box', 'You have no bookmarks. You can add projects or registrations by dragging them into your bookmarks or by clicking the Add to Bookmark button on the project or registration.');
                     } else {
@@ -823,9 +825,9 @@ var MyProjects = {
             promise.then(function(result){
                 result.data.forEach(function(node){
                     var count = node.relationships.linked_registrations.links.related.meta.count + node.relationships.linked_nodes.links.related.meta.count;
-                    self.collections().push(new LinkObject('collection', {nodeType : 'collection', node : node, count : m.prop(count), loaded: 1 }, node.attributes.title));
+                    self.collections().push(new LinkObject('collection', {nodeType : 'collection', node : node, count : m.prop(count), loaded: 1 }, $osf.decodeText(node.attributes.title)));
 
-                    var regLink = $osf.apiV2Url('collections/' + node.id + '/linked_registrations/', { query : { 'related_counts' : 'children', 'embed' : 'contributors' }});
+                    var regLink = $osf.apiV2Url('collections/' + node.id + '/linked_registrations/', { query : { 'related_counts' : 'children', 'embed' : 'contributors', 'version': '2.2' }});
                     var link = $osf.apiV2Url('collections/' + node.id + '/linked_nodes/', { query : { 'related_counts' : 'children', 'embed' : 'contributors' }});
                     self.fetchers[self.collections()[self.collections().length-1].id] = new NodeFetcher('nodes', link, false, 'registraions', regLink);
                     self.fetchers[self.collections()[self.collections().length-1].id].on(['page'], self.onPageLoad);
@@ -886,7 +888,9 @@ var MyProjects = {
             self.loadCategories().then(function(){
                 self.fetchers[self.systemCollections[0].id].on(['page', 'done'], self.onPageLoad);
                 self.fetchers[self.systemCollections[1].id].on(['page', 'done'], self.onPageLoad);
-                self.fetchers[self.systemCollections[2].id].on(['page', 'done'], self.onPageLoad);
+                if(self.systemCollections[2]){
+                    self.fetchers[self.systemCollections[2].id].on(['page', 'done'], self.onPageLoad);
+                }
             });
             if (!self.viewOnly){
                 var collectionsUrl = $osf.apiV2Url('collections/', { query : {'related_counts' : 'linked_registrations,linked_nodes', 'page[size]' : self.collectionsPageSize(), 'sort' : 'date_created', 'embed' : 'linked_nodes'}});
@@ -1059,7 +1063,7 @@ var Collections = {
         self.totalPages = m.prop(1);
         self.calculateTotalPages = function _calculateTotalPages(result){
             if(result){ // If this calculation comes after GET call to collections
-                self.totalPages(Math.ceil((result.links.meta.total + args.systemCollections.length)/self.pageSize()));
+                self.totalPages(Math.ceil((result.meta.total + args.systemCollections.length)/self.pageSize()));
             } else {
                 self.totalPages(Math.ceil((self.collections().length)/self.pageSize()));
             }
@@ -1114,8 +1118,8 @@ var Collections = {
             promise.then(function(result){
                 var node = result.data;
                 var count = node.relationships.linked_nodes.links.related.meta.count || 0;
-                self.collections().push(new LinkObject('collection', { path : 'collections/' + node.id + '/linked_nodes/', query : { 'related_counts' : 'children' }, node : node, count : m.prop(count), nodeType : 'collection' }, node.attributes.title));
-                var link = $osf.apiV2Url('collections/' + node.id + '/linked_nodes/', { query : { 'related_counts' : 'children', 'embed' : 'contributors' }});
+                self.collections().push(new LinkObject('collection', { path : 'collections/' + node.id + '/linked_nodes/', query : { 'related_counts' : 'children' }, node : node, count : m.prop(count), nodeType : 'collection' }, $osf.decodeText(node.attributes.title)));
+                var link = $osf.apiV2Url('collections/' + node.id + '/linked_nodes/', { query : { 'related_counts' : 'children', 'embed' : 'contributors'}});
                 args.fetchers[self.collections()[self.collections().length-1].id] = new NodeFetcher('nodes', link);
                 args.fetchers[self.collections()[self.collections().length-1].id].on(['page', 'done'], args.onPageLoad);
 
@@ -1635,7 +1639,7 @@ var Breadcrumbs = {
                                     $osf.trackClick('myProjects', 'add-component', 'open-add-component-modal');
                                 }}, [m('i.fa.fa-plus.m-r-xs', {style: 'font-size: 10px;'}), 'Create component']),
                                 parentID: linkObject.data.id,
-                                parentTitle: linkObject.data.name,
+                                parentTitle: $osf.decodeText(linkObject.data.name),
                                 modalID: 'addSubComponent',
                                 title: 'Create new component',
                                 categoryList: args.categoryList,
@@ -1666,7 +1670,7 @@ var Breadcrumbs = {
                         }
                         return [
                             m('li', [
-                                m('span.btn', item.label),
+                                m('span.btn', $osf.decodeText(item.label)),
                                 contributorsTemplate,
                                 tagsTemplate,
                                 m('i.fa.fa-angle-right')
@@ -1678,7 +1682,7 @@ var Breadcrumbs = {
                 item.index = index; // Add index to update breadcrumbs
                 item.placement = 'breadcrumb'; // differentiate location for proper breadcrumb actions
                 return m('li',[
-                    m('span.btn.btn-link', {onclick : updateFilesOnClick.bind(null, item)},  item.label),
+                    m('span.btn.btn-link', {onclick : updateFilesOnClick.bind(null, item)},  $osf.decodeText(item.label)),
                     index === 0 && arr.length === 1 ? [contributorsTemplate, tagsTemplate] : '',
                     m('i.fa.fa-angle-right'),
                     ]
@@ -1824,7 +1828,7 @@ var Information = {
                 } }, 'Remove from collection')) : '',
                     m('h3', m('a', { href : item.links.html, onclick: function(){
                         $osf.trackClick('myProjects', 'information-panel', 'navigate-to-project');
-                    }}, item.attributes.title)),
+                    }}, $osf.decodeText(item.attributes.title))),
                 m('[role="tabpanel"]', [
                     m('ul.nav.nav-tabs.m-b-md[role="tablist"]', [
                         m('li[role="presentation"].active', m('a[href="#tab-information"][aria-controls="information"][role="tab"][data-toggle="tab"]', {onclick: function(){
@@ -1875,7 +1879,7 @@ var Information = {
                     return m('.db-info-multi', [
                         m('h4', m('a', { href : item.data.links.html, onclick: function(){
                             $osf.trackClick('myProjects', 'information-panel', 'navigate-to-project-multiple-selected');
-                        }}, item.data.attributes.title)),
+                        }}, $osf.decodeText(item.data.attributes.title))),
                         m('p.db-info-meta.text-muted', [
                             m('span', item.data.attributes.public ? 'Public' : 'Private' + ' ' + item.data.attributes.category),
                             m('span', ', Last Modified on ' + item.data.date.local)

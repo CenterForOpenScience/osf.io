@@ -120,20 +120,6 @@
 
     ${self.footer()}
     <%include file="copyright.mako"/>
-        % if settings.PINGDOM_ID:
-            <script>
-            var _prum = [['id', ${ settings.PINGDOM_ID | sjson, n }],
-                            ['mark', 'firstbyte', (new Date()).getTime()]];
-            (function() {
-                var s = document.getElementsByTagName('script')[0]
-                    , p = document.createElement('script');
-                p.async = 'async';
-                p.src = '//rum-static.pingdom.net/prum.min.js';
-                s.parentNode.insertBefore(p, s);
-            })();
-            </script>
-        % endif
-
         <%!
             import hashlib
 
@@ -158,7 +144,7 @@
 
             ga('create', ${ settings.GOOGLE_ANALYTICS_ID | sjson, n }, 'auto', {'allowLinker': true});
             ga('require', 'linker');
-            ga('linker:autoLink', ['centerforopenscience.org'] );
+            ga('linker:autoLink', ['centerforopenscience.org', 'cos.io'] );
             ga('set', 'dimension1', ${user_hash(user_id) | sjson, n});
             ga('set', 'dimension2', ${create_timestamp() | sjson, n});
             ga('send', 'pageview');
@@ -188,7 +174,6 @@
                     emailsToAdd: ${ user_email_verifications | sjson, n },
                     anon: ${ anon | sjson, n },
                 },
-                allInstitutions: ${ all_institutions | sjson, n},
                 popular: ${ popular_links_node | sjson, n },
                 newAndNoteworthy: ${ noteworthy_links_node | sjson, n },
                 maintenance: ${ maintenance | sjson, n},
@@ -264,17 +249,17 @@
 <%def name="content_wrap()">
     <div class="watermarked">
         <div class="container ${self.container_class()}">
-            % if maintenance:
             ## Maintenance alert
-            <div id="maintenance" class="scripted alert alert-info alert-dismissible" role="alert">
+            % if maintenance:
+                <div id="maintenance" class="scripted alert alert-info alert-dismissible" role="alert">
                 <button type="button" class="close" data-dismiss="alert" aria-label="Close">
                     <span aria-hidden="true">&times;</span></button>
                 <strong>Notice:</strong> The site will undergo maintenance between
                 <span id="maintenanceTime"></span>.
                 Thank you for your patience.
             </div>
-            ## End Maintenance alert
             % endif
+            ## End Maintenance alert
 
             % if status:
                 ${self.alert()}
