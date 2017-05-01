@@ -17,13 +17,11 @@ from framework.auth import exceptions as auth_exc
 from framework.auth.core import Auth
 from tests.base import OsfTestCase
 from tests.base import fake
-
 from osf_tests.factories import (UserFactory, AuthUserFactory, ProjectFactory, NodeFactory,
                              RegistrationFactory,  UnregUserFactory, UnconfirmedUserFactory,
                              PrivateLinkFactory, PreprintFactory, PreprintProviderFactory, SubjectFactory)
 from addons.wiki.tests.factories import NodeWikiFactory
 from osf.models import AbstractNode as Node
-
 from website import settings, language
 from website.files.models.osfstorage import OsfStorageFile
 from website.util import web_url_for, api_url_for, permissions
