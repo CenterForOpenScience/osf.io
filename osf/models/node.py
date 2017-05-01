@@ -1484,14 +1484,12 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                     return False
             self.is_public = True
             self.keenio_read_key = self.generate_keenio_read_key()
-            status = 'public'
         elif permissions == 'private' and self.is_public:
             if self.is_registration and not self.is_pending_embargo:
                 raise NodeStateError('Public registrations must be withdrawn, not made private.')
             else:
                 self.is_public = False
                 self.keenio_read_key = ''
-                status = 'unavailable'
         else:
             return False
 
