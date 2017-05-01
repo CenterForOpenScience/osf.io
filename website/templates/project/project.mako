@@ -460,7 +460,7 @@
                     ${render_nodes.render_nodes(nodes=node['descendants'], sortable=user['can_sort'], user=user, pluralized_node_type='components', show_path=False, include_js=True)}
                 </div>
             % else:
-              <p>No components have been added to this ${node['node_type']}.</p>
+              <p class="text-muted">Add components to organize your project.</p>
             % endif
         </div><!-- end addon-widget-body -->
     </div><!-- end components -->
