@@ -311,7 +311,7 @@ ARK_NAMESPACE = 'ark:99999/fk4'
 EZID_USERNAME = None
 EZID_PASSWORD = None
 # Format for DOIs and ARKs
-EZID_FORMAT = '{namespace}{domain}/{guid}'
+EZID_FORMAT = '{namespace}osf.io/{guid}'
 
 SHARE_REGISTRATION_URL = ''
 SHARE_URL = None

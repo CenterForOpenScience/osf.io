@@ -71,14 +71,11 @@ def get_top_level_domain(url):
 def get_doi_and_metadata_for_object(target_object):
     from osf.models import PreprintService
 
-    domain = 'osf.io'
     metadata_function = datacite_metadata_for_node
     if isinstance(target_object, PreprintService):
-        if target_object.provider.external_url:
-            domain = get_top_level_domain(target_object.provider.external_url)
         metadata_function = datacite_metadata_for_preprint
 
-    doi = settings.EZID_FORMAT.format(namespace=settings.DOI_NAMESPACE, domain=domain, guid=target_object._id)
+    doi = settings.EZID_FORMAT.format(namespace=settings.DOI_NAMESPACE, guid=target_object._id)
     datacite_metadata = metadata_function(target_object, doi)
 
     return doi, datacite_metadata
