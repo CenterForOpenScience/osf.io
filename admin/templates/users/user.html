@@ -57,7 +57,6 @@
                     <div class="modal-content"></div>
                 </div>
             </div>
-            {% endif %}
 
             {%  if perms.osf.change_osfuser %}
                 <span class="col-md-2">
@@ -67,11 +66,7 @@
                     Send reset
                 </a>
                 </span>
-                <div class="modal" id="resetModal" style="display: none">
-                    <div class="modal-dialog">
-                        <div class="modal-content"></div>
-                        {# Data from above link #}
-                    </div>
+            {% endif %}
             <div class="modal" id="resetModal" style="display: none">
                 <div class="modal-dialog">
                     <div class="modal-content"></div>
