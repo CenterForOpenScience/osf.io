@@ -104,10 +104,11 @@ var ProjectViewModel = function(data, options) {
             }
         }));
 
+        var project_or_component_label = self.categoryValue() === 'project' ? 'project' : 'component';
         $('#nodeDescriptionEditable').editable($.extend({}, editableOptions, {
             name: 'description',
             title: 'Edit Description',
-            emptytext: 'No description',
+            emptytext: 'Add a brief description to your ' + project_or_component_label,
             emptyclass: 'text-muted',
             value: self.description(),
             success: function(response, newValue) {
