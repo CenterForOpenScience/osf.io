@@ -4,8 +4,9 @@ from rest_framework.exceptions import PermissionDenied, NotFound
 from api.base.exceptions import RelationshipPostMakesNoChanges, NonDescendantNodeError
 from api.base.serializers import (
     JSONAPISerializer, IDField, RelationshipField,
-    JSONAPIRelationshipSerializer, LinksField, relationship_diff
-)
+    JSONAPIRelationshipSerializer, LinksField, relationship_diff,
+    DateByVersion,
+    PrefetchRelationshipsSerializer)
 from api.base.utils import absolute_reverse
 
 from website.project.model import Node
@@ -14,7 +15,7 @@ from website.project.model import Node
 class ViewOnlyLinkDetailSerializer(JSONAPISerializer):
     key = ser.CharField(read_only=True)
     id = IDField(source='_id', read_only=True)
-    date_created = ser.DateTimeField(read_only=True)
+    date_created = DateByVersion(read_only=True)
     anonymous = ser.BooleanField(required=False)
     name = ser.CharField(required=False)
 
@@ -50,7 +51,7 @@ class VOLNode(JSONAPIRelationshipSerializer):
         type_ = 'nodes'
 
 
-class ViewOnlyLinkNodesSerializer(ser.Serializer):
+class ViewOnlyLinkNodesSerializer(PrefetchRelationshipsSerializer):
     data = ser.ListField(child=VOLNode())
     links = LinksField({
         'self': 'get_self_url',
@@ -67,7 +68,7 @@ class ViewOnlyLinkNodesSerializer(ser.Serializer):
 
     def make_instance_obj(self, obj):
         return {
-            'data': obj.nodes,
+            'data': obj.nodes.all(),
             'self': obj
         }
 
@@ -116,7 +117,7 @@ class ViewOnlyLinkNodesSerializer(ser.Serializer):
                 raise PermissionDenied
             if node not in eligible_nodes:
                 raise NonDescendantNodeError(node_id=node._id)
-            view_only_link.nodes.append(node)
+            view_only_link.nodes.add(node)
 
         view_only_link.save()
 
@@ -139,7 +140,7 @@ class ViewOnlyLinkNodesSerializer(ser.Serializer):
             view_only_link.nodes.remove(node)
         view_only_link.save()
 
-        nodes = [Node.load(node) for node in view_only_link.nodes]
+        nodes = view_only_link.nodes.all()
         eligible_nodes = self.get_eligible_nodes(nodes)
 
         for node in add:
@@ -147,7 +148,7 @@ class ViewOnlyLinkNodesSerializer(ser.Serializer):
                 raise PermissionDenied
             if node not in eligible_nodes:
                 raise NonDescendantNodeError(node_id=node._id)
-            view_only_link.nodes.append(node)
+            view_only_link.nodes.add(node)
         view_only_link.save()
 
         return self.make_instance_obj(view_only_link)

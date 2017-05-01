@@ -4,15 +4,16 @@ import datetime
 import httplib as http
 
 import mock
+from django.utils import timezone
+from django.db import DataError
 from nose.tools import *  # noqa
 
-from modularodm.exceptions import ValidationValueError
 from modularodm import Q
 
 from framework.auth import Auth
 from framework.exceptions import PermissionsError
 from tests.base import fake, OsfTestCase
-from tests.factories import (
+from osf_tests.factories import (
     AuthUserFactory, NodeFactory, ProjectFactory,
     RegistrationFactory, UserFactory, UnconfirmedUserFactory,
     UnregUserFactory
@@ -23,15 +24,23 @@ from website.exceptions import (
     NodeStateError,
 )
 from website.models import Retraction
+from osf.models import Contributor
 
 
 class RegistrationRetractionModelsTestCase(OsfTestCase):
     def setUp(self):
         super(RegistrationRetractionModelsTestCase, self).setUp()
+        self.mock_registration_update = mock.patch('website.project.tasks.on_registration_updated')
+        self.mock_registration_update.start()
+
         self.user = UserFactory()
         self.registration = RegistrationFactory(creator=self.user, is_public=True)
         self.valid_justification = fake.sentence()
         self.invalid_justification = fake.text(max_nb_chars=3000)
+
+    def tearDown(self):
+        self.mock_registration_update.stop()
+        super(RegistrationRetractionModelsTestCase, self).tearDown()
 
     def test_set_public_registration_to_private_raises_NodeStateException(self):
         self.registration.save()
@@ -48,7 +57,7 @@ class RegistrationRetractionModelsTestCase(OsfTestCase):
 
     def test__initiate_retraction_does_not_create_tokens_for_unregistered_admin(self):
         unconfirmed_user = UnconfirmedUserFactory()
-        self.registration.contributors.append(unconfirmed_user)
+        Contributor.objects.create(node=self.registration, user=unconfirmed_user)
         self.registration.add_permission(unconfirmed_user, 'admin', save=True)
         assert_true(self.registration.has_permission(unconfirmed_user, 'admin'))
 
@@ -100,22 +109,21 @@ class RegistrationRetractionModelsTestCase(OsfTestCase):
         assert_equal(self.registration.retraction.initiated_by, self.user)
         assert_equal(
             self.registration.retraction.initiation_date.date(),
-            datetime.datetime.utcnow().date()
+            timezone.now().date()
         )
 
     def test_retract_component_raises_NodeStateError(self):
         project = ProjectFactory(is_public=True, creator=self.user)
-        component = NodeFactory(is_public=True, creator=self.user, parent=project)
+        NodeFactory(is_public=True, creator=self.user, parent=project)
         registration = RegistrationFactory(is_public=True, project=project)
 
         with assert_raises(NodeStateError):
-            registration.nodes[0].retract_registration(self.user, self.valid_justification)
+            registration._nodes.first().retract_registration(self.user, self.valid_justification)
 
     def test_long_justification_raises_ValidationValueError(self):
-        with assert_raises(ValidationValueError):
+        with assert_raises(DataError):
             self.registration.retract_registration(self.user, self.invalid_justification)
             self.registration.save()
-        self.registration.reload()
         assert_is_none(self.registration.retraction)
 
     def test_retract_private_registration_raises_NodeStateError(self):
@@ -126,19 +134,10 @@ class RegistrationRetractionModelsTestCase(OsfTestCase):
         self.registration.reload()
         assert_is_none(self.registration.retraction)
 
-    def test_retract_public_non_registration_raises_NodeStateError(self):
-        project = ProjectFactory(is_public=True, creator=self.user)
-        project.save()
-        with assert_raises(NodeStateError):
-            project.retract_registration(self.user, self.valid_justification)
-
-        project.reload()
-        assert_is_none(project.retraction)
-
     def test_retraction_of_registration_pending_embargo_cancels_embargo(self):
         self.registration.embargo_registration(
             self.user,
-            (datetime.date.today() + datetime.timedelta(days=10)),
+            (timezone.now() + datetime.timedelta(days=10)),
             for_existing_registration=True
         )
         self.registration.save()
@@ -152,13 +151,14 @@ class RegistrationRetractionModelsTestCase(OsfTestCase):
         self.registration.retraction.approve_retraction(self.user, approval_token)
         assert_false(self.registration.is_pending_retraction)
         assert_true(self.registration.is_retracted)
+        self.registration.embargo.reload()
         assert_false(self.registration.is_pending_embargo)
         assert_true(self.registration.embargo.is_rejected)
 
     def test_retraction_of_registration_in_active_embargo_cancels_embargo(self):
         self.registration.embargo_registration(
             self.user,
-            (datetime.date.today() + datetime.timedelta(days=10)),
+            (timezone.now() + datetime.timedelta(days=10)),
             for_existing_registration=True
         )
         self.registration.save()
@@ -177,6 +177,7 @@ class RegistrationRetractionModelsTestCase(OsfTestCase):
         self.registration.retraction.approve_retraction(self.user, retraction_approval_token)
         assert_false(self.registration.is_pending_retraction)
         assert_true(self.registration.is_retracted)
+        self.registration.embargo.reload()
         assert_false(self.registration.is_pending_embargo)
         assert_true(self.registration.embargo.is_rejected)
 
@@ -215,20 +216,20 @@ class RegistrationRetractionModelsTestCase(OsfTestCase):
         assert_equal(num_of_approvals, 1)
 
     def test_approval_adds_to_parent_projects_log(self):
-        initial_project_logs = len(self.registration.registered_from.logs)
+        initial_project_logs = self.registration.registered_from.logs.count()
         self.registration.retract_registration(self.user)
         self.registration.save()
 
         approval_token = self.registration.retraction.approval_state[self.user._id]['approval_token']
         self.registration.retraction.approve_retraction(self.user, approval_token)
         # Logs: Created, registered, retraction initiated, retraction approved
-        assert_equal(len(self.registration.registered_from.logs), initial_project_logs + 2)
+        assert_equal(self.registration.registered_from.logs.count(), initial_project_logs + 2)
 
-    def test_retraction_of_registration_pending_embargo_cancels_embargo(self):
+    def test_retraction_of_registration_pending_embargo_cancels_embargo_public(self):
         self.registration.is_public = True
         self.registration.embargo_registration(
             self.user,
-            datetime.datetime.utcnow() + datetime.timedelta(days=10),
+            timezone.now() + datetime.timedelta(days=10),
             for_existing_registration=True
         )
         self.registration.save()
@@ -242,15 +243,16 @@ class RegistrationRetractionModelsTestCase(OsfTestCase):
         self.registration.retraction.approve_retraction(self.user, approval_token)
         assert_false(self.registration.is_pending_retraction)
         assert_true(self.registration.is_retracted)
+        self.registration.embargo.reload()
         assert_false(self.registration.is_pending_embargo)
         assert_true(self.registration.embargo.is_rejected)
 
     def test_approval_of_registration_with_embargo_adds_to_parent_projects_log(self):
-        initial_project_logs = len(self.registration.registered_from.logs)
+        initial_project_logs = self.registration.registered_from.logs.count()
         self.registration.is_public = True
         self.registration.embargo_registration(
             self.user,
-            datetime.datetime.utcnow() + datetime.timedelta(days=10),
+            timezone.now() + datetime.timedelta(days=10),
             for_existing_registration=True
         )
         self.registration.save()
@@ -261,13 +263,13 @@ class RegistrationRetractionModelsTestCase(OsfTestCase):
         approval_token = self.registration.retraction.approval_state[self.user._id]['approval_token']
         self.registration.retraction.approve_retraction(self.user, approval_token)
         # Logs: Created, registered, embargo initiated, retraction initiated, retraction approved, embargo cancelled
-        assert_equal(len(self.registration.registered_from.logs), initial_project_logs + 4)
+        assert_equal(self.registration.registered_from.logs.count(), initial_project_logs + 4)
 
-    def test_retraction_of_registration_in_active_embargo_cancels_embargo(self):
+    def test_retraction_of_public_registration_in_active_embargo_cancels_embargo(self):
         self.registration.is_public = True
         self.registration.embargo_registration(
             self.user,
-            datetime.datetime.utcnow() + datetime.timedelta(days=10),
+            timezone.now() + datetime.timedelta(days=10),
             for_existing_registration=True
         )
         self.registration.save()
@@ -286,12 +288,13 @@ class RegistrationRetractionModelsTestCase(OsfTestCase):
         self.registration.retraction.approve_retraction(self.user, retraction_approval_token)
         assert_false(self.registration.is_pending_retraction)
         assert_true(self.registration.is_retracted)
+        self.registration.embargo.reload()
         assert_false(self.registration.is_pending_embargo)
         assert_true(self.registration.embargo.is_rejected)
 
     def test_two_approvals_with_two_admins_retracts(self):
         self.admin2 = UserFactory()
-        self.registration.contributors.append(self.admin2)
+        Contributor.objects.create(node=self.registration, user=self.admin2)
         self.registration.add_permission(self.admin2, 'admin', save=True)
         self.registration.retract_registration(self.user)
         self.registration.save()
@@ -313,7 +316,7 @@ class RegistrationRetractionModelsTestCase(OsfTestCase):
 
     def test_one_approval_with_two_admins_stays_pending(self):
         self.admin2 = UserFactory()
-        self.registration.contributors.append(self.admin2)
+        Contributor.objects.create(node=self.registration, user=self.admin2)
         self.registration.add_permission(self.admin2, 'admin', save=True)
 
         self.registration.retract_registration(self.user)
@@ -361,7 +364,7 @@ class RegistrationRetractionModelsTestCase(OsfTestCase):
         assert_true(self.registration.retraction.is_rejected)
 
     def test_disapproval_adds_to_parent_projects_log(self):
-        initial_project_logs = len(self.registration.registered_from.logs)
+        initial_project_logs = self.registration.registered_from.logs.count()
         self.registration.retract_registration(self.user)
         self.registration.save()
         self.registration.reload()
@@ -369,7 +372,7 @@ class RegistrationRetractionModelsTestCase(OsfTestCase):
         rejection_token = self.registration.retraction.approval_state[self.user._id]['rejection_token']
         self.registration.retraction.disapprove_retraction(self.user, rejection_token)
         # Logs: Created, registered, retraction initiated, retraction cancelled
-        assert_equal(len(self.registration.registered_from.logs), initial_project_logs + 2)
+        assert_equal(self.registration.registered_from.logs.count(), initial_project_logs + 2)
 
     def test__on_complete_makes_project_and_components_public(self):
         project_admin = UserFactory()
@@ -384,6 +387,7 @@ class RegistrationRetractionModelsTestCase(OsfTestCase):
         registration._initiate_retraction(self.user)
         registration.retraction._on_complete(self.user)
         for each in registration.node_and_primary_descendants():
+            each.reload()
             assert_true(each.is_public)
 
     # Retraction property tests
@@ -396,6 +400,9 @@ class RegistrationRetractionModelsTestCase(OsfTestCase):
 class RegistrationWithChildNodesRetractionModelTestCase(OsfTestCase):
     def setUp(self):
         super(RegistrationWithChildNodesRetractionModelTestCase, self).setUp()
+        self.mock_registration_update = mock.patch('website.project.tasks.on_registration_updated')
+        self.mock_registration_update.start()
+
         self.user = AuthUserFactory()
         self.auth = self.user.auth
         self.project = ProjectFactory(is_public=True, creator=self.user)
@@ -417,6 +424,10 @@ class RegistrationWithChildNodesRetractionModelTestCase(OsfTestCase):
         self.registration = RegistrationFactory(project=self.project, is_public=True)
         # Reload the registration; else tests won't catch failures to svae
         self.registration.reload()
+
+    def tearDown(self):
+        self.mock_registration_update.stop()
+        super(RegistrationWithChildNodesRetractionModelTestCase, self).tearDown()
 
     def test_approval_retracts_descendant_nodes(self):
         # Initiate retraction for parent registration
@@ -469,7 +480,7 @@ class RegistrationWithChildNodesRetractionModelTestCase(OsfTestCase):
         # Initiate embargo for registration
         self.registration.embargo_registration(
             self.user,
-            datetime.datetime.utcnow() + datetime.timedelta(days=10),
+            timezone.now() + datetime.timedelta(days=10),
             for_existing_registration=True
         )
         self.registration.save()
@@ -490,6 +501,7 @@ class RegistrationWithChildNodesRetractionModelTestCase(OsfTestCase):
         approval_token = self.registration.retraction.approval_state[self.user._id]['approval_token']
         self.registration.retraction.approve_retraction(self.user, approval_token)
         assert_true(self.registration.is_retracted)
+        self.registration.embargo.reload()
         assert_false(self.registration.is_pending_embargo)
 
         # Ensure descendant nodes are not pending embargo
@@ -502,7 +514,7 @@ class RegistrationWithChildNodesRetractionModelTestCase(OsfTestCase):
         # Initiate embargo for registration
         self.registration.embargo_registration(
             self.user,
-            datetime.datetime.utcnow() + datetime.timedelta(days=10),
+            timezone.now() + datetime.timedelta(days=10),
             for_existing_registration=True
         )
         self.registration.save()
@@ -536,9 +548,52 @@ class RegistrationWithChildNodesRetractionModelTestCase(OsfTestCase):
             assert_true(node.is_retracted)
 
 
+class RegistrationRetractionShareHook(OsfTestCase):
+    def setUp(self):
+        super(RegistrationRetractionShareHook, self).setUp()
+
+        self.user = AuthUserFactory()
+        self.auth = self.user.auth
+        self.project = ProjectFactory(is_public=True, creator=self.user)
+
+        self.registration = RegistrationFactory(project=self.project, is_public=True)
+        # Reload the registration; else tests won't catch failures to svae
+        self.registration.reload()
+
+    @mock.patch('website.project.tasks.settings.SHARE_URL', 'ima_real_website')
+    @mock.patch('website.project.tasks.settings.SHARE_API_TOKEN', 'totaly_real_token')
+    @mock.patch('website.project.tasks.on_registration_updated')
+    def test_approval_calls_share_hook(self, mock_on_registration_updated):
+        # Initiate retraction for parent registration
+        self.registration.retract_registration(self.user)
+        self.registration.save()
+
+        # Approve parent registration's retraction
+        approval_token = self.registration.retraction.approval_state[self.user._id]['approval_token']
+        self.registration.retraction.approve_retraction(self.user, approval_token)
+        assert_true(self.registration.is_retracted)
+        assert mock_on_registration_updated.called
+
+    @mock.patch('website.project.tasks.settings.SHARE_URL', 'ima_real_website')
+    @mock.patch('website.project.tasks.settings.SHARE_API_TOKEN', 'totaly_real_token')
+    @mock.patch('website.project.tasks.on_registration_updated')
+    def test_disapproval_does_not_call_share_hook(self, mock_on_registration_updated):
+        # Initiate retraction for parent registration
+        self.registration.retract_registration(self.user)
+        self.registration.save()
+
+        rejection_token = self.registration.retraction.approval_state[self.user._id]['rejection_token']
+        self.registration.retraction.disapprove_retraction(self.user, rejection_token)
+        assert_false(self.registration.is_retracted)
+        assert not mock_on_registration_updated.called
+
+
 class RegistrationRetractionApprovalDisapprovalViewsTestCase(OsfTestCase):
     def setUp(self):
         super(RegistrationRetractionApprovalDisapprovalViewsTestCase, self).setUp()
+        self.mock_registration_update = mock.patch('website.project.tasks.on_registration_updated')
+        self.mock_registration_update.start()
+
         self.user = AuthUserFactory()
         self.registered_from = ProjectFactory(is_public=True, creator=self.user)
         self.registration = RegistrationFactory(is_public=True, project=self.registered_from)
@@ -552,6 +607,10 @@ class RegistrationRetractionApprovalDisapprovalViewsTestCase(OsfTestCase):
             'user_id': self.user._id,
             'sanction_id': 'invalid id'
         })
+
+    def tearDown(self):
+        self.mock_registration_update.stop()
+        super(RegistrationRetractionApprovalDisapprovalViewsTestCase, self).tearDown()
 
     # node_registration_retraction_approve_tests
     def test_GET_approve_from_unauthorized_user_returns_HTTPError_UNAUTHORIZED(self):
@@ -670,9 +729,9 @@ class ComponentRegistrationRetractionViewsTestCase(OsfTestCase):
             title='Subcomponent'
         )
         self.registration = RegistrationFactory(is_public=True, project=self.project)
-        self.component_registration = self.registration.nodes[0]
-        self.subproject_registration = self.registration.nodes[1]
-        self.subproject_component_registration = self.subproject_registration.nodes[0]
+        self.component_registration = self.registration._nodes.order_by('date_created').first()
+        self.subproject_registration = list(self.registration._nodes.order_by('date_created'))[1]
+        self.subproject_component_registration = self.subproject_registration._nodes.order_by('date_created').first()
 
     def test_POST_retraction_to_component_returns_HTTPError_BAD_REQUEST(self):
         res = self.app.post_json(
@@ -701,6 +760,9 @@ class ComponentRegistrationRetractionViewsTestCase(OsfTestCase):
 class RegistrationRetractionViewsTestCase(OsfTestCase):
     def setUp(self):
         super(RegistrationRetractionViewsTestCase, self).setUp()
+        self.mock_registration_update = mock.patch('website.project.tasks.on_registration_updated')
+        self.mock_registration_update.start()
+
         self.user = AuthUserFactory()
         self.registered_from = ProjectFactory(creator=self.user, is_public=True)
         self.registration = RegistrationFactory(project=self.registered_from, is_public=True)
@@ -708,6 +770,10 @@ class RegistrationRetractionViewsTestCase(OsfTestCase):
         self.retraction_post_url = self.registration.api_url_for('node_registration_retraction_post')
         self.retraction_get_url = self.registration.web_url_for('node_registration_retraction_get')
         self.justification = fake.sentence()
+
+    def tearDown(self):
+        self.mock_registration_update.stop()
+        super(RegistrationRetractionViewsTestCase, self).tearDown()
 
     def test_GET_retraction_page_when_pending_retraction_returns_HTTPError_BAD_REQUEST(self):
         self.registration.retract_registration(self.user)
@@ -754,7 +820,7 @@ class RegistrationRetractionViewsTestCase(OsfTestCase):
     def test_POST_pending_embargo_returns_HTTPError_HTTPOK(self):
         self.registration.embargo_registration(
             self.user,
-            (datetime.datetime.utcnow() + datetime.timedelta(days=10)),
+            (timezone.now() + datetime.timedelta(days=10)),
             for_existing_registration=True
         )
         self.registration.save()
@@ -773,7 +839,7 @@ class RegistrationRetractionViewsTestCase(OsfTestCase):
     def test_POST_active_embargo_returns_HTTPOK(self):
         self.registration.embargo_registration(
             self.user,
-            (datetime.datetime.utcnow() + datetime.timedelta(days=10)),
+            (timezone.now() + datetime.timedelta(days=10)),
             for_existing_registration=True
         )
         self.registration.save()
@@ -814,7 +880,7 @@ class RegistrationRetractionViewsTestCase(OsfTestCase):
 
     @mock.patch('website.mails.send_mail')
     def test_valid_POST_retraction_adds_to_parent_projects_log(self, mock_send):
-        initial_project_logs = len(self.registration.registered_from.logs)
+        initial_project_logs = self.registration.registered_from.logs.count()
         self.app.post_json(
             self.retraction_post_url,
             {'justification': ''},
@@ -822,7 +888,7 @@ class RegistrationRetractionViewsTestCase(OsfTestCase):
         )
         self.registration.registered_from.reload()
         # Logs: Created, registered, retraction initiated
-        assert_equal(len(self.registration.registered_from.logs), initial_project_logs + 1)
+        assert_equal(self.registration.registered_from.logs.count(), initial_project_logs + 1)
 
     @mock.patch('website.mails.send_mail')
     def test_valid_POST_retraction_when_pending_retraction_raises_400(self, mock_send):

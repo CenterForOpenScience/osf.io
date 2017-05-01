@@ -9,7 +9,7 @@ import inspect
 from . import defaults
 import os
 
-DB_PORT = 27017
+DB_PORT = 54321
 
 DEV_MODE = True
 DEBUG_MODE = True  # Sets app to debug mode, turns off template caching, etc.
@@ -18,6 +18,21 @@ SECURE_MODE = not DEBUG_MODE  # Disable osf secure cookie
 PROTOCOL = 'https://' if SECURE_MODE else 'http://'
 DOMAIN = PROTOCOL + 'localhost:5000/'
 API_DOMAIN = PROTOCOL + 'localhost:8000/'
+ENABLE_INSTITUTIONS = True
+
+PREPRINT_PROVIDER_DOMAINS = {
+    'enabled': False,
+    'prefix': 'http://local.',
+    'suffix': ':4200/'
+}
+USE_EXTERNAL_EMBER = True
+EXTERNAL_EMBER_APPS = {
+    'preprints': {
+        'url': '/preprints/',
+        'server': 'http://localhost:4200',
+        'path': os.environ.get('HOME') + '/preprints/'
+    }
+}
 
 SEARCH_ENGINE = 'elastic'
 

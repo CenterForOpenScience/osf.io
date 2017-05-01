@@ -255,6 +255,8 @@ def make_response_from_ticket(ticket, service_url):
     """
 
     service_furl = furl.furl(service_url)
+    # `service_url` is guaranteed to be removed of `ticket` parameter, which has been pulled off in
+    # `framework.sessions.before_request()`.
     if 'ticket' in service_furl.args:
         service_furl.args.pop('ticket')
     client = get_client()
@@ -281,23 +283,26 @@ def make_response_from_ticket(ticket, service_url):
                 )))
 
             # if user is authenticated by CAS
+            # TODO [CAS-27]: Remove Access Token From Service Validation
             return authenticate(
                 user,
-                cas_resp.attributes['accessToken'],
+                cas_resp.attributes.get('accessToken', ''),
                 redirect(service_furl.url)
             )
         # first time login from external identity provider
         if not user and external_credential and action == 'external_first_login':
             from website.util import web_url_for
             # orcid attributes can be marked private and not shared, default to orcid otherwise
-            fullname = '{} {}'.format(cas_resp.attributes.get('given-names', ''), cas_resp.attributes.get('family-name', '')).strip()
+            fullname = u'{} {}'.format(cas_resp.attributes.get('given-names', ''), cas_resp.attributes.get('family-name', '')).strip()
             if not fullname:
                 fullname = external_credential['id']
+            # TODO [CAS-27]: Remove Access Token From Service Validation
             user = {
                 'external_id_provider': external_credential['provider'],
                 'external_id': external_credential['id'],
                 'fullname': fullname,
-                'access_token': cas_resp.attributes['accessToken'],
+                'access_token': cas_resp.attributes.get('accessToken', ''),
+                'service_url': service_furl.url,
             }
             return external_first_login_authenticate(
                 user,
@@ -310,13 +315,15 @@ def make_response_from_ticket(ticket, service_url):
 def get_user_from_cas_resp(cas_resp):
     """
     Given a CAS service validation response, attempt to retrieve user information and next action.
+    The `user` in `cas_resp` is the unique GUID of the user. Please do not use the primary key `id`
+    or the email `username`. This holds except for the first step of ORCiD login.
 
     :param cas_resp: the cas service validation response
     :return: the user, the external_credential, and the next action
     """
 
     if cas_resp.user:
-        user = User.load(cas_resp.user)
+        user = User.objects.filter(guids___id=cas_resp.user).first()
         # cas returns a valid OSF user id
         if user:
             return user, None, 'authenticate'

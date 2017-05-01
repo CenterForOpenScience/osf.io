@@ -129,11 +129,11 @@ var FileRevisionsTable = {
                   m('a', {href: parseInt(revision.displayVersion) === model.revisions.length ? self.baseUrl : revision.osfViewUrl}, revision.displayVersion)
                 ),
                 model.hasDate ? m('td', revision.displayDate) : false,
-                model.hasUser ?
+                model.hasUser && !window.contextVars.node.anonymous ?
                     m('td', revision.extra.user.url ?
                             m('a', {href: revision.extra.user.url}, revision.extra.user.name) :
                             revision.extra.user.name
-                    ) : false,
+                    ) : m('td', 'Anonymous Contributor'),
                 m('td', revision.extra.downloads > -1 ? m('.badge', revision.extra.downloads) : ''),
                 m('td',
                     m('a.btn.btn-primary.btn-sm.file-download', {

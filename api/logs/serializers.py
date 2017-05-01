@@ -5,11 +5,13 @@ from api.base.serializers import (
     RelationshipField,
     RestrictedDictSerializer,
     LinksField,
-    is_anonymized
+    is_anonymized,
+    DateByVersion,
 )
 from website.project.model import Node
 from website.util import permissions as osf_permissions
 from framework.auth.core import User
+from website.preprints.model import PreprintService
 
 
 class NodeLogIdentifiersSerializer(RestrictedDictSerializer):
@@ -34,7 +36,10 @@ class NodeLogFileParamsSerializer(RestrictedDictSerializer):
         user = self.context['request'].user
         node_title = obj['node']['title']
         node = Node.load(obj['node']['_id'])
-        if node.has_permission(user, osf_permissions.READ):
+        if not user.is_authenticated:
+            if node.is_public:
+                return node_title
+        elif node.has_permission(user, osf_permissions.READ):
             return node_title
         return 'Private Component'
 
@@ -55,6 +60,7 @@ class NodeLogParamsSerializer(RestrictedDictSerializer):
     kind = ser.CharField(read_only=True)
     folder = ser.CharField(read_only=True)
     folder_name = ser.CharField(read_only=True)
+    license = ser.CharField(read_only=True, source='new_license')
     identifiers = NodeLogIdentifiersSerializer(read_only=True)
     institution = NodeLogInstitutionSerializer(read_only=True)
     old_page = ser.CharField(read_only=True)
@@ -64,6 +70,8 @@ class NodeLogParamsSerializer(RestrictedDictSerializer):
     params_project = ser.SerializerMethodField(read_only=True)
     path = ser.CharField(read_only=True)
     pointer = ser.DictField(read_only=True)
+    preprint = ser.CharField(read_only=True)
+    preprint_provider = ser.SerializerMethodField(read_only=True)
     previous_institution = NodeLogInstitutionSerializer(read_only=True)
     source = NodeLogFileParamsSerializer(read_only=True)
     study = ser.CharField(read_only=True)
@@ -91,15 +99,15 @@ class NodeLogParamsSerializer(RestrictedDictSerializer):
     def get_params_node(self, obj):
         node_id = obj.get('node', None)
         if node_id:
-            node = Node.load(node_id)
-            return {'id': node_id, 'title': node.title}
+            node = Node.objects.filter(guids___id=node_id).values('title').get()
+            return {'id': node_id, 'title': node['title']}
         return None
 
     def get_params_project(self, obj):
         project_id = obj.get('project', None)
         if project_id:
-            node = Node.load(project_id)
-            return {'id': project_id, 'title': node.title}
+            node = Node.objects.filter(guids___id=project_id).values('title').get()
+            return {'id': project_id, 'title': node['title']}
         return None
 
     def get_contributors(self, obj):
@@ -130,6 +138,14 @@ class NodeLogParamsSerializer(RestrictedDictSerializer):
                 })
         return contributor_info
 
+    def get_preprint_provider(self, obj):
+        preprint_id = obj.get('preprint', None)
+        if preprint_id:
+            preprint = PreprintService.load(preprint_id)
+            if preprint:
+                provider = preprint.provider
+                return {'url': provider.external_url, 'name': provider.name}
+        return None
 
 class NodeLogSerializer(JSONAPISerializer):
 
@@ -141,7 +157,7 @@ class NodeLogSerializer(JSONAPISerializer):
     ]
 
     id = ser.CharField(read_only=True, source='_id')
-    date = ser.DateTimeField(read_only=True)
+    date = DateByVersion(read_only=True)
     action = ser.CharField(read_only=True)
     params = NodeLogParamsSerializer(read_only=True)
     links = LinksField({'self': 'get_absolute_url'})

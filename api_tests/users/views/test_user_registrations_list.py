@@ -2,9 +2,14 @@
 from nose.tools import *  # flake8: noqa
 
 from tests.base import ApiTestCase
-from tests.factories import AuthUserFactory, BookmarkCollectionFactory, CollectionFactory, ProjectFactory, RegistrationFactory
+from osf_tests.factories import (
+    AuthUserFactory, BookmarkCollectionFactory, CollectionFactory,
+    NodeFactory, ProjectFactory, RegistrationFactory
+)
 
 from api.base.settings.defaults import API_BASE
+from api_tests.registrations.filters.test_filters import RegistrationListFilteringMixin
+from website.views import find_bookmark_collection
 
 
 class TestUserRegistrations(ApiTestCase):
@@ -37,7 +42,7 @@ class TestUserRegistrations(ApiTestCase):
                                                 is_public=False,
                                                 creator=self.user_one,
                                                 is_deleted=True)
-        self.bookmark_collection = BookmarkCollectionFactory()
+        self.bookmark_collection = find_bookmark_collection(self.user_one)
 
         self.reg_public_project_user_one = RegistrationFactory(project=self.public_project_user_one,
                                                       creator=self.user_one, is_public=True)
@@ -104,3 +109,8 @@ class TestUserRegistrations(ApiTestCase):
         assert_not_in(self.folder._id, ids)
         assert_not_in(self.deleted_folder._id, ids)
         assert_not_in(self.deleted_project_user_one._id, ids)
+
+
+class TestRegistrationListFiltering(RegistrationListFilteringMixin, ApiTestCase):
+
+    url = '/{}users/me/registrations/?'.format(API_BASE)

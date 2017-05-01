@@ -10,6 +10,6 @@ require('../components/logFeed.js'); // Needed for nodelists to work
 
 var ctx = window.contextVars;
 // Instantiate all the profile modules
-new profile.Social('#social', ctx.socialUrls, ['view']);
-new profile.Jobs('#jobs', ctx.jobsUrls, ['view']);
-new profile.Schools('#schools', ctx.schoolsUrls, ['view']);
+new profile.Social('#social', ctx.socialUrls, ['view'], false);
+new profile.Jobs('#jobs', ctx.jobsUrls, ['view'], false);
+new profile.Schools('#schools', ctx.schoolsUrls, ['view'], false);

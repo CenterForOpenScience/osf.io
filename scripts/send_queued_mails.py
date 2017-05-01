@@ -1,11 +1,10 @@
 import logging
 
-from datetime import datetime
-
+from django.db import transaction
+from django.utils import timezone
 from modularodm import Q
 
 from framework.celery_tasks import app as celery_app
-from framework.transactions.context import TokuTransaction
 
 from website.app import init_app
 from website import mails, settings
@@ -28,11 +27,11 @@ def main(dry_run=True):
 
     emails_to_be_sent = pop_and_verify_mails_for_each_user(user_queue)
 
-    logger.info('Emails being sent at {0}'.format(datetime.utcnow().isoformat()))
+    logger.info('Emails being sent at {0}'.format(timezone.now().isoformat()))
 
     for mail in emails_to_be_sent:
         if not dry_run:
-            with TokuTransaction():
+            with transaction.atomic():
                 try:
                     sent_ = mail.send_mail()
                     message = 'Email of type {0} sent to {1}'.format(mail.email_type, mail.to_addr) if sent_ else \
@@ -48,7 +47,7 @@ def main(dry_run=True):
 
 def find_queued_mails_ready_to_be_sent():
     return mails.QueuedMail.find(
-        Q('send_at', 'lt', datetime.utcnow()) &
+        Q('send_at', 'lt', timezone.now()) &
         Q('sent_at', 'eq', None)
     )
 
@@ -58,7 +57,7 @@ def pop_and_verify_mails_for_each_user(user_queue):
         mail = user_emails[0]
         mails_past_week = mails.QueuedMail.find(
             Q('user', 'eq', mail.user) &
-            Q('sent_at', 'gt', datetime.utcnow() - settings.WAIT_BETWEEN_MAILS)
+            Q('sent_at', 'gt', timezone.now() - settings.WAIT_BETWEEN_MAILS)
         )
         if not mails_past_week.count():
             yield mail

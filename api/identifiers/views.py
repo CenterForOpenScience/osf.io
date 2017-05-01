@@ -95,7 +95,7 @@ class IdentifierList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
 
     # overrides ODMFilterMixin
     def get_default_odm_query(self):
-        return Q('referent', 'eq', self.get_node())
+        return Q('pk', 'in', self.get_node().identifiers.values_list('pk', flat=True))
 
     # overrides ListCreateAPIView
     def get_queryset(self):

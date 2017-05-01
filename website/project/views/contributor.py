@@ -9,7 +9,7 @@ from framework import forms, status
 from framework.auth import cas
 from framework.auth import User
 from framework.auth.core import get_user, generate_verification_key
-from framework.auth.decorators import collect_auth, must_be_logged_in
+from framework.auth.decorators import block_bing_preview, collect_auth, must_be_logged_in
 from framework.auth.forms import PasswordForm, SetEmailAndPasswordForm
 from framework.auth.signals import user_registered
 from framework.auth.utils import validate_email, validate_recaptcha
@@ -18,7 +18,7 @@ from framework.flask import redirect  # VOL-aware redirect
 from framework.sessions import session
 from framework.transactions.handlers import no_auto_transaction
 from website import mails, language, settings
-from website.models import Node
+from website.models import Node, PreprintService
 from website.notifications.utils import check_if_all_global_subscriptions_are_none
 from website.profile import utils as profile_utils
 from website.project.decorators import (must_have_permission, must_be_valid_project, must_not_be_registration,
@@ -41,7 +41,7 @@ def get_node_contributors_abbrev(auth, node, **kwargs):
     if 'user_ids' in kwargs:
         users = [
             User.load(user_id) for user_id in kwargs['user_ids']
-            if user_id in node.visible_contributor_ids
+            if node.contributor_set.filter(user__guid__guid=user_id).exists()
         ]
     else:
         users = node.visible_contributors
@@ -178,7 +178,7 @@ def deserialize_contributors(node, user_dicts, auth, validate=False):
                     fullname=fullname,
                     email=email)
                 contributor.save()
-            except ValidationValueError:
+            except ValidationError:
                 ## FIXME: This suppresses an exception if ID not found & new validation fails; get_user will return None
                 contributor = get_user(email=email)
 
@@ -332,8 +332,8 @@ def project_remove_contributor(auth, **kwargs):
             if auth.user != contributor:
                 raise HTTPError(http.FORBIDDEN)
 
-        if len(node.visible_contributor_ids) == 1 \
-                and node.visible_contributor_ids[0] == contributor._id:
+        if node.visible_contributors.count() == 1 \
+                and node.visible_contributors[0] == contributor:
             raise HTTPError(http.FORBIDDEN, data={
                 'message_long': 'Must have at least one bibliographic contributor'
             })
@@ -439,21 +439,32 @@ def send_claim_email(email, unclaimed_user, node, notify=True, throttle=24 * 360
     """
 
     claimer_email = email.lower().strip()
-
     unclaimed_record = unclaimed_user.get_unclaimed_record(node._primary_key)
     referrer = User.load(unclaimed_record['referrer_id'])
     claim_url = unclaimed_user.get_claim_url(node._primary_key, external=True)
 
-    # When adding the contributor, the referrer provides both name and email.
-    # The given email is the same provided by user, just send to that email.
+    # Option 1:
+    #   When adding the contributor, the referrer provides both name and email.
+    #   The given email is the same provided by user, just send to that email.
+    preprint_provider = None
     if unclaimed_record.get('email') == claimer_email:
-        mail_tpl = getattr(mails, 'INVITE_{}'.format(email_template.upper()))
+        # check email template for branded preprints
+        if email_template == 'preprint':
+            email_template, preprint_provider = find_preprint_provider(node)
+            if not email_template or not preprint_provider:
+                return
+            mail_tpl = getattr(mails, 'INVITE_PREPRINT')(email_template, preprint_provider)
+        else:
+            mail_tpl = getattr(mails, 'INVITE_DEFAULT'.format(email_template.upper()))
+
         to_addr = claimer_email
         unclaimed_record['claimer_email'] = claimer_email
         unclaimed_user.save()
-    # When adding the contributor, the referred only provides the name.
-    # The account is later claimed by some one who provides the email.
-    # Send email to the referrer and ask her/him to forward the email to the user.
+    # Option 2:
+    # TODO: [new improvement ticket] this option is disabled from preprint but still available on the project page
+    #   When adding the contributor, the referred only provides the name.
+    #   The account is later claimed by some one who provides the email.
+    #   Send email to the referrer and ask her/him to forward the email to the user.
     else:
         # check throttle
         timestamp = unclaimed_record.get('last_sent')
@@ -484,7 +495,7 @@ def send_claim_email(email, unclaimed_user, node, notify=True, throttle=24 * 360
         mail_tpl = mails.FORWARD_INVITE
         to_addr = referrer.username
 
-    # send an email to the referrer with `claim_url`
+    # Send an email to the claimer (Option 1) or to the referrer (Option 2) with `claim_url`
     mails.send_mail(
         to_addr,
         mail_tpl,
@@ -493,7 +504,8 @@ def send_claim_email(email, unclaimed_user, node, notify=True, throttle=24 * 360
         node=node,
         claim_url=claim_url,
         email=claimer_email,
-        fullname=unclaimed_record['name']
+        fullname=unclaimed_record['name'],
+        branded_service_name=preprint_provider
     )
 
     return to_addr
@@ -509,7 +521,16 @@ def notify_added_contributor(node, contributor, auth=None, throttle=None, email_
     if (contributor.is_registered and not node.template_node and not node.is_fork and
             (not node.parent_node or
                 (node.parent_node and not node.parent_node.is_contributor(contributor)))):
-        email_template = getattr(mails, 'CONTRIBUTOR_ADDED_{}'.format(email_template.upper()))
+
+        preprint_provider = None
+        if email_template == 'preprint':
+            email_template, preprint_provider = find_preprint_provider(node)
+            if not email_template or not preprint_provider:
+                return
+            email_template = getattr(mails, 'CONTRIBUTOR_ADDED_PREPRINT')(email_template, preprint_provider)
+        else:
+            email_template = getattr(mails, 'CONTRIBUTOR_ADDED_DEFAULT'.format(email_template.upper()))
+
         contributor_record = contributor.contributor_added_email_records.get(node._id, {})
         if contributor_record:
             timestamp = contributor_record.get('last_sent', None)
@@ -525,7 +546,8 @@ def notify_added_contributor(node, contributor, auth=None, throttle=None, email_
             user=contributor,
             node=node,
             referrer_name=auth.user.fullname if auth else '',
-            all_global_subscriptions_none=check_if_all_global_subscriptions_are_none(contributor)
+            all_global_subscriptions_none=check_if_all_global_subscriptions_are_none(contributor),
+            branded_service_name=preprint_provider
         )
 
         contributor.contributor_added_email_records[node._id]['last_sent'] = get_timestamp()
@@ -533,6 +555,26 @@ def notify_added_contributor(node, contributor, auth=None, throttle=None, email_
 
     elif not contributor.is_registered:
         unreg_contributor_added.send(node, contributor=contributor, auth=auth, email_template=email_template)
+
+
+def find_preprint_provider(node):
+    """
+    Given a node, find the preprint and the service provider.
+
+    :param node: the node to which a contributer or preprint author is added
+    :return: the email template
+    """
+
+    try:
+        preprint = PreprintService.objects.get(node=node)
+        provider = preprint.provider
+        if provider._id == 'osf':
+            return 'osf', provider.name
+        else:
+            return 'branded', provider.name
+    # TODO: fine-grained exception handling
+    except Exception:
+        return None, None
 
 
 def verify_claim_token(user, token, pid):
@@ -551,6 +593,7 @@ def verify_claim_token(user, token, pid):
     return True
 
 
+@block_bing_preview
 @collect_auth
 @must_be_valid_project
 def claim_user_registered(auth, node, **kwargs):
@@ -638,6 +681,7 @@ def replace_unclaimed_user_with_registered(user):
             'Successfully claimed contributor.', kind='success', trust=False)
 
 
+@block_bing_preview
 @collect_auth
 def claim_user_form(auth, **kwargs):
     """
@@ -669,10 +713,11 @@ def claim_user_form(auth, **kwargs):
     user.update_guessed_names()
     # The email can be the original referrer email if no claimer email has been specified.
     claimer_email = unclaimed_record.get('claimer_email') or unclaimed_record.get('email')
-
     # If there is a registered user with this email, redirect to 're-enter password' page
-    found_by_email = User.find_by_email(claimer_email)
-    user_from_email = found_by_email[0] if found_by_email else None
+    try:
+        user_from_email = User.objects.get(emails__icontains=claimer_email) if claimer_email else None
+    except User.DoesNotExist:
+        user_from_email = None
     if user_from_email and user_from_email.is_registered:
         return redirect(web_url_for('claim_user_registered', uid=uid, pid=pid, token=token))
 

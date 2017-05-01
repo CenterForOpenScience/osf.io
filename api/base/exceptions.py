@@ -116,7 +116,7 @@ class Gone(JSONAPIException):
     default_detail = ('The requested resource is no longer available.')
 
 
-class Conflict(APIException):
+class Conflict(JSONAPIException):
     status_code = status.HTTP_409_CONFLICT
     default_detail = ('Resource identifier does not match server endpoint.')
 
@@ -209,9 +209,24 @@ class UnconfirmedAccountError(APIException):
     default_detail = _('Please confirm your account before using the API.')
 
 
+class UnclaimedAccountError(APIException):
+    status_code = 400
+    default_detail = _('Please claim your account before using the API.')
+
+
 class DeactivatedAccountError(APIException):
     status_code = 400
     default_detail = _('Making API requests with credentials associated with a deactivated account is not allowed.')
+
+
+class MergedAccountError(APIException):
+    status_code = 400
+    default_detail = _('Making API requests with credentials associated with a merged account is not allowed.')
+
+
+class InvalidAccountError(APIException):
+    status_code = 400
+    default_detail = _('Making API requests with credentials associated with an invalid account is not allowed.')
 
 
 class TwoFactorRequiredError(AuthenticationFailed):

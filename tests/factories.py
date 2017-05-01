@@ -16,6 +16,7 @@ Factory boy docs: http://factoryboy.readthedocs.org/
 import datetime
 import functools
 
+from django.utils import timezone
 from factory import base, Sequence, SubFactory, post_generation, LazyAttribute
 import mock
 from mock import patch, Mock
@@ -29,18 +30,19 @@ from framework.mongo import StoredObject
 from framework.sessions.model import Session
 from tests.base import fake
 from tests.base import get_default_metaschema
-from website.addons import base as addons_base
-from website.addons.wiki.model import NodeWikiPage
+from tests import mock_addons as addons_base
+from addons.wiki.models import NodeWikiPage
 from website.oauth.models import (
     ApiOAuth2Application,
     ApiOAuth2PersonalToken,
     ExternalAccount,
     ExternalProvider
 )
+from website.preprints.model import PreprintProvider, PreprintService
 from website.project.model import (
     Comment, DraftRegistration, MetaSchema, Node, NodeLog, Pointer,
     PrivateLink, Tag, WatchConfig, AlternativeCitation,
-    ensure_schemas, Institution, PreprintProvider
+    ensure_schemas, Institution
 )
 from website.project.sanctions import (
     Embargo,
@@ -55,8 +57,8 @@ from website.identifiers.model import Identifier
 from website.archiver import ARCHIVER_SUCCESS
 from website.project.licenses import NodeLicense, NodeLicenseRecord, ensure_licenses
 from website.util import permissions
-from website.files.models.osfstorage import OsfStorageFile, FileVersion
-
+from website.files.models.osfstorage import OsfStorageFile
+from website.exceptions import InvalidSanctionApprovalToken
 
 ensure_licenses = functools.partial(ensure_licenses, warn=False)
 
@@ -101,6 +103,18 @@ class ModularOdmFactory(base.Factory):
         return instance
 
 
+class PreprintProviderFactory(ModularOdmFactory):
+    class Meta:
+        model = PreprintProvider
+        abstract = False
+
+    def __init__(self, provider_id, provider_name):
+        super(PreprintProviderFactory, self).__init()
+        self._id = provider_id
+        self.name = provider_name
+        self.save()
+
+
 class UserFactory(ModularOdmFactory):
     class Meta:
         model = User
@@ -113,7 +127,7 @@ class UserFactory(ModularOdmFactory):
     fullname = Sequence(lambda n: 'Freddie Mercury{0}'.format(n))
     is_registered = True
     is_claimed = True
-    date_confirmed = datetime.datetime(2014, 2, 21)
+    date_confirmed = timezone.now()
     merged_by = None
     email_verifications = {}
     verification_key = None
@@ -199,6 +213,7 @@ class AbstractNodeFactory(ModularOdmFactory):
 
 
 class ProjectFactory(AbstractNodeFactory):
+    type = 'osf.node'
     category = 'project'
 
 
@@ -232,15 +247,19 @@ class PreprintProviderFactory(ModularOdmFactory):
         return provider
 
 
-class PreprintFactory(AbstractNodeFactory):
+class PreprintFactory(ModularOdmFactory):
     creator = None
     category = 'project'
-    doi = Sequence(lambda n: '10.123/{}'.format(n))
-    providers = [SubFactory(PreprintProviderFactory)]
+    doi = Sequence(lambda n: '10.12345/0{}'.format(n))
+    provider = SubFactory(PreprintProviderFactory)
     external_url = 'http://hello.org'
 
+    class Meta:
+        model = PreprintService
+
     @classmethod
-    def _create(cls, target_class, project=None, is_public=True, filename='preprint_file.txt', providers=None, doi=None, external_url=None, *args, **kwargs):
+    def _create(cls, target_class, project=None, is_public=True, filename='preprint_file.txt', provider=None, 
+                doi=None, external_url=None, is_published=True, subjects=None, finish=True, *args, **kwargs):
         save_kwargs(**kwargs)
         user = None
         if project:
@@ -248,7 +267,7 @@ class PreprintFactory(AbstractNodeFactory):
         user = kwargs.get('user') or kwargs.get('creator') or user or UserFactory()
         kwargs['creator'] = user
         # Original project to be converted to a preprint
-        project = project or target_class(*args, **kwargs)
+        project = project or AbstractNodeFactory(*args, **kwargs)
         if user._id not in project.permissions:
             project.add_contributor(
                 contributor=user,
@@ -260,21 +279,30 @@ class PreprintFactory(AbstractNodeFactory):
         project.reload()
 
         file = OsfStorageFile.create(
-            is_file=True,
             node=project,
             path='/{}'.format(filename),
             name=filename,
             materialized_path='/{}'.format(filename))
         file.save()
 
-        project.set_preprint_file(file, auth=Auth(project.creator))
-        project.preprint_subjects = [SubjectFactory()._id]
-        project.preprint_providers = providers
-        project.preprint_doi = doi
-        project.external_url = external_url
-        project.save()
+        preprint = target_class(node=project, provider=provider)
 
-        return project
+        auth = Auth(project.creator)
+
+        if finish:
+            preprint.set_primary_file(file, auth=auth)
+            subjects = subjects or [[SubjectFactory()._id]]
+            preprint.set_subjects(subjects, auth=auth)
+            preprint.set_published(is_published, auth=auth)
+        
+        if not preprint.is_published:
+            project._has_abandoned_preprint = True
+
+        project.preprint_article_doi = doi
+        project.save()
+        preprint.save()
+
+        return preprint
 
 
 class SubjectFactory(ModularOdmFactory):
@@ -290,7 +318,8 @@ class SubjectFactory(ModularOdmFactory):
         except NoResultsFound:
             subject = target_class(*args, **kwargs)
             subject.text = text
-            subject.parents = parents
+            subject.save()
+            subject.parents.add(*parents)
             subject.save()
         return subject
 
@@ -381,11 +410,15 @@ class WithdrawnRegistrationFactory(AbstractNodeFactory):
 
         registration.retract_registration(user)
         withdrawal = registration.retraction
-        token = withdrawal.approval_state.values()[0]['approval_token']
-        withdrawal.approve_retraction(user, token)
-        withdrawal.save()
 
-        return withdrawal
+        for token in withdrawal.approval_state.values():
+            try:
+                withdrawal.approve_retraction(user, token['approval_token'])
+                withdrawal.save()
+
+                return withdrawal
+            except InvalidSanctionApprovalToken:
+                continue
 
 
 class ForkFactory(ModularOdmFactory):

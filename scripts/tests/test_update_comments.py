@@ -1,4 +1,7 @@
 from datetime import datetime
+
+from django.utils import timezone
+
 from framework.auth.core import User
 from scripts.update_comments import update_comments_viewed_timestamp
 from tests.base import OsfTestCase
@@ -22,7 +25,7 @@ class TestUpdateCommentFields(OsfTestCase):
 
     def test_update_comments_viewed_timestamp(self):
         user = UserFactory()
-        timestamp = datetime.utcnow().replace(microsecond=0)
+        timestamp = timezone.now().replace(microsecond=0)
         user.comments_viewed_timestamp = {
             'node_id': {
                 'node': timestamp,

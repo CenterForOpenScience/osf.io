@@ -18,6 +18,7 @@ urlpatterns = [
             url(r'^account/', include('admin.common_auth.urls', namespace='auth')),
             url(r'^password/', include('password_reset.urls')),
             url(r'^nodes/', include('admin.nodes.urls', namespace='nodes')),
+            url(r'^preprints/', include('admin.preprints.urls', namespace='preprints')),
             url(r'^users/', include('admin.users.urls', namespace='users')),
             url(r'^meetings/', include('admin.meetings.urls',
                                        namespace='meetings')),
@@ -26,7 +27,6 @@ urlpatterns = [
                                       namespace='metrics')),
             url(r'^desk/', include('admin.desk.urls',
                                    namespace='desk')),
-            url(r'^sales_analytics/', include('admin.sales_analytics.urls', namespace='sales_analytics')),
         ]),
     ),
 ]
