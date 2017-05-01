@@ -348,7 +348,7 @@ class ApiAddonTestCase(ApiTestCase):
 
 
 class AdminTestCase(DbTestCase, DjangoTestCase, SearchTestCase, MockRequestTestCase):
-    pass
+    urls = 'admin.base.urls'
 
 
 class NotificationTestCase(OsfTestCase):
