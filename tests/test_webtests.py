@@ -28,6 +28,8 @@ from website import settings, language
 from website.files.models.osfstorage import OsfStorageFile
 from website.util import web_url_for, api_url_for, permissions
 
+from api_tests import utils as test_utils
+
 logging.getLogger('website.project.model').setLevel(logging.ERROR)
 
 
@@ -1073,45 +1075,62 @@ class TestAUserProfile(OsfTestCase):
         assert_not_in(reg.nodes[0].title, res)
 
 
-class TestPreprint(OsfTestCase):
+class TestPreprintBannerView(OsfTestCase):
     def setUp(self):
-        super(TestPreprint, self).setUp()
+        super(TestPreprintBannerView, self).setUp()
 
-        self.user = AuthUserFactory()
-        self.auth = Auth(user=self.user)
+        self.admin = AuthUserFactory()
+        self.provider_one = PreprintProviderFactory()
+        self.provider_two = PreprintProviderFactory()
+        self.project_one = ProjectFactory(creator=self.admin, is_public=True)
+        self.project_two = ProjectFactory(creator=self.admin, is_public=True)
+        self.project_three = ProjectFactory(creator=self.admin, is_public=True)
 
-        self.project = ProjectFactory(creator=self.user) # used
-        self.file = OsfStorageFile.create(
-            node=self.project,
-            path='/panda.txt',
-            name='panda.txt',
-            materialized_path='/panda.txt')
-        self.file.save()
+        self.subject_one = SubjectFactory()
+        self.subject_two = SubjectFactory()
 
-        self.preprint = PreprintFactory(project=self.project, finish=False)    
+        self.file_one = test_utils.create_test_file(self.project_one, self.admin, 'mgla.pdf')
+        self.file_two = test_utils.create_test_file(self.project_two, self.admin, 'saor.pdf')
 
-    def test_public_private_preprint_banner_on_file_exist(self):
-        url = self.project.web_url_for('view_project')
-        
-        res = self.app.get(url, auth=self.user.auth)
+        self.published_preprint = PreprintFactory(creator=self.admin, filename='mgla.pdf', provider=self.provider_one, subjects=[[self.subject_one._id]], project=self.project_one, is_published=True)
+        self.unpublished_preprint = PreprintFactory(creator=self.admin, filename='saor.pdf', provider=self.provider_two, subjects=[[self.subject_two._id]], project=self.project_two, is_published=False)
+
+    def test_public_project_published_preprint(self):
+        url = self.project_one.web_url_for('view_project')
+        res = self.app.get(url, auth=self.admin.auth)
         assert_not_in('has a preprint, but has been made Private. Make your preprint discoverable by making this', res.body)
 
-        self.preprint.set_primary_file(self.file, auth=self.auth, save=True)
-        with assert_raises(ValueError):
-            self.preprint.set_published(True, auth=self.auth, save=True)
-        self.preprint.provider = PreprintProviderFactory()
-        self.preprint.set_subjects([[SubjectFactory()._id]], auth=self.auth, save=True)
-        self.preprint.set_published(True, auth=self.auth, save=True)
-        self.project.reload()
-
-        res = self.app.get(url, auth=self.user.auth)
-        assert_not_in('has a preprint, but has been made Private. Make your preprint discoverable by making this', res.body)
-
-        self.project.is_public = False
-        self.project.save()
-
-        res = self.app.get(url, auth=self.user.auth)
+    def test_private_project_published_preprint(self):
+        self.project_one.is_public = False
+        self.project_one.save()
+        url = self.project_one.web_url_for('view_project')
+        res = self.app.get(url, auth=self.admin.auth)
         assert_in('has a preprint, but has been made Private. Make your preprint discoverable by making this', res.body)
+
+    def test_public_project_unpublished_preprint(self):
+        url = self.project_two.web_url_for('view_project')
+        res = self.app.get(url, auth=self.admin.auth)
+        assert_not_in('has a preprint, but has been made Private. Make your preprint discoverable by making this', res.body)
+
+    def test_private_project_unpublished_preprint(self):
+        # Do not show banner on unpublished preprints
+        self.project_two.is_public = False
+        self.project_two.save()
+        url = self.project_two.web_url_for('view_project')
+        res = self.app.get(url, auth=self.admin.auth)
+        assert_not_in('has a preprint, but has been made Private. Make your preprint discoverable by making this', res.body)
+
+    def test_public_project_no_preprint(self):
+        url = self.project_three.web_url_for('view_project')
+        res = self.app.get(url, auth=self.admin.auth)
+        assert_not_in('has a preprint, but has been made Private. Make your preprint discoverable by making this', res.body)
+
+    def test_private_project_no_preprint(self):
+        self.project_three.is_public = False
+        self.project_three.save()
+        url = self.project_three.web_url_for('view_project')
+        res = self.app.get(url, auth=self.admin.auth)
+        assert_not_in('has a preprint, but has been made Private. Make your preprint discoverable by making this', res.body)
 
 
 if __name__ == '__main__':
