@@ -248,7 +248,7 @@
 
 <%include file="project/modal_add_pointer.mako"/>
 
-% if user['can_comment'] or node['has_comments']:
+% if (user['can_comment'] or node['has_comments']) and not node['anonymous']:
     <%include file="include/comment_pane_template.mako"/>
 % endif
 
