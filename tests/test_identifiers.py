@@ -52,7 +52,7 @@ class TestMetadataGeneration(OsfTestCase):
         metadata_xml = metadata.datacite_metadata_for_node(self.node, doi=self.identifier.value)
         root = lxml.etree.fromstring(metadata_xml)
         xsi_location = '{http://www.w3.org/2001/XMLSchema-instance}schemaLocation'
-        expected_location = 'http://datacite.org/schema/kernel-3 http://schema.datacite.org/meta/kernel-3/metadata.xsd'
+        expected_location = 'http://datacite.org/schema/kernel-4 http://schema.datacite.org/meta/kernel-4/metadata.xsd'
         assert_equal(root.attrib[xsi_location], expected_location)
 
         identifier = root.find('{%s}identifier' % metadata.NAMESPACE)
