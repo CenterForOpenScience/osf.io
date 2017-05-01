@@ -98,7 +98,7 @@ class CommentDetailMixin(object):
         self.comment.content = 'test with [@username](userlink) and @mention'
         self.comment.save()
         private_link = PrivateLinkFactory(anonymous=True)
-        private_link.nodes.append(self.private_project)
+        private_link.nodes.add(self.private_project)
         private_link.save()
         res = self.app.get('/{}comments/{}/'.format(API_BASE, self.comment._id), {'view_only': private_link.key})
         assert_equal(res.status_code, 200)
@@ -253,7 +253,7 @@ class CommentDetailMixin(object):
         reply = CommentFactory(node=self.private_project, target=reply_target, user=self.user)
         reply_url = '/{}comments/{}/'.format(API_BASE, reply._id)
         res = self.app.delete_json_api(reply_url, auth=self.user.auth)
-        assert_equal(res.status_code, 204)        
+        assert_equal(res.status_code, 204)
 
     def test_private_node_only_logged_in_contributor_commenter_can_undelete_own_reply(self):
         self._set_up_private_project_with_comment()
