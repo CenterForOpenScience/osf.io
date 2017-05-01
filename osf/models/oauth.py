@@ -5,7 +5,6 @@ from osf.utils.fields import NonNaiveDateTimeField
 from website.util import api_v2_url
 
 from django.db import models
-from django.utils import timezone
 from osf.models import base
 from website.security import random_string
 
@@ -23,11 +22,6 @@ class ApiOAuth2Scope(base.ObjectIDMixin, base.BaseModel):
     Store information about recognized OAuth2 scopes. Only scopes registered under this database model can
         be requested by third parties.
     """
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.oauth.models.ApiOAuth2Scope'
-    modm_query = None
-    # /TODO DELETE ME POST MIGRATION
-
     name = models.CharField(max_length=50, unique=True, db_index=True, null=False, blank=False)
     description = models.CharField(max_length=255, null=False, blank=False)
     is_active = models.BooleanField(default=True, db_index=True)  # TODO: Add mechanism to deactivate a scope?
@@ -43,11 +37,6 @@ class ApiOAuth2Application(base.ObjectIDMixin, base.BaseModel):
     This collection is also used by CAS to create the master list of available applications.
     Any changes made to field names in this model must be echoed in the CAS implementation.
     """
-
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.oauth.models.ApiOAuth2Application'
-    modm_query = None
-    # /TODO DELETE ME POST MIGRATION
 
     # Client ID and secret. Use separate ID field so ID format doesn't
     # have to be restricted to database internals.
@@ -68,7 +57,7 @@ class ApiOAuth2Application(base.ObjectIDMixin, base.BaseModel):
     name = models.CharField(db_index=True, blank=False, null=False, max_length=200)
     description = models.CharField(blank=True, null=True, max_length=1000)
 
-    date_created = NonNaiveDateTimeField(default=timezone.now)
+    date_created = NonNaiveDateTimeField(auto_now_add=True)
 
     home_url = models.URLField(blank=False, null=False)
     callback_url = models.URLField(blank=False, null=False)
@@ -132,10 +121,6 @@ class ApiOAuth2PersonalToken(base.ObjectIDMixin, base.BaseModel):
     This collection is also used by CAS to create the master list of available tokens.
     Any changes made to field names in this model must be echoed in the CAS implementation.
     """
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.oauth.models.ApiOAuth2PersonalToken'
-    modm_query = None
-    # /TODO DELETE ME POST MIGRATION
     # Name of the field being `token_id` is a CAS requirement.
     # This is the actual value of the token that's used to authenticate
     token_id = models.CharField(max_length=70, default=generate_token_id,

@@ -76,6 +76,8 @@ def decode_datetime_objects(nested_value):
     return nested_value
 
 
+# TODO: This might not be necessary in Django 1.11, which allows JSONField to use
+# custom JSON encoders.
 class DateTimeAwareJSONField(JSONField):
     def formfield(self, **kwargs):
         defaults = {'form_class': DateTimeAwareJSONFormField}

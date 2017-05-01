@@ -1,15 +1,15 @@
 # -*- coding: utf-8 -*-
 
-import collections
-import re
-import urllib
-import logging
-import urlparse
 from contextlib import contextmanager
+import collections
+import logging
+import re
+import urlparse
 
 from blinker import ANY
 import furl
 
+from django.utils.http import urlencode, urlquote
 from flask import request, url_for
 
 from website import settings as website_settings
@@ -114,16 +114,15 @@ def api_v2_url(path_str,
     """
     params = params or {}  # Optional params dict for special-character param names, eg filter[fullname]
 
-    base_url = furl.furl(base_route + base_prefix)
+    x = urlparse.urljoin(base_route, urlparse.urljoin(base_prefix, path_str.lstrip('/')))
 
-    base_url.path.add([x for x in path_str.split('/') if x] + [''])
+    if params or kwargs:
+        x = '{}?{}'.format(x, urlencode(dict(params, **kwargs)))
 
-    base_url.args.update(params)
-    base_url.args.update(kwargs)
-    return str(base_url)
+    return x
 
 
-def web_url_for(view_name, _absolute=False, _guid=False, *args, **kwargs):
+def web_url_for(view_name, _absolute=False, _internal=False, _guid=False, *args, **kwargs):
     """Reverse URL lookup for web routes (those that use the OsfWebRenderer).
     Takes the same arguments as Flask's url_for, with the addition of
     `_absolute`, which will make an absolute URL with the correct HTTP scheme
@@ -136,7 +135,8 @@ def web_url_for(view_name, _absolute=False, _guid=False, *args, **kwargs):
     if _absolute:
         # We do NOT use the url_for's _external kwarg because app.config['SERVER_NAME'] alters
         # behavior in an unknown way (currently breaks tests). /sloria /jspies
-        return urlparse.urljoin(website_settings.DOMAIN, url)
+        domain = website_settings.INTERNAL_DOMAIN if _internal else website_settings.DOMAIN
+        return urlparse.urljoin(domain, url)
     return url
 
 
@@ -186,7 +186,7 @@ def waterbutler_api_url_for(node_id, provider, path='/', _internal=False, **kwar
     assert path.startswith('/'), 'Path must always start with /'
     url = furl.furl(website_settings.WATERBUTLER_INTERNAL_URL if _internal else website_settings.WATERBUTLER_URL)
     segments = ['v1', 'resources', node_id, 'providers', provider] + path.split('/')[1:]
-    url.path.segments.extend([urllib.quote(x.encode('utf-8')) for x in segments])
+    url.path.segments.extend([urlquote(x) for x in segments])
     url.args.update(kwargs)
     return url.url
 

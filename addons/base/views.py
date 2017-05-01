@@ -3,6 +3,7 @@ import httplib
 import os
 import uuid
 import markupsafe
+import urllib
 from django.utils import timezone
 
 from flask import make_response
@@ -37,6 +38,7 @@ from website.project import decorators
 from website.project.decorators import must_be_contributor_or_public, must_be_valid_project
 from website.project.model import DraftRegistration, MetaSchema
 from website.project.utils import serialize_node
+from website.settings import MFR_SERVER_URL
 from website.util import rubeus
 
 # import so that associated listener is instantiated and gets emails
@@ -289,6 +291,7 @@ def get_auth(auth, **kwargs):
             'callback_url': node.api_url_for(
                 ('create_waterbutler_log' if not node.is_registration else 'registration_callbacks'),
                 _absolute=True,
+                _internal=True
             ),
         }
     }, settings.WATERBUTLER_JWT_SECRET, algorithm=settings.WATERBUTLER_JWT_ALGORITHM), WATERBUTLER_JWE_KEY)}
@@ -624,6 +627,7 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
             'message_long': 'The {} add-on containing {} is no longer configured.'.format(provider_safe, path_safe)
         })
 
+    savepoint_id = transaction.savepoint()
     file_node = FileNode.resolve_class(provider, FileNode.FILE).get_or_create(node, path)
 
     # Note: Cookie is provided for authentication to waterbutler
@@ -638,7 +642,17 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
     )
 
     if version is None:
+        # File is either deleted or unable to be found in the provider location
+        # Rollback the insertion of the file_node
+        transaction.savepoint_rollback(savepoint_id)
+        if not file_node.pk:
+            raise HTTPError(httplib.NOT_FOUND, data={
+                'message_short': 'File Not Found',
+                'message_long': 'The requested file could not be found.'
+            })
         return addon_deleted_file(file_node=file_node, path=path, **kwargs)
+    else:
+        transaction.savepoint_commit(savepoint_id)
 
     # TODO clean up these urls and unify what is used as a version identifier
     if request.method == 'HEAD':
@@ -647,6 +661,13 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
         }))
 
     if action == 'download':
+        format = extras.get('format')
+        _, extension = os.path.splitext(file_node.name)
+        # avoid rendering files with the same format type.
+        if format and '.{}'.format(format) != extension:
+            return redirect('{}/export?format={}&url={}'.format(MFR_SERVER_URL, format, urllib.quote(file_node.generate_waterbutler_url(
+                **dict(extras, direct=None, version=version.identifier, _internal=extras.get('mode') == 'render')
+            ))))
         return redirect(file_node.generate_waterbutler_url(**dict(extras, direct=None, version=version.identifier, _internal=extras.get('mode') == 'render')))
 
     if action == 'get_guid':

@@ -110,3 +110,10 @@
     margin-top: 20px;
     margin-bottom: 50px;
 }
+
+.prereg-banner p {
+    margin: 0;
+    padding-top: 6px;
+    padding-bottom: 6px;
+    font-weight: bold;
+}

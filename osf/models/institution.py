@@ -1,35 +1,53 @@
+import logging
 from django.conf import settings
 from django.contrib.postgres import fields
 from django.core.urlresolvers import reverse
 from django.db import models
-from modularodm import Q as MQ
 from osf.models import base
 from osf.models.contributor import InstitutionalContributor
 from osf.models.mixins import Loggable
 
+logger = logging.getLogger(__name__)
+
 
 class Institution(Loggable, base.ObjectIDMixin, base.BaseModel):
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.project.model.Node'
-    modm_query = dict(query=MQ('institution_id', 'ne', None), allow_institution=True)
-    FIELD_ALIASES = {
-        'auth_url': 'login_url'
-    }
-    # /TODO DELETE ME POST MIGRATION
 
     # TODO Remove null=True for things that shouldn't be nullable
-    banner_name = models.CharField(max_length=255, null=True, blank=True)
+    # e.g. CharFields should never be null=True
+
+    name = models.CharField(max_length=255)
+    description = models.TextField(blank=True, default='', null=True)
+
+    # TODO Could `banner_name` and `logo_name` be a FilePathField?
+    banner_name = models.CharField(max_length=255, blank=True, null=True)
+    logo_name = models.CharField(max_length=255, blank=True, null=True)
+
+    # The protocol which is used to delegate authentication.
+    # Currently, we have `CAS`, `SAML`, `OAuth` available.
+    # For `SAML`, we use Shibboleth.
+    # For `CAS` and `OAuth`, we use pac4j.
+    # Only institutions with a valid delegation protocol show up on the institution login page.
+    DELEGATION_PROTOCOL_CHOICES = (
+        ('cas-pac4j', 'CAS by pac4j'),
+        ('oauth-pac4j', 'OAuth by pac4j'),
+        ('saml-shib', 'SAML by Shibboleth'),
+        ('', 'No Delegation Protocol'),
+    )
+    delegation_protocol = models.CharField(max_length=15, choices=DELEGATION_PROTOCOL_CHOICES, blank=True, default='')
+
+    # login_url and logout_url can be null or empty
     login_url = models.URLField(null=True, blank=True)
-    contributors = models.ManyToManyField(settings.AUTH_USER_MODEL,
-                                          through=InstitutionalContributor,
-                                          related_name='institutions')
+    logout_url = models.URLField(null=True, blank=True)
+
     domains = fields.ArrayField(models.CharField(max_length=255), db_index=True, null=True, blank=True)
     email_domains = fields.ArrayField(models.CharField(max_length=255), db_index=True, null=True, blank=True)
-    logo_name = models.CharField(max_length=255, null=True)  # TODO: Could this be a FilePathField?
-    logout_url = models.URLField(null=True, blank=True)
-    name = models.CharField(max_length=255)
 
-    description = models.TextField(blank=True, default='', null=True)
+    contributors = models.ManyToManyField(
+        settings.AUTH_USER_MODEL,
+        through=InstitutionalContributor,
+        related_name='institutions'
+    )
+
     is_deleted = models.BooleanField(default=False, db_index=True)
 
     def __init__(self, *args, **kwargs):
@@ -38,21 +56,6 @@ class Institution(Loggable, base.ObjectIDMixin, base.BaseModel):
 
     def __unicode__(self):
         return u'{} : ({})'.format(self.name, self._id)
-
-    @classmethod
-    def migrate_from_modm(cls, modm_obj):
-        inst = cls()
-        inst._id = modm_obj.institution_id
-        inst.auth_url = modm_obj.institution_auth_url
-        inst.banner_name = modm_obj.institution_banner_name
-        inst.domains = modm_obj.institution_domains
-        inst.email_domains = modm_obj.institution_email_domains
-        inst.logo_name = modm_obj.institution_logo_name
-        inst.logout_url = modm_obj.institution_logout_url
-        inst.name = modm_obj.title
-        inst.description = modm_obj.description
-        inst.is_deleted = modm_obj.is_deleted
-        return inst
 
     @property
     def api_v2_url(self):
@@ -92,3 +95,15 @@ class Institution(Loggable, base.ObjectIDMixin, base.BaseModel):
             return '/static/img/institutions/banners/{}'.format(self.banner_name)
         else:
             return None
+
+    def update_search(self):
+        from website.search.search import update_institution
+        from website.search.exceptions import SearchUnavailableError
+        try:
+            update_institution(self)
+        except SearchUnavailableError as e:
+            logger.exception(e)
+
+    def save(self, *args, **kwargs):
+        self.update_search()
+        return super(Institution, self).save(*args, **kwargs)

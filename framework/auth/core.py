@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import datetime as dt
+
 import framework
 import itertools
 import logging
@@ -117,7 +118,11 @@ def get_current_user_id():
 
 # TODO - rename to _get_current_user_from_session /HRYBACKI
 def _get_current_user():
-    return User.load(get_current_user_id())
+    current_user_id = get_current_user_id()
+    if current_user_id:
+        return User.load(current_user_id)
+    else:
+        return None
 
 
 # TODO: This should be a class method of User?
@@ -496,9 +501,11 @@ class User(GuidStoredObject, AddonModelMixin):
     def email(self):
         return self.username
 
+    @property
     def is_authenticated(self):  # Needed for django compat
         return True
 
+    @property
     def is_anonymous(self):
         return False
 
@@ -1069,7 +1076,7 @@ class User(GuidStoredObject, AddonModelMixin):
         :return:
         """
         from website.search import search
-        search.update_contributors(self.visible_contributor_to)
+        search.update_contributors_async(self.id)
 
     def update_affiliated_institutions_by_email_domain(self):
         """

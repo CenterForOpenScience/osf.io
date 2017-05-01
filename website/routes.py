@@ -119,7 +119,8 @@ def get_globals():
             },
         },
         'maintenance': maintenance.get_maintenance(),
-        'recaptcha_site_key': settings.RECAPTCHA_SITE_KEY
+        'recaptcha_site_key': settings.RECAPTCHA_SITE_KEY,
+        'custom_citations': settings.CUSTOM_CITATIONS
     }
 
 
@@ -268,17 +269,35 @@ def make_url_map(app):
         Rule('/sitemaps/<path>', 'get', sitemap_file, json_renderer),
     ])
 
+    # Ember Applications
     if settings.USE_EXTERNAL_EMBER:
         # Routes that serve up the Ember application. Hide behind feature flag.
-        rules = []
         for prefix in settings.EXTERNAL_EMBER_APPS.keys():
-            rules += [
-                '/{}/'.format(prefix),
-                '/{}/<path:path>'.format(prefix),
-            ]
-        process_rules(app, [
-            Rule(rules, 'get', ember_app, json_renderer),
-        ])
+            process_rules(app, [
+                Rule(
+                    [
+                        '/<provider>/<guid>/download',
+                        '/<provider>/<guid>/download/',
+                    ],
+                    ['get', 'post', 'put', 'patch', 'delete'],
+                    website_views.resolve_guid_download,
+                    notemplate,
+                    endpoint_suffix='__' + prefix
+                ),
+            ], prefix='/' + prefix)
+
+            process_rules(app, [
+                Rule(
+                    [
+                        '/',
+                        '/<path:path>',
+                    ],
+                    'get',
+                    ember_app,
+                    json_renderer,
+                    endpoint_suffix='__' + prefix
+                ),
+            ], prefix='/' + prefix)
 
     ### Base ###
 
@@ -313,8 +332,8 @@ def make_url_map(app):
         Rule(
             '/explore/',
             'get',
-            {},
-            OsfWebRenderer('public/explore.mako', trust=False)
+            discovery_views.redirect_explore_to_activity,
+            notemplate
         ),
 
         Rule(
@@ -517,6 +536,13 @@ def make_url_map(app):
 
         Rule(
             '/explore/activity/',
+            'get',
+            discovery_views.redirect_explore_activity_to_activity,
+            notemplate
+        ),
+
+        Rule(
+            '/activity/',
             'get',
             discovery_views.activity,
             OsfWebRenderer('public/pages/active_nodes.mako', trust=False)
@@ -788,18 +814,13 @@ def make_url_map(app):
 
     process_rules(app, [
 
-        Rule('/profile/', 'get', profile_views.profile_view, json_renderer),
+        Rule('/profile/', 'get', profile_views.profile_view_json, json_renderer),
         Rule('/profile/', 'put', profile_views.update_user, json_renderer),
         Rule('/resend/', 'put', profile_views.resend_confirmation, json_renderer),
-        Rule('/profile/<uid>/', 'get', profile_views.profile_view_id, json_renderer),
+        Rule('/profile/<uid>/', 'get', profile_views.profile_view_id_json, json_renderer),
 
         # Used by profile.html
         Rule('/profile/<uid>/edit/', 'post', profile_views.edit_profile, json_renderer),
-        Rule('/profile/<uid>/public_projects/', 'get',
-             profile_views.get_public_projects, json_renderer),
-        Rule('/profile/<uid>/public_components/', 'get',
-             profile_views.get_public_components, json_renderer),
-
         Rule('/profile/<user_id>/summary/', 'get',
              profile_views.get_profile_summary, json_renderer),
         Rule('/user/<uid>/<pid>/claim/email/', 'post',
@@ -1329,25 +1350,6 @@ def make_url_map(app):
             project_views.node.remove_pointer_from_folder,
             json_renderer,
         ),
-        Rule([
-            '/project/<pid>/get_summary/',
-            '/project/<pid>/node/<nid>/get_summary/',
-        ], 'get', project_views.node.get_summary, json_renderer),
-        # TODO: [#OSF-6557] Route "get_children" is deprecated. Use get_readable_descendants.
-        Rule([
-            '/project/<pid>/get_children/',
-            '/project/<pid>/node/<nid>/get_children/',
-            '/project/<pid>/get_readable_descendants/',
-            '/project/<pid>/node/<nid>/get_readable_descendants/',
-        ], 'get', project_views.node.get_readable_descendants, json_renderer),
-        Rule([
-            '/project/<pid>/get_forks/',
-            '/project/<pid>/node/<nid>/get_forks/',
-        ], 'get', project_views.node.get_forks, json_renderer),
-        Rule([
-            '/project/<pid>/get_registrations/',
-            '/project/<pid>/node/<nid>/get_registrations/',
-        ], 'get', project_views.node.get_registrations, json_renderer),
 
         # Draft Registrations
         Rule([
@@ -1491,12 +1493,6 @@ def make_url_map(app):
                 '/project/<pid>/fork/before/',
                 '/project/<pid>/node/<nid>/fork/before/',
             ], 'get', project_views.node.project_before_fork, json_renderer,
-        ),
-        Rule(
-            [
-                '/project/<pid>/fork/',
-                '/project/<pid>/node/<nid>/fork/',
-            ], 'post', project_views.node.node_fork_page, json_renderer,
         ),
         Rule(
             [
@@ -1720,7 +1716,15 @@ def make_url_map(app):
     # NOTE: We use nginx to serve static addon assets in production
     addon_base_path = os.path.abspath('addons')
     if settings.DEV_MODE:
+        from flask import stream_with_context, Response
+        import requests
+
         @app.route('/static/addons/<addon>/<path:filename>')
         def addon_static(addon, filename):
             addon_path = os.path.join(addon_base_path, addon, 'static')
             return send_from_directory(addon_path, filename)
+
+        @app.route('/ember-cli-live-reload.js')
+        def ember_cli_live_reload():
+            req = requests.get('{}/ember-cli-live-reload.js'.format(settings.LIVE_RELOAD_DOMAIN), stream=True)
+            return Response(stream_with_context(req.iter_content()), content_type=req.headers['content-type'])

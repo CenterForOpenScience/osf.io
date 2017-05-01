@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 import uuid
 
-from django.utils import timezone
-
 from framework import bcrypt
 from framework.auth import signals
 from framework.auth.core import User, Auth
@@ -44,7 +42,7 @@ def authenticate(user, access_token, response):
         'auth_user_fullname': user.fullname,
         'auth_user_access_token': access_token,
     })
-    user.date_last_login = timezone.now()
+    user.update_date_last_login()
     user.clean_email_verifications()
     user.update_affiliated_institutions_by_email_domain()
     user.save()
@@ -125,7 +123,7 @@ def get_or_create_user(fullname, address, reset_password=True, is_spam=False):
     else:
         password = str(uuid.uuid4())
         user = User.create_confirmed(address, password, fullname)
-        if password:
+        if reset_password:
             user.verification_key_v2 = generate_verification_key(verification_type='password')
         if is_spam:
             user.save()  # need to save in order to add a tag

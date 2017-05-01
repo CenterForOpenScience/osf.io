@@ -33,18 +33,15 @@ class TestNodeSettings(OAuthAddonNodeSettingsTestSuiteMixin, utils.DataverseAddo
         return {
             'user_settings': self.user_settings,
             '_dataset_id': '1234567890',
+            'dataset_doi': '10.123/DAVATERSE',
             'owner': self.node
         }
 
-    def setUp(self):
-        super(TestNodeSettings, self).setUp()
-        self.set_node_settings(self.node_settings)
-
     @mock.patch('website.archiver.tasks.archive')
     def test_does_not_get_copied_to_registrations(self, mock_archive):
-        registration = self.project.register_node(
+        registration = self.node.register_node(
             schema=get_default_metaschema(),
-            auth=Auth(user=self.project.creator),
+            auth=Auth(user=self.node.creator),
             data='hodor',
         )
         assert_false(registration.has_addon('dataverse'))
