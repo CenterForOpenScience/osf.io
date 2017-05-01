@@ -52,7 +52,7 @@ def unset_date_retracted(*args):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0015_retraction_date_retracted'),
+        ('osf', '0021_retraction_date_retracted'),
     ]
 
     operations = [
