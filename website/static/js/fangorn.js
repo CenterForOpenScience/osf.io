@@ -435,7 +435,16 @@ function checkConflicts(tb, item, folder, cb) {
     for(var i = 0; i < folder.children.length; i++) {
         var child = folder.children[i];
         if (child.data.name === item.data.name && child.id !== item.id) {
-            messageArray.push(m('p', 'An item named "' + child.data.name + '" already exists in this location.'));
+           messageArray.push([
+                m('p', 'An item named "' + child.data.name + '" already exists in this location.'),
+                m('h5.text-danger.replace-file',
+                    '"Keep Both" will retain both files (and their version histories) in this location.'),
+                m('h5.text-danger.replace-file',
+                    '"Replace" will overwrite the existing file in this location. ' +
+                    'You will lose previous versions of the overwritten file. ' +
+                    'You will keep previous versions of the moved file.'),
+                m('h5.text-danger.replace-file', '"Cancel" will cancel the move.')
+            ]);
             
             tb.modal.update(
                 m('', messageArray), [
@@ -457,7 +466,17 @@ function checkConflictsRename(tb, item, name, cb) {
     for(var i = 0; i < parent.children.length; i++) {
         var child = parent.children[i];
         if (child.data.name === name && child.id !== item.id) {
-            messageArray.push(m('p', 'An item named "' + child.data.name + '" already exists in this location.'));
+            messageArray.push([
+                m('p', 'An item named "' + child.data.name + '" already exists in this location.'),
+                m('h5.text-danger.replace-file',
+                    '"Keep Both" will retain both files (and their version histories) in this location.'),
+                m('h5.text-danger.replace-file',
+                    '"Replace" will overwrite the existing file in this location. ' +
+                    'You will lose previous versions of the overwritten file. ' +
+                    'You will keep previous versions of the moved file.'),
+                m('h5.text-danger.replace-file', '"Cancel" will cancel the move.')
+            ]);
+
 
             if (window.contextVars.node.preprintFileId === child.data.path.replace('/', '')) {
                 messageArray = messageArray.concat([
