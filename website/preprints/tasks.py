@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 
 @celery_app.task(ignore_results=True)
-def on_preprint_updated(preprint_id):
+def on_preprint_updated(preprint_id, update_share=False):
     # WARNING: Only perform Read-Only operations in an asynchronous task, until Repeatable Read/Serializable
     # transactions are implemented in View and Task application layers.
     from osf.models import PreprintService
@@ -23,7 +23,7 @@ def on_preprint_updated(preprint_id):
         status = 'public' if preprint.node.is_public else 'unavailable'
         update_ezid_metadata_on_change(preprint, status=status)
 
-    if settings.SHARE_URL:
+    if settings.SHARE_URL and update_share:
         if not preprint.provider.access_token:
             raise ValueError('No access_token for {}. Unable to send {} to SHARE.'.format(preprint.provider, preprint))
         resp = requests.post('{}api/v2/normalizeddata/'.format(settings.SHARE_URL), json={
@@ -56,9 +56,11 @@ def format_preprint(preprint):
 
     to_visit = [
         preprint_graph,
-        GraphNode('workidentifier', creative_work=preprint_graph, uri=urlparse.urljoin(settings.DOMAIN, preprint._id + '/')),
-        GraphNode('workidentifier', creative_work=preprint_graph, uri='http://dx.doi.org/{}'.format(preprint.get_identifier('doi').value))
+        GraphNode('workidentifier', creative_work=preprint_graph, uri=urlparse.urljoin(settings.DOMAIN, preprint._id + '/'))
     ]
+
+    if preprint.get_identifier('doi'):
+        to_visit.append(GraphNode('workidentifier', creative_work=preprint_graph, uri='http://dx.doi.org/{}'.format(preprint.get_identifier('doi').value)))
 
     if preprint.provider.domain_redirect_enabled:
         to_visit.append(GraphNode('workidentifier', creative_work=preprint_graph, uri=preprint.absolute_url))
