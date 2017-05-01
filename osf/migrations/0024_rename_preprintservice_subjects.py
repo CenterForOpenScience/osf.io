@@ -8,7 +8,7 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0016_migrate_preprint_subjects_to_fks'),
+        ('osf', '0023_migrate_preprint_subjects_to_fks'),
     ]
 
     operations = [
