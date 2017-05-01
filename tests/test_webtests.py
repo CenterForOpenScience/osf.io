@@ -1082,7 +1082,6 @@ class TestPreprint(OsfTestCase):
 
         self.project = ProjectFactory(creator=self.user) # used
         self.file = OsfStorageFile.create(
-            is_file=True,
             node=self.project,
             path='/panda.txt',
             name='panda.txt',
