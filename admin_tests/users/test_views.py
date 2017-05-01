@@ -472,7 +472,7 @@ class TestGetLinkView(AdminTestCase):
     def test_get_user_confirmation_link(self):
         user = UnconfirmedUserFactory()
         request = RequestFactory().get('/fake_path')
-        view = GetUserConfirmationLink()
+        view = views.GetUserConfirmationLink()
         view = setup_view(view, request, guid=user._id)
 
         user_token = user.email_verifications.keys()[0]
@@ -485,7 +485,7 @@ class TestGetLinkView(AdminTestCase):
     def test_get_user_confirmation_link_with_expired_token(self):
         user = UnconfirmedUserFactory()
         request = RequestFactory().get('/fake_path')
-        view = GetUserConfirmationLink()
+        view = views.GetUserConfirmationLink()
         view = setup_view(view, request, guid=user._id)
 
         old_user_token = user.email_verifications.keys()[0]
@@ -503,7 +503,7 @@ class TestGetLinkView(AdminTestCase):
     def test_get_password_reset_link(self):
         user = UnconfirmedUserFactory()
         request = RequestFactory().get('/fake_path')
-        view = GetPasswordResetLink()
+        view = views.GetPasswordResetLink()
         view = setup_view(view, request, guid=user._id)
 
         link = view.get_link(user)

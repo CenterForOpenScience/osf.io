@@ -4,9 +4,8 @@ import csv
 import pytz
 from furl import furl
 from datetime import datetime, timedelta
-from django.views.generic import FormView, DeleteView, ListView, TemplateView
 from django.views.defaults import page_not_found
-from django.views.generic import FormView, DeleteView, ListView
+from django.views.generic import FormView, DeleteView, ListView, TemplateView
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.core.urlresolvers import reverse
 from django.core.exceptions import PermissionDenied
