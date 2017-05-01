@@ -150,8 +150,6 @@ def get_or_create_identifiers(target_object):
     Moved from website/project/views/register.py for use by other modules
     """
     if settings.EZID_USERNAME and settings.EZID_PASSWORD:
-        # doi, metadata = build_ezid_metadata(target_object)
-
         response_dict = request_identifiers_from_ezid(target_object)
 
         resp = response_dict['response']
