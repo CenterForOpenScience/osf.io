@@ -1,4 +1,7 @@
 # -*- coding: utf-8 -*-
+import urllib
+import urlparse
+
 import furl
 from django.core.exceptions import ObjectDoesNotExist
 from modularodm import Q
@@ -18,8 +21,8 @@ from website import util as website_util  # noqa
 # These values are copied from rest_framework.fields.BooleanField
 # BooleanField cannot be imported here without raising an
 # ImproperlyConfigured error
-TRUTHY = set(('t', 'T', 'true', 'True', 'TRUE', '1', 1, True))
-FALSY = set(('f', 'F', 'false', 'False', 'FALSE', '0', 0, 0.0, False))
+TRUTHY = set(('t', 'T', 'true', 'True', 'TRUE', '1', 1, True, 'on', 'ON', 'On'))
+FALSY = set(('f', 'F', 'false', 'False', 'FALSE', '0', 0, 0.0, False, 'off', 'OFF', 'Off'))
 
 UPDATE_METHODS = ['PUT', 'PATCH']
 
@@ -56,7 +59,7 @@ def get_user_auth(request):
     """
     user = request.user
     private_key = request.query_params.get('view_only', None)
-    if user.is_anonymous():
+    if user.is_anonymous:
         auth = Auth(None, private_key=private_key)
     else:
         auth = Auth(user, private_key=private_key)
@@ -158,18 +161,25 @@ def default_node_list_query():
 
 def default_node_permission_query(user):
     permission_query = Q('is_public', 'eq', True)
-    if not user.is_anonymous():
+    if not user.is_anonymous:
         permission_query = (permission_query | Q('contributors', 'eq', user.pk))
 
     return permission_query
 
+
 def extend_querystring_params(url, params):
-    return furl.furl(url).add(args=params).url
+    scheme, netloc, path, query, _ = urlparse.urlsplit(url)
+    orig_params = urlparse.parse_qs(query)
+    orig_params.update(params)
+    query = urllib.urlencode(orig_params, True)
+    return urlparse.urlunsplit([scheme, netloc, path, query, ''])
+
 
 def extend_querystring_if_key_exists(url, request, key):
     if key in request.query_params.keys():
         return extend_querystring_params(url, {key: request.query_params.get(key)})
     return url
+
 
 def has_admin_scope(request):
     """ Helper function to determine if a request should be treated
@@ -186,6 +196,7 @@ def has_admin_scope(request):
         return False
 
     return set(ComposedScopes.ADMIN_LEVEL).issubset(normalize_scopes(token.attributes['accessTokenScope']))
+
 
 def is_deprecated(request_version, min_version, max_version):
     if request_version < min_version or request_version > max_version:

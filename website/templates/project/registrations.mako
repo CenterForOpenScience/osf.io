@@ -17,7 +17,7 @@
     <div class="row" style="min-height: 150px; padding-top:20px;">
       <div class="col-xs-9 col-sm-8">
         % if node["registration_count"]:
-          ${render_nodes.render_nodes(nodes=node['registrations'], sortable=True, user=user, pluralized_node_type='registrations', show_path=False, include_js=True)}
+          ${render_nodes.render_nodes(nodes=node['registrations'], sortable=False, user=user, pluralized_node_type='registrations', show_path=False, include_js=True)}
     ## Uncomment to disable registering Components
     ##% elif node['node_type'] != 'project':
     ##      %if user['is_admin_parent']:
@@ -26,12 +26,14 @@
     ##          There have been no registrations of the parent project (<a href="${parent_node['url']}">${parent_node['title']}</a>).
     ##      %endif
         % else:
-        <p>
-          There have been no completed registrations of this project. For a list of the most viewed and most recent public registrations on the Open Science Framework, click <a href="/explore/activity/#newPublicRegistrations">here</a>.
           % if 'admin' in user['permissions']:
-          You can start a new registration by clicking the “New registration” button, and you have the option of saving as a draft registration before submission.
+            <p>There have been no completed registrations of this project.
+            You can start a new registration by clicking the “New registration” button, and you have the option of saving as a draft registration before submission.</p>
+          % else:
+            <p>There have been no completed registrations of this project.
+            Only project administrators can initiate registrations.</p>
           % endif
-        </p>
+          <p>For a list of the most viewed and most recent public registrations on the Open Science Framework, click <a href="/explore/activity/#newPublicRegistrations">here</a>.</p>
         % endif
         %if parent_node['exists'] and user['is_admin_parent']:
         <br />

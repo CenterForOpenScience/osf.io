@@ -69,7 +69,7 @@ class CommentSerializer(JSONAPISerializer):
 
     def get_has_report(self, obj):
         user = self.context['request'].user
-        if user.is_anonymous():
+        if user.is_anonymous:
             return False
         return user._id in obj.reports and not obj.reports[user._id].get('retracted', True)
 
@@ -80,7 +80,7 @@ class CommentSerializer(JSONAPISerializer):
 
     def get_can_edit(self, obj):
         user = self.context['request'].user
-        if user.is_anonymous():
+        if user.is_anonymous:
             return False
         return obj.user._id == user._id and obj.node.can_comment(Auth(user))
 

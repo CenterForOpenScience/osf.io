@@ -22,6 +22,12 @@ API_DOMAIN = PROTOCOL + 'localhost:8000/'
 #WATERBUTLER_URL = 'http://localhost:7777'
 #WATERBUTLER_INTERNAL_URL = WATERBUTLER_URL
 
+LIVE_RELOAD_DOMAIN = 'http://localhost:4200'
+PREPRINT_PROVIDER_DOMAINS = {
+    'enabled': False,
+    'prefix': 'http://local.',
+    'suffix': ':4200/'
+}
 USE_EXTERNAL_EMBER = True
 EXTERNAL_EMBER_APPS = {
     'preprints': {
@@ -29,16 +35,16 @@ EXTERNAL_EMBER_APPS = {
         'server': 'http://localhost:4200',
         'path': '/preprints/'
     },
+    'registries': {
+        'url': '/registries/',
+        'server': 'http://localhost:4300',
+        'path': '/registries/'
+    }
     # 'meetings': {
     #     'url': '/meetings/',
     #     'server': 'http://localhost:4201',
     #     'path': '../osf-meetings/dist/'
     # },
-    # 'registries': {
-    #     'url': '/registries/',
-    #     'server': 'http://localhost:4200',
-    #     'path': '../ember-osf-registries/dist/'
-    # }
 }
 
 SEARCH_ENGINE = 'elastic'

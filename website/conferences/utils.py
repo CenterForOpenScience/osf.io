@@ -31,6 +31,7 @@ def get_or_create_node(title, user):
     try:
         node = Node.find_one(
             Q('title', 'iexact', title)
+            & Q('is_deleted', 'ne', True)
             & Q('contributors', 'eq', user)
         )
         return node, False

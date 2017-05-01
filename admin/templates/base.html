@@ -65,7 +65,7 @@
                   </span>
                 </a>
                 <ul class="dropdown-menu user-menu">
-                    {%  if perms.osf.change_user %}
+                    {%  if perms.osf.change_osfuser %}
                   <li>
                     <a href="{% url 'auth:register' %}">
                       Admin-User Registration
@@ -107,7 +107,10 @@
               </ul>
             </li>
             {% endif %}
-              {% if perms.osf.view_user %}
+            {% if perms.osf.view_preprintservice %}
+            <li><a href="{% url 'preprints:search' %}"><i class='fa fa-link'></i><span>Preprints</span> </a></li>
+            {% endif %}
+              {% if perms.osf.view_osfuser %}
             <li><a href="{% url 'users:search' %}"><i class='fa fa-link'></i> <span>OSF Users</span></a></li>
             <li>
               <ul class="sidebar-menu" style="position:relative; left: 20px;">

@@ -1,9 +1,5 @@
-import weakref
-
 from django.conf import settings as django_settings
 from django.db import transaction
-from django.db.models import F
-from django.db.models.expressions import RawSQL
 from django.http import JsonResponse
 from rest_framework import generics
 from rest_framework import permissions as drf_permissions
@@ -29,10 +25,9 @@ from api.nodes.permissions import ContributorOrPublicForRelationshipPointers
 from api.nodes.permissions import ReadOnlyIfRegistration
 from api.users.serializers import UserSerializer
 from framework.auth.oauth_scopes import CoreScopes
-from osf.models.contributor import Contributor, get_contributor_permissions
+from osf.models.contributor import Contributor
 from website.models import Pointer
-
-CACHE = weakref.WeakKeyDictionary()
+from website import maintenance
 
 
 class JSONAPIBaseView(generics.GenericAPIView):
@@ -59,14 +54,21 @@ class JSONAPIBaseView(generics.GenericAPIView):
             v, view_args, view_kwargs = field.resolve(item, field_name, self.request)
             if not v:
                 return None
-            if isinstance(self.request._request, EmbeddedRequest):
-                request = self.request._request
+
+            if isinstance(self.request, EmbeddedRequest):
+                request = EmbeddedRequest(self.request._request)
             else:
                 request = EmbeddedRequest(self.request)
 
+            if not hasattr(request._request._request, '_embed_cache'):
+                request._request._request._embed_cache = {}
+            cache = request._request._request._embed_cache
+
+            request.parents.setdefault(type(item), {})[item._id] = item
+
             view_kwargs.update({
                 'request': request,
-                'is_embedded': True
+                'is_embedded': True,
             })
 
             # Setup a view ourselves to avoid all the junk DRF throws in
@@ -78,25 +80,33 @@ class JSONAPIBaseView(generics.GenericAPIView):
             view.request.parser_context['kwargs'] = view_kwargs
             view.format_kwarg = view.get_format_suffix(**view_kwargs)
 
-            _cache_key = (v.cls, field_name, view.get_serializer_class(), item)
-            if _cache_key in CACHE.setdefault(self.request._request, {}):
+            if not isinstance(view, ListModelMixin):
+                try:
+                    item = view.get_object()
+                except Exception as e:
+                    with transaction.atomic():
+                        ret = view.handle_exception(e).data
+                    return ret
+
+            _cache_key = (v.cls, field_name, view.get_serializer_class(), (type(item), item.id))
+            if _cache_key in cache:
                 # We already have the result for this embed, return it
-                return CACHE[self.request._request][_cache_key]
+                return cache[_cache_key]
 
             # Cache serializers. to_representation of a serializer should NOT augment it's fields so resetting the context
             # should be sufficient for reuse
-            if not view.get_serializer_class() in CACHE.setdefault(self.request._request, {}):
-                CACHE[self.request._request][view.get_serializer_class()] = view.get_serializer_class()(many=isinstance(view, ListModelMixin))
-            ser = CACHE[self.request._request][view.get_serializer_class()]
+            if not view.get_serializer_class() in cache:
+                cache[view.get_serializer_class()] = view.get_serializer_class()(many=isinstance(view, ListModelMixin))
+            ser = cache[view.get_serializer_class()]
 
             try:
                 ser._context = view.get_serializer_context()
 
                 if not isinstance(view, ListModelMixin):
-                    ret = ser.to_representation(view.get_object())
+                    ret = ser.to_representation(item)
                 else:
                     queryset = view.filter_queryset(view.get_queryset())
-                    page = view.paginate_queryset(queryset)
+                    page = view.paginate_queryset(getattr(queryset, '_results_cache', None) or queryset)
 
                     ret = ser.to_representation(page or queryset)
 
@@ -113,7 +123,7 @@ class JSONAPIBaseView(generics.GenericAPIView):
             ser._context = None
 
             # Cache our final result
-            CACHE[self.request._request][_cache_key] = ret
+            cache[_cache_key] = ret
 
             return ret
 
@@ -351,11 +361,13 @@ class LinkedRegistrationsRelationship(JSONAPIBaseView, generics.RetrieveUpdateDe
     def perform_destroy(self, instance):
         data = self.request.data['data']
         auth = utils.get_user_auth(self.request)
-        current_pointers = {pointer.node._id: pointer for pointer in instance['data']}
+        current_pointers = {pointer._id: pointer for pointer in instance['data']}
         collection = instance['self']
         for val in data:
             if val['id'] in current_pointers:
                 collection.rm_pointer(current_pointers[val['id']], auth)
+            else:
+                raise NotFound(detail='Pointer with id "{}" not found in pointers list'.format(val['id'], collection))
 
     def create(self, *args, **kwargs):
         try:
@@ -720,7 +732,7 @@ def root(request, format=None, **kwargs):
         s3           Amazon S3
 
     """
-    if request.user and not request.user.is_anonymous():
+    if request.user and not request.user.is_anonymous:
         user = request.user
         current_user = UserSerializer(user, context={'request': request}).data
     else:
@@ -749,6 +761,13 @@ def root(request, format=None, **kwargs):
 
     return Response(return_val)
 
+@api_view(('GET',))
+@throttle_classes([RootAnonThrottle, UserRateThrottle])
+def status_check(request, format=None, **kwargs):
+    return Response({
+        'maintenance': maintenance.get_maintenance(),
+    })
+
 
 def error_404(request, format=None, *args, **kwargs):
     return JsonResponse(
@@ -767,15 +786,9 @@ class BaseContributorDetail(JSONAPIBaseView, generics.RetrieveAPIView):
         # May raise a permission denied
         self.check_object_permissions(self.request, user)
         try:
-            contributor = node.contributor_set.get(user=user)
+            return node.contributor_set.get(user=user)
         except Contributor.DoesNotExist:
             raise NotFound('{} cannot be found in the list of contributors.'.format(user))
-
-        user.permission = get_contributor_permissions(contributor, as_list=False)
-        user.bibliographic = contributor.visible
-        user.node_id = node._id
-        user.index = list(node.get_contributor_order()).index(contributor.id)
-        return user
 
 
 class BaseContributorList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
@@ -783,24 +796,7 @@ class BaseContributorList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin
     def get_default_queryset(self):
         node = self.get_node()
 
-        qs = node._contributors.all() \
-            .annotate(
-            index=F('contributor___order'),
-            bibliographic=F('contributor__visible'),
-            node_id=F('contributor__node__guids___id'),
-            permission=RawSQL("""
-                SELECT
-                  CASE WHEN c.admin IS TRUE
-                    THEN 'admin'
-                    WHEN c.admin IS FALSE and c.write IS TRUE
-                    THEN 'write'
-                    WHEN c.admin IS FALSE and c.write is FALSE and c.read IS TRUE
-                    THEN 'read'
-                  END as permission
-                FROM osf_contributor AS c WHERE c.user_id = osf_osfuser.id AND c.node_id = %s LIMIT 1
-            """, (node.id, ))
-        ).order_by('contributor___order')
-        return qs
+        return node.contributor_set.all()
 
     def get_queryset(self):
         queryset = self.get_queryset_from_request()
@@ -858,11 +854,4 @@ class BaseLinkedList(JSONAPIBaseView, generics.ListAPIView):
     def get_queryset(self):
         auth = get_user_auth(self.request)
 
-        linked_node_ids = [
-            each.id for each in self.get_node().linked_nodes
-            .filter(is_deleted=False)
-            .exclude(type='osf.collection')
-            .order_by('-date_modified')
-            if each.can_view(auth)
-        ]
-        return self.get_node().linked_nodes.filter(id__in=linked_node_ids)
+        return self.get_node().linked_nodes.filter(is_deleted=False).exclude(type='osf.collection').can_view(user=auth.user, private_link=auth.private_link).order_by('-date_modified')

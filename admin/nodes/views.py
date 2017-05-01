@@ -22,6 +22,7 @@ from osf.models.admin_log_entry import (
 from admin.nodes.templatetags.node_extras import reverse_node
 from admin.nodes.serializers import serialize_node, serialize_simple_user_and_node_permissions
 from website.project.spam.model import SpamStatus
+from website.project.views.register import osf_admin_change_status_identifier
 
 
 class NodeFormView(PermissionRequiredMixin, GuidFormView):
@@ -191,7 +192,9 @@ class NodeView(PermissionRequiredMixin, GuidView):
         return kwargs
 
     def get_object(self, queryset=None):
-        return serialize_node(Node.load(self.kwargs.get('guid')))
+        guid = self.kwargs.get('guid')
+        node = Node.load(guid) or Registration.load(guid)
+        return serialize_node(node)
 
 
 class RegistrationListView(PermissionRequiredMixin, ListView):
@@ -260,6 +263,7 @@ class NodeFlaggedSpamList(NodeSpamList, DeleteView):
         ]
         for nid in node_ids:
             node = Node.load(nid)
+            osf_admin_change_status_identifier(node, 'unavailable | spam')
             node.confirm_spam(save=True)
             update_admin_log(
                 user_id=self.request.user.id,
@@ -286,6 +290,7 @@ class NodeConfirmSpamView(PermissionRequiredMixin, NodeDeleteBase):
 
     def delete(self, request, *args, **kwargs):
         node = self.get_object()
+        osf_admin_change_status_identifier(node, 'unavailable | spam')
         node.confirm_spam(save=True)
         update_admin_log(
             user_id=self.request.user.id,
@@ -304,6 +309,7 @@ class NodeConfirmHamView(PermissionRequiredMixin, NodeDeleteBase):
     def delete(self, request, *args, **kwargs):
         node = self.get_object()
         node.confirm_ham(save=True)
+        osf_admin_change_status_identifier(node, 'public')
         update_admin_log(
             user_id=self.request.user.id,
             object_id=node._id,

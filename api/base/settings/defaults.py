@@ -88,7 +88,6 @@ INSTALLED_APPS = (
     'corsheaders',
     'raven.contrib.django.raven_compat',
     'django_extensions',
-    'cacheops',
 
     # OSF
     'osf',
@@ -187,7 +186,7 @@ CORS_ORIGIN_WHITELIST = (urlparse(osf_settings.DOMAIN).netloc,
 # use cookies.
 CORS_ALLOW_CREDENTIALS = True
 # Set dynamically on app init
-INSTITUTION_ORIGINS_WHITELIST = ()
+ORIGINS_WHITELIST = ()
 
 MIDDLEWARE_CLASSES = (
     'api.base.middleware.DjangoGlobalMiddleware',
@@ -281,32 +280,4 @@ ADDONS_OAUTH = ADDONS_FOLDER_CONFIGURABLE + ['dataverse', 'github', 'mendeley', 
 
 BYPASS_THROTTLE_TOKEN = 'test-token'
 
-SHELL_PLUS_PRE_IMPORTS = (
-    ('osf.management.utils', ('print_sql', )),
-)
-# cacheops
-
-CACHEOPS_REDIS = os.environ.get('REDIS_URL', 'redis://localhost:6379/1')
-# fail gracefully if redis is not running
-CACHEOPS_DEGRADE_ON_FAILURE = False
-CACHEOPS = {
-    # all the models in all the apps ever except admin
-    'osf.*': {'ops': 'all', 'timeout': 60 * 60},  # expire cache after 1hr unless it's been invalidated already
-    'addons_base.*': {'ops': 'all', 'timeout': 60 * 60},
-    'addons_box.*': {'ops': 'all', 'timeout': 60 * 60},
-    'addons_citations.*': {'ops': 'all', 'timeout': 60 * 60},
-    'addons_dataverse.*': {'ops': 'all', 'timeout': 60 * 60},
-    'addons_dropbox.*': {'ops': 'all', 'timeout': 60 * 60},
-    'addons_figshare.*': {'ops': 'all', 'timeout': 60 * 60},
-    'addons_forward.*': {'ops': 'all', 'timeout': 60 * 60},
-    'addons_github.*': {'ops': 'all', 'timeout': 60 * 60},
-    'addons_googledrive.*': {'ops': 'all', 'timeout': 60 * 60},
-    'addons_mendeley.*': {'ops': 'all', 'timeout': 60 * 60},
-    'addons_osfstorage.*': {'ops': 'all', 'timeout': 60 * 60},
-    'addons_owncloud.*': {'ops': 'all', 'timeout': 60 * 60},
-    'addons_s3.*': {'ops': 'all', 'timeout': 60 * 60},
-    'addons_twofactor.*': {'ops': 'all', 'timeout': 60 * 60},
-    'addons_wiki.*': {'ops': 'all', 'timeout': 60 * 60},
-    'addons_zotero.*': {'ops': 'all', 'timeout': 60 * 60},
-}
-CACHEOPS_ENABLED = False
+OSF_SHELL_USER_IMPORTS = None

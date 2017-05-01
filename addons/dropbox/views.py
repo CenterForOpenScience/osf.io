@@ -52,7 +52,3 @@ dropbox_set_config = generic_views.set_config(
 dropbox_deauthorize_node = generic_views.deauthorize_node(
     SHORT_NAME
 )
-
-dropbox_root_folder = generic_views.root_folder(
-    SHORT_NAME
-)

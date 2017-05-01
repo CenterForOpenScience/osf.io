@@ -6,6 +6,7 @@ from dataverse.exceptions import ConnectionError, UnauthorizedError, OperationFa
 from framework.exceptions import HTTPError
 
 from addons.dataverse import settings
+from website.util.sanitize import strip_html
 
 def _connect(host, token):
     try:
@@ -112,3 +113,9 @@ def get_dataverse(connection, alias):
     if connection is None:
         return
     return connection.get_dataverse(alias)
+
+
+def get_custom_publish_text(connection):
+    if connection is None:
+        return ''
+    return strip_html(connection.get_custom_publish_text(), tags=['strong', 'li', 'ul'])

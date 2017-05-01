@@ -39,6 +39,7 @@ from .factories import (
     NodeFactory,
     InstitutionFactory,
     SessionFactory,
+    TagFactory,
     UserFactory,
     UnregUserFactory,
     UnconfirmedUserFactory
@@ -69,8 +70,6 @@ class TestOSFUser:
         user = User.create(
             username=email, password='foobar', fullname=name
         )
-        # TODO: Remove me when auto_now_add is enabled (post-migration)
-        user.date_registered = timezone.now()
         user.save()
         assert user.check_password('foobar') is True
         assert user._id
@@ -81,9 +80,6 @@ class TestOSFUser:
         user = User.create_unconfirmed(
             username=email, password='foobar', fullname=name
         )
-        # TODO: Remove me when auto_now_add is enabled (post-migration)
-        user.date_registered = timezone.now()
-        user.save()
         assert user.is_registered is False
         assert len(user.email_verifications.keys()) == 1
         assert len(user.emails) == 0, 'primary email has not been added to emails list'
@@ -944,16 +940,27 @@ class TestTagging:
 
         assert len(user.system_tags) == 1
 
-        tag = Tag.objects.get(name=tag_name, system=True)
-        assert tag in user.tags.all()
+        tag = Tag.all_tags.get(name=tag_name, system=True)
+        assert tag in user.all_tags.all()
+
+    def test_add_system_tag_instance(self, user):
+        tag = TagFactory(system=True)
+        user.add_system_tag(tag)
+        assert tag in user.all_tags.all()
+
+    def test_add_system_tag_with_non_system_instance(self, user):
+        tag = TagFactory(system=False)
+        with pytest.raises(ValueError):
+            user.add_system_tag(tag)
+        assert tag not in user.all_tags.all()
 
     def test_tags_get_lowercased(self, user):
         tag_name = 'NeOn'
         user.add_system_tag(tag_name)
         user.save()
 
-        tag = Tag.objects.get(name=tag_name.lower(), system=True)
-        assert tag in user.tags.all()
+        tag = Tag.all_tags.get(name=tag_name.lower(), system=True)
+        assert tag in user.all_tags.all()
 
     def test_system_tags_property(self, user):
         tag_name = fake.word()
@@ -1441,7 +1448,6 @@ class TestUserMerging(OsfTestCase):
             'suffix',
             'timezone',
             'username',
-            'mailing_lists',
             'verification_key',
             'verification_key_v2',
             'affiliated_institutions',
@@ -1485,7 +1491,6 @@ class TestUserMerging(OsfTestCase):
                 'other': today,
                 'shared': today,
             },
-            'tags': [Tag.load('user', system=True).id, Tag.load('shared', system=True).id, Tag.load('other', system=True).id],
             'unclaimed_records': {},
         }
 
@@ -1499,7 +1504,8 @@ class TestUserMerging(OsfTestCase):
                 expected[key] = getattr(self.user, key)
 
         # ensure all fields of the user object have an explicit expectation
-        assert set(expected.keys()).issubset(set(self.user._meta.get_all_field_names()))
+        all_field_names = {each.name for each in self.user._meta.get_fields()}
+        assert set(expected.keys()).issubset(all_field_names)
 
         # mock mailchimp
         mock_client = mock.MagicMock()
@@ -1519,6 +1525,9 @@ class TestUserMerging(OsfTestCase):
                 assert list(getattr(self.user, k).all().values_list('id', flat=True)) == v, '{} doesn\'t match expectations'.format(k)
             else:
                 assert getattr(self.user, k) == v, '{} doesn\'t match expectation'.format(k)
+
+
+        assert sorted(self.user.system_tags) == ['other', 'shared', 'user']
 
         # check fields set on merged user
         assert other_user.merged_by == self.user
