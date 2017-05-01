@@ -212,7 +212,7 @@ class TestIdentifierViews(OsfTestCase):
     def test_create_identifiers_not_exists(self):
         identifier = self.node._id
         url = furl.furl('https://ezid.cdlib.org/id')
-        doi = settings.EZID_FORMAT.format(namespace=settings.DOI_NAMESPACE, domain='osf.io', guid=identifier)
+        doi = settings.EZID_FORMAT.format(namespace=settings.DOI_NAMESPACE, guid=identifier)
         url.path.segments.append(doi)
         httpretty.register_uri(
             httpretty.PUT,
@@ -246,7 +246,7 @@ class TestIdentifierViews(OsfTestCase):
     @httpretty.activate
     def test_create_identifiers_exists(self):
         identifier = self.node._id
-        doi = settings.EZID_FORMAT.format(namespace=settings.DOI_NAMESPACE, domain='osf.io', guid=identifier)
+        doi = settings.EZID_FORMAT.format(namespace=settings.DOI_NAMESPACE, guid=identifier)
         url = furl.furl('https://ezid.cdlib.org/id')
         url.path.segments.append(doi)
         httpretty.register_uri(

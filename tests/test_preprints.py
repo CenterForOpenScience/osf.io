@@ -303,11 +303,10 @@ class TestPreprintIdentifiers(OsfTestCase):
 
         assert mock_get_and_set_identifiers.called
 
-
     def test_get_doi_for_preprint(self):
-        new_provider = PreprintProviderFactory(external_url='http://www.hello.com')
+        new_provider = PreprintProviderFactory()
         preprint = PreprintFactory(provider=new_provider)
-        ideal_doi = '{}hello.com/{}'.format(settings.DOI_NAMESPACE, preprint._id)
+        ideal_doi = '{}osf.io/{}'.format(settings.DOI_NAMESPACE, preprint._id)
 
         doi, metadata = get_doi_and_metadata_for_object(preprint)
 
