@@ -219,11 +219,14 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, BaseModel):
         if save:
             self.save()
 
-    def set_preprint_identifiers(self, ezid_response):
+    def set_preprint_identifiers(self, ezid_response, save=False):
         new_identifiers = parse_identifiers(ezid_response)
 
         self.set_identifier_value('doi', new_identifiers['doi'])
         self.set_identifier_value('ark', new_identifiers['ark'])
+
+        if save:
+            self.save()
 
     def save(self, *args, **kwargs):
         first_save = not bool(self.pk)
