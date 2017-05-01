@@ -1412,16 +1412,11 @@ function _fangornVersionColumn(item, col) {
  */
 function _fangornModifiedColumn(item, col) {
     var tb = this;
-    // Kludge for Dropbox date format
-    // TODO [OSF-6461]: remove kludge when we either move to DropBox v2 API or implememnt
-    // normalized dates in WaterButler
-    var myFormats = ['ddd, DD MMM YYYY HH:mm:ss ZZ', 'YYYY-MM-DD hh:mm A'];
     if (item.data.isAddonRoot && item.connected === false) { // as opposed to undefined, avoids unnecessary setting of this value
         return _connectCheckTemplate.call(this, item);
     }
-    if (item.kind === 'file' && item.data.permissions.view && item.data.modified) {
-        // "new Date" required for non-ISO date formats
-        item.data.modified = new moment(item.data.modified, myFormats, 'en').format('YYYY-MM-DD hh:mm A');
+    if (item.kind === 'file' && item.data.permissions.view && item.data.modified_utc) {
+        item.data.modified = new moment(moment.utc(item.data.modified_utc,'YYYY-MM-DD hh:mm A', 'en').toDate()).format('YYYY-MM-DD hh:mm A');
         return m(
             'span',
             item.data.modified
