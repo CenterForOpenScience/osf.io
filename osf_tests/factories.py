@@ -512,11 +512,10 @@ class PreprintProviderFactory(DjangoModelFactory):
 
 
 def sync_set_identifiers(preprint):
-    domain = get_top_level_domain(preprint.provider.external_url)
     ezid_return_value ={
         'response': {
-            'success': '{doi}{domain}/{guid} | {ark}{domain}/{guid}'.format(
-                doi=settings.DOI_NAMESPACE, domain=domain, ark=settings.ARK_NAMESPACE, guid=preprint._id
+            'success': '{doi}osf.io/{guid} | {ark}osf.io/{guid}'.format(
+                doi=settings.DOI_NAMESPACE, ark=settings.ARK_NAMESPACE, guid=preprint._id
             )
         },
         'already_exists': False
@@ -525,46 +524,55 @@ def sync_set_identifiers(preprint):
 
 
 class PreprintFactory(DjangoModelFactory):
-    doi = factory.Sequence(lambda n: '10.123/{}'.format(n))
-    provider = factory.SubFactory(PreprintProviderFactory)
-    external_url = 'http://hello.org'
-
     class Meta:
         model = models.PreprintService
 
-    @classmethod
-    def _build(cls, target_class, project=None, filename='preprint_file.txt', provider=None,
-                doi=None, external_url=None, is_published=True, subjects=None, license_details=None, finish=True, *args, **kwargs):
-        patch_change_status = mock.patch("website.identifiers.client.EzidClient.change_status_identifier")
-        patch_change_status.start()
+    doi = factory.Sequence(lambda n: '10.123/{}'.format(n))
+    provider = factory.SubFactory(PreprintProviderFactory)
 
-        user = None
-        if project:
-            user = project.creator
-        user = kwargs.get('user') or kwargs.get('creator') or user or UserFactory()
-        kwargs['creator'] = user
-        # Original project to be converted to a preprint
-        project = project or ProjectFactory(*args, **kwargs)
-        project.preprint_article_doi = doi
-        project.save()
-        if not project.is_contributor(user):
-            project.add_contributor(
+    @classmethod
+    def _build(cls, target_class, *args, **kwargs):
+        creator = kwargs.pop('creator', None) or UserFactory()
+        project = kwargs.pop('project', None) or ProjectFactory(creator=creator)
+        provider = kwargs.pop('provider', None) or PreprintProviderFactory()
+        instance = target_class(node=project, provider=provider)
+
+        return instance
+
+    @classmethod
+    def _create(cls, target_class, *args, **kwargs):
+        update_task_patcher = mock.patch('website.preprints.tasks.on_preprint_updated.s')
+        update_task_patcher.start()
+
+        finish = kwargs.pop('finish', True)
+        is_published = kwargs.pop('is_published', True)
+        instance = cls._build(target_class, *args, **kwargs)
+
+        doi = kwargs.pop('doi', None)
+        license_details = kwargs.pop('license_details', None)
+        filename = kwargs.pop('filename', None) or 'preprint_file.txt'
+        subjects = kwargs.pop('subjects', None) or [[SubjectFactory()._id]]
+        instance.node.doi = doi
+
+        user = kwargs.pop('creator', None) or instance.node.creator
+        if not instance.node.is_contributor(user):
+            instance.node.add_contributor(
                 contributor=user,
                 permissions=permissions.CREATOR_PERMISSIONS,
                 log=False,
                 save=True
             )
 
-        file = OsfStorageFile.create(
-            node=project,
+        preprint_file = OsfStorageFile.create(
+            node=instance.node,
             path='/{}'.format(filename),
             name=filename,
             materialized_path='/{}'.format(filename))
-        file.save()
+        preprint_file.save()
 
         from addons.osfstorage import settings as osfstorage_settings
 
-        file.create_version(user, {
+        preprint_file.create_version(user, {
             'object': '06d80e',
             'service': 'cloud',
             osfstorage_settings.WATERBUTLER_RESOURCE: 'osf',
@@ -573,43 +581,23 @@ class PreprintFactory(DjangoModelFactory):
             'contentType': 'img/png'
         }).save()
 
-        preprint = target_class(node=project, provider=provider)
-        preprint.save()
-
-        auth = Auth(project.creator)
-
         if finish:
-            preprint.set_primary_file(file, auth=auth)
-            subjects = subjects or [[SubjectFactory()._id]]
-            preprint.set_subjects(subjects, auth=auth, save=True)
-            preprint.save()
+            auth = Auth(user)
+
+            instance.set_primary_file(preprint_file, auth=auth)
+            instance.set_subjects(subjects, auth=auth, save=True)
             if license_details:
-                preprint.set_preprint_license(license_details, auth=auth)
+                instance.set_preprint_license(license_details, auth=auth)
 
+            create_task_patcher = mock.patch('website.preprints.tasks.get_and_set_preprint_identifiers.s')
+            mock_create_identifier = create_task_patcher.start()
             if is_published:
-                create_task_patcher = mock.patch('website.preprints.tasks.get_and_set_preprint_identifiers.s')
-                mock_create_identifier = create_task_patcher.start()
-                mock_create_identifier.side_effect = sync_set_identifiers(preprint)
+                mock_create_identifier.side_effect = sync_set_identifiers(instance)
 
-            preprint.set_published(is_published, auth=auth)
+            instance.set_published(is_published, auth=auth)
+            create_task_patcher.stop()
 
-            if is_published:
-                create_task_patcher.stop()
-
-        if not preprint.is_published:
-            project._has_abandoned_preprint = True
-        project.save()
-        return preprint
-
-    @classmethod
-    def _create(cls, target_class, project=None, filename='preprint_file.txt', provider=None,
-                doi=None, external_url=None, is_published=True, subjects=None, finish=True, *args, **kwargs):
-        instance = cls._build(
-            target_class=target_class,
-            project=project, filename=filename, provider=provider,
-            doi=doi, external_url=external_url, is_published=is_published, subjects=subjects,
-            finish=finish, *args, **kwargs
-        )
+        instance.node.save()
         instance.save()
         return instance
 
