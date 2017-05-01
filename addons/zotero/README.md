@@ -7,6 +7,6 @@
 3. In the Website field, enter "http://localhost:5000/callback/“
 4. In the Authorization Callback URL field, enter "http://localhost:5000/oauth/callback/zotero/".
 5. Submit the form.
-6. cp website/addons/zotero/settings/defaults.py website/addons/zotero/settings/local.py
+6. cp addons/zotero/settings/defaults.py addons/zotero/settings/local.py
 7. Copy your client key and client secret from Zotero into the new local.py file.
 8. Restart your app server.

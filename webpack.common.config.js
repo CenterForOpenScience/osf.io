@@ -188,7 +188,8 @@ var plugins = [
     }),
     // Slight hack to make sure that CommonJS is always used
     new webpack.DefinePlugin({
-        'define.amd': false
+        'define.amd': false,
+        '__ENABLE_DEV_MODE_CONTROLS': fs.existsSync(staticPath(path.join('built', 'git_logs.json')))
     }),
 ];
 

@@ -3,14 +3,18 @@
 
 1. Install the Docker Client
   - OSX: https://www.docker.com/products/docker#/mac
+  - Ubuntu
+    - docker: https://docs.docker.com/engine/installation/linux/ubuntulinux
+    - docker-compose: https://docs.docker.com/compose/install/
   - Windows: https://www.docker.com/products/docker#/windows
 2. Grant the docker client additional memory and cpu (minimum of 4GB and 2 CPU)
    - OSX: https://docs.docker.com/docker-for-mac/#/preferences
+   - Ubuntu: N/A
    - Windows: https://docs.docker.com/docker-for-windows/#advanced
 3. Setup the Operating System
   - OSX
     - Alias the loopback interface
-    
+
     ```bash
     export libdir='/Library/LaunchDaemons' \
       && export file='com.runlevel1.lo0.192.168.168.167.plist' \
@@ -19,6 +23,25 @@
       && sudo chown root:wheel $libdir/$file \
       && sudo launchctl load $libdir/$file
     ```
+  - Ubuntu
+    - Add loopback alias
+      `sudo ifconfig lo:0 192.168.168.167 netmask 255.255.255.255 up`
+
+      - For persistance, add to /etc/network/interfaces...
+        Add lo:0 to auto line...
+        ```auto lo lo:0```
+        Add stanza for lo:0...
+        ```iface lo:0 inet static
+               address 192.168.168.167
+               netmask 255.255.255.255
+               network 192.168.168.167
+        ```
+    - If UFW enabled. Enable UFW forwarding.
+      - https://docs.docker.com/engine/installation/linux/ubuntulinux/#/enable-ufw-forwarding
+    - If needed. Configure a DNS server for use by Docker.
+      - https://docs.docker.com/engine/installation/linux/ubuntulinux/#/configure-a-dns-server-for-use-by-docker
+    - Configure docker to start at boot for Ubuntu 15.04 onwards
+      `sudo systemctl enable docker`
 
   - Windows
     - Install Microsoft Loopback Adapter (Windows 10 follow community comments as the driver was renamed)
@@ -74,6 +97,8 @@
       wb:
         volumes_from:
           - container:wb-sync
+
+    ...
     ```
 
   - In `docker-sync.yml`:
@@ -87,14 +112,32 @@
         sync_excludes_type: 'Name'
         sync_excludes: ['.DS_Store', '*.pyc', '*.tmp', '.git', '.idea']
         watch_excludes: ['.*\.DS_Store', '.*\.pyc', '.*\.tmp', '.*/\.git', '.*/\.idea']
+
+    ...
     ```
+  
+  Modifying these files will show up as changes in git. To avoid committing these files, run:
+  
+  ```bash
+  git update-index --skip-worktree docker-compose.override.yml docker-sync.yml
+  ```
+  
+  To be able to commit changes to these files again, run:
+  
+  ```bash
+  git update-index --no-skip-worktree docker-compose.override.yml docker-sync.yml
+  ```
 
 ## Docker Sync
+
+Ubuntu: Skip install of docker-sync, fswatch, and unison. instead...
+        `cp docker-compose.ubuntu.yml docker-compose.override.yml`
+        Ignore future steps that start, stop, or wait for docker-sync
 
 1. Install Docker Sync
   - Mac: `$ sudo gem install docker-sync`
   - [Instructions](http://docker-sync.io)
-  
+
 1. Install fswatch and unison
   - Mac: `$ brew install fswatch unison`
 
@@ -124,6 +167,7 @@
 3. Remove your existing node_modules and start the assets watcher (Detached)
   - `$ rm -Rf ./node_modules`
   - `$ docker-compose up -d assets`
+  - `$ docker-compose up -d admin_assets`
 
     _NOTE: The first time the assets container is run it will take Webpack/NPM up to 15 minutes to compile resources.
     When you see the BowerJS build occurring it is likely a safe time to move forward with starting the remaining
@@ -132,8 +176,8 @@
   - `$ docker-compose up -d mfr wb fakecas sharejs`
 5. Run migrations and create preprint providers
   - When starting with an empty database you will need to run migrations and populate preprint providers. See the [Running arbitrary commands](#running-arbitrary-commands) section below for instructions.
-6. Start the OSF Web, API Server, and Preprints (Detached)
-  - `$ docker-compose up -d worker web api preprints`
+6. Start the OSF Web, API Server, Preprints, and Registries (Detached)
+  - `$ docker-compose up -d worker web api admin preprints registries`
 7. View the OSF at [http://localhost:5000](http://localhost:5000).
 
 
@@ -144,13 +188,13 @@
   ```
   $ docker-sync start
   # Wait until you see "Nothing to do: replicas have not changed since last sync."
-  $ docker-compose up -d assets elasticsearch postgres tokumx mfr wb fakecas sharejs worker web api preprints
+  $ docker-compose up -d assets admin_assets mfr wb fakecas sharejs worker web api admin preprints registries
   ```
 
 - To view the logs for a given container: 
 
   ```
-  $ docker-compose logs -f -t 100 web
+  $ docker-compose logs -f --tail 100 web
   ```
 
 ## Running arbitrary commands
@@ -167,6 +211,9 @@
   - After resetting your database or with a new install you will need to populate the table of preprint providers. **You must have run migrations first.**
     - `docker-compose run --rm web python -m scripts.update_taxonomies`
     - `docker-compose run --rm web python -m scripts.populate_preprint_providers`
+- OPTIONAL: Register OAuth Scopes
+  - Needed for things such as the ember-osf dummy app
+    - `docker-compose run --rm web python -m scripts.register_oauth_scopes`
 - OPTIONAL: Create migrations:
   - After changing a model you will need to create migrations and apply them. Migrations are python code that changes either the structure or the data of a database. This will compare the django models on disk to the database, find the differences, and create migration code to change the database. If there are no changes this command is a noop.
     - `docker-compose run --rm web python manage.py makemigrations`
@@ -175,20 +222,38 @@
     - `docker-compose run --rm web python manage.py reset_db --noinput`
 
 ## Application Debugging
-- Console Debugging with IPDB
-  - `docker attach [projectname]_web_1`
 
-    _NOTE: You can detach from a container and leave it running using the CTRL-p CTRL-q key sequence._
-- Remote Debugging with PyCharm
-  - Add a Python Remote Debugger per container
-    - Name: `Remote Debug (web)`
-    - Local host name: `192.168.168.167`
-    - Port: `11000`
-    - Path mappings:
-      - `~/Projects/cos/osf : /code`
-      - `~/.virtualenvs/osf/lib/python2.7/site-packages : /usr/local/lib/python2.7/site-packages`
-    - `Single Instance only`
-  - Configure `.docker-compose.env` `<APP>_REMOTE_DEBUG` environment variables to match these settings.
+### Console Debugging with IPDB
+
+If you use the following to add a breakpoint
+
+```python
+import ipdb; ipdb.set_trace()
+```
+
+You should run the `web` and/or `api` container (depending on which codebase the breakpoint is in) using:
+
+```
+# Kill the already-running web container
+docker-compose kill web
+
+# Run a web container. App logs and breakpoints will show up here.
+docker-compose run --service-ports web
+```
+
+**IMPORTANT: While attached to the running app, CTRL-c will stop the container.** To detach from the container and leave it running, **use CTRL-p CTRL-q**. Use `docker attach` to re-attach to the container, passing the *container-name* (which you can get from `docker-compose ps`), e.g. `docker attach osf_web_run_1`.
+
+### Remote Debugging with PyCharm
+
+- Add a Python Remote Debugger per container
+  - Name: `Remote Debug (web)`
+  - Local host name: `192.168.168.167`
+  - Port: `11000`
+  - Path mappings: (It is recommended to use absolute path. `~/` may not work.)
+    - `/Users/<your username>/Projects/cos/osf : /code`
+    - (Optional) `/Users/<your username>/.virtualenvs/osf/lib/python2.7/site-packages : /usr/local/lib/python2.7/site-packages`
+  - `Single Instance only`
+- Configure `.docker-compose.env` `<APP>_REMOTE_DEBUG` environment variables to match these settings.
 
 ## Application Tests
 - Run All Tests
@@ -199,6 +264,12 @@
 
 - Test a Specific Module
   - `$ docker-compose run --rm web invoke test_module -m tests/test_conferences.py`
+
+- Test a Specific Class
+  - `docker-compose run --rm web invoke test_module -m tests/test_conferences.py::TestProvisionNode`
+
+- Test a Specific Method
+  - `$ docker-compose run --rm web invoke test_module -m tests/test_conferences.py::TestProvisionNode::test_upload`
 
 ## Managing Container State
 
@@ -212,6 +283,9 @@ Delete a container _(does not remove volumes)_:
   - `$ docker-compose stop -t 0 assets`
   - `$ docker-compose rm assets`
 
+List containers and status:
+  - `$ docker-compose ps`
+
 ## Cleanup & Docker Reset
 
 Resetting the Environment:
@@ -224,4 +298,20 @@ Delete a persistent storage volume:
   **WARNING: All postgres data will be destroyed.**
   - `$ docker-compose stop -t 0 postgres`
   - `$ docker-compose rm postgres`
-  - `$ docker volume rm osf_postgres_data_vol`
+  - `$ docker volume rm osfio_postgres_data_vol`
+
+## Updating
+
+```bash
+git stash # if you have any changes that need to be stashed
+git pull upstream develop # (replace upstream with the name of your remote)
+git stash pop # unstash changes
+# If you get an out of space error
+docker image prune
+# Pull latest images
+docker-compose pull
+
+docker-compose up requirements mfr_requirements wb_requirements
+# Run db migrations
+docker-compose run --rm web python manage.py migrate
+```

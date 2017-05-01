@@ -8,12 +8,12 @@ from website.archiver import (
     ARCHIVER_SIZE_EXCEEDED,
     ARCHIVER_FILE_NOT_FOUND,
 )
-from website.archiver.model import ArchiveJob
 
 from website import (
     mails,
     settings
 )
+from website.util import sanitize
 
 def send_archiver_size_exceeded_mails(src, user, stat_result):
     mails.send_mail(
@@ -158,6 +158,7 @@ def aggregate_file_tree_metadata(addon_short_name, fileobj_metadata, user):
         )
 
 def before_archive(node, user):
+    from website.archiver.model import ArchiveJob
     link_archive_provider(node, user)
     job = ArchiveJob.objects.create(
         src_node=node.registered_from,
@@ -205,9 +206,14 @@ def get_file_map(node, file_map):
 
 def find_registration_file(value, node):
     from osf.models import AbstractNode as Node
-
     orig_sha256 = value['sha256']
-    orig_name = value['selectedFileName']
+    orig_name = sanitize.unescape_entities(
+        value['selectedFileName'],
+        safe={
+            '&lt;': '<',
+            '&gt;': '>'
+        }
+    )
     orig_node = value['nodeId']
     file_map = get_file_map(node)
     for sha256, value, node_id in file_map:

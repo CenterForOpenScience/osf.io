@@ -1,7 +1,7 @@
 import os
-from addons.base.apps import BaseAddonAppConfig
+from addons.base.apps import BaseAddonAppConfig, generic_root_folder
 
-from addons.s3.views import s3_root_folder
+s3_root_folder = generic_root_folder('s3')
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 TEMPLATE_PATH = os.path.join(
@@ -17,6 +17,7 @@ class S3AddonAppConfig(BaseAddonAppConfig):
     short_name = 's3'
     owners = ['user', 'node']
     configs = ['accounts', 'node']
+    categories = ['storage']
     has_hgrid_files = True
     max_file_size = 128  # MB
     node_settings_template = os.path.join(TEMPLATE_PATH, 's3_node_settings.mako')

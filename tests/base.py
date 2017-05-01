@@ -4,32 +4,33 @@ import abc
 import datetime as dt
 import functools
 import logging
-import re
 import os
+import re
 import shutil
+import tempfile
 import unittest
+import uuid
 
 import blinker
 import httpretty
 import mock
 import pytest
+
+from addons.wiki.models import NodeWikiPage
 from django.test import TestCase as DjangoTestCase
 from faker import Factory
-from nose.tools import *  # noqa (PEP8 asserts); noqa (PEP8 asserts)
-from pymongo.errors import OperationFailure
-from webtest_plus import TestApp
-
 from framework.auth import User
 from framework.auth.core import Auth
 from framework.celery_tasks.handlers import celery_before_request
+from framework.django.handlers import handlers as django_handlers
+from framework.flask import rm_handlers
 from framework.guid.model import Guid
 from framework.mongo import client as client_proxy
 from framework.mongo import database as database_proxy
 from framework.sessions.model import Session
 from framework.transactions import commands, messages, utils
+from pymongo.errors import OperationFailure
 from website import settings
-from website.addons.base import AddonConfig
-from addons.wiki.models import NodeWikiPage
 from website.app import init_app
 from website.notifications.listeners import (subscribe_contributor,
                                              subscribe_creator)
@@ -38,7 +39,13 @@ from website.project.model import (MetaSchema, Node, NodeLog, Tag, WatchConfig,
 from website.project.signals import contributor_added, project_created
 from website.project.views.contributor import notify_added_contributor
 from website.signals import ALL_SIGNALS
+from webtest_plus import TestApp
+
 from .json_api_test_app import JSONAPITestApp
+
+from nose.tools import *  # noqa (PEP8 asserts); noqa (PEP8 asserts)
+
+logger = logging.getLogger(__name__)
 
 
 def get_default_metaschema():
@@ -53,21 +60,30 @@ try:
     test_app = init_app(routes=True, set_backends=False)
 except AssertionError:  # Routes have already been set up
     test_app = init_app(routes=False, set_backends=False)
+
+rm_handlers(test_app, django_handlers)
+
 test_app.testing = True
 
 
 # Silence some 3rd-party logging and some "loud" internal loggers
 SILENT_LOGGERS = [
+    'api.caching.tasks',
     'factory.generate',
     'factory.containers',
-    'website.search.elastic_search',
     'framework.analytics',
     'framework.auth.core',
+    'framework.celery_tasks.signals',
+    'website.app',
+    'website.archiver.tasks',
     'website.mails',
+    'website.notifications.listeners',
+    'website.search.elastic_search',
     'website.search_migration.migrate',
     'website.util.paths',
-    'api.caching.tasks',
-    'website.notifications.listeners',
+    'requests_oauthlib.oauth2_session',
+    'raven.base.Client',
+    'raven.contrib.django.client.DjangoClient',
 ]
 for logger_name in SILENT_LOGGERS:
     logging.getLogger(logger_name).setLevel(logging.CRITICAL)
@@ -98,25 +114,9 @@ class DbTestCase(unittest.TestCase):
     """
     DB_NAME = getattr(settings, 'TEST_DB_NAME', 'osf_test')
 
-    # dict of addons to inject into the app.
-    ADDONS_UNDER_TEST = {}
-    # format: {
-    #    <addon shortname>: {
-    #        'user_settings': <AddonUserSettingsBase instance>,
-    #        'node_settings': <AddonNodeSettingsBase instance>,
-    #}
-
-    # list of AddonConfig instances of injected addons
-    __ADDONS_UNDER_TEST = []
-
     @classmethod
     def setUpClass(cls):
         super(DbTestCase, cls).setUpClass()
-
-        for (short_name, options) in cls.ADDONS_UNDER_TEST.iteritems():
-            cls.__ADDONS_UNDER_TEST.append(
-                init_mock_addon(short_name, **options)
-            )
 
         # cls._original_db_name = settings.DB_NAME
         # settings.DB_NAME = cls.DB_NAME
@@ -124,7 +124,7 @@ class DbTestCase(unittest.TestCase):
         settings.ENABLE_EMAIL_SUBSCRIPTIONS = False
 
         cls._original_bcrypt_log_rounds = settings.BCRYPT_LOG_ROUNDS
-        settings.BCRYPT_LOG_ROUNDS = 1
+        settings.BCRYPT_LOG_ROUNDS = 4
 
         # teardown_database(database=database_proxy._get_current_object())
 
@@ -140,42 +140,10 @@ class DbTestCase(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         super(DbTestCase, cls).tearDownClass()
-
-        for addon in cls.__ADDONS_UNDER_TEST:
-            remove_mock_addon(addon)
-
         # teardown_database(database=database_proxy._get_current_object())
         # settings.DB_NAME = cls._original_db_name
         settings.ENABLE_EMAIL_SUBSCRIPTIONS = cls._original_enable_email_subscriptions
         settings.BCRYPT_LOG_ROUNDS = cls._original_bcrypt_log_rounds
-
-
-class DbIsolationMixin(object):
-    """Use this mixin when test-level database isolation is desired.
-
-    DbTestCase only wipes the database during *class* setup and teardown. This
-    leaks database state across test cases, which smells pretty bad. Place this
-    mixin before DbTestCase (or derivatives, such as OsfTestCase) in your test
-    class definition to empty your database during *test* setup and teardown.
-
-    This removes all documents from all collections on tearDown. It doesn't
-    drop collections and it doesn't touch indexes.
-
-    """
-
-    def tearDown(self):
-        super(DbIsolationMixin, self).tearDown()
-        # eval is deprecated in Mongo 3, and may be removed in the future. It's
-        # nice here because it saves us collections.length database calls.
-        self.db.eval('''
-
-            var collections = db.getCollectionNames();
-            for (var collection, i=0; collection = collections[i]; i++) {
-                if (collection.indexOf('system.') === 0) continue
-                db[collection].remove();
-            }
-
-        ''')
 
 
 class AppTestCase(unittest.TestCase):
@@ -225,28 +193,25 @@ class ApiAppTestCase(unittest.TestCase):
         self.app = JSONAPITestApp()
 
 
-class UploadTestCase(unittest.TestCase):
+class SearchTestCase(unittest.TestCase):
 
-    @classmethod
-    def setUpClass(cls):
-        """Store uploads in temp directory.
-        """
-        super(UploadTestCase, cls).setUpClass()
-        cls._old_uploads_path = settings.UPLOADS_PATH
-        cls._uploads_path = os.path.join('/tmp', 'osf', 'uploads')
-        try:
-            os.makedirs(cls._uploads_path)
-        except OSError:  # Path already exists
-            pass
-        settings.UPLOADS_PATH = cls._uploads_path
+    def setUp(self):
+        settings.ELASTIC_INDEX = uuid.uuid4().hex
+        settings.ELASTIC_TIMEOUT = 60
 
-    @classmethod
-    def tearDownClass(cls):
-        """Restore uploads path.
-        """
-        super(UploadTestCase, cls).tearDownClass()
-        shutil.rmtree(cls._uploads_path)
-        settings.UPLOADS_PATH = cls._old_uploads_path
+        from website.search import elastic_search
+        elastic_search.INDEX = settings.ELASTIC_INDEX
+        elastic_search.create_index(settings.ELASTIC_INDEX)
+
+        # NOTE: Super is called last to ensure the ES connection can be established before
+        #       the httpretty module patches the socket.
+        super(SearchTestCase, self).setUp()
+
+    def tearDown(self):
+        super(SearchTestCase, self).tearDown()
+
+        from website.search import elastic_search
+        elastic_search.delete_index(settings.ELASTIC_INDEX)
 
 
 methods = [
@@ -258,17 +223,17 @@ methods = [
     httpretty.DELETE,
 ]
 def kill(*args, **kwargs):
-    raise httpretty.errors.UnmockedError
+    logger.error('httppretty.kill: %s - %s', args, kwargs)
+    raise httpretty.errors.UnmockedError()
 
 
 class MockRequestTestCase(unittest.TestCase):
 
     DISABLE_OUTGOING_CONNECTIONS = False
 
-    @classmethod
-    def setUpClass(cls):
-        super(MockRequestTestCase, cls).setUpClass()
-        if cls.DISABLE_OUTGOING_CONNECTIONS:
+    def setUp(self):
+        super(MockRequestTestCase, self).setUp()
+        if self.DISABLE_OUTGOING_CONNECTIONS:
             httpretty.enable()
             for method in methods:
                 httpretty.register_uri(
@@ -281,15 +246,10 @@ class MockRequestTestCase(unittest.TestCase):
     def tearDown(self):
         super(MockRequestTestCase, self).tearDown()
         httpretty.reset()
-
-    @classmethod
-    def tearDownClass(cls):
-        super(MockRequestTestCase, cls).tearDownClass()
-        httpretty.reset()
         httpretty.disable()
 
 
-class OsfTestCase(DbTestCase, AppTestCase, UploadTestCase, MockRequestTestCase):
+class OsfTestCase(DbTestCase, AppTestCase, SearchTestCase, MockRequestTestCase):
     """Base `TestCase` for tests that require both scratch databases and the OSF
     application. Note: superclasses must call `super` in order for all setup and
     teardown methods to be called correctly.
@@ -297,7 +257,7 @@ class OsfTestCase(DbTestCase, AppTestCase, UploadTestCase, MockRequestTestCase):
     pass
 
 
-class ApiTestCase(DbTestCase, ApiAppTestCase, UploadTestCase, MockRequestTestCase):
+class ApiTestCase(DbTestCase, ApiAppTestCase, SearchTestCase, MockRequestTestCase):
     """Base `TestCase` for tests that require both scratch databases and the OSF
     API application. Note: superclasses must call `super` in order for all setup and
     teardown methods to be called correctly.
@@ -387,7 +347,7 @@ class ApiAddonTestCase(ApiTestCase):
             self.account.remove()
 
 
-class AdminTestCase(DbTestCase, DjangoTestCase, UploadTestCase, MockRequestTestCase):
+class AdminTestCase(DbTestCase, DjangoTestCase, SearchTestCase, MockRequestTestCase):
     pass
 
 
@@ -491,42 +451,3 @@ def assert_datetime_equal(dt1, dt2, allowance=500):
     """Assert that two datetimes are about equal."""
 
     assert abs(dt1 - dt2) < dt.timedelta(milliseconds=allowance)
-
-def init_mock_addon(short_name, user_settings=None, node_settings=None):
-    """Add an addon to the settings, so that it is ready for app init
-
-    This is used to inject addons into the application context for tests."""
-
-    #Importing within the function to prevent circular import problems.
-    import factories
-    user_settings = user_settings or factories.MockAddonUserSettings
-    node_settings = node_settings or factories.MockAddonNodeSettings
-    settings.ADDONS_REQUESTED.append(short_name)
-
-    addon_config = AddonConfig(
-        short_name=short_name,
-        full_name=short_name,
-        owners=['User', 'Node'],
-        categories=['Storage'],
-        user_settings_model=user_settings,
-        node_settings_model=node_settings,
-        models=[user_settings, node_settings],
-    )
-    settings.ADDONS_AVAILABLE_DICT[addon_config.short_name] = addon_config
-    settings.ADDONS_AVAILABLE.append(addon_config)
-    return addon_config
-
-
-def remove_mock_addon(addon_config):
-    """Given an AddonConfig instance, remove that addon from the settings"""
-    settings.ADDONS_AVAILABLE_DICT.pop(addon_config.short_name, None)
-
-    try:
-        settings.ADDONS_AVAILABLE.remove(addon_config)
-    except ValueError:
-        pass
-
-    try:
-        settings.ADDONS_REQUESTED.remove(addon_config.short_name)
-    except ValueError:
-        pass

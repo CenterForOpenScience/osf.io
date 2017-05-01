@@ -1,3 +1,5 @@
+from framework.flask import redirect
+
 from website import settings
 from website.project import utils
 
@@ -12,8 +14,7 @@ def activity():
 
     # New and Noreworthy Projects
     try:
-        new_and_noteworthy_pointers = Node.load(settings.NEW_AND_NOTEWORTHY_LINKS_NODE).nodes_pointer
-        new_and_noteworthy_projects = [pointer.node for pointer in new_and_noteworthy_pointers]
+        new_and_noteworthy_projects = Node.load(settings.NEW_AND_NOTEWORTHY_LINKS_NODE).nodes_pointer
     except AttributeError:
         new_and_noteworthy_projects = []
 
@@ -35,3 +36,11 @@ def activity():
         'popular_public_projects': popular_public_projects,
         'popular_public_registrations': popular_public_registrations,
     }
+
+
+def redirect_explore_to_activity(**kwargs):
+    return redirect('/activity/')
+
+
+def redirect_explore_activity_to_activity(**kwargs):
+    return redirect('/activity/')

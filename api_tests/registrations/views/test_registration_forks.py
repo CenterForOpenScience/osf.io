@@ -111,7 +111,7 @@ class TestRegistrationForksList(ApiTestCase):
         assert_equal(fork_contributors['id'], self.user._id)
 
         forked_children = data['embeds']['children']['data'][0]
-        assert_equal(forked_children['id'], self.private_registration.forks.first().nodes.first()._id)
+        assert_equal(forked_children['id'], self.private_registration.forks.first().nodes[0]._id)
         assert_equal(forked_children['attributes']['title'], self.component.title)
 
         forked_node_links = data['embeds']['node_links']['data'][0]['embeds']['target_node']['data']
@@ -121,13 +121,13 @@ class TestRegistrationForksList(ApiTestCase):
         assert_equal(data['attributes']['fork'], True)
 
         expected_logs = list(self.private_registration.logs.values_list('action', flat=True))
-        expected_logs.append(self.private_registration.nodes.first().logs.latest().action)
+        expected_logs.append(self.private_registration.nodes[0].logs.latest().action)
         expected_logs.append('node_forked')
         expected_logs.append('node_forked')
 
         forked_logs = data['embeds']['logs']['data']
         assert_equal(set(expected_logs), set(log['attributes']['action'] for log in forked_logs))
-        assert_equal(len(forked_logs), 6)
+        assert_equal(len(forked_logs), len(expected_logs))
 
         forked_from = data['embeds']['forked_from']['data']
         assert_equal(forked_from['id'], self.private_registration._id)

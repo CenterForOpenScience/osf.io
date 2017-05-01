@@ -13,9 +13,12 @@ It provides basic logging utilities and a dry run mode
 ```python
 import sys
 import logging
-from website.app import init_app
+from website.app import setup_django
 from scripts import utils as script_utils
 from django.db import transaction
+
+setup_django()
+from osf.models import OSFUser, AbstractNode
 
 
 logger = logging.getLogger(__name__)
@@ -27,8 +30,6 @@ def do_migration():
 
 
 def main(dry=True):
-    init_app(set_backends=True, routes=False)  # Sets the storage backends on all models
-
     # Start a transaction that will be rolled back if any exceptions are un
     with transaction.atomic():
         do_migration()
@@ -44,30 +45,15 @@ if __name__ == '__main__':
         script_utils.add_file_logger(logger, __file__)
 
     # Allow setting the log level just by appending the level to the command
-    if 'debug' in sys.argv:
+    if '--debug' in sys.argv:
         logger.setLevel(logging.DEBUG)
-    elif 'warning' in sys.argv:
+    elif '--warning' in sys.argv:
         logger.setLevel(logging.WARNING)
-    elif 'info' in sys.argv:
+    elif '--info' in sys.argv:
         logger.setLevel(logging.INFO)
-    elif 'error' in sys.argv:
+    elif '--error' in sys.argv:
         logger.setLevel(logging.ERROR)
 
     # Finally run the migration
     main(dry=dry)
-```
-
-
-## Cursor timeouts
-
-Sometimes and slowly iterating over a large collection the mongo cursor will time out
-
-The code snippet below will paginate result and load them into memory so timeouts are no longer an issue
-
-```python
-from framework.mongo.utils import paginated
-
-nodes = paginated(Node, Q('is_public', 'eq', True))
-for node in nodes:
-    #...
 ```

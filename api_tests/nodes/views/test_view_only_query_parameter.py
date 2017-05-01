@@ -161,7 +161,7 @@ class TestNodeDetailViewOnlyLinks(ViewOnlyTestCase):
 
     def test_private_project_logs_with_anonymous_link_does_not_expose_user_id(self):
         res = self.app.get(self.private_node_one_url+'logs/', {
-            'view_only': self.private_node_one_anonymous_link.key,
+            'view_only': str(self.private_node_one_anonymous_link.key),
         })
         assert_equal(res.status_code, 200)
         body = res.body

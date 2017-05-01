@@ -1,37 +1,40 @@
 # -*- coding: utf-8 -*-
+from __future__ import absolute_import
+
+import framework
 import importlib
 import itertools
 import json
+import logging
 import os
 import sys
 import thread
 from collections import OrderedDict
 
 import django
-from django.apps import apps
 import modularodm
-from werkzeug.contrib.fixers import ProxyFix
-
-import framework
-import website.models
+from api.caching import listeners  # noqa
+from django.apps import apps
 from framework.addons.utils import render_addon_capabilities
-from framework.flask import app, add_handlers
-from framework.logging import logger
+from framework.celery_tasks import handlers as celery_task_handlers
+from framework.django import handlers as django_handlers
+from framework.flask import add_handlers, app
+# Import necessary to initialize the root logger
+from framework.logging import logger as root_logger  # noqa
 from framework.mongo import handlers as mongo_handlers
-from framework.mongo import set_up_storage, storage
 from framework.postcommit_tasks import handlers as postcommit_handlers
 from framework.sentry import sentry
-from framework.celery_tasks import handlers as celery_task_handlers
 from framework.transactions import handlers as transaction_handlers
-from website.project.licenses import ensure_licenses
-from website.project.model import ensure_schemas
-from website import maintenance
-
 # Imports necessary to connect signals
 from website.archiver import listeners  # noqa
+from website.files.models import FileNode
 from website.mails import listeners  # noqa
 from website.notifications import listeners  # noqa
-from api.caching import listeners  # noqa
+from website.project.licenses import ensure_licenses
+from website.project.model import ensure_schemas
+from werkzeug.contrib.fixers import ProxyFix
+
+logger = logging.getLogger(__name__)
 
 
 def init_addons(settings, routes=True):
@@ -46,19 +49,21 @@ def init_addons(settings, routes=True):
         try:
             addon = apps.get_app_config('addons_{}'.format(addon_name))
         except LookupError:
-            pass
-        else:
+            addon = None
+        if addon:
             if addon not in settings.ADDONS_AVAILABLE:
                 settings.ADDONS_AVAILABLE.append(addon)
             settings.ADDONS_AVAILABLE_DICT[addon.short_name] = addon
     settings.ADDON_CAPABILITIES = render_addon_capabilities(settings.ADDONS_AVAILABLE)
 
-
 def attach_handlers(app, settings):
     """Add callback handlers to ``app`` in the correct order."""
     # Add callback handlers to application
-    if not settings.USE_POSTGRES:
+    if settings.USE_POSTGRES:
+        add_handlers(app, django_handlers.handlers)
+    else:
         add_handlers(app, mongo_handlers.handlers)
+
     add_handlers(app, celery_task_handlers.handlers)
     add_handlers(app, transaction_handlers.handlers)
     add_handlers(app, postcommit_handlers.handlers)
@@ -76,17 +81,10 @@ def attach_handlers(app, settings):
     return app
 
 
-def do_set_backends(settings):
-    if settings.USE_POSTGRES:
-        logger.debug('Not setting storage backends because USE_POSTGRES = True')
-        return
-    logger.debug('Setting storage backends')
-    maintenance.ensure_maintenance_collection()
-    set_up_storage(
-        website.models.MODELS,
-        storage.MongoStorage,
-        addons=settings.ADDONS_AVAILABLE,
-    )
+def setup_django():
+    # Django App config
+    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'api.base.settings')
+    django.setup()
 
 
 def init_app(settings_module='website.settings', set_backends=True, routes=True,
@@ -96,17 +94,18 @@ def init_app(settings_module='website.settings', set_backends=True, routes=True,
     a single app instance (rather than creating multiple instances).
 
     :param settings_module: A string, the settings module to use.
-    :param set_backends: Whether to set the database storage backends.
+    :param set_backends: Deprecated.
     :param routes: Whether to set the url map.
 
     """
+    # Ensure app initialization only takes place once
+    if app.config.get('IS_INITIALIZED', False) is True:
+        return app
+
     logger.info('Initializing the application from process {}, thread {}.'.format(
         os.getpid(), thread.get_ident()
     ))
-
-    # Django App config
-    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'api.base.settings')
-    django.setup()
+    setup_django()
 
     # The settings module
     settings = importlib.import_module(settings_module)
@@ -123,8 +122,6 @@ def init_app(settings_module='website.settings', set_backends=True, routes=True,
     app.config['SESSION_COOKIE_SECURE'] = settings.SESSION_COOKIE_SECURE
     app.config['SESSION_COOKIE_HTTPONLY'] = settings.SESSION_COOKIE_HTTPONLY
 
-    if set_backends:
-        do_set_backends(settings)
     if routes:
         try:
             from website.routes import make_url_map
@@ -146,6 +143,7 @@ def init_app(settings_module='website.settings', set_backends=True, routes=True,
         ensure_licenses()
     apply_middlewares(app, settings)
 
+    app.config['IS_INITIALIZED'] = True
     return app
 
 
@@ -178,6 +176,7 @@ def patch_models(settings):
         models.OSFUser: 'User',
         models.AbstractNode: 'Node',
         models.NodeRelation: 'Pointer',
+        models.BaseFileNode: 'StoredFileNode',
     }
     for module in sys.modules.values():
         if not module:
@@ -187,7 +186,7 @@ def patch_models(settings):
             if (
                 hasattr(module, model_name) and
                 isinstance(getattr(module, model_name), type) and
-                issubclass(getattr(module, model_name), modularodm.StoredObject)
+                (issubclass(getattr(module, model_name), modularodm.StoredObject) or issubclass(getattr(module, model_name), FileNode))
             ):
                 setattr(module, model_name, model_cls)
             # Institution is a special case because it isn't a StoredObject

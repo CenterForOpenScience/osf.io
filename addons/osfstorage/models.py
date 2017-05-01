@@ -1,16 +1,19 @@
+from __future__ import unicode_literals
+
 import logging
-import os
+
+from django.apps import apps
+from django.db import models, connection
+from modularodm import Q
+from psycopg2._psycopg import AsIs
 
 from addons.base.models import BaseNodeSettings, BaseStorageAddon
-from django.apps import apps
-from django.db import models
-from modularodm import Q
 from osf.exceptions import InvalidTagError, NodeStateError, TagNotFoundError
-from osf.models import (File, FileNode, FileVersion, Folder, Guid,
-                        TrashedFileNode)
+from osf.models import (File, FileVersion, Folder, Guid,
+                        TrashedFileNode, BaseFileNode)
 from osf.utils.auth import Auth
-from website.files import utils as files_utils
 from website.files import exceptions
+from website.files import utils as files_utils
 from website.util import permissions
 
 settings = apps.get_app_config('addons_osfstorage')
@@ -18,37 +21,50 @@ settings = apps.get_app_config('addons_osfstorage')
 logger = logging.getLogger(__name__)
 
 
-class OsfStorageFileNode(FileNode):
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.files.models.osfstorage.OsfStorageFileNode'
-    modm_query = None
-    # /TODO DELETE ME POST MIGRATION
-    provider = 'osfstorage'
+class OsfStorageFileNode(BaseFileNode):
+    _provider = 'osfstorage'
+
+    @property
+    def materialized_path(self):
+        sql = """
+            WITH RECURSIVE materialized_path_cte(parent_id, GEN_PATH) AS (
+              SELECT
+                T.parent_id,
+                T.name :: TEXT AS GEN_PATH
+              FROM %s AS T
+              WHERE T.id = %s
+              UNION ALL
+              SELECT
+                T.parent_id,
+                (T.name || '/' || R.GEN_PATH) AS GEN_PATH
+              FROM materialized_path_cte AS R
+                JOIN %s AS T ON T.id = R.parent_id
+              WHERE R.parent_id IS NOT NULL
+            )
+            SELECT gen_path
+            FROM materialized_path_cte AS N
+            WHERE parent_id IS NULL
+            LIMIT 1;
+        """
+        with connection.cursor() as cursor:
+            cursor.execute(sql, [AsIs(self._meta.db_table), self.pk, AsIs(self._meta.db_table)])
+            row = cursor.fetchone()
+            if not row:
+                return '/'
+
+            path = row[0]
+            if not self.is_file:
+                path = path + '/'
+            return path
+
+    @materialized_path.setter
+    def materialized_path(self, val):
+        # raise Exception('Cannot set materialized path on OSFStorage as it is computed.')
+        logger.warn('Cannot set materialized path on OSFStorage because it\'s computed.')
 
     @classmethod
     def get(cls, _id, node):
         return cls.find_one(Q('_id', 'eq', _id) & Q('node', 'eq', node))
-
-    def _create_trashed(self, save=True, user=None, parent=None):
-        if save is False:
-            logger.warning('Asked to create a TrashedFileNode without saving.')
-        trashed = TrashedFileNode.objects.create(
-            _id=self._id,
-            name=self.name,
-            path=self.path,
-            node=self.node,
-            parent=parent or self.parent,
-            history=self.history,
-            is_file=self.is_file,
-            checkout=self.checkout,
-            provider=self.provider,
-            last_touched=self.last_touched,
-            materialized_path=self.materialized_path,
-            deleted_by=user
-        )
-        if self.versions.exists():
-            trashed.versions.add(*self.versions.all())
-        return trashed
 
     @classmethod
     def get_or_create(cls, node, path):
@@ -63,7 +79,7 @@ class OsfStorageFileNode(FileNode):
             return inst
 
         # Dont raise anything a 404 will be raised later
-        return cls.create(node=node, path=path)
+        return cls(node=node, path=path)
 
     @classmethod
     def get_file_guids(cls, materialized_path, provider, node=None):
@@ -102,31 +118,6 @@ class OsfStorageFileNode(FileNode):
         return 'file' if self.is_file else 'folder'
 
     @property
-    def materialized_path(self):
-        """creates the full path to a the given filenode
-        Note: Possibly high complexity/ many database calls
-        USE SPARINGLY
-        """
-        if not self.parent:
-            return '/'
-
-        # Note: ODM cache can be abused here
-        # for highly nested folders calling
-        # list(self.__class__.find(Q(nodesetting),Q(folder))
-        # may result in a massive increase in performance
-
-        def lineage():
-            current = self
-            while current:
-                yield current
-                current = current.parent
-
-        path = os.path.join(*reversed([x.name for x in lineage()]))
-        if self.is_file:
-            return '/{}'.format(path)
-        return '/{}/'.format(path)
-
-    @property
     def path(self):
         """Path is dynamically computed as storedobject.path is stored
         as an empty string to make the unique index work properly for osfstorage
@@ -137,13 +128,15 @@ class OsfStorageFileNode(FileNode):
     def is_checked_out(self):
         return self.checkout is not None
 
-    def delete(self, user=None, parent=None):
+    def delete(self, user=None, parent=None, **kwargs):
         if self.node.preprint_file and self.node.preprint_file.pk == self.pk:
             self.node._is_preprint_orphan = True
             self.node.save()
         if self.is_checked_out:
             raise exceptions.FileNodeCheckedOutError()
-        return super(OsfStorageFileNode, self).delete(user=user, parent=parent)
+        self._path = self.path
+        self._materialized_path = self.materialized_path
+        return super(OsfStorageFileNode, self).delete(user=user, parent=parent, **kwargs)
 
     def move_under(self, destination_parent, name=None):
         if self.is_checked_out:
@@ -195,16 +188,13 @@ class OsfStorageFileNode(FileNode):
                 self.save()
 
     def save(self):
-        self.path = ''
-        self.materialized_path = ''
+        self._path = ''
+        self._materialized_path = ''
         return super(OsfStorageFileNode, self).save()
 
 
 class OsfStorageFile(OsfStorageFileNode, File):
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.files.models.osfstorage.OsfStorageFile'
-    modm_query = None
-    # /TODO DELETE ME POST MIGRATION
+
     def touch(self, bearer, version=None, revision=None, **kwargs):
         try:
             return self.get_version(revision or version)
@@ -218,18 +208,25 @@ class OsfStorageFile(OsfStorageFileNode, File):
             metadata.append(meta)
         return metadata
 
+    @history.setter
+    def history(self, value):
+        logger.warn('Tried to set history on OsfStorageFile/Folder')
+
     def serialize(self, include_full=None, version=None):
         ret = super(OsfStorageFile, self).serialize()
         if include_full:
             ret['fullPath'] = self.materialized_path
 
         version = self.get_version(version)
-        return dict(
-            ret,
-            version=self.versions.count(),
-            md5=version.metadata.get('md5') if version else None,
-            sha256=version.metadata.get('sha256') if version else None,
-        )
+        earliest_version = self.versions.order_by('date_created').first()
+        ret.update({
+            'version': self.versions.count(),
+            'md5': version.metadata.get('md5') if version else None,
+            'sha256': version.metadata.get('sha256') if version else None,
+            'modified': version.date_created.isoformat() if version else None,
+            'created': earliest_version.date_created.isoformat() if version else None,
+        })
+        return ret
 
     def create_version(self, creator, location, metadata=None):
         latest_version = self.get_version()
@@ -281,7 +278,7 @@ class OsfStorageFile(OsfStorageFileNode, File):
     def add_tag(self, tag, auth, save=True, log=True):
         from osf.models import Tag, NodeLog  # Prevent import error
 
-        if not self.tags.filter(name=tag).exists() and not self.node.is_registration:
+        if not self.tags.filter(system=False, name=tag).exists() and not self.node.is_registration:
             new_tag = Tag.load(tag)
             if not new_tag:
                 new_tag = Tag(name=tag)
@@ -299,7 +296,7 @@ class OsfStorageFile(OsfStorageFileNode, File):
         if self.node.is_registration:
             # Can't perform edits on a registration
             raise NodeStateError
-        tag_instance = Tag.objects.filter(name=tag).first()
+        tag_instance = Tag.objects.filter(system=False, name=tag).first()
         if not tag_instance:
             raise InvalidTagError
         elif not self.tags.filter(id=tag_instance.id).exists():
@@ -312,11 +309,11 @@ class OsfStorageFile(OsfStorageFileNode, File):
                 self.save()
             return True
 
-    def delete(self, user=None, parent=None):
+    def delete(self, user=None, parent=None, **kwargs):
         from website.search import search
 
         search.update_file(self, delete=True)
-        return super(OsfStorageFile, self).delete(user, parent)
+        return super(OsfStorageFile, self).delete(user, parent, **kwargs)
 
     def save(self, skip_search=False):
         from website.search import search
@@ -328,10 +325,7 @@ class OsfStorageFile(OsfStorageFileNode, File):
 
 
 class OsfStorageFolder(OsfStorageFileNode, Folder):
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.files.models.osfstorage.OsfStorageFolder'
-    modm_query = None
-    # /TODO DELETE ME POST MIGRATION
+
     @property
     def is_checked_out(self):
         try:
@@ -357,22 +351,18 @@ class OsfStorageFolder(OsfStorageFileNode, Folder):
 
 
 class NodeSettings(BaseStorageAddon, BaseNodeSettings):
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.addons.osfstorage.model.OsfStorageNodeSettings'
-    modm_query = None
-    # /TODO DELETE ME POST MIGRATION
     # Required overrides
     complete = True
     has_auth = True
 
-    root_node = models.ForeignKey('osf.StoredFileNode', null=True, blank=True)
+    root_node = models.ForeignKey(OsfStorageFolder, null=True, blank=True)
 
     @property
     def folder_name(self):
         return self.root_node.name
 
     def get_root(self):
-        return self.root_node.wrapped()
+        return self.root_node
 
     def on_add(self):
         if self.root_node:
@@ -385,7 +375,7 @@ class NodeSettings(BaseStorageAddon, BaseNodeSettings):
         # Note: The "root" node will always be "named" empty string
         root = OsfStorageFolder(name='', node=self.owner)
         root.save()
-        self.root_node = root.stored_object
+        self.root_node = root
         self.save()
 
     def after_fork(self, node, fork, user, save=True):
@@ -395,7 +385,7 @@ class NodeSettings(BaseStorageAddon, BaseNodeSettings):
         if not self.root_node:
             self.on_add()
 
-        clone.root_node = files_utils.copy_files(self.get_root(), clone.owner).stored_object
+        clone.root_node = files_utils.copy_files(self.get_root(), clone.owner)
         clone.save()
 
         return clone, None

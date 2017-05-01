@@ -97,7 +97,7 @@ def _get_wiki_pages_current(node):
             'name': sorted_page.page_name,
             'url': node.web_url_for('project_wiki_view', wname=sorted_page.page_name, _guid=True),
             'wiki_id': sorted_page._primary_key,
-            'wiki_content': wiki_page_content(sorted_page.page_name, node=node)
+            'wiki_content': _wiki_page_content(sorted_page.page_name, node=node)
         }
         for sorted_page in [
             node.get_wiki_page(sorted_key)
@@ -181,20 +181,20 @@ def wiki_page_draft(wname, **kwargs):
                        else wiki_utils.get_sharejs_content(node, wname)),
     }
 
-
-@must_be_valid_project
-@must_be_contributor_or_public
-@must_have_addon('wiki', 'node')
-def wiki_page_content(wname, wver=None, **kwargs):
+def _wiki_page_content(wname, wver=None, **kwargs):
     node = kwargs['node'] or kwargs['project']
     wiki_page = node.get_wiki_page(wname, version=wver)
     rendered_before_update = wiki_page.rendered_before_update if wiki_page else False
-
     return {
         'wiki_content': wiki_page.content if wiki_page else '',
         'rendered_before_update': rendered_before_update
     }
 
+@must_be_valid_project
+@must_be_contributor_or_public
+@must_have_addon('wiki', 'node')
+def wiki_page_content(wname, wver=None, **kwargs):
+    return _wiki_page_content(wname, wver=wver, **kwargs)
 
 @must_be_valid_project  # injects project
 @must_have_permission('write')  # injects user, project
@@ -395,7 +395,7 @@ def edit_wiki_settings(node, auth, **kwargs):
 @must_be_logged_in
 @must_be_valid_project
 def get_node_wiki_permissions(node, auth, **kwargs):
-    return wiki_utils.serialize_wiki_settings(auth.user, [node._id])
+    return wiki_utils.serialize_wiki_settings(auth.user, [node])
 
 @must_be_valid_project
 @must_have_addon('wiki', 'node')
@@ -557,9 +557,8 @@ def format_project_wiki_pages(node, auth):
 
 def format_component_wiki_pages(node, auth):
     pages = []
-    for node in node.nodes:
-        if any([node.is_deleted,
-                not node.can_view(auth),
+    for node in node.get_nodes(is_deleted=False):
+        if any([not node.can_view(auth),
                 not node.has_addon('wiki')]):
             continue
         else:
@@ -572,13 +571,13 @@ def format_component_wiki_pages(node, auth):
 def serialize_component_wiki(node, auth):
     children = []
     url = node.web_url_for('project_wiki_view', wname='home', _guid=True)
-    home_has_content = bool(wiki_page_content('home', node=node).get('wiki_content'))
+    home_has_content = bool(_wiki_page_content('home', node=node).get('wiki_content'))
     component_home_wiki = {
         'page': {
             'url': url,
             'name': 'Home',
             # Handle pointers
-            'id': node._primary_key if node.primary else node.node._primary_key,
+            'id': node._id
         }
     }
 

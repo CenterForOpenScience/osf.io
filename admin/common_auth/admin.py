@@ -2,33 +2,27 @@ from __future__ import absolute_import
 
 from django.contrib import admin
 from django.contrib.admin.models import DELETION
-from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth.models import Permission
 from django.core.urlresolvers import reverse
 from django.utils.html import escape
 
-from admin.common_auth.logs import OSFLogEntry
-from admin.common_auth.forms import UserRegistrationForm
-from osf.models.user import OSFUser
+from osf.models import AdminLogEntry
+from osf.models import AdminProfile
 
 
 class PermissionAdmin(admin.ModelAdmin):
     search_fields = ['name', 'codename']
 
 
-class CustomUserAdmin(UserAdmin):
-    add_form = UserRegistrationForm
-    list_display = ['username', 'given_name', 'is_active']
-
-admin.site.register(OSFUser, CustomUserAdmin)
 admin.site.register(Permission, PermissionAdmin)
+admin.site.register(AdminProfile)
 
 
 class LogEntryAdmin(admin.ModelAdmin):
 
     date_hierarchy = 'action_time'
 
-    readonly_fields = [f.name for f in OSFLogEntry._meta.get_fields()]
+    readonly_fields = [f.name for f in AdminLogEntry._meta.get_fields()]
 
     list_filter = [
         'user',
@@ -78,4 +72,4 @@ class LogEntryAdmin(admin.ModelAdmin):
             .prefetch_related('content_type')
 
 
-admin.site.register(OSFLogEntry, LogEntryAdmin)
+# admin.site.register(AdminLogEntry, LogEntryAdmin)
