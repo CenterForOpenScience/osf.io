@@ -55,6 +55,9 @@ def update_or_create(provider_data):
         )
         if licenses:
             provider.licenses_acceptable.add(*licenses)
+        default_license = provider_data.pop('default_license', False)
+        if default_license:
+            provider.default_license = get_license(default_license)
         for key, val in provider_data.iteritems():
             setattr(provider, key, val)
         changed_fields = provider.save()
@@ -435,6 +438,7 @@ def main(env):
             'social_twitter': 'lawarxiv',
             'social_facebook': '',
             'header_text': '',
+            'default_license': 'CC-By Attribution 4.0 International',
             'licenses_acceptable': ['CC0 1.0 Universal', 'CC-By Attribution 4.0 International', 'No license'],
             'subjects_acceptable': [
                 (['Arts and Humanities'], True),

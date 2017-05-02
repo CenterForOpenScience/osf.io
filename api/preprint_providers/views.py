@@ -271,4 +271,8 @@ class PreprintProviderLicenseList(LicenseList):
 
     def get_queryset(self):
         provider = get_object_or_error(PreprintProvider, self.kwargs['provider_id'], display_name='PreprintProvider')
-        return provider.licenses_acceptable.get_queryset() if provider.licenses_acceptable.count() else super(PreprintProviderLicenseList, self).get_queryset()
+        if not provider.licenses_acceptable.count():
+            return super(PreprintProviderLicenseList, self).get_queryset()
+        if not provider.default_license:
+            return provider.licenses_acceptable.get_queryset()
+        return [provider.default_license] + [license for license in provider.licenses_acceptable.all() if license != provider.default_license]
