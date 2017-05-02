@@ -729,6 +729,7 @@ def _view_project(node, auth, primary=False,
             'contributors': list(node.contributors.values_list('guids___id', flat=True)),
             'is_preprint': node.is_preprint,
             'is_preprint_orphan': node.is_preprint_orphan,
+            'has_published_preprint': node.preprints.filter(is_published=True).exists() if node else False,
             'preprint_file_id': node.preprint_file._id if node.preprint_file else None,
             'preprint_url': node.preprint_url
         },
