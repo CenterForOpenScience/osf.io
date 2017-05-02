@@ -1,10 +1,11 @@
 from __future__ import unicode_literals
 
 import csv
+import pytz
 from furl import furl
 from datetime import datetime, timedelta
 from django.views.defaults import page_not_found
-from django.views.generic import FormView, DeleteView, ListView
+from django.views.generic import FormView, DeleteView, ListView, TemplateView
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.core.urlresolvers import reverse
 from django.core.exceptions import PermissionDenied
@@ -57,12 +58,14 @@ class UserDeleteView(PermissionRequiredMixin, DeleteView):
                 if 'spam_flagged' in user.system_tags or 'ham_confirmed' in user.system_tags:
                     if 'spam_flagged' in user.system_tags:
                         t = Tag.all_tags.get(name='spam_flagged', system=True)
+                        # TODO: removing system tags this way does not currently work -- https://openscience.atlassian.net/browse/OSF-7760
                         user.tags.remove(t)
                     if 'ham_confirmed' in user.system_tags:
                         t = Tag.all_tags.get(name='ham_confirmed', system=True)
                         user.tags.remove(t)
-                    if 'spam_confirmed' not in user.system_tags:
-                        user.add_system_tag('spam_confirmed')
+
+                if kwargs.get('is_spam') and 'spam_confirmed' not in user.system_tags:
+                    user.add_system_tag('spam_confirmed')
                 flag = USER_REMOVED
                 message = 'User account {} disabled'.format(user.pk)
             else:
@@ -75,7 +78,7 @@ class UserDeleteView(PermissionRequiredMixin, DeleteView):
                         user.tags.remove(t)
                     if 'spam_confirmed' in user.system_tags:
                         t = Tag.all_tags.get(name='spam_confirmed', system=True)
-                        user.tags.remove('spam_confirmed')
+                        user.tags.remove(t)
                     if 'ham_confirmed' not in user.system_tags:
                         user.add_system_tag('ham_confirmed')
                 flag = USER_RESTORED
@@ -431,6 +434,49 @@ class UserWorkshopFormView(PermissionRequiredMixin, FormView):
 
     def form_invalid(self, form):
         super(UserWorkshopFormView, self).form_invalid(form)
+
+
+class GetUserLink(PermissionRequiredMixin, TemplateView):
+    permission_required = 'osf.change_osfuser'
+    template_name = 'users/get_link.html'
+    raise_exception = True
+
+    def get_link(self, user):
+        raise NotImplementedError()
+
+    def get_link_type(self):
+        raise NotImplementedError()
+
+    def get_context_data(self, **kwargs):
+        user = OSFUser.load(self.kwargs.get('guid'))
+
+        kwargs['user_link'] = self.get_link(user)
+        kwargs['username'] = user.username
+        kwargs['title'] = self.get_link_type()
+
+        return super(GetUserLink, self).get_context_data(**kwargs)
+
+
+class GetUserConfirmationLink(GetUserLink):
+    def get_link(self, user):
+        return user.get_confirmation_url(user.username, force=True)
+
+    def get_link_type(self):
+        return 'User Confirmation'
+
+
+class GetPasswordResetLink(GetUserLink):
+    def get_link(self, user):
+        user.verification_key_v2 = generate_verification_key(verification_type='password')
+        user.verification_key_v2['expires'] = datetime.utcnow().replace(tzinfo=pytz.utc) + timedelta(hours=48)
+        user.save()
+
+        reset_abs_url = furl(DOMAIN)
+        reset_abs_url.path.add(('resetpassword/{}/{}'.format(user._id, user.verification_key_v2['token'])))
+        return reset_abs_url
+
+    def get_link_type(self):
+        return 'Password Reset'
 
 
 class ResetPasswordView(PermissionRequiredMixin, FormView):

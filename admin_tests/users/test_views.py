@@ -6,7 +6,9 @@ from nose import tools as nt
 import mock
 import csv
 import os
-from datetime import timedelta
+import furl
+import pytz
+from datetime import timedelta, datetime
 
 from tests.base import AdminTestCase
 from website import settings
@@ -16,7 +18,8 @@ from osf_tests.factories import (
     UserFactory,
     AuthUserFactory,
     ProjectFactory,
-    TagFactory
+    TagFactory,
+    UnconfirmedUserFactory
 )
 from admin_tests.utilities import setup_view, setup_log_view, setup_form_view
 
@@ -462,3 +465,53 @@ class TestUserSearchView(AdminTestCase):
         nt.assert_equal(len(results), 3)
         for user in results:
             nt.assert_in('Hardy', user.fullname)
+
+
+class TestGetLinkView(AdminTestCase):
+
+    def test_get_user_confirmation_link(self):
+        user = UnconfirmedUserFactory()
+        request = RequestFactory().get('/fake_path')
+        view = views.GetUserConfirmationLink()
+        view = setup_view(view, request, guid=user._id)
+
+        user_token = user.email_verifications.keys()[0]
+        ideal_link_path = '/confirm/{}/{}/'.format(user._id, user_token)
+        link = view.get_link(user)
+        link_path = str(furl.furl(link).path)
+
+        nt.assert_equal(link_path, ideal_link_path)
+
+    def test_get_user_confirmation_link_with_expired_token(self):
+        user = UnconfirmedUserFactory()
+        request = RequestFactory().get('/fake_path')
+        view = views.GetUserConfirmationLink()
+        view = setup_view(view, request, guid=user._id)
+
+        old_user_token = user.email_verifications.keys()[0]
+        user.email_verifications[old_user_token]['expiration'] = datetime.utcnow().replace(tzinfo=pytz.utc) - timedelta(hours=24)
+        user.save()
+
+        link = view.get_link(user)
+        new_user_token = user.email_verifications.keys()[0]
+
+        link_path = str(furl.furl(link).path)
+        ideal_link_path = '/confirm/{}/{}/'.format(user._id, new_user_token)
+
+        nt.assert_equal(link_path, ideal_link_path)
+
+    def test_get_password_reset_link(self):
+        user = UnconfirmedUserFactory()
+        request = RequestFactory().get('/fake_path')
+        view = views.GetPasswordResetLink()
+        view = setup_view(view, request, guid=user._id)
+
+        link = view.get_link(user)
+
+        user_token = user.verification_key_v2.get('token')
+        nt.assert_is_not_none(user_token)
+
+        ideal_link_path = '/resetpassword/{}/{}'.format(user._id, user_token)
+        link_path = str(furl.furl(link).path)
+
+        nt.assert_equal(link_path, ideal_link_path)
