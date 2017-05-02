@@ -111,6 +111,7 @@ class PreprintProviderDisplay(PermissionRequiredMixin, DetailView):
         fields = model_to_dict(preprint_provider)
         fields['toplevel_subjects'] = list(subject_ids)
         fields['subjects_chosen'] = ', '.join(str(i) for i in subject_ids)
+        kwargs['show_taxonomies'] = settings.SHOW_TAXONOMIES_IN_PREPRINT_PROVIDER_EDIT
         kwargs['form'] = PreprintProviderForm(initial=fields)
         kwargs['import_form'] = ImportFileForm()
         return kwargs
@@ -141,7 +142,6 @@ class PreprintProviderChangeForm(PermissionRequiredMixin, UpdateView):
 
     def get_context_data(self, *args, **kwargs):
         kwargs['import_form'] = ImportFileForm()
-        kwargs['show_taxonomies'] = settings.SHOW_TAXONOMIES_IN_PREPRINT_PROVIDER_EDIT
         return super(PreprintProviderChangeForm, self).get_context_data(*args, **kwargs)
 
     def get_success_url(self, *args, **kwargs):
