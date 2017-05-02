@@ -4,6 +4,8 @@ import re
 import furl
 from django.core.urlresolvers import resolve, reverse, NoReverseMatch
 from django.core.exceptions import ImproperlyConfigured
+from django.utils import six
+
 from rest_framework import exceptions
 from rest_framework import serializers as ser
 from rest_framework.fields import SkipField
@@ -844,6 +846,27 @@ class LinksField(ser.Field):
         if hasattr(obj, 'get_absolute_url') and 'self' not in self.links:
             ret['self'] = self.extend_absolute_url(obj)
         return ret
+
+
+class ListDictField(ser.DictField):
+
+    def __init__(self, **kwargs):
+        super(ListDictField, self).__init__(**kwargs)
+
+    def to_representation(self, value):
+        """
+        Ensure the value of each key in the Dict to be a list
+        """
+        res = {}
+        for key, val in value.items():
+            if isinstance(self.child.to_representation(val), list):
+                res[six.text_type(key)] = self.child.to_representation(val)
+            else:
+                if self.child.to_representation(val):
+                    res[six.text_type(key)] = [self.child.to_representation(val)]
+                else:
+                    res[six.text_type(key)] = []
+        return res
 
 
 _tpl_pattern = re.compile(r'\s*<\s*(\S*)\s*>\s*')
