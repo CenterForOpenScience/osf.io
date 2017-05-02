@@ -62,7 +62,7 @@ def remove_group_permissions(*args):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0001_initial'),
+        ('osf', '0022_backfill_date_retracted'),
     ]
 
     operations = [
