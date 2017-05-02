@@ -11,36 +11,21 @@ var $osf = require('js/osfHelpers');
 var NavbarViewModel = function() {
     var self = this;
 
-    self.showSearch = ko.observable(false);
-    self.searchCSS = ko.observable('');
-    self.query = ko.observable('');
-    self.showClose = true;
+    self.currentService = window.contextVars.meetings ? 'meetings' : 'home';
 
-    self.onSearchPage = ko.computed(function() {
-        return window.contextVars.search;
-    });
-
-    self.toggleSearch = function(){
-        if(self.showSearch()){
-            self.showSearch(false);
-            self.searchCSS('');
-        } else {
-            self.showSearch(true);
-            self.searchCSS('active');
-            $('#searchPageFullBar').focus();
+    self.osfServices = {
+        home: {
+            name: 'HOME',
+            href: '${domain}'
+        },
+        meetings: {
+            name: 'MEETINGS',
+            href: '${domain}/meetings/'
         }
     };
 
-    self.submit = function() {
-        $('#searchPageFullBar').blur().focus();
-       if(self.query() !== ''){
-           window.location.href = '/search/?q=' + self.query();
-       }
-    };
-
-    $('.navbar .dropdown').on('show.bs.dropdown', function () {
-        self.showSearch(false);
-        self.searchCSS('');
+    $('#primary-navigation').on('click', function () {
+        $('.navbar-collapse').collapse('hide');
     });
 
 };
@@ -55,43 +40,9 @@ function NavbarControl (selector, data, options) {
     self.init();
 }
 
-/** Only for Search Bar Placeholder -- Allow IE and other browsers to work as the same */
-function placeholder(inputDom, inputLabel) {
-    inputDom.on('input', function () {
-        if (inputDom.val() === '') {
-            inputLabel.css( 'visibility', 'visible' );
-        } else {
-            inputLabel.css( 'visibility', 'hidden' );
-        }
-    });
-}
-
-function searchBarPlaceHolderInit() {
-    var inputDom =  $('#searchPageFullBar');
-    var inputLabel =  $('#searchBarLabel');
-    inputDom.attr('placeholder', ''); //Clear the original placeholder
-    inputLabel.css( 'visibility', 'visible' );
-    placeholder(inputDom, inputLabel);
-    inputDom.focus();
-
-    //Make sure IE cursor is located at the end of text
-    var $inputVal = inputDom.val();
-    inputDom.val('').val($inputVal);
-
-    //For search page with existing input, make sure placeholder is hidden.
-
-    if(inputDom.val() !== '' ){
-         inputLabel.css( 'visibility', 'hidden' );
-    }
-}
-
 NavbarControl.prototype.init = function() {
     var self = this;
     ko.applyBindings(self.viewModel, self.$element[0]);
-    if($osf.isIE()){
-        searchBarPlaceHolderInit();
-    }
-
 };
 
 
