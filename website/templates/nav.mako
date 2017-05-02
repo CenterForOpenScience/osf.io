@@ -37,7 +37,7 @@
             % if user_name:
                 <li><a href="${domain}myprojects/">My Projects</a></li>
             % endif
-                <li><a href="${domain}search/">Search</a></li>
+                <li><a href="${domain}search/">Search OSF</a></li>
             <!-- /ko -->
 
             % if not user_name:
@@ -57,7 +57,7 @@
 
             <ul class="dropdown-menu auth-dropdown" role="menu">
                 <li><a href="${domain}profile/"><i class="fa fa-user fa-lg p-r-xs"></i> My Profile</a></li>
-                <li><a href="${domain}support/" ><i class="fa fa-life-ring fa-lg p-r-xs"></i> Support</a></li>
+                <li><a href="${domain}support/" ><i class="fa fa-life-ring fa-lg p-r-xs"></i> OSF Support</a></li>
                 <li><a href="${web_url_for('user_profile')}"><i class="fa fa-cog fa-lg p-r-xs"></i> Settings</a></li>
                 <li><a href="${web_url_for('auth_logout')}"><i class="fa fa-sign-out fa-lg p-r-xs"></i> Log out</a></li>
             </ul>
