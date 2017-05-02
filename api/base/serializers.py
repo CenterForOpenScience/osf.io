@@ -4,6 +4,8 @@ import re
 import furl
 from django.core.urlresolvers import resolve, reverse, NoReverseMatch
 from django.core.exceptions import ImproperlyConfigured
+from django.utils import six
+
 from rest_framework import exceptions
 from rest_framework import serializers as ser
 from rest_framework.fields import SkipField
@@ -22,6 +24,7 @@ from website import settings
 from website import util as website_utils
 from website.models import Node
 from website.util.sanitize import strip_html
+from website.project.model import has_anonymous_link
 
 
 def format_relationship_links(related_link=None, self_link=None, rel_meta=None, self_meta=None):
@@ -53,8 +56,11 @@ def format_relationship_links(related_link=None, self_link=None, rel_meta=None, 
 
 
 def is_anonymized(request):
+    if hasattr(request, '_is_anonymized'):
+        return request._is_anonymized
     private_key = request.query_params.get('view_only', None)
-    return website_utils.check_private_key_for_anonymized_link(private_key)
+    request._is_anonymized = website_utils.check_private_key_for_anonymized_link(private_key)
+    return request._is_anonymized
 
 
 class ShowIfVersion(ser.Field):
@@ -248,6 +254,7 @@ class DateByVersion(ser.DateTimeField):
     """
     Custom DateTimeField that forces dates into the ISO-8601 format with timezone information in version 2.2.
     """
+
     def to_representation(self, value):
         request = self.context.get('request')
         if request:
@@ -339,8 +346,7 @@ class AuthorizedCharField(ser.CharField):
         content = AuthorizedCharField(source='get_content')
     """
 
-    def __init__(self, source=None, **kwargs):
-        assert source is not None, 'The `source` argument is required.'
+    def __init__(self, source, **kwargs):
         self.source = source
         super(AuthorizedCharField, self).__init__(source=self.source, **kwargs)
 
@@ -350,6 +356,33 @@ class AuthorizedCharField(ser.CharField):
         field_source_method = getattr(obj, self.source)
         return field_source_method(auth=auth)
 
+class AnonymizedRegexField(AuthorizedCharField):
+    """
+    Performs a regex replace on the content of the authorized object's
+    source field when an anonymous view is requested.
+
+    Example:
+        content = AnonymizedRegexField(source='get_content', regex='\[@[^\]]*\]\([^\) ]*\)', replace='@A User')
+    """
+
+    def __init__(self, source, regex, replace, **kwargs):
+        self.source = source
+        self.regex = regex
+        self.replace = replace
+        super(AnonymizedRegexField, self).__init__(source=self.source, **kwargs)
+
+    def get_attribute(self, obj):
+        value = super(AnonymizedRegexField, self).get_attribute(obj)
+
+        if value:
+            user = self.context['request'].user
+            auth = auth_core.Auth(user)
+            if 'view_only' in self.context['request'].query_params:
+                auth.private_key = self.context['request'].query_params['view_only']
+                if has_anonymous_link(obj.node, auth):
+                    value = re.sub(self.regex, self.replace, value)
+
+        return value
 
 class RelationshipField(ser.HyperlinkedIdentityField):
     """
@@ -358,9 +391,9 @@ class RelationshipField(ser.HyperlinkedIdentityField):
 
         children = RelationshipField(
             related_view='nodes:node-children',
-            related_view_kwargs={'node_id': '<pk>'},
+            related_view_kwargs={'node_id': '<_id>'},
             self_view='nodes:node-node-children-relationship',
-            self_view_kwargs={'node_id': '<pk>'},
+            self_view_kwargs={'node_id': '<_id>'},
             related_meta={'count': 'get_node_count'}
         )
 
@@ -400,7 +433,7 @@ class RelationshipField(ser.HyperlinkedIdentityField):
     replies = RelationshipField(
         self_view='nodes:node-comments',
         self_view_kwargs={'node_id': '<node._id>'},
-        filter={'target': '<pk>'})
+        filter={'target': '<_id>'})
     )
     """
     json_api_link = True  # serializes to a links object
@@ -775,15 +808,15 @@ class LinksField(ser.Field):
         links = LinksField({
             'html': 'absolute_url',
             'children': {
-                'related': Link('nodes:node-children', node_id='<pk>'),
+                'related': Link('nodes:node-children', node_id='<_id>'),
                 'count': 'get_node_count'
             },
             'contributors': {
-                'related': Link('nodes:node-contributors', node_id='<pk>'),
+                'related': Link('nodes:node-contributors', node_id='<_id>'),
                 'count': 'get_contrib_count'
             },
             'registrations': {
-                'related': Link('nodes:node-registrations', node_id='<pk>'),
+                'related': Link('nodes:node-registrations', node_id='<_id>'),
                 'count': 'get_registration_count'
             },
         })
@@ -813,6 +846,27 @@ class LinksField(ser.Field):
         if hasattr(obj, 'get_absolute_url') and 'self' not in self.links:
             ret['self'] = self.extend_absolute_url(obj)
         return ret
+
+
+class ListDictField(ser.DictField):
+
+    def __init__(self, **kwargs):
+        super(ListDictField, self).__init__(**kwargs)
+
+    def to_representation(self, value):
+        """
+        Ensure the value of each key in the Dict to be a list
+        """
+        res = {}
+        for key, val in value.items():
+            if isinstance(self.child.to_representation(val), list):
+                res[six.text_type(key)] = self.child.to_representation(val)
+            else:
+                if self.child.to_representation(val):
+                    res[six.text_type(key)] = [self.child.to_representation(val)]
+                else:
+                    res[six.text_type(key)] = []
+        return res
 
 
 _tpl_pattern = re.compile(r'\s*<\s*(\S*)\s*>\s*')
@@ -1004,7 +1058,15 @@ class JSONAPIListSerializer(ser.ListSerializer):
         return ret
 
 
-class JSONAPISerializer(ser.Serializer):
+class PrefetchRelationshipsSerializer(ser.Serializer):
+
+    def __init__(self, *args, **kwargs):
+        super(PrefetchRelationshipsSerializer, self).__init__(*args, **kwargs)
+        self.model_field_names = [name if field.source == '*' else field.source
+                                  for name, field in self.fields.iteritems()]
+
+
+class JSONAPISerializer(PrefetchRelationshipsSerializer):
     """Base serializer. Requires that a `type_` option is set on `class Meta`. Also
     allows for enveloping of both single resources and collections.  Looks to nest fields
     according to JSON API spec. Relational fields must set json_api_link=True flag.
@@ -1101,7 +1163,10 @@ class JSONAPISerializer(ser.Serializer):
                 data['attributes'][field.field_name] = None
             else:
                 try:
-                    representation = field.to_representation(attribute)
+                    if hasattr(attribute, 'all'):
+                        representation = field.to_representation(attribute.all())
+                    else:
+                        representation = field.to_representation(attribute)
                 except SkipField:
                     continue
                 if getattr(field, 'json_api_link', False) or getattr(nested_field, 'json_api_link', False):
@@ -1183,7 +1248,7 @@ class JSONAPISerializer(ser.Serializer):
         return website_utils.rapply(self.validated_data, strip_html)
 
 
-class JSONAPIRelationshipSerializer(ser.Serializer):
+class JSONAPIRelationshipSerializer(PrefetchRelationshipsSerializer):
     """Base Relationship serializer. Requires that a `type_` option is set on `class Meta`.
     Provides a simplified serialization of the relationship, allowing for simple update request
     bodies.
@@ -1273,21 +1338,20 @@ class AddonAccountSerializer(JSONAPISerializer):
 
 
 class LinkedNode(JSONAPIRelationshipSerializer):
-    id = ser.CharField(source='node._id', required=False, allow_null=True)
+    id = ser.CharField(source='_id', required=False, allow_null=True)
 
     class Meta:
         type_ = 'linked_nodes'
 
 
 class LinkedRegistration(JSONAPIRelationshipSerializer):
-    id = ser.CharField(source='node._id', required=False, allow_null=True)
+    id = ser.CharField(source='_id', required=False, allow_null=True)
 
     class Meta:
         type_ = 'linked_registrations'
 
 
-class LinkedNodesRelationshipSerializer(ser.Serializer):
-
+class LinkedNodesRelationshipSerializer(PrefetchRelationshipsSerializer):
     data = ser.ListField(child=LinkedNode())
     links = LinksField({'self': 'get_self_url',
                         'html': 'get_related_url'})
@@ -1303,8 +1367,8 @@ class LinkedNodesRelationshipSerializer(ser.Serializer):
 
     def get_pointers_to_add_remove(self, pointers, new_pointers):
         diff = relationship_diff(
-            current_items={pointer.node._id: pointer for pointer in pointers},
-            new_items={val['node']['_id']: val for val in new_pointers}
+            current_items={pointer._id: pointer for pointer in pointers},
+            new_items={val['_id']: val for val in new_pointers}
         )
 
         nodes_to_add = []
@@ -1320,10 +1384,7 @@ class LinkedNodesRelationshipSerializer(ser.Serializer):
         # Convenience method to format instance based on view's get_object
         return {'data': [
             pointer for pointer in
-            obj.nodes_pointer
-            if not pointer.node.is_deleted
-            and not pointer.node.is_registration
-            and not pointer.node.is_collection
+            obj.linked_nodes.filter(is_deleted=False, type='osf.node')
         ], 'self': obj}
 
     def update(self, instance, validated_data):
@@ -1355,8 +1416,7 @@ class LinkedNodesRelationshipSerializer(ser.Serializer):
         return self.make_instance_obj(collection)
 
 
-class LinkedRegistrationsRelationshipSerializer(ser.Serializer):
-
+class LinkedRegistrationsRelationshipSerializer(PrefetchRelationshipsSerializer):
     data = ser.ListField(child=LinkedRegistration())
     links = LinksField({'self': 'get_self_url',
                         'html': 'get_related_url'})
@@ -1372,8 +1432,8 @@ class LinkedRegistrationsRelationshipSerializer(ser.Serializer):
 
     def get_pointers_to_add_remove(self, pointers, new_pointers):
         diff = relationship_diff(
-            current_items={pointer.node._id: pointer for pointer in pointers},
-            new_items={val['node']['_id']: val for val in new_pointers}
+            current_items={pointer._id: pointer for pointer in pointers},
+            new_items={val['_id']: val for val in new_pointers}
         )
 
         nodes_to_add = []
@@ -1389,10 +1449,7 @@ class LinkedRegistrationsRelationshipSerializer(ser.Serializer):
         # Convenience method to format instance based on view's get_object
         return {'data': [
             pointer for pointer in
-            obj.nodes_pointer
-            if not pointer.node.is_deleted
-            and pointer.node.is_registration
-            and not pointer.node.is_collection
+            obj.linked_nodes.filter(is_deleted=False, type='osf.registration')
         ], 'self': obj}
 
     def update(self, instance, validated_data):

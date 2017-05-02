@@ -6,7 +6,7 @@ from modularodm import Q
 from modularodm.exceptions import NoResultsFound, ValidationValueError
 
 from framework.celery_tasks import handlers
-from website.addons.osfstorage import settings as osfstorage_settings
+from addons.osfstorage import settings as osfstorage_settings
 from website.files.models.osfstorage import OsfStorageFile
 from website.preprints.tasks import format_preprint
 from website.util import permissions
@@ -15,13 +15,11 @@ from framework.auth import Auth
 from framework.exceptions import PermissionsError
 
 from website import settings
-from website.project.model import (
-    NodeLog,
-    NodeStateError
-)
+from osf.models import NodeLog, Subject
+from osf.exceptions import NodeStateError
 
 from tests.base import OsfTestCase
-from tests.factories import (
+from osf_tests.factories import (
     AuthUserFactory,
     ProjectFactory,
     PreprintFactory,
@@ -29,6 +27,8 @@ from tests.factories import (
     SubjectFactory
 )
 from tests.utils import assert_logs, assert_not_logs
+from api_tests import utils as api_test_utils
+from website.project.views.contributor import find_preprint_provider
 
 
 class TestPreprintFactory(OsfTestCase):
@@ -59,7 +59,6 @@ class TestSetPreprintFile(OsfTestCase):
 
         self.project = ProjectFactory(creator=self.user)
         self.file = OsfStorageFile.create(
-            is_file=True,
             node=self.project,
             path='/panda.txt',
             name='panda.txt',
@@ -67,7 +66,6 @@ class TestSetPreprintFile(OsfTestCase):
         self.file.save()
 
         self.file_two = OsfStorageFile.create(
-            is_file=True,
             node=self.project,
             path='/pandapanda.txt',
             name='pandapanda.txt',
@@ -166,7 +164,6 @@ class TestPreprintServicePermissions(OsfTestCase):
     def test_nonadmin_cannot_set_file(self):
         initial_file = self.preprint.primary_file
         file = OsfStorageFile.create(
-            is_file=True,
             node=self.project,
             path='/panda.txt',
             name='panda.txt',
@@ -198,7 +195,6 @@ class TestPreprintServicePermissions(OsfTestCase):
     def test_admin_can_set_file(self):
         initial_file = self.preprint.primary_file
         file = OsfStorageFile.create(
-            is_file=True,
             node=self.project,
             path='/panda.txt',
             name='panda.txt',
@@ -235,7 +231,7 @@ class TestPreprintServicePermissions(OsfTestCase):
 class TestPreprintProviders(OsfTestCase):
     def setUp(self):
         super(TestPreprintProviders, self).setUp()
-        self.preprint = PreprintFactory(providers=[])
+        self.preprint = PreprintFactory(provider=None, is_published=False)
         self.provider = PreprintProviderFactory(name='WWEArxiv')
 
     def test_add_provider(self):
@@ -254,10 +250,25 @@ class TestPreprintProviders(OsfTestCase):
 
         assert_equal(self.preprint.provider, None)
 
+    def test_find_provider(self):
+        self.preprint.provider = self.provider
+        self.preprint.save()
+        self.preprint.reload()
+
+        assert ('branded', 'WWEArxiv') == find_preprint_provider(self.preprint.node)
+
+
 class TestOnPreprintUpdatedTask(OsfTestCase):
     def setUp(self):
         super(TestOnPreprintUpdatedTask, self).setUp()
         self.user = AuthUserFactory()
+        if len(self.user.fullname.split(' ')) > 2:
+            # Prevent unexpected keys ('suffix', 'additional_name')
+            self.user.fullname = 'David Davidson'
+            self.user.middle_names = ''
+            self.user.suffix = ''
+            self.user.save()
+
         self.auth = Auth(user=self.user)
         self.preprint = PreprintFactory()
 
@@ -267,7 +278,12 @@ class TestOnPreprintUpdatedTask(OsfTestCase):
         self.preprint.node.add_contributor(self.user, visible=False)
         self.preprint.node.save()
 
-        self.preprint.node.creator.given_name = 'ZZYZ'
+        self.preprint.node.creator.given_name = u'ZZYZ'
+        if len(self.preprint.node.creator.fullname.split(' ')) > 2:
+            # Prevent unexpected keys ('suffix', 'additional_name')
+            self.preprint.node.creator.fullname = 'David Davidson'
+            self.preprint.node.creator.middle_names = ''
+            self.preprint.node.creator.suffix = ''
         self.preprint.node.creator.save()
 
         self.preprint.set_subjects([[SubjectFactory()._id]], auth=Auth(self.preprint.node.creator), save=False)
@@ -279,7 +295,7 @@ class TestOnPreprintUpdatedTask(OsfTestCase):
     def test_format_preprint(self):
         res = format_preprint(self.preprint)
 
-        assert set(gn['@type'] for gn in res) == {'creator', 'contributor', 'throughsubjects', 'subject', 'throughtags', 'tag', 'workidentifier', 'agentidentifier', 'person', 'preprint'}
+        assert set(gn['@type'] for gn in res) == {'creator', 'contributor', 'throughsubjects', 'subject', 'throughtags', 'tag', 'workidentifier', 'agentidentifier', 'person', 'preprint', 'workrelation', 'creativework'}
 
         nodes = dict(enumerate(res))
         preprint = nodes.pop(next(k for k, v in nodes.items() if v['@type'] == 'preprint'))
@@ -297,40 +313,41 @@ class TestOnPreprintUpdatedTask(OsfTestCase):
         subjects = [nodes.pop(k) for k, v in nodes.items() if v['@type'] == 'subject']
         through_subjects = [nodes.pop(k) for k, v in nodes.items() if v['@type'] == 'throughsubjects']
         assert sorted(subject['@id'] for subject in subjects) == sorted(tt['subject']['@id'] for tt in through_subjects)
-        assert sorted(subject['name'] for subject in subjects) == ['Example Subject #1']
+        assert sorted(subject['name'] for subject in subjects) == [Subject.load(s).text for h in self.preprint.subjects for s in h]
 
         people = sorted([nodes.pop(k) for k, v in nodes.items() if v['@type'] == 'person'], key=lambda x: x['given_name'])
-        assert people == [{
-            '@id': people[0]['@id'],
+        expected_people = sorted([{
             '@type': 'person',
             'given_name': u'BoJack',
             'family_name': u'Horseman',
         }, {
-            '@id': people[1]['@id'],
             '@type': 'person',
             'given_name': self.user.given_name,
             'family_name': self.user.family_name,
         }, {
-            '@id': people[2]['@id'],
             '@type': 'person',
             'given_name': self.preprint.node.creator.given_name,
             'family_name': self.preprint.node.creator.family_name,
-        }]
+        }], key=lambda x: x['given_name'])
+        for i, p in enumerate(expected_people):
+            expected_people[i]['@id'] = people[i]['@id']
+
+        assert people == expected_people
 
         creators = sorted([nodes.pop(k) for k, v in nodes.items() if v['@type'] == 'creator'], key=lambda x: x['order_cited'])
         assert creators == [{
             '@id': creators[0]['@id'],
             '@type': 'creator',
             'order_cited': 0,
-            'cited_as': self.preprint.node.creator.fullname,
-            'agent': {'@id': people[2]['@id'], '@type': 'person'},
+            'cited_as': u'{}'.format(self.preprint.node.creator.fullname),
+            'agent': {'@id': [p['@id'] for p in people if p['given_name'] == self.preprint.node.creator.given_name][0], '@type': 'person'},
             'creative_work': {'@id': preprint['@id'], '@type': preprint['@type']},
         }, {
             '@id': creators[1]['@id'],
             '@type': 'creator',
             'order_cited': 1,
-            'cited_as': 'BoJack Horseman',
-            'agent': {'@id': people[0]['@id'], '@type': 'person'},
+            'cited_as': u'BoJack Horseman',
+            'agent': {'@id': [p['@id'] for p in people if p['given_name'] == u'BoJack'][0], '@type': 'person'},
             'creative_work': {'@id': preprint['@id'], '@type': preprint['@type']},
         }]
 
@@ -338,8 +355,8 @@ class TestOnPreprintUpdatedTask(OsfTestCase):
         assert contributors == [{
             '@id': contributors[0]['@id'],
             '@type': 'contributor',
-            'cited_as': self.user.fullname,
-            'agent': {'@id': people[1]['@id'], '@type': 'person'},
+            'cited_as': u'{}'.format(self.user.fullname),
+            'agent': {'@id': [p['@id'] for p in people if p['given_name'] == self.user.given_name][0], '@type': 'person'},
             'creative_work': {'@id': preprint['@id'], '@type': preprint['@type']},
         }]
 
@@ -351,21 +368,29 @@ class TestOnPreprintUpdatedTask(OsfTestCase):
             self.preprint.node.creator.profile_image_url(),
         ]) | set(urlparse.urljoin(settings.DOMAIN, user.profile_url) for user in self.preprint.node.contributors if user.is_registered)
 
-        workidentifiers = {nodes.pop(k)['uri'] for k, v in nodes.items() if v['@type'] == 'workidentifier'}
-        assert workidentifiers == set([
-            'http://dx.doi.org/{}'.format(self.preprint.article_doi),
-            urlparse.urljoin(settings.DOMAIN, self.preprint.url)
-        ])
+        related_work = next(nodes.pop(k) for k, v in nodes.items() if v['@type'] == 'creativework')
+        assert set(related_work.keys()) == {'@id', '@type'}  # Empty except @id and @type
+
+        doi = next(nodes.pop(k) for k, v in nodes.items() if v['@type'] == 'workidentifier' and 'doi' in v['uri'])
+        assert doi['creative_work'] == related_work
+
+        workidentifiers = [nodes.pop(k)['uri'] for k, v in nodes.items() if v['@type'] == 'workidentifier']
+        assert workidentifiers == [urlparse.urljoin(settings.DOMAIN, self.preprint._id + '/')]
+
+        relation = nodes.pop(nodes.keys()[0])
+        assert relation == {'@id': relation['@id'], '@type': 'workrelation', 'related': {'@id': related_work['@id'], '@type': related_work['@type']}, 'subject': {'@id': preprint['@id'], '@type': preprint['@type']}}
 
         assert nodes == {}
 
     def test_format_preprint_nones(self):
-        self.preprint.node.tags = None
+        self.preprint.node.tags = []
         self.preprint.date_published = None
+        self.preprint.node.preprint_article_doi = None
         self.preprint.set_subjects([], auth=Auth(self.preprint.node.creator), save=False)
 
         res = format_preprint(self.preprint)
 
+        assert self.preprint.provider != 'osf'
         assert set(gn['@type'] for gn in res) == {'creator', 'contributor', 'workidentifier', 'agentidentifier', 'person', 'preprint'}
 
         nodes = dict(enumerate(res))
@@ -377,22 +402,23 @@ class TestOnPreprintUpdatedTask(OsfTestCase):
         assert preprint.get('date_published') is None
 
         people = sorted([nodes.pop(k) for k, v in nodes.items() if v['@type'] == 'person'], key=lambda x: x['given_name'])
-        assert people == [{
-            '@id': people[0]['@id'],
+        expected_people = sorted([{
             '@type': 'person',
             'given_name': u'BoJack',
             'family_name': u'Horseman',
         }, {
-            '@id': people[1]['@id'],
             '@type': 'person',
             'given_name': self.user.given_name,
             'family_name': self.user.family_name,
         }, {
-            '@id': people[2]['@id'],
             '@type': 'person',
             'given_name': self.preprint.node.creator.given_name,
             'family_name': self.preprint.node.creator.family_name,
-        }]
+        }], key=lambda x: x['given_name'])
+        for i, p in enumerate(expected_people):
+            expected_people[i]['@id'] = people[i]['@id']
+
+        assert people == expected_people
 
         creators = sorted([nodes.pop(k) for k, v in nodes.items() if v['@type'] == 'creator'], key=lambda x: x['order_cited'])
         assert creators == [{
@@ -400,14 +426,14 @@ class TestOnPreprintUpdatedTask(OsfTestCase):
             '@type': 'creator',
             'order_cited': 0,
             'cited_as': self.preprint.node.creator.fullname,
-            'agent': {'@id': people[2]['@id'], '@type': 'person'},
+            'agent': {'@id': [p['@id'] for p in people if p['given_name'] == self.preprint.node.creator.given_name][0], '@type': 'person'},
             'creative_work': {'@id': preprint['@id'], '@type': preprint['@type']},
         }, {
             '@id': creators[1]['@id'],
             '@type': 'creator',
             'order_cited': 1,
-            'cited_as': 'BoJack Horseman',
-            'agent': {'@id': people[0]['@id'], '@type': 'person'},
+            'cited_as': u'BoJack Horseman',
+            'agent': {'@id': [p['@id'] for p in people if p['given_name'] == u'BoJack'][0], '@type': 'person'},
             'creative_work': {'@id': preprint['@id'], '@type': preprint['@type']},
         }]
 
@@ -416,7 +442,7 @@ class TestOnPreprintUpdatedTask(OsfTestCase):
             '@id': contributors[0]['@id'],
             '@type': 'contributor',
             'cited_as': self.user.fullname,
-            'agent': {'@id': people[1]['@id'], '@type': 'person'},
+            'agent': {'@id': [p['@id'] for p in people if p['given_name'] == self.user.given_name][0], '@type': 'person'},
             'creative_work': {'@id': preprint['@id'], '@type': preprint['@type']},
         }]
 
@@ -429,10 +455,8 @@ class TestOnPreprintUpdatedTask(OsfTestCase):
         ]) | set(urlparse.urljoin(settings.DOMAIN, user.profile_url) for user in self.preprint.node.contributors if user.is_registered)
 
         workidentifiers = {nodes.pop(k)['uri'] for k, v in nodes.items() if v['@type'] == 'workidentifier'}
-        assert workidentifiers == set([
-            'http://dx.doi.org/{}'.format(self.preprint.article_doi),
-            urlparse.urljoin(settings.DOMAIN, self.preprint.url)
-        ])
+        # URLs should *always* be osf.io/guid/
+        assert workidentifiers == set([urlparse.urljoin(settings.DOMAIN, self.preprint._id) + '/'])
 
         assert nodes == {}
 
@@ -442,8 +466,6 @@ class TestOnPreprintUpdatedTask(OsfTestCase):
             'is_published': (False, True),
             'node.is_public': (True, False),
             'node.is_public': (False, True),
-            'node.tags': (['qatest'], True),
-            'node.tags': ([], False),
             'node._is_preprint_orphan': (True, True),
             'node._is_preprint_orphan': (False, False),
             'node.is_deleted': (True, True),
@@ -463,3 +485,62 @@ class TestOnPreprintUpdatedTask(OsfTestCase):
             assert preprint['is_deleted'] is is_deleted
 
             setattr(target, key.split('.')[-1], orig_val)
+
+    def test_format_preprint_is_deleted_true_if_qatest_tag_is_added(self):
+        res = format_preprint(self.preprint)
+        preprint = next(v for v in res if v['@type'] == 'preprint')
+        assert preprint['is_deleted'] is False
+
+        self.preprint.node.add_tag('qatest', auth=self.auth, save=True)
+
+        res = format_preprint(self.preprint)
+        preprint = next(v for v in res if v['@type'] == 'preprint')
+        assert preprint['is_deleted'] is True
+
+
+class TestPreprintSaveShareHook(OsfTestCase):
+    def setUp(self):
+        super(TestPreprintSaveShareHook, self).setUp()
+        self.admin = AuthUserFactory()
+        self.auth = Auth(user=self.admin)
+        self.provider = PreprintProviderFactory(name='Lars Larson Snowmobiling Experience')
+        self.project = ProjectFactory(creator=self.admin, is_public=True)
+        self.subject = SubjectFactory()
+        self.subject_two = SubjectFactory()
+        self.file = api_test_utils.create_test_file(self.project, self.admin, 'second_place.pdf')
+        self.preprint = PreprintFactory(creator=self.admin, filename='second_place.pdf', provider=self.provider, subjects=[[self.subject._id]], project=self.project, is_published=False)
+
+    @mock.patch('website.preprints.tasks.on_preprint_updated.s')
+    def test_save_unpublished_not_called(self, mock_on_preprint_updated):
+        self.preprint.save()
+        assert not mock_on_preprint_updated.called
+
+    @mock.patch('website.preprints.tasks.on_preprint_updated.s')
+    def test_save_published_called(self, mock_on_preprint_updated):
+        self.preprint.set_published(True, auth=self.auth, save=True)
+        assert mock_on_preprint_updated.called
+
+    # This covers an edge case where a preprint is forced back to unpublished
+    # that it sends the information back to share
+    @mock.patch('website.preprints.tasks.on_preprint_updated.s')
+    def test_save_unpublished_called_forced(self, mock_on_preprint_updated):
+        self.preprint.set_published(True, auth=self.auth, save=True)
+        self.preprint.published = False
+        self.preprint.save(**{'force_update': True})
+        assert_equal(mock_on_preprint_updated.call_count, 2)
+
+    @mock.patch('website.preprints.tasks.on_preprint_updated.s')
+    def test_save_published_called(self, mock_on_preprint_updated):
+        self.preprint.set_published(True, auth=self.auth, save=True)
+        assert mock_on_preprint_updated.called
+
+    @mock.patch('website.preprints.tasks.on_preprint_updated.s')
+    def test_save_published_subject_change_called(self, mock_on_preprint_updated):
+        self.preprint.is_published = True
+        self.preprint.set_subjects([[self.subject_two._id]], auth=self.auth, save=True)
+        assert mock_on_preprint_updated.called
+
+    @mock.patch('website.preprints.tasks.on_preprint_updated.s')
+    def test_save_unpublished_subject_change_not_called(self, mock_on_preprint_updated):
+        self.preprint.set_subjects([[self.subject_two._id]], auth=self.auth, save=True)
+        assert not mock_on_preprint_updated.called

@@ -1,18 +1,21 @@
 # -*- coding: utf-8 -*-
-import itertools
+import datetime
 import functools
+import itertools
+import logging
 import os
 import re
-import logging
-import pymongo
-import datetime
 import urlparse
 import warnings
-import jsonschema
 
+import jsonschema
+import pymongo
 import pytz
+from django.apps import apps
+from django.core.exceptions import ValidationError
 from django.core.urlresolvers import reverse
 from django.core.validators import URLValidator
+from django.utils import timezone
 
 from modularodm import Q
 from modularodm import fields
@@ -25,51 +28,41 @@ from framework.mongo import StoredObject
 from framework.mongo import validators
 from framework.mongo import get_request_and_user_id
 from framework.addons import AddonModelMixin
-from framework.auth import get_user, User, Auth
-from framework.exceptions import PermissionsError
-from framework.guid.model import GuidStoredObject, Guid
+from framework.analytics import (get_basic_counters,
+                                 increment_user_activity_counters)
+from framework.auth import Auth, User, get_user
 from framework.auth.utils import privacy_info_handle
+from framework.celery_tasks.handlers import enqueue_task
+from framework.exceptions import PermissionsError
+from framework.guid.model import Guid, GuidStoredObject
 from framework.mongo.utils import to_mongo_key, unique_on
-from framework.analytics import (
-    get_basic_counters, increment_user_activity_counters
-)
 from framework.sentry import log_exception
 from framework.transactions.context import TokuTransaction
 from framework.utils import iso8601format
-from framework.celery_tasks.handlers import enqueue_task
 
+from keen import scoped_keys
 from website import language, settings
-from website.mails import mails
-from website.util import web_url_for
-from website.util import api_url_for
-from website.util import api_v2_url
-from website.util import sanitize
-from website.util import get_headers_from_request
-from website.exceptions import (
-    NodeStateError,
-    InvalidTagError, TagNotFoundError,
-    UserNotAffiliatedError,
-)
-from website.institutions.model import Institution, AffiliatedInstitutionsList
 from website.citations.utils import datetime_to_csl
+from website.exceptions import (InvalidTagError, NodeStateError,
+                                TagNotFoundError, UserNotAffiliatedError)
 from website.identifiers.model import IdentifierMixin
-from website.util.permissions import expand_permissions, reduce_permissions
-from website.util.permissions import CREATOR_PERMISSIONS, DEFAULT_CONTRIBUTOR_PERMISSIONS, ADMIN
+from website.institutions.model import AffiliatedInstitutionsList, Institution
+from website.mails import mails
+from website.project import signals as project_signals
+from website.project import tasks as node_tasks
 from website.project.commentable import Commentable
 from website.project.metadata.schemas import OSF_META_SCHEMAS
 from website.project.metadata.utils import create_jsonschema_from_metaschema
+from website.project.sanctions import (DraftRegistrationApproval, Embargo,
+                                       EmbargoTerminationApproval,
+                                       RegistrationApproval, Retraction)
 from website.project.licenses import set_license
-from website.project import signals as project_signals
-from website.project import tasks as node_tasks
 from website.project.spam.model import SpamMixin
-from website.project.sanctions import (
-    DraftRegistrationApproval,
-    EmbargoTerminationApproval,
-    Embargo,
-    RegistrationApproval,
-    Retraction,
-)
-from keen import scoped_keys
+from website.util import (api_url_for, api_v2_url, get_headers_from_request,
+                          sanitize, web_url_for)
+from website.util.permissions import (ADMIN, CREATOR_PERMISSIONS,
+                                      DEFAULT_CONTRIBUTOR_PERMISSIONS,
+                                      expand_permissions, reduce_permissions)
 
 logger = logging.getLogger(__name__)
 
@@ -144,13 +137,14 @@ class MetaSchema(StoredObject):
 
 
 def ensure_schema(schema, name, version=1):
+    MetaSchema = apps.get_model('osf.MetaSchema')
     try:
         MetaSchema(
             name=name,
             schema_version=version,
             schema=schema
         ).save()
-    except KeyExistsException:
+    except (KeyExistsException, ValidationError):
         schema_obj = MetaSchema.find_one(
             Q('name', 'eq', name) &
             Q('schema_version', 'eq', version)
@@ -178,13 +172,10 @@ class MetaData(GuidStoredObject):
 
 
 def validate_contributor(guid, contributors):
-    user = User.find(
-        Q('_id', 'eq', guid) &
-        Q('is_claimed', 'eq', True)
-    )
-    if user.count() != 1:
+    user = User.load(guid)
+    if not user or not user.is_claimed:
         raise ValidationValueError('User does not exist or is not active.')
-    elif guid not in contributors:
+    elif user not in contributors:
         raise ValidationValueError('Mentioned user is not a contributor.')
     return True
 
@@ -275,8 +266,8 @@ class Comment(GuidStoredObject, SpamMixin, Commentable):
         if not auth and not self.node.is_public:
             raise PermissionsError
 
-        if self.is_deleted and ((not auth or auth.user.is_anonymous())
-                                or (auth and not auth.user.is_anonymous() and self.user._id != auth.user._id)):
+        if self.is_deleted and ((not auth or auth.user.is_anonymous)
+                                or (auth and not auth.user.is_anonymous and self.user._id != auth.user._id)):
             return None
 
         return self.content
@@ -370,7 +361,7 @@ class Comment(GuidStoredObject, SpamMixin, Commentable):
         log_dict.update(self.root_target.referent.get_extra_log_params(self))
         self.content = content
         self.modified = True
-        self.date_modified = datetime.datetime.utcnow()
+        self.date_modified = timezone.now()
         new_mentions = get_valid_mentioned_users_guids(self, self.node.contributors)
 
         if save:
@@ -397,7 +388,7 @@ class Comment(GuidStoredObject, SpamMixin, Commentable):
         }
         self.is_deleted = True
         log_dict.update(self.root_target.referent.get_extra_log_params(self))
-        self.date_modified = datetime.datetime.utcnow()
+        self.date_modified = timezone.now()
         if save:
             self.save()
             self.node.add_log(
@@ -419,7 +410,7 @@ class Comment(GuidStoredObject, SpamMixin, Commentable):
             'comment': self._id,
         }
         log_dict.update(self.root_target.referent.get_extra_log_params(self))
-        self.date_modified = datetime.datetime.utcnow()
+        self.date_modified = timezone.now()
         if save:
             self.save()
             self.node.add_log(
@@ -663,7 +654,10 @@ class Pointer(StoredObject):
     #: Whether this is a pointer or not
     primary = False
 
-    _id = fields.StringField()
+    _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
+    # Previous 5-character ID. Unused in application code.
+    # These were migrated to ObjectIds to prevent clashes with GUIDs.
+    _legacy_id = fields.StringField()
     node = fields.ForeignField('node')
 
     _meta = {'optimistic': True}
@@ -751,7 +745,7 @@ def validate_user(value):
 
 class NodeUpdateError(Exception):
     def __init__(self, reason, key, *args, **kwargs):
-        super(NodeUpdateError, self).__init__(*args, **kwargs)
+        super(NodeUpdateError, self).__init__(reason, *args, **kwargs)
         self.key = key
         self.reason = reason
 
@@ -1369,7 +1363,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
     def find_readable_antecedent(self, auth):
         """ Returns first antecendant node readable by <user>.
         """
-
         next_parent = self.parent_node
         while next_parent:
             if next_parent.can_view(auth):
@@ -1662,7 +1655,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
 
         if first_save and self.is_bookmark_collection:
             existing_bookmark_collections = Node.find(
-                Q('is_bookmark_collection', 'eq', True) & Q('contributors', 'eq', self.creator._id)
+                Q('is_bookmark_collection', 'eq', True) & Q('contributors', 'eq', self.creator._id) & Q('is_deleted', 'eq', False)
             )
             if existing_bookmark_collections.count() > 0:
                 raise NodeStateError('Only one bookmark collection allowed per user.')
@@ -1788,7 +1781,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
         # Slight hack - date_created is a read-only field.
         new._fields['date_created'].__set__(
             new,
-            datetime.datetime.utcnow(),
+            timezone.now(),
             safe=True
         )
 
@@ -1993,7 +1986,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
         """Recursively checks whether the current node or any of its nodes
         contains a pointer.
         """
-        if self.nodes_pointer:
+        if self.nodes_pointer.exists():
             return True
         for node in self.nodes_primary:
             if node.has_pointers_recursive:
@@ -2154,6 +2147,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
         return None
 
     def on_update(self, first_save, saved_fields):
+        if settings.RUNNING_MIGRATION:  # no-no during migration
+            return
         request, user_id = get_request_and_user_id()
         request_headers = {}
         if not isinstance(request, DummyRequest):
@@ -2205,6 +2200,11 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
 
     def delete_registration_tree(self, save=False):
         self.is_deleted = True
+        for draft_registration in DraftRegistration.find(Q('registered_node', 'eq', self)):
+            # Allow draft registration to be submitted
+            if draft_registration.approval:
+                draft_registration.approval = None
+                draft_registration.save()
         if not getattr(self.embargo, 'for_existing_registration', False):
             self.registered_from = None
         if save:
@@ -2231,7 +2231,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
         if not self.can_edit(auth):
             raise PermissionsError('{0!r} does not have permission to modify this {1}'.format(auth.user, self.category or 'node'))
 
-        #if this is a collection, remove all the collections that this is pointing at.
+        # if this is a collection, remove all the collections that this is pointing at.
         if self.is_collection:
             for pointed in self.nodes_pointer:
                 if pointed.node.is_collection:
@@ -2246,7 +2246,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
             if message:
                 status.push_status_message(message, kind='info', trust=False)
 
-        log_date = date or datetime.datetime.utcnow()
+        log_date = date or timezone.now()
 
         # Add log to parent
         if self.node__parent:
@@ -2292,7 +2292,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
         if not (self.is_public or self.has_permission(user, 'read')):
             raise PermissionsError('{0!r} does not have permission to fork node {1!r}'.format(user, self._id))
 
-        when = datetime.datetime.utcnow()
+        when = timezone.now()
 
         original = self.load(self._primary_key)
 
@@ -2387,7 +2387,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
 
         return forked
 
-    def register_node(self, schema, auth, data, parent=None):
+    def register_node(self, schema, auth, data, parent=None, recur=False):
         """Make a frozen copy of a node.
 
         :param schema: Schema object
@@ -2406,7 +2406,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
         if self.is_collection:
             raise NodeStateError('Folders may not be registered')
 
-        when = datetime.datetime.utcnow()
+        when = timezone.now()
 
         original = self.load(self._primary_key)
 
@@ -2453,19 +2453,26 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
         # After register callback
         for addon in original.get_addons():
             _, message = addon.after_register(original, registered, auth.user)
-            if message:
+            if message and not recur:
                 status.push_status_message(message, kind='info', trust=False)
 
-        for node_contained in original.nodes:
-            if not node_contained.is_deleted:
-                child_registration = node_contained.register_node(
+        for node_relation in original.node_relations.filter(child__is_deleted=False):
+            node_contained = node_relation.child
+            # Register child nodes
+            if not node_relation.is_node_link:
+                registered_child = node_contained.register_node(  # noqa
                     schema=schema,
                     auth=auth,
                     data=data,
                     parent=registered,
                 )
-                if child_registration and not child_registration.primary:
-                    registered.nodes.append(child_registration)
+            else:
+                from osf.models.node_relation import NodeRelation
+                NodeRelation.objects.get_or_create(
+                    is_node_link=True,
+                    parent=registered,
+                    child=node_contained
+                )
 
         registered.save()
 
@@ -2602,11 +2609,11 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
         if len(self.logs) == 1:
             self.date_modified = log.date.replace(tzinfo=None)
         else:
-            self.date_modified = self.logs[-1].date.replace(tzinfo=None)
+            self.date_modified = self.logs.latest().date.replace(tzinfo=None)
 
         if save:
             self.save()
-        if user:
+        if user and not self.is_collection:
             increment_user_activity_counters(user._primary_key, action, log.date.isoformat())
         return log
 
@@ -2711,7 +2718,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
             csl['DOI'] = doi
 
         if self.logs:
-            csl['issued'] = datetime_to_csl(self.logs[-1].date)
+            csl['issued'] = datetime_to_csl(self.logs.latest().date)
 
         return csl
 
@@ -2756,10 +2763,18 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
         parent.nodes.append(self)
         parent.save()
 
+    def _get_parent(self):
+        try:
+            return self.node__parent[0]
+        except IndexError:
+            pass
+        return None
+
     @property
     def _root(self):
-        if self._parent_node:
-            return self._parent_node._root
+        parent = self._get_parent()
+        if parent:
+            return parent._root
         else:
             return self
 
@@ -3319,7 +3334,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
                 self.add_contributor(contributor=contributor, auth=auth, visible=bibliographic,
                                      send_email=send_email, permissions=permissions, save=True)
 
-        auth.user.email_last_sent = datetime.datetime.utcnow()
+        auth.user.email_last_sent = timezone.now()
         auth.user.save()
 
         if index is not None:
@@ -3336,7 +3351,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
         return contributor
 
     def _get_spam_content(self, saved_fields):
-        from website.addons.wiki.model import NodeWikiPage
+        from addons.wiki.models import NodeWikiPage
         spam_fields = self.SPAM_CHECK_FIELDS if self.is_public and 'is_public' in saved_fields else self.SPAM_CHECK_FIELDS.intersection(saved_fields)
         content = []
         for field in spam_fields:
@@ -3383,7 +3398,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
     def _check_spam_user(self, user):
         if (
             settings.SPAM_ACCOUNT_SUSPENSION_ENABLED
-            and (datetime.datetime.utcnow() - user.date_confirmed) <= settings.SPAM_ACCOUNT_SUSPENSION_THRESHOLD
+            and (timezone.now() - user.date_confirmed) <= settings.SPAM_ACCOUNT_SUSPENSION_THRESHOLD
         ):
             self.set_privacy('private', log=False, save=False)
 
@@ -3517,7 +3532,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
 
     # TODO: Move to wiki add-on
     def get_wiki_page(self, name=None, version=None, id=None):
-        from website.addons.wiki.model import NodeWikiPage
+        from addons.wiki.models import NodeWikiPage
 
         if name:
             name = (name or '').strip()
@@ -3543,7 +3558,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
         :param content: A string, the posted content.
         :param auth: All the auth information including user, API key.
         """
-        from website.addons.wiki.model import NodeWikiPage
+        from addons.wiki.models import NodeWikiPage
 
         name = (name or '').strip()
         key = to_mongo_key(name)
@@ -3613,7 +3628,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
 
         """
         # TODO: Fix circular imports
-        from website.addons.wiki.exceptions import (
+        from addons.wiki.exceptions import (
             PageCannotRenameError,
             PageConflictError,
             PageNotFoundError,
@@ -3744,14 +3759,14 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
         if not self.is_registration or (not self.is_public and not (self.embargo_end_date or self.is_pending_embargo)):
             raise NodeStateError('Only public or embargoed registrations may be withdrawn.')
 
-        if self.root is not self:
+        if self.root_id != self.id:
             raise NodeStateError('Withdrawal of non-parent registrations is not permitted.')
 
         retraction = self._initiate_retraction(user, justification)
         self.registered_from.add_log(
             action=NodeLog.RETRACTION_INITIATED,
             params={
-                'node': self.registered_from_id,
+                'node': self.registered_from._id,
                 'registration': self._id,
                 'retraction_id': retraction._id,
             },
@@ -3763,7 +3778,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
         return retraction
 
     def _is_embargo_date_valid(self, end_date):
-        today = datetime.datetime.utcnow()
+        today = timezone.now()
         if (end_date - today) >= settings.EMBARGO_END_DATE_MIN:
             if (end_date - today) <= settings.EMBARGO_END_DATE_MAX:
                 return True
@@ -3804,7 +3819,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
         if not self.has_permission(user, 'admin'):
             raise PermissionsError('Only admins may embargo a registration')
         if not self._is_embargo_date_valid(end_date):
-            if (end_date - datetime.datetime.utcnow()) >= settings.EMBARGO_END_DATE_MIN:
+            if (end_date - timezone.now()) >= settings.EMBARGO_END_DATE_MIN:
                 raise ValidationValueError('Registrations can only be embargoed for up to four years.')
             raise ValidationValueError('Embargo end date must be at least three days in the future.')
 
@@ -3813,7 +3828,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
         self.registered_from.add_log(
             action=NodeLog.EMBARGO_INITIATED,
             params={
-                'node': self.registered_from_id,
+                'node': self.registered_from._id,
                 'registration': self._id,
                 'embargo_id': embargo._id,
             },
@@ -3916,7 +3931,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
             user.is_active)
 
     def _initiate_approval(self, user, notify_initiator_on_complete=False):
-        end_date = datetime.datetime.now() + settings.REGISTRATION_APPROVAL_TIME
+        end_date = timezone.now() + settings.REGISTRATION_APPROVAL_TIME
         approval = RegistrationApproval(
             initiated_by=user,
             end_date=end_date,

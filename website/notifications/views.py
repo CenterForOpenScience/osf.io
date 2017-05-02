@@ -22,7 +22,7 @@ def get_subscriptions(auth):
 @must_be_valid_project
 def get_node_subscriptions(auth, **kwargs):
     node = kwargs.get('node') or kwargs['project']
-    return utils.format_data(auth.user, [node._id])
+    return utils.format_data(auth.user, [node])
 
 
 @must_be_logged_in
@@ -100,6 +100,7 @@ def configure_subscription(auth):
 
     if not subscription:
         subscription = NotificationSubscription(_id=event_id, owner=owner, event_name=event)
+        subscription.save()
 
     if node and node._id not in user.notifications_configured:
         user.notifications_configured[node._id] = True

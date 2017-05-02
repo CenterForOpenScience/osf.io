@@ -13,6 +13,7 @@ var NewAndNoteworthy = require('js/home-page/newAndNoteworthyPlugin');
 var MeetingsAndConferences = require('js/home-page/meetingsAndConferencesPlugin');
 var Preprints = require('js/home-page/preprintsPlugin');
 var Prereg = require('js/home-page/preregPlugin');
+var PreregBanner = require('js/home-page/preregBannerPlugin');
 var InstitutionsPanel = require('js/home-page/institutionsPanelPlugin');
 var ensureUserTimezone = require('js/ensureUserTimezone');
 
@@ -31,6 +32,13 @@ $(document).ready(function(){
                 return {logoPath: inst.logo_path, id: inst.id, name: inst.name};
             });
             return [
+                m('.prereg-banner', m('.container',
+                    [
+                        m('.row', [
+                            m(columnSizeClass,  m.component(PreregBanner, {}))
+                        ])
+                    ]
+                )),
                 m('.quickSearch', m('.container.p-t-lg',
                     [
                         m('.row.m-t-lg', [
@@ -60,14 +68,15 @@ $(document).ready(function(){
 
                     ]
                 )),
+                /*
                 m('.prereg', m('.container',
                     [
                         m('.row', [
                             m(columnSizeClass,  m.component(Prereg, {}))
                         ])
-
                     ]
                 )),
+                */
                 m('.meetings', m('.container',
                     [
                         m('.row', [

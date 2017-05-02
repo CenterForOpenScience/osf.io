@@ -4,8 +4,8 @@ from rest_framework.exceptions import NotFound
 
 from framework.auth.oauth_scopes import CoreScopes
 
-from website.models import Guid
-from website.files.models import (
+from osf.models import (
+    Guid,
     FileNode,
     FileVersion,
     StoredFileNode
@@ -41,12 +41,11 @@ class FileMixin(object):
             obj = utils.get_object_or_error(Guid, self.kwargs[self.file_lookup_url_kwarg]).referent
             if not isinstance(obj, StoredFileNode):
                 raise NotFound
-            obj = obj.wrapped()
 
         if check_permissions:
             # May raise a permission denied
             self.check_object_permissions(self.request, obj)
-        return obj.wrapped()
+        return obj
 
 
 class FileDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, FileMixin):
@@ -361,10 +360,11 @@ class FileVersionsList(JSONAPIBaseView, generics.ListAPIView, FileMixin):
 
     For an OSF FileVersion entity the API `type` is "file_versions".
 
-        name          type     description
-        =================================================================================
-        size          integer  size of file in bytes
-        content_type  string   MIME content-type for the file. May be null if unavailable.
+        name          type       description
+        ====================================================================================
+        size          integer    size of file in bytes
+        date_created  timestamp  date that the version was created
+        content_type  string     MIME content-type for the file. May be null if unavailable.
 
     ##Links
 
@@ -399,7 +399,7 @@ class FileVersionsList(JSONAPIBaseView, generics.ListAPIView, FileMixin):
     view_name = 'file-versions'
 
     def get_queryset(self):
-        return self.get_file().versions
+        return self.get_file().versions.all()
 
 
 def node_from_version(request, view, obj):
@@ -420,10 +420,11 @@ class FileVersionDetail(JSONAPIBaseView, generics.RetrieveAPIView, FileMixin):
 
     For an OSF FileVersion entity the API `type` is "file_versions".
 
-        name          type     description
-        =================================================================================
-        size          integer  size of file in bytes
-        content_type  string   MIME content-type for the file. May be null if unavailable.
+        name          type       description
+        ====================================================================================
+        size          integer    size of file in bytes
+        date_created  timestamp  date that the version was created
+        content_type  string     MIME content-type for the file. May be null if unavailable.
 
     ##Relationships
 

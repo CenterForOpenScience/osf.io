@@ -6,18 +6,21 @@ from api.files.serializers import FileSerializer
 from api.nodes.serializers import NodeSerializer
 from api.registrations.serializers import RegistrationSerializer
 from api.users.serializers import UserSerializer
+from api.institutions.serializers import InstitutionSerializer
+from osf.models import AbstractNode
 
-from framework.auth.core import User
+from osf.models import OSFUser as User
 
-from website.files.models import FileNode
-from website.models import Node
+from osf.models import FileNode
+
+from osf.models import Institution
 
 
 class SearchSerializer(JSONAPISerializer):
 
     def to_representation(self, data, envelope='data'):
 
-        if isinstance(data, Node):
+        if isinstance(data, AbstractNode):
             if data.is_registration:
                 serializer = RegistrationSerializer(data, context=self.context)
                 return RegistrationSerializer.to_representation(serializer, data)
@@ -31,6 +34,10 @@ class SearchSerializer(JSONAPISerializer):
         if isinstance(data, FileNode):
             serializer = FileSerializer(data, context=self.context)
             return FileSerializer.to_representation(serializer, data)
+
+        if isinstance(data, Institution):
+            serializer = InstitutionSerializer(data, context=self.context)
+            return InstitutionSerializer.to_representation(serializer, data)
 
         return None
 

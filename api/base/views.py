@@ -1,36 +1,33 @@
-import weakref
 from django.conf import settings as django_settings
+from django.db import transaction
 from django.http import JsonResponse
-from rest_framework.decorators import api_view, throttle_classes
-from rest_framework.response import Response
 from rest_framework import generics
-from rest_framework import status
 from rest_framework import permissions as drf_permissions
+from rest_framework import status
+from rest_framework.decorators import api_view, throttle_classes
 from rest_framework.exceptions import ValidationError, NotFound
-
-from framework.auth.oauth_scopes import CoreScopes
-
 from rest_framework.mixins import ListModelMixin
+from rest_framework.response import Response
+
 from api.base import permissions as base_permissions
+from api.base import utils
 from api.base.exceptions import RelationshipPostMakesNoChanges
 from api.base.filters import ListFilterMixin
-
-from api.users.serializers import UserSerializer
 from api.base.parsers import JSONAPIRelationshipParser
 from api.base.parsers import JSONAPIRelationshipParserForRegularJSON
 from api.base.requests import EmbeddedRequest
 from api.base.serializers import LinkedNodesRelationshipSerializer
 from api.base.serializers import LinkedRegistrationsRelationshipSerializer
 from api.base.throttling import RootAnonThrottle, UserRateThrottle
-from api.base import utils
-from api.nodes.permissions import ReadOnlyIfRegistration
+from api.base.utils import is_bulk_request, get_user_auth
 from api.nodes.permissions import ContributorOrPublic
 from api.nodes.permissions import ContributorOrPublicForRelationshipPointers
-from api.base.utils import is_bulk_request, get_user_auth
+from api.nodes.permissions import ReadOnlyIfRegistration
+from api.users.serializers import UserSerializer
+from framework.auth.oauth_scopes import CoreScopes
+from osf.models.contributor import Contributor
 from website.models import Pointer
-
-
-CACHE = weakref.WeakKeyDictionary()
+from website import maintenance
 
 
 class JSONAPIBaseView(generics.GenericAPIView):
@@ -51,19 +48,27 @@ class JSONAPIBaseView(generics.GenericAPIView):
         """
         if getattr(field, 'field', None):
             field = field.field
+
         def partial(item):
             # resolve must be implemented on the field
             v, view_args, view_kwargs = field.resolve(item, field_name, self.request)
             if not v:
                 return None
-            if isinstance(self.request._request, EmbeddedRequest):
-                request = self.request._request
+
+            if isinstance(self.request, EmbeddedRequest):
+                request = EmbeddedRequest(self.request._request)
             else:
                 request = EmbeddedRequest(self.request)
 
+            if not hasattr(request._request._request, '_embed_cache'):
+                request._request._request._embed_cache = {}
+            cache = request._request._request._embed_cache
+
+            request.parents.setdefault(type(item), {})[item._id] = item
+
             view_kwargs.update({
                 'request': request,
-                'is_embedded': True
+                'is_embedded': True,
             })
 
             # Setup a view ourselves to avoid all the junk DRF throws in
@@ -75,25 +80,33 @@ class JSONAPIBaseView(generics.GenericAPIView):
             view.request.parser_context['kwargs'] = view_kwargs
             view.format_kwarg = view.get_format_suffix(**view_kwargs)
 
-            _cache_key = (v.cls, field_name, view.get_serializer_class(), item)
-            if _cache_key in CACHE.setdefault(self.request._request, {}):
+            if not isinstance(view, ListModelMixin):
+                try:
+                    item = view.get_object()
+                except Exception as e:
+                    with transaction.atomic():
+                        ret = view.handle_exception(e).data
+                    return ret
+
+            _cache_key = (v.cls, field_name, view.get_serializer_class(), (type(item), item.id))
+            if _cache_key in cache:
                 # We already have the result for this embed, return it
-                return CACHE[self.request._request][_cache_key]
+                return cache[_cache_key]
 
             # Cache serializers. to_representation of a serializer should NOT augment it's fields so resetting the context
             # should be sufficient for reuse
-            if not view.get_serializer_class() in CACHE.setdefault(self.request._request, {}):
-                CACHE[self.request._request][view.get_serializer_class()] = view.get_serializer_class()(many=isinstance(view, ListModelMixin))
-            ser = CACHE[self.request._request][view.get_serializer_class()]
+            if not view.get_serializer_class() in cache:
+                cache[view.get_serializer_class()] = view.get_serializer_class()(many=isinstance(view, ListModelMixin))
+            ser = cache[view.get_serializer_class()]
 
             try:
                 ser._context = view.get_serializer_context()
 
                 if not isinstance(view, ListModelMixin):
-                    ret = ser.to_representation(view.get_object())
+                    ret = ser.to_representation(item)
                 else:
                     queryset = view.filter_queryset(view.get_queryset())
-                    page = view.paginate_queryset(queryset)
+                    page = view.paginate_queryset(getattr(queryset, '_results_cache', None) or queryset)
 
                     ret = ser.to_representation(page or queryset)
 
@@ -103,13 +116,14 @@ class JSONAPIBaseView(generics.GenericAPIView):
                         view.paginator.request = request
                         ret = view.paginator.get_paginated_response(ret).data
             except Exception as e:
-                ret = view.handle_exception(e).data
+                with transaction.atomic():
+                    ret = view.handle_exception(e).data
 
             # Allow request to be gc'd
             ser._context = None
 
             # Cache our final result
-            CACHE[self.request._request][_cache_key] = ret
+            cache[_cache_key] = ret
 
             return ret
 
@@ -234,11 +248,8 @@ class LinkedNodesRelationship(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPI
         auth = utils.get_user_auth(self.request)
         obj = {'data': [
             pointer for pointer in
-            object.nodes_pointer
-            if not pointer.node.is_deleted
-            and not pointer.node.is_collection
-            and not pointer.node.is_registration
-            and pointer.node.can_view(auth)
+            object.linked_nodes.filter(is_deleted=False, type='osf.node')
+            if pointer.can_view(auth)
         ], 'self': object}
         self.check_object_permissions(self.request, obj)
         return obj
@@ -246,7 +257,7 @@ class LinkedNodesRelationship(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPI
     def perform_destroy(self, instance):
         data = self.request.data['data']
         auth = utils.get_user_auth(self.request)
-        current_pointers = {pointer.node._id: pointer for pointer in instance['data']}
+        current_pointers = {pointer._id: pointer for pointer in instance['data']}
         collection = instance['self']
         for val in data:
             if val['id'] in current_pointers:
@@ -341,11 +352,8 @@ class LinkedRegistrationsRelationship(JSONAPIBaseView, generics.RetrieveUpdateDe
         auth = utils.get_user_auth(self.request)
         obj = {'data': [
             pointer for pointer in
-            object.nodes_pointer
-            if not pointer.node.is_deleted
-            and not pointer.node.is_collection
-            and pointer.node.is_registration
-            and pointer.node.can_view(auth)
+            object.linked_nodes.filter(is_deleted=False, type='osf.registration')
+            if pointer.can_view(auth)
         ], 'self': object}
         self.check_object_permissions(self.request, obj)
         return obj
@@ -353,11 +361,13 @@ class LinkedRegistrationsRelationship(JSONAPIBaseView, generics.RetrieveUpdateDe
     def perform_destroy(self, instance):
         data = self.request.data['data']
         auth = utils.get_user_auth(self.request)
-        current_pointers = {pointer.node._id: pointer for pointer in instance['data']}
+        current_pointers = {pointer._id: pointer for pointer in instance['data']}
         collection = instance['self']
         for val in data:
             if val['id'] in current_pointers:
                 collection.rm_pointer(current_pointers[val['id']], auth)
+            else:
+                raise NotFound(detail='Pointer with id "{}" not found in pointers list'.format(val['id'], collection))
 
     def create(self, *args, **kwargs):
         try:
@@ -722,7 +732,7 @@ def root(request, format=None, **kwargs):
         s3           Amazon S3
 
     """
-    if request.user and not request.user.is_anonymous():
+    if request.user and not request.user.is_anonymous:
         user = request.user
         current_user = UserSerializer(user, context={'request': request}).data
     else:
@@ -751,6 +761,13 @@ def root(request, format=None, **kwargs):
 
     return Response(return_val)
 
+@api_view(('GET',))
+@throttle_classes([RootAnonThrottle, UserRateThrottle])
+def status_check(request, format=None, **kwargs):
+    return Response({
+        'maintenance': maintenance.get_maintenance(),
+    })
+
 
 def error_404(request, format=None, *args, **kwargs):
     return JsonResponse(
@@ -768,29 +785,18 @@ class BaseContributorDetail(JSONAPIBaseView, generics.RetrieveAPIView):
         user = self.get_user()
         # May raise a permission denied
         self.check_object_permissions(self.request, user)
-        if user not in node.contributors:
+        try:
+            return node.contributor_set.get(user=user)
+        except Contributor.DoesNotExist:
             raise NotFound('{} cannot be found in the list of contributors.'.format(user))
-        user.permission = node.get_permissions(user)[-1]
-        user.bibliographic = node.get_visible(user)
-        user.node_id = node._id
-        user.index = node.contributors.index(user)
-        return user
+
 
 class BaseContributorList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
 
     def get_default_queryset(self):
         node = self.get_node()
-        visible_contributors = set(node.visible_contributor_ids)
-        contributors = []
-        index = 0
-        for contributor in node.contributors:
-            contributor.index = index
-            contributor.bibliographic = contributor._id in visible_contributors
-            contributor.permission = node.get_permissions(contributor)[-1]
-            contributor.node_id = node._id
-            contributors.append(contributor)
-            index += 1
-        return contributors
+
+        return node.contributor_set.all()
 
     def get_queryset(self):
         queryset = self.get_queryset_from_request()
@@ -807,28 +813,23 @@ class BaseContributorList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin
             queryset[:] = [contrib for contrib in queryset if contrib._id in contrib_ids]
         return queryset
 
-class BaseNodeLinksDetail(JSONAPIBaseView, generics.RetrieveAPIView):
 
-    def get_queryset(self):
-        auth = get_user_auth(self.request)
-        return sorted([
-            pointer.node for pointer in
-            self.get_node().nodes_pointer
-            if not pointer.node.is_deleted and not pointer.node.is_collection and
-            pointer.node.can_view(auth) and not pointer.node.is_retracted
-        ], key=lambda n: n.date_modified, reverse=True)
+class BaseNodeLinksDetail(JSONAPIBaseView, generics.RetrieveAPIView):
+    pass
 
 
 class BaseNodeLinksList(JSONAPIBaseView, generics.ListAPIView):
 
     def get_queryset(self):
         auth = get_user_auth(self.request)
+        query = self.get_node()\
+                .node_relations.select_related('child')\
+                .filter(is_node_link=True, child__is_deleted=False)\
+                .exclude(child__type='osf.collection')
         return sorted([
-            pointer.node for pointer in
-            self.get_node().nodes_pointer
-            if not pointer.node.is_deleted and not pointer.node.is_collection and
-            pointer.node.can_view(auth) and not pointer.node.is_retracted
-        ], key=lambda n: n.date_modified, reverse=True)
+            node_link for node_link in query
+            if node_link.child.can_view(auth) and not node_link.child.is_retracted
+        ], key=lambda node_link: node_link.child.date_modified, reverse=True)
 
 
 class BaseLinkedList(JSONAPIBaseView, generics.ListAPIView):
@@ -852,11 +853,5 @@ class BaseLinkedList(JSONAPIBaseView, generics.ListAPIView):
 
     def get_queryset(self):
         auth = get_user_auth(self.request)
-        return sorted([
-            pointer.node for pointer in
-            self.get_node().nodes_pointer
-            if not pointer.node.is_deleted
-            and not pointer.node.is_collection
-            # and pointer.node.is_registration
-            and pointer.node.can_view(auth)
-        ], key=lambda n: n.date_modified, reverse=True)
+
+        return self.get_node().linked_nodes.filter(is_deleted=False).exclude(type='osf.collection').can_view(user=auth.user, private_link=auth.private_link).order_by('-date_modified')

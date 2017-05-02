@@ -1,15 +1,14 @@
-from django.core.urlresolvers import resolve, reverse
-import furl
-from rest_framework import serializers as ser
-import pytz
 from datetime import datetime
 
+from django.core.urlresolvers import resolve, reverse
 from modularodm import Q
+import furl
+import pytz
 
 from framework.auth.core import Auth, User
+from osf.models import FileNode
+from rest_framework import serializers as ser
 from website import settings
-
-from website.files.models import FileNode
 from website.project.model import Comment
 from website.util import api_v2_url
 
@@ -31,7 +30,6 @@ from api.base.exceptions import Conflict
 from api.base.utils import absolute_reverse
 from api.base.utils import get_user_auth
 
-
 class CheckoutField(ser.HyperlinkedRelatedField):
 
     default_error_messages = {'invalid_data': 'Checkout must be either the current user or null'}
@@ -41,7 +39,7 @@ class CheckoutField(ser.HyperlinkedRelatedField):
         kwargs['queryset'] = True
         kwargs['read_only'] = False
         kwargs['allow_null'] = True
-        kwargs['lookup_field'] = 'pk'
+        kwargs['lookup_field'] = '_id'
         kwargs['lookup_url_kwarg'] = 'user_id'
 
         self.meta = {'id': 'user_id'}
@@ -54,7 +52,7 @@ class CheckoutField(ser.HyperlinkedRelatedField):
         """
         Resolves the view when embedding.
         """
-        embed_value = resource.stored_object.checkout.pk
+        embed_value = resource.stored_object.checkout._id
         return resolve(
             reverse(
                 self.view_name,
@@ -94,7 +92,7 @@ class CheckoutField(ser.HyperlinkedRelatedField):
         url = super(CheckoutField, self).to_representation(value)
 
         rel_meta = None
-        if value:
+        if value and hasattr(value, '_id'):
             rel_meta = {'id': value._id}
 
         ret = format_relationship_links(related_link=url, rel_meta=rel_meta)
@@ -104,7 +102,7 @@ class CheckoutField(ser.HyperlinkedRelatedField):
 class FileTagField(ser.Field):
     def to_representation(self, obj):
         if obj is not None:
-            return obj._id
+            return obj.name
         return None
 
     def to_internal_value(self, data):
@@ -148,7 +146,7 @@ class FileSerializer(JSONAPISerializer):
 
     files = NodeFileHyperLinkField(
         related_view='nodes:node-files',
-        related_view_kwargs={'node_id': '<node_id>', 'path': '<path>', 'provider': '<provider>'},
+        related_view_kwargs={'node_id': '<node._id>', 'path': '<path>', 'provider': '<provider>'},
         kind='folder'
     )
     versions = NodeFileHyperLinkField(
@@ -183,44 +181,45 @@ class FileSerializer(JSONAPISerializer):
         return 1
 
     def get_size(self, obj):
-        if obj.versions:
-            return obj.versions[-1].size
+        if obj.versions.exists():
+            self.size = obj.versions.last().size
+            return self.size
         return None
 
     def get_date_modified(self, obj):
         mod_dt = None
-        if obj.provider == 'osfstorage' and obj.versions:
+        if obj.provider == 'osfstorage' and obj.versions.exists():
             # Each time an osfstorage file is added or uploaded, a new version object is created with its
             # date_created equal to the time of the update.  The date_modified is the modified date
             # from the backend the file is stored on.  This field refers to the modified date on osfstorage,
             # so prefer to use the date_created of the latest version.
-            mod_dt = obj.versions[-1].date_created
+            mod_dt = obj.versions.last().date_created
         elif obj.provider != 'osfstorage' and obj.history:
             mod_dt = obj.history[-1].get('modified', None)
 
-        if self.context['request'].version >= '2.2' and obj.is_file:
+        if self.context['request'].version >= '2.2' and obj.is_file and mod_dt:
             return datetime.strftime(mod_dt, '%Y-%m-%dT%H:%M:%S.%fZ')
 
         return mod_dt and mod_dt.replace(tzinfo=pytz.utc)
 
     def get_date_created(self, obj):
         creat_dt = None
-        if obj.provider == 'osfstorage' and obj.versions:
-            creat_dt = obj.versions[0].date_created
+        if obj.provider == 'osfstorage' and obj.versions.exists():
+            creat_dt = obj.versions.first().date_created
         elif obj.provider != 'osfstorage' and obj.history:
             # Non-osfstorage files don't store a created date, so instead get the modified date of the
             # earliest entry in the file history.
             creat_dt = obj.history[0].get('modified', None)
 
-        if self.context['request'].version >= '2.2' and obj.is_file:
+        if self.context['request'].version >= '2.2' and obj.is_file and creat_dt:
             return datetime.strftime(creat_dt, '%Y-%m-%dT%H:%M:%S.%fZ')
 
         return creat_dt and creat_dt.replace(tzinfo=pytz.utc)
 
     def get_extra(self, obj):
         metadata = {}
-        if obj.provider == 'osfstorage' and obj.versions:
-            metadata = obj.versions[-1].metadata
+        if obj.provider == 'osfstorage' and obj.versions.exists():
+            metadata = obj.versions.last().metadata
         elif obj.provider != 'osfstorage' and obj.history:
             metadata = obj.history[-1].get('extra', {})
 
@@ -235,12 +234,12 @@ class FileSerializer(JSONAPISerializer):
 
     def get_current_user_can_comment(self, obj):
         user = self.context['request'].user
-        auth = Auth(user if not user.is_anonymous() else None)
+        auth = Auth(user if not user.is_anonymous else None)
         return obj.node.can_comment(auth)
 
     def get_unread_comments_count(self, obj):
         user = self.context['request'].user
-        if user.is_anonymous():
+        if user.is_anonymous:
             return 0
         return Comment.find_n_unread(user=user, node=obj.node, page='files', root_id=obj.get_guid()._id)
 
@@ -256,7 +255,7 @@ class FileSerializer(JSONAPISerializer):
         if instance.provider != 'osfstorage' and 'tags' in validated_data:
             raise Conflict('File service provider {} does not support tags on the OSF.'.format(instance.provider))
         auth = get_user_auth(self.context['request'])
-        old_tags = set([tag._id for tag in instance.tags])
+        old_tags = set(instance.tags.values_list('name', flat=True))
         if 'tags' in validated_data:
             current_tags = set(validated_data.pop('tags', []))
         else:
@@ -290,6 +289,24 @@ class FileSerializer(JSONAPISerializer):
         return api_v2_url('files/{}/'.format(obj._id))
 
 
+class OsfStorageFileSerializer(FileSerializer):
+    """ Overrides `filterable_fields` to make `last_touched` non-filterable
+    """
+    filterable_fields = frozenset([
+        'id',
+        'name',
+        'node',
+        'kind',
+        'path',
+        'size',
+        'provider',
+        'tags',
+    ])
+
+    def create(self, validated_data):
+        return super(OsfStorageFileSerializer, self).create(validated_data)
+
+
 class FileDetailSerializer(FileSerializer):
     """
     Overrides FileSerializer to make id required.
@@ -307,6 +324,7 @@ class FileVersionSerializer(JSONAPISerializer):
     id = ser.CharField(read_only=True, source='identifier')
     size = ser.IntegerField(read_only=True, help_text='The size of this file at this version')
     content_type = ser.CharField(read_only=True, help_text='The mime type of this file at this verison')
+    date_created = DateByVersion(read_only=True, help_text='The date that this version was created')
     links = LinksField({
         'self': 'self_url',
         'html': 'absolute_url'

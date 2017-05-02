@@ -1,4 +1,6 @@
 from datetime import datetime, timedelta
+
+from django.utils import timezone
 from nose import tools as nt
 
 from tests.base import OsfTestCase
@@ -15,7 +17,7 @@ class TestMigrateSpam(OsfTestCase):
         self.generic_report = {
             'category': 'spam',
             'text': 'spammer spam',
-            'date': datetime.utcnow(),
+            'date': timezone.now(),
             'retracted': False
         }
         Comment.remove()

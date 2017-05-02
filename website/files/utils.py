@@ -9,16 +9,16 @@ def copy_files(src, target_node, parent=None, name=None):
     """
     assert not parent or not parent.is_file, 'Parent must be a folder'
 
-    cloned = src.clone().wrapped()
+    cloned = src.clone()
     cloned.parent = parent
     cloned.node = target_node
     cloned.name = name or cloned.name
     cloned.copied_from = src
 
-    if src.is_file:
-        cloned.versions = src.versions
-
     cloned.save()
+
+    if src.is_file and src.versions.exists():
+        cloned.versions.add(*src.versions.all())
 
     if not src.is_file:
         for child in src.children:
@@ -40,7 +40,7 @@ class GenWrapper(object):
         """Returns a generator that wraps all StoredFileNodes
         returned from self.mqs
         """
-        return (x.wrapped() for x in self.mqs)
+        return (x for x in self.mqs)
 
     def __repr__(self):
         return '<website.files.utils.GenWrapper({!r})>'.format(self.mqs)
@@ -49,7 +49,7 @@ class GenWrapper(object):
         """__getitem__ does not default to __getattr__
         so it must be explicitly overriden
         """
-        return self.mqs[x].wrapped()
+        return self.mqs[x]
 
     def __len__(self):
         """__len__ does not default to __getattr__
@@ -71,7 +71,7 @@ class GenWrapper(object):
 def validate_location(value):
     if value is None:
         return  # Allow for None locations but not broken dicts
-    from website.addons.osfstorage import settings
+    from addons.osfstorage import settings
     for key in ('service', settings.WATERBUTLER_RESOURCE, 'object'):
         if key not in value:
             raise ValidationValueError('Location {} missing key "{}"'.format(value, key))

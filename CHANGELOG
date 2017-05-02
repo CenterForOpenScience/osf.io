@@ -2,6 +2,43 @@
 Changelog
 *********
 
+0.107.0 (2017-04-28)
+====================
+
+- Upgrade to Django 1.11.
+- Remove BaseFileNode.wrapped() method.
+- Remove guid_string field from models.
+- Preprints: Add LawArxiv.
+- Admin: Add Date Registration Initiated to node view.
+- Admin: Add link between projects and registrations.
+
+0.106.0 (2017-04-21)
+====================
+
+- Registrations with 100+ nodes fail with content_length_mismatch error
+- [Win 10] DropZone patch for Windows folder uploads (IE / Firefox)
+- Submitting to OSF4M using deleted project name does not create new project
+- Fangorn edit undefined
+- API 502s when refreshing github metadata (was: TypeError: Can't compare datetime.datetime to NoneType)
+- API 502s when requesting Github file metadata w/ version=2.2
+- Search unhappy with some users
+- Registries: "Withdrawn" label not appearing on newly-withdrawn registrations
+- Retraction detail pages throw mithril mounting error
+- Preprint Provider detail not 404-ing if not found
+- Sitemap index datemod -> lastmod
+- Cannot change GitHub branches on staging/staging3
+- When project marked spam, update EZID DOI status to Unavailable
+- Populate Fangorn text input on rename
+- Allow UVA dataverse-specific Pop-up in Fangorn upon publishing dataset/verse
+- Linked Registrations on Nodes in API
+- OSF - Convert all Dropbox v1 API code/clients to v2 API before deadline
+- Update dockerfile to support running registries locally
+
+0.105.0 (2017-04-02)
+====================
+
+- Migrate from TokuMX to Postgres and ModularODM to DjangoORM. APIv1 code is monkeypatched to use Django models.
+
 0.104.0 (2016-12-19)
 ====================
 - Various APIv2 fixes and improvements to support Preprints.
@@ -380,7 +417,7 @@ Migrations
 - Use HTTPS URLS on DOI links.
 - Set HttpOnly flag on cookies.
 - Replace jquery.cookie (deprecated) with js-cookie.
-- Improved error messaging for DropBox addon.
+- Improved error messaging for Dropbox addon.
 - More help text for Collections and Bookmarks.
 - Upgrade to invoke 0.13.0.
 

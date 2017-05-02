@@ -2,7 +2,7 @@ import bleach
 
 from rest_framework import serializers as ser
 from modularodm import Q
-from modularodm.exceptions import ValidationValueError
+from osf.exceptions import ValidationError as ModelValidationError
 from framework.auth.core import Auth
 from framework.exceptions import PermissionsError
 from framework.guid.model import Guid
@@ -16,7 +16,8 @@ from api.base.serializers import (JSONAPISerializer,
                                   TargetField,
                                   RelationshipField,
                                   IDField, TypeField, LinksField,
-                                  AuthorizedCharField, DateByVersion,)
+                                  AnonymizedRegexField,
+                                  DateByVersion)
 from website.project.spam.model import SpamStatus
 
 
@@ -39,12 +40,12 @@ class CommentSerializer(JSONAPISerializer):
 
     id = IDField(source='_id', read_only=True)
     type = TypeField()
-    content = AuthorizedCharField(source='get_content', required=True)
+    content = AnonymizedRegexField(source='get_content', regex='\[@[^\]]*\]\([^\) ]*\)', replace='@A User', required=True)
     page = ser.CharField(read_only=True)
 
     target = TargetField(link_type='related', meta={'type': 'get_target_type'})
     user = RelationshipField(related_view='users:user-detail', related_view_kwargs={'user_id': '<user._id>'})
-    reports = RelationshipField(related_view='comments:comment-reports', related_view_kwargs={'comment_id': '<pk>'})
+    reports = RelationshipField(related_view='comments:comment-reports', related_view_kwargs={'comment_id': '<_id>'})
 
     date_created = DateByVersion(read_only=True)
     date_modified = DateByVersion(read_only=True)
@@ -69,7 +70,7 @@ class CommentSerializer(JSONAPISerializer):
 
     def get_has_report(self, obj):
         user = self.context['request'].user
-        if user.is_anonymous():
+        if user.is_anonymous:
             return False
         return user._id in obj.reports and not obj.reports[user._id].get('retracted', True)
 
@@ -80,7 +81,7 @@ class CommentSerializer(JSONAPISerializer):
 
     def get_can_edit(self, obj):
         user = self.context['request'].user
-        if user.is_anonymous():
+        if user.is_anonymous:
             return False
         return obj.user._id == user._id and obj.node.can_comment(Auth(user))
 
@@ -114,8 +115,8 @@ class CommentSerializer(JSONAPISerializer):
                     comment.edit(content, auth=auth, save=True)
                 except PermissionsError:
                     raise PermissionDenied('Not authorized to edit this comment.')
-                except ValidationValueError as err:
-                    raise ValidationError(err.args[0])
+                except ModelValidationError as err:
+                    raise ValidationError(err.messages[0])
         return comment
 
     def get_target_type(self, obj):
@@ -135,12 +136,12 @@ class CommentSerializer(JSONAPISerializer):
 
 
 class RegistrationCommentSerializer(CommentSerializer):
-    replies = RelationshipField(related_view='registrations:registration-comments', related_view_kwargs={'node_id': '<node._id>'}, filter={'target': '<pk>'})
+    replies = RelationshipField(related_view='registrations:registration-comments', related_view_kwargs={'node_id': '<node._id>'}, filter={'target': '<_id>'})
     node = RelationshipField(related_view='registrations:registration-detail', related_view_kwargs={'node_id': '<node._id>'})
 
 
 class NodeCommentSerializer(CommentSerializer):
-    replies = RelationshipField(related_view='nodes:node-comments', related_view_kwargs={'node_id': '<node._id>'}, filter={'target': '<pk>'})
+    replies = RelationshipField(related_view='nodes:node-comments', related_view_kwargs={'node_id': '<node._id>'}, filter={'target': '<_id>'})
     node = RelationshipField(related_view='nodes:node-detail', related_view_kwargs={'node_id': '<node._id>'})
 
 
@@ -185,8 +186,8 @@ class CommentCreateSerializer(CommentSerializer):
             comment = Comment.create(auth=auth, **validated_data)
         except PermissionsError:
             raise PermissionDenied('Not authorized to comment on this project.')
-        except ValidationValueError as err:
-            raise ValidationError(err.args[0])
+        except ModelValidationError as err:
+            raise ValidationError(err.messages[0])
         return comment
 
 

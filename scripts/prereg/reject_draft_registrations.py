@@ -5,6 +5,8 @@ import sys
 import logging
 import datetime as dt
 
+from django.utils import timezone
+
 from website.app import init_app
 from website.project.model import DraftRegistration, Sanction
 
@@ -20,7 +22,7 @@ def add_comments(draft):
             'name': 'Mario!'
         },
         'value': 'Ahoy! This is a comment!',
-        'lastModified': dt.datetime.utcnow().isoformat()
+        'lastModified': timezone.now().isoformat()
     }]
     for question_id, value in draft.registration_metadata.iteritems():
         value['comments'] = comment

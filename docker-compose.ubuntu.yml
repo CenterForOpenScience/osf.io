@@ -1,0 +1,96 @@
+
+version: '2.1'
+
+services:
+
+#  fakecas:
+#    image: quay.io/centerforopenscience/fakecas:latest
+#    command: fakecas -host=0.0.0.0:8080 -dbaddress=172.19.0.7:27017
+
+#  wb:
+#    volumes:
+#      - ../waterbutler:/code
+
+#  wb_worker:
+#    volumes:
+#      - ../waterbutler:/code
+
+#  wb_requirements:
+#    volumes:
+#      - ../waterbutler:/code
+
+#  mfr:
+#    volumes:
+#      - ../modular-file-renderer:/code
+
+#  mfr_requirements:
+#    volumes:
+#      - ../modular-file-renderer:/code
+
+#  preprints:
+#    volumes:
+#      - ../ember-preprints:/code
+#########    Use this for ember-osf linked development (with docker-sync): #############
+#    depends_on:
+#      - emberosf
+#    command: /bin/bash -c "cd /ember-osf && yarn link && cd /code && yarn link ember-osf && yarn --pure-lockfile && ./node_modules/bower/bin/bower install --allow-root --config.interactive=false && ./node_modules/ember-cli/bin/ember serve --host 0.0.0.0 --port 4200"
+#    volumes:
+#      - preprints_dist_vol:/code/dist
+#      - ../ember-osf:/ember-osf
+########################################################################################
+#
+#  registries:
+#    volumes:
+#      - ../ember-osf-registries:/code
+#########    Use this for ember-osf linked development (with docker-sync): #############
+#    depends_on:
+#      - emberosf
+#    command: /bin/bash -c "cd /ember-osf && yarn link && cd /code && yarn link ember-osf && yarn --pure-lockfile && ./node_modules/bower/bin/bower install --allow-root --config.interactive=false && ./node_modules/ember-cli/bin/ember serve --host 0.0.0.0 --port 4300"
+#    volumes:
+#      - registries_dist_vol:/code/dist
+#      - ../ember-osf:/ember-osf
+########################################################################################
+#
+#########    Use this for ember-osf linked development (with docker-sync): #############
+#  emberosf:
+#    build: ../ember-osf
+#    command: /bin/bash -c "yarn --pure-lockfile && ./node_modules/bower/bin/bower install --allow-root --config.interactive=false"
+#    volumes:
+#      - ../ember-osf:/code/
+########################################################################################
+
+  requirements:
+    volumes:
+      - ./:/code
+
+  assets:
+    volumes:
+      - ./:/code
+
+  admin_assets:
+    volumes:
+      - ./:/code
+
+  sharejs:
+    volumes:
+      - ./:/code
+
+#  beat:
+#    volumes:
+#      - ./:/code
+
+  worker:
+    volumes:
+      - ./:/code
+
+  admin:
+    volumes:
+      - ./:/code
+
+  web:
+    volumes:
+      - ./:/code
+
+  api:
+    volumes:
+      - ./:/code
