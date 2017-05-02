@@ -6,6 +6,7 @@ Backfill Retraction.date_retracted with `RETRACTION_APPROVED` log date.
 """
 
 from __future__ import unicode_literals
+from datetime import timedelta
 
 from django.db import migrations
 
@@ -23,8 +24,11 @@ def set_date_retracted(*args):
     print('Migrating {} retractions.'.format(total))
 
     for registration in registrations:
+        if not registration.registered_from:
+            print('WARNING: Skipping failed registration {}'.format(registration._id))
+            continue
         retraction_logs = registration.registered_from.logs.filter(action='retraction_approved', params__retraction_id=registration.retraction._id)
-        if retraction_logs.count() != 1:
+        if retraction_logs.count() != 1 and retraction_logs.first().date - retraction_logs.last().date > timedelta(seconds=5):
             msg = (
                 'There should be a retraction_approved log for retraction {} on node {}. No retraction_approved log found.'
                 if retraction_logs.count() == 0
