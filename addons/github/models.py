@@ -180,7 +180,10 @@ class NodeSettings(BaseStorageAddon, BaseOAuthNodeSettings):
     @property
     def is_private(self):
         connection = GitHubClient(external_account=self.external_account)
-        return connection.repo(user=self.user, repo=self.repo).private
+        try:
+            return connection.repo(user=self.user, repo=self.repo).private
+        except GitHubError:
+            return
 
     # TODO: Delete me and replace with serialize_settings / Knockout
     def to_json(self, user):
