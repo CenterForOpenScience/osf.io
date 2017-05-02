@@ -112,7 +112,7 @@
                       % if wiki_content:
                           ${wiki_content}
                       % else:
-                          <p><em>No wiki content</em></p>
+                          <p class="text-muted"><em>Add important information, links, or images here to describe your project.</em></p>
                       % endif
                   </div>
                 </div>
