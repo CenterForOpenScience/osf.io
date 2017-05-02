@@ -89,6 +89,7 @@ class PreprintProviderDisplay(PermissionRequiredMixin, DetailView):
             subject_html += '<li>{}</li>'.format(parent.text)
             child_html = '<ul>'
             for child in parent.children.all():
+                grandchild_html = ''
                 if child.id in subject_ids:
                     child_html += '<li>{}</li>'.format(child.text)
                     grandchild_html = '<ul>'
@@ -193,7 +194,7 @@ class CannotDeleteProvider(TemplateView):
 
 
 class ImportPreprintProvider(PermissionRequiredMixin, View):
-    permission_required = 'osf.change_preprint_provider'
+    permission_required = 'osf.change_preprintprovider'
     raise_exception = True
 
     def post(self, request, *args, **kwargs):
@@ -211,7 +212,7 @@ class ImportPreprintProvider(PermissionRequiredMixin, View):
 
 
 class SubjectDynamicUpdateView(PermissionRequiredMixin, View):
-    permission_required = 'osf.change_preprint_provider'
+    permission_required = 'osf.change_preprintprovider'
     raise_exception = True
 
     def get(self, request, *args, **kwargs):
