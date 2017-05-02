@@ -301,7 +301,7 @@ class UserSearchList(PermissionRequiredMixin, ListView):
     paginate_by = 25
 
     def get_queryset(self):
-        query = OSFUser.objects.filter(fullname__contains=self.kwargs['name']).only(
+        query = OSFUser.objects.filter(fullname__icontains=self.kwargs['name']).only(
             'guids', 'fullname', 'username', 'date_confirmed', 'date_disabled'
         )
         return query
