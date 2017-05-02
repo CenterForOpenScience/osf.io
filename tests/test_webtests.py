@@ -225,7 +225,7 @@ class TestAUser(OsfTestCase):
         # Goes to project's wiki, where there is no content
         res = self.app.get('/{0}/wiki/home/'.format(project._primary_key), auth=self.auth)
         # Sees a message indicating no content
-        assert_in('No wiki content', res)
+        assert_in('Add important information, links, or images here to describe your project.', res)
         # Sees that edit panel is open by default when home wiki has no content
         assert_in('panelsUsed: ["view", "menu", "edit"]', res)
 
@@ -238,7 +238,7 @@ class TestAUser(OsfTestCase):
             project._primary_key,
             wiki_page,
         ), auth=self.auth)
-        assert_not_in('No wiki content', res)
+        assert_not_in('Add important information, links, or images here to describe your project.', res)
         assert_in(wiki_content, res)
         assert_in('panelsUsed: ["view", "menu"]', res)
 
@@ -259,7 +259,7 @@ class TestAUser(OsfTestCase):
         # self navigates to project
         res = self.app.get(project.url).maybe_follow()
         # Should not see wiki widget (since non-contributor and no content)
-        assert_not_in('No wiki content', res)
+        assert_not_in('Add important information, links, or images here to describe your project.', res)
 
     def test_wiki_does_not_exist(self):
         project = ProjectFactory(creator=self.user)
@@ -267,7 +267,7 @@ class TestAUser(OsfTestCase):
             project._primary_key,
             'not a real page yet',
         ), auth=self.auth, expect_errors=True)
-        assert_in('No wiki content', res)
+        assert_in('Add important information, links, or images here to describe your project.', res)
 
     def test_sees_own_profile(self):
         res = self.app.get('/profile/', auth=self.auth)
