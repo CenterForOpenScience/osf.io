@@ -3,7 +3,7 @@ import csv
 import os
 import furl
 import pytz
-from datetime import timedelta, datetime
+from datetime import datetime, timedelta
 
 from nose import tools as nt
 from django.test import RequestFactory
@@ -13,11 +13,6 @@ from django.utils import timezone
 from django.core.urlresolvers import reverse
 from django.core.exceptions import PermissionDenied
 from django.contrib.auth.models import Permission
-from nose import tools as nt
-import mock
-import csv
-import os
-from datetime import timedelta
 
 from tests.base import AdminTestCase
 from website import settings
