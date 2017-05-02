@@ -466,6 +466,17 @@ class TestUserSearchView(AdminTestCase):
         for user in results:
             nt.assert_in('Hardy', user.fullname)
 
+    def test_search_user_list_case_insensitive(self):
+        view = views.UserSearchList()
+        view = setup_view(view, self.request)
+        view.kwargs = {'name': 'hardy'}
+
+        results = view.get_queryset()
+
+        nt.assert_equal(len(results), 3)
+        for user in results:
+            nt.assert_in('Hardy', user.fullname)
+
 
 class TestGetLinkView(AdminTestCase):
 
