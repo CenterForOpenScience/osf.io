@@ -28,7 +28,6 @@ class TestPreprintProviderSerializer(DbTestCase):
         self.preprint_provider.emails.add(self.email)
         self.preprint_provider.social_accounts.add(self.social_account)
         self.preprint_provider.links.add(self.provider_link)
-        self.preprint_provider.save()
 
     def test_preprint_provider_serialization_v2(self):
         req = make_drf_request_with_version(version='2.0')

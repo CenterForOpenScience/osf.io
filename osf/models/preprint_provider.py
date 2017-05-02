@@ -34,18 +34,18 @@ class PreprintProvider(ObjectIDMixin, BaseModel):
     access_token = EncryptedTextField(null=True, blank=True)
     advisory_board = models.TextField(null=True, blank=True)
 
-    emails = models.ManyToManyField(Email, blank=True)
+    emails = models.ManyToManyField(Email, blank=True, related_name='preprint_providers')
     # TODO: Remove email fields in favor of emails
     email_contact = models.CharField(null=True, blank=True, max_length=200)  # max length on prod: 23
     email_support = models.CharField(null=True, blank=True, max_length=200)  # max length on prod: 23
 
-    social_accounts = models.ManyToManyField(SocialAccount, blank=True)
+    social_accounts = models.ManyToManyField(SocialAccount, blank=True, related_name='preprint_providers')
     # TODO: Remove social fields in favor of social_accounts
     social_twitter = models.CharField(null=True, blank=True, max_length=200)  # max length on prod: 8
     social_facebook = models.CharField(null=True, blank=True, max_length=200)  # max length on prod: 8
     social_instagram = models.CharField(null=True, blank=True, max_length=200)  # max length on prod: 8
 
-    links = models.ManyToManyField(PreprintProviderLink, blank=True)
+    links = models.ManyToManyField(PreprintProviderLink, blank=True, related_name='preprint_providers')
     # TODO: Remove external_url in favor of links
     external_url = models.URLField(null=True, blank=True, max_length=200)  # max length on prod: 25
 

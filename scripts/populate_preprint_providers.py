@@ -53,31 +53,28 @@ def get_license(name):
 
 def set_or_update_m2m_fields(provider, emails, licenses, links, social_accounts):
     for email in emails:
-        try:
-            provider_email = Email.objects.get(email=email['email'], email_type=email['email_type'])
-        except Email.DoesNotExist:
-            provider_email = Email(**email)
-            provider_email.save()
-        provider.emails.add(provider_email)
+        obj, created = Email.objects.get_or_create(
+            email=email['email'],
+            email_type=email['email_type']
+        )
+        provider.emails.add(obj)
 
     if licenses:
         provider.licenses_acceptable.add(*licenses)
 
     for link in links:
-        try:
-            provider_link = PreprintProviderLink.objects.get(url=link['url'], description=link['description'])
-        except PreprintProviderLink.DoesNotExist:
-            provider_link = PreprintProviderLink(**link)
-            provider_link.save()
-        provider.links.add(provider_link)
+        obj, created = PreprintProviderLink.objects.get_or_create(
+            url=link['url'],
+            description=link['description']
+        )
+        provider.links.add(obj)
 
     for account in social_accounts:
-        try:
-            social_account = SocialAccount.objects.get(network=account['network'], username=account['username'])
-        except SocialAccount.DoesNotExist:
-            social_account = SocialAccount(**account)
-            social_account.save()
-        provider.social_accounts.add(social_account)
+        obj, created = SocialAccount.objects.get_or_create(
+            network=account['network'],
+            username=account['username']
+        )
+        provider.social_accounts.add(obj)
 
     return provider
 

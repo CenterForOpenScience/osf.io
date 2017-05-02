@@ -31,8 +31,4 @@ SOCIAL_NETWORKS = [
 def ensure_social_networks():
     SocialNetwork = apps.get_model('osf.SocialNetwork')
     for network in SOCIAL_NETWORKS:
-        try:
-            SocialNetwork.objects.get(name=network['name'])
-        except SocialNetwork.DoesNotExist:
-            new_network = SocialNetwork(**network)
-            new_network.save()
+        SocialNetwork.objects.get_or_create(name=network['name'])

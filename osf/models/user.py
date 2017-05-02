@@ -71,7 +71,7 @@ def get_default_mailing_lists():
 
 class Email(ObjectIDMixin, BaseModel):
     email = models.EmailField(validators=[validate_email])
-    email_type = models.CharField(choices=EMAIL_TYPES, null=True, blank=True, max_length=50)
+    email_type = models.CharField(choices=EMAIL_TYPES, blank=True, max_length=50)
 
     class Meta:
         unique_together = ('email', 'email_type')
@@ -84,7 +84,7 @@ class SocialNetwork(ObjectIDMixin, BaseModel):
 
 class SocialAccount(ObjectIDMixin, BaseModel):
     username = models.CharField(max_length=200)
-    network = models.ForeignKey(SocialNetwork, on_delete=models.CASCADE)
+    network = models.ForeignKey(SocialNetwork, on_delete=models.CASCADE, related_name='accounts')
 
     class Meta:
         unique_together = ('username', 'network')
