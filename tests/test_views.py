@@ -4694,7 +4694,6 @@ class TestResetPassword(OsfTestCase):
         assert_in('logout?service=', location)
         assert_in('resetpassword', location)
 
-@unittest.skip('Unskip when institution hiding code is reimplemented')
 class TestIndexView(OsfTestCase):
 
     def setUp(self):
@@ -4709,46 +4708,44 @@ class TestIndexView(OsfTestCase):
         self.user = AuthUserFactory()
         self.user.affiliated_institutions.add(self.inst_one)
         self.user.affiliated_institutions.add(self.inst_two)
-        self.user.save()
 
         # tests 5 affiliated, non-registered, public projects
         for i in range(settings.INSTITUTION_DISPLAY_NODE_THRESHOLD):
             node = ProjectFactory(creator=self.user, is_public=True)
             node.affiliated_institutions.add(self.inst_one)
-            node.save()
 
         # tests 4 affiliated, non-registered, public projects
         for i in range(settings.INSTITUTION_DISPLAY_NODE_THRESHOLD - 1):
             node = ProjectFactory(creator=self.user, is_public=True)
             node.affiliated_institutions.add(self.inst_two)
-            node.save()
 
         # tests 5 affiliated, registered, public projects
         for i in range(settings.INSTITUTION_DISPLAY_NODE_THRESHOLD):
             registration = RegistrationFactory(creator=self.user, is_public=True)
             registration.affiliated_institutions.add(self.inst_three)
-            registration.save()
 
         # tests 5 affiliated, non-registered public components
         for i in range(settings.INSTITUTION_DISPLAY_NODE_THRESHOLD):
             node = NodeFactory(creator=self.user, is_public=True)
             node.affiliated_institutions.add(self.inst_four)
-            node.save()
 
         # tests 5 affiliated, non-registered, private projects
         for i in range(settings.INSTITUTION_DISPLAY_NODE_THRESHOLD):
             node = ProjectFactory(creator=self.user)
             node.affiliated_institutions.add(self.inst_five)
-            node.save()
 
     def test_dashboard_institutions(self):
-        dashboard_institutions = index()['dashboard_institutions']
-        assert_equal(len(dashboard_institutions), 1)
-        assert_equal(dashboard_institutions[0]['id'], self.inst_one._id)
-        assert_not_equal(dashboard_institutions[0]['id'], self.inst_two._id)
-        assert_not_equal(dashboard_institutions[0]['id'], self.inst_three._id)
-        assert_not_equal(dashboard_institutions[0]['id'], self.inst_four._id)
-        assert_not_equal(dashboard_institutions[0]['id'], self.inst_five._id)
+        with mock.patch('website.views.get_current_user_id', return_value=self.user._id):
+            institution_ids = [
+                institution['id']
+                for institution in index()['dashboard_institutions']
+            ]
+            assert_equal(len(institution_ids), 2)
+            assert_in(self.inst_one._id, institution_ids)
+            assert_not_in(self.inst_two._id, institution_ids)
+            assert_not_in(self.inst_three._id, institution_ids)
+            assert_in(self.inst_four._id, institution_ids)
+            assert_not_in(self.inst_five._id, institution_ids)
 
 
 class TestResolveGuid(OsfTestCase):
