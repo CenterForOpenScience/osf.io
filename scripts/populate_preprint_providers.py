@@ -435,7 +435,7 @@ def main(env):
             'social_twitter': 'lawarxiv',
             'social_facebook': '',
             'header_text': '',
-            'licenses_acceptable': ['CC0 1.0 Universal', 'CC-By Attribution 4.0 International'],
+            'licenses_acceptable': ['CC0 1.0 Universal', 'CC-By Attribution 4.0 International', 'No license'],
             'subjects_acceptable': [
                 (['Arts and Humanities'], True),
                 (['Business'], True),
