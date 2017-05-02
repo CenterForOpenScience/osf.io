@@ -32,6 +32,11 @@ DATABASES = {
 }
 
 DATABASE_ROUTERS = ['osf.db.router.PostgreSQLFailoverRouter', ]
+CELERY_IMPORTS = [
+    'osf.management.commands.migratedata',
+    'osf.management.commands.migraterelations',
+    'osf.management.commands.verify',
+]
 
 PASSWORD_HASHERS = [
     'django.contrib.auth.hashers.BCryptSHA256PasswordHasher',
@@ -108,9 +113,6 @@ INSTALLED_APPS = (
 if osf_settings.SECURE_MODE and DEBUG:
     INSTALLED_APPS += ('sslserver',)
 
-if DEBUG:
-    INSTALLED_APPS += ('debug_toolbar', )
-
 # TODO: Are there more granular ways to configure reporting specifically related to the API?
 RAVEN_CONFIG = {
     'tags': {'App': 'api'},
@@ -184,7 +186,7 @@ CORS_ORIGIN_WHITELIST = (urlparse(osf_settings.DOMAIN).netloc,
 # use cookies.
 CORS_ALLOW_CREDENTIALS = True
 # Set dynamically on app init
-INSTITUTION_ORIGINS_WHITELIST = ()
+ORIGINS_WHITELIST = ()
 
 MIDDLEWARE_CLASSES = (
     'api.base.middleware.DjangoGlobalMiddleware',
@@ -277,3 +279,5 @@ ADDONS_FOLDER_CONFIGURABLE = ['box', 'dropbox', 's3', 'googledrive', 'figshare',
 ADDONS_OAUTH = ADDONS_FOLDER_CONFIGURABLE + ['dataverse', 'github', 'mendeley', 'zotero', 'forward']
 
 BYPASS_THROTTLE_TOKEN = 'test-token'
+
+OSF_SHELL_USER_IMPORTS = None

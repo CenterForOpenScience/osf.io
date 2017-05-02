@@ -8,7 +8,6 @@ import requests
 
 from framework.mongo.utils import to_mongo_key
 
-from website.models import Node
 from addons.wiki import settings as wiki_settings
 from addons.wiki.exceptions import InvalidVersionError
 

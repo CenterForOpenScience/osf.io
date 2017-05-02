@@ -7,7 +7,7 @@ from django.utils import timezone
 from django.conf import settings
 from django.db import models
 
-from osf.utils.fields import NonNaiveDatetimeField
+from osf.utils.fields import NonNaiveDateTimeField
 from website.prereg import utils as prereg_utils
 
 from framework.auth import Auth
@@ -19,6 +19,7 @@ from website.exceptions import (
     InvalidSanctionApprovalToken,
     NodeStateError,
 )
+from website.project import tasks as project_tasks
 
 from osf.models import MetaSchema
 from osf.models.base import BaseModel, ObjectIDMixin
@@ -30,10 +31,6 @@ VIEW_PROJECT_URL_TEMPLATE = osf_settings.DOMAIN + '{node_id}/'
 
 class Sanction(ObjectIDMixin, BaseModel):
     """Sanction class is a generic way to track approval states"""
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.project.sanctions.Sanction'
-    modm_query = None
-    # /TODO DELETE ME POST MIGRATION
     # Neither approved not cancelled
     UNAPPROVED = 'unapproved'
     # Has approval
@@ -78,8 +75,8 @@ class Sanction(ObjectIDMixin, BaseModel):
     # Expiration date-- Sanctions in the UNAPPROVED state that are older than their end_date
     # are automatically made ACTIVE by a daily cron job
     # Use end_date=None for a non-expiring Sanction
-    end_date = NonNaiveDatetimeField(null=True, blank=True, default=None)
-    initiation_date = NonNaiveDatetimeField(default=timezone.now, null=True, blank=True)
+    end_date = NonNaiveDateTimeField(null=True, blank=True, default=None)
+    initiation_date = NonNaiveDateTimeField(default=timezone.now, null=True, blank=True)
 
     state = models.CharField(choices=STATE_CHOICES,
                              default=UNAPPROVED,
@@ -131,11 +128,6 @@ class Sanction(ObjectIDMixin, BaseModel):
 
 
 class TokenApprovableSanction(Sanction):
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.project.sanctions.TokenApprovableSanction'
-    modm_query = None
-
-    # /TODO DELETE ME POST MIGRATION
     def _validate_authorizer(self, user):
         """Subclasses may choose to provide extra restrictions on who can be an authorizer
         :return Boolean: True if user is allowed to be an authorizer else False
@@ -261,10 +253,6 @@ class TokenApprovableSanction(Sanction):
 
 
 class EmailApprovableSanction(TokenApprovableSanction):
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.project.sanctions.EmailApprovableSanction'
-    modm_query = None
-    # /TODO DELETE ME POST MIGRATION
     AUTHORIZER_NOTIFY_EMAIL_TEMPLATE = None
     NON_AUTHORIZER_NOTIFY_EMAIL_TEMPLATE = None
 
@@ -390,10 +378,6 @@ class PreregCallbackMixin(object):
 
 class Embargo(PreregCallbackMixin, EmailApprovableSanction):
     """Embargo object for registrations waiting to go public."""
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.project.sanctions.Embargo'
-    modm_query = None
-    # /TODO DELETE ME POST MIGRATION
     DISPLAY_NAME = 'Embargo'
     SHORT_NAME = 'embargo'
 
@@ -564,10 +548,6 @@ class Retraction(EmailApprovableSanction):
     Externally (specifically in user-facing language) retractions should be referred to as "Withdrawals", i.e.
     "Retract Registration" -> "Withdraw Registration", "Retracted" -> "Withdrawn", etc.
     """
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.project.sanctions.Retraction'
-    modm_query = None
-    # /TODO DELETE ME POST MIGRATION
     DISPLAY_NAME = 'Retraction'
     SHORT_NAME = 'retraction'
 
@@ -580,6 +560,7 @@ class Retraction(EmailApprovableSanction):
 
     initiated_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True)
     justification = models.CharField(max_length=2048, null=True, blank=True)
+    date_retracted = NonNaiveDateTimeField(null=True, blank=True)
 
     def _view_url_context(self, user_id, node):
         registration = self.registrations.first()
@@ -659,6 +640,9 @@ class Retraction(EmailApprovableSanction):
         Registration = apps.get_model('osf.Registration')
         NodeLog = apps.get_model('osf.NodeLog')
 
+        self.date_retracted = timezone.now()
+        self.save()
+
         parent_registration = Registration.find_one(Q('retraction', 'eq', self))
         parent_registration.registered_from.add_log(
             action=NodeLog.RETRACTION_APPROVED,
@@ -689,6 +673,10 @@ class Retraction(EmailApprovableSanction):
         for node in parent_registration.node_and_primary_descendants():
             node.set_privacy('public', auth=None, save=True, log=False)
             node.update_search()
+        if osf_settings.SHARE_URL and osf_settings.SHARE_API_TOKEN:
+            # force a save before sending data to share or retraction will not be updated
+            self.save()
+            project_tasks.on_registration_updated(parent_registration)
 
     def approve_retraction(self, user, token):
         self.approve(user, token)
@@ -698,10 +686,6 @@ class Retraction(EmailApprovableSanction):
 
 
 class RegistrationApproval(PreregCallbackMixin, EmailApprovableSanction):
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.project.sanctions.RegistrationApproval'
-    modm_query = None
-    # /TODO DELETE ME POST MIGRATION
     DISPLAY_NAME = 'Approval'
     SHORT_NAME = 'registration_approval'
 
@@ -844,10 +828,6 @@ class RegistrationApproval(PreregCallbackMixin, EmailApprovableSanction):
 
 
 class DraftRegistrationApproval(Sanction):
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.project.sanctions.DraftRegistrationApproval'
-    modm_query = None
-    # /TODO DELETE ME POST MIGRATION
     mode = Sanction.ANY
 
     # Since draft registrations that require approval are not immediately registered,
@@ -924,10 +904,6 @@ class DraftRegistrationApproval(Sanction):
 
 
 class EmbargoTerminationApproval(EmailApprovableSanction):
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.project.sanctions.EmbargoTerminationApproval'
-    modm_query = None
-    # /TODO DELETE ME POST MIGRATION
     DISPLAY_NAME = 'Embargo Termination Request'
     SHORT_NAME = 'embargo_termination_approval'
 

@@ -24,6 +24,7 @@ from api.base.parsers import (
 )
 from api.base.exceptions import RelationshipPostMakesNoChanges
 from api.nodes.serializers import NodeSerializer
+from api.nodes.filters import NodesListFilterMixin
 from api.users.serializers import UserSerializer
 
 from api.institutions.authentication import InstitutionAuthentication
@@ -133,7 +134,7 @@ class InstitutionDetail(JSONAPIBaseView, generics.RetrieveAPIView, InstitutionMi
         return self.get_institution()
 
 
-class InstitutionNodeList(JSONAPIBaseView, ODMFilterMixin, generics.ListAPIView, InstitutionMixin):
+class InstitutionNodeList(JSONAPIBaseView, NodesListFilterMixin, generics.ListAPIView, InstitutionMixin):
     """Nodes that have selected an institution as their primary institution.
 
     ##Permissions
@@ -296,9 +297,7 @@ class InstitutionNodesRelationship(JSONAPIBaseView, generics.RetrieveDestroyAPIV
         ConcreteNode = apps.get_model('osf.Node')
         inst = self.get_institution()
         auth = get_user_auth(self.request)
-        nodes = [node for node in
-                 ConcreteNode.find_by_institutions(inst, Q('is_deleted', 'ne', True))
-                 if node.can_view(auth)]
+        nodes = ConcreteNode.find_by_institutions(inst, Q('is_deleted', 'ne', True)).can_view(user=auth.user, private_link=auth.private_link)
         ret = {
             'data': nodes,
             'self': inst

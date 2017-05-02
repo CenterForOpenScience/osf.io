@@ -58,7 +58,7 @@ class TestNodeLinkDetail(ApiTestCase):
         assert_equal(res.status_code, 200)
         target_node = res.json['data']['embeds']['target_node']
         assert_in('errors', target_node)
-        assert_equal(target_node['errors'][0]['detail'], 'Authentication credentials were not provided.')
+        assert_equal(target_node['errors'][0]['detail'], 'You do not have permission to perform this action.')
 
     def test_returns_private_node_pointer_detail_logged_in_contributor(self):
         res = self.app.get(self.private_url, auth=self.user.auth)

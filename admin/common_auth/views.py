@@ -1,7 +1,7 @@
 from __future__ import absolute_import, unicode_literals
 
 from django.core.urlresolvers import reverse, reverse_lazy
-from django.http import Http404, HttpResponseBadRequest
+from django.http import Http404
 from django.shortcuts import redirect
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import never_cache
@@ -15,7 +15,7 @@ from django.contrib.auth import login, REDIRECT_FIELD_NAME, authenticate, logout
 from website.settings import PREREG_ADMIN_TAG
 
 from osf.models.user import OSFUser
-from admin.common_auth.models import AdminProfile
+from osf.models import AdminProfile
 from admin.common_auth.forms import LoginForm, UserRegistrationForm, DeskUserForm
 
 
@@ -74,11 +74,8 @@ class RegisterUser(PermissionRequiredMixin, FormView):
 
         # create AdminProfile for this new user
         profile, created = AdminProfile.objects.get_or_create(user=osf_user)
-        if not created:
-            return HttpResponseBadRequest(
-                'This user is already able to access the OSF Admin - please update their permissions with a superuser'
-            )
 
+        osf_user.groups.clear()
         prereg_admin_group = Group.objects.get(name='prereg_admin')
         for group in form.cleaned_data.get('group_perms'):
             osf_user.groups.add(group)
@@ -87,7 +84,10 @@ class RegisterUser(PermissionRequiredMixin, FormView):
 
         osf_user.save()
 
-        messages.success(self.request, 'Registration successful for OSF User {}!'.format(osf_user.username))
+        if created:
+            messages.success(self.request, 'Registration successful for OSF User {}!'.format(osf_user.username))
+        else:
+            messages.success(self.request, 'Permissions update successful for OSF User {}!'.format(osf_user.username))
         return super(RegisterUser, self).form_valid(form)
 
     def get_success_url(self):
@@ -98,7 +98,7 @@ class DeskUserCreateFormView(PermissionRequiredMixin, CreateView):
     form_class = DeskUserForm
     template_name = 'desk/settings.html'
     success_url = reverse_lazy('auth:desk')
-    permissions_required = 'admin.view_desk'
+    permission_required = 'osf.view_desk'
     raise_exception = True
 
     def form_valid(self, form):
@@ -110,7 +110,7 @@ class DeskUserUpdateFormView(PermissionRequiredMixin, UpdateView):
     form_class = DeskUserForm
     template_name = 'desk/settings.html'
     success_url = reverse_lazy('auth:desk')
-    permissions_required = 'admin.view_desk'
+    permission_required = 'osf.view_desk'
     raise_exception = True
 
     def get_object(self, queryset=None):

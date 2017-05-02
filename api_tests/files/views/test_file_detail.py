@@ -3,16 +3,18 @@ from __future__ import unicode_literals
 import itsdangerous
 import mock
 import pytz
+from nose.tools import *  # flake8: noqa
+
+from addons.github.models import GithubFileNode
+from addons.osfstorage import settings as osfstorage_settings
 from api.base.settings.defaults import API_BASE
 from api_tests import utils as api_utils
 from framework.auth.core import Auth
 from framework.sessions.model import Session
-from nose.tools import *  # flake8: noqa
 from osf_tests.factories import (AuthUserFactory, CommentFactory,
                                  ProjectFactory, UserFactory)
 from tests.base import ApiTestCase, capture_signals
 from website import settings as website_settings
-from addons.osfstorage import settings as osfstorage_settings
 from website.project.model import NodeLog
 from website.project.signals import contributor_removed
 
@@ -21,7 +23,7 @@ from website.project.signals import contributor_removed
 def _dt_to_iso8601(value):
     iso8601 = value.isoformat()
     if iso8601.endswith('+00:00'):
-        iso8601 = iso8601[:-9] + 'Z'  # offset upped to 9 to get rid of 3 ms decimal points
+        iso8601 = iso8601[:-6] + 'Z'  # microsecond precision
 
     return iso8601
 
@@ -394,7 +396,7 @@ class TestFileView(ApiTestCase):
         assert_false(self.file.is_checked_out)
 
     def test_must_be_osfstorage(self):
-        self.file.provider = 'github'
+        self.file.recast(GithubFileNode._typedmodels_type)
         self.file.save()
         res = self.app.put_json_api(
             self.file_url,
@@ -436,6 +438,15 @@ class TestFileView(ApiTestCase):
             res = self.app.get(self.file_url, auth=self.user.auth)
             assert_equal(res.json['data']['attributes']['current_version'], version)
 
+    # Regression test for OSF-7758
+    def test_folder_files_relationships_contains_guid_not_id(self):
+        self.folder = self.node.get_addon('osfstorage').get_root().append_folder('I\'d be a teacher!!')
+        self.folder.save()
+        self.folder_url = '/{}files/{}/'.format(API_BASE, self.folder._id)
+        res = self.app.get(self.folder_url, auth=self.user.auth)
+        split_href = res.json['data']['relationships']['files']['links']['related']['href'].split('/')
+        assert_in(self.node._id, split_href)
+        assert_not_in(self.node.id, split_href)
 
 class TestFileVersionView(ApiTestCase):
     def setUp(self):

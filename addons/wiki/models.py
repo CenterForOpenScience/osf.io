@@ -2,18 +2,17 @@
 import datetime
 import functools
 import logging
-import urllib
 
 import markdown
 import pytz
 from addons.base.models import BaseNodeSettings
 from bleach.callbacks import nofollow
 from django.db import models
-from django.utils import timezone
 from framework.forms.utils import sanitize
 from markdown.extensions import codehilite, fenced_code, wikilinks
 from osf.models import AbstractNode, NodeLog
 from osf.models.base import BaseModel, GuidMixin
+from osf.utils.fields import NonNaiveDateTimeField
 from website import settings
 from addons.wiki import utils as wiki_utils
 from website.exceptions import NodeStateError
@@ -49,6 +48,7 @@ def validate_page_name(value):
     value = (value or '').strip()
 
     if not value:
+        # TODO: determine if this if possible anymore, deprecate if not
         raise NameEmptyError('Page name cannot be blank.')
     if value.find('/') != -1:
         raise NameInvalidError('Page name cannot contain forward slashes.')
@@ -97,14 +97,9 @@ def build_wiki_url(node, label, base, end):
 
 
 class NodeWikiPage(GuidMixin, BaseModel):
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.addons.wiki.model.NodeWikiPage'
-    modm_query = None
-    # /TODO DELETE ME POST MIGRATION
-
     page_name = models.CharField(max_length=200, validators=[validate_page_name, ])
     version = models.IntegerField(default=1)
-    date = models.DateTimeField(default=timezone.now)  # auto_now_add=True)
+    date = NonNaiveDateTimeField(auto_now_add=True)
     content = models.TextField(default='', blank=True)
     user = models.ForeignKey('osf.OSFUser', null=True, blank=True)
     node = models.ForeignKey('osf.AbstractNode', null=True, blank=True)
@@ -119,11 +114,11 @@ class NodeWikiPage(GuidMixin, BaseModel):
 
     @property
     def deep_url(self):
-        return '{}wiki/{}/'.format(self.node.deep_url, urllib.quote(self.page_name))
+        return u'{}wiki/{}/'.format(self.node.deep_url, self.page_name)
 
     @property
     def url(self):
-        return '{}wiki/{}/'.format(self.node.url, urllib.quote(self.page_name))
+        return u'{}wiki/{}/'.format(self.node.url, self.page_name)
 
     @property
     def rendered_before_update(self):
@@ -272,10 +267,6 @@ class NodeWikiPage(GuidMixin, BaseModel):
 
 
 class NodeSettings(BaseNodeSettings):
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.addons.wiki.model.AddonWikiNodeSettings'
-    modm_query = None
-    # /TODO DELETE ME POST MIGRATION
     complete = True
     has_auth = True
     is_publicly_editable = models.BooleanField(default=False, db_index=True)

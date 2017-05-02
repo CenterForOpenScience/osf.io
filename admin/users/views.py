@@ -3,8 +3,10 @@ from __future__ import unicode_literals
 import csv
 from furl import furl
 from datetime import datetime, timedelta
+from django.views.defaults import page_not_found
 from django.views.generic import FormView, DeleteView, ListView
 from django.contrib.auth.mixins import PermissionRequiredMixin
+from django.core.urlresolvers import reverse
 from django.core.exceptions import PermissionDenied
 from django.core.mail import send_mail
 from django.http import Http404, HttpResponse
@@ -13,14 +15,15 @@ from django.shortcuts import redirect
 from osf.models.user import OSFUser
 from osf.models.node import Node, NodeLog
 from osf.models.spam import SpamStatus
+from osf.models.tag import Tag
 from framework.auth import get_user
 from framework.auth.utils import impute_names
 from framework.auth.core import generate_verification_key
 
 from website.mailchimp_utils import subscribe_on_confirm
 
-from admin.base.views import GuidFormView, GuidView
-from admin.common_auth.logs import (
+from admin.base.views import GuidView
+from osf.models.admin_log_entry import (
     update_admin_log,
     USER_2_FACTOR,
     USER_EMAILED,
@@ -29,7 +32,7 @@ from admin.common_auth.logs import (
     CONFIRM_SPAM)
 
 from admin.users.serializers import serialize_user
-from admin.users.forms import EmailResetForm, WorkshopForm
+from admin.users.forms import EmailResetForm, WorkshopForm, UserSearchForm
 from admin.users.templatetags.user_extras import reverse_user
 from website.settings import DOMAIN, SUPPORT_EMAIL
 
@@ -42,7 +45,7 @@ class UserDeleteView(PermissionRequiredMixin, DeleteView):
     template_name = 'users/remove_user.html'
     context_object_name = 'user'
     object = None
-    permission_required = 'osf.change_user'
+    permission_required = 'osf.change_osfuser'
     raise_exception = True
 
     def delete(self, request, *args, **kwargs):
@@ -53,11 +56,13 @@ class UserDeleteView(PermissionRequiredMixin, DeleteView):
                 user.is_registered = False
                 if 'spam_flagged' in user.system_tags or 'ham_confirmed' in user.system_tags:
                     if 'spam_flagged' in user.system_tags:
-                        user.system_tags.remove('spam_flagged')
+                        t = Tag.all_tags.get(name='spam_flagged', system=True)
+                        user.tags.remove(t)
                     if 'ham_confirmed' in user.system_tags:
-                        user.system_tags.remove('ham_confirmed')
+                        t = Tag.all_tags.get(name='ham_confirmed', system=True)
+                        user.tags.remove(t)
                     if 'spam_confirmed' not in user.system_tags:
-                        user.system_tags.append('spam_confirmed')
+                        user.add_system_tag('spam_confirmed')
                 flag = USER_REMOVED
                 message = 'User account {} disabled'.format(user.pk)
             else:
@@ -66,11 +71,13 @@ class UserDeleteView(PermissionRequiredMixin, DeleteView):
                 user.is_registered = True
                 if 'spam_flagged' in user.system_tags or 'spam_confirmed' in user.system_tags:
                     if 'spam_flagged' in user.system_tags:
-                        user.system_tags.remove('spam_flagged')
+                        t = Tag.all_tags.get(name='spam_flagged', system=True)
+                        user.tags.remove(t)
                     if 'spam_confirmed' in user.system_tags:
-                        user.system_tags.remove('spam_confirmed')
+                        t = Tag.all_tags.get(name='spam_confirmed', system=True)
+                        user.tags.remove('spam_confirmed')
                     if 'ham_confirmed' not in user.system_tags:
-                        user.system_tags.append('ham_confirmed')
+                        user.add_system_tag('ham_confirmed')
                 flag = USER_RESTORED
                 message = 'User account {} reenabled'.format(user.pk)
             user.save()
@@ -169,8 +176,8 @@ class UserSpamList(PermissionRequiredMixin, ListView):
     paginate_by = 25
     paginate_orphans = 1
     ordering = ('date_disabled')
-    context_object_name = '-user'
-    permission_required = ('common_auth.view_spam', 'osf.view_user')
+    context_object_name = '-osfuser'
+    permission_required = ('osf.view_spam', 'osf.view_osfuser')
     raise_exception = True
 
     def get_queryset(self):
@@ -192,7 +199,7 @@ class UserFlaggedSpamList(UserSpamList, DeleteView):
     template_name = 'users/flagged_spam_list.html'
 
     def delete(self, request, *args, **kwargs):
-        if not request.user.get_perms('admin.mark_spam'):
+        if not request.user.get_perms('osf.mark_spam'):
             raise PermissionDenied("You don't have permission to update this user's spam status.")
         user_ids = [
             uid for uid in request.POST.keys()
@@ -202,7 +209,7 @@ class UserFlaggedSpamList(UserSpamList, DeleteView):
             user = OSFUser.load(uid)
             if 'spam_flagged' in user.system_tags:
                 user.system_tags.remove('spam_flagged')
-            user.system_tags.append('spam_confirmed')
+            user.add_system_tag('spam_confirmed')
             user.save()
             update_admin_log(
                 user_id=self.request.user.id,
@@ -249,21 +256,72 @@ class User2FactorDeleteView(UserDeleteView):
         return redirect(reverse_user(self.kwargs.get('guid')))
 
 
-class UserFormView(PermissionRequiredMixin, GuidFormView):
+class UserFormView(PermissionRequiredMixin, FormView):
     template_name = 'users/search.html'
-    object_type = 'user'
-    permission_required = 'osf.view_user'
+    object_type = 'osfuser'
+    permission_required = 'osf.view_osfuser'
     raise_exception = True
+    form_class = UserSearchForm
+
+    def __init__(self, *args, **kwargs):
+        self.redirect_url = None
+        super(UserFormView, self).__init__(*args, **kwargs)
+
+    def form_valid(self, form):
+        guid = form.cleaned_data['guid']
+        name = form.cleaned_data['name']
+        email = form.cleaned_data['email']
+
+        if guid or email:
+            if email:
+                try:
+                    user = OSFUser.objects.get(emails__contains=[email])
+                    guid = user.guids.first()._id
+                except OSFUser.DoesNotExist:
+                    return page_not_found(self.request, AttributeError('User with email address {} not found.'.format(email)))
+            self.redirect_url = reverse('users:user', kwargs={'guid': guid})
+        elif name:
+            self.redirect_url = reverse('users:search_list', kwargs={'name': name})
+
+        return super(UserFormView, self).form_valid(form)
 
     @property
     def success_url(self):
-        return reverse_user(self.guid)
+        return self.redirect_url
+
+
+class UserSearchList(PermissionRequiredMixin, ListView):
+    template_name = 'users/list.html'
+    permission_required = 'osf.view_osfuser'
+    raise_exception = True
+    form_class = UserSearchForm
+    paginate_by = 25
+
+    def get_queryset(self):
+        query = OSFUser.objects.filter(fullname__contains=self.kwargs['name']).only(
+            'guids', 'fullname', 'username', 'date_confirmed', 'date_disabled'
+        )
+        return query
+
+    def get_context_data(self, **kwargs):
+        users = self.get_queryset()
+        page_size = self.get_paginate_by(users)
+        paginator, page, query_set, is_paginated = self.paginate_queryset(users, page_size)
+        kwargs['page'] = page
+        kwargs['users'] = [{
+            'name': user.fullname,
+            'username': user.username,
+            'id': user.guids.first()._id,
+            'confirmed': user.date_confirmed,
+            'disabled': user.date_disabled if user.is_disabled else None
+        } for user in query_set]
+        return super(UserSearchList, self).get_context_data(**kwargs)
 
 
 class UserView(PermissionRequiredMixin, GuidView):
     template_name = 'users/user.html'
     context_object_name = 'user'
-    permission_required = 'osf.view_user'
+    permission_required = 'osf.view_osfuser'
     raise_exception = True
 
     def get_context_data(self, **kwargs):
@@ -279,7 +337,7 @@ class UserWorkshopFormView(PermissionRequiredMixin, FormView):
     form_class = WorkshopForm
     object_type = 'user'
     template_name = 'users/workshop.html'
-    permission_required = 'osf.view_user'
+    permission_required = 'osf.view_osfuser'
     raise_exception = True
 
     def form_valid(self, form):
@@ -379,7 +437,7 @@ class ResetPasswordView(PermissionRequiredMixin, FormView):
     form_class = EmailResetForm
     template_name = 'users/reset.html'
     context_object_name = 'user'
-    permission_required = 'osf.change_user'
+    permission_required = 'osf.change_osfuser'
     raise_exception = True
 
     def get_context_data(self, **kwargs):

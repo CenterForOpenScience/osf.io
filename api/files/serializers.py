@@ -146,7 +146,7 @@ class FileSerializer(JSONAPISerializer):
 
     files = NodeFileHyperLinkField(
         related_view='nodes:node-files',
-        related_view_kwargs={'node_id': '<node_id>', 'path': '<path>', 'provider': '<provider>'},
+        related_view_kwargs={'node_id': '<node._id>', 'path': '<path>', 'provider': '<provider>'},
         kind='folder'
     )
     versions = NodeFileHyperLinkField(
@@ -197,7 +197,7 @@ class FileSerializer(JSONAPISerializer):
         elif obj.provider != 'osfstorage' and obj.history:
             mod_dt = obj.history[-1].get('modified', None)
 
-        if self.context['request'].version >= '2.2' and obj.is_file:
+        if self.context['request'].version >= '2.2' and obj.is_file and mod_dt:
             return datetime.strftime(mod_dt, '%Y-%m-%dT%H:%M:%S.%fZ')
 
         return mod_dt and mod_dt.replace(tzinfo=pytz.utc)
@@ -211,7 +211,7 @@ class FileSerializer(JSONAPISerializer):
             # earliest entry in the file history.
             creat_dt = obj.history[0].get('modified', None)
 
-        if self.context['request'].version >= '2.2' and obj.is_file:
+        if self.context['request'].version >= '2.2' and obj.is_file and creat_dt:
             return datetime.strftime(creat_dt, '%Y-%m-%dT%H:%M:%S.%fZ')
 
         return creat_dt and creat_dt.replace(tzinfo=pytz.utc)
@@ -234,12 +234,12 @@ class FileSerializer(JSONAPISerializer):
 
     def get_current_user_can_comment(self, obj):
         user = self.context['request'].user
-        auth = Auth(user if not user.is_anonymous() else None)
+        auth = Auth(user if not user.is_anonymous else None)
         return obj.node.can_comment(auth)
 
     def get_unread_comments_count(self, obj):
         user = self.context['request'].user
-        if user.is_anonymous():
+        if user.is_anonymous:
             return 0
         return Comment.find_n_unread(user=user, node=obj.node, page='files', root_id=obj.get_guid()._id)
 
@@ -324,6 +324,7 @@ class FileVersionSerializer(JSONAPISerializer):
     id = ser.CharField(read_only=True, source='identifier')
     size = ser.IntegerField(read_only=True, help_text='The size of this file at this version')
     content_type = ser.CharField(read_only=True, help_text='The mime type of this file at this verison')
+    date_created = DateByVersion(read_only=True, help_text='The date that this version was created')
     links = LinksField({
         'self': 'self_url',
         'html': 'absolute_url'

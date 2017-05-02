@@ -12,11 +12,6 @@ from website.project.metadata.utils import create_jsonschema_from_metaschema
 
 
 class MetaSchema(ObjectIDMixin, BaseModel):
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.project.model.MetaSchema'
-    modm_query = None
-    # /TODO DELETE ME POST MIGRATION
-
     name = models.CharField(max_length=255)
     schema = DateTimeAwareJSONField(default=dict)
     category = models.CharField(max_length=255, null=True, blank=True)
@@ -26,6 +21,9 @@ class MetaSchema(ObjectIDMixin, BaseModel):
 
     class Meta:
         unique_together = ('name', 'schema_version')
+
+    def __unicode__(self):
+        return '(name={}, schema_version={}, id={})'.format(self.name, self.schema_version, self.id)
 
     @property
     def _config(self):

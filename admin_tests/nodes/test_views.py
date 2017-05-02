@@ -1,5 +1,5 @@
 import mock
-from admin.common_auth.logs import OSFLogEntry
+from osf.models.admin_log_entry import AdminLogEntry
 from admin.nodes.views import (NodeDeleteView, NodeRemoveContributorView,
                                NodeView)
 from admin_tests.utilities import setup_log_view, setup_view
@@ -60,21 +60,21 @@ class TestNodeDeleteView(AdminTestCase):
         nt.assert_equal(res.get('guid'), self.node._id)
 
     def test_remove_node(self):
-        count = OSFLogEntry.objects.count()
+        count = AdminLogEntry.objects.count()
         self.view.delete(self.request)
         self.node.refresh_from_db()
         nt.assert_true(self.node.is_deleted)
-        nt.assert_equal(OSFLogEntry.objects.count(), count + 1)
+        nt.assert_equal(AdminLogEntry.objects.count(), count + 1)
 
     def test_restore_node(self):
         self.view.delete(self.request)
         self.node.refresh_from_db()
         nt.assert_true(self.node.is_deleted)
-        count = OSFLogEntry.objects.count()
+        count = AdminLogEntry.objects.count()
         self.view.delete(self.request)
         self.node.reload()
         nt.assert_false(self.node.is_deleted)
-        nt.assert_equal(OSFLogEntry.objects.count(), count + 1)
+        nt.assert_equal(AdminLogEntry.objects.count(), count + 1)
 
 
 class TestRemoveContributor(AdminTestCase):
@@ -108,10 +108,10 @@ class TestRemoveContributor(AdminTestCase):
         nt.assert_in(self.user_2, self.node.contributors)
         view = setup_log_view(self.view, self.request, node_id=self.node._id,
                               user_id=self.user_2._id)
-        count = OSFLogEntry.objects.count()
+        count = AdminLogEntry.objects.count()
         view.delete(self.request)
         nt.assert_not_in(self.user_2, self.node.contributors)
-        nt.assert_equal(OSFLogEntry.objects.count(), count + 1)
+        nt.assert_equal(AdminLogEntry.objects.count(), count + 1)
 
     def test_do_not_remove_last_admin(self):
         nt.assert_equal(
@@ -120,7 +120,7 @@ class TestRemoveContributor(AdminTestCase):
         )
         view = setup_log_view(self.view, self.request, node_id=self.node._id,
                               user_id=self.user._id)
-        count = OSFLogEntry.objects.count()
+        count = AdminLogEntry.objects.count()
         view.delete(self.request)
         self.node.reload()  # Reloads instance to show that nothing was removed
         nt.assert_equal(len(list(self.node.contributors)), 2)
@@ -128,7 +128,7 @@ class TestRemoveContributor(AdminTestCase):
             len(list(self.node.get_admin_contributors(self.node.contributors))),
             1
         )
-        nt.assert_equal(OSFLogEntry.objects.count(), count)
+        nt.assert_equal(AdminLogEntry.objects.count(), count)
 
     def test_no_log(self):
         view = setup_log_view(self.view, self.request, node_id=self.node._id,

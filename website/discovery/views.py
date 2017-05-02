@@ -1,3 +1,5 @@
+from framework.flask import redirect
+
 from website import settings
 from website.project import utils
 
@@ -34,3 +36,11 @@ def activity():
         'popular_public_projects': popular_public_projects,
         'popular_public_registrations': popular_public_registrations,
     }
+
+
+def redirect_explore_to_activity(**kwargs):
+    return redirect('/activity/')
+
+
+def redirect_explore_activity_to_activity(**kwargs):
+    return redirect('/activity/')
