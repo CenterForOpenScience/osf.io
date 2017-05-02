@@ -141,6 +141,7 @@ class PreprintProviderChangeForm(PermissionRequiredMixin, UpdateView):
 
     def get_context_data(self, *args, **kwargs):
         kwargs['import_form'] = ImportFileForm()
+        kwargs['show_taxonomies'] = settings.SHOW_TAXONOMIES_IN_PREPRINT_PROVIDER_EDIT
         return super(PreprintProviderChangeForm, self).get_context_data(*args, **kwargs)
 
     def get_success_url(self, *args, **kwargs):
@@ -246,4 +247,5 @@ class CreatePreprintProvider(PermissionRequiredMixin, CreateView):
 
     def get_context_data(self, *args, **kwargs):
         kwargs['import_form'] = ImportFileForm()
+        kwargs['show_taxonomies'] = settings.SHOW_TAXONOMIES_IN_PREPRINT_PROVIDER_EDIT
         return super(CreatePreprintProvider, self).get_context_data(*args, **kwargs)

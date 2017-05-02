@@ -240,3 +240,8 @@ if DEBUG:
     DEBUG_TOOLBAR_CONFIG = {
         'SHOW_TOOLBAR_CALLBACK': lambda(_): True
     }
+
+
+# In the very near future, taxonomies be changed drastically and they won't work the same anymore
+# When this happens, flip the switch here and disable editing taxonomies in the admin app until it is updated
+SHOW_TAXONOMIES_IN_PREPRINT_PROVIDER_EDIT = True

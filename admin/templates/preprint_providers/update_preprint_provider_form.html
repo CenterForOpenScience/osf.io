@@ -13,6 +13,7 @@
                     </div>
                 {% endif %}
             {% endfor %}
+            {% if show_taxonomies %}
             <div class="row">
                 <div class="col-md-4">
                     <div class="firstlevel_subjects">
@@ -32,7 +33,7 @@
                     </div>
                 </div>
             </div>
-
+            {% endif %}
             <input class="form-button" type="submit" value="Save" />
         </form>
     </div>
