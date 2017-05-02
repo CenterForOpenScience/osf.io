@@ -1,5 +1,6 @@
 """
 Force-archive "stuck" registrations (i.e. failed to completely archive).
+USE WITH CARE.
 
 Usage:
 
@@ -72,6 +73,9 @@ def verify(reg):
 
 
 def check_registration(reg):
+    if reg.is_deleted:
+        logger.info('Registration {} is deleted.'.format(reg._id))
+        return True
     expired_if_before = timezone.now() - ARCHIVE_TIMEOUT_TIMEDELTA
     archive_job = reg.archive_job
     root_job = reg.root.archive_job
