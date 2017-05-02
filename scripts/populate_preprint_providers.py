@@ -97,6 +97,7 @@ def main(env):
             'social_twitter': '',
             'social_facebook': '',
             'social_instagram': '',
+            'default_license': 'CC0 1.0 Universal',
             'licenses_acceptable': ['CC0 1.0 Universal', 'CC-By Attribution 4.0 International', 'No license'],
             'header_text': '',
             'subjects_acceptable': [],
@@ -138,6 +139,7 @@ def main(env):
             'social_twitter': 'engrxiv',
             'social_facebook': 'engrXiv',
             'social_instagram': 'engrxiv',
+            'default_license': 'CC0 1.0 Universal',
             'licenses_acceptable': ['CC0 1.0 Universal', 'CC-By Attribution 4.0 International', 'No license'],
             'header_text': '',
             'subjects_acceptable': [
@@ -282,6 +284,7 @@ def main(env):
             'social_twitter': 'psyarxiv',
             'social_facebook': 'PsyArXiv',
             'social_instagram': 'psyarxiv',
+            'default_license': 'CC0 1.0 Universal',
             'licenses_acceptable': ['CC0 1.0 Universal', 'CC-By Attribution 4.0 International', 'No license'],
             'header_text': '',
             'subjects_acceptable': [
@@ -367,6 +370,7 @@ def main(env):
             'social_twitter': 'socarxiv',
             'social_facebook': 'socarxiv',
             'social_instagram': 'socarxiv',
+            'default_license': 'CC0 1.0 Universal',
             'licenses_acceptable': ['CC0 1.0 Universal', 'CC-By Attribution 4.0 International', 'No license'],
             'header_text': '',
             'subjects_acceptable': [
@@ -393,6 +397,7 @@ def main(env):
             'social_twitter': 'RedeSciELO',  # optional
             'social_facebook': 'SciELONetwork',
             'header_text': '',
+            'default_license': 'CC-By Attribution 4.0 International',
             'licenses_acceptable': ['CC-By Attribution 4.0 International'],
             'subjects_acceptable': []
         },
@@ -438,7 +443,7 @@ def main(env):
             'social_twitter': 'lawarxiv',
             'social_facebook': '',
             'header_text': '',
-            'default_license': 'CC-By Attribution 4.0 International',
+            'default_license': 'No license',
             'licenses_acceptable': ['CC0 1.0 Universal', 'CC-By Attribution 4.0 International', 'No license'],
             'subjects_acceptable': [
                 (['Arts and Humanities'], True),
@@ -500,6 +505,7 @@ def main(env):
             'social_twitter': 'AgriXiv',
             'social_facebook': 'agrixiv',
             'social_instagram': 'agrixiv',
+            'default_license': 'CC0 1.0 Universal',
             'licenses_acceptable': ['CC0 1.0 Universal', 'CC-By Attribution 4.0 International'],
             'header_text': '',
             'subjects_acceptable': [
@@ -1105,6 +1111,7 @@ def main(env):
             'email_contact': 'contact+bitss@osf.io',
             'email_support': 'support+bitss@osf.io',
             'social_twitter': 'UCBITSS',
+            'default_license': 'CC-By Attribution 4.0 International',
             'licenses_acceptable': ['CC-By Attribution 4.0 International', 'CC0 1.0 Universal'],
             'header_text': '',
             'subjects_acceptable': [
