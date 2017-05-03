@@ -1,4 +1,9 @@
-from django.apps import apps
+# -*- coding: utf-8 -*-
+from __future__ import unicode_literals
+
+from django.db import migrations
+from osf.models.user import SocialNetwork
+
 
 SOCIAL_NETWORKS = [
     {
@@ -28,7 +33,21 @@ SOCIAL_NETWORKS = [
     }
 ]
 
-def ensure_social_networks():
-    SocialNetwork = apps.get_model('osf.SocialNetwork')
+def add_social_networks(*args):
     for network in SOCIAL_NETWORKS:
-        SocialNetwork.objects.get_or_create(name=network['name'])
+        SocialNetwork.objects.get_or_create(**network)
+
+def remove_social_networks(*args):
+    for network in SOCIAL_NETWORKS:
+        SocialNetwork.objects.get(**network).delete()
+
+
+class Migration(migrations.Migration):
+
+    dependencies = [
+        ('osf', '0022_auto_20170503_0948'),
+    ]
+
+    operations = [
+        migrations.RunPython(add_social_networks, remove_social_networks)
+    ]

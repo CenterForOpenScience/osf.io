@@ -53,27 +53,18 @@ def get_license(name):
 
 def set_or_update_m2m_fields(provider, emails, licenses, links, social_accounts):
     for email in emails:
-        obj, created = Email.objects.get_or_create(
-            email=email['email'],
-            email_type=email['email_type']
-        )
+        obj, created = Email.objects.get_or_create(**email)
         provider.emails.add(obj)
 
     if licenses:
         provider.licenses_acceptable.add(*licenses)
 
     for link in links:
-        obj, created = PreprintProviderLink.objects.get_or_create(
-            url=link['url'],
-            description=link['description']
-        )
+        obj, created = PreprintProviderLink.objects.get_or_create(**link)
         provider.links.add(obj)
 
     for account in social_accounts:
-        obj, created = SocialAccount.objects.get_or_create(
-            network=account['network'],
-            username=account['username']
-        )
+        obj, created = SocialAccount.objects.get_or_create(**account)
         provider.social_accounts.add(obj)
 
     return provider
