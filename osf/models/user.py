@@ -162,7 +162,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         'twitter': u'http://twitter.com/{}',
         'profileWebsites': [],
         'linkedIn': u'https://www.linkedin.com/{}',
-        'impactStory': u'https://impactstory.org/{}',
+        'impactStory': u'https://impactstory.org/u/{}',
         'researcherId': u'http://researcherid.com/rid/{}',
         'researchGate': u'https://researchgate.net/profile/{}',
         'academiaInstitution': u'https://{}',
