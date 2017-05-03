@@ -1779,6 +1779,101 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
     endpoint is cached.  The `last_touched` field describes the last time the metadata was retrieved from the external
     provider.  To force a metadata update, access the parent folder via its Node Files List endpoint.
 
+    ##Provider Specific File Attributes and Quirks
+    Some storage providers do not return all attributes depending on their internals.
+    For the most up to date information, see [the documentation for each provider in WaterButler](https://github.com/CenterForOpenScience/waterbutler)
+
+    ###OSF Storage
+    OSF Storage is the only provider that has all file attributes (except "last_touched" which only applies to non-osfstorage files).
+
+    ###Dataverse
+    Dataverse returns `null` for the following fields:
+
+    - `last_touched`
+    - `date_modified`
+    - `date_created`
+    - hashes
+        - `md5`
+        - `sha256`
+    - `size`
+
+    ###Dropbox
+    Dropbox returns `null` for the following fields:
+
+    - hashes
+        - `md5`
+        - `sha256`
+    - `size`
+
+    ###figshare
+    figshare returns `null` for the following fields:
+
+    - `last_touched`
+    - `date_modified`
+    - `date_created`
+    - hashes
+        - `md5`
+        - `sha256`
+    - `size`
+
+    ###GitHub
+    GitHub returns `null` for the following fields:
+
+    - hashes
+        - `md5`
+        - `sha256`
+    - `size`
+
+    Some quirks of the githb API:
+
+    * git doesn't have a concept of empty folders, so this provider creates 0-byte ``.gitkeep``
+    files in the requested folder.
+    * The ``contents`` endpoint cannot be used to fetch metadata reliably for all files. Requesting
+    a file that is larger than 1Mb will result in a error response directing you to the ``blob``
+    endpoint.  A recursive tree fetch may be used instead.
+    * The tree endpoint truncates results after a large number of files.  It does not provide a way
+    to page through the tree.  Since move, copy, and folder delete operations rely on whole-tree
+    replacement, they cannot be reliably supported for large repos.  Attempting to use them will
+    throw a 501 Not Implemented error.
+
+
+    ###Google Drive
+    returns `null` for the following fields:
+
+    - hashes
+        - `md5`
+        - `sha256`
+    - `size`
+
+    The attribute `materialized_path` for Google-type files (.gdoc etc.) does not have a file extension.
+    The file extension is displayed as a part of the `name` attribute.
+
+
+    ###Amazon S3
+    Amazon s3 returns `null` for the following fields:
+
+    - hashes
+        - `sha256`
+    - `size`
+
+    ###Box
+    Box returns `null` for the following fields:
+
+    - hashes
+        - `md5`
+        - `sha256`
+    - `size`
+
+    ###ownCloud
+    ownCloud returns `null` for the following fields:
+
+    - `date_modified`
+    - `date_created`
+    - hashes
+        - `md5`
+        - `sha256`
+    - `size`
+
     ##Links
 
     See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
