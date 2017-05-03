@@ -26,6 +26,7 @@ class Subject(ObjectIDMixin, BaseModel):
     objects = SubjectQuerySet.as_manager()
 
     class Meta:
+        base_manager_name = 'objects'
         unique_together = ('text', 'provider')
 
     def __unicode__(self):
