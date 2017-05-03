@@ -3,6 +3,7 @@ import csv
 import os
 import furl
 import pytz
+import pytest
 from datetime import datetime, timedelta
 
 from nose import tools as nt
@@ -30,6 +31,8 @@ from admin_tests.utilities import setup_view, setup_log_view, setup_form_view
 from admin.users import views
 from admin.users.forms import WorkshopForm, UserSearchForm
 from osf.models.admin_log_entry import AdminLogEntry
+
+pytestmark = pytest.mark.django_db
 
 
 class TestUserView(AdminTestCase):
@@ -273,8 +276,10 @@ class SpamUserListMixin(object):
         user = UserFactory()
         guid = user._id
 
-        change_permission = Permission.objects.get(codename='view_osfuser')
-        user.user_permissions.add(change_permission)
+        view_permission = Permission.objects.get(codename='view_osfuser')
+        spam_permission = Permission.objects.get(codename='view_spam')
+        user.user_permissions.add(view_permission)
+        user.user_permissions.add(spam_permission)
         user.save()
 
         request = RequestFactory().get(self.url)
@@ -284,7 +289,7 @@ class SpamUserListMixin(object):
         self.assertEqual(response.status_code, 200)
 
 
-class TestFlaggedSpamUserList(SpamUserListMixin):
+class TestFlaggedSpamUserList(SpamUserListMixin, AdminTestCase):
     def setUp(self):
         super(TestFlaggedSpamUserList, self).setUp()
         self.plain_view = views.UserFlaggedSpamList
@@ -297,30 +302,30 @@ class TestFlaggedSpamUserList(SpamUserListMixin):
         nt.assert_equal(qs[0]._id, self.flagged_user._id)
 
 
-class TestConfirmedSpamUserList(SpamUserListMixin):
+class TestConfirmedSpamUserList(SpamUserListMixin, AdminTestCase):
     def setUp(self):
         super(TestConfirmedSpamUserList, self).setUp()
         self.plain_view = views.UserKnownSpamList
-        self.view = setup_log_view(self.view(), self.request)
+        self.view = setup_log_view(self.plain_view(), self.request)
 
         self.url = reverse('users:known-spam')
 
     def test_get_queryset(self):
-        qs = self.view().get_queryset()
+        qs = self.view.get_queryset()
         nt.assert_equal(qs.count(), 1)
         nt.assert_equal(qs[0]._id, self.spam_user._id)
 
 
-class TestConfirmedHamUserList(SpamUserListMixin):
+class TestConfirmedHamUserList(SpamUserListMixin, AdminTestCase):
     def setUp(self):
         super(TestConfirmedHamUserList, self).setUp()
         self.plain_view = views.UserKnownHamList
-        self.view = setup_log_view(self.view(), self.request)
+        self.view = setup_log_view(self.plain_view(), self.request)
 
         self.url = reverse('users:known-ham')
 
     def test_get_queryset(self):
-        qs = self.view().get_queryset()
+        qs = self.view.get_queryset()
         nt.assert_equal(qs.count(), 1)
         nt.assert_equal(qs[0]._id, self.ham_user._id)
 
