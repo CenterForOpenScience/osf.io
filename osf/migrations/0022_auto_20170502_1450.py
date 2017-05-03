@@ -9,7 +9,7 @@ import django.db.models.deletion
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0022_backfill_date_retracted'),
+        ('osf', '0021_retraction_date_retracted'),
     ]
 
     operations = [
