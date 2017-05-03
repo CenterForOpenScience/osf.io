@@ -187,7 +187,7 @@ class PreprintList(JSONAPIBaseView, generics.ListCreateAPIView, DjangoFilterMixi
 
     # overrides ListAPIView
     def get_queryset(self):
-        return PreprintService.objects.filter(self.get_query_from_request())
+        return PreprintService.objects.filter(self.get_query_from_request()).distinct()
 
 class PreprintDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, PreprintMixin, WaterButlerMixin):
     """Preprint Detail  *Writeable*.
