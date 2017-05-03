@@ -412,13 +412,15 @@ class TestUserWorkshopFormView(AdminTestCase):
         return result_csv
 
     def _create_nodes_and_add_logs(self, first_activity_date, second_activity_date=None):
-        node_one = ProjectFactory(creator=self.user_1, date_created=first_activity_date)
+        node_one = ProjectFactory(creator=self.user_1)
+        node_one.date_created = first_activity_date
         node_one.add_log(
             'log_added', params={'project': node_one._id}, auth=self.auth_1, log_date=first_activity_date, save=True
         )
 
         if second_activity_date:
-            node_two = ProjectFactory(creator=self.user_1, date_created=second_activity_date)
+            node_two = ProjectFactory(creator=self.user_1)
+            node_two.date_created = second_activity_date
             node_two.add_log(
                 'log_added', params={'project': node_two._id}, auth=self.auth_1, log_date=second_activity_date, save=True
             )
@@ -457,7 +459,7 @@ class TestUserWorkshopFormView(AdminTestCase):
         user_logs_since_workshop = result_csv[1][-3]
         user_nodes_created_since_workshop = result_csv[1][-2]
 
-        nt.assert_equal(user_logs_since_workshop, 2)
+        nt.assert_equal(user_logs_since_workshop, 1)
         nt.assert_equal(user_nodes_created_since_workshop, 1)
 
     def test_user_activity_day_of_workshop_and_before(self):
@@ -485,7 +487,7 @@ class TestUserWorkshopFormView(AdminTestCase):
         user_logs_since_workshop = result_csv[1][-3]
         user_nodes_created_since_workshop = result_csv[1][-2]
 
-        nt.assert_equal(user_logs_since_workshop, 2)
+        nt.assert_equal(user_logs_since_workshop, 1)
         nt.assert_equal(user_nodes_created_since_workshop, 1)
 
     def test_user_activity_before_workshop_and_after(self):
@@ -500,7 +502,8 @@ class TestUserWorkshopFormView(AdminTestCase):
         user_logs_since_workshop = result_csv[1][-3]
         user_nodes_created_since_workshop = result_csv[1][-2]
 
-        nt.assert_equal(user_logs_since_workshop, 2)
+        # One log before workshop, one after, only should show the one after
+        nt.assert_equal(user_logs_since_workshop, 1)
         nt.assert_equal(user_nodes_created_since_workshop, 1)
 
     def test_user_osf_account_not_found(self):
