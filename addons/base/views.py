@@ -662,7 +662,9 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
 
     if action == 'download':
         format = extras.get('format')
-        if format:
+        _, extension = os.path.splitext(file_node.name)
+        # avoid rendering files with the same format type.
+        if format and '.{}'.format(format) != extension:
             return redirect('{}/export?format={}&url={}'.format(MFR_SERVER_URL, format, urllib.quote(file_node.generate_waterbutler_url(
                 **dict(extras, direct=None, version=version.identifier, _internal=extras.get('mode') == 'render')
             ))))
