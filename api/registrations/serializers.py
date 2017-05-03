@@ -51,6 +51,7 @@ class BaseRegistrationSerializer(NodeSerializer):
                                  help_text='The registration has been withdrawn.')
 
     date_registered = DateByVersion(source='registered_date', read_only=True, help_text='Date time of registration.')
+    date_withdrawn = DateByVersion(source='retraction.date_retracted', read_only=True, help_text='Date time of when this registration was retracted.')
     embargo_end_date = HideIfWithdrawal(ser.SerializerMethodField(help_text='When the embargo on this registration will be lifted.'))
 
     withdrawal_justification = ser.CharField(source='retraction.justification', read_only=True)
