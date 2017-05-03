@@ -16,7 +16,8 @@
         "twofactor",
         "wiki",
         "googledrive",
-        "bitbucket"
+        "bitbucket",
+        "swift"
     ],
     "addons_default": [
         "osfstorage"
@@ -35,7 +36,8 @@
         "owncloud": "partial",
         "s3": "partial",
         "wiki": "full",
-        "bitbucket": "partial"
+        "bitbucket": "partial",
+        "swift": "partial"
     },
     "addons_commentable": [
         "osfstorage",
@@ -49,7 +51,8 @@
         "owncloud",
         "s3",
         "bitbucket",
-        "onedrive"
+        "onedrive",
+        "swift"
     ],
     "addons_based_on_ids": [
         "osfstorage",
@@ -73,7 +76,8 @@
         "wiki": "The wiki is a versatile communication tool. Wikis can be used to explain the main points of your project and can contain information like lab notes or contact information.",
         "googledrive": "Google Drive is a file storage add-on. Connect your Google Drive account to an OSF project to interact with files hosted on Google Drive via the OSF.",
         "bitbucket": "Bitbucket is a web-based Git repository hosting service. Connect your Bitbucket repo to your OSF project to share your code alongside other materials in your OSF project.",
-        "onedrive": "Microsoft OneDrive is a file storage add-on. Connect your Microsoft OneDrive account to an OSF project to interact with files hosted on Microsoft OneDrive via the OSF."
+        "onedrive": "Microsoft OneDrive is a file storage add-on. Connect your Microsoft OneDrive account to an OSF project to interact with files hosted on Microsoft OneDrive via the OSF.",
+        "swift": "Swift is a file storage add-on. Connect your Swift account to an OSF project to interact with files hosted on Swift via the OSF."
     },
     "addons_url": {
         "box": "http://www.box.com",
@@ -88,6 +92,7 @@
         "s3": "https://aws.amazon.com/s3/",
         "googledrive": "https://drive.google.com",
         "bitbucket": "https://bitbucket.org/",
-        "onedrive": "https://onedrive.live.com"
+        "onedrive": "https://onedrive.live.com",
+        "swift": "https://wiki.openstack.org/wiki/Swift"
     }
 }

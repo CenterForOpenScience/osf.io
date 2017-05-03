@@ -46,5 +46,9 @@
     "onedrive": {
         "fullName": "OneDrive",
         "externalView": true
+    },
+    "swift": {
+        "fullName": "Swift",
+        "externalView": false
     }
 }

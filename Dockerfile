@@ -115,6 +115,7 @@ COPY ./addons/s3/requirements.txt ./addons/s3/
 COPY ./addons/twofactor/requirements.txt ./addons/twofactor/
 #COPY ./addons/wiki/requirements.txt ./addons/wiki/
 COPY ./addons/zotero/requirements.txt ./addons/zotero/
+COPY ./addons/swift/requirements.txt ./addons/swift/
 
 RUN for reqs_file in \
         /code/requirements.txt \
@@ -166,6 +167,7 @@ COPY ./addons/s3/static/ ./addons/s3/static/
 COPY ./addons/twofactor/static/ ./addons/twofactor/static/
 COPY ./addons/wiki/static/ ./addons/wiki/static/
 COPY ./addons/zotero/static/ ./addons/zotero/static/
+COPY ./addons/swift/static/ ./addons/swift/static/
 RUN mkdir -p ./website/static/built/ \
     && invoke build_js_config_files \
     && yarn run webpack-prod
