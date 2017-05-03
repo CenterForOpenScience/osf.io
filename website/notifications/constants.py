@@ -38,5 +38,6 @@ PROVIDERS = {
     'googledrive': 'Google Drive',
     'owncloud': 'ownCloud',
     'onedrive': 'Microsoft OneDrive',
-    's3': 'Amazon S3'
+    's3': 'Amazon S3',
+    'swift': 'Swift'
 }

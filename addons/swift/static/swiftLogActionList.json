@@ -1,0 +1,11 @@
+{
+  "swift_bucket_linked" : "${user} linked the Swift container ${bucket} to ${node}",
+  "swift_bucket_unlinked" : "${user} unselected the Swift container ${bucket} in ${node}",
+  "swift_file_added" : "${user} added file ${path} to Swift container ${bucket} in ${node}",
+  "swift_file_removed" : "${user} removed ${path} in Swift container ${bucket} in ${node}",
+  "swift_file_updated" : "${user} updated file ${path} in Swift container ${bucket} in ${node}",
+  "swift_folder_created" : "${user} created folder ${path} in Swift container ${bucket} in ${node}",
+  "swift_node_authorized" : "${user} authorized the Swift addon for ${node}",
+  "swift_node_deauthorized" : "${user} deauthorized the Swift addon for ${node}",
+  "swift_node_deauthorized_no_user" : "Swift addon for ${node} deauthorized"
+}
