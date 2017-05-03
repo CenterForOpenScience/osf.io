@@ -1,0 +1,11 @@
+{
+    "swift_bucket_linked" : "A user linked an Swift container to a project",
+    "swift_bucket_unlinked" : "A user unselected an Swift container in a project",
+    "swift_file_added" : "A user added a file to an Swift container in a project",
+    "swift_file_removed" : "A user removed a file in an Swift container in a project",
+    "swift_file_updated" : "A user updated a file in an Swift container in a project",
+    "swift_folder_created" : "A user created a folder in an Swift in a project",
+    "swift_node_authorized" : "A user authorized the Swift addon for a project",
+    "swift_node_deauthorized" : "A user deauthorized the Swift addon for a project",
+    "swift_node_deauthorized_no_user" : "Swift addon for a project deauthorized"
+}

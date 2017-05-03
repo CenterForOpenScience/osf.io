@@ -9,3 +9,4 @@ from website.files.models.dataverse import *  # noqa
 from website.files.models.osfstorage import *  # noqa
 from website.files.models.owncloud import *  # noqa
 from website.files.models.googledrive import *  # noqa
+from website.files.models.swift import *  # noqa
