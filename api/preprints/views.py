@@ -164,6 +164,8 @@ class PreprintList(JSONAPIBaseView, generics.ListCreateAPIView, DjangoFilterMixi
             operation['source_field_name'] = 'provider___id'
         if field_name == 'id':
             operation['source_field_name'] = 'guids___id'
+        if field_name == 'subjects':
+            operation['source_field_name'] = 'subjects__text'
 
     def get_serializer_class(self):
         if self.request.method == 'POST':
