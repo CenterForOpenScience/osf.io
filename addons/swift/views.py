@@ -103,8 +103,8 @@ def swift_add_user_account(auth, **kwargs):
         )
     assert provider.account is not None
 
-    if provider.account not in auth.user.external_accounts:
-        auth.user.external_accounts.append(provider.account)
+    if not auth.user.external_accounts.filter(id=provider.account.id).exists():
+        auth.user.external_accounts.add(provider.account)
 
     # Ensure Swift is enabled.
     auth.user.get_or_add_addon('swift', auth=auth)
