@@ -74,7 +74,7 @@ class TestDraftListView(AdminTestCase):
         request = RequestFactory().get(self.url)
         request.user = self.user
 
-        with self.assertRaises(PermissionDenied):
+        with nt.assert_raises(PermissionDenied):
             self.plain_view.as_view()(request)
 
     def test_correct_view_permissions(self):
@@ -86,7 +86,7 @@ class TestDraftListView(AdminTestCase):
         request.user = self.user
 
         response = self.plain_view.as_view()(request)
-        self.assertEqual(response.status_code, 200)
+        nt.assert_equal(response.status_code, 200)
 
 
 class TestDraftDetailView(AdminTestCase):
@@ -116,7 +116,7 @@ class TestDraftDetailView(AdminTestCase):
         request = RequestFactory().get(self.url)
         request.user = self.user
 
-        with self.assertRaises(PermissionDenied):
+        with nt.assert_raises(PermissionDenied):
             self.plain_view.as_view()(request, draft_pk=self.dr1._id)
 
     @mock.patch('admin.pre_reg.views.DraftDetailView.checkout_files')
@@ -129,7 +129,7 @@ class TestDraftDetailView(AdminTestCase):
         request.user = self.user
 
         response = self.plain_view.as_view()(request, draft_pk=self.dr1._id)
-        self.assertEqual(response.status_code, 200)
+        nt.assert_equal(response.status_code, 200)
 
 
 class TestDraftFormView(AdminTestCase):
@@ -227,7 +227,7 @@ class TestDraftFormView(AdminTestCase):
         request = RequestFactory().get(self.url)
         request.user = self.user
 
-        with self.assertRaises(PermissionDenied):
+        with nt.assert_raises(PermissionDenied):
             self.plain_view.as_view()(request, draft_pk=self.dr1._id)
 
     def test_get_correct_view_permissions(self):
@@ -239,7 +239,7 @@ class TestDraftFormView(AdminTestCase):
         request.user = self.user
 
         response = self.plain_view.as_view()(request, draft_pk=self.dr1._id)
-        self.assertEqual(response.status_code, 200)
+        nt.assert_equal(response.status_code, 200)
 
     def test_post_correct_view_permissions(self):
         view_permission = Permission.objects.get(codename='view_prereg')
@@ -250,7 +250,7 @@ class TestDraftFormView(AdminTestCase):
         request.user = self.user
 
         response = self.plain_view.as_view()(request, draft_pk=self.dr1._id)
-        self.assertEqual(response.status_code, 200)
+        nt.assert_equal(response.status_code, 200)
 
 
 class TestCommentUpdateView(AdminTestCase):
@@ -281,7 +281,7 @@ class TestCommentUpdateView(AdminTestCase):
         request = RequestFactory().get(self.url)
         request.user = self.user
 
-        with self.assertRaises(PermissionDenied):
+        with nt.assert_raises(PermissionDenied):
             self.plain_view.as_view()(request, draft_pk=self.dr1._id)
 
 
