@@ -48,7 +48,7 @@ class TestNodeView(AdminTestCase):
         request = RequestFactory().get(reverse('nodes:node', kwargs={'guid': guid}))
         request.user = user
 
-        with self.assertRaises(PermissionDenied):
+        with nt.assert_raises(PermissionDenied):
             NodeView.as_view()(request, guid=guid)
 
     def test_correct_view_permissions(self):
@@ -64,7 +64,7 @@ class TestNodeView(AdminTestCase):
         request.user = user
 
         response = NodeView.as_view()(request, guid=guid)
-        self.assertEqual(response.status_code, 200)
+        nt.assert_equal(response.status_code, 200)
 
 
 class TestNodeDeleteView(AdminTestCase):
@@ -110,7 +110,7 @@ class TestNodeDeleteView(AdminTestCase):
         request = RequestFactory().get(self.url)
         request.user = user
 
-        with self.assertRaises(PermissionDenied):
+        with nt.assert_raises(PermissionDenied):
             self.plain_view.as_view()(request, guid=guid)
 
     def test_correct_view_permissions(self):
@@ -127,7 +127,7 @@ class TestNodeDeleteView(AdminTestCase):
         request.user = user
 
         response = self.plain_view.as_view()(request, guid=guid)
-        self.assertEqual(response.status_code, 200)
+        nt.assert_equal(response.status_code, 200)
 
 
 class TestRemoveContributor(AdminTestCase):
@@ -195,7 +195,7 @@ class TestRemoveContributor(AdminTestCase):
         request = RequestFactory().get(self.url)
         request.user = self.user
 
-        with self.assertRaises(PermissionDenied):
+        with nt.assert_raises(PermissionDenied):
             self.view.as_view()(request, node_id=guid, user_id=self.user)
 
     def test_correct_view_permissions(self):
@@ -209,4 +209,4 @@ class TestRemoveContributor(AdminTestCase):
         request.user = self.user
 
         response = self.view.as_view()(request, node_id=self.node._id, user_id=self.user._id)
-        self.assertEqual(response.status_code, 200)
+        nt.assert_equal(response.status_code, 200)

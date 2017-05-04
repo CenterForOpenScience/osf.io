@@ -40,7 +40,7 @@ class TestMeetingListView(AdminTestCase):
         request = RequestFactory().get(reverse('meetings:list'))
         request.user = user
 
-        with self.assertRaises(PermissionDenied):
+        with nt.assert_raises(PermissionDenied):
             MeetingListView.as_view()(request)
 
     def test_correct_view_permissions(self):
@@ -54,7 +54,7 @@ class TestMeetingListView(AdminTestCase):
         request.user = user
 
         response = MeetingListView.as_view()(request)
-        self.assertEqual(response.status_code, 200)
+        nt.assert_equal(response.status_code, 200)
 
 
 class TestMeetingFormView(AdminTestCase):
@@ -116,7 +116,7 @@ class TestMeetingFormView(AdminTestCase):
         request = RequestFactory().get(self.url)
         request.user = self.user
 
-        with self.assertRaises(PermissionDenied):
+        with nt.assert_raises(PermissionDenied):
             self.view.as_view()(request, endpoint=self.conf.endpoint)
 
     def test_correct_view_permissions(self):
@@ -129,7 +129,7 @@ class TestMeetingFormView(AdminTestCase):
         request.user = self.user
 
         response = self.view.as_view()(request, endpoint=self.conf.endpoint)
-        self.assertEqual(response.status_code, 200)
+        nt.assert_equal(response.status_code, 200)
 
 
 class TestMeetingCreateFormView(AdminTestCase):
@@ -161,7 +161,7 @@ class TestMeetingCreateFormView(AdminTestCase):
         request = RequestFactory().get(self.url)
         request.user = self.user
 
-        with self.assertRaises(PermissionDenied):
+        with nt.assert_raises(PermissionDenied):
             self.view.as_view()(request)
 
     def test_correct_view_permissions(self):
@@ -175,7 +175,7 @@ class TestMeetingCreateFormView(AdminTestCase):
         request.user = self.user
 
         response = self.view.as_view()(request)
-        self.assertEqual(response.status_code, 200)
+        nt.assert_equal(response.status_code, 200)
 
 
 class TestMeetingMisc(AdminTestCase):
