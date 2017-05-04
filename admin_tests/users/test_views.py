@@ -682,3 +682,22 @@ class TestGetLinkView(AdminTestCase):
         link_path = str(furl.furl(link).path)
 
         nt.assert_equal(link_path, ideal_link_path)
+
+    def test_get_unclaimed_node_links(self):
+        project = ProjectFactory()
+        unregistered_contributor = project.add_unregistered_contributor(fullname='Brother Nero', email='matt@hardyboyz.biz', auth=Auth(project.creator))
+        project.save()
+
+        request = RequestFactory().get('/fake_path')
+        view = views.GetUserClaimLinks()
+        view = setup_view(view, request, guid=unregistered_contributor._id)
+
+        links = view.get_claim_links(unregistered_contributor)
+        unclaimed_records = unregistered_contributor.unclaimed_records
+
+        nt.assert_equal(len(links), 1)
+        nt.assert_equal(len(links), len(unclaimed_records.keys()))
+        link = links[0]
+
+        nt.assert_in(project._id, link)
+        nt.assert_in(unregistered_contributor.unclaimed_records[project._id]['token'], link)
