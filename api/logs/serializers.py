@@ -107,7 +107,7 @@ class NodeLogParamsSerializer(RestrictedDictSerializer):
             view = urls.get('view', None)
             if view:
                 file_id = view.split('/')[-2]
-                provider = 'osfstorage'
+                provider = view.split('/')[-3]
                 try:
                     file_node = FileNode.resolve_class(provider, FileNode.ANY).find_one(Q('_id', 'eq', file_id))
                 except NoResultsFound:
