@@ -16,6 +16,7 @@ from admin.preprints.forms import ChangeProviderForm
 class TestPreprintView(AdminTestCase):
 
     def setUp(self):
+        super(TestPreprintView, self).setUp()
         self.preprint = PreprintFactory()
         self.view = views.PreprintView
 
@@ -90,6 +91,7 @@ class TestPreprintView(AdminTestCase):
 class TestPreprintFormView(AdminTestCase):
 
     def setUp(self):
+        super(TestPreprintFormView, self).setUp()
         self.preprint = PreprintFactory()
         self.view = views.PreprintFormView
         self.user = AuthUserFactory()
@@ -112,4 +114,4 @@ class TestPreprintFormView(AdminTestCase):
         request.user = self.user
 
         response = self.view.as_view()(request)
-        self.assertEqual(response.status_code, 200)
+        nt.assert_equal(response.status_code, 200)
