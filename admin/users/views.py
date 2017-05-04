@@ -498,7 +498,7 @@ class GetUserClaimLinks(GetUserLink):
             )
             links.append('Claim URL for node {}: {}'.format(node._id, url))
 
-        return links or 'User currently has no active unclaimed records for any nodes.'
+        return links or ['User currently has no active unclaimed records for any nodes.']
 
     def get_link(self, user):
         return None
