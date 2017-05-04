@@ -281,7 +281,3 @@ ADDONS_OAUTH = ADDONS_FOLDER_CONFIGURABLE + ['dataverse', 'github', 'mendeley', 
 BYPASS_THROTTLE_TOKEN = 'test-token'
 
 OSF_SHELL_USER_IMPORTS = None
-
-ALLOWED_HOSTS = [
-    'localhost',
-]
