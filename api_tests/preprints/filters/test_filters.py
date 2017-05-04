@@ -50,6 +50,8 @@ class PreprintsListFilteringMixin(object):
 
         self.is_published_and_modified_url = '{}filter[is_published]=true&filter[date_created]=2013-12-11'.format(self.url)
 
+        self.has_subject = '{}filter[subjects]='.format(self.url)
+
     def test_provider_filter_null(self):
         expected = []
         res = self.app.get('{}null'.format(self.provider_url), auth=self.user.auth)
@@ -133,6 +135,22 @@ class PreprintsListFilteringMixin(object):
     def test_multiple_filters_returns_one(self):
         expected = set([self.preprint_two._id])
         res = self.app.get(self.is_published_and_modified_url,
+            auth=self.user.auth
+        )
+        actual = set([preprint['id'] for preprint in res.json['data']])
+        assert_equal(expected, actual)
+
+    def test_subject_filter_using_id(self):
+        expected = set([self.preprint._id, self.preprint_three._id])
+        res = self.app.get('{}{}'.format(self.has_subject, self.subject._id),
+            auth=self.user.auth
+        )
+        actual = set([preprint['id'] for preprint in res.json['data']])
+        assert_equal(expected, actual)
+
+    def test_subject_filter_using_text(self):
+        expected = set([self.preprint._id, self.preprint_three._id])
+        res = self.app.get('{}{}'.format(self.has_subject, self.subject.text),
             auth=self.user.auth
         )
         actual = set([preprint['id'] for preprint in res.json['data']])
