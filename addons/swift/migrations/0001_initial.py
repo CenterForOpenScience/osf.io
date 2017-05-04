@@ -15,7 +15,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
-        ('osf', '0014_auto_20170502_1815'),
+        ('osf', '0014_add_swift_addon'),
     ]
 
     operations = [
