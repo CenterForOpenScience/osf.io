@@ -2,8 +2,7 @@ import httplib
 
 from swiftclient import exceptions as swift_exceptions
 from flask import request
-from modularodm import Q
-from modularodm.storage.base import KeyExistsException
+from django.core.exceptions import ValidationError
 
 from framework.exceptions import HTTPError
 from framework.auth.decorators import must_be_logged_in
@@ -94,12 +93,13 @@ def swift_add_user_account(auth, **kwargs):
                              username=access_key, password=secret_key)
     try:
         provider.account.save()
-    except KeyExistsException:
+    except ValidationError:
         # ... or get the old one
-        provider.account = ExternalAccount.find_one(
-            Q('provider', 'eq', SHORT_NAME) &
-            Q('provider_id', 'eq', '{}\t{}:{}'.format(auth_url, tenant_name,
-                                                     access_key).lower())
+        provider.account = ExternalAccount.objects.get(
+            provider=SHORT_NAME,
+            provider_id='{}\t{}:{}'.format(auth_url,
+                                           tenant_name,
+                                           access_key).lower()
         )
     assert provider.account is not None
 
