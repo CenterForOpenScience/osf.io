@@ -72,6 +72,11 @@ DOMAIN = PROTOCOL + 'localhost:5000/'
 INTERNAL_DOMAIN = DOMAIN
 API_DOMAIN = PROTOCOL + 'localhost:8000/'
 
+PREPRINT_PROVIDER_DOMAINS = {
+    'enabled': False,
+    'prefix': PROTOCOL,
+    'suffix': '/'
+}
 # External Ember App Local Development
 USE_EXTERNAL_EMBER = False
 EXTERNAL_EMBER_APPS = {}
@@ -291,9 +296,6 @@ CONTRIBUTOR_ADDED_EMAIL_THROTTLE = 24 * 3600
 # Google Analytics
 GOOGLE_ANALYTICS_ID = None
 GOOGLE_SITE_VERIFICATION = None
-
-# Pingdom
-PINGDOM_ID = None
 
 DEFAULT_HMAC_SECRET = 'changeme'
 DEFAULT_HMAC_ALGORITHM = hashlib.sha256
@@ -1807,3 +1809,9 @@ SITEMAP_NODE_CONFIG = OrderedDict([('loc', ''), ('lastmod', ''), ('changefreq', 
 SITEMAP_REGISTRATION_CONFIG = OrderedDict([('loc', ''), ('lastmod', ''), ('changefreq', 'never'), ('priority', '0.5')])
 SITEMAP_PREPRINT_CONFIG = OrderedDict([('loc', ''), ('lastmod', ''), ('changefreq', 'yearly'), ('priority', '0.5')])
 SITEMAP_PREPRINT_FILE_CONFIG = OrderedDict([('loc', ''), ('lastmod', ''), ('changefreq', 'yearly'), ('priority', '0.5')])
+
+CUSTOM_CITATIONS = {
+    'bluebook-law-review': 'bluebook',
+    'bluebook2': 'bluebook',
+    'bluebook-inline': 'bluebook'
+}

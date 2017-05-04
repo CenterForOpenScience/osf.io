@@ -179,9 +179,11 @@ def get_configured_projects(user):
     :param user: modular odm User object
     :return: list of node objects for projects with no parent
     """
-    AbstractNode = apps.get_model('osf.AbstractNode')
     configured_projects = set()
-    user_subscriptions = get_all_user_subscriptions(user)
+    user_subscriptions = get_all_user_subscriptions(user, extra=(
+        Q('node__type', 'ne', 'osf.collection') &
+        Q('node__is_deleted', 'eq', False)
+    ))
 
     for subscription in user_subscriptions:
         if subscription is None:
@@ -190,20 +192,17 @@ def get_configured_projects(user):
         node = subscription.owner
 
         if (
-            not isinstance(node, AbstractNode) or
             (subscription.none.filter(id=user.id).exists() and not node.parent_id) or
-            node._id not in user.notifications_configured or
-            node.is_collection
+            node._id not in user.notifications_configured
         ):
             continue
 
-        while node.parent_id and not node.is_deleted:
-            node = node.parent_node
+        root = node.root
 
-        if not node.is_deleted:
-            configured_projects.add(node)
+        if not root.is_deleted:
+            configured_projects.add(root)
 
-    return list(configured_projects)
+    return sorted(configured_projects, key=lambda n: n.title.lower())
 
 
 def check_project_subscriptions_are_all_none(user, node):
@@ -214,12 +213,15 @@ def check_project_subscriptions_are_all_none(user, node):
     return True
 
 
-def get_all_user_subscriptions(user):
+def get_all_user_subscriptions(user, extra=None):
     """ Get all Subscription objects that the user is subscribed to"""
     NotificationSubscription = apps.get_model('osf.NotificationSubscription')
     for notification_type in constants.NOTIFICATION_TYPES:
-        query = NotificationSubscription.find(Q(notification_type, 'eq', user.pk))
-        for subscription in query:
+        query = Q(notification_type, 'eq', user.pk)
+        if extra:
+            query &= extra
+        queryset = NotificationSubscription.find(query)
+        for subscription in queryset:
             yield subscription
 
 
@@ -233,6 +235,7 @@ def get_all_node_subscriptions(user, node, user_subscriptions=None):
     """
     if not user_subscriptions:
         user_subscriptions = get_all_user_subscriptions(user)
+    # TODO: Filter in database rather than in Python
     for subscription in user_subscriptions:
         if subscription and subscription.owner == node:
             yield subscription
@@ -425,8 +428,8 @@ def subscribe_user_to_global_notifications(user):
     for user_event in user_events:
         user_event_id = to_subscription_key(user._id, user_event)
 
-        subscription = NotificationSubscription(_id=user_event_id, owner=user, event_name=user_event)
-        subscription.save()  # Need to save in order to access m2m fields
+        # get_or_create saves on creation
+        subscription, created = NotificationSubscription.objects.get_or_create(_id=user_event_id, user=user, event_name=user_event)
         subscription.add_user_to_subscription(user, notification_type)
         subscription.save()
 

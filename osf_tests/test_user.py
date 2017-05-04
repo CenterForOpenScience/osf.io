@@ -70,8 +70,6 @@ class TestOSFUser:
         user = User.create(
             username=email, password='foobar', fullname=name
         )
-        # TODO: Remove me when auto_now_add is enabled (post-migration)
-        user.date_registered = timezone.now()
         user.save()
         assert user.check_password('foobar') is True
         assert user._id
@@ -82,9 +80,6 @@ class TestOSFUser:
         user = User.create_unconfirmed(
             username=email, password='foobar', fullname=name
         )
-        # TODO: Remove me when auto_now_add is enabled (post-migration)
-        user.date_registered = timezone.now()
-        user.save()
         assert user.is_registered is False
         assert len(user.email_verifications.keys()) == 1
         assert len(user.emails) == 0, 'primary email has not been added to emails list'
@@ -1453,7 +1448,6 @@ class TestUserMerging(OsfTestCase):
             'suffix',
             'timezone',
             'username',
-            'mailing_lists',
             'verification_key',
             'verification_key_v2',
             'affiliated_institutions',
@@ -1510,7 +1504,8 @@ class TestUserMerging(OsfTestCase):
                 expected[key] = getattr(self.user, key)
 
         # ensure all fields of the user object have an explicit expectation
-        assert set(expected.keys()).issubset(set(self.user._meta.get_all_field_names()))
+        all_field_names = {each.name for each in self.user._meta.get_fields()}
+        assert set(expected.keys()).issubset(all_field_names)
 
         # mock mailchimp
         mock_client = mock.MagicMock()

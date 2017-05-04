@@ -1,3 +1,4 @@
+import logging
 import datetime
 import urlparse
 
@@ -17,21 +18,16 @@ from osf.models import (
     EmbargoTerminationApproval,
 )
 
-# TODO DELETE ME POST MIGRATION
-from modularodm import Q as MQ
-# /TODO DELETE ME POST MIGRATION
 from osf.exceptions import ValidationValueError
 from osf.models.base import BaseModel, ObjectIDMixin
 from osf.models.node import AbstractNode
 from osf.models.nodelog import NodeLog
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 
+logger = logging.getLogger(__name__)
+
 
 class Registration(AbstractNode):
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.project.model.Node'
-    modm_query = MQ('is_registration', 'eq', True)
-    # /TODO DELETE ME POST MIGRATION
 
     registered_date = NonNaiveDateTimeField(db_index=True, null=True, blank=True)
     registered_user = models.ForeignKey(OSFUser,
@@ -331,6 +327,7 @@ class Registration(AbstractNode):
         return retraction
 
     def delete_registration_tree(self, save=False):
+        logger.debug('Marking registration {} as deleted'.format(self._id))
         self.is_deleted = True
         for draft_registration in DraftRegistration.objects.filter(registered_node=self):
             # Allow draft registration to be submitted
@@ -359,10 +356,6 @@ class DraftRegistrationLog(ObjectIDMixin, BaseModel):
     field - action - simple action to track what happened
     field - user - user who did the action
     """
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.project.model.DraftRegistrationLog'
-    modm_query = None
-    # /TODO DELETE ME POST MIGRATION
     date = NonNaiveDateTimeField(default=timezone.now)
     action = models.CharField(max_length=255)
     draft = models.ForeignKey('DraftRegistration', related_name='logs', null=True, blank=True)
@@ -380,14 +373,10 @@ class DraftRegistrationLog(ObjectIDMixin, BaseModel):
 
 
 class DraftRegistration(ObjectIDMixin, BaseModel):
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.project.model.DraftRegistration'
-    modm_query = None
-    # /TODO DELETE ME POST MIGRATION
     URL_TEMPLATE = settings.DOMAIN + 'project/{node_id}/drafts/{draft_id}'
 
-    datetime_initiated = NonNaiveDateTimeField(default=timezone.now)  # auto_now_add=True)
-    datetime_updated = NonNaiveDateTimeField(default=timezone.now)  # auto_now=True)
+    datetime_initiated = NonNaiveDateTimeField(auto_now_add=True)
+    datetime_updated = NonNaiveDateTimeField(auto_now=True)
     # Original Node a draft registration is associated with
     branched_from = models.ForeignKey('Node', null=True, related_name='registered_draft')
 
@@ -450,7 +439,7 @@ class DraftRegistration(ObjectIDMixin, BaseModel):
     @property
     def url(self):
         return self.URL_TEMPLATE.format(
-            node_id=self.branched_from,
+            node_id=self.branched_from._id,
             draft_id=self._id
         )
 

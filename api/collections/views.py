@@ -138,7 +138,7 @@ class CollectionList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_vie
             Q('is_deleted', 'ne', True)
         )
         user = self.request.user
-        if not user.is_anonymous():
+        if not user.is_anonymous:
             permission_query = Q('creator', 'eq', user)
         else:
             permission_query = Q('is_public', 'eq', True)
@@ -350,9 +350,7 @@ class LinkedNodesList(BaseLinkedList, CollectionMixin):
     view_name = 'linked-nodes'
 
     def get_queryset(self):
-        return [node for node in
-            super(LinkedNodesList, self).get_queryset()
-            if not node.is_registration]
+        return super(LinkedNodesList, self).get_queryset().exclude(type='osf.registration')
 
     # overrides APIView
     def get_parser_context(self, http_request):

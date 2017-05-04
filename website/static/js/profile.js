@@ -48,7 +48,7 @@ var socialRules = {
     scholar: /scholar\.google\.com\/citations\?user=(\w+)/i,
     twitter: /twitter\.com\/(\w+)/i,
     linkedIn: /.*\/?(in\/.*|profile\/.*|pub\/.*)/i,
-    impactStory: /impactstory\.org\/([\w\.-]+)/i,
+    impactStory: /impactstory\.org\/u\/([\w\.-]+)/i,
     github: /github\.com\/(\w+)/i,
     researchGate: /researchgate\.net\/profile\/(\w+)/i,
     academia: /(\w+)\.academia\.edu\/(\w+)/i,
@@ -262,15 +262,17 @@ var BaseViewModel = function(urls, modes, preventUnsaved) {
     }
 
     // Warn on tab change if dirty
-    $('body').on('show.bs.tab', function() {
-        if (self.dirty()) {
-            $osf.growl('There are unsaved changes to your settings.',
-                    'Please save or discard your changes before switching ' +
-                    'tabs.');
-            return false;
-        }
-        return true;
-    });
+    if (preventUnsaved !== false) {
+        $('body').on('show.bs.tab', function() {
+            if (self.dirty()) {
+                $osf.growl('There are unsaved changes to your settings.',
+                        'Please save or discard your changes before switching ' +
+                        'tabs.');
+                return false;
+            }
+            return true;
+        });
+    }
 
     this.message = ko.observable();
     this.messageClass = ko.observable();
@@ -523,9 +525,9 @@ var extendLink = function(obs, $parent, label, baseUrl) {
     return obs;
 };
 
-var SocialViewModel = function(urls, modes) {
+var SocialViewModel = function(urls, modes, preventUnsaved) {
     var self = this;
-    BaseViewModel.call(self, urls, modes);
+    BaseViewModel.call(self, urls, modes, preventUnsaved);
     TrackedMixin.call(self);
 
     self.addons = ko.observableArray();
@@ -594,7 +596,7 @@ var SocialViewModel = function(urls, modes) {
     );
     self.impactStory = extendLink(
         ko.observable().extend({trimmed: true, cleanup: cleanByRule(socialRules.impactStory)}),
-        self, 'impactStory', 'https://www.impactstory.org/'
+        self, 'impactStory', 'https://www.impactstory.org/u/'
     );
     self.github = extendLink(
         ko.observable().extend({trimmed: true, cleanup: cleanByRule(socialRules.github)}),
@@ -778,9 +780,9 @@ SocialViewModel.prototype.submit = function() {
     }
 };
 
-var ListViewModel = function(ContentModel, urls, modes) {
+var ListViewModel = function(ContentModel, urls, modes, preventUnsaved) {
     var self = this;
-    BaseViewModel.call(self, urls, modes);
+    BaseViewModel.call(self, urls, modes, preventUnsaved);
 
     self.ContentModel = ContentModel;
     self.contents = ko.observableArray();
@@ -1062,42 +1064,42 @@ var SchoolViewModel = function() {
 };
 $.extend(SchoolViewModel.prototype, DateMixin.prototype, TrackedMixin.prototype);
 
-var JobsViewModel = function(urls, modes) {
+var JobsViewModel = function(urls, modes, preventUnsaved) {
     var self = this;
-    ListViewModel.call(self, JobViewModel, urls, modes);
+    ListViewModel.call(self, JobViewModel, urls, modes, preventUnsaved);
 
     self.fetch();
 };
 JobsViewModel.prototype = Object.create(ListViewModel.prototype);
 
-var SchoolsViewModel = function(urls, modes) {
+var SchoolsViewModel = function(urls, modes, preventUnsaved) {
     var self = this;
-    ListViewModel.call(self, SchoolViewModel, urls, modes);
+    ListViewModel.call(self, SchoolViewModel, urls, modes, preventUnsaved);
 
     self.fetch();
 };
 SchoolsViewModel.prototype = Object.create(ListViewModel.prototype);
 
-var Names = function(selector, urls, modes) {
-    this.viewModel = new NameViewModel(urls, modes);
+var Names = function(selector, urls, modes, preventUnsaved) {
+    this.viewModel = new NameViewModel(urls, modes, preventUnsaved);
     $osf.applyBindings(this.viewModel, selector);
     window.nameModel = this.viewModel;
 };
 
-var Social = function(selector, urls, modes) {
-    this.viewModel = new SocialViewModel(urls, modes);
+var Social = function(selector, urls, modes, preventUnsaved) {
+    this.viewModel = new SocialViewModel(urls, modes, preventUnsaved);
     $osf.applyBindings(this.viewModel, selector);
     window.social = this.viewModel;
 };
 
-var Jobs = function(selector, urls, modes) {
-    this.viewModel = new JobsViewModel(urls, modes);
+var Jobs = function(selector, urls, modes, preventUnsaved) {
+    this.viewModel = new JobsViewModel(urls, modes, preventUnsaved);
     $osf.applyBindings(this.viewModel, selector);
     window.jobsModel = this.viewModel;
 };
 
-var Schools = function(selector, urls, modes) {
-    this.viewModel = new SchoolsViewModel(urls, modes);
+var Schools = function(selector, urls, modes, preventUnsaved) {
+    this.viewModel = new SchoolsViewModel(urls, modes, preventUnsaved);
     $osf.applyBindings(this.viewModel, selector);
 };
 

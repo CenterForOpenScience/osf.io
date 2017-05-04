@@ -75,7 +75,7 @@ def migrate_osfstorage_guids():
         # try:
         #     assert actual_guid._id == referent.get_guid()._id
         # except exceptions.MultipleResultsFound:
-        #     logger.warning('FileNode {!r} has muliple guids referring to it.'.format(referent.wrapped()))
+        #     logger.warning('FileNode {!r} has muliple guids referring to it.'.format(referent))
 
 
 def migrate_guids(guid_type, provider):
@@ -107,7 +107,7 @@ def migrate_guids(guid_type, provider):
                 Q('node', 'eq', guid.node) &
                 Q('path', 'eq', guid.waterbutler_path)
             )
-            logger.warning('{!r}({}) has multiple guids'.format(file_node.wrapped(), guid._id))
+            logger.warning('{!r}({}) has multiple guids'.format(file_node, guid._id))
 
         actual_guid = Guid.load(guid._id)
         actual_guid.referent = file_node

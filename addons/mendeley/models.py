@@ -250,19 +250,11 @@ class Mendeley(CitationsOauthProvider):
 
 
 class UserSettings(BaseOAuthUserSettings):
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.addons.mendeley.model.MendeleyUserSettings'
-    modm_query = None
-    # /TODO DELETE ME POST MIGRATION
     oauth_provider = Mendeley
     serializer = MendeleySerializer
 
 
 class NodeSettings(BaseCitationsNodeSettings):
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.addons.mendeley.model.MendeleyNodeSettings'
-    modm_query = None
-    # /TODO DELETE ME POST MIGRATION
     provider_name = 'mendeley'
     oauth_provider = Mendeley
     serializer = MendeleySerializer

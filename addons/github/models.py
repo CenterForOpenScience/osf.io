@@ -21,9 +21,6 @@ from addons.github.api import GitHubClient
 from addons.github.exceptions import ApiError, NotFoundError
 from addons.github.serializer import GitHubSerializer
 from website.util import web_url_for
-# TODO DELETE ME POST MIGRATION
-from modularodm import Q as MQ
-# /TODO DELETE ME POST MIGRATION
 hook_domain = github_settings.HOOK_DOMAIN or settings.DOMAIN
 
 
@@ -32,18 +29,10 @@ class GithubFileNode(BaseFileNode):
 
 
 class GithubFolder(GithubFileNode, Folder):
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.files.models.github.GithubFolder'
-    modm_query = MQ('is_file', 'eq', False)
-    # /TODO DELETE ME POST MIGRATION
     pass
 
 
 class GithubFile(GithubFileNode, File):
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.files.models.github.GithubFile'
-    modm_query = MQ('is_file', 'eq', True)
-    # /TODO DELETE ME POST MIGRATION
     version_identifier = 'ref'
 
     def touch(self, auth_header, revision=None, ref=None, branch=None, **kwargs):
@@ -82,10 +71,6 @@ class GitHubProvider(ExternalProvider):
 class UserSettings(BaseStorageAddon, BaseOAuthUserSettings):
     """Stores user-specific github information
     """
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.addons.github.model.GitHubUserSettings'
-    modm_query = None
-    # /TODO DELETE ME POST MIGRATION
     oauth_provider = GitHubProvider
     serializer = GitHubSerializer
 
@@ -111,10 +96,6 @@ class UserSettings(BaseStorageAddon, BaseOAuthUserSettings):
 
 
 class NodeSettings(BaseStorageAddon, BaseOAuthNodeSettings):
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.addons.github.model.GitHubNodeSettings'
-    modm_query = None
-    # /TODO DELETE ME POST MIGRATION
     oauth_provider = GitHubProvider
     serializer = GitHubSerializer
 
@@ -199,7 +180,10 @@ class NodeSettings(BaseStorageAddon, BaseOAuthNodeSettings):
     @property
     def is_private(self):
         connection = GitHubClient(external_account=self.external_account)
-        return connection.repo(user=self.user, repo=self.repo).private
+        try:
+            return connection.repo(user=self.user, repo=self.repo).private
+        except GitHubError:
+            return
 
     # TODO: Delete me and replace with serialize_settings / Knockout
     def to_json(self, user):
@@ -209,7 +193,7 @@ class NodeSettings(BaseStorageAddon, BaseOAuthNodeSettings):
             'user_has_auth': user_settings and user_settings.has_auth,
             'is_registration': self.owner.is_registration,
         })
-        if self.user_settings and self.user_settings.has_auth:
+        if self.has_auth:
             valid_credentials = False
             owner = self.user_settings.owner
             connection = GitHubClient(external_account=self.external_account)
@@ -405,34 +389,20 @@ class NodeSettings(BaseStorageAddon, BaseOAuthNodeSettings):
         :param Node fork: Forked node
         :param User user: User creating fork
         :param bool save: Save settings after callback
-        :return tuple: Tuple of cloned settings and alert message
+        :return the cloned settings
         """
-        clone, _ = super(NodeSettings, self).after_fork(
+        clone = super(NodeSettings, self).after_fork(
             node, fork, user, save=False
         )
 
         # Copy authentication if authenticated by forking user
         if self.user_settings and self.user_settings.owner == user:
             clone.user_settings = self.user_settings
-            message = (
-                'GitHub authorization copied to forked {cat}.'
-            ).format(
-                cat=markupsafe.escape(fork.project_or_component),
-            )
-        else:
-            message = (
-                'GitHub authorization not copied to forked {cat}. You may '
-                'authorize this fork on the <u><a href={url}>Settings</a></u> '
-                'page.'
-            ).format(
-                cat=markupsafe.escape(fork.project_or_component),
-                url=fork.url + 'settings/'
-            )
 
         if save:
             clone.save()
 
-        return clone, message
+        return clone
 
     def before_make_public(self, node):
         try:

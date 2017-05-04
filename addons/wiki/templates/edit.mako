@@ -8,7 +8,7 @@
 ## Use full page width
 <%def name="container_class()">container-xxl</%def>
 
-% if (user['can_comment'] or node['has_comments']):
+% if (user['can_comment'] or node['has_comments']) and not node['anonymous']:
     <%include file="include/comment_pane_template.mako"/>
 % endif
 
@@ -83,6 +83,8 @@
 
                             <div class="pull-right">
                                 <!-- Version Picker -->
+                                <span>Wiki Version:</span>
+                                <div style="display: inline-block">
                                 <select class="form-control" data-bind="value:viewVersion" id="viewVersionSelect">
                                     % if user['can_edit_wiki_body']:
                                         <option value="preview" ${'selected' if version_settings['view'] == 'preview' else ''}>Preview</option>
@@ -98,7 +100,7 @@
                                         % endfor
                                     % endif
                                 </select>
-
+                              </div>
                             </div>
 
                         </div>
@@ -110,7 +112,7 @@
                       % if wiki_content:
                           ${wiki_content}
                       % else:
-                          <p><em>No wiki content</em></p>
+                          <p class="text-muted"><em>Add important information, links, or images here to describe your project.</em></p>
                       % endif
                   </div>
                 </div>

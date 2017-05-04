@@ -29,6 +29,12 @@ h3, h4 {
 .prereg {
     background: #C5D6E6 url("/static/img/bg6.jpg") no-repeat center top;
     background-size: cover;
+
+}
+
+.prereg-banner {
+    background: #337AB7;
+    color: #FFF;
 }
 
 .preprints {

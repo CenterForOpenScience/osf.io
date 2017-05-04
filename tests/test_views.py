@@ -86,6 +86,8 @@ from osf_tests.factories import (
     ApiOAuth2ApplicationFactory,
     ApiOAuth2PersonalTokenFactory,
     ProjectWithAddonFactory,
+    PreprintFactory,
+    PreprintProviderFactory,
 )
 
 class Addon(MockAddonNodeSettings):
@@ -123,9 +125,9 @@ def no_auto_transact():
 
 class TestViewsAreAtomic(OsfTestCase):
     def test_error_response_rolls_back_transaction(self):
-        assert_equal(User.objects.count(), 0)
+        original_user_count  = User.objects.count()
         self.app.get('/error500', expect_errors=True)
-        assert_equal(User.objects.count(), 0)
+        assert_equal(User.objects.count(), original_user_count)
 
         # Need to set debug = False in order to rollback transactions in transaction_teardown_request
         mock_app.debug = False
@@ -135,10 +137,8 @@ class TestViewsAreAtomic(OsfTestCase):
             pass
         mock_app.debug = True
 
-        assert_equal(User.objects.count(), 0)
-
         self.app.get('/noautotransact', expect_errors=True)
-        assert_equal(User.objects.count(), 1)
+        assert_equal(User.objects.count(), original_user_count + 1)
 
 
 class TestViewingProjectWithPrivateLink(OsfTestCase):
@@ -270,15 +270,6 @@ class TestViewingProjectWithPrivateLink(OsfTestCase):
 
 
 class TestProjectViews(OsfTestCase):
-
-    ADDONS_UNDER_TEST = {
-        'addon1': {
-            'node_settings': Addon,
-        },
-        'addon2': {
-            'node_settings': Addon2,
-        },
-    }
 
     def setUp(self):
         super(TestProjectViews, self).setUp()
@@ -1671,6 +1662,19 @@ class TestUserAccount(OsfTestCase):
         assert_equal(res.status_code, 400)
         assert_equal(send_mail.call_count, 1)
 
+    def test_get_unconfirmed_emails_exclude_external_identity(self):
+        external_identity = {
+            'service': {
+                'AFI': 'LINK'
+            }
+        }
+        self.user.add_unconfirmed_email("james@steward.com")
+        self.user.add_unconfirmed_email("steward@james.com", external_identity=external_identity)
+        self.user.save()
+        unconfirmed_emails = self.user.get_unconfirmed_emails_exclude_external_identity()
+        assert_in("james@steward.com", unconfirmed_emails)
+        assert_not_in("steward@james.com", unconfirmed_emails)
+
 
 class TestAddingContributorViews(OsfTestCase):
 
@@ -2945,7 +2949,7 @@ class TestPointerViews(OsfTestCase):
     def test_fork_pointer_not_in_nodes(self):
         url = self.project.api_url + 'pointer/fork/'
         node = NodeFactory()
-        pointer = Pointer(node=node)
+        pointer = Pointer()
         res = self.app.post_json(
             url,
             {'pointerId': pointer._id},
@@ -3488,6 +3492,7 @@ class TestAuthLoginAndRegisterLogic(OsfTestCase):
         self.user_auth = AuthUserFactory()
         self.auth = Auth(user=self.user_auth)
         self.next_url = web_url_for('my_projects', _absolute=True)
+        self.invalid_campaign = 'invalid_campaign'
 
     def test_osf_login_with_auth(self):
         # login: user with auth
@@ -3600,7 +3605,7 @@ class TestAuthLoginAndRegisterLogic(OsfTestCase):
             assert_equal(data.get('status_code'), http.FOUND)
             assert_equal(data.get('next_url'), campaign_url_for(campaign))
 
-    def test_campaign_register_without_campaign(self):
+    def test_campaign_register_without_auth(self):
         for campaign in get_campaigns():
             if is_institution_login(campaign):
                 continue
@@ -3668,6 +3673,30 @@ class TestAuthLoginAndRegisterLogic(OsfTestCase):
                     web_url_for('auth_login', next= next_url, _absolute=True)
                 )
 
+    def test_invalid_campaign_login_without_auth(self):
+        data = login_and_register_handler(
+            self.no_auth,
+            login=True,
+            campaign=self.invalid_campaign,
+            next_url=self.next_url
+        )
+        redirect_url = web_url_for('auth_login', campaigns=None, next=self.next_url)
+        assert_equal(data['status_code'], http.FOUND)
+        assert_equal(data['next_url'], redirect_url)
+        assert_equal(data['campaign'], None)
+
+    def test_invalid_campaign_register_without_auth(self):
+        data = login_and_register_handler(
+            self.no_auth,
+            login=False,
+            campaign=self.invalid_campaign,
+            next_url=self.next_url
+        )
+        redirect_url = web_url_for('auth_register', campaigns=None, next=self.next_url)
+        assert_equal(data['status_code'], http.FOUND)
+        assert_equal(data['next_url'], redirect_url)
+        assert_equal(data['campaign'], None)
+
     # The following two tests handles the special case for `claim_user_registered`
     # When an authenticated user clicks the claim confirmation clink, there are two ways to trigger this flow:
     # 1. If the authenticated user is already a contributor to the project, OSF will ask the user to sign out
@@ -3687,6 +3716,58 @@ class TestAuthLoginAndRegisterLogic(OsfTestCase):
         assert_equal(data.get('status_code'), http.OK)
         assert_equal(data.get('next_url'), self.next_url)
         assert_true(data.get('must_login_warning'))
+
+
+class TestAuthLogout(OsfTestCase):
+
+    def setUp(self):
+        super(TestAuthLogout, self).setUp()
+        self.goodbye_url = web_url_for('goodbye', _absolute=True)
+        self.redirect_url = web_url_for('forgot_password_get', _absolute=True)
+        self.valid_next_url = web_url_for('dashboard', _absolute=True)
+        self.invalid_next_url = 'http://localhost:1234/abcde'
+        self.auth_user = AuthUserFactory()
+
+    def tearDown(self):
+        super(TestAuthLogout, self).tearDown()
+        User.objects.all().delete()
+        assert_equal(User.objects.count(), 0)
+
+    def test_logout_with_valid_next_url_logged_in(self):
+        logout_url = web_url_for('auth_logout', _absolute=True, next=self.valid_next_url)
+        resp = self.app.get(logout_url, auth=self.auth_user.auth)
+        assert_equal(resp.status_code, http.FOUND)
+        assert_equal(cas.get_logout_url(logout_url), resp.headers['Location'])
+
+    def test_logout_with_valid_next_url_logged_out(self):
+        logout_url = web_url_for('auth_logout', _absolute=True, next=self.valid_next_url)
+        resp = self.app.get(logout_url, auth=None)
+        assert_equal(resp.status_code, http.FOUND)
+        assert_equal(self.valid_next_url, resp.headers['Location'])
+
+    def test_logout_with_invalid_next_url_logged_in(self):
+        logout_url = web_url_for('auth_logout', _absolute=True, next=self.invalid_next_url)
+        resp = self.app.get(logout_url, auth=self.auth_user.auth)
+        assert_equal(resp.status_code, http.FOUND)
+        assert_equal(cas.get_logout_url(self.goodbye_url), resp.headers['Location'])
+
+    def test_logout_with_invalid_next_url_logged_out(self):
+        logout_url = web_url_for('auth_logout', _absolute=True, next=self.invalid_next_url)
+        resp = self.app.get(logout_url, auth=None)
+        assert_equal(resp.status_code, http.FOUND)
+        assert_equal(cas.get_logout_url(self.goodbye_url), resp.headers['Location'])
+
+    def test_logout_with_redirect_url(self):
+        logout_url = web_url_for('auth_logout', _absolute=True, redirect_url=self.redirect_url)
+        resp = self.app.get(logout_url, auth=self.auth_user.auth)
+        assert_equal(resp.status_code, http.FOUND)
+        assert_equal(cas.get_logout_url(self.redirect_url), resp.headers['Location'])
+
+    def test_logout_with_no_parameter(self):
+        logout_url = web_url_for('auth_logout', _absolute=True)
+        resp = self.app.get(logout_url, auth=None)
+        assert_equal(resp.status_code, http.FOUND)
+        assert_equal(cas.get_logout_url(self.goodbye_url), resp.headers['Location'])
 
 
 class TestExternalAuthViews(OsfTestCase):
@@ -4162,44 +4243,6 @@ class TestWikiWidgetViews(OsfTestCase):
     def test_show_wiki_is_false_for_noncontributors_when_no_wiki_or_content(self):
         assert_false(_should_show_wiki_widget(self.project, self.noncontributor))
         assert_false(_should_show_wiki_widget(self.project2, self.read_only_contrib))
-
-
-class TestForkViews(OsfTestCase):
-
-    def setUp(self):
-        super(TestForkViews, self).setUp()
-        self.user = AuthUserFactory()
-        self.project = ProjectFactory.build(creator=self.user, is_public=True)
-        self.consolidated_auth = Auth(user=self.project.creator)
-        self.user.save()
-        self.project.save()
-
-    def test_fork_private_project_non_contributor(self):
-        self.project.set_privacy("private")
-        self.project.save()
-
-        url = self.project.api_url_for('node_fork_page')
-        non_contributor = AuthUserFactory()
-        res = self.app.post_json(url,
-                                 auth=non_contributor.auth,
-                                 expect_errors=True)
-        assert_equal(res.status_code, http.FORBIDDEN)
-
-    def test_fork_public_project_non_contributor(self):
-        url = self.project.api_url_for('node_fork_page')
-        non_contributor = AuthUserFactory()
-        res = self.app.post_json(url, auth=non_contributor.auth)
-        assert_equal(res.status_code, 200)
-
-    def test_fork_project_contributor(self):
-        contributor = AuthUserFactory()
-        self.project.set_privacy("private")
-        self.project.add_contributor(contributor)
-        self.project.save()
-
-        url = self.project.api_url_for('node_fork_page')
-        res = self.app.post_json(url, auth=contributor.auth)
-        assert_equal(res.status_code, 200)
 
 
 class TestProjectCreation(OsfTestCase):
@@ -4706,6 +4749,66 @@ class TestIndexView(OsfTestCase):
         assert_not_equal(dashboard_institutions[0]['id'], self.inst_three._id)
         assert_not_equal(dashboard_institutions[0]['id'], self.inst_four._id)
         assert_not_equal(dashboard_institutions[0]['id'], self.inst_five._id)
+
+
+class TestResolveGuid(OsfTestCase):
+    def setUp(self):
+        super(TestResolveGuid, self).setUp()
+
+    def test_preprint_provider_without_domain(self):
+        provider = PreprintProviderFactory(domain='')
+        preprint = PreprintFactory(provider=provider)
+        url = web_url_for('resolve_guid', _guid=True, guid=preprint._id)
+        res = self.app.get(url)
+        assert_equal(res.status_code, 200)
+        assert_equal(
+            res.request.path,
+            '/{}/'.format(preprint._id)
+        )
+
+    def test_preprint_provider_with_domain_without_redirect(self):
+        domain = 'https://test.com/'
+        provider = PreprintProviderFactory(_id='test', domain=domain, domain_redirect_enabled=False)
+        preprint = PreprintFactory(provider=provider)
+        url = web_url_for('resolve_guid', _guid=True, guid=preprint._id)
+        res = self.app.get(url)
+        assert_equal(res.status_code, 200)
+        assert_equal(
+            res.request.path,
+            '/{}/'.format(preprint._id)
+        )
+
+    def test_preprint_provider_with_domain_with_redirect(self):
+        domain = 'https://test.com/'
+        provider = PreprintProviderFactory(_id='test', domain=domain, domain_redirect_enabled=True)
+        preprint = PreprintFactory(provider=provider)
+        url = web_url_for('resolve_guid', _guid=True, guid=preprint._id)
+        res = self.app.get(url)
+
+        assert_is_redirect(res)
+        assert_equal(res.status_code, 301)
+        assert_equal(
+            res.headers['location'],
+            '{}{}/'.format(domain, preprint._id)
+        )
+
+        assert_equal(
+            res.request.path,
+            '/{}/'.format(preprint._id)
+        )
+
+
+
+    def test_preprint_provider_with_osf_domain(self):
+        provider = PreprintProviderFactory(_id='osf', domain='https://osf.io/')
+        preprint = PreprintFactory(provider=provider)
+        url = web_url_for('resolve_guid', _guid=True, guid=preprint._id)
+        res = self.app.get(url)
+        assert_equal(res.status_code, 200)
+        assert_equal(
+            res.request.path,
+            '/{}/'.format(preprint._id)
+        )
 
 
 class TestConfirmationViewBlockBingPreview(OsfTestCase):
