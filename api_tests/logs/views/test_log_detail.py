@@ -141,3 +141,12 @@ class TestNodeFileLogDetail(ApiTestCase):
         assert_equal(res.status_code, 200)
         assert_not_in(self.component.title, res.json['data'])
         assert_equal(res.json['data'][0]['attributes']['params']['source']['node_title'], 'Private Component')
+
+    def test_file_params(self):
+        res = self.app.get(self.node_logs_url, auth=self.user_one.auth)
+        assert_equal(res.status_code, 200)
+        assert_equal(
+            res.json['data'][1]['attributes']['params']['params_file'],
+            '/project/{}/files/osfstorage/{}/'.format(self.component._id, self.file._id)
+        )
+
