@@ -6,7 +6,7 @@ from rest_framework import generics
 from rest_framework.exceptions import NotFound, PermissionDenied, NotAuthenticated
 from rest_framework import permissions as drf_permissions
 
-from website.models import PreprintService
+from website.models import PreprintService, Subject
 from framework.auth.oauth_scopes import CoreScopes
 
 from api.base.exceptions import Conflict
@@ -165,7 +165,12 @@ class PreprintList(JSONAPIBaseView, generics.ListCreateAPIView, DjangoFilterMixi
         if field_name == 'id':
             operation['source_field_name'] = 'guids___id'
         if field_name == 'subjects':
-            operation['source_field_name'] = 'subjects__text'
+            try:
+                Subject.objects.get(_id=operation['value'])
+                operation['source_field_name'] = 'subjects___id'
+            except Subject.DoesNotExist:
+                operation['source_field_name'] = 'subjects__text'
+                operation['op'] = 'contains'
 
     def get_serializer_class(self):
         if self.request.method == 'POST':
