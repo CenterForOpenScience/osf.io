@@ -16,6 +16,7 @@ $(function() {
         width: '100%',
         interactive: window.contextVars.currentUser.canEdit,
         maxChars: 128,
+        defaultText: 'add a tag to enhance discoverability',
         onAddTag: function (tag) {
             var url = tagUrl;
             var request = $osf.postJSON(url, {'tag': tag });
@@ -43,6 +44,12 @@ $(function() {
             });
         }
     });
+
+    // allows inital default message to fit on empty tag
+    if(!$('.tag').length){
+        $('#fileTags_tag').css('width', '250px');
+    }
+
     $('#fileTags_tag').attr('maxlength', '128');
     if (!window.contextVars.currentUser.canEdit || window.contextVars.node.isRegistration) {
         $('a[title="Removing tag"]').remove();
