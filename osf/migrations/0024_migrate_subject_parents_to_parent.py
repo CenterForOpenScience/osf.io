@@ -35,7 +35,7 @@ def remove_custom_mapping_constraint(*args):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0021_retraction_date_retracted'),
+        ('osf', '0023_merge_20170503_1947'),
     ]
 
     operations = [

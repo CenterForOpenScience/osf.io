@@ -25,7 +25,7 @@ def unmigrate_data(state, scheme):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0022_migrate_subject_parents_to_parent'),
+        ('osf', '0024_migrate_subject_parents_to_parent'),
     ]
 
     operations = [
