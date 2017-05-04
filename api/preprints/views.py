@@ -6,7 +6,6 @@ from rest_framework import generics
 from rest_framework.exceptions import NotFound, PermissionDenied, NotAuthenticated
 from rest_framework import permissions as drf_permissions
 
-# from website.models import PreprintService
 from modularodm import Q as MODMQ
 from framework.auth.oauth_scopes import CoreScopes
 from osf.models import PreprintService, Identifier
@@ -30,6 +29,7 @@ from api.nodes.serializers import (
     NodeCitationStyleSerializer,
 )
 
+from api.identifiers.views import IdentifierList
 from api.identifiers.serializers import PreprintIdentifierSerializer
 from api.nodes.views import NodeMixin, WaterButlerMixin
 from api.nodes.permissions import ContributorOrPublic
@@ -355,8 +355,7 @@ class PreprintCitationStyleDetail(JSONAPIBaseView, generics.RetrieveAPIView, Pre
 
         raise PermissionDenied if auth.user else NotAuthenticated
 
-
-class PreprintIdentifierList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin, PreprintMixin):
+class PreprintIdentifierList(IdentifierList, PreprintMixin):
     """List of identifiers for a specified preprint. *Read-only*.
 
     ##Identifier Attributes
@@ -404,17 +403,8 @@ class PreprintIdentifierList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMix
     view_category = 'identifiers'
     view_name = 'identifier-list'
 
-    def get_preprint(self, check_object_permissions=True):
-        preprint = get_object_or_error(
-            PreprintService,
-            self.kwargs[self.preprint_lookup_url_kwarg],
-            display_name='preprint'
-        )
-
-        # May raise a permission denied
-        if check_object_permissions:
-            self.check_object_permissions(self.request, preprint)
-        return preprint
+    def get_object(self, check_object_permissions=True):
+        return self.get_preprint(check_object_permissions=check_object_permissions)
 
     # overrides ODMFilterMixin
     def get_default_odm_query(self):
