@@ -37,7 +37,7 @@ class TestPreprintView(AdminTestCase):
         request = RequestFactory().get(reverse('preprints:preprint', kwargs={'guid': self.preprint._id}))
         request.user = user
 
-        with self.assertRaises(PermissionDenied):
+        with nt.assert_raises(PermissionDenied):
             self.view.as_view()(request, guid=self.preprint._id)
 
     def test_correct_view_permissions(self):
@@ -51,14 +51,14 @@ class TestPreprintView(AdminTestCase):
         request.user = user
 
         response = self.view.as_view()(request, guid=self.preprint._id)
-        self.assertEqual(response.status_code, 200)
+        nt.assert_equal(response.status_code, 200)
 
     def test_change_preprint_provider_no_permission(self):
         user = AuthUserFactory()
         request = RequestFactory().post(reverse('preprints:preprint', kwargs={'guid': self.preprint._id}))
         request.user = user
 
-        with self.assertRaises(PermissionDenied):
+        with nt.assert_raises(PermissionDenied):
             self.view.as_view()(request, guid=self.preprint._id)
 
     def test_change_preprint_provider_correct_permission(self):
@@ -74,7 +74,7 @@ class TestPreprintView(AdminTestCase):
         request.user = user
 
         response = self.view.as_view()(request, guid=self.preprint._id)
-        self.assertEqual(response.status_code, 302)
+        nt.assert_equal(response.status_code, 302)
 
     def test_change_preprint_provider_form(self):
         new_provider = PreprintProviderFactory()
@@ -100,8 +100,7 @@ class TestPreprintFormView(AdminTestCase):
     def test_no_user_permissions_raises_error(self):
         request = RequestFactory().get(self.url)
         request.user = self.user
-
-        with self.assertRaises(PermissionDenied):
+        with nt.assert_raises(PermissionDenied):
             self.view.as_view()(request)
 
     def test_correct_view_permissions(self):
