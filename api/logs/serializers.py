@@ -109,13 +109,11 @@ class NodeLogParamsSerializer(RestrictedDictSerializer):
                 file_id = view.split('/')[-2]
                 provider = 'osfstorage'
                 try:
-                    file_node = FileNode.resolve_class(provider, FileNode.ANY).find_one(
-                        Q('id', 'eq', file_id)
-                    )
+                    file_node = FileNode.resolve_class(provider, FileNode.ANY).find_one(Q('_id', 'eq', file_id))
                 except NoResultsFound:
                     file_node = None
                 if file_node:
-                    return file_node.path
+                    return "/project/{}/files/{}/{}/".format(file_node.node._id, provider, file_id)
         return None
 
     def get_params_node(self, obj):
