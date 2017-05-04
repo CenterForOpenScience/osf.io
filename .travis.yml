@@ -105,6 +105,7 @@ install:
     - cd $PROJECT_DIR
     - cp website/settings/local-travis.py website/settings/local.py
     - cp api/base/settings/local-travis.py api/base/settings/local.py
+    - '[ -d $HOME/preprints ] || ( mkdir -p $HOME/preprints && touch $HOME/preprints/index.html )'
 
     - travis_retry pip install --upgrade pip
     - travis_retry pip install invoke==0.13.0
@@ -138,6 +139,10 @@ before_cache:
   - kill -9 $POSTGRES_PID
   - kill -9 $ELASTICSEARCH_PID
   - kill -9 $VARNISH_PID
+
+branches:
+  except:
+    - /^[0-9]/
 
 notifications:
   flowdock: 0221882cdda034c0e9ac2a0e766053dd

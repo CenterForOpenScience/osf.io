@@ -439,7 +439,7 @@ var LogPieces = {
     path: {
         controller: function(logObject){
             var self = this;
-            self.returnLinkForPath = function() {
+            self.returnLinkForPath = function(logObject) {
                 if (logObject) {
                     var action = logObject.attributes.action;
                     var acceptableLinkedItems = ['osf_storage_file_added', 'osf_storage_file_updated', 'file_tag_added', 'file_tag_removed',
@@ -456,7 +456,7 @@ var LogPieces = {
             };
         },
         view: function (ctrl, logObject) {
-            var url = ctrl.returnLinkForPath();
+            var url = ctrl.returnLinkForPath(logObject);
             return returnTextParams('path', 'a file', logObject, url);
         }
     },
@@ -464,7 +464,7 @@ var LogPieces = {
     filename: {
         controller: function(logObject) {
             var self = this;
-            self.returnLinkForPath = function(){
+            self.returnLinkForPath = function(logObject){
                 if (logObject){
                     var action = logObject.attributes.action;
                     var acceptableLinkedItems = ['dataverse_file_added'];
@@ -476,7 +476,7 @@ var LogPieces = {
             };
         },
         view: function (ctrl, logObject) {
-            var url = ctrl.returnLinkForPath();
+            var url = ctrl.returnLinkForPath(logObject);
             return returnTextParams('filename', 'a title', logObject, url);
         }
     },
@@ -560,7 +560,7 @@ var LogPieces = {
     googledrive_path: {
         controller: function(logObject){
             var self = this;
-            self.returnLinkForPath = function() {
+            self.returnLinkForPath = function(logObject) {
                 if (logObject) {
                     var action = logObject.attributes.action;
                     var acceptableLinkedItems = ['googledrive_file_added', 'googledrive_file_updated'];
@@ -572,7 +572,7 @@ var LogPieces = {
             };
         },
         view: function (ctrl, logObject) {
-            var url = ctrl.returnLinkForPath();
+            var url = ctrl.returnLinkForPath(logObject);
             var path = logObject.attributes.params.path;
             if(paramIsReturned(path, logObject)){
                 path = stripBackslash(decodeURIComponent(path));

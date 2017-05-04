@@ -1,6 +1,6 @@
-from addons.base.apps import BaseAddonAppConfig
+from addons.base.apps import BaseAddonAppConfig, generic_root_folder
 
-from addons.googledrive.views import googledrive_root_folder
+googledrive_root_folder = generic_root_folder('googledrive')
 
 class GoogleDriveAddonConfig(BaseAddonAppConfig):
 

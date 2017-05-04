@@ -9,7 +9,8 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
 from flask import request
-from oauthlib.oauth2 import MissingTokenError
+from oauthlib.oauth2 import (AccessDeniedError, InvalidGrantError,
+    TokenExpiredError, MissingTokenError)
 from requests.exceptions import HTTPError as RequestsHTTPError
 from requests_oauthlib import OAuth1Session, OAuth2Session
 
@@ -40,11 +41,6 @@ class ExternalAccount(base.ObjectIDMixin, base.BaseModel):
     The ``provider`` field is a de facto foreign key to an ``ExternalProvider``
     object, as providers are not stored in the database.
     """
-
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.oauth.models.ExternalAccount'
-    modm_query = None
-    # /TODO DELETE ME POST MIGRATION
 
     # The OAuth credentials. One or both of these fields should be populated.
     # For OAuth1, this is usually the "oauth_token"
@@ -426,10 +422,17 @@ class ExternalProvider(object):
             'client_secret': self.client_secret
         })
 
-        token = client.refresh_token(
-            self.auto_refresh_url,
-            **extra
-        )
+        try:
+            token = client.refresh_token(
+                self.auto_refresh_url,
+                **extra
+            )
+        except (AccessDeniedError, InvalidGrantError, TokenExpiredError):
+            if not force:
+                return False
+            else:
+                raise
+
         self.account.oauth_key = token[resp_auth_token_key]
         self.account.refresh_token = token[resp_refresh_token_key]
         self.account.expires_at = resp_expiry_fn(token)

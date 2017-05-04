@@ -3,7 +3,6 @@
 import datetime
 import httplib as http
 import time
-import unittest
 
 import furl
 import itsdangerous
@@ -22,48 +21,16 @@ from tests.base import OsfTestCase, get_default_metaschema
 from osf_tests.factories import (AuthUserFactory, ProjectFactory,
                              RegistrationFactory)
 from website import settings
-from website.addons.base import AddonConfig, AddonNodeSettingsBase, views
+from addons.base import views
 from addons.github.exceptions import ApiError
 from addons.github.models import GithubFolder, GithubFile, GithubFileNode
 from addons.github.tests.factories import GitHubAccountFactory
 from osf.models import files as file_models
-from osf.models.files import (PROVIDER_MAP, StoredFileNode,
-                                       TrashedFileNode)
+from osf.models.files import StoredFileNode, TrashedFileNode
 from website.project import new_private_link
 from website.project.model import MetaSchema, ensure_schemas
 from website.project.views.node import _view_project as serialize_node
 from website.util import api_url_for, rubeus
-
-
-class TestAddonConfig(unittest.TestCase):
-
-    def setUp(self):
-        self.addon_config = AddonConfig(
-            short_name='test', full_name='test', owners=['node'],
-            added_to={'node': False}, categories=[],
-            settings_model=AddonNodeSettingsBase,
-        )
-
-    def test_static_url_relative(self):
-        url = self.addon_config._static_url('foo')
-        assert_equal(
-            url,
-            '/static/addons/test/foo'
-        )
-
-    def test_deleted_defaults_to_false(self):
-        class MyAddonSettings(AddonNodeSettingsBase):
-            pass
-
-        config = MyAddonSettings()
-        assert_is(config.deleted, False)
-
-    def test_static_url_absolute(self):
-        url = self.addon_config._static_url('/foo')
-        assert_equal(
-            url,
-            '/foo'
-        )
 
 
 class SetEnvironMiddleware(object):
@@ -123,7 +90,7 @@ class TestAddonAuth(OsfTestCase):
         assert_equal(data['auth'], views.make_auth(self.user))
         assert_equal(data['credentials'], self.node_addon.serialize_waterbutler_credentials())
         assert_equal(data['settings'], self.node_addon.serialize_waterbutler_settings())
-        expected_url = furl.furl(self.node.api_url_for('create_waterbutler_log', _absolute=True))
+        expected_url = furl.furl(self.node.api_url_for('create_waterbutler_log', _absolute=True, _internal=True))
         observed_url = furl.furl(data['callback_url'])
         observed_url.port = expected_url.port
         assert_equal(expected_url, observed_url)
@@ -141,7 +108,7 @@ class TestAddonAuth(OsfTestCase):
         assert_equal(data['auth'], views.make_auth(self.user))
         assert_equal(data['credentials'], self.node_addon.serialize_waterbutler_credentials())
         assert_equal(data['settings'], self.node_addon.serialize_waterbutler_settings())
-        expected_url = furl.furl(self.node.api_url_for('create_waterbutler_log', _absolute=True))
+        expected_url = furl.furl(self.node.api_url_for('create_waterbutler_log', _absolute=True, _internal=True))
         observed_url = furl.furl(data['callback_url'])
         observed_url.port = expected_url.port
         assert_equal(expected_url, observed_url)
@@ -156,7 +123,7 @@ class TestAddonAuth(OsfTestCase):
         res = self.app.get(url, expect_errors=True, auth=self.user.auth)
         assert_equal(res.status_code, 400)
 
-    @mock.patch('website.addons.base.views.cas.get_client')
+    @mock.patch('addons.base.views.cas.get_client')
     def test_auth_bad_bearer_token(self, mock_cas_client):
         mock_cas_client.return_value = mock.Mock(profile=mock.Mock(return_value=cas.CasResponse(authenticated=False)))
         url = self.build_url()
@@ -908,6 +875,18 @@ class TestAddonFileViews(OsfTestCase):
         )
         trashed_node = second_file_node.delete()
         assert_false(trashed_node.copied_from)
+
+    @mock.patch('website.archiver.tasks.archive')
+    def test_missing_modified_date_in_file_data(self, mock_archive):
+        file_node = self.get_test_file()
+        file_data = {
+            'name': 'Test File Update',
+            'materialized': file_node.materialized_path,
+            'modified': None
+        }
+        file_node.update(revision=None, data=file_data)
+        assert_equal(len(file_node.history), 1)
+        assert_equal(file_node.history[0], file_data)
 
 
 class TestLegacyViews(OsfTestCase):

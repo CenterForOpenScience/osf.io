@@ -1,6 +1,6 @@
 # Reference README-docker-compose.md for instructions.
 
-version: '2'
+version: '2.1'
 
 volumes:
   postgres_data_vol:
@@ -19,7 +19,9 @@ volumes:
     external: false
   wb_requirements_vol:
     external: false
-  wb_osfstoragecache_vol:
+  wb_tmp_vol:
+    external: false
+  osfstoragecache_vol:
     external: false
   osf_requirements_vol:
     external: false
@@ -63,7 +65,7 @@ services:
         sed -i -e 's/max_connections.*/max_connections = 5000/' /var/lib/postgresql/data/postgresql.conf
         sed -i -e 's/#log_min_duration_statement = .*/log_min_duration_statement = 0/' /var/lib/postgresql/data/postgresql.conf
     volumes:
-      - postgres_data_vol:/var/lib/postgresql/data/
+      - "${POSTGRES_DATA_VOL:-postgres_data_vol}:/var/lib/postgresql/data/"
     stdin_open: true
 
   tokumx:
@@ -153,7 +155,25 @@ services:
       - .docker-compose.wb.env
     volumes:
       - wb_requirements_vol:/usr/local/lib/python3.5
-      - wb_osfstoragecache_vol:/code/website/osfstoragecache
+      - osfstoragecache_vol:/code/website/osfstoragecache
+      - wb_tmp_vol:/tmp
+    stdin_open: true
+
+  wb_worker:
+    image: quay.io/centerforopenscience/waterbutler:develop
+    command: invoke celery
+    restart: unless-stopped
+    depends_on:
+      - wb
+      - rabbitmq
+    environment:
+      C_FORCE_ROOT: 1
+    env_file:
+      - .docker-compose.wb.env
+    volumes:
+      - wb_requirements_vol:/usr/local/lib/python3.5
+      - osfstoragecache_vol:/code/website/osfstoragecache
+      - wb_tmp_vol:/tmp
     stdin_open: true
 
   ##################################
@@ -177,7 +197,7 @@ services:
 
   preprints:
     image: quay.io/centerforopenscience/ember-preprints:develop-development-local
-    command: /bin/bash -c "yarn --pure-lockfile --no-progress --no-emoji && ./node_modules/bower/bin/bower install --allow-root --config.interactive=false && ./node_modules/ember-cli/bin/ember serve --host 0.0.0.0 --port 4200"
+    command: /bin/bash -c "yarn --pure-lockfile --no-progress --no-emoji && ./node_modules/bower/bin/bower install --allow-root --config.interactive=false && ./node_modules/ember-cli/bin/ember serve --host 0.0.0.0 --port 4200 --live-reload-port 41953"
     restart: unless-stopped
     depends_on:
       - api
@@ -186,8 +206,10 @@ services:
       - BACKEND=local
     expose:
       - 4200
+      - 41953
     ports:
       - 4200:4200
+      - 41953:41953
     volumes:
       - preprints_dist_vol:/code/dist
     stdin_open: true
@@ -318,7 +340,6 @@ services:
       - 8001:8001
     depends_on:
       - postgres
-      - tokumx
       - rabbitmq
       - elasticsearch
     env_file:
@@ -339,7 +360,6 @@ services:
       - 8000:8000
     depends_on:
       - postgres
-      - tokumx
       - rabbitmq
       - elasticsearch
     environment:
@@ -360,7 +380,6 @@ services:
       - 5000:5000
     depends_on:
       - postgres
-      - tokumx
       - rabbitmq
       - elasticsearch
     environment:

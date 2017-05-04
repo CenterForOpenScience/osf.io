@@ -6,12 +6,12 @@ import os
 from lxml import etree
 
 from website import settings
-from website.app import init_app
-from website.models import CitationStyle
+from website.app import setup_django
+setup_django()
+from osf.models.citation import CitationStyle
 
 
 def main():
-    init_app(set_backends=True, routes=False)
 
     # drop all styles
     CitationStyle.remove()

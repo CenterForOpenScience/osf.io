@@ -23,7 +23,7 @@ from website.project.signals import contributor_removed
 def _dt_to_iso8601(value):
     iso8601 = value.isoformat()
     if iso8601.endswith('+00:00'):
-        iso8601 = iso8601[:-9] + 'Z'  # offset upped to 9 to get rid of 3 ms decimal points
+        iso8601 = iso8601[:-6] + 'Z'  # microsecond precision
 
     return iso8601
 
@@ -438,6 +438,15 @@ class TestFileView(ApiTestCase):
             res = self.app.get(self.file_url, auth=self.user.auth)
             assert_equal(res.json['data']['attributes']['current_version'], version)
 
+    # Regression test for OSF-7758
+    def test_folder_files_relationships_contains_guid_not_id(self):
+        self.folder = self.node.get_addon('osfstorage').get_root().append_folder('I\'d be a teacher!!')
+        self.folder.save()
+        self.folder_url = '/{}files/{}/'.format(API_BASE, self.folder._id)
+        res = self.app.get(self.folder_url, auth=self.user.auth)
+        split_href = res.json['data']['relationships']['files']['links']['related']['href'].split('/')
+        assert_in(self.node._id, split_href)
+        assert_not_in(self.node.id, split_href)
 
 class TestFileVersionView(ApiTestCase):
     def setUp(self):

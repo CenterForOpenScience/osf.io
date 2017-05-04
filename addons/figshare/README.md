@@ -29,11 +29,12 @@ has instructions for use with ngrok, but there are other methods.
 1. Go to [figshare](http://figshare.com), create an account, and login
 2. Click the dropdown with your name and select **Applications** and click **Create Personal Token**
 3. `invoke shell`, then run:
-```
+```python
 from addons.figshare.client import FigshareClient
+from osf.models.user import OSFUser
 from website.oauth.models import ExternalAccount
 
-me = User.find_one(Q('username', 'eq', '<your username>'))
+me = OSFUser.load('<osf_guid>')
 token = '<personal token id from figshare>'
 client = FigshareClient(token)
 
@@ -47,7 +48,7 @@ ea = ExternalAccount(
 )
 ea.save()
 fu = me.get_or_add_addon('figshare')
-me.external_accounts.append(ea)
+me.external_accounts.add(ea)
 me.save()
 
 commit()

@@ -1,7 +1,27 @@
 from addons.base.apps import BaseAddonAppConfig
 
-from addons.figshare.views import figshare_root_folder
+from website.util import rubeus
 
+def figshare_root_folder(node_settings, auth, **kwargs):
+    """Return the Rubeus/HGrid-formatted response for the root folder only.
+
+    Identical to the generic_views.root_folder except adds root_folder_type
+    to exported data.  Fangorn needs root_folder_type to decide whether to
+    display the 'Create Folder' button.
+    """
+    # Quit if node settings does not have authentication
+    if not node_settings.has_auth or not node_settings.folder_id:
+        return None
+    node = node_settings.owner
+    return [rubeus.build_addon_root(
+        node_settings=node_settings,
+        name=node_settings.fetch_folder_name(),
+        permissions=auth,
+        nodeUrl=node.url,
+        nodeApiUrl=node.api_url,
+        rootFolderType=node_settings.folder_path,
+        private_key=kwargs.get('view_only', None),
+    )]
 
 class FigshareAddonAppConfig(BaseAddonAppConfig):
 

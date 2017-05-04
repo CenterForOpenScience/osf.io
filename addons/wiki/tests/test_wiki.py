@@ -341,7 +341,7 @@ class TestWikiViews(OsfTestCase):
         project = ProjectFactory(creator=self.user)
         url = project.web_url_for('view_project')
         res = self.app.get(url, auth=self.user.auth)
-        assert_in('No wiki content', res)
+        assert_in('Add important information, links, or images here to describe your project.', res)
 
     def test_project_dashboard_wiki_wname_get_shows_non_ascii_characters(self):
         # Regression test for:
@@ -878,7 +878,7 @@ class TestWikiUuid(OsfTestCase):
 
     @mock.patch('addons.wiki.utils.broadcast_to_sharejs')
     def test_uuid_persists_after_rename(self, mock_sharejs):
-        new_wname = 'bar.baz'
+        new_wname = 'barbaz'
         new_wkey = to_mongo_key(new_wname)
         assert_is_none(self.project.wiki_private_uuids.get(self.wkey))
         assert_is_none(self.project.wiki_private_uuids.get(new_wkey))

@@ -63,8 +63,8 @@ raven==5.32.0
 webcolors==1.4
 
 # API requirements
-Django==1.9
-djangorestframework==3.3.3
+Django==1.11
+djangorestframework==3.6.2
 django-cors-headers==1.3.1
 django-rest-swagger==0.3.6
 djangorestframework-bulk==0.2.1
@@ -76,7 +76,7 @@ jsonschema==2.5.1
 
 # Admin requirements
 django-webpack-loader==0.2.3
-django-nose==1.4.3
+django-nose==1.4.4
 django-password-reset==0.8.2
 sendgrid-django==2.0.0
 
@@ -85,9 +85,10 @@ keen==0.3.21
 python-geoip-geolite2==2015.0303
 
 # OSF models
-git+https://github.com/cos-forks/django-typed-models@0.5.2
+git+https://github.com/cos-forks/django-typed-models@0.6.0+cos3
 git+https://github.com/cos-forks/django-dirtyfields@develop
-django-extensions==1.6.1
+git+https://github.com/cos-forks/django-extensions@master
+django-include==0.1.0
 psycopg2==2.6.2
 ujson==1.35
 sqlparse==0.2.2
