@@ -113,7 +113,7 @@ class NodeLogParamsSerializer(RestrictedDictSerializer):
                 except NoResultsFound:
                     file_node = None
                 if file_node:
-                    return "/project/{}/files/{}/{}/".format(file_node.node._id, provider, file_id)
+                    return '/project/{}/files/{}/{}/'.format(file_node.node._id, provider, file_id)
         return None
 
     def get_params_node(self, obj):
