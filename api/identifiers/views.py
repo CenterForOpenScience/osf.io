@@ -7,14 +7,14 @@ from api.base.views import JSONAPIBaseView
 from api.base.filters import ODMFilterMixin
 from api.base.serializers import JSONAPISerializer
 
-from api.identifiers.serializers import NodeIdentifierSerializer, RegistrationIdentifierSerializer
+from api.identifiers.serializers import NodeIdentifierSerializer, RegistrationIdentifierSerializer, PreprintIdentifierSerializer
 
 from api.nodes.permissions import (
     IsPublic,
     ExcludeWithdrawals,
 )
 
-from website.identifiers.model import Identifier
+from osf.models import Node, Registration, PreprintService, Identifier
 
 
 class IdentifierList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
@@ -113,9 +113,13 @@ class IdentifierDetail(JSONAPIBaseView, generics.RetrieveAPIView):
 
     def get_serializer_class(self):
         if 'identifier_id' in self.kwargs:
-            if self.get_object().referent.is_registration:
+            referent = self.get_object().referent
+            if isinstance(referent, Node):
+                return NodeIdentifierSerializer
+            if isinstance(referent, Registration):
                 return RegistrationIdentifierSerializer
-            return NodeIdentifierSerializer
+            if isinstance(referent, PreprintService):
+                return PreprintIdentifierSerializer
         return JSONAPISerializer
 
     def get_object(self):
