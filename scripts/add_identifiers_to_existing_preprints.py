@@ -2,7 +2,7 @@ import logging
 import time
 
 from website.app import init_app
-from website.identifiers.utils import get_top_level_domain, request_identifiers_from_ezid
+from website.identifiers.utils import request_identifiers_from_ezid
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -22,11 +22,9 @@ def add_identifiers_to_preprints():
         preprint.save()
 
         doi = preprint.get_identifier('doi')
-        subdomain = get_top_level_domain(preprint.provider.external_url)
-        assert subdomain.upper() in doi.value
         assert preprint._id.upper() in doi.value
 
-        logger.info('Created DOI {} for Preprint from service {}'.format(doi.value, preprint.provider.name))
+        logger.info('Created DOI {} for Preprint with guid {} from service {}'.format(doi.value, preprint._id, preprint.provider.name))
         time.sleep(1)
 
     logger.info('Finished Adding identifiers to {} preprints.'.format(preprints_without_identifiers.count()))
