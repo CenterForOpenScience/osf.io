@@ -1,14 +1,19 @@
-from django.test import RequestFactory
-from django.http import Http404
-from django.core.files.uploadedfile import SimpleUploadedFile
-from django.utils import timezone
-from nose import tools as nt
 import mock
 import csv
 import os
 import furl
 import pytz
-from datetime import timedelta, datetime
+import pytest
+from datetime import datetime, timedelta
+
+from nose import tools as nt
+from django.test import RequestFactory
+from django.http import Http404
+from django.core.files.uploadedfile import SimpleUploadedFile
+from django.utils import timezone
+from django.core.urlresolvers import reverse
+from django.core.exceptions import PermissionDenied
+from django.contrib.auth.models import Permission
 
 from tests.base import AdminTestCase
 from website import settings
@@ -26,6 +31,8 @@ from admin_tests.utilities import setup_view, setup_log_view, setup_form_view
 from admin.users import views
 from admin.users.forms import WorkshopForm, UserSearchForm
 from osf.models.admin_log_entry import AdminLogEntry
+
+pytestmark = pytest.mark.django_db
 
 
 class TestUserView(AdminTestCase):
@@ -56,48 +63,96 @@ class TestUserView(AdminTestCase):
         res = view.get_context_data()
         nt.assert_equal(res[views.UserView.context_object_name], temp_object)
 
+    def test_no_user_permissions_raises_error(self):
+        user = UserFactory()
+        guid = user._id
+        request = RequestFactory().get(reverse('users:user', kwargs={'guid': guid}))
+        request.user = user
+
+        with self.assertRaises(PermissionDenied):
+            views.UserView.as_view()(request, guid=guid)
+
+    def test_correct_view_permissions(self):
+        user = UserFactory()
+        guid = user._id
+
+        view_permission = Permission.objects.get(codename='view_osfuser')
+        user.user_permissions.add(view_permission)
+        user.save()
+
+        request = RequestFactory().get(reverse('users:user', kwargs={'guid': guid}))
+        request.user = user
+
+        response = views.UserView.as_view()(request, guid=guid)
+        self.assertEqual(response.status_code, 200)
+
 
 class TestResetPasswordView(AdminTestCase):
     def test_reset_password_context(self):
         user = UserFactory()
+
         guid = user._id
         request = RequestFactory().get('/fake_path')
-        view = views.ResetPasswordView()
+        view = views.ResetPasswordView(initial={})
         view = setup_view(view, request, guid=guid)
         res = view.get_context_data()
         nt.assert_is_instance(res, dict)
         nt.assert_in((user.emails[0], user.emails[0]), view.initial['emails'])
+
+    def test_no_user_permissions_raises_error(self):
+        user = UserFactory()
+
+        guid = user._id
+        request = RequestFactory().get(reverse('users:reset_password', kwargs={'guid': guid}))
+        request.user = user
+
+        with self.assertRaises(PermissionDenied):
+            views.ResetPasswordView.as_view()(request, guid=guid)
+
+    def test_correct_view_permissions(self):
+        user = UserFactory()
+        guid = user._id
+
+        change_permission = Permission.objects.get(codename='change_osfuser')
+        user.user_permissions.add(change_permission)
+        user.save()
+
+        request = RequestFactory().get(reverse('users:reset_password', kwargs={'guid': guid}))
+        request.user = user
+
+        response = views.ResetPasswordView.as_view()(request, guid=guid)
+        self.assertEqual(response.status_code, 200)
 
 
 class TestDisableUser(AdminTestCase):
     def setUp(self):
         self.user = UserFactory()
         self.request = RequestFactory().post('/fake_path')
-        self.view = views.UserDeleteView()
+        self.view = views.UserDeleteView
         self.view = setup_log_view(self.view, self.request, guid=self.user._id)
 
     def test_get_object(self):
-        obj = self.view.get_object()
+        obj = self.view().get_object()
         nt.assert_is_instance(obj, OSFUser)
 
     def test_get_context(self):
-        res = self.view.get_context_data(object=self.user)
+        res = self.view().get_context_data(object=self.user)
         nt.assert_in('guid', res)
         nt.assert_equal(res.get('guid'), self.user._id)
 
     def test_disable_user(self):
         settings.ENABLE_EMAIL_SUBSCRIPTIONS = False
         count = AdminLogEntry.objects.count()
-        self.view.delete(self.request)
+        self.view().delete(self.request)
         self.user.reload()
         nt.assert_true(self.user.is_disabled)
         nt.assert_equal(AdminLogEntry.objects.count(), count + 1)
 
     def test_reactivate_user(self):
         settings.ENABLE_EMAIL_SUBSCRIPTIONS = False
-        self.view.delete(self.request)
+        self.view().delete(self.request)
         count = AdminLogEntry.objects.count()
-        self.view.delete(self.request)
+        self.view().delete(self.request)
         self.user.reload()
         nt.assert_false(self.user.is_disabled)
         nt.assert_equal(AdminLogEntry.objects.count(), count + 1)
@@ -107,6 +162,28 @@ class TestDisableUser(AdminTestCase):
         with nt.assert_raises(Http404):
             view.delete(self.request)
 
+    def test_no_user_permissions_raises_error(self):
+        user = UserFactory()
+        guid = user._id
+        request = RequestFactory().get(reverse('users:disable', kwargs={'guid': guid}))
+        request.user = user
+
+        with self.assertRaises(PermissionDenied):
+            self.view.as_view()(request, guid=guid)
+
+    def test_correct_view_permissions(self):
+        user = UserFactory()
+        guid = user._id
+
+        change_permission = Permission.objects.get(codename='change_osfuser')
+        user.user_permissions.add(change_permission)
+        user.save()
+
+        request = RequestFactory().get(reverse('users:disable', kwargs={'guid': guid}))
+        request.user = user
+
+        response = self.view.as_view()(request, guid=guid)
+        self.assertEqual(response.status_code, 200)
 
 class TestDisableSpamUser(AdminTestCase):
     def setUp(self):
@@ -114,22 +191,22 @@ class TestDisableSpamUser(AdminTestCase):
         self.public_node = ProjectFactory(creator=self.user, is_public=True)
         self.public_node = ProjectFactory(creator=self.user, is_public=False)
         self.request = RequestFactory().post('/fake_path')
-        self.view = views.SpamUserDeleteView()
+        self.view = views.SpamUserDeleteView
         self.view = setup_log_view(self.view, self.request, guid=self.user._id)
 
     def test_get_object(self):
-        obj = self.view.get_object()
+        obj = self.view().get_object()
         nt.assert_is_instance(obj, OSFUser)
 
     def test_get_context(self):
-        res = self.view.get_context_data(object=self.user)
+        res = self.view().get_context_data(object=self.user)
         nt.assert_in('guid', res)
         nt.assert_equal(res.get('guid'), self.user._id)
 
     def test_disable_spam_user(self):
         settings.ENABLE_EMAIL_SUBSCRIPTIONS = False
         count = AdminLogEntry.objects.count()
-        self.view.delete(self.request)
+        self.view().delete(self.request)
         self.user.reload()
         self.public_node.reload()
         nt.assert_true(self.user.is_disabled)
@@ -137,12 +214,35 @@ class TestDisableSpamUser(AdminTestCase):
         nt.assert_equal(AdminLogEntry.objects.count(), count + 3)
 
     def test_no_user(self):
-        view = setup_view(views.UserDeleteView(), self.request, guid='meh')
+        view = setup_view(self.view(), self.request, guid='meh')
         with nt.assert_raises(Http404):
             view.delete(self.request)
 
+    def test_no_user_permissions_raises_error(self):
+        user = UserFactory()
+        guid = user._id
+        request = RequestFactory().get(reverse('users:spam_disable', kwargs={'guid': guid}))
+        request.user = user
 
-class SpamUserListMixin(AdminTestCase):
+        with self.assertRaises(PermissionDenied):
+            self.view.as_view()(request, guid=guid)
+
+    def test_correct_view_permissions(self):
+        user = UserFactory()
+        guid = user._id
+
+        change_permission = Permission.objects.get(codename='change_osfuser')
+        user.user_permissions.add(change_permission)
+        user.save()
+
+        request = RequestFactory().get(reverse('users:spam_disable', kwargs={'guid': guid}))
+        request.user = user
+
+        response = self.view.as_view()(request, guid=guid)
+        self.assertEqual(response.status_code, 200)
+
+
+class SpamUserListMixin(object):
     def setUp(self):
 
         spam_flagged = TagFactory(name='spam_flagged')
@@ -163,12 +263,38 @@ class SpamUserListMixin(AdminTestCase):
 
         self.request = RequestFactory().post('/fake_path')
 
+    def test_no_user_permissions_raises_error(self):
+        user = UserFactory()
+        guid = user._id
+        request = RequestFactory().get(self.url)
+        request.user = user
 
-class TestFlaggedSpamUserList(SpamUserListMixin):
+        with self.assertRaises(PermissionDenied):
+            self.plain_view.as_view()(request, guid=guid)
+
+    def test_correct_view_permissions(self):
+        user = UserFactory()
+        guid = user._id
+
+        view_permission = Permission.objects.get(codename='view_osfuser')
+        spam_permission = Permission.objects.get(codename='view_spam')
+        user.user_permissions.add(view_permission)
+        user.user_permissions.add(spam_permission)
+        user.save()
+
+        request = RequestFactory().get(self.url)
+        request.user = user
+
+        response = self.plain_view.as_view()(request, guid=guid)
+        self.assertEqual(response.status_code, 200)
+
+
+class TestFlaggedSpamUserList(SpamUserListMixin, AdminTestCase):
     def setUp(self):
         super(TestFlaggedSpamUserList, self).setUp()
-        self.view = views.UserFlaggedSpamList()
-        self.view = setup_log_view(self.view, self.request)
+        self.plain_view = views.UserFlaggedSpamList
+        self.view = setup_log_view(self.plain_view(), self.request)
+        self.url = reverse('users:flagged-spam')
 
     def test_get_queryset(self):
         qs = self.view.get_queryset()
@@ -176,11 +302,13 @@ class TestFlaggedSpamUserList(SpamUserListMixin):
         nt.assert_equal(qs[0]._id, self.flagged_user._id)
 
 
-class TestConfirmedSpamUserList(SpamUserListMixin):
+class TestConfirmedSpamUserList(SpamUserListMixin, AdminTestCase):
     def setUp(self):
         super(TestConfirmedSpamUserList, self).setUp()
-        self.view = views.UserKnownSpamList()
-        self.view = setup_log_view(self.view, self.request)
+        self.plain_view = views.UserKnownSpamList
+        self.view = setup_log_view(self.plain_view(), self.request)
+
+        self.url = reverse('users:known-spam')
 
     def test_get_queryset(self):
         qs = self.view.get_queryset()
@@ -188,11 +316,13 @@ class TestConfirmedSpamUserList(SpamUserListMixin):
         nt.assert_equal(qs[0]._id, self.spam_user._id)
 
 
-class TestConfirmedHamUserList(SpamUserListMixin):
+class TestConfirmedHamUserList(SpamUserListMixin, AdminTestCase):
     def setUp(self):
         super(TestConfirmedHamUserList, self).setUp()
-        self.view = views.UserKnownHamList()
-        self.view = setup_log_view(self.view, self.request)
+        self.plain_view = views.UserKnownHamList
+        self.view = setup_log_view(self.plain_view(), self.request)
+
+        self.url = reverse('users:known-ham')
 
     def test_get_queryset(self):
         qs = self.view.get_queryset()
@@ -205,12 +335,14 @@ class TestRemove2Factor(AdminTestCase):
         super(TestRemove2Factor, self).setUp()
         self.user = AuthUserFactory()
         self.request = RequestFactory().post('/fake_path')
-        self.view = views.User2FactorDeleteView()
-        self.view = setup_log_view(self.view, self.request, guid=self.user._id)
+        self.view = views.User2FactorDeleteView
+        self.setup_view = setup_log_view(self.view(), self.request, guid=self.user._id)
+
+        self.url = reverse('users:remove2factor', kwargs={'guid': self.user._id})
 
     @mock.patch('osf.models.user.OSFUser.delete_addon')
     def test_remove_two_factor_get(self, mock_delete_addon):
-        self.view.delete(self.request)
+        self.setup_view.delete(self.request)
         mock_delete_addon.assert_called_with('twofactor')
 
     def test_integration_delete_two_factor(self):
@@ -219,10 +351,31 @@ class TestRemove2Factor(AdminTestCase):
         user_settings = self.user.get_addon('twofactor')
         nt.assert_not_equal(user_settings, None)
         count = AdminLogEntry.objects.count()
-        self.view.delete(self.request)
+        self.setup_view.delete(self.request)
         post_addon = self.user.get_addon('twofactor')
         nt.assert_equal(post_addon, None)
         nt.assert_equal(AdminLogEntry.objects.count(), count + 1)
+
+    def test_no_user_permissions_raises_error(self):
+        guid = self.user._id
+        request = RequestFactory().get(self.url)
+        request.user = self.user
+
+        with self.assertRaises(PermissionDenied):
+            self.view.as_view()(request, guid=guid)
+
+    def test_correct_view_permissions(self):
+        guid = self.user._id
+
+        change_permission = Permission.objects.get(codename='change_osfuser')
+        self.user.user_permissions.add(change_permission)
+        self.user.save()
+
+        request = RequestFactory().get(self.url)
+        request.user = self.user
+
+        response = self.view.as_view()(request, guid=guid)
+        self.assertEqual(response.status_code, 200)
 
 
 class TestUserWorkshopFormView(AdminTestCase):
@@ -259,13 +412,15 @@ class TestUserWorkshopFormView(AdminTestCase):
         return result_csv
 
     def _create_nodes_and_add_logs(self, first_activity_date, second_activity_date=None):
-        node_one = ProjectFactory(creator=self.user_1, date_created=first_activity_date)
+        node_one = ProjectFactory(creator=self.user_1)
+        node_one.date_created = first_activity_date
         node_one.add_log(
             'log_added', params={'project': node_one._id}, auth=self.auth_1, log_date=first_activity_date, save=True
         )
 
         if second_activity_date:
-            node_two = ProjectFactory(creator=self.user_1, date_created=second_activity_date)
+            node_two = ProjectFactory(creator=self.user_1)
+            node_two.date_created = second_activity_date
             node_two.add_log(
                 'log_added', params={'project': node_two._id}, auth=self.auth_1, log_date=second_activity_date, save=True
             )
@@ -304,7 +459,7 @@ class TestUserWorkshopFormView(AdminTestCase):
         user_logs_since_workshop = result_csv[1][-3]
         user_nodes_created_since_workshop = result_csv[1][-2]
 
-        nt.assert_equal(user_logs_since_workshop, 2)
+        nt.assert_equal(user_logs_since_workshop, 1)
         nt.assert_equal(user_nodes_created_since_workshop, 1)
 
     def test_user_activity_day_of_workshop_and_before(self):
@@ -332,7 +487,7 @@ class TestUserWorkshopFormView(AdminTestCase):
         user_logs_since_workshop = result_csv[1][-3]
         user_nodes_created_since_workshop = result_csv[1][-2]
 
-        nt.assert_equal(user_logs_since_workshop, 2)
+        nt.assert_equal(user_logs_since_workshop, 1)
         nt.assert_equal(user_nodes_created_since_workshop, 1)
 
     def test_user_activity_before_workshop_and_after(self):
@@ -347,7 +502,8 @@ class TestUserWorkshopFormView(AdminTestCase):
         user_logs_since_workshop = result_csv[1][-3]
         user_nodes_created_since_workshop = result_csv[1][-2]
 
-        nt.assert_equal(user_logs_since_workshop, 2)
+        # One log before workshop, one after, only should show the one after
+        nt.assert_equal(user_logs_since_workshop, 1)
         nt.assert_equal(user_nodes_created_since_workshop, 1)
 
     def test_user_osf_account_not_found(self):
