@@ -38,5 +38,9 @@
     "swift": {
         "fullName": "Swift",
         "externalView": false
+    },
+    "azureblobstorage": {
+        "fullName": "Azure Blob Storage",
+        "externalView": false
     }
 }

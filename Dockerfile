@@ -85,6 +85,7 @@ COPY ./addons/s3/requirements.txt /code/addons/s3/
 COPY ./addons/twofactor/requirements.txt /code/addons/twofactor/
 COPY ./addons/zotero/requirements.txt /code/addons/zotero/
 COPY ./addons/swift/requirements.txt /code/addons/swift/
+COPY ./addons/azureblobstorage/requirements.txt /code/addons/azureblobstorage/
 
 RUN pip install --no-cache-dir -c /code/requirements/constraints.txt -r /code/requirements.txt \
     && pip install --no-cache-dir -c /code/requirements/constraints.txt -r /code/requirements/release.txt
@@ -98,7 +99,8 @@ RUN pip install --no-cache-dir -c /code/requirements/constraints.txt -r /code/ad
     && pip install --no-cache-dir -c /code/requirements/constraints.txt -r /code/addons/s3/requirements.txt \
     && pip install --no-cache-dir -c /code/requirements/constraints.txt -r /code/addons/twofactor/requirements.txt \
     && pip install --no-cache-dir -c /code/requirements/constraints.txt -r /code/addons/zotero/requirements.txt \
-    && pip install --no-cache-dir -c /code/requirements/constraints.txt -r /code/addons/swift/requirements.txt
+    && pip install --no-cache-dir -c /code/requirements/constraints.txt -r /code/addons/swift/requirements.txt \
+    && pip install --no-cache-dir -c /code/requirements/constraints.txt -r /code/addons/azureblobstorage/requirements.txt
 
 RUN (pip uninstall uritemplate.py --yes || true) \
     && pip install --no-cache-dir uritemplate.py==0.3.0
@@ -143,6 +145,7 @@ COPY ./addons/twofactor/static/ /code/addons/twofactor/static/
 COPY ./addons/wiki/static/ /code/addons/wiki/static/
 COPY ./addons/zotero/static/ /code/addons/zotero/static/
 COPY ./addons/swift/static/ /code/addons/swift/static/
+COPY ./addons/azureblobstorage/static/ /code/addons/azureblobstorage/static/
 RUN mkdir -p /code/website/static/built/ \
     && invoke build_js_config_files \
     && node ./node_modules/webpack/bin/webpack.js --config webpack.prod.config.js \
