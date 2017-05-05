@@ -30,7 +30,7 @@ END_DATETIME = dt.datetime(2017, 5, 5, 5, 48, tzinfo=pytz.utc)
 
 def main():
     dry_run = '--dry' in sys.argv
-    if not dry:
+    if not dry_run:
         # If we're not running in dry mode log everything to a file
         script_utils.add_file_logger(logger, __file__)
     count = 0
@@ -38,7 +38,7 @@ def main():
         is_published=True,
         date_published__gte=START_DATETIME,
         date_published__lte=END_DATETIME
-    ).order_by('date_published').select_related('node', 'node__creator')
+    ).order_by('date_published').distinct().select_related('node', 'node__creator')
     for preprint in preprints:
         auth = Auth(preprint.node.creator)
         for author in preprint.node.contributors.filter(is_active=False):
