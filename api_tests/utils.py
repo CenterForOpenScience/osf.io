@@ -19,17 +19,17 @@ def create_test_file(node, user, filename='test_file', create_guid=True):
         'contentType': 'img/png'
     }).save()
 
-    root_node.add_log(
+    node.add_log(
         'osf_storage_file_added',
         auth=Auth(user),
         params={
-            'node': root_node._id,
-            'project': root_node.parent_id,
+            'node': node._id,
+            'project': node.parent_id,
             'path': test_file.materialized_path,
-            'params_file':  '/project/{}/files/osfstorage/{}/'.format(root_node._id, test_file._id)
+            'params_file':  '/project/{}/files/osfstorage/{}/'.format(node._id, test_file._id)
         },
     )
-    root_node.save()
+    node.save()
 
     return test_file
 
