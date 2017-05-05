@@ -1,0 +1,11 @@
+{
+  "azureblobstorage_bucket_linked" : "${user} linked the Azure Blob Storage container ${bucket} to ${node}",
+  "azureblobstorage_bucket_unlinked" : "${user} unselected the Azure Blob Storage container ${bucket} in ${node}",
+  "azureblobstorage_file_added" : "${user} added file ${path} to Azure Blob Storage container ${bucket} in ${node}",
+  "azureblobstorage_file_removed" : "${user} removed ${path} in Azure Blob Storage container ${bucket} in ${node}",
+  "azureblobstorage_file_updated" : "${user} updated file ${path} in Azure Blob Storage container ${bucket} in ${node}",
+  "azureblobstorage_folder_created" : "${user} created folder ${path} in Azure Blob Storage container ${bucket} in ${node}",
+  "azureblobstorage_node_authorized" : "${user} authorized the Azure Blob Storage addon for ${node}",
+  "azureblobstorage_node_deauthorized" : "${user} deauthorized the Azure Blob Storage addon for ${node}",
+  "azureblobstorage_node_deauthorized_no_user" : "Azure Blob Storage addon for ${node} deauthorized"
+}

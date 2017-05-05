@@ -1,0 +1,3 @@
+# Workaround for https://github.com/pypa/setuptools/issues/951#issuecomment-282435064
+#setuptools>=16.0,!=24.0.0,!=34.0.0,!=34.0.1,!=34.0.2,!=34.0.3,!=34.1.0,!=34.1.1,!=34.2.0
+azure-storage==0.33.0

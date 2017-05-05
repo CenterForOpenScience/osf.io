@@ -1,0 +1,11 @@
+{
+    "azureblobstorage_bucket_linked" : "A user linked an Azure Blob Storage container to a project",
+    "azureblobstorage_bucket_unlinked" : "A user unselected an Azure Blob Storage container in a project",
+    "azureblobstorage_file_added" : "A user added a file to an Azure Blob Storage container in a project",
+    "azureblobstorage_file_removed" : "A user removed a file in an Azure Blob Storage container in a project",
+    "azureblobstorage_file_updated" : "A user updated a file in an Azure Blob Storage container in a project",
+    "azureblobstorage_folder_created" : "A user created a folder in an Azure Blob Storage in a project",
+    "azureblobstorage_node_authorized" : "A user authorized the Azure Blob Storage addon for a project",
+    "azureblobstorage_node_deauthorized" : "A user deauthorized the Azure Blob Storage addon for a project",
+    "azureblobstorage_node_deauthorized_no_user" : "Azure Blob Storage addon for a project deauthorized"
+}
