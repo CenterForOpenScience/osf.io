@@ -1251,6 +1251,7 @@ def main(env):
             'advisory_board': '''
                 <div class="col-xs-12">
                     <h2>Steering Committee</h2>
+                    <p class="m-b-lg"></p>
                 </div>
                 <div class="col-xs-6">
                     <ul>
@@ -1261,8 +1262,8 @@ def main(env):
                 </div>
                 <div class="col-xs-6">
                     <ul>
-                        <li><b>John Snell, Ph.D.</b></li>
-                        <li><b>Kelsie Timbie, Ph.D.</b></li>
+                        <li><b>John Snell</b>, Ph.D.</li>
+                        <li><b>Kelsie Timbie</b>, Ph.D.</li>
                         <li><b>Emily White</b>, M.D.</li>
                     </ul>
                 </div>

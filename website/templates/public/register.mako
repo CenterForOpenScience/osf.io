@@ -67,9 +67,9 @@
         </div>
     %endif
 
-    %if campaign == "fusfoundation-preprints":
+    %if campaign == "focusarchive-preprints":
         <div class="text-center m-t-lg">
-            <h3>Focused Ultrasound Foundation Preprints</h3><hr>
+            <h3>FocUS Archive Preprints</h3><hr>
         </div>
     %endif
 
@@ -140,11 +140,11 @@
                             <td><h3>Create a free OSF account to contribute to BITSS</h3></td>
                         </tr>
                     </table>
-                %elif campaign == "fusfoundation-preprints":
+                %elif campaign == "focusarchive-preprints":
                     <table style="border-collapse: separate; border-spacing: 30px 0; margin-top: 20px;  margin-bottom: 10px;">
                         <tr>
                             <td><img src="/static/img/preprint_providers/fusf_logo.png"></td>
-                            <td><h3>Create a free OSF account to contribute to Focused Ultrasound Foundation</h3></td>
+                            <td><h3>Create a free OSF account to contribute to FocUS Archive</h3></td>
                         </tr>
                     </table>
                 %elif campaign == "lawarxiv-preprints":
