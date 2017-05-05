@@ -28,7 +28,7 @@ from website.models import NodeLog
 from website.prereg import utils as prereg_utils
 from website.project import utils as project_utils
 from osf.models import MetaSchema, DraftRegistration, Sanction
-from website.project.metadata.schemas import ACTIVE_META_SCHEMAS
+from website.project.metadata.schemas import METASCHEMA_ORDERING
 from website.project.metadata.utils import serialize_meta_schema, serialize_draft_registration
 from website.project.utils import serialize_node
 from website.util import rapply
@@ -371,9 +371,9 @@ def get_metaschemas(*args, **kwargs):
     meta_schemas = [
         schema
         for schema in meta_schemas
-        if schema.name in ACTIVE_META_SCHEMAS
+        if schema.active
     ]
-    meta_schemas.sort(key=lambda a: ACTIVE_META_SCHEMAS.index(a.name))
+    meta_schemas.sort(key=lambda a: METASCHEMA_ORDERING.index(a.name))
     return {
         'meta_schemas': [
             serialize_meta_schema(ms) for ms in meta_schemas[:count]

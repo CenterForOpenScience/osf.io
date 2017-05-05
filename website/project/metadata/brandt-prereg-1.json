@@ -1,5 +1,6 @@
 {
     "name": "Replication Recipe (Brandt et al., 2013): Pre-Registration",
+    "active": false,
     "schema": {
         "pages": [{
             "id": "page1",

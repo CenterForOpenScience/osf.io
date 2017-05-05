@@ -1,5 +1,6 @@
 {
     "name": "Replication Recipe (Brandt et al., 2013): Post-Completion",
+    "active": false,
     "schema": {
         "pages": [
             {

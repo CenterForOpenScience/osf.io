@@ -12,7 +12,6 @@ import jsonschema
 import pymongo
 import pytz
 from django.apps import apps
-from django.core.exceptions import ValidationError
 from django.core.urlresolvers import reverse
 from django.core.validators import URLValidator
 from django.utils import timezone
@@ -20,7 +19,7 @@ from django.utils import timezone
 from modularodm import Q
 from modularodm import fields
 from modularodm.validators import MaxLengthValidator
-from modularodm.exceptions import KeyExistsException, ValidationValueError
+from modularodm.exceptions import ValidationValueError
 
 from framework import status
 from framework.mongo import ObjectId, DummyRequest
@@ -136,28 +135,22 @@ class MetaSchema(StoredObject):
         return
 
 
-def ensure_schema(schema, name, version=1):
+def ensure_schema(schema, name, version=1, active=True):
     MetaSchema = apps.get_model('osf.MetaSchema')
-    try:
-        MetaSchema(
-            name=name,
-            schema_version=version,
-            schema=schema
-        ).save()
-    except (KeyExistsException, ValidationError):
-        schema_obj = MetaSchema.find_one(
-            Q('name', 'eq', name) &
-            Q('schema_version', 'eq', version)
-        )
-        schema_obj.schema = schema
-        schema_obj.save()
-
+    MetaSchema.objects.update_or_create(
+        name=name,
+        schema_version=version,
+        defaults={
+            'schema': schema,
+            'active': active
+        }
+    )
 
 def ensure_schemas():
     """Import meta-data schemas from JSON to database if not already loaded
     """
     for schema in OSF_META_SCHEMAS:
-        ensure_schema(schema, schema['name'], version=schema.get('version', 1))
+        ensure_schema(schema, schema['name'], version=schema.get('version', 1), active=schema.get('active', True))
 
 
 class MetaData(GuidStoredObject):

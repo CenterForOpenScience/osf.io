@@ -1,6 +1,6 @@
 from nose.tools import *  # flake8: noqa
 
-from website.project.metadata.schemas import ACTIVE_META_SCHEMAS, LATEST_SCHEMA_VERSION
+from website.project.metadata.schemas import LATEST_SCHEMA_VERSION
 from website.project.model import ensure_schemas, MetaSchema, Q
 
 from api.base.settings.defaults import API_BASE
@@ -23,15 +23,16 @@ class TestMetaSchemaDetail(ApiTestCase):
         data = res.json['data']['attributes']
         assert_equal(data['name'], 'Prereg Challenge')
         assert_equal(data['schema_version'], 2)
+        assert_true(data['active'])
         assert_equal(res.json['data']['id'], self.schema._id)
-        assert_in(data['name'], ACTIVE_META_SCHEMAS)
 
     def test_pass_unauthenticated_user_can_view_schemas(self):
         res = self.app.get(self.url)
         assert_equal(res.status_code, 200)
 
-    def test_inactive_metaschema_not_returned(self):
+    def test_pervious_version_metaschema_not_returned(self):
         self.schema = MetaSchema.find_one(Q('name', 'eq', 'Open-Ended Registration') & Q('schema_version', 'eq', 1))
         self.url = '/{}metaschemas/{}/'.format(API_BASE, self.schema._id)
         res = self.app.get(self.url, auth=self.user.auth, expect_errors=True)
+        # check error detail here
         assert_equal(res.status_code, 404)

@@ -1,10 +1,9 @@
-from modularodm import Q
 from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import NotFound
 
 from framework.auth.oauth_scopes import CoreScopes
 
-from website.project.metadata.schemas import ACTIVE_META_SCHEMAS, LATEST_SCHEMA_VERSION
+from website.project.metadata.schemas import LATEST_SCHEMA_VERSION
 from api.base import permissions as base_permissions
 from api.base.views import JSONAPIBaseView
 from api.base.utils import get_object_or_error
@@ -52,9 +51,7 @@ class MetaSchemasList(JSONAPIBaseView, generics.ListAPIView):
 
     # overrides ListCreateAPIView
     def get_queryset(self):
-        schemas = MetaSchema.find(Q('name', 'in', ACTIVE_META_SCHEMAS) &
-                                  Q('schema_version', 'eq', LATEST_SCHEMA_VERSION))
-        return schemas
+        return MetaSchema.objects.filter(schema_version=LATEST_SCHEMA_VERSION)
 
 
 class MetaSchemaDetail(JSONAPIBaseView, generics.RetrieveAPIView):
@@ -90,6 +87,7 @@ class MetaSchemaDetail(JSONAPIBaseView, generics.RetrieveAPIView):
     def get_object(self):
         schema_id = self.kwargs['metaschema_id']
         schema = get_object_or_error(MetaSchema, schema_id)
-        if schema.schema_version != LATEST_SCHEMA_VERSION or schema.name not in ACTIVE_META_SCHEMAS:
+        if schema.schema_version != LATEST_SCHEMA_VERSION:
+            # Raise an error that there is a newer version?
             raise NotFound
         return schema
