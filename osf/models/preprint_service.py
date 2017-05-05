@@ -77,11 +77,17 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, BaseModel):
 
     @property
     def url(self):
-        return '/{}/'.format(self._id)
+        if self.provider.domain_redirect_enabled or self.provider._id == 'osf':
+            return '/{}/'.format(self._id)
+
+        return '/preprints/{}/{}/'.format(self.provider._id, self._id)
 
     @property
     def absolute_url(self):
-        return urlparse.urljoin(settings.DOMAIN, self.url)
+        return urlparse.urljoin(
+            self.provider.domain if self.provider.domain_redirect_enabled else settings.DOMAIN,
+            self.url
+        )
 
     @property
     def absolute_api_v2_url(self):

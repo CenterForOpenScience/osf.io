@@ -174,6 +174,10 @@ CONFIRM_EMAIL_PREPRINTS = lambda name, provider: Mail(
     'confirm_preprints_{}'.format(name),
     subject='Open Science Framework Account Verification, {} Preprints Service'.format(provider)
 )
+CONFIRM_EMAIL_REGISTRIES_OSF = Mail(
+    'confirm_registries_osf',
+    subject='Open Science Framework Account Verification, OSF Registries'
+)
 
 # Merge account, add or remove email confirmation emails.
 CONFIRM_MERGE = Mail('confirm_merge', subject='Confirm account merge')

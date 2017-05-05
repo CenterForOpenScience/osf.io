@@ -732,7 +732,7 @@ def root(request, format=None, **kwargs):
         s3           Amazon S3
 
     """
-    if request.user and not request.user.is_anonymous():
+    if request.user and not request.user.is_anonymous:
         user = request.user
         current_user = UserSerializer(user, context={'request': request}).data
     else:

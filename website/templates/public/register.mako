@@ -18,6 +18,12 @@
         </div>
     %endif
 
+    %if campaign == "osf-registries":
+        <div class="text-center m-t-lg">
+            <h3>OSF Registries</h3><hr>
+            <p>Please login to the Open Science Framework or create a free account to continue.</p>
+    %endif
+
     %if campaign == "osf-preprints":
         <div class="text-center m-t-lg">
             <h3>OSF Preprints</h3><hr>
@@ -67,12 +73,25 @@
         </div>
     %endif
 
+    %if campaign == "lawarxiv-preprints":
+        <div class="text-center m-t-lg">
+            <h3>LawArXiv Preprints</h3><hr>
+        </div>
+    %endif
+
     <div class="row m-t-xl">
     %if campaign != "institution" or not enable_institutions:
         <div id="signUpScope" class="col-sm-10 col-sm-offset-1 col-md-9 col-md-offset-2 col-lg-8 signup-form p-b-md m-b-m bg-color-light">
             <form data-bind="submit: submit" class="form-horizontal">
 
-                %if campaign == "osf-preprints":
+                %if campaign == "osf-registries":
+                     <table style="border-collapse: separate; border-spacing: 30px 0; margin-top: 20px;  margin-bottom: 10px;">
+                        <tr>
+                            <td><img src="/static/img/registries/osf-registries-black.png" style="width: 200px; margin-top: 15px" /></td>
+                            <td><h3>Create a free OSF account</h3></td>
+                        </tr>
+                    </table>
+                %elif campaign == "osf-preprints":
                      <table style="border-collapse: separate; border-spacing: 30px 0; margin-top: 20px;  margin-bottom: 10px;">
                         <tr>
                             <td><img src="/static/img/preprint_providers/osf-preprints-login.png" style="width: 200px; margin-top: 15px" /></td>
@@ -96,7 +115,7 @@
                 %elif campaign == "psyarxiv-preprints":
                     <table style="border-collapse: separate; border-spacing: 30px 0; margin-top: 20px;  margin-bottom: 10px;">
                         <tr>
-                            <td><img src="/static/img/preprint_providers/psyarxiv-login.png" style="width: 150px; background: #a9a9a9; padding: 0 10px 0 10px;" /></td>
+                            <td><img src="/static/img/preprint_providers/psyarxiv-login.png" style="width: 150px; background: #062F4F; padding: 0 10px 0 10px;" /></td>
                             <td><h3>Create a free OSF account to contribute to PsyArXiv</h3></td>
                         </tr>
                     </table>
@@ -126,6 +145,13 @@
                         <tr>
                             <td><img src="/static/img/preprint_providers/fusf_logo.png"></td>
                             <td><h3>Create a free OSF account to contribute to Focused Ultrasound Foundation</h3></td>
+                        </tr>
+                    </table>
+                %elif campaign == "lawarxiv-preprints":
+                    <table style="border-collapse: separate; border-spacing: 30px 0; margin-top: 20px;  margin-bottom: 10px;">
+                        <tr>
+                            <td><img src="/static/img/preprint_providers/lawarxiv-logo.png" style="width: 150px; padding: 0 10px 0 10px;" /></td>
+                            <td><h3>Create a free OSF account to contribute to LawArXiv</h3></td>
                         </tr>
                     </table>
                 %else:

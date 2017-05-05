@@ -153,17 +153,6 @@
                 % endif
                 % if node['is_registration']:
                     <p>
-                    Registration Form:
-                    % for meta_schema in node['registered_schemas']:
-                    <a href="${node['url']}register/${meta_schema['id']}">${meta_schema['schema_name']}</a>
-                      % if len(node['registered_schemas']) > 1:
-                      ,
-                      % endif
-                    % endfor
-                    </p>
-                % endif
-                % if node['is_registration']:
-                    <p>
                     Date registered:
                     <span data-bind="text: dateRegistered.local, tooltip: {title: dateRegistered.utc}" class="date node-date-registered"></span>
                     </p>
@@ -208,19 +197,46 @@
                         ${node['description']}</span>
                     </p>
                 % endif
-                % if ('admin' in user['permissions'] or node['license'].get('name', 'No license') != 'No license'):
-                    <p>
-                      <license-picker params="saveUrl: '${node['update_url']}',
-                                              saveMethod: 'PUT',
-                                              license: window.contextVars.node.license,
-                                              saveLicenseKey: 'node_license',
-                                              readonly: ${ node['is_registration'] | sjson, n}">
-                        <span id="license">License:</span>
-                        <span class="text-muted"> ${node['license'].get('name', 'No license')} </span>
-                      </license-picker>
-                    </p>
-                 % endif
-
+                <div class="row">
+                    % if not node['is_registration']:
+                        <div class="col-xs-12">
+                    % else:
+                        <div class="col-xs-6">
+                    % endif
+                            % if ('admin' in user['permissions'] or node['license'].get('name', 'No license') != 'No license'):
+                                <p>
+                                  <license-picker params="saveUrl: '${node['update_url']}',
+                                                          saveMethod: 'PUT',
+                                                          license: window.contextVars.node.license,
+                                                          saveLicenseKey: 'node_license',
+                                                          readonly: ${ node['is_registration'] | sjson, n}">
+                                    <span id="license">License:</span>
+                                    <span class="text-muted"> ${node['license'].get('name', 'No license')} </span>
+                                  </license-picker>
+                                </p>
+                             % endif
+                        </div>
+                        % if node['is_registration']:
+                            <div class="col-xs-6">
+                                % if len(node['registered_schemas']) == 1:
+                                    <a class="btn btn-primary pull-right" href="${node['url']}register/${node['registered_schemas'][0]['id']}">View Registration Form</a>
+                                % else:
+                                    ## This is a special case that is right now only possible on 12 Nodes in production
+                                    <div class="dropdown">
+                                        <button class="btn btn-primary dropdown-toggle pull-right" type="button" id="RegFormMenu" data-toggle="dropdown">
+                                            View Registration Forms
+                                            <span class="caret"></span>
+                                        </button>
+                                        <ul class="dropdown-menu pull-right">
+                                            % for meta_schema in node['registered_schemas']:
+                                                <li><a href="${node['url']}register/${meta_schema['id']}">${meta_schema['schema_name']}</a></li>
+                                            % endfor
+                                        </ul>
+                                    </div>
+                                % endif
+                            </div>
+                    % endif
+                </div>
             </div>
         </div>
 
@@ -232,7 +248,7 @@
 
 <%include file="project/modal_add_pointer.mako"/>
 
-% if user['can_comment'] or node['has_comments']:
+% if (user['can_comment'] or node['has_comments']) and not node['anonymous']:
     <%include file="include/comment_pane_template.mako"/>
 % endif
 
@@ -259,6 +275,7 @@
     </div>
 </div>
 % endif
+
 
 <div class="row">
 
@@ -443,7 +460,7 @@
                     ${render_nodes.render_nodes(nodes=node['descendants'], sortable=user['can_sort'], user=user, pluralized_node_type='components', show_path=False, include_js=True)}
                 </div>
             % else:
-              <p>No components have been added to this ${node['node_type']}.</p>
+              <p class="text-muted">Add components to organize your project.</p>
             % endif
         </div><!-- end addon-widget-body -->
     </div><!-- end components -->
@@ -492,6 +509,7 @@ ${parent.javascript_bottom()}
                 public: true,
             },
         },
+        customCitations: ${ custom_citations | sjson, n }
     });
 </script>
 
