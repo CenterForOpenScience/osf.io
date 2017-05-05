@@ -1,6 +1,6 @@
 from urlparse import urlparse
 from addons.osfstorage import settings as osfstorage_settings
-
+from framework.auth.core import Auth
 
 def create_test_file(node, user, filename='test_file', create_guid=True):
     osfstorage = node.get_addon('osfstorage')
@@ -18,6 +18,19 @@ def create_test_file(node, user, filename='test_file', create_guid=True):
         'size': 1337,
         'contentType': 'img/png'
     }).save()
+
+    root_node.add_log(
+        'osf_storage_file_added',
+        auth=Auth(user),
+        params={
+            'node': root_node._id,
+            'project': root_node.parent_id,
+            'path': test_file.materialized_path,
+            'params_file':  '/project/{}/files/osfstorage/{}/'.format(root_node._id, test_file._id)
+        },
+    )
+    root_node.save()
+
     return test_file
 
 def urlparse_drop_netloc(url):
