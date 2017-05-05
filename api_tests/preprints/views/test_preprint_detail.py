@@ -256,22 +256,6 @@ class TestPreprintUpdate(ApiTestCase):
         unpublished.reload()
         assert_true(unpublished.is_published)
 
-    # Regression test for https://openscience.atlassian.net/browse/OSF-7630
-    def test_update_published_does_not_send_contributor_added_for_inactive_users(self):
-        unpublished = PreprintFactory(creator=self.user, is_published=False)
-        unpublished.node.add_unregistered_contributor(
-            fullname=fake.name(),
-            email=fake.email(),
-            auth=Auth(self.user),
-            save=True
-        )
-        url = '/{}preprints/{}/'.format(API_BASE, unpublished._id)
-        payload = build_preprint_update_payload(unpublished._id, attributes={'is_published': True})
-        with capture_signals() as captured:
-            res = self.app.patch_json_api(url, payload, auth=self.user.auth)
-            # Signal not sent, because contributor is not registered
-            assert_false(captured[contributor_added])
-
 
 class TestPreprintUpdateLicense(ApiTestCase):
 
