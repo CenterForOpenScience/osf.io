@@ -25,7 +25,7 @@ class AzureBlobStorageAddonAppConfig(BaseAddonAppConfig):
 
     @property
     def get_hgrid_data(self):
-        return swift_root_folder
+        return azureblobstorage_root_folder
 
     BUCKET_LINKED = 'azureblobstorage_bucket_linked'
     BUCKET_UNLINKED = 'azureblobstorage_bucket_unlinked'
