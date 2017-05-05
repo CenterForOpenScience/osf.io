@@ -2,8 +2,7 @@ import httplib
 
 from azure.common import AzureHttpError
 from flask import request
-from modularodm import Q
-from modularodm.storage.base import KeyExistsException
+from django.core.exceptions import ValidationError
 
 from framework.exceptions import HTTPError
 from framework.auth.decorators import must_be_logged_in
@@ -97,16 +96,16 @@ def azureblobstorage_add_user_account(auth, **kwargs):
             display_name=user_info['display_name'],
         )
         account.save()
-    except KeyExistsException:
+    except ValidationError:
         # ... or get the old one
-        account = ExternalAccount.find_one(
-            Q('provider', 'eq', SHORT_NAME) &
-            Q('provider_id', 'eq', user_info['id'])
+        account = ExternalAccount.objects.get(
+            provider=SHORT_NAME,
+            provider_id=user_info['id']
         )
     assert account is not None
 
-    if account not in auth.user.external_accounts:
-        auth.user.external_accounts.append(account)
+    if not auth.user.external_accounts.filter(id=account.id).exists():
+        auth.user.external_accounts.add(account)
 
     # Ensure Azure Blob Storage is enabled.
     auth.user.get_or_add_addon('azureblobstorage', auth=auth)
