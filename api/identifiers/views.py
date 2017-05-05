@@ -1,3 +1,4 @@
+from modularodm import Q as MODMQ
 from rest_framework import generics, permissions as drf_permissions
 
 from framework.auth.oauth_scopes import CoreScopes
@@ -70,6 +71,10 @@ class IdentifierList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
     # overrides ListCreateAPIView
     def get_queryset(self):
         return Identifier.find(self.get_query_from_request())
+
+    # overrides ODMFilterMixin
+    def get_default_odm_query(self):
+        return MODMQ('pk', 'in', self.get_object().identifiers.values_list('pk', flat=True))
 
 
 class IdentifierDetail(JSONAPIBaseView, generics.RetrieveAPIView):

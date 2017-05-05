@@ -3514,10 +3514,6 @@ class NodeIdentifierList(NodeMixin, IdentifierList):
             self.check_object_permissions(self.request, node)
         return node
 
-    # overrides ODMFilterMixin
-    def get_default_odm_query(self):
-        return Q('pk', 'in', self.get_node().identifiers.values_list('pk', flat=True))
-
 
 class NodePreprintsList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, DjangoFilterMixin):
     """List of preprints for a node. *Read-only*.

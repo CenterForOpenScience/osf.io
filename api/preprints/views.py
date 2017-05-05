@@ -6,7 +6,6 @@ from rest_framework import generics
 from rest_framework.exceptions import NotFound, PermissionDenied, NotAuthenticated
 from rest_framework import permissions as drf_permissions
 
-from modularodm import Q as MODMQ
 from framework.auth.oauth_scopes import CoreScopes
 from osf.models import PreprintService, Identifier
 
@@ -405,10 +404,6 @@ class PreprintIdentifierList(IdentifierList, PreprintMixin):
 
     def get_object(self, check_object_permissions=True):
         return self.get_preprint(check_object_permissions=check_object_permissions)
-
-    # overrides ODMFilterMixin
-    def get_default_odm_query(self):
-        return MODMQ('pk', 'in', self.get_preprint().identifiers.values_list('pk', flat=True))
 
     # overrides ListCreateAPIView
     def get_queryset(self):
