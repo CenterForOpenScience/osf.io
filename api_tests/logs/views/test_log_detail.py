@@ -149,7 +149,4 @@ class TestNodeFileLogDetail(ApiTestCase):
             res.json['data'][1]['attributes']['params']['params_file'],
             '/project/{}/files/osfstorage/{}/'.format(self.node._id, self.file._id)
         )
-        assert_equal(
-            res.json['data'][1]['attributes']['params']['params_file'],
-            '/project/{}/files/osfstorage/{}/'.format(self.component._id, self.file._id)
-        )
+
