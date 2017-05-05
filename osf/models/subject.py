@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from dirtyfields import DirtyFieldsMixin
 from django.db import models
 from django.db.models import Q
 from django.core.exceptions import ValidationError
@@ -17,7 +18,7 @@ class SubjectQuerySet(MODMCompatibilityQuerySet, IncludeQuerySet):
         # but this breaks for certain querysets when relabeling aliases.
         return Subject.objects.filter(Q(id__in=self.values_list('id', flat=True)) | Q(parent__in=self) | Q(parent__parent__in=self))
 
-class Subject(ObjectIDMixin, BaseModel):
+class Subject(ObjectIDMixin, BaseModel, DirtyFieldsMixin):
     """A subject discipline that may be attached to a preprint."""
 
     text = models.CharField(null=False, max_length=256)  # max length on prod: 73
@@ -65,8 +66,9 @@ class Subject(ObjectIDMixin, BaseModel):
         return [self]
 
     def save(self, *args, **kwargs):
+        saved_fields = self.get_dirty_fields() or []
         validate_subject_provider_mapping(self.provider, self.bepress_subject)
-        if self.pk and self.preprint_services.exists():
+        if 'text' in saved_fields and self.pk and self.preprint_services.exists():
             raise ValidationError('Cannot edit a used Subject')
         return super(Subject, self).save()
 
