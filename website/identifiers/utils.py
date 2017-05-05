@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 import re
-import furl
 import logging
 
 from framework.exceptions import HTTPError

@@ -7,7 +7,8 @@ from framework.celery_tasks import app as celery_app
 
 from website import settings
 from website.util.share import GraphNode, format_contributor
-from website.identifiers.utils import request_identifiers_from_ezid, get_ezid_client, build_ezid_metadata
+
+from website.identifiers.utils import request_identifiers_from_ezid, get_ezid_client, build_ezid_metadata, parse_identifiers
 
 logger = logging.getLogger(__name__)
 
@@ -106,8 +107,8 @@ def get_and_set_preprint_identifiers(preprint_id):
 
     preprint = PreprintService.load(preprint_id)
     ezid_response = request_identifiers_from_ezid(preprint)
-
-    preprint.set_preprint_identifiers(ezid_response)
+    id_dict = parse_identifiers(ezid_response)
+    preprint.set_identifier_values(doi=id_dict['doi'], ark=id_dict['ark'])
 
 
 @celery_app.task(ignore_results=True)

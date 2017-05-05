@@ -12,7 +12,7 @@ from osf.models import PreprintService, Identifier
 
 from api.base.exceptions import Conflict
 from api.base.views import JSONAPIBaseView
-from api.base.filters import DjangoFilterMixin, ODMFilterMixin
+from api.base.filters import DjangoFilterMixin
 from api.base.parsers import (
     JSONAPIMultipleRelationshipsParser,
     JSONAPIMultipleRelationshipsParserForRegularJSON,
