@@ -24,7 +24,7 @@
             </ul>
         </div>
         <div class="service-name">
-            <a href="${domain}"><strong data-bind="text: osfServices[currentService].name"></strong></a>
+            <a data-bind="attr: {href: osfServices[currentService].href}"><strong data-bind="text: osfServices[currentService].name"></strong></a>
         </div>
     </div>
     <div id="navbar" class="navbar-collapse collapse navbar-right">
@@ -37,14 +37,12 @@
             % if user_name:
                 <li><a href="${domain}myprojects/">My Projects</a></li>
             % endif
-                <li><a href="${domain}search/">Search OSF</a></li>
+                <li><a href="${domain}search/">Search</a></li>
             <!-- /ko -->
 
-            % if not user_name:
             <li class="dropdown">
-            <a href="${domain}support/" >Support</a>
+            <a data-bind="attr: {href: osfServices[currentService].support}">Support</a>
             </li>
-            % endif
 
             % if user_name and display_name:
             <li class="dropdown">

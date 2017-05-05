@@ -84,8 +84,11 @@
                     </div>
                     <!-- /ko -->
                     <div class="col-md-9">
-                        <!-- ko if: searchStarted() && !totalCount() -->
+                        <!-- ko if: searchStarted() && !totalCount() && query() !== "" -->
                         <div class="search-results hidden" data-bind="css: {hidden: totalCount() }">No results found.</div>
+                        <!-- /ko -->
+                        <!-- ko if: searchStarted() && !totalCount() && query() === "" -->
+                        <div class="search-results hidden" data-bind="css: {hidden: totalCount() }">Type in the box above to search the OSF.</div>
                         <!-- /ko -->
                         <!-- ko if: totalCount() -->
                         <div data-bind="foreach: results">

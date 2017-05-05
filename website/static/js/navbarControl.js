@@ -15,12 +15,14 @@ var NavbarViewModel = function() {
 
     self.osfServices = {
         home: {
-            name: 'HOME',
-            href: '${domain}'
+            name: 'HOME ',
+            href: '/',
+            support: '/support/'
         },
         meetings: {
             name: 'MEETINGS',
-            href: '${domain}/meetings/'
+            href: '/meetings/',
+            support: 'http://help.osf.io/m/meetings'
         }
     };
 
