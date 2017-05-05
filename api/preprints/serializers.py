@@ -66,7 +66,7 @@ class PreprintSerializer(JSONAPISerializer):
     ])
 
     id = IDField(source='_id', read_only=True)
-    subjects = ser.SerializerMethodField()
+    subjects = JSONAPIListField(child=JSONAPIListField(child=TaxonomyField()), allow_null=True, required=False)
     date_created = DateByVersion(read_only=True)
     date_modified = DateByVersion(read_only=True)
     date_published = DateByVersion(read_only=True)
@@ -201,7 +201,7 @@ class PreprintSerializer(JSONAPISerializer):
         # nodes will send emails making it seem like a new node.
         if recently_published:
             for author in preprint.node.contributors:
-                if author != auth.user and author.is_confirmed:
+                if author != auth.user:
                     project_signals.contributor_added.send(preprint.node, contributor=author, auth=auth, email_template='preprint')
 
         return preprint
