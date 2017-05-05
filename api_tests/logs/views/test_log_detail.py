@@ -145,8 +145,8 @@ class TestNodeFileLogDetail(ApiTestCase):
     def test_file_params(self):
         res = self.app.get(self.node_logs_url, auth=self.user_one.auth)
         assert_equal(res.status_code, 200)
-        assert_equal(
+        assert_not_equal(
             res.json['data'][1]['attributes']['params']['params_file'],
-            '/project/{}/files/osfstorage/{}/'.format(self.component._id, self.file._id)
+            '/project/{}/files/osfstorage/{}/'.format(self.node._id, self.file._id)
         )
 
