@@ -1248,7 +1248,25 @@ def main(env):
             'banner_name': 'fusf_logo_on_transparent.png',
             'external_url': 'https://www.fusfoundation.org/',
             'example': '',
-            'advisory_board': '',
+            'advisory_board': '''
+                <div class="col-xs-12">
+                    <h2>Steering Committee</h2>
+                </div>
+                <div class="col-xs-6">
+                    <ul>
+                        <li><b>Matt Eames</b>, Ph.D.</li>
+                        <li><b>Jessica Foley</b>, Ph.D.</li>
+                        <li><b>Tim Meakem</b>, M.D.</li>
+                    </ul>
+                </div>
+                <div class="col-xs-6">
+                    <ul>
+                        <li><b>John Snell, Ph.D.</b></li>
+                        <li><b>Kelsie Timbie, Ph.D.</b></li>
+                        <li><b>Emily White</b>, M.D.</li>
+                    </ul>
+                </div>
+            ''',
             'email_contact': 'contact+fusfoundation@osf.io',
             'email_support': 'support+fusfoundation@osf.io',
             'social_twitter': 'FUSFoundation',
