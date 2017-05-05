@@ -12,7 +12,7 @@ from framework.auth import Auth
 from framework.exceptions import PermissionsError
 
 from website import settings
-from website.identifiers.utils import get_doi_and_metadata_for_object, get_top_level_domain
+from website.identifiers.utils import get_doi_and_metadata_for_object
 from osf.models import NodeLog, Subject
 
 from tests.base import OsfTestCase
@@ -231,12 +231,6 @@ class TestPreprintProvider(OsfTestCase):
         self.preprint = PreprintFactory(provider=None, is_published=False)
         self.provider = PreprintProviderFactory(name='WWEArxiv')
 
-        self.patch_toplevel = mock.patch('website.identifiers.utils.get_top_level_domain')
-        self.patch_toplevel.start()
-
-    def tearDown(self):
-        self.patch_toplevel.stop()
-
     def test_add_provider(self):
         assert_not_equal(self.preprint.provider, self.provider)
 
@@ -311,15 +305,6 @@ class TestPreprintIdentifiers(OsfTestCase):
         doi, metadata = get_doi_and_metadata_for_object(preprint)
 
         assert doi == ideal_doi
-
-    def test_get_top_level_domain(self):
-        urls = ['https://www.broken-m-hardy.woo', 'https://broken-m-hardy.woo', 'broken-m-hardy.woo', 'www.broken-m-hardy.woo']
-        ideal = 'broken-m-hardy.woo'
-
-        for url in urls:
-            sub = get_top_level_domain(url)
-            assert sub == ideal
-
 
 class TestOnPreprintUpdatedTask(OsfTestCase):
     def setUp(self):

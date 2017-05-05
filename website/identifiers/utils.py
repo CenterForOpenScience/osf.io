@@ -14,9 +14,6 @@ logger = logging.getLogger(__name__)
 FIELD_SEPARATOR = '\n'
 PAIR_SEPARATOR = ': '
 
-# subdomains to remove when constructing TLDs for DOI namespace creation
-SUBDOMAINS = ['www']
-
 
 def encode(match):
     return '%{:02x}'.format(ord(match.group()))
@@ -59,12 +56,6 @@ def from_anvl(data):
 
 def merge_dicts(*dicts):
     return dict(sum((each.items() for each in dicts), []))
-
-
-def get_top_level_domain(url):
-    furled = furl.furl(url)
-    url = furled.host or furled.url
-    return '.'.join([part for part in url.split('.') if part not in SUBDOMAINS])
 
 
 def get_doi_and_metadata_for_object(target_object):

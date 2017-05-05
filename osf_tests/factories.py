@@ -21,7 +21,7 @@ from website.util import permissions
 from website.project.licenses import ensure_licenses
 from website.project.model import ensure_schemas
 from website.archiver import ARCHIVER_SUCCESS
-from website.identifiers.utils import get_top_level_domain, parse_identifiers
+from website.identifiers.utils import parse_identifiers
 from framework.auth.core import Auth
 
 from osf import models
