@@ -13,7 +13,9 @@ from osf.models.validators import validate_subject_hierarchy_length, validate_su
 
 class SubjectQuerySet(MODMCompatibilityQuerySet, IncludeQuerySet):
     def include_children(self):
-        return (self | Subject.objects.filter(Q(parent__in=self) | Q(parent__parent__in=self)))
+        # It would be more efficient to OR self with the latter two Q's,
+        # but this breaks for certain querysets when relabeling aliases.
+        return Subject.objects.filter(Q(id__in=self.values_list('id', flat=True)) | Q(parent__in=self) | Q(parent__parent__in=self))
 
 class Subject(ObjectIDMixin, BaseModel):
     """A subject discipline that may be attached to a preprint."""
