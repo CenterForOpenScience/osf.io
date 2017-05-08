@@ -13,7 +13,7 @@ from addons.base.tests.views import (
     OAuthAddonConfigViewsTestCaseMixin
 )
 from addons.azureblobstorage.tests.utils import AzureBlobStorageAddonTestCase
-from addons.azureblobstorage.utils import validate_bucket_name
+from addons.azureblobstorage.utils import validate_container_name
 from website.util import api_url_for
 
 
@@ -63,36 +63,36 @@ class TestAzureBlobStorageViews(AzureBlobStorageAddonTestCase, OAuthAddonConfigV
         assert_equals(rv.status_int, http.BAD_REQUEST)
         assert_in('All the fields above are required.', rv.body)
 
-    def test_azureblobstorage_set_bucket_no_settings(self):
+    def test_azureblobstorage_set_container_no_settings(self):
         user = AuthUserFactory()
         self.project.add_contributor(user, save=True)
         url = self.project.api_url_for('azureblobstorage_set_config')
         res = self.app.put_json(
-            url, {'azureblobstorage_bucket': 'hammertofall'}, auth=user.auth,
+            url, {'azureblobstorage_container': 'hammertofall'}, auth=user.auth,
             expect_errors=True
         )
         assert_equal(res.status_code, http.BAD_REQUEST)
 
-    def test_azureblobstorage_set_bucket_no_auth(self):
+    def test_azureblobstorage_set_container_no_auth(self):
 
         user = AuthUserFactory()
         user.add_addon('azureblobstorage')
         self.project.add_contributor(user, save=True)
         url = self.project.api_url_for('azureblobstorage_set_config')
         res = self.app.put_json(
-            url, {'azureblobstorage_bucket': 'hammertofall'}, auth=user.auth,
+            url, {'azureblobstorage_container': 'hammertofall'}, auth=user.auth,
             expect_errors=True
         )
         assert_equal(res.status_code, http.FORBIDDEN)
 
-    def test_azureblobstorage_set_bucket_registered(self):
+    def test_azureblobstorage_set_container_registered(self):
         registration = self.project.register_node(
             get_default_metaschema(), Auth(self.user), '', ''
         )
 
         url = registration.api_url_for('azureblobstorage_set_config')
         res = self.app.put_json(
-            url, {'azureblobstorage_bucket': 'hammertofall'}, auth=self.user.auth,
+            url, {'azureblobstorage_container': 'hammertofall'}, auth=self.user.auth,
             expect_errors=True,
         )
 
@@ -106,7 +106,7 @@ class TestAzureBlobStorageViews(AzureBlobStorageAddonTestCase, OAuthAddonConfigV
             'secret_key': 'las'
         }, auth=self.user.auth, expect_errors=True)
         assert_equals(rv.status_int, http.BAD_REQUEST)
-        assert_in('Unable to list buckets.', rv.body)
+        assert_in('Unable to list containers.', rv.body)
 
     def test_azureblobstorage_remove_node_settings_owner(self):
         url = self.node_settings.owner.api_url_for('azureblobstorage_deauthorize_node')
@@ -122,7 +122,7 @@ class TestAzureBlobStorageViews(AzureBlobStorageAddonTestCase, OAuthAddonConfigV
 
     def test_azureblobstorage_get_node_settings_owner(self):
         self.node_settings.set_auth(self.external_account, self.user)
-        self.node_settings.folder_id = 'bucket'
+        self.node_settings.folder_id = 'container'
         self.node_settings.save()
         url = self.node_settings.owner.api_url_for('azureblobstorage_get_config')
         res = self.app.get(url, auth=self.user.auth)
@@ -141,9 +141,9 @@ class TestAzureBlobStorageViews(AzureBlobStorageAddonTestCase, OAuthAddonConfigV
 
     ## Overrides ##
 
-    @mock.patch('addons.azureblobstorage.models.get_bucket_names')
+    @mock.patch('addons.azureblobstorage.models.get_container_names')
     def test_folder_list(self, mock_names):
-        mock_names.return_value = ['bucket1', 'bucket2']
+        mock_names.return_value = ['container1', 'container2']
         super(TestAzureBlobStorageViews, self).test_folder_list()
 
     @mock.patch('addons.azureblobstorage.models.container_exists')
@@ -164,11 +164,11 @@ class TestAzureBlobStorageViews(AzureBlobStorageAddonTestCase, OAuthAddonConfigV
         assert_equal(res.json['result']['folder']['name'], self.node_settings.folder_name)
 
 
-class TestCreateBucket(AzureBlobStorageAddonTestCase, OsfTestCase):
+class TestCreateContainer(AzureBlobStorageAddonTestCase, OsfTestCase):
 
     def setUp(self):
 
-        super(TestCreateBucket, self).setUp()
+        super(TestCreateContainer, self).setUp()
 
         self.user = AuthUserFactory()
         self.consolidated_auth = Auth(user=self.user)
@@ -184,45 +184,45 @@ class TestCreateBucket(AzureBlobStorageAddonTestCase, OsfTestCase):
         self.user_settings.save()
 
         self.node_settings = self.project.get_addon('azureblobstorage')
-        self.node_settings.bucket = 'Sheer-Heart-Attack'
+        self.node_settings.container = 'Sheer-Heart-Attack'
         self.node_settings.user_settings = self.project.creator.get_addon('azureblobstorage')
 
         self.node_settings.save()
 
     def test_bad_names(self):
-        assert_false(validate_bucket_name(''))
-        assert_false(validate_bucket_name('no'))
-        assert_false(validate_bucket_name('a' * 64))
-        assert_false(validate_bucket_name(' leadingspace'))
-        assert_false(validate_bucket_name('trailingspace '))
-        assert_false(validate_bucket_name('bogus naMe'))
-        assert_false(validate_bucket_name('.cantstartwithp'))
-        assert_false(validate_bucket_name('or.endwith.'))
-        assert_false(validate_bucket_name('..nodoubles'))
-        assert_false(validate_bucket_name('no_unders_in'))
-        assert_false(validate_bucket_name('-leadinghyphen'))
-        assert_false(validate_bucket_name('trailinghyphen-'))
-        assert_false(validate_bucket_name('Mixedcase'))
-        assert_false(validate_bucket_name('empty..label'))
-        assert_false(validate_bucket_name('label-.trailinghyphen'))
-        assert_false(validate_bucket_name('label.-leadinghyphen'))
-        assert_false(validate_bucket_name('8.8.8.8'))
-        assert_false(validate_bucket_name('600.9000.0.28'))
-        assert_false(validate_bucket_name('no_underscore'))
-        assert_false(validate_bucket_name('_nounderscoreinfront'))
-        assert_false(validate_bucket_name('no-underscore-in-back_'))
-        assert_false(validate_bucket_name('no-underscore-in_the_middle_either'))
+        assert_false(validate_container_name(''))
+        assert_false(validate_container_name('no'))
+        assert_false(validate_container_name('a' * 64))
+        assert_false(validate_container_name(' leadingspace'))
+        assert_false(validate_container_name('trailingspace '))
+        assert_false(validate_container_name('bogus naMe'))
+        assert_false(validate_container_name('.cantstartwithp'))
+        assert_false(validate_container_name('or.endwith.'))
+        assert_false(validate_container_name('..nodoubles'))
+        assert_false(validate_container_name('no_unders_in'))
+        assert_false(validate_container_name('-leadinghyphen'))
+        assert_false(validate_container_name('trailinghyphen-'))
+        assert_false(validate_container_name('Mixedcase'))
+        assert_false(validate_container_name('empty..label'))
+        assert_false(validate_container_name('label-.trailinghyphen'))
+        assert_false(validate_container_name('label.-leadinghyphen'))
+        assert_false(validate_container_name('8.8.8.8'))
+        assert_false(validate_container_name('600.9000.0.28'))
+        assert_false(validate_container_name('no_underscore'))
+        assert_false(validate_container_name('_nounderscoreinfront'))
+        assert_false(validate_container_name('no-underscore-in-back_'))
+        assert_false(validate_container_name('no-underscore-in_the_middle_either'))
 
     def test_names(self):
-        assert_true(validate_bucket_name('imagoodname'))
-        assert_true(validate_bucket_name('can-have-dashes'))
-        assert_true(validate_bucket_name('a--------a'))
-        assert_true(validate_bucket_name('a' * 63))
+        assert_true(validate_container_name('imagoodname'))
+        assert_true(validate_container_name('can-have-dashes'))
+        assert_true(validate_container_name('a--------a'))
+        assert_true(validate_container_name('a' * 63))
 
 
     @mock.patch('addons.azureblobstorage.views.utils.create_container')
-    @mock.patch('addons.azureblobstorage.views.utils.get_bucket_names')
-    def test_create_bucket_pass(self, mock_names, mock_make):
+    @mock.patch('addons.azureblobstorage.views.utils.get_container_names')
+    def test_create_container_pass(self, mock_names, mock_make):
         mock_make.return_value = True
         mock_names.return_value = [
             'butintheend',
@@ -233,7 +233,7 @@ class TestCreateBucket(AzureBlobStorageAddonTestCase, OsfTestCase):
         ret = self.app.post_json(
             url,
             {
-                'bucket_name': 'doesntevenmatter'
+                'container_name': 'doesntevenmatter'
             },
             auth=self.user.auth
         )
@@ -242,12 +242,12 @@ class TestCreateBucket(AzureBlobStorageAddonTestCase, OsfTestCase):
         assert_equal(ret.json, {})
 
     @mock.patch('addons.azureblobstorage.views.utils.create_container')
-    def test_create_bucket_fail(self, mock_make):
+    def test_create_container_fail(self, mock_make):
         error = AzureHttpError('because Im a test', 418)
         error.message = 'This should work'
         mock_make.side_effect = error
 
         url = "/api/v1/project/{0}/azureblobstorage/newcontainer/".format(self.project._id)
-        ret = self.app.post_json(url, {'bucket_name': 'doesntevenmatter'}, auth=self.user.auth, expect_errors=True)
+        ret = self.app.post_json(url, {'container_name': 'doesntevenmatter'}, auth=self.user.auth, expect_errors=True)
 
         assert_equals(ret.body, '{"message": "This should work", "title": "Problem connecting to Azure Blob Storage"}')

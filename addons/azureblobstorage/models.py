@@ -10,7 +10,7 @@ from osf.models.files import File, Folder, BaseFileNode
 from addons.base import exceptions
 
 from addons.azureblobstorage.serializer import AzureBlobStorageSerializer
-from addons.azureblobstorage.utils import container_exists, get_bucket_names
+from addons.azureblobstorage.utils import container_exists, get_container_names
 
 from addons.azureblobstorage.provider import AzureBlobStorageProvider
 
@@ -52,7 +52,7 @@ class NodeSettings(BaseStorageAddon, BaseOAuthNodeSettings):
 
     def set_folder(self, folder_id, auth):
         if not container_exists(self.external_account.oauth_key, self.external_account.oauth_secret, folder_id):
-            error_message = ('We are having trouble connecting to that bucket. '
+            error_message = ('We are having trouble connecting to that container. '
                              'Try a different one.')
             raise exceptions.InvalidFolderError(error_message)
 
@@ -63,10 +63,10 @@ class NodeSettings(BaseStorageAddon, BaseOAuthNodeSettings):
         self.nodelogger.log(action='bucket_linked', extra={'bucket': str(folder_id)}, save=True)
 
     def get_folders(self, **kwargs):
-        # This really gets only buckets, not subfolders,
+        # This really gets only containers, not subfolders,
         # as that's all we want to be linkable on a node.
         try:
-            buckets = get_bucket_names(self)
+            containers = get_container_names(self)
         except:
             raise exceptions.InvalidAuthError()
 
@@ -74,14 +74,14 @@ class NodeSettings(BaseStorageAddon, BaseOAuthNodeSettings):
             {
                 'addon': 'azureblobstorage',
                 'kind': 'folder',
-                'id': bucket,
-                'name': bucket,
-                'path': bucket,
+                'id': container,
+                'name': container,
+                'path': container,
                 'urls': {
                     'folders': ''
                 }
             }
-            for bucket in buckets
+            for container in containers
         ]
 
     @property
