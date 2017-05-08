@@ -84,7 +84,7 @@ class TestNodeSettings(OAuthAddonNodeSettingsTestSuiteMixin, unittest.TestCase):
         folder_id = '1234567890'
         self.node_settings.set_folder(folder_id, auth=Auth(self.user))
         self.node_settings.save()
-        # Bucket was set
+        # Container was set
         assert_equal(self.node_settings.folder_id, folder_id)
         # Log was saved
         last_log = self.node.logs.latest()

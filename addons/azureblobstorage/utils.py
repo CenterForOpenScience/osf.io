@@ -16,7 +16,7 @@ def connect_azureblobstorage(account_name=None, account_key=None, node_settings=
     return service
 
 
-def get_bucket_names(node_settings):
+def get_container_names(node_settings):
     try:
         containers = connect_azureblobstorage(node_settings=node_settings).list_containers()
         return list(map(lambda c: c.name, containers))
@@ -24,8 +24,8 @@ def get_bucket_names(node_settings):
         raise HTTPError(e.status_code)
 
 
-def validate_bucket_name(name):
-    """Make sure the bucket name conforms to Azure's expectations
+def validate_container_name(name):
+    """Make sure the container name conforms to Azure's expectations
     """
     label = '[a-z0-9]+(?:[a-z0-9\-]*[a-z0-9])*'
     validate_name = re.compile('^' + label + '$')
@@ -39,7 +39,7 @@ def create_container(node_settings, container_name):
 
 
 def container_exists(access_key, secret_key, container_name):
-    """Tests for the existance of a bucket and if the user
+    """Tests for the existance of a container and if the user
     can access it with the given keys
     """
     if not container_name:
@@ -58,7 +58,7 @@ def container_exists(access_key, secret_key, container_name):
 
 def can_list(access_key, secret_key):
     """Return whether or not a user can list
-    all buckets accessable by this keys
+    all containers accessable by this keys
     """
     # Bail out early as boto does not handle getting
     # Called with (None, None)
