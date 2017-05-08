@@ -139,23 +139,24 @@ def get_or_create_identifiers(target_object):
     that build ARK URLs is responsible for adding the leading slash.
     Moved from website/project/views/register.py for use by other modules
     """
-    response_dict = request_identifiers_from_ezid(target_object)
+    if settings.EZID_USERNAME and settings.EZID_PASSWORD:
+        response_dict = request_identifiers_from_ezid(target_object)
 
-    resp = response_dict['response']
-    exists = response_dict['already_exists']
+        resp = response_dict['response']
+        exists = response_dict['already_exists']
 
-    if exists:
-        doi = resp['success']
-        suffix = doi.strip(settings.DOI_NAMESPACE)
-        return {
-            'doi': doi.replace('doi:', ''),
-            'ark': '{0}{1}'.format(settings.ARK_NAMESPACE.replace('ark:', ''), suffix),
-        }
-    else:
-        return dict(
-            [each.strip('/') for each in pair.strip().split(':')]
-            for pair in resp['success'].split('|')
-        )
+        if exists:
+            doi = resp['success']
+            suffix = doi.strip(settings.DOI_NAMESPACE)
+            return {
+                'doi': doi.replace('doi:', ''),
+                'ark': '{0}{1}'.format(settings.ARK_NAMESPACE.replace('ark:', ''), suffix),
+            }
+        else:
+            return dict(
+                [each.strip('/') for each in pair.strip().split(':')]
+                for pair in resp['success'].split('|')
+            )
 
 @signals.node_deleted.connect
 def update_status_on_delete(node):
