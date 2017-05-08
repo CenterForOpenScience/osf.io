@@ -97,31 +97,11 @@ var azureblobstorageFolderPickerViewModel = oop.extend(OauthAddonFolderPicker, {
             });
         });
     },
-    /**
-     * Tests if the given string is a valid Amazon S3 bucket name.  Supports two modes: strict and lax.
-     * Strict is for bucket creation and follows the guidelines at:
-     *
-     *   http://docs.aws.amazon.com/AmazonS3/latest/dev/BucketRestrictions.html#bucketnamingrules
-     *
-     * However, the US East (N. Virginia) region currently permits much laxer naming rules.  The S3
-     * docs claim this will be changed at some point, but to support our user's already existing
-     * buckets, we provide the lax mode checking.
-     *
-     * Strict checking is the default.
-     *
-     * @param {String} bucketName user-provided name of bucket to validate
-     * @param {Boolean} laxChecking whether to use the more permissive validation
-     */
-    isValidBucketName: function(bucketName, laxChecking) {
-        if (laxChecking === true) {
-            return /^[a-zA-Z0-9.\-_]{1,255}$/.test(bucketName);
-        }
-        var label = '[a-z0-9]+(?:[a-z0-9\-]*[a-z0-9])?';
-        var strictBucketName = new RegExp('^' + label + '(?:\\.' + label + ')*$');
-        var isIpAddress = /^[0-9]+(?:\.[0-9]+){3}$/;
-        return bucketName.length >= 3 && bucketName.length <= 63 &&
-            strictBucketName.test(bucketName) && !isIpAddress.test(bucketName);
-    }, 
+    isValidContainerName: function(containerName) {
+        var validContainerName = /^[a-z0-9]+(?:[a-z0-9\-]*[a-z0-9])*$/;
+        return containerName.length >= 3 && containerName.length <= 63 &&
+            validContainerName.test(containerName);
+    },
 
     /** Reset all fields from S3 credentials input modal */
     clearModal: function() {
@@ -132,17 +112,17 @@ var azureblobstorageFolderPickerViewModel = oop.extend(OauthAddonFolderPicker, {
         self.accessKey(null);
     },
 
-    createContainer: function(self, bucketName) {
+    createContainer: function(self, containerName) {
         $osf.block();
         return $osf.postJSON(
             self.urls().createContainer, {
-                bucket_name: bucketName
+                container_name: containerName
             }
         ).done(function(response) {
             $osf.unblock();
             self.loadedFolders(false);
             self.activatePicker();
-            var msg = 'Successfully created container "' + $osf.htmlEscape(bucketName) + '". You can now select it from the list.';
+            var msg = 'Successfully created container "' + $osf.htmlEscape(containerName) + '". You can now select it from the list.';
             var msgType = 'text-success';
             self.changeMessage(msg, msgType, null, true);
         }).fail(function(xhr) {
@@ -180,11 +160,11 @@ var azureblobstorageFolderPickerViewModel = oop.extend(OauthAddonFolderPicker, {
                         '<div class="col-md-12"> ' +
                             '<form class="form-horizontal" onsubmit="return false"> ' +
                                 '<div class="form-group"> ' +
-                                    '<label class="col-md-4 control-label" for="bucketName">Container Name</label> ' +
+                                    '<label class="col-md-4 control-label" for="containerName">Container Name</label> ' +
                                     '<div class="col-md-8"> ' +
-                                        '<input id="bucketName" name="bucketName" type="text" placeholder="Enter container name" class="form-control" autofocus> ' +
+                                        '<input id="containerName" name="containerName" type="text" placeholder="Enter container name" class="form-control" autofocus> ' +
                                         '<div>' +
-                                            '<span id="bucketModalErrorMessage" ></span>' +
+                                            '<span id="containerModalErrorMessage" ></span>' +
                                         '</div>'+
                                     '</div>' +
                                 '</div>' +
@@ -200,14 +180,14 @@ var azureblobstorageFolderPickerViewModel = oop.extend(OauthAddonFolderPicker, {
                     label: 'Create',
                     className: 'btn-success',
                     callback: function () {
-                        var bucketName = $('#bucketName').val();
+                        var containerName = $('#containerName').val();
 
-                        if (!bucketName) {
-                            var errorMessage = $('#bucketModalErrorMessage');
+                        if (!containerName) {
+                            var errorMessage = $('#containerModalErrorMessage');
                             errorMessage.text('Container name cannot be empty');
                             errorMessage[0].classList.add('text-danger');
                             return false;
-                        } else if (!self.isValidBucketName(bucketName, false)) {
+                        } else if (!self.isValidContainerName(containerName)) {
                             bootbox.confirm({
                                 title: 'Invalid container name',
                                 message: 'Azure Blob Storage containers can contain lowercase letters, numbers, and hyphens.' +
@@ -224,7 +204,7 @@ var azureblobstorageFolderPickerViewModel = oop.extend(OauthAddonFolderPicker, {
                                 }
                             });
                         } else {
-                            self.createContainer(self, bucketName);
+                            self.createContainer(self, containerName);
                         }
                     }
                 }

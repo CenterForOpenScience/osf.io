@@ -59,8 +59,8 @@ api_routes = {
         ),
         Rule(
             [
-                '/project/<pid>/azureblobstorage/buckets/',
-                '/project/<pid>/node/<nid>/azureblobstorage/buckets/',
+                '/project/<pid>/azureblobstorage/containers/',
+                '/project/<pid>/node/<nid>/azureblobstorage/containers/',
             ],
             'get',
             views.azureblobstorage_folder_list,

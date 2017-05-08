@@ -12,7 +12,7 @@ class AzureBlobStorageAddonTestCase(OAuthAddonTestCaseMixin, AddonTestCase):
     Serializer = AzureBlobStorageSerializer
     client = None
     folder = {
-    	'path': 'bucket',
-    	'name': 'bucket',
-    	'id': 'bucket'
+    	'path': 'container',
+    	'name': 'container',
+    	'id': 'container'
 	}

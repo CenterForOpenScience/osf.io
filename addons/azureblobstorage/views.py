@@ -76,13 +76,13 @@ def azureblobstorage_add_user_account(auth, **kwargs):
         return {
             'message': ('Unable to access account.\n'
                 'Check to make sure that the above credentials are valid, '
-                'and that they have permission to list buckets.')
+                'and that they have permission to list containers.')
         }, httplib.BAD_REQUEST
 
     if not utils.can_list(access_key, secret_key):
         return {
-            'message': ('Unable to list buckets.\n'
-                'Listing buckets is required permission that can be changed via IAM')
+            'message': ('Unable to list containers.\n'
+                'Listing containers is required permission that can be changed via IAM')
         }, httplib.BAD_REQUEST
 
     try:
@@ -117,16 +117,16 @@ def azureblobstorage_add_user_account(auth, **kwargs):
 @must_have_addon('azureblobstorage', 'node')
 @must_have_permission('write')
 def azureblobstorage_create_container(auth, node_addon, **kwargs):
-    bucket_name = request.json.get('bucket_name', '')
+    container_name = request.json.get('container_name', '')
 
-    if not utils.validate_bucket_name(bucket_name):
+    if not utils.validate_container_name(container_name):
         return {
             'message': 'That container name is not valid.',
             'title': 'Invalid container name',
         }, httplib.BAD_REQUEST
 
     try:
-        utils.create_container(node_addon, bucket_name)
+        utils.create_container(node_addon, container_name)
     except AzureHttpError as e:
         return {
             'message': e.message,
