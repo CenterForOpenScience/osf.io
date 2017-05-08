@@ -94,6 +94,7 @@ def main(env):
             'social_twitter': '',
             'social_facebook': '',
             'social_instagram': '',
+            'about_link': '',
             'licenses_acceptable': ['CC0 1.0 Universal', 'CC-By Attribution 4.0 International', 'No license'],
             'header_text': '',
             'subjects_acceptable': [],
@@ -135,6 +136,7 @@ def main(env):
             'social_twitter': 'engrxiv',
             'social_facebook': 'engrXiv',
             'social_instagram': 'engrxiv',
+            'about_link': 'http://blog.engrxiv.org/about/',
             'licenses_acceptable': ['CC0 1.0 Universal', 'CC-By Attribution 4.0 International', 'No license'],
             'header_text': '',
             'subjects_acceptable': [
@@ -279,6 +281,7 @@ def main(env):
             'social_twitter': 'psyarxiv',
             'social_facebook': 'PsyArXiv',
             'social_instagram': 'psyarxiv',
+            'about_link': 'http://blog.psyarxiv.com/psyarxiv/about-psyarxiv/',
             'licenses_acceptable': ['CC0 1.0 Universal', 'CC-By Attribution 4.0 International', 'No license'],
             'header_text': '',
             'subjects_acceptable': [
@@ -364,6 +367,7 @@ def main(env):
             'social_twitter': 'socarxiv',
             'social_facebook': 'socarxiv',
             'social_instagram': 'socarxiv',
+            'about_link': 'https://socopen.org/welcome/',
             'licenses_acceptable': ['CC0 1.0 Universal', 'CC-By Attribution 4.0 International', 'No license'],
             'header_text': '',
             'subjects_acceptable': [
@@ -496,6 +500,7 @@ def main(env):
             'social_twitter': 'AgriXiv',
             'social_facebook': 'agrixiv',
             'social_instagram': 'agrixiv',
+            'about_link': 'https://agrixiv.wordpress.com/about/',
             'licenses_acceptable': ['CC0 1.0 Universal', 'CC-By Attribution 4.0 International'],
             'header_text': '',
             'subjects_acceptable': [
@@ -1101,6 +1106,7 @@ def main(env):
             'email_contact': 'contact+bitss@osf.io',
             'email_support': 'support+bitss@osf.io',
             'social_twitter': 'UCBITSS',
+            'about_link': '',
             'licenses_acceptable': ['CC-By Attribution 4.0 International', 'CC0 1.0 Universal'],
             'header_text': '',
             'subjects_acceptable': [

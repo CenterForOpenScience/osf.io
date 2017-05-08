@@ -500,6 +500,7 @@ class PreprintProviderFactory(DjangoModelFactory):
     external_url = factory.Faker('url')
     logo_name = factory.Faker('file_name', category='image')
     banner_name = factory.Faker('file_name', category='image')
+    about_link = factory.Faker('url')
 
     class Meta:
         model = models.PreprintProvider

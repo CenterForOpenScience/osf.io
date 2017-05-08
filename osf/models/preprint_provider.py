@@ -29,7 +29,7 @@ class PreprintProvider(ObjectIDMixin, BaseModel):
     social_twitter = models.CharField(null=True, blank=True, max_length=200)  # max length on prod: 8
     social_facebook = models.CharField(null=True, blank=True, max_length=200)  # max length on prod: 8
     social_instagram = models.CharField(null=True, blank=True, max_length=200)  # max length on prod: 8
-
+    about_link = models.CharField(null=True, blank=True, max_length=200)
     subjects_acceptable = DateTimeAwareJSONField(blank=True, default=list)
     licenses_acceptable = models.ManyToManyField(NodeLicense, blank=True)
 
