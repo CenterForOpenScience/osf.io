@@ -1,14 +1,9 @@
 import re
-import httplib
 
 from azure.storage.blob import BlockBlobService
 from azure.common import AzureHttpError
 
 from framework.exceptions import HTTPError
-from addons.base.exceptions import InvalidAuthError, InvalidFolderError
-from addons.azureblobstorage.settings import BUCKET_LOCATIONS
-
-from addons.azureblobstorage.provider import AzureBlobStorageProvider
 
 def connect_azureblobstorage(account_name=None, account_key=None, node_settings=None):
     """Helper to build an azureblobstorageclient.Connection object

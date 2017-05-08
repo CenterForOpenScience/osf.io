@@ -9,7 +9,6 @@ from framework.auth.decorators import must_be_logged_in
 
 from addons.base import generic_views
 from addons.azureblobstorage import utils
-from addons.azureblobstorage.provider import AzureBlobStorageProvider
 from addons.azureblobstorage.serializer import AzureBlobStorageSerializer
 from website.oauth.models import ExternalAccount
 from website.project.decorators import (

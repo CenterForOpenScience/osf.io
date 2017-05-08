@@ -1,11 +1,9 @@
 import re
-import httplib
 
 from swiftclient import Connection
 from swiftclient import exceptions as swift_exceptions
 
 from framework.exceptions import HTTPError
-from addons.base.exceptions import InvalidAuthError, InvalidFolderError
 
 from addons.swift.provider import SwiftProvider
 
@@ -74,7 +72,7 @@ def can_list(auth_url, access_key, secret_key, tenant_name):
 
     try:
         connect_swift(auth_url, access_key, secret_key, tenant_name).get_account()
-    except swift_exceptions.ClientException as e:
+    except swift_exceptions.ClientException:
         return False
     return True
 
