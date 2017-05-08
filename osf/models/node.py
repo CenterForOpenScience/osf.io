@@ -221,18 +221,13 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         'title',
         'category',
         'description',
-        'visible_contributor_ids',
-        'tags',
         'is_fork',
-        'is_registration',
         'retraction',
         'embargo',
         'is_public',
         'is_deleted',
         'wiki_pages_current',
-        'is_retracted',
         'node_license',
-        'affiliated_institutions',
         'preprint_file',
     }
 
@@ -720,6 +715,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             raise UserNotAffiliatedError('User is not affiliated with {}'.format(inst.name))
         if not self.is_affiliated_with_institution(inst):
             self.affiliated_institutions.add(inst)
+            self.update_search()
         if log:
             NodeLog = apps.get_model('osf.NodeLog')
 
@@ -752,6 +748,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 )
             if save:
                 self.save()
+            self.update_search()
             return True
         return False
 
