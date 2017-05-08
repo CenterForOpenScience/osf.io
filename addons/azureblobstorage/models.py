@@ -8,7 +8,6 @@ from framework.auth.core import Auth
 from osf.models.files import File, Folder, BaseFileNode
 
 from addons.base import exceptions
-from website.oauth.models import BasicAuthProviderMixin
 
 from addons.azureblobstorage.serializer import AzureBlobStorageSerializer
 from addons.azureblobstorage.utils import container_exists, get_bucket_names
