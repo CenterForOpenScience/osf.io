@@ -65,7 +65,7 @@
         "wiki": "The wiki is a versatile communication tool. Wikis can be used to explain the main points of your project and can contain information like lab notes or contact information.",
         "googledrive": "Google Drive is a file storage add-on. Connect your Google Drive account to an OSF project to interact with files hosted on Google Drive via the OSF.",
         "swift": "Swift is a file storage add-on. Connect your Swift account to an OSF project to interact with files hosted on Swift via the OSF.",
-        "azureblobstorage": "Azure Blob Storage is a file storage add-on. Connect your Azure Storage account to an OSF project to interact with files hosted on Azure Blob Storage via the OSF."
+        "azureblobstorage": "Azure Blob Storage is a file storage add-on. Connect your Azure Storage account to an OSF project to interact with files hosted on Azure Blob Storage (Block Blob) via the OSF."
     },
     "addons_url": {
         "box": "http://www.box.com",
