@@ -18,11 +18,11 @@ def subscribe_creator(node):
         logger.warn('Reason: {}'.format(str(err)))
 
 @contributor_added.connect
-def subscribe_contributor(node, contributor, auth=None, *args, **kwargs):
+def subscribe_contributor(node, user, auth=None, *args, **kwargs):
     try:
-        subscribe_user_to_notifications(node, contributor)
+        subscribe_user_to_notifications(node, user)
     except InvalidSubscriptionError as err:
-        logger.warn('Skipping subscription of user {} to node {}'.format(contributor, node._id))
+        logger.warn('Skipping subscription of user {} to node {}'.format(user, node._id))
         logger.warn('Reason: {}'.format(str(err)))
 
 @user_confirmed.connect

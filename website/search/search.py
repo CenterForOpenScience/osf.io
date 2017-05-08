@@ -3,6 +3,7 @@ import logging
 from framework.celery_tasks.handlers import enqueue_task
 
 from website import settings
+from website.project.signals import contributor_added, contributor_removed
 
 logger = logging.getLogger(__name__)
 
@@ -25,6 +26,7 @@ def search(query, index=None, doc_type=None, raw=None):
     return search_engine.search(query, index=index, doc_type=doc_type, raw=raw)
 
 @requires_search
+@contributor_removed.connect
 def update_node(node, index=None, bulk=False, async=True, saved_fields=None):
     kwargs = {
         'index': index,
@@ -58,8 +60,10 @@ def delete_node(node, index=None):
     search_engine.delete_doc(node._id, node, index=index, category=doc_type)
 
 @requires_search
-def update_contributors_async(user_id):
+@contributor_added.connect
+def update_contributors_async(node, user, *args, **kwargs):
     """Async version of update_contributors above"""
+    user_id = user.id
     if settings.USE_CELERY:
         enqueue_task(search_engine.update_contributors_async.s(user_id))
     else:

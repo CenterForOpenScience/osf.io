@@ -1144,10 +1144,9 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             if save:
                 self.save()
 
-            if self._id and send_email != 'false':
-                project_signals.contributor_added.send(self,
-                                                       contributor=contributor,
-                                                       auth=auth, email_template=send_email)
+            if self._id:
+                # send signal to notify contributor, subscribe to notifications, and update search
+                project_signals.contributor_added.send(self, user=contributor, auth=auth, email_template=send_email)
 
             return contrib_to_add, True
 
@@ -1364,7 +1363,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
         self.save()
 
-        # send signal to remove this user from project subscriptions
+        # send signal to remove this user from project subscriptions and update search
         project_signals.contributor_removed.send(self, user=contributor)
 
         return True
@@ -1948,7 +1947,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         forked.save()
 
         # Need to call this after save for the notifications to be created with the _primary_key
-        project_signals.contributor_added.send(forked, contributor=user, auth=auth)
+        project_signals.contributor_added.send(forked, user=user, auth=auth)
 
         forked.add_log(
             action=NodeLog.NODE_FORKED,
