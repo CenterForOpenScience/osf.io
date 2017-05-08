@@ -774,3 +774,17 @@ footer {
 #alert-container {
     margin-top: 0 !important;
 }
+
+.advisory {
+    margin-top: -20px;
+    color: #393536;
+    padding: 50px 0;
+}
+
+.registries-ul {
+    list-style: none;
+}
+.registries-ul li {
+    padding-top: 5px;
+    font-size: 16px;
+}
