@@ -21,10 +21,10 @@
                 {% if user.confirmed %}
                     <button class="btn btn-default disabled" data-toggle="tooltip" title="User already confirmed">Get confirmation link</button>
                 {% else %}
-                    {% if user.is_claimed %}
-                        <a href="{% url 'users:get_confirmation' user.id %}" data-toggle="modal" data-target="#getConfirmationModal" class="btn btn-default">Get confirmation link</a>
-                    {%  else %}
+                    {% if user.unclaimed %}
                         <a href="{% url 'users:get_claim_urls' user.id %}" data-toggle="modal" data-target="#getUserClaimModal" class="btn btn-default">Get claim links</a>
+                    {%  else %}
+                        <a href="{% url 'users:get_confirmation' user.id %}" data-toggle="modal" data-target="#getConfirmationModal" class="btn btn-default">Get confirmation link</a>
                     {% endif %}
                 {% endif %}
                 {% endif %}

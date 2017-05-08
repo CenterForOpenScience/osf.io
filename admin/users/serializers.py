@@ -17,7 +17,7 @@ def serialize_user(user):
         'two_factor': user.has_addon('twofactor'),
         'osf_link': user.absolute_url,
         'system_tags': user.system_tags,
-        'is_claimed': user.is_claimed,
+        'unclaimed': True if user.unclaimed_records else False
     }
 
 
