@@ -2,8 +2,6 @@ from website.util import web_url_for
 from addons.base.serializer import StorageAddonSerializer
 from addons.azureblobstorage import utils
 
-from addons.azureblobstorage.provider import AzureBlobStorageProvider
-
 class AzureBlobStorageSerializer(StorageAddonSerializer):
     addon_short_name = 'azureblobstorage'
 
