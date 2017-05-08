@@ -165,6 +165,7 @@ class UserDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, UserMixin):
         family_name        string             family name of user; for bibliographic citations
         suffix             string             suffix of user's name for bibliographic citations
         date_registered    iso8601 timestamp  timestamp when the user's account was created
+        social             dict               Dictionary of a list of social information of user
 
     ##Relationships
 
@@ -196,6 +197,9 @@ class UserDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, UserMixin):
                              "middle_names": {middle_names}, # optional
                              "family_name":  {family_name},  # optional
                              "suffix":       {suffix}        # optional
+                             "social":      {
+                                    key: [social_id]}
+                             }                               # optional
                            }
                          }
                        }
@@ -204,7 +208,8 @@ class UserDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, UserMixin):
     To update your user profile, issue a PUT request to either the canonical URL of your user resource (as given in
     `/links/self`) or to `/users/me/`.  Only the `full_name` attribute is required.  Unlike at signup, the given, middle,
     and family names will not be inferred from the `full_name`.  Currently, only `full_name`, `given_name`,
-    `middle_names`, `family_name`, and `suffix` are updateable.
+    `middle_names`, `family_name`, and `suffix` are updateable. Currently in social dicts, only the "profileWebsites"
+    accept a list with more than one items, the others key value only accept list of one item.
 
     A PATCH request issued to this endpoint will behave the same as a PUT request, but does not require `full_name` to
     be set.

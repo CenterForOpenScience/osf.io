@@ -4,6 +4,8 @@ import re
 import furl
 from django.core.urlresolvers import resolve, reverse, NoReverseMatch
 from django.core.exceptions import ImproperlyConfigured
+from django.utils import six
+
 from rest_framework import exceptions
 from rest_framework import serializers as ser
 from rest_framework.fields import SkipField
@@ -22,6 +24,7 @@ from website import settings
 from website import util as website_utils
 from website.models import Node
 from website.util.sanitize import strip_html
+from website.project.model import has_anonymous_link
 
 
 def format_relationship_links(related_link=None, self_link=None, rel_meta=None, self_meta=None):
@@ -343,8 +346,7 @@ class AuthorizedCharField(ser.CharField):
         content = AuthorizedCharField(source='get_content')
     """
 
-    def __init__(self, source=None, **kwargs):
-        assert source is not None, 'The `source` argument is required.'
+    def __init__(self, source, **kwargs):
         self.source = source
         super(AuthorizedCharField, self).__init__(source=self.source, **kwargs)
 
@@ -354,6 +356,33 @@ class AuthorizedCharField(ser.CharField):
         field_source_method = getattr(obj, self.source)
         return field_source_method(auth=auth)
 
+class AnonymizedRegexField(AuthorizedCharField):
+    """
+    Performs a regex replace on the content of the authorized object's
+    source field when an anonymous view is requested.
+
+    Example:
+        content = AnonymizedRegexField(source='get_content', regex='\[@[^\]]*\]\([^\) ]*\)', replace='@A User')
+    """
+
+    def __init__(self, source, regex, replace, **kwargs):
+        self.source = source
+        self.regex = regex
+        self.replace = replace
+        super(AnonymizedRegexField, self).__init__(source=self.source, **kwargs)
+
+    def get_attribute(self, obj):
+        value = super(AnonymizedRegexField, self).get_attribute(obj)
+
+        if value:
+            user = self.context['request'].user
+            auth = auth_core.Auth(user)
+            if 'view_only' in self.context['request'].query_params:
+                auth.private_key = self.context['request'].query_params['view_only']
+                if has_anonymous_link(obj.node, auth):
+                    value = re.sub(self.regex, self.replace, value)
+
+        return value
 
 class RelationshipField(ser.HyperlinkedIdentityField):
     """
@@ -817,6 +846,27 @@ class LinksField(ser.Field):
         if hasattr(obj, 'get_absolute_url') and 'self' not in self.links:
             ret['self'] = self.extend_absolute_url(obj)
         return ret
+
+
+class ListDictField(ser.DictField):
+
+    def __init__(self, **kwargs):
+        super(ListDictField, self).__init__(**kwargs)
+
+    def to_representation(self, value):
+        """
+        Ensure the value of each key in the Dict to be a list
+        """
+        res = {}
+        for key, val in value.items():
+            if isinstance(self.child.to_representation(val), list):
+                res[six.text_type(key)] = self.child.to_representation(val)
+            else:
+                if self.child.to_representation(val):
+                    res[six.text_type(key)] = [self.child.to_representation(val)]
+                else:
+                    res[six.text_type(key)] = []
+        return res
 
 
 _tpl_pattern = re.compile(r'\s*<\s*(\S*)\s*>\s*')
