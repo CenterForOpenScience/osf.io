@@ -419,7 +419,7 @@
             },
             "View / download file versions": {
                 "status": "partial",
-                "text": "The Azure Blob Storage add-on does not support file versions."
+                "text": "The Azure Blob Storage add-on supports only Block Blobs, and does not support file versions."
             },
             "Add / update files": {
                 "status": "full",
