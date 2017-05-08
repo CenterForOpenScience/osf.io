@@ -23,10 +23,10 @@ class PreprintsListFilteringMixin(object):
         assert self.project, 'Subclasses of PreprintsListFilteringMixin must define self.project'
         assert self.project_two, 'Subclasses of PreprintsListFilteringMixin must define self.projec_two'
         assert self.project_three, 'Subclasses of PreprintsListFilteringMixin must define self.project_three'
-        assert self.url, 'Subclasses of PreprintsListFilteringMixin must define self.url' 
+        assert self.url, 'Subclasses of PreprintsListFilteringMixin must define self.url'
 
-        self.subject = SubjectFactory()
-        self.subject_two = SubjectFactory()
+        self.subject = SubjectFactory(text='First Subject')
+        self.subject_two = SubjectFactory(text='Second Subject')
 
         self.preprint = PreprintFactory(creator=self.user, project=self.project, provider=self.provider, subjects=[[self.subject._id]])
         self.preprint_two = PreprintFactory(creator=self.user, project=self.project_two, filename='tough.txt', provider=self.provider_two, subjects=[[self.subject_two._id]])

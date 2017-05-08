@@ -29,7 +29,7 @@ from django.db.models import Q
 from rest_framework import permissions as drf_permissions
 from rest_framework import generics
 from rest_framework.exceptions import NotAuthenticated, NotFound
-from website.models import ExternalAccount, Node, User
+from website.models import ExternalAccount, Node, User, Subject
 from osf.models import PreprintService
 
 
@@ -537,6 +537,13 @@ class UserPreprints(JSONAPIBaseView, generics.ListAPIView, UserMixin, DjangoFilt
 
         if field_name == 'id':
             operation['source_field_name'] = 'guids___id'
+
+        if field_name == 'subjects':
+            try:
+                Subject.objects.get(_id=operation['value'])
+                operation['source_field_name'] = 'subjects___id'
+            except Subject.DoesNotExist:
+                operation['source_field_name'] = 'subjects__text'
 
     # overrides DjangoFilterMixin
     def get_default_django_query(self):

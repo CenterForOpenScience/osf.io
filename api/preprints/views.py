@@ -170,7 +170,6 @@ class PreprintList(JSONAPIBaseView, generics.ListCreateAPIView, DjangoFilterMixi
                 operation['source_field_name'] = 'subjects___id'
             except Subject.DoesNotExist:
                 operation['source_field_name'] = 'subjects__text'
-                operation['op'] = 'contains'
 
     def get_serializer_class(self):
         if self.request.method == 'POST':

@@ -103,6 +103,7 @@ from osf.models import (Node, PrivateLink, NodeLog, Institution, Comment, DraftR
 from osf.models import OSFUser as User
 from osf.models import NodeRelation, AlternativeCitation, Guid
 from osf.models import BaseFileNode
+from osf.models import Subject
 from osf.models.files import File, Folder
 from addons.wiki.models import NodeWikiPage
 from website.exceptions import NodeStateError
@@ -3566,6 +3567,13 @@ class NodePreprintsList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, Django
 
         if field_name == 'id':
             operation['source_field_name'] = 'guids___id'
+
+        if field_name == 'subjects':
+            try:
+                Subject.objects.get(_id=operation['value'])
+                operation['source_field_name'] = 'subjects___id'
+            except Subject.DoesNotExist:
+                operation['source_field_name'] = 'subjects__text'
 
     # overrides DjangoFilterMixin
     def get_default_django_query(self):

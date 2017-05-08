@@ -206,6 +206,13 @@ class PreprintProviderPreprintList(JSONAPIBaseView, generics.ListAPIView, Django
         if field_name == 'id':
             operation['source_field_name'] = 'guids___id'
 
+        if field_name == 'subjects':
+            try:
+                Subject.objects.get(_id=operation['value'])
+                operation['source_field_name'] = 'subjects___id'
+            except Subject.DoesNotExist:
+                operation['source_field_name'] = 'subjects__text'
+
     # overrides DjangoFilterMixin
     def get_default_django_query(self):
         auth = get_user_auth(self.request)
