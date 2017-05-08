@@ -65,7 +65,7 @@ def format_preprint(preprint):
 
     preprint_graph.attrs['tags'] = [
         GraphNode('throughtags', creative_work=preprint_graph, tag=GraphNode('tag', name=tag))
-        for tag in preprint.node.tags.values_list('name', flat=True)
+        for tag in preprint.node.tags.values_list('name', flat=True) if tag
     ]
 
     preprint_graph.attrs['subjects'] = [
