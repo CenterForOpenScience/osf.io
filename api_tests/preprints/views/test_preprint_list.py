@@ -52,7 +52,6 @@ def build_preprint_create_payload(node_id=None, provider_id=None, file_id=None, 
         }
     return payload
 
-
 class TestPreprintList(ApiTestCase):
 
     def setUp(self):
@@ -83,7 +82,6 @@ class TestPreprintsListFiltering(PreprintsListFilteringMixin, ApiTestCase):
         self.mock_change_identifier = mock.patch('website.identifiers.client.EzidClient.change_status_identifier')
         self.mock_change_identifier.start()
         self.user = AuthUserFactory()
-
         self.provider = PreprintProviderFactory(name='Sockarxiv')
         self.provider_two = PreprintProviderFactory(name='Piratearxiv')
         self.provider_three = self.provider

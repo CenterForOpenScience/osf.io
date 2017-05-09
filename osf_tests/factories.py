@@ -585,8 +585,8 @@ class PreprintFactory(DjangoModelFactory):
         if finish:
             auth = Auth(user)
 
-            instance.set_primary_file(preprint_file, auth=auth)
-            instance.set_subjects(subjects, auth=auth, save=True)
+            instance.set_primary_file(preprint_file, auth=auth, save=True)
+            instance.set_subjects(subjects, auth=auth)
             if license_details:
                 instance.set_preprint_license(license_details, auth=auth)
 

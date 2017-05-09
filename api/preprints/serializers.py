@@ -5,8 +5,8 @@ from rest_framework import serializers as ser
 
 from api.base.exceptions import Conflict
 from api.base.serializers import (
-    JSONAPISerializer, IDField, JSONAPIListField,
-    LinksField, RelationshipField, DateByVersion
+    JSONAPISerializer, IDField,
+    LinksField, RelationshipField, DateByVersion,
 )
 from api.base.utils import absolute_reverse, get_user_auth
 from api.taxonomies.serializers import TaxonomyField
@@ -66,7 +66,7 @@ class PreprintSerializer(JSONAPISerializer):
     ])
 
     id = IDField(source='_id', read_only=True)
-    subjects = JSONAPIListField(child=JSONAPIListField(child=TaxonomyField()), allow_null=True, required=False)
+    subjects = ser.SerializerMethodField()
     date_created = DateByVersion(read_only=True)
     date_modified = DateByVersion(read_only=True)
     date_published = DateByVersion(read_only=True)
