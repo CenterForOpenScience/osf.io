@@ -340,7 +340,7 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
 
     def move_under(self, destination_parent, name=None):
         self.name = name or self.name
-        self.parent = destination_parent.stored_object
+        self.parent = destination_parent
         self._update_node(save=True)  # Trust _update_node to save us
 
         return self
