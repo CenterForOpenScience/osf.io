@@ -140,8 +140,8 @@ class TestMetadataGeneration(OsfTestCase):
 
     def test_format_subjects_for_preprint(self):
         subject = SubjectFactory()
-        subject_1 = SubjectFactory(parents=[subject])
-        subject_2 = SubjectFactory(parents=[subject])
+        subject_1 = SubjectFactory(parent=subject)
+        subject_2 = SubjectFactory(parent=subject)
 
         subjects = [[subject._id, subject_1._id], [subject._id, subject_2._id]]
         preprint = PreprintFactory(subjects=subjects, project=self.node, is_published=True)
