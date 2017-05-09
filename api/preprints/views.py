@@ -402,6 +402,7 @@ class PreprintIdentifierList(IdentifierList, PreprintMixin):
     view_category = 'identifiers'
     view_name = 'identifier-list'
 
+    # overrides IdentifierList
     def get_object(self, check_object_permissions=True):
         return self.get_preprint(check_object_permissions=check_object_permissions)
 
