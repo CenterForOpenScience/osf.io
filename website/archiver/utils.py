@@ -7,6 +7,7 @@ from website.archiver import (
     ARCHIVER_NETWORK_ERROR,
     ARCHIVER_SIZE_EXCEEDED,
     ARCHIVER_FILE_NOT_FOUND,
+    ARCHIVER_FORCED_FAILURE,
 )
 
 from website import (
@@ -95,6 +96,8 @@ def handle_archive_fail(reason, src, dst, user, result):
         send_archiver_size_exceeded_mails(src, user, result)
     elif reason == ARCHIVER_FILE_NOT_FOUND:
         send_archiver_file_not_found_mails(src, user, result)
+    elif reason == ARCHIVER_FORCED_FAILURE:  # Forced failure using scripts.force_fail_registration
+        pass
     else:  # reason == ARCHIVER_UNCAUGHT_ERROR
         send_archiver_uncaught_error_mails(src, user, result)
     dst.root.sanction.forcibly_reject()

@@ -402,7 +402,7 @@ def main(env):
             'domain': '',  # No domain information yet
             'domain_redirect_enabled': False,
             'external_url': '',
-            'example': '',  # An example guid for this provider (Will have to be updated after the provider is up)
+            'example': 'vk7yp',  # An example guid for this provider (Will have to be updated after the provider is up)
             # Advisory board should be valid html string in triple quotes
             'advisory_board': '''
                 <div class="col-xs-12">
@@ -435,7 +435,7 @@ def main(env):
             'social_twitter': 'lawarxiv',
             'social_facebook': '',
             'header_text': '',
-            'licenses_acceptable': ['CC0 1.0 Universal', 'CC-By Attribution 4.0 International'],
+            'licenses_acceptable': ['CC0 1.0 Universal', 'CC-By Attribution 4.0 International', 'No license'],
             'subjects_acceptable': [
                 (['Arts and Humanities'], True),
                 (['Business'], True),

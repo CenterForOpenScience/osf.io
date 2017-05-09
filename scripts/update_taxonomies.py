@@ -40,7 +40,6 @@ def update_taxonomies(filename):
                     parent = Subject.find_one(Q('text', 'eq', subjects[-2]))
                 except NoResultsFound:
                     pass
-            parents = [parent] if parent else []
             try:
                 subject = Subject.find_one(Q('text', 'eq', text))
                 logger.info('Found existing Subject "{}":{}{}'.format(
@@ -57,28 +56,25 @@ def update_taxonomies(filename):
                     subject._id,
                     u' with parent {}:{}'.format(parent.text, parent._id) if parent else ''
                 ))
-            if parent and not subject.parents.filter(id=parent.id).exists():
+            if parent and not subject.parent:
                 logger.info(u'Adding parent "{}":{} to Subject "{}":{}'.format(
                     parent.text, parent._id,
                     subject.text, subject._id
                 ))
-                subject.parents.add(parent)
+                subject.parent = parent
             subject.save()
 
 def main():
     init_app(set_backends=True, routes=False)
-    Subject = apps.get_model('osf.Subject')
     dry_run = '--dry' in sys.argv
     if not dry_run:
         script_utils.add_file_logger(logger, __file__)
     with transaction.atomic():
         update_taxonomies('bepress_taxonomy.json')
-        # Now that all subjects have been added to the db, compute and set
-        # the 'children' field for every subject
-        logger.info('Setting "children" field for each Subject')
-        for subject in Subject.find():
-            subject.children = Subject.find(Q('parents', 'eq', subject))
-            subject.save()
+        # Now that all subjects have been added to the db,
+        # run through again to ensure parent is set correctly
+        logger.info('Ensuring "parent" field is set for each Subject')
+        update_taxonomies('bepress_taxonomy.json')
         if dry_run:
             raise RuntimeError('Dry run, transaction rolled back')
 

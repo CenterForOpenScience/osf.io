@@ -1,9 +1,11 @@
 from nose import tools as nt
 from django.test import SimpleTestCase
+from django.test.utils import override_settings
 
 from admin.spam.templatetags import spam_extras
 
 
+@override_settings(ROOT_URLCONF='admin.base.urls')
 class TestReverseTags(SimpleTestCase):
     def test_reverse_spam_detail(self):
         res = spam_extras.reverse_spam_detail('123ab', page='2', status='4')
