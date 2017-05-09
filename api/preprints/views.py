@@ -6,12 +6,12 @@ from rest_framework import generics
 from rest_framework.exceptions import NotFound, PermissionDenied, NotAuthenticated
 from rest_framework import permissions as drf_permissions
 
-from website.models import PreprintService, Subject
+from website.models import PreprintService
 from framework.auth.oauth_scopes import CoreScopes
 
 from api.base.exceptions import Conflict
 from api.base.views import JSONAPIBaseView
-from api.base.filters import DjangoFilterMixin
+from api.base.filters import PreprintFilterMixin
 from api.base.parsers import (
     JSONAPIMultipleRelationshipsParser,
     JSONAPIMultipleRelationshipsParserForRegularJSON,
@@ -51,7 +51,7 @@ class PreprintMixin(NodeMixin):
         return preprint
 
 
-class PreprintList(JSONAPIBaseView, generics.ListCreateAPIView, DjangoFilterMixin):
+class PreprintList(JSONAPIBaseView, generics.ListCreateAPIView, PreprintFilterMixin):
     """Preprints that represent a special kind of preprint node. *Writeable*.
 
     Paginated list of preprints ordered by their `date_created`.  Each resource contains a representation of the
@@ -157,19 +157,6 @@ class PreprintList(JSONAPIBaseView, generics.ListCreateAPIView, DjangoFilterMixi
     ordering = ('-date_created')
     view_category = 'preprints'
     view_name = 'preprint-list'
-
-    # overrides FilterMixin
-    def postprocess_query_param(self, key, field_name, operation):
-        if field_name == 'provider':
-            operation['source_field_name'] = 'provider___id'
-        if field_name == 'id':
-            operation['source_field_name'] = 'guids___id'
-        if field_name == 'subjects':
-            try:
-                Subject.objects.get(_id=operation['value'])
-                operation['source_field_name'] = 'subjects___id'
-            except Subject.DoesNotExist:
-                operation['source_field_name'] = 'subjects__text'
 
     def get_serializer_class(self):
         if self.request.method == 'POST':
