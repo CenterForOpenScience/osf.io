@@ -7,13 +7,13 @@ var setTooltip = function (elm, message) {
     $(elm).tooltip('hide')
     .attr('title', message)
     .tooltip('show');
-}
+};
 
 var hideTooltip = function (elm) {
     setTimeout(function() {
         $(elm).tooltip('hide');
     }, 2000);
-}
+};
 
 var makeClient = function(elm) {
     var $elm = $(elm);
