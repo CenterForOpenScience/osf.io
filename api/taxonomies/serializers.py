@@ -25,6 +25,13 @@ class TaxonomySerializer(JSONAPISerializer):
     text = ser.CharField(max_length=200)
     parents = JSONAPIListField(child=TaxonomyField())
     child_count = ser.IntegerField()
+    children = ser.SerializerMethodField('get_child_num')
+
+    def get_child_num(self, obj):
+        if hasattr(obj, 'child_list_provider'):
+            return getattr(obj, 'child_list_provider')
+        else:
+            return []
 
     links = LinksField({
         'parents': 'get_parent_urls',
