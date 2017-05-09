@@ -115,9 +115,6 @@ class PreprintService(GuidStoredObject):
         if not self.node.has_permission(auth.user, ADMIN):
             raise PermissionsError('Only admins can change a preprint\'s primary file.')
 
-        if not isinstance(preprint_file, StoredFileNode):
-            preprint_file = preprint_file.stored_object
-
         if preprint_file.node != self.node or preprint_file.provider != 'osfstorage':
             raise ValueError('This file is not a valid primary file for this preprint.')
 
