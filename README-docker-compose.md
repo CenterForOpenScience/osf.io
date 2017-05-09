@@ -211,6 +211,9 @@ Ubuntu: Skip install of docker-sync, fswatch, and unison. instead...
   - After resetting your database or with a new install you will need to populate the table of preprint providers. **You must have run migrations first.**
     - `docker-compose run --rm web python -m scripts.update_taxonomies`
     - `docker-compose run --rm web python -m scripts.populate_preprint_providers`
+- Populate citation styles
+  - Needed for api v2 citation style rendering.
+    - `docker-compose run --rm web python -m scripts.parse_citation_styles`
 - OPTIONAL: Register OAuth Scopes
   - Needed for things such as the ember-osf dummy app
     - `docker-compose run --rm web python -m scripts.register_oauth_scopes`
