@@ -10,9 +10,7 @@ from django.contrib.contenttypes.fields import GenericRelation
 from framework.celery_tasks.handlers import enqueue_task
 from framework.exceptions import PermissionsError
 from osf.utils.fields import NonNaiveDateTimeField
-from website.files.models import StoredFileNode
 from website.preprints.tasks import on_preprint_updated, get_and_set_preprint_identifiers
-from website.preprints.tasks import on_preprint_updated
 from website.project.model import NodeLog
 from website.project.licenses import set_license
 from website.project.taxonomies import validate_subject_hierarchy

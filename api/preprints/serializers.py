@@ -5,8 +5,8 @@ from rest_framework import serializers as ser
 
 from api.base.exceptions import Conflict
 from api.base.serializers import (
-    JSONAPISerializer, IDField,
-    LinksField, RelationshipField, DateByVersion,
+    JSONAPISerializer, IDField, JSONAPIListField,
+    LinksField, RelationshipField, DateByVersion
 )
 from api.base.utils import absolute_reverse, get_user_auth
 from api.taxonomies.serializers import TaxonomyField
