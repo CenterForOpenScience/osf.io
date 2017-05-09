@@ -143,7 +143,7 @@
                 %elif campaign == "focusarchive-preprints":
                     <table style="border-collapse: separate; border-spacing: 30px 0; margin-top: 20px;  margin-bottom: 10px;">
                         <tr>
-                            <td><img src="/static/img/preprint_providers/fusf_logo.png"></td>
+                            <td><img src="/static/img/preprint_providers/fusf-logo-small.png"></td>
                             <td><h3>Create a free OSF account to contribute to FocUS Archive</h3></td>
                         </tr>
                     </table>

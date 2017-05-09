@@ -1243,9 +1243,9 @@ def main(env):
         'focusarchive': {
             '_id': 'focusarchive',
             'name': 'FocUS Archive',
-            'logo_name': 'fusf_logo.jpg',
+            'logo_name': 'fusf-logo.png',
             'description': 'A free preprint service for the focused ultrasound research community.',
-            'banner_name': 'fusf_logo_on_transparent.png',
+            'banner_name': 'fusf-logo.png',
             'external_url': 'https://www.fusfoundation.org/',
             'example': '',
             'advisory_board': '''
