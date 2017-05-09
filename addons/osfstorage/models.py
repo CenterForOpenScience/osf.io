@@ -128,8 +128,7 @@ class OsfStorageFileNode(BaseFileNode):
     def is_checked_out(self):
         return self.checkout is not None
 
-    @property
-    def _delete_allowed(self):
+    def _check_delete_allowed(self):
         if self.is_preprint_primary:
             raise exceptions.FileNodeIsPrimaryFile()
         if self.is_checked_out:
@@ -143,11 +142,11 @@ class OsfStorageFileNode(BaseFileNode):
     def delete(self, user=None, parent=None, **kwargs):
         self._path = self.path
         self._materialized_path = self.materialized_path
-        return super(OsfStorageFileNode, self).delete(user=user, parent=parent) if self._delete_allowed else None
+        return super(OsfStorageFileNode, self).delete(user=user, parent=parent) if self._check_delete_allowed() else None
 
     def move_under(self, destination_parent, name=None):
         if self.is_preprint_primary:
-            if self.node._id != destination_parent.node._id or self.provider != destination_parent.provider:
+            if self.node != destination_parent.node or self.provider != destination_parent.provider:
                 raise exceptions.FileNodeIsPrimaryFile()
         if self.is_checked_out:
             raise exceptions.FileNodeCheckedOutError()
@@ -355,7 +354,7 @@ class OsfStorageFolder(OsfStorageFileNode, Folder):
     @property
     def is_preprint_primary(self):
         if self.node.is_preprint:
-            for child in self.children:
+            for child in self.children.all():
                 if child.is_preprint_primary:
                     return True
         return False
