@@ -10,7 +10,6 @@ from framework.celery_tasks.handlers import enqueue_task
 from framework.exceptions import PermissionsError
 from osf.models.subject import Subject
 from osf.utils.fields import NonNaiveDateTimeField
-from website.files.models import StoredFileNode
 from website.preprints.tasks import on_preprint_updated
 from website.project.model import NodeLog
 from website.project.licenses import set_license
@@ -129,9 +128,6 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, BaseModel):
     def set_primary_file(self, preprint_file, auth, save=False):
         if not self.node.has_permission(auth.user, ADMIN):
             raise PermissionsError('Only admins can change a preprint\'s primary file.')
-
-        if not isinstance(preprint_file, StoredFileNode):
-            preprint_file = preprint_file.stored_object
 
         if preprint_file.node != self.node or preprint_file.provider != 'osfstorage':
             raise ValueError('This file is not a valid primary file for this preprint.')

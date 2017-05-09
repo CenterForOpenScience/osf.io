@@ -9,7 +9,6 @@ from framework.exceptions import PermissionsError
 from framework.guid.model import GuidStoredObject
 from framework.mongo import ObjectId, StoredObject
 from framework.mongo.utils import unique_on
-from website.files.models import StoredFileNode
 from website.preprints.tasks import on_preprint_updated
 from website.project.model import NodeLog
 from website.project.licenses import set_license
