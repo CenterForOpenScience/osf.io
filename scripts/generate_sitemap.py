@@ -182,7 +182,8 @@ class Sitemap(object):
             try:
                 preprint_date = obj.date_modified.strftime('%Y-%m-%d')
                 config = settings.SITEMAP_PREPRINT_CONFIG
-                config['loc'] = urlparse.urljoin(settings.DOMAIN, obj.url)
+                preprint_loc = '/preprints' + obj.url
+                config['loc'] = urlparse.urljoin(settings.DOMAIN, preprint_loc)
                 config['lastmod'] = preprint_date
                 self.add_url(config)
 
