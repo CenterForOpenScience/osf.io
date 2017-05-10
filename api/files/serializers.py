@@ -48,11 +48,11 @@ class CheckoutField(ser.HyperlinkedRelatedField):
 
         super(CheckoutField, self).__init__('users:user-detail', **kwargs)
 
-    def resolve(self, resource, request):
+    def resolve(self, resource, field_name, request):
         """
         Resolves the view when embedding.
         """
-        embed_value = resource.stored_object.checkout._id
+        embed_value = resource.checkout._id
         return resolve(
             reverse(
                 self.view_name,
