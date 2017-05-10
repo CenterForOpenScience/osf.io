@@ -511,7 +511,7 @@ var FileViewPage = {
             // Special case to not show delete for public figshare files
             (
                 ctrl.canEdit() &&
-                !(ctrl.node.isPreprint && ctrl.node.preprintFileId === ctrl.file.id) &&
+                (ctrl.node.preprintFileId !== ctrl.file.id) &&
                     !(ctrl.file.provider === 'figshare' && ctrl.file.extra.status === 'public') &&
                 (ctrl.file.provider !== 'osfstorage' || !ctrl.file.checkoutUser) &&
                 ctrl.requestDone &&
