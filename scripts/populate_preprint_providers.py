@@ -402,7 +402,7 @@ def main(env):
             'domain': '',  # No domain information yet
             'domain_redirect_enabled': False,
             'external_url': '',
-            'example': '',  # An example guid for this provider (Will have to be updated after the provider is up)
+            'example': 'vk7yp',  # An example guid for this provider (Will have to be updated after the provider is up)
             # Advisory board should be valid html string in triple quotes
             'advisory_board': '''
                 <div class="col-xs-12">
