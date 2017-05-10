@@ -5,21 +5,11 @@ from modularodm import Q
 
 from osf.models.base import BaseModel, ObjectIDMixin
 from osf.models.licenses import NodeLicense
-from osf.models.subject import Subject
-from osf.models.user import Email, SocialAccount
+from osf.models.user import Email, SocialAccount, ExternalLink
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import EncryptedTextField
 
 from website.util import api_v2_url
-
-
-class PreprintProviderLink(ObjectIDMixin, BaseModel):
-    url = models.URLField(max_length=200)
-    description = models.CharField(max_length=200)
-    linked_text = models.TextField(null=True, blank=True)
-
-    class Meta:
-        unique_together = ('url', 'description')
 
 
 class PreprintProvider(ObjectIDMixin, BaseModel):
@@ -45,7 +35,7 @@ class PreprintProvider(ObjectIDMixin, BaseModel):
     social_facebook = models.CharField(null=True, blank=True, max_length=200)  # max length on prod: 8
     social_instagram = models.CharField(null=True, blank=True, max_length=200)  # max length on prod: 8
 
-    links = models.ManyToManyField(PreprintProviderLink, blank=True, related_name='preprint_providers')
+    links = models.ManyToManyField(ExternalLink, blank=True, related_name='preprint_providers')
     # TODO: Remove external_url in favor of links
     external_url = models.URLField(null=True, blank=True, max_length=200)  # max length on prod: 25
 

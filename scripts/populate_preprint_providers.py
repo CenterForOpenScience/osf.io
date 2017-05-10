@@ -14,8 +14,7 @@ import django
 django.setup()
 
 from osf.exceptions import ValidationError
-from osf.models.preprint_provider import PreprintProviderLink
-from osf.models.user import Email, SocialAccount, SocialNetwork
+from osf.models.user import Email, ExternalLink, SocialAccount, SocialNetwork
 from website.models import Subject, PreprintProvider, NodeLicense
 
 logger = logging.getLogger(__name__)
@@ -60,7 +59,13 @@ def set_or_update_m2m_fields(provider, emails, licenses, links, social_accounts)
         provider.licenses_acceptable.add(*licenses)
 
     for link in links:
-        obj, created = PreprintProviderLink.objects.get_or_create(**link)
+        obj, created = provider.links.update_or_create(
+            url=link['url'],
+            description=link['description'],
+            defaults={
+                'linked_text': link.get('linked_text')
+            }
+        )
         provider.links.add(obj)
 
     for account in social_accounts:

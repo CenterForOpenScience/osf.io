@@ -45,7 +45,7 @@ def remove_social_networks(*args):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0022_auto_20170503_0948'),
+        ('osf', '0029_auto_20170510_1028'),
     ]
 
     operations = [

@@ -77,6 +77,12 @@ class Email(ObjectIDMixin, BaseModel):
         unique_together = ('email', 'email_type')
 
 
+class ExternalLink(ObjectIDMixin, BaseModel):
+    url = models.URLField(max_length=200)
+    description = models.CharField(max_length=200)
+    linked_text = models.TextField(null=True, blank=True)
+
+
 class SocialNetwork(ObjectIDMixin, BaseModel):
     name = models.CharField(max_length=200)
     base_url = models.URLField(null=True, blank=True)

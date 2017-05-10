@@ -2,16 +2,7 @@ from rest_framework import serializers as ser
 
 from api.base.utils import absolute_reverse
 from api.base.serializers import JSONAPISerializer, LinksField, RelationshipField, ShowIfVersion
-from api.users.serializers import EmailSerializer, SocialAccountSerializer
-
-from osf.models.preprint_provider import PreprintProviderLink
-
-
-class PreprintProviderLinkSerializer(ser.ModelSerializer):
-
-    class Meta:
-        model = PreprintProviderLink
-        fields = ('url', 'description', 'linked_text',)
+from api.users.serializers import EmailSerializer, ExternalLinkSerializer, SocialAccountSerializer
 
 
 class PreprintProviderSerializer(JSONAPISerializer):
@@ -35,7 +26,7 @@ class PreprintProviderSerializer(JSONAPISerializer):
     banner_path = ser.CharField(read_only=True)
     emails = EmailSerializer(read_only=True, many=True)
     social_accounts = SocialAccountSerializer(read_only=True, many=True)
-    preprint_provider_links = PreprintProviderLinkSerializer(read_only=True, many=True, source='links')
+    preprint_provider_links = ExternalLinkSerializer(read_only=True, many=True, source='links')
 
     email_contact = ShowIfVersion(
         ser.CharField(required=False, allow_null=True),

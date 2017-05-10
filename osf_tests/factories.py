@@ -505,6 +505,14 @@ class EmailFactory(DjangoModelFactory):
         model = models.Email
 
 
+class ExternalLinkFactory(DjangoModelFactory):
+    url = factory.Faker('url')
+    description = factory.Faker('word')
+
+    class Meta:
+        model = models.ExternalLink
+
+
 class SocialNetworkFactory(DjangoModelFactory):
     name = factory.Faker('company')
     base_url = factory.Faker('url')
@@ -519,14 +527,6 @@ class SocialAccountFactory(DjangoModelFactory):
 
     class Meta:
         model = models.SocialAccount
-
-
-class PreprintProviderLinkFactory(DjangoModelFactory):
-    url = factory.Faker('url')
-    description = factory.Faker('word')
-
-    class Meta:
-        model = models.PreprintProviderLink
 
 
 class PreprintProviderFactory(DjangoModelFactory):

@@ -8,7 +8,7 @@ from api.preprint_providers.serializers import PreprintProviderSerializer
 from osf_tests.factories import (
     EmailFactory,
     PreprintProviderFactory,
-    PreprintProviderLinkFactory,
+    ExternalLinkFactory,
     SocialAccountFactory
 )
 from tests.base import DbTestCase
@@ -23,7 +23,7 @@ class TestPreprintProviderSerializer(DbTestCase):
 
         self.email = EmailFactory()
         self.social_account = SocialAccountFactory()
-        self.provider_link = PreprintProviderLinkFactory()
+        self.provider_link = ExternalLinkFactory()
 
         self.preprint_provider.emails.add(self.email)
         self.preprint_provider.social_accounts.add(self.social_account)
