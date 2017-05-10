@@ -60,8 +60,8 @@ def get_subject_rules(subjects_selected):
     new_rules = []
     subjects_done = []
     while len(subjects_done) < len(subjects_selected):
-        parents_left = [sub for sub in subjects_selected if sub.parents.count() == 0 and sub not in subjects_done]
-        subjects_left = [sub for sub in subjects_selected if sub not in subjects_done and sub.parents.exists()]
+        parents_left = [sub for sub in subjects_selected if not sub.parent and sub not in subjects_done]
+        subjects_left = [sub for sub in subjects_selected if sub not in subjects_done and sub.parent]
         for parent in parents_left:
             parent_has_no_descendants_in_rules = True
             used_children = []
@@ -113,4 +113,4 @@ def get_nodelicense_choices():
 
 
 def get_toplevel_subjects():
-    return Subject.objects.filter(parents__isnull=True).values_list('id', 'text')
+    return Subject.objects.filter(parent__isnull=True).values_list('id', 'text')

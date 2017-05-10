@@ -219,7 +219,7 @@ class SubjectDynamicUpdateView(PermissionRequiredMixin, View):
     def get(self, request, *args, **kwargs):
         parent_id = request.GET['parent_id']
         level = request.GET.get('level', None)
-        subjects_from_parent = Subject.objects.filter(parents__id=parent_id)
+        subjects_from_parent = Subject.objects.filter(parent__id=parent_id)
         subject_ids = [sub.id for sub in subjects_from_parent]
 
         new_level = 'secondlevel_subjects'
