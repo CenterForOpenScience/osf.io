@@ -11,7 +11,7 @@ setup_django()
 logger = logging.getLogger(__name__)
 
 
-def add_identifiers_to_preprints(dry=True):
+def main(dry=True):
     from osf.models import PreprintService
 
     preprints_without_identifiers = PreprintService.objects.filter(identifiers__isnull=True)
@@ -35,14 +35,6 @@ def add_identifiers_to_preprints(dry=True):
             logger.info('Dry run - would have created identifier for preprint {} from service {}'.format(preprint._id, preprint.provider.name))
 
     logger.info('Finished Adding identifiers to {} preprints.'.format(preprints_without_identifiers.count()))
-
-
-def main(dry=True):
-    # Start a transaction that will be rolled back if any exceptions are un
-    add_identifiers_to_preprints(dry)
-    if dry:
-        # When running in dry mode force the transaction to rollback
-        raise Exception('Dry Run complete -- not actually saved')
 
 
 if __name__ == '__main__':
