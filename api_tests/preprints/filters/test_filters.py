@@ -155,3 +155,9 @@ class PreprintsListFilteringMixin(object):
         )
         actual = set([preprint['id'] for preprint in res.json['data']])
         assert_equal(expected, actual)
+
+    def test_unknows_subject_filter(self):
+        res = self.app.get('{}notActuallyASubjectIdOrTestMostLikely'.format(self.has_subject),
+            auth=self.user.auth
+        )
+        assert_equal(len(res.json['data']), 0)
