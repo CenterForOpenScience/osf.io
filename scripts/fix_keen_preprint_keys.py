@@ -19,8 +19,8 @@ def valid_keen_key(keenio_read_key, node_id):
         ret = scoped_keys.decrypt(settings.KEEN['public']['master_key'], keenio_read_key)
         return ret['filters'][0]['property_value'] == node_id
     except Exception as error:
-        logger.info('Error on {}:'.format(node_id))
-        logger.exception(error)
+        logger.exception('Error on {}:'.format(node_id))
+        # Returns True to bypass updating of the key -- failed nodes should be investigated separately
         return True
 
 def update():
