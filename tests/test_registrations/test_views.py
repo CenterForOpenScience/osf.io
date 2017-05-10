@@ -455,7 +455,7 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
         res = self.app.get(url).json
         assert_equal(
             len(res['meta_schemas']),
-            MetaSchema.objects.filter(active=True, schema_version=LATEST_SCHEMA_VERSION)
+            MetaSchema.objects.filter(active=True, schema_version=LATEST_SCHEMA_VERSION).count()
         )
 
     def test_get_metaschemas_all(self):

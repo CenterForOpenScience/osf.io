@@ -30,9 +30,23 @@ class TestMetaSchemaDetail(ApiTestCase):
         res = self.app.get(self.url)
         assert_equal(res.status_code, 200)
 
-    def test_pervious_version_metaschema_not_returned(self):
-        self.schema = MetaSchema.find_one(Q('name', 'eq', 'Open-Ended Registration') & Q('schema_version', 'eq', 1))
-        self.url = '/{}metaschemas/{}/'.format(API_BASE, self.schema._id)
+    def test_inactive_metaschema_returned(self):
+        inactive_schema = MetaSchema.objects.get(name='Election Research Preacceptance Competition', active=False)
+        url = '/{}metaschemas/{}/'.format(API_BASE, inactive_schema._id)
+        res = self.app.get(url)
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json['data']['attributes']['name'], 'Election Research Preacceptance Competition')
+        assert_equal(res.json['data']['attributes']['active'], False)
+
+    def test_non_latest_version_metaschema_returned(self):
+        old_schema = MetaSchema.objects.get(name='OSF-Standard Pre-Data Collection Registration', schema_version=1)
+        url = '/{}metaschemas/{}/'.format(API_BASE, old_schema._id)
+        res = self.app.get(url)
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json['data']['attributes']['name'], 'OSF-Standard Pre-Data Collection Registration')
+        assert_equal(res.json['data']['attributes']['schema_version'], 1)
+
+    def test_invalid_metaschema_not_found(self):
+        self.url = '/{}metaschemas/garbage/'.format(API_BASE)
         res = self.app.get(self.url, auth=self.user.auth, expect_errors=True)
-        # check error detail here
         assert_equal(res.status_code, 404)

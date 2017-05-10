@@ -1,5 +1,4 @@
 from rest_framework import generics, permissions as drf_permissions
-from rest_framework.exceptions import NotFound
 
 from framework.auth.oauth_scopes import CoreScopes
 
@@ -51,7 +50,7 @@ class MetaSchemasList(JSONAPIBaseView, generics.ListAPIView):
 
     # overrides ListCreateAPIView
     def get_queryset(self):
-        return MetaSchema.objects.filter(schema_version=LATEST_SCHEMA_VERSION)
+        return MetaSchema.objects.filter(schema_version=LATEST_SCHEMA_VERSION, active=True)
 
 
 class MetaSchemaDetail(JSONAPIBaseView, generics.RetrieveAPIView):
@@ -86,8 +85,4 @@ class MetaSchemaDetail(JSONAPIBaseView, generics.RetrieveAPIView):
     # overrides RetrieveAPIView
     def get_object(self):
         schema_id = self.kwargs['metaschema_id']
-        schema = get_object_or_error(MetaSchema, schema_id)
-        if schema.schema_version != LATEST_SCHEMA_VERSION:
-            # Raise an error that there is a newer version?
-            raise NotFound
-        return schema
+        return get_object_or_error(MetaSchema, schema_id)
