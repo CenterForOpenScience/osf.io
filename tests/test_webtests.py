@@ -19,11 +19,14 @@ from tests.base import OsfTestCase
 from tests.base import fake
 from osf_tests.factories import (UserFactory, AuthUserFactory, ProjectFactory, NodeFactory,
                              RegistrationFactory,  UnregUserFactory, UnconfirmedUserFactory,
-                             PrivateLinkFactory)
+                             PrivateLinkFactory, PreprintFactory, PreprintProviderFactory, SubjectFactory)
 from addons.wiki.tests.factories import NodeWikiFactory
 from osf.models import AbstractNode as Node
 from website import settings, language
-from website.util import web_url_for, api_url_for
+from website.files.models.osfstorage import OsfStorageFile
+from website.util import web_url_for, api_url_for, permissions
+
+from api_tests import utils as test_utils
 
 logging.getLogger('website.project.model').setLevel(logging.ERROR)
 
@@ -222,7 +225,7 @@ class TestAUser(OsfTestCase):
         # Goes to project's wiki, where there is no content
         res = self.app.get('/{0}/wiki/home/'.format(project._primary_key), auth=self.auth)
         # Sees a message indicating no content
-        assert_in('No wiki content', res)
+        assert_in('Add important information, links, or images here to describe your project.', res)
         # Sees that edit panel is open by default when home wiki has no content
         assert_in('panelsUsed: ["view", "menu", "edit"]', res)
 
@@ -235,7 +238,7 @@ class TestAUser(OsfTestCase):
             project._primary_key,
             wiki_page,
         ), auth=self.auth)
-        assert_not_in('No wiki content', res)
+        assert_not_in('Add important information, links, or images here to describe your project.', res)
         assert_in(wiki_content, res)
         assert_in('panelsUsed: ["view", "menu"]', res)
 
@@ -256,7 +259,7 @@ class TestAUser(OsfTestCase):
         # self navigates to project
         res = self.app.get(project.url).maybe_follow()
         # Should not see wiki widget (since non-contributor and no content)
-        assert_not_in('No wiki content', res)
+        assert_not_in('Add important information, links, or images here to describe your project.', res)
 
     def test_wiki_does_not_exist(self):
         project = ProjectFactory(creator=self.user)
@@ -264,7 +267,7 @@ class TestAUser(OsfTestCase):
             project._primary_key,
             'not a real page yet',
         ), auth=self.auth, expect_errors=True)
-        assert_in('No wiki content', res)
+        assert_in('Add important information, links, or images here to describe your project.', res)
 
     def test_sees_own_profile(self):
         res = self.app.get('/profile/', auth=self.auth)
@@ -1068,6 +1071,65 @@ class TestAUserProfile(OsfTestCase):
         assert_in('This user has no public components', res)
         assert_not_in(reg.title, res)
         assert_not_in(reg.nodes[0].title, res)
+
+
+class TestPreprintBannerView(OsfTestCase):
+    def setUp(self):
+        super(TestPreprintBannerView, self).setUp()
+
+        self.admin = AuthUserFactory()
+        self.provider_one = PreprintProviderFactory()
+        self.provider_two = PreprintProviderFactory()
+        self.project_one = ProjectFactory(creator=self.admin, is_public=True)
+        self.project_two = ProjectFactory(creator=self.admin, is_public=True)
+        self.project_three = ProjectFactory(creator=self.admin, is_public=True)
+
+        self.subject_one = SubjectFactory()
+        self.subject_two = SubjectFactory()
+
+        self.file_one = test_utils.create_test_file(self.project_one, self.admin, 'mgla.pdf')
+        self.file_two = test_utils.create_test_file(self.project_two, self.admin, 'saor.pdf')
+
+        self.published_preprint = PreprintFactory(creator=self.admin, filename='mgla.pdf', provider=self.provider_one, subjects=[[self.subject_one._id]], project=self.project_one, is_published=True)
+        self.unpublished_preprint = PreprintFactory(creator=self.admin, filename='saor.pdf', provider=self.provider_two, subjects=[[self.subject_two._id]], project=self.project_two, is_published=False)
+
+    def test_public_project_published_preprint(self):
+        url = self.project_one.web_url_for('view_project')
+        res = self.app.get(url, auth=self.admin.auth)
+        assert_not_in('has a preprint, but has been made Private. Make your preprint discoverable by making this', res.body)
+
+    def test_private_project_published_preprint(self):
+        self.project_one.is_public = False
+        self.project_one.save()
+        url = self.project_one.web_url_for('view_project')
+        res = self.app.get(url, auth=self.admin.auth)
+        assert_in('has a preprint, but has been made Private. Make your preprint discoverable by making this', res.body)
+
+    def test_public_project_unpublished_preprint(self):
+        url = self.project_two.web_url_for('view_project')
+        res = self.app.get(url, auth=self.admin.auth)
+        assert_not_in('has a preprint, but has been made Private. Make your preprint discoverable by making this', res.body)
+
+    def test_private_project_unpublished_preprint(self):
+        # Do not show banner on unpublished preprints
+        self.project_two.is_public = False
+        self.project_two.save()
+        url = self.project_two.web_url_for('view_project')
+        res = self.app.get(url, auth=self.admin.auth)
+        assert_not_in('has a preprint, but has been made Private. Make your preprint discoverable by making this', res.body)
+
+    def test_public_project_no_preprint(self):
+        url = self.project_three.web_url_for('view_project')
+        res = self.app.get(url, auth=self.admin.auth)
+        assert_not_in('has a preprint, but has been made Private. Make your preprint discoverable by making this', res.body)
+
+    def test_private_project_no_preprint(self):
+        self.project_three.is_public = False
+        self.project_three.save()
+        url = self.project_three.web_url_for('view_project')
+        res = self.app.get(url, auth=self.admin.auth)
+        assert_not_in('has a preprint, but has been made Private. Make your preprint discoverable by making this', res.body)
+
 
 if __name__ == '__main__':
     unittest.main()

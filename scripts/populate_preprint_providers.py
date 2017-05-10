@@ -21,7 +21,7 @@ logging.basicConfig(level=logging.INFO)
 ENVS = ['prod', 'stage']
 SUBJECTS_CACHE = {}
 STAGING_PREPRINT_PROVIDERS = ['osf', 'psyarxiv', 'engrxiv', 'socarxiv', 'scielo', 'agrixiv', 'bitss', 'lawarxiv']
-PROD_PREPRINT_PROVIDERS = ['osf', 'psyarxiv', 'engrxiv', 'socarxiv', 'agrixiv', 'bitss']
+PROD_PREPRINT_PROVIDERS = ['osf', 'psyarxiv', 'engrxiv', 'socarxiv', 'agrixiv', 'bitss', 'lawarxiv']
 
 
 def get_subject_id(name):
@@ -402,15 +402,19 @@ def main(env):
             'domain': '',  # No domain information yet
             'domain_redirect_enabled': False,
             'external_url': '',
-            'example': '',  # An example guid for this provider (Will have to be updated after the provider is up)
+            'example': 'vk7yp',  # An example guid for this provider (Will have to be updated after the provider is up)
             # Advisory board should be valid html string in triple quotes
             'advisory_board': '''
+                <div class="col-xs-12">
+                    <h2>Legal Scholarship Advisory Board</h2>
+                    <p class="m-b-lg"></p>
+                </div>
                 <div class="col-xs-6">
                     <ul>
                         <li> <b>Timothy Armstrong</b>, University of Cincinnati College of Law</li>
                         <li> <b>Barbara Bintliff</b>, Texas Law </li>
                         <li> <b>Femi Cadmus</b>, Cornell Law School </li>
-                        <li> <b>Kyle Courtney</b>, Harvard University, Copyright Advisor </li>
+                        <li> <b>Kyle Courtney</b>, Harvard University </li>
                         <li> <b>Corie Dugas</b>, Mid-America Law Library Consortium </li>
                         <li> <b>James Grimmelmann</b>, Cornell Tech and Cornell Law School </li>
                     </ul>
@@ -431,8 +435,15 @@ def main(env):
             'social_twitter': 'lawarxiv',
             'social_facebook': '',
             'header_text': '',
-            'licenses_acceptable': ['CC0 1.0 Universal', 'CC-By Attribution 4.0 International'],
-            'subjects_acceptable': []
+            'licenses_acceptable': ['CC0 1.0 Universal', 'CC-By Attribution 4.0 International', 'No license'],
+            'subjects_acceptable': [
+                (['Arts and Humanities'], True),
+                (['Business'], True),
+                (['Education'], True),
+                (['Law'], True),
+                (['Medicine and Health Sciences'], True),
+                (['Social and Behavioral Sciences'], True),
+            ]
         },
         'agrixiv': {
             '_id': 'agrixiv',

@@ -224,7 +224,7 @@ class PreprintProviderPreprintList(JSONAPIBaseView, generics.ListAPIView, Django
 
     # overrides ListAPIView
     def get_queryset(self):
-        return PreprintService.objects.filter(self.get_query_from_request())
+        return PreprintService.objects.filter(self.get_query_from_request()).distinct()
 
 
 class PreprintProviderSubjectList(JSONAPIBaseView, generics.ListAPIView):
@@ -242,26 +242,31 @@ class PreprintProviderSubjectList(JSONAPIBaseView, generics.ListAPIView):
     serializer_class = TaxonomySerializer
 
     def is_valid_subject(self, allows_children, allowed_parents, sub):
+        # TODO: Delet this when all PreprintProviders have a mapping
         if sub._id in allowed_parents:
             return True
-        for parent in sub.parents.all():
-            if parent._id in allows_children:
+        if sub.parent:
+            if sub.parent._id in allows_children:
                 return True
-            for grandpa in parent.parents.all():
-                if grandpa._id in allows_children:
+            if sub.parent.parent:
+                if sub.parent.parent._id in allows_children:
                     return True
         return False
 
     def get_queryset(self):
-        parent = self.request.query_params.get('filter[parents]', None)
+        parent = self.request.query_params.get('filter[parents]', None) or self.request.query_params.get('filter[parent]', None)
         provider = get_object_or_error(PreprintProvider, self.kwargs['provider_id'], display_name='PreprintProvider')
         if parent:
             if parent == 'null':
                 return provider.top_level_subjects
-            #  Calculate this here to only have to do it once.
-            allowed_parents = [id_ for sublist in provider.subjects_acceptable for id_ in sublist[0]]
-            allows_children = [subs[0][-1] for subs in provider.subjects_acceptable if subs[1]]
-            return [sub for sub in Subject.find(MQ('parents___id', 'eq', parent)) if provider.subjects_acceptable == [] or self.is_valid_subject(allows_children=allows_children, allowed_parents=allowed_parents, sub=sub)]
+            if provider.subjects.exists():
+                return provider.subjects.filter(parent___id=parent)
+            else:
+                # TODO: Delet this when all PreprintProviders have a mapping
+                #  Calculate this here to only have to do it once.
+                allowed_parents = [id_ for sublist in provider.subjects_acceptable for id_ in sublist[0]]
+                allows_children = [subs[0][-1] for subs in provider.subjects_acceptable if subs[1]]
+                return [sub for sub in Subject.find(MQ('parent___id', 'eq', parent)) if provider.subjects_acceptable == [] or self.is_valid_subject(allows_children=allows_children, allowed_parents=allowed_parents, sub=sub)]
         return provider.all_subjects
 
 

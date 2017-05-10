@@ -459,7 +459,7 @@ def addon_delete_file_node(self, node, user, event_type, payload):
                 if item.kind == 'file' and not TrashedFileNode.load(item._id):
                     item.delete(user=user)
                 elif item.kind == 'folder':
-                    StoredFileNode.remove_one(item.stored_object)
+                    StoredFileNode.remove_one(item)
         else:
             try:
                 file_node = FileNode.resolve_class(provider, FileNode.FILE).find_one(
@@ -662,7 +662,9 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
 
     if action == 'download':
         format = extras.get('format')
-        if format:
+        _, extension = os.path.splitext(file_node.name)
+        # avoid rendering files with the same format type.
+        if format and '.{}'.format(format) != extension:
             return redirect('{}/export?format={}&url={}'.format(MFR_SERVER_URL, format, urllib.quote(file_node.generate_waterbutler_url(
                 **dict(extras, direct=None, version=version.identifier, _internal=extras.get('mode') == 'render')
             ))))
