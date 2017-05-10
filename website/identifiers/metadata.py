@@ -68,7 +68,7 @@ def datacite_metadata_for_node(node, doi, pretty_print=False):
 def format_creators(preprint):
     creators = []
     for contributor in preprint.node.visible_contributors:
-        creator = CREATOR(E.creatorName(u'{}, {}'.format(contributor.family_name, contributor.given_name)))
+        creator = CREATOR(E.creatorName(format_contributor(contributor)))
         creator.append(E.givenName(contributor.given_name))
         creator.append(E.familyName(contributor.family_name))
 
