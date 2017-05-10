@@ -1,11 +1,14 @@
-import logging
+import sys
 import time
+import logging
+from scripts import utils as script_utils
+from django.db import transaction
 
-from website.app import init_app
+from website.app import setup_django
 from website.identifiers.utils import request_identifiers_from_ezid, parse_identifiers
 
+setup_django()
 logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.INFO)
 
 
 def add_identifiers_to_preprints():
@@ -31,6 +34,30 @@ def add_identifiers_to_preprints():
     logger.info('Finished Adding identifiers to {} preprints.'.format(preprints_without_identifiers.count()))
 
 
+def main(dry=True):
+    # Start a transaction that will be rolled back if any exceptions are un
+    with transaction.atomic():
+        add_identifiers_to_preprints()
+        if dry:
+            # When running in dry mode force the transaction to rollback
+            raise Exception('Abort Transaction - Dry Run')
+
+
 if __name__ == '__main__':
-    init_app(routes=False)
-    add_identifiers_to_preprints()
+    dry = '--dry' in sys.argv
+    if not dry:
+        # If we're not running in dry mode log everything to a file
+        script_utils.add_file_logger(logger, __file__)
+
+    # Allow setting the log level just by appending the level to the command
+    if '--debug' in sys.argv:
+        logger.setLevel(logging.DEBUG)
+    elif '--warning' in sys.argv:
+        logger.setLevel(logging.WARNING)
+    elif '--info' in sys.argv:
+        logger.setLevel(logging.INFO)
+    elif '--error' in sys.argv:
+        logger.setLevel(logging.ERROR)
+
+    # Finally run the migration
+    main(dry=dry)
