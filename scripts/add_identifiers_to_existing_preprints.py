@@ -11,7 +11,7 @@ setup_django()
 logger = logging.getLogger(__name__)
 
 
-def add_identifiers_to_preprints():
+def add_identifiers_to_preprints(dry=True):
     from osf.models import PreprintService
 
     preprints_without_identifiers = PreprintService.objects.filter(identifiers__isnull=True)
@@ -20,27 +20,29 @@ def add_identifiers_to_preprints():
     for preprint in preprints_without_identifiers:
         logger.info('Saving identifier for preprint {} from source {}'.format(preprint._id, preprint.provider.name))
 
-        ezid_response = request_identifiers_from_ezid(preprint)
-        id_dict = parse_identifiers(ezid_response)
-        preprint.set_identifier_values(doi=id_dict['doi'], ark=id_dict['ark'])
-        preprint.save()
+        if not dry:
+            ezid_response = request_identifiers_from_ezid(preprint)
+            id_dict = parse_identifiers(ezid_response)
+            preprint.set_identifier_values(doi=id_dict['doi'], ark=id_dict['ark'])
+            preprint.save()
 
-        doi = preprint.get_identifier('doi')
-        assert preprint._id.upper() in doi.value
+            doi = preprint.get_identifier('doi')
+            assert preprint._id.upper() in doi.value
 
-        logger.info('Created DOI {} for Preprint with guid {} from service {}'.format(doi.value, preprint._id, preprint.provider.name))
-        time.sleep(1)
+            logger.info('Created DOI {} for Preprint with guid {} from service {}'.format(doi.value, preprint._id, preprint.provider.name))
+            time.sleep(1)
+        else:
+            logger.info('Dry run - would have created identifier for preprint {} from service {}'.format(preprint._id, preprint.provider.name))
 
     logger.info('Finished Adding identifiers to {} preprints.'.format(preprints_without_identifiers.count()))
 
 
 def main(dry=True):
     # Start a transaction that will be rolled back if any exceptions are un
-    with transaction.atomic():
-        add_identifiers_to_preprints()
-        if dry:
-            # When running in dry mode force the transaction to rollback
-            raise Exception('Abort Transaction - Dry Run')
+    add_identifiers_to_preprints(dry)
+    if dry:
+        # When running in dry mode force the transaction to rollback
+        raise Exception('Dry Run complete -- not actually saved')
 
 
 if __name__ == '__main__':
