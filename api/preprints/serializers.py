@@ -63,6 +63,7 @@ class PreprintSerializer(JSONAPISerializer):
         'date_published',
         'provider',
         'is_published',
+        'subjects',
     ])
 
     id = IDField(source='_id', read_only=True)

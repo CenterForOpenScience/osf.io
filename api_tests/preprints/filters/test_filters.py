@@ -23,10 +23,10 @@ class PreprintsListFilteringMixin(object):
         assert self.project, 'Subclasses of PreprintsListFilteringMixin must define self.project'
         assert self.project_two, 'Subclasses of PreprintsListFilteringMixin must define self.projec_two'
         assert self.project_three, 'Subclasses of PreprintsListFilteringMixin must define self.project_three'
-        assert self.url, 'Subclasses of PreprintsListFilteringMixin must define self.url' 
+        assert self.url, 'Subclasses of PreprintsListFilteringMixin must define self.url'
 
-        self.subject = SubjectFactory()
-        self.subject_two = SubjectFactory()
+        self.subject = SubjectFactory(text='First Subject')
+        self.subject_two = SubjectFactory(text='Second Subject')
 
         self.preprint = PreprintFactory(creator=self.user, project=self.project, provider=self.provider, subjects=[[self.subject._id]])
         self.preprint_two = PreprintFactory(creator=self.user, project=self.project_two, filename='tough.txt', provider=self.provider_two, subjects=[[self.subject_two._id]])
@@ -49,6 +49,8 @@ class PreprintsListFilteringMixin(object):
         self.is_published_url = '{}filter[is_published]='.format(self.url)
 
         self.is_published_and_modified_url = '{}filter[is_published]=true&filter[date_created]=2013-12-11'.format(self.url)
+
+        self.has_subject = '{}filter[subjects]='.format(self.url)
 
     def test_provider_filter_null(self):
         expected = []
@@ -137,3 +139,25 @@ class PreprintsListFilteringMixin(object):
         )
         actual = set([preprint['id'] for preprint in res.json['data']])
         assert_equal(expected, actual)
+
+    def test_subject_filter_using_id(self):
+        expected = set([self.preprint._id, self.preprint_three._id])
+        res = self.app.get('{}{}'.format(self.has_subject, self.subject._id),
+            auth=self.user.auth
+        )
+        actual = set([preprint['id'] for preprint in res.json['data']])
+        assert_equal(expected, actual)
+
+    def test_subject_filter_using_text(self):
+        expected = set([self.preprint._id, self.preprint_three._id])
+        res = self.app.get('{}{}'.format(self.has_subject, self.subject.text),
+            auth=self.user.auth
+        )
+        actual = set([preprint['id'] for preprint in res.json['data']])
+        assert_equal(expected, actual)
+
+    def test_unknows_subject_filter(self):
+        res = self.app.get('{}notActuallyASubjectIdOrTestMostLikely'.format(self.has_subject),
+            auth=self.user.auth
+        )
+        assert_equal(len(res.json['data']), 0)

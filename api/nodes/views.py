@@ -21,7 +21,7 @@ from api.base.exceptions import (
     RelationshipPostMakesNoChanges,
     EndpointNotImplementedError,
 )
-from api.base.filters import ODMFilterMixin, ListFilterMixin, DjangoFilterMixin
+from api.base.filters import ODMFilterMixin, ListFilterMixin, PreprintFilterMixin
 from api.base.pagination import CommentPagination, NodeContributorPagination, MaxSizePagination
 from api.base.parsers import (
     JSONAPIRelationshipParser,
@@ -3496,7 +3496,7 @@ class NodeIdentifierList(NodeMixin, IdentifierList):
     serializer_class = NodeIdentifierSerializer
 
 
-class NodePreprintsList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, DjangoFilterMixin):
+class NodePreprintsList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, PreprintFilterMixin):
     """List of preprints for a node. *Read-only*.
 
     ##Note
@@ -3559,13 +3559,6 @@ class NodePreprintsList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, Django
 
     view_category = 'nodes'
     view_name = 'node-preprints'
-
-    def postprocess_query_param(self, key, field_name, operation):
-        if field_name == 'provider':
-            operation['source_field_name'] = 'provider___id'
-
-        if field_name == 'id':
-            operation['source_field_name'] = 'guids___id'
 
     # overrides DjangoFilterMixin
     def get_default_django_query(self):
