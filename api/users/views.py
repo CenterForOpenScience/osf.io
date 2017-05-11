@@ -1,4 +1,5 @@
 from django.apps import apps
+from django_filters.rest_framework import DjangoFilterBackend
 
 from api.addons.views import AddonSettingsMixin
 from api.base import permissions as base_permissions
@@ -144,6 +145,8 @@ class UserList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
     model_class = apps.get_model('osf.OSFUser')
 
     serializer_class = UserSerializer
+
+    filter_backends = (DjangoFilterBackend,)
 
     ordering = ('-date_registered')
     view_category = 'users'
