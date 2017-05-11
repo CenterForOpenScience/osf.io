@@ -16,6 +16,9 @@ from admin.base.forms import ImportFileForm
 from admin.preprint_providers.forms import PreprintProviderForm
 from osf.models import PreprintProvider, Subject
 
+# When preprint_providers exclusively use Subject relations for creation, set this to False
+SHOW_TAXONOMIES_IN_PREPRINT_PROVIDER_CREATE = True
+
 
 class PreprintProviderList(PermissionRequiredMixin, ListView):
     paginate_by = 25
@@ -111,7 +114,7 @@ class PreprintProviderDisplay(PermissionRequiredMixin, DetailView):
         fields = model_to_dict(preprint_provider)
         fields['toplevel_subjects'] = list(subject_ids)
         fields['subjects_chosen'] = ', '.join(str(i) for i in subject_ids)
-        kwargs['show_taxonomies'] = settings.SHOW_TAXONOMIES_IN_PREPRINT_PROVIDER_EDIT
+        kwargs['show_taxonomies'] = True if preprint_provider.subjects.exists() else False
         kwargs['form'] = PreprintProviderForm(initial=fields)
         kwargs['import_form'] = ImportFileForm()
         return kwargs
@@ -247,5 +250,5 @@ class CreatePreprintProvider(PermissionRequiredMixin, CreateView):
 
     def get_context_data(self, *args, **kwargs):
         kwargs['import_form'] = ImportFileForm()
-        kwargs['show_taxonomies'] = settings.SHOW_TAXONOMIES_IN_PREPRINT_PROVIDER_EDIT
+        kwargs['show_taxonomies'] = SHOW_TAXONOMIES_IN_PREPRINT_PROVIDER_CREATE
         return super(CreatePreprintProvider, self).get_context_data(*args, **kwargs)
