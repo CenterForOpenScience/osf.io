@@ -1,6 +1,6 @@
 from osf.models.metaschema import MetaSchema  # noqa
 from osf.models.base import Guid, BlackListGuid  # noqa
-from osf.models.user import OSFUser  # noqa
+from osf.models.user import Email, ExternalLink, OSFUser, SocialAccount, SocialNetwork  # noqa
 from osf.models.contributor import Contributor, RecentlyAddedContributor  # noqa
 from osf.models.session import Session  # noqa
 from osf.models.institution import Institution  # noqa

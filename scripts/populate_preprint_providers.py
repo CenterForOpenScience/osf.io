@@ -13,6 +13,8 @@ from website.settings import PREPRINT_PROVIDER_DOMAINS, DOMAIN
 import django
 django.setup()
 
+from osf.exceptions import ValidationError
+from osf.models.user import Email, ExternalLink, SocialAccount, SocialNetwork
 from website.models import Subject, PreprintProvider, NodeLicense
 
 logger = logging.getLogger(__name__)
@@ -23,6 +25,11 @@ SUBJECTS_CACHE = {}
 STAGING_PREPRINT_PROVIDERS = ['osf', 'psyarxiv', 'engrxiv', 'socarxiv', 'scielo', 'agrixiv', 'bitss', 'lawarxiv']
 PROD_PREPRINT_PROVIDERS = ['osf', 'psyarxiv', 'engrxiv', 'socarxiv', 'agrixiv', 'bitss', 'lawarxiv']
 
+FACEBOOK = SocialNetwork.objects.get(_id='facebook')
+INSTAGRAM = SocialNetwork.objects.get(_id='instagram')
+LINKEDIN = SocialNetwork.objects.get(_id='linkedin')
+TWITTER = SocialNetwork.objects.get(_id='twitter')
+YOUTUBE = SocialNetwork.objects.get(_id='youtube')
 
 def get_subject_id(name):
     if name not in SUBJECTS_CACHE:
@@ -36,7 +43,6 @@ def get_subject_id(name):
 
     return SUBJECTS_CACHE[name]
 
-
 def get_license(name):
     try:
         license = NodeLicense.find_one(Q('name', 'eq', name))
@@ -44,19 +50,49 @@ def get_license(name):
         raise Exception('License: "{}" not found'.format(name))
     return license
 
+def set_or_update_m2m_fields(provider, emails, licenses, links, social_accounts):
+    for email in emails:
+        obj, created = Email.objects.get_or_create(**email)
+        provider.emails.add(obj)
+
+    if licenses:
+        provider.licenses_acceptable.add(*licenses)
+
+    for link in links:
+        obj, created = provider.links.update_or_create(
+            url=link['url'],
+            description=link['description'],
+            defaults={
+                'linked_text': link.get('linked_text')
+            }
+        )
+        provider.links.add(obj)
+
+    for account in social_accounts:
+        obj, created = SocialAccount.objects.get_or_create(**account)
+        provider.social_accounts.add(obj)
+
+    return provider
 
 def update_or_create(provider_data):
     provider = PreprintProvider.load(provider_data['_id'])
+
+    links = provider_data.pop('links', [])
+    emails = provider_data.pop('emails', [])
+    social_accounts = provider_data.pop('social_accounts', [])
     licenses = [get_license(name) for name in provider_data.pop('licenses_acceptable', [])]
+
     if provider:
         provider_data['subjects_acceptable'] = map(
             lambda rule: (map(get_subject_id, rule[0]), rule[1]),
             provider_data['subjects_acceptable']
         )
-        if licenses:
-            provider.licenses_acceptable.add(*licenses)
+
+        provider = set_or_update_m2m_fields(provider, emails, licenses, links, social_accounts)
+
         for key, val in provider_data.iteritems():
             setattr(provider, key, val)
+
         changed_fields = provider.save()
         if changed_fields:
             print('Updated {}: {}'.format(provider.name, changed_fields))
@@ -64,8 +100,7 @@ def update_or_create(provider_data):
     else:
         new_provider = PreprintProvider(**provider_data)
         new_provider.save()
-        if licenses:
-            new_provider.licenses_acceptable.add(*licenses)
+        new_provider = set_or_update_m2m_fields(new_provider, emails, licenses, links, social_accounts)
         provider = PreprintProvider.load(new_provider._id)
         print('Added new preprint provider: {}'.format(provider._id))
         return new_provider, True
@@ -97,6 +132,12 @@ def main(env):
             'licenses_acceptable': ['CC0 1.0 Universal', 'CC-By Attribution 4.0 International', 'No license'],
             'header_text': '',
             'subjects_acceptable': [],
+            'links': [
+                {
+                    'url': 'https://osf.io',
+                    'description': 'external'
+                }
+            ]
         },
         'engrxiv': {
             '_id': 'engrxiv',
@@ -137,6 +178,44 @@ def main(env):
             'social_instagram': 'engrxiv',
             'licenses_acceptable': ['CC0 1.0 Universal', 'CC-By Attribution 4.0 International', 'No license'],
             'header_text': '',
+            'emails': [
+                {
+                    'email': 'contact+engrxiv@osf.io',
+                    'email_type': 'contact'
+                },
+                {
+                    'email': 'support+engrxiv@osf.io',
+                    'email_type': 'support'
+                }
+            ],
+            'social_accounts': [
+                {
+                    'network': FACEBOOK,
+                    'username': 'engrXiv'
+                },
+                {
+                    'network': INSTAGRAM,
+                    'username': 'engrxiv'
+                },
+                {
+                    'network': TWITTER,
+                    'username': 'engrxiv'
+                }
+            ],
+            'links': [
+                {
+                    'url': 'http://blog.engrxiv.org/about/',
+                    'description': 'about'
+                },
+                {
+                    'url': 'http://blog.engrxiv.org/',
+                    'description': 'blog'
+                },
+                {
+                    'url': 'http://engrxiv.org',
+                    'description': 'external'
+                }
+            ],
             'subjects_acceptable': [
                 (['Architecture', 'Architectural Engineering'], True),
                 (['Engineering', 'Aerospace Engineering', 'Aerodynamics and Fluid Mechanics'], False),
@@ -281,6 +360,49 @@ def main(env):
             'social_instagram': 'psyarxiv',
             'licenses_acceptable': ['CC0 1.0 Universal', 'CC-By Attribution 4.0 International', 'No license'],
             'header_text': '',
+            'emails': [
+                {
+                    'email': 'contact+psyarxiv@osf.io',
+                    'email_type': 'contact'
+                },
+                {
+                    'email': 'support+psyarxiv@osf.io',
+                    'email_type': 'support'
+                }
+            ],
+            'social_accounts': [
+                {
+                    'network': FACEBOOK,
+                    'username': 'PsyArXiv'
+                },
+                {
+                    'network': INSTAGRAM,
+                    'username': 'psyarxiv'
+                },
+                {
+                    'network': TWITTER,
+                    'username': 'psyarxiv'
+                }
+            ],
+            'links': [
+                {
+                    'url': 'http://blog.psyarxiv.com/psyarxiv/about-psyarxiv/',
+                    'description': 'about'
+                },
+                {
+                    'url': 'http://blog.psyarxiv.com/psyarxiv/',
+                    'description': 'blog'
+                },
+                {
+                    'url': 'http://psyarxiv.com',
+                    'description': 'external'
+                },
+                {
+                    'url': 'http://improvingpsych.org',
+                    'description': 'description',
+                    'linked_text': 'The Society for the Improvement of Psychological Science'
+                }
+            ],
             'subjects_acceptable': [
                 (['Engineering', 'Operations Research, Systems Engineering and Industrial Engineering', 'Ergonomics'], False),
                 (['Life Sciences', 'Neuroscience and Neurobiology', 'Behavioral Neurobiology'], False),
@@ -366,6 +488,44 @@ def main(env):
             'social_instagram': 'socarxiv',
             'licenses_acceptable': ['CC0 1.0 Universal', 'CC-By Attribution 4.0 International', 'No license'],
             'header_text': '',
+            'emails': [
+                {
+                    'email': 'contact+socarxiv@osf.io',
+                    'email_type': 'contact'
+                },
+                {
+                    'email': 'support+socarxiv@osf.io',
+                    'email_type': 'support'
+                }
+            ],
+            'social_accounts': [
+                {
+                    'network': FACEBOOK,
+                    'username': 'socarxiv'
+                },
+                {
+                    'network': INSTAGRAM,
+                    'username': 'socarxiv'
+                },
+                {
+                    'network': TWITTER,
+                    'username': 'socarxiv'
+                }
+            ],
+            'links': [
+                {
+                    'url': 'https://socopen.org/welcome/',
+                    'description': 'about'
+                },
+                {
+                    'url': 'https://socopen.org',
+                    'description': 'blog'
+                },
+                {
+                    'url': 'http://socarxiv.org',
+                    'description': 'external'
+                }
+            ],
             'subjects_acceptable': [
                 (['Arts and Humanities'], True),
                 (['Education'], True),
@@ -391,7 +551,33 @@ def main(env):
             'social_facebook': 'SciELONetwork',
             'header_text': '',
             'licenses_acceptable': ['CC-By Attribution 4.0 International'],
-            'subjects_acceptable': []
+            'emails': [
+                {
+                    'email': 'contact+scielo@osf.io',
+                    'email_type': 'contact'
+                },
+                {
+                    'email': 'support+scielo@osf.io',
+                    'email_type': 'support'
+                }
+            ],
+            'social_accounts': [
+                {
+                    'network': FACEBOOK,
+                    'username': 'SciELONetwork'
+                },
+                {
+                    'network': TWITTER,
+                    'username': 'RedeSciELO'
+                }
+            ],
+            'links': [
+                {
+                    'url': 'http://scielo.org',
+                    'description': 'external'
+                }
+            ],
+            'subjects_acceptable':[]
         },
         'lawarxiv': {
             '_id': 'lawarxiv',
@@ -435,6 +621,22 @@ def main(env):
             'social_twitter': 'lawarxiv',
             'social_facebook': '',
             'header_text': '',
+            'emails': [
+                {
+                    'email': 'contact+lawarxiv@osf.io',
+                    'email_type': 'contact'
+                },
+                {
+                    'email': 'support+lawarxiv@osf.io',
+                    'email_type': 'support'
+                }
+            ],
+            'social_accounts': [
+                {
+                    'network': TWITTER,
+                    'username': 'lawarxiv'
+                }
+            ],
             'licenses_acceptable': ['CC0 1.0 Universal', 'CC-By Attribution 4.0 International', 'No license'],
             'subjects_acceptable': [
                 (['Arts and Humanities'], True),
@@ -498,6 +700,36 @@ def main(env):
             'social_instagram': 'agrixiv',
             'licenses_acceptable': ['CC0 1.0 Universal', 'CC-By Attribution 4.0 International'],
             'header_text': '',
+            'emails': [
+                {
+                    'email': 'contact+agrixiv@osf.io',
+                    'email_type': 'contact'
+                },
+                {
+                    'email': 'support+agrixiv@osf.io',
+                    'email_type': 'support'
+                }
+            ],
+            'social_accounts': [
+                {
+                    'network': FACEBOOK,
+                    'username': 'agrixiv'
+                },
+                {
+                    'network': INSTAGRAM,
+                    'username': 'agrixiv'
+                },
+                {
+                    'network': TWITTER,
+                    'username': 'AgriXiv'
+                }
+            ],
+            'links': [
+                {
+                    'url': 'https://agrixiv.wordpress.com/about/',
+                    'description': 'about'
+                }
+            ],
             'subjects_acceptable': [
                 (['Business', 'Business Administration, Management, and Operations'], False),
                 (['Business', 'Business and Corporate Communications'], False),
@@ -1103,6 +1335,33 @@ def main(env):
             'social_twitter': 'UCBITSS',
             'licenses_acceptable': ['CC-By Attribution 4.0 International', 'CC0 1.0 Universal'],
             'header_text': '',
+            'emails': [
+                {
+                    'email': 'contact+bitss@osf.io',
+                    'email_type': 'contact'
+                },
+                {
+                    'email': 'support+bitss@osf.io',
+                    'email_type': 'support'
+                }
+            ],
+            'social_accounts': [
+                {
+                    'network': TWITTER,
+                    'username': 'UCBITSS'
+                }
+            ],
+            'links': [
+                {
+                    'url': 'http://www.bitss.org',
+                    'description': 'external'
+                },
+                {
+                    'url': 'http://www.bitss.org',
+                    'description': 'description',
+                    'linked_text': 'The Berkeley Initiative for Transparency in the Social Sciences (BITSS)'
+                }
+            ],
             'subjects_acceptable': [
                 (['Medicine and Health Sciences', 'Health Information Technology'], False),
                 (['Medicine and Health Sciences', 'Mental and Social Health'], False),

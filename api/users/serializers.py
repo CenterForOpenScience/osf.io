@@ -11,6 +11,37 @@ from api.base.serializers import (
     DateByVersion,
 )
 from api.base.utils import absolute_reverse, get_user_auth
+from osf.models.user import Email, ExternalLink, SocialAccount, SocialNetwork
+
+
+class EmailSerializer(ser.ModelSerializer):
+
+    class Meta:
+        model = Email
+        fields = ('email', 'email_type',)
+
+
+class ExternalLinkSerializer(ser.ModelSerializer):
+
+    class Meta:
+        model = ExternalLink
+        fields = ('url', 'description', 'linked_text',)
+
+
+class SocialNetworkSerializer(ser.ModelSerializer):
+
+    class Meta:
+        model = SocialNetwork
+        fields = ('base_url', 'name',)
+
+
+class SocialAccountSerializer(ser.ModelSerializer):
+
+    network = SocialNetworkSerializer(read_only=True)
+
+    class Meta:
+        model = SocialAccount
+        fields = ('network', 'username',)
 
 
 class UserSerializer(JSONAPISerializer):

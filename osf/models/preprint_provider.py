@@ -5,6 +5,7 @@ from modularodm import Q
 
 from osf.models.base import BaseModel, ObjectIDMixin
 from osf.models.licenses import NodeLicense
+from osf.models.user import Email, SocialAccount, ExternalLink
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import EncryptedTextField
 
@@ -19,15 +20,24 @@ class PreprintProvider(ObjectIDMixin, BaseModel):
     banner_name = models.CharField(null=True, blank=True, max_length=128)  # max length on prod: 19
     domain = models.URLField(blank=True, default='', max_length=200)
     domain_redirect_enabled = models.BooleanField(default=False)
-    external_url = models.URLField(null=True, blank=True, max_length=200)  # max length on prod: 25
-    email_contact = models.CharField(null=True, blank=True, max_length=200)  # max length on prod: 23
-    email_support = models.CharField(null=True, blank=True, max_length=200)  # max length on prod: 23
     example = models.CharField(null=True, blank=True, max_length=20)  # max length on prod: 5
     access_token = EncryptedTextField(null=True, blank=True)
     advisory_board = models.TextField(null=True, blank=True)
+
+    emails = models.ManyToManyField(Email, blank=True, related_name='preprint_providers')
+    # TODO: Remove email fields in favor of emails
+    email_contact = models.CharField(null=True, blank=True, max_length=200)  # max length on prod: 23
+    email_support = models.CharField(null=True, blank=True, max_length=200)  # max length on prod: 23
+
+    social_accounts = models.ManyToManyField(SocialAccount, blank=True, related_name='preprint_providers')
+    # TODO: Remove social fields in favor of social_accounts
     social_twitter = models.CharField(null=True, blank=True, max_length=200)  # max length on prod: 8
     social_facebook = models.CharField(null=True, blank=True, max_length=200)  # max length on prod: 8
     social_instagram = models.CharField(null=True, blank=True, max_length=200)  # max length on prod: 8
+
+    links = models.ManyToManyField(ExternalLink, blank=True, related_name='preprint_providers')
+    # TODO: Remove external_url in favor of links
+    external_url = models.URLField(null=True, blank=True, max_length=200)  # max length on prod: 25
 
     subjects_acceptable = DateTimeAwareJSONField(blank=True, default=list)
     licenses_acceptable = models.ManyToManyField(NodeLicense, blank=True)
