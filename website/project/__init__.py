@@ -4,6 +4,7 @@ import uuid
 from django.apps import apps
 
 from .model import PrivateLink
+from framework.auth.core import Auth
 from framework.mongo.utils import from_mongo
 from modularodm import Q
 from modularodm.exceptions import ValidationValueError
@@ -76,7 +77,8 @@ def new_bookmark_collection(user):
     Collection = apps.get_model('osf.Collection')
     existing_bookmark_collection = Collection.find(
         Q('is_bookmark_collection', 'eq', True) &
-        Q('creator', 'eq', user)
+        Q('creator', 'eq', user) &
+        Q('is_deleted', 'eq', False)
     )
 
     if existing_bookmark_collection.count() > 0:
@@ -101,6 +103,8 @@ def new_private_link(name, user, nodes, anonymous):
     :return PrivateLink: Created private link
 
     """
+    NodeLog = apps.get_model('osf.NodeLog')
+
     key = str(uuid.uuid4()).replace('-', '')
     if name:
         name = strip_html(name)
@@ -119,6 +123,21 @@ def new_private_link(name, user, nodes, anonymous):
     private_link.save()
 
     private_link.nodes.add(*nodes)
+
+    auth = Auth(user)
+    for node in nodes:
+        log_dict = {
+            'project': node.parent_id,
+            'node': node._id,
+            'user': user._id,
+            'anonymous_link': anonymous,
+        }
+
+        node.add_log(
+            NodeLog.VIEW_ONLY_LINK_ADDED,
+            log_dict,
+            auth=auth
+        )
 
     private_link.save()
 

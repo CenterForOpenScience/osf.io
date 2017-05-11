@@ -8,10 +8,6 @@ from oath import accept_totp
 
 
 class UserSettings(BaseUserSettings):
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.addons.twofactor.models.TwoFactorUserSettings'
-    modm_query = None
-    # /TODO DELETE ME POST MIGRATION
     totp_secret = models.TextField(null=True, blank=True)  # hexadecimal
     totp_drift = models.IntegerField()
     is_confirmed = models.BooleanField(default=False)

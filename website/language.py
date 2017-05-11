@@ -27,7 +27,7 @@ REGISTRATION_UNAVAILABLE = 'Registration currently unavailable.'
 
 ALREADY_REGISTERED = u'The email {email} has already been registered.'
 
-AFTER_SUBMIT_FOR_REVIEW = 'Your submission has been received. You will be notified within ten business days regarding the status of your submission. If you have questions you may contact us at prereg@cos.io.'
+AFTER_SUBMIT_FOR_REVIEW = 'Your submission has been received. You will be notified within two business days regarding the status of your submission. If you have questions you may contact us at prereg@cos.io.'
 
 # Shown if user tries to login with an email that is not yet confirmed
 UNCONFIRMED = ('This login email has been registered but not confirmed. Please check your email (and spam folder).'
@@ -169,7 +169,7 @@ LINK_DESCRIPTION = """
 creating a copy. The link will always point to the most up-to-date version.</p>
 """
 
-TEMPLATE_ACTION = 'Copy Project Structure'
+TEMPLATE_ACTION = 'Duplicate template'
 TEMPLATE_DESCRIPTION = """
 <p>This option will create a new project, using this project as a template.
 The new project will be structured in the same way, but contain no data.</p>

@@ -3,7 +3,7 @@ from framework.mongo import database as db
 
 from scripts.clone_wiki_pages import main
 
-from website.addons.wiki.model import NodeWikiPage
+from addons.wiki.models import NodeWikiPage
 from website.project.model import Node
 
 from tests.base import OsfTestCase, get_default_metaschema

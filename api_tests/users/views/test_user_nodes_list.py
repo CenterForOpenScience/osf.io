@@ -2,9 +2,20 @@
 from nose.tools import *  # flake8: noqa
 
 from tests.base import ApiTestCase
-from osf_tests.factories import AuthUserFactory, BookmarkCollectionFactory, CollectionFactory, ProjectFactory, RegistrationFactory, PreprintFactory
+from osf_tests.factories import (
+    AuthUserFactory,
+    BookmarkCollectionFactory,
+    CollectionFactory,
+    NodeFactory,
+    PreprintFactory,
+    ProjectFactory,
+    RegistrationFactory,
+)
 
 from api.base.settings.defaults import API_BASE
+from api_tests.nodes.filters.test_filters import NodesListFilteringMixin
+
+from website.views import find_bookmark_collection
 
 
 class TestUserNodes(ApiTestCase):
@@ -37,7 +48,7 @@ class TestUserNodes(ApiTestCase):
                                                 is_public=False,
                                                 creator=self.user_one,
                                                 is_deleted=True)
-        self.bookmark_collection = BookmarkCollectionFactory()
+        self.bookmark_collection = find_bookmark_collection(self.user_one)
 
         self.registration = RegistrationFactory(project=self.public_project_user_one,
                                                       creator=self.user_one, is_public=True)
@@ -114,8 +125,7 @@ class TestUserNodesPreprintsFiltering(ApiTestCase):
         self.valid_preprint = PreprintFactory(project=self.valid_preprint_node)
         self.abandoned_preprint = PreprintFactory(project=self.abandoned_preprint_node, is_published=False)
         self.orphaned_preprint = PreprintFactory(project=self.orphaned_preprint_node)
-        self.orphaned_preprint.node.preprint_file.wrapped().delete()
-        self.orphaned_preprint.node.reload()  # preprint_file has been set to null
+        self.orphaned_preprint.node.preprint_file = None
         self.orphaned_preprint.node.save()
         self.url_base = '/{}users/me/nodes/?filter[preprint]='.format(API_BASE)
 
@@ -132,3 +142,8 @@ class TestUserNodesPreprintsFiltering(ApiTestCase):
         actual_ids = [n['id'] for n in res.json['data']]
 
         assert_equal(set(expected_ids), set(actual_ids))
+
+
+class TestNodeListFiltering(NodesListFilteringMixin, ApiTestCase):
+
+    url = '/{}users/me/nodes/?'.format(API_BASE)

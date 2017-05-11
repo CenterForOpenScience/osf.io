@@ -11,10 +11,10 @@ import factory
 import pytz
 from factory.django import DjangoModelFactory
 from django.utils import timezone
+from django.db.utils import IntegrityError
 from faker import Factory
 from modularodm.exceptions import NoResultsFound
 
-from osf.models import OSFUser
 from website.notifications.constants import NOTIFICATION_TYPES
 from website.util import permissions
 from website.project.licenses import ensure_licenses
@@ -46,7 +46,7 @@ def FakeList(provider, n, *args, **kwargs):
 class UserFactory(DjangoModelFactory):
     # TODO: Change this to only generate long names and see what breaks
     fullname = factory.Sequence(lambda n: 'Freddie Mercury{0}'.format(n))
-    
+
     username = factory.Faker('email')
     password = factory.PostGenerationMethodCall('set_password',
                                                 'queenfan86')
@@ -226,6 +226,13 @@ class NodeLicenseRecordFactory(DjangoModelFactory):
             )
         )
         return super(NodeLicenseRecordFactory, cls)._create(*args, **kwargs)
+
+
+class NodeLogFactory(DjangoModelFactory):
+    class Meta:
+        model = models.NodeLog
+    action = 'file_added'
+    user = SubFactory(UserFactory)
 
 class PrivateLinkFactory(DjangoModelFactory):
     class Meta:
@@ -477,10 +484,17 @@ class SubjectFactory(DjangoModelFactory):
         model = models.Subject
 
     @classmethod
-    def _create(cls, target_class, parents=None, *args, **kwargs):
-        ret = super(SubjectFactory, cls)._create(target_class, *args, **kwargs)
-        if parents:
-            ret.parents.add(*parents)
+    def _create(cls, target_class, parent=None, provider=None, bepress_subject=None, *args, **kwargs):
+        provider = provider or models.PreprintProvider.objects.first() or PreprintProviderFactory(_id='osf')
+        if provider._id != 'osf' and not bepress_subject:
+            osf = models.PreprintProvider.load('osf') or PreprintProviderFactory(_id='osf')
+            bepress_subject = SubjectFactory(provider=osf)
+        try:
+            ret = super(SubjectFactory, cls)._create(target_class, parent=parent, provider=provider, bepress_subject=bepress_subject, *args, **kwargs)
+        except IntegrityError:
+            ret = models.Subject.objects.get(text=kwargs['text'])
+            if parent:
+                ret.parent = parent
         return ret
 
 
@@ -504,7 +518,7 @@ class PreprintFactory(DjangoModelFactory):
         model = models.PreprintService
 
     @classmethod
-    def _create(cls, target_class, project=None, filename='preprint_file.txt', provider=None,
+    def _build(cls, target_class, project=None, filename='preprint_file.txt', provider=None,
                 doi=None, external_url=None, is_published=True, subjects=None, finish=True, *args, **kwargs):
         user = None
         if project:
@@ -523,12 +537,22 @@ class PreprintFactory(DjangoModelFactory):
             )
 
         file = OsfStorageFile.create(
-            is_file=True,
             node=project,
             path='/{}'.format(filename),
             name=filename,
             materialized_path='/{}'.format(filename))
         file.save()
+
+        from addons.osfstorage import settings as osfstorage_settings
+
+        file.create_version(user, {
+            'object': '06d80e',
+            'service': 'cloud',
+            osfstorage_settings.WATERBUTLER_RESOURCE: 'osf',
+        }, {
+            'size': 1337,
+            'contentType': 'img/png'
+        }).save()
 
         preprint = target_class(node=project, provider=provider)
 
@@ -537,6 +561,7 @@ class PreprintFactory(DjangoModelFactory):
         if finish:
             preprint.set_primary_file(file, auth=auth)
             subjects = subjects or [[SubjectFactory()._id]]
+            preprint.save()
             preprint.set_subjects(subjects, auth=auth)
             preprint.set_published(is_published, auth=auth)
 
@@ -545,10 +570,19 @@ class PreprintFactory(DjangoModelFactory):
 
         project.preprint_article_doi = doi
         project.save()
-        preprint.save()
-
         return preprint
 
+    @classmethod
+    def _create(cls, target_class, project=None, filename='preprint_file.txt', provider=None,
+                doi=None, external_url=None, is_published=True, subjects=None, finish=True, *args, **kwargs):
+        instance = cls._build(
+            target_class=target_class,
+            project=project, filename=filename, provider=provider,
+            doi=doi, external_url=external_url, is_published=is_published, subjects=subjects,
+            finish=finish, *args, **kwargs
+        )
+        instance.save()
+        return instance
 
 class TagFactory(DjangoModelFactory):
     class Meta:

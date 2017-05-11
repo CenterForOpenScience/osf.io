@@ -7,34 +7,22 @@ from django.db import models
 from framework.auth import Auth
 from framework.exceptions import HTTPError
 from osf.models.external import ExternalProvider
-from osf.models.files import File, FileNode, Folder, FileVersion
-from website.addons.base import exceptions
-from website.addons.figshare import settings as figshare_settings
-from website.addons.figshare import messages
-from website.addons.figshare.client import FigshareClient
-from website.addons.figshare.serializer import FigshareSerializer
+from osf.models.files import File, Folder, FileVersion, BaseFileNode
+from addons.base import exceptions
+from addons.figshare import settings as figshare_settings
+from addons.figshare import messages
+from addons.figshare.client import FigshareClient
+from addons.figshare.serializer import FigshareSerializer
 
-
-class FigshareFileNode(FileNode):
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.files.models.figshare.FigshareFileNode'
-    modm_query = None
-    # /TODO DELETE ME POST MIGRATION
-    provider = 'figshare'
+class FigshareFileNode(BaseFileNode):
+    _provider = 'figshare'
 
 
 class FigshareFolder(FigshareFileNode, Folder):
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.files.models.figshare.FigshareFolder'
-    modm_query = None
-    # /TODO DELETE ME POST MIGRATION
     pass
 
+
 class FigshareFile(FigshareFileNode, File):
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.files.models.figshare.FigshareFile'
-    modm_query = None
-    # /TODO DELETE ME POST MIGRATION
     version_identifier = 'ref'
 
     def touch(self, bearer, revision=None, **kwargs):
@@ -99,19 +87,11 @@ class FigshareProvider(ExternalProvider):
 class UserSettings(BaseStorageAddon, BaseOAuthUserSettings):
     """Stores user-specific figshare information
     """
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.addons.figshare.model.FigshareUserSettings'
-    modm_query = None
-    # /TODO DELETE ME POST MIGRATION
     oauth_provider = FigshareProvider
     serializer = FigshareSerializer
 
 
 class NodeSettings(BaseStorageAddon, BaseOAuthNodeSettings):
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.addons.figshare.model.FigshareNodeSettings'
-    modm_query = None
-    # /TODO DELETE ME POST MIGRATION
     oauth_provider = FigshareProvider
     serializer = FigshareSerializer
 
@@ -235,7 +215,7 @@ class NodeSettings(BaseStorageAddon, BaseOAuthNodeSettings):
         :param User user:
         :return str: Alert message
         """
-        if not self.folder_id:
+        if not self.configured:
             return []
         figshare = node.get_addon('figshare')
         # Quit if no user authorization

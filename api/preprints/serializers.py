@@ -5,7 +5,7 @@ from rest_framework import serializers as ser
 
 from api.base.exceptions import Conflict
 from api.base.serializers import (
-    JSONAPISerializer, IDField, JSONAPIListField,
+    JSONAPISerializer, IDField,
     LinksField, RelationshipField, DateByVersion,
 )
 from api.base.utils import absolute_reverse, get_user_auth
@@ -19,7 +19,7 @@ from framework.exceptions import PermissionsError
 from website.util import permissions
 from website.exceptions import NodeStateError
 from website.project import signals as project_signals
-from website.models import StoredFileNode, PreprintService, PreprintProvider, Node, NodeLicense
+from osf.models import StoredFileNode, PreprintService, PreprintProvider, Node, NodeLicense
 
 
 class PrimaryFileRelationshipField(RelationshipField):
@@ -50,7 +50,9 @@ class PreprintProviderRelationshipField(RelationshipField):
 class PreprintLicenseRelationshipField(RelationshipField):
     def to_internal_value(self, license_id):
         license = NodeLicense.load(license_id)
-        return {'license_type': license}
+        if license:
+            return {'license_type': license}
+        raise exceptions.NotFound('Unable to find specified license.')
 
 
 class PreprintSerializer(JSONAPISerializer):
@@ -64,7 +66,7 @@ class PreprintSerializer(JSONAPISerializer):
     ])
 
     id = IDField(source='_id', read_only=True)
-    subjects = JSONAPIListField(child=JSONAPIListField(child=TaxonomyField()), allow_null=True, required=False)
+    subjects = ser.SerializerMethodField()
     date_created = DateByVersion(read_only=True)
     date_modified = DateByVersion(read_only=True)
     date_published = DateByVersion(read_only=True)
@@ -114,6 +116,13 @@ class PreprintSerializer(JSONAPISerializer):
     class Meta:
         type_ = 'preprints'
 
+    def get_subjects(self, obj):
+        return [
+            [
+                TaxonomyField().to_representation(subj) for subj in hier
+            ] for hier in obj.subject_hierarchy
+        ]
+
     def get_preprint_url(self, obj):
         return absolute_reverse('preprints:preprint-detail', kwargs={'preprint_id': obj._id, 'version': self.context['request'].parser_context['kwargs']['version']})
 
@@ -122,6 +131,14 @@ class PreprintSerializer(JSONAPISerializer):
 
     def get_doi_url(self, obj):
         return 'https://dx.doi.org/{}'.format(obj.article_doi) if obj.article_doi else None
+
+    def run_validation(self, *args, **kwargs):
+        # Overrides construtor for validated_data to allow writes to a SerializerMethodField
+        # Validation for `subjects` happens in the model
+        _validated_data = super(PreprintSerializer, self).run_validation(*args, **kwargs)
+        if 'subjects' in self.initial_data:
+            _validated_data['subjects'] = self.initial_data['subjects']
+        return _validated_data
 
     def update(self, preprint, validated_data):
         assert isinstance(preprint, PreprintService), 'You must specify a valid preprint to be updated'
@@ -134,7 +151,6 @@ class PreprintSerializer(JSONAPISerializer):
         save_node = False
         save_preprint = False
         recently_published = False
-
         primary_file = validated_data.pop('primary_file', None)
         if primary_file:
             self.set_field(preprint.set_primary_file, primary_file, auth)

@@ -1,14 +1,15 @@
 import mock
-from admin.common_auth.logs import OSFLogEntry
-from admin.nodes.views import (NodeDeleteView, NodeRemoveContributorView,
-                               NodeView)
-from admin_tests.utilities import setup_log_view, setup_view
-from django.test import RequestFactory
-from framework.auth import User
 from nose import tools as nt
+from django.test import RequestFactory
+from django.core.urlresolvers import reverse
+from django.core.exceptions import PermissionDenied
+from django.contrib.auth.models import Permission
+
 from tests.base import AdminTestCase
 from tests.factories import AuthUserFactory, ProjectFactory
-from website.project.model import Node, NodeLog
+from osf.models import AdminLogEntry, OSFUser, Node, NodeLog
+from admin_tests.utilities import setup_log_view, setup_view
+from admin.nodes.views import (NodeDeleteView, NodeRemoveContributorView, NodeView)
 
 
 class TestNodeView(AdminTestCase):
@@ -40,15 +41,42 @@ class TestNodeView(AdminTestCase):
         res = view.get_context_data()
         nt.assert_equal(res[NodeView.context_object_name], temp_object)
 
+    def test_no_user_permissions_raises_error(self):
+        user = AuthUserFactory()
+        node = ProjectFactory()
+        guid = node._id
+        request = RequestFactory().get(reverse('nodes:node', kwargs={'guid': guid}))
+        request.user = user
+
+        with nt.assert_raises(PermissionDenied):
+            NodeView.as_view()(request, guid=guid)
+
+    def test_correct_view_permissions(self):
+        user = AuthUserFactory()
+        node = ProjectFactory()
+        guid = node._id
+
+        change_permission = Permission.objects.get(codename='view_node')
+        user.user_permissions.add(change_permission)
+        user.save()
+
+        request = RequestFactory().get(reverse('nodes:node', kwargs={'guid': guid}))
+        request.user = user
+
+        response = NodeView.as_view()(request, guid=guid)
+        nt.assert_equal(response.status_code, 200)
+
 
 class TestNodeDeleteView(AdminTestCase):
     def setUp(self):
         super(TestNodeDeleteView, self).setUp()
         self.node = ProjectFactory()
         self.request = RequestFactory().post('/fake_path')
-        self.view = NodeDeleteView()
-        self.view = setup_log_view(self.view, self.request,
+        self.plain_view = NodeDeleteView
+        self.view = setup_log_view(self.plain_view(), self.request,
                                    guid=self.node._id)
+
+        self.url = reverse('nodes:remove', kwargs={'guid': self.node._id})
 
     def test_get_object(self):
         obj = self.view.get_object()
@@ -60,20 +88,46 @@ class TestNodeDeleteView(AdminTestCase):
         nt.assert_equal(res.get('guid'), self.node._id)
 
     def test_remove_node(self):
-        count = OSFLogEntry.objects.count()
+        count = AdminLogEntry.objects.count()
         self.view.delete(self.request)
-        self.node.reload()
+        self.node.refresh_from_db()
         nt.assert_true(self.node.is_deleted)
-        nt.assert_equal(OSFLogEntry.objects.count(), count + 1)
+        nt.assert_equal(AdminLogEntry.objects.count(), count + 1)
 
     def test_restore_node(self):
         self.view.delete(self.request)
+        self.node.refresh_from_db()
         nt.assert_true(self.node.is_deleted)
-        count = OSFLogEntry.objects.count()
+        count = AdminLogEntry.objects.count()
         self.view.delete(self.request)
         self.node.reload()
         nt.assert_false(self.node.is_deleted)
-        nt.assert_equal(OSFLogEntry.objects.count(), count + 1)
+        nt.assert_equal(AdminLogEntry.objects.count(), count + 1)
+
+    def test_no_user_permissions_raises_error(self):
+        user = AuthUserFactory()
+        guid = self.node._id
+        request = RequestFactory().get(self.url)
+        request.user = user
+
+        with nt.assert_raises(PermissionDenied):
+            self.plain_view.as_view()(request, guid=guid)
+
+    def test_correct_view_permissions(self):
+        user = AuthUserFactory()
+        guid = self.node._id
+
+        change_permission = Permission.objects.get(codename='delete_node')
+        view_permission = Permission.objects.get(codename='view_node')
+        user.user_permissions.add(change_permission)
+        user.user_permissions.add(view_permission)
+        user.save()
+
+        request = RequestFactory().get(self.url)
+        request.user = user
+
+        response = self.plain_view.as_view()(request, guid=guid)
+        nt.assert_equal(response.status_code, 200)
 
 
 class TestRemoveContributor(AdminTestCase):
@@ -84,42 +138,43 @@ class TestRemoveContributor(AdminTestCase):
         self.user_2 = AuthUserFactory()
         self.node.add_contributor(self.user_2)
         self.node.save()
-        self.view = NodeRemoveContributorView()
+        self.view = NodeRemoveContributorView
         self.request = RequestFactory().post('/fake_path')
+        self.url = reverse('nodes:remove_user', kwargs={'node_id': self.node._id, 'user_id': self.user._id})
 
     def test_get_object(self):
-        view = setup_log_view(self.view, self.request, node_id=self.node._id,
+        view = setup_log_view(self.view(), self.request, node_id=self.node._id,
                               user_id=self.user._id)
         node, user = view.get_object()
         nt.assert_is_instance(node, Node)
-        nt.assert_is_instance(user, User)
+        nt.assert_is_instance(user, OSFUser)
 
     @mock.patch('admin.nodes.views.Node.remove_contributor')
     def test_remove_contributor(self, mock_remove_contributor):
         user_id = self.user_2._id
         node_id = self.node._id
-        view = setup_log_view(self.view, self.request, node_id=node_id,
+        view = setup_log_view(self.view(), self.request, node_id=node_id,
                               user_id=user_id)
         view.delete(self.request)
         mock_remove_contributor.assert_called_with(self.user_2, None, log=False)
 
     def test_integration_remove_contributor(self):
         nt.assert_in(self.user_2, self.node.contributors)
-        view = setup_log_view(self.view, self.request, node_id=self.node._id,
+        view = setup_log_view(self.view(), self.request, node_id=self.node._id,
                               user_id=self.user_2._id)
-        count = OSFLogEntry.objects.count()
+        count = AdminLogEntry.objects.count()
         view.delete(self.request)
         nt.assert_not_in(self.user_2, self.node.contributors)
-        nt.assert_equal(OSFLogEntry.objects.count(), count + 1)
+        nt.assert_equal(AdminLogEntry.objects.count(), count + 1)
 
     def test_do_not_remove_last_admin(self):
         nt.assert_equal(
             len(list(self.node.get_admin_contributors(self.node.contributors))),
             1
         )
-        view = setup_log_view(self.view, self.request, node_id=self.node._id,
+        view = setup_log_view(self.view(), self.request, node_id=self.node._id,
                               user_id=self.user._id)
-        count = OSFLogEntry.objects.count()
+        count = AdminLogEntry.objects.count()
         view.delete(self.request)
         self.node.reload()  # Reloads instance to show that nothing was removed
         nt.assert_equal(len(list(self.node.contributors)), 2)
@@ -127,10 +182,31 @@ class TestRemoveContributor(AdminTestCase):
             len(list(self.node.get_admin_contributors(self.node.contributors))),
             1
         )
-        nt.assert_equal(OSFLogEntry.objects.count(), count)
+        nt.assert_equal(AdminLogEntry.objects.count(), count)
 
     def test_no_log(self):
-        view = setup_log_view(self.view, self.request, node_id=self.node._id,
+        view = setup_log_view(self.view(), self.request, node_id=self.node._id,
                               user_id=self.user_2._id)
         view.delete(self.request)
         nt.assert_not_equal(self.node.logs.latest().action, NodeLog.CONTRIB_REMOVED)
+
+    def test_no_user_permissions_raises_error(self):
+        guid = self.node._id
+        request = RequestFactory().get(self.url)
+        request.user = self.user
+
+        with nt.assert_raises(PermissionDenied):
+            self.view.as_view()(request, node_id=guid, user_id=self.user)
+
+    def test_correct_view_permissions(self):
+        change_permission = Permission.objects.get(codename='change_node')
+        view_permission = Permission.objects.get(codename='view_node')
+        self.user.user_permissions.add(change_permission)
+        self.user.user_permissions.add(view_permission)
+        self.user.save()
+
+        request = RequestFactory().get(self.url)
+        request.user = self.user
+
+        response = self.view.as_view()(request, node_id=self.node._id, user_id=self.user._id)
+        nt.assert_equal(response.status_code, 200)

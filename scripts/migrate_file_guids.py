@@ -12,14 +12,14 @@ from framework.transactions.context import TokuTransaction
 from framework.guid.model import Guid
 
 from website.files import models
-from website.addons.box.model import BoxFile
-from website.addons.s3.model import S3GuidFile
-from website.addons.dropbox.model import DropboxFile
-from website.addons.github.model import GithubGuidFile
-from website.addons.dataverse.model import DataverseFile
-from website.addons.figshare.model import FigShareGuidFile
-from website.addons.osfstorage.model import OsfStorageGuidFile
-from website.addons.googledrive.model import GoogleDriveGuidFile
+from addons.box.model import BoxFile
+from addons.s3.model import S3GuidFile
+from addons.dropbox.model import DropboxFile
+from addons.github.model import GithubGuidFile
+from addons.dataverse.model import DataverseFile
+from addons.figshare.model import FigShareGuidFile
+from addons.osfstorage.model import OsfStorageGuidFile
+from addons.googledrive.model import GoogleDriveGuidFile
 
 logger = logging.getLogger(__name__)
 
@@ -75,7 +75,7 @@ def migrate_osfstorage_guids():
         # try:
         #     assert actual_guid._id == referent.get_guid()._id
         # except exceptions.MultipleResultsFound:
-        #     logger.warning('FileNode {!r} has muliple guids referring to it.'.format(referent.wrapped()))
+        #     logger.warning('FileNode {!r} has muliple guids referring to it.'.format(referent))
 
 
 def migrate_guids(guid_type, provider):
@@ -107,7 +107,7 @@ def migrate_guids(guid_type, provider):
                 Q('node', 'eq', guid.node) &
                 Q('path', 'eq', guid.waterbutler_path)
             )
-            logger.warning('{!r}({}) has multiple guids'.format(file_node.wrapped(), guid._id))
+            logger.warning('{!r}({}) has multiple guids'.format(file_node, guid._id))
 
         actual_guid = Guid.load(guid._id)
         actual_guid.referent = file_node

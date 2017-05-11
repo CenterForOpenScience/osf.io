@@ -10,7 +10,6 @@ from nose.tools import *  # flake8: noqa
 from rest_framework.test import APIRequestFactory
 
 from website.util import api_v2_url
-from api.base.middleware import TokuTransactionMiddleware
 from api.base import settings
 from api.base.middleware import CorsMiddleware
 from tests.base import ApiTestCase
@@ -26,27 +25,6 @@ class MiddlewareTestCase(ApiTestCase):
         self.request_factory = APIRequestFactory()
 
 
-# TODO Fix, these tests don't line up with the new middleware for django+flask
-@pytest.mark.skip
-class TestMiddlewareRollback(MiddlewareTestCase):
-    MIDDLEWARE = TokuTransactionMiddleware
-
-    @mock.patch('framework.transactions.handlers.commands')
-    def test_400_error_causes_rollback(self, mock_commands):
-
-        self.mock_response.status_code = 400
-        self.middleware.process_response(mock.Mock(), self.mock_response)
-
-        assert_true(mock_commands.rollback.called)
-
-    @mock.patch('framework.transactions.handlers.commands')
-    def test_200_OK_causes_commit(self, mock_commands):
-
-        self.mock_response.status_code = 200
-        self.middleware.process_response(mock.Mock(), self.mock_response)
-
-        assert_true(mock_commands.commit.called)
-
 class TestCorsMiddleware(MiddlewareTestCase):
     MIDDLEWARE = CorsMiddleware
 
@@ -57,7 +35,21 @@ class TestCorsMiddleware(MiddlewareTestCase):
             domains=[domain.netloc.lower()],
             name="Institute for Sexy Lizards"
         )
-        settings.load_institutions()
+        settings.load_origins_whitelist()
+        request = self.request_factory.get(url, HTTP_ORIGIN=domain.geturl())
+        response = HttpResponse()
+        self.middleware.process_request(request)
+        processed = self.middleware.process_response(request, response)
+        assert_equal(response['Access-Control-Allow-Origin'], domain.geturl())
+
+    def test_institutions_added_to_cors_whitelist(self):
+        url = api_v2_url('users/me/')
+        domain = urlparse("https://dinoprints.sexy")
+        preprintprovider = factories.PreprintProviderFactory(
+            domain=domain.netloc.lower(),
+            _id="DinoXiv"
+        )
+        settings.load_origins_whitelist()
         request = self.request_factory.get(url, HTTP_ORIGIN=domain.geturl())
         response = HttpResponse()
         self.middleware.process_request(request)

@@ -2,6 +2,77 @@
 Changelog
 *********
 
+0.109.0 (2017-05-10)
+====================
+
+- Support custom taxonomies for preprint providers.
+
+0.108.0 (2017-05-08)
+====================
+- [My Projects] Icon for Uncategorized disappears when project/component is highlighted
+- Comment pane should not appear in anonymous view-only links
+- Moving multiple GitHub files into folder fails
+- Incorrect heading text is displayed in copy or move "taking longer than expected" message
+- Files added to OSF Storage display incorrect time stamps
+- Update Social Links to ImpactStory
+- & in file name causes registration to fail
+- Prereg banner on Dashboard misbehaves on mobile and requires hard refresh to show correct color
+- Retractions should show the date retracted in the metadata
+- Update Default to Collapsed Preview Pane on My Projects Page
+- Add Search by User Name and Search by Email to Admin App
+- Finish user serialization
+- Add Banner to Private Project That Has Preprint
+- Generate Account Confirmation + Password reset Links in Admin App
+- Redirect osf.io/explore (and osf.io/explore/activity) to osf.io/activity
+- Better way to surface registration form
+- Improve wording on move/replace file modal
+- Change Default Language on Wiki without Content
+- Update Language when there are no components on a project
+- Change text prompt if no tags applied
+- Change Project Description Prompt text
+- Change No License Prompt Text
+- Improve Language for Non-Admins on Registrations Tab
+- Add timestamp to APIv2 file versions
+- Make wiki versioning more clear to users
+
+
+0.107.0 (2017-04-28)
+====================
+
+- Upgrade to Django 1.11.
+- Remove BaseFileNode.wrapped() method.
+- Remove guid_string field from models.
+- Preprints: Add LawArxiv.
+- Admin: Add Date Registration Initiated to node view.
+- Admin: Add link between projects and registrations.
+
+0.106.0 (2017-04-21)
+====================
+
+- Registrations with 100+ nodes fail with content_length_mismatch error
+- [Win 10] DropZone patch for Windows folder uploads (IE / Firefox)
+- Submitting to OSF4M using deleted project name does not create new project
+- Fangorn edit undefined
+- API 502s when refreshing github metadata (was: TypeError: Can't compare datetime.datetime to NoneType)
+- API 502s when requesting Github file metadata w/ version=2.2
+- Search unhappy with some users
+- Registries: "Withdrawn" label not appearing on newly-withdrawn registrations
+- Retraction detail pages throw mithril mounting error
+- Preprint Provider detail not 404-ing if not found
+- Sitemap index datemod -> lastmod
+- Cannot change GitHub branches on staging/staging3
+- When project marked spam, update EZID DOI status to Unavailable
+- Populate Fangorn text input on rename
+- Allow UVA dataverse-specific Pop-up in Fangorn upon publishing dataset/verse
+- Linked Registrations on Nodes in API
+- OSF - Convert all Dropbox v1 API code/clients to v2 API before deadline
+- Update dockerfile to support running registries locally
+
+0.105.0 (2017-04-02)
+====================
+
+- Migrate from TokuMX to Postgres and ModularODM to DjangoORM. APIv1 code is monkeypatched to use Django models.
+
 0.104.0 (2016-12-19)
 ====================
 - Various APIv2 fixes and improvements to support Preprints.

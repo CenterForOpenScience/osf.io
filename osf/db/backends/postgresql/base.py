@@ -2,9 +2,8 @@ import uuid
 
 import psycopg2
 from django.conf import settings
-from django.db.backends.postgresql.base import (
+from django.db.backends.postgresql.base import \
     DatabaseWrapper as PostgresqlDatabaseWrapper
-)
 from django.db.backends.postgresql.base import utc_tzinfo_factory
 
 
@@ -34,6 +33,8 @@ class server_side_cursors(object):
         self.connection.server_side_cursor_itersize = None
 
 
+# TODO: Server-side cursors are supported in Django 1.11. Remove our
+# implementation in favor of Django's
 class DatabaseWrapper(PostgresqlDatabaseWrapper):
     """
     Psycopg2 database backend that allows the use of server side cursors.
@@ -52,9 +53,9 @@ class DatabaseWrapper(PostgresqlDatabaseWrapper):
 
         super(DatabaseWrapper, self).__init__(*args, **kwargs)
 
-    def create_cursor(self):
+    def create_cursor(self, name=None):
         if not self.server_side_cursors:
-            return super(DatabaseWrapper, self).create_cursor()
+            return super(DatabaseWrapper, self).create_cursor(name=name)
 
         cursor = self.connection.cursor(
             name='osf.db.backends.postgresql_cursors:{}'.format(

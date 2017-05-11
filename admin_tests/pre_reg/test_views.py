@@ -3,24 +3,24 @@ from nose import tools as nt
 from django.test import RequestFactory
 from django.db import transaction
 from django.http import Http404
+from django.core.urlresolvers import reverse
+from django.contrib.auth.models import Permission
+from django.core.exceptions import PermissionDenied
 
 from tests.base import AdminTestCase
-from tests.factories import (
+from osf_tests.factories import (
     DraftRegistrationFactory,
     AuthUserFactory,
-    DraftRegistration,
     ProjectFactory,
+    UserFactory
 )
-from website.files.models import (
-    OsfStorageFile,
-    OsfStorageFileNode,
-    StoredFileNode,
-)
+from osf.models.registrations import DraftRegistration
+from addons.osfstorage.models import OsfStorageFile, OsfStorageFileNode
+
 from website.project.model import ensure_schemas
 from website.prereg.utils import get_prereg_schema
 
 from admin_tests.utilities import setup_view, setup_form_view, setup_user_view
-from admin_tests.factories import UserFactory
 from admin_tests.pre_reg import utils
 
 from admin.pre_reg.views import (
@@ -32,7 +32,7 @@ from admin.pre_reg.views import (
     get_file_questions,
 )
 from admin.pre_reg.forms import DraftRegistrationForm
-from admin.common_auth.logs import OSFLogEntry
+from osf.models.admin_log_entry import AdminLogEntry
 
 
 class TestDraftListView(AdminTestCase):
@@ -53,8 +53,10 @@ class TestDraftListView(AdminTestCase):
         )
         self.dr2.submit_for_review(self.user, {}, save=True)
         self.request = RequestFactory().get('/fake_path')
-        self.view = DraftListView()
-        self.view = setup_view(self.view, self.request)
+        self.plain_view = DraftListView
+        self.view = setup_view(self.plain_view(), self.request)
+
+        self.url = reverse('pre_reg:prereg')
 
     def test_get_queryset(self):
         res = list(self.view.get_queryset())
@@ -67,6 +69,24 @@ class TestDraftListView(AdminTestCase):
         nt.assert_is_instance(res, dict)
         nt.assert_is_instance(res['drafts'], list)
         nt.assert_equal(len(res['drafts']), 2)
+
+    def test_no_user_permissions_raises_error(self):
+        request = RequestFactory().get(self.url)
+        request.user = self.user
+
+        with nt.assert_raises(PermissionDenied):
+            self.plain_view.as_view()(request)
+
+    def test_correct_view_permissions(self):
+        view_permission = Permission.objects.get(codename='view_prereg')
+        self.user.user_permissions.add(view_permission)
+        self.user.save()
+
+        request = RequestFactory().get(self.url)
+        request.user = self.user
+
+        response = self.plain_view.as_view()(request)
+        nt.assert_equal(response.status_code, 200)
 
 
 class TestDraftDetailView(AdminTestCase):
@@ -81,14 +101,35 @@ class TestDraftDetailView(AdminTestCase):
         )
         self.dr1.submit_for_review(self.user, {}, save=True)
         self.request = RequestFactory().get('/fake_path')
-        self.view = DraftDetailView()
-        self.view = setup_view(self.view, self.request, draft_pk=self.dr1._id)
+        self.plain_view = DraftDetailView
+        self.view = setup_view(self.plain_view(), self.request, draft_pk=self.dr1._id)
+
+        self.url = reverse('pre_reg:view_draft', kwargs={'draft_pk': self.dr1._id})
 
     @mock.patch('admin.pre_reg.views.DraftDetailView.checkout_files')
     def test_get_object(self, mock_files):
         res = self.view.get_object()
         nt.assert_is_instance(res, dict)
         nt.assert_equal(res['pk'], self.dr1._id)
+
+    def test_no_user_permissions_raises_error(self):
+        request = RequestFactory().get(self.url)
+        request.user = self.user
+
+        with nt.assert_raises(PermissionDenied):
+            self.plain_view.as_view()(request, draft_pk=self.dr1._id)
+
+    @mock.patch('admin.pre_reg.views.DraftDetailView.checkout_files')
+    def test_correct_view_permissions(self, mock_files):
+        view_permission = Permission.objects.get(codename='view_prereg')
+        self.user.user_permissions.add(view_permission)
+        self.user.save()
+
+        request = RequestFactory().get(self.url)
+        request.user = self.user
+
+        response = self.plain_view.as_view()(request, draft_pk=self.dr1._id)
+        nt.assert_equal(response.status_code, 200)
 
 
 class TestDraftFormView(AdminTestCase):
@@ -103,8 +144,8 @@ class TestDraftFormView(AdminTestCase):
         self.dr1.submit_for_review(self.user, {}, save=True)
         self.dr1.flags  # sets flags if there aren't any yet.
         self.request = RequestFactory().get('/fake_path')
-        self.view = DraftFormView()
-        self.view = setup_view(self.view, self.request, draft_pk=self.dr1._id)
+        self.plain_view = DraftFormView
+        self.view = setup_view(self.plain_view(), self.request, draft_pk=self.dr1._id)
 
         self.post = RequestFactory().post('/fake_path')
         self.post.user = UserFactory()
@@ -113,6 +154,7 @@ class TestDraftFormView(AdminTestCase):
             'notes': 'Far between',
             'proof_of_publication': 'approved',
         }
+        self.url = reverse('pre_reg:view_draft', kwargs={'draft_pk': self.dr1._id})
 
     def test_dispatch_raise_404(self):
         view = setup_view(DraftFormView(), self.request, draft_pk='wrong')
@@ -144,10 +186,10 @@ class TestDraftFormView(AdminTestCase):
         view = setup_form_view(self.post_view, self.post, form,
                                draft_pk=self.dr1._id)
         view.draft = self.dr1
-        count = OSFLogEntry.objects.count()
+        count = AdminLogEntry.objects.count()
         with transaction.atomic():
             view.form_valid(form)
-        nt.assert_equal(count, OSFLogEntry.objects.count())
+        nt.assert_equal(count, AdminLogEntry.objects.count())
         self.dr1.reload()
         nt.assert_equal(self.dr1.notes, self.form_data['notes'])
 
@@ -160,11 +202,11 @@ class TestDraftFormView(AdminTestCase):
         view = setup_form_view(self.post_view, self.post, form,
                                draft_pk=self.dr1._id)
         view.draft = self.dr1
-        count = OSFLogEntry.objects.count()
+        count = AdminLogEntry.objects.count()
         with transaction.atomic():
             view.form_valid(form)
         nt.assert_true(mock_approve.called)
-        nt.assert_equal(count + 1, OSFLogEntry.objects.count())
+        nt.assert_equal(count + 1, AdminLogEntry.objects.count())
 
     @mock.patch('admin.pre_reg.views.DraftFormView.checkin_files')
     @mock.patch('admin.pre_reg.views.DraftRegistration.reject')
@@ -175,11 +217,40 @@ class TestDraftFormView(AdminTestCase):
         view = setup_form_view(self.post_view, self.post, form,
                                draft_pk=self.dr1._id)
         view.draft = self.dr1
-        count = OSFLogEntry.objects.count()
+        count = AdminLogEntry.objects.count()
         with transaction.atomic():
             view.form_valid(form)
         nt.assert_true(mock_reject.called)
-        nt.assert_equal(count + 1, OSFLogEntry.objects.count())
+        nt.assert_equal(count + 1, AdminLogEntry.objects.count())
+
+    def test_no_user_permissions_raises_error(self):
+        request = RequestFactory().get(self.url)
+        request.user = self.user
+
+        with nt.assert_raises(PermissionDenied):
+            self.plain_view.as_view()(request, draft_pk=self.dr1._id)
+
+    def test_get_correct_view_permissions(self):
+        view_permission = Permission.objects.get(codename='view_prereg')
+        self.user.user_permissions.add(view_permission)
+        self.user.save()
+
+        request = RequestFactory().get(self.url)
+        request.user = self.user
+
+        response = self.plain_view.as_view()(request, draft_pk=self.dr1._id)
+        nt.assert_equal(response.status_code, 200)
+
+    def test_post_correct_view_permissions(self):
+        view_permission = Permission.objects.get(codename='view_prereg')
+        self.user.user_permissions.add(view_permission)
+        self.user.save()
+
+        request = RequestFactory().get(self.url)
+        request.user = self.user
+
+        response = self.plain_view.as_view()(request, draft_pk=self.dr1._id)
+        nt.assert_equal(response.status_code, 200)
 
 
 class TestCommentUpdateView(AdminTestCase):
@@ -194,15 +265,24 @@ class TestCommentUpdateView(AdminTestCase):
         self.dr1.submit_for_review(self.user, {}, save=True)
         self.request = RequestFactory().post('/fake_path', data={'blah': 'arg'})
         self.request.user = UserFactory()
-        self.view = CommentUpdateView()
-        self.view = setup_view(self.view, self.request, draft_pk=self.dr1._id)
+        self.plain_view = CommentUpdateView
+        self.view = setup_view(self.plain_view(), self.request, draft_pk=self.dr1._id)
+
+        self.url = reverse('pre_reg:comment', kwargs={'draft_pk': self.dr1._id})
 
     @mock.patch('admin.pre_reg.views.json.loads')
     @mock.patch('admin.pre_reg.views.DraftRegistration.update_metadata')
     def test_post_comments(self, mock_json, mock_meta):
-        count = OSFLogEntry.objects.count()
+        count = AdminLogEntry.objects.count()
         self.view.post(self.request)
-        nt.assert_equal(OSFLogEntry.objects.count(), count + 1)
+        nt.assert_equal(AdminLogEntry.objects.count(), count + 1)
+
+    def test_no_user_permissions_raises_error(self):
+        request = RequestFactory().get(self.url)
+        request.user = self.user
+
+        with nt.assert_raises(PermissionDenied):
+            self.plain_view.as_view()(request, draft_pk=self.dr1._id)
 
 
 class TestPreregFiles(AdminTestCase):
@@ -265,7 +345,7 @@ class TestPreregFiles(AdminTestCase):
             registration_metadata=data
         )
         self.prereg_user.save()
-        self.admin_user = UserFactory(osf_id=self.prereg_user.pk)
+        self.admin_user = UserFactory()
 
     def test_checkout_files(self):
         self.draft.submit_for_review(self.user, {}, save=True)
@@ -275,7 +355,8 @@ class TestPreregFiles(AdminTestCase):
                                draft_pk=self.draft._id)
         view.checkout_files(self.draft)
         for q, f in self.d_of_qs.iteritems():
-            nt.assert_equal(self.prereg_user, f.checkout)
+            f.refresh_from_db()
+            nt.assert_equal(self.admin_user, f.checkout)
 
     def test_checkin_files(self):
         self.draft.submit_for_review(self.user, {}, save=True)
@@ -292,7 +373,7 @@ class TestPreregFiles(AdminTestCase):
 
     def test_get_meta_data_files(self):
         for item in get_metadata_files(self.draft):
-            nt.assert_in(type(item), [OsfStorageFile, StoredFileNode])
+            nt.assert_in(type(item), [OsfStorageFile, OsfStorageFileNode])
 
     def test_get_file_questions(self):
         questions = get_file_questions('prereg-prize.json')
@@ -315,14 +396,14 @@ class TestPreregFiles(AdminTestCase):
         data['q7']['value']['uploader']['extra'][0].pop('fileId')
         self.draft.update_metadata(data)
         for item in get_metadata_files(self.draft):
-            nt.assert_in(type(item), [OsfStorageFile, StoredFileNode])
+            nt.assert_in(type(item), [OsfStorageFile, OsfStorageFileNode])
 
     def test_file_id_missing_odd(self):
         data = self.draft.registration_metadata
         data['q26']['extra'][0].pop('fileId')
         self.draft.update_metadata(data)
         for item in get_metadata_files(self.draft):
-            nt.assert_in(type(item), [OsfStorageFile, StoredFileNode])
+            nt.assert_in(type(item), [OsfStorageFile, OsfStorageFileNode])
 
     def test_wrong_provider(self):
         data = self.draft.registration_metadata

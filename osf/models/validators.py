@@ -12,6 +12,36 @@ from website import settings
 from osf.exceptions import ValidationError, ValidationValueError, reraise_django_validation_errors
 
 
+def validate_history_item(items):
+    for value in items or []:
+        string_required(value.get('institution'))
+        startMonth = value.get('startMonth')
+        startYear = value.get('startYear')
+        endMonth = value.get('endMonth')
+        endYear = value.get('endYear')
+
+        validate_year(startYear)
+        validate_year(endYear)
+
+        if startYear and endYear:
+            if endYear < startYear:
+                raise ValidationValueError('End date must be later than start date.')
+            elif endYear == startYear:
+                if endMonth and startMonth and endMonth < startMonth:
+                    raise ValidationValueError('End date must be later than start date.')
+
+
+def validate_year(item):
+    if item:
+        try:
+            int(item)
+        except ValueError:
+            raise ValidationValueError('Please enter a valid year.')
+        else:
+            if len(item) != 4:
+                raise ValidationValueError('Please enter a valid year.')
+
+
 def string_required(value):
     if value is None or value.strip() == '':
         raise ValidationValueError('Value must not be empty.')
@@ -62,6 +92,16 @@ def validate_email(value):
     if value.split('@')[1].lower() in settings.BLACKLISTED_DOMAINS:
         raise ValidationError('Invalid Email')
 
+def validate_subject_hierarchy_length(parent):
+    from osf.models import Subject
+    parent = Subject.objects.get(id=parent)
+    if parent and len(parent.hierarchy) >= 3:
+        raise DjangoValidationError('Invalid hierarchy')
+
+def validate_subject_provider_mapping(provider, mapping):
+    if not mapping and provider._id != 'osf':
+        raise DjangoValidationError('Invalid PreprintProvider / Subject alias mapping.')
+
 
 @deconstructible
 class CommentMaxLength(object):
@@ -101,7 +141,7 @@ def validate_doi(value):
 def validate_location(value):
     if value is None:
         return  # Allow for None locations but not broken dicts
-    from website.addons.osfstorage import settings
+    from addons.osfstorage import settings
 
     for key in ('service', settings.WATERBUTLER_RESOURCE, 'object'):
         if key not in value:

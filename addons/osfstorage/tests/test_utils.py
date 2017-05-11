@@ -8,10 +8,10 @@ from framework import sessions
 from framework.flask import request
 
 from website.models import Session
-from website.addons.osfstorage.tests import factories
-from website.addons.osfstorage import utils
+from addons.osfstorage.tests import factories
+from addons.osfstorage import utils
 
-from website.addons.osfstorage.tests.utils import StorageTestCase
+from addons.osfstorage.tests.utils import StorageTestCase
 
 
 @pytest.mark.django_db

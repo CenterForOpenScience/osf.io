@@ -5,43 +5,35 @@ import os
 from addons.base.models import (BaseOAuthNodeSettings, BaseOAuthUserSettings,
                                 BaseStorageAddon)
 from django.db import models
-from dropbox.client import DropboxClient, DropboxOAuth2Flow
-from dropbox.rest import ErrorResponse
+from dropbox.dropbox import Dropbox
+from dropbox.exceptions import ApiError, DropboxException
+from dropbox.files import FolderMetadata
+from dropbox.client import DropboxOAuth2Flow
 from flask import request
 from framework.auth import Auth
 from framework.exceptions import HTTPError
 from framework.sessions import session
 from osf.models.external import ExternalProvider
-from osf.models.files import File, FileNode, Folder
-from urllib3.exceptions import MaxRetryError
-from website.addons.base import exceptions
-from website.addons.dropbox import settings
-from website.addons.dropbox.serializer import DropboxSerializer
+from osf.models.files import File, Folder, BaseFileNode
+from addons.base import exceptions
+from addons.dropbox import settings
+from addons.dropbox.serializer import DropboxSerializer
 from website.util import api_v2_url, web_url_for
 
 logger = logging.getLogger(__name__)
 
 
-class DropboxFileNode(FileNode):
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.files.models.dropbox.DropboxFileNode'
-    modm_query = None
-    # /TODO DELETE ME POST MIGRATION
-    provider = 'dropbox'
+class DropboxFileNode(BaseFileNode):
+    _provider = 'dropbox'
+
 
 class DropboxFolder(DropboxFileNode, Folder):
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.files.models.dropbox.DropboxFolder'
-    modm_query = None
-    # /TODO DELETE ME POST MIGRATION
     pass
 
+
 class DropboxFile(DropboxFileNode, File):
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.files.models.dropbox.DropboxFile'
-    modm_query = None
-    # /TODO DELETE ME POST MIGRATION
     pass
+
 
 class Provider(ExternalProvider):
     name = 'Dropbox'
@@ -93,15 +85,15 @@ class Provider(ExternalProvider):
         except DropboxOAuth2Flow.BadRequestException:
             raise HTTPError(http.BAD_REQUEST)
 
-        self.client = DropboxClient(access_token)
+        self.client = Dropbox(access_token)
 
-        info = self.client.account_info()
+        info = self.client.users_get_current_account()
         return self._set_external_account(
             user,
             {
                 'key': access_token,
-                'provider_id': info['uid'],
-                'display_name': info['display_name'],
+                'provider_id': info.account_id,
+                'display_name': info.name.display_name,
             }
         )
 
@@ -110,10 +102,6 @@ class UserSettings(BaseOAuthUserSettings):
     """Stores user-specific dropbox information.
     token.
     """
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.addons.dropbox.model.DropboxUserSettings'
-    modm_query = None
-    # /TODO DELETE ME POST MIGRATION
     oauth_provider = Provider
     serializer = DropboxSerializer
 
@@ -122,17 +110,14 @@ class UserSettings(BaseOAuthUserSettings):
 
         Tells Dropbox to remove the grant for the OSF associated with this account.
         """
-        client = DropboxClient(external_account.oauth_key)
+        client = Dropbox(external_account.oauth_key)
         try:
-            client.disable_access_token()
-        except ErrorResponse:
+            client.auth_token_revoke()
+        except DropboxException:
             pass
 
+
 class NodeSettings(BaseStorageAddon, BaseOAuthNodeSettings):
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.addons.dropbox.model.DropboxNodeSettings'
-    modm_query = None
-    # /TODO DELETE ME POST MIGRATION
     oauth_provider = Provider
     serializer = DropboxSerializer
 
@@ -167,9 +152,6 @@ class NodeSettings(BaseStorageAddon, BaseOAuthNodeSettings):
     def clear_settings(self):
         self.folder = None
 
-    def fetch_folder_name(self):
-        return self.folder_name
-
     def get_folders(self, **kwargs):
         folder_id = kwargs.get('folder_id')
         if folder_id is None:
@@ -186,43 +168,38 @@ class NodeSettings(BaseStorageAddon, BaseOAuthNodeSettings):
                 }
             }]
 
-        client = DropboxClient(self.external_account.oauth_key)
-        file_not_found = HTTPError(http.NOT_FOUND, data={
-            'message_short': 'File not found',
-            'message_long': 'The Dropbox file you requested could not be found.'
-        })
-
-        max_retry_error = HTTPError(http.REQUEST_TIMEOUT, data={
-            'message_short': 'Request Timeout',
-            'message_long': 'Dropbox could not be reached at this time.'
-        })
+        client = Dropbox(self.external_account.oauth_key)
 
         try:
-            metadata = client.metadata(folder_id)
-        except ErrorResponse:
-            raise file_not_found
-        except MaxRetryError:
-            raise max_retry_error
-
-        # Raise error if folder was deleted
-        if metadata.get('is_deleted'):
-            raise file_not_found
+            folder_id = '' if folder_id == '/' else folder_id
+            list_folder = client.files_list_folder(folder_id)
+            contents = [x for x in list_folder.entries]
+            while list_folder.has_more:
+                list_folder = client.files_list_folder_continue(list_folder.cursor)
+                contents += [x for x in list_folder.entries]
+        except ApiError as error:
+            raise HTTPError(http.BAD_REQUEST, data={
+                'message_short': error.user_message_text,
+                'message_long': error.user_message_text,
+            })
+        except DropboxException:
+            raise HTTPError(http.BAD_REQUEST)
 
         return [
             {
                 'addon': 'dropbox',
                 'kind': 'folder',
-                'id': item['path'],
-                'name': item['path'].split('/')[-1],
-                'path': item['path'],
+                'id': item.path_display,
+                'name': item.path_display.split('/')[-1],
+                'path': item.path_display,
                 'urls': {
-                    'folders': api_v2_url('nodes/{}/addons/box/folders/'.format(self.owner._id),
-                        params={'id': item['path']}
+                    'folders': api_v2_url('nodes/{}/addons/dropbox/folders/'.format(self.owner._id),
+                        params={'id': item.path_display}
                     )
                 }
             }
-            for item in metadata['contents']
-            if item['is_dir']
+            for item in contents
+            if isinstance(item, FolderMetadata)
         ]
 
     def set_folder(self, folder, auth):

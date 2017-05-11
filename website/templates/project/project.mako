@@ -1,4 +1,6 @@
 <%inherit file="project/project_base.mako"/>
+<%namespace name="render_nodes" file="util/render_nodes.mako" />
+<%namespace name="contributor_list" file="util/contributor_list.mako" />
 <%include file="project/nodes_privacy.mako"/>
 
 <%
@@ -49,7 +51,51 @@
                         <button class="btn btn-default disabled">Public</button>
                     % endif
                     </div>
-
+                    <!-- /ko -->
+                    <div class="btn-group"
+                        % if not user_name:
+                            data-bind="tooltip: {title: 'Log in or create an account to duplicate this project', placement: 'top'}"
+                        % endif
+                        >
+                            <div class="dropdown">
+                                <a
+                                % if user_name:
+                                    class="btn btn-default dropdown-toggle" data-toggle="dropdown" type="button" aria-expanded="false"
+                                % else:
+                                    class="btn btn-default disabled"
+                                % endif
+                                >
+                                    <i class="fa fa-code-fork"></i>&nbsp; ${ node['templated_count'] + node['fork_count'] + node['points'] }
+                                </a>
+                                <ul class="duplicate-menu dropdown-menu" role="menu">
+                                    <div class="arrow-up m-b-xs"></div>
+                                    % if not disk_saving_mode:
+                                    <li class="p-h-md">
+                                        <span class="btn btn-primary btn-block m-t-sm form-control${ '' if user_name and (user['is_contributor'] or node['is_public']) else ' disabled'}"
+                                           data-dismiss="modal"
+                                           onclick="NodeActions.forkNode();"
+                                        >
+                                            ${ language.FORK_ACTION | n }
+                                        </span>
+                                    </li>
+                                    %endif
+                                    <li class="p-h-md">
+                                        <span class="btn btn-primary btn-block m-t-sm form-control${'' if user_name and (user['is_contributor'] or node['is_public']) else ' disabled'}"
+                                           onclick="NodeActions.useAsTemplate();"
+                                        >
+                                            ${ language.TEMPLATE_ACTION | n }
+                                        </span>
+                                    </li>
+                                    % if not disk_saving_mode:
+                                    <li class="p-h-md">
+                                        <span class="btn btn-primary btn-block m-v-sm" href="${ node['url'] }forks/">
+                                            View Forks(${ node['fork_count']})
+                                        </span>
+                                    </li>
+                                    %endif
+                                </ul>
+                            </div>
+                    </div>
                     <!-- ko if: canBeOrganized -->
                     <div class="btn-group" style="display: none;" data-bind="visible: true">
 
@@ -69,24 +115,6 @@
                         <!-- /ko -->
 
                     </div>
-                    <!-- /ko -->
-                    <div class="btn-group"
-                        % if not user_name:
-                            data-bind="tooltip: {title: 'Log in or create an account to duplicate this project', placement: 'top'}"
-                        % endif
-                        >
-                            <a
-                            % if user_name:
-                                class="btn btn-default"
-                                data-bind="tooltip: {title: 'Duplicate', placement: 'bottom', container : 'body'}"
-                                data-target="#duplicateModal" data-toggle="modal"
-                            % else:
-                                class="btn btn-default disabled"
-                            % endif
-                                href="#">
-                                <span class="glyphicon glyphicon-share"></span>&nbsp; ${ node['templated_count'] + node['fork_count'] + node['points'] }
-                            </a>
-                    </div>
                     % if 'badges' in addons_enabled and badges and badges['can_award']:
                         <div class="btn-group">
                             <button class="btn btn-primary" id="awardBadge" style="border-bottom-right-radius: 4px;border-top-right-radius: 4px;">
@@ -95,7 +123,7 @@
                         </div>
                     % endif
                     % if node["is_public"]:
-                    <div class="btn-group" id="shareButtonsPopover"></div>
+                        <div class="btn-group" id="shareButtonsPopover"></div>
                     % endif
                 </div>
             </div>
@@ -113,11 +141,7 @@
                     <ol>Anonymous Contributors</ol>
                 % else:
                     <ol>
-                        <div mod-meta='{
-                            "tpl": "util/render_contributors.mako",
-                            "uri": "${node["api_url"]}get_contributors/",
-                            "replace": true
-                        }'></div>
+                        ${contributor_list.render_contributors_full(contributors=node['contributors'])}
                     </ol>
                 % endif
                 </div>
@@ -151,17 +175,6 @@
                     <p>
                     Forked from <a class="node-forked-from" href="/${node['forked_from_id']}/">${node['forked_from_display_absolute_url']}</a> on
                     <span data-bind="text: dateForked.local, tooltip: {title: dateForked.utc}"></span>
-                    </p>
-                % endif
-                % if node['is_registration']:
-                    <p>
-                    Registration Form:
-                    % for meta_schema in node['registered_schemas']:
-                    <a href="${node['url']}register/${meta_schema['id']}">${meta_schema['schema_name']}</a>
-                      % if len(node['registered_schemas']) > 1:
-                      ,
-                      % endif
-                    % endfor
                     </p>
                 % endif
                 % if node['is_registration']:
@@ -210,19 +223,46 @@
                         ${node['description']}</span>
                     </p>
                 % endif
-                % if ('admin' in user['permissions'] or node['license'].get('name', 'No license') != 'No license'):
-                    <p>
-                      <license-picker params="saveUrl: '${node['update_url']}',
-                                              saveMethod: 'PUT',
-                                              license: window.contextVars.node.license,
-                                              saveLicenseKey: 'node_license',
-                                              readonly: ${ node['is_registration'] | sjson, n}">
-                        <span id="license">License:</span>
-                        <span class="text-muted"> ${node['license'].get('name', 'No license')} </span>
-                      </license-picker>
-                    </p>
-                 % endif
-
+                <div class="row">
+                    % if not node['is_registration']:
+                        <div class="col-xs-12">
+                    % else:
+                        <div class="col-xs-6">
+                    % endif
+                            % if ('admin' in user['permissions'] or node['license'].get('name', 'No license') != 'No license'):
+                                <p>
+                                  <license-picker params="saveUrl: '${node['update_url']}',
+                                                          saveMethod: 'PUT',
+                                                          license: window.contextVars.node.license,
+                                                          saveLicenseKey: 'node_license',
+                                                          readonly: ${ node['is_registration'] | sjson, n}">
+                                    <span id="license">License:</span>
+                                    <span class="text-muted"> ${node['license'].get('name', 'No license')} </span>
+                                  </license-picker>
+                                </p>
+                             % endif
+                        </div>
+                        % if node['is_registration']:
+                            <div class="col-xs-6">
+                                % if len(node['registered_schemas']) == 1:
+                                    <a class="btn btn-primary pull-right" href="${node['url']}register/${node['registered_schemas'][0]['id']}">View Registration Form</a>
+                                % else:
+                                    ## This is a special case that is right now only possible on 12 Nodes in production
+                                    <div class="dropdown">
+                                        <button class="btn btn-primary dropdown-toggle pull-right" type="button" id="RegFormMenu" data-toggle="dropdown">
+                                            View Registration Forms
+                                            <span class="caret"></span>
+                                        </button>
+                                        <ul class="dropdown-menu pull-right">
+                                            % for meta_schema in node['registered_schemas']:
+                                                <li><a href="${node['url']}register/${meta_schema['id']}">${meta_schema['schema_name']}</a></li>
+                                            % endfor
+                                        </ul>
+                                    </div>
+                                % endif
+                            </div>
+                    % endif
+                </div>
             </div>
         </div>
 
@@ -234,7 +274,7 @@
 
 <%include file="project/modal_add_pointer.mako"/>
 
-% if user['can_comment'] or node['has_comments']:
+% if (user['can_comment'] or node['has_comments']) and not node['anonymous']:
     <%include file="include/comment_pane_template.mako"/>
 % endif
 
@@ -245,7 +285,7 @@
             This project represents a preprint. <a href="http://help.osf.io/m/preprints">Learn more</a> about how to work with preprint files.
             <a href="${node['preprint_url']}" class="btn btn-default btn-sm m-r-xs pull-right">View preprint</a>
             % if user['is_admin']:
-                <a href="${node['preprint_url']}?edit" class="btn btn-default btn-sm m-r-xs pull-right">Edit preprint</a>
+                <a href="${node['preprint_url']}edit" class="btn btn-default btn-sm m-r-xs pull-right">Edit preprint</a>
             % endif
         </div>
     </div>
@@ -257,10 +297,11 @@
     <div class="col-xs-12">
         <div class="pp-notice pp-warning m-b-md p-md clearfix">
             This project used to represent a preprint, but the primary preprint file has been moved or deleted. <a href="/preprints/submit/" class="btn btn-default btn-sm m-r-xs pull-right">Create a new preprint</a>
-        </div> 
+        </div>
     </div>
 </div>
 % endif
+
 
 <div class="row">
 
@@ -268,7 +309,7 @@
 
         %if user['show_wiki_widget']:
             <div id="addonWikiWidget" class="" mod-meta='{
-            "tpl": "../addons/wiki/templates/wiki_widget.mako",
+              "tpl": "../../addons/wiki/templates/wiki_widget.mako",
             "uri": "${node['api_url']}wiki/widget/"
         }'></div>
         %endif
@@ -308,7 +349,7 @@
                 % if addons[addon]['has_widget']:
                     %if addon != 'wiki': ## We already show the wiki widget at the top
                     <div class="addon-widget-container" mod-meta='{
-                            "tpl": "../addons/${addon}/templates/${addon}_widget.mako",
+                            "tpl": "../../addons/${addon}/templates/${addon}_widget.mako",
                             "uri": "${node['api_url']}${addon}/widget/"
                         }'></div>
                     %endif
@@ -442,18 +483,10 @@
         <div class="panel-body">
             % if node['children']:
                 <div id="containment">
-                    <div mod-meta='{
-                        "tpl": "util/render_nodes.mako",
-                        "uri": "${node["api_url"]}get_readable_descendants/",
-                        "replace": true,
-                        "kwargs": {
-                          "sortable" : ${'true' if not node['is_registration'] else 'false'},
-                          "pluralized_node_type": "components"
-                        }
-                      }'></div>
-                </div><!-- end containment -->
+                    ${render_nodes.render_nodes(nodes=node['descendants'], sortable=user['can_sort'], user=user, pluralized_node_type='components', show_path=False, include_js=True)}
+                </div>
             % else:
-              <p>No components have been added to this ${node['node_type']}.</p>
+              <p class="text-muted">Add components to organize your project.</p>
             % endif
         </div><!-- end addon-widget-body -->
     </div><!-- end components -->
@@ -502,6 +535,7 @@ ${parent.javascript_bottom()}
                 public: true,
             },
         },
+        customCitations: ${ custom_citations | sjson, n }
     });
 </script>
 

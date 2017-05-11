@@ -79,7 +79,7 @@ class Loggable(models.Model):
 
         if save:
             self.save()
-        if user:
+        if user and not self.is_collection:
             increment_user_activity_counters(user._primary_key, action, log.date.isoformat())
 
         return log
@@ -97,12 +97,13 @@ class Taggable(models.Model):
             raise ValueError('Must provide auth if adding a non-system tag')
 
         if not isinstance(tag, Tag):
-            tag_instance, created = Tag.objects.get_or_create(name=tag, system=system)
+            tag_instance, created = Tag.all_tags.get_or_create(name=tag, system=system)
         else:
             tag_instance = tag
 
         if not self.tags.filter(id=tag_instance.id).exists():
             self.tags.add(tag_instance)
+            # TODO: Logging belongs in on_tag_added hook
             if log:
                 self.add_tag_log(tag_instance, auth)
             if save:
@@ -111,6 +112,8 @@ class Taggable(models.Model):
         return tag_instance
 
     def add_system_tag(self, tag, save=True):
+        if isinstance(tag, Tag) and not tag.system:
+            raise ValueError('Non-system tag passed to add_system_tag')
         return self.add_tag(tag=tag, auth=None, save=save, log=False, system=True)
 
     def add_tag_log(self, *args, **kwargs):
@@ -127,8 +130,8 @@ class AddonModelMixin(models.Model):
 
     # from addons.base.apps import BaseAddonConfig
     settings_type = None
-    ADDONS_AVAILABLE = [config for config in apps.get_app_configs() if config.name.startswith('addons.') and
-        config.label != 'base']
+    ADDONS_AVAILABLE = sorted([config for config in apps.get_app_configs() if config.name.startswith('addons.') and
+        config.label != 'base'])
 
     class Meta:
         abstract = True

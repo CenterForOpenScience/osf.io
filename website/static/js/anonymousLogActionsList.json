@@ -76,5 +76,7 @@
     "affiliated_institution_removed": "A user removed an affiliation from a project",
     "preprint_initiated": "A user made a project a preprint",
     "preprint_file_updated": "A user updated the primary file of a preprint",
-    "preprint_license_updated": "A user updated the license of a preprint"
+    "preprint_license_updated": "A user updated the license of a preprint",
+    "view_only_link_added": "A user created a view-only link to a project",
+    "view_only_link_removed": "A user removed a view-only link to a project"
 }

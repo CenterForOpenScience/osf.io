@@ -1,3 +1,4 @@
+import logging
 import datetime
 import urlparse
 
@@ -6,7 +7,7 @@ from django.db import models
 
 from framework.auth import Auth
 from framework.exceptions import PermissionsError
-from osf.utils.fields import NonNaiveDatetimeField
+from osf.utils.fields import NonNaiveDateTimeField
 from website.exceptions import NodeStateError
 from website.util import api_v2_url
 from website import settings
@@ -17,23 +18,18 @@ from osf.models import (
     EmbargoTerminationApproval,
 )
 
-# TODO DELETE ME POST MIGRATION
-from modularodm import Q as MQ
-# /TODO DELETE ME POST MIGRATION
 from osf.exceptions import ValidationValueError
 from osf.models.base import BaseModel, ObjectIDMixin
 from osf.models.node import AbstractNode
 from osf.models.nodelog import NodeLog
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 
+logger = logging.getLogger(__name__)
+
 
 class Registration(AbstractNode):
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.project.model.Node'
-    modm_query = MQ('is_registration', 'eq', True)
-    # /TODO DELETE ME POST MIGRATION
 
-    registered_date = NonNaiveDatetimeField(db_index=True, null=True, blank=True)
+    registered_date = NonNaiveDateTimeField(db_index=True, null=True, blank=True)
     registered_user = models.ForeignKey(OSFUser,
                                         related_name='related_to',
                                         on_delete=models.SET_NULL,
@@ -312,7 +308,7 @@ class Registration(AbstractNode):
         if not self.is_public and not (self.embargo_end_date or self.is_pending_embargo):
             raise NodeStateError('Only public or embargoed registrations may be withdrawn.')
 
-        if self.root is not self:
+        if self.root_id != self.id:
             raise NodeStateError('Withdrawal of non-parent registrations is not permitted.')
 
         retraction = self._initiate_retraction(user, justification)
@@ -331,7 +327,13 @@ class Registration(AbstractNode):
         return retraction
 
     def delete_registration_tree(self, save=False):
+        logger.debug('Marking registration {} as deleted'.format(self._id))
         self.is_deleted = True
+        for draft_registration in DraftRegistration.objects.filter(registered_node=self):
+            # Allow draft registration to be submitted
+            if draft_registration.approval:
+                draft_registration.approval = None
+                draft_registration.save()
         if not getattr(self.embargo, 'for_existing_registration', False):
             self.registered_from = None
         if save:
@@ -340,6 +342,11 @@ class Registration(AbstractNode):
         for child in self.nodes_primary:
             child.delete_registration_tree(save=save)
 
+    class Meta:
+        # custom permissions for use in the OSF Admin App
+        permissions = (
+            ('view_registration', 'Can view registration details'),
+        )
 
 class DraftRegistrationLog(ObjectIDMixin, BaseModel):
     """ Simple log to show status changes for DraftRegistrations
@@ -349,11 +356,7 @@ class DraftRegistrationLog(ObjectIDMixin, BaseModel):
     field - action - simple action to track what happened
     field - user - user who did the action
     """
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.project.model.DraftRegistrationLog'
-    modm_query = None
-    # /TODO DELETE ME POST MIGRATION
-    date = NonNaiveDatetimeField(default=timezone.now)
+    date = NonNaiveDateTimeField(default=timezone.now)
     action = models.CharField(max_length=255)
     draft = models.ForeignKey('DraftRegistration', related_name='logs', null=True, blank=True)
     user = models.ForeignKey('OSFUser', null=True)
@@ -370,14 +373,10 @@ class DraftRegistrationLog(ObjectIDMixin, BaseModel):
 
 
 class DraftRegistration(ObjectIDMixin, BaseModel):
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.project.model.DraftRegistration'
-    modm_query = None
-    # /TODO DELETE ME POST MIGRATION
     URL_TEMPLATE = settings.DOMAIN + 'project/{node_id}/drafts/{draft_id}'
 
-    datetime_initiated = NonNaiveDatetimeField(default=timezone.now)  # auto_now_add=True)
-    datetime_updated = NonNaiveDatetimeField(auto_now=True)
+    datetime_initiated = NonNaiveDateTimeField(auto_now_add=True)
+    datetime_updated = NonNaiveDateTimeField(auto_now=True)
     # Original Node a draft registration is associated with
     branched_from = models.ForeignKey('Node', null=True, related_name='registered_draft')
 
@@ -440,7 +439,7 @@ class DraftRegistration(ObjectIDMixin, BaseModel):
     @property
     def url(self):
         return self.URL_TEMPLATE.format(
-            node_id=self.branched_from,
+            node_id=self.branched_from._id,
             draft_id=self._id
         )
 
@@ -489,7 +488,7 @@ class DraftRegistration(ObjectIDMixin, BaseModel):
     @property
     def status_logs(self):
         """ List of logs associated with this node"""
-        return self.logs.all().order('date')
+        return self.logs.all().order_by('date')
 
     @classmethod
     def create_from_node(cls, node, user, schema, data=None):
@@ -556,6 +555,7 @@ class DraftRegistration(ObjectIDMixin, BaseModel):
 
     def approve(self, user):
         self.approval.approve(user)
+        self.refresh_from_db()
         self.add_status_log(user, DraftRegistrationLog.APPROVED)
         self.approval.save()
 

@@ -2,7 +2,10 @@ from nose import tools as nt
 
 from django.test import RequestFactory
 from django.http import Http404
-from modularodm import Q
+from django.core.urlresolvers import reverse
+from django.contrib.auth.models import Permission
+from django.core.exceptions import PermissionDenied
+
 from tests.base import AdminTestCase
 from tests.factories import AuthUserFactory
 from tests.test_conferences import ConferenceFactory
@@ -32,6 +35,27 @@ class TestMeetingListView(AdminTestCase):
         view = MeetingListView()
         nt.assert_equal(len(view.get_queryset()), 3)
 
+    def test_no_user_permissions_raises_error(self):
+        user = AuthUserFactory()
+        request = RequestFactory().get(reverse('meetings:list'))
+        request.user = user
+
+        with nt.assert_raises(PermissionDenied):
+            MeetingListView.as_view()(request)
+
+    def test_correct_view_permissions(self):
+        user = AuthUserFactory()
+
+        view_permission = Permission.objects.get(codename='view_conference')
+        user.user_permissions.add(view_permission)
+        user.save()
+
+        request = RequestFactory().get(reverse('meetings:list'))
+        request.user = user
+
+        response = MeetingListView.as_view()(request)
+        nt.assert_equal(response.status_code, 200)
+
 
 class TestMeetingFormView(AdminTestCase):
     def setUp(self):
@@ -39,7 +63,7 @@ class TestMeetingFormView(AdminTestCase):
         self.conf = ConferenceFactory()
         self.user = AuthUserFactory()
         self.request = RequestFactory().post('/fake_path')
-        self.view = MeetingFormView()
+        self.view = MeetingFormView
         mod_data = dict(data)
         mod_data.update({
             'edit': 'True',
@@ -52,14 +76,16 @@ class TestMeetingFormView(AdminTestCase):
         self.form = MeetingForm(data=mod_data)
         self.form.is_valid()
 
+        self.url = reverse('meetings:detail', kwargs={'endpoint': self.conf.endpoint})
+
     def test_dispatch_raise_404(self):
-        view = setup_form_view(self.view, self.request, self.form,
+        view = setup_form_view(self.view(), self.request, self.form,
                                endpoint='meh')
         with nt.assert_raises(Http404):
             view.dispatch(self.request, endpoint='meh')
 
     def test_get_context(self):
-        view = setup_form_view(self.view, self.request, self.form,
+        view = setup_form_view(self.view(), self.request, self.form,
                                endpoint=self.conf.endpoint)
         view.conf = self.conf
         res = view.get_context_data()
@@ -68,7 +94,7 @@ class TestMeetingFormView(AdminTestCase):
         nt.assert_equal(res['endpoint'], self.conf.endpoint)
 
     def test_get_initial(self):
-        view = setup_form_view(self.view, self.request, self.form,
+        view = setup_form_view(self.view(), self.request, self.form,
                                endpoint=self.conf.endpoint)
         view.conf = self.conf
         res = view.get_initial()
@@ -77,14 +103,33 @@ class TestMeetingFormView(AdminTestCase):
         nt.assert_in('submission2_plural', res)
 
     def test_form_valid(self):
-        view = setup_form_view(self.view, self.request, self.form,
+        view = setup_form_view(self.view(), self.request, self.form,
                                endpoint=self.conf.endpoint)
         view.conf = self.conf
         view.form_valid(self.form)
         self.conf.reload()
-        nt.assert_equal(self.conf.admins[0].emails[0], self.user.emails[0])
+        nt.assert_equal(self.conf.admins.all()[0].emails[0], self.user.emails[0])
         nt.assert_equal(self.conf.location, self.form.cleaned_data['location'])
         nt.assert_equal(self.conf.start_date, self.form.cleaned_data['start_date'])
+
+    def test_no_user_permissions_raises_error(self):
+        request = RequestFactory().get(self.url)
+        request.user = self.user
+
+        with nt.assert_raises(PermissionDenied):
+            self.view.as_view()(request, endpoint=self.conf.endpoint)
+
+    def test_correct_view_permissions(self):
+
+        view_permission = Permission.objects.get(codename='change_conference')
+        self.user.user_permissions.add(view_permission)
+        self.user.save()
+
+        request = RequestFactory().get(self.url)
+        request.user = self.user
+
+        response = self.view.as_view()(request, endpoint=self.conf.endpoint)
+        nt.assert_equal(response.status_code, 200)
 
 
 class TestMeetingCreateFormView(AdminTestCase):
@@ -93,25 +138,44 @@ class TestMeetingCreateFormView(AdminTestCase):
         Conference.remove()
         self.user = AuthUserFactory()
         self.request = RequestFactory().post('/fake_path')
-        self.view = MeetingCreateFormView()
+        self.view = MeetingCreateFormView
         mod_data = dict(data)
         mod_data.update({'admins': self.user.emails[0]})
         self.form = MeetingForm(data=mod_data)
         self.form.is_valid()
 
+        self.url = reverse('meetings:create')
+
     def test_get_initial(self):
-        self.view.get_initial()
-        nt.assert_equal(self.view.initial['edit'], False)
+        self.view().get_initial()
+        nt.assert_equal(self.view().initial['edit'], False)
         nt.assert_equal(self.view.initial['submission1'],
                         DEFAULT_FIELD_NAMES['submission1'])
 
     def test_form_valid(self):
-        view = setup_form_view(self.view, self.request, self.form)
+        view = setup_form_view(self.view(), self.request, self.form)
         view.form_valid(self.form)
-        nt.assert_equal(
-            Conference.find(Q('endpoint', 'iexact', data['endpoint'])).count(),
-            1
-        )
+        nt.assert_equal(Conference.objects.filter(endpoint=data['endpoint']).count(), 1)
+
+    def test_no_user_permissions_raises_error(self):
+        request = RequestFactory().get(self.url)
+        request.user = self.user
+
+        with nt.assert_raises(PermissionDenied):
+            self.view.as_view()(request)
+
+    def test_correct_view_permissions(self):
+        change_permission = Permission.objects.get(codename='view_conference')
+        view_permission = Permission.objects.get(codename='change_conference')
+        self.user.user_permissions.add(view_permission)
+        self.user.user_permissions.add(change_permission)
+        self.user.save()
+
+        request = RequestFactory().get(self.url)
+        request.user = self.user
+
+        response = self.view.as_view()(request)
+        nt.assert_equal(response.status_code, 200)
 
 
 class TestMeetingMisc(AdminTestCase):

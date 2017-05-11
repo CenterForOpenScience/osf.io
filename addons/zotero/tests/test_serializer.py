@@ -5,7 +5,7 @@ import pytest
 from addons.base.tests.serializers import CitationAddonSerializerTestSuiteMixin
 from addons.base.tests.utils import MockFolder
 from addons.zotero.tests.factories import ZoteroAccountFactory
-from website.addons.zotero.serializer import ZoteroSerializer
+from addons.zotero.serializer import ZoteroSerializer
 
 from tests.base import OsfTestCase
 

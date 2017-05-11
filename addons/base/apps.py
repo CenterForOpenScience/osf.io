@@ -5,7 +5,10 @@ import mimetypes
 from django.apps import AppConfig
 
 from mako.lookup import TemplateLookup
+from framework.routing import process_rules
+from framework.flask import app
 from website import settings
+from website.util import rubeus
 
 
 def _is_image(filename):
@@ -26,7 +29,27 @@ USER_SETTINGS_TEMPLATE_DEFAULT = os.path.join(
 )
 
 
-class BaseAddonConfig(AppConfig):
+def generic_root_folder(addon_short_name):
+    def _root_folder(node_settings, auth, **kwargs):
+        """Return the Rubeus/HGrid-formatted response for the root folder only."""
+        # Quit if node settings does not have authentication
+        if not node_settings.has_auth or not node_settings.folder_id:
+            return None
+        node = node_settings.owner
+        root = rubeus.build_addon_root(
+            node_settings=node_settings,
+            name=node_settings.fetch_folder_name(),
+            permissions=auth,
+            nodeUrl=node.url,
+            nodeApiUrl=node.api_url,
+            private_key=kwargs.get('view_only', None),
+        )
+        return [root]
+    _root_folder.__name__ = '{0}_root_folder'.format(addon_short_name)
+    return _root_folder
+
+
+class BaseAddonAppConfig(AppConfig):
     name = 'addons.base'
     label = 'addons_base'
 
@@ -45,9 +68,13 @@ class BaseAddonConfig(AppConfig):
     get_hgrid_data = None
     max_file_size = None
     accept_extensions = True
+    # NOTE: Subclasses may make routes a property to avoid import errors
+    routes = []
+    owners = []
+    categories = []
 
     def __init__(self, *args, **kwargs):
-        ret = super(BaseAddonConfig, self).__init__(*args, **kwargs).__init__()
+        ret = super(BaseAddonAppConfig, self).__init__(*args, **kwargs).__init__()
         # Build template lookup
         paths = [settings.TEMPLATES_PATH]
         if self.user_settings_template:
@@ -94,7 +121,7 @@ class BaseAddonConfig(AppConfig):
         try:
             return self._icon
         except:
-            static_path = os.path.join('website', 'addons', self.short_name, 'static')
+            static_path = os.path.join('addons', self.short_name, 'static')
             static_files = glob.glob(os.path.join(static_path, 'comicon.*'))
             image_files = [
                 os.path.split(filename)[1]
@@ -136,3 +163,9 @@ class BaseAddonConfig(AppConfig):
             'has_page': 'page' in self.views,
             'has_widget': 'widget' in self.views,
         }
+
+    # Override Appconfig
+    def ready(self):
+        # Set up Flask routes
+        for route_group in self.routes:
+            process_rules(app, **route_group)

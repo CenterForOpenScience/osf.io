@@ -13,12 +13,8 @@ class TestTaxonomy(ApiTestCase):
 
         # Subject 1 has 3 children
         self.subject1 = SubjectFactory()
-        self.subject1_child1 = SubjectFactory(parents=[self.subject1])
-        self.subject1_child2 = SubjectFactory(parents=[self.subject1])
-
-        # Subject 2 has a child whose parent is both subject 1 and subject 2
-        self.subject2 = SubjectFactory()
-        self.subject2_child1_subject1_child3 = SubjectFactory(parents=[self.subject1, self.subject2])
+        self.subject1_child1 = SubjectFactory(parent=self.subject1)
+        self.subject1_child2 = SubjectFactory(parent=self.subject1)
 
         self.subjects = Subject.find()
         self.url = '/{}taxonomies/'.format(API_BASE)
@@ -41,13 +37,11 @@ class TestTaxonomy(ApiTestCase):
             parents_ids = []
             for parent in self.data[index]['attributes']['parents']:
                 parents_ids.append(parent['id'])
-            for parent_id in subject.parents.values_list('_id', flat=True):
-                assert parent_id in parents_ids
+            if subject.parent:
+                assert subject.parent._id in parents_ids
 
     def test_taxonomy_filter_top_level(self):
-        top_level_subjects = Subject.find(
-            Q('parents', 'eq', [])
-        )
+        top_level_subjects = Subject.objects.filter(parent__isnull=True)
         top_level_url = self.url + '?filter[parents]=null'
 
         res = self.app.get(top_level_url)
@@ -60,9 +54,7 @@ class TestTaxonomy(ApiTestCase):
             assert_equal(subject['attributes']['parents'], [])
 
     def test_taxonomy_filter_by_parent(self):
-        children_subjects = Subject.find(
-            Q('parents___id', 'eq', self.subject1._id)
-        )
+        children_subjects = Subject.objects.filter(parent__id=self.subject1.id)
         children_url = self.url + '?filter[parents]={}'.format(self.subject1._id)
 
         res = self.app.get(children_url)
