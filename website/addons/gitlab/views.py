@@ -293,11 +293,11 @@ def gitlab_hgrid_data(node_settings, auth, **kwargs):
         'private': node_settings.is_private
     }
     urls = {
-        'upload': node_settings.owner.api_url + 'gitlab/file/' + (ref or ''),
-        'fetch': node_settings.owner.api_url + 'gitlab/hgrid/' + (ref or ''),
-        'branch': node_settings.owner.api_url + 'gitlab/hgrid/root/',
-        'zip': node_settings.owner.api_url + 'gitlab/zipball/',
-        'repo': 'https://{0}/{1}/tree/{2}'.format(node_settings.external_account.display_name, node_settings.repo, branch)
+        'upload': node_settings.owner.api_url + 'gitlab/file/' + branch,
+        'fetch': node_settings.owner.api_url + 'gitlab/hgrid/' + branch,
+        'branch': node_settings.owner.api_url + 'gitlab/hgrid/root/' + branch,
+        'zip': 'https://{0}/{1}/repository/archive.zip?ref={2}'.format(node_settings.external_account.display_name, repo['path_with_namespace'], branch),
+        'repo': 'https://{0}/{1}/tree/{2}'.format(node_settings.external_account.display_name, repo['path_with_namespace'], branch)
     }
 
     branch_names = [each['name'] for each in branches]

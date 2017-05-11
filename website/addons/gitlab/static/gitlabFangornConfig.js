@@ -66,19 +66,18 @@ var _gitlabItemButtons = {
             if (tb.options.placement !== 'fileview') {
                 if (item.data.addonFullname) {
                     var branch = _getCurrentBranch(item);
-                    var branchParamUrl = '?ref=' + branch;
 
                     buttons.push(
                         m.component(Fangorn.Components.button, {
                             onclick: function (event) {
-                                window.location = item.data.urls.zip + branchParamUrl;
+                                window.location = item.data.urls.zip;
                             },
                             icon: 'fa fa-download',
                             className: 'text-primary'
                         }, 'Download'),
                         m.component(Fangorn.Components.button, {
                             onclick: function (event) {
-                                window.open(item.data.urls.repo + branchParamUrl, '_blank');
+                                window.open(item.data.urls.repo, '_blank');
                             },
                             icon: 'fa fa-external-link',
                             className: 'text-info'
@@ -114,19 +113,6 @@ var _gitlabItemButtons = {
                     ])
                 );
             }
-        }
-
-        if(item.data.provider && !item.data.isAddonRoot && item.data.permissions && item.data.permissions.edit && tb.options.placement !== 'fileview') {
-            buttons.push(
-                m.component(Fangorn.Components.button, {
-                    onclick: function() {
-                        tb.toolbarMode(Fangorn.Components.toolbarModes.RENAME);
-                    },
-                    tooltip: 'Change the name of the item',
-                    icon: 'fa fa-font',
-                    className : 'text-info'
-                }, 'Rename')
-            );
         }
 
         return m('span', buttons); // Tell fangorn this function is used.
