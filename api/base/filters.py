@@ -9,7 +9,7 @@ from api.base.exceptions import (InvalidFilterComparisonType,
                                  InvalidFilterError, InvalidFilterFieldError,
                                  InvalidFilterMatchType, InvalidFilterOperator,
                                  InvalidFilterValue)
-from api.base.serializers import RelationshipField, TargetField
+from api.base.serializers import RelationshipField, ShowIfVersion, TargetField
 from dateutil import parser as date_parser
 from django.core.exceptions import ValidationError
 from django.db.models import QuerySet as DjangoQuerySet
@@ -269,6 +269,8 @@ class FilterMixin(object):
         :param rest_framework.fields.Field field: Field instance
         """
         field = utils.decompose_field(field)
+        if isinstance(field, ShowIfVersion):
+            field = field.field
         if isinstance(field, ser.BooleanField):
             if utils.is_truthy(value):
                 return True
