@@ -10,6 +10,7 @@ ARCHIVER_SENDING = 'SENDING'
 ARCHIVER_NETWORK_ERROR = 'NETWORK_ERROR'
 ARCHIVER_SIZE_EXCEEDED = 'SIZE_EXCEEDED'
 ARCHIVER_FILE_NOT_FOUND = 'FILE_NOT_FOUND'
+ARCHIVER_FORCED_FAILURE = 'FORCED_FAILURE'
 ARCHIVER_UNCAUGHT_ERROR = 'UNCAUGHT_ERROR'
 
 ARCHIVER_FAILURE_STATUSES = {
@@ -17,6 +18,7 @@ ARCHIVER_FAILURE_STATUSES = {
     ARCHIVER_NETWORK_ERROR,
     ARCHIVER_SIZE_EXCEEDED,
     ARCHIVER_FILE_NOT_FOUND,
+    ARCHIVER_FORCED_FAILURE,
     ARCHIVER_UNCAUGHT_ERROR,
 }
 
@@ -51,6 +53,7 @@ class AggregateStatResult(object):
     def __init__(self, target_id, target_name, targets=None):
         self.target_id = target_id
         self.target_name = target_name
+        targets = targets or []
         self.targets = [target for target in targets if target]
 
     def __str__(self):

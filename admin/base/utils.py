@@ -12,4 +12,4 @@ def reverse_qs(view, urlconf=None, args=None, kwargs=None, current_app=None, que
 
 
 def osf_staff_check(user):
-    return user.is_authenticated() and user.is_staff
+    return user.is_authenticated and user.is_staff

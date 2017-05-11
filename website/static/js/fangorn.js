@@ -435,7 +435,16 @@ function checkConflicts(tb, item, folder, cb) {
     for(var i = 0; i < folder.children.length; i++) {
         var child = folder.children[i];
         if (child.data.name === item.data.name && child.id !== item.id) {
-            messageArray.push(m('p', 'An item named "' + child.data.name + '" already exists in this location.'));
+           messageArray.push([
+                m('p', 'An item named "' + child.data.name + '" already exists in this location.'),
+                m('h5.replace-file',
+                    '"Keep Both" will retain both files (and their version histories) in this location.'),
+                m('h5.replace-file',
+                    '"Replace" will overwrite the existing file in this location. ' +
+                    'You will lose previous versions of the overwritten file. ' +
+                    'You will keep previous versions of the moved file.'),
+                m('h5.replace-file', '"Cancel" will cancel the move.')
+            ]);
             
             tb.modal.update(
                 m('', messageArray), [
@@ -457,7 +466,17 @@ function checkConflictsRename(tb, item, name, cb) {
     for(var i = 0; i < parent.children.length; i++) {
         var child = parent.children[i];
         if (child.data.name === name && child.id !== item.id) {
-            messageArray.push(m('p', 'An item named "' + child.data.name + '" already exists in this location.'));
+            messageArray.push([
+                m('p', 'An item named "' + child.data.name + '" already exists in this location.'),
+                m('h5.replace-file',
+                    '"Keep Both" will retain both files (and their version histories) in this location.'),
+                m('h5.replace-file',
+                    '"Replace" will overwrite the existing file in this location. ' +
+                    'You will lose previous versions of the overwritten file. ' +
+                    'You will keep previous versions of the moved file.'),
+                m('h5.replace-file', '"Cancel" will cancel the move.')
+            ]);
+
 
             if (window.contextVars.node.preprintFileId === child.data.path.replace('/', '')) {
                 messageArray = messageArray.concat([
@@ -554,7 +573,8 @@ function doItemOp(operation, to, from, rename, conflict) {
             var mithrilButtons = m('div', [
                 m('span.tb-modal-btn', { 'class' : 'text-default', onclick : function() { tb.modal.dismiss(); }}, 'Close')
             ]);
-            tb.modal.update(mithrilContent, mithrilButtons);
+            var header =  m('h3.modal-title.break-word', 'Operation Information');
+            tb.modal.update(mithrilContent, mithrilButtons, header);
             return;
         }
         from.data = tb.options.lazyLoadPreprocess.call(this, resp).data;
@@ -619,6 +639,9 @@ function doItemOp(operation, to, from, rename, conflict) {
         orderFolder.call(tb, from.parent());
     }).always(function(){
         from.inProgress = false;
+        if (SYNC_UPLOAD_ADDONS.indexOf(to.data.provider) !== -1){
+            doSyncMove(tb, to.data.provider);
+        }        
     });
 }
 
@@ -1389,16 +1412,11 @@ function _fangornVersionColumn(item, col) {
  */
 function _fangornModifiedColumn(item, col) {
     var tb = this;
-    // Kludge for Dropbox date format
-    // TODO [OSF-6461]: remove kludge when we either move to DropBox v2 API or implememnt
-    // normalized dates in WaterButler
-    var myFormats = ['ddd, DD MMM YYYY HH:mm:ss ZZ', 'YYYY-MM-DD hh:mm A'];
     if (item.data.isAddonRoot && item.connected === false) { // as opposed to undefined, avoids unnecessary setting of this value
         return _connectCheckTemplate.call(this, item);
     }
-    if (item.kind === 'file' && item.data.permissions.view && item.data.modified) {
-        // "new Date" required for non-ISO date formats
-        item.data.modified = new moment(item.data.modified, myFormats, 'en').format('YYYY-MM-DD hh:mm A');
+    if (item.kind === 'file' && item.data.permissions.view && item.data.modified_utc) {
+        item.data.modified = new moment(moment.utc(item.data.modified_utc,'YYYY-MM-DD hh:mm A', 'en').toDate()).format('YYYY-MM-DD hh:mm A');
         return m(
             'span',
             item.data.modified
@@ -2371,9 +2389,26 @@ function _dropLogic(event, items, folder) {
         return tb.updateFolder(null, folder, _dropLogic.bind(tb, event, items, folder));
     }
 
-    $.each(items, function(index, item) {
-        checkConflicts(tb, item, folder, doItemOp.bind(tb, copyMode === 'move' ? OPERATIONS.MOVE : OPERATIONS.COPY, folder, item, undefined));
-    });
+    if (SYNC_UPLOAD_ADDONS.indexOf(folder.data.provider) !== -1) {
+        tb.syncFileMoveCache = tb.syncFileMoveCache || {};
+        tb.syncFileMoveCache[folder.data.provider] = tb.syncFileMoveCache[folder.data.provider] || [];
+        $.each(items, function(index, item) {
+            tb.syncFileMoveCache[folder.data.provider].push({'item' : item, 'folder' : folder});
+        });
+        doSyncMove(tb, folder.data.provider);
+    }else{
+        $.each(items, function(index, item) {
+            checkConflicts(tb, item, folder, doItemOp.bind(tb, copyMode === 'move' ? OPERATIONS.MOVE : OPERATIONS.COPY, folder, item, undefined));
+        });    
+    }
+}
+
+function doSyncMove(tb, provider){
+    var cache = tb.syncFileMoveCache[provider];
+    if (cache.length > 0){
+        var itemData = cache.pop();
+        checkConflicts(tb, itemData.item, itemData.folder, doItemOp.bind(tb, copyMode === 'move' ? OPERATIONS.MOVE : OPERATIONS.COPY, itemData.folder, itemData.item, undefined));
+    }
 }
 
 /**
@@ -2524,7 +2559,7 @@ function getPreprintPath(preprintFileId) {
 function getCopyMode(folder, items) {
     var tb = this;
     // Prevents side effects from rare instance where folders not fully populated
-    if (typeof folder.data === 'undefined') {
+    if (typeof folder === 'undefined' || typeof folder.data === 'undefined') {
         return 'forbidden';
     }
 

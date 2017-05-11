@@ -84,6 +84,11 @@
                     </div>
                     <!-- /ko -->
                     <div class="col-md-9">
+                        <!-- ko if: searching() -->
+                        <div class="panel-body clearfix" data-bind="css: {hidden: !searching()}">
+                            <div class="ball-scale ball-scale-blue text-center"><div></div></div>
+                        </div>
+                        <!-- /ko -->
                         <!-- ko if: searchStarted() && !totalCount() -->
                         <div class="search-results hidden" data-bind="css: {hidden: totalCount() }">No results found.</div>
                         <!-- /ko -->

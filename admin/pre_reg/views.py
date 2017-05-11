@@ -201,6 +201,9 @@ class CommentUpdateView(PermissionRequiredMixin, UpdateView):
     permission_required = ('osf.view_prereg', 'osf.administer_prereg')
     raise_exception = True
 
+    def get_object(self, *args, **kwargs):
+        return DraftRegistration.load(self.kwargs.get('draft_pk'))
+
     def post(self, request, *args, **kwargs):
         try:
             data = json.loads(request.body).get('schema_data', {})

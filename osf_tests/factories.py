@@ -484,13 +484,17 @@ class SubjectFactory(DjangoModelFactory):
         model = models.Subject
 
     @classmethod
-    def _create(cls, target_class, parents=None, *args, **kwargs):
+    def _create(cls, target_class, parent=None, provider=None, bepress_subject=None, *args, **kwargs):
+        provider = provider or models.PreprintProvider.objects.first() or PreprintProviderFactory(_id='osf')
+        if provider._id != 'osf' and not bepress_subject:
+            osf = models.PreprintProvider.load('osf') or PreprintProviderFactory(_id='osf')
+            bepress_subject = SubjectFactory(provider=osf)
         try:
-            ret = super(SubjectFactory, cls)._create(target_class, *args, **kwargs)
+            ret = super(SubjectFactory, cls)._create(target_class, parent=parent, provider=provider, bepress_subject=bepress_subject, *args, **kwargs)
         except IntegrityError:
             ret = models.Subject.objects.get(text=kwargs['text'])
-        if parents:
-            ret.parents.add(*parents)
+            if parent:
+                ret.parent = parent
         return ret
 
 
@@ -539,6 +543,17 @@ class PreprintFactory(DjangoModelFactory):
             materialized_path='/{}'.format(filename))
         file.save()
 
+        from addons.osfstorage import settings as osfstorage_settings
+
+        file.create_version(user, {
+            'object': '06d80e',
+            'service': 'cloud',
+            osfstorage_settings.WATERBUTLER_RESOURCE: 'osf',
+        }, {
+            'size': 1337,
+            'contentType': 'img/png'
+        }).save()
+
         preprint = target_class(node=project, provider=provider)
 
         auth = Auth(project.creator)
@@ -546,6 +561,7 @@ class PreprintFactory(DjangoModelFactory):
         if finish:
             preprint.set_primary_file(file, auth=auth)
             subjects = subjects or [[SubjectFactory()._id]]
+            preprint.save()
             preprint.set_subjects(subjects, auth=auth)
             preprint.set_published(is_published, auth=auth)
 
