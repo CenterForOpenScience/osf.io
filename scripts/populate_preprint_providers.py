@@ -258,7 +258,7 @@ def main(env):
                     <ul>
                         <li><b>Jack Arnal</b>, McDaniel College</li>
                         <li><b>David Barner</b>, University of California, San Diego</li>
-                        <li><b>Benjamin Brown</b>, Georgia Gwinnett College</li>
+                        <li><b>Benjamin Brown</b>, Georgia Gwinnett College, Committee Chair</li>
                         <li><b>David Condon</b>, Northwestern University</li>
                         <li><b>Will Cross</b>, North Carolina State University Libraries</li>
                         <li><b>Anita Eerland</b>, Utrecht University</li>
