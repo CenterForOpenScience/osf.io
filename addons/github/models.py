@@ -8,11 +8,13 @@ import markupsafe
 from addons.base.models import (BaseOAuthNodeSettings, BaseOAuthUserSettings,
                                 BaseStorageAddon)
 from django.db import models
+from django.contrib.postgres.fields import JSONField
+
 from framework.auth import Auth
 from github3 import GitHubError
 from osf.models.external import ExternalProvider
 from osf.models.files import File, Folder, BaseFileNode
-from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
+from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONEncoder
 from website import settings
 from addons.base import exceptions
 from addons.github import settings as github_settings
@@ -103,7 +105,7 @@ class NodeSettings(BaseStorageAddon, BaseOAuthNodeSettings):
     repo = models.TextField(blank=True, null=True)
     hook_id = models.TextField(blank=True, null=True)
     hook_secret = models.TextField(blank=True, null=True)
-    registration_data = DateTimeAwareJSONField(default=dict, blank=True, null=True)
+    registration_data = JSONField(encoder=DateTimeAwareJSONEncoder, default=dict, blank=True, null=True)
     user_settings = models.ForeignKey(UserSettings, null=True, blank=True)
 
     @property

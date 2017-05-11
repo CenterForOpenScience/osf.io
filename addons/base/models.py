@@ -5,6 +5,7 @@ import time
 import markupsafe
 import requests
 from django.db import models
+from django.contrib.postgres.fields import JSONField
 from framework.auth import Auth
 from framework.auth.decorators import must_be_logged_in
 from framework.exceptions import HTTPError, PermissionsError
@@ -14,7 +15,7 @@ from osf.models.external import ExternalAccount
 from osf.models.node import AbstractNode
 from osf.models.user import OSFUser
 from osf.modm_compat import Q
-from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
+from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONEncoder
 from website import settings
 from addons.base import logger, serializer
 from website.oauth.signals import oauth_complete
@@ -148,7 +149,7 @@ def oauth_complete(provider, account, user):
 class BaseOAuthUserSettings(BaseUserSettings):
     # Keeps track of what nodes have been given permission to use external
     #   accounts belonging to the user.
-    oauth_grants = DateTimeAwareJSONField(default=dict, blank=True)
+    oauth_grants = JSONField(encoder=DateTimeAwareJSONEncoder, default=dict, blank=True)
     # example:
     # {
     #     '<Node._id>': {
