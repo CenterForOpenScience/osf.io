@@ -29,7 +29,6 @@ __all__ = (
     'File',
     'Folder',
     'FileVersion',
-    'StoredFileNode',
     'BaseFileNode',
     'TrashedFileNode',
 )
@@ -401,11 +400,6 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
             self.name,
             self.node
         )
-
-
-# TODO Refactor code pointing at FileNode to point to StoredFileNode
-FileNode = StoredFileNode = BaseFileNode
-
 
 class UnableToRestore(Exception):
     pass
