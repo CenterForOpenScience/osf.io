@@ -9,6 +9,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
 from django.db.models import Manager
 from django.utils import timezone
+from django.contrib.postgres.fields import JSONField
 from modularodm.exceptions import NoResultsFound
 from typedmodels.models import TypedModel, TypedModelManager
 from include import IncludeManager
@@ -19,7 +20,7 @@ from osf.models.comment import CommentableMixin
 from osf.models.mixins import Taggable
 from osf.models.validators import validate_location
 from osf.modm_compat import Q
-from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
+from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONEncoder
 from osf.utils.fields import NonNaiveDateTimeField
 from website.files import utils
 from website.files.exceptions import VersionNotFoundError
@@ -87,7 +88,7 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
     # A list of dictionaries sorted by the 'modified' key
     # The raw output of the metadata request deduped by etag
     # Add regardless it can be pinned to a version or not
-    _history = DateTimeAwareJSONField(default=list, blank=True)
+    _history = JSONField(encoder=DateTimeAwareJSONEncoder, default=list, blank=True)
     # A concrete version of a FileNode, must have an identifier
     versions = models.ManyToManyField('FileVersion')
 
@@ -636,8 +637,8 @@ class FileVersion(ObjectIDMixin, BaseModel):
     # exists on the backend
     date_modified = NonNaiveDateTimeField(null=True, blank=True)
 
-    metadata = DateTimeAwareJSONField(blank=True, default=dict)
-    location = DateTimeAwareJSONField(default=None, blank=True, null=True, validators=[validate_location])
+    metadata = JSONField(encoder=DateTimeAwareJSONEncoder, blank=True, default=dict)
+    location = JSONField(encoder=DateTimeAwareJSONEncoder, default=None, blank=True, null=True, validators=[validate_location])
 
     includable_objects = IncludeManager()
 

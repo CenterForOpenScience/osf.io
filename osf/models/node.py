@@ -7,6 +7,7 @@ import warnings
 
 from dirtyfields import DirtyFieldsMixin
 from django.apps import apps
+from django.contrib.postgres.fields import JSONField
 from django.contrib.contenttypes.fields import GenericRelation
 from django.core.exceptions import ValidationError
 from django.core.urlresolvers import reverse
@@ -44,7 +45,7 @@ from osf.models.user import OSFUser
 from osf.models.validators import validate_doi, validate_title
 from osf.modm_compat import Q
 from osf.utils.auth import Auth, get_user
-from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
+from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONEncoder
 from osf.utils.fields import NonNaiveDateTimeField
 from website import language, settings
 from website.citations.utils import datetime_to_csl
@@ -285,7 +286,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     # Dictionary field mapping user id to a list of nodes in node.nodes which the user has subscriptions for
     # {<User.id>: [<Node._id>, <Node2._id>, ...] }
     # TODO: Can this be a reference instead of data?
-    child_node_subscriptions = DateTimeAwareJSONField(default=dict, blank=True)
+    child_node_subscriptions = JSONField(encoder=DateTimeAwareJSONEncoder, default=dict, blank=True)
     _contributors = models.ManyToManyField(OSFUser,
                                            through=Contributor,
                                            related_name='nodes')
@@ -304,7 +305,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     date_modified = NonNaiveDateTimeField(db_index=True, auto_now=True)
     deleted_date = NonNaiveDateTimeField(null=True, blank=True)
     description = models.TextField(blank=True, default='')
-    file_guid_to_share_uuids = DateTimeAwareJSONField(default=dict, blank=True)
+    file_guid_to_share_uuids = JSONField(encoder=DateTimeAwareJSONEncoder, default=dict, blank=True)
     forked_date = NonNaiveDateTimeField(db_index=True, null=True, blank=True)
     forked_from = models.ForeignKey('self',
                                     related_name='forks',
@@ -406,11 +407,11 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     )  # this should be a charfield but data from mongo didn't fit in 255
     # TODO why is this here if it's empty
     users_watching_node = models.ManyToManyField(OSFUser, related_name='watching')
-    wiki_pages_current = DateTimeAwareJSONField(default=dict, blank=True)
-    wiki_pages_versions = DateTimeAwareJSONField(default=dict, blank=True)
+    wiki_pages_current = JSONField(encoder=DateTimeAwareJSONEncoder, default=dict, blank=True)
+    wiki_pages_versions = JSONField(encoder=DateTimeAwareJSONEncoder, default=dict, blank=True)
     # Dictionary field mapping node wiki page to sharejs private uuid.
     # {<page_name>: <sharejs_id>}
-    wiki_private_uuids = DateTimeAwareJSONField(default=dict, blank=True)
+    wiki_private_uuids = JSONField(encoder=DateTimeAwareJSONEncoder, default=dict, blank=True)
 
     identifiers = GenericRelation(Identifier, related_query_name='nodes')
 

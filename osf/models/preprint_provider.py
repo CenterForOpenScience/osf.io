@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
 from django.db import models
+from django.contrib.postgres.fields import JSONField
 
 from modularodm import Q
 
 from osf.models.base import BaseModel, ObjectIDMixin
 from osf.models.licenses import NodeLicense
-from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
+from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONEncoder
 from osf.utils.fields import EncryptedTextField
 
 from website.util import api_v2_url
@@ -29,7 +30,7 @@ class PreprintProvider(ObjectIDMixin, BaseModel):
     social_facebook = models.CharField(null=True, blank=True, max_length=200)  # max length on prod: 8
     social_instagram = models.CharField(null=True, blank=True, max_length=200)  # max length on prod: 8
 
-    subjects_acceptable = DateTimeAwareJSONField(blank=True, default=list)
+    subjects_acceptable = JSONField(encoder=DateTimeAwareJSONEncoder, blank=True, default=list)
     licenses_acceptable = models.ManyToManyField(NodeLicense, blank=True)
 
     def __unicode__(self):

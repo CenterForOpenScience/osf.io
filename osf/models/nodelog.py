@@ -1,8 +1,9 @@
 from django.apps import apps
 from django.db import models
 from django.utils import timezone
+from django.contrib.postgres.fields import JSONField
 from osf.models.base import BaseModel, ObjectIDMixin
-from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
+from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONEncoder
 from osf.utils.fields import NonNaiveDateTimeField
 from website.util import api_v2_url
 
@@ -135,7 +136,7 @@ class NodeLog(ObjectIDMixin, BaseModel):
     date = NonNaiveDateTimeField(db_index=True, null=True, blank=True, default=timezone.now)
     # TODO build action choices on the fly with the addon stuff
     action = models.CharField(max_length=255, db_index=True)  # , choices=action_choices)
-    params = DateTimeAwareJSONField(default=dict)
+    params = JSONField(encoder=DateTimeAwareJSONEncoder, default=dict)
     should_hide = models.BooleanField(default=False)
     user = models.ForeignKey('OSFUser', related_name='logs', db_index=True, null=True, blank=True)
     foreign_user = models.CharField(max_length=255, null=True, blank=True)

@@ -3,8 +3,9 @@ import logging
 
 from django.db import models
 from django.utils import timezone
+from django.contrib.postgres.fields import JSONField
 from osf.exceptions import ValidationValueError, ValidationTypeError
-from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
+from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONEncoder
 from osf.utils.fields import NonNaiveDateTimeField
 
 from website import settings
@@ -64,7 +65,7 @@ class SpamMixin(models.Model):
     #   - Remote-Addr: ip address from request
     #   - User-Agent: user agent from request
     #   - Referer: referrer header from request (typo +1, rtd)
-    spam_data = DateTimeAwareJSONField(default=dict, blank=True)
+    spam_data = JSONField(encoder=DateTimeAwareJSONEncoder, default=dict, blank=True)
     date_last_reported = NonNaiveDateTimeField(default=None, null=True, blank=True, db_index=True)
 
     # Reports is a dict of reports keyed on reporting user
@@ -73,7 +74,8 @@ class SpamMixin(models.Model):
     #  - retracted: if a report has been retracted
     #  - category: What type of spam does the reporter believe this is
     #  - text: Comment on the comment
-    reports = DateTimeAwareJSONField(
+    reports = JSONField(
+        encoder=DateTimeAwareJSONEncoder,
         default=dict, blank=True, validators=[_validate_reports]
     )
 

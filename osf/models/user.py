@@ -42,7 +42,7 @@ from osf.models.session import Session
 from osf.models.tag import Tag
 from osf.models.validators import validate_email, validate_social, validate_history_item
 from osf.modm_compat import Q
-from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
+from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONEncoder
 from osf.utils.fields import NonNaiveDateTimeField
 from osf.utils.names import impute_names
 from website import settings as website_settings
@@ -170,7 +170,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
     # security emails that have been sent
     # TODO: This should be removed and/or merged with system_tags
-    security_messages = DateTimeAwareJSONField(default=dict, blank=True)
+    security_messages = fields.JSONField(encoder=DateTimeAwareJSONEncoder, default=dict, blank=True)
     # Format: {
     #   <message label>: <datetime>
     #   ...
@@ -181,7 +181,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
     # Per-project unclaimed user data:
     # TODO: add validation
-    unclaimed_records = DateTimeAwareJSONField(default=dict, blank=True)
+    unclaimed_records = fields.JSONField(encoder=DateTimeAwareJSONEncoder, default=dict, blank=True)
     # Format: {
     #   <project_id>: {
     #       'name': <name that referrer provided>,
@@ -201,7 +201,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     #   }
     #   ...
     # }
-    contributor_added_email_records = DateTimeAwareJSONField(default=dict, blank=True)
+    contributor_added_email_records = fields.JSONField(encoder=DateTimeAwareJSONEncoder, default=dict, blank=True)
 
     # The user into which this account was merged
     merged_by = models.ForeignKey('self', null=True, blank=True, related_name='merger')
@@ -212,7 +212,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
     # verification key v2: token, and expiration time
     # used for password reset, confirm account/email, claim account/contributor-ship
-    verification_key_v2 = DateTimeAwareJSONField(default=dict, blank=True, null=True)
+    verification_key_v2 = fields.JSONField(encoder=DateTimeAwareJSONEncoder, default=dict, blank=True, null=True)
     # Format: {
     #   'token': <verification token>
     #   'expires': <verification expiration time>
@@ -229,14 +229,14 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
     # email verification tokens
     #   see also ``unconfirmed_emails``
-    email_verifications = DateTimeAwareJSONField(default=dict, blank=True)
+    email_verifications = fields.JSONField(encoder=DateTimeAwareJSONEncoder, default=dict, blank=True)
     # Format: {
     #   <token> : {'email': <email address>,
     #              'expiration': <datetime>}
     # }
 
     # email lists to which the user has chosen a subscription setting
-    mailchimp_mailing_lists = DateTimeAwareJSONField(default=dict, blank=True)
+    mailchimp_mailing_lists = fields.JSONField(encoder=DateTimeAwareJSONEncoder, default=dict, blank=True)
     # Format: {
     #   'list1': True,
     #   'list2: False,
@@ -245,7 +245,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
     # email lists to which the user has chosen a subscription setting,
     # being sent from osf, rather than mailchimp
-    osf_mailing_lists = DateTimeAwareJSONField(default=get_default_mailing_lists, blank=True)
+    osf_mailing_lists = fields.JSONField(encoder=DateTimeAwareJSONEncoder, default=get_default_mailing_lists, blank=True)
     # Format: {
     #   'list1': True,
     #   'list2: False,
@@ -273,7 +273,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     suffix = models.CharField(max_length=255, blank=True)
 
     # identity for user logged in through external idp
-    external_identity = DateTimeAwareJSONField(default=dict, blank=True)
+    external_identity = fields.JSONField(encoder=DateTimeAwareJSONEncoder, default=dict, blank=True)
     # Format: {
     #   <external_id_provider>: {
     #       <external_id>: <status from ('VERIFIED, 'CREATE', 'LINK')>,
@@ -283,7 +283,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     # }
 
     # Employment history
-    jobs = DateTimeAwareJSONField(default=list, blank=True, validators=[validate_history_item])
+    jobs = fields.JSONField(encoder=DateTimeAwareJSONEncoder, default=list, blank=True, validators=[validate_history_item])
     # Format: list of {
     #     'title': <position or job title>,
     #     'institution': <institution or organization>,
@@ -297,7 +297,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     # }
 
     # Educational history
-    schools = DateTimeAwareJSONField(default=list, blank=True, validators=[validate_history_item])
+    schools = fields.JSONField(encoder=DateTimeAwareJSONEncoder, default=list, blank=True, validators=[validate_history_item])
     # Format: list of {
     #     'degree': <position or job title>,
     #     'institution': <institution or organization>,
@@ -311,7 +311,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     # }
 
     # Social links
-    social = DateTimeAwareJSONField(default=dict, blank=True, validators=[validate_social])
+    social = fields.JSONField(encoder=DateTimeAwareJSONEncoder, default=dict, blank=True, validators=[validate_social])
     # Format: {
     #     'profileWebsites': <list of profile websites>
     #     'twitter': <twitter id>,
@@ -327,7 +327,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     date_disabled = NonNaiveDateTimeField(db_index=True, null=True, blank=True)
 
     # when comments were last viewed
-    comments_viewed_timestamp = DateTimeAwareJSONField(default=dict, blank=True)
+    comments_viewed_timestamp = fields.JSONField(encoder=DateTimeAwareJSONEncoder, default=dict, blank=True)
     # Format: {
     #   'Comment.root_target._id': 'timestamp',
     #   ...
@@ -344,7 +344,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
     affiliated_institutions = models.ManyToManyField('Institution', blank=True)
 
-    notifications_configured = DateTimeAwareJSONField(default=dict, blank=True)
+    notifications_configured = fields.JSONField(encoder=DateTimeAwareJSONEncoder, default=dict, blank=True)
 
     objects = OSFUserManager()
 
