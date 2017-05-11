@@ -126,6 +126,9 @@ def stat_addon(addon_short_name, job_pk):
     job = ArchiveJob.load(job_pk)
     src, dst, user = job.info()
     src_addon = src.get_addon(addon_name)
+    if hasattr(src_addon, 'configured') and not src_addon.configured:
+        # Addon enabled but not configured - no file trees, nothing to archive.
+        return AggregateStatResult(src_addon._id, addon_short_name)
     try:
         file_tree = src_addon._get_file_tree(user=user, version=version)
     except HTTPError as e:

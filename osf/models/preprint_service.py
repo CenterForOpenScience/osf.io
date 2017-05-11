@@ -4,11 +4,12 @@ import urlparse
 from dirtyfields import DirtyFieldsMixin
 from django.db import models
 from django.utils import timezone
+from django.utils.functional import cached_property
 
 from framework.celery_tasks.handlers import enqueue_task
 from framework.exceptions import PermissionsError
+from osf.models.subject import Subject
 from osf.utils.fields import NonNaiveDateTimeField
-from website.files.models import StoredFileNode
 from website.preprints.tasks import on_preprint_updated
 from website.project.model import NodeLog
 from website.project.licenses import set_license
@@ -17,9 +18,7 @@ from website.util import api_v2_url
 from website.util.permissions import ADMIN
 from website import settings
 
-from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.models.base import BaseModel, GuidMixin
-from osf.models.subject import Subject
 
 class PreprintService(DirtyFieldsMixin, GuidMixin, BaseModel):
     date_created = NonNaiveDateTimeField(auto_now_add=True)
@@ -36,12 +35,7 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, BaseModel):
     license = models.ForeignKey('osf.NodeLicenseRecord',
                                 on_delete=models.SET_NULL, null=True, blank=True)
 
-    # This is a list of tuples of Subject id's. MODM doesn't do schema
-    # validation for DictionaryFields, but would unsuccessfully attempt
-    # to validate the schema for a list of lists of ForeignFields.
-    #
-    # Format: [[root_subject._id, ..., child_subject._id], ...]
-    subjects = DateTimeAwareJSONField(default=list, null=True, blank=True)
+    subjects = models.ManyToManyField(blank=True, to='osf.Subject', related_name='preprint_services')
 
     class Meta:
         unique_together = ('node', 'provider')
@@ -69,6 +63,12 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, BaseModel):
         if not self.node:
             return
         return self.node.is_preprint_orphan
+
+    @cached_property
+    def subject_hierarchy(self):
+        return [
+            s.object_hierarchy for s in self.subjects.exclude(children__in=self.subjects.all())
+        ]
 
     @property
     def deep_url(self):
@@ -99,12 +99,11 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, BaseModel):
 
     def get_subjects(self):
         ret = []
-        for subj_list in self.subjects:
+        for subj_list in self.subject_hierarchy:
             subj_hierarchy = []
-            for subj_id in subj_list:
-                subj = Subject.load(subj_id)
+            for subj in subj_list:
                 if subj:
-                    subj_hierarchy += ({'id': subj_id, 'text': subj.text}, )
+                    subj_hierarchy += ({'id': subj._id, 'text': subj.text}, )
             if subj_hierarchy:
                 ret.append(subj_hierarchy)
         return ret
@@ -113,14 +112,15 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, BaseModel):
         if not self.node.has_permission(auth.user, ADMIN):
             raise PermissionsError('Only admins can change a preprint\'s subjects.')
 
-        self.subjects = []
+        self.subjects.clear()
         for subj_list in preprint_subjects:
             subj_hierarchy = []
             for s in subj_list:
                 subj_hierarchy.append(s)
             if subj_hierarchy:
                 validate_subject_hierarchy(subj_hierarchy)
-                self.subjects.append(subj_hierarchy)
+                for s_id in subj_hierarchy:
+                    self.subjects.add(Subject.load(s_id))
 
         if save:
             self.save()
@@ -128,9 +128,6 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, BaseModel):
     def set_primary_file(self, preprint_file, auth, save=False):
         if not self.node.has_permission(auth.user, ADMIN):
             raise PermissionsError('Only admins can change a preprint\'s primary file.')
-
-        if not isinstance(preprint_file, StoredFileNode):
-            preprint_file = preprint_file.stored_object
 
         if preprint_file.node != self.node or preprint_file.provider != 'osfstorage':
             raise ValueError('This file is not a valid primary file for this preprint.')
@@ -167,7 +164,7 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, BaseModel):
                 raise ValueError('Preprint node is not a valid preprint; cannot publish.')
             if not self.provider:
                 raise ValueError('Preprint provider not specified; cannot publish.')
-            if not self.subjects:
+            if not self.subjects.exists():
                 raise ValueError('Preprint must have at least one subject to be published.')
             self.date_published = timezone.now()
             self.node._has_abandoned_preprint = False

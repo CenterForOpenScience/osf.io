@@ -437,13 +437,13 @@ function checkConflicts(tb, item, folder, cb) {
         if (child.data.name === item.data.name && child.id !== item.id) {
            messageArray.push([
                 m('p', 'An item named "' + child.data.name + '" already exists in this location.'),
-                m('h5.text-danger.replace-file',
+                m('h5.replace-file',
                     '"Keep Both" will retain both files (and their version histories) in this location.'),
-                m('h5.text-danger.replace-file',
+                m('h5.replace-file',
                     '"Replace" will overwrite the existing file in this location. ' +
                     'You will lose previous versions of the overwritten file. ' +
                     'You will keep previous versions of the moved file.'),
-                m('h5.text-danger.replace-file', '"Cancel" will cancel the move.')
+                m('h5.replace-file', '"Cancel" will cancel the move.')
             ]);
             
             tb.modal.update(
@@ -468,13 +468,13 @@ function checkConflictsRename(tb, item, name, cb) {
         if (child.data.name === name && child.id !== item.id) {
             messageArray.push([
                 m('p', 'An item named "' + child.data.name + '" already exists in this location.'),
-                m('h5.text-danger.replace-file',
+                m('h5.replace-file',
                     '"Keep Both" will retain both files (and their version histories) in this location.'),
-                m('h5.text-danger.replace-file',
+                m('h5.replace-file',
                     '"Replace" will overwrite the existing file in this location. ' +
                     'You will lose previous versions of the overwritten file. ' +
                     'You will keep previous versions of the moved file.'),
-                m('h5.text-danger.replace-file', '"Cancel" will cancel the move.')
+                m('h5.replace-file', '"Cancel" will cancel the move.')
             ]);
 
 
@@ -2475,8 +2475,8 @@ function isInvalidDropFolder(folder) {
         // must have a provider
         !folder.data.provider ||
         folder.data.status ||
-        // cannot add to dataverse
-        folder.data.provider === 'dataverse'
+        // cannot add to published dataverse
+        (folder.data.provider === 'dataverse' && folder.data.dataverseIsPublished)
     ) {
         return true;
     }
@@ -2493,8 +2493,10 @@ function isInvalidDropItem(folder, item, cannotBeFolder, mustBeIntra) {
         item.id === folder.id ||
         // no dropping on direct parent
         item.parentID === folder.id ||
-        // no moving items from dataverse
-        item.data.provider === 'dataverse' ||
+        // no moving published items from dataverse
+        (item.data.provider === 'dataverse' && item.data.extra.hasPublishedVersion) ||
+        // no moving folders into dataverse
+        (folder.data.provider === 'dataverse' && item.data.kind === 'folder') ||
         // no dropping if waiting on waterbutler ajax
         item.inProgress ||
         (cannotBeFolder && item.data.kind === 'folder') ||
