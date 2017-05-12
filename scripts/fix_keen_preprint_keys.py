@@ -1,13 +1,12 @@
 import logging
 import sys
-import django
+from website.app import setup_django
+setup_django()
 from django.db import transaction
-django.setup()
 
 from osf.models import Node
 from scripts import utils as script_utils
 from website import settings
-from website.app import init_app
 
 from keen import scoped_keys
 
@@ -31,6 +30,7 @@ def update():
     for node in queryset:
         if not valid_keen_key(node.keenio_read_key, node._id):
             count += 1
+            logger.info('Update keenio_read_key for node {}'.format(node._id))
             node.keenio_read_key = node.generate_keenio_read_key()
             node.save()
             updated_nodes.append(node._id)
@@ -40,7 +40,6 @@ def main():
     dry_run = '--dry' in sys.argv
     if not dry_run:
         script_utils.add_file_logger(logger, __file__)
-    init_app(set_backends=True, routes=False)
     with transaction.atomic():
         update()
         if dry_run:
