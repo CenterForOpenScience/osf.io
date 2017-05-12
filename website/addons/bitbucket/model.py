@@ -192,14 +192,8 @@ class BitbucketNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
             'is_registration': self.owner.is_registration,
         })
         if self.user_settings and self.user_settings.has_auth:
-            valid_credentials = False
-            owner = self.user_settings.owner
             connection = BitbucketClient(access_token=self.api.fetch_access_token())
 
-            # TODO: Fetch repo list client-side
-            # Since /user/repos excludes organization repos to which the
-            # current user has push access, we have to make extra requests to
-            # find them
             valid_credentials = True
             try:
                 mine = connection.repos()
@@ -212,6 +206,7 @@ class BitbucketNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
                 repo_names = []
                 valid_credentials = False
 
+            owner = self.user_settings.owner
             if owner == user:
                 ret.update({'repo_names': repo_names})
             ret.update({
