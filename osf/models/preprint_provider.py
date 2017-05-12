@@ -30,7 +30,8 @@ class PreprintProvider(ObjectIDMixin, BaseModel):
     social_instagram = models.CharField(null=True, blank=True, max_length=200)  # max length on prod: 8
 
     subjects_acceptable = DateTimeAwareJSONField(blank=True, default=list)
-    licenses_acceptable = models.ManyToManyField(NodeLicense, blank=True)
+    licenses_acceptable = models.ManyToManyField(NodeLicense, blank=True, related_name='licenses_acceptable')
+    default_license = models.ForeignKey(NodeLicense, blank=True, related_name='default_license', null=True)
 
     def __unicode__(self):
         return '{} with id {}'.format(self.name, self.id)
