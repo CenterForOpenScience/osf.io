@@ -152,7 +152,7 @@ var ViewModel = function(data) {
         self.loadingBootbox = bootbox.dialog({
             backdrop: true,
             closeButton: false,
-            message: '<div class="spinner-loading-wrapper"><div class="logo-spin logo-lg"></div><p class="m-t-sm fg-load-message"> Updating affiliation... this may take a minute.</p></div>',
+            message: '<div class="spinner-loading-wrapper"><div class="ball-scale ball-scale-blue"><div></div></div><p class="m-t-sm fg-load-message"> Updating affiliation... this may take a minute.</p></div>',
         });
         var index;
         var url = data.apiV2Prefix + 'institutions/' + item.id + '/relationships/nodes/';
