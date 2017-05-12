@@ -516,15 +516,15 @@ def send_claim_email(email, unclaimed_user, node, notify=True, throttle=24 * 360
 
 
 @contributor_added.connect
-def notify_added_contributor(node, contributor, auth=None, throttle=None, email_template='default'):
+def notify_added_contributor(node, user, auth=None, throttle=None, email_template='default'):
     throttle = throttle or settings.CONTRIBUTOR_ADDED_EMAIL_THROTTLE
 
     # Exclude forks and templates because the user forking/templating the project gets added
     # via 'add_contributor' but does not need to get notified.
     # Only email users for projects, or for components where they are not contributors on the parent node.
-    if (contributor.is_registered and not node.template_node and not node.is_fork and
+    if (user.is_registered and not node.template_node and not node.is_fork and
             (not node.parent_node or
-                (node.parent_node and not node.parent_node.is_contributor(contributor)))):
+                (node.parent_node and not node.parent_node.is_contributor(user)))):
 
         preprint_provider = None
         if email_template == 'preprint':
@@ -535,30 +535,30 @@ def notify_added_contributor(node, contributor, auth=None, throttle=None, email_
         else:
             email_template = getattr(mails, 'CONTRIBUTOR_ADDED_DEFAULT'.format(email_template.upper()))
 
-        contributor_record = contributor.contributor_added_email_records.get(node._id, {})
+        contributor_record = user.contributor_added_email_records.get(node._id, {})
         if contributor_record:
             timestamp = contributor_record.get('last_sent', None)
             if timestamp:
                 if not throttle_period_expired(timestamp, throttle):
                     return
         else:
-            contributor.contributor_added_email_records[node._id] = {}
+            user.contributor_added_email_records[node._id] = {}
 
         mails.send_mail(
-            contributor.username,
+            user.username,
             email_template,
-            user=contributor,
+            user=user,
             node=node,
             referrer_name=auth.user.fullname if auth else '',
-            all_global_subscriptions_none=check_if_all_global_subscriptions_are_none(contributor),
+            all_global_subscriptions_none=check_if_all_global_subscriptions_are_none(user),
             branded_service_name=preprint_provider
         )
 
-        contributor.contributor_added_email_records[node._id]['last_sent'] = get_timestamp()
-        contributor.save()
+        user.contributor_added_email_records[node._id]['last_sent'] = get_timestamp()
+        user.save()
 
-    elif not contributor.is_registered:
-        unreg_contributor_added.send(node, contributor=contributor, auth=auth, email_template=email_template)
+    elif not user.is_registered:
+        unreg_contributor_added.send(node, contributor=user, auth=auth, email_template=email_template)
 
 
 def find_preprint_provider(node):

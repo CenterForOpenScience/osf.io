@@ -221,18 +221,13 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         'title',
         'category',
         'description',
-        'visible_contributor_ids',
-        'tags',
         'is_fork',
-        'is_registration',
         'retraction',
         'embargo',
         'is_public',
         'is_deleted',
         'wiki_pages_current',
-        'is_retracted',
         'node_license',
-        'affiliated_institutions',
         'preprint_file',
     }
 
@@ -720,6 +715,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             raise UserNotAffiliatedError('User is not affiliated with {}'.format(inst.name))
         if not self.is_affiliated_with_institution(inst):
             self.affiliated_institutions.add(inst)
+            self.update_search()
         if log:
             NodeLog = apps.get_model('osf.NodeLog')
 
@@ -752,6 +748,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 )
             if save:
                 self.save()
+            self.update_search()
             return True
         return False
 
@@ -1144,10 +1141,9 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             if save:
                 self.save()
 
-            if self._id and send_email != 'false':
-                project_signals.contributor_added.send(self,
-                                                       contributor=contributor,
-                                                       auth=auth, email_template=send_email)
+            if self._id:
+                # send signal to notify contributor, subscribe to notifications, and update search
+                project_signals.contributor_added.send(self, user=contributor, auth=auth, email_template=send_email)
 
             return contrib_to_add, True
 
@@ -1366,7 +1362,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
         self.save()
 
-        # send signal to remove this user from project subscriptions
+        # send signal to remove this user from project subscriptions and update search
         project_signals.contributor_removed.send(self, user=contributor)
 
         return True
@@ -1950,7 +1946,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         forked.save()
 
         # Need to call this after save for the notifications to be created with the _primary_key
-        project_signals.contributor_added.send(forked, contributor=user, auth=auth)
+        project_signals.contributor_added.send(forked, user=user, auth=auth)
 
         forked.add_log(
             action=NodeLog.NODE_FORKED,
