@@ -3,10 +3,11 @@ import logging
 from dateutil import parser
 from django.db import models, transaction
 from django.utils import timezone
+from django.contrib.postgres.fields import JSONField
 
 from framework.sessions import session
 from osf.models.base import BaseModel
-from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
+from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONEncoder
 
 logger = logging.getLogger(__name__)
 
@@ -16,8 +17,8 @@ class UserActivityCounter(BaseModel):
 
     _id = models.CharField(max_length=5, null=False, blank=False, db_index=True,
                            unique=True)  # 5 in prod
-    action = DateTimeAwareJSONField(default=dict)
-    date = DateTimeAwareJSONField(default=dict)
+    action = JSONField(encoder=DateTimeAwareJSONEncoder, default=dict)
+    date = JSONField(encoder=DateTimeAwareJSONEncoder, default=dict)
     total = models.PositiveIntegerField(default=0)
 
     @classmethod
@@ -58,7 +59,7 @@ class PageCounter(BaseModel):
 
     _id = models.CharField(max_length=300, null=False, blank=False, db_index=True,
                            unique=True)  # 272 in prod
-    date = DateTimeAwareJSONField(default=dict)
+    date = JSONField(encoder=DateTimeAwareJSONEncoder, default=dict)
 
     total = models.PositiveIntegerField(default=0)
     unique = models.PositiveIntegerField(default=0)

@@ -1,5 +1,6 @@
 from django.db import models
 from django.utils import timezone
+from django.contrib.postgres.fields import JSONField
 
 from osf.utils.fields import NonNaiveDateTimeField
 from website.mails import Mail, send_mail
@@ -8,7 +9,7 @@ from website import settings as osf_settings
 
 from osf.models.base import BaseModel, ObjectIDMixin
 from osf.modm_compat import Q
-from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
+from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONEncoder
 
 
 class QueuedMail(ObjectIDMixin, BaseModel):
@@ -25,7 +26,7 @@ class QueuedMail(ObjectIDMixin, BaseModel):
     #    'nid' : 'ShIpTo',
     #    'fullname': 'Florence Welch',
     #}
-    data = DateTimeAwareJSONField(default=dict, blank=True)
+    data = JSONField(encoder=DateTimeAwareJSONEncoder, default=dict, blank=True)
     sent_at = NonNaiveDateTimeField(db_index=True, null=True, blank=True)
 
     def __repr__(self):

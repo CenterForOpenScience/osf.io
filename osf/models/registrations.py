@@ -4,6 +4,7 @@ import urlparse
 
 from django.utils import timezone
 from django.db import models
+from django.contrib.postgres.fields import JSONField
 
 from framework.auth import Auth
 from framework.exceptions import PermissionsError
@@ -22,7 +23,7 @@ from osf.exceptions import ValidationValueError
 from osf.models.base import BaseModel, ObjectIDMixin
 from osf.models.node import AbstractNode
 from osf.models.nodelog import NodeLog
-from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
+from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONEncoder
 
 logger = logging.getLogger(__name__)
 
@@ -37,7 +38,7 @@ class Registration(AbstractNode):
 
     registered_schema = models.ManyToManyField(MetaSchema)
 
-    registered_meta = DateTimeAwareJSONField(default=dict, blank=True)
+    registered_meta = JSONField(encoder=DateTimeAwareJSONEncoder, default=dict, blank=True)
     # TODO Add back in once dependencies are resolved
     registration_approval = models.ForeignKey(RegistrationApproval, null=True, blank=True)
     retraction = models.ForeignKey(Retraction, null=True, blank=True)
@@ -396,7 +397,7 @@ class DraftRegistration(ObjectIDMixin, BaseModel):
     #     'value': <value>
     #   }
     # }
-    registration_metadata = DateTimeAwareJSONField(default=dict, blank=True)
+    registration_metadata = JSONField(encoder=DateTimeAwareJSONEncoder, default=dict, blank=True)
     registration_schema = models.ForeignKey('MetaSchema', null=True)
     registered_node = models.ForeignKey('Registration', null=True, blank=True,
                                         related_name='draft_registration')
@@ -407,7 +408,7 @@ class DraftRegistration(ObjectIDMixin, BaseModel):
     # values. Defaults should be provided in the schema (e.g. 'paymentSent': false),
     # and these values are added to the DraftRegistration
     # TODO: Use "FIELD_ALIASES"?
-    _metaschema_flags = DateTimeAwareJSONField(default=dict, blank=True)
+    _metaschema_flags = JSONField(encoder=DateTimeAwareJSONEncoder, default=dict, blank=True)
     notes = models.TextField(blank=True)
 
     def __repr__(self):

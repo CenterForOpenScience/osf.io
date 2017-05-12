@@ -1,11 +1,11 @@
-from django.contrib.postgres.fields import ArrayField
+from django.contrib.postgres.fields import ArrayField, JSONField
 from django.utils import timezone
 from django.db import models
 
 from osf.utils.fields import NonNaiveDateTimeField
 from website import settings
 from osf.models.base import BaseModel, ObjectIDMixin
-from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
+from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONEncoder
 
 from addons.base.models import BaseStorageAddon
 from website.archiver import (
@@ -31,7 +31,7 @@ class ArchiveTarget(ObjectIDMixin, BaseModel):
     #     'num_files': <int>,
     #     'disk_usage': <float>,
     # }
-    stat_result = DateTimeAwareJSONField(default=dict, blank=True)
+    stat_result = JSONField(encoder=DateTimeAwareJSONEncoder, default=dict, blank=True)
     errors = ArrayField(models.TextField(), default=list, blank=True)
 
     def __repr__(self):

@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 from django.db import models
 from osf.models.base import BaseModel, ObjectIDMixin
-from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
+from django.contrib.postgres.fields import JSONField
+from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONEncoder
 from osf.utils.fields import NonNaiveDateTimeField
 
 from website.conferences.exceptions import ConferenceError
@@ -57,7 +58,7 @@ class Conference(ObjectIDMixin, BaseModel):
     talk = models.BooleanField(default=True)
     # field_names are used to customize the text on the conference page, the categories
     # of submissions, and the email adress to send material to.
-    field_names = DateTimeAwareJSONField(default=get_default_field_names)
+    field_names = JSONField(encoder=DateTimeAwareJSONEncoder, default=get_default_field_names)
 
     # Cached number of submissions
     num_submissions = models.IntegerField(default=0)
@@ -81,6 +82,6 @@ class Conference(ObjectIDMixin, BaseModel):
 
 
 class MailRecord(ObjectIDMixin, BaseModel):
-    data = DateTimeAwareJSONField()
+    data = JSONField(encoder=DateTimeAwareJSONEncoder)
     nodes_created = models.ManyToManyField('Node')
     users_created = models.ManyToManyField('OSFUser')

@@ -1,11 +1,13 @@
 # -*- coding: utf-8 -*-
 from django.db import models
+from django.contrib.postgres.fields import JSONField
 import jsonschema
 
 from website.util import api_v2_url
 
 from osf.models.base import BaseModel, ObjectIDMixin
-from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
+from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONEncoder
+
 from osf.exceptions import ValidationValueError
 
 from website.project.metadata.utils import create_jsonschema_from_metaschema
@@ -13,7 +15,7 @@ from website.project.metadata.utils import create_jsonschema_from_metaschema
 
 class MetaSchema(ObjectIDMixin, BaseModel):
     name = models.CharField(max_length=255)
-    schema = DateTimeAwareJSONField(default=dict)
+    schema = JSONField(encoder=DateTimeAwareJSONEncoder, default=dict)
     category = models.CharField(max_length=255, null=True, blank=True)
 
     # Version of the schema to use (e.g. if questions, responses change)
