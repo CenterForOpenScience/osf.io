@@ -176,6 +176,16 @@ services:
       - wb_tmp_vol:/tmp
     stdin_open: true
 
+  # wb_flower:
+  #   image: quay.io/centerforopenscience/waterbutler:develop
+  #   # Install flower here, instead of in WB repo, due to tornado version conflict
+  #   command: [/bin/bash, -c, "pip install flower && celery flower -A waterbutler.tasks.app.app --port=5556 --broker=amqp://guest:guest@192.168.168.167:5672//"]
+  #   depends_on:
+  #     - rabbitmq
+  #   # Use non-default port to avoid conflict with OSF flower
+  #   ports:
+  #     - 5556:5556
+
   ##################################
   # Central Authentication Service #
   ##################################
