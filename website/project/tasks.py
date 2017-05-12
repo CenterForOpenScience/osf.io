@@ -3,6 +3,8 @@ import logging
 import urlparse
 import requests
 
+from modularodm import Q
+
 from framework.celery_tasks import app as celery_app
 
 from website import settings
@@ -10,6 +12,22 @@ from website.util.share import GraphNode, format_contributor
 
 
 logger = logging.getLogger(__name__)
+
+
+@celery_app.task(ignore_results=True)
+def institution_set_dashboard_display(inst):
+    from website.models import Node
+    if not inst.dashboard_display:
+        num_nodes = len(Node.find_by_institutions(inst, query=(
+            Q('is_public', 'eq', True) &
+            Q('is_folder', 'ne', True) &
+            Q('is_deleted', 'ne', True) &
+            Q('parent_node', 'eq', None) &
+            Q('is_registration', 'eq', False)
+        )))
+        if num_nodes >= settings.INSTITUTION_DISPLAY_NODE_THRESHOLD:
+            inst.node.institution_dashboard_display = True
+            inst.node.save()
 
 
 @celery_app.task(ignore_results=True)
@@ -113,3 +131,4 @@ def format_registration(node):
         to_visit.extend(list(n.get_related()))
 
     return [node_.serialize() for node_ in visited]
+

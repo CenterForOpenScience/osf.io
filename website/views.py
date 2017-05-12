@@ -126,7 +126,6 @@ def index():
             'institution': True,
             'redirect_url': '/institutions/{}/'.format(institution._id),
         })
-
         return inst_dict
     except Institution.DoesNotExist:
         pass

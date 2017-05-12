@@ -6,6 +6,9 @@ from framework.exceptions import HTTPError
 from modularodm import Q
 from modularodm.exceptions import NoResultsFound
 
+from website.project import tasks
+
+
 def serialize_institution(inst):
     return {
         'id': inst._id,
@@ -22,4 +25,8 @@ def view_institution(inst_id, **kwargs):
         inst = Institution.find_one(Q('_id', 'eq', inst_id) & Q('is_deleted', 'ne', True))
     except NoResultsFound:
         raise HTTPError(http.NOT_FOUND)
+
+    if not inst.dashboard_display:
+        tasks.institution_set_dashboard_display(inst)
+
     return serialize_institution(inst)

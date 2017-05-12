@@ -4764,6 +4764,10 @@ class TestIndexView(OsfTestCase):
             node = ProjectFactory(creator=self.user)
             node.affiliated_institutions.add(self.inst_five)
 
+        for inst in [self.inst_one, self.inst_two, self.inst_three, self.inst_four, self.inst_five]:
+            url = web_url_for('view_institution', inst_id=inst._id)
+            self.app.get(url)
+
     def test_dashboard_institutions(self):
         with mock.patch('website.views.get_current_user_id', return_value=self.user._id):
             institution_ids = [
