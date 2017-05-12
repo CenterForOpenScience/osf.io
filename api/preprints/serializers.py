@@ -5,7 +5,7 @@ from rest_framework import serializers as ser
 
 from api.base.exceptions import Conflict
 from api.base.serializers import (
-    JSONAPISerializer, IDField, JSONAPIListField,
+    JSONAPISerializer, IDField,
     LinksField, RelationshipField, DateByVersion,
 )
 from api.base.utils import absolute_reverse, get_user_auth
@@ -63,10 +63,11 @@ class PreprintSerializer(JSONAPISerializer):
         'date_published',
         'provider',
         'is_published',
+        'subjects',
     ])
 
     id = IDField(source='_id', read_only=True)
-    subjects = JSONAPIListField(child=JSONAPIListField(child=TaxonomyField()), allow_null=True, required=False)
+    subjects = ser.SerializerMethodField()
     date_created = DateByVersion(read_only=True)
     date_modified = DateByVersion(read_only=True)
     date_published = DateByVersion(read_only=True)
@@ -116,6 +117,13 @@ class PreprintSerializer(JSONAPISerializer):
     class Meta:
         type_ = 'preprints'
 
+    def get_subjects(self, obj):
+        return [
+            [
+                TaxonomyField().to_representation(subj) for subj in hier
+            ] for hier in obj.subject_hierarchy
+        ]
+
     def get_preprint_url(self, obj):
         return absolute_reverse('preprints:preprint-detail', kwargs={'preprint_id': obj._id, 'version': self.context['request'].parser_context['kwargs']['version']})
 
@@ -124,6 +132,14 @@ class PreprintSerializer(JSONAPISerializer):
 
     def get_doi_url(self, obj):
         return 'https://dx.doi.org/{}'.format(obj.article_doi) if obj.article_doi else None
+
+    def run_validation(self, *args, **kwargs):
+        # Overrides construtor for validated_data to allow writes to a SerializerMethodField
+        # Validation for `subjects` happens in the model
+        _validated_data = super(PreprintSerializer, self).run_validation(*args, **kwargs)
+        if 'subjects' in self.initial_data:
+            _validated_data['subjects'] = self.initial_data['subjects']
+        return _validated_data
 
     def update(self, preprint, validated_data):
         assert isinstance(preprint, PreprintService), 'You must specify a valid preprint to be updated'
@@ -176,7 +192,7 @@ class PreprintSerializer(JSONAPISerializer):
         # nodes will send emails making it seem like a new node.
         if recently_published:
             for author in preprint.node.contributors:
-                if author.is_active and author != auth.user:
+                if author != auth.user:
                     project_signals.contributor_added.send(preprint.node, contributor=author, auth=auth, email_template='preprint')
 
         return preprint

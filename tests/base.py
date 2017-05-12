@@ -17,6 +17,7 @@ import mock
 import pytest
 
 from addons.wiki.models import NodeWikiPage
+from django.test.utils import override_settings
 from django.test import TestCase as DjangoTestCase
 from django.test import override_settings
 from faker import Factory
@@ -351,7 +352,6 @@ class ApiAddonTestCase(ApiTestCase):
 @override_settings(ROOT_URLCONF='admin.base.urls')
 class AdminTestCase(DbTestCase, DjangoTestCase, SearchTestCase, MockRequestTestCase):
     pass
-
 
 class NotificationTestCase(OsfTestCase):
     """An `OsfTestCase` to use when testing specific subscription behavior.

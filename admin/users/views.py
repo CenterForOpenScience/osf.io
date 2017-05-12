@@ -1,10 +1,13 @@
 from __future__ import unicode_literals
 
 import csv
+import pytz
 from furl import furl
 from datetime import datetime, timedelta
-from django.views.generic import FormView, DeleteView, ListView
+from django.views.defaults import page_not_found
+from django.views.generic import FormView, DeleteView, ListView, TemplateView
 from django.contrib.auth.mixins import PermissionRequiredMixin
+from django.core.urlresolvers import reverse
 from django.core.exceptions import PermissionDenied
 from django.core.mail import send_mail
 from django.http import Http404, HttpResponse
@@ -21,7 +24,7 @@ from framework.auth.core import generate_verification_key
 from website.mailchimp_utils import subscribe_on_confirm
 from website import search
 
-from admin.base.views import GuidFormView, GuidView
+from admin.base.views import GuidView
 from osf.models.admin_log_entry import (
     update_admin_log,
     USER_2_FACTOR,
@@ -33,7 +36,7 @@ from osf.models.admin_log_entry import (
 )
 
 from admin.users.serializers import serialize_user
-from admin.users.forms import EmailResetForm, WorkshopForm
+from admin.users.forms import EmailResetForm, WorkshopForm, UserSearchForm
 from admin.users.templatetags.user_extras import reverse_user
 from website.settings import DOMAIN, SUPPORT_EMAIL
 
@@ -58,12 +61,14 @@ class UserDeleteView(PermissionRequiredMixin, DeleteView):
                 if 'spam_flagged' in user.system_tags or 'ham_confirmed' in user.system_tags:
                     if 'spam_flagged' in user.system_tags:
                         t = Tag.all_tags.get(name='spam_flagged', system=True)
+                        # TODO: removing system tags this way does not currently work -- https://openscience.atlassian.net/browse/OSF-7760
                         user.tags.remove(t)
                     if 'ham_confirmed' in user.system_tags:
                         t = Tag.all_tags.get(name='ham_confirmed', system=True)
                         user.tags.remove(t)
-                    if 'spam_confirmed' not in user.system_tags:
-                        user.add_system_tag('spam_confirmed')
+
+                if kwargs.get('is_spam') and 'spam_confirmed' not in user.system_tags:
+                    user.add_system_tag('spam_confirmed')
                 flag = USER_REMOVED
                 message = 'User account {} disabled'.format(user.pk)
             else:
@@ -76,7 +81,7 @@ class UserDeleteView(PermissionRequiredMixin, DeleteView):
                         user.tags.remove(t)
                     if 'spam_confirmed' in user.system_tags:
                         t = Tag.all_tags.get(name='spam_confirmed', system=True)
-                        user.tags.remove('spam_confirmed')
+                        user.tags.remove(t)
                     if 'ham_confirmed' not in user.system_tags:
                         user.add_system_tag('ham_confirmed')
                 flag = USER_RESTORED
@@ -257,15 +262,66 @@ class User2FactorDeleteView(UserDeleteView):
         return redirect(reverse_user(self.kwargs.get('guid')))
 
 
-class UserFormView(PermissionRequiredMixin, GuidFormView):
+class UserFormView(PermissionRequiredMixin, FormView):
     template_name = 'users/search.html'
-    object_type = 'user'
+    object_type = 'osfuser'
     permission_required = 'osf.view_osfuser'
     raise_exception = True
+    form_class = UserSearchForm
+
+    def __init__(self, *args, **kwargs):
+        self.redirect_url = None
+        super(UserFormView, self).__init__(*args, **kwargs)
+
+    def form_valid(self, form):
+        guid = form.cleaned_data['guid']
+        name = form.cleaned_data['name']
+        email = form.cleaned_data['email']
+
+        if guid or email:
+            if email:
+                try:
+                    user = OSFUser.objects.get(emails__contains=[email])
+                    guid = user.guids.first()._id
+                except OSFUser.DoesNotExist:
+                    return page_not_found(self.request, AttributeError('User with email address {} not found.'.format(email)))
+            self.redirect_url = reverse('users:user', kwargs={'guid': guid})
+        elif name:
+            self.redirect_url = reverse('users:search_list', kwargs={'name': name})
+
+        return super(UserFormView, self).form_valid(form)
 
     @property
     def success_url(self):
-        return reverse_user(self.guid)
+        return self.redirect_url
+
+
+class UserSearchList(PermissionRequiredMixin, ListView):
+    template_name = 'users/list.html'
+    permission_required = 'osf.view_osfuser'
+    raise_exception = True
+    form_class = UserSearchForm
+    paginate_by = 25
+
+    def get_queryset(self):
+        query = OSFUser.objects.filter(fullname__icontains=self.kwargs['name']).only(
+            'guids', 'fullname', 'username', 'date_confirmed', 'date_disabled'
+        )
+        return query
+
+    def get_context_data(self, **kwargs):
+        users = self.get_queryset()
+        page_size = self.get_paginate_by(users)
+        paginator, page, query_set, is_paginated = self.paginate_queryset(users, page_size)
+        kwargs['page'] = page
+        kwargs['users'] = [{
+            'name': user.fullname,
+            'username': user.username,
+            'id': user.guids.first()._id,
+            'confirmed': user.date_confirmed,
+            'disabled': user.date_disabled if user.is_disabled else None
+        } for user in query_set]
+        return super(UserSearchList, self).get_context_data(**kwargs)
 
 
 class UserView(PermissionRequiredMixin, GuidView):
@@ -381,6 +437,77 @@ class UserWorkshopFormView(PermissionRequiredMixin, FormView):
 
     def form_invalid(self, form):
         super(UserWorkshopFormView, self).form_invalid(form)
+
+
+class GetUserLink(PermissionRequiredMixin, TemplateView):
+    permission_required = 'osf.change_osfuser'
+    template_name = 'users/get_link.html'
+    raise_exception = True
+
+    def get_link(self, user):
+        raise NotImplementedError()
+
+    def get_link_type(self):
+        # Used in the title of the link modal
+        raise NotImplementedError()
+
+    def get_claim_links(self, user):
+        return None
+
+    def get_context_data(self, **kwargs):
+        user = OSFUser.load(self.kwargs.get('guid'))
+
+        kwargs['user_link'] = self.get_link(user)
+        kwargs['username'] = user.username
+        kwargs['title'] = self.get_link_type()
+        kwargs['node_claim_links'] = self.get_claim_links(user)
+
+        return super(GetUserLink, self).get_context_data(**kwargs)
+
+
+class GetUserConfirmationLink(GetUserLink):
+    def get_link(self, user):
+        return user.get_confirmation_url(user.username, force=True)
+
+    def get_link_type(self):
+        return 'User Confirmation'
+
+
+class GetPasswordResetLink(GetUserLink):
+    def get_link(self, user):
+        user.verification_key_v2 = generate_verification_key(verification_type='password')
+        user.verification_key_v2['expires'] = datetime.utcnow().replace(tzinfo=pytz.utc) + timedelta(hours=48)
+        user.save()
+
+        reset_abs_url = furl(DOMAIN)
+        reset_abs_url.path.add(('resetpassword/{}/{}'.format(user._id, user.verification_key_v2['token'])))
+        return reset_abs_url
+
+    def get_link_type(self):
+        return 'Password Reset'
+
+
+class GetUserClaimLinks(GetUserLink):
+    def get_claim_links(self, user):
+        links = []
+
+        for guid, value in user.unclaimed_records.iteritems():
+            node = Node.load(guid)
+            url = '{base_url}user/{uid}/{project_id}/claim/?token={token}'.format(
+                base_url=DOMAIN,
+                uid=user._id,
+                project_id=guid,
+                token=value['token']
+            )
+            links.append('Claim URL for node {}: {}'.format(node._id, url))
+
+        return links or ['User currently has no active unclaimed records for any nodes.']
+
+    def get_link(self, user):
+        return None
+
+    def get_link_type(self):
+        return 'Claim User'
 
 
 class ResetPasswordView(PermissionRequiredMixin, FormView):

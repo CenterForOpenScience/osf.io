@@ -19,6 +19,8 @@ class PreprintProviderSerializer(JSONAPISerializer):
     email_contact = ser.CharField(required=False, allow_null=True)
     email_support = ser.CharField(required=False, allow_null=True)
     example = ser.CharField(required=False, allow_null=True)
+    domain = ser.CharField(required=False, allow_null=False)
+    domain_redirect_enabled = ser.CharField(required=False, allow_null=False)
     social_twitter = ser.CharField(required=False, allow_null=True)
     social_facebook = ser.CharField(required=False, allow_null=True)
     social_instagram = ser.CharField(required=False, allow_null=True)

@@ -164,19 +164,6 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
         """The comment page type associated with StoredFileNodes."""
         return 'files'
 
-    @property
-    def stored_object(self):
-        """
-        DEPRECATED: Returns self after logging.
-        :return:
-        """
-        logger.warn('BaseFileNode.stored_object is deprecated.')
-        return self
-
-    @stored_object.setter
-    def stored_object(self, value):
-        raise DeprecatedException('BaseFileNode.stored_object is deprecated.')
-
     @classmethod
     def create(cls, **kwargs):
         kwargs.update(provider=cls._provider)
@@ -340,7 +327,7 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
 
     def move_under(self, destination_parent, name=None):
         self.name = name or self.name
-        self.parent = destination_parent.stored_object
+        self.parent = destination_parent
         self._update_node(save=True)  # Trust _update_node to save us
 
         return self

@@ -16,7 +16,8 @@ from api.base.serializers import (JSONAPISerializer,
                                   TargetField,
                                   RelationshipField,
                                   IDField, TypeField, LinksField,
-                                  AuthorizedCharField, DateByVersion,)
+                                  AnonymizedRegexField,
+                                  DateByVersion)
 from website.project.spam.model import SpamStatus
 
 
@@ -39,7 +40,7 @@ class CommentSerializer(JSONAPISerializer):
 
     id = IDField(source='_id', read_only=True)
     type = TypeField()
-    content = AuthorizedCharField(source='get_content', required=True)
+    content = AnonymizedRegexField(source='get_content', regex='\[@[^\]]*\]\([^\) ]*\)', replace='@A User', required=True)
     page = ser.CharField(read_only=True)
 
     target = TargetField(link_type='related', meta={'type': 'get_target_type'})

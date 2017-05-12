@@ -128,17 +128,26 @@ class OsfStorageFileNode(BaseFileNode):
     def is_checked_out(self):
         return self.checkout is not None
 
-    def delete(self, user=None, parent=None, **kwargs):
-        if self.node.preprint_file and self.node.preprint_file.pk == self.pk:
-            self.node._is_preprint_orphan = True
-            self.node.save()
+    def _check_delete_allowed(self):
+        if self.is_preprint_primary:
+            raise exceptions.FileNodeIsPrimaryFile()
         if self.is_checked_out:
             raise exceptions.FileNodeCheckedOutError()
+        return True
+
+    @property
+    def is_preprint_primary(self):
+        return self.node.preprint_file == self and not self.node._has_abandoned_preprint
+
+    def delete(self, user=None, parent=None, **kwargs):
         self._path = self.path
         self._materialized_path = self.materialized_path
-        return super(OsfStorageFileNode, self).delete(user=user, parent=parent, **kwargs)
+        return super(OsfStorageFileNode, self).delete(user=user, parent=parent) if self._check_delete_allowed() else None
 
     def move_under(self, destination_parent, name=None):
+        if self.is_preprint_primary:
+            if self.node != destination_parent.node or self.provider != destination_parent.provider:
+                raise exceptions.FileNodeIsPrimaryFile()
         if self.is_checked_out:
             raise exceptions.FileNodeCheckedOutError()
         return super(OsfStorageFileNode, self).move_under(destination_parent, name)
@@ -218,10 +227,13 @@ class OsfStorageFile(OsfStorageFileNode, File):
             ret['fullPath'] = self.materialized_path
 
         version = self.get_version(version)
+        earliest_version = self.versions.order_by('date_created').first()
         ret.update({
             'version': self.versions.count(),
             'md5': version.metadata.get('md5') if version else None,
             'sha256': version.metadata.get('sha256') if version else None,
+            'modified': version.date_created.isoformat() if version else None,
+            'created': earliest_version.date_created.isoformat() if version else None,
         })
         return ret
 
@@ -337,6 +349,14 @@ class OsfStorageFolder(OsfStorageFileNode, Folder):
                     return True
             except AttributeError:
                 pass
+        return False
+
+    @property
+    def is_preprint_primary(self):
+        if self.node.preprint_file:
+            for child in self.children.all().select_related('node'):
+                if child.is_preprint_primary:
+                    return True
         return False
 
     def serialize(self, include_full=False, version=None):

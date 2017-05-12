@@ -23,7 +23,7 @@ class PreprintFormView(PermissionRequiredMixin, GuidFormView):
     """
     template_name = 'preprints/search.html'
     object_type = 'preprint'
-    permission_required = 'osf.view_node'
+    permission_required = 'osf.view_preprintservice'
     raise_exception = True
 
     @property

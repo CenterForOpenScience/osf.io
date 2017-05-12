@@ -86,6 +86,8 @@ from osf_tests.factories import (
     ApiOAuth2ApplicationFactory,
     ApiOAuth2PersonalTokenFactory,
     ProjectWithAddonFactory,
+    PreprintFactory,
+    PreprintProviderFactory,
 )
 
 class Addon(MockAddonNodeSettings):
@@ -809,6 +811,36 @@ class TestProjectViews(OsfTestCase):
         self.project.reload()
         link.reload()
         assert_true(link.is_deleted)
+
+    def test_remove_private_link_log(self):
+        link = PrivateLinkFactory()
+        link.nodes.add(self.project)
+        link.save()
+        url = self.project.api_url_for('remove_private_link')
+        self.app.delete_json(
+            url,
+            {'private_link_id': link._id},
+            auth=self.auth,
+        ).maybe_follow()
+
+        last_log = self.project.logs.latest()
+        assert last_log.action == NodeLog.VIEW_ONLY_LINK_REMOVED
+        assert not last_log.params.get('anonymous_link')
+
+    def test_remove_private_link_anonymous_log(self):
+        link = PrivateLinkFactory(anonymous=True)
+        link.nodes.add(self.project)
+        link.save()
+        url = self.project.api_url_for('remove_private_link')
+        self.app.delete_json(
+            url,
+            {'private_link_id': link._id},
+            auth=self.auth,
+        ).maybe_follow()
+
+        last_log = self.project.logs.latest()
+        assert last_log.action == NodeLog.VIEW_ONLY_LINK_REMOVED
+        assert last_log.params.get('anonymous_link')
 
     def test_remove_component(self):
         node = NodeFactory(parent=self.project, creator=self.user1)
@@ -3716,6 +3748,58 @@ class TestAuthLoginAndRegisterLogic(OsfTestCase):
         assert_true(data.get('must_login_warning'))
 
 
+class TestAuthLogout(OsfTestCase):
+
+    def setUp(self):
+        super(TestAuthLogout, self).setUp()
+        self.goodbye_url = web_url_for('goodbye', _absolute=True)
+        self.redirect_url = web_url_for('forgot_password_get', _absolute=True)
+        self.valid_next_url = web_url_for('dashboard', _absolute=True)
+        self.invalid_next_url = 'http://localhost:1234/abcde'
+        self.auth_user = AuthUserFactory()
+
+    def tearDown(self):
+        super(TestAuthLogout, self).tearDown()
+        User.objects.all().delete()
+        assert_equal(User.objects.count(), 0)
+
+    def test_logout_with_valid_next_url_logged_in(self):
+        logout_url = web_url_for('auth_logout', _absolute=True, next=self.valid_next_url)
+        resp = self.app.get(logout_url, auth=self.auth_user.auth)
+        assert_equal(resp.status_code, http.FOUND)
+        assert_equal(cas.get_logout_url(logout_url), resp.headers['Location'])
+
+    def test_logout_with_valid_next_url_logged_out(self):
+        logout_url = web_url_for('auth_logout', _absolute=True, next=self.valid_next_url)
+        resp = self.app.get(logout_url, auth=None)
+        assert_equal(resp.status_code, http.FOUND)
+        assert_equal(self.valid_next_url, resp.headers['Location'])
+
+    def test_logout_with_invalid_next_url_logged_in(self):
+        logout_url = web_url_for('auth_logout', _absolute=True, next=self.invalid_next_url)
+        resp = self.app.get(logout_url, auth=self.auth_user.auth)
+        assert_equal(resp.status_code, http.FOUND)
+        assert_equal(cas.get_logout_url(self.goodbye_url), resp.headers['Location'])
+
+    def test_logout_with_invalid_next_url_logged_out(self):
+        logout_url = web_url_for('auth_logout', _absolute=True, next=self.invalid_next_url)
+        resp = self.app.get(logout_url, auth=None)
+        assert_equal(resp.status_code, http.FOUND)
+        assert_equal(cas.get_logout_url(self.goodbye_url), resp.headers['Location'])
+
+    def test_logout_with_redirect_url(self):
+        logout_url = web_url_for('auth_logout', _absolute=True, redirect_url=self.redirect_url)
+        resp = self.app.get(logout_url, auth=self.auth_user.auth)
+        assert_equal(resp.status_code, http.FOUND)
+        assert_equal(cas.get_logout_url(self.redirect_url), resp.headers['Location'])
+
+    def test_logout_with_no_parameter(self):
+        logout_url = web_url_for('auth_logout', _absolute=True)
+        resp = self.app.get(logout_url, auth=None)
+        assert_equal(resp.status_code, http.FOUND)
+        assert_equal(cas.get_logout_url(self.goodbye_url), resp.headers['Location'])
+
+
 class TestExternalAuthViews(OsfTestCase):
 
     def setUp(self):
@@ -4640,7 +4724,6 @@ class TestResetPassword(OsfTestCase):
         assert_in('logout?service=', location)
         assert_in('resetpassword', location)
 
-@unittest.skip('Unskip when institution hiding code is reimplemented')
 class TestIndexView(OsfTestCase):
 
     def setUp(self):
@@ -4655,46 +4738,104 @@ class TestIndexView(OsfTestCase):
         self.user = AuthUserFactory()
         self.user.affiliated_institutions.add(self.inst_one)
         self.user.affiliated_institutions.add(self.inst_two)
-        self.user.save()
 
         # tests 5 affiliated, non-registered, public projects
         for i in range(settings.INSTITUTION_DISPLAY_NODE_THRESHOLD):
             node = ProjectFactory(creator=self.user, is_public=True)
             node.affiliated_institutions.add(self.inst_one)
-            node.save()
 
         # tests 4 affiliated, non-registered, public projects
         for i in range(settings.INSTITUTION_DISPLAY_NODE_THRESHOLD - 1):
             node = ProjectFactory(creator=self.user, is_public=True)
             node.affiliated_institutions.add(self.inst_two)
-            node.save()
 
         # tests 5 affiliated, registered, public projects
         for i in range(settings.INSTITUTION_DISPLAY_NODE_THRESHOLD):
             registration = RegistrationFactory(creator=self.user, is_public=True)
             registration.affiliated_institutions.add(self.inst_three)
-            registration.save()
 
         # tests 5 affiliated, non-registered public components
         for i in range(settings.INSTITUTION_DISPLAY_NODE_THRESHOLD):
             node = NodeFactory(creator=self.user, is_public=True)
             node.affiliated_institutions.add(self.inst_four)
-            node.save()
 
         # tests 5 affiliated, non-registered, private projects
         for i in range(settings.INSTITUTION_DISPLAY_NODE_THRESHOLD):
             node = ProjectFactory(creator=self.user)
             node.affiliated_institutions.add(self.inst_five)
-            node.save()
 
     def test_dashboard_institutions(self):
-        dashboard_institutions = index()['dashboard_institutions']
-        assert_equal(len(dashboard_institutions), 1)
-        assert_equal(dashboard_institutions[0]['id'], self.inst_one._id)
-        assert_not_equal(dashboard_institutions[0]['id'], self.inst_two._id)
-        assert_not_equal(dashboard_institutions[0]['id'], self.inst_three._id)
-        assert_not_equal(dashboard_institutions[0]['id'], self.inst_four._id)
-        assert_not_equal(dashboard_institutions[0]['id'], self.inst_five._id)
+        with mock.patch('website.views.get_current_user_id', return_value=self.user._id):
+            institution_ids = [
+                institution['id']
+                for institution in index()['dashboard_institutions']
+            ]
+            assert_equal(len(institution_ids), 2)
+            assert_in(self.inst_one._id, institution_ids)
+            assert_not_in(self.inst_two._id, institution_ids)
+            assert_not_in(self.inst_three._id, institution_ids)
+            assert_in(self.inst_four._id, institution_ids)
+            assert_not_in(self.inst_five._id, institution_ids)
+
+
+class TestResolveGuid(OsfTestCase):
+    def setUp(self):
+        super(TestResolveGuid, self).setUp()
+
+    def test_preprint_provider_without_domain(self):
+        provider = PreprintProviderFactory(domain='')
+        preprint = PreprintFactory(provider=provider)
+        url = web_url_for('resolve_guid', _guid=True, guid=preprint._id)
+        res = self.app.get(url)
+        assert_equal(res.status_code, 200)
+        assert_equal(
+            res.request.path,
+            '/{}/'.format(preprint._id)
+        )
+
+    def test_preprint_provider_with_domain_without_redirect(self):
+        domain = 'https://test.com/'
+        provider = PreprintProviderFactory(_id='test', domain=domain, domain_redirect_enabled=False)
+        preprint = PreprintFactory(provider=provider)
+        url = web_url_for('resolve_guid', _guid=True, guid=preprint._id)
+        res = self.app.get(url)
+        assert_equal(res.status_code, 200)
+        assert_equal(
+            res.request.path,
+            '/{}/'.format(preprint._id)
+        )
+
+    def test_preprint_provider_with_domain_with_redirect(self):
+        domain = 'https://test.com/'
+        provider = PreprintProviderFactory(_id='test', domain=domain, domain_redirect_enabled=True)
+        preprint = PreprintFactory(provider=provider)
+        url = web_url_for('resolve_guid', _guid=True, guid=preprint._id)
+        res = self.app.get(url)
+
+        assert_is_redirect(res)
+        assert_equal(res.status_code, 301)
+        assert_equal(
+            res.headers['location'],
+            '{}{}/'.format(domain, preprint._id)
+        )
+
+        assert_equal(
+            res.request.path,
+            '/{}/'.format(preprint._id)
+        )
+
+
+
+    def test_preprint_provider_with_osf_domain(self):
+        provider = PreprintProviderFactory(_id='osf', domain='https://osf.io/')
+        preprint = PreprintFactory(provider=provider)
+        url = web_url_for('resolve_guid', _guid=True, guid=preprint._id)
+        res = self.app.get(url)
+        assert_equal(res.status_code, 200)
+        assert_equal(
+            res.request.path,
+            '/{}/'.format(preprint._id)
+        )
 
 
 class TestConfirmationViewBlockBingPreview(OsfTestCase):

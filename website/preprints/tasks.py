@@ -51,8 +51,11 @@ def format_preprint(preprint):
 
     to_visit = [
         preprint_graph,
-        GraphNode('workidentifier', creative_work=preprint_graph, uri=urlparse.urljoin(settings.DOMAIN, preprint.url))
+        GraphNode('workidentifier', creative_work=preprint_graph, uri=urlparse.urljoin(settings.DOMAIN, preprint._id + '/'))
     ]
+
+    if preprint.provider.domain_redirect_enabled:
+        to_visit.append(GraphNode('workidentifier', creative_work=preprint_graph, uri=preprint.absolute_url))
 
     if preprint.article_doi:
         # Article DOI refers to a clone of this preprint on another system and therefore does not qualify as an identifier for this preprint
@@ -62,12 +65,12 @@ def format_preprint(preprint):
 
     preprint_graph.attrs['tags'] = [
         GraphNode('throughtags', creative_work=preprint_graph, tag=GraphNode('tag', name=tag))
-        for tag in preprint.node.tags.values_list('name', flat=True)
+        for tag in preprint.node.tags.values_list('name', flat=True) if tag
     ]
 
     preprint_graph.attrs['subjects'] = [
         GraphNode('throughsubjects', creative_work=preprint_graph, subject=GraphNode('subject', name=subject))
-        for subject in set(x['text'] for hier in preprint.get_subjects() or [] for x in hier) if subject
+        for subject in set(s.bepress_text for s in preprint.subjects.all())
     ]
 
     to_visit.extend(format_contributor(preprint_graph, user, preprint.node.get_visible(user), i) for i, user in enumerate(preprint.node.contributors))
