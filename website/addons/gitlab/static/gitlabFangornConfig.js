@@ -13,13 +13,21 @@ var $osf = require('js/osfHelpers');
 // Cross browser key codes for the Command key
 var commandKeys = [224, 17, 91, 93];
 
+function _formatRepoUrl(item, branch) {
+    return item.data.urls.repo.substring(0, item.data.urls.repo.indexOf('/tree/') + 6) + branch;
+}
+
+function _formatZipUrl(item, branch) {
+    return item.data.urls.zip.substring(0, item.data.urls.zip.indexOf('?ref=') + 5) + branch;
+}
+
 function _getCurrentBranch(item) {
     var branch;
     if (item.data.branch === undefined) {
-        if (item.data.isAddonRoot){
+        if (item.data.isAddonRoot) {
             branch = item.data.default_branch;
         } else {
-            branch = item.data.extra.ref;
+            branch = item.data.extra.branch;
         }
     } else {
         branch = item.data.branch;
@@ -70,14 +78,14 @@ var _gitlabItemButtons = {
                     buttons.push(
                         m.component(Fangorn.Components.button, {
                             onclick: function (event) {
-                                window.location = item.data.urls.zip;
+                                window.location = _formatZipUrl(item, branch);
                             },
                             icon: 'fa fa-download',
                             className: 'text-primary'
                         }, 'Download'),
                         m.component(Fangorn.Components.button, {
                             onclick: function (event) {
-                                window.open(item.data.urls.repo, '_blank');
+                                window.open(_formatRepoUrl(item, branch), '_blank');
                             },
                             icon: 'fa fa-external-link',
                             className: 'text-info'
