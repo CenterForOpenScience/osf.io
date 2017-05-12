@@ -11,13 +11,14 @@ from django.forms.models import model_to_dict
 from django.shortcuts import redirect
 
 from admin.base import settings
-from admin.base.utils import rules_to_subjects
 from admin.base.forms import ImportFileForm
 from admin.preprint_providers.forms import PreprintProviderForm
 from osf.models import PreprintProvider, Subject
+from osf.models.preprint_provider import rules_to_subjects
 
 # When preprint_providers exclusively use Subject relations for creation, set this to False
 SHOW_TAXONOMIES_IN_PREPRINT_PROVIDER_CREATE = True
+FIELDS_TO_NOT_IMPORT_EXPORT = ['access_token']
 
 
 class PreprintProviderList(PermissionRequiredMixin, ListView):
@@ -158,9 +159,10 @@ class ExportPreprintProvider(PermissionRequiredMixin, View):
     def get(self, request, *args, **kwargs):
         preprint_provider = PreprintProvider.objects.get(id=self.kwargs['preprint_provider_id'])
         data = serializers.serialize('json', [preprint_provider])
-        cleaned_data = {key: value for key, value in json.loads(data)[0].iteritems() if key != 'access_token'}
+        cleaned_data = json.loads(data)[0]
+        cleaned_fields = {key: value for key, value in cleaned_data['fields'].iteritems() if key not in FIELDS_TO_NOT_IMPORT_EXPORT}
+        cleaned_data['fields'] = cleaned_fields
         filename = '{}_export.json'.format(preprint_provider.name)
-
         response = HttpResponse(json.dumps(cleaned_data), content_type='text/json')
         response['Content-Disposition'] = 'attachment; filename={}'.format(filename)
         return response
@@ -207,7 +209,7 @@ class ImportPreprintProvider(PermissionRequiredMixin, View):
             file_str = self.parse_file(request.FILES['file'])
             file_json = json.loads(file_str)
             # make sure not to import an exported access token for SHARE
-            cleaned_result = {key: value for key, value in file_json['fields'].iteritems() if key != 'access_token'}
+            cleaned_result = {key: value for key, value in file_json['fields'].iteritems() if key not in FIELDS_TO_NOT_IMPORT_EXPORT}
             return JsonResponse(cleaned_result)
 
     def parse_file(self, f):

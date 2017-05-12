@@ -1,10 +1,14 @@
 from nose.tools import *  # flake8: noqa
 
+from django.db.models import Q
+
 from tests.base import AdminTestCase
 
 from osf_tests.factories import SubjectFactory
 
-from admin.base.utils import get_subject_rules
+from osf.models import Subject
+from osf.models.preprint_provider import rules_to_subjects
+from admin.base.utils import get_subject_rules, rules_to_subjects
 
 
 class TestSubjectRules(AdminTestCase):
@@ -15,16 +19,13 @@ class TestSubjectRules(AdminTestCase):
         self.parent_one = SubjectFactory()  # 0
         self.parent_two = SubjectFactory()  # 1
 
-        self.child_one_1 = SubjectFactory(parents=[self.parent_one])  # 2
-        self.child_one_2 = SubjectFactory(parents=[self.parent_one])  # 3
-        self.grandchild_one_1 = SubjectFactory(parents=[self.child_one_1])  # 4
-        self.grandchild_one_2 = SubjectFactory(parents=[self.child_one_1])  # 5
+        self.child_one_1 = SubjectFactory(parent=self.parent_one)  # 2
+        self.child_one_2 = SubjectFactory(parent=self.parent_one)  # 3
+        self.grandchild_one_1 = SubjectFactory(parent=self.child_one_1)  # 4
+        self.grandchild_one_2 = SubjectFactory(parent=self.child_one_1)  # 5
 
-        self.child_two_1 = SubjectFactory(parents=[self.parent_two])  # 6
-        self.child_two_2 = SubjectFactory(parents=[self.parent_two])  # 7
-
-        self.child_one_two_1 = SubjectFactory(parents=[self.parent_one, self.parent_two])  # 8
-        self.grandchild_one_two_1 = SubjectFactory(parents=[self.child_one_two_1])  # 9
+        self.child_two_1 = SubjectFactory(parent=self.parent_two)  # 6
+        self.child_two_2 = SubjectFactory(parent=self.parent_two)  # 7
 
     def test_just_toplevel_subject(self):
         subjects_selected = [self.parent_one]
@@ -116,3 +117,12 @@ class TestSubjectRules(AdminTestCase):
             [[self.parent_two._id, self.child_one_two_1._id], False]
         ]
         self.assertItemsEqual(rules_returned, rules_ideal)
+
+    def test_rules_to_subjects(self):
+        rules = [
+            [[self.parent_one._id, self.child_one_1._id], False]
+        ]
+        subject_queryset_ideal = Subject.objects.filter(Q(id=self.parent_one.id) | Q(id=self.child_one_1.id))
+        returned_subjects = rules_to_subjects(rules)
+
+        self.assertItemsEqual(subject_queryset_ideal, returned_subjects)
