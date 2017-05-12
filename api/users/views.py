@@ -86,7 +86,8 @@ class UserMixin(object):
         return obj
 
 
-class UserList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
+class UserList(JSONAPIBaseView, generics.ListAPIView):
+
     """List of users registered on the OSF.
 
     Paginated list of users ordered by the date they registered.  Each resource contains the full representation of the
@@ -147,6 +148,7 @@ class UserList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
     serializer_class = UserSerializer
 
     filter_backends = (DjangoFilterBackend,)
+    filter_fields = ('id', 'fullname', 'given_name', 'middle_names', 'family_name')
 
     ordering = ('-date_registered')
     view_category = 'users'
@@ -159,7 +161,7 @@ class UserList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
 
     # overrides ListCreateAPIView
     def get_queryset(self):
-        return self.get_queryset_from_request()
+        return self.get_default_queryset()
 
 
 class UserDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, UserMixin):
