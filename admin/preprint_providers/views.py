@@ -114,7 +114,7 @@ class PreprintProviderDisplay(PermissionRequiredMixin, DetailView):
         fields = model_to_dict(preprint_provider)
         fields['toplevel_subjects'] = list(subject_ids)
         fields['subjects_chosen'] = ', '.join(str(i) for i in subject_ids)
-        kwargs['show_taxonomies'] = True if preprint_provider.subjects.exists() else False
+        kwargs['show_taxonomies'] = False if preprint_provider.subjects.exists() else True
         kwargs['form'] = PreprintProviderForm(initial=fields)
         kwargs['import_form'] = ImportFileForm()
         return kwargs
@@ -158,10 +158,10 @@ class ExportPreprintProvider(PermissionRequiredMixin, View):
     def get(self, request, *args, **kwargs):
         preprint_provider = PreprintProvider.objects.get(id=self.kwargs['preprint_provider_id'])
         data = serializers.serialize('json', [preprint_provider])
-
+        cleaned_data = {key: value for key, value in json.loads(data)[0].iteritems() if key != 'access_token'}
         filename = '{}_export.json'.format(preprint_provider.name)
 
-        response = HttpResponse(data, content_type='text/json')
+        response = HttpResponse(json.dumps(cleaned_data), content_type='text/json')
         response['Content-Disposition'] = 'attachment; filename={}'.format(filename)
         return response
 
@@ -206,7 +206,9 @@ class ImportPreprintProvider(PermissionRequiredMixin, View):
         if form.is_valid():
             file_str = self.parse_file(request.FILES['file'])
             file_json = json.loads(file_str)
-            return JsonResponse(file_json[0]['fields'])
+            # make sure not to import an exported access token for SHARE
+            cleaned_result = {key: value for key, value in file_json['fields'].iteritems() if key != 'access_token'}
+            return JsonResponse(cleaned_result)
 
     def parse_file(self, f):
         parsed_file = ''
