@@ -718,10 +718,15 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         """Update ``is_active`` to be consistent with the fields that
         it depends on.
         """
+        # The user can log in if they have set a password OR
+        # have a verified external ID, e.g an ORCID
+        can_login = self.has_usable_password() or (
+            'VERIFIED' in sum([each.values() for each in self.external_identity.values()], [])
+        )
         self.is_active = (
             self.is_registered and
             self.is_confirmed and
-            self.has_usable_password() and
+            can_login and
             not self.is_merged and
             not self.is_disabled
         )
