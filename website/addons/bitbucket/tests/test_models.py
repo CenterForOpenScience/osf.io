@@ -147,8 +147,8 @@ class TestCallbacks(OsfTestCase):
         mock_repo.return_value = {'is_private': False}
         message = self.node_settings.before_page_load(self.project, self.project.creator)
         mock_repo.assert_called_with(
-            self.node_settings.user,
-            self.node_settings.repo,
+            user=self.node_settings.user,
+            repo=self.node_settings.repo,
         )
         assert_false(message)
 
@@ -159,8 +159,8 @@ class TestCallbacks(OsfTestCase):
         mock_repo.return_value = {'is_private': True}
         message = self.node_settings.before_page_load(self.project, self.project.creator)
         mock_repo.assert_called_with(
-            self.node_settings.user,
-            self.node_settings.repo,
+            user=self.node_settings.user,
+            repo=self.node_settings.repo,
         )
         assert_true(message)
 
@@ -169,8 +169,8 @@ class TestCallbacks(OsfTestCase):
         mock_repo.return_value = {'is_private': False}
         message = self.node_settings.before_page_load(self.project, self.project.creator)
         mock_repo.assert_called_with(
-            self.node_settings.user,
-            self.node_settings.repo,
+            user=self.node_settings.user,
+            repo=self.node_settings.repo,
         )
         assert_true(message)
 
@@ -179,8 +179,8 @@ class TestCallbacks(OsfTestCase):
         mock_repo.return_value = {'is_private': True}
         message = self.node_settings.before_page_load(self.project, self.project.creator)
         mock_repo.assert_called_with(
-            self.node_settings.user,
-            self.node_settings.repo,
+            user=self.node_settings.user,
+            repo=self.node_settings.repo,
         )
         assert_false(message)
 
