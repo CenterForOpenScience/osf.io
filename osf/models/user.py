@@ -18,11 +18,11 @@ from django.conf import settings
 from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
 from django.contrib.auth.hashers import check_password
 from django.contrib.auth.models import PermissionsMixin
-from django.contrib.postgres import fields
 from django.dispatch import receiver
 from django.db.models.signals import post_save
 from django.db import models
 from django.utils import timezone
+from django_extensions.db.models import TimeStampedModel
 from framework.auth import Auth, signals
 from framework.auth.core import generate_verification_key
 from framework.auth.exceptions import (ChangePasswordError, ExpiredTokenError,
@@ -43,7 +43,7 @@ from osf.models.tag import Tag
 from osf.models.validators import validate_email, validate_social, validate_history_item
 from osf.modm_compat import Q
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
-from osf.utils.fields import NonNaiveDateTimeField
+from osf.utils.fields import NonNaiveDateTimeField, LowercaseEmailField
 from osf.utils.names import impute_names
 from website import settings as website_settings
 from website import filters, mails
@@ -102,6 +102,14 @@ class OSFUserManager(BaseUserManager):
         return user
 
 
+class Email(BaseModel, TimeStampedModel):
+    address = LowercaseEmailField(unique=True, db_index=True, validators=[validate_email])
+    user = models.ForeignKey('OSFUser', related_name='emails', on_delete=models.CASCADE)
+
+    def __unicode__(self):
+        return self.address
+
+
 class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, PermissionsMixin, AddonModelMixin):
     FIELD_ALIASES = {
         '_id': 'guids___id',
@@ -149,6 +157,9 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     # This value is unique, but multiple "None" records exist for:
     #   * unregistered contributors where an email address was not provided.
     # TODO: Update mailchimp subscription on username change in user.save()
+    # TODO: Consider making this a FK to Email with to_field='address'
+    #   Django supports this (https://docs.djangoproject.com/en/1.11/topics/auth/customizing/#django.contrib.auth.models.CustomUser.USERNAME_FIELD)
+    #   but some third-party apps may not.
     username = models.CharField(max_length=255, db_index=True, unique=True)
 
     # Hashed. Use `User.set_password` and `User.check_password`
@@ -219,13 +230,6 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     # }
 
     email_last_sent = NonNaiveDateTimeField(null=True, blank=True)
-
-    # confirmed emails
-    #   emails should be stripped of whitespace and lower-cased before appending
-    # TODO: Add validator to ensure an email address only exists once across
-    # TODO: Change to m2m field per @sloria
-    # all User's email lists
-    emails = fields.ArrayField(models.CharField(max_length=255), default=list, blank=True)
 
     # email verification tokens
     #   see also ``unconfirmed_emails``
@@ -936,7 +940,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         :raises: ValueError if email already confirmed, except for login through external idp.
         """
 
-        # TODO: This is technically not compliant with RFC 822, which requires
+        # Note: This is technically not compliant with RFC 822, which requires
         #       that case be preserved in the "local-part" of an address. From
         #       a practical standpoint, the vast majority of email servers do
         #       not preserve case.
