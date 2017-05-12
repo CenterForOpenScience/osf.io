@@ -60,18 +60,7 @@ class PreprintProvider(ObjectIDMixin, BaseModel):
             return self.subjects.all()
         else:
             # TODO: Delet this when all PreprintProviders have a mapping
-            from osf.models.subject import Subject
-            q = []
-            for rule in self.subjects_acceptable:
-                if rule[1]:
-                    q.append(Q('parent', 'eq', Subject.load(rule[0][-1])))
-                    if len(rule[0]) == 1:
-                        potential_parents = Subject.find(Q('parent', 'eq', Subject.load(rule[0][-1])))
-                        for parent in potential_parents:
-                            q.append(Q('parent', 'eq', parent))
-                for sub in rule[0]:
-                    q.append(Q('_id', 'eq', sub))
-            return Subject.find(reduce(lambda x, y: x | y, q)) if len(q) > 1 else (Subject.find(q[0]) if len(q) else Subject.find())
+            return rules_to_subjects(self.subjects_acceptable)
 
     def get_absolute_url(self):
         return '{}preprint_providers/{}'.format(self.absolute_api_v2_url, self._id)
@@ -94,3 +83,18 @@ class PreprintProvider(ObjectIDMixin, BaseModel):
             return '/static/img/preprint_providers/{}'.format(self.logo_name)
         else:
             return None
+
+
+def rules_to_subjects(rules):
+    from osf.models.subject import Subject
+    q = []
+    for rule in rules:
+        if rule[1]:
+            q.append(Q('parent', 'eq', Subject.load(rule[0][-1])))
+            if len(rule[0]) == 1:
+                potential_parents = Subject.find(Q('parent', 'eq', Subject.load(rule[0][-1])))
+                for parent in potential_parents:
+                    q.append(Q('parent', 'eq', parent))
+        for sub in rule[0]:
+            q.append(Q('_id', 'eq', sub))
+    return Subject.find(reduce(lambda x, y: x | y, q)) if len(q) > 1 else (Subject.find(q[0]) if len(q) else Subject.find())
