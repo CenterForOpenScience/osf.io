@@ -31,8 +31,8 @@ from website import mails
 from website import settings
 from addons.base import exceptions
 from addons.base import signals as file_signals
-from osf.models import BaseFileNode, TrashedFileNode
-from website.models import Node, NodeLog, User
+from osf.models import BaseFileNode, TrashedFileNode, OSFUser as User
+from website.models import Node, NodeLog
 from website.profile.utils import get_gravatar
 from website.project import decorators
 from website.project.decorators import must_be_contributor_or_public, must_be_valid_project

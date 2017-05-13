@@ -17,7 +17,7 @@ from api.base.settings.defaults import API_BASE
 
 from framework.auth.cas import CasResponse
 from framework.sessions.model import Session
-from website.models import User
+from osf.models import OSFUser as User
 from website import settings
 from website.oauth.models import ApiOAuth2PersonalToken
 from website.util.permissions import CREATOR_PERMISSIONS

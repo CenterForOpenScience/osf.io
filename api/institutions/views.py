@@ -9,7 +9,8 @@ from modularodm import Q
 
 from framework.auth.oauth_scopes import CoreScopes
 
-from website.models import Node, User, Institution
+from osf.models import OSFUser as User
+from website.models import Node, Institution
 from website.util import permissions as osf_permissions
 
 from api.base import permissions as base_permissions

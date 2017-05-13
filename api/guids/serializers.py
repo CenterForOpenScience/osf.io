@@ -1,6 +1,7 @@
 import urlparse
 
-from website.models import Node, User, Guid
+from osf.models import OSFUser
+from website.models import Node, Guid
 from website.files.models.base import StoredFileNode
 from website import settings as website_settings
 
@@ -11,7 +12,7 @@ from api.base.serializers import (JSONAPISerializer, IDField, TypeField, Relatio
 def get_type(record):
     if isinstance(record, Node):
         return 'nodes'
-    elif isinstance(record, User):
+    elif isinstance(record, OSFUser):
         return 'users'
     elif isinstance(record, StoredFileNode):
         return 'files'

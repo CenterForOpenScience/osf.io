@@ -3,7 +3,7 @@ import mock
 
 from nose.tools import * # flake8: noqa
 
-from website.models import User, ApiOAuth2PersonalToken
+from website.models import ApiOAuth2PersonalToken
 from website.util import api_v2_url
 from website.util import sanitize
 

@@ -5,8 +5,9 @@ from datetime import datetime, timedelta
 
 from modularodm import Q
 
+from osf.models import OSFUser as User
 from website.app import init_app
-from website.models import User, NodeLog
+from website.models import NodeLog
 from framework.mongo.utils import paginated
 from scripts.analytics.base import SummaryAnalytics
 

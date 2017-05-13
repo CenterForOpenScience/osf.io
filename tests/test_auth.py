@@ -22,9 +22,9 @@ from osf_tests.factories import (
     ProjectFactory, NodeFactory, AuthUserFactory, PrivateLinkFactory
 )
 
-from framework.auth import User, Auth
+from framework.auth import Auth
 from framework.auth.decorators import must_be_logged_in
-
+from osf.models import OSFUser as User
 from website import mails
 from website import settings
 from website.util import permissions

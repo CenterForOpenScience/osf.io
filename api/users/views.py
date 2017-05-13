@@ -29,9 +29,8 @@ from django.db.models import Q
 from rest_framework import permissions as drf_permissions
 from rest_framework import generics
 from rest_framework.exceptions import NotAuthenticated, NotFound
-from osf.models import Contributor
-from website.models import ExternalAccount, Node, User
-from osf.models import PreprintService
+from website.models import ExternalAccount, Node
+from osf.models import Contributor, PreprintService, OSFUser as User
 
 
 class UserMixin(object):

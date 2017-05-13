@@ -30,7 +30,7 @@ from framework.mongo import get_request_and_user_id
 from framework.addons import AddonModelMixin
 from framework.analytics import (get_basic_counters,
                                  increment_user_activity_counters)
-from framework.auth import Auth, User, get_user
+from framework.auth import Auth, get_user
 from framework.auth.utils import privacy_info_handle
 from framework.celery_tasks.handlers import enqueue_task
 from framework.exceptions import PermissionsError
@@ -172,7 +172,8 @@ class MetaData(GuidStoredObject):
 
 
 def validate_contributor(guid, contributors):
-    user = User.load(guid)
+    OSFUser = apps.get_model('osf.OSFUser')
+    user = OSFUser.load(guid)
     if not user or not user.is_claimed:
         raise ValidationValueError('User does not exist or is not active.')
     elif user not in contributors:
@@ -596,7 +597,8 @@ class NodeLog(StoredObject):
         return node.can_view(auth)
 
     def _render_log_contributor(self, contributor, anonymous=False):
-        user = User.load(contributor)
+        OSFUser = apps.get_model('osf.OSFUser')
+        user = OSFUser.load(contributor)
         if not user:
             # Handle legacy non-registered users, which were
             # represented as a dict
@@ -736,9 +738,10 @@ def validate_title(value):
 
 
 def validate_user(value):
+    OSFUser = apps.get_model('osf.OSFUser')
     if value != {}:
         user_id = value.iterkeys().next()
-        if User.find(Q('_id', 'eq', user_id)).count() != 1:
+        if OSFUser.find(Q('_id', 'eq', user_id)).count() != 1:
             raise ValidationValueError('User does not exist.')
     return True
 
@@ -1419,8 +1422,9 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
 
     @property
     def visible_contributors(self):
+        OSFUser = apps.get_model('osf.OSFUser')
         return [
-            User.load(_id)
+            OSFUser.load(_id)
             for _id in self.visible_contributor_ids
         ]
 
@@ -1444,8 +1448,9 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
 
     @property
     def admin_contributors(self):
+        OSFUser = apps.get_model('osf.OSFUser')
         return sorted(
-            [User.load(_id) for _id in self.admin_contributor_ids],
+            [OSFUser.load(_id) for _id in self.admin_contributor_ids],
             key=lambda user: user.family_name,
         )
 
@@ -2147,6 +2152,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
         return None
 
     def on_update(self, first_save, saved_fields):
+        OSFUser = apps.get_model('osf.OSFUser')
         if settings.RUNNING_MIGRATION:  # no-no during migration
             return
         request, user_id = get_request_and_user_id()
@@ -2167,7 +2173,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
             for preprint in PreprintService.find(Q('node', 'eq', self)):
                 enqueue_task(on_preprint_updated.s(preprint._id))
 
-        user = User.load(user_id)
+        user = OSFUser.load(user_id)
         if user and self.check_spam(user, saved_fields, request_headers):
             # Specifically call the super class save method to avoid recursion into model save method.
             super(Node, self).save()
@@ -3083,6 +3089,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
         :raises: ValueError if any users in `users` not in contributors or if
             no admin contributors remaining
         """
+        OSFUser = apps.get_model('osf.OSFUser')
         with TokuTransaction():
             users = []
             user_ids = []
@@ -3091,7 +3098,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
             to_retain = []
             to_remove = []
             for user_dict in user_dicts:
-                user = User.load(user_dict['id'])
+                user = OSFUser.load(user_dict['id'])
                 if user is None:
                     raise ValueError('User not found')
                 if user not in self.contributors:
@@ -3286,8 +3293,9 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
         :returns: The added contributor
         :raises: DuplicateEmailError if user with given email is already in the database.
         """
+        OSFUser = apps.get_model('osf.OSFUser')
         # Create a new user record if you weren't passed an existing_user
-        contributor = existing_user if existing_user else User.create_unregistered(fullname=fullname, email=email)
+        contributor = existing_user if existing_user else OSFUser.create_unregistered(fullname=fullname, email=email)
 
         contributor.add_unclaimed_record(node=self, referrer=auth.user,
             given_name=fullname, email=email)
@@ -3313,8 +3321,9 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
     def add_contributor_registered_or_not(self, auth, user_id=None, full_name=None, email=None, send_email='false',
                                           permissions=None, bibliographic=True, index=None, save=False):
 
+        OSFUser = apps.get_model('osf.OSFUser')
         if user_id:
-            contributor = User.load(user_id)
+            contributor = OSFUser.load(user_id)
             if not contributor:
                 raise ValueError('User with id {} was not found.'.format(user_id))
             if contributor in self.contributors:

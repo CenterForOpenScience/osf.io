@@ -13,7 +13,6 @@ Example usage: ::
 Factory boy docs: http://factoryboy.readthedocs.org/
 
 """
-import datetime
 import functools
 
 from django.utils import timezone
@@ -23,7 +22,7 @@ from mock import patch, Mock
 from modularodm import Q
 from modularodm.exceptions import NoResultsFound
 
-from framework.auth import User, Auth
+from framework.auth import Auth
 from framework.auth.utils import impute_names_model, impute_names
 from framework.guid.model import Guid
 from framework.mongo import StoredObject
@@ -32,6 +31,7 @@ from tests.base import fake
 from tests.base import get_default_metaschema
 from tests import mock_addons as addons_base
 from addons.wiki.models import NodeWikiPage
+from osf.models import OSFUser as User
 from website.oauth.models import (
     ApiOAuth2Application,
     ApiOAuth2PersonalToken,

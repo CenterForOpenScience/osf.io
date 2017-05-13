@@ -1,18 +1,15 @@
 # -*- coding: utf-8 -*-
-
-import datetime
-
 import pytest
 from django.utils import timezone
-from flask import redirect
 from nose.tools import *  # noqa
 
 from framework.auth.core import Auth
 from osf_tests.factories import AuthUserFactory, ProjectFactory, UserFactory
 from scripts import parse_citation_styles
 from tests.base import OsfTestCase
+from osf.models import OSFUser as User
 from website.citations.utils import datetime_to_csl
-from website.models import Node, User
+from website.models import Node
 from website.util import api_url_for
 
 pytestmark = pytest.mark.django_db

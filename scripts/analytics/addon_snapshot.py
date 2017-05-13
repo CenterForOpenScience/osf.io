@@ -4,7 +4,8 @@ import logging
 from modularodm import Q
 
 from website.app import init_app
-from website.models import Node, User
+from website.models import Node
+from osf.models import OSFUser as User
 from framework.mongo.utils import paginated
 from scripts.analytics.base import SnapshotAnalytics
 

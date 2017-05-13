@@ -8,7 +8,6 @@ import urllib
 from lxml import etree
 import requests
 
-from framework.auth import User
 from framework.auth import authenticate, external_first_login_authenticate
 from framework.auth.core import get_user, generate_verification_key
 from framework.flask import redirect
@@ -321,9 +320,9 @@ def get_user_from_cas_resp(cas_resp):
     :param cas_resp: the cas service validation response
     :return: the user, the external_credential, and the next action
     """
-
+    from osf.models import OSFUser
     if cas_resp.user:
-        user = User.objects.filter(guids___id=cas_resp.user).first()
+        user = OSFUser.objects.filter(guids___id=cas_resp.user).first()
         # cas returns a valid OSF user id
         if user:
             return user, None, 'authenticate'

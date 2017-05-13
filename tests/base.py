@@ -4,10 +4,7 @@ import abc
 import datetime as dt
 import functools
 import logging
-import os
 import re
-import shutil
-import tempfile
 import unittest
 import uuid
 
@@ -20,7 +17,6 @@ from addons.wiki.models import NodeWikiPage
 from django.test.utils import override_settings
 from django.test import TestCase as DjangoTestCase
 from faker import Factory
-from framework.auth import User
 from framework.auth.core import Auth
 from framework.celery_tasks.handlers import celery_before_request
 from framework.django.handlers import handlers as django_handlers
@@ -30,6 +26,7 @@ from framework.mongo import client as client_proxy
 from framework.mongo import database as database_proxy
 from framework.sessions.model import Session
 from framework.transactions import commands, messages, utils
+from osf.models import OSFUser as User
 from pymongo.errors import OperationFailure
 from website import settings
 from website.app import init_app

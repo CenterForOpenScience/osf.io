@@ -4,9 +4,8 @@ from django.db import transaction
 from django.utils import timezone
 from modularodm import Q
 
-from framework.auth import User
 from framework.celery_tasks import app as celery_app
-
+from osf.models import OSFUser as User
 from website.app import init_app
 from website import mails, settings
 

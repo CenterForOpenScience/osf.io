@@ -2,7 +2,6 @@
 """Consolidates all necessary models from the framework and website packages.
 """
 
-from framework.auth.core import User
 from framework.guid.model import Guid, BlacklistGuid
 from framework.sessions.model import Session
 
@@ -39,7 +38,6 @@ from website.preprints.model import PreprintService, PreprintProvider
 
 # All models
 MODELS = (
-    User,
     ApiOAuth2Application, ApiOAuth2PersonalToken, Node,
     NodeLog, StoredFileNode, TrashedFileNode, FileVersion,
     Tag, WatchConfig, Session, Guid, MetaSchema, Pointer,
@@ -54,4 +52,4 @@ MODELS = (
     Subject, PreprintProvider, PreprintService
 )
 
-GUID_MODELS = (User, Node, Comment, MetaData)
+GUID_MODELS = (Node, Comment, MetaData)

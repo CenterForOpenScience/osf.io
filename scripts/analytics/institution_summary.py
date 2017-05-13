@@ -4,8 +4,9 @@ from modularodm import Q
 from dateutil.parser import parse
 from datetime import datetime, timedelta
 
+from osf.models import OSFUser as User
 from website.app import init_app
-from website.models import User, Node, Institution
+from website.models import Node, Institution
 from scripts.analytics.base import SummaryAnalytics
 
 

@@ -8,9 +8,9 @@ from api.base.serializers import (
     is_anonymized,
     DateByVersion,
 )
+from osf.models import OSFUser
 from website.project.model import Node
 from website.util import permissions as osf_permissions
-from framework.auth.core import User
 from website.preprints.model import PreprintService
 
 
@@ -123,7 +123,7 @@ class NodeLogParamsSerializer(RestrictedDictSerializer):
 
         if contributor_ids:
             for contrib_id in contributor_ids:
-                user = User.load(contrib_id)
+                user = OSFUser.load(contrib_id)
                 unregistered_name = None
                 if user.unclaimed_records.get(params_node):
                     unregistered_name = user.unclaimed_records[params_node].get('name', None)

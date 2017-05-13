@@ -11,7 +11,6 @@ from framework.auth import signing
 from framework.flask import redirect
 from framework.exceptions import HTTPError
 from .core import Auth
-from .core import User
 
 
 # TODO [CAS-10][OSF-7566]: implement long-term fix for URL preview/prefetch
@@ -44,8 +43,9 @@ def must_be_confirmed(func):
 
     @functools.wraps(func)
     def wrapped(*args, **kwargs):
+        from osf.models import OSFUser
 
-        user = User.load(kwargs['uid'])
+        user = OSFUser.load(kwargs['uid'])
         if user is not None:
             if user.is_confirmed:
                 return func(*args, **kwargs)
