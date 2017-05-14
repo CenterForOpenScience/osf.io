@@ -183,7 +183,7 @@ class Auth(object):
             return None
         try:
             # Avoid circular import
-            from website.project.model import PrivateLink
+            from osf.models import PrivateLink
             private_link = PrivateLink.find_one(
                 Q('key', 'eq', self.private_key)
             )

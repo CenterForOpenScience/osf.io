@@ -7,10 +7,9 @@ import furl
 import pytz
 
 from framework.auth.core import Auth
-from osf.models import OSFUser, BaseFileNode
+from osf.models import BaseFileNode, OSFUser, Comment
 from rest_framework import serializers as ser
 from website import settings
-from website.project.model import Comment
 from website.util import api_v2_url
 
 from api.base.serializers import (

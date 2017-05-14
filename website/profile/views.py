@@ -25,11 +25,11 @@ from framework.exceptions import HTTPError, PermissionsError
 from framework.flask import redirect  # VOL-aware redirect
 from framework.status import push_status_message
 
+from osf.models import ApiOAuth2Application, ApiOAuth2PersonalToken
 from website import mails
 from website import mailchimp_utils
 from website import settings
 from website.project.utils import PROJECT_QUERY
-from website.models import ApiOAuth2Application, ApiOAuth2PersonalToken
 from website.oauth.utils import get_available_scopes
 from website.profile import utils as profile_utils
 from website.util.time import throttle_period_expired

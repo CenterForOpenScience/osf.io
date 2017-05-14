@@ -8,10 +8,8 @@ from api.base.serializers import (
     is_anonymized,
     DateByVersion,
 )
-from osf.models import OSFUser
-from website.project.model import Node
+from osf.models import OSFUser, AbstractNode as Node, PreprintService
 from website.util import permissions as osf_permissions
-from website.preprints.model import PreprintService
 
 
 class NodeLogIdentifiersSerializer(RestrictedDictSerializer):

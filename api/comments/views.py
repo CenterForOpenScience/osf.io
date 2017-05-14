@@ -22,9 +22,8 @@ from api.comments.serializers import (
 from framework.auth.core import Auth
 from framework.auth.oauth_scopes import CoreScopes
 from framework.exceptions import PermissionsError
-from website.project.model import Comment, Node
+from osf.models import AbstractNode as Node, Comment, StoredFileNode
 from addons.wiki.models import NodeWikiPage
-from website.files.models.base import StoredFileNode
 
 
 class CommentMixin(object):

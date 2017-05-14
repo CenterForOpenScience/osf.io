@@ -12,5 +12,5 @@ class ODMBackend(ModelBackend):
         try:
             user = OSFUser.objects.get(id=user_id)
         except OSFUser.DoesNotExist:
-            user = User.load(user_id)
+            user = OSFUser.load(user_id)
         return user

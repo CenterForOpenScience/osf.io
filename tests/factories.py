@@ -41,7 +41,7 @@ from website.oauth.models import (
 from website.preprints.model import PreprintProvider, PreprintService
 from website.project.model import (
     Comment, DraftRegistration, MetaSchema, Node, NodeLog, Pointer,
-    PrivateLink, Tag, WatchConfig, AlternativeCitation,
+    PrivateLink, Tag, AlternativeCitation,
     ensure_schemas, Institution
 )
 from website.project.sanctions import (
@@ -448,12 +448,6 @@ class NodeLogFactory(ModularOdmFactory):
         model = NodeLog
     action = 'file_added'
     user = SubFactory(UserFactory)
-
-
-class WatchConfigFactory(ModularOdmFactory):
-    class Meta:
-        model = WatchConfig
-    node = SubFactory(NodeFactory)
 
 
 class SanctionFactory(ModularOdmFactory):

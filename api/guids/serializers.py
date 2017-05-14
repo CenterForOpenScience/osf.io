@@ -1,8 +1,6 @@
 import urlparse
 
-from osf.models import OSFUser
-from website.models import Node, Guid
-from website.files.models.base import StoredFileNode
+from osf.models import OSFUser, AbstractNode as Node, Guid, StoredFileNode
 from website import settings as website_settings
 
 from api.base.utils import absolute_reverse
