@@ -19,8 +19,7 @@ from framework.mongo import StoredObject
 
 from website import settings
 from addons.base import serializer, logger
-from osf.models import OSFUser as User
-from website.project.model import Node
+from osf.models import OSFUser as User, AbstractNode as Node
 from website.util import waterbutler_url_for
 
 from website.oauth.signals import oauth_complete

@@ -14,7 +14,6 @@ from werkzeug.wrappers import BaseResponse
 from framework import auth
 from framework.auth import cas
 from framework.auth.utils import validate_recaptcha
-from framework.sessions import Session
 from framework.exceptions import HTTPError
 from tests.base import OsfTestCase, assert_is_redirect, fake
 from osf_tests.factories import (
@@ -24,7 +23,7 @@ from osf_tests.factories import (
 
 from framework.auth import Auth
 from framework.auth.decorators import must_be_logged_in
-from osf.models import OSFUser as User
+from osf.models import OSFUser as User, Session
 from website import mails
 from website import settings
 from website.util import permissions
@@ -248,7 +247,7 @@ class TestAuthObject(OsfTestCase):
 
     def test_factory(self):
         auth_obj = AuthFactory()
-        assert_true(isinstance(auth_obj.user, auth.User))
+        assert_true(isinstance(auth_obj.user, User))
 
     def test_from_kwargs(self):
         user = UserFactory()

@@ -8,7 +8,7 @@ from django.db import transaction
 
 from osf.models import PreprintProvider, PreprintService, Subject
 from scripts import utils as script_utils
-from website.project.taxonomies import validate_subject_hierarchy
+from osf.models.validators import validate_subject_hierarchy
 
 logger = logging.getLogger(__name__)
 

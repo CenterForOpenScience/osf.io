@@ -4,7 +4,7 @@ import pytest
 from bulk_update.helper import bulk_update
 
 from osf.models import OSFUser
-from django.db.models import CharField, Max, DateTimeField
+from django.db.models import Max, DateTimeField
 
 from osf_tests.factories import UserFactory, PreprintFactory
 

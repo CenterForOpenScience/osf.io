@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 from nose.tools import *  # flake8: noqa
 
-from website.models import NodeLog
-from website.project.model import Auth
+from osf.models import NodeLog
+from framework.auth.core import Auth
 from website.util import permissions
 
 from api.base.settings.defaults import API_BASE

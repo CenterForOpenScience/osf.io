@@ -16,10 +16,8 @@ from osf_tests.factories import AuthUserFactory, UserFactory, ProjectFactory, Au
 from api.base.settings.defaults import API_BASE
 
 from framework.auth.cas import CasResponse
-from framework.sessions.model import Session
-from osf.models import OSFUser as User
+from osf.models import OSFUser as User, Session, ApiOAuth2PersonalToken
 from website import settings
-from website.oauth.models import ApiOAuth2PersonalToken
 from website.util.permissions import CREATOR_PERMISSIONS
 
 

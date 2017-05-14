@@ -23,7 +23,7 @@ from osf_tests.factories import (UserFactory, AuthUserFactory, ProjectFactory, N
 from addons.wiki.tests.factories import NodeWikiFactory
 from osf.models import AbstractNode as Node
 from website import settings, language
-from website.files.models.osfstorage import OsfStorageFile
+from addons.osfstorage.models import OsfStorageFile
 from website.util import web_url_for, api_url_for, permissions
 
 from api_tests import utils as test_utils

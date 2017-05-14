@@ -15,7 +15,7 @@ from osf_tests.factories import (
 )
 from osf_tests.utils import mock_archive
 
-from website.models import MetaSchema
+from osf.models import MetaSchema
 from website.project.model import ensure_schemas
 from website.project.metadata.schemas import LATEST_SCHEMA_VERSION
 from website.search import search
