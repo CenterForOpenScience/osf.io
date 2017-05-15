@@ -220,6 +220,33 @@ Then reboot.
 The automated installer does not install CAS, Waterbutler, or MFR, which may be needed to run some OSF features locally.
 Consult the [optional extras](#optional-extras) section for more details.
 
+### Vagrant installation
+**experimental**
+ 
+[Vagrant](https://www.vagrantup.com) builds a full OSF stack in a virtual machine on Ubuntu 14.04. Just run:
+```
+vagrant box update
+vagrant up
+# tokumx's install requires manual interaction so we can't run it from Vagrantfile
+vagrant ssh -c "sudo ~/project/install-tokumx.sh"
+# building assets requires a running tokumx
+vagrant ssh -c "source ~/venv/bin/activate; cd project; invoke assets --dev"
+```
+
+Your git checkout directory will be mounted at `~/project` inside the VM, and the virtualenv will be activated for you;
+elasticsearch & mongo will be started by the OS:
+```
+vagrant ssh
+
+<inside VM>
+
+cd project
+invoke apiserver
+invoke server
+```
+The [API](http://localhost:8000/) & [web](http://localhost:5000/) servers will be port forwarded to the host machine.
+
+
 ### Manual installation
 [At present](CONTRIBUTING.md), there is no complete automated install process for other platforms.
 Although the process above should perform most setup steps on Mac OS, users of other platforms will need to perform the
