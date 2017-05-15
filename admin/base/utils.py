@@ -40,6 +40,8 @@ def get_subject_rules(subjects_selected):
     while len(subjects_done) < len(subjects_selected):
         parents_left = [sub for sub in subjects_selected if not sub.parent and sub not in subjects_done]
         subjects_left = [sub for sub in subjects_selected if sub not in subjects_done and sub.parent]
+        if subjects_left and not parents_left:
+            raise AttributeError('Error parsing  rules - should not be children with no parents to process')
         for parent in parents_left:
             parent_has_no_descendants_in_rules = True
             used_children = []
@@ -64,13 +66,13 @@ def get_subject_rules(subjects_selected):
 
                         if len(used_grandchildren) == child.children.count():
                             all_grandchildren = True
-                            subjects_done += used_grandchildren
                             potential_children_rules.append([[parent._id, child._id], True])
                         else:
                             new_rules += potential_grandchildren_rules
 
                         if child_has_no_descendants_in_rules:
                             potential_children_rules.append([[parent._id, child._id], False])
+                        subjects_done += used_grandchildren
                 subjects_done += used_children
 
             if parent_has_no_descendants_in_rules:

@@ -8,7 +8,12 @@ from osf_tests.factories import SubjectFactory
 
 from osf.models import Subject
 from osf.models.preprint_provider import rules_to_subjects
-from admin.base.utils import get_subject_rules, rules_to_subjects
+from admin.base.utils import get_subject_rules
+
+
+import logging
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
 
 
 class TestSubjectRules(AdminTestCase):
@@ -26,6 +31,12 @@ class TestSubjectRules(AdminTestCase):
 
         self.child_two_1 = SubjectFactory(parent=self.parent_two)  # 6
         self.child_two_2 = SubjectFactory(parent=self.parent_two)  # 7
+
+    def test_error_when_child_called_without_parent(self):
+        subjects_selected = [self.child_one_1]
+
+        with self.assertRaises(AttributeError):
+            get_subject_rules(subjects_selected)
 
     def test_just_toplevel_subject(self):
         subjects_selected = [self.parent_one]
@@ -71,9 +82,7 @@ class TestSubjectRules(AdminTestCase):
             self.child_one_1,
             self.grandchild_one_1,
             self.grandchild_one_2,
-            self.child_one_2,
-            self.child_one_two_1,
-            self.grandchild_one_two_1
+            self.child_one_2
         ]
         rules_returned = get_subject_rules(subjects_selected)
         rules_ideal = [[[self.parent_one._id], True]]
@@ -88,33 +97,6 @@ class TestSubjectRules(AdminTestCase):
         rules_returned = get_subject_rules(subjects_selected)
         rules_ideal = [
             [[self.parent_one._id, self.child_one_1._id, self.grandchild_one_1._id], False]
-        ]
-        self.assertItemsEqual(rules_returned, rules_ideal)
-
-    def test_children_and_grandchildren_with_two_parents(self):
-        subjects_selected = [
-            self.parent_one,
-            self.parent_two,
-            self.child_one_two_1,
-            self.grandchild_one_two_1
-        ]
-        rules_returned = get_subject_rules(subjects_selected)
-        rules_ideal = [
-            [[self.parent_one._id, self.child_one_two_1._id], True],
-            [[self.parent_two._id, self.child_one_two_1._id], True]
-        ]
-        self.assertItemsEqual(rules_returned, rules_ideal)
-
-    def test_children_with_two_parents(self):
-        subjects_selected = [
-            self.parent_one,
-            self.parent_two,
-            self.child_one_two_1,
-        ]
-        rules_returned = get_subject_rules(subjects_selected)
-        rules_ideal = [
-            [[self.parent_one._id, self.child_one_two_1._id], False],
-            [[self.parent_two._id, self.child_one_two_1._id], False]
         ]
         self.assertItemsEqual(rules_returned, rules_ideal)
 
