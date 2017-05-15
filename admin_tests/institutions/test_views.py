@@ -136,7 +136,8 @@ class TestInstitutionChangeForm(AdminTestCase):
         new_data = {
             'name': 'New Name',
             'logo_name': 'awesome_logo.png',
-            'domains': 'http://kris.biz/, http://www.little.biz/'
+            'domains': 'http://kris.biz/, http://www.little.biz/',
+            '_id': 'newawesomeprov'
         }
         form = InstitutionForm(data=new_data)
         nt.assert_true(form.is_valid())
@@ -176,8 +177,8 @@ class TestCreateInstitution(AdminTestCase):
 
         self.request = RequestFactory().get('/fake_path')
         self.request.user = self.user
-        self.view = views.CreateInstitution()
-        self.view = setup_form_view(self.view, self.request, form=InstitutionForm())
+        self.base_view = views.CreateInstitution
+        self.view = setup_form_view(self.base_view(), self.request, form=InstitutionForm())
 
         self.view.kwargs = {'institution_id': self.institution.id}
 
@@ -193,7 +194,7 @@ class TestCreateInstitution(AdminTestCase):
         self.request.user = user2
 
         with nt.assert_raises(PermissionDenied):
-            self.view.get(self.request)
+            self.base_view.as_view()(self.request)
 
     def test_get_view(self):
         res = self.view.get(self.request)
@@ -219,8 +220,8 @@ class TestAffiliatedNodeList(AdminTestCase):
 
         self.request = RequestFactory().get('/fake_path')
         self.request.user = self.user
-        self.view = views.InstitutionNodeList()
-        self.view = setup_form_view(self.view, self.request, form=InstitutionForm())
+        self.base_view = views.InstitutionNodeList
+        self.view = setup_form_view(self.base_view(), self.request, form=InstitutionForm())
 
         self.view.kwargs = {'institution_id': self.institution.id}
 
@@ -236,7 +237,7 @@ class TestAffiliatedNodeList(AdminTestCase):
         self.request.user = user2
 
         with nt.assert_raises(PermissionDenied):
-            self.view.get(self.request)
+            self.base_view.as_view()(self.request)
 
     def test_get_view(self):
         res = self.view.get(self.request)
