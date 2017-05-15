@@ -2,7 +2,6 @@
 
 import datetime as dt
 
-import itertools
 import logging
 
 from django.utils import timezone
@@ -128,7 +127,7 @@ def get_user(email=None, password=None, token=None, external_id_provider=None, e
 
     if email:
         email = email.strip().lower()
-        query_list.append(Q('emails', 'eq', email) | Q('username', 'eq', email))
+        query_list.append(Q('emails__address', 'eq', email) | Q('username', 'eq', email))
 
     if password:
         password = password.strip()
@@ -204,9 +203,3 @@ class Auth(object):
             user=user,
             private_key=private_key,
         )
-
-
-def _merge_into_reversed(*iterables):
-    '''Merge multiple sorted inputs into a single output in reverse order.
-    '''
-    return sorted(itertools.chain(*iterables), reverse=True)

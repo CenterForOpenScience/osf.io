@@ -464,7 +464,7 @@ def auth_email_logout(token, user):
             'message_long': 'The private link you used is expired.'
         })
     try:
-        user_merge = User.find_one(Q('emails', 'eq', unconfirmed_email))
+        user_merge = User.find_one(Q('emails__address', 'eq', unconfirmed_email))
     except NoResultsFound:
         user_merge = False
     if user_merge:
@@ -538,8 +538,8 @@ def external_login_confirm_email_get(auth, uid, token):
     if not user.is_registered:
         user.register(email)
 
-    if email.lower() not in user.emails:
-        user.emails.append(email.lower())
+    if not user.emails.filter(address=email.lower()):
+        user.emails.create(address=email.lower())
 
     user.date_last_logged_in = timezone.now()
     user.external_identity[provider][provider_id] = 'VERIFIED'
@@ -603,7 +603,7 @@ def confirm_email_get(token, auth=None, **kwargs):
                 return redirect(campaigns.campaign_url_for(campaign))
 
             # go to home page with push notification
-            if len(auth.user.emails) == 1 and len(auth.user.email_verifications) == 0:
+            if auth.user.emails.count() == 1 and len(auth.user.email_verifications) == 0:
                 status.push_status_message(language.WELCOME_MESSAGE, kind='default', jumbotron=True, trust=True)
             if token in auth.user.email_verifications:
                 status.push_status_message(language.CONFIRM_ALTERNATE_EMAIL_ERROR, kind='danger', trust=True)
@@ -727,7 +727,7 @@ def send_confirm_email(user, email, renew=False, external_id_provider=None, exte
     )
 
     try:
-        merge_target = User.find_one(Q('emails', 'eq', email))
+        merge_target = User.find_one(Q('emails__address', 'eq', email))
     except NoResultsFound:
         merge_target = None
 

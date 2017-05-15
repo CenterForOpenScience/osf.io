@@ -300,8 +300,8 @@ class TestProjectViews(OsfTestCase):
         inst2 = InstitutionFactory(email_domains=['baz.qux'])
 
         user = AuthUserFactory()
-        user.emails.append('queen@foo.bar')
-        user.emails.append('brian@baz.qux')
+        user.emails.create(address='queen@foo.bar')
+        user.emails.create(address='brian@baz.qux')
         user.save()
         project = ProjectFactory(creator=user)
 
@@ -1082,8 +1082,9 @@ class TestUserProfile(OsfTestCase):
     def test_making_email_primary_is_not_case_sensitive(self):
         user = AuthUserFactory(username='fred@queen.test')
         # make confirmed email have different casing
-        user.emails[0] = user.emails[0].capitalize()
-        user.save()
+        email = user.emails.first()
+        email.address = email.address.capitalize()
+        email.save()
         url = api_url_for('update_user')
         res = self.app.put_json(
             url,
@@ -1427,7 +1428,7 @@ class TestUserProfile(OsfTestCase):
     @mock.patch('website.mailchimp_utils.get_mailchimp_api')
     def test_update_user_mailing_lists(self, mock_get_mailchimp_api, send_mail):
         email = fake.email()
-        self.user.emails.append(email)
+        self.user.emails.create(address=email)
         list_name = 'foo'
         self.user.mailchimp_mailing_lists[list_name] = True
         self.user.save()
@@ -1466,7 +1467,7 @@ class TestUserProfile(OsfTestCase):
     @mock.patch('website.mailchimp_utils.get_mailchimp_api')
     def test_unsubscribe_mailchimp_not_called_if_user_not_subscribed(self, mock_get_mailchimp_api, send_mail):
         email = fake.email()
-        self.user.emails.append(email)
+        self.user.emails.create(address=email)
         list_name = 'foo'
         self.user.mailchimp_mailing_lists[list_name] = False
         self.user.save()
@@ -2298,7 +2299,7 @@ class TestClaimViews(OsfTestCase):
 
         # unregistered user then goes and makes an account with same email, before claiming themselves as contributor
         registered_user = UserFactory(username=email, fullname=name)
-        registered_user.emails.append(secondary_email)
+        registered_user.emails.create(address=secondary_email)
         registered_user.save()
 
         # claim link for the now registered email is accessed while not logged in
@@ -3351,7 +3352,7 @@ class TestAuthViews(OsfTestCase):
         res = self.app.put_json(put_email_url, email_verifications[0], auth=self.user.auth)
         self.user.reload()
         assert_equal(res.json_body['status'], 'success')
-        assert_equal(self.user.emails[1], 'test@mail.com')
+        assert_equal(self.user.emails.last().address, 'test@mail.com')
 
     def test_remove_email(self):
         email = 'test@mail.com'
@@ -3416,7 +3417,6 @@ class TestAuthViews(OsfTestCase):
         email = "copy@cat.com"
         dupe = UserFactory(
             username=email,
-            emails=[email]
         )
         dupe.save()
         token = self.user.add_unconfirmed_email(email)
@@ -3431,7 +3431,7 @@ class TestAuthViews(OsfTestCase):
         res = self.app.put_json(put_email_url, email_verifications[0], auth=self.user.auth)
         self.user.reload()
         assert_equal(res.json_body['status'], 'success')
-        assert_equal(self.user.emails[1], 'copy@cat.com')
+        assert_equal(self.user.emails.last().address, 'copy@cat.com')
 
     def test_resend_confirmation_without_user_id(self):
         email = 'test@mail.com'

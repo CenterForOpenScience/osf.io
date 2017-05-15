@@ -699,7 +699,7 @@ class TestConfirmingEmail(OsfTestCase):
         user1 = AuthUserFactory()
         user2 = AuthUserFactory()
         email = 'test@cos.io'
-        user1.emails.append(email)
+        user1.emails.create(address=email)
         user1.save()
         url = api_url_for('update_user')
         header = {'id': user1.username,
@@ -866,7 +866,7 @@ class TestResendConfirmation(OsfTestCase):
         # load resend confirmation page and submit email
         res = self.app.get(self.get_url)
         form = res.forms['resendForm']
-        form['email'] = self.confirmed_user.emails[0]
+        form['email'] = self.confirmed_user.emails.first().address
         res = form.submit()
 
         # check email, request and response

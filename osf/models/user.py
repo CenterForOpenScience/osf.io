@@ -594,8 +594,8 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             elif timestamp > self.comments_viewed_timestamp[target_id]:
                 self.comments_viewed_timestamp[target_id] = timestamp
 
-        self.emails.extend(user.emails)
-        user.emails = []
+        # Give old user's emails to self
+        user.emails.update(user=self)
 
         for k, v in user.email_verifications.iteritems():
             email_to_confirm = v['email']
@@ -810,7 +810,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         user.is_claimed = True
         user.save()  # Must save before using auto_now_add field
         user.date_confirmed = user.date_registered
-        user.emails.append(username)
+        user.emails.create(address=username.lower().strip())
         return user
 
     def get_unconfirmed_email_for_token(self, token):
@@ -854,7 +854,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             if self.email_verifications[token].get('confirmed', False):
                 try:
                     user_merge = OSFUser.find_one(
-                        Q('emails', 'contains', [self.email_verifications[token]['email'].lower()])
+                        Q('emails__address', 'eq', self.email_verifications[token]['email'].lower())
                     )
                 except NoResultsFound:
                     user_merge = False
@@ -947,7 +947,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         #       ref: https://tools.ietf.org/html/rfc822#section-6
         email = email.lower().strip()
 
-        if not external_identity and email in self.emails:
+        if not external_identity and self.emails.filter(address=email).exists():
             raise ValueError('Email already confirmed to this user.')
 
         with reraise_django_validation_errors():
@@ -985,8 +985,8 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         """Remove a confirmed email"""
         if email == self.username:
             raise PermissionsError("Can't remove primary email")
-        if email in self.emails:
-            self.emails.remove(email)
+        if self.emails.filter(address=email):
+            self.emails.filter(address=email).delete()
             signals.user_email_removed.send(self, email=email)
 
     def get_confirmation_token(self, email, force=False, renew=False):
@@ -1050,8 +1050,8 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         self.username = username
         if password:
             self.set_password(password)
-        if username not in self.emails:
-            self.emails.append(username)
+        if not self.emails.filter(address=username):
+            self.emails.create(address=username)
         self.is_registered = True
         self.is_claimed = True
         self.date_confirmed = timezone.now()
@@ -1069,7 +1069,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
         # If this email is confirmed on another account, abort
         try:
-            user_to_merge = OSFUser.find_one(Q('emails', 'contains', [email]))
+            user_to_merge = OSFUser.find_one(Q('emails__address', 'eq', email))
         except NoResultsFound:
             user_to_merge = None
 
@@ -1094,8 +1094,8 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             self.save()
             unregistered_user.username = None
 
-        if email not in self.emails:
-            self.emails.append(email)
+        if not self.emails.filter(address=email).exists():
+            self.emails.create(address=email)
 
         # Complete registration if primary email
         if email.lower() == self.username.lower():
@@ -1327,7 +1327,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         :return:
         """
         try:
-            email_domains = [email.split('@')[1].lower() for email in self.emails]
+            email_domains = [email.split('@')[1].lower() for email in self.emails.values_list('address', flat=True)]
             insts = Institution.objects.filter(email_domains__overlap=email_domains)
             if insts.exists():
                 self.affiliated_institutions.add(*insts)

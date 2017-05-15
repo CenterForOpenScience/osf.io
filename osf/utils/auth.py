@@ -30,7 +30,7 @@ def get_user(email=None, password=None, verification_key=None):
     query_list = []
     if email:
         email = email.strip().lower()
-        query_list.append(Q('emails', 'eq', email) | Q('username', 'eq', email))
+        query_list.append(Q('emails__address', 'eq', email) | Q('username', 'eq', email))
     if password:
         password = password.strip()
         try:
