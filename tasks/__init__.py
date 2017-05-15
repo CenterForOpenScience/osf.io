@@ -227,7 +227,7 @@ def sharejs(ctx, host=None, port=None, db_url=None, cors_allow_origin=None):
 def celery_worker(ctx, level='debug', hostname=None, beat=False, queues=None):
     """Run the Celery process."""
     os.environ['DJANGO_SETTINGS_MODULE'] = 'api.base.settings'
-    cmd = 'celery worker -A framework.celery_tasks -l {0}'.format(level)
+    cmd = 'celery worker -A framework.celery_tasks -Ofair -l {0}'.format(level)
     if hostname:
         cmd = cmd + ' --hostname={}'.format(hostname)
     # beat sets up a cron like scheduler, refer to website/settings
