@@ -135,9 +135,9 @@ class TestPreprintProviderChangeForm(AdminTestCase):
         self.view = setup_form_view(self.view, self.request, form=PreprintProviderForm())
 
         self.parent_1 = SubjectFactory()
-        self.child_1 = SubjectFactory(parents=[self.parent_1])
-        self.child_2 = SubjectFactory(parents=[self.parent_1])
-        self.grandchild_1 = SubjectFactory(parents=[self.child_1])
+        self.child_1 = SubjectFactory(parent=self.parent_1)
+        self.child_2 = SubjectFactory(parent=self.parent_1)
+        self.grandchild_1 = SubjectFactory(parent=self.child_1)
 
         self.view.kwargs = {'preprint_provider_id': self.preprint_provider.id}
 
@@ -147,7 +147,7 @@ class TestPreprintProviderChangeForm(AdminTestCase):
         nt.assert_is_instance(res, dict)
         nt.assert_is_instance(res['import_form'], ImportFileForm)
 
-    def test_preprint_provider_form_create(self):
+    def test_preprint_provider_form(self):
         formatted_rule = [[[self.parent_1._id], True]]
 
         new_data = {
@@ -156,32 +156,14 @@ class TestPreprintProviderChangeForm(AdminTestCase):
                 self.parent_1.id, self.child_1.id, self.child_2.id, self.grandchild_1.id
             ),
             'toplevel_subjects': [self.parent_1.id],
-            'subjects_acceptable': '[]'
+            'subjects_acceptable': '[]',
+            '_id': 'newname'
         }
         form = PreprintProviderForm(data=new_data)
         nt.assert_true(form.is_valid())
 
         new_provider = form.save()
         nt.assert_equal(new_provider.name, new_data['name'])
-        nt.assert_equal(new_provider.subjects_acceptable, formatted_rule)
-
-    def test_preprint_provider_form_update(self):
-        formatted_rule = [[[self.parent_1._id, self.child_1._id], True]]
-
-        old_data = model_to_dict(self.preprint_provider)
-
-        old_data['name'] = 'Snappy New Name'
-        old_data['subjects_chosen'] = '{}, {}, {}'.format(
-            self.parent_1.id, self.child_1.id, self.grandchild_1.id
-        )
-        old_data['subjects_acceptable'] = str(old_data['subjects_acceptable'])
-        old_data['toplevel_subjects'] = [self.parent_1.id]
-
-        form = PreprintProviderForm(data=old_data)
-        nt.assert_true(form.is_valid())
-
-        new_provider = form.save()
-        nt.assert_equal(new_provider.name, old_data['name'])
         nt.assert_equal(new_provider.subjects_acceptable, formatted_rule)
 
 
@@ -200,10 +182,16 @@ class TestPreprintProviderExport(AdminTestCase):
 
     def test_post(self):
         res = self.view.get(self.request)
-        content_dict = json.loads(res.content)[0]
+        content_dict = json.loads(res.content)
         nt.assert_equal(content_dict['model'], 'osf.preprintprovider')
         nt.assert_equal(content_dict['fields']['name'], self.preprint_provider.name)
         nt.assert_equal(res.__getitem__('content-type'), 'text/json')
+
+    def test_certain_fields_not_included(self):
+        res = self.view.get(self.request)
+        content_dict = json.loads(res.content)
+        for field in views.FIELDS_TO_NOT_IMPORT_EXPORT:
+            nt.assert_not_in(field, content_dict['fields'].keys())
 
 
 class TestCreatePreprintProvider(AdminTestCase):
@@ -239,9 +227,9 @@ class TestGetSubjectDescendants(AdminTestCase):
         self.preprint_provider = PreprintProviderFactory()
 
         self.parent_1 = SubjectFactory()
-        self.child_1 = SubjectFactory(parents=[self.parent_1])
-        self.child_2 = SubjectFactory(parents=[self.parent_1])
-        self.grandchild_1 = SubjectFactory(parents=[self.child_1])
+        self.child_1 = SubjectFactory(parent=self.parent_1)
+        self.child_2 = SubjectFactory(parent=self.parent_1)
+        self.grandchild_1 = SubjectFactory(parent=self.child_1)
 
         self.request = RequestFactory().get('/?parent_id={}'.format(self.parent_1.id))
         self.view = views.GetSubjectDescendants()
@@ -253,7 +241,7 @@ class TestGetSubjectDescendants(AdminTestCase):
         nt.assert_equal(res.__getitem__('content-type'), 'application/json')
 
         content_dict = json.loads(res.content)
-        nt.assert_equal(
+        nt.assert_items_equal(
             content_dict['all_descendants'],
             [self.child_1.id, self.child_2.id, self.grandchild_1.id]
         )
