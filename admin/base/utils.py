@@ -1,7 +1,6 @@
 """
 Utility functions and classes
 """
-from modularodm import Q
 from osf.models import Subject, NodeLicense
 
 from django.core.urlresolvers import reverse

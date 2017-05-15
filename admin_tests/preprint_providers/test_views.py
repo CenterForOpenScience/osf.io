@@ -2,7 +2,6 @@ import json
 
 from nose import tools as nt
 from django.test import RequestFactory
-from django.forms.models import model_to_dict
 
 from tests.base import AdminTestCase
 from osf_tests.factories import (
