@@ -107,6 +107,8 @@ INSTALLED_APPS = (
     'admin.users',
     'admin.desk',
     'admin.meetings',
+    'admin.institutions',
+    'admin.preprint_providers',
 
 )
 
@@ -188,13 +190,10 @@ LOGIN_URL = 'account/login/'
 LOGIN_REDIRECT_URL = ADMIN_BASE
 
 STATIC_ROOT = os.path.join(os.path.dirname(BASE_DIR), 'static_root')
-STATICFILES_DIRS = (
-    os.path.join(BASE_DIR, 'static'),
-)
-
 
 STATICFILES_DIRS = (
     os.path.join(BASE_DIR, 'static'),
+    os.path.join(BASE_DIR, '../website/static'),
 )
 
 LANGUAGE_CODE = 'en-us'
@@ -232,3 +231,10 @@ ENTRY_POINTS = {'osf4m': 'osf4m', 'prereg_challenge_campaign': 'prereg',
 # Set in local.py
 DESK_KEY = ''
 DESK_KEY_SECRET = ''
+
+if DEBUG:
+    INSTALLED_APPS += ('debug_toolbar', )
+    MIDDLEWARE_CLASSES += ('debug_toolbar.middleware.DebugToolbarMiddleware', )
+    DEBUG_TOOLBAR_CONFIG = {
+        'SHOW_TOOLBAR_CALLBACK': lambda(_): True
+    }
