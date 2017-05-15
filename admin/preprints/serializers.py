@@ -11,9 +11,5 @@ def serialize_preprint(preprint):
         'node': serialize_node(preprint.node),
         'is_published': preprint.is_published,
         'date_published': preprint.date_published,
-        'subjects': serialize_subjects(preprint.subject_hierarchy),
+        'subjects': preprint.subjects.all()
     }
-
-
-def serialize_subjects(subject_hierarchy):
-    return [{'id': subject._id, 'text': subject.text} for subjects in subject_hierarchy for subject in subjects]
