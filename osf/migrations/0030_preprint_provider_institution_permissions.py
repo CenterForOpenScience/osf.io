@@ -62,7 +62,7 @@ def remove_group_permissions(*args):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0028_auto_20170504_1548'),
+        ('osf', '0029_auto_20170511_1553'),
     ]
 
     operations = [
