@@ -48,6 +48,7 @@ def get_license(name):
 def update_or_create(provider_data):
     provider = PreprintProvider.load(provider_data['_id'])
     licenses = [get_license(name) for name in provider_data.pop('licenses_acceptable', [])]
+    default_license = provider_data.pop('default_license', False)
     if provider:
         provider_data['subjects_acceptable'] = map(
             lambda rule: (map(get_subject_id, rule[0]), rule[1]),
@@ -55,7 +56,6 @@ def update_or_create(provider_data):
         )
         if licenses:
             provider.licenses_acceptable.add(*licenses)
-        default_license = provider_data.pop('default_license', False)
         if default_license:
             provider.default_license = get_license(default_license)
         for key, val in provider_data.iteritems():
@@ -69,6 +69,9 @@ def update_or_create(provider_data):
         new_provider.save()
         if licenses:
             new_provider.licenses_acceptable.add(*licenses)
+        if default_license:
+            new_provider.default_license = get_license(default_license)
+            new_provider.save()
         provider = PreprintProvider.load(new_provider._id)
         print('Added new preprint provider: {}'.format(provider._id))
         return new_provider, True
