@@ -1,7 +1,7 @@
 from rest_framework import serializers as ser
 
 from api.base.utils import absolute_reverse
-from api.base.serializers import JSONAPISerializer, LinksField, RelationshipField
+from api.base.serializers import JSONAPISerializer, LinksField, RelationshipField, ShowIfVersion
 
 
 class PreprintProviderSerializer(JSONAPISerializer):
@@ -16,18 +16,35 @@ class PreprintProviderSerializer(JSONAPISerializer):
     description = ser.CharField(required=False)
     id = ser.CharField(max_length=200, source='_id')
     advisory_board = ser.CharField(required=False, allow_null=True)
-    email_contact = ser.CharField(required=False, allow_null=True)
-    email_support = ser.CharField(required=False, allow_null=True)
     example = ser.CharField(required=False, allow_null=True)
     domain = ser.CharField(required=False, allow_null=False)
     domain_redirect_enabled = ser.CharField(required=False, allow_null=False)
-    social_twitter = ser.CharField(required=False, allow_null=True)
-    social_facebook = ser.CharField(required=False, allow_null=True)
-    social_instagram = ser.CharField(required=False, allow_null=True)
     header_text = ser.CharField(required=False, allow_null=True)
     subjects_acceptable = ser.JSONField(required=False, allow_null=True)
     logo_path = ser.CharField(read_only=True)
     banner_path = ser.CharField(read_only=True)
+    footer_links = ser.CharField(required=False, allow_null=True)
+
+    email_contact = ShowIfVersion(
+        ser.CharField(required=False, allow_null=True),
+        min_version='2.0', max_version='2.3'
+    )
+    email_support = ShowIfVersion(
+        ser.CharField(required=False, allow_null=True),
+        min_version='2.0', max_version='2.3'
+    )
+    social_twitter = ShowIfVersion(
+        ser.CharField(required=False, allow_null=True),
+        min_version='2.0', max_version='2.3'
+    )
+    social_facebook = ShowIfVersion(
+        ser.CharField(required=False, allow_null=True),
+        min_version='2.0', max_version='2.3'
+    )
+    social_instagram = ShowIfVersion(
+        ser.CharField(required=False, allow_null=True),
+        min_version='2.0', max_version='2.3'
+    )
 
     preprints = RelationshipField(
         related_view='preprint_providers:preprints-list',

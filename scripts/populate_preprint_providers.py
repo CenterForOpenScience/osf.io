@@ -88,7 +88,9 @@ def main(env):
             '_id': 'osf',
             'name': 'Open Science Framework',
             'logo_name': 'cos-logo.png',
-            'description': 'A scholarly commons to connect the entire research cycle',
+            'description': '''
+                <span>A scholarly commons to connect the entire research cycle</span>
+            ''',
             'banner_name': 'cos-banner.png',
             'domain': DOMAIN,
             'domain_redirect_enabled': False,  # Never change this
@@ -109,7 +111,26 @@ def main(env):
             '_id': 'engrxiv',
             'name': 'engrXiv',
             'logo_name': 'engrxiv-logo.png',
-            'description': 'The open archive of engineering.',
+            'description': '''
+                <span>The open archive of engineering.</span>
+            ''',
+            'footer_links': '''
+                <div>
+                    <span>engrXiv:</span>
+                    <span><a href="http://blog.engrxiv.org/about/">About</a></span>
+                    <span> | </span>
+                    <span><a href="mailto:support+engrxiv@osf.io">Support</a></span>
+                    <span> | </span>
+                    <span><a href="mailto:contact+engrxiv@osf.io">Contact</a></span>
+                    <span> | </span>
+                </div>
+                <div class="social">
+                    <a href="https://twitter.com/engrxiv" aria-label="Twitter"><i class="fa fa-2x fa-twitter"></i></a>
+                    <a href="https://www.facebook.com/engrXiv" aria-label="Facebook"><i class="fa fa-2x fa-facebook"></i></a>
+                    <a href="https://instragram.com/engrxiv" aria-label="Instagram"><i class="fa fa-2x fa-instagram"></i></a>
+                    <a href="http://blog.engrxiv.org/" aria-label="Blog"><i class="fa fa-2x fa-pencil-square-o"></i></a>
+                </div>
+            ''',
             'banner_name': 'engrxiv-banner.png',
             'domain': format_domain_url('engrxiv.org'),
             'domain_redirect_enabled': False,
@@ -251,7 +272,28 @@ def main(env):
             '_id': 'psyarxiv',
             'name': 'PsyArXiv',
             'logo_name': 'psyarxiv-logo.png',
-            'description': 'A free preprint service for the psychological sciences.',
+            'description': '''
+                <span>A free preprint service for the psychological sciences.</span>
+                </br>
+                <span>Maintained by <a href="http://improvingpsych.org">The Society for the Improvement of Psychological Science</a></span>
+            ''',
+            'footer_links': '''
+                <div>
+                    <span>PsyArXiv:</span>
+                    <span><a href="http://blog.psyarxiv.com/psyarxiv/about-psyarxiv/">About</a></span>
+                    <span> | </span>
+                    <span><a href="mailto:support+psyarxiv@osf.io">Support</a></span>
+                    <span> | </span>
+                    <span><a href="mailto:contact+psyarxiv@osf.io">Contact</a></span>
+                    <span> | </span>
+                </div>
+                <div class="social">
+                    <a href="https://twitter.com/psyarxiv" aria-label="Twitter"><i class="fa fa-2x fa-twitter"></i></a>
+                    <a href="https://www.facebook.com/PsyArXiv" aria-label="Facebook"><i class="fa fa-2x fa-facebook"></i></a>
+                    <a href="https://instragram.com/psyarxiv" aria-label="Instagram"><i class="fa fa-2x fa-instagram"></i></a>
+                    <a href="http://blog.psyarxiv.com/psyarxiv/" aria-label="Blog"><i class="fa fa-2x fa-pencil-square-o"></i></a>
+                </div>
+            ''',
             'banner_name': 'psyarxiv-banner.png',
             'domain': format_domain_url('psyarxiv.com'),
             'domain_redirect_enabled': False,
@@ -339,7 +381,26 @@ def main(env):
             '_id': 'socarxiv',
             'name': 'SocArXiv',
             'logo_name': 'socarxiv-logo.png',
-            'description': 'Open archive of the social sciences',
+            'description': '''
+                <span>Open archive of the social sciences</span>
+            ''',
+            'footer_links': '''
+                <div>
+                    <span>SocArXiv:</span>
+                    <span><a href="https://socopen.org/welcome/">About</a></span>
+                    <span> | </span>
+                    <span><a href="mailto:support+socarxiv@osf.io">Support</a></span>
+                    <span> | </span>
+                    <span><a href="mailto:contact+socarxiv@osf.io">Contact</a></span>
+                    <span> | </span>
+                </div>
+                <div class="social">
+                    <a href="https://twitter.com/socarxiv" aria-label="Twitter"><i class="fa fa-2x fa-twitter"></i></a>
+                    <a href="https://www.facebook.com/socarxiv" aria-label="Facebook"><i class="fa fa-2x fa-facebook"></i></a>
+                    <a href="https://instragram.com/socarxiv" aria-label="Instagram"><i class="fa fa-2x fa-instagram"></i></a>
+                    <a href="http://socopen.org/" aria-label="Blog"><i class="fa fa-2x fa-pencil-square-o"></i></a>
+                </div>
+            ''',
             'banner_name': 'socarxiv-banner.png',
             'domain': format_domain_url('socarxiv.org'),
             'domain_redirect_enabled': False,
@@ -387,7 +448,22 @@ def main(env):
             '_id': 'scielo',
             'name': 'SciELO',
             'logo_name': 'scielo-logo.png',
-            'description': 'Advancing Research Communication',
+            'description': '''
+                <span>Advancing Research Communication</span>
+            ''',
+            'footer_links': '''
+                <div>
+                    <span>SciELO:</span>
+                    <span><a href="mailto:support+scielo@osf.io">Support</a></span>
+                    <span> | </span>
+                    <span><a href="mailto:contact+scielo@osf.io">Contact</a></span>
+                    <span> | </span>
+                </div>
+                <div class="social">
+                    <a href="https://twitter.com/RedeSciELO" aria-label="Twitter"><i class="fa fa-2x fa-twitter"></i></a>
+                    <a href="https://www.facebook.com/SciELONetwork" aria-label="Facebook"><i class="fa fa-2x fa-facebook"></i></a>
+                </div>
+            ''',
             'banner_name': 'scielo-logo.png',
             'domain': format_domain_url('scielo.org'),
             'domain_redirect_enabled': False,
@@ -408,7 +484,21 @@ def main(env):
             '_id': 'lawarxiv',
             'name': 'LawArXiv',
             'logo_name': 'lawarxiv-logo.png',
-            'description': 'Legal Scholarship in the Open',
+            'description': '''
+                <span>Legal Scholarship in the Open</span>
+            ''',
+            'footer_links': '''
+                <div>
+                    <span>LawArXiv:</span>
+                    <span><a href="mailto:support+lawarxiv@osf.io">Support</a></span>
+                    <span> | </span>
+                    <span><a href="mailto:contact+lawarxiv@osf.io">Contact</a></span>
+                    <span> | </span>
+                </div>
+                <div class="social">
+                    <a href="https://twitter.com/lawarxiv" aria-label="Twitter"><i class="fa fa-2x fa-twitter"></i></a>
+                </div>
+            ''',
             'banner_name': 'lawarxiv-logo.png',
             'domain': '',  # No domain information yet
             'domain_redirect_enabled': False,
@@ -461,7 +551,23 @@ def main(env):
             '_id': 'agrixiv',
             'name': 'AgriXiv',
             'logo_name': 'agrixiv-logo.svg',
-            'description': 'Preprints for Agriculture and Allied Sciences',
+            'description': '''
+                <span>Preprints for Agriculture and Allied Sciences</span>
+            ''',
+            'footer_links': '''
+                <div>
+                    <span>AgriXiv:</span>
+                    <span><a href="mailto:support+agrixiv@osf.io">Support</a></span>
+                    <span> | </span>
+                    <span><a href="mailto:contact+agrixiv@osf.io">Contact</a></span>
+                    <span> | </span>
+                </div>
+                <div class="social">
+                    <a href="https://twitter.com/agrixiv" aria-label="Twitter"><i class="fa fa-2x fa-twitter"></i></a>
+                    <a href="https://www.facebook.com/AgriXiv" aria-label="Facebook"><i class="fa fa-2x fa-facebook"></i></a>
+                    <a href="https://instragram.com/agrixiv" aria-label="Instagram"><i class="fa fa-2x fa-instagram"></i></a>
+                </div>
+            ''',
             'banner_name': 'agrixiv-banner.svg',
             'domain': format_domain_url('agrixiv.org'),
             'domain_redirect_enabled': False,
@@ -1087,7 +1193,23 @@ def main(env):
             '_id': 'bitss',
             'name': 'BITSS',
             'logo_name': 'bitss-logo.png',
-            'description': 'An interdisciplinary archive of articles focused on improving research transparency and reproducibility',
+            'description': '''
+                <span>An interdisciplinary archive of articles focused on improving research transparency and reproducibility</span>
+                </br>
+                <span>Maintained by <a href="www.bitss.org">The Berkeley Initiative for Transparency in the Social Sciences (BITSS)</a></span>
+            ''',
+            'footer_links': '''
+                <div>
+                    <span>BITSS:</span>
+                    <span><a href="mailto:support+bitss@osf.io">Support</a></span>
+                    <span> | </span>
+                    <span><a href="mailto:contact+bitss@osf.io">Contact</a></span>
+                    <span> | </span>
+                </div>
+                <div class="social">
+                    <a href="https://twitter.com/UCBITSS" aria-label="Twitter"><i class="fa fa-2x fa-twitter"></i></a>
+                </div>
+            ''',
             'banner_name': 'bitss-banner.png',
             'domain': '',  # Not using domain
             'domain_redirect_enabled': False,

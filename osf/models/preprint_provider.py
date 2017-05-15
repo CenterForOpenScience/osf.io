@@ -15,7 +15,7 @@ class PreprintProvider(ObjectIDMixin, BaseModel):
     name = models.CharField(null=False, max_length=128)  # max length on prod: 22
     logo_name = models.CharField(null=True, blank=True, max_length=128)  # max length on prod: 17
     header_text = models.TextField(default='', blank=True)
-    description = models.CharField(null=True, blank=True, max_length=256)  # max length on prod: 56
+    description = models.TextField(default='', blank=True)
     banner_name = models.CharField(null=True, blank=True, max_length=128)  # max length on prod: 19
     domain = models.URLField(blank=True, default='', max_length=200)
     domain_redirect_enabled = models.BooleanField(default=False)
@@ -28,6 +28,7 @@ class PreprintProvider(ObjectIDMixin, BaseModel):
     social_twitter = models.CharField(null=True, blank=True, max_length=200)  # max length on prod: 8
     social_facebook = models.CharField(null=True, blank=True, max_length=200)  # max length on prod: 8
     social_instagram = models.CharField(null=True, blank=True, max_length=200)  # max length on prod: 8
+    footer_links = models.TextField(default='', blank=True)
 
     subjects_acceptable = DateTimeAwareJSONField(blank=True, default=list)
     licenses_acceptable = models.ManyToManyField(NodeLicense, blank=True, related_name='licenses_acceptable')
