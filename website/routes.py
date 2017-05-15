@@ -1561,22 +1561,6 @@ def make_url_map(app):
             '/project/<pid>/node/<nid>/permissions/beforepublic/',
         ], 'get', project_views.node.project_before_set_public, json_renderer),
 
-        ### Watching ###
-        Rule([
-            '/project/<pid>/watch/',
-            '/project/<pid>/node/<nid>/watch/'
-        ], 'post', project_views.node.watch_post, json_renderer),
-
-        Rule([
-            '/project/<pid>/unwatch/',
-            '/project/<pid>/node/<nid>/unwatch/'
-        ], 'post', project_views.node.unwatch_post, json_renderer),
-
-        Rule([
-            '/project/<pid>/togglewatch/',
-            '/project/<pid>/node/<nid>/togglewatch/'
-        ], 'post', project_views.node.togglewatch_post, json_renderer),
-
         # Combined files
         Rule(
             [
