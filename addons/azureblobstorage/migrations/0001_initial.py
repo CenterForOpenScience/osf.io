@@ -15,7 +15,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
-        ('osf', '0025_add_azureblobstorage_addon'),
+        ('osf', '0031_add_azureblobstorage_addon'),
     ]
 
     operations = [
