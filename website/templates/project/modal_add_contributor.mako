@@ -268,8 +268,8 @@
 
                 <span data-bind="if: page() === 'invite'">
                     <button class="btn btn-primary" data-bind='click:selectWhom'>Back</button>
-                    <button class='btn btn-success btn-add'
-                         data-bind='click: postInvite'
+                    <button class='btn btn-success'
+                         data-bind='click: postInvite, enable:canSubmit'
                                     type="submit">Add</button>
                 </span>
 
