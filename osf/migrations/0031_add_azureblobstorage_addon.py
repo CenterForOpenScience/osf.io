@@ -8,7 +8,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0024_add_swift_addon'),
+        ('osf', '0030_add_swift_addon'),
     ]
 
     operations = [
