@@ -342,21 +342,15 @@ class OsfStorageFolder(OsfStorageFileNode, Folder):
                 return True
         except AttributeError:
             return False
-        # TODO this should be one query
-        for child in self.children.all():
-            try:
-                if child.is_checked_out:
-                    return True
-            except AttributeError:
-                pass
+        if self.children.filter(checkout=True).exists():
+            return True
         return False
 
     @property
     def is_preprint_primary(self):
         if self.node.preprint_file:
-            for child in self.children.all().select_related('node'):
-                if child.is_preprint_primary:
-                    return True
+            if self.children.filter(node__preprint_file__isnull=False).filter(node___has_abandoned_preprint=False).exists():
+                return True
         return False
 
     def serialize(self, include_full=False, version=None):
