@@ -4,17 +4,18 @@ embargo end dates have been passed.
 """
 
 import logging
-import datetime
 
+import django
 from django.utils import timezone
 from django.db import transaction
 from modularodm import Q
+django.setup()
 
 from framework.celery_tasks import app as celery_app
 
 from website.app import init_app
 from website import models, settings
-from website.project.model import NodeLog
+from osf.models import NodeLog
 
 from scripts import utils as scripts_utils
 

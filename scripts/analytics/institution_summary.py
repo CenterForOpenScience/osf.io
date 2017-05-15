@@ -4,9 +4,8 @@ from modularodm import Q
 from dateutil.parser import parse
 from datetime import datetime, timedelta
 
-from osf.models import OSFUser as User
+from osf.models import OSFUser as User, AbstractNode as Node, Institution
 from website.app import init_app
-from website.models import Node, Institution
 from scripts.analytics.base import SummaryAnalytics
 
 
@@ -50,7 +49,7 @@ class InstitutionSummary(SummaryAnalytics):
             project_public_query = project_query & public_query
             project_private_query = project_query & private_query
             count = {
-                'institution':{
+                'institution': {
                     'id': institution._id,
                     'name': institution.name,
                 },
@@ -58,7 +57,7 @@ class InstitutionSummary(SummaryAnalytics):
                     'total': User.find(user_query).count(),
                 },
                 'nodes': {
-                    'total':AbstractNode.find_by_institutions(institution, node_query).count(),
+                    'total': AbstractNode.find_by_institutions(institution, node_query).count(),
                     'public': AbstractNode.find_by_institutions(institution, node_public_query).count(),
                     'private': AbstractNode.find_by_institutions(institution, node_private_query).count(),
                 },
