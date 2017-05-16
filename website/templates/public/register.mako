@@ -67,6 +67,12 @@
         </div>
     %endif
 
+    %if campaign == "focusarchive-preprints":
+        <div class="text-center m-t-lg">
+            <h3>FocUS Archive Preprints</h3><hr>
+        </div>
+    %endif
+
     %if campaign == "lawarxiv-preprints":
         <div class="text-center m-t-lg">
             <h3>LawArXiv Preprints</h3><hr>
@@ -132,6 +138,13 @@
                         <tr>
                             <td><img src="/static/img/preprint_providers/bitss-login.png" style="width: 150px; background: #a9a9a9; padding: 0 10px 0 10px;" /></td>
                             <td><h3>Create a free OSF account to contribute to BITSS</h3></td>
+                        </tr>
+                    </table>
+                %elif campaign == "focusarchive-preprints":
+                    <table style="border-collapse: separate; border-spacing: 30px 0; margin-top: 20px;  margin-bottom: 10px;">
+                        <tr>
+                            <td><img src="/static/img/preprint_providers/fusf_wide_color.png"></td>
+                            <td><h3>Create a free OSF account to contribute to FocUS Archive</h3></td>
                         </tr>
                     </table>
                 %elif campaign == "lawarxiv-preprints":
