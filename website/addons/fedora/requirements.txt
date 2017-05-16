@@ -1,0 +1,1 @@
+# Requirements for the fedora add-on

@@ -30,6 +30,36 @@
                 "text": "GitHub content will be registered, but version history will not be copied to the registration."
             }
         },
+        "Fedora": {
+            "Permissions": {
+                "status": "partial",
+                "text": "Making an OSF project public or private is independent of making a Fedora repo public or private. The OSF does not alter the permissions of linked Fedora repos."
+            },
+            "View / download file versions": {
+                "status": "full",
+                "text": "Fedora files and their versions can be viewed/downloaded via OSF."
+            },
+            "Add / update files": {
+                "status": "full",
+                "text": "Adding/updating files in the project via OSF will be reflected in the Fedora repo."
+            },
+            "Delete files": {
+                "status": "full",
+                "text": "Files deleted via OSF will be deleted in the Fedora repo."
+            },
+            "Logs": {
+                "status": "partial",
+                "text": "OSF keeps track of changes you make to your Fedora content through OSF, but not for changes made using Fedora directly."
+            },
+            "Forking": {
+                "status": "partial",
+                "text": "Forking a project or component does not copy Fedora authorization unless the user forking the project is the same user who authorized the Github add-on in the source project being forked."
+            },
+            "Registering": {
+                "status": "partial",
+                "text": "Fedora content will be registered, but version history will not be copied to the registration."
+            }
+        },	
         "Amazon S3": {
             "Permissions": {
                 "status": "partial",
