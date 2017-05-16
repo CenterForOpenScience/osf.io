@@ -177,6 +177,9 @@
                 popular: ${ popular_links_node | sjson, n },
                 newAndNoteworthy: ${ noteworthy_links_node | sjson, n },
                 maintenance: ${ maintenance | sjson, n},
+                sharejs: {
+                    useWebsockets: ${ sharejs['use_websockets'] | sjson, n }
+                },
                 analyticsMeta: {},
             });
         </script>

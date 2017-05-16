@@ -1,7 +1,8 @@
 var $ = require('jquery');
 var m = require('mithril');
 
-var collaborative = (typeof WebSocket !== 'undefined' && typeof sharejs !== 'undefined');
+var collaborative = typeof sharejs !== 'undefined';
+var useWs = typeof WebSocket !== 'undefined' && window.contextVars.sharejs.useWebsockets;
 
 var ShareJSDoc = function(shareWSUrl, metadata, editor, observables) {
     var self = this;
@@ -28,15 +29,18 @@ var ShareJSDoc = function(shareWSUrl, metadata, editor, observables) {
     self.observables = observables;
 
 
-    // Requirements load order is specific in this case to compensate
-    // for older browsers.
-    var ReconnectingWebSocket = require('reconnectingWebsocket');
+    var Socket = useWs ? require('reconnectingWebsocket') : require('browserchannel/dist/bcsocket-uncompressed').BCSocket;
     require('addons/wiki/static/ace.js');
 
-    // Configure connection
-    var wsPrefix = (window.location.protocol === 'https:') ? 'wss://' : 'ws://';
-    var wsUrl = wsPrefix + shareWSUrl;
-    var socket = new ReconnectingWebSocket(wsUrl);
+    var prefix = (useWs ? 'ws' : 'http') + ((window.location.protocol === 'https:') ? 's://' : '://');
+    var url = prefix + ctx.urls.sharejs + (useWs ? '' : '/channel');
+    var socket;
+    if (useWs) {
+        socket = new Socket(url);
+    } else {
+        socket = new Socket(url, {crossDomainXhr:true});
+    }
+
     var sjs = new sharejs.Connection(socket);
     var doc = sjs.get('docs', metadata.docId);
     var madeConnection = false;
@@ -46,11 +50,7 @@ var ShareJSDoc = function(shareWSUrl, metadata, editor, observables) {
 
     function whenReady() {
         if (!collaborative) {
-            if (typeof WebSocket === 'undefined') {
-                self.observables.status('unsupported');
-            } else {
-                self.observables.status('disconnected');
-            }
+            self.observables.status('disconnected');
             return;
         }
 
