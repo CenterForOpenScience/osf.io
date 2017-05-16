@@ -1819,3 +1819,5 @@ CUSTOM_CITATIONS = {
     'bluebook2': 'bluebook',
     'bluebook-inline': 'bluebook'
 }
+
+PREPRINTS_ASSETS = '/static/img/preprints_assets/'
