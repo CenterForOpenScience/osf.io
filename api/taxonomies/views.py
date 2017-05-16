@@ -61,10 +61,19 @@ class TaxonomyList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
 
     # overrides FilterMixin
     def postprocess_query_param(self, key, field_name, operation):
-        # Queries on 'parents' should be by object_id
+        # TODO: Queries on 'parents' should be deprecated
         if field_name == 'parents':
             if operation['value'] not in (list(), tuple()):
-                operation['source_field_name'] = 'parents___id'
+                operation['source_field_name'] = 'parent___id'
+            else:
+                if len(operation['value']) > 1:
+                    operation['source_field_name'] = 'parent___id__in'
+                elif len(operation['value']) == 1:
+                    operation['source_field_name'] == 'parent___id'
+                    operation['value'] = operation['value'][0]
+                else:
+                    operation['source_field_name'] = 'parent__isnull'
+                    operation['value'] = True
 
 
 class TaxonomyDetail(JSONAPIBaseView, generics.RetrieveAPIView):

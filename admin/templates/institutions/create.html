@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% load static %}
+{% block top_includes %}
+    <link rel="stylesheet" type="text/css" href="/static/css/institutions.css" />
+{% endblock %}
+{% load user_extras %}
+{% load spam_extras %}
+{% block title %}
+    <title>Create Institution</title>
+{% endblock title %}
+{% block content %}
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-12">
+                <h2>Create An Institution</h2>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-7">
+                <form action="" method="post">
+                    {% csrf_token %}
+                    {{ form.as_p }}
+                    <input class="form-button" type="submit" value="Save" />
+                </form>
+            </div>
+            <div class="col-md-5">
+                <div>
+                    <h4>Import from JSON</h4>
+                    <p>Choose a JSON file that has been previously exported from another Institution detail page. This will
+                        pre-populate the Institution change form with those details.</p>
+                    <form id="import-form" action = {% url 'institutions:import' %} method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        {{ import_form.as_p }}
+                        <input class="form-button" type="submit" value="Import" />
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+{% endblock content %}
+
+{% block bottom_js %}
+    <script>
+        $(document).ready(function() {
+
+            $("#import-form").submit(function(event) {
+                event.preventDefault();
+                $.ajax({
+                    url: '{% url 'institutions:import' %}',
+                    type: "post",
+                    data: new FormData($(this)[0]),
+                    cache: false,
+                    contentType: false,
+                    processData: false,
+                    success: function(response) {
+                        for (var k in response){
+                            if (response.hasOwnProperty(k)) {
+                                var field = $('#id_' + k);
+                                field.val(response[k]);
+                            }
+                        }
+                    }
+                });
+            });
+        });
+    </script>
+{% endblock %}

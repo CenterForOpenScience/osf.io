@@ -6,7 +6,7 @@ import furl
 import pytz
 
 from framework.auth.core import Auth, User
-from osf.models import FileNode
+from osf.models import BaseFileNode
 from rest_framework import serializers as ser
 from website import settings
 from website.project.model import Comment
@@ -48,11 +48,11 @@ class CheckoutField(ser.HyperlinkedRelatedField):
 
         super(CheckoutField, self).__init__('users:user-detail', **kwargs)
 
-    def resolve(self, resource, request):
+    def resolve(self, resource, field_name, request):
         """
         Resolves the view when embedding.
         """
-        embed_value = resource.stored_object.checkout._id
+        embed_value = resource.checkout._id
         return resolve(
             reverse(
                 self.view_name,
@@ -251,7 +251,7 @@ class FileSerializer(JSONAPISerializer):
         return None
 
     def update(self, instance, validated_data):
-        assert isinstance(instance, FileNode), 'Instance must be a FileNode'
+        assert isinstance(instance, BaseFileNode), 'Instance must be a BaseFileNode'
         if instance.provider != 'osfstorage' and 'tags' in validated_data:
             raise Conflict('File service provider {} does not support tags on the OSF.'.format(instance.provider))
         auth = get_user_auth(self.context['request'])
@@ -324,6 +324,7 @@ class FileVersionSerializer(JSONAPISerializer):
     id = ser.CharField(read_only=True, source='identifier')
     size = ser.IntegerField(read_only=True, help_text='The size of this file at this version')
     content_type = ser.CharField(read_only=True, help_text='The mime type of this file at this verison')
+    date_created = DateByVersion(read_only=True, help_text='The date that this version was created')
     links = LinksField({
         'self': 'self_url',
         'html': 'absolute_url'

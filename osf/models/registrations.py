@@ -1,3 +1,4 @@
+import logging
 import datetime
 import urlparse
 
@@ -22,6 +23,8 @@ from osf.models.base import BaseModel, ObjectIDMixin
 from osf.models.node import AbstractNode
 from osf.models.nodelog import NodeLog
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
+
+logger = logging.getLogger(__name__)
 
 
 class Registration(AbstractNode):
@@ -324,6 +327,7 @@ class Registration(AbstractNode):
         return retraction
 
     def delete_registration_tree(self, save=False):
+        logger.debug('Marking registration {} as deleted'.format(self._id))
         self.is_deleted = True
         for draft_registration in DraftRegistration.objects.filter(registered_node=self):
             # Allow draft registration to be submitted

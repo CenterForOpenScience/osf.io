@@ -158,8 +158,12 @@ class TestGuidAnnotations:
         objects = []
         ids = range(0, 5)
         Model = Factory._meta.model
+        kwargs = {}
+        if Factory == PreprintFactory:
+            # Don't try to save preprints on build when neither the subject nor provider have been saved
+            kwargs['finish'] = False
         for id in ids:
-            objects.append(Factory.build(id=id))
+            objects.append(Factory.build(id=id, **kwargs))
         with django_assert_num_queries(1):
             things = Model.objects.bulk_create(objects)
         assert len(things) == len(objects)

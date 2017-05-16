@@ -11,7 +11,7 @@ from framework.auth.oauth_scopes import CoreScopes
 
 from api.base.exceptions import Conflict
 from api.base.views import JSONAPIBaseView
-from api.base.filters import DjangoFilterMixin
+from api.base.filters import PreprintFilterMixin
 from api.base.parsers import (
     JSONAPIMultipleRelationshipsParser,
     JSONAPIMultipleRelationshipsParserForRegularJSON,
@@ -51,7 +51,7 @@ class PreprintMixin(NodeMixin):
         return preprint
 
 
-class PreprintList(JSONAPIBaseView, generics.ListCreateAPIView, DjangoFilterMixin):
+class PreprintList(JSONAPIBaseView, generics.ListCreateAPIView, PreprintFilterMixin):
     """Preprints that represent a special kind of preprint node. *Writeable*.
 
     Paginated list of preprints ordered by their `date_created`.  Each resource contains a representation of the
@@ -158,13 +158,6 @@ class PreprintList(JSONAPIBaseView, generics.ListCreateAPIView, DjangoFilterMixi
     view_category = 'preprints'
     view_name = 'preprint-list'
 
-    # overrides FilterMixin
-    def postprocess_query_param(self, key, field_name, operation):
-        if field_name == 'provider':
-            operation['source_field_name'] = 'provider___id'
-        if field_name == 'id':
-            operation['source_field_name'] = 'guids___id'
-
     def get_serializer_class(self):
         if self.request.method == 'POST':
             return PreprintCreateSerializer
@@ -187,7 +180,7 @@ class PreprintList(JSONAPIBaseView, generics.ListCreateAPIView, DjangoFilterMixi
 
     # overrides ListAPIView
     def get_queryset(self):
-        return PreprintService.objects.filter(self.get_query_from_request())
+        return PreprintService.objects.filter(self.get_query_from_request()).distinct()
 
 class PreprintDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, PreprintMixin, WaterButlerMixin):
     """Preprint Detail  *Writeable*.

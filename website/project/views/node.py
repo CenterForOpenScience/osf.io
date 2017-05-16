@@ -15,6 +15,7 @@ from framework.utils import iso8601format
 from framework.flask import redirect
 from framework.auth.decorators import must_be_logged_in, collect_auth
 from framework.exceptions import HTTPError
+from osf.models.nodelog import NodeLog
 
 from website import language
 
@@ -596,6 +597,21 @@ def remove_private_link(*args, **kwargs):
         link = PrivateLink.load(link_id)
         link.is_deleted = True
         link.save()
+
+        for node in link.nodes.all():
+            log_dict = {
+                'project': node.parent_id,
+                'node': node._id,
+                'user': kwargs.get('auth').user._id,
+                'anonymous_link': link.anonymous,
+            }
+
+            node.add_log(
+                NodeLog.VIEW_ONLY_LINK_REMOVED,
+                log_dict,
+                auth=kwargs.get('auth', None)
+            )
+
     except ModularOdmException:
         raise HTTPError(http.NOT_FOUND)
 
@@ -692,6 +708,7 @@ def _view_project(node, auth, primary=False,
             'is_retracted': node.is_retracted,
             'is_pending_retraction': node.is_pending_retraction,
             'retracted_justification': getattr(node.retraction, 'justification', None),
+            'date_retracted': iso8601format(getattr(node.retraction, 'date_retracted', None)),
             'embargo_end_date': node.embargo_end_date.strftime('%A, %b. %d, %Y') if node.embargo_end_date else False,
             'is_pending_embargo': node.is_pending_embargo,
             'is_embargoed': node.is_embargoed,
@@ -728,6 +745,7 @@ def _view_project(node, auth, primary=False,
             'contributors': list(node.contributors.values_list('guids___id', flat=True)),
             'is_preprint': node.is_preprint,
             'is_preprint_orphan': node.is_preprint_orphan,
+            'has_published_preprint': node.preprints.filter(is_published=True).exists() if node else False,
             'preprint_file_id': node.preprint_file._id if node.preprint_file else None,
             'preprint_url': node.preprint_url
         },

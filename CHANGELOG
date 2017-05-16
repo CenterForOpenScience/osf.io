@@ -2,12 +2,47 @@
 Changelog
 *********
 
-0.107.0 (unreleased)
+0.109.0 (2017-05-10)
+====================
+
+- Support custom taxonomies for preprint providers.
+
+0.108.0 (2017-05-08)
+====================
+- [My Projects] Icon for Uncategorized disappears when project/component is highlighted
+- Comment pane should not appear in anonymous view-only links
+- Moving multiple GitHub files into folder fails
+- Incorrect heading text is displayed in copy or move "taking longer than expected" message
+- Files added to OSF Storage display incorrect time stamps
+- Update Social Links to ImpactStory
+- & in file name causes registration to fail
+- Prereg banner on Dashboard misbehaves on mobile and requires hard refresh to show correct color
+- Retractions should show the date retracted in the metadata
+- Update Default to Collapsed Preview Pane on My Projects Page
+- Add Search by User Name and Search by Email to Admin App
+- Finish user serialization
+- Add Banner to Private Project That Has Preprint
+- Generate Account Confirmation + Password reset Links in Admin App
+- Redirect osf.io/explore (and osf.io/explore/activity) to osf.io/activity
+- Better way to surface registration form
+- Improve wording on move/replace file modal
+- Change Default Language on Wiki without Content
+- Update Language when there are no components on a project
+- Change text prompt if no tags applied
+- Change Project Description Prompt text
+- Change No License Prompt Text
+- Improve Language for Non-Admins on Registrations Tab
+- Add timestamp to APIv2 file versions
+- Make wiki versioning more clear to users
+
+
+0.107.0 (2017-04-28)
 ====================
 
 - Upgrade to Django 1.11.
 - Remove BaseFileNode.wrapped() method.
 - Remove guid_string field from models.
+- Preprints: Add LawArxiv.
 - Admin: Add Date Registration Initiated to node view.
 - Admin: Add link between projects and registrations.
 
