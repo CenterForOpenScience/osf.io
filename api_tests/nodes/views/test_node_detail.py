@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import mock
 from urlparse import urlparse
 from nose.tools import *  # flake8: noqa
 import functools
@@ -23,7 +24,8 @@ from osf_tests.factories import (
     CollectionFactory,
     CommentFactory,
     NodeLicenseRecordFactory,
-    PrivateLinkFactory
+    PrivateLinkFactory,
+    PreprintFactory
 )
 
 from website.project.licenses import ensure_licenses
@@ -845,6 +847,14 @@ class TestNodeDelete(NodeCRUDTestCase):
         )
         # Bookmark collections are collections, so a 404 is returned
         assert_equal(res.status_code, 404)
+
+    @mock.patch('website.preprints.tasks.update_ezid_metadata_on_change.s')
+    def test_delete_node_with_preprint_calls_preprint_update_status(self, mock_update_ezid_metadata_on_change):
+        PreprintFactory(project=self.public_project)
+        self.app.delete_json_api(self.public_url, auth=self.user.auth, expect_errors=True)
+        self.public_project.reload()
+
+        assert mock_update_ezid_metadata_on_change.called
 
 
 class TestReturnDeletedNode(ApiTestCase):

@@ -3494,6 +3494,26 @@ class NodeIdentifierList(NodeMixin, IdentifierList):
     """
 
     serializer_class = NodeIdentifierSerializer
+    node_lookup_url_kwarg = 'node_id'
+
+    # overrides IdentifierList
+    def get_object(self, check_object_permissions=True):
+        return self.get_node(check_object_permissions=check_object_permissions)
+
+    def get_node(self, check_object_permissions=True):
+        node = get_object_or_error(
+            Node,
+            self.kwargs[self.node_lookup_url_kwarg],
+            display_name='node'
+        )
+        # Nodes that are folders/collections are treated as a separate resource, so if the client
+        # requests a collection through a node endpoint, we return a 404
+        if node.is_collection:
+            raise NotFound
+        # May raise a permission denied
+        if check_object_permissions:
+            self.check_object_permissions(self.request, node)
+        return node
 
 
 class NodePreprintsList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, PreprintFilterMixin):

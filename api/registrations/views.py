@@ -13,7 +13,7 @@ from api.base.parsers import JSONAPIRelationshipParserForRegularJSON
 from api.base.utils import get_user_auth
 from api.comments.serializers import RegistrationCommentSerializer, CommentCreateSerializer
 from api.identifiers.serializers import RegistrationIdentifierSerializer
-from api.identifiers.views import IdentifierList
+from api.nodes.views import NodeIdentifierList
 from api.users.views import UserMixin
 
 from api.nodes.permissions import (
@@ -1051,7 +1051,7 @@ class RegistrationViewOnlyLinkDetail(NodeViewOnlyLinkDetail, RegistrationMixin):
     view_name = 'registration-view-only-link-detail'
 
 
-class RegistrationIdentifierList(RegistrationMixin, IdentifierList):
+class RegistrationIdentifierList(RegistrationMixin, NodeIdentifierList):
     """List of identifiers for a specified node. *Read-only*.
 
     ##Identifier Attributes

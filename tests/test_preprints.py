@@ -12,6 +12,7 @@ from framework.auth import Auth
 from framework.exceptions import PermissionsError
 
 from website import settings
+from website.identifiers.utils import get_doi_and_metadata_for_object
 from osf.models import NodeLog, Subject
 
 from tests.base import OsfTestCase
@@ -282,6 +283,29 @@ class TestPreprintProvider(OsfTestCase):
 
         assert set(self.provider.all_subjects) == set([subj_a, subj_b, subj_aa, subj_ab, subj_ba, subj_bb, subj_aaa])
 
+class TestPreprintIdentifiers(OsfTestCase):
+    def setUp(self):
+        super(TestPreprintIdentifiers, self).setUp()
+        self.user = AuthUserFactory()
+        self.auth = Auth(user=self.user)
+        self.preprint = PreprintFactory(is_published=False, creator=self.user)
+
+    @mock.patch('website.preprints.tasks.get_and_set_preprint_identifiers.s')
+    def test_identifiers_task_called_on_publish(self, mock_get_and_set_identifiers):
+        assert self.preprint.identifiers.count() == 0
+        self.preprint.set_published(True, auth=self.auth, save=True)
+
+        assert mock_get_and_set_identifiers.called
+
+    def test_get_doi_for_preprint(self):
+        new_provider = PreprintProviderFactory()
+        preprint = PreprintFactory(provider=new_provider)
+        ideal_doi = '{}osf.io/{}'.format(settings.DOI_NAMESPACE, preprint._id)
+
+        doi, metadata = get_doi_and_metadata_for_object(preprint)
+
+        assert doi == ideal_doi
+
 class TestOnPreprintUpdatedTask(OsfTestCase):
     def setUp(self):
         super(TestOnPreprintUpdatedTask, self).setUp()
@@ -395,8 +419,11 @@ class TestOnPreprintUpdatedTask(OsfTestCase):
         related_work = next(nodes.pop(k) for k, v in nodes.items() if v['@type'] == 'creativework')
         assert set(related_work.keys()) == {'@id', '@type'}  # Empty except @id and @type
 
-        doi = next(nodes.pop(k) for k, v in nodes.items() if v['@type'] == 'workidentifier' and 'doi' in v['uri'])
-        assert doi['creative_work'] == related_work
+        osf_doi = next(nodes.pop(k) for k, v in nodes.items() if v['@type'] == 'workidentifier' and 'doi' in v['uri'] and 'osf.io' in v['uri'])
+        assert osf_doi['creative_work'] == {'@id': preprint['@id'], '@type': preprint['@type']}
+
+        related_doi = next(nodes.pop(k) for k, v in nodes.items() if v['@type'] == 'workidentifier' and 'doi' in v['uri'])
+        assert related_doi['creative_work'] == related_work
 
         workidentifiers = [nodes.pop(k)['uri'] for k, v in nodes.items() if v['@type'] == 'workidentifier']
         assert workidentifiers == [urlparse.urljoin(settings.DOMAIN, self.preprint._id + '/')]
@@ -480,7 +507,7 @@ class TestOnPreprintUpdatedTask(OsfTestCase):
 
         workidentifiers = {nodes.pop(k)['uri'] for k, v in nodes.items() if v['@type'] == 'workidentifier'}
         # URLs should *always* be osf.io/guid/
-        assert workidentifiers == set([urlparse.urljoin(settings.DOMAIN, self.preprint._id) + '/'])
+        assert workidentifiers == set([urlparse.urljoin(settings.DOMAIN, self.preprint._id) + '/', 'http://dx.doi.org/{}'.format(self.preprint.get_identifier('doi').value)])
 
         assert nodes == {}
 

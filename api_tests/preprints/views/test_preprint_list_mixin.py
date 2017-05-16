@@ -1,4 +1,5 @@
 from nose.tools import *  # flake8: noqa
+import mock
 
 from api.base.settings.defaults import API_BASE
 
@@ -139,7 +140,8 @@ class PreprintIsValidListMixin(object):
         res = self.app.get(self.url, auth=self.admin.auth)
         assert len(res.json['data']) == 0
 
-    def test_preprint_node_null_invisible(self):
+    @mock.patch('website.preprints.tasks.on_preprint_updated.s')
+    def test_preprint_node_null_invisible(self, mock_preprint_updated):
         self.preprint.node = None
         self.preprint.save()
         # no auth

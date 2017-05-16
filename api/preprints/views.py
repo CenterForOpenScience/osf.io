@@ -6,8 +6,8 @@ from rest_framework import generics
 from rest_framework.exceptions import NotFound, PermissionDenied, NotAuthenticated
 from rest_framework import permissions as drf_permissions
 
-from website.models import PreprintService
 from framework.auth.oauth_scopes import CoreScopes
+from osf.models import PreprintService, Identifier
 
 from api.base.exceptions import Conflict
 from api.base.views import JSONAPIBaseView
@@ -27,6 +27,9 @@ from api.preprints.serializers import (
 from api.nodes.serializers import (
     NodeCitationStyleSerializer,
 )
+
+from api.identifiers.views import IdentifierList
+from api.identifiers.serializers import PreprintIdentifierSerializer
 from api.nodes.views import NodeMixin, WaterButlerMixin
 from api.nodes.permissions import ContributorOrPublic
 
@@ -343,3 +346,59 @@ class PreprintCitationStyleDetail(JSONAPIBaseView, generics.RetrieveAPIView, Pre
             return {'citation': citation, 'id': style}
 
         raise PermissionDenied if auth.user else NotAuthenticated
+
+class PreprintIdentifierList(IdentifierList, PreprintMixin):
+    """List of identifiers for a specified preprint. *Read-only*.
+
+    ##Identifier Attributes
+
+    OSF Identifier entities have the "identifiers" `type`.
+
+        name           type                   description
+        ----------------------------------------------------------------------------
+        category       string                 e.g. 'ark', 'doi'
+        value          string                 the identifier value itself
+
+    ##Links
+
+        self: this identifier's detail page
+
+    ##Relationships
+
+    ###Referent
+
+    The identifier is refers to this preprint.
+
+    ##Actions
+
+    *None*.
+
+    ##Query Params
+
+     Identifiers may be filtered by their category.
+
+    #This Request/Response
+
+    """
+
+    permission_classes = (
+        PreprintPublishedOrAdmin,
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+    )
+    serializer_class = PreprintIdentifierSerializer
+    required_read_scopes = [CoreScopes.IDENTIFIERS_READ]
+    required_write_scopes = [CoreScopes.NULL]
+
+    preprint_lookup_url_kwarg = 'preprint_id'
+
+    view_category = 'identifiers'
+    view_name = 'identifier-list'
+
+    # overrides IdentifierList
+    def get_object(self, check_object_permissions=True):
+        return self.get_preprint(check_object_permissions=check_object_permissions)
+
+    # overrides ListCreateAPIView
+    def get_queryset(self):
+        return Identifier.find(self.get_query_from_request())

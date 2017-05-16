@@ -5,12 +5,12 @@ from dirtyfields import DirtyFieldsMixin
 from django.db import models
 from django.utils import timezone
 from django.utils.functional import cached_property
+from django.contrib.contenttypes.fields import GenericRelation
 
 from framework.celery_tasks.handlers import enqueue_task
 from framework.exceptions import PermissionsError
-from osf.models.subject import Subject
 from osf.utils.fields import NonNaiveDateTimeField
-from website.preprints.tasks import on_preprint_updated
+from website.preprints.tasks import on_preprint_updated, get_and_set_preprint_identifiers
 from website.project.model import NodeLog
 from website.project.licenses import set_license
 from website.project.taxonomies import validate_subject_hierarchy
@@ -19,8 +19,10 @@ from website.util.permissions import ADMIN
 from website import settings
 
 from osf.models.base import BaseModel, GuidMixin
+from osf.models.subject import Subject
+from osf.models.identifiers import IdentifierMixin, Identifier
 
-class PreprintService(DirtyFieldsMixin, GuidMixin, BaseModel):
+class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, BaseModel):
     date_created = NonNaiveDateTimeField(auto_now_add=True)
     date_modified = NonNaiveDateTimeField(auto_now=True)
     provider = models.ForeignKey('osf.PreprintProvider',
@@ -36,6 +38,8 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, BaseModel):
                                 on_delete=models.SET_NULL, null=True, blank=True)
 
     subjects = models.ManyToManyField(blank=True, to='osf.Subject', related_name='preprint_services')
+
+    identifiers = GenericRelation(Identifier, related_query_name='preprintservices')
 
     class Meta:
         unique_together = ('node', 'provider')
@@ -57,6 +61,10 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, BaseModel):
         if not self.node:
             return
         return self.node.preprint_article_doi
+
+    @property
+    def preprint_doi(self):
+        return self.get_identifier_value('doi')
 
     @property
     def is_preprint_orphan(self):
@@ -185,6 +193,9 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, BaseModel):
                     log=True
                 )
 
+            # This should be called after all fields for EZID metadta have been set
+            enqueue_task(get_and_set_preprint_identifiers.s(self._id))
+
         if save:
             self.node.save()
             self.save()
@@ -202,6 +213,13 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, BaseModel):
                 auth=auth,
                 save=False
             )
+
+        if save:
+            self.save()
+
+    def set_identifier_values(self, doi, ark, save=False):
+        self.set_identifier_value('doi', doi)
+        self.set_identifier_value('ark', ark)
 
         if save:
             self.save()

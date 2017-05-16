@@ -81,6 +81,11 @@ class PreprintSerializer(JSONAPISerializer):
         related_view_kwargs={'preprint_id': '<_id>'}
     )
 
+    identifiers = RelationshipField(
+        related_view='preprints:identifier-list',
+        related_view_kwargs={'preprint_id': '<_id>'}
+    )
+
     node = NodeRelationshipField(
         related_view='nodes:node-detail',
         related_view_kwargs={'node_id': '<node._id>'},
@@ -110,7 +115,8 @@ class PreprintSerializer(JSONAPISerializer):
         {
             'self': 'get_preprint_url',
             'html': 'get_absolute_html_url',
-            'doi': 'get_doi_url'
+            'doi': 'get_article_doi_url',
+            'preprint_doi': 'get_preprint_doi_url'
         }
     )
 
@@ -130,8 +136,12 @@ class PreprintSerializer(JSONAPISerializer):
     def get_absolute_url(self, obj):
         return self.get_preprint_url(obj)
 
-    def get_doi_url(self, obj):
+    def get_article_doi_url(self, obj):
         return 'https://dx.doi.org/{}'.format(obj.article_doi) if obj.article_doi else None
+
+    def get_preprint_doi_url(self, obj):
+        doi_identifier = obj.get_identifier('doi')
+        return 'https://dx.doi.org/{}'.format(doi_identifier.value) if doi_identifier else None
 
     def run_validation(self, *args, **kwargs):
         # Overrides construtor for validated_data to allow writes to a SerializerMethodField
@@ -166,16 +176,16 @@ class PreprintSerializer(JSONAPISerializer):
             preprint.node.preprint_article_doi = validated_data['article_doi']
             save_node = True
 
+        if 'license_type' in validated_data or 'license' in validated_data:
+            license_details = get_license_details(preprint, validated_data)
+            self.set_field(preprint.set_preprint_license, license_details, auth)
+            save_preprint = True
+
         published = validated_data.pop('is_published', None)
         if published is not None:
             self.set_field(preprint.set_published, published, auth)
             save_preprint = True
             recently_published = published
-
-        if 'license_type' in validated_data or 'license' in validated_data:
-            license_details = get_license_details(preprint, validated_data)
-            self.set_field(preprint.set_preprint_license, license_details, auth)
-            save_preprint = True
 
         if save_node:
             try:
