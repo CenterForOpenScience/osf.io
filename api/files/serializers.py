@@ -6,7 +6,7 @@ import furl
 import pytz
 
 from framework.auth.core import Auth, User
-from osf.models import FileNode
+from osf.models import BaseFileNode
 from rest_framework import serializers as ser
 from website import settings
 from website.project.model import Comment
@@ -251,7 +251,7 @@ class FileSerializer(JSONAPISerializer):
         return None
 
     def update(self, instance, validated_data):
-        assert isinstance(instance, FileNode), 'Instance must be a FileNode'
+        assert isinstance(instance, BaseFileNode), 'Instance must be a BaseFileNode'
         if instance.provider != 'osfstorage' and 'tags' in validated_data:
             raise Conflict('File service provider {} does not support tags on the OSF.'.format(instance.provider))
         auth = get_user_auth(self.context['request'])
