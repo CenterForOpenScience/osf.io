@@ -65,7 +65,7 @@
                         %if campaign == provider:
                             <table style="border-collapse: separate; border-spacing: 30px 0; margin-top: 20px;  margin-bottom: 10px;">
                                 <tr>
-                                    <td><img src="${preprint_campaigns[provider]['logo_path']}"/></td>
+                                    <td><img src="${preprint_campaigns[provider]['logo_path']}" style="width: 100px; height: 100px" /></td>
                                     <td><h3>Create a free OSF account to contribute to ${preprint_campaigns[provider]['name'] | n}</h3></td>
                                 </tr>
                             </table>
