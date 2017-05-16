@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 @app.task
 def send_email(from_addr, to_addr, subject, message, mimetype='html', ttls=True, login=True,
-                username=None, password=None, categories=None):
+                username=None, password=None, categories=None, attachment_name=None, attachment_content=None):
     """Send email to specified destination.
     Email is sent from the email specified in FROM_EMAIL settings in the
     settings module.
@@ -39,7 +39,9 @@ def send_email(from_addr, to_addr, subject, message, mimetype='html', ttls=True,
             subject=subject,
             message=message,
             mimetype=mimetype,
-            categories=categories
+            categories=categories,
+            attachment_name=attachment_name,
+            attachment_content=attachment_content,
         )
     else:
         return _send_with_smtp(
@@ -82,7 +84,7 @@ def _send_with_smtp(from_addr, to_addr, subject, message, mimetype='html', ttls=
     s.quit()
     return True
 
-def _send_with_sendgrid(from_addr, to_addr, subject, message, mimetype='html', categories=None, client=None):
+def _send_with_sendgrid(from_addr, to_addr, subject, message, mimetype='html', categories=None, attachment_name=None, attachment_content=None, client=None):
     client = client or sendgrid.SendGridClient(settings.SENDGRID_API_KEY)
     mail = sendgrid.Mail()
     mail.set_from(from_addr)
@@ -94,6 +96,8 @@ def _send_with_sendgrid(from_addr, to_addr, subject, message, mimetype='html', c
         mail.set_text(message)
     if categories:
         mail.set_categories(categories)
+    if attachment_name and attachment_content:
+        mail.add_attachment_stream(attachment_name, attachment_content)
 
     status, msg = client.send(mail)
     return status < 400
