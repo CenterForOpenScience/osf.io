@@ -65,8 +65,7 @@
                         %if campaign == provider:
                             <table style="border-collapse: separate; border-spacing: 30px 0; margin-top: 20px;  margin-bottom: 10px;">
                                 <tr>
-                                    <!-- Path to be changed to /wherever preprint assets are/id/square_color_no_transparent.png -->
-                                    <td><img src="${"/static/img/preprint_providers/" + preprint_campaigns[provider]['id'] + "-login.png"}" style="width: 200px; margin-top: 15px" /></td>
+                                    <td><img src="${preprint_campaigns[provider]['logo_path']}"/></td>
                                     <td><h3>Create a free OSF account to contribute to ${preprint_campaigns[provider]['name'] | n}</h3></td>
                                 </tr>
                             </table>

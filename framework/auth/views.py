@@ -373,7 +373,11 @@ def auth_register(auth):
         context['login_url'] = destination
         # "Login through your institution" link
         context['institution_login_url'] = cas.get_login_url(data['next_url'], campaign='institution')
-        context['preprint_campaigns'] = {k._id + '-preprints': {'id': k._id, 'name': k.name} for k in PreprintProvider.objects.all() if k._id != 'osf'}
+        context['preprint_campaigns'] = {k._id + '-preprints': {
+            'id': k._id,
+            'name': k.name,
+            'logo_path': settings.PREPRINTS_ASSETS + k._id + '/square_color_no_transparent.png'
+        } for k in PreprintProvider.objects.all() if k._id != 'osf'}
         context['campaign'] = data['campaign']
         return context, http.OK
     # redirect to url
