@@ -31,47 +31,13 @@
         </div>
     %endif
 
-    %if campaign == "socarxiv-preprints":
-        <div class="text-center m-t-lg">
-            <h3>SocArXiv Preprints</h3><hr>
-        </div>
-    %endif
-
-    %if campaign == "engrxiv-preprints":
-        <div class="text-center m-t-lg">
-            <h3>engrXiv Preprints</h3><hr>
-        </div>
-    %endif
-
-    %if campaign == "psyarxiv-preprints":
-        <div class="text-center m-t-lg">
-            <h3>PsyArXiv Preprints</h3><hr>
-        </div>
-    %endif
-
-    %if campaign == "agrixiv-preprints":
-        <div class="text-center m-t-lg">
-            <h3>AgriXiv Preprints</h3><hr>
-        </div>
-    %endif
-
-    %if campaign == "bitss-preprints":
-        <div class="text-center m-t-lg">
-            <h3>BITSS Preprints</h3><hr>
-        </div>
-    %endif
-
-    %if campaign == "scielo-preprints":
-        <div class="text-center m-t-lg">
-            <h3>SciELO Preprints</h3><hr>
-        </div>
-    %endif
-
-    %if campaign == "lawarxiv-preprints":
-        <div class="text-center m-t-lg">
-            <h3>LawArXiv Preprints</h3><hr>
-        </div>
-    %endif
+    %for provider in preprint_campaigns.keys():
+        %if campaign == provider:
+            <div class="text-center m-t-lg">
+                <h3>${preprint_campaigns[provider]['name'] | n} Preprints</h3><hr>
+            </div>
+        %endif
+    %endfor
 
     <div class="row m-t-xl">
     %if campaign != "institution" or not enable_institutions:
@@ -92,57 +58,20 @@
                             <td><h3>Create a free OSF account</h3></td>
                         </tr>
                     </table>
-                %elif campaign == "socarxiv-preprints":
-                    <table style="border-collapse: separate; border-spacing: 30px 0; margin-top: 20px;  margin-bottom: 10px;">
-                        <tr>
-                            <td><img src="/static/img/preprint_providers/socarxiv-login.png" style="width: 150px; background: #e14b5a;" /></td>
-                            <td><h3>Create a free OSF account to contribute to SocArXiv</h3></td>
-                        </tr>
-                    </table>
-                %elif campaign == "engrxiv-preprints":
-                    <table style="border-collapse: separate; border-spacing: 30px 0; margin-top: 20px;  margin-bottom: 10px;">
-                        <tr>
-                            <td><img src="/static/img/preprint_providers/engrxiv-login.png" style="width: 150px; background: #222F38;" /></td>
-                            <td><h3>Create a free OSF account to contribute to engrXiv</h3></td>
-                        </tr>
-                    </table>
-                %elif campaign == "psyarxiv-preprints":
-                    <table style="border-collapse: separate; border-spacing: 30px 0; margin-top: 20px;  margin-bottom: 10px;">
-                        <tr>
-                            <td><img src="/static/img/preprint_providers/psyarxiv-login.png" style="width: 150px; background: #062F4F; padding: 0 10px 0 10px;" /></td>
-                            <td><h3>Create a free OSF account to contribute to PsyArXiv</h3></td>
-                        </tr>
-                    </table>
-                %elif campaign == "scielo-preprints":
-                    <table style="border-collapse: separate; border-spacing: 30px 0; margin-top: 20px;  margin-bottom: 10px;">
-                        <tr>
-                            <td><img src="/static/img/preprint_providers/scielo-login.png" style="width: 150px; padding: 0 10px 0 10px;" /></td>
-                            <td><h3>Create a free OSF account to contribute to SciELO</h3></td>
-                        </tr>
-                    </table>
-                %elif campaign == "agrixiv-preprints":
-                    <table style="border-collapse: separate; border-spacing: 30px 0; margin-top: 20px; margin-bottom: 10px;">
-                        <tr>
-                            <td><img src="/static/img/preprint_providers/agrixiv-login.svg" style="width: 150px; padding: 0 10px 0 10px;" /></td>
-                            <td><h3>Create a free OSF account to contribute to AgriXiv</h3></td>
-                        </tr>
-                    </table>
-                %elif campaign == "bitss-preprints":
-                    <table style="border-collapse: separate; border-spacing: 30px 0; margin-top: 20px;  margin-bottom: 10px;">
-                        <tr>
-                            <td><img src="/static/img/preprint_providers/bitss-login.png" style="width: 150px; background: #a9a9a9; padding: 0 10px 0 10px;" /></td>
-                            <td><h3>Create a free OSF account to contribute to BITSS</h3></td>
-                        </tr>
-                    </table>
-                %elif campaign == "lawarxiv-preprints":
-                    <table style="border-collapse: separate; border-spacing: 30px 0; margin-top: 20px;  margin-bottom: 10px;">
-                        <tr>
-                            <td><img src="/static/img/preprint_providers/lawarxiv-logo.png" style="width: 150px; padding: 0 10px 0 10px;" /></td>
-                            <td><h3>Create a free OSF account to contribute to LawArXiv</h3></td>
-                        </tr>
-                    </table>
-                %else:
+                %elif campaign not in preprint_campaigns.keys():
                     <h3 class="m-b-lg"> Create a free account </h3>
+                %else:
+                    %for provider in preprint_campaigns.keys():
+                        %if campaign == provider:
+                            <table style="border-collapse: separate; border-spacing: 30px 0; margin-top: 20px;  margin-bottom: 10px;">
+                                <tr>
+                                    <!-- Path to be changed to /wherever preprint assets are/id/square_color_no_transparent.png -->
+                                    <td><img src="${"/static/img/preprint_providers/" + preprint_campaigns[provider]['id'] + "-login.png"}" style="width: 200px; margin-top: 15px" /></td>
+                                    <td><h3>Create a free OSF account to contribute to ${preprint_campaigns[provider]['name'] | n}</h3></td>
+                                </tr>
+                            </table>
+                        %endif
+                    %endfor
                 %endif
 
                 <div class="form-group" data-bind=" css: { 'has-error': fullName() && !fullName.isValid(), 'has-success': fullName() && fullName.isValid() }">

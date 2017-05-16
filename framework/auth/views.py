@@ -30,7 +30,7 @@ from framework.sessions.utils import remove_sessions_for_user, remove_session
 from framework.sessions import get_session
 
 from website import settings, mails, language
-from website.models import User
+from website.models import User, PreprintProvider
 from website.util import web_url_for
 from website.util.time import throttle_period_expired
 from website.util.sanitize import strip_html
@@ -373,6 +373,7 @@ def auth_register(auth):
         context['login_url'] = destination
         # "Login through your institution" link
         context['institution_login_url'] = cas.get_login_url(data['next_url'], campaign='institution')
+        context['preprint_campaigns'] = {k._id + '-preprints': {'id': k._id, 'name': k.name} for k in PreprintProvider.objects.all() if k._id != 'osf'}
         context['campaign'] = data['campaign']
         return context, http.OK
     # redirect to url
