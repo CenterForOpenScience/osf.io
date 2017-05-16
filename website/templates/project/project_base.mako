@@ -27,9 +27,6 @@
     <%include file="retracted_registration.mako" args="node='${node}'"/>
 % else:
     ${next.body()}
-##  % if node['node_type'] == 'project':
-        <%include file="modal_duplicate.mako"/>
-##  % endif
 % endif
 
 </%def>

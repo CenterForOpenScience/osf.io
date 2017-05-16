@@ -6,7 +6,6 @@ import urllib
 import markupsafe
 from django.utils import timezone
 from flask import request
-import uuid
 
 from modularodm import Q
 from modularodm.exceptions import NoResultsFound
@@ -1000,7 +999,7 @@ def external_login_email_post():
             external_identity[external_id_provider][external_id] = 'CREATE'
             user = User.create_unconfirmed(
                 username=clean_email,
-                password=str(uuid.uuid4()),
+                password=None,
                 fullname=fullname,
                 external_identity=external_identity,
                 campaign=None

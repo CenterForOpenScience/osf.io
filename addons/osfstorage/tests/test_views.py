@@ -571,7 +571,6 @@ class TestDeleteHook(HookTestCase):
         assert_equal(resp.json, {'status': 'success'})
         fid = file._id
         del file
-        # models.StoredFileNode._clear_object_cache()
         assert_is(models.OsfStorageFileNode.load(fid), None)
         assert_true(models.TrashedFileNode.load(fid))
 
@@ -599,7 +598,7 @@ class TestDeleteHook(HookTestCase):
 
     def test_attempt_delete_while_preprint(self):
         file = self.root_node.append_file('Nights')
-        self.node.preprint_file = file.stored_object
+        self.node.preprint_file = file
         self.node.save()
         res = self.delete(file, expect_errors=True)
 
@@ -608,7 +607,7 @@ class TestDeleteHook(HookTestCase):
     def test_attempt_delete_folder_with_preprint(self):
         folder = self.root_node.append_folder('Fishes')
         file = folder.append_file('Fish')
-        self.node.preprint_file = file.stored_object
+        self.node.preprint_file = file
         self.node.save()
         res = self.delete(folder, expect_errors=True)
 
@@ -668,7 +667,7 @@ class TestMoveHook(HookTestCase):
     def test_within_node_move_while_preprint(self):
 
         file = self.root_node.append_file('Self Control')
-        self.node.preprint_file = file.stored_object
+        self.node.preprint_file = file
         self.node.save()
         folder = self.root_node.append_folder('Frank Ocean')
         res = self.send_hook(

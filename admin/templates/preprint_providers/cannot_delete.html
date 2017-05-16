@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% load static %}
+{% load user_extras %}
+{% load spam_extras %}
+{% block title %}
+    <title>Preprint Provider Delete</title>
+{% endblock title %}
+{% block content %}
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-12">
+                <h3>Cannot Delete {{ provider.name }}</h3>
+                <p>{{ provider.name }} has {{ provider.preprint_services.count }} preprints associated with it, and therefore cannot be safely deleted.</p>
+            </div>
+        </div>
+    </div>
+{% endblock content %}

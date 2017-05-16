@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """Generate a sitemap for osf.io"""
+import boto3
 import datetime
 import gzip
 import math
@@ -57,6 +58,16 @@ class Sitemap(object):
         if not os.path.exists(self.sitemap_dir):
             print('Creating sitemap directory at `{}`'.format(self.sitemap_dir))
             os.makedirs(self.sitemap_dir)
+        if settings.SITEMAP_TO_S3:
+            assert settings.SITEMAP_AWS_BUCKET, 'SITEMAP_AWS_BUCKET must be set for sitemap files to be sent to S3'
+            assert settings.AWS_ACCESS_KEY_ID, 'AWS_ACCESS_KEY_ID must be set for sitemap files to be sent to S3'
+            assert settings.AWS_SECRET_ACCESS_KEY, 'AWS_SECRET_ACCESS_KEY must be set for sitemap files to be sent to S3'
+            self.s3 = boto3.resource(
+                's3',
+                aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+                aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+                region_name='us-east-1'
+            )
 
     def new_doc(self):
         """Creates new sitemap document and resets the url_count."""
@@ -87,16 +98,33 @@ class Sitemap(object):
 
     def write_doc(self):
         """Writes and gzips each sitemap xml file"""
-        path = os.path.join(self.sitemap_dir, 'sitemap_{}.xml'.format(str(self.sitemap_count)))
-        print('Writing and gzipping `{}`: url_count = {}'.format(path, str(self.url_count)))
+        file_name = 'sitemap_{}.xml'.format(str(self.sitemap_count))
+        file_path = os.path.join(self.sitemap_dir, file_name)
+        zip_file_name = file_name + '.gz'
+        zip_file_path = file_path + '.gz'
+        print('Writing and gzipping `{}`: url_count = {}'.format(file_path, str(self.url_count)))
 
         xml_str = self.doc.toprettyxml(indent="  ", encoding='utf-8')
-        with open(path, 'w') as f:
+        with open(file_path, 'wb') as f:
             f.write(xml_str)
+
         # Write zipped file
-        with open(path, 'rb') as f_in, gzip.open(path + '.gz', 'wb') as f_out:
+        with open(file_path, 'rb') as f_in, gzip.open(zip_file_path, 'wb') as f_out:
             shutil.copyfileobj(f_in, f_out)
+        if settings.SITEMAP_TO_S3:
+            self.ship_to_s3(file_name, file_path)
+            self.ship_to_s3(zip_file_name, zip_file_path)
         self.sitemap_count += 1
+
+    def ship_to_s3(self, name, path):
+        data = open(path, 'rb')
+        try:
+            self.s3.Bucket(settings.SITEMAP_AWS_BUCKET).put_object(Key='sitemaps/{}'.format(name), Body=data)
+        except Exception as e:
+            logger.info('Error sending data to s3 via boto3')
+            logger.exception(e)
+            sentry.log_message('ERROR: Sitemaps could not be uploaded to s3, see `generate_sitemap` logs')
+        data.close()
 
     def write_sitemap_index(self):
         """Writes the index file for all of the sitemap files"""
@@ -120,9 +148,13 @@ class Sitemap(object):
             datemod.appendChild(datemod_text)
 
         print('Writing `sitemap_index.xml`')
+        file_name = 'sitemap_index.xml'
+        file_path = os.path.join(self.sitemap_dir, file_name)
         xml_str = doc.toprettyxml(indent="  ", encoding='utf-8')
-        with open(os.path.join(self.sitemap_dir, 'sitemap_index.xml'), 'w') as f:
+        with open(file_path, 'wb') as f:
             f.write(xml_str)
+        if settings.SITEMAP_TO_S3:
+            self.ship_to_s3(file_name, file_path)
 
     def log_errors(self, obj, obj_id, error):
         if not self.errors:

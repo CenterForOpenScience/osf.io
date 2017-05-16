@@ -1788,8 +1788,12 @@ INSTITUTION_DISPLAY_NODE_THRESHOLD = 5
 CAMPAIGN_REFRESH_THRESHOLD = 5 * 60  # 5 minutes in seconds
 
 
-# sitemap default settings
+AWS_ACCESS_KEY_ID = None
+AWS_SECRET_ACCESS_KEY = None
 
+# sitemap default settings
+SITEMAP_TO_S3 = False
+SITEMAP_AWS_BUCKET = None
 SITEMAP_URL_MAX = 25000
 SITEMAP_INDEX_MAX = 50000
 SITEMAP_STATIC_URLS = [
@@ -1815,6 +1819,5 @@ CUSTOM_CITATIONS = {
     'bluebook2': 'bluebook',
     'bluebook-inline': 'bluebook'
 }
-
 
 PREPRINTS_ASSETS = '/static/img/preprints_assets/'
