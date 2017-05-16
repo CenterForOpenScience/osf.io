@@ -29,11 +29,11 @@ from framework.sessions.utils import remove_sessions_for_user, remove_session
 from framework.sessions import get_session
 
 from website import settings, mails, language
-from website.models import User, PreprintProvider
+from website.models import User
 from website.util import web_url_for
 from website.util.time import throttle_period_expired
 from website.util.sanitize import strip_html
-
+from osf.models.preprint_provider import PreprintProvider
 
 @block_bing_preview
 @collect_auth
