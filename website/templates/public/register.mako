@@ -73,6 +73,12 @@
         </div>
     %endif
 
+    %if campaign == "fusf-preprints":
+        <div class="text-center m-t-lg">
+            <h3>FUSFoundation Preprints</h3><hr>
+        </div>
+    %endif
+
     <div class="row m-t-xl">
     %if campaign != "institution" or not enable_institutions:
         <div id="signUpScope" class="col-sm-10 col-sm-offset-1 col-md-9 col-md-offset-2 col-lg-8 signup-form p-b-md m-b-m bg-color-light">
@@ -139,6 +145,13 @@
                         <tr>
                             <td><img src="/static/img/preprint_providers/lawarxiv-logo.png" style="width: 150px; padding: 0 10px 0 10px;" /></td>
                             <td><h3>Create a free OSF account to contribute to LawArXiv</h3></td>
+                        </tr>
+                    </table>
+                %elif campaign == "fusf-preprints":
+                    <table style="border-collapse: separate; border-spacing: 30px 0; margin-top: 20px;  margin-bottom: 10px;">
+                        <tr>
+                            <td><img src="/static/img/preprint_providers/fusf-logo.jpg" style="width: 150px; padding: 0 10px 0 10px;" /></td>
+                            <td><h3>Create a free OSF account to contribute to FUSFoundation</h3></td>
                         </tr>
                     </table>
                 %else:
