@@ -11,9 +11,15 @@
                 <span class="icon-bar"></span>
                 <span class="icon-bar"></span>
             </button>
-        <a class="navbar-brand" href="/" aria-label="Go home"><span class="osf-navbar-logo"></span> OSF </a>
+        <a class="navbar-brand" href="/" aria-label="Go home"><span class="osf-navbar-logo"></span></a>
+        <div class="service-name">
+            <a data-bind="attr: {href: osfServices[currentService].href}">
+                <span class="hidden-xs"> OSF </span>
+                <span><strong data-bind="text: osfServices[currentService].name"></strong></span>
+            </a>
+        </div>
         <div class="dropdown primary-nav">
-            <button id="primary-navigation" class="dropdown-toggle btn-link" data-toggle="dropdown" role="button" aria-expanded="false" aria-label="Toggle primarnavigation">
+            <button id="primary-navigation" class="dropdown-toggle btn-link" data-toggle="dropdown" role="button" aria-expanded="false" aria-label="Toggle primary navigation">
                 <span class="fa fa-caret-down fa-2x"></span>
             </button>
             <ul class="dropdown-menu service-dropdown" role="menu">
@@ -22,9 +28,6 @@
                 <li><a href="${domain}registries/">OSF<b>REGISTRIES</b></a></li>
                 <li><a href="${domain}meetings/">OSF<b>MEETINGS</b></a></li>
             </ul>
-        </div>
-        <div class="service-name">
-            <a data-bind="attr: {href: osfServices[currentService].href}"><strong data-bind="text: osfServices[currentService].name"></strong></a>
         </div>
     </div>
     <div id="navbar" class="navbar-collapse collapse navbar-right">
