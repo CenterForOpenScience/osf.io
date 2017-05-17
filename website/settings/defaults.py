@@ -343,6 +343,7 @@ LOW_PRI_MODULES = {
     'framework.analytics.tasks',
     'framework.celery_tasks',
     'scripts.osfstorage.usage_audit',
+    'scripts.stuck_registration_audit',
     'scripts.osfstorage.glacier_inventory',
     'scripts.analytics.tasks',
     'scripts.osfstorage.files_audit',
@@ -426,6 +427,7 @@ CELERY_IMPORTS = (
 #     'scripts.osfstorage.glacier_inventory',
 #     'scripts.osfstorage.glacier_audit',
 #     'scripts.osfstorage.usage_audit',
+#     'scripts.stuck_registration_audit',
 #     'scripts.osfstorage.files_audit',
 #     'scripts.analytics.tasks',
 #     'scripts.analytics.upload',
@@ -524,6 +526,11 @@ else:
     #         'task': 'scripts.osfstorage.usage_audit',
     #         'schedule': crontab(minute=0, hour=0),  # Daily 12 a.m
     #         'kwargs': {'send_mail': True},
+    #     },
+    #     'stuck_registration_audit': {
+    #         'task': 'scripts.stuck_registration_audit',
+    #         'schedule': crontab(minute=0, hour=6),  # Daily 6 a.m
+    #         'kwargs': {},
     #     },
     #     'glacier_inventory': {
     #         'task': 'scripts.osfstorage.glacier_inventory',
@@ -1819,5 +1826,4 @@ CUSTOM_CITATIONS = {
     'bluebook2': 'bluebook',
     'bluebook-inline': 'bluebook'
 }
-
 PREPRINTS_ASSETS = '/static/img/preprints_assets/'

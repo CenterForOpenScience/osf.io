@@ -1,12 +1,5 @@
+${len(broken_registrations)} registrations found stuck in archiving
 
-User: ${user.fullname} (${user.username}) [${user._id}]
+See attached file for details.
 
-Registration ${src.title} [${src._id}] is stuck in archiving.
-
-Archive Job: [${archive_job._id}]
-
-<% import json %>
-
-${archive_job.to_storage()}
-
-Automatically sent from scripts/cleanup_failed_registrations.py
+Automatically sent from scripts/stuck_registration_audit.py
