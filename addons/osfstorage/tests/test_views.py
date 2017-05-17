@@ -614,7 +614,7 @@ class TestDeleteHook(HookTestCase):
 
         assert_equal(res.status_code, 403)
 
-def test_delete_folder_while_preprint(self):
+    def test_delete_folder_while_preprint(self):
         folder = self.root_node.append_folder('Mr. Yuck')
         preprint_file = self.root_node.append_file('Thyme Out')
         self.node.preprint_file = preprint_file
