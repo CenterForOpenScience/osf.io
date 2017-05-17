@@ -11,7 +11,7 @@ from framework.auth.oauth_scopes import CoreScopes
 
 
 class TaxonomyList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
-    '''[PLOS taxonomy of subjects](http://journals.plos.org/plosone/browse/) in flattened form. *Read-only*
+    '''[BePress taxonomy subject](https://www.bepress.com/wp-content/uploads/2016/12/Digital-Commons-Disciplines-taxonomy-2017-01.pdf) instance. *Read-only*
 
     ##Note
     **This API endpoint is under active development, and is subject to change in the future**
@@ -34,11 +34,7 @@ class TaxonomyList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
 
     Subjects may be filtered by their 'text', 'parents', and 'id' fields.
 
-    **Note:** Subjects are unique (e.g. there exists only one object in this list with `text='Biology and life sciences'`),
-    but as per the structure of the PLOS taxonomy, subjects can exist in separate paths down the taxonomy and as such
-    can have multiple parent subjects.
-
-    Only the top three levels of the PLOS taxonomy are included.
+    **Note:** Subjects are unique per provider (e.g. there exists at most one object per provider with any given `text`.
     '''
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -61,14 +57,23 @@ class TaxonomyList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
 
     # overrides FilterMixin
     def postprocess_query_param(self, key, field_name, operation):
-        # Queries on 'parents' should be by object_id
+        # TODO: Queries on 'parents' should be deprecated
         if field_name == 'parents':
             if operation['value'] not in (list(), tuple()):
-                operation['source_field_name'] = 'parents___id'
+                operation['source_field_name'] = 'parent___id'
+            else:
+                if len(operation['value']) > 1:
+                    operation['source_field_name'] = 'parent___id__in'
+                elif len(operation['value']) == 1:
+                    operation['source_field_name'] == 'parent___id'
+                    operation['value'] = operation['value'][0]
+                else:
+                    operation['source_field_name'] = 'parent__isnull'
+                    operation['value'] = True
 
 
 class TaxonomyDetail(JSONAPIBaseView, generics.RetrieveAPIView):
-    '''[PLOS taxonomy subject](http://journals.plos.org/plosone/browse/) instance. *Read-only*
+    '''[BePress taxonomy subject](https://www.bepress.com/wp-content/uploads/2016/12/Digital-Commons-Disciplines-taxonomy-2017-01.pdf) instance. *Read-only*
 
     ##Note
     **This API endpoint is under active development, and is subject to change in the future**
@@ -77,11 +82,7 @@ class TaxonomyDetail(JSONAPIBaseView, generics.RetrieveAPIView):
 
     See TaxonomyList
 
-    **Note:** Subjects are unique (e.g. there exists only one object in this list with `text='Biology and life sciences'`),
-    but as per the structure of the PLOS taxonomy, subjects can exist in separate paths down the taxonomy and as such
-    can have multiple parent subjects.
-
-    Only the top three levels of the PLOS taxonomy are included.
+    **Note:** Subjects are unique per provider (e.g. there exists at most one object per provider with any given `text`.
     '''
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,

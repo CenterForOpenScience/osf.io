@@ -61,9 +61,9 @@ function ViewModel(url) {
         return Boolean(self.selectedHost());
     });
     self.tokenUrl = ko.pureComputed(function() {
-        var tokenPath = self.host() === 'dataverse.lib.virginia.edu'
-                ? '/account/apitoken' : '/dataverseuser.xhtml?selectTab=apiTokenTab';
-        return self.host() ? 'https://' + self.host() + tokenPath : null;
+        var tokenPath = 'dataverseuser.xhtml?selectTab=apiTokenTab';
+        var extraSlash = self.host() && self.host().substr(self.host().length - 1) === '/' ? '' : '/';
+        return self.host() ? 'https://' + self.host() + extraSlash + tokenPath : null;
     });
     self.savedHostUrl = ko.pureComputed(function() {
         return 'https://' + self.savedHost();

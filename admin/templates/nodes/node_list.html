@@ -85,7 +85,7 @@
             </td>
             <td>
                 {% for user in node.contributors %}
-                    <a href="{{ user.id | reverse_user }}">{{ user.id }}</a>{% if not forloop.last %}, {% endif %}
+                    <a href="{{ user.id | reverse_user }}">{{ user.username }}</a>{% if not forloop.last %}, {% endif %}
                 {% endfor %}
             </td>
         </tr>

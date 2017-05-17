@@ -50,6 +50,12 @@ class Institution(Loggable, base.ObjectIDMixin, base.BaseModel):
 
     is_deleted = models.BooleanField(default=False, db_index=True)
 
+    class Meta:
+        # custom permissions for use in the OSF Admin App
+        permissions = (
+            ('view_institution', 'Can view institution details'),
+        )
+
     def __init__(self, *args, **kwargs):
         kwargs.pop('node', None)
         super(Institution, self).__init__(*args, **kwargs)
