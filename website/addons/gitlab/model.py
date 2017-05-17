@@ -311,11 +311,8 @@ class GitLabNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
             else:
                 message += (
                     ' The files in this GitLab repo can be viewed on GitLab '
-                    '<u><a href="{base_url}/{repo}/">here</a></u>.'
-                ).format(
-                    base_url='https://{0}'.format(self.external_account.display_name),
-                    repo=self.repo,
-                )
+                    '<u><a href="{url}">here</a></u>.'
+                ).format(url = repo['http_url_to_repo'])
             messages.append(message)
             return messages
 
