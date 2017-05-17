@@ -2,7 +2,13 @@ import datetime
 import functools
 import operator
 import re
+from operator import or_
 
+from django.utils import six
+from django import forms
+import django_filters
+from django.http.request import QueryDict
+from django.db import models
 import pytz
 from guardian.shortcuts import get_objects_for_user
 from api.base import utils
@@ -64,6 +70,79 @@ class OSFOrderingFilter(OrderingFilter):
                 return sorted_list
             return queryset.sort(*ordering)
         return queryset
+
+
+class NewDjangoFilterMixin(django_filters.FilterSet):
+
+    QUERY_PATTERN = re.compile(r'^filter\[(?P<fields>((?:,*\s*\w+)*))\](\[(?P<op>\w+)\])?$')
+    FILTER_FIELDS = re.compile(r'(?:,*\s*(\w+)+)')
+
+    or_fields = {}
+
+    def __init__(self, data=None, *args, **kwargs):
+        if data:
+            new_qd = QueryDict('', mutable=True)
+            for key, value in data.iteritems():
+                match = self.QUERY_PATTERN.match(key)
+                if match:
+                    match_dict = match.groupdict()
+                    fields = match_dict['fields']
+                    field_names = re.findall(self.FILTER_FIELDS, fields.strip())
+                    if len(field_names) > 1:
+                        self.or_fields[frozenset(field_names)] = value
+                    for field in field_names:
+                        new_qd.update({field: value})
+            data = new_qd
+        super(NewDjangoFilterMixin, self).__init__(data=data, *args, **kwargs)
+
+    @property
+    def qs(self, *args, **kwargs):
+        if not hasattr(self, '_qs'):
+            if not self.is_bound:
+                self._qs = self.queryset.all()
+                return self._qs
+            if not self.form.is_valid():
+                if self.strict == django_filters.constants.STRICTNESS.RAISE_VALIDATION_ERROR:
+                    raise forms.ValidationError(self.form.errors)
+                elif self.strict == django_filters.constants.STRICTNESS.RETURN_NO_RESULTS:
+                    self._qs = self.queryset.none()
+                    return self._qs
+            for field in self.data.keys():
+                if field not in self.form.fields.keys():
+                    raise InvalidFilterError(detail="'{0}' is not a valid field for this endpoint.".format(field))
+
+            # start with all the results and filter from there
+            qs = self.queryset.all()
+            for name, filter_ in six.iteritems(self.filters):
+                value = self.form.cleaned_data.get(name)
+                if name in reduce(or_, self.or_fields.keys(), set()):
+                    qs = self.filter_groups(qs)
+                else:
+                    qs = filter_.filter(qs, value)
+            self._qs = qs
+
+            return self._qs
+
+    def filter_groups(self, qs):
+        for group, value in self.or_fields.iteritems():
+            group_q = Q()
+            for field in group:
+                if field in self.form.fields.keys():
+                    group_q |= Q(**{field: value})
+
+            qs = qs.filter(group_q)
+
+        return qs
+
+    class Meta:
+        filter_overrides = {
+            models.CharField: {
+                'filter_class': django_filters.CharFilter,
+                'extra': lambda f: {
+                    'lookup_expr': 'icontains',
+                }
+            }
+        }
 
 
 class FilterMixin(object):

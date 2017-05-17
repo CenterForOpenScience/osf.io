@@ -1,10 +1,10 @@
+import django_filters
 from django.apps import apps
-from django_filters.rest_framework import DjangoFilterBackend
 
 from api.addons.views import AddonSettingsMixin
 from api.base import permissions as base_permissions
 from api.base.exceptions import Conflict, UserGone
-from api.base.filters import ListFilterMixin, PreprintFilterMixin
+from api.base.filters import ListFilterMixin, NewDjangoFilterMixin, PreprintFilterMixin
 from api.base.parsers import (JSONAPIRelationshipParser,
                               JSONAPIRelationshipParserForRegularJSON)
 from api.base.serializers import AddonAccountSerializer
@@ -86,6 +86,17 @@ class UserMixin(object):
         return obj
 
 
+class UserFilter(NewDjangoFilterMixin):
+
+    full_name = django_filters.CharFilter(name='fullname', lookup_expr='icontains')
+    id = django_filters.CharFilter(name='guids___id')
+
+    class Meta:
+        model = OSFUser
+        fields = ['id', 'full_name', 'given_name', 'middle_names', 'family_name']
+        strict = django_filters.constants.STRICTNESS.RAISE_VALIDATION_ERROR
+
+
 class UserList(JSONAPIBaseView, generics.ListAPIView):
 
     """List of users registered on the OSF.
@@ -147,8 +158,8 @@ class UserList(JSONAPIBaseView, generics.ListAPIView):
 
     serializer_class = UserSerializer
 
-    filter_backends = (DjangoFilterBackend,)
-    filter_fields = ('id', 'fullname', 'given_name', 'middle_names', 'family_name')
+    filter_backends = (django_filters.rest_framework.DjangoFilterBackend,)
+    filter_class = UserFilter
 
     ordering = ('-date_registered')
     view_category = 'users'
