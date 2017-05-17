@@ -1,3 +1,5 @@
+import bleach
+
 from django.forms import ModelForm, CheckboxSelectMultiple, MultipleChoiceField, HiddenInput, CharField
 
 from osf.models import PreprintProvider, Subject
@@ -7,6 +9,7 @@ from admin.base.utils import get_subject_rules, get_toplevel_subjects, get_nodel
 class PreprintProviderForm(ModelForm):
     toplevel_subjects = MultipleChoiceField(widget=CheckboxSelectMultiple())
     subjects_chosen = CharField(widget=HiddenInput())
+
 
     class Meta:
         model = PreprintProvider
@@ -30,3 +33,27 @@ class PreprintProviderForm(ModelForm):
         subjects_selected = [Subject.objects.get(id=ident) for ident in subject_ids]
         rules = get_subject_rules(subjects_selected)
         return rules
+
+    def clean_advisory_board(self, *args, **kwargs):
+        return bleach.clean(
+            self.data['advisory_board'],
+            tags=['a', 'br', 'div', 'em', 'h2', 'li', 'p', 'strong', 'ul'],
+            attributes=['class', 'style', 'href', 'title'],
+            strip=True
+        )
+
+    def clean_description(self, *args, **kwargs):
+        return bleach.clean(
+            self.data['description'],
+            tags=['a', 'br', 'em', 'p', 'span', 'strong'],
+            attributes=['class', 'style', 'href', 'title'],
+            strip=True
+        )
+
+    def clean_footer_links(self, *args, **kwargs):
+        return bleach.clean(
+            self.data['footer_links'],
+            tags=['a', 'br', 'div', 'em', 'p', 'span', 'strong'],
+            attributes=['class', 'style', 'href', 'title'],
+            strip=True
+        )
