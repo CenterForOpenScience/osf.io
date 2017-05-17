@@ -18,15 +18,17 @@ from framework.auth.oauth_scopes import CoreScopes
 from osf.models import ApiOAuth2Application, ApiOAuth2PersonalToken, ApiOAuth2Scope, Institution, OSFUser
 
 
-class CasLogin(JSONAPIBaseView, generics.CreateAPIView):
+class AuthLogin(JSONAPIBaseView, generics.CreateAPIView):
+    """ Default osf login.
+    """
 
-    permission_classes = (IsCasAuthentication,)
+    permission_classes = (IsCasAuthentication, )
 
     required_read_scopes = [CoreScopes.NULL]
     required_write_scopes = [CoreScopes.NULL]
 
     view_category = 'cas'
-    view_name = 'cas-login'
+    view_name = 'auth-login'
 
     serializer_class = JSONAPISerializer
 
@@ -61,7 +63,9 @@ class CasLogin(JSONAPIBaseView, generics.CreateAPIView):
         return Response(content)
 
 
-class CasRegister(JSONAPIBaseView, generics.CreateAPIView):
+class AuthRegister(JSONAPIBaseView, generics.CreateAPIView):
+    """ Default osf account creation.
+    """
 
     permission_classes = (IsCasAuthentication, )
 
@@ -69,7 +73,7 @@ class CasRegister(JSONAPIBaseView, generics.CreateAPIView):
     required_write_scopes = [CoreScopes.NULL]
 
     view_category = 'cas'
-    view_name = 'cas-login'
+    view_name = 'auth-register'
 
     serializer_class = JSONAPISerializer
 
@@ -91,7 +95,9 @@ class CasRegister(JSONAPIBaseView, generics.CreateAPIView):
         return Response(content)
 
 
-class CasInstitutionAuthenticate(JSONAPIBaseView, generics.CreateAPIView):
+class AuthInstitution(JSONAPIBaseView, generics.CreateAPIView):
+    """ Institution login.
+    """
 
     permission_classes = (IsCasAuthentication, )
 
@@ -99,7 +105,7 @@ class CasInstitutionAuthenticate(JSONAPIBaseView, generics.CreateAPIView):
     required_write_scopes = [CoreScopes.NULL]
 
     view_category = 'cas'
-    view_name = 'cas-institution-authenticate'
+    view_name = 'auth-institution'
 
     serializer_class = JSONAPISerializer
 
@@ -109,10 +115,83 @@ class CasInstitutionAuthenticate(JSONAPIBaseView, generics.CreateAPIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-class CasPersonalAccessToken(JSONAPIBaseView, generics.CreateAPIView):
+class AuthVerifyEmail(JSONAPIBaseView, generics.CreateAPIView):
+    """ Verify the primary email for a new osf account.
+    """
+
+    permission_classes = (IsCasAuthentication, )
+
+    required_read_scopes = [CoreScopes.NULL]
+    required_write_scopes = [CoreScopes.NULL]
 
     view_category = 'cas'
-    view_name = 'cas-personal-access-token'
+    view_name = 'auth-verify-email'
+
+    serializer_class = JSONAPISerializer
+
+    authentication_classes = (CasAuthentication, )
+
+    def post(self, request, *args, **kwargs):
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class AuthResetPassword(JSONAPIBaseView, generics.CreateAPIView):
+    """ Reset the password for an osf account.
+    """
+
+    permission_classes = (IsCasAuthentication, )
+
+    required_read_scopes = [CoreScopes.NULL]
+    required_write_scopes = [CoreScopes.NULL]
+
+    view_category = 'cas'
+    view_name = 'auth-reset-password'
+
+    serializer_class = JSONAPISerializer
+
+    authentication_classes = (CasAuthentication, )
+
+    def post(self, request, *args, **kwargs):
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class UtilityFindAccount(JSONAPIBaseView, generics.CreateAPIView):
+    """ Find user's account by email. If relevant pending action exists, send verification email.
+    """
+
+    view_category = 'cas'
+    view_name = 'service-find-account'
+
+    serializer_class = JSONAPISerializer
+    permission_classes = ()
+    authentication_classes = ()
+
+    def post(self, request, *args, **kwargs):
+
+        payload = util.decrypt_payload(request.body)
+        data = json.loads(payload['data'])
+
+        util_type = data.get('type')
+        if not util_type:
+            raise AuthenticationFailed(detail=util.INVALID_REQUEST_BODY)
+
+        if util_type == 'FIND_ACCOUNT_FOR_VERIFY_EMAIL':
+            if util.find_account_for_verify_email(data.get('user')):
+                return Response(status=status.HTTP_204_NO_CONTENT)
+
+        if util_type == 'FIND_ACCOUNT_FOR_RESET_PASSWORD':
+            if util.find_account_for_reset_password(data.get('user')):
+                return Response(status=status.HTTP_204_NO_CONTENT)
+
+        raise AuthenticationFailed(detail=util.INVALID_REQUEST_BODY)
+
+
+class UtilityCheckPersonalAccessToken(JSONAPIBaseView, generics.CreateAPIView):
+    """ Get the owner and scopes of a personal access token by token id.
+    """
+
+    view_category = 'cas'
+    view_name = 'service-check-personal-access-token'
 
     serializer_class = JSONAPISerializer
     permission_classes = ()
@@ -146,10 +225,12 @@ class CasPersonalAccessToken(JSONAPIBaseView, generics.CreateAPIView):
         return Response(content)
 
 
-class CasOAuthScopes(JSONAPIBaseView, generics.CreateAPIView):
+class UtilityCheckOauthScope(JSONAPIBaseView, generics.CreateAPIView):
+    """ Get the description of an oauth scope by scope name.
+    """
 
     view_category = 'cas'
-    view_name = 'cas-oauth-scopes'
+    view_name = 'service-get-oauth-description'
 
     serializer_class = JSONAPISerializer
     permission_classes = ()
@@ -178,10 +259,12 @@ class CasOAuthScopes(JSONAPIBaseView, generics.CreateAPIView):
         return Response(content)
 
 
-class CasDeveloperApplications(JSONAPIBaseView, generics.CreateAPIView):
+class ServiceLoadDeveloperApps(JSONAPIBaseView, generics.CreateAPIView):
+    """ Load all active developer applications.
+    """
 
     view_category = 'cas'
-    view_name = 'cas-developer-applications'
+    view_name = 'service-load-developer-apps'
 
     serializer_class = JSONAPISerializer
     permission_classes = ()
@@ -193,7 +276,7 @@ class CasDeveloperApplications(JSONAPIBaseView, generics.CreateAPIView):
         data = json.loads(payload['data'])
 
         service_type = data.get('serviceType')
-        if not service_type or service_type != 'OAUTH_APPLICATIONS':
+        if not service_type or service_type != 'LOAD_DEVELOPER_APPS':
             raise AuthenticationFailed(detail=util.INVALID_REQUEST_BODY)
 
         oauth_applications = ApiOAuth2Application.objects.filter(is_active=True)
@@ -213,10 +296,12 @@ class CasDeveloperApplications(JSONAPIBaseView, generics.CreateAPIView):
         return Response(content)
 
 
-class CasInstitutions(JSONAPIBaseView, generics.CreateAPIView):
+class ServiceLoadInstitutions(JSONAPIBaseView, generics.CreateAPIView):
+    """ Load institutions that provide authentication delegation. 
+    """
 
     view_category = 'cas'
-    view_name = 'cas-institutions'
+    view_name = 'service-load-institutions'
 
     serializer_class = JSONAPISerializer
     permission_classes = ()
@@ -228,7 +313,7 @@ class CasInstitutions(JSONAPIBaseView, generics.CreateAPIView):
         data = json.loads(payload['data'])
 
         service_type = data.get('serviceType')
-        if not service_type or service_type != 'INSTITUTIONS':
+        if not service_type or service_type != 'LOAD_INSTITUTIONS':
             raise AuthenticationFailed(detail=util.INVALID_REQUEST_BODY)
 
         institutions = Institution.objects\

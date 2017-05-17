@@ -3,11 +3,16 @@ from django.conf.urls import url
 from api.cas import views
 
 urlpatterns = [
-    url(r'^auth/login/$', views.CasLogin.as_view(), name=views.CasLogin.view_name),
-    url(r'^auth/register/$', views.CasRegister.as_view(), name=views.CasRegister.view_name),
-    url(r'^auth/institution/', views.CasInstitutionAuthenticate.as_view(), name=views.CasInstitutionAuthenticate.view_name),
-    url(r'^service/personalAccessToken/$', views.CasPersonalAccessToken.as_view(), name=views.CasPersonalAccessToken.view_name),
-    url(r'^service/oauthScopes/$', views.CasOAuthScopes.as_view(), name=views.CasOAuthScopes.view_name),
-    url(r'^service/institutions/$', views.CasInstitutions.as_view(), name=views.CasInstitutions.view_name),
-    url(r'^service/developerApps/$', views.CasDeveloperApplications.as_view(), name=views.CasDeveloperApplications.view_name),
+    # auth
+    url(r'^auth/login/$', views.AuthLogin.as_view(), name=views.AuthLogin.view_name),
+    url(r'^auth/register/$', views.AuthRegister.as_view(), name=views.AuthRegister.view_name),
+    url(r'^auth/institution/', views.AuthInstitution.as_view(), name=views.AuthInstitution.view_name),
+    url(r'^auth/verifyEmail/', views.AuthVerifyEmail.as_view(), name=views.AuthVerifyEmail.view_name),
+    url(r'^auth/resetPassword/', views.AuthResetPassword.as_view(), name=views.AuthResetPassword.view_name),
+    # service
+    url(r'^service/findAccount/', views.UtilityFindAccount.as_view(), name=views.UtilityFindAccount.view_name),
+    url(r'^service/checkPAT/$', views.UtilityCheckPersonalAccessToken.as_view(), name=views.UtilityCheckPersonalAccessToken.view_name),
+    url(r'^service/checkOauthScope/$', views.UtilityCheckOauthScope.as_view(), name=views.UtilityCheckOauthScope.view_name),
+    url(r'^service/loadInstitutions/$', views.ServiceLoadInstitutions.as_view(), name=views.ServiceLoadInstitutions.view_name),
+    url(r'^service/loadDeveloperApps/$', views.ServiceLoadDeveloperApps.as_view(), name=views.ServiceLoadDeveloperApps.view_name),
 ]

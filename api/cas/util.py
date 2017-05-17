@@ -1,5 +1,3 @@
-import json
-
 from rest_framework.exceptions import AuthenticationFailed
 
 import jwe
@@ -35,8 +33,8 @@ TOKEN_NOT_FOUND = 'TOKEN_NOT_FOUND'
 TOKEN_OWNER_NOT_FOUND = 'TOKEN_OWNER_NOT_FOUND'
 
 # general
-INVALID_REQUEST_BODY = 'INVALID REQUEST BODY'
-API_NOT_IMPLEMENTED = 'API NOT IMPLEMENTED'
+INVALID_REQUEST_BODY = 'INVALID_REQUEST_BODY'
+API_NOT_IMPLEMENTED = 'API_NOT_IMPLEMENTED'
 
 
 def decrypt_payload(body):
@@ -106,3 +104,21 @@ def verify_two_factor(user, one_time_password):
     if two_factor.verify_code(one_time_password):
         return None
     return INVALID_ONE_TIME_PASSWORD
+
+
+def find_account_for_verify_email(data_user):
+    """
+    Find user's account by email. If it is a new account pending verification,
+    roll the verification token and send the verification email.
+    """
+    # TODO: implement this
+    return True
+
+
+def find_account_for_reset_password(data_user):
+    """
+    Find user's account by email. Generate a (or roll the) pending verification
+    entry for reset password and send the verification email.
+    """
+    # TODO: implement this
+    return True

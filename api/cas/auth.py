@@ -25,45 +25,70 @@ class CasAuthentication(BaseAuthentication):
     def authenticate(self, request):
         """
         Handle CAS authentication request.
+
         1. The POST request payload is encrypted using a secret only known by CAS and OSF.
-        2. There are three types of authentication with respective payload structure and handling:
-            1.1 "LOGIN"
+
+        2. There are five types of authentication with respective payload structure:
+        
+            2.1 Login
                 "data": {
                     "type": "LOGIN",
                     "user": {
-                        "email": "",
-                        "password": "",
-                        "verificationKey": "",
-                        "oneTimePasscode": "",
-                        "remoteAuthenticated": "",
+                        "email": "testuser@example.com",
+                        "password": "abCD12#$",
+                        "verificationKey": "K3ISQVqZP82BX6QCt1SW2Em4bN2GHC",
+                        "oneTimePasscode": "123456",
+                        "remoteAuthenticated": "false",
                     },
-                }
-            1.2 "REGISTER"
+                },
+            
+            2.2 Register
                 "data": {
                     "type": "REGISTER",
                     "user": {
-                        "fullname": "",
-                        "email": "",
-                        "password": "",
+                        "fullname": "User Test",
+                        "email": "testuser@example.com",
+                        "password": "abCD12#$",
                         "campaign": "",
                     },
                 },
-            1.3 "INSTITUTION_AUTHENTICATE"
+            
+            2.3 Institution Authenticate
                 "data", {
-                    "type": "INSTITUTION_AUTHENTICATE"
+                    "type": "INSTITUTION_LOGIN",
                     "provider": {
-                        "idp": "",
-                        "id": "",
+                        "idp": "https://login.exampleshibuniv.edu/idp/shibboleth",
+                        "id": "esu",
                         "user": {
-                            "middleNames": "",
-                            "familyName": "",
-                            "givenName": "",
+                            "username": "testuser@exampleshibuniv.edu"
                             "fullname": "",
+                            "familyName": "Test",
+                            "givenName": "User",
                             "suffix": "",
-                            "username": ""
+                            "middleNames": "",
                         },
                     },
-                }
+                },
+            
+            2.4 Reset Password
+                "data": {
+                    "type": "RESET_PASSWORD",
+                    "user": {
+                        "username": "testuser@example.com",
+                        "password": "ABcd!@34",
+                        "verificationCode": "K3ISQVqZP82BX6QCt1SW2Em4bN2GHC",
+                    },
+                },
+            
+            2.5 Verify Email (New Account)
+                "data": {
+                    "type": "VERIFY_EMAIL",
+                    "user": {
+                        "emailToVerify": "testuser@example.com",
+                        "verificationCode": "K3ISQVqZP82BX6QCt1SW2Em4bN2GHC",
+                    },
+                },
+
         3. If authentication succeed, return (user, None); otherwise, return return (None, error_message).
 
         :param request: the POST request
@@ -73,9 +98,10 @@ class CasAuthentication(BaseAuthentication):
         # decrypt the payload and load data
         payload = util.decrypt_payload(request.body)
         data = json.loads(payload['data'])
+        auth_type = data.get('type')
 
         # login request
-        if data.get('type') == 'LOGIN':
+        if auth_type == 'LOGIN':
             user, error_message, user_status = handle_login(data.get('user'))
             if user and not error_message:
                 if user_status != util.USER_ACTIVE:
@@ -85,14 +111,20 @@ class CasAuthentication(BaseAuthentication):
             # authentication fails due to login exceptions
             raise AuthenticationFailed(detail=error_message)
 
-        if data.get('type') == 'REGISTER':
+        if auth_type == 'REGISTER':
             user, error_message = handle_register(data.get('user'))
             if user and not error_message:
                 return user, None
             raise AuthenticationFailed(detail=error_message)
 
-        if data.get('type') == 'INSTITUTION_AUTHENTICATE':
+        if auth_type == 'INSTITUTION_LOGIN':
             return handle_institution_authenticate(data.get('provider'))
+
+        if auth_type == 'RESET_PASSWORD':
+            return handle_reset_password(data.get('user'))
+
+        if auth_type == 'VERIFY_EMAIL':
+            return handle_verify_email(data.get('user'))
 
         return AuthenticationFailed
 
@@ -159,7 +191,7 @@ def handle_register(data_user):
     Handle new user registration.
 
     :param data_user: the user object in decrypted data payload
-    :return: if registration suceed, return the newly created unconfirmed user with `None` error message
+    :return: if registration succeeds, return the newly created unconfirmed user with `None` error message
              otherwise, return a `None` user with respective error message
     """
 
@@ -254,3 +286,17 @@ def handle_institution_authenticate(provider):
         user.save()
 
     return user, None
+
+
+def handle_reset_password(data_user):
+    """ Handle password reset.
+    """
+
+    return None, None
+
+
+def handle_verify_email(data_user):
+    """ Handle email verification for new account.
+    """
+
+    return None, None
