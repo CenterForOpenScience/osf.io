@@ -1,4 +1,5 @@
 <% from website import settings %>
+<% from flask import request %>
 
 <!DOCTYPE html>
 <html lang="en">
@@ -12,6 +13,12 @@
     <meta name="description" content="${self.description()}">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="fragment" content="!">
+    
+    % if request.headers.get("User-Agent") is not None and "Prerender" in request.headers.get("User-Agent"):
+        <meta name="prerender-status-code" content="504">
+        <script> window.prerenderReady = false </script>
+        <script src="/static/js/prerender.js"> </script>
+    % endif
 
     % if sentry_dsn_js:
     <script src="/static/vendor/bower_components/raven-js/dist/raven.min.js"></script>
