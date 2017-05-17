@@ -20,7 +20,7 @@
             <table class="table table-hover">
                 <thead>
                     <tr class="user-settings-addon-auth">
-                        <th class="text-muted default-authorized-by">Authorized on <a data-bind="attr: {href: gitlabUrl}"><em data-bind="text: gitlabHost"></em></a></th>
+                        <th class="text-muted default-authorized-by">Authorized on <a data-bind="attr: {href: gitlabHost}"><em data-bind="text: gitlabHost"></em></a></th>
                     </tr>
                 </thead>
                 <!-- ko if: connectedNodes().length > 0 -->

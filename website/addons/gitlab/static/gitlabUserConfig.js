@@ -80,9 +80,11 @@ function ViewModel(url) {
         });
         request.fail(function(xhr, status, error) {
             Raven.captureMessage('Error while updating addon account', {
-                url: url,
-                status: status,
-                error: error
+                extra: {
+                    url: url,
+                    status: status,
+                    error: error
+                }
             });
         });
         return request;
@@ -124,15 +126,17 @@ function ViewModel(url) {
             //self.updateAccounts();
             self.clearModal();
             $modal.modal('hide');
-            window.open('/oauth/connect/gitlab');
+            self.updateAccounts();
 
         }).fail(function(xhr, textStatus, error) {
             var errorMessage = (xhr.status === 401) ? 'Auth Error' : 'Other error';
             self.changeMessage(errorMessage, 'text-danger');
             Raven.captureMessage('Could not authenticate with GitLab', {
-                url: url,
-                textStatus: textStatus,
-                error: error
+                extra: {
+                    url: url,
+                    textStatus: textStatus,
+                    error: error
+                }
             });
         });
     };
@@ -171,9 +175,11 @@ function ViewModel(url) {
         });
         request.fail(function(xhr, status, error) {
             Raven.captureMessage('Error while removing addon authorization for ' + account.id, {
-                url: url,
-                status: status,
-                error: error
+                extra: {
+                    url: url,
+                    status: status,
+                    error: error
+                }
             });
         });
         return request;
@@ -208,9 +214,11 @@ function ViewModel(url) {
         }).fail(function (xhr, textStatus, error) {
             self.changeMessage(language.userSettingsError, 'text-danger');
             Raven.captureMessage('Could not GET GitLab settings', {
-                url: url,
-                textStatus: textStatus,
-                error: error
+                extra: {
+                    url: url,
+                    textStatus: textStatus,
+                    error: error
+                }
             });
         });
     };
