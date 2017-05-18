@@ -85,7 +85,7 @@ class TestSetPreprintFile(OsfTestCase):
         with assert_raises(ValueError):
             self.preprint.set_published(True, auth=self.auth, save=True)
         self.preprint.provider = PreprintProviderFactory()
-        self.preprint.set_subjects([[SubjectFactory()._id]], auth=self.auth, save=True)
+        self.preprint.set_subjects([[SubjectFactory()._id]], auth=self.auth)
         self.project.reload()
         assert_false(self.project.is_preprint)
         self.preprint.set_published(True, auth=self.auth, save=True)
@@ -100,7 +100,7 @@ class TestSetPreprintFile(OsfTestCase):
         with assert_raises(ValueError):
             self.preprint.set_published(True, auth=self.auth, save=True)
         self.preprint.provider = PreprintProviderFactory()
-        self.preprint.set_subjects([[SubjectFactory()._id]], auth=self.auth, save=True)
+        self.preprint.set_subjects([[SubjectFactory()._id]], auth=self.auth)
         self.project.reload()
         assert_false(self.project.is_public)
         self.preprint.set_published(True, auth=self.auth, save=True)
@@ -160,7 +160,7 @@ class TestPreprintServicePermissions(OsfTestCase):
     def test_nonadmin_cannot_set_subjects(self):
         initial_subjects = list(self.preprint.subjects.all())
         with assert_raises(PermissionsError):
-            self.preprint.set_subjects([[SubjectFactory()._id]], auth=Auth(self.write_contrib), save=True)
+            self.preprint.set_subjects([[SubjectFactory()._id]], auth=Auth(self.write_contrib))
 
         self.preprint.reload()
         assert_equal(initial_subjects, list(self.preprint.subjects.all()))
@@ -191,7 +191,7 @@ class TestPreprintServicePermissions(OsfTestCase):
 
     def test_admin_can_set_subjects(self):
         initial_subjects = list(self.preprint.subjects.all())
-        self.preprint.set_subjects([[SubjectFactory()._id]], auth=Auth(self.user), save=True)
+        self.preprint.set_subjects([[SubjectFactory()._id]], auth=Auth(self.user))
 
         self.preprint.reload()
         assert_not_equal(initial_subjects, list(self.preprint.subjects.all()))
@@ -341,7 +341,7 @@ class TestOnPreprintUpdatedTask(OsfTestCase):
             self.preprint.node.creator.suffix = ''
         self.preprint.node.creator.save()
 
-        self.preprint.set_subjects([[SubjectFactory()._id]], auth=Auth(self.preprint.node.creator), save=False)
+        self.preprint.set_subjects([[SubjectFactory()._id]], auth=Auth(self.preprint.node.creator))
 
     def tearDown(self):
         handlers.celery_before_request()
@@ -444,7 +444,7 @@ class TestOnPreprintUpdatedTask(OsfTestCase):
         self.preprint.node.tags = []
         self.preprint.date_published = None
         self.preprint.node.preprint_article_doi = None
-        self.preprint.set_subjects([], auth=Auth(self.preprint.node.creator), save=False)
+        self.preprint.set_subjects([], auth=Auth(self.preprint.node.creator))
 
         res = format_preprint(self.preprint)
 
@@ -595,12 +595,12 @@ class TestPreprintSaveShareHook(OsfTestCase):
     @mock.patch('website.preprints.tasks.on_preprint_updated.s')
     def test_save_published_subject_change_called(self, mock_on_preprint_updated):
         self.preprint.is_published = True
-        self.preprint.set_subjects([[self.subject_two._id]], auth=self.auth, save=True)
+        self.preprint.set_subjects([[self.subject_two._id]], auth=self.auth)
         assert mock_on_preprint_updated.called
 
     @mock.patch('website.preprints.tasks.on_preprint_updated.s')
     def test_save_unpublished_subject_change_not_called(self, mock_on_preprint_updated):
-        self.preprint.set_subjects([[self.subject_two._id]], auth=self.auth, save=True)
+        self.preprint.set_subjects([[self.subject_two._id]], auth=self.auth)
         assert not mock_on_preprint_updated.called
 
     @mock.patch('website.preprints.tasks.requests')
