@@ -52,9 +52,10 @@ class PreprintIsValidListMixin(object):
     def subject(self):
         return SubjectFactory()
 
-    # TESTS
+    # SETUP
 
-    def test_preprint_is_valid_list(self, app, url, admin, write_contrib, non_contrib, project, provider, subject):
+    @pytest.fixture(scope="function", autouse=True)
+    def int(self, app, url, admin, write_contrib, non_contrib, project, provider, subject):
         self.app = app
         self.url = url
         self.admin = admin
@@ -68,14 +69,19 @@ class PreprintIsValidListMixin(object):
         test_utils.create_test_file(self.project, self.admin, 'saor.pdf')
         self.preprint = PreprintFactory(creator=self.admin, filename='saor.pdf', provider=self.provider, subjects=[[self.subject._id]], project=self.project, is_published=True)
 
-        self.preprint_private_invisible_no_auth()
-        self.preprint_private_invisible_non_contributor()
-        self.preprint_private_visible_write()
-        self.preprint_private_visible_owner()
-        self.preprint_node_deleted_invisible()
-        self.preprint_node_null_invisible()
+    # TESTS
 
-    def preprint_private_invisible_no_auth(self):
+    @pytest.mark.group_test
+    def test_preprint_is_valid_list(self):
+        self.test_preprint_private_invisible_no_auth()
+        self.test_preprint_private_invisible_non_contributor()
+        self.test_preprint_private_visible_write()
+        self.test_preprint_private_visible_owner()
+        self.test_preprint_node_deleted_invisible()
+        self.test_preprint_node_null_invisible()
+
+    @pytest.mark.individual_test
+    def test_preprint_private_invisible_no_auth(self):
         res = self.app.get(self.url)
         assert len(res.json['data']) == 1
         self.project.is_public = False
@@ -85,7 +91,8 @@ class PreprintIsValidListMixin(object):
         self.project.is_public = True
         self.project.save()
 
-    def preprint_private_invisible_non_contributor(self):
+    @pytest.mark.individual_test
+    def test_preprint_private_invisible_non_contributor(self):
         res = self.app.get(self.url, auth=self.non_contrib.auth)
         assert len(res.json['data']) == 1
         self.project.is_public = False
@@ -95,7 +102,8 @@ class PreprintIsValidListMixin(object):
         self.project.is_public = True
         self.project.save()
 
-    def preprint_private_visible_write(self):
+    @pytest.mark.individual_test
+    def test_preprint_private_visible_write(self):
         res = self.app.get(self.url, auth=self.write_contrib.auth)
         assert len(res.json['data']) == 1
         self.project.is_public = False
@@ -105,7 +113,8 @@ class PreprintIsValidListMixin(object):
         self.project.is_public = True
         self.project.save()
 
-    def preprint_private_visible_owner(self):
+    @pytest.mark.individual_test
+    def test_preprint_private_visible_owner(self):
         res = self.app.get(self.url, auth=self.admin.auth)
         assert len(res.json['data']) == 1
         self.project.is_public = False
@@ -115,7 +124,8 @@ class PreprintIsValidListMixin(object):
         self.project.is_public = True
         self.project.save()
 
-    def preprint_node_deleted_invisible(self):
+    @pytest.mark.individual_test
+    def test_preprint_node_deleted_invisible(self):
         self.project.is_deleted = True
         self.project.save()
         # unauth
@@ -133,7 +143,8 @@ class PreprintIsValidListMixin(object):
         self.project.is_deleted = False
         self.project.save()
 
-    def preprint_node_null_invisible(self):
+    @pytest.mark.individual_test
+    def test_preprint_node_null_invisible(self):
         self.preprint.node = None
         self.preprint.save()
         # unauth
