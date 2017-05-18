@@ -4,9 +4,8 @@ from nose.tools import *  # flake8: noqa
 
 from api.base.settings.defaults import API_BASE
 from tests.json_api_test_app import JSONAPITestApp
-
 from website.util import permissions
-
+from api_tests import utils as test_utils
 from osf_tests.factories import (
     ProjectFactory,
     PreprintFactory,
@@ -14,8 +13,6 @@ from osf_tests.factories import (
     SubjectFactory,
     PreprintProviderFactory,
 )
-
-from api_tests import utils as test_utils
 
 class PreprintIsPublishedListMixin(object):
 
