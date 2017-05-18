@@ -86,48 +86,6 @@
 
       _NOTE: Similar docker-compose.\<name\>.env environment configuration files exist for services._
 
-3. OPTIONAL (skip if you do not need to modify services, e.g. mfr and waterbutler): Mounting Service Code
-  - By modifying docker-compose.override.yml and docker-sync.yml you can specify the relative path to your service code directories. e.g.
-    - This makes it so your local changes will be reflected in the docker containers. Until you do this none of your changes will have any effect.
-
-  - In `docker-compose.override.yml`:
-
-    ```yml
-    services:
-      wb:
-        volumes_from:
-          - container:wb-sync
-
-    ...
-    ```
-
-  - In `docker-sync.yml`:
-
-    ```yml
-    syncs:
-      wb-sync:
-        src: '../waterbutler'
-        dest: '/code'
-        sync_strategy: 'unison'
-        sync_excludes_type: 'Name'
-        sync_excludes: ['.DS_Store', '*.pyc', '*.tmp', '.git', '.idea']
-        watch_excludes: ['.*\.DS_Store', '.*\.pyc', '.*\.tmp', '.*/\.git', '.*/\.idea']
-
-    ...
-    ```
-  
-  Modifying these files will show up as changes in git. To avoid committing these files, run:
-  
-  ```bash
-  git update-index --skip-worktree docker-compose.override.yml docker-sync.yml
-  ```
-  
-  To be able to commit changes to these files again, run:
-  
-  ```bash
-  git update-index --no-skip-worktree docker-compose.override.yml docker-sync.yml
-  ```
-
 ## Docker Sync
 
 Ubuntu: Skip install of docker-sync, fswatch, and unison. instead...
@@ -228,6 +186,79 @@ Ubuntu: Skip install of docker-sync, fswatch, and unison. instead...
     - `docker-compose run --rm web python manage.py reset_db --noinput`
 
 ## Application Debugging
+
+### Debugging Services
+
+The OSF is supported by several services which function independently from the main site and need some configuration to be modified using docker-sync. If you don't need to make changes to Waterbutler, MFR etc. you can ignore this.
+
+  Uncomment the appropriate code in docker-compose.override.yml and docker-sync.yml for your desired container and be sure to specify the relative path to your service code directories.
+  This makes it so your local changes will be reflected in the docker containers. Until you do this none of your changes will have any effect.
+  For example if you wanted to the modify Waterbutler you would uncomment the following.
+  
+  - In `docker-compose.override.yml`:
+
+    ```yml
+    services:
+      wb:
+        volumes_from:
+          - container:wb-sync
+
+    ...
+    ```
+
+  - In `docker-sync.yml`:
+
+    ```yml
+    syncs:
+      wb-sync:
+        src: '../waterbutler'
+        dest: '/code'
+        sync_strategy: 'unison'
+        sync_excludes_type: 'Name'
+        sync_excludes: ['.DS_Store', '*.pyc', '*.tmp', '.git', '.idea']
+        watch_excludes: ['.*\.DS_Store', '.*\.pyc', '.*\.tmp', '.*/\.git', '.*/\.idea']
+
+    ...
+    ```
+  
+  Modifying these files will show up as changes in git. To avoid committing these files, run:
+  
+  ```bash
+  git update-index --skip-worktree docker-compose.override.yml docker-sync.yml
+  ```
+  
+  To be able to commit changes to these files again, run:
+  
+  ```bash
+  git update-index --no-skip-worktree docker-compose.override.yml docker-sync.yml
+  ```
+
+  This will allow local changes to be reflected in your Docker environment, but you'll have to run `docker-compose up --force-recreate <container name>` every time you modify code in order to see your changes reflected in the application. But fear not! Setting `DEBUG=1` and `SERVER_CONFIG_DEBUG=1` in `docker-compose.wb.env` or `docker-compose.mfr.env` will enable live reload for those services, so your changes will take effect automatically in a few seconds.
+
+### Catching Print Statements
+
+If you want to debug your changes by using print statements, you'll have to have to set your container's environment variable PYTHONUNBUFFERED to 0. You can do this two ways:
+  
+  1. Edit your container configuration in docker-compose.override.yml to include the new enviroment varible. For example to get print statements from Waterbutler:
+  ```yml
+    wb:
+    volumes_from:
+      - container:wb-sync
+  ```
+  becomes
+  ```yml
+    wb:
+    volumes_from:
+      - container:wb-sync
+    environment:
+      - PYTHONUNBUFFERED=0
+   ```
+   2. If you're using a container running Python 3 you can insert the following code prior to a print statement:
+   ```
+    import functools
+    print = functools.partial(print, flush=True)
+   ```
+
 
 ### Console Debugging with IPDB
 
