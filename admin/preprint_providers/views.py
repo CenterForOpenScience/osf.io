@@ -18,7 +18,7 @@ from osf.models.preprint_provider import rules_to_subjects
 
 # When preprint_providers exclusively use Subject relations for creation, set this to False
 SHOW_TAXONOMIES_IN_PREPRINT_PROVIDER_CREATE = True
-FIELDS_TO_NOT_IMPORT_EXPORT = ['access_token']
+FIELDS_TO_NOT_IMPORT_EXPORT = ['access_token', 'share_source']
 
 
 class PreprintProviderList(PermissionRequiredMixin, ListView):

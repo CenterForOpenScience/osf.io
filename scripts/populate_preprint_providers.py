@@ -18,7 +18,7 @@ from website.models import Subject, PreprintProvider, NodeLicense
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
-ENVS = ['prod', 'stage', 'stage2', 'stage3']
+ENVS = ['prod', 'stage']
 SUBJECTS_CACHE = {}
 STAGING_PREPRINT_PROVIDERS = ['osf', 'psyarxiv', 'engrxiv', 'socarxiv', 'scielo', 'agrixiv', 'bitss', 'lawarxiv']
 PROD_PREPRINT_PROVIDERS = ['osf', 'psyarxiv', 'engrxiv', 'socarxiv', 'agrixiv', 'bitss', 'lawarxiv']
@@ -103,8 +103,7 @@ def main(env):
             'default_license': 'CC0 1.0 Universal',
             'licenses_acceptable': ['CC0 1.0 Universal', 'CC-By Attribution 4.0 International', 'No license'],
             'header_text': '',
-            'share_source': 'OSF' if env == 'prod' else 'OSF-{}'.format(env),
-            'subjects_acceptable': []
+            'subjects_acceptable': [],
         },
         'engrxiv': {
             '_id': 'engrxiv',
@@ -146,7 +145,6 @@ def main(env):
             'default_license': 'CC0 1.0 Universal',
             'licenses_acceptable': ['CC0 1.0 Universal', 'CC-By Attribution 4.0 International', 'No license'],
             'header_text': '',
-            'share_source': 'engrXiv' if env == 'prod' else 'engrXiv-{}'.format(env),
             'subjects_acceptable': [
                 (['Architecture', 'Architectural Engineering'], True),
                 (['Engineering', 'Aerospace Engineering', 'Aerodynamics and Fluid Mechanics'], False),
@@ -292,7 +290,6 @@ def main(env):
             'default_license': 'CC0 1.0 Universal',
             'licenses_acceptable': ['CC0 1.0 Universal', 'CC-By Attribution 4.0 International', 'No license'],
             'header_text': '',
-            'share_source': 'PsyArXiv' if env == 'prod' else 'PsyArXiv-{}'.format(env),
             'subjects_acceptable': [
                 (['Engineering', 'Operations Research, Systems Engineering and Industrial Engineering', 'Ergonomics'], False),
                 (['Life Sciences', 'Neuroscience and Neurobiology', 'Behavioral Neurobiology'], False),
@@ -379,7 +376,6 @@ def main(env):
             'default_license': 'CC0 1.0 Universal',
             'licenses_acceptable': ['CC0 1.0 Universal', 'CC-By Attribution 4.0 International', 'No license'],
             'header_text': '',
-            'share_source': 'SocArXiv' if env == 'prod' else 'SocArXiv-{}'.format(env),
             'subjects_acceptable': [
                 (['Arts and Humanities'], True),
                 (['Education'], True),
@@ -406,7 +402,6 @@ def main(env):
             'header_text': '',
             'default_license': 'CC-By Attribution 4.0 International',
             'licenses_acceptable': ['CC-By Attribution 4.0 International'],
-            'share_source': 'SciELO' if env == 'prod' else 'SciELO-{}'.format(env),
             'subjects_acceptable': []
         },
         'lawarxiv': {
@@ -453,7 +448,6 @@ def main(env):
             'header_text': '',
             'default_license': 'No license',
             'licenses_acceptable': ['CC0 1.0 Universal', 'CC-By Attribution 4.0 International', 'No license'],
-            'share_source': 'LawArXiv' if env == 'prod' else 'LawArXiv-{}'.format(env),
             'subjects_acceptable': [
                 (['Arts and Humanities'], True),
                 (['Business'], True),
@@ -517,7 +511,6 @@ def main(env):
             'default_license': 'CC0 1.0 Universal',
             'licenses_acceptable': ['CC0 1.0 Universal', 'CC-By Attribution 4.0 International'],
             'header_text': '',
-            'share_source': 'AgriXiv' if env == 'prod' else 'AgriXiv-{}'.format(env),
             'subjects_acceptable': [
                 (['Business', 'Business Administration, Management, and Operations'], False),
                 (['Business', 'Business and Corporate Communications'], False),
@@ -1124,7 +1117,6 @@ def main(env):
             'default_license': 'CC-By Attribution 4.0 International',
             'licenses_acceptable': ['CC-By Attribution 4.0 International', 'CC0 1.0 Universal'],
             'header_text': '',
-            'share_source': 'BITSS' if env == 'prod' else 'BITSS-{}'.format(env),
             'subjects_acceptable': [
                 (['Medicine and Health Sciences', 'Health Information Technology'], False),
                 (['Medicine and Health Sciences', 'Mental and Social Health'], False),
