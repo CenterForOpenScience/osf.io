@@ -233,7 +233,7 @@ The OSF is supported by several services which function independently from the m
   git update-index --no-skip-worktree docker-compose.override.yml docker-sync.yml
   ```
 
-  This will allow local changes to be reflected in your Docker environment, but you'll have to run `docker-compose up --force-recreate <container name>` every time you modify code in order to see your changes reflected in the application. But fear not! Setting `DEBUG=1` and `SERVER_CONFIG_DEBUG=1` in `docker-compose.wb.env` or `docker-compose.mfr.env` will enable live reload for those services, so your changes will take effect automatically in a few seconds.
+  The first time that sync settings are changed, you will need to run docker-compose up --force-recreate <container name>. To see the effect of code changes as you work (without needing to restart the container), you will need to separately turn on debug mode for the service by setting `DEBUG=1` and `SERVER_CONFIG_DEBUG=1` in `docker-compose.wb.env` or `docker-compose.mfr.env` this will enable live reload for those services, so your changes will take effect automatically in a few seconds.
 
 ### Catching Print Statements
 
