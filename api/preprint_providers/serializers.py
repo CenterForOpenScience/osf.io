@@ -15,36 +15,12 @@ class PreprintProviderSerializer(JSONAPISerializer):
     name = ser.CharField(required=True)
     description = ser.CharField(required=False)
     id = ser.CharField(max_length=200, source='_id')
-    advisory_board = ser.CharField(required=False, allow_null=True)
+    advisory_board = ser.CharField(required=False)
     example = ser.CharField(required=False, allow_null=True)
     domain = ser.CharField(required=False, allow_null=False)
     domain_redirect_enabled = ser.CharField(required=False, allow_null=False)
-    header_text = ser.CharField(required=False, allow_null=True)
     subjects_acceptable = ser.JSONField(required=False, allow_null=True)
-    logo_path = ser.CharField(read_only=True)
-    banner_path = ser.CharField(read_only=True)
-    footer_links = ser.CharField(required=False, allow_null=True)
-
-    email_contact = ShowIfVersion(
-        ser.CharField(required=False, allow_null=True),
-        min_version='2.0', max_version='2.3'
-    )
-    email_support = ShowIfVersion(
-        ser.CharField(required=False, allow_null=True),
-        min_version='2.0', max_version='2.3'
-    )
-    social_twitter = ShowIfVersion(
-        ser.CharField(required=False, allow_null=True),
-        min_version='2.0', max_version='2.3'
-    )
-    social_facebook = ShowIfVersion(
-        ser.CharField(required=False, allow_null=True),
-        min_version='2.0', max_version='2.3'
-    )
-    social_instagram = ShowIfVersion(
-        ser.CharField(required=False, allow_null=True),
-        min_version='2.0', max_version='2.3'
-    )
+    footer_links = ser.CharField(required=False)
 
     preprints = RelationshipField(
         related_view='preprint_providers:preprints-list',
@@ -66,6 +42,41 @@ class PreprintProviderSerializer(JSONAPISerializer):
         'preprints': 'get_preprints_url',
         'external_url': 'get_external_url'
     })
+
+    # Deprecated fields
+    header_text = ShowIfVersion(
+        ser.CharField(required=False, default=''),
+        min_version='2.0', max_version='2.3'
+    )
+    banner_path = ShowIfVersion(
+        ser.CharField(required=False, default=''),
+        min_version='2.0', max_version='2.3'
+    )
+    logo_path = ShowIfVersion(
+        ser.CharField(required=False, default=''),
+        min_version='2.0', max_version='2.3'
+    )
+    email_contact = ShowIfVersion(
+        ser.CharField(required=False, allow_null=True),
+        min_version='2.0', max_version='2.3'
+    )
+    email_support = ShowIfVersion(
+        ser.CharField(required=False, allow_null=True),
+        min_version='2.0', max_version='2.3'
+    )
+    social_twitter = ShowIfVersion(
+        ser.CharField(required=False, allow_null=True),
+        min_version='2.0', max_version='2.3'
+    )
+    social_facebook = ShowIfVersion(
+        ser.CharField(required=False, allow_null=True),
+        min_version='2.0', max_version='2.3'
+    )
+    social_instagram = ShowIfVersion(
+        ser.CharField(required=False, allow_null=True),
+        min_version='2.0', max_version='2.3'
+    )
+
 
     class Meta:
         type_ = 'preprint_providers'

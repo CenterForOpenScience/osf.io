@@ -26,6 +26,9 @@ class TestPreprintProviderSerializer(DbTestCase):
         assert_equal(data['id'], self.preprint_provider._id)
         assert_equal(data['type'], 'preprint_providers')
 
+        assert_in('banner_path', attributes)
+        assert_in('logo_path', attributes)
+        assert_in('header_text', attributes)
         assert_in('email_contact', attributes)
         assert_in('email_support', attributes)
         assert_in('social_facebook', attributes)
@@ -42,6 +45,9 @@ class TestPreprintProviderSerializer(DbTestCase):
         assert_equal(data['id'], self.preprint_provider._id)
         assert_equal(data['type'], 'preprint_providers')
 
+        assert_not_in('banner_path', attributes)
+        assert_not_in('logo_path', attributes)
+        assert_not_in('header_text', attributes)
         assert_not_in('email_contact', attributes)
         assert_not_in('email_support', attributes)
         assert_not_in('social_facebook', attributes)
