@@ -935,7 +935,7 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
         assert_equal(res.status_code, 400)
         assert_equal(res.json['errors'][0]['detail'], '{} is already a contributor.'.format(name))
 
-    def test_add_contributor_user_is_deactivated(self):
+    def test_add_contributor_user_is_deactivated_registered_payload(self):
         user = UserFactory()
         user.date_disabled = datetime.utcnow()
         user.save()
@@ -951,6 +951,23 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
                         }
                     }
                 }
+            }
+        }
+        res = self.app.post_json_api(self.public_url, payload, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], 'Deactivated users cannot be added as contributors.')
+
+    def test_add_contributor_user_is_deactivated_unregistered_payload(self):
+        user = UserFactory()
+        user.date_disabled = datetime.utcnow()
+        user.save()
+        payload =  {
+            'data': {
+                'type': 'contributors',
+                'attributes': {
+                    'full_name': user.fullname,
+                    'email': user.username
+                },
             }
         }
         res = self.app.post_json_api(self.public_url, payload, auth=self.user.auth, expect_errors=True)
