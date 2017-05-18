@@ -2,8 +2,8 @@
 import io
 import os
 import csv
+import logging
 from datetime import datetime
-import tempfile
 
 from modularodm import Q
 
@@ -21,7 +21,8 @@ from osf.models import NodeLog, ArchiveJob, Registration
 from website.archiver import ARCHIVER_INITIATED
 from website.settings import ARCHIVE_TIMEOUT_TIMEDELTA, ADDONS_REQUESTED
 
-import logging
+from scripts import utils as scripts_utils
+
 logger = logging.getLogger(__name__)
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -115,7 +116,6 @@ def main():
                     'has_addons', 'addon_list', 'succeeded_registrations_after_failed', 'can_be_reset',
                     'registered_from_public']
         filename = 'stuck_registrations_{}.csv'.format(timezone.now().isoformat())
-        filepath = os.path.join(settings.LOG_PATH, filename)
 
         output = io.BytesIO()
         dict_writer = csv.DictWriter(output, fieldnames)
@@ -124,8 +124,7 @@ def main():
 
         mails.send_mail(
             mail=mails.ARCHIVE_REGISTRATION_STUCK_DESK,
-            # to_addr=settings.SUPPORT_EMAIL,
-            to_addr='sloria1@gmail.com',
+            to_addr=settings.SUPPORT_EMAIL,
             broken_registrations=broken_registrations,
             attachment_name=filename,
             attachment_content=output.getvalue(),
