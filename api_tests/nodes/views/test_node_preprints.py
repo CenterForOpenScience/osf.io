@@ -1,3 +1,4 @@
+import pytest
 from nose.tools import *  # flake8: noqa
 
 from framework.auth.core import Auth
@@ -42,43 +43,54 @@ class TestNodePreprintIsPublishedList(PreprintIsPublishedListMixin, ApiTestCase)
         self.url = '/{}nodes/{}/preprints/?version=2.2&'.format(API_BASE, self.published_project._id)
         super(TestNodePreprintIsPublishedList, self).setUp()
 
-class TestNodePreprintIsValidList(PreprintIsValidListMixin, ApiTestCase):
-    def setUp(self):
-        self.admin = AuthUserFactory()
-        self.provider = PreprintProviderFactory()
-        self.project = ProjectFactory(creator=self.admin, is_public=True)
-        self.url = '/{}nodes/{}/preprints/?version=2.2&'.format(API_BASE, self.project._id)
-        super(TestNodePreprintIsValidList, self).setUp()
+class TestNodePreprintIsValidList(PreprintIsValidListMixin):
+    @pytest.fixture()
+    def admin(self):
+        return AuthUserFactory()
 
+    @pytest.fixture()
+    def project(self, admin):
+        return ProjectFactory(creator=admin, is_public=True)
+
+    @pytest.fixture()
+    def provider(self):
+        return PreprintProviderFactory()
+
+    @pytest.fixture()
+    def url(self, project):
+        return '/{}nodes/{}/preprints/?version=2.2&'.format(API_BASE, project._id)
+
+    # test override: custom exception checks because of node permission failures
     def test_preprint_private_invisible_no_auth(self):
         res = self.app.get(self.url)
         assert len(res.json['data']) == 1
         self.project.is_public = False
         self.project.save()
         res = self.app.get(self.url, expect_errors=True)
-        assert_equal(res.status_code, 401)
+        assert res.status_code == 401
 
+    # test override: custom exception checks because of node permission failures
     def test_preprint_private_invisible_non_contributor(self):
         res = self.app.get(self.url, auth=self.non_contrib.auth)
         assert len(res.json['data']) == 1
         self.project.is_public = False
         self.project.save()
         res = self.app.get(self.url, auth=self.non_contrib.auth, expect_errors=True)
-        assert_equal(res.status_code, 403)
+        assert res.status_code == 403
 
-    # custom exception checks because of node permission failures
+    # test override: custom exception checks because of node permission failures
     def test_preprint_node_deleted_invisible(self):
         self.project.is_deleted = True
         self.project.save()
         # no auth
         res = self.app.get(self.url, expect_errors=True)
-        assert_equal(res.status_code, 410)
+        assert res.status_code == 410
         # contrib
         res = self.app.get(self.url, auth=self.non_contrib.auth, expect_errors=True)
-        assert_equal(res.status_code, 410)
+        assert res.status_code == 410
         # write_contrib
         res = self.app.get(self.url, auth=self.write_contrib.auth, expect_errors=True)
-        assert_equal(res.status_code, 410)
+        assert res.status_code == 410
         # admin
         res = self.app.get(self.url, auth=self.admin.auth, expect_errors=True)
-        assert_equal(res.status_code, 410)
+        assert res.status_code == 410

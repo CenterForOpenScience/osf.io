@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import pytest
 from nose.tools import *  # flake8: noqa
 
 from tests.base import ApiTestCase
@@ -102,16 +103,24 @@ class TestUserPreprintIsPublishedList(PreprintIsPublishedListMixin, ApiTestCase)
         self.url = '/{}users/{}/preprints/?version=2.2&'.format(API_BASE, self.admin._id)
         super(TestUserPreprintIsPublishedList, self).setUp()
 
+class TestUserPreprintIsValidList(PreprintIsValidListMixin):
+    @pytest.fixture()
+    def admin(self):
+        return AuthUserFactory()
 
-class TestUserPreprintIsValidList(PreprintIsValidListMixin, ApiTestCase):
-    def setUp(self):
-        self.admin = AuthUserFactory()
-        self.provider = PreprintProviderFactory()
-        self.project = ProjectFactory(creator=self.admin, is_public=True)
-        self.url = '/{}users/{}/preprints/?version=2.2&'.format(API_BASE, self.admin._id)
-        super(TestUserPreprintIsValidList, self).setUp()
+    @pytest.fixture()
+    def project(self, admin):
+        return ProjectFactory(creator=admin, is_public=True)
 
-    # User nodes/preprints routes do not show private nodes to anyone but the self
+    @pytest.fixture()
+    def provider(self):
+        return PreprintProviderFactory()
+
+    @pytest.fixture()
+    def url(self, admin):
+        return '/{}users/{}/preprints/?version=2.2&'.format(API_BASE, admin._id)
+
+    # test override: user nodes/preprints routes do not show private nodes to anyone but the self
     def test_preprint_private_visible_write(self):
         res = self.app.get(self.url, auth=self.write_contrib.auth)
         assert len(res.json['data']) == 1

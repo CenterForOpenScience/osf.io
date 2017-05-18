@@ -1,3 +1,5 @@
+import pytest
+
 from nose.tools import *  # flake8: noqa
 
 from addons.github.models import GithubFile
@@ -9,6 +11,7 @@ from website.util import permissions
 from osf.models import PreprintService, Node
 from website.project import signals as project_signals
 import mock
+from tests.json_api_test_app import JSONAPITestApp
 
 from tests.base import ApiTestCase, capture_signals
 from osf_tests.factories import (
@@ -286,10 +289,19 @@ class TestPreprintIsPublishedList(PreprintIsPublishedListMixin, ApiTestCase):
         self.url = '/{}preprints/?version=2.2&'.format(API_BASE)
         super(TestPreprintIsPublishedList, self).setUp()
 
-class TestPreprintIsValidList(PreprintIsValidListMixin, ApiTestCase):
-    def setUp(self):
-        self.admin = AuthUserFactory()
-        self.provider = PreprintProviderFactory()
-        self.project = ProjectFactory(creator=self.admin, is_public=True)
-        self.url = '/{}preprints/?version=2.2&'.format(API_BASE)
-        super(TestPreprintIsValidList, self).setUp()
+class TestPreprintIsValidList(PreprintIsValidListMixin):
+    @pytest.fixture()
+    def admin(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def project(self, admin):
+        return ProjectFactory(creator=admin, is_public=True)
+
+    @pytest.fixture()
+    def provider(self):
+        return PreprintProviderFactory()
+
+    @pytest.fixture()
+    def url(self):
+        return '/{}preprints/?version=2.2&'.format(API_BASE)

@@ -1,6 +1,9 @@
+import pytest
+
 from nose.tools import *  # flake8: noqa
 
 from api.base.settings.defaults import API_BASE
+from tests.json_api_test_app import JSONAPITestApp
 
 from website.util import permissions
 
@@ -9,6 +12,7 @@ from osf_tests.factories import (
     PreprintFactory,
     AuthUserFactory,
     SubjectFactory,
+    PreprintProviderFactory,
 )
 
 from api_tests import utils as test_utils
@@ -73,24 +77,59 @@ class PreprintIsPublishedListMixin(object):
         res = self.app.get('{}filter[is_published]=false'.format(self.url))
         assert len(res.json['data']) == 0
 
+@pytest.mark.django_db
 class PreprintIsValidListMixin(object):
 
-    def setUp(self):
-        super(PreprintIsValidListMixin, self).setUp()
-        assert self.admin, 'Subclasses of PreprintIsValidListMixin must define self.admin'
-        assert self.project, 'Subclasses of PreprintIsValidListMixin must define self.project'
-        assert self.provider, 'Subclasses of PreprintIsValidListMixin must define self.provider'
-        assert self.url, 'Subclasses of PreprintIsValidListMixin must define self.url'
+    # FIXTURES
+    @pytest.fixture()
+    def admin(self):
+        raise NotImplementedError("subclass must define an admin fixture")
 
-        self.write_contrib = AuthUserFactory()
-        self.non_contrib = AuthUserFactory()
+    @pytest.fixture()
+    def url(self):
+        raise NotImplementedError("subclass must define a url fixture")
 
-        self.subject = SubjectFactory()
-        self.file_one_project = test_utils.create_test_file(self.project, self.admin, 'saor.pdf')
+    @pytest.fixture()
+    def project(self, admin):
+        raise NotImplementedError("subclass must define a project fixture")
+
+    @pytest.fixture()
+    def provider(self):
+        raise NotImplementedError("subclass must define a provider")
+
+    @pytest.fixture()
+    def app(self):
+        return JSONAPITestApp()
+
+    @pytest.fixture()
+    def write_contrib(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def non_contrib(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def subject(self):
+        return SubjectFactory()
+
+    # SETUP
+    @pytest.fixture(scope="function", autouse=True)
+    def int(self, app, url, admin, write_contrib, non_contrib, project, provider, subject):
+        self.app = app
+        self.url = url
+        self.admin = admin
+        self.write_contrib = write_contrib
+        self.non_contrib = non_contrib
+        self.project = project
+        self.provider = provider
+        self.subject = subject
+
         self.project.add_contributor(self.write_contrib, permissions=permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS, save=True)
+        test_utils.create_test_file(self.project, self.admin, 'saor.pdf')
         self.preprint = PreprintFactory(creator=self.admin, filename='saor.pdf', provider=self.provider, subjects=[[self.subject._id]], project=self.project, is_published=True)
 
-    # Test private
+    # TESTS
     def test_preprint_private_invisible_no_auth(self):
         res = self.app.get(self.url)
         assert len(res.json['data']) == 1
@@ -126,10 +165,10 @@ class PreprintIsValidListMixin(object):
     def test_preprint_node_deleted_invisible(self):
         self.project.is_deleted = True
         self.project.save()
-        # no auth
+        # unauth
         res = self.app.get(self.url)
         assert len(res.json['data']) == 0
-        # contrib
+        # non_contrib
         res = self.app.get(self.url, auth=self.non_contrib.auth)
         assert len(res.json['data']) == 0
         # write_contrib
@@ -142,10 +181,10 @@ class PreprintIsValidListMixin(object):
     def test_preprint_node_null_invisible(self):
         self.preprint.node = None
         self.preprint.save()
-        # no auth
+        # unauth
         res = self.app.get(self.url)
         assert len(res.json['data']) == 0
-        # contrib
+        # non_contrib
         res = self.app.get(self.url, auth=self.non_contrib.auth)
         assert len(res.json['data']) == 0
         # write_contrib
