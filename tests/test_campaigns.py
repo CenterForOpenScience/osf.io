@@ -177,7 +177,7 @@ class TestCampaignsAuthViews(OsfTestCase):
             },
             'erpc': {
                 'title_register': 'Election Research Preacceptance Competition',
-                'title_landing': 'Welcome to the Election Research Preacceptance Competition!'
+                'title_landing': 'The Election Research Preacceptance Competition is Now Closed'
             },
         }
         for key, value in self.campaigns.items():

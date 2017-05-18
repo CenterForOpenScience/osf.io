@@ -134,8 +134,8 @@ Ubuntu: Skip install of docker-sync, fswatch, and unison. instead...
         `cp docker-compose.ubuntu.yml docker-compose.override.yml`
         Ignore future steps that start, stop, or wait for docker-sync
 
-1. Install Docker Sync
-  - Mac: `$ sudo gem install docker-sync`
+1. Install Docker Sync 0.3.5
+  - Mac: `$ gem install docker-sync -v 0.3.5`
   - [Instructions](http://docker-sync.io)
 
 1. Install fswatch and unison
@@ -144,7 +144,10 @@ Ubuntu: Skip install of docker-sync, fswatch, and unison. instead...
 1. Running Docker Sync
 
     _NOTE: Wait for Docker Sync to fully start before running any docker-compose commands._
-  - `$ docker-sync start`
+
+    **IMPORTANT**: docker-sync may ask you to upgrade to a newer version. Type `n` to decline the upgrade then rerun the `start` command.
+
+  - `$ docker-sync start --daemon`
 
 1. OPTIONAL: If you have problems trying installing macfsevents
   - `$ sudo pip install macfsevents`

@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% load static %}
+{% block top_includes %}
+    <link rel="stylesheet" type="text/css" href="/static/css/institutions.css" />
+    <script src="/static/js/preprint_providers/preprintProviders.js"></script>
+{% endblock %}
+{% load user_extras %}
+{% load spam_extras %}
+{% block title %}
+    <title>Preprint Provider Delete</title>
+{% endblock title %}
+{% block content %}
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-12">
+                <form action="" method="post">{% csrf_token %}
+                    <p>Are you sure you want to delete "{{ object.name }}"?</p>
+                    <input class="btn btn-primary" type="submit" value="Confirm" />
+                </form>
+            </div>
+        </div>
+    </div>
+
+{% endblock content %}

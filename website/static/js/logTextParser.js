@@ -671,6 +671,15 @@ var LogPieces = {
             return m('span', '');
         }
     },
+    
+    anonymous_link: {
+        view: function(ctrl, logObject) {
+            if (logObject.attributes.params.anonymous_link) {
+                return m('span', 'an anonymous');
+            }
+            return m('span', 'a');
+        }
+    }
 };
 
 module.exports = LogText;

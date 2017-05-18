@@ -9,7 +9,7 @@ from framework.auth.oauth_scopes import CoreScopes
 from website.models import Node, Subject, PreprintService, PreprintProvider
 
 from api.base import permissions as base_permissions
-from api.base.filters import DjangoFilterMixin, ODMFilterMixin
+from api.base.filters import PreprintFilterMixin, ODMFilterMixin
 from api.base.views import JSONAPIBaseView
 from api.base.pagination import MaxSizePagination
 from api.base.utils import get_object_or_error, get_user_auth
@@ -142,7 +142,7 @@ class PreprintProviderDetail(JSONAPIBaseView, generics.RetrieveAPIView):
         return get_object_or_error(PreprintProvider, self.kwargs['provider_id'], display_name='PreprintProvider')
 
 
-class PreprintProviderPreprintList(JSONAPIBaseView, generics.ListAPIView, DjangoFilterMixin):
+class PreprintProviderPreprintList(JSONAPIBaseView, generics.ListAPIView, PreprintFilterMixin):
     """Preprints from a given preprint_provider. *Read Only*
 
     To update preprints with a given preprint_provider, see the `<node_id>/relationships/preprint_provider` endpoint
@@ -158,7 +158,7 @@ class PreprintProviderPreprintList(JSONAPIBaseView, generics.ListAPIView, Django
         date_published                  iso8601 timestamp                   timestamp when the preprint was published
         is_published                    boolean                             whether or not this preprint is published
         is_preprint_orphan              boolean                             whether or not this preprint is orphaned
-        subjects                        array of tuples of dictionaries     ids of Subject in the PLOS taxonomy. Dictionary, containing the subject text and subject ID
+        subjects                        array of tuples of dictionaries     ids of Subject in the BePress taxonomy. Dictionary, containing the subject text and subject ID
         doi                             string                              bare DOI for the manuscript, as entered by the user
 
     ##Relationships
@@ -198,13 +198,6 @@ class PreprintProviderPreprintList(JSONAPIBaseView, generics.ListAPIView, Django
 
     view_category = 'preprint_providers'
     view_name = 'preprints-list'
-
-    def postprocess_query_param(self, key, field_name, operation):
-        if field_name == 'provider':
-            operation['source_field_name'] = 'provider___id'
-
-        if field_name == 'id':
-            operation['source_field_name'] = 'guids___id'
 
     # overrides DjangoFilterMixin
     def get_default_django_query(self):
@@ -276,4 +269,10 @@ class PreprintProviderLicenseList(LicenseList):
 
     def get_queryset(self):
         provider = get_object_or_error(PreprintProvider, self.kwargs['provider_id'], display_name='PreprintProvider')
-        return provider.licenses_acceptable.get_queryset() if provider.licenses_acceptable.count() else super(PreprintProviderLicenseList, self).get_queryset()
+        if not provider.licenses_acceptable.count():
+            if not provider.default_license:
+                return super(PreprintProviderLicenseList, self).get_queryset()
+            return [provider.default_license] + [license for license in super(PreprintProviderLicenseList, self).get_queryset() if license != provider.default_license]
+        if not provider.default_license:
+            return provider.licenses_acceptable.get_queryset()
+        return [provider.default_license] + [license for license in provider.licenses_acceptable.all() if license != provider.default_license]

@@ -80,12 +80,18 @@
 
 <%def name="content()">
 <div class="prereg-container">
-    <h1 class="m-t-xl m-b-lg text-center">Welcome to the ${campaign_long}!</h1>
+    % if campaign_short == 'erpc':
+        <h1 class="m-t-xl m-b-lg text-center">The Election Research Preacceptance Competition is Now Closed</h1>
+    % else:
+        <h1 class="m-t-xl m-b-lg text-center">Welcome to the ${campaign_long}!</h1>
+    % endif
     <p>${description()}</p>
-    <p class="m-t-lg f-w-lg">Ready for the ${challenge_word()}? Please follow these steps:</p>
-    <p>
-        ${steps()}
-    </p>
+    % if campaign_short != 'erpc':
+        <p class="m-t-lg f-w-lg">Ready for the ${challenge_word()}? Please follow these steps:</p>
+    % endif
+        <p>
+            ${steps()}
+        </p>
     <div class="col-md-12 visible-xs">                  
       ## Always displayed
       <div class="row">
@@ -112,55 +118,57 @@
       </div>
       %endif      
     </div>
-    <div class="row hidden-xs">
-      <%
-           if has_draft_registrations and has_projects:
-               # all three buttons
-               num_cols = 3
-           elif has_draft_registrations or has_projects:
-               # two buttons
-               num_cols = 2
-           else:
-               # one button
-               num_cols = 1
-      %>
-      <table class="prereg-button-row">
-        <tbody>
-          <tr>
-            ## Always displayed
-            <td class="col-sm-${ num_cols } prereg-button-col">
-              <div class="prereg-button m-b-md p-md osf-box-lt p-md box-round prereg" data-qtoggle-group="prereg" data-qtoggle-target="#newPrereg">Start a new ${kind()}</div>
-            </td>
-            %if has_draft_registrations:
-            <td class="col-sm-${ num_cols } prereg-button-col">
-              <div class="prereg-button m-b-md p-md osf-box-lt p-md box-round" data-qtoggle-group="prereg" data-qtoggle-target="#existingPrereg">Continue working on an existing ${kind()}</div>
-            </td>
-            %endif
-            %if has_projects:
-            <td class="col-sm-${ num_cols } prereg-button-col">
-              <div class="prereg-button m-b-md p-md osf-box-lt p-md box-round" data-qtoggle-group="prereg" data-qtoggle-target="#existingProject">Make a ${kind()} for a project you already have on the OSF</div>
-            </td>
-            %endif
-          </tr>
-          <tr>
-            ## Always displayed
-            <td class="col-sm-${ num_cols } prereg-button-contents">
-              ${newPrereg()}
-            </td>
-            %if has_draft_registrations:
-            <td class="col-sm-${ num_cols } prereg-button-contents">
-              ${existingPrereg()}
-            </td>
-            %endif
-            %if has_projects:
-            <td class="col-sm-${ num_cols } prereg-button-contents">
-              ${existingProject()}
-            </td>
-            %endif
-          </tr>
-        </tbody>
-      </table>
+    % if campaign_short != 'erpc':
+        <div class="row hidden-xs">
+          <%
+               if has_draft_registrations and has_projects:
+                   # all three buttons
+                   num_cols = 3
+               elif has_draft_registrations or has_projects:
+                   # two buttons
+                   num_cols = 2
+               else:
+                   # one button
+                   num_cols = 1
+          %>
+          <table class="prereg-button-row">
+            <tbody>
+              <tr>
+                ## Always displayed
+                <td class="col-sm-${ num_cols } prereg-button-col">
+                  <div class="prereg-button m-b-md p-md osf-box-lt p-md box-round prereg" data-qtoggle-group="prereg" data-qtoggle-target="#newPrereg">Start a new ${kind()}</div>
+                </td>
+                %if has_draft_registrations:
+                <td class="col-sm-${ num_cols } prereg-button-col">
+                  <div class="prereg-button m-b-md p-md osf-box-lt p-md box-round" data-qtoggle-group="prereg" data-qtoggle-target="#existingPrereg">Continue working on an existing ${kind()}</div>
+                </td>
+                %endif
+                %if has_projects:
+                <td class="col-sm-${ num_cols } prereg-button-col">
+                  <div class="prereg-button m-b-md p-md osf-box-lt p-md box-round" data-qtoggle-group="prereg" data-qtoggle-target="#existingProject">Make a ${kind()} for a project you already have on the OSF</div>
+                </td>
+                %endif
+              </tr>
+              <tr>
+                ## Always displayed
+                <td class="col-sm-${ num_cols } prereg-button-contents">
+                  ${newPrereg()}
+                </td>
+                %if has_draft_registrations:
+                <td class="col-sm-${ num_cols } prereg-button-contents">
+                  ${existingPrereg()}
+                </td>
+                %endif
+                %if has_projects:
+                <td class="col-sm-${ num_cols } prereg-button-contents">
+                  ${existingProject()}
+                </td>
+                %endif
+              </tr>
+            </tbody>
+          </table>
     </div>
+    % endif
 </div>
 <%include file="components/autocomplete.mako"/>
 <script type="text/javascript">

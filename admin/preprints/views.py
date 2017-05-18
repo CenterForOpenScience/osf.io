@@ -9,7 +9,7 @@ from website.preprints.model import PreprintService
 from framework.exceptions import PermissionsError
 from admin.base.views import GuidFormView, GuidView
 from admin.nodes.templatetags.node_extras import reverse_preprint
-from admin.preprints.serializers import serialize_preprint, serialize_subjects
+from admin.preprints.serializers import serialize_preprint
 from admin.preprints.forms import ChangeProviderForm
 
 
@@ -55,5 +55,4 @@ class PreprintView(PermissionRequiredMixin, UpdateView, GuidView):
         # TODO - we shouldn't need this serialized_preprint value -- https://openscience.atlassian.net/browse/OSF-7743
         kwargs['serialized_preprint'] = serialize_preprint(preprint)
         kwargs['change_provider_form'] = ChangeProviderForm(instance=preprint)
-        kwargs['subjects'] = serialize_subjects(preprint.subjects)
         return super(PreprintView, self).get_context_data(**kwargs)
