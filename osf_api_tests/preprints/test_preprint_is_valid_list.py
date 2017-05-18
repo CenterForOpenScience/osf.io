@@ -8,7 +8,6 @@ from osf_api_tests.factories import (
     PreprintProviderFactory
 )
 from tests.json_api_test_app import JSONAPITestApp
-from api_tests import utils as test_utils
 
 pytestmark = pytest.mark.django_db
 
