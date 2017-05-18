@@ -32,6 +32,8 @@ from osf.models import (
     DraftRegistration,
 )
 
+from website.util import waterbutler_api_url_for
+
 def create_app_context():
     try:
         init_addons(settings)
@@ -126,6 +128,9 @@ def stat_addon(addon_short_name, job_pk):
     job = ArchiveJob.load(job_pk)
     src, dst, user = job.info()
     src_addon = src.get_addon(addon_name)
+    if hasattr(src_addon, 'configured') and not src_addon.configured:
+        # Addon enabled but not configured - no file trees, nothing to archive.
+        return AggregateStatResult(src_addon._id, addon_short_name)
     try:
         file_tree = src_addon._get_file_tree(user=user, version=version)
     except HTTPError as e:
@@ -157,33 +162,19 @@ def make_copy_request(job_pk, url, data):
     create_app_context()
     job = ArchiveJob.load(job_pk)
     src, dst, user = job.info()
-    provider = data['source']['provider']
-    logger.info('Sending copy request for addon: {0} on node: {1}'.format(provider, dst._id))
+    logger.info('Sending copy request for addon: {0} on node: {1}'.format(data['provider'], dst._id))
     res = requests.post(url, data=json.dumps(data))
     if res.status_code not in (http.OK, http.CREATED, http.ACCEPTED):
         raise HTTPError(res.status_code)
 
-
-def make_waterbutler_payload(src, dst, addon_short_name, rename, cookie, revision=None):
-    ret = {
-        'source': {
-            'cookie': cookie,
-            'nid': src._id,
-            'provider': addon_short_name,
-            'path': '/',
-        },
-        'destination': {
-            'cookie': cookie,
-            'nid': dst._id,
-            'provider': settings.ARCHIVE_PROVIDER,
-            'path': '/',
-        },
-        'rename': rename.replace('/', '-')
+def make_waterbutler_payload(dst_id, rename):
+    return {
+        'action': 'copy',
+        'path': '/',
+        'rename': rename.replace('/', '-'),
+        'resource': dst_id,
+        'provider': settings.ARCHIVE_PROVIDER,
     }
-    if revision:
-        ret['source']['revision'] = revision
-    return ret
-
 
 @celery_app.task(base=ArchiverTask, ignore_result=False)
 @logged('archive_addon')
@@ -195,35 +186,30 @@ def archive_addon(addon_short_name, job_pk, stat_result):
     :param job_pk: primary key of ArchiveJob
     :return: None
     """
-    # Dataverse requires special handling for draft
-    # and published content
-    addon_name = addon_short_name
-    if 'dataverse' in addon_short_name:
-        addon_name = 'dataverse'
-        revision = 'latest' if addon_short_name.split('-')[-1] == 'draft' else 'latest-published'
-        folder_name_suffix = 'draft' if addon_short_name.split('-')[-1] == 'draft' else 'published'
     create_app_context()
     job = ArchiveJob.load(job_pk)
     src, dst, user = job.info()
     logger.info('Archiving addon: {0} on node: {1}'.format(addon_short_name, src._id))
-    src_provider = src.get_addon(addon_name)
-    folder_name = src_provider.archive_folder_name
-    cookie = user.get_or_create_cookie()
-    copy_url = settings.WATERBUTLER_INTERNAL_URL + '/ops/copy'
-    if addon_name == 'dataverse':
-        # The dataverse API will not differentiate between published and draft files
-        # unless expcicitly asked. We need to create seperate folders for published and
-        # draft in the resulting archive.
-        #
-        # Additionally trying to run the archive without this distinction creates a race
-        # condition that non-deterministically caused archive jobs to fail.
-        data = make_waterbutler_payload(src, dst, addon_name, '{0} ({1})'.format(folder_name, folder_name_suffix),
-                                        cookie, revision=revision)
-        make_copy_request.delay(job_pk=job_pk, url=copy_url, data=data)
-    else:
-        data = make_waterbutler_payload(src, dst, addon_name, folder_name, cookie)
-        make_copy_request.delay(job_pk=job_pk, url=copy_url, data=data)
 
+    cookie = user.get_or_create_cookie()
+    params = {'cookie': cookie}
+    rename_suffix = ''
+    # The dataverse API will not differentiate between published and draft files
+    # unless expcicitly asked. We need to create seperate folders for published and
+    # draft in the resulting archive.
+    #
+    # Additionally trying to run the archive without this distinction creates a race
+    # condition that non-deterministically caused archive jobs to fail.
+    if 'dataverse' in addon_short_name:
+        params['revision'] = 'latest' if addon_short_name.split('-')[-1] == 'draft' else 'latest-published'
+        rename_suffix = ' (draft)' if addon_short_name.split('-')[-1] == 'draft' else ' (published)'
+        addon_short_name = 'dataverse'
+    src_provider = src.get_addon(addon_short_name)
+    folder_name = src_provider.archive_folder_name
+    rename = '{}{}'.format(folder_name, rename_suffix)
+    url = waterbutler_api_url_for(src._id, addon_short_name, _internal=True, **params)
+    data = make_waterbutler_payload(dst._id, rename)
+    make_copy_request.delay(job_pk=job_pk, url=url, data=data)
 
 @celery_app.task(base=ArchiverTask, ignore_result=False)
 @logged('archive_node')

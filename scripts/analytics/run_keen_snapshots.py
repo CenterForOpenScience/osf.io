@@ -1,3 +1,6 @@
+import django
+django.setup()
+
 from framework.celery_tasks import app as celery_app
 from scripts.analytics.base import BaseAnalyticsHarness
 from scripts.analytics.addon_snapshot import AddonSnapshot

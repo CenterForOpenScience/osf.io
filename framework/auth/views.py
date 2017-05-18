@@ -6,7 +6,6 @@ import urllib
 import markupsafe
 from django.utils import timezone
 from flask import request
-import uuid
 
 from modularodm import Q
 from modularodm.exceptions import NoResultsFound
@@ -34,7 +33,7 @@ from website.models import User
 from website.util import web_url_for
 from website.util.time import throttle_period_expired
 from website.util.sanitize import strip_html
-
+from osf.models.preprint_provider import PreprintProvider
 
 @block_bing_preview
 @collect_auth
@@ -373,6 +372,11 @@ def auth_register(auth):
         context['login_url'] = destination
         # "Login through your institution" link
         context['institution_login_url'] = cas.get_login_url(data['next_url'], campaign='institution')
+        context['preprint_campaigns'] = {k._id + '-preprints': {
+            'id': k._id,
+            'name': k.name,
+            'logo_path': settings.PREPRINTS_ASSETS + k._id + '/square_color_no_transparent.png'
+        } for k in PreprintProvider.objects.all() if k._id != 'osf'}
         context['campaign'] = data['campaign']
         return context, http.OK
     # redirect to url
@@ -995,7 +999,7 @@ def external_login_email_post():
             external_identity[external_id_provider][external_id] = 'CREATE'
             user = User.create_unconfirmed(
                 username=clean_email,
-                password=str(uuid.uuid4()),
+                password=None,
                 fullname=fullname,
                 external_identity=external_identity,
                 campaign=None

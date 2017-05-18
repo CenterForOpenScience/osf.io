@@ -19,12 +19,12 @@ from framework.exceptions import PermissionsError
 from website.util import permissions
 from website.exceptions import NodeStateError
 from website.project import signals as project_signals
-from osf.models import StoredFileNode, PreprintService, PreprintProvider, Node, NodeLicense
+from osf.models import BaseFileNode, PreprintService, PreprintProvider, Node, NodeLicense
 
 
 class PrimaryFileRelationshipField(RelationshipField):
     def get_object(self, file_id):
-        return StoredFileNode.load(file_id)
+        return BaseFileNode.load(file_id)
 
     def to_internal_value(self, data):
         file = self.get_object(data)
@@ -192,7 +192,7 @@ class PreprintSerializer(JSONAPISerializer):
         # nodes will send emails making it seem like a new node.
         if recently_published:
             for author in preprint.node.contributors:
-                if author.is_active and author != auth.user:
+                if author != auth.user:
                     project_signals.contributor_added.send(preprint.node, contributor=author, auth=auth, email_template='preprint')
 
         return preprint

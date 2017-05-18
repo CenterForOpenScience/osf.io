@@ -21,6 +21,8 @@
     <link href="{% static 'vendor/bower_components/admin-lte/dist/css/AdminLTE.min.css' %}" rel="stylesheet" type="text/css" />
         <!-- AdminLTE Skins. -->
     <link href="{% static 'vendor/bower_components/admin-lte/dist/css/skins/skin-blue.min.css' %}" rel="stylesheet" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="/static/css/base.css" />
+
     <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
     <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
     <!--[if lt IE 9]>
@@ -98,31 +100,69 @@
           <ul class="sidebar-menu">
             <li class="header">Menu</li>
             {% if perms.osf.view_node %}
-            <li><a href="{% url 'nodes:search' %}"><i class='fa fa-link'></i><span> OSF Nodes</span> </a></li>
+                <li><a role="button" data-toggle="collapse" href="#collapseNodes">
+                  <i class='fa fa-caret-down'></i> OSF Nodes
+              </a></li>
             <li>
-              <ul class="sidebar-menu" style="position:relative; left: 20px;">
-                <li><a href="{% url 'nodes:flagged-spam' %}"><i class="fa fa-exclamation-triangle"></i><span> Flagged Spam</span> </a></li>
-                <li><a href="{% url 'nodes:known-spam' %}"><i class="fa fa-cutlery"></i><span> Known Spam</span> </a></li>
-                <li><a href="{% url 'nodes:known-ham' %}"><i class="fa fa-star"></i><span> Known Ham</span> </a></li>
-              </ul>
+                <div class="collapse" id="collapseNodes">
+                    <ul class="sidebar-menu sidebar-menu-inner">
+                        <li><a href="{% url 'nodes:search' %}"><i class='fa fa-link'></i><span> OSF Nodes</span> </a></li>
+                        <li><a href="{% url 'nodes:flagged-spam' %}"><i class="fa fa-exclamation-triangle"></i><span> Flagged Spam</span> </a></li>
+                        <li><a href="{% url 'nodes:known-spam' %}"><i class="fa fa-cutlery"></i><span> Known Spam</span> </a></li>
+                        <li><a href="{% url 'nodes:known-ham' %}"><i class="fa fa-star"></i><span> Known Ham</span> </a></li>
+                    </ul>
+                </div>
             </li>
             {% endif %}
             {% if perms.osf.view_preprintservice %}
             <li><a href="{% url 'preprints:search' %}"><i class='fa fa-link'></i><span>Preprints</span> </a></li>
             {% endif %}
-              {% if perms.osf.view_osfuser %}
-            <li><a href="{% url 'users:search' %}"><i class='fa fa-link'></i> <span>OSF Users</span></a></li>
-            <li>
-              <ul class="sidebar-menu" style="position:relative; left: 20px;">
-                <li><a href="{% url 'users:flagged-spam' %}"><i class="fa fa-exclamation-triangle"></i><span> Flagged Spam</span> </a></li>
-                <li><a href="{% url 'users:known-spam' %}"><i class="fa fa-cutlery"></i><span> Known Spam</span> </a></li>
-                <li><a href="{% url 'users:known-ham' %}"><i class="fa fa-star"></i><span> Known Ham</span> </a></li>
-              </ul>
-            </li>
-              {% endif %}
+          {% if perms.osf.view_osfuser %}
+              <li><a role="button" data-toggle="collapse" href="#collapseUsers">
+                  <i class='fa fa-caret-down'></i> OSF Users
+              </a></li>
+              <div class="collapse" id="collapseUsers">
+                  <ul class="sidebar-menu sidebar-menu-inner">
+                      <li><a href="{% url 'users:search' %}"><i class='fa fa-link'></i><span>OSF Users</span> </a></li>
+                      <li><a href="{% url 'users:flagged-spam' %}"><i class="fa fa-exclamation-triangle"></i><span> Flagged Spam</span> </a></li>
+                      <li><a href="{% url 'users:known-spam' %}"><i class="fa fa-cutlery"></i><span> Known Spam</span> </a></li>
+                      <li><a href="{% url 'users:known-ham' %}"><i class="fa fa-star"></i><span> Known Ham</span> </a></li>
+                  </ul>
+              </div>
+          {% endif %}
           {% if perms.osf.view_spam %}
             <li><a href="{% url 'spam:spam' %}"><i class='fa fa-link'></i> <span>OSF Spam</span></a></li>
+          {% endif %}
+          {% if perms.osf.view_registration %}
             <li><a href="{% url 'nodes:registrations' %}"><i class='fa fa-link'></i> <span>OSF Registrations</span></a></li>
+          {% endif %}
+          {% if perms.osf.view_institution %}
+              <li><a role="button" data-toggle="collapse" href="#collapseInstitutions">
+                  <i class='fa fa-caret-down'></i> OSF Institutions
+              </a></li>
+              <div class="collapse" id="collapseInstitutions">
+                  <ul class="sidebar-menu sidebar-menu-inner">
+                      <li><a href="{% url 'institutions:list' %}"><i class='fa fa-link'></i><span> List</span> </a></li>
+                      {% if perms.osf.change_institution %}
+                      <li><a href="{% url 'institutions:create' %}"><i class='fa fa-link'></i><span> Create</span> </a></li>
+                      {% endif %}
+                  </ul>
+              </div>
+          {% endif %}
+          {% if perms.osf.view_preprintprovider %}
+              <li><a role="button" data-toggle="collapse" href="#collapsePreprintProviders">
+                  <i class='fa fa-caret-down'></i> Preprint Providers
+              </a></li>
+              <div class="collapse" id="collapsePreprintProviders">
+                  <ul class="sidebar-menu sidebar-menu-inner">
+                      <li><a href="{% url 'preprint_providers:list' %}"><i class='fa fa-link'></i><span> List</span> </a></li>
+                      {% if perms.osf.change_preprintprovider %}
+                      <li><a href="{% url 'preprint_providers:create' %}"><i class='fa fa-link'></i><span> Create</span> </a></li>
+                      {% endif %}
+                  </ul>
+              </div>
+          {% endif %}
+          {% if perms.osf.view_conference %}
             <li><a href="{% url 'meetings:list' %}"><i class='fa fa-link'></i> <span>OSF Meetings</span></a></li>
           {% endif %}
           {% if perms.osf.view_prereg %}

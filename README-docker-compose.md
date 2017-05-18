@@ -134,8 +134,8 @@ Ubuntu: Skip install of docker-sync, fswatch, and unison. instead...
         `cp docker-compose.ubuntu.yml docker-compose.override.yml`
         Ignore future steps that start, stop, or wait for docker-sync
 
-1. Install Docker Sync
-  - Mac: `$ sudo gem install docker-sync`
+1. Install Docker Sync 0.3.5
+  - Mac: `$ gem install docker-sync -v 0.3.5`
   - [Instructions](http://docker-sync.io)
 
 1. Install fswatch and unison
@@ -144,7 +144,10 @@ Ubuntu: Skip install of docker-sync, fswatch, and unison. instead...
 1. Running Docker Sync
 
     _NOTE: Wait for Docker Sync to fully start before running any docker-compose commands._
-  - `$ docker-sync start`
+
+    **IMPORTANT**: docker-sync may ask you to upgrade to a newer version. Type `n` to decline the upgrade then rerun the `start` command.
+
+  - `$ docker-sync start --daemon`
 
 1. OPTIONAL: If you have problems trying installing macfsevents
   - `$ sudo pip install macfsevents`
@@ -185,7 +188,7 @@ Ubuntu: Skip install of docker-sync, fswatch, and unison. instead...
 
 - Once the requirements have all been installed, you can start the OSF in the background with
 
-  ```
+  ```bash
   $ docker-sync start
   # Wait until you see "Nothing to do: replicas have not changed since last sync."
   $ docker-compose up -d assets admin_assets mfr wb fakecas sharejs worker web api admin preprints registries
@@ -193,7 +196,7 @@ Ubuntu: Skip install of docker-sync, fswatch, and unison. instead...
 
 - To view the logs for a given container: 
 
-  ```
+  ```bash
   $ docker-compose logs -f --tail 100 web
   ```
 
@@ -211,6 +214,9 @@ Ubuntu: Skip install of docker-sync, fswatch, and unison. instead...
   - After resetting your database or with a new install you will need to populate the table of preprint providers. **You must have run migrations first.**
     - `docker-compose run --rm web python -m scripts.update_taxonomies`
     - `docker-compose run --rm web python -m scripts.populate_preprint_providers`
+- Populate citation styles
+  - Needed for api v2 citation style rendering.
+    - `docker-compose run --rm web python -m scripts.parse_citation_styles`
 - OPTIONAL: Register OAuth Scopes
   - Needed for things such as the ember-osf dummy app
     - `docker-compose run --rm web python -m scripts.register_oauth_scopes`
@@ -233,12 +239,12 @@ import ipdb; ipdb.set_trace()
 
 You should run the `web` and/or `api` container (depending on which codebase the breakpoint is in) using:
 
-```
+```bash
 # Kill the already-running web container
-docker-compose kill web
+$ docker-compose kill web
 
 # Run a web container. App logs and breakpoints will show up here.
-docker-compose run --service-ports web
+$ docker-compose run --service-ports web
 ```
 
 **IMPORTANT: While attached to the running app, CTRL-c will stop the container.** To detach from the container and leave it running, **use CTRL-p CTRL-q**. Use `docker attach` to re-attach to the container, passing the *container-name* (which you can get from `docker-compose ps`), e.g. `docker attach osf_web_run_1`.
@@ -286,6 +292,36 @@ Delete a container _(does not remove volumes)_:
 List containers and status:
   - `$ docker-compose ps`
 
+### Backing up your database
+In certain cases, you may wish to remove all docker container images, but preserve a copy of the database used by your 
+local OSF instance. For example, this is helpful if you have test data that you would like to use after 
+resetting docker. To back up your database, follow the following sequence of commands:
+
+1. Install Postgres on your local machine, outside of docker. (eg `brew install postgres`) To avoid migrations, the 
+  version you install must match the one used by the docker container. 
+  ([as of this writing](https://github.com/CenterForOpenScience/osf.io/blob/ce1702cbc95eb7777e5aaf650658a9966f0e6b0c/docker-compose.yml#L53), Postgres 9.6)
+2. Start postgres locally. This must be on a different port than the one used by [docker postgres](https://github.com/CenterForOpenScience/osf.io/blob/ce1702cbc95eb7777e5aaf650658a9966f0e6b0c/docker-compose.yml#L61). 
+  Eg, `pg_ctl -D /usr/local/var/postgres start -o "-p 5433"`
+3. Verify that the postgres docker container is running (`docker-compose up -d postgres`)
+4. Tell your local (non-docker) version of postgres to connect to (and back up) data from the instance in docker 
+  (defaults to port 5432): 
+  `pg_dump --username postgres --compress 9 --create --clean --format d --jobs 4 --host localhost --file ~/Desktop/osf_backup osf`
+  
+(shorthand: `pg_dump -U postgres -Z 9 -C --c -Fd --j 4 -h localhost --f ~/Desktop/osf_backup osf`)
+
+
+#### Restoring your database
+To restore a local copy of your database for use inside docker, make sure to start both local and dockerized postgres 
+(as shown above). For best results, start from a clean postgres container with no other data. (see below for 
+instructions on dropping postgres data volumes) 
+
+When ready, run the restore command from a local terminal:
+```bash
+$ pg_restore --username postgres --clean --dbname osf --format d --jobs 4 --host localhost ~/Desktop/osf_backup
+```
+ 
+(shorthand) `pg_restore -U postgres -c -d osf -Fd -j 4 -h localhost ~/Desktop/osf_backup`
+
 ## Cleanup & Docker Reset
 
 Resetting the Environment:
@@ -303,15 +339,15 @@ Delete a persistent storage volume:
 ## Updating
 
 ```bash
-git stash # if you have any changes that need to be stashed
-git pull upstream develop # (replace upstream with the name of your remote)
-git stash pop # unstash changes
+$ git stash # if you have any changes that need to be stashed
+$ git pull upstream develop # (replace upstream with the name of your remote)
+$ git stash pop # unstash changes
 # If you get an out of space error
-docker image prune
+$ docker image prune
 # Pull latest images
-docker-compose pull
+$ docker-compose pull
 
-docker-compose up requirements mfr_requirements wb_requirements
+$ docker-compose up requirements mfr_requirements wb_requirements
 # Run db migrations
-docker-compose run --rm web python manage.py migrate
+$ docker-compose run --rm web python manage.py migrate
 ```

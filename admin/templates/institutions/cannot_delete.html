@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% load static %}
+{% load user_extras %}
+{% load spam_extras %}
+{% block title %}
+    <title>Institution Delete</title>
+{% endblock title %}
+{% block content %}
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-12">
+                <h3>Cannot Delete {{ institution.name }}</h3>
+                <p>{{ institution.name }} has {{ institution.nodes.count }} nodes associated with it, and therefore cannot be safely deleted.</p>
+                <p><a href="{% url 'institutions:nodes' institution.id %}">View associated nodes here</a></p>
+                <p><a href="{% url 'institutions:detail' institution.id %}">Back to institution detail</a></p>
+            </div>
+        </div>
+    </div>
+{% endblock content %}

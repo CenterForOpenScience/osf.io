@@ -2,11 +2,8 @@
 from nose.tools import *  # flake8: noqa (PEP8 asserts)
 import mock
 import urlparse
-from modularodm import Q
-from modularodm.exceptions import NoResultsFound, ValidationValueError
 
 from framework.celery_tasks import handlers
-from addons.osfstorage import settings as osfstorage_settings
 from website.files.models.osfstorage import OsfStorageFile
 from website.preprints.tasks import format_preprint
 from website.util import permissions
@@ -16,7 +13,6 @@ from framework.exceptions import PermissionsError
 
 from website import settings
 from osf.models import NodeLog, Subject
-from osf.exceptions import NodeStateError
 
 from tests.base import OsfTestCase
 from osf_tests.factories import (
@@ -26,7 +22,7 @@ from osf_tests.factories import (
     PreprintProviderFactory,
     SubjectFactory
 )
-from tests.utils import assert_logs, assert_not_logs
+from tests.utils import assert_logs
 from api_tests import utils as api_test_utils
 from website.project.views.contributor import find_preprint_provider
 
@@ -112,7 +108,7 @@ class TestSetPreprintFile(OsfTestCase):
     def test_add_primary_file(self):
         self.preprint.set_primary_file(self.file, auth=self.auth, save=True)
         assert_equal(self.project.preprint_file, self.file)
-        assert_equal(type(self.project.preprint_file), type(self.file.stored_object))
+        assert_equal(type(self.project.preprint_file), type(self.file))
 
     @assert_logs(NodeLog.PREPRINT_FILE_UPDATED, 'project')
     def test_change_primary_file(self):

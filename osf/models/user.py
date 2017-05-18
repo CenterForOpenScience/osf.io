@@ -659,8 +659,8 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         user.created.filter(is_bookmark_collection=False).update(creator=self)
 
         # - file that the user has checked_out, import done here to prevent import error
-        from osf.models import FileNode
-        for file_node in FileNode.files_checked_out(user=user):
+        from osf.models import BaseFileNode
+        for file_node in BaseFileNode.files_checked_out(user=user):
             file_node.checkout = self
             file_node.save()
 
@@ -718,10 +718,15 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         """Update ``is_active`` to be consistent with the fields that
         it depends on.
         """
+        # The user can log in if they have set a password OR
+        # have a verified external ID, e.g an ORCID
+        can_login = self.has_usable_password() or (
+            'VERIFIED' in sum([each.values() for each in self.external_identity.values()], [])
+        )
         self.is_active = (
             self.is_registered and
             self.is_confirmed and
-            self.has_usable_password() and
+            can_login and
             not self.is_merged and
             not self.is_disabled
         )
