@@ -239,21 +239,8 @@ The OSF is supported by several services which function independently from the m
 
 If you want to debug your changes by using print statements, you'll have to have to set your container's environment variable PYTHONUNBUFFERED to 0. You can do this two ways:
   
-  1. Edit your container configuration in docker-compose.override.yml to include the new enviroment varible. For example to get print statements from Waterbutler:
-  ```yml
-    wb:
-    volumes_from:
-      - container:wb-sync
-  ```
-  becomes
-  ```yml
-    wb:
-    volumes_from:
-      - container:wb-sync
-    environment:
-      - PYTHONUNBUFFERED=0
-   ```
-   2. If you're using a container running Python 3 you can insert the following code prior to a print statement:
+  1. Edit your container configuration in docker-compose.mfr.env or docker-compose.mfr.env to include the new environment variable by uncommenting PYTHONUNBUFFERED=0 
+  2. If you're using a container running Python 3 you can insert the following code prior to a print statement:
    ```
     import functools
     print = functools.partial(print, flush=True)
