@@ -115,10 +115,11 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, BaseModel):
                 ret.append(subj_hierarchy)
         return ret
 
-    def set_subjects(self, preprint_subjects, auth, save=False):
+    def set_subjects(self, preprint_subjects, auth):
         if not self.node.has_permission(auth.user, ADMIN):
             raise PermissionsError('Only admins can change a preprint\'s subjects.')
 
+        old_subjects = list(self.subjects.values_list('id', flat=True))
         self.subjects.clear()
         for subj_list in preprint_subjects:
             subj_hierarchy = []
@@ -129,8 +130,7 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, BaseModel):
                 for s_id in subj_hierarchy:
                     self.subjects.add(Subject.load(s_id))
 
-        if save:
-            self.save()
+        self.save(old_subjects=old_subjects)
 
     def set_primary_file(self, preprint_file, auth, save=False):
         if not self.node.has_permission(auth.user, ADMIN):
@@ -226,8 +226,9 @@ class PreprintService(DirtyFieldsMixin, GuidMixin, IdentifierMixin, BaseModel):
     def save(self, *args, **kwargs):
         first_save = not bool(self.pk)
         saved_fields = self.get_dirty_fields() or []
+        old_subjects = kwargs.pop('old_subjects', [])
         ret = super(PreprintService, self).save(*args, **kwargs)
 
         if (not first_save and 'is_published' in saved_fields) or self.is_published:
-            enqueue_task(on_preprint_updated.s(self._id))
+            enqueue_task(on_preprint_updated.s(self._id, old_subjects))
         return ret

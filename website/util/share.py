@@ -67,3 +67,18 @@ def format_contributor(preprint, user, bibliographic, index):
         creative_work=preprint,
         cited_as=user.fullname,
     )
+
+def format_subject(subject, context={}):
+    if subject is None:
+        return None
+    if subject.id in context:
+        return context[subject.id]
+    context[subject.id] = GraphNode(
+        'subject',
+        name=subject.text,
+        is_deleted=False,
+        uri=subject.absolute_api_v2_url,
+    )
+    context[subject.id].attrs['parent'] = format_subject(subject.parent, context)
+    context[subject.id].attrs['central_synonym'] = format_subject(subject.central_alias, context)
+    return context[subject.id]
