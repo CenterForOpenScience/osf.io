@@ -51,7 +51,6 @@
                         <button class="btn btn-default disabled">Public</button>
                     % endif
                     </div>
-                    <!-- /ko -->
                     <div class="btn-group"
                         % if not user_name:
                             data-bind="tooltip: {title: 'Log in or create an account to duplicate this project', placement: 'top'}"
@@ -115,6 +114,7 @@
                         <!-- /ko -->
 
                     </div>
+                    <!-- /ko -->
                     % if 'badges' in addons_enabled and badges and badges['can_award']:
                         <div class="btn-group">
                             <button class="btn btn-primary" id="awardBadge" style="border-bottom-right-radius: 4px;border-top-right-radius: 4px;">
