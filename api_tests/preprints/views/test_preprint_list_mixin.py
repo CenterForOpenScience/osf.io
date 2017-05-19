@@ -11,7 +11,6 @@ from osf_tests.factories import (
     PreprintFactory,
     AuthUserFactory,
     SubjectFactory,
-    PreprintProviderFactory,
 )
 
 class PreprintIsPublishedListMixin(object):
