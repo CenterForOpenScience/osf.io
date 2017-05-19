@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+import pytest
 from nose.tools import *  # flake8: noqa
 
 from tests.base import ApiTestCase

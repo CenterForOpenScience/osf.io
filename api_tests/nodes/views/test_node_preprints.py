@@ -1,3 +1,4 @@
+import pytest
 from nose.tools import *  # flake8: noqa
 
 from framework.auth.core import Auth
@@ -11,26 +12,44 @@ from website.files.models.osfstorage import OsfStorageFile
 from osf_tests.factories import PreprintFactory, AuthUserFactory, ProjectFactory, SubjectFactory, PreprintProviderFactory
 from api_tests import utils as test_utils
 
-class TestNodePreprintsListFiltering(PreprintsListFilteringMixin, ApiTestCase):
+class TestNodePreprintsListFiltering(PreprintsListFilteringMixin):
+    @pytest.fixture()
+    def user(self):
+        return AuthUserFactory()
 
-    def setUp(self):
-        self.user = AuthUserFactory()
-        # all different providers
-        self.provider = PreprintProviderFactory(name='Sockarxiv')
-        self.provider_two = PreprintProviderFactory(name='Piratearxiv')
-        self.provider_three = PreprintProviderFactory(name='Mockarxiv')
-        # all same project
-        self.project = ProjectFactory(creator=self.user)
-        self.project_two = self.project
-        self.project_three = self.project
-        self.url = '/{}nodes/{}/preprints/?version=2.2&'.format(API_BASE, self.project._id)
-        super(TestNodePreprintsListFiltering, self).setUp()
+    @pytest.fixture()
+    def provider_one(self):
+        return PreprintProviderFactory(name='Sockarxiv')
+
+    @pytest.fixture()
+    def provider_two(self):
+        return PreprintProviderFactory(name='Piratearxiv')
+
+    @pytest.fixture()
+    def provider_three(self):
+        return PreprintProviderFactory(name='Mockarxiv')
+
+    @pytest.fixture()
+    def project_one(self, user):
+        return ProjectFactory(creator=user)
+
+    @pytest.fixture()
+    def project_two(self, project_one):
+        return project_one
+
+    @pytest.fixture()
+    def project_three(self, project_one):
+        return project_one
+
+    @pytest.fixture()
+    def url(self, project_one):
+        return '/{}nodes/{}/preprints/?version=2.2&'.format(API_BASE, project_one._id)
 
     def test_provider_filter_equals_returns_one(self):
         expected = [self.preprint_two._id]
         res = self.app.get('{}{}'.format(self.provider_url, self.provider_two._id), auth=self.user.auth)
         actual = [preprint['id'] for preprint in res.json['data']]
-        assert_equal(expected, actual)
+        assert expected == actual
 
 class TestNodePreprintIsPublishedList(PreprintIsPublishedListMixin, ApiTestCase):
     def setUp(self):
