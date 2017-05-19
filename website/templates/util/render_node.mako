@@ -2,6 +2,29 @@
 ## TODO: Rename summary to node
 <%def name="render_node(summary, show_path)">
 ## TODO: Don't rely on ID
+<style >
+
+.dropdown-menu > li > a:hover {
+    background-image: none !important;
+    background-color: #D9D9D9;
+}
+
+.quickActions {
+  padding: 3px 12px;
+  line-height: 0;
+}
+
+#componentQuickActions {
+    background-color: #EFEFEF;
+    min-width: 180px;
+}
+
+#componentQuickActions a {
+    color: #333;
+}
+
+</style>
+
 <div id="render-node">
 % if summary['can_view']:
 
@@ -58,18 +81,17 @@
                     <i class="fa fa-times remove-pointer" data-id="${summary['id']}" data-toggle="tooltip" title="Remove link"></i>
                     <i class="fa fa-code-fork" onclick="NodeActions.forkPointer('${summary['id']}', '${summary['primary_id']}');" data-toggle="tooltip" title="Fork this ${summary['node_type']} into ${node['node_type']} ${node['title']}"></i>
                 % endif
-                <div id="projectSettings" class="dropdown">
-                  <button class="btn btn-default btn-sm dropdown-toggle" type="button" id="commonActions" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+                <div class="dropdown pull-right">
+                  <button class="btn btn-default dropdown-toggle quickActions" type="button" data-toggle="dropdown">
                     <span class="glyphicon glyphicon-option-horizontal"></span>
                   </button>
-                  <ul class="dropdown-menu dropdown-menu-right" aria-labelledby="commonActions">
-                    <li><a type="button">Upload</a></li>
-                    <li><a href="${domain}${summary['id']}/settings/">Settings</a></li>
-                    <li><a href="${domain}${summary['id']}/contributors/">Manage Contributors</a></li>
+                  <ul class="dropdown-menu dropdown-menu-right" id="componentQuickActions">
+                    <li><a tabindex="-1" href="${domain}${summary['id']}/settings/">Settings</a></li>
+                    <li><a tabindex="-1" href="${domain}${summary['id']}/contributors/">Manage Contributors</a></li>
                     % if 'admin' in user['permissions']:
-                        <li><a class="deleteComponent" type="button">Delete</a></li>
+                        <li><a tabindex="-1" class="deleteComponent" type="button">Delete</a></li>
                         <script type="text/javascript">
-                            $(".deleteComponent").data("summary", ${summary | sjson, n}) ;
+                            $(".deleteComponent").data("component", ${summary | sjson, n}) ;
                         </script>
                     % endif
                   </ul>
@@ -142,12 +164,12 @@
             % if not summary['primary'] and 'write' in user['permissions'] and not node['is_registration']:
                 ## Allow deletion of pointers, even if user doesn't know what they are deleting
                 <span class="pull-right">
-                    <i class="fa fa-times remove-pointer pointer" data-id="${summary['id']}" data-toggle="tooltip" title="Remove link"></i>
+                    <i class="fa fa-times remove-pointer pointer" data-id="${summary['id']}"
+                    data-toggle="tooltip" title="Remove link"></i>
                 </span>
             % endif
         </p>
     </li>
-
 % endif
 </div>
 <script type="text/javascript">
@@ -158,11 +180,11 @@
 
     var nodes = window.contextVars.nodes || [];
     nodes.push({
-        node : ${summary | sjson, n},
-        id: ${summary['primary_id'] if not summary['primary'] and summary['can_view'] else summary['id'] | sjson, n}
+      node : ${summary | sjson, n},
+      id: ${summary['primary_id'] if not summary['primary'] and summary['can_view'] else summary['id'] | sjson, n}
     });
     window.contextVars = $.extend(true, {}, window.contextVars, {
-        nodes : nodes
+      nodes : nodes
     });
 </script>
 
