@@ -11,8 +11,8 @@ from api_tests.preprints.views.test_preprint_list_mixin import PreprintIsPublish
 from website.util import permissions
 from osf.models import PreprintService, Node
 from website.project import signals as project_signals
-from tests.json_api_test_app import JSONAPITestApp
 from tests.base import ApiTestCase, capture_signals
+from api_tests import utils as test_utils
 from osf_tests.factories import (
     ProjectFactory,
     PreprintFactory,
@@ -20,8 +20,6 @@ from osf_tests.factories import (
     SubjectFactory,
     PreprintProviderFactory
 )
-
-from api_tests import utils as test_utils
 
 def build_preprint_create_payload(node_id=None, provider_id=None, file_id=None, attrs={}):
     payload = {

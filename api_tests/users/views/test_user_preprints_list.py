@@ -1,9 +1,13 @@
-# -*- coding: utf-8 -*-
 import pytest
 
 from nose.tools import *  # flake8: noqa
 
 from tests.base import ApiTestCase
+from osf.models import PreprintService, Node
+from website.util import permissions
+from api.base.settings.defaults import API_BASE
+from api_tests.preprints.filters.test_filters import PreprintsListFilteringMixin
+from api_tests.preprints.views.test_preprint_list_mixin import PreprintIsPublishedListMixin, PreprintIsValidListMixin
 from osf_tests.factories import (
     ProjectFactory,
     PreprintFactory,
@@ -11,11 +15,6 @@ from osf_tests.factories import (
     SubjectFactory,
     PreprintProviderFactory
 )
-from osf.models import PreprintService, Node
-from website.util import permissions
-from api.base.settings.defaults import API_BASE
-from api_tests.preprints.filters.test_filters import PreprintsListFilteringMixin
-from api_tests.preprints.views.test_preprint_list_mixin import PreprintIsPublishedListMixin, PreprintIsValidListMixin
 
 class TestUserPreprints(ApiTestCase):
 
