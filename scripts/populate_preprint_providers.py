@@ -9,7 +9,7 @@ from django.db import transaction
 from modularodm import Q
 from modularodm.exceptions import NoResultsFound
 from website.app import init_app
-from website.settings import PREPRINT_PROVIDER_DOMAINS, DOMAIN
+from website.settings import PREPRINT_PROVIDER_DOMAINS, DOMAIN, PROTOCOL
 import django
 django.setup()
 
@@ -47,8 +47,10 @@ def get_license(name):
 
 def update_or_create(provider_data):
     provider = PreprintProvider.load(provider_data['_id'])
+    provider_data['domain_redirect_enabled'] &= PREPRINT_PROVIDER_DOMAINS['enabled'] and bool(provider_data['domain'])
     licenses = [get_license(name) for name in provider_data.pop('licenses_acceptable', [])]
     default_license = provider_data.pop('default_license', False)
+
     if provider:
         provider_data['subjects_acceptable'] = map(
             lambda rule: (map(get_subject_id, rule[0]), rule[1]),
@@ -78,8 +80,10 @@ def update_or_create(provider_data):
 
 
 def format_domain_url(domain):
-    return ''.join((PREPRINT_PROVIDER_DOMAINS['prefix'], str(domain), PREPRINT_PROVIDER_DOMAINS['suffix'])) if \
-        PREPRINT_PROVIDER_DOMAINS['enabled'] else ''
+    prefix = PREPRINT_PROVIDER_DOMAINS['prefix'] or PROTOCOL
+    suffix = PREPRINT_PROVIDER_DOMAINS['suffix'] or '/'
+
+    return '{}{}{}'.format(prefix, str(domain), suffix)
 
 
 def main(env):

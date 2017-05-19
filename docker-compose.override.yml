@@ -34,8 +34,6 @@ services:
 #  preprints:
 #    volumes_from:
 #      - container:preprints-sync
-##     environment:
-##       - ENABLE_PROVIDER_DOMAINS=true
 #########    Use this for ember-osf linked development (with docker-sync): #############
 #    depends_on:
 #      - emberosf
