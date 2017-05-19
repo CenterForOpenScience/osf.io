@@ -9,7 +9,9 @@ class PreprintProviderSerializer(JSONAPISerializer):
     filterable_fields = frozenset([
         'name',
         'description',
-        'id'
+        'id',
+        'domain',
+        'domain_redirect_enabled'
     ])
 
     name = ser.CharField(required=True)
@@ -18,7 +20,7 @@ class PreprintProviderSerializer(JSONAPISerializer):
     advisory_board = ser.CharField(required=False)
     example = ser.CharField(required=False, allow_null=True)
     domain = ser.CharField(required=False, allow_null=False)
-    domain_redirect_enabled = ser.CharField(required=False, allow_null=False)
+    domain_redirect_enabled = ser.BooleanField(required=True)
     subjects_acceptable = ser.JSONField(required=False, allow_null=True)
     footer_links = ser.CharField(required=False)
 

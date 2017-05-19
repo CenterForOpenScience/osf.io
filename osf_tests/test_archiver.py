@@ -18,7 +18,7 @@ from modularodm.exceptions import KeyExistsException
 import pytest
 from nose.tools import *  # flake8: noqa
 
-from scripts import cleanup_failed_registrations as scripts
+from scripts.stuck_registration_audit import find_failed_registrations
 
 from framework.auth import Auth
 from framework.celery_tasks import handlers
@@ -1126,7 +1126,7 @@ class TestArchiverScripts(ArchiverTestCase):
             archive_job.update_target('osfstorage', ARCHIVER_INITIATED)
             archive_job.save()
             pending.append(reg)
-        failed = scripts.find_failed_registrations()
+        failed = find_failed_registrations()
         assert_equal(len(failed), 5)
         assert_items_equal([f._id for f in failed], failures)
         for pk in legacy:

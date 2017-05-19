@@ -9,7 +9,6 @@ from include import IncludeQuerySet
 from website.util import api_v2_url
 
 from osf.models.base import BaseModel, MODMCompatibilityQuerySet, ObjectIDMixin
-from osf.models.preprint_provider import PreprintProvider
 from osf.models.validators import validate_subject_hierarchy_length, validate_subject_provider_mapping
 
 class SubjectQuerySet(MODMCompatibilityQuerySet, IncludeQuerySet):
@@ -24,7 +23,7 @@ class Subject(ObjectIDMixin, BaseModel, DirtyFieldsMixin):
     text = models.CharField(null=False, max_length=256)  # max length on prod: 73
     parent = models.ForeignKey('self', related_name='children', null=True, blank=True, on_delete=models.SET_NULL, validators=[validate_subject_hierarchy_length])
     bepress_subject = models.ForeignKey('self', related_name='aliases', null=True, blank=True, on_delete=models.deletion.CASCADE)
-    provider = models.ForeignKey(PreprintProvider, related_name='subjects', on_delete=models.deletion.CASCADE)
+    provider = models.ForeignKey('PreprintProvider', related_name='subjects', on_delete=models.deletion.CASCADE)
 
     objects = SubjectQuerySet.as_manager()
 

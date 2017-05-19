@@ -9,7 +9,6 @@ from nose.tools import *  # noqa
 from addons.osfstorage.models import OsfStorageFile, OsfStorageFolder, OsfStorageFileNode
 from addons.s3.models import S3File
 from osf.models import File
-from osf.models import FileNode
 from osf.models import Folder
 from osf.models.files import BaseFileNode
 from tests.base import OsfTestCase
@@ -189,9 +188,9 @@ class TestFileNodeObj(FilesTestCase):
         )
         item.save()
 
-        assert_is(models.FileNode.load('notanid'), None)
+        assert_is(models.BaseFileNode.load('notanid'), None)
         assert_true(isinstance(TestFolder.load(item._id), TestFolder))
-        assert_true(isinstance(models.FileNode.load(item._id), TestFolder))
+        assert_true(isinstance(models.BaseFileNode.load(item._id), TestFolder))
 
     def test_parent(self):
         parent = TestFolder(
