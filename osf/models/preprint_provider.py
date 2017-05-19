@@ -5,6 +5,7 @@ from modularodm import Q
 
 from osf.models.base import BaseModel, ObjectIDMixin
 from osf.models.licenses import NodeLicense
+from osf.models.subject import Subject
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import EncryptedTextField
 
@@ -48,9 +49,8 @@ class PreprintProvider(ObjectIDMixin, BaseModel):
             return self.subjects.filter(parent__isnull=True)
         else:
             # TODO: Delet this when all PreprintProviders have a mapping
-            from osf.models.subject import Subject
             if len(self.subjects_acceptable) == 0:
-                return Subject.find(Q('parent', 'isnull', True))
+                return Subject.objects.filter(parent__isnull=True, provider___id='osf')
             tops = set([sub[0][0] for sub in self.subjects_acceptable])
             return [Subject.load(sub) for sub in tops]
 
@@ -86,7 +86,8 @@ class PreprintProvider(ObjectIDMixin, BaseModel):
 
 
 def rules_to_subjects(rules):
-    from osf.models.subject import Subject
+    if not rules:
+        return Subject.objects.filter(provider___id='osf')
     q = []
     for rule in rules:
         if rule[1]:
