@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
-from nose.tools import *  # flake8: noqa
+import pytest
 
 from framework.auth.core import Auth
-
+from tests.json_api_test_app import JSONAPITestApp
 from osf_tests.factories import (
     PreprintFactory,
     AuthUserFactory,
@@ -10,27 +10,74 @@ from osf_tests.factories import (
     PreprintProviderFactory
 )
 
-
+@pytest.mark.django_db
 class PreprintsListFilteringMixin(object):
 
-    def setUp(self):
-        super(PreprintsListFilteringMixin, self).setUp()
-        # user defined by subclasses to allow user preprints testing in the future
-        assert self.user, 'Subclasses of PreprintsListFilteringMixin must define self.user'
-        assert self.provider, 'Subclasses of PreprintsListFilteringMixin must define self.provider'
-        assert self.provider_two, 'Subclasses of PreprintsListFilteringMixin must define self.provider_two'
-        assert self.provider_three, 'Subclasses of PreprintsListFilteringMixin must define self.provider_three'
-        assert self.project, 'Subclasses of PreprintsListFilteringMixin must define self.project'
-        assert self.project_two, 'Subclasses of PreprintsListFilteringMixin must define self.projec_two'
-        assert self.project_three, 'Subclasses of PreprintsListFilteringMixin must define self.project_three'
-        assert self.url, 'Subclasses of PreprintsListFilteringMixin must define self.url'
+    # FIXTURES
 
-        self.subject = SubjectFactory(text='First Subject')
-        self.subject_two = SubjectFactory(text='Second Subject')
+    @pytest.fixture()
+    def user(self):
+        raise NotImplementedError("subclass must define a user fixture")
 
-        self.preprint = PreprintFactory(creator=self.user, project=self.project, provider=self.provider, subjects=[[self.subject._id]])
+    @pytest.fixture()
+    def provider_one(self):
+        raise NotImplementedError("subclass must define a provider_one fixture")
+
+    @pytest.fixture()
+    def provider_two(self):
+        raise NotImplementedError("subclass must define a provider_two fixture")
+
+    @pytest.fixture()
+    def provider_three(self):
+        raise NotImplementedError("subclass must define a provider_three fixture")
+
+    @pytest.fixture()
+    def project_one(self):
+        raise NotImplementedError("subclass must define a project_one fixture")
+
+    @pytest.fixture()
+    def project_two(self):
+        raise NotImplementedError("subclass must define a project_two fixture")
+
+    @pytest.fixture()
+    def project_three(self):
+        raise NotImplementedError("subclass must define a project_three fixture")
+
+    @pytest.fixture()
+    def url(self):
+        raise NotImplementedError("subclass must define a url fixture")
+
+    @pytest.fixture()
+    def app(self):
+        return JSONAPITestApp()
+
+    @pytest.fixture()
+    def subject_one(self):
+        return SubjectFactory(text='First Subject')
+
+    @pytest.fixture()
+    def subject_two(self):
+        return SubjectFactory(text='Second Subject')
+
+    # SETUP
+
+    @pytest.fixture(scope="function", autouse=True)
+    def int(self, user, provider_one, provider_two, provider_three, project_one, project_two, project_three, url, app, subject_one, subject_two):
+        self.user = user
+        self.provider_one = provider_one
+        self.provider_two = provider_two
+        self.provider_three = provider_three
+        self.project_one = project_one
+        self.project_two = project_two
+        self.project_three = project_three
+        self.url = url
+        self.app = app
+        self.subject_one = subject_one
+        self.subject_two = subject_two
+
+        self.preprint_one = PreprintFactory(creator=self.user, project=self.project_one, provider=self.provider_one, subjects=[[self.subject_one._id]])
         self.preprint_two = PreprintFactory(creator=self.user, project=self.project_two, filename='tough.txt', provider=self.provider_two, subjects=[[self.subject_two._id]])
-        self.preprint_three = PreprintFactory(creator=self.user, project=self.project_three, filename='darn.txt', provider=self.provider_three, subjects=[[self.subject._id], [self.subject_two._id]])
+        self.preprint_three = PreprintFactory(creator=self.user, project=self.project_three, filename='darn.txt', provider=self.provider_three, subjects=[[self.subject_one._id], [self.subject_two._id]])
 
         self.preprint_two.date_created = '2013-12-11 10:09:08.070605+00:00'
         self.preprint_two.date_published = '2013-12-11 10:09:08.070605+00:00'
@@ -52,85 +99,87 @@ class PreprintsListFilteringMixin(object):
 
         self.has_subject = '{}filter[subjects]='.format(self.url)
 
+    # TESTS
+
     def test_provider_filter_null(self):
         expected = []
         res = self.app.get('{}null'.format(self.provider_url), auth=self.user.auth)
         actual = [preprint['id'] for preprint in res.json['data']]
-        assert_equal(expected, actual)
+        assert expected == actual
 
     def test_id_filter_null(self):
         expected = []
         res = self.app.get('{}null'.format(self.id_url), auth=self.user.auth)
         actual = [preprint['id'] for preprint in res.json['data']]
-        assert_equal(expected, actual)
+        assert expected == actual
 
     def test_id_filter_equals_returns_one(self):
         expected = [self.preprint_two._id]
         res = self.app.get('{}{}'.format(self.id_url, self.preprint_two._id), auth=self.user.auth)
         actual = [preprint['id'] for preprint in res.json['data']]
-        assert_equal(expected, actual)
+        assert expected == actual
 
     def test_date_created_filter_equals_returns_none(self):
         expected = []
         res = self.app.get('{}{}'.format(self.date_created_url, '2015-11-15 10:09:08.070605+00:00'), auth=self.user.auth)
         actual = [preprint['id'] for preprint in res.json['data']]
-        assert_equal(expected, actual)
+        assert expected == actual
 
     def test_date_created_filter_equals_returns_one(self):
-        expected = [self.preprint._id]
-        res = self.app.get('{}{}'.format(self.date_created_url, self.preprint.date_created), auth=self.user.auth)
+        expected = [self.preprint_one._id]
+        res = self.app.get('{}{}'.format(self.date_created_url, self.preprint_one.date_created), auth=self.user.auth)
         actual = [preprint['id'] for preprint in res.json['data']]
-        assert_equal(expected, actual)
+        assert expected == actual
 
     def test_date_created_filter_equals_returns_multiple(self):
         expected = set([self.preprint_two._id, self.preprint_three._id])
         res = self.app.get('{}{}'.format(self.date_created_url, self.preprint_two.date_created), auth=self.user.auth)
         actual = set([preprint['id'] for preprint in res.json['data']])
-        assert_equal(expected, actual)
+        assert expected == actual
 
     def test_date_modified_filter_equals_returns_none(self):
         expected = []
         res = self.app.get('{}{}'.format(self.date_modified_url, '2015-11-15 10:09:08.070605+00:00'), auth=self.user.auth)
         actual = [preprint['id'] for preprint in res.json['data']]
-        assert_equal(expected, actual)
+        assert expected == actual
 
     # This test was causing problems because modifying anything caused set modified dates to update to current date
     # This test could hypothetically fail if the time between fixture creations splits a day (e.g., midnight)
     def test_date_modified_filter_equals_returns_multiple(self):
-        expected = set([self.preprint._id, self.preprint_two._id, self.preprint_three._id])
-        res = self.app.get('{}{}'.format(self.date_modified_url, self.preprint.date_modified), auth=self.user.auth)
+        expected = set([self.preprint_one._id, self.preprint_two._id, self.preprint_three._id])
+        res = self.app.get('{}{}'.format(self.date_modified_url, self.preprint_one.date_modified), auth=self.user.auth)
         actual = set([preprint['id'] for preprint in res.json['data']])
-        assert_equal(expected, actual)
+        assert expected == actual
 
     def test_date_published_filter_equals_returns_none(self):
         expected = []
         res = self.app.get('{}{}'.format(self.date_published_url, '2015-11-15 10:09:08.070605+00:00'), auth=self.user.auth)
         actual = [preprint['id'] for preprint in res.json['data']]
-        assert_equal(expected, actual)
+        assert expected == actual
 
     def test_date_published_filter_equals_returns_one(self):
-        expected = [self.preprint._id]
-        res = self.app.get('{}{}'.format(self.date_published_url, self.preprint.date_published), auth=self.user.auth)
+        expected = [self.preprint_one._id]
+        res = self.app.get('{}{}'.format(self.date_published_url, self.preprint_one.date_published), auth=self.user.auth)
         actual = [preprint['id'] for preprint in res.json['data']]
-        assert_equal(expected, actual)
+        assert expected == actual
 
     def test_date_published_filter_equals_returns_multiple(self):
         expected = set([self.preprint_two._id, self.preprint_three._id])
         res = self.app.get('{}{}'.format(self.date_published_url, self.preprint_two.date_published), auth=self.user.auth)
         actual = set([preprint['id'] for preprint in res.json['data']])
-        assert_equal(expected, actual)
+        assert expected == actual
 
     def test_is_published_false_filter_equals_returns_one(self):
         expected = [self.preprint_three._id]
         res = self.app.get('{}{}'.format(self.is_published_url, 'false'), auth=self.user.auth)
         actual = [preprint['id'] for preprint in res.json['data']]
-        assert_equal(expected, actual)
+        assert expected == actual
 
     def test_is_published_true_filter_equals_returns_multiple(self):
-        expected = set([self.preprint._id, self.preprint_two._id])
+        expected = set([self.preprint_one._id, self.preprint_two._id])
         res = self.app.get('{}{}'.format(self.is_published_url, 'true'), auth=self.user.auth)
         actual = set([preprint['id'] for preprint in res.json['data']])
-        assert_equal(expected, actual)
+        assert expected == actual
 
     def test_multiple_filters_returns_one(self):
         expected = set([self.preprint_two._id])
@@ -138,26 +187,26 @@ class PreprintsListFilteringMixin(object):
             auth=self.user.auth
         )
         actual = set([preprint['id'] for preprint in res.json['data']])
-        assert_equal(expected, actual)
+        assert expected == actual
 
     def test_subject_filter_using_id(self):
-        expected = set([self.preprint._id, self.preprint_three._id])
-        res = self.app.get('{}{}'.format(self.has_subject, self.subject._id),
+        expected = set([self.preprint_one._id, self.preprint_three._id])
+        res = self.app.get('{}{}'.format(self.has_subject, self.subject_one._id),
             auth=self.user.auth
         )
         actual = set([preprint['id'] for preprint in res.json['data']])
-        assert_equal(expected, actual)
+        assert expected == actual
 
     def test_subject_filter_using_text(self):
-        expected = set([self.preprint._id, self.preprint_three._id])
-        res = self.app.get('{}{}'.format(self.has_subject, self.subject.text),
+        expected = set([self.preprint_one._id, self.preprint_three._id])
+        res = self.app.get('{}{}'.format(self.has_subject, self.subject_one.text),
             auth=self.user.auth
         )
         actual = set([preprint['id'] for preprint in res.json['data']])
-        assert_equal(expected, actual)
+        assert expected == actual
 
     def test_unknows_subject_filter(self):
         res = self.app.get('{}notActuallyASubjectIdOrTestMostLikely'.format(self.has_subject),
             auth=self.user.auth
         )
-        assert_equal(len(res.json['data']), 0)
+        assert len(res.json['data']) == 0
