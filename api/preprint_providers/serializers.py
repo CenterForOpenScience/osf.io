@@ -77,7 +77,6 @@ class PreprintProviderSerializer(JSONAPISerializer):
         min_version='2.0', max_version='2.3'
     )
 
-
     class Meta:
         type_ = 'preprint_providers'
 

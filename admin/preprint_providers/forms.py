@@ -10,7 +10,6 @@ class PreprintProviderForm(ModelForm):
     toplevel_subjects = MultipleChoiceField(widget=CheckboxSelectMultiple())
     subjects_chosen = CharField(widget=HiddenInput())
 
-
     class Meta:
         model = PreprintProvider
 
