@@ -76,24 +76,44 @@ class TestPreprintList(ApiTestCase):
         assert_in(self.preprint._id, ids)
         assert_not_in(self.project._id, ids)
 
-class TestPreprintsListFiltering(PreprintsListFilteringMixin, ApiTestCase):
+class TestPreprintsListFiltering(PreprintsListFilteringMixin):
+    @pytest.fixture()
+    def user(self):
+        return AuthUserFactory()
 
-    def setUp(self):
-        self.user = AuthUserFactory()
-        self.provider = PreprintProviderFactory(name='Sockarxiv')
-        self.provider_two = PreprintProviderFactory(name='Piratearxiv')
-        self.provider_three = self.provider
-        self.project = ProjectFactory(creator=self.user)
-        self.project_two = ProjectFactory(creator=self.user)
-        self.project_three = ProjectFactory(creator=self.user)
-        self.url = '/{}preprints/?version=2.2&'.format(API_BASE)
-        super(TestPreprintsListFiltering, self).setUp()
+    @pytest.fixture()
+    def provider_one(self):
+        return PreprintProviderFactory(name='Sockarxiv')
+
+    @pytest.fixture()
+    def provider_two(self):
+        return PreprintProviderFactory(name='Piratearxiv')
+
+    @pytest.fixture()
+    def provider_three(self, provider_one):
+        return provider_one
+
+    @pytest.fixture()
+    def project_one(self, user):
+        return ProjectFactory(creator=user)
+
+    @pytest.fixture()
+    def project_two(self, user):
+        return ProjectFactory(creator=user)
+
+    @pytest.fixture()
+    def project_three(self, user):
+        return ProjectFactory(creator=user)
+
+    @pytest.fixture()
+    def url(self):
+        return '/{}preprints/?version=2.2&'.format(API_BASE)
 
     def test_provider_filter_equals_returns_one(self):
         expected = [self.preprint_two._id]
         res = self.app.get('{}{}'.format(self.provider_url, self.provider_two._id), auth=self.user.auth)
         actual = [preprint['id'] for preprint in res.json['data']]
-        assert_equal(expected, actual)
+        assert expected == actual
 
 
 class TestPreprintCreate(ApiTestCase):
