@@ -35,7 +35,7 @@ class PreprintProviderForm(ModelForm):
 
     def clean_advisory_board(self, *args, **kwargs):
         return bleach.clean(
-            self.data['advisory_board'],
+            self.data.get('advisory_board'),
             tags=['a', 'br', 'div', 'em', 'h2', 'li', 'p', 'strong', 'ul'],
             attributes=['class', 'style', 'href', 'title'],
             strip=True
@@ -43,7 +43,7 @@ class PreprintProviderForm(ModelForm):
 
     def clean_description(self, *args, **kwargs):
         return bleach.clean(
-            self.data['description'],
+            self.data.get('description'),
             tags=['a', 'br', 'em', 'p', 'span', 'strong'],
             attributes=['class', 'style', 'href', 'title'],
             strip=True
@@ -51,7 +51,7 @@ class PreprintProviderForm(ModelForm):
 
     def clean_footer_links(self, *args, **kwargs):
         return bleach.clean(
-            self.data['footer_links'],
+            self.data.get('footer_links'),
             tags=['a', 'br', 'div', 'em', 'p', 'span', 'strong'],
             attributes=['class', 'style', 'href', 'title'],
             strip=True

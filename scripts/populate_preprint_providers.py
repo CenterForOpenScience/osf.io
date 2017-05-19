@@ -91,9 +91,7 @@ def main(env):
         'osf': {
             '_id': 'osf',
             'name': 'Open Science Framework',
-            'logo_name': 'cos-logo.png',
             'description': 'A scholarly commons to connect the entire research cycle',
-            'banner_name': 'cos-banner.png',
             'domain': DOMAIN,
             'domain_redirect_enabled': False,  # Never change this
             'external_url': 'https://osf.io/preprints/',
@@ -112,9 +110,7 @@ def main(env):
         'engrxiv': {
             '_id': 'engrxiv',
             'name': 'engrXiv',
-            'logo_name': 'engrxiv-logo.png',
             'description': 'The open archive of engineering.',
-            'banner_name': 'engrxiv-banner.png',
             'domain': format_domain_url('engrxiv.org'),
             'domain_redirect_enabled': False,
             'external_url': 'http://engrxiv.com',
@@ -254,9 +250,7 @@ def main(env):
         'psyarxiv': {
             '_id': 'psyarxiv',
             'name': 'PsyArXiv',
-            'logo_name': 'psyarxiv-logo.png',
             'description': 'A free preprint service for the psychological sciences.',
-            'banner_name': 'psyarxiv-banner.png',
             'domain': format_domain_url('psyarxiv.com'),
             'domain_redirect_enabled': False,
             'external_url': 'http://psyarxiv.org',
@@ -342,9 +336,7 @@ def main(env):
         'socarxiv': {
             '_id': 'socarxiv',
             'name': 'SocArXiv',
-            'logo_name': 'socarxiv-logo.png',
             'description': 'Open archive of the social sciences',
-            'banner_name': 'socarxiv-banner.png',
             'domain': format_domain_url('socarxiv.org'),
             'domain_redirect_enabled': False,
             'external_url': 'http://socarxiv.org',
@@ -390,9 +382,7 @@ def main(env):
         'scielo': {
             '_id': 'scielo',
             'name': 'SciELO',
-            'logo_name': 'scielo-logo.png',
             'description': 'Advancing Research Communication',
-            'banner_name': 'scielo-logo.png',
             'domain': format_domain_url('scielo.org'),
             'domain_redirect_enabled': False,
             'external_url': 'http://scielo.org',
@@ -411,9 +401,7 @@ def main(env):
         'lawarxiv': {
             '_id': 'lawarxiv',
             'name': 'LawArXiv',
-            'logo_name': 'lawarxiv-logo.png',
             'description': 'Legal Scholarship in the Open',
-            'banner_name': 'lawarxiv-logo.png',
             'domain': '',  # No domain information yet
             'domain_redirect_enabled': False,
             'external_url': '',
@@ -464,9 +452,7 @@ def main(env):
         'agrixiv': {
             '_id': 'agrixiv',
             'name': 'AgriXiv',
-            'logo_name': 'agrixiv-logo.svg',
             'description': 'Preprints for Agriculture and Allied Sciences',
-            'banner_name': 'agrixiv-banner.svg',
             'domain': format_domain_url('agrixiv.org'),
             'domain_redirect_enabled': False,
             'external_url': '',
@@ -1090,9 +1076,7 @@ def main(env):
         'bitss': {
             '_id': 'bitss',
             'name': 'BITSS',
-            'logo_name': 'bitss-logo.png',
             'description': 'An interdisciplinary archive of articles focused on improving research transparency and reproducibility',
-            'banner_name': 'bitss-banner.png',
             'domain': '',  # Not using domain
             'domain_redirect_enabled': False,
             'external_url': 'http://www.bitss.org',
