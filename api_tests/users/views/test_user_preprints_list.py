@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import pytest
+
 from nose.tools import *  # flake8: noqa
 
 from tests.base import ApiTestCase
@@ -11,9 +12,7 @@ from osf_tests.factories import (
     PreprintProviderFactory
 )
 from osf.models import PreprintService, Node
-
 from website.util import permissions
-
 from api.base.settings.defaults import API_BASE
 from api_tests.preprints.filters.test_filters import PreprintsListFilteringMixin
 from api_tests.preprints.views.test_preprint_list_mixin import PreprintIsPublishedListMixin, PreprintIsValidListMixin
@@ -104,21 +103,13 @@ class TestUserPreprintIsPublishedList(PreprintIsPublishedListMixin, ApiTestCase)
         super(TestUserPreprintIsPublishedList, self).setUp()
 
 class TestUserPreprintIsValidList(PreprintIsValidListMixin):
-    @pytest.fixture()
-    def admin(self):
-        return AuthUserFactory()
-
-    @pytest.fixture()
-    def project(self, admin):
-        return ProjectFactory(creator=admin, is_public=True)
-
-    @pytest.fixture()
-    def provider(self):
-        return PreprintProviderFactory()
-
-    @pytest.fixture()
-    def url(self, admin):
-        return '/{}users/{}/preprints/?version=2.2&'.format(API_BASE, admin._id)
+    @pytest.fixture(autouse=True)
+    def setUp(self):
+        self.admin = AuthUserFactory()
+        self.project = ProjectFactory(creator=self.admin, is_public=True)
+        self.provider = PreprintProviderFactory()
+        self.url = '/{}users/{}/preprints/?version=2.2&'.format(API_BASE, self.admin._id)
+        super(TestUserPreprintIsValidList, self).setUp()
 
     # test override: user nodes/preprints routes do not show private nodes to anyone but the self
     def test_preprint_private_visible_write(self):

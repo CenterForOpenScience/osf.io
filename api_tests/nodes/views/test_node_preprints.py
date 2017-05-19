@@ -1,4 +1,5 @@
 import pytest
+
 from nose.tools import *  # flake8: noqa
 
 from framework.auth.core import Auth
@@ -6,7 +7,6 @@ from tests.base import ApiTestCase
 from api.base.settings.defaults import API_BASE
 from api_tests.preprints.filters.test_filters import PreprintsListFilteringMixin
 from api_tests.preprints.views.test_preprint_list_mixin import PreprintIsPublishedListMixin, PreprintIsValidListMixin
-
 from website.preprints.model import PreprintService
 from website.files.models.osfstorage import OsfStorageFile
 from osf_tests.factories import PreprintFactory, AuthUserFactory, ProjectFactory, SubjectFactory, PreprintProviderFactory
@@ -44,21 +44,13 @@ class TestNodePreprintIsPublishedList(PreprintIsPublishedListMixin, ApiTestCase)
         super(TestNodePreprintIsPublishedList, self).setUp()
 
 class TestNodePreprintIsValidList(PreprintIsValidListMixin):
-    @pytest.fixture()
-    def admin(self):
-        return AuthUserFactory()
-
-    @pytest.fixture()
-    def project(self, admin):
-        return ProjectFactory(creator=admin, is_public=True)
-
-    @pytest.fixture()
-    def provider(self):
-        return PreprintProviderFactory()
-
-    @pytest.fixture()
-    def url(self, project):
-        return '/{}nodes/{}/preprints/?version=2.2&'.format(API_BASE, project._id)
+    @pytest.fixture(autouse=True)
+    def setUp(self):
+        self.admin = AuthUserFactory()
+        self.project = ProjectFactory(creator=self.admin, is_public=True)
+        self.provider = PreprintProviderFactory()
+        self.url = '/{}nodes/{}/preprints/?version=2.2&'.format(API_BASE, self.project._id)
+        super(TestNodePreprintIsValidList, self).setUp()
 
     # test override: custom exception checks because of node permission failures
     def test_preprint_private_invisible_no_auth(self):
