@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import pytest
 
 from framework.auth.core import Auth
@@ -12,68 +11,19 @@ from osf_tests.factories import (
 
 @pytest.mark.django_db
 class PreprintsListFilteringMixin(object):
+    def setUp(self):
+        assert self.user, 'Subclasses of PreprintsListFilteringMixin must define self.user'
+        assert self.provider_one, 'Subclasses of PreprintsListFilteringMixin must define self.provider_one'
+        assert self.provider_two, 'Subclasses of PreprintsListFilteringMixin must define self.provider_two'
+        assert self.provider_three, 'Subclasses of PreprintsListFilteringMixin must define self.provider_three'
+        assert self.project_one, 'Subclasses of PreprintsListFilteringMixin must define self.project_one'
+        assert self.project_two, 'Subclasses of PreprintsListFilteringMixin must define self.project_two'
+        assert self.project_three, 'Subclasses of PreprintsListFilteringMixin must define self.project_three'
+        assert self.url, 'Subclasses of PreprintsListFilteringMixin must define self.url'
 
-    # FIXTURES
-
-    @pytest.fixture()
-    def user(self):
-        raise NotImplementedError("subclass must define a user fixture")
-
-    @pytest.fixture()
-    def provider_one(self):
-        raise NotImplementedError("subclass must define a provider_one fixture")
-
-    @pytest.fixture()
-    def provider_two(self):
-        raise NotImplementedError("subclass must define a provider_two fixture")
-
-    @pytest.fixture()
-    def provider_three(self):
-        raise NotImplementedError("subclass must define a provider_three fixture")
-
-    @pytest.fixture()
-    def project_one(self):
-        raise NotImplementedError("subclass must define a project_one fixture")
-
-    @pytest.fixture()
-    def project_two(self):
-        raise NotImplementedError("subclass must define a project_two fixture")
-
-    @pytest.fixture()
-    def project_three(self):
-        raise NotImplementedError("subclass must define a project_three fixture")
-
-    @pytest.fixture()
-    def url(self):
-        raise NotImplementedError("subclass must define a url fixture")
-
-    @pytest.fixture()
-    def app(self):
-        return JSONAPITestApp()
-
-    @pytest.fixture()
-    def subject_one(self):
-        return SubjectFactory(text='First Subject')
-
-    @pytest.fixture()
-    def subject_two(self):
-        return SubjectFactory(text='Second Subject')
-
-    # SETUP
-
-    @pytest.fixture(scope="function", autouse=True)
-    def int(self, user, provider_one, provider_two, provider_three, project_one, project_two, project_three, url, app, subject_one, subject_two):
-        self.user = user
-        self.provider_one = provider_one
-        self.provider_two = provider_two
-        self.provider_three = provider_three
-        self.project_one = project_one
-        self.project_two = project_two
-        self.project_three = project_three
-        self.url = url
-        self.app = app
-        self.subject_one = subject_one
-        self.subject_two = subject_two
+        self.app = JSONAPITestApp()
+        self.subject_one = SubjectFactory(text='First Subject')
+        self.subject_two = SubjectFactory(text='Second Subject')
 
         self.preprint_one = PreprintFactory(creator=self.user, project=self.project_one, provider=self.provider_one, subjects=[[self.subject_one._id]])
         self.preprint_two = PreprintFactory(creator=self.user, project=self.project_two, filename='tough.txt', provider=self.provider_two, subjects=[[self.subject_two._id]])
@@ -98,8 +48,6 @@ class PreprintsListFilteringMixin(object):
         self.is_published_and_modified_url = '{}filter[is_published]=true&filter[date_created]=2013-12-11'.format(self.url)
 
         self.has_subject = '{}filter[subjects]='.format(self.url)
-
-    # TESTS
 
     def test_provider_filter_null(self):
         expected = []

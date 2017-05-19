@@ -1,4 +1,5 @@
 import pytest
+
 from nose.tools import *  # flake8: noqa
 
 from framework.auth.core import Auth
@@ -6,44 +7,23 @@ from tests.base import ApiTestCase
 from api.base.settings.defaults import API_BASE
 from api_tests.preprints.filters.test_filters import PreprintsListFilteringMixin
 from api_tests.preprints.views.test_preprint_list_mixin import PreprintIsPublishedListMixin, PreprintIsValidListMixin
-
 from website.preprints.model import PreprintService
 from website.files.models.osfstorage import OsfStorageFile
 from osf_tests.factories import PreprintFactory, AuthUserFactory, ProjectFactory, SubjectFactory, PreprintProviderFactory
 from api_tests import utils as test_utils
 
 class TestNodePreprintsListFiltering(PreprintsListFilteringMixin):
-    @pytest.fixture()
-    def user(self):
-        return AuthUserFactory()
-
-    @pytest.fixture()
-    def provider_one(self):
-        return PreprintProviderFactory(name='Sockarxiv')
-
-    @pytest.fixture()
-    def provider_two(self):
-        return PreprintProviderFactory(name='Piratearxiv')
-
-    @pytest.fixture()
-    def provider_three(self):
-        return PreprintProviderFactory(name='Mockarxiv')
-
-    @pytest.fixture()
-    def project_one(self, user):
-        return ProjectFactory(creator=user)
-
-    @pytest.fixture()
-    def project_two(self, project_one):
-        return project_one
-
-    @pytest.fixture()
-    def project_three(self, project_one):
-        return project_one
-
-    @pytest.fixture()
-    def url(self, project_one):
-        return '/{}nodes/{}/preprints/?version=2.2&'.format(API_BASE, project_one._id)
+    @pytest.fixture(autouse=True)
+    def setUp(self):
+        self.user = AuthUserFactory()
+        self.provider_one = PreprintProviderFactory(name='Sockarxiv')
+        self.provider_two = PreprintProviderFactory(name='Piratearxiv')
+        self.provider_three = PreprintProviderFactory(name='Mockarxiv')
+        self.project_one = ProjectFactory(creator=self.user)
+        self.project_two = self.project_one
+        self.project_three = self.project_one
+        self.url = '/{}nodes/{}/preprints/?version=2.2&'.format(API_BASE, self.project_one._id)
+        super(TestNodePreprintsListFiltering, self).setUp()
 
     def test_provider_filter_equals_returns_one(self):
         expected = [self.preprint_two._id]

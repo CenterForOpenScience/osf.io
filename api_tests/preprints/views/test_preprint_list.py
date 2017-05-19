@@ -1,4 +1,6 @@
 import pytest
+import mock
+
 from nose.tools import *  # flake8: noqa
 
 from addons.github.models import GithubFile
@@ -9,9 +11,8 @@ from api_tests.preprints.views.test_preprint_list_mixin import PreprintIsPublish
 from website.util import permissions
 from osf.models import PreprintService, Node
 from website.project import signals as project_signals
-import mock
-
 from tests.base import ApiTestCase, capture_signals
+from api_tests import utils as test_utils
 from osf_tests.factories import (
     ProjectFactory,
     PreprintFactory,
@@ -19,8 +20,6 @@ from osf_tests.factories import (
     SubjectFactory,
     PreprintProviderFactory
 )
-
-from api_tests import utils as test_utils
 
 def build_preprint_create_payload(node_id=None, provider_id=None, file_id=None, attrs={}):
     payload = {
@@ -78,37 +77,17 @@ class TestPreprintList(ApiTestCase):
         assert_not_in(self.project._id, ids)
 
 class TestPreprintsListFiltering(PreprintsListFilteringMixin):
-    @pytest.fixture()
-    def user(self):
-        return AuthUserFactory()
-
-    @pytest.fixture()
-    def provider_one(self):
-        return PreprintProviderFactory(name='Sockarxiv')
-
-    @pytest.fixture()
-    def provider_two(self):
-        return PreprintProviderFactory(name='Piratearxiv')
-
-    @pytest.fixture()
-    def provider_three(self, provider_one):
-        return provider_one
-
-    @pytest.fixture()
-    def project_one(self, user):
-        return ProjectFactory(creator=user)
-
-    @pytest.fixture()
-    def project_two(self, user):
-        return ProjectFactory(creator=user)
-
-    @pytest.fixture()
-    def project_three(self, user):
-        return ProjectFactory(creator=user)
-
-    @pytest.fixture()
-    def url(self):
-        return '/{}preprints/?version=2.2&'.format(API_BASE)
+    @pytest.fixture(autouse=True)
+    def setUp(self):
+        self.user = AuthUserFactory()
+        self.provider_one = PreprintProviderFactory(name='Sockarxiv')
+        self.provider_two = PreprintProviderFactory(name='Piratearxiv')
+        self.provider_three = self.provider_one
+        self.project_one = ProjectFactory(creator=self.user)
+        self.project_two = ProjectFactory(creator=self.user)
+        self.project_three = ProjectFactory(creator=self.user)
+        self.url = '/{}preprints/?version=2.2&'.format(API_BASE)
+        super(TestPreprintsListFiltering, self).setUp()
 
     def test_provider_filter_equals_returns_one(self):
         expected = [self.preprint_two._id]
