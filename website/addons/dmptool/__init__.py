@@ -11,7 +11,7 @@ NODE_SETTINGS_MODEL = AddonDmptoolNodeSettings
 ROUTES = [api_routes]
 
 SHORT_NAME = 'dmptool'
-FULL_NAME = 'Dmptool'
+FULL_NAME = 'DMPTool'
 
 OWNERS = ['user', 'node']
 
