@@ -11,10 +11,10 @@ var { getConfirmationCode } = require('js/projectSettings.js');
 $(document).ready(function() {
 
   //Project overview >> Component Widget >> Event/Click handler for componentQuickActions menu item: Delete.
-  $(".deleteComponent").each( function() {
+  $('.deleteComponent').each( function() {
     $(this).off().on('click', function(e) {
       var componentIndex = $(this).data('index');
-      var component = window.contextVars.nodes[componentIndex]['node'];
+      var component = window.contextVars.nodes[componentIndex].node;
 
       var {node_type, api_url, isPreprint, childExists} = component;
 
@@ -24,7 +24,7 @@ $(document).ready(function() {
           'Any child components must be deleted prior to deleting this component.',
           'danger',
           30000
-        )
+        );
       }else{
         getConfirmationCode(
           node_type,
@@ -33,6 +33,6 @@ $(document).ready(function() {
         );
       }
     });
-  })
+  });
 
 });
