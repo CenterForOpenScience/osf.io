@@ -150,7 +150,6 @@ var GitLabConfigHelper = (function() {
             window.oauthComplete = function(res) {
                 askImport();
             };
-            window.open('/oauth/connect/gitlab/');
         });
 
         $('#gitlabRemoveToken').on('click', function() {

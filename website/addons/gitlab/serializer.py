@@ -12,7 +12,7 @@ class GitLabSerializer(StorageAddonSerializer):
     # Include host information with more informative labels / formatting
     def serialize_account(self, external_account):
         ret = super(GitLabSerializer, self).serialize_account(external_account)
-        host = external_account.oauth_key
+        host = external_account.display_name
         ret.update({
             'host': host,
             'host_url': 'https://{0}'.format(host),

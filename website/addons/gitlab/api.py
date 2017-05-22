@@ -15,12 +15,12 @@ class GitLabClient(object):
 
     def __init__(self, external_account=None, access_token=None):
 
-        self.access_token = getattr(external_account, 'oauth_key', None) or access_token
+        self.access_token = getattr(external_account, 'provider_id', None) or access_token
 
         self.host = getattr(external_account, 'display_name', None) or 'gitlab.com'
 
         if self.access_token:
-            self.gitlab = gitlab.Gitlab(self.host, oauth_token=self.access_token)
+            self.gitlab = gitlab.Gitlab(self.host, token=self.access_token)
         else:
             self.gitlab = gitlab.Gitlab(self.host)
 
@@ -120,9 +120,9 @@ class GitLabClient(object):
         return False
 
     def _get_api_request(self, uri):
-        headers = {'Authorization': 'Bearer {}'.format(self.access_token)}
+        headers = {'PRIVATE-TOKEN': '{}'.format(self.access_token)}
 
-        return requests.get('https://{0}/{1}/{2}'.format(self.host, 'api/v3', uri),
+        return requests.get('https://{0}/{1}/{2}'.format(self.host, 'api/v4', uri),
                             verify=True, headers=headers)
 
     def revoke_token(self):

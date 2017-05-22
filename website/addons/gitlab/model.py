@@ -39,11 +39,11 @@ class GitLabProvider(ExternalProvider):
 
     @property
     def client_secret(self):
-        return 'a89f6d159da4ac8a105952f1b27370fc977e548b20100f267f22d22b92773d52'
+        return ''
 
     @property
     def client_id(self):
-        return '48dc7b0e3938b64e1feb1452602edcd69d444415c1aa996f042e13d9e04624e0'
+        return ''
 
     def handle_callback(self, response):
         """View called when the OAuth flow is completed. Adds a new GitLabUserSettings
@@ -66,17 +66,6 @@ class GitLabProvider(ExternalProvider):
 class GitLabUserSettings(AddonOAuthUserSettingsBase):
     oauth_provider = GitLabProvider
     serializer = GitLabSerializer
-
-    def revoke_remote_oauth_access(self, external_account):
-        """Overrides default behavior during external_account deactivation.
-
-        Tells GitLab to remove the grant for the OSF associated with this account.
-        """
-        connection = GitLabClient(external_account=external_account)
-        try:
-            connection.revoke_token()
-        except GitLabError:
-            pass
 
 
 class GitLabNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
@@ -214,13 +203,13 @@ class GitLabNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
     def serialize_waterbutler_credentials(self):
         if not self.complete or not self.repo:
             raise exceptions.AddonError('Addon is not authorized')
-        return {'token': self.external_account.oauth_key}
+        return {'token': self.external_account.provider_id}
 
     def serialize_waterbutler_settings(self):
         if not self.complete:
             raise exceptions.AddonError('Repo is not configured')
         return {
-            'host': 'https://{}'.format(self.external_account.provider_id),
+            'host': 'https://{}'.format(self.external_account.display_name),
             'owner': self.user,
             'repo': self.repo,
             'repo_id': self.repo_id

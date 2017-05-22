@@ -24,7 +24,6 @@ function ViewModel(url) {
 
     self.properName = 'GitLab';
     self.clientId = ko.observable();
-    self.clientSecret = ko.observable();
     self.urls = ko.observable({});
     self.hosts = ko.observableArray([]);
     self.selectedHost = ko.observable();    // Host specified in select element
@@ -49,7 +48,7 @@ function ViewModel(url) {
         return Boolean(self.selectedHost());
     });
     self.tokenUrl = ko.pureComputed(function() {
-        return self.host() ? 'https://' + self.host() + '/profile/applications' : null;
+        return self.host() ? 'https://' + self.host() + '/profile/personal_access_tokens' : null;
     });
 
     // Flashed messages
@@ -61,7 +60,6 @@ function ViewModel(url) {
         self.message('');
         self.messageClass('text-info');
         self.clientId(null);
-        self.clientSecret(null);
         self.selectedHost(null);
         self.customHost(null);
     };
@@ -98,18 +96,13 @@ function ViewModel(url) {
             return;
         }
 
-        if ( !self.useCustomHost() && !self.clientId() ){
-            self.changeMessage("Please enter a Client ID.", 'text-danger');
+        if ( !self.useCustomHost() && !self.clientId() ) {
+            self.changeMessage("Please enter your Personal Access Token.", 'text-danger');
             return;
         }
 
-        if ( !self.useCustomHost() && !self.clientSecret() ){
-            self.changeMessage("Please enter a Client Secret.", 'text-danger');
-            return;
-        }
-
-        if ( self.useCustomHost() && ( !self.customHost() || !self.clientId() || !self.clientSecret()) )  {
-            self.changeMessage("Please enter a GitLab host and a Client ID and a Client Secret.", 'text-danger');
+        if ( self.useCustomHost() && (!self.customHost() || !self.clientId()) ) {
+            self.changeMessage("Please enter a GitLab host and your Personal Access Token.", 'text-danger');
             return;
         }
 
@@ -119,14 +112,12 @@ function ViewModel(url) {
             url,
             ko.toJS({
                 host: self.host,
-                clientSecret: self.clientSecret,
                 clientId: self.clientId
             })
         ).done(function() {
-            //self.updateAccounts();
+            self.updateAccounts();
             self.clearModal();
             $modal.modal('hide');
-            self.updateAccounts();
 
         }).fail(function(xhr, textStatus, error) {
             var errorMessage = (xhr.status === 401) ? 'Auth Error' : 'Other error';
