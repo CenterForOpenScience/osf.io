@@ -408,14 +408,7 @@ var CommentModel = function(data, $parent, $root) {
         return !self.isDeleted() && self.isAbuse();
     });
 
-    if (window.contextVars.node.anonymous) {
-        self.author = {
-            'id': null,
-            'urls': {'profile': ''},
-            'fullname': 'A User',
-            'gravatarUrl': ''
-        };
-    } else if ('embeds' in data && 'user' in data.embeds && 'data' in data.embeds.user) {
+    if ('embeds' in data && 'user' in data.embeds && 'data' in data.embeds.user) {
         var userData = data.embeds.user.data;
         self.author = {
             'id': userData.id,

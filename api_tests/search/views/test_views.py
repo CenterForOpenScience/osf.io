@@ -11,6 +11,7 @@ from osf_tests.factories import (
     AuthUserFactory,
     NodeFactory,
     ProjectFactory,
+    InstitutionFactory
 )
 from osf_tests.utils import mock_archive
 
@@ -38,6 +39,10 @@ class ApiSearchTestCase(ApiTestCase):
         self.user_one.save()
 
         self.user_two = AuthUserFactory(fullname='Chance The Rapper')
+        self.institution = InstitutionFactory(name='Social Experiment')
+        self.user_two.affiliated_institutions.add(self.institution)
+        self.user_two.save()
+        # self.institution.save()
 
         self.project = ProjectFactory(title='The Life of Pablo', creator=self.user_one, is_public=True)
         self.project.set_description('Name one genius who ain\'t crazy', auth=Auth(self.user_one), save=True)
@@ -582,3 +587,35 @@ class TestSearchUsers(ApiSearchTestCase):
         total = res.json['links']['meta']['total']
         assert_equal(num_results, total, 1)
         assert_equal(self.user_one.fullname, res.json['data'][0]['attributes']['full_name'])
+
+
+class TestSearchInstitutions(ApiSearchTestCase):
+
+    def setUp(self):
+        super(TestSearchInstitutions, self).setUp()
+        self.url = '/{}search/institutions/'.format(API_BASE)
+
+    def test_search_institutions_no_auth(self):
+        res = self.app.get(self.url)
+        assert_equal(res.status_code, 200)
+        num_results = len(res.json['data'])
+        total = res.json['links']['meta']['total']
+        assert_equal(num_results, total, 1)
+        assert_in(self.institution.name, res)
+
+    def test_search_institutions_auth(self):
+        res = self.app.get(self.url, auth=self.user)
+        assert_equal(res.status_code, 200)
+        num_results = len(res.json['data'])
+        total = res.json['links']['meta']['total']
+        assert_equal(num_results, total, 1)
+        assert_in(self.institution.name, res)
+
+    def test_search_institutions_by_name(self):
+        url = '{}?q={}'.format(self.url, 'Social')
+        res = self.app.get(url)
+        assert_equal(res.status_code, 200)
+        num_results = len(res.json['data'])
+        total = res.json['links']['meta']['total']
+        assert_equal(num_results, total, 1)
+        assert_equal(self.institution.name, res.json['data'][0]['attributes']['name'])

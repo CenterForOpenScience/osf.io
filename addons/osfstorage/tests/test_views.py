@@ -20,8 +20,8 @@ from website.util import rubeus
 
 from website.models import Tag
 from website.files import models
+from addons.osfstorage.apps import osf_storage_root
 from addons.osfstorage import utils
-from addons.osfstorage import views
 from addons.base.views import make_auth
 from addons.osfstorage import settings as storage_settings
 
@@ -91,7 +91,7 @@ class TestGetMetadataHook(HookTestCase):
 
     def test_osf_storage_root(self):
         auth = Auth(self.project.creator)
-        result = views.osf_storage_root(self.node_settings.config, self.node_settings, auth)
+        result = osf_storage_root(self.node_settings.config, self.node_settings, auth)
         node = self.project
         expected = rubeus.build_addon_root(
             node_settings=self.node_settings,
@@ -571,7 +571,6 @@ class TestDeleteHook(HookTestCase):
         assert_equal(resp.json, {'status': 'success'})
         fid = file._id
         del file
-        # models.StoredFileNode._clear_object_cache()
         assert_is(models.OsfStorageFileNode.load(fid), None)
         assert_true(models.TrashedFileNode.load(fid))
 
@@ -597,6 +596,22 @@ class TestDeleteHook(HookTestCase):
         res = self.delete(file_checked, expect_errors=True)
         assert_equal(res.status_code, 403)
 
+    def test_attempt_delete_while_preprint(self):
+        file = self.root_node.append_file('Nights')
+        self.node.preprint_file = file
+        self.node.save()
+        res = self.delete(file, expect_errors=True)
+
+        assert_equal(res.status_code, 403)
+
+    def test_attempt_delete_folder_with_preprint(self):
+        folder = self.root_node.append_folder('Fishes')
+        file = folder.append_file('Fish')
+        self.node.preprint_file = file
+        self.node.save()
+        res = self.delete(folder, expect_errors=True)
+
+        assert_equal(res.status_code, 403)
 
 @pytest.mark.django_db
 class TestMoveHook(HookTestCase):
@@ -648,6 +663,30 @@ class TestMoveHook(HookTestCase):
             expect_errors=True,
         )
         assert_equal(res.status_code, 405)
+
+    def test_within_node_move_while_preprint(self):
+
+        file = self.root_node.append_file('Self Control')
+        self.node.preprint_file = file
+        self.node.save()
+        folder = self.root_node.append_folder('Frank Ocean')
+        res = self.send_hook(
+            'osfstorage_move_hook',
+            {'nid': self.root_node.node._id},
+            payload={
+                'source': file._id,
+                'node': self.root_node._id,
+                'user': self.user._id,
+                'destination': {
+                    'parent': folder._id,
+                    'node': folder.node._id,
+                    'name': folder.name,
+                }
+            },
+            method='post_json',
+            expect_errors=True,
+        )
+        assert_equal(res.status_code, 200)
 
 
 @pytest.mark.django_db

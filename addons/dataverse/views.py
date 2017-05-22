@@ -15,7 +15,7 @@ from addons.dataverse import client
 from addons.dataverse.models import DataverseProvider
 from addons.dataverse.settings import DEFAULT_HOSTS
 from addons.dataverse.serializer import DataverseSerializer
-from dataverse.exceptions import VersionJsonNotFoundError
+from dataverse.exceptions import VersionJsonNotFoundError, OperationFailedError
 from website.oauth.models import ExternalAccount
 from website.project.decorators import (
     must_have_addon, must_be_addon_authorizer,
@@ -266,6 +266,11 @@ def _dataverse_root_folder(node_addon, auth, **kwargs):
     # (stored in oauth_key because dataverse doesn't use that)
     dataverse_host = node_addon.external_account.oauth_key
 
+    try:
+        host_custom_publish_text = client.get_custom_publish_text(connection)
+    except OperationFailedError:
+        host_custom_publish_text = ''
+
     return [rubeus.build_addon_root(
         node_addon,
         node_addon.dataset,
@@ -280,6 +285,7 @@ def _dataverse_root_folder(node_addon, auth, **kwargs):
         datasetDraftModified=dataset_draft_modified,
         version=version,
         host=dataverse_host,
+        hostCustomPublishText=host_custom_publish_text,
         private_key=kwargs.get('view_only', None),
     )]
 

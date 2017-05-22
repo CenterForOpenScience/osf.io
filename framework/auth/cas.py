@@ -283,9 +283,10 @@ def make_response_from_ticket(ticket, service_url):
                 )))
 
             # if user is authenticated by CAS
+            # TODO [CAS-27]: Remove Access Token From Service Validation
             return authenticate(
                 user,
-                cas_resp.attributes['accessToken'],
+                cas_resp.attributes.get('accessToken', ''),
                 redirect(service_furl.url)
             )
         # first time login from external identity provider
@@ -295,11 +296,12 @@ def make_response_from_ticket(ticket, service_url):
             fullname = u'{} {}'.format(cas_resp.attributes.get('given-names', ''), cas_resp.attributes.get('family-name', '')).strip()
             if not fullname:
                 fullname = external_credential['id']
+            # TODO [CAS-27]: Remove Access Token From Service Validation
             user = {
                 'external_id_provider': external_credential['provider'],
                 'external_id': external_credential['id'],
                 'fullname': fullname,
-                'access_token': cas_resp.attributes['accessToken'],
+                'access_token': cas_resp.attributes.get('accessToken', ''),
                 'service_url': service_furl.url,
             }
             return external_first_login_authenticate(

@@ -1,2 +1,0 @@
-DEFAULT_HOSTS = []
-USE_SSL = True

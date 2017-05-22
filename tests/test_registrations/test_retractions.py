@@ -30,10 +30,17 @@ from osf.models import Contributor
 class RegistrationRetractionModelsTestCase(OsfTestCase):
     def setUp(self):
         super(RegistrationRetractionModelsTestCase, self).setUp()
+        self.mock_registration_update = mock.patch('website.project.tasks.on_registration_updated')
+        self.mock_registration_update.start()
+
         self.user = UserFactory()
         self.registration = RegistrationFactory(creator=self.user, is_public=True)
         self.valid_justification = fake.sentence()
         self.invalid_justification = fake.text(max_nb_chars=3000)
+
+    def tearDown(self):
+        self.mock_registration_update.stop()
+        super(RegistrationRetractionModelsTestCase, self).tearDown()
 
     def test_set_public_registration_to_private_raises_NodeStateException(self):
         self.registration.save()
@@ -393,6 +400,9 @@ class RegistrationRetractionModelsTestCase(OsfTestCase):
 class RegistrationWithChildNodesRetractionModelTestCase(OsfTestCase):
     def setUp(self):
         super(RegistrationWithChildNodesRetractionModelTestCase, self).setUp()
+        self.mock_registration_update = mock.patch('website.project.tasks.on_registration_updated')
+        self.mock_registration_update.start()
+
         self.user = AuthUserFactory()
         self.auth = self.user.auth
         self.project = ProjectFactory(is_public=True, creator=self.user)
@@ -414,6 +424,10 @@ class RegistrationWithChildNodesRetractionModelTestCase(OsfTestCase):
         self.registration = RegistrationFactory(project=self.project, is_public=True)
         # Reload the registration; else tests won't catch failures to svae
         self.registration.reload()
+
+    def tearDown(self):
+        self.mock_registration_update.stop()
+        super(RegistrationWithChildNodesRetractionModelTestCase, self).tearDown()
 
     def test_approval_retracts_descendant_nodes(self):
         # Initiate retraction for parent registration
@@ -534,9 +548,52 @@ class RegistrationWithChildNodesRetractionModelTestCase(OsfTestCase):
             assert_true(node.is_retracted)
 
 
+class RegistrationRetractionShareHook(OsfTestCase):
+    def setUp(self):
+        super(RegistrationRetractionShareHook, self).setUp()
+
+        self.user = AuthUserFactory()
+        self.auth = self.user.auth
+        self.project = ProjectFactory(is_public=True, creator=self.user)
+
+        self.registration = RegistrationFactory(project=self.project, is_public=True)
+        # Reload the registration; else tests won't catch failures to svae
+        self.registration.reload()
+
+    @mock.patch('website.project.tasks.settings.SHARE_URL', 'ima_real_website')
+    @mock.patch('website.project.tasks.settings.SHARE_API_TOKEN', 'totaly_real_token')
+    @mock.patch('website.project.tasks.on_registration_updated')
+    def test_approval_calls_share_hook(self, mock_on_registration_updated):
+        # Initiate retraction for parent registration
+        self.registration.retract_registration(self.user)
+        self.registration.save()
+
+        # Approve parent registration's retraction
+        approval_token = self.registration.retraction.approval_state[self.user._id]['approval_token']
+        self.registration.retraction.approve_retraction(self.user, approval_token)
+        assert_true(self.registration.is_retracted)
+        assert mock_on_registration_updated.called
+
+    @mock.patch('website.project.tasks.settings.SHARE_URL', 'ima_real_website')
+    @mock.patch('website.project.tasks.settings.SHARE_API_TOKEN', 'totaly_real_token')
+    @mock.patch('website.project.tasks.on_registration_updated')
+    def test_disapproval_does_not_call_share_hook(self, mock_on_registration_updated):
+        # Initiate retraction for parent registration
+        self.registration.retract_registration(self.user)
+        self.registration.save()
+
+        rejection_token = self.registration.retraction.approval_state[self.user._id]['rejection_token']
+        self.registration.retraction.disapprove_retraction(self.user, rejection_token)
+        assert_false(self.registration.is_retracted)
+        assert not mock_on_registration_updated.called
+
+
 class RegistrationRetractionApprovalDisapprovalViewsTestCase(OsfTestCase):
     def setUp(self):
         super(RegistrationRetractionApprovalDisapprovalViewsTestCase, self).setUp()
+        self.mock_registration_update = mock.patch('website.project.tasks.on_registration_updated')
+        self.mock_registration_update.start()
+
         self.user = AuthUserFactory()
         self.registered_from = ProjectFactory(is_public=True, creator=self.user)
         self.registration = RegistrationFactory(is_public=True, project=self.registered_from)
@@ -550,6 +607,10 @@ class RegistrationRetractionApprovalDisapprovalViewsTestCase(OsfTestCase):
             'user_id': self.user._id,
             'sanction_id': 'invalid id'
         })
+
+    def tearDown(self):
+        self.mock_registration_update.stop()
+        super(RegistrationRetractionApprovalDisapprovalViewsTestCase, self).tearDown()
 
     # node_registration_retraction_approve_tests
     def test_GET_approve_from_unauthorized_user_returns_HTTPError_UNAUTHORIZED(self):
@@ -699,6 +760,9 @@ class ComponentRegistrationRetractionViewsTestCase(OsfTestCase):
 class RegistrationRetractionViewsTestCase(OsfTestCase):
     def setUp(self):
         super(RegistrationRetractionViewsTestCase, self).setUp()
+        self.mock_registration_update = mock.patch('website.project.tasks.on_registration_updated')
+        self.mock_registration_update.start()
+
         self.user = AuthUserFactory()
         self.registered_from = ProjectFactory(creator=self.user, is_public=True)
         self.registration = RegistrationFactory(project=self.registered_from, is_public=True)
@@ -706,6 +770,10 @@ class RegistrationRetractionViewsTestCase(OsfTestCase):
         self.retraction_post_url = self.registration.api_url_for('node_registration_retraction_post')
         self.retraction_get_url = self.registration.web_url_for('node_registration_retraction_get')
         self.justification = fake.sentence()
+
+    def tearDown(self):
+        self.mock_registration_update.stop()
+        super(RegistrationRetractionViewsTestCase, self).tearDown()
 
     def test_GET_retraction_page_when_pending_retraction_returns_HTTPError_BAD_REQUEST(self):
         self.registration.retract_registration(self.user)

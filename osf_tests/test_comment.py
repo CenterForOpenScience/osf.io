@@ -17,7 +17,7 @@ from website.project.views.comment import update_file_guid_referent
 from website.project.signals import comment_added, mention_added, contributor_added
 from framework.exceptions import PermissionsError
 from tests.base import capture_signals
-from osf.models import Comment, NodeLog, Guid, FileNode
+from osf.models import Comment, NodeLog, Guid, BaseFileNode
 from osf.modm_compat import Q
 from osf.utils.auth import Auth
 from .factories import (
@@ -492,7 +492,7 @@ class FileCommentMoveRenameTestMixin(object):
         payload = self._create_payload('move', user, source, destination, self.file._id)
         update_file_guid_referent(self=None, node=destination['node'], event_type='addon_file_renamed', payload=payload)
         self.guid.reload()
-        file_node = FileNode.resolve_class(self.provider, FileNode.FILE).get_or_create(destination['node'], self._format_path(destination['path'], file_id=self.file._id))
+        file_node = BaseFileNode.resolve_class(self.provider, BaseFileNode.FILE).get_or_create(destination['node'], self._format_path(destination['path'], file_id=self.file._id))
         assert self.guid._id == file_node.get_guid()._id
         file_comments = Comment.find(Q('root_target', 'eq', self.guid.pk))
         assert file_comments.count() == 1
@@ -514,7 +514,7 @@ class FileCommentMoveRenameTestMixin(object):
         update_file_guid_referent(self=None, node=destination['node'], event_type='addon_file_renamed', payload=payload)
         self.guid.reload()
 
-        file_node = FileNode.resolve_class(self.provider, FileNode.FILE).get_or_create(destination['node'], self._format_path('{}{}'.format(destination['path'], file_name), file_id=self.file._id))
+        file_node = BaseFileNode.resolve_class(self.provider, BaseFileNode.FILE).get_or_create(destination['node'], self._format_path('{}{}'.format(destination['path'], file_name), file_id=self.file._id))
         assert self.guid._id == file_node.get_guid()._id
         file_comments = Comment.find(Q('root_target', 'eq', self.guid.pk))
         assert file_comments.count() == 1
@@ -536,7 +536,7 @@ class FileCommentMoveRenameTestMixin(object):
         update_file_guid_referent(self=None, node=destination['node'], event_type='addon_file_renamed', payload=payload)
         self.guid.reload()
 
-        file_node = FileNode.resolve_class(self.provider, FileNode.FILE).get_or_create(destination['node'], self._format_path('{}{}'.format(destination['path'], file_path), file_id=self.file._id))
+        file_node = BaseFileNode.resolve_class(self.provider, BaseFileNode.FILE).get_or_create(destination['node'], self._format_path('{}{}'.format(destination['path'], file_path), file_id=self.file._id))
         assert self.guid._id == file_node.get_guid()._id
         file_comments = Comment.find(Q('root_target', 'eq', self.guid.pk))
         assert file_comments.count() == 1
@@ -557,7 +557,7 @@ class FileCommentMoveRenameTestMixin(object):
         update_file_guid_referent(self=None, node=destination['node'], event_type='addon_file_moved', payload=payload)
         self.guid.reload()
 
-        file_node = FileNode.resolve_class(self.provider, FileNode.FILE).get_or_create(destination['node'], self._format_path(destination['path'], file_id=self.file._id))
+        file_node = BaseFileNode.resolve_class(self.provider, BaseFileNode.FILE).get_or_create(destination['node'], self._format_path(destination['path'], file_id=self.file._id))
         assert self.guid._id == file_node.get_guid()._id
         file_comments = Comment.find(Q('root_target', 'eq', self.guid.pk))
         assert file_comments.count() == 1
@@ -578,7 +578,7 @@ class FileCommentMoveRenameTestMixin(object):
         update_file_guid_referent(self=None, node=destination['node'], event_type='addon_file_moved', payload=payload)
         self.guid.reload()
 
-        file_node = FileNode.resolve_class(self.provider, FileNode.FILE).get_or_create(destination['node'], self._format_path(destination['path'], file_id=self.file._id))
+        file_node = BaseFileNode.resolve_class(self.provider, BaseFileNode.FILE).get_or_create(destination['node'], self._format_path(destination['path'], file_id=self.file._id))
         assert self.guid._id == file_node.get_guid()._id
         file_comments = Comment.find(Q('root_target', 'eq', self.guid.pk))
         assert file_comments.count() == 1
@@ -599,7 +599,7 @@ class FileCommentMoveRenameTestMixin(object):
         update_file_guid_referent(self=None, node=destination['node'], event_type='addon_file_moved', payload=payload)
         self.guid.reload()
 
-        file_node = FileNode.resolve_class(self.provider, FileNode.FILE).get_or_create(destination['node'], self._format_path(destination['path'], file_id=self.file._id))
+        file_node = BaseFileNode.resolve_class(self.provider, BaseFileNode.FILE).get_or_create(destination['node'], self._format_path(destination['path'], file_id=self.file._id))
         assert self.guid._id == file_node.get_guid()._id
         assert self.guid.referent.node._id == destination['node']._id
         file_comments = Comment.find(Q('root_target', 'eq', self.guid.pk))
@@ -621,7 +621,7 @@ class FileCommentMoveRenameTestMixin(object):
         update_file_guid_referent(self=None, node=destination['node'], event_type='addon_file_moved', payload=payload)
         self.guid.reload()
 
-        file_node = FileNode.resolve_class(self.provider, FileNode.FILE).get_or_create(destination['node'], self._format_path(destination['path'], file_id=self.file._id))
+        file_node = BaseFileNode.resolve_class(self.provider, BaseFileNode.FILE).get_or_create(destination['node'], self._format_path(destination['path'], file_id=self.file._id))
         assert self.guid._id == file_node.get_guid()._id
         assert self.guid.referent.node._id == destination['node']._id
         file_comments = Comment.find(Q('root_target', 'eq', self.guid.pk))
@@ -644,7 +644,7 @@ class FileCommentMoveRenameTestMixin(object):
         update_file_guid_referent(self=None, node=destination['node'], event_type='addon_file_moved', payload=payload)
         self.guid.reload()
 
-        file_node = FileNode.resolve_class(self.provider, FileNode.FILE).get_or_create(destination['node'], self._format_path('{}{}'.format(destination['path'], file_name), file_id=self.file._id))
+        file_node = BaseFileNode.resolve_class(self.provider, BaseFileNode.FILE).get_or_create(destination['node'], self._format_path('{}{}'.format(destination['path'], file_name), file_id=self.file._id))
         assert self.guid._id == file_node.get_guid()._id
         file_comments = Comment.find(Q('root_target', 'eq', self.guid.pk))
         assert file_comments.count() == 1
@@ -666,7 +666,7 @@ class FileCommentMoveRenameTestMixin(object):
         update_file_guid_referent(self=None, node=destination['node'], event_type='addon_file_moved', payload=payload)
         self.guid.reload()
 
-        file_node = FileNode.resolve_class(self.provider, FileNode.FILE).get_or_create(destination['node'], self._format_path('{}{}'.format(destination['path'], file_name), file_id=self.file._id))
+        file_node = BaseFileNode.resolve_class(self.provider, BaseFileNode.FILE).get_or_create(destination['node'], self._format_path('{}{}'.format(destination['path'], file_name), file_id=self.file._id))
         assert self.guid._id == file_node.get_guid()._id
         file_comments = Comment.find(Q('root_target', 'eq', self.guid.pk))
         assert file_comments.count() == 1
@@ -688,7 +688,7 @@ class FileCommentMoveRenameTestMixin(object):
         update_file_guid_referent(self=None, node=destination['node'], event_type='addon_file_moved', payload=payload)
         self.guid.reload()
 
-        file_node = FileNode.resolve_class(self.provider, FileNode.FILE).get_or_create(destination['node'], self._format_path('{}{}'.format(destination['path'], file_name), file_id=self.file._id))
+        file_node = BaseFileNode.resolve_class(self.provider, BaseFileNode.FILE).get_or_create(destination['node'], self._format_path('{}{}'.format(destination['path'], file_name), file_id=self.file._id))
         assert self.guid._id == file_node.get_guid()._id
         file_comments = Comment.find(Q('root_target', 'eq', self.guid.pk))
         assert file_comments.count() == 1
@@ -710,7 +710,7 @@ class FileCommentMoveRenameTestMixin(object):
         update_file_guid_referent(self=None, node=destination['node'], event_type='addon_file_moved', payload=payload)
         self.guid.reload()
 
-        file_node = FileNode.resolve_class(self.provider, FileNode.FILE).get_or_create(destination['node'], self._format_path('{}{}'.format(destination['path'], file_name), file_id=self.file._id))
+        file_node = BaseFileNode.resolve_class(self.provider, BaseFileNode.FILE).get_or_create(destination['node'], self._format_path('{}{}'.format(destination['path'], file_name), file_id=self.file._id))
         assert self.guid._id == file_node.get_guid()._id
         file_comments = Comment.find(Q('root_target', 'eq', self.guid.pk))
         assert file_comments.count() == 1
@@ -744,7 +744,7 @@ class FileCommentMoveRenameTestMixin(object):
         update_file_guid_referent(self=None, node=destination['node'], event_type='addon_file_moved', payload=payload)
         self.guid.reload()
 
-        file_node = FileNode.resolve_class('osfstorage', FileNode.FILE).get_or_create(destination['node'], destination['path'])
+        file_node = BaseFileNode.resolve_class('osfstorage', BaseFileNode.FILE).get_or_create(destination['node'], destination['path'])
         assert self.guid._id == file_node.get_guid()._id
         file_comments = Comment.find(Q('root_target', 'eq', self.guid.pk))
         assert file_comments.count() == 1
@@ -785,7 +785,7 @@ class FileCommentMoveRenameTestMixin(object):
         update_file_guid_referent(self=None, node=destination['node'], event_type='addon_file_moved', payload=payload)
         self.guid.reload()
 
-        file_node = FileNode.resolve_class('osfstorage', FileNode.FILE).get_or_create(destination['node'], osf_file._id)
+        file_node = BaseFileNode.resolve_class('osfstorage', BaseFileNode.FILE).get_or_create(destination['node'], osf_file._id)
         assert self.guid._id == file_node.get_guid()._id
         file_comments = Comment.find(Q('root_target', 'eq', self.guid.pk))
         assert file_comments.count() == 1
@@ -819,7 +819,7 @@ class FileCommentMoveRenameTestMixin(object):
         update_file_guid_referent(self=None, node=destination['node'], event_type='addon_file_moved', payload=payload)
         self.guid.reload()
 
-        file_node = FileNode.resolve_class(destination_provider, FileNode.FILE).get_or_create(destination['node'], destination['path'])
+        file_node = BaseFileNode.resolve_class(destination_provider, BaseFileNode.FILE).get_or_create(destination['node'], destination['path'])
         assert self.guid._id == file_node.get_guid()._id
         file_comments = Comment.find(Q('root_target', 'eq', self.guid.pk))
         assert file_comments.count() == 1
@@ -859,7 +859,7 @@ class FileCommentMoveRenameTestMixin(object):
         update_file_guid_referent(self=None, node=destination['node'], event_type='addon_file_moved', payload=payload)
         self.guid.reload()
 
-        file_node = FileNode.resolve_class(destination_provider, FileNode.FILE).get_or_create(destination['node'], destination_path)
+        file_node = BaseFileNode.resolve_class(destination_provider, BaseFileNode.FILE).get_or_create(destination['node'], destination_path)
         assert self.guid._id == file_node.get_guid()._id
         file_comments = Comment.find(Q('root_target', 'eq', self.guid.pk))
         assert file_comments.count() == 1
@@ -910,7 +910,7 @@ class TestOsfstorageFileCommentMoveRename(FileCommentMoveRenameTestMixin):
         update_file_guid_referent(self=None, node=destination['node'], event_type='addon_file_moved', payload=payload)
         self.guid.reload()
 
-        file_node = FileNode.resolve_class(self.provider, FileNode.FILE).get_or_create(destination['node'], self._format_path(destination['path'], file_id=self.file._id))
+        file_node = BaseFileNode.resolve_class(self.provider, BaseFileNode.FILE).get_or_create(destination['node'], self._format_path(destination['path'], file_id=self.file._id))
         assert self.guid._id == file_node.get_guid()._id
         assert self.guid.referent.node._id == destination['node']._id
         file_comments = Comment.find(Q('root_target', 'eq', self.guid.pk))
@@ -933,7 +933,7 @@ class TestOsfstorageFileCommentMoveRename(FileCommentMoveRenameTestMixin):
         update_file_guid_referent(self=None, node=destination['node'], event_type='addon_file_moved', payload=payload)
         self.guid.reload()
 
-        file_node = FileNode.resolve_class(self.provider, FileNode.FILE).get_or_create(destination['node'], self._format_path(destination['path'], file_id=self.file._id))
+        file_node = BaseFileNode.resolve_class(self.provider, BaseFileNode.FILE).get_or_create(destination['node'], self._format_path(destination['path'], file_id=self.file._id))
         assert self.guid._id == file_node.get_guid()._id
         assert self.guid.referent.node._id == destination['node']._id
         file_comments = Comment.find(Q('root_target', 'eq', self.guid.pk))
@@ -957,7 +957,7 @@ class TestOsfstorageFileCommentMoveRename(FileCommentMoveRenameTestMixin):
         update_file_guid_referent(self=None, node=destination['node'], event_type='addon_file_moved', payload=payload)
         self.guid.reload()
 
-        file_node = FileNode.resolve_class(self.provider, FileNode.FILE).get_or_create(destination['node'], self._format_path('{}{}'.format(destination['path'], file_name), file_id=self.file._id))
+        file_node = BaseFileNode.resolve_class(self.provider, BaseFileNode.FILE).get_or_create(destination['node'], self._format_path('{}{}'.format(destination['path'], file_name), file_id=self.file._id))
         assert self.guid._id == file_node.get_guid()._id
         file_comments = Comment.find(Q('root_target', 'eq', self.guid.pk))
         assert file_comments.count() == 1
@@ -980,7 +980,7 @@ class TestOsfstorageFileCommentMoveRename(FileCommentMoveRenameTestMixin):
         update_file_guid_referent(self=None, node=destination['node'], event_type='addon_file_moved', payload=payload)
         self.guid.reload()
 
-        file_node = FileNode.resolve_class(self.provider, FileNode.FILE).get_or_create(destination['node'], self._format_path('{}{}'.format(destination['path'], file_name), file_id=self.file._id))
+        file_node = BaseFileNode.resolve_class(self.provider, BaseFileNode.FILE).get_or_create(destination['node'], self._format_path('{}{}'.format(destination['path'], file_name), file_id=self.file._id))
         assert self.guid._id == file_node.get_guid()._id
         file_comments = Comment.find(Q('root_target', 'eq', self.guid.pk))
         assert file_comments.count() == 1

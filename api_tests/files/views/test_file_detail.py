@@ -23,7 +23,7 @@ from website.project.signals import contributor_removed
 def _dt_to_iso8601(value):
     iso8601 = value.isoformat()
     if iso8601.endswith('+00:00'):
-        iso8601 = iso8601[:-9] + 'Z'  # offset upped to 9 to get rid of 3 ms decimal points
+        iso8601 = iso8601[:-6] + 'Z'  # microsecond precision
 
     return iso8601
 

@@ -1,7 +1,7 @@
 import os
-from addons.base.apps import BaseAddonAppConfig
+from addons.base.apps import BaseAddonAppConfig, generic_root_folder
 
-from addons.s3.views import s3_root_folder
+s3_root_folder = generic_root_folder('s3')
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 TEMPLATE_PATH = os.path.join(

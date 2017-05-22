@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% load render_bundle from webpack_loader %}
+{% load spam_extras %}
+
+{% load static %}
+{% block top_includes %}
+  <link rel="stylesheet" type="text/css" href="/static/css/institutions.css" />
+{% endblock %}
+{% block title %}
+    <title>List of Institutions</title>
+{% endblock title %}
+{% block content %}
+    <h2>List of Institutions</h2>
+
+    {% include "util/pagination.html" with items=page status=status %}
+    <table class="table table-striped table-hover table-responsive">
+    <thead>
+        <tr>
+            <th>Logo</th>
+            <th>Name</th>
+            <th>Description</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for institution in institutions %}
+    <tr>
+        <td>
+            <a href="{% url 'institutions:detail' institution_id=institution.id %}">
+                <img class="institution-logo" src="{{ logohost }}/static/img/institutions/shields/{{ institution.logo_name }}">
+            </a>
+        </td>
+        <td><a href="{% url 'institutions:detail' institution_id=institution.id %}">{{ institution.name }}</a></td>
+        <td>{{ institution.description | safe}}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+    </table>
+
+{% endblock content %}

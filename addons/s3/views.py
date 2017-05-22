@@ -57,10 +57,6 @@ def s3_folder_list(node_addon, **kwargs):
     """
     return node_addon.get_folders()
 
-s3_root_folder = generic_views.root_folder(
-    SHORT_NAME
-)
-
 @must_be_logged_in
 def s3_add_user_account(auth, **kwargs):
     """Verifies new external account credentials and adds to user's list"""

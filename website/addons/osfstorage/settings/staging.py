@@ -1,1 +1,0 @@
-WATERBUTLER_RESOURCE = 'container'

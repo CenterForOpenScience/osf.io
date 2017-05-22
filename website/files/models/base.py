@@ -217,7 +217,7 @@ class StoredFileNode(StoredObject, Commentable):
 
     @property
     def deep_url(self):
-        return self.wrapped().deep_url
+        return self.deep_url
 
     @property
     def absolute_api_v2_url(self):
@@ -402,7 +402,7 @@ class FileNode(object):
         """A proxy for StoredFileNode.find_one but applies class based contraints.
         :rtype: cls
         """
-        return StoredFileNode.find_one(cls._filter(qs)).wrapped()
+        return StoredFileNode.find_one(cls._filter(qs))
 
     @classmethod
     def files_checked_out(cls, user):
@@ -421,7 +421,6 @@ class FileNode(object):
         inst = StoredFileNode.load(_id)
         if not inst:
             return None
-        inst = inst.wrapped()
         assert isinstance(inst, cls), 'Loaded object {} is not of type {}'.format(inst, cls)
         return inst
 
@@ -430,7 +429,7 @@ class FileNode(object):
         """A proxy to self.stored_object.parent but forces it to be wrapped.
         """
         if self.stored_object.parent:
-            return self.stored_object.parent.wrapped()
+            return self.stored_object.parent
         return None
 
     @parent.setter
@@ -784,7 +783,7 @@ class Folder(FileNode):
             parent=self.stored_object,
             materialized_path=materialized_path or
             os.path.join(self.materialized_path, name) + '/' if not kind else ''
-        ).wrapped()
+        )
         if save:
             child.save()
         return child

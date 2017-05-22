@@ -3,6 +3,9 @@ from nose import tools as nt
 from django.test import RequestFactory
 from django.db import transaction
 from django.http import Http404
+from django.core.urlresolvers import reverse
+from django.contrib.auth.models import Permission
+from django.core.exceptions import PermissionDenied
 
 from tests.base import AdminTestCase
 from osf_tests.factories import (
@@ -12,7 +15,6 @@ from osf_tests.factories import (
     UserFactory
 )
 from osf.models.registrations import DraftRegistration
-from website.files.models import StoredFileNode
 from addons.osfstorage.models import OsfStorageFile, OsfStorageFileNode
 
 from website.project.model import ensure_schemas
@@ -51,8 +53,10 @@ class TestDraftListView(AdminTestCase):
         )
         self.dr2.submit_for_review(self.user, {}, save=True)
         self.request = RequestFactory().get('/fake_path')
-        self.view = DraftListView()
-        self.view = setup_view(self.view, self.request)
+        self.plain_view = DraftListView
+        self.view = setup_view(self.plain_view(), self.request)
+
+        self.url = reverse('pre_reg:prereg')
 
     def test_get_queryset(self):
         res = list(self.view.get_queryset())
@@ -65,6 +69,24 @@ class TestDraftListView(AdminTestCase):
         nt.assert_is_instance(res, dict)
         nt.assert_is_instance(res['drafts'], list)
         nt.assert_equal(len(res['drafts']), 2)
+
+    def test_no_user_permissions_raises_error(self):
+        request = RequestFactory().get(self.url)
+        request.user = self.user
+
+        with nt.assert_raises(PermissionDenied):
+            self.plain_view.as_view()(request)
+
+    def test_correct_view_permissions(self):
+        view_permission = Permission.objects.get(codename='view_prereg')
+        self.user.user_permissions.add(view_permission)
+        self.user.save()
+
+        request = RequestFactory().get(self.url)
+        request.user = self.user
+
+        response = self.plain_view.as_view()(request)
+        nt.assert_equal(response.status_code, 200)
 
 
 class TestDraftDetailView(AdminTestCase):
@@ -79,14 +101,35 @@ class TestDraftDetailView(AdminTestCase):
         )
         self.dr1.submit_for_review(self.user, {}, save=True)
         self.request = RequestFactory().get('/fake_path')
-        self.view = DraftDetailView()
-        self.view = setup_view(self.view, self.request, draft_pk=self.dr1._id)
+        self.plain_view = DraftDetailView
+        self.view = setup_view(self.plain_view(), self.request, draft_pk=self.dr1._id)
+
+        self.url = reverse('pre_reg:view_draft', kwargs={'draft_pk': self.dr1._id})
 
     @mock.patch('admin.pre_reg.views.DraftDetailView.checkout_files')
     def test_get_object(self, mock_files):
         res = self.view.get_object()
         nt.assert_is_instance(res, dict)
         nt.assert_equal(res['pk'], self.dr1._id)
+
+    def test_no_user_permissions_raises_error(self):
+        request = RequestFactory().get(self.url)
+        request.user = self.user
+
+        with nt.assert_raises(PermissionDenied):
+            self.plain_view.as_view()(request, draft_pk=self.dr1._id)
+
+    @mock.patch('admin.pre_reg.views.DraftDetailView.checkout_files')
+    def test_correct_view_permissions(self, mock_files):
+        view_permission = Permission.objects.get(codename='view_prereg')
+        self.user.user_permissions.add(view_permission)
+        self.user.save()
+
+        request = RequestFactory().get(self.url)
+        request.user = self.user
+
+        response = self.plain_view.as_view()(request, draft_pk=self.dr1._id)
+        nt.assert_equal(response.status_code, 200)
 
 
 class TestDraftFormView(AdminTestCase):
@@ -101,8 +144,8 @@ class TestDraftFormView(AdminTestCase):
         self.dr1.submit_for_review(self.user, {}, save=True)
         self.dr1.flags  # sets flags if there aren't any yet.
         self.request = RequestFactory().get('/fake_path')
-        self.view = DraftFormView()
-        self.view = setup_view(self.view, self.request, draft_pk=self.dr1._id)
+        self.plain_view = DraftFormView
+        self.view = setup_view(self.plain_view(), self.request, draft_pk=self.dr1._id)
 
         self.post = RequestFactory().post('/fake_path')
         self.post.user = UserFactory()
@@ -111,6 +154,7 @@ class TestDraftFormView(AdminTestCase):
             'notes': 'Far between',
             'proof_of_publication': 'approved',
         }
+        self.url = reverse('pre_reg:view_draft', kwargs={'draft_pk': self.dr1._id})
 
     def test_dispatch_raise_404(self):
         view = setup_view(DraftFormView(), self.request, draft_pk='wrong')
@@ -179,6 +223,35 @@ class TestDraftFormView(AdminTestCase):
         nt.assert_true(mock_reject.called)
         nt.assert_equal(count + 1, AdminLogEntry.objects.count())
 
+    def test_no_user_permissions_raises_error(self):
+        request = RequestFactory().get(self.url)
+        request.user = self.user
+
+        with nt.assert_raises(PermissionDenied):
+            self.plain_view.as_view()(request, draft_pk=self.dr1._id)
+
+    def test_get_correct_view_permissions(self):
+        view_permission = Permission.objects.get(codename='view_prereg')
+        self.user.user_permissions.add(view_permission)
+        self.user.save()
+
+        request = RequestFactory().get(self.url)
+        request.user = self.user
+
+        response = self.plain_view.as_view()(request, draft_pk=self.dr1._id)
+        nt.assert_equal(response.status_code, 200)
+
+    def test_post_correct_view_permissions(self):
+        view_permission = Permission.objects.get(codename='view_prereg')
+        self.user.user_permissions.add(view_permission)
+        self.user.save()
+
+        request = RequestFactory().get(self.url)
+        request.user = self.user
+
+        response = self.plain_view.as_view()(request, draft_pk=self.dr1._id)
+        nt.assert_equal(response.status_code, 200)
+
 
 class TestCommentUpdateView(AdminTestCase):
     def setUp(self):
@@ -192,8 +265,10 @@ class TestCommentUpdateView(AdminTestCase):
         self.dr1.submit_for_review(self.user, {}, save=True)
         self.request = RequestFactory().post('/fake_path', data={'blah': 'arg'})
         self.request.user = UserFactory()
-        self.view = CommentUpdateView()
-        self.view = setup_view(self.view, self.request, draft_pk=self.dr1._id)
+        self.plain_view = CommentUpdateView
+        self.view = setup_view(self.plain_view(), self.request, draft_pk=self.dr1._id)
+
+        self.url = reverse('pre_reg:comment', kwargs={'draft_pk': self.dr1._id})
 
     @mock.patch('admin.pre_reg.views.json.loads')
     @mock.patch('admin.pre_reg.views.DraftRegistration.update_metadata')
@@ -201,6 +276,13 @@ class TestCommentUpdateView(AdminTestCase):
         count = AdminLogEntry.objects.count()
         self.view.post(self.request)
         nt.assert_equal(AdminLogEntry.objects.count(), count + 1)
+
+    def test_no_user_permissions_raises_error(self):
+        request = RequestFactory().get(self.url)
+        request.user = self.user
+
+        with nt.assert_raises(PermissionDenied):
+            self.plain_view.as_view()(request, draft_pk=self.dr1._id)
 
 
 class TestPreregFiles(AdminTestCase):
@@ -291,7 +373,7 @@ class TestPreregFiles(AdminTestCase):
 
     def test_get_meta_data_files(self):
         for item in get_metadata_files(self.draft):
-            nt.assert_in(type(item), [OsfStorageFile, StoredFileNode])
+            nt.assert_in(type(item), [OsfStorageFile, OsfStorageFileNode])
 
     def test_get_file_questions(self):
         questions = get_file_questions('prereg-prize.json')
@@ -314,14 +396,14 @@ class TestPreregFiles(AdminTestCase):
         data['q7']['value']['uploader']['extra'][0].pop('fileId')
         self.draft.update_metadata(data)
         for item in get_metadata_files(self.draft):
-            nt.assert_in(type(item), [OsfStorageFile, StoredFileNode])
+            nt.assert_in(type(item), [OsfStorageFile, OsfStorageFileNode])
 
     def test_file_id_missing_odd(self):
         data = self.draft.registration_metadata
         data['q26']['extra'][0].pop('fileId')
         self.draft.update_metadata(data)
         for item in get_metadata_files(self.draft):
-            nt.assert_in(type(item), [OsfStorageFile, StoredFileNode])
+            nt.assert_in(type(item), [OsfStorageFile, OsfStorageFileNode])
 
     def test_wrong_provider(self):
         data = self.draft.registration_metadata

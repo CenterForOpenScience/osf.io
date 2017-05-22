@@ -5,7 +5,7 @@ from modularodm import Q
 
 from framework.auth.decorators import must_be_logged_in
 
-from website.models import CitationStyle
+from osf.models.citation import CitationStyle
 from website.project.decorators import (
     must_have_addon, must_be_addon_authorizer,
     must_have_permission, must_not_be_registration,

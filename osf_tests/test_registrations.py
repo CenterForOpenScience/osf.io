@@ -378,8 +378,9 @@ class TestNodeSanctionStates:
         registration = Registration.find_one(Q('retraction', 'eq', retraction))
         assert registration.is_retracted
 
+    @mock.patch('website.project.tasks.on_registration_updated')
     @mock.patch('osf.models.node.AbstractNode.update_search')
-    def test_is_retracted_searches_parents(self, mock_update_search):
+    def test_is_retracted_searches_parents(self, mock_registration_updated, mock_update_search):
         user = factories.UserFactory()
         node = factories.ProjectFactory(creator=user)
         child = factories.NodeFactory(creator=user, parent=node)

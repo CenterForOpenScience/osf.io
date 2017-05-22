@@ -72,6 +72,11 @@ DOMAIN = PROTOCOL + 'localhost:5000/'
 INTERNAL_DOMAIN = DOMAIN
 API_DOMAIN = PROTOCOL + 'localhost:8000/'
 
+PREPRINT_PROVIDER_DOMAINS = {
+    'enabled': False,
+    'prefix': PROTOCOL,
+    'suffix': '/'
+}
 # External Ember App Local Development
 USE_EXTERNAL_EMBER = False
 EXTERNAL_EMBER_APPS = {}
@@ -338,6 +343,7 @@ LOW_PRI_MODULES = {
     'framework.analytics.tasks',
     'framework.celery_tasks',
     'scripts.osfstorage.usage_audit',
+    'scripts.stuck_registration_audit',
     'scripts.osfstorage.glacier_inventory',
     'scripts.analytics.tasks',
     'scripts.osfstorage.files_audit',
@@ -421,6 +427,7 @@ CELERY_IMPORTS = (
 #     'scripts.osfstorage.glacier_inventory',
 #     'scripts.osfstorage.glacier_audit',
 #     'scripts.osfstorage.usage_audit',
+#     'scripts.stuck_registration_audit',
 #     'scripts.osfstorage.files_audit',
 #     'scripts.analytics.tasks',
 #     'scripts.analytics.upload',
@@ -519,6 +526,11 @@ else:
     #         'task': 'scripts.osfstorage.usage_audit',
     #         'schedule': crontab(minute=0, hour=0),  # Daily 12 a.m
     #         'kwargs': {'send_mail': True},
+    #     },
+    #     'stuck_registration_audit': {
+    #         'task': 'scripts.stuck_registration_audit',
+    #         'schedule': crontab(minute=0, hour=6),  # Daily 6 a.m
+    #         'kwargs': {},
     #     },
     #     'glacier_inventory': {
     #         'task': 'scripts.osfstorage.glacier_inventory',
@@ -1783,8 +1795,12 @@ INSTITUTION_DISPLAY_NODE_THRESHOLD = 5
 CAMPAIGN_REFRESH_THRESHOLD = 5 * 60  # 5 minutes in seconds
 
 
-# sitemap default settings
+AWS_ACCESS_KEY_ID = None
+AWS_SECRET_ACCESS_KEY = None
 
+# sitemap default settings
+SITEMAP_TO_S3 = False
+SITEMAP_AWS_BUCKET = None
 SITEMAP_URL_MAX = 25000
 SITEMAP_INDEX_MAX = 50000
 SITEMAP_STATIC_URLS = [
@@ -1804,3 +1820,10 @@ SITEMAP_NODE_CONFIG = OrderedDict([('loc', ''), ('lastmod', ''), ('changefreq', 
 SITEMAP_REGISTRATION_CONFIG = OrderedDict([('loc', ''), ('lastmod', ''), ('changefreq', 'never'), ('priority', '0.5')])
 SITEMAP_PREPRINT_CONFIG = OrderedDict([('loc', ''), ('lastmod', ''), ('changefreq', 'yearly'), ('priority', '0.5')])
 SITEMAP_PREPRINT_FILE_CONFIG = OrderedDict([('loc', ''), ('lastmod', ''), ('changefreq', 'yearly'), ('priority', '0.5')])
+
+CUSTOM_CITATIONS = {
+    'bluebook-law-review': 'bluebook',
+    'bluebook2': 'bluebook',
+    'bluebook-inline': 'bluebook'
+}
+PREPRINTS_ASSETS = '/static/img/preprints_assets/'

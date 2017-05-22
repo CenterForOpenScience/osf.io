@@ -14,7 +14,8 @@ from framework import status
 from framework.utils import iso8601format
 from framework.flask import redirect
 from framework.auth.decorators import must_be_logged_in, collect_auth
-from framework.exceptions import HTTPError, PermissionsError
+from framework.exceptions import HTTPError
+from osf.models.nodelog import NodeLog
 
 from website import language
 
@@ -28,7 +29,6 @@ from website.project.decorators import (
     must_be_valid_project,
     must_have_permission,
     must_not_be_registration,
-    http_error_if_disk_saving_mode
 )
 from website.tokens import process_token_or_pass
 from website.util.permissions import ADMIN, READ, WRITE, CREATOR_PERMISSIONS
@@ -235,24 +235,6 @@ def project_before_template(auth, node, **kwargs):
                 prompts.append(addon.to_json(auth.user)['addon_full_name'])
 
     return {'prompts': prompts}
-
-
-@must_be_logged_in
-@must_be_valid_project
-@http_error_if_disk_saving_mode
-def node_fork_page(auth, node, **kwargs):
-    try:
-        fork = node.fork_node(auth)
-    except PermissionsError:
-        raise HTTPError(
-            http.FORBIDDEN,
-            redirect_url=node.url
-        )
-    message = '{} has been successfully forked.'.format(
-        node.project_or_component.capitalize()
-    )
-    status.push_status_message(message, kind='success', trust=False)
-    return fork.url
 
 
 @must_be_valid_project
@@ -615,6 +597,21 @@ def remove_private_link(*args, **kwargs):
         link = PrivateLink.load(link_id)
         link.is_deleted = True
         link.save()
+
+        for node in link.nodes.all():
+            log_dict = {
+                'project': node.parent_id,
+                'node': node._id,
+                'user': kwargs.get('auth').user._id,
+                'anonymous_link': link.anonymous,
+            }
+
+            node.add_log(
+                NodeLog.VIEW_ONLY_LINK_REMOVED,
+                log_dict,
+                auth=kwargs.get('auth', None)
+            )
+
     except ModularOdmException:
         raise HTTPError(http.NOT_FOUND)
 
@@ -711,6 +708,7 @@ def _view_project(node, auth, primary=False,
             'is_retracted': node.is_retracted,
             'is_pending_retraction': node.is_pending_retraction,
             'retracted_justification': getattr(node.retraction, 'justification', None),
+            'date_retracted': iso8601format(getattr(node.retraction, 'date_retracted', None)),
             'embargo_end_date': node.embargo_end_date.strftime('%A, %b. %d, %Y') if node.embargo_end_date else False,
             'is_pending_embargo': node.is_pending_embargo,
             'is_embargoed': node.is_embargoed,
@@ -747,6 +745,7 @@ def _view_project(node, auth, primary=False,
             'contributors': list(node.contributors.values_list('guids___id', flat=True)),
             'is_preprint': node.is_preprint,
             'is_preprint_orphan': node.is_preprint_orphan,
+            'has_published_preprint': node.preprints.filter(is_published=True).exists() if node else False,
             'preprint_file_id': node.preprint_file._id if node.preprint_file else None,
             'preprint_url': node.preprint_url
         },

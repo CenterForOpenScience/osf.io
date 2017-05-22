@@ -259,8 +259,9 @@ class TestRegistrationRetractions(OsfTestCase):
         )
         self.registration = factories.RegistrationFactory(project=self.project, is_public=True)
 
+    @mock.patch('website.project.tasks.on_registration_updated')
     @mock.patch('osf.models.registrations.Registration.archiving', mock.PropertyMock(return_value=False))
-    def test_retraction_is_searchable(self):
+    def test_retraction_is_searchable(self, mock_registration_updated):
         self.registration.retract_registration(self.user)
         self.registration.retraction.state = Retraction.APPROVED
         self.registration.retraction.save()
@@ -899,7 +900,7 @@ class TestSearchFiles(OsfTestCase):
 
     def test_add_tag(self):
         file_ = self.root.append_file('That\'s How Strong My Love Is.mp3')
-        tag = Tag(_id='Redding', name='Redding')
+        tag = Tag(name='Redding')
         tag.save()
         file_.tags.add(tag)
         file_.save()
@@ -908,7 +909,7 @@ class TestSearchFiles(OsfTestCase):
 
     def test_remove_tag(self):
         file_ = self.root.append_file('I\'ve Been Loving You Too Long.mp3')
-        tag = Tag(_id='Blue', name='Blue')
+        tag = Tag(name='Blue')
         tag.save()
         file_.tags.add(tag)
         file_.save()
@@ -964,7 +965,7 @@ class TestSearchFiles(OsfTestCase):
 
     def test_file_download_url_no_guid(self):
         file_ = self.root.append_file('Timber.mp3')
-        path = OsfStorageFile.find_one( Q('node', 'eq', file_.node_id)).wrapped().path
+        path = OsfStorageFile.find_one( Q('node', 'eq', file_.node_id)).path
         deep_url = '/' + file_.node._id + '/files/osfstorage' + path + '/'
         find = query_file('Timber.mp3')['results']
         assert_not_equal(file_.path, '')

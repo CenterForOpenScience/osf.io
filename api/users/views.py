@@ -2,7 +2,7 @@
 from api.addons.views import AddonSettingsMixin
 from api.base import permissions as base_permissions
 from api.base.exceptions import Conflict, UserGone
-from api.base.filters import ListFilterMixin, ODMFilterMixin, DjangoFilterMixin
+from api.base.filters import ListFilterMixin, ODMFilterMixin, PreprintFilterMixin
 from api.base.parsers import (JSONAPIRelationshipParser,
                               JSONAPIRelationshipParserForRegularJSON)
 from api.base.serializers import AddonAccountSerializer
@@ -181,6 +181,7 @@ class UserDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, UserMixin):
         family_name        string             family name of user; for bibliographic citations
         suffix             string             suffix of user's name for bibliographic citations
         date_registered    iso8601 timestamp  timestamp when the user's account was created
+        social             dict               Dictionary of a list of social information of user
 
     ##Relationships
 
@@ -212,6 +213,9 @@ class UserDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, UserMixin):
                              "middle_names": {middle_names}, # optional
                              "family_name":  {family_name},  # optional
                              "suffix":       {suffix}        # optional
+                             "social":      {
+                                    key: [social_id]}
+                             }                               # optional
                            }
                          }
                        }
@@ -220,7 +224,8 @@ class UserDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, UserMixin):
     To update your user profile, issue a PUT request to either the canonical URL of your user resource (as given in
     `/links/self`) or to `/users/me/`.  Only the `full_name` attribute is required.  Unlike at signup, the given, middle,
     and family names will not be inferred from the `full_name`.  Currently, only `full_name`, `given_name`,
-    `middle_names`, `family_name`, and `suffix` are updateable.
+    `middle_names`, `family_name`, and `suffix` are updateable. Currently in social dicts, only the "profileWebsites"
+    accept a list with more than one items, the others key value only accept list of one item.
 
     A PATCH request issued to this endpoint will behave the same as a PUT request, but does not require `full_name` to
     be set.
@@ -529,7 +534,7 @@ class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, NodesFilterMix
         )
 
 
-class UserPreprints(JSONAPIBaseView, generics.ListAPIView, UserMixin, DjangoFilterMixin):
+class UserPreprints(JSONAPIBaseView, generics.ListAPIView, UserMixin, PreprintFilterMixin):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
@@ -544,13 +549,6 @@ class UserPreprints(JSONAPIBaseView, generics.ListAPIView, UserMixin, DjangoFilt
     serializer_class = PreprintSerializer
     view_category = 'users'
     view_name = 'user-preprints'
-
-    def postprocess_query_param(self, key, field_name, operation):
-        if field_name == 'provider':
-            operation['source_field_name'] = 'provider___id'
-
-        if field_name == 'id':
-            operation['source_field_name'] = 'guids___id'
 
     # overrides DjangoFilterMixin
     def get_default_django_query(self):
@@ -572,7 +570,7 @@ class UserPreprints(JSONAPIBaseView, generics.ListAPIView, UserMixin, DjangoFilt
         return (default_query & no_user_query)
 
     def get_queryset(self):
-        return PreprintService.objects.filter(self.get_query_from_request())
+        return PreprintService.objects.filter(self.get_query_from_request()).distinct()
 
 
 class UserInstitutions(JSONAPIBaseView, generics.ListAPIView, UserMixin):
@@ -702,7 +700,7 @@ class UserRegistrations(JSONAPIBaseView, generics.ListAPIView, UserMixin, NodeOD
             MQ('contributors', 'eq', user)
         )
         permission_query = MQ('is_public', 'eq', True)
-        if not current_user.is_anonymous():
+        if not current_user.is_anonymous:
             permission_query = (permission_query | MQ('contributors', 'eq', current_user))
         query = query & permission_query
         return query

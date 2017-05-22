@@ -39,10 +39,6 @@ googledrive_deauthorize_node = generic_views.deauthorize_node(
     SHORT_NAME
 )
 
-googledrive_root_folder = generic_views.root_folder(
-    SHORT_NAME
-)
-
 @must_have_addon(SHORT_NAME, 'node')
 @must_be_addon_authorizer(SHORT_NAME)
 def googledrive_folder_list(node_addon, **kwargs):

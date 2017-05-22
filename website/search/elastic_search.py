@@ -1,3 +1,4 @@
+
 # -*- coding: utf-8 -*-
 
 from __future__ import division
@@ -21,7 +22,8 @@ from framework.mongo.utils import paginated
 from modularodm import Q
 from osf.models import AbstractNode as Node
 from osf.models import OSFUser as User
-from osf.models import FileNode
+from osf.models import BaseFileNode
+from osf.models import Institution
 from website import settings
 from website.filters import gravatar
 from website.project.licenses import serialize_node_license_record
@@ -49,7 +51,8 @@ DOC_TYPE_TO_MODEL = {
     'project': Node,
     'registration': Node,
     'user': User,
-    'file': FileNode,
+    'file': BaseFileNode,
+    'institution': Institution
 }
 
 # Prevent tokenizing and stop word removal.
@@ -336,11 +339,11 @@ def serialize_node(node, category):
         'id': node._id,
         'contributors': [
             {
-                'fullname': x.fullname,
-                'url': x.profile_url if x.is_active else None
+                'fullname': x['fullname'],
+                'url': '/{}/'.format(x['guids___id']) if x['is_active'] else None
             }
-            for x in node.visible_contributors
-            if x is not None
+            for x in node._contributors.filter(contributor__visible=True).order_by('contributor___order')
+            .values('fullname', 'guids___id', 'is_active')
         ],
         'title': node.title,
         'normalized_title': normalized_title,
@@ -365,11 +368,9 @@ def serialize_node(node, category):
         'extra_search_terms': clean_splitters(node.title),
     }
     if not node.is_retracted:
-        for wiki in [
-            NodeWikiPage.load(x)
-            for x in node.wiki_pages_current.values()
-        ]:
-            elastic_document['wikis'][wiki.page_name] = wiki.raw_text(node)
+        for wiki in NodeWikiPage.objects.filter(guids___id__in=node.wiki_pages_current.values()):
+            # '.' is not allowed in field names in ES2
+            elastic_document['wikis'][wiki.page_name.replace('.', ' ')] = wiki.raw_text(node)
 
     return elastic_document
 
@@ -418,11 +419,10 @@ def serialize_contributors(node):
     return {
         'contributors': [
             {
-                'fullname': user.fullname,
-                'url': user.profile_url if user.is_active else None
-            } for user in node.visible_contributors
-            if user is not None
-            and user.is_active
+                'fullname': x['user__fullname'],
+                'url': '/{}/'.format(x['user__guids___id'])
+            } for x in
+            node.contributor_set.filter(visible=True, user__is_active=True).order_by('_order').values('user__fullname', 'user__guids___id')
         ]
     }
 
@@ -581,6 +581,9 @@ def create_index(index=None):
                     'properties': {
                         'id': NOT_ANALYZED_PROPERTY,
                         'name': NOT_ANALYZED_PROPERTY,
+                        # Elasticsearch automatically infers mappings from content-type. `year` needs to
+                        # be explicitly mapped as a string to allow date ranges, which break on the inferred type
+                        'year': {'type': 'string'},
                     }
                 }
             }

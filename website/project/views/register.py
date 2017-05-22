@@ -252,6 +252,13 @@ def _get_or_create_identifiers(node):
         }
 
 
+def osf_admin_change_status_identifier(node, status):
+    if node.get_identifier_value('doi') and node.get_identifier_value('ark'):
+        doi, metadata = _build_ezid_metadata(node)
+        client = EzidClient(settings.EZID_USERNAME, settings.EZID_PASSWORD)
+        client.change_status_identifier(status, doi, metadata)
+
+
 @must_be_valid_project
 @must_be_contributor_or_public
 def node_identifiers_get(node, **kwargs):

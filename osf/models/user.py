@@ -137,7 +137,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         'twitter': u'http://twitter.com/{}',
         'profileWebsites': [],
         'linkedIn': u'https://www.linkedin.com/{}',
-        'impactStory': u'https://impactstory.org/{}',
+        'impactStory': u'https://impactstory.org/u/{}',
         'researcherId': u'http://researcherid.com/rid/{}',
         'researchGate': u'https://researchgate.net/profile/{}',
         'academiaInstitution': u'https://{}',
@@ -498,9 +498,11 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     def has_usable_username(self):
         return '@' in self.username
 
+    @property
     def is_authenticated(self):  # Needed for django compat
         return True
 
+    @property
     def is_anonymous(self):
         return False
 
@@ -657,8 +659,8 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         user.created.filter(is_bookmark_collection=False).update(creator=self)
 
         # - file that the user has checked_out, import done here to prevent import error
-        from osf.models import FileNode
-        for file_node in FileNode.files_checked_out(user=user):
+        from osf.models import BaseFileNode
+        for file_node in BaseFileNode.files_checked_out(user=user):
             file_node.checkout = self
             file_node.save()
 
@@ -716,10 +718,15 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         """Update ``is_active`` to be consistent with the fields that
         it depends on.
         """
+        # The user can log in if they have set a password OR
+        # have a verified external ID, e.g an ORCID
+        can_login = self.has_usable_password() or (
+            'VERIFIED' in sum([each.values() for each in self.external_identity.values()], [])
+        )
         self.is_active = (
             self.is_registered and
             self.is_confirmed and
-            self.has_usable_password() and
+            can_login and
             not self.is_merged and
             not self.is_disabled
         )
@@ -821,6 +828,16 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             raise ExpiredTokenError
 
         return verification['email']
+
+    def get_unconfirmed_emails_exclude_external_identity(self):
+        """Return a list of unconfirmed emails that are not related to external identity."""
+
+        unconfirmed_emails = []
+        if self.email_verifications:
+            for token, value in self.email_verifications.iteritems():
+                if not value.get('external_identity'):
+                    unconfirmed_emails.append(value.get('email'))
+        return unconfirmed_emails
 
     @property
     def unconfirmed_email_info(self):

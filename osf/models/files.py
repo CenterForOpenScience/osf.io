@@ -10,7 +10,8 @@ from django.db import models
 from django.db.models import Manager
 from django.utils import timezone
 from modularodm.exceptions import NoResultsFound
-from typedmodels.models import TypedModel
+from typedmodels.models import TypedModel, TypedModelManager
+from include import IncludeManager
 
 from framework.analytics import get_basic_counters
 from osf.models.base import BaseModel, OptionalGuidMixin, ObjectIDMixin
@@ -23,13 +24,11 @@ from osf.utils.fields import NonNaiveDateTimeField
 from website.files import utils
 from website.files.exceptions import VersionNotFoundError
 from website.util import api_v2_url, waterbutler_api_url_for
-from osf.utils.manager import IncludeQuerySet
 
 __all__ = (
     'File',
     'Folder',
     'FileVersion',
-    'StoredFileNode',
     'BaseFileNode',
     'TrashedFileNode',
 )
@@ -38,8 +37,7 @@ PROVIDER_MAP = {}
 logger = logging.getLogger(__name__)
 
 
-class BaseFileNodeManager(Manager):
-    use_for_related_fields = True
+class BaseFileNodeManager(TypedModelManager):
 
     def get_queryset(self):
         qs = super(BaseFileNodeManager, self).get_queryset()
@@ -98,7 +96,7 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
 
     provider = models.CharField(max_length=25, blank=False, null=False, db_index=True)
 
-    name = models.TextField(blank=True, null=True)
+    name = models.TextField(blank=True)
     _path = models.TextField(blank=True, null=True)  # 1950 on prod
     _materialized_path = models.TextField(blank=True, null=True)  # 482 on staging
 
@@ -108,7 +106,9 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
 
     objects = BaseFileNodeManager()
     active = ActiveFileNodeManager()
-    _base_manager = BaseFileNodeManager()
+
+    class Meta:
+        base_manager_name = 'objects'
 
     @property
     def history(self):
@@ -162,19 +162,6 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
     def root_target_page(self):
         """The comment page type associated with StoredFileNodes."""
         return 'files'
-
-    @property
-    def stored_object(self):
-        """
-        DEPRECATED: Returns self after logging.
-        :return:
-        """
-        logger.warn('BaseFileNode.stored_object is deprecated.')
-        return self
-
-    @stored_object.setter
-    def stored_object(self, value):
-        raise DeprecatedException('BaseFileNode.stored_object is deprecated.')
 
     @classmethod
     def create(cls, **kwargs):
@@ -321,44 +308,6 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
         # TODO Switch back to head requests
         # return self.update(revision, json.loads(resp.headers['x-waterbutler-metadata']))
 
-    def update(self, revision, data, user=None):
-        """Using revision and data update all data pretaining to self
-        :param str or None revision: The revision that data points to
-        :param dict data: Metadata recieved from waterbutler
-        :returns: FileVersion
-        """
-        self.name = data['name']
-        self.materialized_path = data['materialized']
-
-        version = FileVersion(identifier=revision)
-        version.update_metadata(data, save=False)
-
-        # Transform here so it can be sortted on later
-        if data['modified'] is not None and data['modified'] != '':
-            data['modified'] = parse_date(
-                data['modified'],
-                ignoretz=True,
-                default=timezone.now()  # Just incase nothing can be parsed
-            )
-
-        # if revision is none then version is the latest version
-        # Dont save the latest information
-        if revision is not None:
-            version.save()
-            self.versions.add(version)
-        for entry in self.history:
-            if ('etag' in entry and 'etag' in data) and (entry['etag'] == data['etag']):
-                break
-        else:
-            # Insert into history if there is no matching etag
-            utils.insort(self.history, data, lambda x: x['modified'])
-
-        # Finally update last touched
-        self.last_touched = timezone.now()
-
-        self.save()
-        return version
-
     def get_download_count(self, version=None):
         """Pull the download count from the pagecounter collection
         Limit to version if specified.
@@ -377,7 +326,7 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
 
     def move_under(self, destination_parent, name=None):
         self.name = name or self.name
-        self.parent = destination_parent.stored_object
+        self.parent = destination_parent
         self._update_node(save=True)  # Trust _update_node to save us
 
         return self
@@ -404,12 +353,6 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
         if recursive and not self.is_file:
             for child in self.children:
                 child._update_node(save=save)
-
-    def wrapped(self):
-        """Wrap self in a FileNode subclass
-        """
-        logger.warn('Wrapped is deprecated.')
-        return self
 
     # TODO: Remove unused parent param
     def delete(self, user=None, parent=None, save=True, deleted_on=None):
@@ -458,11 +401,6 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
             self.node
         )
 
-
-# TODO Refactor code pointing at FileNode to point to StoredFileNode
-FileNode = StoredFileNode = BaseFileNode
-
-
 class UnableToRestore(Exception):
     pass
 
@@ -474,6 +412,48 @@ class File(models.Model):
     @property
     def kind(self):
         return 'file'
+
+    def update(self, revision, data, user=None):
+        """Using revision and data update all data pretaining to self
+        :param str or None revision: The revision that data points to
+        :param dict data: Metadata recieved from waterbutler
+        :returns: FileVersion
+        """
+        self.name = data['name']
+        self.materialized_path = data['materialized']
+
+        version = FileVersion(identifier=revision)
+        version.update_metadata(data, save=False)
+
+        # Transform here so it can be sortted on later
+        if data['modified'] is not None and data['modified'] != '':
+            data['modified'] = parse_date(
+                data['modified'],
+                ignoretz=True,
+                default=timezone.now()  # Just incase nothing can be parsed
+            )
+
+        # if revision is none then version is the latest version
+        # Dont save the latest information
+        if revision is not None:
+            version.save()
+            self.versions.add(version)
+        for entry in self.history:
+            if ('etag' in entry and 'etag' in data) and (entry['etag'] == data['etag']):
+                break
+        else:
+            # Insert into history if there is no matching etag
+            if data.get('modified'):
+                utils.insort(self.history, data, lambda x: x['modified'])
+            # If modified not included in the metadata, insert at the end of the history
+            else:
+                self.history.append(data)
+
+        # Finally update last touched
+        self.last_touched = timezone.now()
+
+        self.save()
+        return version
 
     def serialize(self):
         newest_version = self.versions.all().last()
@@ -515,6 +495,17 @@ class Folder(models.Model):
     @property
     def children(self):
         return self._children.exclude(type__in=TrashedFileNode._typedmodels_subtypes)
+
+    def update(self, revision, data, save=True, user=None):
+        """Note: User is a kwargs here because of special requirements of
+        dataverse and django
+        See dataversefile.update
+        """
+        self.name = data['name']
+        self.materialized_path = data['materialized']
+        self.last_touched = timezone.now()
+        if save:
+            self.save()
 
     def append_file(self, name, path=None, materialized_path=None, save=True):
         return self._create_child(name, File, path=path, materialized_path=materialized_path, save=save)
@@ -642,7 +633,7 @@ class FileVersion(ObjectIDMixin, BaseModel):
     metadata = DateTimeAwareJSONField(blank=True, default=dict)
     location = DateTimeAwareJSONField(default=None, blank=True, null=True, validators=[validate_location])
 
-    includable_objects = IncludeQuerySet.as_manager()
+    includable_objects = IncludeManager()
 
     @property
     def location_hash(self):

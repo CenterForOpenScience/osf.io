@@ -1,11 +1,15 @@
 import mock
 import pytest
+import urllib
 from django.core.exceptions import MultipleObjectsReturned
 
 from osf.models import Guid, NodeLicenseRecord, OSFUser
 from osf.modm_compat import Q
-from osf_tests.factories import UserFactory, NodeFactory, NodeLicenseRecordFactory, RegistrationFactory
+from osf_tests.factories import AuthUserFactory, UserFactory, NodeFactory, NodeLicenseRecordFactory, \
+    RegistrationFactory, PreprintFactory, PreprintProviderFactory
 from tests.base import OsfTestCase
+from tests.test_websitefiles import TestFile
+from website.settings import MFR_SERVER_URL, WATERBUTLER_URL
 
 @pytest.mark.django_db
 class TestGuid:
@@ -160,3 +164,157 @@ class TestResolveGuid(OsfTestCase):
             expect_errors=True,
         )
         assert res.status_code == 404
+
+    def test_resolve_guid_download_file(self):
+        pp = PreprintFactory(finish=True)
+
+        res = self.app.get(pp.url + 'download')
+        assert res.status_code == 302
+        assert '{}/v1/resources/{}/providers/{}{}?action=download&version=1&direct'.format(WATERBUTLER_URL, pp.node._id, pp.primary_file.provider, pp.primary_file.path) in res.location
+
+        res = self.app.get(pp.url + 'download/')
+        assert res.status_code == 302
+        assert '{}/v1/resources/{}/providers/{}{}?action=download&version=1&direct'.format(WATERBUTLER_URL, pp.node._id, pp.primary_file.provider, pp.primary_file.path) in res.location
+
+        res = self.app.get('/{}/download'.format(pp.primary_file.get_guid(create=True)._id))
+        assert res.status_code == 302
+        assert '{}/v1/resources/{}/providers/{}{}?action=download&version=1&direct'.format(WATERBUTLER_URL, pp.node._id, pp.primary_file.provider, pp.primary_file.path) in res.location
+
+        pp.primary_file.create_version(
+            creator=pp.node.creator,
+            location={u'folder': u'osf', u'object': u'deadbe', u'service': u'cloud'},
+            metadata={u'contentType': u'img/png', u'size': 9001}
+        )
+        pp.primary_file.save()
+
+        res = self.app.get(pp.url + 'download/')
+        assert res.status_code == 302
+        assert '{}/v1/resources/{}/providers/{}{}?action=download&version=2&direct'.format(WATERBUTLER_URL, pp.node._id, pp.primary_file.provider, pp.primary_file.path) in res.location
+
+        res = self.app.get(pp.url + 'download/?version=1')
+        assert res.status_code == 302
+        assert '{}/v1/resources/{}/providers/{}{}?action=download&version=1&direct'.format(WATERBUTLER_URL, pp.node._id, pp.primary_file.provider, pp.primary_file.path) in res.location
+
+        unpub_pp = PreprintFactory(project=self.node, is_published=False)
+        res = self.app.get(unpub_pp.url + 'download/?version=1', auth=self.node.creator.auth)
+        assert res.status_code == 302
+        assert '{}/v1/resources/{}/providers/{}{}?action=download&version=1&direct'.format(WATERBUTLER_URL, unpub_pp.node._id, unpub_pp.primary_file.provider, unpub_pp.primary_file.path) in res.location
+
+    @mock.patch('website.settings.USE_EXTERNAL_EMBER', True)
+    @mock.patch('website.settings.EXTERNAL_EMBER_APPS', {
+        'preprints': {
+            'url': '/preprints/',
+            'server': 'http://localhost:4200',
+            'path': '/preprints/'
+        },
+    })
+    def test_resolve_guid_download_file_from_emberapp_preprints(self):
+        provider = PreprintProviderFactory(_id='sockarxiv', name='Sockarxiv')
+        pp = PreprintFactory(finish=True, provider=provider)
+        assert pp.url.startswith('/preprints/sockarxiv')
+
+        res = self.app.get(pp.url + 'download')
+        assert res.status_code == 302
+        assert '{}/v1/resources/{}/providers/{}{}?action=download&version=1&direct'.format(WATERBUTLER_URL, pp.node._id, pp.primary_file.provider, pp.primary_file.path) in res.location
+
+        res = self.app.get(pp.url + 'download/')
+        assert res.status_code == 302
+        assert '{}/v1/resources/{}/providers/{}{}?action=download&version=1&direct'.format(WATERBUTLER_URL, pp.node._id, pp.primary_file.provider, pp.primary_file.path) in res.location
+
+    def test_resolve_guid_download_file_export(self):
+        pp = PreprintFactory(finish=True)
+
+        res = self.app.get(pp.url + 'download?format=asdf')
+        assert res.status_code == 302
+        assert '{}/export?format=asdf&url='.format(MFR_SERVER_URL) in res.location
+        assert '{}/v1/resources/{}/providers/{}{}%3Faction%3Ddownload'.format(urllib.quote(WATERBUTLER_URL), pp.node._id, pp.primary_file.provider, pp.primary_file.path) in res.location
+
+        res = self.app.get(pp.url + 'download/?format=asdf')
+        assert res.status_code == 302
+        assert '{}/export?format=asdf&url='.format(MFR_SERVER_URL) in res.location
+        assert '{}/v1/resources/{}/providers/{}{}%3Faction%3Ddownload'.format(urllib.quote(WATERBUTLER_URL), pp.node._id, pp.primary_file.provider, pp.primary_file.path) in res.location
+
+        res = self.app.get('/{}/download?format=asdf'.format(pp.primary_file.get_guid(create=True)._id))
+        assert res.status_code == 302
+        assert '{}/export?format=asdf&url='.format(MFR_SERVER_URL) in res.location
+        assert '{}/v1/resources/{}/providers/{}{}%3Faction%3Ddownload'.format(urllib.quote(WATERBUTLER_URL), pp.node._id, pp.primary_file.provider, pp.primary_file.path) in res.location
+
+        res = self.app.get('/{}/download/?format=asdf'.format(pp.primary_file.get_guid(create=True)._id))
+        assert res.status_code == 302
+        assert '{}/export?format=asdf&url='.format(MFR_SERVER_URL) in res.location
+        assert '{}/v1/resources/{}/providers/{}{}%3Faction%3Ddownload'.format(urllib.quote(WATERBUTLER_URL), pp.node._id, pp.primary_file.provider, pp.primary_file.path) in res.location
+
+        pp.primary_file.create_version(
+            creator=pp.node.creator,
+            location={u'folder': u'osf', u'object': u'deadbe', u'service': u'cloud'},
+            metadata={u'contentType': u'img/png', u'size': 9001}
+        )
+        pp.primary_file.save()
+
+        res = self.app.get(pp.url + 'download/?format=asdf')
+        assert res.status_code == 302
+        assert '{}/export?format=asdf&url='.format(MFR_SERVER_URL) in res.location
+        assert '{}/v1/resources/{}/providers/{}{}%3F'.format(urllib.quote(WATERBUTLER_URL), pp.node._id, pp.primary_file.provider, pp.primary_file.path) in res.location
+        quarams = res.location.split('%3F')[1].split('%26')
+        assert 'action%3Ddownload' in quarams
+        assert 'version%3D2' in quarams
+        assert 'direct' in quarams
+
+        res = self.app.get(pp.url + 'download/?format=asdf&version=1')
+        assert res.status_code == 302
+        assert '{}/export?format=asdf&url='.format(MFR_SERVER_URL) in res.location
+        assert '{}/v1/resources/{}/providers/{}{}%3F'.format(urllib.quote(WATERBUTLER_URL), pp.node._id, pp.primary_file.provider, pp.primary_file.path) in res.location
+        quarams = res.location.split('%3F')[1].split('%26')
+        assert 'action%3Ddownload' in quarams
+        assert 'version%3D1' in quarams
+        assert 'direct' in quarams
+
+        unpub_pp = PreprintFactory(project=self.node, is_published=False)
+        res = self.app.get(unpub_pp.url + 'download?format=asdf', auth=unpub_pp.node.creator.auth)
+        assert res.status_code == 302
+        assert res.status_code == 302
+        assert '{}/export?format=asdf&url='.format(MFR_SERVER_URL) in res.location
+        assert '{}/v1/resources/{}/providers/{}{}%3F'.format(urllib.quote(WATERBUTLER_URL), unpub_pp.node._id, unpub_pp.primary_file.provider, unpub_pp.primary_file.path) in res.location
+        quarams = res.location.split('%3F')[1].split('%26')
+        assert 'action%3Ddownload' in quarams
+        assert 'version%3D1' in quarams
+        assert 'direct' in quarams
+
+    def test_resolve_guid_download_file_export_same_format_optimization(self):
+        pp = PreprintFactory(filename='test.pdf', finish=True)
+
+        res = self.app.get(pp.url + 'download/?format=pdf')
+        assert res.status_code == 302
+        assert '{}/export?'.format(MFR_SERVER_URL) not in res.location
+        assert '{}/v1/resources/{}/providers/{}{}?action=download&version=1&direct'.format(WATERBUTLER_URL, pp.node._id, pp.primary_file.provider, pp.primary_file.path) in res.location
+
+    def test_resolve_guid_download_errors(self):
+        testfile = TestFile.get_or_create(self.node, 'folder/path')
+        testfile.name = 'asdf'
+        testfile.materialized_path = '/folder/path'
+        guid = testfile.get_guid(create=True)
+        testfile.save()
+        testfile.delete()
+        res = self.app.get('/{}/download'.format(guid), expect_errors=True)
+        assert res.status_code == 404
+
+        pp = PreprintFactory(is_published=False)
+
+        res = self.app.get(pp.url + 'download', expect_errors=True)
+        assert res.status_code == 404
+
+        pp.is_published = True
+        pp.save()
+        pp.node.is_public = False
+        pp.node.save()
+
+        non_contrib = AuthUserFactory()
+
+        res = self.app.get(pp.url + 'download', auth=non_contrib.auth, expect_errors=True)
+        assert res.status_code == 403
+
+        pp.node.is_deleted = True
+        pp.node.save()
+
+        res = self.app.get(pp.url + 'download', auth=non_contrib.auth, expect_errors=True)
+        assert res.status_code == 410

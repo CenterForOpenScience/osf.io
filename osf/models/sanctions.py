@@ -19,6 +19,7 @@ from website.exceptions import (
     InvalidSanctionApprovalToken,
     NodeStateError,
 )
+from website.project import tasks as project_tasks
 
 from osf.models import MetaSchema
 from osf.models.base import BaseModel, ObjectIDMixin
@@ -559,6 +560,7 @@ class Retraction(EmailApprovableSanction):
 
     initiated_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True)
     justification = models.CharField(max_length=2048, null=True, blank=True)
+    date_retracted = NonNaiveDateTimeField(null=True, blank=True)
 
     def _view_url_context(self, user_id, node):
         registration = self.registrations.first()
@@ -638,6 +640,9 @@ class Retraction(EmailApprovableSanction):
         Registration = apps.get_model('osf.Registration')
         NodeLog = apps.get_model('osf.NodeLog')
 
+        self.date_retracted = timezone.now()
+        self.save()
+
         parent_registration = Registration.find_one(Q('retraction', 'eq', self))
         parent_registration.registered_from.add_log(
             action=NodeLog.RETRACTION_APPROVED,
@@ -668,6 +673,10 @@ class Retraction(EmailApprovableSanction):
         for node in parent_registration.node_and_primary_descendants():
             node.set_privacy('public', auth=None, save=True, log=False)
             node.update_search()
+        if osf_settings.SHARE_URL and osf_settings.SHARE_API_TOKEN:
+            # force a save before sending data to share or retraction will not be updated
+            self.save()
+            project_tasks.on_registration_updated(parent_registration)
 
     def approve_retraction(self, user, token):
         self.approve(user, token)

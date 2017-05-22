@@ -48,7 +48,3 @@ box_set_config = generic_views.set_config(
 box_deauthorize_node = generic_views.deauthorize_node(
     SHORT_NAME
 )
-
-box_root_folder = generic_views.root_folder(
-    SHORT_NAME
-)

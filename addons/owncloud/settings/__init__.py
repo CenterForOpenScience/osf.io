@@ -6,4 +6,3 @@ try:
     from addons.owncloud.settings.local import *  # noqa
 except ImportError as error:
     logger.warn('No local.py settings file found')
-

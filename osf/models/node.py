@@ -17,7 +17,8 @@ from django.utils import timezone
 from django.utils.functional import cached_property
 from keen import scoped_keys
 from psycopg2._psycopg import AsIs
-from typedmodels.models import TypedModel
+from typedmodels.models import TypedModel, TypedModelManager
+from include import IncludeQuerySet, IncludeManager
 
 from framework import status
 from framework.celery_tasks.handlers import enqueue_task
@@ -45,7 +46,6 @@ from osf.modm_compat import Q
 from osf.utils.auth import Auth, get_user
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import NonNaiveDateTimeField
-from osf.utils.manager import IncludeQuerySet
 from website import language, settings
 from website.citations.utils import datetime_to_csl
 from website.exceptions import (InvalidTagError, NodeStateError,
@@ -153,6 +153,35 @@ class AbstractNodeQuerySet(MODMCompatibilityQuerySet, IncludeQuerySet):
 
         return qs.distinct()
 
+class AbstractNodeManager(TypedModelManager, IncludeManager):
+
+    def get_queryset(self):
+        qs = AbstractNodeQuerySet(self.model, using=self._db)
+        # Filter by typedmodels type
+        return self._filter_by_type(qs)
+
+    # MODMCompatibilityQuerySet methods
+
+    def eager(self, *fields):
+        return self.get_queryset().eager(*fields)
+
+    def sort(self, *fields):
+        return self.get_queryset().sort(*fields)
+
+    def limit(self, n):
+        return self.get_queryset().limit(n)
+
+    # AbstractNodeQuerySet methods
+
+    def get_roots(self):
+        return self.get_queryset().get_roots()
+
+    def get_children(self, root, active=False):
+        return self.get_queryset().get_children(root, active=active)
+
+    def can_view(self, user=None, private_link=None):
+        return self.get_queryset().can_view(user=user, private_link=private_link)
+
 
 class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixin,
                    NodeLinkMixin, CommentableMixin, SpamMixin,
@@ -192,18 +221,13 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         'title',
         'category',
         'description',
-        'visible_contributor_ids',
-        'tags',
         'is_fork',
-        'is_registration',
         'retraction',
         'embargo',
         'is_public',
         'is_deleted',
         'wiki_pages_current',
-        'is_retracted',
         'node_license',
-        'affiliated_institutions',
         'preprint_file',
     }
 
@@ -302,9 +326,10 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                                     related_name='parent_nodes')
 
     class Meta:
+        base_manager_name = 'objects'
         index_together = (('is_public', 'is_deleted', 'type'))
 
-    objects = AbstractNodeQuerySet.as_manager()
+    objects = AbstractNodeManager()
 
     @cached_property
     def parent_node(self):
@@ -690,6 +715,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             raise UserNotAffiliatedError('User is not affiliated with {}'.format(inst.name))
         if not self.is_affiliated_with_institution(inst):
             self.affiliated_institutions.add(inst)
+            self.update_search()
         if log:
             NodeLog = apps.get_model('osf.NodeLog')
 
@@ -722,6 +748,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 )
             if save:
                 self.save()
+            self.update_search()
             return True
         return False
 
@@ -1118,7 +1145,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 project_signals.contributor_added.send(self,
                                                        contributor=contributor,
                                                        auth=auth, email_template=send_email)
-
+            self.update_search()
             return contrib_to_add, True
 
         # Permissions must be overridden if changed when contributor is
@@ -1210,6 +1237,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             contributor = OSFUser.load(user_id)
             if not contributor:
                 raise ValueError('User with id {} was not found.'.format(user_id))
+            if contributor.is_disabled:
+                raise ValidationValueError('Deactivated users cannot be added as contributors.')
             if self.contributor_set.filter(user=contributor).exists():
                 raise ValidationValueError('{} is already a contributor.'.format(contributor.fullname))
             contributor, _ = self.add_contributor(contributor=contributor, auth=auth, visible=bibliographic,
@@ -1333,7 +1362,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             )
 
         self.save()
-
+        self.update_search()
         # send signal to remove this user from project subscriptions
         project_signals.contributor_removed.send(self, user=contributor)
 
@@ -1941,9 +1970,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
         # After fork callback
         for addon in original.get_addons():
-            _, message = addon.after_fork(original, forked, user)
-            if message:
-                status.push_status_message(message, kind='info', trust=True)
+            addon.after_fork(original, forked, user)
 
         return forked
 

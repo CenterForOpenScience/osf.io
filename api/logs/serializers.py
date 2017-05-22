@@ -36,7 +36,7 @@ class NodeLogFileParamsSerializer(RestrictedDictSerializer):
         user = self.context['request'].user
         node_title = obj['node']['title']
         node = Node.load(obj['node']['_id'])
-        if not user.is_authenticated():
+        if not user.is_authenticated:
             if node.is_public:
                 return node_title
         elif node.has_permission(user, osf_permissions.READ):
@@ -87,6 +87,7 @@ class NodeLogParamsSerializer(RestrictedDictSerializer):
     wiki = ser.DictField(read_only=True)
     citation_name = ser.CharField(read_only=True, source='citation.name')
     institution = NodeLogInstitutionSerializer(read_only=True)
+    anonymous_link = ser.BooleanField(read_only=True)
 
     def get_view_url(self, obj):
         urls = obj.get('urls', None)

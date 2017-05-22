@@ -85,7 +85,7 @@ class CorsMiddleware(corsheaders.middleware.CorsMiddleware):
         not_found = super(CorsMiddleware, self).origin_not_found_in_white_lists(origin, url)
         if not_found:
             # Check if origin is in the dynamic Institutions whitelist
-            if url.netloc.lower() in api_settings.INSTITUTION_ORIGINS_WHITELIST:
+            if url.netloc.lower() in api_settings.ORIGINS_WHITELIST:
                 return
             # Check if a cross-origin request using the Authorization header
             elif not self._context.request.COOKIES:

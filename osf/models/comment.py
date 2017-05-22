@@ -92,8 +92,8 @@ class Comment(GuidMixin, SpamMixin, CommentableMixin, BaseModel):
         if not auth and not self.node.is_public:
             raise PermissionsError
 
-        if self.is_deleted and ((not auth or auth.user.is_anonymous()) or
-                                (auth and not auth.user.is_anonymous() and self.user._id != auth.user._id)):
+        if self.is_deleted and ((not auth or auth.user.is_anonymous) or
+                                (auth and not auth.user.is_anonymous and self.user._id != auth.user._id)):
             return None
 
         return self.content

@@ -1,4 +1,5 @@
 from datetime import datetime
+from collections import OrderedDict
 
 from django.core.urlresolvers import resolve, reverse
 from modularodm import Q
@@ -6,7 +7,7 @@ import furl
 import pytz
 
 from framework.auth.core import Auth, User
-from osf.models import FileNode
+from osf.models import BaseFileNode
 from rest_framework import serializers as ser
 from website import settings
 from website.project.model import Comment
@@ -48,11 +49,11 @@ class CheckoutField(ser.HyperlinkedRelatedField):
 
         super(CheckoutField, self).__init__('users:user-detail', **kwargs)
 
-    def resolve(self, resource, request):
+    def resolve(self, resource, field_name, request):
         """
         Resolves the view when embedding.
         """
-        embed_value = resource.stored_object.checkout._id
+        embed_value = resource.checkout._id
         return resolve(
             reverse(
                 self.view_name,
@@ -62,6 +63,28 @@ class CheckoutField(ser.HyperlinkedRelatedField):
                 }
             )
         )
+
+    def get_choices(self, cutoff=None):
+        """Most of this was copied and pasted from rest_framework's RelatedField -- we needed to pass the
+        correct value of a user's pk as a choice, while avoiding our custom implementation of `to_representation`
+        which returns a dict for JSON API purposes.
+        """
+        queryset = self.get_queryset()
+        if queryset is None:
+            # Ensure that field.choices returns something sensible
+            # even when accessed with a read-only field.
+            return {}
+
+        if cutoff is not None:
+            queryset = queryset[:cutoff]
+
+        return OrderedDict([
+            (
+                item.pk,
+                self.display_value(item)
+            )
+            for item in queryset
+        ])
 
     def get_queryset(self):
         return User.find(Q('_id', 'eq', self.context['request'].user._id))
@@ -197,7 +220,7 @@ class FileSerializer(JSONAPISerializer):
         elif obj.provider != 'osfstorage' and obj.history:
             mod_dt = obj.history[-1].get('modified', None)
 
-        if self.context['request'].version >= '2.2' and obj.is_file:
+        if self.context['request'].version >= '2.2' and obj.is_file and mod_dt:
             return datetime.strftime(mod_dt, '%Y-%m-%dT%H:%M:%S.%fZ')
 
         return mod_dt and mod_dt.replace(tzinfo=pytz.utc)
@@ -211,7 +234,7 @@ class FileSerializer(JSONAPISerializer):
             # earliest entry in the file history.
             creat_dt = obj.history[0].get('modified', None)
 
-        if self.context['request'].version >= '2.2' and obj.is_file:
+        if self.context['request'].version >= '2.2' and obj.is_file and creat_dt:
             return datetime.strftime(creat_dt, '%Y-%m-%dT%H:%M:%S.%fZ')
 
         return creat_dt and creat_dt.replace(tzinfo=pytz.utc)
@@ -234,12 +257,12 @@ class FileSerializer(JSONAPISerializer):
 
     def get_current_user_can_comment(self, obj):
         user = self.context['request'].user
-        auth = Auth(user if not user.is_anonymous() else None)
+        auth = Auth(user if not user.is_anonymous else None)
         return obj.node.can_comment(auth)
 
     def get_unread_comments_count(self, obj):
         user = self.context['request'].user
-        if user.is_anonymous():
+        if user.is_anonymous:
             return 0
         return Comment.find_n_unread(user=user, node=obj.node, page='files', root_id=obj.get_guid()._id)
 
@@ -251,7 +274,7 @@ class FileSerializer(JSONAPISerializer):
         return None
 
     def update(self, instance, validated_data):
-        assert isinstance(instance, FileNode), 'Instance must be a FileNode'
+        assert isinstance(instance, BaseFileNode), 'Instance must be a BaseFileNode'
         if instance.provider != 'osfstorage' and 'tags' in validated_data:
             raise Conflict('File service provider {} does not support tags on the OSF.'.format(instance.provider))
         auth = get_user_auth(self.context['request'])
@@ -324,6 +347,7 @@ class FileVersionSerializer(JSONAPISerializer):
     id = ser.CharField(read_only=True, source='identifier')
     size = ser.IntegerField(read_only=True, help_text='The size of this file at this version')
     content_type = ser.CharField(read_only=True, help_text='The mime type of this file at this verison')
+    date_created = DateByVersion(read_only=True, help_text='The date that this version was created')
     links = LinksField({
         'self': 'self_url',
         'html': 'absolute_url'

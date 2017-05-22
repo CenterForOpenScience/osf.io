@@ -6,7 +6,6 @@ import modularodm.exceptions
 from django.contrib.contenttypes.fields import (GenericForeignKey,
                                                 GenericRelation)
 from django.contrib.contenttypes.models import ContentType
-from django.contrib.postgres.fields import ArrayField
 from django.core.exceptions import MultipleObjectsReturned
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import models
@@ -161,9 +160,6 @@ class BaseModel(models.Model):
             if hasattr(field, 'cache_attr') and field.cache_attr in self.__dict__:
                 del self.__dict__[field.cache_attr]
 
-    def _natural_key(self):
-        return self.pk
-
     def clone(self):
         """Create a new, unsaved copy of this object."""
         copy = self.__class__.objects.get(pk=self.pk)
@@ -272,9 +268,6 @@ class ObjectIDMixin(BaseIDMixin):
     class Meta:
         abstract = True
 
-    def _natural_key(self):
-        return self._id
-
 
 class InvalidGuid(Exception):
     pass
@@ -288,7 +281,6 @@ class OptionalGuidMixin(BaseIDMixin):
     __guid_min_length__ = 5
 
     guids = GenericRelation(Guid, related_name='referent', related_query_name='referents')
-    guid_string = ArrayField(models.CharField(max_length=255, null=True, blank=True), null=True, blank=True)
     content_type_pk = models.PositiveIntegerField(null=True, blank=True)
 
     def __unicode__(self):
@@ -504,10 +496,7 @@ class GuidMixinQuerySet(MODMCompatibilityQuerySet):
 class GuidMixin(BaseIDMixin):
     __guid_min_length__ = 5
 
-    primary_identifier_name = 'guid_string'
-
     guids = GenericRelation(Guid, related_name='referent', related_query_name='referents')
-    guid_string = ArrayField(models.CharField(max_length=255, null=True, blank=True), null=True, blank=True)
     content_type_pk = models.PositiveIntegerField(null=True, blank=True)
 
     objects = GuidMixinQuerySet.as_manager()
@@ -515,9 +504,6 @@ class GuidMixin(BaseIDMixin):
 
     def __unicode__(self):
         return '{}'.format(self._id)
-
-    def _natural_key(self):
-        return self.guid_string
 
     @cached_property
     def _id(self):
@@ -581,9 +567,3 @@ def ensure_guid(sender, instance, created, **kwargs):
             del instance._prefetched_objects_cache['guids']
         Guid.objects.create(object_id=instance.pk, content_type=ContentType.objects.get_for_model(instance),
                             _id=generate_guid(instance.__guid_min_length__))
-    elif not existing_guids.exists() and instance.guid_string is not None:
-        # Clear query cache of instance.guids
-        if has_cached_guids:
-            del instance._prefetched_objects_cache['guids']
-        Guid.objects.create(object_id=instance.pk, content_type_id=instance.content_type_pk,
-                            _id=instance.guid_string)

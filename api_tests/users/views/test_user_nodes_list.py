@@ -125,8 +125,7 @@ class TestUserNodesPreprintsFiltering(ApiTestCase):
         self.valid_preprint = PreprintFactory(project=self.valid_preprint_node)
         self.abandoned_preprint = PreprintFactory(project=self.abandoned_preprint_node, is_published=False)
         self.orphaned_preprint = PreprintFactory(project=self.orphaned_preprint_node)
-        self.orphaned_preprint.node.preprint_file.wrapped().delete()
-        self.orphaned_preprint.node.reload()  # preprint_file has been set to null
+        self.orphaned_preprint.node.preprint_file = None
         self.orphaned_preprint.node.save()
         self.url_base = '/{}users/me/nodes/?filter[preprint]='.format(API_BASE)
 

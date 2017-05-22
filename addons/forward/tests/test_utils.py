@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Tests for website.addons.forward.utils."""
+"""Tests for addons.forward.utils."""
 
 from nose.tools import assert_equal, assert_true, assert_false
 import pytest

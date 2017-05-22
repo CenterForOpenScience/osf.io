@@ -41,7 +41,7 @@ def validate_subject_hierarchy(subject_hierarchy):
         if not subject:
             raise ValidationValueError('Subject with id <{}> could not be found.'.format(subject_id))
 
-        if subject.parents.exists():
+        if subject.parent:
             continue
 
         raw_hierarchy.remove(subject_id)

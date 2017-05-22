@@ -1,10 +1,26 @@
 from addons.base.apps import BaseAddonAppConfig
 from website import settings
+from website.util import rubeus
 from addons.osfstorage import settings as addon_settings
-from addons.osfstorage import views
 
 # Ensure blinker signal listeners are connected
 import addons.osfstorage.listeners  # noqa
+
+# This is defined here to avoid `AppRegistryNotReady: Apps aren't loaded yet` errors
+def osf_storage_root(addon_config, node_settings, auth, **kwargs):
+    """Build HGrid JSON for root node. Note: include node URLs for client-side
+    URL creation for uploaded files.
+    """
+    node = node_settings.owner
+    root = rubeus.build_addon_root(
+        node_settings=node_settings,
+        name='',
+        permissions=auth,
+        user=auth.user,
+        nodeUrl=node.url,
+        nodeApiUrl=node.api_url,
+    )
+    return [root]
 
 
 class OSFStorageAddonAppConfig(BaseAddonAppConfig):
@@ -19,7 +35,7 @@ class OSFStorageAddonAppConfig(BaseAddonAppConfig):
 
     has_hgrid_files = True
 
-    get_hgrid_data = views.osf_storage_root
+    get_hgrid_data = osf_storage_root
 
     max_file_size = 5 * 1024  # 5 GB
     high_max_file_size = 5 * 1024  # 5 GB

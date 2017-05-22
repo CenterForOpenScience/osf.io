@@ -7,8 +7,7 @@ from framework.auth.decorators import must_be_signed
 
 from framework.exceptions import HTTPError
 
-from website.models import User
-from website.models import Node
+from osf.models import OSFUser as User, AbstractNode as Node
 from website.files import models
 from website.files import exceptions
 from website.project.decorators import (

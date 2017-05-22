@@ -185,7 +185,7 @@ def patch_client(target, mock_client=None):
 
     Usage: ::
 
-        with patch_client('website.addons.box.views.BoxClient') as client:
+        with patch_client('addons.box.views.BoxClient') as client:
             # test view that uses the box client.
     """
     with mock.patch(target) as client_getter:
