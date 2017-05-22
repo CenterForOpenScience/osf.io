@@ -1,8 +1,8 @@
 <%namespace name="contributor_list" file="./contributor_list.mako" />
 ## TODO: Rename summary to node
-<%def name="render_node(summary, show_path)">
+<%def name="render_node(index, summary, show_path)">
 ## TODO: Don't rely on ID
-<style >
+<style>
 
 .dropdown-menu > li > a:hover {
     background-image: none !important;
@@ -10,7 +10,7 @@
 }
 
 .quickActions {
-  padding: 3px 12px;
+  padding: 4px 12px;
   line-height: 0;
 }
 
@@ -27,7 +27,6 @@
 
 <div id="render-node">
 % if summary['can_view']:
-
     <li
             node_id="${summary['id']}"
             class="
@@ -89,10 +88,7 @@
                     <li><a tabindex="-1" href="${domain}${summary['id']}/settings/">Settings</a></li>
                     <li><a tabindex="-1" href="${domain}${summary['id']}/contributors/">Manage Contributors</a></li>
                     % if 'admin' in user['permissions']:
-                        <li><a tabindex="-1" class="deleteComponent" type="button">Delete</a></li>
-                        <script type="text/javascript">
-                            $(".deleteComponent").data("component", ${summary | sjson, n}) ;
-                        </script>
+                        <li><a tabindex="-1" data-index="${index}" class="deleteComponent" type="button">Delete</a></li>
                     % endif
                   </ul>
                 </div>
@@ -186,6 +182,7 @@
     window.contextVars = $.extend(true, {}, window.contextVars, {
       nodes : nodes
     });
+
 </script>
 
 <script type="text/javascript" src=${"/static/public/js/component-settings-page.js" | webpack_asset}></script>

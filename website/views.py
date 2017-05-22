@@ -86,6 +86,8 @@ def serialize_node_summary(node, auth, primary=True, show_path=False):
             'api_url': node.api_url,
             'title': node.title,
             'category': node.category,
+            'isPreprint': node.is_preprint,
+            'childExists': bool(node.nodes_active),
             'node_type': node.project_or_component,
             'is_fork': node.is_fork,
             'is_registration': node.is_registration,

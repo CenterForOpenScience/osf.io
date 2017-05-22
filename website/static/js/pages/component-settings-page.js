@@ -13,7 +13,10 @@ $(document).ready(function() {
   //Project overview >> Component Widget >> Event/Click handler for componentQuickActions menu item: Delete.
   $(".deleteComponent").each( function() {
     $(this).off().on('click', function(e) {
-      var {node_type, api_url, isPreprint, childExists} = $(this).data('component');
+      var componentIndex = $(this).data('index');
+      var component = window.contextVars.nodes[componentIndex]['node'];
+
+      var {node_type, api_url, isPreprint, childExists} = component;
 
       if(childExists){
         $osf.growl(
@@ -21,7 +24,7 @@ $(document).ready(function() {
           'Any child components must be deleted prior to deleting this component.',
           'danger',
           30000
-        );
+        )
       }else{
         getConfirmationCode(
           node_type,
