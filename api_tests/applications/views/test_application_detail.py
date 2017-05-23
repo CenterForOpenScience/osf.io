@@ -168,7 +168,7 @@ class TestApplicationDetail(object):
 
     #   test_update_application_incorrect_type
         res = self.app.put_json_api(self.user_one_app_url, self.incorrect_type, auth=self.user_one.auth, expect_errors=True)
-        assert res.status_code == 404
+        assert res.status_code == 409
 
     #   test_update_application_incorrect_id
         res = self.app.put_json_api(self.user_one_app_url, self.incorrect_id, auth=self.user_one.auth, expect_errors=True)
