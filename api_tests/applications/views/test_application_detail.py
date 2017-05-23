@@ -1,11 +1,11 @@
+import pytest
 import mock
-
-from nose.tools import *  # flake8: noqa
 
 from website.models import ApiOAuth2Application, User
 from website.util import api_v2_url
-
 from tests.base import ApiTestCase
+from api_tests.utils import assert_dict_contains_subset
+from tests.json_api_test_app import JSONAPITestApp
 from osf_tests.factories import ApiOAuth2ApplicationFactory, AuthUserFactory
 
 
@@ -18,16 +18,16 @@ def _get_application_list_url():
     path = "applications/"
     return api_v2_url(path, base_route='/')
 
+@pytest.mark.django_db
+class TestApplicationDetail(object):
 
-class TestApplicationDetail(ApiTestCase):
+    @pytest.fixture(autouse=True)
     def setUp(self):
-        super(TestApplicationDetail, self).setUp()
-
-        self.user1 = AuthUserFactory()
-        self.user2 = AuthUserFactory()
-
-        self.user1_app = ApiOAuth2ApplicationFactory(owner=self.user1)
-        self.user1_app_url = _get_application_detail_route(self.user1_app)
+        self.app = JSONAPITestApp()
+        self.user_one = AuthUserFactory()
+        self.user_two = AuthUserFactory()
+        self.user_one_app = ApiOAuth2ApplicationFactory(owner=self.user_one)
+        self.user_one_app_url = _get_application_detail_route(self.user_one_app)
 
         self.missing_id = {
             'data': {
@@ -42,7 +42,7 @@ class TestApplicationDetail(ApiTestCase):
 
         self.missing_type = {
             'data': {
-                'id': self.user1_app.client_id,
+                'id': self.user_one_app.client_id,
                 'attributes': {
                     'name': 'A shiny new application',
                     'home_url': 'http://osf.io',
@@ -65,7 +65,7 @@ class TestApplicationDetail(ApiTestCase):
 
         self.incorrect_type = {
             'data': {
-                'id': self.user1_app.client_id,
+                'id': self.user_one_app.client_id,
                 'type': 'Wrong type.',
                 'attributes': {
                     'name': 'A shiny new application',
@@ -77,7 +77,7 @@ class TestApplicationDetail(ApiTestCase):
 
         self.correct = {
             'data': {
-                'id': self.user1_app.client_id,
+                'id': self.user_one_app.client_id,
                 'type': 'applications',
                 'attributes': {
                     'name': 'A shiny new application',
@@ -88,129 +88,128 @@ class TestApplicationDetail(ApiTestCase):
         }
 
     def test_owner_can_view(self):
-        res = self.app.get(self.user1_app_url, auth=self.user1.auth)
-        assert_equal(res.status_code, 200)
-        assert_equal(res.json['data']['attributes']['client_id'], self.user1_app.client_id)
+        res = self.app.get(self.user_one_app_url, auth=self.user_one.auth)
+        assert res.status_code == 200
+        assert res.json['data']['attributes']['client_id'] == self.user_one_app.client_id
 
     def test_non_owner_cant_view(self):
-        res = self.app.get(self.user1_app_url, auth=self.user2.auth, expect_errors=True)
-        assert_equal(res.status_code, 403)
+        res = self.app.get(self.user_one_app_url, auth=self.user_two.auth, expect_errors=True)
+        assert res.status_code == 403
 
     def test_returns_401_when_not_logged_in(self):
-        res = self.app.get(self.user1_app_url, expect_errors=True)
-        assert_equal(res.status_code, 401)
+        res = self.app.get(self.user_one_app_url, expect_errors=True)
+        assert res.status_code == 401
 
     @mock.patch('framework.auth.cas.CasClient.revoke_application_tokens')
     def test_owner_can_delete(self, mock_method):
         mock_method.return_value(True)
-        res = self.app.delete(self.user1_app_url, auth=self.user1.auth)
-        assert_equal(res.status_code, 204)
+        res = self.app.delete(self.user_one_app_url, auth=self.user_one.auth)
+        assert res.status_code == 204
 
     def test_non_owner_cant_delete(self):
-        res = self.app.delete(self.user1_app_url,
-                              auth=self.user2.auth,
+        res = self.app.delete(self.user_one_app_url,
+                              auth=self.user_two.auth,
                               expect_errors=True)
-        assert_equal(res.status_code, 403)
+        assert res.status_code == 403
 
     @mock.patch('framework.auth.cas.CasClient.revoke_application_tokens')
     def test_deleting_application_makes_api_view_inaccessible(self, mock_method):
         mock_method.return_value(True)
-        res = self.app.delete(self.user1_app_url, auth=self.user1.auth)
-        res = self.app.get(self.user1_app_url, auth=self.user1.auth, expect_errors=True)
-        assert_equal(res.status_code, 404)
+        res = self.app.delete(self.user_one_app_url, auth=self.user_one.auth)
+        res = self.app.get(self.user_one_app_url, auth=self.user_one.auth, expect_errors=True)
+        assert res.status_code == 404
 
     def test_updating_one_field_should_not_blank_others_on_patch_update(self):
-        user1_app = self.user1_app
+        user_one_app = self.user_one_app
         new_name = "The instance formerly known as Prince"
-        res = self.app.patch_json_api(self.user1_app_url,
+        res = self.app.patch_json_api(self.user_one_app_url,
                              {'data': {'attributes':
                                   {'name': new_name},
-                              'id': self.user1_app.client_id,
+                              'id': self.user_one_app.client_id,
                               'type': 'applications'
-                             }}, auth=self.user1.auth, expect_errors=True)
-        user1_app.reload()
-        assert_equal(res.status_code, 200)
+                             }}, auth=self.user_one.auth, expect_errors=True)
+        user_one_app.reload()
+        assert res.status_code == 200
 
-        assert_dict_contains_subset({'client_id': user1_app.client_id,
-                                     'client_secret': user1_app.client_secret,
-                                     'owner': user1_app.owner._id,
+        assert_dict_contains_subset({'client_id': user_one_app.client_id,
+                                     'client_secret': user_one_app.client_secret,
+                                     'owner': user_one_app.owner._id,
                                      'name': new_name,
-                                     'description': user1_app.description,
-                                     'home_url': user1_app.home_url,
-                                     'callback_url': user1_app.callback_url
+                                     'description': user_one_app.description,
+                                     'home_url': user_one_app.home_url,
+                                     'callback_url': user_one_app.callback_url
                                      },
                                     res.json['data']['attributes'])
 
     def test_updating_an_instance_does_not_change_the_number_of_instances(self):
         new_name = "The instance formerly known as Prince"
-        res = self.app.patch_json_api(self.user1_app_url,
+        res = self.app.patch_json_api(self.user_one_app_url,
                                       {'data': {
                                           'attributes': {"name": new_name},
-                                          'id': self.user1_app.client_id,
-                                          'type': 'applications'}}, auth=self.user1.auth)
-        assert_equal(res.status_code, 200)
+                                          'id': self.user_one_app.client_id,
+                                          'type': 'applications'}}, auth=self.user_one.auth)
+        assert res.status_code == 200
 
         list_url = _get_application_list_url()
-        res = self.app.get(list_url, auth=self.user1.auth)
-        assert_equal(res.status_code, 200)
-        assert_equal(len(res.json['data']),
-                     1)
+        res = self.app.get(list_url, auth=self.user_one.auth)
+        assert res.status_code == 200
+        assert len(res.json['data']) == 1
 
     @mock.patch('framework.auth.cas.CasClient.revoke_application_tokens')
     def test_deleting_application_flags_instance_inactive(self, mock_method):
         mock_method.return_value(True)
-        res = self.app.delete(self.user1_app_url, auth=self.user1.auth)
-        self.user1_app.reload()
-        assert_false(self.user1_app.is_active)
+        res = self.app.delete(self.user_one_app_url, auth=self.user_one.auth)
+        self.user_one_app.reload()
+        assert not self.user_one_app.is_active
 
     def test_update_application(self):
-        res = self.app.put_json_api(self.user1_app_url, self.correct, auth=self.user1.auth, expect_errors=True)
-        assert_equal(res.status_code, 200)
+        res = self.app.put_json_api(self.user_one_app_url, self.correct, auth=self.user_one.auth, expect_errors=True)
+        assert res.status_code == 200
 
-    def test_update_application_incorrect_type(self):
-        res = self.app.put_json_api(self.user1_app_url, self.incorrect_type, auth=self.user1.auth, expect_errors=True)
-        assert_equal(res.status_code, 409)
+    #   test_update_application_incorrect_type(self):
+        res = self.app.put_json_api(self.user_one_app_url, self.incorrect_type, auth=self.user_one.auth, expect_errors=True)
+        assert res.status_code == 409
 
-    def test_update_application_incorrect_id(self):
-        res = self.app.put_json_api(self.user1_app_url, self.incorrect_id, auth=self.user1.auth, expect_errors=True)
-        assert_equal(res.status_code, 409)
+    #   test_update_application_incorrect_id(self):
+        res = self.app.put_json_api(self.user_one_app_url, self.incorrect_id, auth=self.user_one.auth, expect_errors=True)
+        assert res.status_code == 409
 
-    def test_update_application_no_type(self):
-        res = self.app.put_json_api(self.user1_app_url, self.missing_type, auth=self.user1.auth, expect_errors=True)
-        assert_equal(res.status_code, 400)
+    #   test_update_application_no_type(self):
+        res = self.app.put_json_api(self.user_one_app_url, self.missing_type, auth=self.user_one.auth, expect_errors=True)
+        assert res.status_code == 400
 
-    def test_update_application_no_id(self):
-        res = self.app.put_json_api(self.user1_app_url, self.missing_id, auth=self.user1.auth, expect_errors=True)
-        assert_equal(res.status_code, 400)
+    #   test_update_application_no_id(self):
+        res = self.app.put_json_api(self.user_one_app_url, self.missing_id, auth=self.user_one.auth, expect_errors=True)
+        assert res.status_code == 400
 
-    def test_update_application_no_attributes(self):
-        payload = {'id': self.user1_app.client_id, 'type': 'applications', 'name': 'The instance formerly known as Prince'}
-        res = self.app.put_json_api(self.user1_app_url, payload, auth=self.user1.auth, expect_errors=True)
-        assert_equal(res.status_code, 400)
+    #   test_update_application_no_attributes(self):
+        payload = {'id': self.user_one_app.client_id, 'type': 'applications', 'name': 'The instance formerly known as Prince'}
+        res = self.app.put_json_api(self.user_one_app_url, payload, auth=self.user_one.auth, expect_errors=True)
+        assert res.status_code == 400
 
-    def test_partial_update_application_incorrect_type(self):
-        res = self.app.patch_json_api(self.user1_app_url, self.incorrect_type, auth=self.user1.auth, expect_errors=True)
-        assert_equal(res.status_code, 409)
+    #   test_partial_update_application_incorrect_type(self):
+        res = self.app.patch_json_api(self.user_one_app_url, self.incorrect_type, auth=self.user_one.auth, expect_errors=True)
+        assert res.status_code == 409
 
-    def test_partial_update_application_incorrect_id(self):
-        res = self.app.patch_json_api(self.user1_app_url, self.incorrect_id, auth=self.user1.auth, expect_errors=True)
-        assert_equal(res.status_code, 409)
+    #   test_partial_update_application_incorrect_id(self):
+        res = self.app.patch_json_api(self.user_one_app_url, self.incorrect_id, auth=self.user_one.auth, expect_errors=True)
+        assert res.status_code == 409
 
-    def test_partial_update_application_no_type(self):
-        res = self.app.patch_json_api(self.user1_app_url, self.missing_type, auth=self.user1.auth, expect_errors=True)
-        assert_equal(res.status_code, 400)
+    #   test_partial_update_application_no_type(self):
+        res = self.app.patch_json_api(self.user_one_app_url, self.missing_type, auth=self.user_one.auth, expect_errors=True)
+        assert res.status_code == 400
 
-    def test_partial_update_application_no_id(self):
-        res = self.app.patch_json_api(self.user1_app_url, self.missing_id, auth=self.user1.auth, expect_errors=True)
-        assert_equal(res.status_code, 400)
+    #   test_partial_update_application_no_id(self):
+        res = self.app.patch_json_api(self.user_one_app_url, self.missing_id, auth=self.user_one.auth, expect_errors=True)
+        assert res.status_code == 400
 
-    def test_partial_update_application_no_attributes(self):
+    #   test_partial_update_application_no_attributes(self):
         payload = {
             'data':
-                {'id': self.user1_app.client_id,
+                {'id': self.user_one_app.client_id,
                  'type': 'applications',
                  'name': 'The instance formerly known as Prince'
                  }
         }
-        res = self.app.patch_json_api(self.user1_app_url, payload, auth=self.user1.auth, expect_errors=True)
-        assert_equal(res.status_code, 400)
+        res = self.app.patch_json_api(self.user_one_app_url, payload, auth=self.user_one.auth, expect_errors=True)
+        assert res.status_code == 400
