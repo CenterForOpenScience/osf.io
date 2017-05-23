@@ -1072,16 +1072,16 @@ class SparseFieldsetMixin(object):
                     if field_name not in fieldset:
                         self.fields.pop(field_name)
 
-class PrefetchRelationshipsSerializer(ser.Serializer, SparseFieldsetMixin):
+class BaseAPISerializer(ser.Serializer, SparseFieldsetMixin):
 
     def __init__(self, *args, **kwargs):
         self.parse_sparse_fields(**kwargs)
-        super(PrefetchRelationshipsSerializer, self).__init__(*args, **kwargs)
+        super(BaseAPISerializer, self).__init__(*args, **kwargs)
         self.model_field_names = [name if field.source == '*' else field.source
                                   for name, field in self.fields.iteritems()]
 
 
-class JSONAPISerializer(PrefetchRelationshipsSerializer):
+class JSONAPISerializer(BaseAPISerializer):
     """Base serializer. Requires that a `type_` option is set on `class Meta`. Also
     allows for enveloping of both single resources and collections.  Looks to nest fields
     according to JSON API spec. Relational fields must set json_api_link=True flag.
@@ -1264,7 +1264,7 @@ class JSONAPISerializer(PrefetchRelationshipsSerializer):
         return website_utils.rapply(self.validated_data, strip_html)
 
 
-class JSONAPIRelationshipSerializer(PrefetchRelationshipsSerializer):
+class JSONAPIRelationshipSerializer(BaseAPISerializer):
     """Base Relationship serializer. Requires that a `type_` option is set on `class Meta`.
     Provides a simplified serialization of the relationship, allowing for simple update request
     bodies.
@@ -1367,7 +1367,7 @@ class LinkedRegistration(JSONAPIRelationshipSerializer):
         type_ = 'linked_registrations'
 
 
-class LinkedNodesRelationshipSerializer(PrefetchRelationshipsSerializer):
+class LinkedNodesRelationshipSerializer(BaseAPISerializer):
     data = ser.ListField(child=LinkedNode())
     links = LinksField({'self': 'get_self_url',
                         'html': 'get_related_url'})
@@ -1432,7 +1432,7 @@ class LinkedNodesRelationshipSerializer(PrefetchRelationshipsSerializer):
         return self.make_instance_obj(collection)
 
 
-class LinkedRegistrationsRelationshipSerializer(PrefetchRelationshipsSerializer):
+class LinkedRegistrationsRelationshipSerializer(BaseAPISerializer):
     data = ser.ListField(child=LinkedRegistration())
     links = LinksField({'self': 'get_self_url',
                         'html': 'get_related_url'})
