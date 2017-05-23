@@ -956,7 +956,7 @@ class NodeProviderSerializer(JSONAPISerializer):
     provider = ser.CharField(read_only=True)
     files = NodeFileHyperLinkField(
         related_view='nodes:node-files',
-        related_view_kwargs={'node_id': '<node_id>', 'path': '<path>', 'provider': '<provider>'},
+        related_view_kwargs={'node_id': '<node._id>', 'path': '<path>', 'provider': '<provider>'},
         kind='folder',
         never_embed=True
     )
