@@ -97,7 +97,14 @@ class TestNodeFileLogDetail(ApiTestCase):
         self.component = NodeFactory(parent=self.node, creator=self.user_one)
 
         self.file = api_utils.create_test_file(node=self.component, user=self.user_one)
-        self.node.add_log(NodeLog.FILE_ADDED, auth=Auth(self.user_one), params={'node': self.component._id})
+        self.node.add_log(
+            NodeLog.FILE_ADDED,
+            auth=Auth(self.user_one),
+            params={
+                'node': self.component._id,
+                'params_file': '/project/{}/files/osfstorage/{}/'.format(self.component._id, self.file._id)
+            }
+        )
         self.node.add_log(
             'osf_storage_file_moved',
             auth=Auth(self.user_one),
