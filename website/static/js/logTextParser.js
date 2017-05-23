@@ -447,7 +447,7 @@ var LogPieces = {
                     's3_file_added', 's3_file_updated', 'figshare_file_added', 'checked_in', 'checked_out'];
                     if (acceptableLinkedItems.indexOf(action) !== -1 && logObject.attributes.params.urls) {
                        var viewUrl = lodashGet(logObject, 'attributes.params.urls.view', null);
-                       return lodashGet(logObject, 'attributes.params.params_file', viewURL)
+                       return lodashGet(logObject, 'attributes.params.params_file', viewURL);
                     }
                 }
                 return null;
