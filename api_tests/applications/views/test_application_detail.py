@@ -166,44 +166,44 @@ class TestApplicationDetail(object):
         res = self.app.put_json_api(self.user_one_app_url, self.correct, auth=self.user_one.auth, expect_errors=True)
         assert res.status_code == 200
 
-    #   test_update_application_incorrect_type(self):
+    #   test_update_application_incorrect_type
         res = self.app.put_json_api(self.user_one_app_url, self.incorrect_type, auth=self.user_one.auth, expect_errors=True)
-        assert res.status_code == 409
+        assert res.status_code == 404
 
-    #   test_update_application_incorrect_id(self):
+    #   test_update_application_incorrect_id
         res = self.app.put_json_api(self.user_one_app_url, self.incorrect_id, auth=self.user_one.auth, expect_errors=True)
         assert res.status_code == 409
 
-    #   test_update_application_no_type(self):
+    #   test_update_application_no_type
         res = self.app.put_json_api(self.user_one_app_url, self.missing_type, auth=self.user_one.auth, expect_errors=True)
         assert res.status_code == 400
 
-    #   test_update_application_no_id(self):
+    #   test_update_application_no_id
         res = self.app.put_json_api(self.user_one_app_url, self.missing_id, auth=self.user_one.auth, expect_errors=True)
         assert res.status_code == 400
 
-    #   test_update_application_no_attributes(self):
+    #   test_update_application_no_attributes
         payload = {'id': self.user_one_app.client_id, 'type': 'applications', 'name': 'The instance formerly known as Prince'}
         res = self.app.put_json_api(self.user_one_app_url, payload, auth=self.user_one.auth, expect_errors=True)
         assert res.status_code == 400
 
-    #   test_partial_update_application_incorrect_type(self):
+    #   test_partial_update_application_incorrect_type
         res = self.app.patch_json_api(self.user_one_app_url, self.incorrect_type, auth=self.user_one.auth, expect_errors=True)
         assert res.status_code == 409
 
-    #   test_partial_update_application_incorrect_id(self):
+    #   test_partial_update_application_incorrect_id
         res = self.app.patch_json_api(self.user_one_app_url, self.incorrect_id, auth=self.user_one.auth, expect_errors=True)
         assert res.status_code == 409
 
-    #   test_partial_update_application_no_type(self):
+    #   test_partial_update_application_no_type
         res = self.app.patch_json_api(self.user_one_app_url, self.missing_type, auth=self.user_one.auth, expect_errors=True)
         assert res.status_code == 400
 
-    #   test_partial_update_application_no_id(self):
+    #   test_partial_update_application_no_id
         res = self.app.patch_json_api(self.user_one_app_url, self.missing_id, auth=self.user_one.auth, expect_errors=True)
         assert res.status_code == 400
 
-    #   test_partial_update_application_no_attributes(self):
+    #   test_partial_update_application_no_attributes
         payload = {
             'data':
                 {'id': self.user_one_app.client_id,
