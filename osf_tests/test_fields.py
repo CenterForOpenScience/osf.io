@@ -4,7 +4,9 @@ from decimal import Decimal
 
 from django.test import TestCase
 from django.utils import timezone
-from osf.models import StoredFileNode
+from osf.models import BaseFileNode
+from tests.test_websitefiles import TestFileNode
+
 from osf.utils.datetime_aware_jsonfield import (DateTimeAwareJSONEncoder,
                                                 decode_datetime_objects)
 
@@ -71,11 +73,11 @@ class DateTimeAwareJSONFieldTests(TestCase):
         assert json_data == self.json_list_data, 'Nope'
 
     def test_list_field(self):
-        l = StoredFileNode.objects.create(history=self.json_list_data)
+        l = TestFileNode.objects.create(history=self.json_list_data)
         iden = l.id
-        assert StoredFileNode.objects.get(id=iden).history == self.json_list_data
+        assert BaseFileNode.objects.get(id=iden).history == self.json_list_data
 
     def test_dict_field(self):
-        d = StoredFileNode.objects.create(history=self.json_dict_data)
+        d = TestFileNode.objects.create(history=self.json_dict_data)
         iden = d.id
-        assert StoredFileNode.objects.get(id=iden).history == self.json_dict_data
+        assert BaseFileNode.objects.get(id=iden).history == self.json_dict_data

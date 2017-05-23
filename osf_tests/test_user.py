@@ -719,6 +719,15 @@ class TestIsActive:
         user.save()
         assert user.is_active is False
 
+    def test_user_with_unusable_password_but_verified_orcid_is_active(self, make_user):
+        user = make_user()
+        user.set_unusable_password()
+        user.save()
+        assert user.is_active is False
+        user.external_identity = {'ORCID': {'fake-orcid': 'VERIFIED'}}
+        user.save()
+        assert user.is_active is True
+
     def test_is_active_is_false_if_not_confirmed(self, make_user):
         user = make_user(date_confirmed=None)
         user.save()

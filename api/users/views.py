@@ -2,7 +2,7 @@
 from api.addons.views import AddonSettingsMixin
 from api.base import permissions as base_permissions
 from api.base.exceptions import Conflict
-from api.base.filters import ListFilterMixin, ODMFilterMixin, DjangoFilterMixin
+from api.base.filters import ListFilterMixin, ODMFilterMixin, PreprintFilterMixin
 from api.base.parsers import (JSONAPIRelationshipParser,
                               JSONAPIRelationshipParserForRegularJSON)
 from api.base.serializers import AddonAccountSerializer
@@ -515,7 +515,7 @@ class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, NodeODMFilterM
         return Node.find(self.get_query_from_request()).select_related('node_license').include('guids', 'contributor__user__guids', 'root__guids', limit_includes=10)
 
 
-class UserPreprints(JSONAPIBaseView, generics.ListAPIView, UserMixin, DjangoFilterMixin):
+class UserPreprints(JSONAPIBaseView, generics.ListAPIView, UserMixin, PreprintFilterMixin):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
@@ -530,13 +530,6 @@ class UserPreprints(JSONAPIBaseView, generics.ListAPIView, UserMixin, DjangoFilt
     serializer_class = PreprintSerializer
     view_category = 'users'
     view_name = 'user-preprints'
-
-    def postprocess_query_param(self, key, field_name, operation):
-        if field_name == 'provider':
-            operation['source_field_name'] = 'provider___id'
-
-        if field_name == 'id':
-            operation['source_field_name'] = 'guids___id'
 
     # overrides DjangoFilterMixin
     def get_default_django_query(self):

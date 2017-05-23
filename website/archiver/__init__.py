@@ -53,6 +53,7 @@ class AggregateStatResult(object):
     def __init__(self, target_id, target_name, targets=None):
         self.target_id = target_id
         self.target_name = target_name
+        targets = targets or []
         self.targets = [target for target in targets if target]
 
     def __str__(self):

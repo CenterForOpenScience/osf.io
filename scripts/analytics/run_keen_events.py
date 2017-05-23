@@ -1,3 +1,6 @@
+import django
+django.setup()
+
 from framework.celery_tasks import app as celery_app
 from scripts.analytics.base import DateAnalyticsHarness
 from scripts.analytics.node_log_events import NodeLogEvents

@@ -637,9 +637,8 @@ class TestNodeFiltering(ApiTestCase):
         orphan = PreprintFactory(creator=self.preprint.node.creator)
 
         # orphan the preprint by deleting the file
-        orphan.primary_file.delete()
-        orphan.save()
-
+        orphan.node.preprint_file = None
+        orphan.node.save()
         url = '/{}nodes/?filter[preprint]=true'.format(API_BASE)
         res = self.app.get(url, auth=self.user_one.auth)
         assert_equal(res.status_code, 200)
@@ -654,8 +653,8 @@ class TestNodeFiltering(ApiTestCase):
         orphan = PreprintFactory(creator=self.preprint.node.creator)
 
         # orphan the preprint by deleting the file
-        orphan.primary_file.delete()
-        orphan.save()
+        orphan.node.preprint_file = None
+        orphan.node.save()
         orphan.refresh_from_db()
 
         url = '/{}nodes/?filter[preprint]=false'.format(API_BASE)
