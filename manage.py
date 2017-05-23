@@ -18,4 +18,9 @@ if __name__ == '__main__':
     if os.environ.get('DJANGO_SETTINGS_MODULE') == 'admin.base.settings' and 'migrate' in sys.argv:
         raise RuntimeError('Running migrations from the admin project is disallowed.')
 
+    # Patches the naive is_sql_dirty string parse, this command was matching on columns.
+    # e.g. is_*delete*d
+    from cacheops import transaction
+    transaction.is_sql_dirty = lambda(_): False
+
     execute_from_command_line(sys.argv)
