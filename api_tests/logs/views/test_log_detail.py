@@ -102,9 +102,12 @@ class TestNodeFileLogDetail(ApiTestCase):
             auth=Auth(self.user_one),
             params={
                 'node': self.component._id,
-                'params_file': '/project/{}/files/osfstorage/{}/'.format(self.component._id, self.file._id)
-            },
-            save=True
+                'params_file': '/project/{}/files/osfstorage/{}/'.format(self.component._id, self.file._id),
+                'urls': {
+                    'download': '/project/{}/files/osfstorage/{}/?action=download'.format(self.component._id, self.file._id),
+                    'view': '/project/{}/files/osfstorage/{}/'.format(self.component._id, self.file._id)
+                }
+            }
         )
         self.node.add_log(
             'osf_storage_file_moved',
