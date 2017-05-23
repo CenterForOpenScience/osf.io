@@ -12,7 +12,7 @@ from api.base.serializers import (
     DateByVersion,
 )
 from website.project.model import Node
-from website.files.models import FileNode
+from osf.models.files import BaseFileNode
 from website.util import permissions as osf_permissions
 from framework.auth.core import User
 from website.preprints.model import PreprintService
@@ -110,7 +110,7 @@ class NodeLogParamsSerializer(RestrictedDictSerializer):
                 file_id = view.split('/')[-2]
                 provider = view.split('/')[-3]
                 try:
-                    file_node = FileNode.resolve_class(provider, FileNode.ANY).find_one(Q('_id', 'eq', file_id))
+                    file_node = BaseFileNode.resolve_class(provider, BaseFileNode.ANY).find_one(Q('_id', 'eq', file_id))
                 except NoResultsFound:
                     file_node = None
                 if file_node:
