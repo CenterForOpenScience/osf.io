@@ -15,6 +15,7 @@ from framework.utils import iso8601format
 from framework.flask import redirect
 from framework.auth.decorators import must_be_logged_in, collect_auth
 from framework.exceptions import HTTPError
+from osf.models.nodelog import NodeLog
 
 from website import language
 
@@ -596,6 +597,21 @@ def remove_private_link(*args, **kwargs):
         link = PrivateLink.load(link_id)
         link.is_deleted = True
         link.save()
+
+        for node in link.nodes.all():
+            log_dict = {
+                'project': node.parent_id,
+                'node': node._id,
+                'user': kwargs.get('auth').user._id,
+                'anonymous_link': link.anonymous,
+            }
+
+            node.add_log(
+                NodeLog.VIEW_ONLY_LINK_REMOVED,
+                log_dict,
+                auth=kwargs.get('auth', None)
+            )
+
     except ModularOdmException:
         raise HTTPError(http.NOT_FOUND)
 

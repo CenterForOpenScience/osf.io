@@ -25,6 +25,7 @@ describe('fangorn', () => {
                 'data': {
                     'provider': 'osfstorage',
                     'kind': kind,
+                    'extra': {},
                     'permissions': {
                         'edit': true
                     }
@@ -156,8 +157,17 @@ describe('fangorn', () => {
             it('cannot be dropped if target provider is dataverse', () => {
                 folder = getItem('folder');
                 folder.data.provider = 'dataverse';
+                folder.data.dataverseIsPublished = true;
                 assert.equal(Fangorn.isInvalidDropFolder(folder), true);
             });
+
+            it('can be dropped if provider dataverse and dataverse is not published', () => {
+                folder = getItem('folder');
+                folder.data.provider = 'dataverse';
+                folder.data.dataverseIsPublished = false;
+                assert.equal(Fangorn.isInvalidDropFolder(folder), false);
+            });
+
         });
 
         describe('isInvalidDropItem', () => {
@@ -194,11 +204,34 @@ describe('fangorn', () => {
                 assert.equal(Fangorn.isInvalidDropItem(folder, item, false, false), true);
             });
 
-            it('cannot be dropped if item provider is dataverse', () => {
+            it('can be dropped if item provider is dataverse and item is not published', () => {
                 folder = getItem('folder', 2);
                 item = getItem('file', 3);
                 item.data.provider = 'dataverse';
+                item.data.extra.hasPublishedVersion = false;
+                assert.equal(Fangorn.isInvalidDropItem(folder, item, false, false), false);
+            });
+
+            it('cannot be dropped if item provider is dataverse and item is published', () => {
+                folder = getItem('folder', 2);
+                item = getItem('file', 3);
+                item.data.provider = 'dataverse';
+                item.data.extra.hasPublishedVersion = true;
                 assert.equal(Fangorn.isInvalidDropItem(folder, item, false, false), true);
+            });
+
+            it('cannot be dropped if folder provider dataverse and item is a folder', () => {
+                folder = getItem('folder', 2);
+                folder.data.provider = 'dataverse';
+                item = getItem('folder', 3);
+                assert.equal(Fangorn.isInvalidDropItem(folder, item, false, false), true);
+            });
+
+            it('can be dropped if provider dataverse and item is not a folder', () => {
+                folder = getItem('folder', 2);
+                folder.data.provider = 'dataverse';
+                item = getItem('file', 3);
+                assert.equal(Fangorn.isInvalidDropItem(folder, item, false, false), false);
             });
 
             it('cannot be dropped if item inProgress is true', () => {
