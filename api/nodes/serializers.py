@@ -51,6 +51,8 @@ class NodeLicenseSerializer(BaseAPISerializer):
     copyright_holders = ser.ListField(allow_empty=True)
     year = ser.CharField(allow_blank=True)
 
+    class Meta:
+        type_ = 'node_licenses'
 
 class NodeLicenseRelationshipField(RelationshipField):
 
