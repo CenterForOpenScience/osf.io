@@ -146,7 +146,6 @@ var PublicNodes = {
 
             self.publicProjects([]);
             self.requestPending(true);
-            m.redraw();
 
             function _processResults (result){
 
@@ -159,9 +158,16 @@ var PublicNodes = {
 
                 self.currentPage(parseInt(page));
                 self.totalPages(Math.ceil(result.meta.total / result.meta.per_page));
+
+                m.redraw();
             }
 
-            var promise = m.request({method : 'GET', url : url, config: mHelpers.apiV2Config({withCredentials: window.contextVars.isOnRootDomain})});
+            var promise = m.request({
+                method : 'GET',
+                url : url,
+                background : true,
+                config: mHelpers.apiV2Config({withCredentials: window.contextVars.isOnRootDomain})
+            });
 
             promise.then(
                 function(result) {
@@ -171,6 +177,7 @@ var PublicNodes = {
                 }, function(xhr, textStatus, error) {
                     self.failed = true;
                     self.requestPending(false);
+                    m.redraw();
                     Raven.captureMessage('Error retrieving projects', {extra: {url: url, textStatus: textStatus, error: error}});
                 }
             );
@@ -308,7 +315,7 @@ var PublicNodes = {
             ]) :
 
             // Show laoding icon while there is a pending request
-            ctrl.requestPending() ?  m('.ball-scale.ball-scale-blue.text-center', m('')) :
+            ctrl.requestPending() ?  m('.ball-pulse.ball-scale-blue.text-center', [m(''), m(''), m('')]) :
 
             // Display each project
             [

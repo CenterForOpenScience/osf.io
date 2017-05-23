@@ -146,7 +146,11 @@
               <h3 class="panel-title" >Public projects</h3>
             </div>
             <div class="panel-body clearfix" id="publicProjects">
-                <div class="ball-scale ball-scale-blue text-center"><div></div></div>
+                <div class="ball-pulse ball-scale-blue text-center">
+                  <div></div>
+                  <div></div>
+                  <div></div>
+                </div>
             </div>
         </div>
     </div>
@@ -156,7 +160,11 @@
                 <h3 class="panel-title">Public components</h3>
             </div>
             <div class="panel-body clearfix" id="publicComponents">
-              <div class="ball-scale ball-scale-blue text-center"><div></div></div>
+              <div class="ball-pulse ball-scale-blue text-center">
+                <div></div>
+                <div></div>
+                <div></div>
+              </div>
             </div>
         </div>
     </div>

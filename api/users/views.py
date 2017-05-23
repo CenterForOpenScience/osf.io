@@ -594,6 +594,7 @@ class UserInstitutions(JSONAPIBaseView, generics.ListAPIView, UserMixin):
         return user.affiliated_institutions.all()
 
 
+# TODO: This view should be a subclass of UserNodes (i.e. NodeODMFilterMixin and NodesListFilterMixin replaced with NodesFilterMixin)
 class UserRegistrations(JSONAPIBaseView, generics.ListAPIView, UserMixin, NodeODMFilterMixin, NodesListFilterMixin):
     """List of registrations that the user contributes to. *Read-only*.
 

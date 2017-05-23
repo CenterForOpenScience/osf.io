@@ -86,7 +86,8 @@ class NodesFilterMixin(ListFilterMixin):
                 if operation['value']:
                     # filter[parent]=<nid>
                     parent = utils.get_object_or_error(Node, operation['value'], display_name='parent')
-                    return queryset.filter(guids___id__in=[node._id for node in parent.get_nodes(is_node_link=False)])
+                    node_ids = NodeRelation.objects.filter(parent=parent, is_node_link=False).values_list('child_id', flat=True)
+                    return queryset.filter(id__in=node_ids)
                 # else filter[parent]=null
                 return queryset.get_roots()
             elif operation['op'] == 'ne':
