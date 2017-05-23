@@ -256,6 +256,10 @@ def main(env):
             'name': 'PsyArXiv',
             'logo_name': 'psyarxiv-logo.png',
             'description': 'A free preprint service for the psychological sciences.',
+            'description_link': {
+                'url': 'http://improvingpsych.org',
+                'text': 'The Society for the Improvement of Psychological Science'
+            },
             'banner_name': 'psyarxiv-banner.png',
             'domain': format_domain_url('psyarxiv.com'),
             'domain_redirect_enabled': False,
@@ -1092,6 +1096,10 @@ def main(env):
             'name': 'BITSS',
             'logo_name': 'bitss-logo.png',
             'description': 'An interdisciplinary archive of articles focused on improving research transparency and reproducibility',
+            'description_link': {
+                'url': 'www.bitss.org',
+                'text': 'The Berkeley Initiative for Transparency in the Social Sciences (BITSS)'
+            },
             'banner_name': 'bitss-banner.png',
             'domain': '',  # Not using domain
             'domain_redirect_enabled': False,
