@@ -23,7 +23,7 @@ from django.dispatch import receiver
 from django.db.models.signals import post_save
 from django.db import models
 from django.utils import timezone
-from framework.auth import Auth, signals
+from framework.auth import Auth, signals, utils
 from framework.auth.core import generate_verification_key
 from framework.auth.exceptions import (ChangePasswordError, ExpiredTokenError,
                                        InvalidTokenError,
@@ -463,13 +463,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
     @property
     def csl_given_name(self):
-        parts = [self.given_name]
-        if self.middle_names:
-            parts.extend(each[0] for each in re.split(r'\s+', self.middle_names))
-        given = ' '.join(parts)
-        if self.suffix:
-            given = '%s ,%s' % (given, self.suffix)
-        return given
+        return utils.generate_csl_given_name(self.given_name, self.middle_names, self.suffix)
 
     @property
     def csl_name(self):

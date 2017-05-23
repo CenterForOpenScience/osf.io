@@ -324,6 +324,7 @@ class TestWebpackFilter(unittest.TestCase):
         with assert_raises(KeyError):
             paths.webpack_asset('bundle.js', self.asset_paths, debug=False)
 
+
 class TestWebsiteUtils(unittest.TestCase):
 
     def test_conjunct(self):

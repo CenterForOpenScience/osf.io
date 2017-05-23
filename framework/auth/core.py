@@ -800,13 +800,7 @@ class User(GuidStoredObject, AddonModelMixin):
 
     @property
     def csl_given_name(self):
-        parts = [self.given_name]
-        if self.middle_names:
-            parts.extend(each[0] for each in re.split(r'\s+', self.middle_names))
-        given = ' '.join(parts)
-        if self.suffix:
-            given = '%s ,%s' % (given, self.suffix)
-        return given
+        return utils.generate_csl_given_name(self.given_name, self.middle_names, self.suffix)
 
     @property
     def csl_name(self):
