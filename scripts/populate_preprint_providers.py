@@ -28,8 +28,8 @@ def get_subject_id(name):
     if name not in SUBJECTS_CACHE:
         subject = None
         try:
-            subject = Subject.find_one(Q('text', 'eq', name))
-        except NoResultsFound:
+            subject = Subject.objects.get(provider___id='osf', text=name)
+        except Subject.DoesNotExist:
             raise Exception('Subject: "{}" not found'.format(name))
         else:
             SUBJECTS_CACHE[name] = subject._id
