@@ -200,9 +200,13 @@ def deserialize_contributors(node, user_dicts, auth, validate=False):
 
 @unreg_contributor_added.connect
 def finalize_invitation(node, contributor, auth, email_template='default'):
-    record = contributor.get_unclaimed_record(node._primary_key)
-    if record['email']:
-        send_claim_email(record['email'], contributor, node, notify=True, email_template=email_template)
+    try:
+        record = contributor.get_unclaimed_record(node._primary_key)
+    except ValueError:
+        pass
+    else:
+        if record['email']:
+            send_claim_email(record['email'], contributor, node, notify=True, email_template=email_template)
 
 
 @must_be_valid_project

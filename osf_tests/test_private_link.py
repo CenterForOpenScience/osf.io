@@ -1,9 +1,11 @@
 import pytest
 
+from website.project import new_private_link
 from website.project.model import ensure_schemas
+from website.project.views.node import remove_private_link
 
 from .factories import PrivateLinkFactory, NodeFactory
-from osf.models import MetaSchema, DraftRegistration
+from osf.models import MetaSchema, DraftRegistration, NodeLog
 
 @pytest.mark.django_db
 def test_factory():
@@ -92,3 +94,43 @@ class TestNodeProperties:
         deleted.nodes.add(node)
         assert link.key not in node.private_link_keys_deleted
         assert deleted.key in node.private_link_keys_deleted
+
+
+@pytest.mark.django_db
+class TestPrivateLinkNodeLogs:
+
+    def test_create_private_link_log(self):
+        node = NodeFactory()
+        new_private_link(
+            name='wooo',
+            user=node.creator,
+            nodes=[node],
+            anonymous=False
+        )
+        last_log = node.logs.latest()
+
+        assert last_log.action == NodeLog.VIEW_ONLY_LINK_ADDED
+        assert last_log.params == {
+            'node': node._id,
+            'project': node.parent_node._id,
+            'anonymous_link': False,
+            'user': node.creator._id
+        }
+
+    def test_create_anonymous_private_link_log(self):
+        node = NodeFactory()
+        new_private_link(
+            name='wooo',
+            user=node.creator,
+            nodes=[node],
+            anonymous=True
+        )
+        last_log = node.logs.latest()
+
+        assert last_log.action == NodeLog.VIEW_ONLY_LINK_ADDED
+        assert last_log.params == {
+            'node': node._id,
+            'project': node.parent_node._id,
+            'anonymous_link': True,
+            'user': node.creator._id
+        }

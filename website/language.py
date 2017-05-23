@@ -169,7 +169,7 @@ LINK_DESCRIPTION = """
 creating a copy. The link will always point to the most up-to-date version.</p>
 """
 
-TEMPLATE_ACTION = 'Copy Project Structure'
+TEMPLATE_ACTION = 'Duplicate template'
 TEMPLATE_DESCRIPTION = """
 <p>This option will create a new project, using this project as a template.
 The new project will be structured in the same way, but contain no data.</p>

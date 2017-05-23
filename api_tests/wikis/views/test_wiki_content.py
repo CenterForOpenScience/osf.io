@@ -70,9 +70,7 @@ class TestWikiContentView(ApiWikiTestCase):
         self._set_up_public_registration_with_wiki_page()
         withdrawal = self.public_registration.retract_registration(user=self.user, save=True)
         token = withdrawal.approval_state.values()[0]['approval_token']
-        # TODO: Remove mocking when StoredFileNode is implemented
-        with mock.patch('osf.models.AbstractNode.update_search'):
-            withdrawal.approve_retraction(self.user, token)
-            withdrawal.save()
+        withdrawal.approve_retraction(self.user, token)
+        withdrawal.save()
         res = self.app.get(self.public_registration_url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 403)

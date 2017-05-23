@@ -301,7 +301,7 @@ class UserSearchList(PermissionRequiredMixin, ListView):
     paginate_by = 25
 
     def get_queryset(self):
-        query = OSFUser.objects.filter(fullname__contains=self.kwargs['name']).only(
+        query = OSFUser.objects.filter(fullname__icontains=self.kwargs['name']).only(
             'guids', 'fullname', 'username', 'date_confirmed', 'date_disabled'
         )
         return query
@@ -445,7 +445,11 @@ class GetUserLink(PermissionRequiredMixin, TemplateView):
         raise NotImplementedError()
 
     def get_link_type(self):
+        # Used in the title of the link modal
         raise NotImplementedError()
+
+    def get_claim_links(self, user):
+        return None
 
     def get_context_data(self, **kwargs):
         user = OSFUser.load(self.kwargs.get('guid'))
@@ -453,6 +457,7 @@ class GetUserLink(PermissionRequiredMixin, TemplateView):
         kwargs['user_link'] = self.get_link(user)
         kwargs['username'] = user.username
         kwargs['title'] = self.get_link_type()
+        kwargs['node_claim_links'] = self.get_claim_links(user)
 
         return super(GetUserLink, self).get_context_data(**kwargs)
 
@@ -477,6 +482,29 @@ class GetPasswordResetLink(GetUserLink):
 
     def get_link_type(self):
         return 'Password Reset'
+
+
+class GetUserClaimLinks(GetUserLink):
+    def get_claim_links(self, user):
+        links = []
+
+        for guid, value in user.unclaimed_records.iteritems():
+            node = Node.load(guid)
+            url = '{base_url}user/{uid}/{project_id}/claim/?token={token}'.format(
+                base_url=DOMAIN,
+                uid=user._id,
+                project_id=guid,
+                token=value['token']
+            )
+            links.append('Claim URL for node {}: {}'.format(node._id, url))
+
+        return links or ['User currently has no active unclaimed records for any nodes.']
+
+    def get_link(self, user):
+        return None
+
+    def get_link_type(self):
+        return 'Claim User'
 
 
 class ResetPasswordView(PermissionRequiredMixin, FormView):

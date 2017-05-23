@@ -3,13 +3,11 @@ import random
 
 import mock
 
-import time
+from datetime import datetime
 
 from nose.tools import *  # flake8: noqa
 
 from rest_framework import exceptions
-
-from unittest import TestCase
 
 from api.base.exceptions import Conflict
 from api.base.settings.defaults import API_BASE
@@ -28,6 +26,7 @@ from tests.utils import assert_logs
 from website.models import NodeLog
 from website.project.signals import contributor_added, unreg_contributor_added, contributor_removed
 from website.util import permissions, disconnected_from_listeners
+
 
 class NodeCRUDTestCase(ApiTestCase):
 
@@ -935,6 +934,28 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
         self.public_project.reload()
         assert_equal(res.status_code, 400)
         assert_equal(res.json['errors'][0]['detail'], '{} is already a contributor.'.format(name))
+
+    def test_add_contributor_user_is_deactivated(self):
+        user = UserFactory()
+        user.date_disabled = datetime.utcnow()
+        user.save()
+        payload = {
+            'data': {
+                'type': 'contributors',
+                'attributes': {},
+                'relationships': {
+                    'users': {
+                        'data': {
+                            'type': 'users',
+                            'id': user._id
+                        }
+                    }
+                }
+            }
+        }
+        res = self.app.post_json_api(self.public_url, payload, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], 'Deactivated users cannot be added as contributors.')
 
     def test_add_contributor_index_returned(self):
         res = self.app.post_json_api(self.public_url, self.data_user_two, auth=self.user.auth)

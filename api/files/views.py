@@ -6,9 +6,8 @@ from framework.auth.oauth_scopes import CoreScopes
 
 from osf.models import (
     Guid,
-    FileNode,
+    BaseFileNode,
     FileVersion,
-    StoredFileNode
 )
 
 from api.base.exceptions import Gone
@@ -36,10 +35,10 @@ class FileMixin(object):
 
     def get_file(self, check_permissions=True):
         try:
-            obj = utils.get_object_or_error(FileNode, self.kwargs[self.file_lookup_url_kwarg])
+            obj = utils.get_object_or_error(BaseFileNode, self.kwargs[self.file_lookup_url_kwarg])
         except (NotFound, Gone):
             obj = utils.get_object_or_error(Guid, self.kwargs[self.file_lookup_url_kwarg]).referent
-            if not isinstance(obj, StoredFileNode):
+            if not isinstance(obj, BaseFileNode):
                 raise NotFound
 
         if check_permissions:

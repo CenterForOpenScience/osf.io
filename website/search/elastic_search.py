@@ -22,7 +22,7 @@ from framework.mongo.utils import paginated
 from modularodm import Q
 from osf.models import AbstractNode as Node
 from osf.models import OSFUser as User
-from osf.models import FileNode
+from osf.models import BaseFileNode
 from osf.models import Institution
 from website import settings
 from website.filters import gravatar
@@ -51,7 +51,7 @@ DOC_TYPE_TO_MODEL = {
     'project': Node,
     'registration': Node,
     'user': User,
-    'file': FileNode,
+    'file': BaseFileNode,
     'institution': Institution
 }
 
@@ -581,6 +581,9 @@ def create_index(index=None):
                     'properties': {
                         'id': NOT_ANALYZED_PROPERTY,
                         'name': NOT_ANALYZED_PROPERTY,
+                        # Elasticsearch automatically infers mappings from content-type. `year` needs to
+                        # be explicitly mapped as a string to allow date ranges, which break on the inferred type
+                        'year': {'type': 'string'},
                     }
                 }
             }
