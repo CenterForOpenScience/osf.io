@@ -1,17 +1,15 @@
 import json
 
-from django.contrib.auth.models import AnonymousUser
-
 from rest_framework import generics
 from rest_framework import status
-from rest_framework.exceptions import AuthenticationFailed
+from rest_framework.exceptions import APIException, ValidationError, PermissionDenied
 from rest_framework.response import Response
 
 from api.base.serializers import JSONAPISerializer
 from api.base.views import JSONAPIBaseView
-from api.cas import util
-from api.cas.auth import CasAuthentication
-from api.cas.permissions import IsCasAuthentication
+from api.cas import util, messages
+from api.cas.auth import CasJweAuthentication
+from api.cas.permissions import IsCasJweAuthentication
 
 from framework.auth.oauth_scopes import CoreScopes
 
@@ -22,27 +20,22 @@ class AuthLogin(JSONAPIBaseView, generics.CreateAPIView):
     """ Default osf login.
     """
 
-    permission_classes = (IsCasAuthentication, )
+    view_category = 'cas'
+    view_name = 'auth-login'
+
+    permission_classes = (IsCasJweAuthentication,)
+
+    authentication_classes = (CasJweAuthentication,)
+
+    serializer_class = JSONAPISerializer
 
     required_read_scopes = [CoreScopes.NULL]
     required_write_scopes = [CoreScopes.NULL]
 
-    view_category = 'cas'
-    view_name = 'auth-login'
-
-    serializer_class = JSONAPISerializer
-
-    authentication_classes = (CasAuthentication, )
-
     def post(self, request, *args, **kwargs):
-
-        user = request.user
-        if not user or isinstance(user, AnonymousUser):
-            raise AuthenticationFailed
 
         # The response `data` payload is expected in the following structures
         # {
-        #     'status': 'AUTHENTICATION SUCCESS',
         #     'userId': <the user's GUID>
         #     'attributes': {
         #         'username': 'testuser@fakecos.io',
@@ -51,12 +44,11 @@ class AuthLogin(JSONAPIBaseView, generics.CreateAPIView):
         #     },
         # }
         content = {
-            'status': 'AUTHENTICATION_SUCCESS',
-            'userId': user._id,
+            'userId': request.user._id,
             'attributes': {
-                'username': user.username,
-                'givenName': user.given_name,
-                'familyName': user.family_name,
+                'username': request.user.username,
+                'givenName': request.user.given_name,
+                'familyName': request.user.family_name,
             }
         }
 
@@ -67,39 +59,28 @@ class AuthRegister(JSONAPIBaseView, generics.CreateAPIView):
     """ Default osf account creation.
     """
 
-    permission_classes = (IsCasAuthentication, )
+    view_category = 'cas'
+    view_name = 'auth-register'
+
+    permission_classes = (IsCasJweAuthentication,)
+
+    authentication_classes = (CasJweAuthentication,)
+
+    serializer_class = JSONAPISerializer
 
     required_read_scopes = [CoreScopes.NULL]
     required_write_scopes = [CoreScopes.NULL]
 
-    view_category = 'cas'
-    view_name = 'auth-register'
-
-    serializer_class = JSONAPISerializer
-
-    authentication_classes = (CasAuthentication, )
-
     def post(self, request, *args, **kwargs):
 
-        if not request.user or isinstance(request.user, AnonymousUser):
-            raise AuthenticationFailed
-        else:
-            # The response `data` payload is expected in the following structures
-            # {
-            #     'status': 'REGISTRATION_SUCCESS'
-            # }
-            content = {
-                'status': 'REGISTRATION_SUCCESS',
-            }
-
-        return Response(content)
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class AuthInstitution(JSONAPIBaseView, generics.CreateAPIView):
     """ Institution login.
     """
 
-    permission_classes = (IsCasAuthentication, )
+    permission_classes = (IsCasJweAuthentication,)
 
     required_read_scopes = [CoreScopes.NULL]
     required_write_scopes = [CoreScopes.NULL]
@@ -109,7 +90,7 @@ class AuthInstitution(JSONAPIBaseView, generics.CreateAPIView):
 
     serializer_class = JSONAPISerializer
 
-    authentication_classes = (CasAuthentication, )
+    authentication_classes = (CasJweAuthentication,)
 
     def post(self, request, *args, **kwargs):
         return Response(status=status.HTTP_204_NO_CONTENT)
@@ -119,7 +100,7 @@ class AuthVerifyEmail(JSONAPIBaseView, generics.CreateAPIView):
     """ Verify the primary email for a new osf account.
     """
 
-    permission_classes = (IsCasAuthentication, )
+    permission_classes = (IsCasJweAuthentication,)
 
     required_read_scopes = [CoreScopes.NULL]
     required_write_scopes = [CoreScopes.NULL]
@@ -129,7 +110,7 @@ class AuthVerifyEmail(JSONAPIBaseView, generics.CreateAPIView):
 
     serializer_class = JSONAPISerializer
 
-    authentication_classes = (CasAuthentication, )
+    authentication_classes = (CasJweAuthentication,)
 
     def post(self, request, *args, **kwargs):
         return Response(status=status.HTTP_204_NO_CONTENT)
@@ -139,7 +120,7 @@ class AuthResetPassword(JSONAPIBaseView, generics.CreateAPIView):
     """ Reset the password for an osf account.
     """
 
-    permission_classes = (IsCasAuthentication, )
+    permission_classes = (IsCasJweAuthentication,)
 
     required_read_scopes = [CoreScopes.NULL]
     required_write_scopes = [CoreScopes.NULL]
@@ -149,13 +130,13 @@ class AuthResetPassword(JSONAPIBaseView, generics.CreateAPIView):
 
     serializer_class = JSONAPISerializer
 
-    authentication_classes = (CasAuthentication, )
+    authentication_classes = (CasJweAuthentication,)
 
     def post(self, request, *args, **kwargs):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-class UtilityFindAccount(JSONAPIBaseView, generics.CreateAPIView):
+class ServiceFindAccount(JSONAPIBaseView, generics.CreateAPIView):
     """ Find user's account by email. If relevant pending action exists, send verification email.
     """
 
@@ -171,22 +152,29 @@ class UtilityFindAccount(JSONAPIBaseView, generics.CreateAPIView):
         payload = util.decrypt_payload(request.body)
         data = json.loads(payload['data'])
 
-        util_type = data.get('type')
-        if not util_type:
-            raise AuthenticationFailed(detail=util.INVALID_REQUEST_BODY)
+        service_type = data.get('type')
+        if not service_type:
+            raise ValidationError(detail=messages.INVALID_REQUEST)
 
-        if util_type == 'FIND_ACCOUNT_FOR_VERIFY_EMAIL':
-            if util.find_account_for_verify_email(data.get('user')):
-                return Response(status=status.HTTP_204_NO_CONTENT)
+        user = None
+        error_message = None
 
-        if util_type == 'FIND_ACCOUNT_FOR_RESET_PASSWORD':
-            if util.find_account_for_reset_password(data.get('user')):
-                return Response(status=status.HTTP_204_NO_CONTENT)
+        if service_type == 'FIND_ACCOUNT_FOR_VERIFY_EMAIL':
+            user, error_message = util.find_account_for_verify_email(data.get('user'))
 
-        raise AuthenticationFailed(detail=util.INVALID_REQUEST_BODY)
+        if service_type == 'FIND_ACCOUNT_FOR_RESET_PASSWORD':
+            user, error_message = util.find_account_for_reset_password(data.get('user'))
+
+        if not user and error_message:
+            raise PermissionDenied(detail=error_message)
+
+        if user and not error_message:
+            return Response(status=status.HTTP_204_NO_CONTENT)
+
+        raise APIException(detail=messages.REQUEST_FAILED)
 
 
-class UtilityCheckPersonalAccessToken(JSONAPIBaseView, generics.CreateAPIView):
+class ServiceCheckPersonalAccessToken(JSONAPIBaseView, generics.CreateAPIView):
     """ Get the owner and scopes of a personal access token by token id.
     """
 
@@ -204,17 +192,17 @@ class UtilityCheckPersonalAccessToken(JSONAPIBaseView, generics.CreateAPIView):
 
         token_id = data.get('tokenId')
         if not token_id:
-            raise AuthenticationFailed(detail=util.INVALID_REQUEST_BODY)
+            raise ValidationError(detail=messages.INVALID_REQUEST)
 
         try:
             token = ApiOAuth2PersonalToken.objects.get(token_id=token_id)
         except ApiOAuth2PersonalToken.DoesNotExist:
-            raise AuthenticationFailed(detail=util.TOKEN_NOT_FOUND)
+            raise PermissionDenied(detail=messages.TOKEN_NOT_FOUND)
 
         try:
             user = OSFUser.objects.get(pk=token.owner_id)
         except OSFUser.DoesNotExist:
-            raise AuthenticationFailed(detail=util.TOKEN_OWNER_NOT_FOUND)
+            raise PermissionDenied(detail=messages.TOKEN_OWNER_NOT_FOUND)
 
         content = {
             'tokenId': token.token_id,
@@ -225,12 +213,12 @@ class UtilityCheckPersonalAccessToken(JSONAPIBaseView, generics.CreateAPIView):
         return Response(content)
 
 
-class UtilityCheckOauthScope(JSONAPIBaseView, generics.CreateAPIView):
+class ServiceCheckOauthScope(JSONAPIBaseView, generics.CreateAPIView):
     """ Get the description of an oauth scope by scope name.
     """
 
     view_category = 'cas'
-    view_name = 'service-get-oauth-description'
+    view_name = 'service-check-oauth-scope'
 
     serializer_class = JSONAPISerializer
     permission_classes = ()
@@ -243,14 +231,14 @@ class UtilityCheckOauthScope(JSONAPIBaseView, generics.CreateAPIView):
 
         scope_name = data.get('scopeName')
         if not scope_name:
-            raise AuthenticationFailed(detail=util.INVALID_REQUEST_BODY)
+            raise ValidationError(detail=messages.INVALID_REQUEST)
 
         try:
             scope = ApiOAuth2Scope.objects.get(name=scope_name)
             if not scope.is_active:
-                raise AuthenticationFailed(detail=util.SCOPE_NOT_ACTIVE)
+                raise PermissionDenied(detail=messages.SCOPE_NOT_ACTIVE)
         except ApiOAuth2Scope.DoesNotExist:
-            raise AuthenticationFailed(detail=util.SCOPE_NOT_FOUND)
+            raise PermissionDenied(detail=messages.SCOPE_NOT_FOUND)
 
         content = {
             'scopeDescription': scope.description,
@@ -277,7 +265,7 @@ class ServiceLoadDeveloperApps(JSONAPIBaseView, generics.CreateAPIView):
 
         service_type = data.get('serviceType')
         if not service_type or service_type != 'LOAD_DEVELOPER_APPS':
-            raise AuthenticationFailed(detail=util.INVALID_REQUEST_BODY)
+            raise ValidationError(detail=messages.INVALID_REQUEST)
 
         oauth_applications = ApiOAuth2Application.objects.filter(is_active=True)
 
@@ -314,7 +302,7 @@ class ServiceLoadInstitutions(JSONAPIBaseView, generics.CreateAPIView):
 
         service_type = data.get('serviceType')
         if not service_type or service_type != 'LOAD_INSTITUTIONS':
-            raise AuthenticationFailed(detail=util.INVALID_REQUEST_BODY)
+            raise ValidationError(detail=messages.INVALID_REQUEST)
 
         institutions = Institution.objects\
             .exclude(delegation_protocol__isnull=True)\

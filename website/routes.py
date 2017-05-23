@@ -585,23 +585,6 @@ def make_url_map(app):
             OsfWebRenderer('public/resetpassword.mako', render_mako_string, trust=False)
         ),
 
-        # resend confirmation get
-        Rule(
-            '/resend/',
-            'get',
-            auth_views.resend_confirmation_get,
-            OsfWebRenderer('resend.mako', render_mako_string, trust=False)
-        ),
-
-        # resend confirmation post
-        Rule(
-            '/resend/',
-            'post',
-            auth_views.resend_confirmation_post,
-            OsfWebRenderer('resend.mako', render_mako_string, trust=False)
-
-        ),
-
         # oauth user email get
         Rule(
             '/external-login/email',
@@ -651,22 +634,6 @@ def make_url_map(app):
             'get',
             auth_views.auth_logout,
             notemplate
-        ),
-
-        # forgot password get
-        Rule(
-            '/forgotpassword/',
-            'get',
-            auth_views.forgot_password_get,
-            OsfWebRenderer('public/forgot_password.mako', trust=False)
-        ),
-
-        # forgot password post
-        Rule(
-            '/forgotpassword/',
-            'post',
-            auth_views.forgot_password_post,
-            OsfWebRenderer('public/forgot_password.mako', trust=False)
         ),
 
         Rule(

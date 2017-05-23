@@ -1,11 +1,11 @@
 import json
 
-from rest_framework.exceptions import AuthenticationFailed
+from rest_framework.exceptions import APIException, ValidationError, AuthenticationFailed, PermissionDenied
 from rest_framework.authentication import BaseAuthentication
 
 from django.db.models import Q
 
-from api.cas import util
+from api.cas import util, messages
 
 from framework import sentry
 from framework.auth import register_unconfirmed, get_or_create_user
@@ -18,15 +18,15 @@ from osf.models import Institution, OSFUser
 from website.mails import send_mail, WELCOME_OSF4I
 
 
-class CasAuthentication(BaseAuthentication):
-
-    media_type = 'text/plain'
+class CasJweAuthentication(BaseAuthentication):
 
     def authenticate(self, request):
         """
-        Handle CAS authentication request.
+        Handle CAS JWE/JWT encrypted authentication request.
 
-        1. The POST request payload is encrypted using a secret only known by CAS and OSF.
+        1. The POST request payload is encrypted using a secret and a token only known by CAS and OSF.
+        
+        2. If authentication succeeds, return (user, None); otherwise, return (None, error_message).
 
         2. There are five types of authentication with respective payload structure:
         
@@ -89,7 +89,6 @@ class CasAuthentication(BaseAuthentication):
                     },
                 },
 
-        3. If authentication succeed, return (user, None); otherwise, return return (None, error_message).
 
         :param request: the POST request
         :return: (user, None) or (None, error_message)
@@ -100,33 +99,37 @@ class CasAuthentication(BaseAuthentication):
         data = json.loads(payload['data'])
         auth_type = data.get('type')
 
-        # login request
+        # default login
         if auth_type == 'LOGIN':
-            user, error_message, user_status = handle_login(data.get('user'))
+            user, error_message, user_status_exception = handle_login(data.get('user'))
             if user and not error_message:
-                if user_status != util.USER_ACTIVE:
-                    # authentication fails due to invalid user status
-                    raise AuthenticationFailed(detail=user_status)
+                if user_status_exception:
+                    # authentication fails due to invalid user status, raise 403
+                    raise PermissionDenied(detail=user_status_exception)
+                # authentication succeeds
                 return user, None
-            # authentication fails due to login exceptions
+            # authentication fails due to invalid ro incomplete credential, raise 401
             raise AuthenticationFailed(detail=error_message)
 
+        # register
         if auth_type == 'REGISTER':
-            user, error_message = handle_register(data.get('user'))
-            if user and not error_message:
-                return user, None
-            raise AuthenticationFailed(detail=error_message)
+            return handle_register(data.get('user'))
 
+        # institution login
         if auth_type == 'INSTITUTION_LOGIN':
             return handle_institution_authenticate(data.get('provider'))
 
+        # reset password
         if auth_type == 'RESET_PASSWORD':
             return handle_reset_password(data.get('user'))
 
+        # verify email
         if auth_type == 'VERIFY_EMAIL':
             return handle_verify_email(data.get('user'))
 
-        return AuthenticationFailed
+        # TODO: inform Sentry
+        # something is wrong with CAS, raise 400
+        raise ValidationError(detail=messages.INVALID_REQUEST)
 
 
 def handle_login(data_user):
@@ -157,33 +160,30 @@ def handle_login(data_user):
 
     # check if credentials are provided
     if not email or not (remote_authenticated or verification_key or password):
-        return None, util.MISSING_CREDENTIALS, None
+        # TODO: inform Sentry
+        # something is wrong with CAS, raise 400
+        raise ValidationError(detail=messages.INVALID_REQUEST)
 
     # retrieve the user
     user = OSFUser.objects.filter(Q(username=email) | Q(emails__icontains=email)).first()
     if not user:
-        return None, util.ACCOUNT_NOT_FOUND, None
+        return None, messages.ACCOUNT_NOT_FOUND, None
 
-    # verify user status
-    user_status = util.get_user_status(user)
-    if user_status == util.USER_NOT_CLAIMED:
-        return user, None, util.USER_NOT_CLAIMED
-
-    # by remote authentication
+    # authenticated by remote authentication
     if remote_authenticated:
-        return user, util.verify_two_factor(user, one_time_password), user_status
+        return user, util.verify_two_factor(user, one_time_password), util.verify_user_status(user)
 
-    # by verification key
+    # authenticated by verification key
     if verification_key:
         if verification_key == user.verification_key:
-            return user, util.verify_two_factor(user, one_time_password), user_status
-        return None, util.INVALID_VERIFICATION_KEY, None
+            return user, util.verify_two_factor(user, one_time_password), util.verify_user_status(user)
+        return None, messages.INVALID_KEY, None
 
-    # by password
+    # authenticated by password
     if password:
         if user.check_password(password):
-            return user, util.verify_two_factor(user, one_time_password), user_status
-        return None, util.INVALID_PASSWORD, None
+            return user, util.verify_two_factor(user, one_time_password), util.verify_user_status(user)
+        return None, messages.INVALID_PASSWORD, None
 
 
 def handle_register(data_user):
@@ -201,7 +201,9 @@ def handle_register(data_user):
 
     # check if all required credentials are provided
     if not (fullname and email and password):
-        return None, util.MISSING_CREDENTIALS
+        # TODO: inform Sentry
+        # something is wrong with CAS, raise 400
+        raise ValidationError(detail=messages.INVALID_REQUEST)
 
     # check campaign
     campaign = data_user.get('campaign')
@@ -217,10 +219,16 @@ def handle_register(data_user):
             campaign=campaign,
         )
     except DuplicateEmailError:
-        return None, util.ALREADY_REGISTERED
+        # user already registered, raise 403
+        raise AuthenticationFailed(detail=messages.ALREADY_REGISTERED)
 
     # send confirmation email
-    send_confirm_email(user, email=user.username)
+    try:
+        send_confirm_email(user, email=user.username)
+    except KeyError:
+        # TODO: inform Sentry
+        # something is wrong with OSF, raise 500
+        raise APIException(detail=messages.RESET_PASSWORD_NOT_ELIGIBLE)
 
     return user, None
 
@@ -235,7 +243,9 @@ def handle_institution_authenticate(provider):
     """
     institution = Institution.load(provider['id'])
     if not institution:
-        raise AuthenticationFailed('Invalid institution id specified "{}"'.format(provider['id']))
+        # TODO: inform Sentry
+        # something wrong with CAS, raise 400
+        raise ValidationError('Invalid institution id specified "{}"'.format(provider['id']))
 
     username = provider['user'].get('username')
     fullname = provider['user'].get('fullname')
@@ -253,7 +263,8 @@ def handle_institution_authenticate(provider):
         message = 'Institution login failed: fullname required' \
                   ' for user {} from institution {}'.format(username, provider['id'])
         sentry.log_message(message)
-        raise AuthenticationFailed(message)
+        # something wrong with CAS, raise 400
+        raise ValidationError(message)
 
     # `get_or_create_user()` guesses names from fullname
     # replace the guessed ones if the names are provided from the authentication
@@ -292,11 +303,11 @@ def handle_reset_password(data_user):
     """ Handle password reset.
     """
 
-    return None, None
+    raise APIException(detail=messages.REQUEST_FAILED)
 
 
 def handle_verify_email(data_user):
     """ Handle email verification for new account.
     """
 
-    return None, None
+    raise APIException(detail=messages.REQUEST_FAILED)
