@@ -15,6 +15,8 @@ from framework.auth.oauth_scopes import CoreScopes
 
 from osf.models import ApiOAuth2Application, ApiOAuth2PersonalToken, ApiOAuth2Scope, Institution, OSFUser
 
+from website import settings as web_settings
+
 
 class AuthLogin(JSONAPIBaseView, generics.CreateAPIView):
     """ Default osf login.
@@ -133,7 +135,13 @@ class AuthResetPassword(JSONAPIBaseView, generics.CreateAPIView):
     authentication_classes = (CasJweAuthentication,)
 
     def post(self, request, *args, **kwargs):
-        return Response(status=status.HTTP_204_NO_CONTENT)
+
+        content = {
+            "verificationKey": request.user.verification_key,
+            "serviceUrl": web_settings.DOMAIN + 'settings/account/',
+        }
+
+        return Response(data=content, status=status.HTTP_200_OK)
 
 
 class ServiceFindAccount(JSONAPIBaseView, generics.CreateAPIView):

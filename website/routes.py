@@ -569,22 +569,6 @@ def make_url_map(app):
             notemplate
         ),
 
-        # reset password get
-        Rule(
-            '/resetpassword/<uid>/<token>/',
-            'get',
-            auth_views.reset_password_get,
-            OsfWebRenderer('public/resetpassword.mako', render_mako_string, trust=False)
-        ),
-
-        # reset password post
-        Rule(
-            '/resetpassword/<uid>/<token>/',
-            'post',
-            auth_views.reset_password_post,
-            OsfWebRenderer('public/resetpassword.mako', render_mako_string, trust=False)
-        ),
-
         # oauth user email get
         Rule(
             '/external-login/email',

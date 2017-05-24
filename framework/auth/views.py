@@ -21,7 +21,7 @@ from framework.auth import get_user
 from framework.auth.exceptions import DuplicateEmailError, ExpiredTokenError, InvalidTokenError
 from framework.auth.core import generate_verification_key
 from framework.auth.decorators import block_bing_preview, collect_auth, must_be_logged_in
-from framework.auth.forms import ResendConfirmationForm, ForgotPasswordForm, ResetPasswordForm
+from framework.auth.forms import ResendConfirmationForm
 from framework.auth.utils import ensure_external_identity_uniqueness, validate_recaptcha
 from framework.exceptions import HTTPError
 from framework.flask import redirect  # VOL-aware redirect
@@ -31,96 +31,7 @@ from framework.sessions import get_session
 from website import settings, mails, language
 from website.models import User
 from website.util import web_url_for
-from website.util.time import throttle_period_expired
 from website.util.sanitize import strip_html
-
-
-@block_bing_preview
-@collect_auth
-def reset_password_get(auth, uid=None, token=None):
-    """
-    View for user to land on the reset password page.
-    HTTp Method: GET
-
-    :param auth: the authentication state
-    :param uid: the user id
-    :param token: the token in verification key
-    :return
-    :raises: HTTPError(http.BAD_REQUEST) if verification key for the user is invalid, has expired or was used
-    """
-
-    # if users are logged in, log them out and redirect back to this page
-    if auth.logged_in:
-        return auth_logout(redirect_url=request.url)
-
-    # Check if request bears a valid pair of `uid` and `token`
-    user_obj = User.load(uid)
-    if not (user_obj and user_obj.verify_password_token(token=token)):
-        error_data = {
-            'message_short': 'Invalid Request.',
-            'message_long': 'The requested URL is invalid, has expired, or was already used',
-        }
-        raise HTTPError(http.BAD_REQUEST, data=error_data)
-
-    # refresh the verification key (v2)
-    user_obj.verification_key_v2 = generate_verification_key(verification_type='password')
-    user_obj.save()
-
-    return {
-        'uid': user_obj._id,
-        'token': user_obj.verification_key_v2['token'],
-    }
-
-
-def reset_password_post(uid=None, token=None):
-    """
-    View for user to submit reset password form.
-    HTTP Method: POST
-
-    :param uid: the user id
-    :param token: the token in verification key
-    :return:
-    :raises: HTTPError(http.BAD_REQUEST) if verification key for the user is invalid, has expired or was used
-    """
-
-    form = ResetPasswordForm(request.form)
-
-    # Check if request bears a valid pair of `uid` and `token`
-    user_obj = User.load(uid)
-    if not (user_obj and user_obj.verify_password_token(token=token)):
-        error_data = {
-            'message_short': 'Invalid Request.',
-            'message_long': 'The requested URL is invalid, has expired, or was already used',
-        }
-        raise HTTPError(http.BAD_REQUEST, data=error_data)
-
-    if not form.validate():
-        # Don't go anywhere
-        forms.push_errors_to_status(form.errors)
-    else:
-        # clear verification key (v2)
-        user_obj.verification_key_v2 = {}
-        # new verification key (v1) for CAS
-        user_obj.verification_key = generate_verification_key(verification_type=None)
-        try:
-            user_obj.set_password(form.password.data)
-            user_obj.save()
-        except exceptions.ChangePasswordError as error:
-            for message in error.messages:
-                status.push_status_message(message, kind='warning', trust=False)
-        else:
-            status.push_status_message('Password reset', kind='success', trust=False)
-            # redirect to CAS and authenticate the user automatically with one-time verification key.
-            return redirect(cas.get_login_url(
-                web_url_for('user_account', _absolute=True),
-                username=user_obj.username,
-                verification_key=user_obj.verification_key
-            ))
-
-    return {
-        'uid': user_obj._id,
-        'token': user_obj.verification_key_v2['token'],
-    }
 
 
 def login_and_register_handler(auth, login=True, campaign=None, next_url=None, logout=None):

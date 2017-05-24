@@ -10,7 +10,8 @@ from api.cas import util, messages
 from framework import sentry
 from framework.auth import register_unconfirmed, get_or_create_user
 from framework.auth import campaigns
-from framework.auth.exceptions import DuplicateEmailError
+from framework.auth.core import generate_verification_key
+from framework.auth.exceptions import DuplicateEmailError, ChangePasswordError
 from framework.auth.views import send_confirm_email
 
 from osf.models import Institution, OSFUser
@@ -303,7 +304,35 @@ def handle_reset_password(data_user):
     """ Handle password reset.
     """
 
-    raise APIException(detail=messages.REQUEST_FAILED)
+    email = data_user.get('email')
+    token = data_user.get('verificationCode')
+    password = data_user.get('password')
+
+    if not email or not token or not password:
+        # something is wrong with CAS, raise 400
+        # CAS will inform log the error and inform Sentry
+        raise ValidationError(detail=messages.INVALID_REQUEST)
+
+    # retrieve the user
+    user = OSFUser.objects.filter(Q(username=email) | Q(emails__icontains=email)).first()
+
+    if not user and user.verify_password_token(token):
+        raise PermissionDenied(detail=messages.INVALID_CODE)
+
+    # clear verification key v2 for password reset
+    user.verification_key_v2 = {}
+    # generate verification key v1 for CAS login
+    user.verification_key = generate_verification_key(verification_type=None)
+    # reset password
+    try:
+        user.set_password(password)
+        user.save()
+    except ChangePasswordError:
+        # TODO: inform Sentry
+        # something is wrong with OSF, raise 500
+        raise APIException(detail=messages.REQUEST_FAILED)
+
+    return user, None
 
 
 def handle_verify_email(data_user):
