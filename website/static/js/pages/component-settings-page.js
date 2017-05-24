@@ -4,9 +4,7 @@ var $ = require('jquery');
 var bootbox = require('bootbox');
 var Raven = require('raven-js');
 var $osf = require('js/osfHelpers.js');
-var { getConfirmationCode } = require('js/projectSettings.js');
-
-
+var getConfirmationCode = require('js/projectSettings.js').getConfirmationCode;
 
 $(document).ready(function() {
 
@@ -16,9 +14,7 @@ $(document).ready(function() {
       var componentIndex = $(this).data('index');
       var component = window.contextVars.nodes[componentIndex].node;
 
-      var {node_type, api_url, isPreprint, childExists} = component;
-
-      if(childExists){
+      if(component.childExists){
         $osf.growl(
           'Error',
           'Any child components must be deleted prior to deleting this component.',
@@ -27,9 +23,9 @@ $(document).ready(function() {
         );
       }else{
         getConfirmationCode(
-          node_type,
-          isPreprint,
-          api_url
+          component.node_type,
+          component.isPreprint,
+          component.api_url
         );
       }
     });

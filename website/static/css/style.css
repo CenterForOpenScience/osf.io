@@ -735,3 +735,23 @@ div.ball-scale-blue>div {
     margin-bottom: 0;
 }
 
+/* To be added to osf-style: project overview -> componentQuickActions menu */
+#componentQuickActions ul.dropdown-menu > li > a:hover,
+#componentQuickActions ul.dropdown-menu > li > a:focus{
+    background-image: none;
+    background-color: #D9D9D9;
+}
+
+#componentQuickActions button{
+  padding: 4px 12px;
+  line-height: 0;
+}
+
+#componentQuickActions ul{
+    background-color: #EFEFEF;
+    min-width: 180px;
+}
+
+#componentQuickActions a {
+    color: #333;
+}

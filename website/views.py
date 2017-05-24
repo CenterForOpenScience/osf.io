@@ -76,6 +76,7 @@ def serialize_node_summary(node, auth, primary=True, show_path=False):
     contributor_data = serialize_contributors_for_summary(node)
 
     parent_node = node.parent_node
+    user = auth.user
     if node.can_view(auth):
         summary.update({
             'can_view': True,
@@ -86,8 +87,11 @@ def serialize_node_summary(node, auth, primary=True, show_path=False):
             'api_url': node.api_url,
             'title': node.title,
             'category': node.category,
-            'isPreprint': node.is_preprint,
+            'isPreprint': bool(node.preprint_file and node.preprint_file._id),
             'childExists': bool(node.nodes_active),
+            'is_admin': node.has_permission(user, permissions.ADMIN),
+            'is_contributor': node.is_contributor(user),
+            'logged_in': auth.logged_in,
             'node_type': node.project_or_component,
             'is_fork': node.is_fork,
             'is_registration': node.is_registration,
