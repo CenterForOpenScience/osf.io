@@ -1,23 +1,21 @@
-# -*- coding: utf-8 -*-
-from urlparse import urlparse
+import pytest
 
-from nose.tools import *  # flake8: noqa
+from urlparse import urlparse
 from dateutil.parser import parse as parse_date
 
 from tests.base import DbTestCase, assert_datetime_equal
 from tests.utils import make_drf_request_with_version
 from osf_tests.factories import UserFactory, NodeFactory, RegistrationFactory, ProjectFactory
-
 from framework.auth import Auth
 from api.nodes.serializers import NodeSerializer
 from api.registrations.serializers import RegistrationSerializer
 from api.base.settings.defaults import API_BASE
 
+@pytest.mark.django_db
+class TestNodeSerializer(object):
 
-class TestNodeSerializer(DbTestCase):
-
+    @pytest.fixture(autouse=True)
     def setUp(self):
-        super(TestNodeSerializer, self).setUp()
         self.user = UserFactory()
 
     def test_node_serialization(self):
@@ -26,36 +24,35 @@ class TestNodeSerializer(DbTestCase):
         req = make_drf_request_with_version(version='2.0')
         result = NodeSerializer(node, context={'request': req}).data
         data = result['data']
-        assert_equal(data['id'], node._id)
-        assert_equal(data['type'], 'nodes')
+        assert data['id'] == node._id
+        assert data['type'] == 'nodes'
 
         # Attributes
         attributes = data['attributes']
-        assert_equal(attributes['title'], node.title)
-        assert_equal(attributes['description'], node.description)
-        assert_equal(attributes['public'], node.is_public)
-        assert_equal(attributes['tags'], [str(each.name) for each in node.tags.all()])
-        assert_equal(attributes['current_user_can_comment'], False)
-        assert_equal(attributes['category'], node.category)
-        assert_equal(attributes['registration'], node.is_registration)
-        assert_equal(attributes['fork'], node.is_fork)
-        assert_equal(attributes['collection'], node.is_collection)
+        assert attributes['title'] == node.title
+        assert attributes['description'] == node.description
+        assert attributes['public'] == node.is_public
+        assert attributes['tags'] == [str(each.name) for each in node.tags.all()]
+        assert attributes['current_user_can_comment'] == False
+        assert attributes['category'] == node.category
+        assert attributes['registration'] == node.is_registration
+        assert attributes['fork'] == node.is_fork
+        assert attributes['collection'] == node.is_collection
 
         # Relationships
         relationships = data['relationships']
-        assert_in('children', relationships)
-        assert_in('contributors', relationships)
-        assert_in('files', relationships)
-        assert_in('parent', relationships)
-        assert_in('affiliated_institutions', relationships)
+        assert 'children' in relationships
+        assert 'contributors' in relationships
+        assert 'files' in relationships
+        assert 'parent' in relationships
+        assert 'affiliated_institutions' in relationships
         parent_link = relationships['parent']['links']['related']['href']
-        assert_equal(
-            urlparse(parent_link).path,
-            '/{}nodes/{}/'.format(API_BASE, parent._id)
-        )
-        assert_in('registrations', relationships)
+        assert (
+            urlparse(parent_link).path ==
+            '/{}nodes/{}/'.format(API_BASE, parent._id))
+        assert 'registrations' in relationships
         # Not a fork, so forked_from is removed entirely
-        assert_not_in('forked_from', relationships)
+        assert 'forked_from' not in relationships
 
     def test_fork_serialization(self):
         node = NodeFactory(creator=self.user)
@@ -67,10 +64,9 @@ class TestNodeSerializer(DbTestCase):
         # Relationships
         relationships = data['relationships']
         forked_from = relationships['forked_from']['links']['related']['href']
-        assert_equal(
-            urlparse(forked_from).path,
-            '/{}nodes/{}/'.format(API_BASE, node._id)
-        )
+        assert (
+            urlparse(forked_from).path ==
+            '/{}nodes/{}/'.format(API_BASE, node._id))
 
     def test_template_serialization(self):
         node = NodeFactory(creator=self.user)
@@ -82,10 +78,9 @@ class TestNodeSerializer(DbTestCase):
         # Relationships
         relationships = data['relationships']
         templated_from = relationships['template_node']['links']['related']['href']
-        assert_equal(
-            urlparse(templated_from).path,
-            '/{}nodes/{}/'.format(API_BASE, node._id)
-        )
+        assert (
+            urlparse(templated_from).path ==
+            '/{}nodes/{}/'.format(API_BASE, node._id))
 
 class TestNodeRegistrationSerializer(DbTestCase):
 
@@ -95,8 +90,8 @@ class TestNodeRegistrationSerializer(DbTestCase):
         reg = RegistrationFactory(creator=user)
         result = RegistrationSerializer(reg, context={'request': req}).data
         data = result['data']
-        assert_equal(data['id'], reg._id)
-        assert_equal(data['type'], 'registrations')
+        assert data['id'] == reg._id
+        assert data['type'] == 'registrations'
         should_not_relate_to_registrations = [
             'registered_from',
             'registered_by',
@@ -109,28 +104,25 @@ class TestNodeRegistrationSerializer(DbTestCase):
             parse_date(attributes['date_registered']),
             reg.registered_date
         )
-        assert_equal(attributes['withdrawn'], reg.is_retracted)
+        assert attributes['withdrawn'] == reg.is_retracted
 
         # Relationships
         relationships = data['relationships']
         relationship_urls = {}
         for relationship in relationships:
             relationship_urls[relationship]=relationships[relationship]['links']['related']['href']
-        assert_in('registered_by', relationships)
+        assert 'registered_by' in relationships
         registered_by = relationships['registered_by']['links']['related']['href']
-        assert_equal(
-            urlparse(registered_by).path,
-            '/{}users/{}/'.format(API_BASE, user._id)
-        )
-        assert_in('registered_from', relationships)
+        assert (
+            urlparse(registered_by).path ==
+            '/{}users/{}/'.format(API_BASE, user._id))
+        assert 'registered_from' in relationships
         registered_from = relationships['registered_from']['links']['related']['href']
-        assert_equal(
-            urlparse(registered_from).path,
-            '/{}nodes/{}/'.format(API_BASE, reg.registered_from._id)
-        )
+        assert (
+            urlparse(registered_from).path ==
+            '/{}nodes/{}/'.format(API_BASE, reg.registered_from._id))
         for relationship in relationship_urls:
             if relationship in should_not_relate_to_registrations:
-                assert_not_in('/{}registrations/'.format(API_BASE), relationship_urls[relationship])
+                assert '/{}registrations/'.format(API_BASE) not in relationship_urls[relationship]
             else:
-                assert_in('/{}registrations/'.format(API_BASE), relationship_urls[relationship],
-                          'For key {}'.format(relationship))
+                assert '/{}registrations/'.format(API_BASE) in relationship_urls[relationship], 'For key {}'.format(relationship)
