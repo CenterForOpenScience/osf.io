@@ -17,7 +17,6 @@ from website.exceptions import NodeStateError
 from website.util import permissions, disconnected_from_listeners, api_url_for, web_url_for
 from website.citations.utils import datetime_to_csl
 from website import language, settings
-from website.project.model import ensure_schemas
 from website.project.tasks import on_node_updated
 
 from osf.models import (
@@ -1646,7 +1645,6 @@ class TestRegisterNode:
         c1 = ProjectFactory(creator=user, parent=root)
         ProjectFactory(creator=user, parent=c1)
 
-        ensure_schemas()
         meta_schema = MetaSchema.find_one(
             Q('name', 'eq', 'Open-Ended Registration') &
             Q('schema_version', 'eq', 1)
@@ -2031,7 +2029,6 @@ class TestPrivateLinks:
 
     # TODO: This seems like it should go elsewhere, but was in tests/test_models.py::TestPrivateLink
     def test_create_from_node(self):
-        ensure_schemas()
         proj = ProjectFactory()
         user = proj.creator
         schema = MetaSchema.find()[0]
@@ -2306,7 +2303,6 @@ class TestNodeTraversals:
         assert mock_update_search.call_count == orig_call_count + len(reg_ids)
 
     def test_delete_registration_tree_sets_draft_registration_approvals_to_none(self, user):
-        ensure_schemas()
         reg = RegistrationFactory()
 
         dr = DraftRegistrationFactory(initiator=user)

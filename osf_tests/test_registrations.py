@@ -9,7 +9,6 @@ from addons.wiki.models import NodeWikiPage
 from osf.modm_compat import Q
 
 from website import settings
-from website.project.model import ensure_schemas
 from website.util.permissions import READ, WRITE, ADMIN
 
 from . import factories
@@ -18,11 +17,6 @@ from .factories import get_default_metaschema
 from addons.wiki.tests.factories import NodeWikiFactory
 
 pytestmark = pytest.mark.django_db
-
-
-@pytest.fixture(autouse=True)
-def _ensure_schemas():
-    return ensure_schemas()
 
 
 @pytest.fixture()
