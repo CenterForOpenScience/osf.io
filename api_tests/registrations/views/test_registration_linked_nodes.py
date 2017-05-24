@@ -14,7 +14,7 @@ from osf_tests.factories import (
 
 
 @pytest.mark.django_db
-class TestNodeRelationshipNodeLinks(object):
+class TestNodeRelationshipNodeLinks:
 
     @pytest.fixture(autouse=True)
     def setUp(self):
@@ -42,12 +42,12 @@ class TestNodeRelationshipNodeLinks(object):
 
     def payload(self, node_ids=None):
         node_ids = node_ids or [self.admin_node._id]
-        env_linked_nodes = [{"type": "linked_nodes", "id": node_id} for node_id in node_ids]
-        return {"data": env_linked_nodes}
+        env_linked_nodes = [{'type': 'linked_nodes', 'id': node_id} for node_id in node_ids]
+        return {'data': env_linked_nodes}
 
     def test_node_relationship_node_links(self):
 
-    #   get_relationship_linked_nodes(self):
+    #   get_relationship_linked_nodes
         res = self.app.get(self.url, auth=self.user.auth)
 
         assert res.status_code == 200
@@ -55,7 +55,7 @@ class TestNodeRelationshipNodeLinks(object):
         assert self.linking_node.linked_nodes_related_url in res.json['links']['html']
         assert self.private_node._id in [e['id'] for e in res.json['data']]
 
-    #   get_linked_nodes_related_counts(self):
+    #   get_linked_nodes_related_counts
         res = self.app.get(
             '/{}registrations/{}/?related_counts=linked_nodes'.format(API_BASE, self.linking_node._id),
             auth=self.user.auth
@@ -63,25 +63,25 @@ class TestNodeRelationshipNodeLinks(object):
 
         assert res.json['data']['relationships']['linked_nodes']['links']['related']['meta']['count'] == 2
 
-    #   get_public_relationship_linked_nodes_logged_out(self):
+    #   get_public_relationship_linked_nodes_logged_out
         res = self.app.get(self.public_url)
 
         assert res.status_code == 200
         assert len(res.json['data']) == 1
         assert self.public_node._id in [e['id'] for e in res.json['data']]
 
-    #   get_public_relationship_linked_nodes_logged_in(self):
+    #   get_public_relationship_linked_nodes_logged_in
         res = self.app.get(self.public_url, auth=self.user.auth)
 
         assert res.status_code == 200
         assert len(res.json['data']) == 2
 
-    #   get_private_relationship_linked_nodes_logged_out(self):
+    #   get_private_relationship_linked_nodes_logged_out
         res = self.app.get(self.url, expect_errors=True)
 
         assert res.status_code == 401
 
-    #   post_contributing_node(self):
+    #   post_contributing_node
         res = self.app.post_json_api(
             self.url, self.payload([self.contributor_node._id]),
             auth=self.user.auth, expect_errors=True
@@ -89,7 +89,7 @@ class TestNodeRelationshipNodeLinks(object):
 
         assert res.status_code == 405
 
-    #   post_public_node(self):
+    #   post_public_node
         res = self.app.post_json_api(
             self.url, self.payload([self.public_node._id]),
             auth=self.user.auth, expect_errors=True
@@ -97,7 +97,7 @@ class TestNodeRelationshipNodeLinks(object):
 
         assert res.status_code == 405
 
-    #   post_private_node(self):
+    #   post_private_node
         res = self.app.post_json_api(
             self.url, self.payload([self.other_node._id]),
             auth=self.user.auth,
@@ -114,7 +114,7 @@ class TestNodeRelationshipNodeLinks(object):
         assert self.other_node._id not in ids
         assert self.private_node._id in ids
 
-    #   post_mixed_nodes(self):
+    #   post_mixed_nodes
         res = self.app.post_json_api(
             self.url, self.payload([self.other_node._id, self.contributor_node._id]),
             auth=self.user.auth,
@@ -132,7 +132,7 @@ class TestNodeRelationshipNodeLinks(object):
         assert self.contributor_node._id not in ids
         assert self.private_node._id in ids
 
-    #   post_node_already_linked(self):
+    #   post_node_already_linked
         res = self.app.post_json_api(
             self.url, self.payload([self.private_node._id]),
             auth=self.user.auth, expect_errors=True
@@ -140,7 +140,7 @@ class TestNodeRelationshipNodeLinks(object):
 
         assert res.status_code == 405
 
-    #   put_contributing_node(self):
+    #   put_contributing_node
         res = self.app.put_json_api(
             self.url, self.payload([self.contributor_node._id]),
             auth=self.user.auth, expect_errors=True
@@ -148,7 +148,7 @@ class TestNodeRelationshipNodeLinks(object):
 
         assert res.status_code == 405
 
-    #   put_private_node(self):
+    #   put_private_node
         res = self.app.put_json_api(
             self.url, self.payload([self.other_node._id]),
             auth=self.user.auth,
@@ -165,7 +165,7 @@ class TestNodeRelationshipNodeLinks(object):
         assert self.other_node._id not in ids
         assert self.private_node._id in ids
 
-    #   put_mixed_nodes(self):
+    #   put_mixed_nodes
         res = self.app.put_json_api(
             self.url, self.payload([self.other_node._id, self.contributor_node._id]),
             auth=self.user.auth, expect_errors=True
@@ -182,7 +182,7 @@ class TestNodeRelationshipNodeLinks(object):
         assert self.contributor_node._id not in ids
         assert self.private_node._id in ids
 
-    #   delete_with_put_empty_array(self):
+    #   delete_with_put_empty_array
         payload = self.payload()
         payload['data'].pop()
         res = self.app.put_json_api(
@@ -190,7 +190,7 @@ class TestNodeRelationshipNodeLinks(object):
         )
         assert res.status_code == 405
 
-    #   delete_one(self):
+    #   delete_one
         res = self.app.delete_json_api(
             self.url, self.payload([self.private_node._id]),
             auth=self.user.auth, expect_errors=True
@@ -203,7 +203,7 @@ class TestNodeRelationshipNodeLinks(object):
         assert self.admin_node._id in ids
         assert self.private_node._id in ids
 
-    #   delete_multiple(self):
+    #   delete_multiple
 
         res = self.app.delete_json_api(
             self.url, self.payload([self.private_node._id, self.admin_node._id]),
@@ -214,7 +214,7 @@ class TestNodeRelationshipNodeLinks(object):
         res = self.app.get(self.url, auth=self.user.auth)
         assert len(res.json['data']) == 2
 
-    #   delete_not_present(self):
+    #   delete_not_present
         number_of_links = self.linking_node.linked_nodes.count()
         res = self.app.delete_json_api(
             self.url, self.payload([self.other_node._id]),
@@ -227,7 +227,7 @@ class TestNodeRelationshipNodeLinks(object):
         )
         assert len(res.json['data']) == number_of_links
 
-    #   node_doesnt_exist(self):
+    #   node_doesnt_exist
         res = self.app.post_json_api(
             self.url, self.payload(['aquarela']),
             auth=self.user.auth,
@@ -236,7 +236,7 @@ class TestNodeRelationshipNodeLinks(object):
 
         assert res.status_code == 405
 
-    #   type_mistyped(self):
+    #   type_mistyped
         res = self.app.post_json_api(
             self.url,
             {
@@ -248,7 +248,7 @@ class TestNodeRelationshipNodeLinks(object):
 
         assert res.status_code == 405
 
-    #   creates_public_linked_node_relationship_logged_out(self):
+    #   creates_public_linked_node_relationship_logged_out
         res = self.app.post_json_api(
                 self.public_url, self.payload([self.public_node._id]),
                 expect_errors=True
@@ -256,7 +256,7 @@ class TestNodeRelationshipNodeLinks(object):
 
         assert res.status_code == 401
 
-    #   creates_public_linked_node_relationship_logged_in(self):
+    #   creates_public_linked_node_relationship_logged_in
         res = self.app.post_json_api(
                 self.public_url, self.payload([self.public_node._id]),
                 auth=self.user.auth, expect_errors=True
@@ -264,7 +264,7 @@ class TestNodeRelationshipNodeLinks(object):
 
         assert res.status_code == 405
 
-    #   creates_private_linked_node_relationship_logged_out(self):
+    #   creates_private_linked_node_relationship_logged_out
         res = self.app.post_json_api(
                 self.url, self.payload([self.other_node._id]),
                 expect_errors=True
@@ -272,7 +272,7 @@ class TestNodeRelationshipNodeLinks(object):
 
         assert res.status_code == 401
 
-    #   put_public_nodes_relationships_logged_out(self):
+    #   put_public_nodes_relationships_logged_out
         res = self.app.put_json_api(
                 self.public_url, self.payload([self.public_node._id]),
                 expect_errors=True
@@ -280,7 +280,7 @@ class TestNodeRelationshipNodeLinks(object):
 
         assert res.status_code == 401
 
-    #   put_public_nodes_relationships_logged_in(self):
+    #   put_public_nodes_relationships_logged_in
         res = self.app.put_json_api(
                 self.public_url, self.payload([self.private_node._id]),
                 auth=self.user.auth, expect_errors=True
@@ -288,7 +288,7 @@ class TestNodeRelationshipNodeLinks(object):
 
         assert res.status_code == 405
 
-    #   delete_public_nodes_relationships_logged_out(self):
+    #   delete_public_nodes_relationships_logged_out
         res = self.app.delete_json_api(
             self.public_url, self.payload([self.public_node._id]),
             expect_errors=True
@@ -296,7 +296,7 @@ class TestNodeRelationshipNodeLinks(object):
 
         assert res.status_code == 401
 
-    #   delete_public_nodes_relationships_logged_in(self):
+    #   delete_public_nodes_relationships_logged_in
         res = self.app.delete_json_api(
                 self.public_url, self.payload([self.private_node._id]),
                 auth=self.user.auth, expect_errors=True
@@ -305,7 +305,7 @@ class TestNodeRelationshipNodeLinks(object):
         assert res.status_code == 405
 
 @pytest.mark.django_db
-class TestNodeLinkedNodes(object):
+class TestNodeLinkedNodes:
 
     @pytest.fixture(autouse=True)
     def setUp(self):

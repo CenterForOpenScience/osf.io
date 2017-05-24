@@ -18,7 +18,7 @@ from osf_tests.factories import (
 
 
 @pytest.mark.django_db
-class TestRegistrationForksList(object):
+class TestRegistrationForksList:
 
     @pytest.fixture(autouse=True)
     def setUp(self):
@@ -138,7 +138,7 @@ class TestRegistrationForksList(object):
         assert res.json['errors'][0]['detail'] == 'You do not have permission to perform this action.'
 
 @pytest.mark.django_db
-class TestRegistrationForkCreate(object):
+class TestRegistrationForkCreate:
 
     @pytest.fixture(autouse=True)
     def setUp(self):

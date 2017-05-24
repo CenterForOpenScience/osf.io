@@ -17,7 +17,7 @@ from osf_tests.factories import (
 )
 
 @pytest.mark.django_db
-class TestRegistrationDetail(object):
+class TestRegistrationDetail:
 
     @pytest.fixture(autouse=True)
     def setUp(self):
@@ -25,8 +25,8 @@ class TestRegistrationDetail(object):
         self.maxDiff = None
         self.user = AuthUserFactory()
         self.user_two = AuthUserFactory()
-        self.public_project = ProjectFactory(title="Project One", is_public=True, creator=self.user)
-        self.private_project = ProjectFactory(title="Project Two", is_public=False, creator=self.user)
+        self.public_project = ProjectFactory(title='Project One', is_public=True, creator=self.user)
+        self.private_project = ProjectFactory(title='Project Two', is_public=False, creator=self.user)
         self.public_registration = RegistrationFactory(project=self.public_project, creator=self.user, is_public=True)
         self.private_registration = RegistrationFactory(project=self.private_project, creator=self.user)
         self.public_url = '/{}registrations/{}/'.format(API_BASE, self.public_registration._id)
@@ -34,7 +34,7 @@ class TestRegistrationDetail(object):
 
     def test_registration_detail(self):
 
-    #   test_return_public_registration_details_logged_out(self):
+    #   test_return_public_registration_details_logged_out
         res = self.app.get(self.public_url)
         assert res.status_code == 200
         data = res.json['data']
@@ -42,7 +42,7 @@ class TestRegistrationDetail(object):
         assert data['attributes']['registration'] == True
         assert registered_from == '/{}nodes/{}/'.format(API_BASE, self.public_project._id)
 
-    #   test_return_public_registration_details_logged_in(self):
+    #   test_return_public_registration_details_logged_in
         res = self.app.get(self.public_url, auth=self.user.auth)
         assert res.status_code == 200
         assert res.content_type == 'application/vnd.api+json'
@@ -51,12 +51,12 @@ class TestRegistrationDetail(object):
         assert data['attributes']['registration'] == True
         assert registered_from == '/{}nodes/{}/'.format(API_BASE, self.public_project._id)
 
-    #   test_return_private_registration_details_logged_out(self):
+    #   test_return_private_registration_details_logged_out
         res = self.app.get(self.private_url, expect_errors=True)
         assert res.status_code == 401
         assert 'detail' in res.json['errors'][0]
 
-    #   test_return_private_project_registrations_logged_in_contributor(self):
+    #   test_return_private_project_registrations_logged_in_contributor
         res = self.app.get(self.private_url, auth=self.user.auth)
         assert res.status_code == 200
         assert res.content_type == 'application/vnd.api+json'
@@ -65,37 +65,37 @@ class TestRegistrationDetail(object):
         assert data['attributes']['registration'] == True
         assert registered_from == '/{}nodes/{}/'.format(API_BASE, self.private_project._id)
 
-    #   test_return_private_registration_details_logged_in_non_contributor(self):
+    #   test_return_private_registration_details_logged_in_non_contributor
         res = self.app.get(self.private_url, auth=self.user_two.auth, expect_errors=True)
         assert res.status_code == 403
         assert 'detail' in res.json['errors'][0]
 
-    #   test_do_not_return_node_detail(self):
+    #   test_do_not_return_node_detail
         url = '/{}registrations/{}/'.format(API_BASE, self.public_project._id)
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
         assert res.status_code == 404
-        assert res.json['errors'][0]['detail'] == "Not found."
+        assert res.json['errors'][0]['detail'] == 'Not found.'
 
-    #   test_do_not_return_node_detail_in_sub_view(self):
+    #   test_do_not_return_node_detail_in_sub_view
         url = '/{}registrations/{}/contributors/'.format(API_BASE, self.public_project._id)
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
         assert res.status_code == 404
-        assert res.json['errors'][0]['detail'] == "Not found."
+        assert res.json['errors'][0]['detail'] == 'Not found.'
 
-    #   test_do_not_return_registration_in_node_detail(self):
+    #   test_do_not_return_registration_in_node_detail
         url = '/{}nodes/{}/'.format(API_BASE, self.public_registration._id)
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
         assert res.status_code == 404
-        assert res.json['errors'][0]['detail'] == "Not found."
+        assert res.json['errors'][0]['detail'] == 'Not found.'
 
-    #   test_registration_shows_specific_related_counts(self):
+    #   test_registration_shows_specific_related_counts
         url = '/{}registrations/{}/?related_counts=children'.format(API_BASE, self.private_registration._id)
         res = self.app.get(url, auth=self.user.auth)
         assert res.status_code == 200
         assert res.json['data']['relationships']['children']['links']['related']['meta']['count'] == 0
         assert res.json['data']['relationships']['contributors']['links']['related']['meta'] == {}
 
-    #   test_hide_if_registration(self):
+    #   test_hide_if_registration
         # Registrations are a HideIfRegistration field
         node_url = '/{}nodes/{}/'.format(API_BASE, self.private_project._id)
         res = self.app.get(node_url, auth=self.user.auth)
@@ -107,7 +107,7 @@ class TestRegistrationDetail(object):
         assert 'registrations' not in res.json['data']['relationships']
 
 @pytest.mark.django_db
-class TestRegistrationUpdate(object):
+class TestRegistrationUpdate:
 
     @pytest.fixture(autouse=True)
     def setUp(self):
@@ -119,8 +119,8 @@ class TestRegistrationUpdate(object):
         self.registration_approval = RegistrationApprovalFactory(state='unapproved', approve=False, user=self.user)
         self.unapproved_registration = Registration.find_one(Q('registration_approval', 'eq', self.registration_approval))
         self.unapproved_url = '/{}registrations/{}/'.format(API_BASE, self.unapproved_registration._id)
-        self.public_project = ProjectFactory(title="Project One", is_public=True, creator=self.user)
-        self.private_project = ProjectFactory(title="Project Two", is_public=False, creator=self.user)
+        self.public_project = ProjectFactory(title='Project One', is_public=True, creator=self.user)
+        self.private_project = ProjectFactory(title='Project Two', is_public=False, creator=self.user)
         self.public_registration = RegistrationFactory(project=self.public_project, creator=self.user, is_public=True)
         self.private_registration = RegistrationFactory(project=self.private_project, creator=self.user)
         self.public_url = '/{}registrations/{}/'.format(API_BASE, self.public_registration._id)
@@ -130,21 +130,21 @@ class TestRegistrationUpdate(object):
         self.private_registration.save()
 
         self.payload = {
-            "data": {
-                "id": self.private_registration._id,
-                "type": "registrations",
-                "attributes": {
-                    "public": True,
+            'data': {
+                'id': self.private_registration._id,
+                'type': 'registrations',
+                'attributes': {
+                    'public': True,
                 }
             }
         }
 
     def make_payload(self, registration_id, attributes):
         return {
-            "data": {
-                "id": registration_id,
-                "type": "registrations",
-                "attributes": attributes
+            'data': {
+                'id': registration_id,
+                'type': 'registrations',
+                'attributes': attributes
             }
         }
 
@@ -167,11 +167,11 @@ class TestRegistrationUpdate(object):
 
     def test_update_public_registration_to_private(self):
         payload = {
-            "data": {
-                "id": self.public_registration._id,
-                "type": "registrations",
-                "attributes": {
-                    "public": False,
+            'data': {
+                'id': self.public_registration._id,
+                'type': 'registrations',
+                'attributes': {
+                    'public': False,
                 }
             }
         }
@@ -181,11 +181,11 @@ class TestRegistrationUpdate(object):
 
     def test_public_field_has_invalid_value(self):
         payload = {
-            "data": {
-                "id": self.public_registration._id,
-                "type": "registrations",
-                "attributes": {
-                    "public": "Yes"
+            'data': {
+                'id': self.public_registration._id,
+                'type': 'registrations',
+                'attributes': {
+                    'public': 'Yes'
                 }
             }
         }
@@ -195,14 +195,14 @@ class TestRegistrationUpdate(object):
 
     def test_fields_other_than_public_are_ignored(self):
         payload = {
-            "data": {
-                "id": self.private_registration._id,
-                "type": "registrations",
-                "attributes": {
-                    "public": True,
-                    "category": "instrumentation",
-                    "title": "New title",
-                    "description": "New description"
+            'data': {
+                'id': self.private_registration._id,
+                'type': 'registrations',
+                'attributes': {
+                    'public': True,
+                    'category': 'instrumentation',
+                    'title': 'New title',
+                    'description': 'New description'
                 }
             }
         }
@@ -215,14 +215,14 @@ class TestRegistrationUpdate(object):
 
     def test_type_field_must_match(self):
         payload = {
-            "data": {
-                "id": self.private_registration._id,
-                "type": "nodes",
-                "attributes": {
-                    "public": True,
-                    "category": "instrumentation",
-                    "title": "New title",
-                    "description": "New description"
+            'data': {
+                'id': self.private_registration._id,
+                'type': 'nodes',
+                'attributes': {
+                    'public': True,
+                    'category': 'instrumentation',
+                    'title': 'New title',
+                    'description': 'New description'
                 }
             }
         }
@@ -231,14 +231,14 @@ class TestRegistrationUpdate(object):
 
     def test_id_field_must_match(self):
         payload = {
-            "data": {
-                "id": '12345',
-                "type": "registrations",
-                "attributes": {
-                    "public": True,
-                    "category": "instrumentation",
-                    "title": "New title",
-                    "description": "New description"
+            'data': {
+                'id': '12345',
+                'type': 'registrations',
+                'attributes': {
+                    'public': True,
+                    'category': 'instrumentation',
+                    'title': 'New title',
+                    'description': 'New description'
                 }
             }
         }
@@ -250,11 +250,11 @@ class TestRegistrationUpdate(object):
         node1 = RegistrationFactory(project=node2, creator=self.user, is_public=False)
 
         payload = {
-            "data": {
-                "id": node1._id,
-                "type": "registrations",
-                "attributes": {
-                    "public": True,
+            'data': {
+                'id': node1._id,
+                'type': 'registrations',
+                'attributes': {
+                    'public': True,
                 }
             }
         }
@@ -288,8 +288,8 @@ class TestRegistrationUpdate(object):
         payload = self.make_payload(
             self.unapproved_registration._id,
             {
-                "public": True,
-                "withdrawn": True
+                'public': True,
+                'withdrawn': True
             }
         )
         res = self.app.put_json_api(self.unapproved_url, payload, auth=self.user.auth, expect_errors=True)
