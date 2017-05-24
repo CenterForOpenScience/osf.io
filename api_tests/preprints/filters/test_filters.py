@@ -10,7 +10,7 @@ from osf_tests.factories import (
 )
 
 @pytest.mark.django_db
-class PreprintsListFilteringMixin(object):
+class PreprintsListFilteringMixin:
     def setUp(self):
         assert self.user, 'Subclasses of PreprintsListFilteringMixin must define self.user'
         assert self.provider_one, 'Subclasses of PreprintsListFilteringMixin must define self.provider_one'
