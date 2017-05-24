@@ -102,7 +102,7 @@ class TestNodeFileLogDetail(ApiTestCase):
             auth=Auth(self.user_one),
             params={
                 'node': self.component._id,
-                'params_file': '/project/{}/files/osfstorage/{}/'.format(self.component._id, self.file._id),
+                'params_file': None,
                 'urls': {
                     'download': '/project/{}/files/osfstorage/{}/?action=download'.format(self.component._id, self.file._id),
                     'view': '/project/{}/files/osfstorage/{}/'.format(self.component._id, self.file._id)
