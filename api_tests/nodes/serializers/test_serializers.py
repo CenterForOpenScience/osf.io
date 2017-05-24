@@ -12,7 +12,7 @@ from api.registrations.serializers import RegistrationSerializer
 from api.base.settings.defaults import API_BASE
 
 @pytest.mark.django_db
-class TestNodeSerializer(object):
+class TestNodeSerializer:
 
     @pytest.fixture(autouse=True)
     def setUp(self):

@@ -1,19 +1,19 @@
-# -*- coding: utf-8 -*-
-from nose.tools import *  # flake8: noqa
+import pytest
 
 from api.base.settings.defaults import API_BASE
-
+from tests.json_api_test_app import JSONAPITestApp
 from tests.base import ApiTestCase
 from osf_tests.factories import (
     ProjectFactory,
     AuthUserFactory
 )
 
+@pytest.mark.django_db
+class TestExceptionFormatting:
 
-class TestExceptionFormatting(ApiTestCase):
+    @pytest.fixture(autouse=True)
     def setUp(self):
-
-        super(TestExceptionFormatting, self).setUp()
+        self.app = JSONAPITestApp()
         self.user = AuthUserFactory()
         self.non_contrib = AuthUserFactory()
 
@@ -35,45 +35,48 @@ class TestExceptionFormatting(ApiTestCase):
         self.public_project = ProjectFactory(is_public=True, creator=self.user)
         self.private_url = '/{}nodes/{}/'.format(API_BASE, self.private_project._id)
 
-    def test_creates_project_with_no_title_formatting(self):
+    def test_exception_formatting(self):
+
+    #   test_creates_project_with_no_title_formatting
         url = '/{}nodes/'.format(API_BASE)
         res = self.app.post_json_api(url, self.project_no_title, auth=self.user.auth, expect_errors=True)
         errors = res.json['errors']
         assert(isinstance(errors, list))
-        assert_equal(res.json['errors'][0]['source'], {'pointer': '/data/attributes/title'})
-        assert_equal(res.json['errors'][0]['detail'], 'This field is required.')
+        assert res.json['errors'][0]['source'] == {'pointer': '/data/attributes/title'}
+        assert res.json['errors'][0]['detail'] == 'This field is required.'
 
-    def test_node_does_not_exist_formatting(self):
+    #   test_node_does_not_exist_formatting
         url = '/{}nodes/{}/'.format(API_BASE, '12345')
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
         errors = res.json['errors']
         assert(isinstance(errors, list))
-        assert_equal(errors[0], {'detail': 'Not found.'})
+        assert errors[0] == {'detail': 'Not found.'}
 
-    def test_forbidden_formatting(self):
+    #   test_forbidden_formatting
         res = self.app.get(self.private_url, auth=self.non_contrib.auth, expect_errors=True)
         errors = res.json['errors']
         assert(isinstance(errors, list))
-        assert_equal(errors[0], {'detail': 'You do not have permission to perform this action.'})
+        assert errors[0] == {'detail': 'You do not have permission to perform this action.'}
 
-    def test_not_authorized_formatting(self):
+    #   test_not_authorized_formatting
         res = self.app.get(self.private_url, expect_errors=True)
         errors = res.json['errors']
         assert(isinstance(errors, list))
-        assert_equal(errors[0], {'detail': "Authentication credentials were not provided."})
+        assert errors[0] == {'detail': 'Authentication credentials were not provided.'}
 
-    def test_update_project_with_no_title_or_category_formatting(self):
+    #   test_update_project_with_no_title_or_category_formatting
         res = self.app.put_json_api(self.private_url, {'data': {'type': 'nodes', 'id': self.private_project._id, 'attributes': {'description': 'New description'}}}, auth=self.user.auth, expect_errors=True)
         errors = res.json['errors']
         assert(isinstance(errors, list))
-        assert_equal(len(errors), 2)
+        assert len(errors) == 2
         errors = res.json['errors']
-        assert_items_equal([errors[0]['source'], errors[1]['source']],
-                           [{'pointer': '/data/attributes/category'}, {'pointer': '/data/attributes/title'}])
-        assert_items_equal([errors[0]['detail'], errors[1]['detail']],
-                           ['This field is required.', 'This field is required.'])
+        assert errors[0]['source'] == {'pointer': '/data/attributes/category'}
+        assert errors[1]['source'] == {'pointer': '/data/attributes/title'}
 
-    def test_create_node_link_no_target_formatting(self):
+        assert errors[0]['detail'] == 'This field is required.'
+        assert errors[1]['detail'] == 'This field is required.'
+
+    #   test_create_node_link_no_target_formatting
         url = self.private_url + 'node_links/'
         res = self.app.post_json_api(url, {
             'data': {
@@ -90,11 +93,11 @@ class TestExceptionFormatting(ApiTestCase):
         }, auth=self.user.auth, expect_errors=True)
         errors = res.json['errors']
         assert(isinstance(errors, list))
-        assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['source'], {'pointer': '/data/id'})
-        assert_equal(res.json['errors'][0]['detail'], 'This field may not be blank.')
+        assert res.status_code == 400
+        assert res.json['errors'][0]['source'] == {'pointer': '/data/id'}
+        assert res.json['errors'][0]['detail'] == 'This field may not be blank.'
 
-    def test_node_link_already_exists(self):
+    #   test_node_link_already_exists
         url = self.private_url + 'node_links/'
         res = self.app.post_json_api(url, {
             'data': {
@@ -109,7 +112,7 @@ class TestExceptionFormatting(ApiTestCase):
                 }
             }
         }, auth=self.user.auth)
-        assert_equal(res.status_code, 201)
+        assert res.status_code == 201
 
         res = self.app.post_json_api(url, {'data': {
             'type': 'node_links',
@@ -124,5 +127,5 @@ class TestExceptionFormatting(ApiTestCase):
         }}, auth=self.user.auth, expect_errors=True)
         errors = res.json['errors']
         assert(isinstance(errors, list))
-        assert_equal(res.status_code, 400)
+        assert res.status_code == 400
         assert(self.public_project._id in res.json['errors'][0]['detail'])

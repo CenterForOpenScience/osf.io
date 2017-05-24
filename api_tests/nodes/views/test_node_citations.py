@@ -10,7 +10,7 @@ from tests.factories import (
 )
 
 @pytest.mark.django_db
-class NodeCitationsMixin(object):
+class NodeCitationsMixin:
 
 	def setUp(self):
 		self.app = JSONAPITestApp()
