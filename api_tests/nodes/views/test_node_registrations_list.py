@@ -1,8 +1,8 @@
-# -*- coding: utf-8 -*-
-from nose.tools import *  # flake8: noqa
+import pytest
 from urlparse import urlparse
-from api.base.settings.defaults import API_BASE
 
+from api.base.settings.defaults import API_BASE
+from tests.json_api_test_app import JSONAPITestApp
 from tests.base import ApiTestCase
 from osf_tests.factories import (
     ProjectFactory,
@@ -10,13 +10,14 @@ from osf_tests.factories import (
     AuthUserFactory,
 )
 
-
 node_url_for = lambda n_id: '/{}nodes/{}/'.format(API_BASE, n_id)
 
+@pytest.mark.django_db
+class TestNodeRegistrationList:
 
-class TestNodeRegistrationList(ApiTestCase):
+    @pytest.fixture(autouse=True)
     def setUp(self):
-        super(TestNodeRegistrationList, self).setUp()
+        self.app = JSONAPITestApp()
         self.user = AuthUserFactory()
 
         self.project = ProjectFactory(is_public=False, creator=self.user)
@@ -31,34 +32,36 @@ class TestNodeRegistrationList(ApiTestCase):
 
         self.user_two = AuthUserFactory()
 
-    def test_return_public_registrations_logged_out(self):
+    def test_node_registration_list(self):
+
+    #   test_return_public_registrations_logged_out
         res = self.app.get(self.public_url)
-        assert_equal(res.status_code, 200)
-        assert_equal(res.content_type, 'application/vnd.api+json')
-        assert_equal(res.json['data'][0]['attributes']['registration'], True)
+        assert res.status_code == 200
+        assert res.content_type == 'application/vnd.api+json'
+        assert res.json['data'][0]['attributes']['registration'] == True
         url = res.json['data'][0]['relationships']['registered_from']['links']['related']['href']
-        assert_equal(urlparse(url).path, '/{}nodes/{}/'.format(API_BASE, self.public_project._id))
-        assert_equal(res.json['data'][0]['type'], 'registrations')
+        assert urlparse(url).path == '/{}nodes/{}/'.format(API_BASE, self.public_project._id)
+        assert res.json['data'][0]['type'] == 'registrations'
 
-    def test_return_public_registrations_logged_in(self):
+    #   test_return_public_registrations_logged_in
         res = self.app.get(self.public_url, auth=self.user.auth)
-        assert_equal(res.status_code, 200)
-        assert_equal(res.json['data'][0]['attributes']['registration'], True)
+        assert res.status_code == 200
+        assert res.json['data'][0]['attributes']['registration'] == True
         url = res.json['data'][0]['relationships']['registered_from']['links']['related']['href']
-        assert_equal(urlparse(url).path, '/{}nodes/{}/'.format(API_BASE, self.public_project._id))
-        assert_equal(res.content_type, 'application/vnd.api+json')
-        assert_equal(res.json['data'][0]['type'], 'registrations')
+        assert urlparse(url).path == '/{}nodes/{}/'.format(API_BASE, self.public_project._id)
+        assert res.content_type == 'application/vnd.api+json'
+        assert res.json['data'][0]['type'] == 'registrations'
 
-    def test_return_private_registrations_logged_out(self):
+    #   test_return_private_registrations_logged_out
         res = self.app.get(self.private_url, expect_errors=True)
-        assert_equal(res.status_code, 401)
+        assert res.status_code == 401
         assert 'detail' in res.json['errors'][0]
 
-    def test_return_private_registrations_logged_in_contributor(self):
+    #   test_return_private_registrations_logged_in_contributor
         res = self.app.get(self.private_url, auth=self.user.auth)
-        assert_equal(res.status_code, 200)
-        assert_equal(res.json['data'][0]['attributes']['registration'], True)
+        assert res.status_code == 200
+        assert res.json['data'][0]['attributes']['registration'] == True
         url = res.json['data'][0]['relationships']['registered_from']['links']['related']['href']
-        assert_equal(urlparse(url).path, '/{}nodes/{}/'.format(API_BASE, self.project._id))
-        assert_equal(res.content_type, 'application/vnd.api+json')
-        assert_equal(res.json['data'][0]['type'], 'registrations')
+        assert urlparse(url).path == '/{}nodes/{}/'.format(API_BASE, self.project._id)
+        assert res.content_type == 'application/vnd.api+json'
+        assert res.json['data'][0]['type'] == 'registrations'
