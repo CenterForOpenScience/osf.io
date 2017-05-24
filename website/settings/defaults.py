@@ -344,6 +344,7 @@ LOW_PRI_MODULES = {
     'framework.analytics.tasks',
     'framework.celery_tasks',
     'scripts.osfstorage.usage_audit',
+    'scripts.stuck_registration_audit',
     'scripts.osfstorage.glacier_inventory',
     'scripts.analytics.tasks',
     'scripts.osfstorage.files_audit',
@@ -427,6 +428,7 @@ CELERY_IMPORTS = (
 #     'scripts.osfstorage.glacier_inventory',
 #     'scripts.osfstorage.glacier_audit',
 #     'scripts.osfstorage.usage_audit',
+#     'scripts.stuck_registration_audit',
 #     'scripts.osfstorage.files_audit',
 #     'scripts.analytics.tasks',
 #     'scripts.analytics.upload',
@@ -525,6 +527,11 @@ else:
     #         'task': 'scripts.osfstorage.usage_audit',
     #         'schedule': crontab(minute=0, hour=0),  # Daily 12 a.m
     #         'kwargs': {'send_mail': True},
+    #     },
+    #     'stuck_registration_audit': {
+    #         'task': 'scripts.stuck_registration_audit',
+    #         'schedule': crontab(minute=0, hour=6),  # Daily 6 a.m
+    #         'kwargs': {},
     #     },
     #     'glacier_inventory': {
     #         'task': 'scripts.osfstorage.glacier_inventory',
@@ -1789,8 +1796,12 @@ INSTITUTION_DISPLAY_NODE_THRESHOLD = 5
 CAMPAIGN_REFRESH_THRESHOLD = 5 * 60  # 5 minutes in seconds
 
 
-# sitemap default settings
+AWS_ACCESS_KEY_ID = None
+AWS_SECRET_ACCESS_KEY = None
 
+# sitemap default settings
+SITEMAP_TO_S3 = False
+SITEMAP_AWS_BUCKET = None
 SITEMAP_URL_MAX = 25000
 SITEMAP_INDEX_MAX = 50000
 SITEMAP_STATIC_URLS = [
@@ -1816,3 +1827,5 @@ CUSTOM_CITATIONS = {
     'bluebook2': 'bluebook',
     'bluebook-inline': 'bluebook'
 }
+
+PREPRINTS_ASSETS = '/static/img/preprints_assets/'

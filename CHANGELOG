@@ -2,6 +2,11 @@
 Changelog
 *********
 
+0.109.0 (2017-05-10)
+====================
+
+- Support custom taxonomies for preprint providers.
+
 0.108.0 (2017-05-08)
 ====================
 - [My Projects] Icon for Uncategorized disappears when project/component is highlighted

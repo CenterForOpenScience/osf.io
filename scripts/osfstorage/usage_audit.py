@@ -29,7 +29,7 @@ from scripts import utils as scripts_utils
 # App must be init'd before django models are imported
 init_app(set_backends=True, routes=False)
 
-from osf.models import StoredFileNode, TrashedFileNode, FileVersion
+from osf.models import BaseFileNode, FileVersion
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -60,7 +60,7 @@ def add_to_white_list(gtg):
 
 
 def get_usage(node):
-    vids = [each for each in StoredFileNode.active.filter(provider='osfstorage', node=node).values_list('versions', flat=True) if each]
+    vids = [each for each in BaseFileNode.active.filter(provider='osfstorage', node=node).values_list('versions', flat=True) if each]
 
     t_vids = [each for eac in TrashedFile.objects.filter(provider='osfstorage', node=node).values_list('versions', flat=True) if each]
 

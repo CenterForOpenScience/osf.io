@@ -206,6 +206,7 @@ class InstitutionFactory(DjangoModelFactory):
     class Meta:
         model = models.Institution
 
+
 class NodeLicenseRecordFactory(DjangoModelFactory):
     year = factory.Faker('year')
     copyright_holders = FakeList('name', n=3)

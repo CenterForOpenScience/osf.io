@@ -9,7 +9,7 @@ from django.db import transaction
 from modularodm import Q
 from modularodm.exceptions import NoResultsFound
 from website.app import init_app
-from website.settings import PREPRINT_PROVIDER_DOMAINS, DOMAIN
+from website.settings import PREPRINT_PROVIDER_DOMAINS, DOMAIN, PROTOCOL
 import django
 django.setup()
 
@@ -47,7 +47,10 @@ def get_license(name):
 
 def update_or_create(provider_data):
     provider = PreprintProvider.load(provider_data['_id'])
+    provider_data['domain_redirect_enabled'] &= PREPRINT_PROVIDER_DOMAINS['enabled'] and bool(provider_data['domain'])
     licenses = [get_license(name) for name in provider_data.pop('licenses_acceptable', [])]
+    default_license = provider_data.pop('default_license', False)
+
     if provider:
         provider_data['subjects_acceptable'] = map(
             lambda rule: (map(get_subject_id, rule[0]), rule[1]),
@@ -55,6 +58,8 @@ def update_or_create(provider_data):
         )
         if licenses:
             provider.licenses_acceptable.add(*licenses)
+        if default_license:
+            provider.default_license = get_license(default_license)
         for key, val in provider_data.iteritems():
             setattr(provider, key, val)
         changed_fields = provider.save()
@@ -66,14 +71,19 @@ def update_or_create(provider_data):
         new_provider.save()
         if licenses:
             new_provider.licenses_acceptable.add(*licenses)
+        if default_license:
+            new_provider.default_license = get_license(default_license)
+            new_provider.save()
         provider = PreprintProvider.load(new_provider._id)
         print('Added new preprint provider: {}'.format(provider._id))
         return new_provider, True
 
 
 def format_domain_url(domain):
-    return ''.join((PREPRINT_PROVIDER_DOMAINS['prefix'], str(domain), PREPRINT_PROVIDER_DOMAINS['suffix'])) if \
-        PREPRINT_PROVIDER_DOMAINS['enabled'] else ''
+    prefix = PREPRINT_PROVIDER_DOMAINS['prefix'] or PROTOCOL
+    suffix = PREPRINT_PROVIDER_DOMAINS['suffix'] or '/'
+
+    return '{}{}{}'.format(prefix, str(domain), suffix)
 
 
 def main(env):
@@ -94,6 +104,7 @@ def main(env):
             'social_twitter': '',
             'social_facebook': '',
             'social_instagram': '',
+            'default_license': 'CC0 1.0 Universal',
             'licenses_acceptable': ['CC0 1.0 Universal', 'CC-By Attribution 4.0 International', 'No license'],
             'header_text': '',
             'subjects_acceptable': [],
@@ -135,6 +146,7 @@ def main(env):
             'social_twitter': 'engrxiv',
             'social_facebook': 'engrXiv',
             'social_instagram': 'engrxiv',
+            'default_license': 'CC0 1.0 Universal',
             'licenses_acceptable': ['CC0 1.0 Universal', 'CC-By Attribution 4.0 International', 'No license'],
             'header_text': '',
             'subjects_acceptable': [
@@ -279,6 +291,7 @@ def main(env):
             'social_twitter': 'psyarxiv',
             'social_facebook': 'PsyArXiv',
             'social_instagram': 'psyarxiv',
+            'default_license': 'CC0 1.0 Universal',
             'licenses_acceptable': ['CC0 1.0 Universal', 'CC-By Attribution 4.0 International', 'No license'],
             'header_text': '',
             'subjects_acceptable': [
@@ -364,6 +377,7 @@ def main(env):
             'social_twitter': 'socarxiv',
             'social_facebook': 'socarxiv',
             'social_instagram': 'socarxiv',
+            'default_license': 'CC0 1.0 Universal',
             'licenses_acceptable': ['CC0 1.0 Universal', 'CC-By Attribution 4.0 International', 'No license'],
             'header_text': '',
             'subjects_acceptable': [
@@ -390,6 +404,7 @@ def main(env):
             'social_twitter': 'RedeSciELO',  # optional
             'social_facebook': 'SciELONetwork',
             'header_text': '',
+            'default_license': 'CC-By Attribution 4.0 International',
             'licenses_acceptable': ['CC-By Attribution 4.0 International'],
             'subjects_acceptable': []
         },
@@ -435,6 +450,7 @@ def main(env):
             'social_twitter': 'lawarxiv',
             'social_facebook': '',
             'header_text': '',
+            'default_license': 'No license',
             'licenses_acceptable': ['CC0 1.0 Universal', 'CC-By Attribution 4.0 International', 'No license'],
             'subjects_acceptable': [
                 (['Arts and Humanities'], True),
@@ -496,6 +512,7 @@ def main(env):
             'social_twitter': 'AgriXiv',
             'social_facebook': 'agrixiv',
             'social_instagram': 'agrixiv',
+            'default_license': 'CC0 1.0 Universal',
             'licenses_acceptable': ['CC0 1.0 Universal', 'CC-By Attribution 4.0 International'],
             'header_text': '',
             'subjects_acceptable': [
@@ -1101,6 +1118,7 @@ def main(env):
             'email_contact': 'contact+bitss@osf.io',
             'email_support': 'support+bitss@osf.io',
             'social_twitter': 'UCBITSS',
+            'default_license': 'CC-By Attribution 4.0 International',
             'licenses_acceptable': ['CC-By Attribution 4.0 International', 'CC0 1.0 Universal'],
             'header_text': '',
             'subjects_acceptable': [

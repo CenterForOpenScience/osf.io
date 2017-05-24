@@ -6,7 +6,7 @@ from django.core.urlresolvers import resolve, reverse, NoReverseMatch
 from django.core.exceptions import ImproperlyConfigured
 from django.utils import six
 
-from rest_framework import exceptions
+from rest_framework import exceptions, permissions
 from rest_framework import serializers as ser
 from rest_framework.fields import SkipField
 from rest_framework.fields import get_attribute as get_nested_attributes
@@ -1058,15 +1058,30 @@ class JSONAPIListSerializer(ser.ListSerializer):
         return ret
 
 
-class PrefetchRelationshipsSerializer(ser.Serializer):
+class SparseFieldsetMixin(object):
+    def parse_sparse_fields(self, allow_unsafe=False, **kwargs):
+        request = kwargs.get('context', {}).get('request', None)
+        if request and (allow_unsafe or request.method in permissions.SAFE_METHODS):
+            sparse_fieldset_query_param = 'fields[{}]'.format(self.Meta.type_)
+            if sparse_fieldset_query_param in request.query_params:
+                fieldset = request.query_params[sparse_fieldset_query_param].split(',')
+                for field_name in self.fields.fields.copy().keys():
+                    if field_name in ('id', 'links', 'type'):
+                        # MUST return these fields
+                        continue
+                    if field_name not in fieldset:
+                        self.fields.pop(field_name)
+
+class BaseAPISerializer(ser.Serializer, SparseFieldsetMixin):
 
     def __init__(self, *args, **kwargs):
-        super(PrefetchRelationshipsSerializer, self).__init__(*args, **kwargs)
+        self.parse_sparse_fields(**kwargs)
+        super(BaseAPISerializer, self).__init__(*args, **kwargs)
         self.model_field_names = [name if field.source == '*' else field.source
                                   for name, field in self.fields.iteritems()]
 
 
-class JSONAPISerializer(PrefetchRelationshipsSerializer):
+class JSONAPISerializer(BaseAPISerializer):
     """Base serializer. Requires that a `type_` option is set on `class Meta`. Also
     allows for enveloping of both single resources and collections.  Looks to nest fields
     according to JSON API spec. Relational fields must set json_api_link=True flag.
@@ -1083,7 +1098,7 @@ class JSONAPISerializer(PrefetchRelationshipsSerializer):
     # overrides Serializer
     @classmethod
     def many_init(cls, *args, **kwargs):
-        kwargs['child'] = cls()
+        kwargs['child'] = cls(*args, **kwargs)
         return JSONAPIListSerializer(*args, **kwargs)
 
     def invalid_embeds(self, fields, embeds):
@@ -1117,6 +1132,7 @@ class JSONAPISerializer(PrefetchRelationshipsSerializer):
         meta = getattr(self, 'Meta', None)
         type_ = getattr(meta, 'type_', None)
         assert type_ is not None, 'Must define Meta.type_'
+        self.parse_sparse_fields(allow_unsafe=True, context=self.context)
 
         data = {
             'id': '',
@@ -1248,7 +1264,7 @@ class JSONAPISerializer(PrefetchRelationshipsSerializer):
         return website_utils.rapply(self.validated_data, strip_html)
 
 
-class JSONAPIRelationshipSerializer(PrefetchRelationshipsSerializer):
+class JSONAPIRelationshipSerializer(BaseAPISerializer):
     """Base Relationship serializer. Requires that a `type_` option is set on `class Meta`.
     Provides a simplified serialization of the relationship, allowing for simple update request
     bodies.
@@ -1351,7 +1367,7 @@ class LinkedRegistration(JSONAPIRelationshipSerializer):
         type_ = 'linked_registrations'
 
 
-class LinkedNodesRelationshipSerializer(PrefetchRelationshipsSerializer):
+class LinkedNodesRelationshipSerializer(BaseAPISerializer):
     data = ser.ListField(child=LinkedNode())
     links = LinksField({'self': 'get_self_url',
                         'html': 'get_related_url'})
@@ -1416,7 +1432,7 @@ class LinkedNodesRelationshipSerializer(PrefetchRelationshipsSerializer):
         return self.make_instance_obj(collection)
 
 
-class LinkedRegistrationsRelationshipSerializer(PrefetchRelationshipsSerializer):
+class LinkedRegistrationsRelationshipSerializer(BaseAPISerializer):
     data = ser.ListField(child=LinkedRegistration())
     links = LinksField({'self': 'get_self_url',
                         'html': 'get_related_url'})

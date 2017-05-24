@@ -571,7 +571,6 @@ class TestDeleteHook(HookTestCase):
         assert_equal(resp.json, {'status': 'success'})
         fid = file._id
         del file
-        # models.StoredFileNode._clear_object_cache()
         assert_is(models.OsfStorageFileNode.load(fid), None)
         assert_true(models.TrashedFileNode.load(fid))
 
