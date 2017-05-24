@@ -258,6 +258,27 @@ class TestUsers:
         res = app.get(url, expect_errors=True)
         assert res.status_code == 400
 
+    def test_users_list_or_filter(self, app):
+        john_doe = UserFactory(fullname='John Doe')
+        john_doe.given_name = 'John'
+        john_doe.family_name = 'Doe'
+        john_doe.save()
+
+        doe_jane = UserFactory(fullname='Doe Jane')
+        doe_jane.given_name = 'Doe'
+        doe_jane.family_name = 'Jane'
+        doe_jane.save()
+
+        june_dog = UserFactory(fullname='June Dog')
+        june_dog.given_name = 'June'
+        june_dog.family_name = 'Dog'
+        june_dog.save()
+
+        url = "/{}users/?filter[family_name]=Jane,Dog".format(API_BASE)
+        res = app.get(url)
+        data = res.json['data']
+        assert len(data) == 2
+
 
 @pytest.mark.django_db
 class TestUsersCreate:

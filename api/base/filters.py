@@ -2,7 +2,6 @@ import datetime
 import functools
 import operator
 import re
-from operator import or_
 
 from django.utils import six
 from django import forms
@@ -77,7 +76,7 @@ class NewDjangoFilterMixin(django_filters.FilterSet):
     QUERY_PATTERN = re.compile(r'^filter\[(?P<fields>((?:,*\s*\w+)*))\](\[(?P<op>\w+)\])?$')
     FILTER_FIELDS = re.compile(r'(?:,*\s*(\w+)+)')
 
-    or_fields = {}
+    or_fields = []
 
     def __init__(self, data=None, *args, **kwargs):
         if data:
@@ -88,8 +87,14 @@ class NewDjangoFilterMixin(django_filters.FilterSet):
                     match_dict = match.groupdict()
                     fields = match_dict['fields']
                     field_names = re.findall(self.FILTER_FIELDS, fields.strip())
-                    if len(field_names) > 1:
-                        self.or_fields[frozenset(field_names)] = value
+
+                    self.or_fields = []
+                    multiple_values = value.split(',')
+                    if len(multiple_values) > 1 or len(field_names) > 1:
+                        for field_name in field_names:
+                            for value in multiple_values:
+                                self.or_fields.append({'field': field_name, 'value': value})
+
                     for field in field_names:
                         new_qd.update({field: value})
             data = new_qd
@@ -115,7 +120,8 @@ class NewDjangoFilterMixin(django_filters.FilterSet):
             qs = self.queryset.all()
             for name, filter_ in six.iteritems(self.filters):
                 value = self.form.cleaned_data.get(name)
-                if name in reduce(or_, self.or_fields.keys(), set()):
+                or_keys = [entry['field'] for entry in self.or_fields]
+                if name in or_keys:
                     qs = self.filter_groups(qs)
                 else:
                     qs = filter_.filter(qs, value)
@@ -124,13 +130,10 @@ class NewDjangoFilterMixin(django_filters.FilterSet):
             return self._qs
 
     def filter_groups(self, qs):
-        for group, value in self.or_fields.iteritems():
-            group_q = Q()
-            for field in group:
-                if field in self.form.fields.keys():
-                    group_q |= Q(**{field: value})
-
-            qs = qs.filter(group_q)
+        group_q = Q()
+        for field_dict in self.or_fields:
+            group_q |= Q(**{field_dict['field']: field_dict['value']})
+        qs = qs.filter(group_q)
 
         return qs
 
