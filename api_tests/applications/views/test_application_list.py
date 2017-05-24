@@ -11,17 +11,17 @@ from osf_tests.factories import ApiOAuth2ApplicationFactory, AuthUserFactory
 
 
 def _get_application_detail_route(app):
-    path = "applications/{}/".format(app.client_id)
+    path = 'applications/{}/'.format(app.client_id)
     return api_v2_url(path, base_route='/')
 
 
 def _get_application_list_url():
-    path = "applications/"
+    path = 'applications/'
     return api_v2_url(path, base_route='/')
 
 
 @pytest.mark.django_db
-class TestApplicationList(object):
+class TestApplicationList:
 
     @pytest.fixture(autouse=True)
     def setUp(self):
@@ -40,7 +40,7 @@ class TestApplicationList(object):
                 'type': 'applications',
                 'attributes': {
                     'name': 'A shiny new application',
-                    'description': "It's really quite shiny",
+                    'description': 'It\'s really quite shiny',
                     'home_url': 'http://osf.io',
                     'callback_url': 'https://cos.io',
                     'owner': 'Value discarded',
@@ -82,13 +82,13 @@ class TestApplicationList(object):
 
     def test_creating_application_fails_if_callbackurl_fails_validation(self):
         data = copy.copy(self.sample_data)
-        data['data']['attributes']['callback_url'] = "itunes:///invalid_url_of_doom"
+        data['data']['attributes']['callback_url'] = 'itunes:///invalid_url_of_doom'
         res = self.app.post_json_api(self.user_one_list_url, data,
                             auth=self.user_one.auth, expect_errors=True)
         assert res.status_code == 400
 
     def test_field_content_is_sanitized_upon_submission(self):
-        bad_text = "<a href='http://sanitized.name'>User_text</a>"
+        bad_text = '<a href=\'http://sanitized.name\'>User_text</a>'
         cleaned_text = sanitize.strip_html(bad_text)
 
         payload = copy.copy(self.sample_data)

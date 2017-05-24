@@ -8,11 +8,11 @@ from tests.json_api_test_app import JSONAPITestApp
 from osf_tests.factories import ApiOAuth2ApplicationFactory, AuthUserFactory
 
 def _get_application_reset_route(app):
-    path = "applications/{}/reset/".format(app.client_id)
+    path = 'applications/{}/reset/'.format(app.client_id)
     return api_v2_url(path, base_route='/')
 
 @pytest.mark.django_db
-class TestApplicationReset(object):
+class TestApplicationReset:
 
     @pytest.fixture(autouse=True)
     def setUp(self):
