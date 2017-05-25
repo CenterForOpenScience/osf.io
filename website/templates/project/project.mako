@@ -87,7 +87,7 @@
                                     </li>
                                     % if not disk_saving_mode:
                                     <li class="p-h-md">
-                                        <span class="btn btn-primary btn-block m-v-sm" href="${ node['url'] }forks/">
+                                        <span class="btn btn-primary btn-block m-v-sm" onclick="NodeActions.redirectForkPage();">
                                             View Forks(${ node['fork_count']})
                                         </span>
                                     </li>
