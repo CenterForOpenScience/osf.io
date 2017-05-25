@@ -27,4 +27,4 @@ def urlparse_drop_netloc(url):
     return url[2]
 
 def assert_dict_contains_subset(a, b):
-    assert set(b.keys()) >= a.keys() and {k: b[k] for k in a if k in b} == a
+    assert set(a.items()).issubset( set(b.items()) )
