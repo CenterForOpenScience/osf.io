@@ -405,7 +405,7 @@ function _fangornResolveToggle(item) {
     }
     if (item.data.provider === 'osfstorage' && item.kind === 'file') {
         if (item.data.extra && item.data.extra.checkout) {
-            if (item.data.extra.checkout === window.contextVars.currentUser.id){
+            if (item.data.extra.checkout._id === window.contextVars.currentUser.id){
                 return checkedByUser;
             }
             return checkedByOther;
@@ -1866,7 +1866,7 @@ var FGItemButtons = {
                                     icon: 'fa fa-sign-out',
                                     className : 'text-warning'
                                 }, 'Check out file'));
-                        } else if (item.data.extra.checkout === window.contextVars.currentUser.id) {
+                        } else if (item.data.extra.checkout && item.data.extra.checkout._id === window.contextVars.currentUser.id) {
                             rowButtons.push(
                                 m.component(FGButton, {
                                     onclick: function(event) {
