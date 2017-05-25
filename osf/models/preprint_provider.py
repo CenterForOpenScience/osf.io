@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from django.db import models
+from django.contrib.postgres import fields
 
 from modularodm import Q
 
@@ -28,6 +29,8 @@ class PreprintProvider(ObjectIDMixin, BaseModel):
     social_instagram = models.CharField(null=True, blank=True, max_length=200)  # max length on prod: 8
     footer_links = models.TextField(default='', blank=True)
     share_source = models.CharField(blank=True, max_length=200)
+    allow_submissions = models.BooleanField(default=True)
+    additional_providers = fields.ArrayField(models.CharField(max_length=200), default=list, blank=True)
 
     subjects_acceptable = DateTimeAwareJSONField(blank=True, default=list)
     licenses_acceptable = models.ManyToManyField(NodeLicense, blank=True, related_name='licenses_acceptable')

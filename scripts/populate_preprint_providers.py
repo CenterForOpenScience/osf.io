@@ -104,7 +104,6 @@ def main(env):
             'social_instagram': '',
             'default_license': 'CC0 1.0 Universal',
             'licenses_acceptable': ['CC0 1.0 Universal', 'CC-By Attribution 4.0 International', 'No license'],
-            'header_text': '',
             'subjects_acceptable': [],
         },
         'engrxiv': {
@@ -144,7 +143,6 @@ def main(env):
             'social_instagram': 'engrxiv',
             'default_license': 'CC0 1.0 Universal',
             'licenses_acceptable': ['CC0 1.0 Universal', 'CC-By Attribution 4.0 International', 'No license'],
-            'header_text': '',
             'subjects_acceptable': [
                 (['Architecture', 'Architectural Engineering'], True),
                 (['Engineering', 'Aerospace Engineering', 'Aerodynamics and Fluid Mechanics'], False),
@@ -287,7 +285,6 @@ def main(env):
             'social_instagram': 'psyarxiv',
             'default_license': 'CC0 1.0 Universal',
             'licenses_acceptable': ['CC0 1.0 Universal', 'CC-By Attribution 4.0 International', 'No license'],
-            'header_text': '',
             'subjects_acceptable': [
                 (['Engineering', 'Operations Research, Systems Engineering and Industrial Engineering', 'Ergonomics'], False),
                 (['Life Sciences', 'Neuroscience and Neurobiology', 'Behavioral Neurobiology'], False),
@@ -371,7 +368,6 @@ def main(env):
             'social_instagram': 'socarxiv',
             'default_license': 'CC0 1.0 Universal',
             'licenses_acceptable': ['CC0 1.0 Universal', 'CC-By Attribution 4.0 International', 'No license'],
-            'header_text': '',
             'subjects_acceptable': [
                 (['Arts and Humanities'], True),
                 (['Education'], True),
@@ -393,7 +389,6 @@ def main(env):
             'email_support': 'support+scielo@osf.io',
             'social_twitter': 'RedeSciELO',  # optional
             'social_facebook': 'SciELONetwork',
-            'header_text': '',
             'default_license': 'CC-By Attribution 4.0 International',
             'licenses_acceptable': ['CC-By Attribution 4.0 International'],
             'subjects_acceptable': []
@@ -437,7 +432,6 @@ def main(env):
             'email_support': 'support+lawarxiv@osf.io',
             'social_twitter': 'lawarxiv',
             'social_facebook': '',
-            'header_text': '',
             'default_license': 'No license',
             'licenses_acceptable': ['CC0 1.0 Universal', 'CC-By Attribution 4.0 International', 'No license'],
             'subjects_acceptable': [
@@ -500,7 +494,6 @@ def main(env):
             'social_instagram': 'agrixiv',
             'default_license': 'CC0 1.0 Universal',
             'licenses_acceptable': ['CC0 1.0 Universal', 'CC-By Attribution 4.0 International'],
-            'header_text': '',
             'subjects_acceptable': [
                 (['Business', 'Business Administration, Management, and Operations'], False),
                 (['Business', 'Business and Corporate Communications'], False),
@@ -1104,7 +1097,6 @@ def main(env):
             'social_twitter': 'UCBITSS',
             'default_license': 'CC-By Attribution 4.0 International',
             'licenses_acceptable': ['CC-By Attribution 4.0 International', 'CC0 1.0 Universal'],
-            'header_text': '',
             'subjects_acceptable': [
                 (['Medicine and Health Sciences', 'Health Information Technology'], False),
                 (['Medicine and Health Sciences', 'Mental and Social Health'], False),

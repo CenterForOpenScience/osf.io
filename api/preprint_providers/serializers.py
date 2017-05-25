@@ -1,7 +1,7 @@
 from rest_framework import serializers as ser
 
 from api.base.utils import absolute_reverse
-from api.base.serializers import JSONAPISerializer, LinksField, RelationshipField, ShowIfVersion
+from api.base.serializers import JSONAPISerializer, LinksField, RelationshipField, ShowIfVersion, DevOnly
 
 
 class PreprintProviderSerializer(JSONAPISerializer):
@@ -24,6 +24,8 @@ class PreprintProviderSerializer(JSONAPISerializer):
     subjects_acceptable = ser.JSONField(required=False, allow_null=True)
     footer_links = ser.CharField(required=False)
     share_source = ser.CharField(read_only=True)
+    allow_submissions = DevOnly(ser.BooleanField(read_only=True))
+    additional_providers = DevOnly(ser.ListField(child=ser.CharField(), read_only=True))
 
     preprints = RelationshipField(
         related_view='preprint_providers:preprints-list',
