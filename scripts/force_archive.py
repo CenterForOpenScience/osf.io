@@ -31,6 +31,7 @@ from scripts import utils as script_utils
 logger = logging.getLogger(__name__)
 
 LOG_WHITELIST = {
+    NodeLog.EMBARGO_COMPLETED,
     NodeLog.EMBARGO_APPROVED,
     NodeLog.EMBARGO_INITIATED,
     NodeLog.REGISTRATION_APPROVAL_INITIATED,
