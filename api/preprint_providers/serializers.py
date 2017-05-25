@@ -23,6 +23,7 @@ class PreprintProviderSerializer(JSONAPISerializer):
     domain_redirect_enabled = ser.BooleanField(required=True)
     subjects_acceptable = ser.JSONField(required=False, allow_null=True)
     footer_links = ser.CharField(required=False)
+    share_source = ser.CharField(read_only=True)
 
     preprints = RelationshipField(
         related_view='preprint_providers:preprints-list',
