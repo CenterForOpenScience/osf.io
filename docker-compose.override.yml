@@ -98,3 +98,11 @@ services:
   api:
     volumes_from:
       - container:osf-sync
+
+######### Use this to get a local CDN for static assets: #############
+#  static-assets:
+#    build: ../osf-assets
+#    ports:
+#      - 10000:80
+#    volumes_from:
+#      - container:static-assets-sync
