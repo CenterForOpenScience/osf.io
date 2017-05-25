@@ -253,12 +253,33 @@ class TestUsers:
         data = res.json['data']
         assert len(data) == 1
 
+    def test_users_list_filter_with_bad_filter(self, app):
+        url = "/{}users/?filter[not_a_filter]=Doe".format(API_BASE)
+        res = app.get(url, expect_errors=True)
+        assert res.status_code == 400
+
     def test_users_list_filter_multiple_fields_with_bad_filter(self, app, user_one, user_two):
         url = '/{}users/?filter[given_name,not_a_filter]=Doe'.format(API_BASE)
         res = app.get(url, expect_errors=True)
         assert res.status_code == 400
 
     def test_users_list_or_filter(self, app):
+        doe_jane = UserFactory(fullname='Doe Jane')
+        doe_jane.given_name = 'Doe'
+        doe_jane.family_name = 'Jane'
+        doe_jane.save()
+
+        june_dog = UserFactory(fullname='June Dog')
+        june_dog.given_name = 'June'
+        june_dog.family_name = 'Dog'
+        june_dog.save()
+
+        url = "/{}users/?filter[family_name]=Jane,Dog".format(API_BASE)
+        res = app.get(url)
+        data = res.json['data']
+        assert len(data) == 2
+
+    def test_users_list_two_multiple_fields(self):
         john_doe = UserFactory(fullname='John Doe')
         john_doe.given_name = 'John'
         john_doe.family_name = 'Doe'
@@ -274,10 +295,32 @@ class TestUsers:
         june_dog.family_name = 'Dog'
         june_dog.save()
 
-        url = "/{}users/?filter[family_name]=Jane,Dog".format(API_BASE)
-        res = app.get(url)
+        dog_boy = UserFactory(fullname='Dog Boy')
+        dog_boy.given_name = 'Dog'
+        dog_boy.family_name = 'Boy'
+        dog_boy.save()
+
+        url = "/{}users/?filter[given_name,family_name]=Doe,Dog".format(API_BASE)
+        res = self.app.get(url)
         data = res.json['data']
-        assert len(data) == 2
+        assert len(data) == 4
+
+    def test_users_list_more_multiple_fields(self):
+        john_doe = UserFactory(fullname='John Doe')
+        john_doe.given_name = 'John'
+        john_doe.family_name = 'Doe'
+        john_doe.save()
+
+        doe_jane = UserFactory(fullname='Doe Jane')
+        doe_jane.given_name = 'Doe'
+        doe_jane.family_name = 'Jane'
+        doe_jane.fullname = john_doe._id
+        doe_jane.save()
+
+        url = "/{}users/?filter[given_name,family_name]=Doe&filter[id,full_name]={}".format(API_BASE, john_doe._id)
+        res = self.app.get(url)
+        data = res.json['data']
+        assert_equal(len(data), 2)
 
 
 @pytest.mark.django_db
