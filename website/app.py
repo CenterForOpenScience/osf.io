@@ -26,8 +26,6 @@ from website.archiver import listeners  # noqa
 from website.mails import listeners  # noqa
 from website.notifications import listeners  # noqa
 from website.identifiers import listeners  # noqa
-from website.project.licenses import ensure_licenses
-from website.project.model import ensure_schemas
 from werkzeug.contrib.fixers import ProxyFix
 
 logger = logging.getLogger(__name__)

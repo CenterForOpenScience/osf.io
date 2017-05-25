@@ -5,45 +5,11 @@ from __future__ import unicode_literals
 import logging
 
 from django.db import migrations
-
-from osf.models import MetaSchema
-from website.project.metadata.schemas import OSF_META_SCHEMAS
+from osf.utils.migrations import ensure_schemas, remove_schemas
 
 
 logger = logging.getLogger(__file__)
 
-
-def add_schemas(*args):
-    """Import meta-data schemas from JSON to database if not already loaded
-    """
-    schema_count = 0
-    for schema in OSF_META_SCHEMAS:
-        schema_obj, created = MetaSchema.objects.get_or_create(
-            name=schema['name'],
-            schema_version=schema.get('version', 1)
-        )
-        schema_obj.schema = schema
-        schema_obj.save()
-        schema_count += 1
-
-        if created:
-            logger.info('Added schema {} to the database'.format(schema['name']))
-
-    logger.info('Ensured {} schemas are in the database'.format(schema_count))
-
-
-def remove_schemas(*args):
-    removed_schemas = 0
-    for schema in OSF_META_SCHEMAS:
-        schema_obj = MetaSchema.objects.get(
-            schema=schema,
-            name=schema['name'],
-            schema_version=schema.get('version', 1)
-        )
-        schema_obj.delete()
-        removed_schemas += 1
-
-    logger.info('Removed {} schemas from the database'.format(removed_schemas))
 
 class Migration(migrations.Migration):
 
@@ -52,5 +18,5 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(add_schemas, remove_schemas),
+        migrations.RunPython(ensure_schemas, remove_schemas),
     ]
