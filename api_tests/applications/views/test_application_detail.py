@@ -34,77 +34,22 @@ class TestApplicationDetail:
         return _get_application_detail_route(user_app)
 
     @pytest.fixture()
-    def missing_id(self):
-        missing_id = {
-            'data': {
-                'type': 'applications',
-                'attributes': {
-                    'name': 'A shiny new application',
-                    'home_url': 'http://osf.io',
-                    'callback_url': 'https://cos.io'
-                }
-            }
-        }
-        return missing_id
+    def make_payload(self, user_app):
 
-    @pytest.fixture()
-    def missing_type(self, user_app):
-        missing_type = {
-            'data': {
-                'id': user_app.client_id,
-                'attributes': {
-                    'name': 'A shiny new application',
-                    'home_url': 'http://osf.io',
-                    'callback_url': 'https://cos.io'
+        def payload(type='applications', id=user_app.client_id):
+            return {
+                'data': {
+                    'id': id,
+                    'type': type,
+                    'attributes': {
+                        'name': 'A shiny new application',
+                        'home_url': 'http://osf.io',
+                        'callback_url': 'https://cos.io'
+                    }
                 }
             }
-        }
-        return missing_type
 
-    @pytest.fixture()
-    def incorrect_id(self):
-        incorrect_id = {
-            'data': {
-                'id': '12345',
-                'type': 'applications',
-                'attributes': {
-                    'name': 'A shiny new application',
-                    'home_url': 'http://osf.io',
-                    'callback_url': 'https://cos.io'
-                }
-            }
-        }
-        return incorrect_id
-
-    @pytest.fixture()
-    def incorrect_type(self, user_app):
-        incorrect_type = {
-            'data': {
-                'id': user_app.client_id,
-                'type': 'Wrong type.',
-                'attributes': {
-                    'name': 'A shiny new application',
-                    'home_url': 'http://osf.io',
-                    'callback_url': 'https://cos.io'
-                }
-            }
-        }
-        return incorrect_type
-
-    @pytest.fixture()
-    def correct(self, user_app):
-        correct = {
-            'data': {
-                'id': user_app.client_id,
-                'type': 'applications',
-                'attributes': {
-                    'name': 'A shiny new application',
-                    'home_url': 'http://osf.io',
-                    'callback_url': 'https://cos.io'
-                }
-            }
-        }
-        return correct
+        return payload
 
     def test_owner_can_view(self, app, user, user_app, user_app_url):
         print user_app_url
@@ -184,24 +129,33 @@ class TestApplicationDetail:
         user_app.reload()
         assert not user_app.is_active
 
-    def test_update_application(self, app, user, user_app, user_app_url, missing_id, missing_type, incorrect_id, incorrect_type, correct):
-        res = app.put_json_api(user_app_url, correct, auth=user.auth, expect_errors=True)
+    def test_update_application(self, app, user, user_app, user_app_url, make_payload):
+
+        valid_payload = make_payload()
+        incorrect_type_payload = make_payload(type='incorrect')
+        incorrect_id_payload = make_payload(id='12345')
+        missing_type_payload = make_payload()
+        del missing_type_payload['data']['type']
+        missing_id_payload = make_payload()
+        del missing_id_payload['data']['id']
+
+        res = app.put_json_api(user_app_url, valid_payload, auth=user.auth, expect_errors=True)
         assert res.status_code == 200
 
-    #   test_update_application_incorrect_type
-        res = app.put_json_api(user_app_url, incorrect_type, auth=user.auth, expect_errors=True)
+    #   test_update_application_incorrect_type_payload
+        res = app.put_json_api(user_app_url, incorrect_type_payload, auth=user.auth, expect_errors=True)
         assert res.status_code == 409
 
-    #   test_update_application_incorrect_id
-        res = app.put_json_api(user_app_url, incorrect_id, auth=user.auth, expect_errors=True)
+    #   test_update_application_incorrect_id_payload
+        res = app.put_json_api(user_app_url, incorrect_id_payload, auth=user.auth, expect_errors=True)
         assert res.status_code == 409
 
     #   test_update_application_no_type
-        res = app.put_json_api(user_app_url, missing_type, auth=user.auth, expect_errors=True)
+        res = app.put_json_api(user_app_url, missing_type_payload, auth=user.auth, expect_errors=True)
         assert res.status_code == 400
 
     #   test_update_application_no_id
-        res = app.put_json_api(user_app_url, missing_id, auth=user.auth, expect_errors=True)
+        res = app.put_json_api(user_app_url, missing_id_payload, auth=user.auth, expect_errors=True)
         assert res.status_code == 400
 
     #   test_update_application_no_attributes
@@ -209,20 +163,20 @@ class TestApplicationDetail:
         res = app.put_json_api(user_app_url, payload, auth=user.auth, expect_errors=True)
         assert res.status_code == 400
 
-    #   test_partial_update_application_incorrect_type
-        res = app.patch_json_api(user_app_url, incorrect_type, auth=user.auth, expect_errors=True)
+    #   test_partial_update_application_incorrect_type_payload
+        res = app.patch_json_api(user_app_url, incorrect_type_payload, auth=user.auth, expect_errors=True)
         assert res.status_code == 409
 
-    #   test_partial_update_application_incorrect_id
-        res = app.patch_json_api(user_app_url, incorrect_id, auth=user.auth, expect_errors=True)
+    #   test_partial_update_application_incorrect_id_payload
+        res = app.patch_json_api(user_app_url, incorrect_id_payload, auth=user.auth, expect_errors=True)
         assert res.status_code == 409
 
     #   test_partial_update_application_no_type
-        res = app.patch_json_api(user_app_url, missing_type, auth=user.auth, expect_errors=True)
+        res = app.patch_json_api(user_app_url, missing_type_payload, auth=user.auth, expect_errors=True)
         assert res.status_code == 400
 
     #   test_partial_update_application_no_id
-        res = app.patch_json_api(user_app_url, missing_id, auth=user.auth, expect_errors=True)
+        res = app.patch_json_api(user_app_url, missing_id_payload, auth=user.auth, expect_errors=True)
         assert res.status_code == 400
 
     #   test_partial_update_application_no_attributes
