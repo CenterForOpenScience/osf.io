@@ -128,12 +128,11 @@ class TestApplicationDetail:
         res = app.get(user_one_app_url, expect_errors=True)
         assert res.status_code == 401
 
-    def test_owner_can_delete(self, app, user_one, user_one_app_url):
-        patcher = mock.patch('framework.auth.cas.CasClient.revoke_application_tokens', return_value=True)
-        mock_method = patcher.start()
+    @mock.patch('framework.auth.cas.CasClient.revoke_application_tokens')
+    def test_owner_can_delete(self, mock_method, app, user_one, user_one_app_url):
+        mock_method.return_value(True)
         res = app.delete(user_one_app_url, auth=user_one.auth)
         assert res.status_code == 204
-        patcher.stop()
 
     def test_non_owner_cant_delete(self, app, user_two, user_one_app_url):
         res = app.delete(user_one_app_url,
@@ -141,9 +140,9 @@ class TestApplicationDetail:
                               expect_errors=True)
         assert res.status_code == 403
 
-    def test_deleting_application_makes_api_view_inaccessible(self, app, user_one, user_one_app_url):
-        patcher = mock.patch('framework.auth.cas.CasClient.revoke_application_tokens', return_value=True)
-        mock_method = patcher.start()
+    @mock.patch('framework.auth.cas.CasClient.revoke_application_tokens')
+    def test_deleting_application_makes_api_view_inaccessible(self, mock_method, app, user_one, user_one_app_url):
+        mock_method.return_value(True)
         res = app.delete(user_one_app_url, auth=user_one.auth)
         res = app.get(user_one_app_url, auth=user_one.auth, expect_errors=True)
         assert res.status_code == 404
@@ -184,13 +183,12 @@ class TestApplicationDetail:
         assert res.status_code == 200
         assert len(res.json['data']) == 1
 
-    def test_deleting_application_flags_instance_inactive(self, app, user_one, user_one_app, user_one_app_url):
-        patcher = mock.patch('framework.auth.cas.CasClient.revoke_application_tokens', return_value=True)
-        mock_method = patcher.start()
+    @mock.patch('framework.auth.cas.CasClient.revoke_application_tokens')
+    def test_deleting_application_flags_instance_inactive(self, mock_method, app, user_one, user_one_app, user_one_app_url):
+        mock_method.return_value(True)
         res = app.delete(user_one_app_url, auth=user_one.auth)
         user_one_app.reload()
         assert not user_one_app.is_active
-        patcher.stop()
 
     def test_update_application(self, app, user_one, user_one_app, user_one_app_url, missing_id, missing_type, incorrect_id, incorrect_type, correct):
         res = app.put_json_api(user_one_app_url, correct, auth=user_one.auth, expect_errors=True)

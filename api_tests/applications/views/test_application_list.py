@@ -77,9 +77,9 @@ class TestApplicationList:
         res = app.get(user_two_list_url, auth=user_two.auth)
         assert len(res.json['data']) == len(user_two_apps)
 
-    def test_deleting_application_should_hide_it_from_api_list(self, app, user_one, user_one_apps, user_one_list_url):
-        patcher = mock.patch('framework.auth.cas.CasClient.revoke_application_tokens', return_value=True)
-        mock_method = patcher.start()
+    @mock.patch('framework.auth.cas.CasClient.revoke_application_tokens')
+    def test_deleting_application_should_hide_it_from_api_list(self, mock_method, app, user_one, user_one_apps, user_one_list_url):
+        mock_method.return_value(True)
         api_app = user_one_apps[0]
         url = _get_application_detail_route(api_app)
 
@@ -89,7 +89,6 @@ class TestApplicationList:
         res = app.get(user_one_list_url, auth=user_one.auth)
         assert res.status_code == 200
         assert len(res.json['data']) == len(user_one_apps) - 1
-        patcher.stop()
 
     def test_created_applications_are_tied_to_request_user_with_data_specified(self, app, user_one, user_one_list_url, sample_data):
         res = app.post_json_api(user_one_list_url, sample_data, auth=user_one.auth, expect_errors=True)

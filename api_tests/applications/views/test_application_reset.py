@@ -44,39 +44,36 @@ class TestApplicationReset:
             }
         }
 
-    def test_reset_revokes_tokens_and_resets(self, user_one_app):
-        patcher = mock.patch('framework.auth.cas.CasClient.revoke_application_tokens', return_value=True)
-        mock_method = patcher.start()
+    @mock.patch('framework.auth.cas.CasClient.revoke_application_tokens')
+    def test_reset_revokes_tokens_and_resets(self, mock_method, user_one_app):
+        mock_method.return_value(True)
         old_secret = user_one_app.client_secret
         user_one_app.reset_secret(save=True)
         mock_method.assert_called()
         user_one_app.reload()
         assert old_secret != user_one_app.client_secret
-        patcher.stop()
 
-    def test_reset_does_not_save_without_save_param(self, user_one_app):
-        patcher = mock.patch('framework.auth.cas.CasClient.revoke_application_tokens', return_value=True)
-        mock_method = patcher.start()
+    @mock.patch('framework.auth.cas.CasClient.revoke_application_tokens')
+    def test_reset_does_not_save_without_save_param(self, mock_method, user_one_app):
+        mock_method.return_value(True)
         old_secret = user_one_app.client_secret
         user_one_app.reset_secret()
         user_one_app.reload()
         assert old_secret == user_one_app.client_secret
-        patcher.stop()
 
-    def test_reset_url_revokes_tokens_and_resets(self, app, user_one, user_one_app, user_one_reset_url, correct):
-        patcher = mock.patch('framework.auth.cas.CasClient.revoke_application_tokens', return_value=True)
-        mock_method = patcher.start()
+    @mock.patch('framework.auth.cas.CasClient.revoke_application_tokens')
+    def test_reset_url_revokes_tokens_and_resets(self, mock_method, app, user_one, user_one_app, user_one_reset_url, correct):
+        mock_method.return_value(True)
         old_secret = user_one_app.client_secret
         res = app.post_json_api(user_one_reset_url, correct, auth=user_one.auth)
         assert res.status_code == 201
         mock_method.assert_called()
         user_one_app.reload()
         assert old_secret != user_one_app.client_secret
-        patcher.stop()
 
-    def test_other_user_cannot_reset(self, app, user_one_app, user_one_reset_url, correct):
-        patcher = mock.patch('website.oauth.models.ApiOAuth2Application.reset_secret', return_value=True)
-        mock_method = patcher.start()
+    @mock.patch('website.oauth.models.ApiOAuth2Application.reset_secret')
+    def test_other_user_cannot_reset(self, mock_method, app, user_one_app, user_one_reset_url, correct):
+        mock_method.return_value(True)
         old_secret = user_one_app.client_secret
         user2 = AuthUserFactory()
         res = app.post_json_api(user_one_reset_url, correct, auth=user2.auth, expect_errors=True)
@@ -84,15 +81,13 @@ class TestApplicationReset:
         mock_method.assert_not_called()
         user_one_app.reload()
         assert old_secret == user_one_app.client_secret
-        patcher.stop()
 
-    def test_unauth_user_cannot_reset(self, app, user_one_app, user_one_reset_url, correct):
-        patcher = mock.patch('website.oauth.models.ApiOAuth2Application.reset_secret', return_value=True)
-        mock_method = patcher.start()
+    @mock.patch('website.oauth.models.ApiOAuth2Application.reset_secret')
+    def test_unauth_user_cannot_reset(self, mock_method, app, user_one_app, user_one_reset_url, correct):
+        mock_method.return_value(True)
         old_secret = user_one_app.client_secret
         res = app.post_json_api(user_one_reset_url, correct, auth=None, expect_errors=True)
         assert res.status_code == 401
         mock_method.assert_not_called()
         user_one_app.reload()
         assert old_secret == user_one_app.client_secret
-        patcher.stop()
