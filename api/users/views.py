@@ -4,7 +4,7 @@ from django.apps import apps
 from api.addons.views import AddonSettingsMixin
 from api.base import permissions as base_permissions
 from api.base.exceptions import Conflict, UserGone
-from api.base.filters import ListFilterMixin, NewDjangoFilterMixin, PreprintFilterMixin
+from api.base.filters import ListFilterMixin, JSONAPIFilterSet, PreprintFilterMixin
 from api.base.parsers import (JSONAPIRelationshipParser,
                               JSONAPIRelationshipParserForRegularJSON)
 from api.base.serializers import AddonAccountSerializer
@@ -86,7 +86,7 @@ class UserMixin(object):
         return obj
 
 
-class UserFilter(NewDjangoFilterMixin):
+class UserFilterSet(JSONAPIFilterSet):
 
     full_name = django_filters.CharFilter(name='fullname', lookup_expr='icontains')
     id = django_filters.CharFilter(name='guids___id')
@@ -159,7 +159,7 @@ class UserList(JSONAPIBaseView, generics.ListAPIView):
     serializer_class = UserSerializer
 
     filter_backends = (django_filters.rest_framework.DjangoFilterBackend,)
-    filter_class = UserFilter
+    filter_class = UserFilterSet
 
     ordering = ('-date_registered')
     view_category = 'users'

@@ -71,7 +71,7 @@ class OSFOrderingFilter(OrderingFilter):
         return queryset
 
 
-class NewDjangoFilterMixin(django_filters.FilterSet):
+class JSONAPIFilterSet(django_filters.FilterSet):
 
     QUERY_PATTERN = re.compile(r'^filter\[(?P<fields>((?:,*\s*\w+)*))\](\[(?P<op>\w+)\])?$')
     FILTER_FIELDS = re.compile(r'(?:,*\s*(\w+)+)')
@@ -79,8 +79,9 @@ class NewDjangoFilterMixin(django_filters.FilterSet):
     or_fields = []
 
     def __init__(self, data=None, *args, **kwargs):
+        self.or_fields = []
         if data:
-            new_qd = QueryDict('', mutable=True)
+            new_data = {}
             for key, value in data.iteritems():
                 match = self.QUERY_PATTERN.match(key)
                 if match:
@@ -88,17 +89,15 @@ class NewDjangoFilterMixin(django_filters.FilterSet):
                     fields = match_dict['fields']
                     field_names = re.findall(self.FILTER_FIELDS, fields.strip())
 
-                    self.or_fields = []
-                    multiple_values = value.split(',')
-                    if len(multiple_values) > 1 or len(field_names) > 1:
+                    values = value.split(',')
+                    if len(values) > 1 or len(field_names) > 1:
                         for field_name in field_names:
-                            for value in multiple_values:
+                            for value in values:
                                 self.or_fields.append({'field': field_name, 'value': value})
-
                     for field in field_names:
-                        new_qd.update({field: value})
-            data = new_qd
-        super(NewDjangoFilterMixin, self).__init__(data=data, *args, **kwargs)
+                        new_data.update({field: value})
+            data = new_data
+        super(JSONAPIFilterSet, self).__init__(data=data, *args, **kwargs)
 
     @property
     def qs(self, *args, **kwargs):
