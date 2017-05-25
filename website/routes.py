@@ -553,6 +553,14 @@ def make_url_map(app):
 
     process_rules(app, [
 
+        # cas action
+        Rule(
+            '/cas/action/<uid>/',
+            'get',
+            auth_views.auth_cas_action,
+            notemplate
+        ),
+
         # confirm email
         Rule(
             '/confirm/<uid>/<token>/',

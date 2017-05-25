@@ -5,7 +5,6 @@ from rest_framework import status
 from rest_framework.exceptions import APIException, ValidationError, PermissionDenied
 from rest_framework.response import Response
 
-from api.base.serializers import JSONAPISerializer
 from api.base.views import JSONAPIBaseView
 from api.cas import util, messages
 from api.cas.auth import CasJweAuthentication
@@ -24,13 +23,8 @@ class AuthLogin(JSONAPIBaseView, generics.CreateAPIView):
 
     view_category = 'cas'
     view_name = 'auth-login'
-
     permission_classes = (IsCasJweAuthentication,)
-
     authentication_classes = (CasJweAuthentication,)
-
-    serializer_class = JSONAPISerializer
-
     required_read_scopes = [CoreScopes.NULL]
     required_write_scopes = [CoreScopes.NULL]
 
@@ -53,7 +47,6 @@ class AuthLogin(JSONAPIBaseView, generics.CreateAPIView):
                 'familyName': request.user.family_name,
             }
         }
-
         return Response(content)
 
 
@@ -63,18 +56,12 @@ class AuthRegister(JSONAPIBaseView, generics.CreateAPIView):
 
     view_category = 'cas'
     view_name = 'auth-register'
-
     permission_classes = (IsCasJweAuthentication,)
-
     authentication_classes = (CasJweAuthentication,)
-
-    serializer_class = JSONAPISerializer
-
     required_read_scopes = [CoreScopes.NULL]
     required_write_scopes = [CoreScopes.NULL]
 
     def post(self, request, *args, **kwargs):
-
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
@@ -82,17 +69,12 @@ class AuthInstitution(JSONAPIBaseView, generics.CreateAPIView):
     """ Institution login.
     """
 
-    permission_classes = (IsCasJweAuthentication,)
-
-    required_read_scopes = [CoreScopes.NULL]
-    required_write_scopes = [CoreScopes.NULL]
-
     view_category = 'cas'
     view_name = 'auth-institution'
-
-    serializer_class = JSONAPISerializer
-
+    permission_classes = (IsCasJweAuthentication,)
     authentication_classes = (CasJweAuthentication,)
+    required_read_scopes = [CoreScopes.NULL]
+    required_write_scopes = [CoreScopes.NULL]
 
     def post(self, request, *args, **kwargs):
         return Response(status=status.HTTP_204_NO_CONTENT)
@@ -102,45 +84,39 @@ class AuthVerifyEmail(JSONAPIBaseView, generics.CreateAPIView):
     """ Verify the primary email for a new osf account.
     """
 
+    view_category = 'cas'
+    view_name = 'auth-verify-email'
     permission_classes = (IsCasJweAuthentication,)
-
+    authentication_classes = (CasJweAuthentication,)
     required_read_scopes = [CoreScopes.NULL]
     required_write_scopes = [CoreScopes.NULL]
 
-    view_category = 'cas'
-    view_name = 'auth-verify-email'
-
-    serializer_class = JSONAPISerializer
-
-    authentication_classes = (CasJweAuthentication,)
-
     def post(self, request, *args, **kwargs):
-        return Response(status=status.HTTP_204_NO_CONTENT)
+
+        content = {
+            "verificationKey": request.user.verification_key,
+            "serviceUrl": web_settings.DOMAIN + 'cas/action/' + request.user._id + '/',
+        }
+        return Response(data=content, status=status.HTTP_200_OK)
 
 
 class AuthResetPassword(JSONAPIBaseView, generics.CreateAPIView):
     """ Reset the password for an osf account.
     """
 
-    permission_classes = (IsCasJweAuthentication,)
-
-    required_read_scopes = [CoreScopes.NULL]
-    required_write_scopes = [CoreScopes.NULL]
-
     view_category = 'cas'
     view_name = 'auth-reset-password'
-
-    serializer_class = JSONAPISerializer
-
+    permission_classes = (IsCasJweAuthentication,)
     authentication_classes = (CasJweAuthentication,)
+    required_read_scopes = [CoreScopes.NULL]
+    required_write_scopes = [CoreScopes.NULL]
 
     def post(self, request, *args, **kwargs):
 
         content = {
             "verificationKey": request.user.verification_key,
-            "serviceUrl": web_settings.DOMAIN + 'settings/account/',
+            "serviceUrl": web_settings.DOMAIN + 'cas/action/' + request.user._id + '/',
         }
-
         return Response(data=content, status=status.HTTP_200_OK)
 
 
@@ -150,8 +126,6 @@ class ServiceFindAccount(JSONAPIBaseView, generics.CreateAPIView):
 
     view_category = 'cas'
     view_name = 'service-find-account'
-
-    serializer_class = JSONAPISerializer
     permission_classes = ()
     authentication_classes = ()
 
@@ -188,8 +162,6 @@ class ServiceCheckPersonalAccessToken(JSONAPIBaseView, generics.CreateAPIView):
 
     view_category = 'cas'
     view_name = 'service-check-personal-access-token'
-
-    serializer_class = JSONAPISerializer
     permission_classes = ()
     authentication_classes = ()
 
@@ -227,8 +199,6 @@ class ServiceCheckOauthScope(JSONAPIBaseView, generics.CreateAPIView):
 
     view_category = 'cas'
     view_name = 'service-check-oauth-scope'
-
-    serializer_class = JSONAPISerializer
     permission_classes = ()
     authentication_classes = ()
 
@@ -261,8 +231,6 @@ class ServiceLoadDeveloperApps(JSONAPIBaseView, generics.CreateAPIView):
 
     view_category = 'cas'
     view_name = 'service-load-developer-apps'
-
-    serializer_class = JSONAPISerializer
     permission_classes = ()
     authentication_classes = ()
 
@@ -298,8 +266,6 @@ class ServiceLoadInstitutions(JSONAPIBaseView, generics.CreateAPIView):
 
     view_category = 'cas'
     view_name = 'service-load-institutions'
-
-    serializer_class = JSONAPISerializer
     permission_classes = ()
     authentication_classes = ()
 

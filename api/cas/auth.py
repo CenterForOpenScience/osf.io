@@ -11,12 +11,13 @@ from framework import sentry
 from framework.auth import register_unconfirmed, get_or_create_user
 from framework.auth import campaigns
 from framework.auth.core import generate_verification_key
-from framework.auth.exceptions import DuplicateEmailError, ChangePasswordError
+from framework.auth.exceptions import DuplicateEmailError, ChangePasswordError, InvalidTokenError, ExpiredTokenError
+
 from framework.auth.views import send_confirm_email
 
 from osf.models import Institution, OSFUser
 
-from website.mails import send_mail, WELCOME_OSF4I
+from website.mails import send_mail, WELCOME, WELCOME_OSF4I
 
 
 class CasJweAuthentication(BaseAuthentication):
@@ -286,12 +287,7 @@ def handle_institution_authenticate(provider):
         user.register(username)
 
         # send confirmation email
-        send_mail(
-            to_addr=user.username,
-            mail=WELCOME_OSF4I,
-            mimetype='html',
-            user=user
-        )
+        send_mail(to_addr=user.username, mail=WELCOME_OSF4I, mimetype='html', user=user)
 
     if not user.is_affiliated_with_institution(institution):
         user.affiliated_institutions.add(institution)
@@ -308,30 +304,34 @@ def handle_reset_password(data_user):
     token = data_user.get('verificationCode')
     password = data_user.get('password')
 
+    # something is wrong with CAS, raise 400
     if not email or not token or not password:
-        # something is wrong with CAS, raise 400
-        # CAS will inform log the error and inform Sentry
         raise ValidationError(detail=messages.INVALID_REQUEST)
 
     # retrieve the user
     user = OSFUser.objects.filter(Q(username=email) | Q(emails__icontains=email)).first()
 
+    # invalid token
     if not user and user.verify_password_token(token):
         raise PermissionDenied(detail=messages.INVALID_CODE)
 
-    # clear verification key v2 for password reset
-    user.verification_key_v2 = {}
-    # generate verification key v1 for CAS login
-    user.verification_key = generate_verification_key(verification_type=None)
     # reset password
     try:
         user.set_password(password)
-        user.save()
     except ChangePasswordError:
-        # TODO: inform Sentry
         # something is wrong with OSF, raise 500
         raise APIException(detail=messages.REQUEST_FAILED)
 
+    # clear verification key v2 for password reset
+    user.verification_key_v2 = {}
+
+    # generate verification key v1 for CAS login
+    user.verification_key = generate_verification_key(verification_type=None)
+
+    # update last_cas_action
+    user.last_cas_action = "reset-password"
+
+    user.save()
     return user, None
 
 
@@ -339,4 +339,42 @@ def handle_verify_email(data_user):
     """ Handle email verification for new account.
     """
 
-    raise APIException(detail=messages.REQUEST_FAILED)
+    email = data_user.get('email')
+    token = data_user.get('verificationCode')
+
+    # something is wrong with CAS, raise 400
+    if not email or not token:
+        raise ValidationError(detail=messages.INVALID_REQUEST)
+
+    # retrieve the user, the email must be primary
+    user = OSFUser.objects.filter(username=email).first()
+    if not user or user.date_confirmed:
+        # something is wrong with CAS, raise 400
+        raise ValidationError(detail=messages.EMAIL_NOT_FOUND)
+
+    # verify the token
+    try:
+        email = user.get_unconfirmed_email_for_token(token)
+    except (InvalidTokenError or ExpiredTokenError):
+        # invalid token
+        raise PermissionDenied(detail=messages.INVALID_CODE)
+
+    # register user
+    user.register(email)
+
+    # send welcome email
+    send_mail(to_addr=user.username, mail=WELCOME, mimetype='html', user=user)
+
+    # clear unclaimed_records and email_verifications for this new user
+    user.email_verifications = {}
+    user.unclaimed_records = {}
+
+    # clear verification key v2 for password reset
+    user.verification_key_v2 = {}
+
+    # generate verification key v1 for CAS login
+    user.verification_key = generate_verification_key(verification_type=None)
+    user.last_cas_action = "verify-new-account"
+
+    user.save()
+    return user, None

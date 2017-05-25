@@ -34,6 +34,30 @@ from website.util import web_url_for
 from website.util.sanitize import strip_html
 
 
+@collect_auth
+def auth_cas_action(auth, uid):
+
+    if not auth or not auth.user or auth.user._id != uid:
+        raise HTTPError(http.FORBIDDEN)
+
+    if "verify-new-account" == auth.user.last_cas_action:
+        auth.user.last_cas_action = None
+        auth.user.save()
+        campaign = campaigns.campaign_for_user(auth.user)
+        if campaign:
+            return redirect(campaigns.campaign_url_for(campaign))
+        status.push_status_message(language.WELCOME_MESSAGE, kind='default', jumbotron=True, trust=True)
+        return redirect(web_url_for('index'))
+
+    if "reset-password" == auth.user.last_cas_action:
+        auth.user.last_cas_action = None
+        auth.user.save()
+        status.push_status_message(language.PASSWORD_RESET_SUCCESS, kind='success', trust=True)
+        return redirect(web_url_for('user_account'))
+
+    raise HTTPError(http.BAD_REQUEST)
+
+
 def login_and_register_handler(auth, login=True, campaign=None, next_url=None, logout=None):
     """
     Non-view helper to handle `login` and `register` requests.
