@@ -22,7 +22,6 @@ def user():
     return AuthUserFactory()
 
 @pytest.mark.django_db
-@pytest.mark.usefixtures('app')
 class TestApplicationDetail:
 
     @pytest.fixture()
@@ -52,7 +51,6 @@ class TestApplicationDetail:
         return payload
 
     def test_owner_can_view(self, app, user, user_app, user_app_url):
-        print user_app_url
         res = app.get(user_app_url, auth=user.auth)
         assert res.status_code == 200
         assert res.json['data']['attributes']['client_id'] == user_app.client_id

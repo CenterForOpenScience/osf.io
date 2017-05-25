@@ -15,7 +15,6 @@ def user():
     return AuthUserFactory()
 
 @pytest.mark.django_db
-@pytest.mark.usefixtures('app')
 class TestApplicationReset:
 
     @pytest.fixture()

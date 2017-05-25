@@ -23,12 +23,11 @@ def user():
     return AuthUserFactory()
 
 @pytest.mark.django_db
-@pytest.mark.usefixtures('app')
 class TestApplicationList:
 
     @pytest.fixture()
-    def user_apps(self, user):
-        return [ApiOAuth2ApplicationFactory(owner=user) for i in xrange(3)]
+    def user_app(self, user):
+        return [ApiOAuth2ApplicationFactory(owner=user) for i in xrange(1)]
 
     @pytest.fixture()
     def user_list_url(self):
@@ -52,21 +51,21 @@ class TestApplicationList:
         }
         return sample_data
 
-    def test_user_should_see_only_their_applications(self, app, user, user_apps, user_list_url):
+    def test_user_should_see_only_their_applications(self, app, user, user_app, user_list_url):
         res = app.get(user_list_url, auth=user.auth)
-        assert len(res.json['data']) == len(user_apps)
+        assert len(res.json['data']) == len(user_app)
 
     def test_other_user_should_see_only_their_applications(self, app, user_list_url):
         other_user = AuthUserFactory()
-        other_user_apps = [ApiOAuth2ApplicationFactory(owner=other_user) for i in xrange(2)]
+        other_user_app = [ApiOAuth2ApplicationFactory(owner=other_user) for i in xrange(2)]
         
         res = app.get(user_list_url, auth=other_user.auth)
-        assert len(res.json['data']) == len(other_user_apps)
+        assert len(res.json['data']) == len(other_user_app)
 
     @mock.patch('framework.auth.cas.CasClient.revoke_application_tokens')
-    def test_deleting_application_should_hide_it_from_api_list(self, mock_method, app, user, user_apps, user_list_url):
+    def test_deleting_application_should_hide_it_from_api_list(self, mock_method, app, user, user_app, user_list_url):
         mock_method.return_value(True)
-        api_app = user_apps[0]
+        api_app = user_app[0]
         url = _get_application_detail_route(api_app)
 
         res = app.delete(url, auth=user.auth)
@@ -74,7 +73,7 @@ class TestApplicationList:
 
         res = app.get(user_list_url, auth=user.auth)
         assert res.status_code == 200
-        assert len(res.json['data']) == len(user_apps) - 1
+        assert len(res.json['data']) == len(user_app) - 1
 
     def test_created_applications_are_tied_to_request_user_with_data_specified(self, app, user, user_list_url, sample_data):
         res = app.post_json_api(user_list_url, sample_data, auth=user.auth, expect_errors=True)
@@ -104,12 +103,12 @@ class TestApplicationList:
         assert res.status_code == 201
         assert res.json['data']['attributes']['name'] == cleaned_text
 
-    def test_created_applications_show_up_in_api_list(self, app, user, user_apps, user_list_url, sample_data):
+    def test_created_applications_show_up_in_api_list(self, app, user, user_app, user_list_url, sample_data):
         res = app.post_json_api(user_list_url, sample_data, auth=user.auth)
         assert res.status_code == 201
 
         res = app.get(user_list_url, auth=user.auth)
-        assert len(res.json['data']) == len(user_apps) + 1
+        assert len(res.json['data']) == len(user_app) + 1
 
     def test_returns_401_when_not_logged_in(self, app, user_list_url):
         res = app.get(user_list_url, expect_errors=True)
