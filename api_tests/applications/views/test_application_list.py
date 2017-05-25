@@ -53,7 +53,7 @@ class TestApplicationList:
 
     def test_user_should_see_only_their_applications(self, app, user, user_app, user_list_url):
         res = app.get(user_list_url, auth=user.auth)
-        assert len(res.json['data']) == 1
+        assert len(res.json['data']) == ApiOAuth2Application.objects.count()
 
     def test_other_user_should_see_only_their_applications(self, app, user_list_url):
         other_user = AuthUserFactory()
@@ -73,7 +73,7 @@ class TestApplicationList:
 
         res = app.get(user_list_url, auth=user.auth)
         assert res.status_code == 200
-        assert len(res.json['data']) == 0
+        assert len(res.json['data']) == ApiOAuth2Application.objects.count() - 1
 
     def test_created_applications_are_tied_to_request_user_with_data_specified(self, app, user, user_list_url, sample_data):
         res = app.post_json_api(user_list_url, sample_data, auth=user.auth, expect_errors=True)
@@ -108,7 +108,7 @@ class TestApplicationList:
         assert res.status_code == 201
 
         res = app.get(user_list_url, auth=user.auth)
-        assert len(res.json['data']) == 1 + 1
+        assert len(res.json['data']) == ApiOAuth2Application.objects.count()
 
     def test_returns_401_when_not_logged_in(self, app, user_list_url):
         res = app.get(user_list_url, expect_errors=True)
