@@ -52,14 +52,13 @@ PREPRINT_PROVIDERS = [
         'default_license': 'CC0 1.0 Universal',
         'licenses_acceptable': ['CC0 1.0 Universal', 'CC-By Attribution 4.0 International', 'No license'],
     },
-    # Straight bepress taxonomy, no custom domain, two licenses
     {
         '_id': 'lawarxiv',
         'name': '[TEST] LawArXiv',
         'default_license': 'CC0 1.0 Universal',
         'licenses_acceptable': ['CC0 1.0 Universal', 'No license'],
+        'description': 'Straight bepress taxonomy, no custom domain, two licenses',
     },
-    # Straight except custom domain that redirects to that domain, one license
     {
         '_id': 'socarxiv',
         'name': '[TEST] SocArXiv',
@@ -67,8 +66,8 @@ PREPRINT_PROVIDERS = [
         'domain_redirect_enabled': True,
         'default_license': 'CC0 1.0 Universal',
         'licenses_acceptable': ['CC0 1.0 Universal'],
+        'description': 'Straight except custom domain that redirects to that domain, one license',
     },
-    # Basic change to taxonomy showing some simple hierarchy, a custom domain but no redirect, three licenses
     {
         '_id': 'psyarxiv',
         'name': '[TEST] PsyArXiv',
@@ -80,14 +79,15 @@ PREPRINT_PROVIDERS = [
             (['Life Sciences', 'Neuroscience and Neurobiology', 'Cognitive Neuroscience'], False),
             (['Social and Behavioral Sciences', 'Psychology'], True),
         ],
+        'description': 'Basic change to taxonomy showing some simple hierarchy, a custom domain but no redirect, three licenses',
     },
-    # Custom taxonomy, no custom domain, all the licenses
     {
         '_id': 'engrxiv',
         'name': '[TEST] engrXiv',
         'external_url': 'http://engrxiv.com',
         'default_license': 'CC0 1.0 Universal',
         'licenses_acceptable': ['CC0 1.0 Universal', 'CC-By Attribution 4.0 International', 'No license'],
+        'description': 'Custom taxonomy, no custom domain, all the licenses',
         'custom_taxonomy': {
             'include': ['Engineering'],
             'exclude': ['Manufacturing', 'Heat Transfer, Combustion', 'Aerodynamics and Fluid Mechanics'],

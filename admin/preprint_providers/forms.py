@@ -29,15 +29,15 @@ class PreprintProviderForm(ModelForm):
 
     def clean_subjects_acceptable(self, *args, **kwargs):
         subject_ids = filter(None, self.data['subjects_chosen'].split(', '))
-        subjects_selected = [Subject.objects.get(id=ident) for ident in subject_ids]
+        subjects_selected = Subject.objects.filter(id__in=subject_ids)
         rules = get_subject_rules(subjects_selected)
         return rules
 
     def clean_advisory_board(self, *args, **kwargs):
         return bleach.clean(
             self.data.get('advisory_board'),
-            tags=['a', 'br', 'div', 'em', 'h2', 'li', 'p', 'strong', 'ul'],
-            attributes=['class', 'style', 'href', 'title'],
+            tags=['a', 'b', 'br', 'div', 'em', 'h2', 'i', 'li', 'p', 'strong', 'ul'],
+            attributes=['class', 'href', 'title', 'target'],
             strip=True
         )
 
@@ -45,7 +45,7 @@ class PreprintProviderForm(ModelForm):
         return bleach.clean(
             self.data.get('description'),
             tags=['a', 'br', 'em', 'p', 'span', 'strong'],
-            attributes=['class', 'style', 'href', 'title'],
+            attributes=['class', 'href', 'title', 'target'],
             strip=True
         )
 
@@ -53,6 +53,7 @@ class PreprintProviderForm(ModelForm):
         return bleach.clean(
             self.data.get('footer_links'),
             tags=['a', 'br', 'div', 'em', 'p', 'span', 'strong'],
-            attributes=['class', 'style', 'href', 'title'],
+            attributes=['class', 'style', 'href', 'title', 'target'],
+            styles=['vertical-align'],
             strip=True
         )
