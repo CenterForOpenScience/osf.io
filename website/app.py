@@ -128,9 +128,6 @@ def init_app(settings_module='website.settings', set_backends=True, routes=True,
         sentry.init_app(app)
         logger.info("Sentry enabled; Flask's debug mode disabled")
 
-    if set_backends and fixtures:
-        ensure_schemas()
-        ensure_licenses()
     apply_middlewares(app, settings)
 
     app.config['IS_INITIALIZED'] = True
