@@ -27,7 +27,7 @@ class TestApplicationList:
 
     @pytest.fixture()
     def user_app(self, user):
-        return [ApiOAuth2ApplicationFactory(owner=user) for i in xrange(1)]
+        return ApiOAuth2ApplicationFactory(owner=user)
 
     @pytest.fixture()
     def user_list_url(self):
@@ -57,7 +57,7 @@ class TestApplicationList:
 
     def test_other_user_should_see_only_their_applications(self, app, user_list_url):
         other_user = AuthUserFactory()
-        other_user_app = [ApiOAuth2ApplicationFactory(owner=other_user) for i in xrange(2)]
+        other_user_apps = [ApiOAuth2ApplicationFactory(owner=other_user) for i in xrange(2)]
         
         res = app.get(user_list_url, auth=other_user.auth)
         assert len(res.json['data']) == len(other_user_app)
