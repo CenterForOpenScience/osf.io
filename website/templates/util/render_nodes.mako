@@ -6,8 +6,8 @@
         <ul data-bind="stopBinding: true" class="list-group m-md ${'sortable' if sortable and 'write' in user['permissions'] else ''}">
             ## TODO: Add .scripted when JS is hooked up
             <span id='${pluralized_node_type if pluralized_node_type is not UNDEFINED else 'osfNodeList'}' class="render-nodes-list">
-                % for index, each in enumerate(nodes):
-                    ${ render_node.render_node(index, each, show_path=show_path) }
+                % for each in nodes:
+                    ${ render_node.render_node(each, show_path=show_path) }
                 % endfor
             </span>
         </ul>
