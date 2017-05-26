@@ -1,6 +1,6 @@
 <%namespace name="contributor_list" file="./contributor_list.mako" />
 ## TODO: Rename summary to node
-<%def name="render_node(index, summary, show_path)">
+<%def name="render_node(summary, show_path)">
 ## TODO: Don't rely on ID
 
 <div id="render-node">
@@ -15,27 +15,27 @@
         <h4 class="list-group-item-heading">
             <span class="component-overflow f-w-lg" style="line-height: 1.5;">
             % if not summary['primary']:
-              <i class="fa fa-link" data-toggle="tooltip" title="Linked ${summary['node_type']}"></i>
+                <i class="fa fa-link" data-toggle="tooltip" title="Linked ${summary['node_type']}"></i>
             % endif
 
             % if not summary['is_public']:
                 <span class="fa fa-lock" data-toggle="tooltip" title="This project is private"></span>
             % endif
                 <span class="project-statuses-lg">
-                  % if summary['is_pending_registration']:
-                    <span class="label label-info"><strong>Pending registration</strong></span> |
-                  % elif summary['is_retracted']:
-                    <span class="label label-danger"><strong>Withdrawn</strong></span> |
-                  % elif summary['is_pending_retraction']:
-                    <span class="label label-info"><strong>Pending withdrawal</strong></span> |
-                  % elif summary['is_embargoed']:
-                    <span class="label label-info"><strong>Embargoed</strong></span> |
-                  % elif summary['is_pending_embargo']:
-                    <span class="label label-info"><strong>Pending embargo</strong></span> |
-                  % endif
-                  % if summary['archiving']:
-                    <span class="label label-primary"><strong>Archiving</strong></span> |
-                  % endif
+                    % if summary['is_pending_registration']:
+                        <span class="label label-info"><strong>Pending registration</strong></span> |
+                    % elif summary['is_retracted']:
+                        <span class="label label-danger"><strong>Withdrawn</strong></span> |
+                    % elif summary['is_pending_retraction']:
+                        <span class="label label-info"><strong>Pending withdrawal</strong></span> |
+                    % elif summary['is_embargoed']:
+                        <span class="label label-info"><strong>Embargoed</strong></span> |
+                    % elif summary['is_pending_embargo']:
+                        <span class="label label-info"><strong>Pending embargo</strong></span> |
+                    % endif
+                    % if summary['archiving']:
+                        <span class="label label-primary"><strong>Archiving</strong></span> |
+                    % endif
                 </span>
             <span data-bind='getIcon: ${ summary["category"] | sjson, n }'></span>
             % if not summary['archiving']:
@@ -56,22 +56,22 @@
                     <i class="fa fa-times remove-pointer" data-id="${summary['id']}" data-toggle="tooltip" title="Remove link"></i>
                     <i class="fa fa-code-fork" onclick="NodeActions.forkPointer('${summary['id']}', '${summary['primary_id']}');" data-toggle="tooltip" title="Fork this ${summary['node_type']} into ${node['node_type']} ${node['title']}"></i>
                 % endif
-                % if summary['logged_in'] and summary['is_contributor']:
-                  <div class="dropdown pull-right" id="componentQuickActions">
-                    <button class="btn btn-default dropdown-toggle" type="button" data-toggle="dropdown">
-                      <span class="glyphicon glyphicon-option-horizontal"></span>
-                    </button>
-                    <ul class="dropdown-menu dropdown-menu-right">
-                      <li><a tabindex="-1" href="${domain}${summary['id']}/settings/">Settings</a></li>
-                      <li><a tabindex="-1" href="${domain}${summary['id']}/contributors/">Manage Contributors</a></li>
-                      % if summary['is_admin']:
-                          <li>
-                              <a tabindex="-1" onclick="ComponentActions.deleteNode(${summary['childExists'] | sjson, n}, '${summary['node_type']}', ${summary['isPreprint'] | sjson, n},'${summary['api_url']}')" type="button">
+                % if summary['node_type'] == 'component' and summary['logged_in'] and summary['is_contributor']:
+                    <div class="dropdown pull-right" id="componentQuickActions">
+                        <button class="btn btn-default dropdown-toggle" type="button" data-toggle="dropdown">
+                            <span class="glyphicon glyphicon-option-horizontal"></span>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-right">
+                            <li><a tabindex="-1" href="${domain}${summary['id']}/settings/">Settings</a></li>
+                            <li><a tabindex="-1" href="${domain}${summary['id']}/contributors/">Manage Contributors</a></li>
+                            % if summary['is_admin']:
+                            <li>
+                                <a tabindex="-1" onclick="ComponentActions.deleteNode(${summary['childExists'] | sjson, n}, '${summary['node_type']}', ${summary['isPreprint'] | sjson, n},'${summary['api_url']}')" type="button">
                                     Delete
-                              </a>
-                          </li>
-                      % endif
-                    </ul>
+                                </a>
+                            </li>
+                            % endif
+                        </ul>
                   </div>
                 % endif
             </div>
@@ -152,21 +152,13 @@
 </div>
 <script type="text/javascript">
     window.contextVars = window.contextVars || {};
-    window.contextVars.node = window.contextVars.node || {};
-    window.contextVars.node.urls = window.contextVars.node.urls || {};
-    window.contextVars.node.urls.api = window.contextVars.node.urls.api || '';
-
     var nodes = window.contextVars.nodes || [];
     nodes.push({
-      node : ${summary | sjson, n},
-      id: ${summary['primary_id'] if not summary['primary'] and summary['can_view'] else summary['id'] | sjson, n}
+        node : ${summary | sjson, n},
+        id: ${summary['primary_id'] if not summary['primary'] and summary['can_view'] else summary['id'] | sjson, n}
     });
     window.contextVars = $.extend(true, {}, window.contextVars, {
-      nodes : nodes
+        nodes : nodes
     });
-
 </script>
-
-## <script type="text/javascript" src=${"/static/public/js/component-settings-page.js" | webpack_asset}></script>
-
 </%def>
