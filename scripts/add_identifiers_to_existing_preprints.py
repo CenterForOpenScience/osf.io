@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 def main(dry=True):
     from osf.models import PreprintService
 
-    preprints_without_identifiers = PreprintService.objects.filter(identifiers__isnull=True)
+    preprints_without_identifiers = PreprintService.objects.filter(identifiers__isnull=True, is_published=True)
     logger.info('About to add identifiers to {} preprints.'.format(preprints_without_identifiers.count()))
 
     for preprint in preprints_without_identifiers:
