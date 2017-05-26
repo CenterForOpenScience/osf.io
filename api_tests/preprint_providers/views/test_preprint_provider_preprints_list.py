@@ -1,9 +1,10 @@
+import pytest
+
 from nose.tools import *  # flake8: noqa
 
 from api.base.settings.defaults import API_BASE
 from api_tests.preprints.filters.test_filters import PreprintsListFilteringMixin
 from api_tests.preprints.views.test_preprint_list_mixin import PreprintIsPublishedListMixin, PreprintIsValidListMixin
-
 from framework.auth.core import Auth
 from tests.base import ApiTestCase
 from osf_tests.factories import (
@@ -47,10 +48,11 @@ class TestPreprintProviderPreprintIsPublishedList(PreprintIsPublishedListMixin, 
         self.url = '/{}preprint_providers/{}/preprints/?version=2.2&'.format(API_BASE, self.provider_one._id)
         super(TestPreprintProviderPreprintIsPublishedList, self).setUp()
 
-class TestPreprintProviderPreprintIsValidList(PreprintIsValidListMixin, ApiTestCase):
+class TestPreprintProviderPreprintIsValidList(PreprintIsValidListMixin):
+    @pytest.fixture(autouse=True)
     def setUp(self):
         self.admin = AuthUserFactory()
-        self.provider = PreprintProviderFactory()
         self.project = ProjectFactory(creator=self.admin, is_public=True)
+        self.provider = PreprintProviderFactory()
         self.url = '/{}preprint_providers/{}/preprints/?version=2.2&'.format(API_BASE, self.provider._id)
         super(TestPreprintProviderPreprintIsValidList, self).setUp()

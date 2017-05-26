@@ -19,12 +19,12 @@ from framework.exceptions import PermissionsError
 from website.util import permissions
 from website.exceptions import NodeStateError
 from website.project import signals as project_signals
-from osf.models import StoredFileNode, PreprintService, PreprintProvider, Node, NodeLicense
+from osf.models import BaseFileNode, PreprintService, PreprintProvider, Node, NodeLicense
 
 
 class PrimaryFileRelationshipField(RelationshipField):
     def get_object(self, file_id):
-        return StoredFileNode.load(file_id)
+        return BaseFileNode.load(file_id)
 
     def to_internal_value(self, data):
         file = self.get_object(data)
@@ -63,6 +63,7 @@ class PreprintSerializer(JSONAPISerializer):
         'date_published',
         'provider',
         'is_published',
+        'subjects',
     ])
 
     id = IDField(source='_id', read_only=True)

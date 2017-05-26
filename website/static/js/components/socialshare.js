@@ -49,7 +49,7 @@ var ShareButtonsPopover = {
     },
     view: function(ctrl, options) {
         return [
-            m('a#sharePopoverBtn.btn.btn-default[href=#][data-toggle=popover]', {
+            m('a#sharePopoverBtn.btn.btn-default.glyphicon.glyphicon-share[href=#][data-toggle=popover]', {
                 onmousedown: function() {
                     ctrl.showOnClick = !ctrl.popupShowing;
                 },
@@ -81,7 +81,7 @@ var ShareButtonsPopover = {
                         });
                     }
                 }
-            }, 'Share'),
+            }),
         ];
     },
 };
