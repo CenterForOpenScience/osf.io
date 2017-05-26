@@ -2,7 +2,7 @@
 Changelog
 *********
 
-0.110.0 (2017-05-25)
+0.110.0 (2017-05-26)
 ====================
 - [production] Can't view file revisions/versions if sharejs is down
 - User can enter invalid Copyright year on projects with no license
