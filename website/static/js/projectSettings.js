@@ -152,7 +152,7 @@ request.fail(function(xhr, textStatus, err) {
  * Pulls a random name from the scientist list to use as confirmation string
  *  Ignores case and whitespace
  */
-var getConfirmationCode = function(nodeType, isPreprint, nodeApiUrl=nodeApiUrl) {
+var getConfirmationCode = function(nodeType, isPreprint) {
 
     var preprint_message = '<p class="danger">This ' + nodeType + ' contains a preprint. Deleting this ' +
         nodeType + ' will also delete your preprint. This action is irreversible.</p>';
