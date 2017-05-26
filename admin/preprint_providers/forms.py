@@ -36,7 +36,7 @@ class PreprintProviderForm(ModelForm):
     def clean_advisory_board(self, *args, **kwargs):
         return bleach.clean(
             self.data.get('advisory_board'),
-            tags=['a', 'b', 'br', 'div', 'em', 'h2', 'i', 'li', 'p', 'strong', 'ul'],
+            tags=['a', 'b', 'br', 'div', 'em', 'h2', 'li', 'p', 'strong', 'ul'],
             attributes=['class', 'href', 'title', 'target'],
             strip=True
         )
