@@ -457,7 +457,7 @@ def send_claim_email(email, unclaimed_user, node, notify=True, throttle=24 * 360
             email_template, preprint_provider = find_preprint_provider(node)
             if not email_template or not preprint_provider:
                 return
-            mail_tpl = getattr(mails, 'INVITE_PREPRINT')(email_template, preprint_provider)
+            mail_tpl = getattr(mails, 'INVITE_PREPRINT')(email_template, preprint_provider.name)
         else:
             mail_tpl = getattr(mails, 'INVITE_DEFAULT'.format(email_template.upper()))
 
@@ -509,7 +509,7 @@ def send_claim_email(email, unclaimed_user, node, notify=True, throttle=24 * 360
         claim_url=claim_url,
         email=claimer_email,
         fullname=unclaimed_record['name'],
-        branded_service_name=preprint_provider
+        branded_service=preprint_provider
     )
 
     return to_addr
@@ -531,7 +531,7 @@ def notify_added_contributor(node, contributor, auth=None, throttle=None, email_
             email_template, preprint_provider = find_preprint_provider(node)
             if not email_template or not preprint_provider:
                 return
-            email_template = getattr(mails, 'CONTRIBUTOR_ADDED_PREPRINT')(email_template, preprint_provider)
+            email_template = getattr(mails, 'CONTRIBUTOR_ADDED_PREPRINT')(email_template, preprint_provider.name)
         else:
             email_template = getattr(mails, 'CONTRIBUTOR_ADDED_DEFAULT'.format(email_template.upper()))
 
@@ -551,7 +551,7 @@ def notify_added_contributor(node, contributor, auth=None, throttle=None, email_
             node=node,
             referrer_name=auth.user.fullname if auth else '',
             all_global_subscriptions_none=check_if_all_global_subscriptions_are_none(contributor),
-            branded_service_name=preprint_provider
+            branded_service=preprint_provider
         )
 
         contributor.contributor_added_email_records[node._id]['last_sent'] = get_timestamp()
@@ -566,18 +566,15 @@ def find_preprint_provider(node):
     Given a node, find the preprint and the service provider.
 
     :param node: the node to which a contributer or preprint author is added
-    :return: the email template
+    :return: tuple containing the type of email template (osf or branded) and the preprint provider
     """
 
     try:
         preprint = PreprintService.objects.get(node=node)
         provider = preprint.provider
-        if provider._id == 'osf':
-            return 'osf', provider.name
-        else:
-            return 'branded', provider.name
-    # TODO: fine-grained exception handling
-    except Exception:
+        email_template = 'osf' if provider._id == 'osf' else 'branded'
+        return email_template, provider
+    except PreprintService.DoesNotExist:
         return None, None
 
 

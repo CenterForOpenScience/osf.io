@@ -1963,7 +1963,7 @@ class TestAddingContributorViews(OsfTestCase):
             node=project,
             referrer_name=self.auth.user.fullname,
             all_global_subscriptions_none=False,
-            branded_service_name=None,
+            branded_service=None,
         )
         assert_almost_equal(contributor.contributor_added_email_records[project._id]['last_sent'], int(time.time()), delta=1)
 
@@ -2188,7 +2188,7 @@ class TestUserInviteViews(OsfTestCase):
             email=real_email.lower().strip(),
             fullname=unreg_user.get_unclaimed_record(project._id)['name'],
             node=project,
-            branded_service_name=None
+            branded_service=None
         )
 
     @mock.patch('website.project.views.contributor.mails.send_mail')
