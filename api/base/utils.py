@@ -21,8 +21,8 @@ from website import util as website_util  # noqa
 # These values are copied from rest_framework.fields.BooleanField
 # BooleanField cannot be imported here without raising an
 # ImproperlyConfigured error
-TRUTHY = set(('t', 'T', 'true', 'True', 'TRUE', '1', 1, True, 'on', 'ON', 'On'))
-FALSY = set(('f', 'F', 'false', 'False', 'FALSE', '0', 0, 0.0, False, 'off', 'OFF', 'Off'))
+TRUTHY = set(('t', 'T', 'true', 'True', 'TRUE', '1', 1, True, 'on', 'ON', 'On', 'y', 'Y', 'YES', 'yes'))
+FALSY = set(('f', 'F', 'false', 'False', 'FALSE', '0', 0, 0.0, False, 'off', 'OFF', 'Off', 'n', 'N', 'NO', 'no'))
 
 UPDATE_METHODS = ['PUT', 'PATCH']
 
