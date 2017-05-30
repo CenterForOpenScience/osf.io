@@ -6,7 +6,6 @@ import re
 from django.utils import six
 from django import forms
 import django_filters
-from django.http.request import QueryDict
 from django.db import models
 import pytz
 from guardian.shortcuts import get_objects_for_user
@@ -71,15 +70,28 @@ class OSFOrderingFilter(OrderingFilter):
         return queryset
 
 
+class MultiValueCharFilter(django_filters.BaseInFilter, django_filters.filters.CharFilter):
+
+    def filter(self, qs, value):
+        q = Q()
+        values = value or []
+        for value in values:
+            name = self.name
+            q |= Q(**{'{}__icontains'.format(name): value})
+        qs = qs.filter(q)
+
+        return qs
+
+
 class JSONAPIFilterSet(django_filters.FilterSet):
 
     QUERY_PATTERN = re.compile(r'^filter\[(?P<fields>((?:,*\s*\w+)*))\](\[(?P<op>\w+)\])?$')
     FILTER_FIELDS = re.compile(r'(?:,*\s*(\w+)+)')
 
-    or_fields = []
+    or_fields = {}
 
     def __init__(self, data=None, *args, **kwargs):
-        self.or_fields = []
+        self.or_fields = {}
         if data:
             new_data = {}
             for key, value in data.iteritems():
@@ -88,12 +100,9 @@ class JSONAPIFilterSet(django_filters.FilterSet):
                     match_dict = match.groupdict()
                     fields = match_dict['fields']
                     field_names = re.findall(self.FILTER_FIELDS, fields.strip())
-
                     values = value.split(',')
-                    if len(values) > 1 or len(field_names) > 1:
-                        for field_name in field_names:
-                            for value in values:
-                                self.or_fields.append({'field': field_name, 'value': value})
+                    if len(field_names) > 1:
+                        self.or_fields[frozenset(field_names)] = values
                     for field in field_names:
                         new_data.update({field: value})
             data = new_data
@@ -101,48 +110,29 @@ class JSONAPIFilterSet(django_filters.FilterSet):
 
     @property
     def qs(self, *args, **kwargs):
-        if not hasattr(self, '_qs'):
-            if not self.is_bound:
-                self._qs = self.queryset.all()
-                return self._qs
-            if not self.form.is_valid():
-                if self.strict == django_filters.constants.STRICTNESS.RAISE_VALIDATION_ERROR:
-                    raise forms.ValidationError(self.form.errors)
-                elif self.strict == django_filters.constants.STRICTNESS.RETURN_NO_RESULTS:
-                    self._qs = self.queryset.none()
-                    return self._qs
-            for field in self.data.keys():
-                if field not in self.form.fields.keys():
-                    raise InvalidFilterError(detail="'{0}' is not a valid field for this endpoint.".format(field))
-
-            # start with all the results and filter from there
-            qs = self.queryset.all()
-            for name, filter_ in six.iteritems(self.filters):
-                value = self.form.cleaned_data.get(name)
-                or_keys = [entry['field'] for entry in self.or_fields]
-                if name in or_keys:
-                    qs = self.filter_groups(qs)
-                else:
-                    qs = filter_.filter(qs, value)
-            self._qs = qs
-
-            return self._qs
+        self.form.is_valid()
+        or_keys = reduce(operator.or_, self.or_fields.keys(), set())
+        for key in or_keys:
+            self.form.cleaned_data.pop(key, None)
+        qs = super(JSONAPIFilterSet, self).qs
+        return self.filter_groups(qs)
 
     def filter_groups(self, qs):
-        group_q = Q()
-        for field_dict in self.or_fields:
-            group_q |= Q(**{field_dict['field']: field_dict['value']})
-        qs = qs.filter(group_q)
+        for group, values in self.or_fields.iteritems():
+            group_q = Q()
+            for field in group:
+                if field not in self.form.fields.keys():
+                    raise InvalidFilterFieldError(parameter='filter', value=field)
+                for value in values:
+                    group_q |= Q(**{self.filters[field].name: value})
+            qs = qs.filter(group_q)
 
         return qs
 
     class Meta:
         filter_overrides = {
             models.CharField: {
-                'filter_class': django_filters.CharFilter,
-                'extra': lambda f: {
-                    'lookup_expr': 'icontains',
-                }
+                'filter_class': MultiValueCharFilter,
             }
         }
 
