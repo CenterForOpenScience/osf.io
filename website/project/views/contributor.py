@@ -517,14 +517,15 @@ def send_claim_email(email, unclaimed_user, node, notify=True, throttle=24 * 360
 
 @contributor_added.connect
 def notify_added_contributor(node, contributor, auth=None, throttle=None, email_template='default'):
+    if email_template == 'false':
+        return
+
     throttle = throttle or settings.CONTRIBUTOR_ADDED_EMAIL_THROTTLE
 
-    # Exclude forks and templates because the user forking/templating the project gets added
-    # via 'add_contributor' but does not need to get notified.
-    # Only email users for projects, or for components where they are not contributors on the parent node.
-    if (contributor.is_registered and not node.template_node and not node.is_fork and
-            (not node.parent_node or
-                (node.parent_node and not node.parent_node.is_contributor(contributor)))):
+    # Email users for projects, or for components where they are not contributors on the parent node.
+    if (contributor.is_registered
+            and not node.parent_node
+            or node.parent_node and not node.parent_node.is_contributor(contributor)):
 
         preprint_provider = None
         if email_template == 'preprint':

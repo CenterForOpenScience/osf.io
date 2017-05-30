@@ -1144,7 +1144,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             if save:
                 self.save()
 
-            if self._id and send_email != 'false':
+            if self._id:
                 project_signals.contributor_added.send(self,
                                                        contributor=contributor,
                                                        auth=auth, email_template=send_email)
@@ -1948,7 +1948,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         forked.save()
 
         # Need to call this after save for the notifications to be created with the _primary_key
-        project_signals.contributor_added.send(forked, contributor=user, auth=auth)
+        project_signals.contributor_added.send(forked, contributor=user, auth=auth, email_template='false')
 
         forked.add_log(
             action=NodeLog.NODE_FORKED,
@@ -2030,6 +2030,9 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         new.date_created = timezone.now()
 
         new.save(suppress_log=True)
+
+        # Need to call this after save for the notifications to be created with the _primary_key
+        project_signals.contributor_added.send(new, contributor=auth.user, auth=auth, email_template='false')
 
         # Log the creation
         new.add_log(
