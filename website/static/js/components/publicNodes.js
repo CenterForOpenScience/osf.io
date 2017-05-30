@@ -14,12 +14,17 @@ var MAX_PAGES_ON_PAGINATOR_SIDE = 5;
 var PROJECTS_PAGE_SIZE = 5;
 
 var _buildUrl = function(page, user, nodeType) {
+    var userFieldSet = ['family_name', 'full_name', 'given_name'];
+    var nodeFieldSet = ['title', 'category', 'parent', 'public', 'contributors'];
+
     var query = {
         'page[size]': PROJECTS_PAGE_SIZE,
         'page': page || 1,
         'embed': ['contributors'],
         'filter[public]': 'true',
-        'version': '2.2'
+        'version': '2.2',
+        'fields[nodes]': nodeFieldSet.join(','),
+        'fields[users]': userFieldSet.join(',')
     };
 
     if (nodeType === 'projects') {
