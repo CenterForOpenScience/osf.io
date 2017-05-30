@@ -94,7 +94,6 @@ class UserFilterSet(JSONAPIFilterSet):
     class Meta(JSONAPIFilterSet.Meta):
         model = OSFUser
         fields = ['id', 'full_name', 'given_name', 'middle_names', 'family_name']
-        strict = django_filters.constants.STRICTNESS.RAISE_VALIDATION_ERROR
 
 
 class UserList(JSONAPIBaseView, generics.ListAPIView):

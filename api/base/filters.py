@@ -90,6 +90,7 @@ class JSONAPIFilterSet(django_filters.FilterSet):
 
     def __init__(self, data=None, *args, **kwargs):
         self.or_fields = {}
+        field_names = []
         if data:
             new_data = {}
             for key, value in data.iteritems():
@@ -105,6 +106,10 @@ class JSONAPIFilterSet(django_filters.FilterSet):
                         new_data.update({field: value})
             data = new_data
         super(JSONAPIFilterSet, self).__init__(data=data, *args, **kwargs)
+
+        for field in field_names:
+            if field not in self.form.fields.keys():
+                raise InvalidFilterFieldError(parameter='filter', value=field)
 
     @property
     def qs(self, *args, **kwargs):
