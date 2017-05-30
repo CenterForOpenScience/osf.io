@@ -25,6 +25,3 @@ def urlparse_drop_netloc(url):
     if url[4]:
         return url[2] + '?' + url[4]
     return url[2]
-
-def assert_dict_contains_subset(a, b):
-    assert set(a.items()).issubset( set(b.items()) )

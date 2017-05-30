@@ -52,7 +52,7 @@ class TestApplicationList:
 
     def test_user_should_see_only_their_applications(self, app, user, user_app, url):
         res = app.get(url, auth=user.auth)
-        assert len(res.json['data']) == ApiOAuth2Application.objects.count()
+        assert len(res.json['data']) == len([user_app])
 
     def test_other_user_should_see_only_their_applications(self, app, url):
         other_user = AuthUserFactory()
@@ -65,9 +65,9 @@ class TestApplicationList:
     def test_deleting_application_should_hide_it_from_api_list(self, mock_method, app, user, user_app, url):
         mock_method.return_value(True)
         api_app = user_app
-        url = _get_application_detail_route(api_app)
+        delete_url = _get_application_detail_route(api_app)
 
-        res = app.delete(url, auth=user.auth)
+        res = app.delete(delete_url, auth=user.auth)
         assert res.status_code == 204
 
         res = app.get(url, auth=user.auth)

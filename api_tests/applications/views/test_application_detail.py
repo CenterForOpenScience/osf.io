@@ -3,8 +3,7 @@ import mock
 
 from website.models import ApiOAuth2Application, User
 from website.util import api_v2_url
-from tests.base import ApiTestCase
-from api_tests.utils import assert_dict_contains_subset
+from tests.base import ApiTestCase, assert_dict_contains_subset
 from osf_tests.factories import ApiOAuth2ApplicationFactory, AuthUserFactory
 
 
