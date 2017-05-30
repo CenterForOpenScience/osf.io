@@ -3,8 +3,6 @@ import functools
 import operator
 import re
 
-from django.utils import six
-from django import forms
 import django_filters
 from django.db import models
 import pytz
