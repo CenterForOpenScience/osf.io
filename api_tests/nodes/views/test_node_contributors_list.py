@@ -19,7 +19,8 @@ from tests.base import ApiTestCase, capture_signals, fake
 from osf_tests.factories import (
     ProjectFactory,
     AuthUserFactory,
-    UserFactory
+    UserFactory,
+    UnconfirmedUserFactory
 )
 from tests.utils import assert_logs
 
@@ -1088,6 +1089,29 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
         assert_equal(res.status_code, 201)
         contributor_added = res.json['data']['embeds']['users']['data']['id']
         assert_equal(contributor_added, primary_user._id)
+
+    def test_add_unconfirmed_user_by_guid(self):
+        unconfirmed_user = UnconfirmedUserFactory()
+        payload = {
+            'data': {
+                'type':'contributors',
+                'attributes': {},
+                'relationships': {
+                     'users': {
+                          'data': {
+                               'type': 'users',
+                               'id': unconfirmed_user._id
+                            }
+                       }
+                  }
+            }
+        }
+        res = self.app.post_json_api(self.public_url, payload, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 404)
+        assert_equal(
+            res.json['errors'][0]['detail'],
+            'Cannot add unconfirmed user {} to node {}'.format(unconfirmed_user._id, self.public_project._id)
+        )
 
 
 class TestNodeContributorCreateValidation(NodeCRUDTestCase):
