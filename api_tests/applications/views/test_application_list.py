@@ -52,7 +52,7 @@ class TestApplicationList:
 
     def test_user_should_see_only_their_applications(self, app, user, user_app, url):
         res = app.get(url, auth=user.auth)
-        assert len(res.json['data']) == len([user_app])
+        assert len(res.json['data']) == ApiOAuth2Application.objects.filter(owner=user).count()
 
     def test_other_user_should_see_only_their_applications(self, app, url):
         other_user = AuthUserFactory()
