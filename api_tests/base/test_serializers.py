@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 import httplib as http
+import importlib
+import pkgutil
 
 import pytest
 from pytz import utc
@@ -14,11 +16,29 @@ from osf_tests import factories
 from tests.utils import make_drf_request_with_version
 
 from api.base.settings.defaults import API_BASE
-from api.base.serializers import JSONAPISerializer
+from api.base.serializers import JSONAPISerializer, BaseAPISerializer
 from api.base import serializers as base_serializers
 from api.nodes.serializers import NodeSerializer, RelationshipField
 from api.registrations.serializers import RegistrationSerializer
 
+SER_MODULES = []
+for loader, name, _ in pkgutil.iter_modules(['api']):
+    if name != 'base' and name != 'test':
+        try:
+            SER_MODULES.append(importlib.import_module('api.{}.serializers'.format(name)))
+        except ImportError:
+            pass
+
+SER_CLASSES = []
+for mod in SER_MODULES:
+    for name, val in mod.__dict__.iteritems():
+        try:
+            if issubclass(val, BaseAPISerializer):
+                if 'JSONAPI' in name or 'BaseAPI' in name:
+                    continue
+                SER_CLASSES.append(val)
+        except TypeError:
+            pass
 
 class FakeModel(object):
 
@@ -55,6 +75,13 @@ class FakeSerializer(base_serializers.JSONAPISerializer):
 
     def valued_field(*args, **kwargs):
         return 'http://foo.com'
+
+
+class TestSerializerMetaType(ApiTestCase):
+    def test_expected_serializers_have_meta_types(self):
+        for ser in SER_CLASSES:
+            assert hasattr(ser, 'Meta'), 'Serializer {} has no Meta'.format(ser)
+            assert hasattr(ser.Meta, 'type_'), 'Serializer {} has no Meta.type_'.format(ser)
 
 
 class TestNodeSerializerAndRegistrationSerializerDifferences(ApiTestCase):

@@ -1,3 +1,4 @@
+import mock
 import functools
 from modularodm import Q
 from nose.tools import *  # flake8: noqa
@@ -9,6 +10,7 @@ from osf_tests.factories import PreprintFactory, AuthUserFactory, ProjectFactory
 from osf.models import PreprintService, NodeLicense
 from website.project.licenses import ensure_licenses
 from website.project.signals import contributor_added
+from website.identifiers.utils import build_ezid_metadata
 from tests.base import ApiTestCase, fake, capture_signals
 
 ensure_licenses = functools.partial(ensure_licenses, warn=False)
@@ -162,7 +164,7 @@ class TestPreprintUpdate(ApiTestCase):
         self.preprint.reload()
         assert_not_equal(self.preprint.primary_file, file_for_project)
 
-    def test_update_doi(self):
+    def test_update_article_doi(self):
         new_doi = '10.1234/ASDFASDF'
         assert_not_equal(self.preprint.article_doi, new_doi)
         update_subjects_payload = build_preprint_update_payload(self.preprint._id, attributes={"doi": new_doi})
@@ -256,6 +258,14 @@ class TestPreprintUpdate(ApiTestCase):
         unpublished.reload()
         assert_true(unpublished.is_published)
 
+    @mock.patch('website.preprints.tasks.on_preprint_updated.s')
+    def test_update_preprint_task_called_on_api_update(self, mock_on_preprint_updated):
+        update_doi_payload = build_preprint_update_payload(self.preprint._id, attributes={'doi': '10.1234/ASDFASDF'})
+
+        self.app.patch_json_api(self.url, update_doi_payload, auth=self.user.auth)
+        self.preprint.node.reload()
+
+        assert mock_on_preprint_updated.called
 
 class TestPreprintUpdateLicense(ApiTestCase):
 
