@@ -1,5 +1,4 @@
 import pytest
-
 from urlparse import urlparse
 from modularodm import Q
 

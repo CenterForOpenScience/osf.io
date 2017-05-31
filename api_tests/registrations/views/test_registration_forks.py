@@ -182,14 +182,14 @@ class TestRegistrationForkCreate:
         return AuthUserFactory()
 
     @pytest.fixture()
+    def private_pointer(self, user_two):
+        return ProjectFactory(creator=user_two)
+
+    @pytest.fixture()
     def private_project(self, user, user_two, private_pointer):
         private_project = ProjectFactory(creator=user)
         private_project.add_pointer(private_pointer, auth=Auth(user_two), save=True)
         return private_project
-
-    @pytest.fixture()
-    def private_pointer(self, user_two):
-        return ProjectFactory(creator=user_two)
 
     @pytest.fixture()
     def private_registration(self, user, private_project):
