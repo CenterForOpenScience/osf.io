@@ -10,7 +10,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0031_user_emails_to_fk'),
+        ('osf', '0033_user_emails_to_fk'),
     ]
 
     operations = [

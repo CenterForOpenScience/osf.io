@@ -50,7 +50,7 @@ def restore_old_emails(state, schema):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0030_preprint_provider_institution_permissions'),
+        ('osf', '0032_unquote_gd_nodesettings_folder_path'),
     ]
 
     operations = [
