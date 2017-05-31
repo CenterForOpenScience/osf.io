@@ -1,18 +1,30 @@
 # -*- coding: utf-8 -*-
 import logging
-from modularodm import fields
-from framework.auth import Auth
-from website.addons.base import exceptions
-from website.addons.base import StorageAddonBase
-from website.addons.base import (
-    AddonOAuthNodeSettingsBase, AddonOAuthUserSettingsBase,
-)
-from website.addons.fedora.serializer import FedoraSerializer
-from website.addons.fedora.settings import DEFAULT_HOSTS, USE_SSL
 
+from django.db import models
+
+from addons.base import exceptions
+from addons.base.models import (BaseOAuthNodeSettings, BaseOAuthUserSettings,
+                                BaseStorageAddon)
+from addons.fedora.serializer import FedoraSerializer
+from addons.fedora.settings import DEFAULT_HOSTS, USE_SSL
+from framework.auth import Auth
+from osf.models.files import File, Folder, BaseFileNode
 from website.oauth.models import BasicAuthProviderMixin
 
 logger = logging.getLogger(__name__)
+
+
+class FedoraFileNode(BaseFileNode):
+    provider = 'fedora'
+
+
+class FedoraFolder(FedoraFileNode, Folder):
+    pass
+
+
+class FedoraFile(FedoraFileNode, File):
+    pass
 
 class FedoraProvider(BasicAuthProviderMixin):
     """An alternative to `ExternalProvider` not tied to OAuth"""
@@ -26,20 +38,21 @@ class FedoraProvider(BasicAuthProviderMixin):
             status=self.account.display_name if self.account else 'anonymous'
         )
 
-class AddonFedoraUserSettings(AddonOAuthUserSettingsBase):
+class UserSettings(BaseOAuthUserSettings):
     oauth_provider = FedoraProvider
     serializer = FedoraSerializer
 
     def to_json(self, user):
-        ret = super(AddonFedoraUserSettings, self).to_json(user)
+        ret = super(UserSettings, self).to_json(user)
         ret['hosts'] = DEFAULT_HOSTS
         return ret
 
-class AddonFedoraNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
+class NodeSettings(BaseStorageAddon, BaseOAuthNodeSettings):
     oauth_provider = FedoraProvider
     serializer = FedoraSerializer
 
-    folder_id = fields.StringField()
+    folder_id = models.TextField(blank=True, null=True)
+    user_settings = models.ForeignKey(UserSettings, null=True, blank=True)
 
     _api = None
 
@@ -75,7 +88,8 @@ class AddonFedoraNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
     def deauthorize(self, auth=None, add_log=True):
         """Remove user authorization from this node and log the event."""
         self.clear_settings()
-        self.nodelogger.log(action='node_deauthorized')
+        if add_log:
+            self.nodelogger.log(action='node_deauthorized')
         self.clear_auth()  # Also performs a .save()
 
     def serialize_waterbutler_credentials(self):

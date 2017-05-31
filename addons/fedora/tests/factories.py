@@ -1,12 +1,11 @@
 # -*- coding: utf-8 -*-
 """Factory boy factories for the Fedora addon."""
 from factory import SubFactory, Sequence
-from tests.factories import ModularOdmFactory, UserFactory, ProjectFactory, ExternalAccountFactory
+from factory.django import DjangoModelFactory
+from osf_tests.factories import UserFactory, ProjectFactory, ExternalAccountFactory
 
-from website.addons.fedora.model import (
-    AddonFedoraUserSettings,
-    AddonFedoraNodeSettings
-)
+from addons.fedora.model import UserSettings, NodeSettings
+
 
 class FedoraAccountFactory(ExternalAccountFactory):
     provider = 'fedora'
@@ -17,16 +16,16 @@ class FedoraAccountFactory(ExternalAccountFactory):
     oauth_key = 'meoword'
 
 
-class FedoraUserSettingsFactory(ModularOdmFactory):
+class FedoraUserSettingsFactory(DjangoModelFactory):
     class Meta:
-        model = AddonFedoraUserSettings
+        model = UserSettings
 
     owner = SubFactory(UserFactory)
 
 
-class FedoraNodeSettingsFactory(ModularOdmFactory):
+class FedoraNodeSettingsFactory(DjangoModelFactory):
     class Meta:
-        model = AddonFedoraNodeSettings
+        model = NodeSettings
 
     owner = SubFactory(ProjectFactory)
     user_settings = SubFactory(FedoraUserSettingsFactory)

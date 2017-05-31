@@ -1,5 +1,5 @@
-from website.addons.base.serializer import StorageAddonSerializer
-from website.addons.fedora.settings import DEFAULT_HOSTS
+from addons.base.serializer import StorageAddonSerializer
+from addons.fedora.settings import DEFAULT_HOSTS
 from website.util import web_url_for
 
 

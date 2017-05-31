@@ -1,18 +1,17 @@
 """Views for the node settings page."""
 # -*- coding: utf-8 -*-
+
+from django.core.exceptions import ValidationError
 from furl import furl
 from flask import request
-from modularodm import Q
-from modularodm.storage.base import KeyExistsException
-from framework.auth.decorators import must_be_logged_in
 
-from website.addons.base import generic_views
-from website.oauth.models import ExternalAccount
+from addons.base import generic_views
+from addons.fedora.model import FedoraProvider
+from addons.fedora.serializer import FedoraSerializer
+from framework.auth.decorators import must_be_logged_in
+from osf.models.external import ExternalAccount
 from website.project.decorators import (
     must_have_addon)
-
-from website.addons.fedora.model import FedoraProvider
-from website.addons.fedora.serializer import FedoraSerializer
 
 SHORT_NAME = 'fedora'
 FULL_NAME = 'Fedora'
@@ -28,10 +27,6 @@ fedora_import_auth = generic_views.import_auth(
 )
 
 fedora_deauthorize_node = generic_views.deauthorize_node(
-    SHORT_NAME
-)
-
-fedora_root_folder = generic_views.root_folder(
     SHORT_NAME
 )
 
@@ -60,11 +55,11 @@ def fedora_add_user_account(auth, **kwargs):
                             username=username, password=password)
     try:
         provider.account.save()
-    except KeyExistsException:
+    except ValidationError:
         # ... or get the old one
-        provider.account = ExternalAccount.find_one(
-            Q('provider', 'eq', provider.short_name) &
-            Q('provider_id', 'eq', username)
+        provider.account = ExternalAccount.objects.get(
+            provider=provider.short_name,
+            provider_id=username
         )
 
     user = auth.user

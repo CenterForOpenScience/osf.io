@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from framework.routing import Rule, json_renderer
 
-from website.addons.fedora import views
+from addons.fedora import views
 
 # JSON endpoints
 api_routes = {

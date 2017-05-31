@@ -1,7 +1,7 @@
-from website.addons.base.testing import OAuthAddonTestCaseMixin, AddonTestCase
-from website.addons.fedora.model import FedoraProvider
-from website.addons.fedora.model import AddonFedoraNodeSettings
-from website.addons.fedora.tests.factories import (
+from addons.base.tests.base import OAuthAddonTestCaseMixin, AddonTestCase
+from addons.fedora.model import FedoraProvider
+from addons.fedora.model import NodeSettings
+from addons.fedora.tests.factories import (
     FedoraAccountFactory, FedoraNodeSettingsFactory,
     FedoraUserSettingsFactory
 )
@@ -14,7 +14,7 @@ class FedoraAddonTestCase(OAuthAddonTestCaseMixin, AddonTestCase):
     ExternalAccountFactory = FedoraAccountFactory
     Provider = FedoraProvider
     NodeSettingsFactory = FedoraNodeSettingsFactory
-    NodeSettingsClass = AddonFedoraNodeSettings
+    NodeSettingsClass = NodeSettings
     UserSettingsFactory = FedoraUserSettingsFactory
     folder = {
         'path': '/Documents/',

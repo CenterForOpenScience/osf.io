@@ -1,39 +1,35 @@
 from nose.tools import assert_is_not_none, assert_equal
+import pytest
+import unittest
 
-from website.addons.base.testing import models
+from addons.base.tests import models
 
-from website.addons.fedora.model import AddonFedoraNodeSettings
-from website.addons.fedora.tests.factories import (
+from addons.fedora.model import NodeSettings
+from addons.fedora.tests.factories import (
     FedoraAccountFactory, FedoraNodeSettingsFactory,
     FedoraUserSettingsFactory
 )
-from website.addons.fedora.tests import utils
-from website.addons.fedora.settings import USE_SSL
+from addons.fedora.tests import utils
+from addons.fedora.settings import USE_SSL
 
-class TestUserSettings(models.OAuthAddonUserSettingTestSuiteMixin, utils.FedoraAddonTestCase):
+pytestmark = pytest.mark.django_db
+
+class TestUserSettings(models.OAuthAddonUserSettingTestSuiteMixin, utils.FedoraAddonTestCase, unittest.TestCase):
 
     short_name = 'fedora'
-    full_name = 'ownCloud'
+    full_name = 'Fedora'
     UserSettingsFactory = FedoraUserSettingsFactory
     ExternalAccountFactory = FedoraAccountFactory
 
 
-class TestNodeSettings(models.OAuthAddonNodeSettingsTestSuiteMixin, utils.FedoraAddonTestCase):
+class TestNodeSettings(models.OAuthAddonNodeSettingsTestSuiteMixin, utils.FedoraAddonTestCase, unittest.TestCase):
 
     short_name = 'fedora'
-    full_name = 'ownCloud'
+    full_name = 'Fedora'
     ExternalAccountFactory = FedoraAccountFactory
     NodeSettingsFactory = FedoraNodeSettingsFactory
-    NodeSettingsClass = AddonFedoraNodeSettings
+    NodeSettingsClass = NodeSettings
     UserSettingsFactory = FedoraUserSettingsFactory
-
-    def _node_settings_class_kwargs(self, node, user_settings):
-        return {
-            'user_settings': self.user_settings,
-            'folder': '/Documents',
-            'owner': self.node,
-            'node': self.node
-        }
 
     def test_serialize_credentials(self):
         credentials = self.node_settings.serialize_waterbutler_credentials()
