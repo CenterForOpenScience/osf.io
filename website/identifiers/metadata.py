@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import unicodedata
 import lxml.etree
 import lxml.builder
 
@@ -17,6 +18,10 @@ CREATOR = E.creator
 CREATOR_NAME = E.creatorName
 SUBJECT_SCHEME = 'bepress Digital Commons Three-Tiered Taxonomy'
 
+# From https://stackoverflow.com/a/19016117
+# lxml does not accept strings with control characters
+def remove_control_characters(s):
+    return ''.join(ch for ch in s if unicodedata.category(ch)[0] != 'C')
 
 # This function is not OSF-specific
 def datacite_metadata(doi, title, creators, publisher, publication_year, pretty_print=False):
@@ -34,7 +39,7 @@ def datacite_metadata(doi, title, creators, publisher, publication_year, pretty_
         E.resourceType('Project', resourceTypeGeneral='Text'),
         E.identifier(doi, identifierType='DOI'),
         E.creators(*creators),
-        E.titles(E.title(title)),
+        E.titles(E.title(remove_control_characters(title))),
         E.publisher(publisher),
         E.publicationYear(str(publication_year)),
     )
@@ -44,7 +49,7 @@ def datacite_metadata(doi, title, creators, publisher, publication_year, pretty_
 
 
 def format_contributor(contributor):
-    return u'{}, {}'.format(contributor.family_name, contributor.given_name)
+    return remove_control_characters(u'{}, {}'.format(contributor.family_name, contributor.given_name))
 
 
 # This function is OSF specific.
@@ -69,8 +74,8 @@ def format_creators(preprint):
     creators = []
     for contributor in preprint.node.visible_contributors:
         creator = CREATOR(E.creatorName(format_contributor(contributor)))
-        creator.append(E.givenName(contributor.given_name))
-        creator.append(E.familyName(contributor.family_name))
+        creator.append(E.givenName(remove_control_characters(contributor.given_name)))
+        creator.append(E.familyName(remove_control_characters(contributor.family_name)))
 
         # contributor.external_identity = {'ORCID': {'1234-1234-1234-1234': 'VERIFIED'}}
         if contributor.external_identity.get('ORCID'):
@@ -104,12 +109,12 @@ def datacite_metadata_for_preprint(preprint, doi, pretty_print=False):
         E.identifier(doi, identifierType='DOI'),
         E.subjects(*format_subjects(preprint)),
         E.creators(*format_creators(preprint)),
-        E.titles(E.title(preprint.node.title)),
+        E.titles(E.title(remove_control_characters(preprint.node.title))),
         E.publisher(preprint.provider.name),
         E.publicationYear(str(getattr(preprint.date_published, 'year'))),
         E.dates(E.date(preprint.date_modified.isoformat(), dateType='Updated')),
         E.alternateIdentifiers(E.alternateIdentifier(settings.DOMAIN + preprint._id, alternateIdentifierType='URL')),
-        E.descriptions(E.description(preprint.node.description, descriptionType='Abstract')),
+        E.descriptions(E.description(remove_control_characters(preprint.node.description), descriptionType='Abstract')),
     )
 
     if preprint.license:

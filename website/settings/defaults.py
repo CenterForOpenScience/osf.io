@@ -308,8 +308,8 @@ DOI_NAMESPACE = 'doi:10.5072/FK2'
 ARK_NAMESPACE = 'ark:99999/fk4'
 
 # For creating DOIs and ARKs through the EZID service
-EZID_USERNAME = None
-EZID_PASSWORD = None
+EZID_USERNAME = 'apitest'
+EZID_PASSWORD = 'apitest'
 # Format for DOIs and ARKs
 EZID_FORMAT = '{namespace}osf.io/{guid}'
 
