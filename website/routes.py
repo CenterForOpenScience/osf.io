@@ -39,6 +39,7 @@ from website import views as website_views
 from website.citations import views as citation_views
 from website.search import views as search_views
 from website.oauth import views as oauth_views
+from website.profile.utils import get_gravatar
 from website.profile import views as profile_views
 from website.project import views as project_views
 from addons.base import views as addon_views
@@ -73,7 +74,7 @@ def get_globals():
         'user_locale': user.locale if user and user.locale else '',
         'user_timezone': user.timezone if user and user.timezone else '',
         'user_url': user.url if user else '',
-        'user_gravatar': profile_views.current_user_gravatar(size=25)['gravatar_url'] if user else '',
+        'user_gravatar': get_gravatar(user=user, size=25) if user else '',
         'user_email_verifications': user.unconfirmed_email_info if user else [],
         'user_api_url': user.api_url if user else '',
         'user_entry_point': metrics.get_entry_point(user) if user else '',
@@ -846,31 +847,6 @@ def make_url_map(app):
             profile_views.delete_external_identity,
             json_renderer,
         ),
-
-        Rule(
-            [
-                '/profile/gravatar/',
-                '/users/gravatar/',
-                '/profile/gravatar/<size>',
-                '/users/gravatar/<size>',
-            ],
-            'get',
-            profile_views.current_user_gravatar,
-            json_renderer,
-        ),
-
-        Rule(
-            [
-                '/profile/<uid>/gravatar/',
-                '/users/<uid>/gravatar/',
-                '/profile/<uid>/gravatar/<size>',
-                '/users/<uid>/gravatar/<size>',
-            ],
-            'get',
-            profile_views.get_gravatar,
-            json_renderer,
-        ),
-
 
         # Rules for user profile configuration
         Rule('/settings/names/', 'get', profile_views.serialize_names, json_renderer),
