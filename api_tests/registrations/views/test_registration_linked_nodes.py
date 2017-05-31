@@ -227,7 +227,6 @@ class TestNodeRelationshipNodeLinks:
 
     #   delete_with_put_empty_array
         new_payload = payload()
-        print new_payload
         new_payload['data'].pop()
         res = app.put_json_api(
             url, new_payload, auth=user.auth, expect_errors=True
