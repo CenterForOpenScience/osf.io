@@ -6,11 +6,13 @@ from urllib2 import quote, unquote
 from bulk_update.helper import bulk_update
 from django.db import migrations
 
-from addons.googledrive.models import NodeSettings
 
-
-def unquote_folder_paths(*args):
-    targets = NodeSettings.objects.filter(folder_path__isnull=False)
+def unquote_folder_paths(state, schema):
+    try:
+        NodeSettings = state.get_model('addons_googledrive', 'nodesettings')
+        targets = NodeSettings.objects.filter(folder_path__isnull=False)
+    except LookupError:
+        return
     for obj in targets:
         try:
             obj.folder_path = unquote(obj.folder_path).decode('utf-8')
@@ -18,8 +20,12 @@ def unquote_folder_paths(*args):
             obj.folder_path = unquote(obj.folder_path)
     bulk_update(targets, update_fields=['folder_path'])
 
-def quote_folder_paths(*args):
-    targets = NodeSettings.objects.filter(folder_path__isnull=False)
+def quote_folder_paths(state, schema):
+    try:
+        NodeSettings = state.get_model('addons_googledrive', 'nodesettings')
+        targets = NodeSettings.objects.filter(folder_path__isnull=False)
+    except LookupError:
+        return
     for obj in targets:
         obj.folder_path = quote(obj.folder_path.encode('utf-8'))
     bulk_update(targets, update_fields=['folder_path'])
