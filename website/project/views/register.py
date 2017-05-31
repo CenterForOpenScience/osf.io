@@ -22,7 +22,7 @@ from website.project.decorators import (
     must_not_be_registration, must_be_registration,
 )
 from website.identifiers.model import Identifier
-from website.identifiers.metadata import datacite_metadata_for_node
+from website.identifiers.utils import get_or_create_identifiers, build_ezid_metadata
 from website.project.utils import serialize_node
 from website.util.permissions import ADMIN
 from website.models import MetaSchema, NodeLog
@@ -214,47 +214,10 @@ def project_before_register(auth, node, **kwargs):
         'errors': error_messages
     }
 
-def _build_ezid_metadata(node):
-    """Build metadata for submission to EZID using the DataCite profile. See
-    http://ezid.cdlib.org/doc/apidoc.html for details.
-    """
-    doi = settings.EZID_FORMAT.format(namespace=settings.DOI_NAMESPACE, guid=node._id)
-    metadata = {
-        '_target': node.absolute_url,
-        'datacite': datacite_metadata_for_node(node=node, doi=doi)
-    }
-    return doi, metadata
-
-
-def _get_or_create_identifiers(node):
-    """
-    Note: ARKs include a leading slash. This is stripped here to avoid multiple
-    consecutive slashes in internal URLs (e.g. /ids/ark/<ark>/). Frontend code
-    that build ARK URLs is responsible for adding the leading slash.
-    """
-    doi, metadata = _build_ezid_metadata(node)
-    client = EzidClient(settings.EZID_USERNAME, settings.EZID_PASSWORD)
-    try:
-        resp = client.create_identifier(doi, metadata)
-        return dict(
-            [each.strip('/') for each in pair.strip().split(':')]
-            for pair in resp['success'].split('|')
-        )
-    except HTTPError as error:
-        if 'identifier already exists' not in error.message.lower():
-            raise
-        resp = client.get_identifier(doi)
-        doi = resp['success']
-        suffix = doi.strip(settings.DOI_NAMESPACE)
-        return {
-            'doi': doi.replace('doi:', ''),
-            'ark': '{0}{1}'.format(settings.ARK_NAMESPACE.replace('ark:', ''), suffix),
-        }
-
 
 def osf_admin_change_status_identifier(node, status):
     if node.get_identifier_value('doi') and node.get_identifier_value('ark'):
-        doi, metadata = _build_ezid_metadata(node)
+        doi, metadata = build_ezid_metadata(node)
         client = EzidClient(settings.EZID_USERNAME, settings.EZID_PASSWORD)
         client.change_status_identifier(status, doi, metadata)
 
@@ -282,7 +245,7 @@ def node_identifiers_post(auth, node, **kwargs):
     if node.get_identifier('doi') or node.get_identifier('ark'):
         raise HTTPError(http.BAD_REQUEST)
     try:
-        identifiers = _get_or_create_identifiers(node)
+        identifiers = get_or_create_identifiers(node)
     except HTTPError:
         raise HTTPError(http.BAD_REQUEST)
     for category, value in identifiers.iteritems():
