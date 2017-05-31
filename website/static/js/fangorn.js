@@ -445,7 +445,7 @@ function checkConflicts(tb, item, folder, cb) {
                     'You will keep previous versions of the moved file.'),
                 m('h5.replace-file', '"Cancel" will cancel the move.')
             ]);
-            
+
             tb.modal.update(
                 m('', messageArray), [
                     m('span.btn.btn-default', {onclick: function() {tb.modal.dismiss();}}, 'Cancel'), //jshint ignore:line
@@ -641,7 +641,7 @@ function doItemOp(operation, to, from, rename, conflict) {
         from.inProgress = false;
         if (SYNC_UPLOAD_ADDONS.indexOf(to.data.provider) !== -1){
             doSyncMove(tb, to.data.provider);
-        }        
+        }
     });
 }
 
@@ -910,19 +910,19 @@ var DEFAULT_ERROR_MESSAGE = 'Could not upload file. The file may be invalid ' +
     'or the file folder has been deleted.';
 function _fangornDropzoneError(treebeard, file, message, xhr) {
     var tb = treebeard;
-    // File may either be a webkit Entry or a file object, depending on the browser
-    // On Chrome we can check if a directory is being uploaded
+    // File may either be a webkit Entry or a file object, depending on browser's HTML5 Filesystem API support or lack thereof, respectively.
+    // On Chrome, Edge, and Firefox (which provide full File API support), we can check if a directory is being uploaded using isDirectory property.
+    // On Safari (which provide basic File API support), isDirectory property is currently unavailable.
     var msgText;
-    var isChrome = !!window.chrome && !!window.chrome.webstore;
-    // Unpatched Dropzone silently does nothing when folders are uploaded on Windows IE and Firefox
+    // Unpatched Dropzone silently does nothing when folders are uploaded on Windows IE
     // Patched Dropzone.prototype.drop to emit error with file = 'None' to catch the error
     if (file === 'None'){
         $osf.growl('Error', 'Cannot upload folders.');
         return;
     }
-    if (isChrome && file.isDirectory) {
+    if (file.isDirectory) {
         msgText = 'Cannot upload folders.';
-    } else if(!isChrome && file.treebeardParent.kind === 'folder') {
+    } else if(file.treebeardParent && file.treebeardParent.kind === 'folder') {
         msgText = 'Cannot upload folders.';
     } else if (xhr && xhr.status === 507) {
         msgText = 'Cannot upload file due to insufficient storage.';
@@ -938,9 +938,8 @@ function _fangornDropzoneError(treebeard, file, message, xhr) {
             msgText = DEFAULT_ERROR_MESSAGE;
         }
     }
-    if (!isChrome) {
-        var parent = file.treebeardParent || treebeardParent.dropzoneItemCache; // jshint ignore:line
-        // Parent may be undefined, e.g. in Chrome, where file is an entry object
+    if (typeof file.isDirectory === 'undefined') {
+        var parent = file.treebeardParent || treebeard.dropzoneItemCache; // jshint ignore:line
         var item;
         var child;
         var destroyItem = false;
@@ -1028,7 +1027,7 @@ function _createFolder(event, dismissCallback, helpText) {
     var extra = {};
     var path = parent.data.path || '/';
     var options = {name: val, kind: 'folder'};
-    
+
     if (parent.data.provider === 'github') {
         extra.branch = parent.data.branch;
         options.branch = parent.data.branch;
@@ -1304,7 +1303,7 @@ function orderFolder(tree) {
     if(typeof this.isSorted !== 'undefined' && typeof this.isSorted[0] !== 'undefined'){
         sortColumn = Object.keys(this.isSorted)[0]; // default to whatever column is first
         for (var column in this.isSorted){
-            sortColumn = this.isSorted[column].asc || this.isSorted[column].desc ? column : sortColumn; 
+            sortColumn = this.isSorted[column].asc || this.isSorted[column].desc ? column : sortColumn;
         }
         sortDirection = this.isSorted[sortColumn].desc ? 'desc' : 'asc'; // default to ascending
     }else{
@@ -1367,7 +1366,7 @@ function _fangornTitleColumnHelper(tb, item, col, nameTitle, toUrl, classNameOpt
         tb.options.links = true;
     }
     // as opposed to undefined, avoids unnecessary setting of this value
-    if (item.data.isAddonRoot && item.connected === false) { 
+    if (item.data.isAddonRoot && item.connected === false) {
         return _connectCheckTemplate.call(this, item);
     }
     if (item.kind === 'file' && item.data.permissions.view) {
@@ -1796,7 +1795,7 @@ var FGItemButtons = {
                         rowButtons.push(
                             m.component(FGButton, {
                                 icon: 'fa fa-trash',
-                                tooltip: 'This folder contains a Preprint. You cannot delete Preprints, but you can upload a new version.',                                        
+                                tooltip: 'This folder contains a Preprint. You cannot delete Preprints, but you can upload a new version.',
                                 className: 'tb-disabled'
                             }, 'Delete Folder'));
                         reapplyTooltips();
@@ -1836,7 +1835,7 @@ var FGItemButtons = {
                                 rowButtons.push(
                                     m.component(FGButton, {
                                         icon: 'fa fa-trash',
-                                        tooltip: 'This file is a Preprint. You cannot delete Preprints, but you can upload a new version.',                                        
+                                        tooltip: 'This file is a Preprint. You cannot delete Preprints, but you can upload a new version.',
                                         className: 'tb-disabled'
                                     }, 'Delete'));
                                 // Tooltips don't seem to auto reapply, this forces them.
@@ -2072,10 +2071,10 @@ var FGToolbar = {
                     generalButtons.push(
                         m.component(FGButton, {
                             icon: 'fa fa-trash',
-                            tooltip: 'One of these items is a Preprint or contains a Preprint. You cannot delete Preprints, but you can upload a new version.',                                        
+                            tooltip: 'One of these items is a Preprint or contains a Preprint. You cannot delete Preprints, but you can upload a new version.',
                             className: 'tb-disabled'
                         }, 'Delete Multiple')
-                    );                    
+                    );
                 } else {
                     generalButtons.push(
                         m.component(FGButton, {
@@ -2220,7 +2219,7 @@ function openParentFolders (item) {
         scrollToItem = true;
         // recursively open parents of the selected item but do not lazyload;
         openParentFolders.call(tb, row);
-    }    
+    }
     dismissToolbar.call(tb);
     filterRows.call(tb, tb.multiselected());
 
@@ -2262,7 +2261,7 @@ var copyMode = null;
  */
 function _fangornDragStart(event, ui) {
     // Sync up the toolbar in case item was drag-clicked and not released
-    m.redraw(); 
+    m.redraw();
     var itemID = $(event.target).attr('data-id'),
         item = this.find(itemID);
     if (this.multiselected().length < 2) {
@@ -2399,7 +2398,7 @@ function _dropLogic(event, items, folder) {
     }else{
         $.each(items, function(index, item) {
             checkConflicts(tb, item, folder, doItemOp.bind(tb, copyMode === 'move' ? OPERATIONS.MOVE : OPERATIONS.COPY, folder, item, undefined));
-        });    
+        });
     }
 }
 
@@ -2533,7 +2532,7 @@ function showDeleteMultiple(items) {
         if (typeof each.permissions !== 'undefined' && each.permissions.edit && !each.isAddonRoot && !each.nodeType) {
             return true;
         }
-    }    
+    }
     return false;
 }
 
@@ -2594,7 +2593,7 @@ function getCopyMode(folder, items) {
                 mustBeIntra = true;
             }
         }
-        
+
         if (canMove) {
             mustBeIntra = mustBeIntra || item.data.provider === 'github' || preprintPath === item.data.path;
             canMove = allowedToMove(folder, item, mustBeIntra);
