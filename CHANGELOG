@@ -2,6 +2,50 @@
 Changelog
 *********
 
+0.111.0 (2017-05-31)
+====================
+
+- Automatically create DOIs for preprints.
+- API: Support sparse fieldsets.
+- Dev: Refactor API OAuth Application tests to use pytest fixtures for better performance.
+
+0.110.0 (2017-05-26)
+====================
+
+- [production] Can't view file revisions/versions if sharejs is down
+- User can enter invalid Copyright year on projects with no license
+- Deactivated users can be added to a node via API
+- Incorrect link to get API token from "other" Dataverses
+- Can't drag files from any Storage Provider to Dataverse
+- Searching for Contributors is Broken
+- Admin tests are not run on Travis (and ~11 fail)
+- Test Optimization: PreprintIsValidListMixin
+- staging1 - Scielo submit preprint form shows two Engineering disciplines
+- Improve CAS/OSF Logout Logic: OSF Part
+- Remove usages of StoredFileNode and FileNode
+- Use custom JSON encoder to implement datetime-aware JSON fields
+- Update branded domains (fixes)
+- Add Location and Date to Meetings pages
+- Hide OSF for Institutions Logos from Dashboard Until 5 Projects Affiliated
+- Update Google+ Link on footer
+- Users should see language explaining the components inherit the license of the parent project upon creation
+- Add UVA to list of available Dataverses
+- Remove demo, apitest dataverses from dropdown list
+- Remove v1 share registration code
+- Create a log when user creates or removes VOL link
+- Add London and Central Canada for S3 bucket locations
+- Update Docs for branded preprint provider domains
+- Change icons on top right of Project Overview page to make them more universal
+- Add preprint_providers and institutions to Admin app with import/export
+- "close" ERPC
+- Update image on Lab@DC OSF4I page
+- Update text on UC OSF4I page
+- Add default license field, serve as first item through provider/licenses endpoint
+- Populate register.mako from database
+- Make preprint and registries landing pages much more basic
+- Update Keen Analytics scripts to be runnable manually in Django
+- API: Create a way to filter a preprints search on subject name/text in addition to  subject_id
+
 0.109.0 (2017-05-10)
 ====================
 

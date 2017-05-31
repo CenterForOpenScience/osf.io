@@ -9,6 +9,7 @@ require('knockout-sortable');
 
 var $osf = require('./osfHelpers');
 var koHelpers = require('./koHelpers');
+var m = require('mithril');
 require('js/objectCreateShim');
 
 // Adapted from Django URLValidator
