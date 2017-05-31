@@ -44,6 +44,16 @@ class TestPreprintDetail(ApiTestCase):
         assert_equal(self.data['type'], 'preprints')
         assert_equal(self.data['id'], self.preprint._id)
 
+    def test_preprint_node_deleted_detail_failure(self):
+        deleted_node = ProjectFactory(creator=self.user, is_deleted=True)
+        deleted_preprint = PreprintFactory(project=deleted_node, creator=self.user)
+
+        url = '/{}preprints/{}/'.format(API_BASE, deleted_preprint._id)
+        res = self.app.get(url, expect_errors=True)
+        assert_equal(res.status_code, 404)
+        assert_equal(self.res.content_type, 'application/vnd.api+json')
+
+
 class TestPreprintDelete(ApiTestCase):
     def setUp(self):
         super(TestPreprintDelete, self).setUp()
