@@ -64,7 +64,7 @@
                                     class="btn btn-default disabled"
                                 % endif
                                 >
-                                    <i class="fa fa-code-fork"></i>&nbsp; ${ node['templated_count'] + node['fork_count'] + node['points'] }
+                                    <i class="fa fa-code-fork"></i>&nbsp; ${ node['fork_count'] }
                                 </a>
                                 <ul class="duplicate-menu dropdown-menu" role="menu">
                                     <div class="arrow-up m-b-xs"></div>
