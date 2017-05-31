@@ -1,17 +1,18 @@
 from django.db import transaction
 from django.test import RequestFactory
 from django.http import Http404
+from django.utils import timezone
 from nose import tools as nt
-from datetime import datetime, timedelta
+from datetime import timedelta
 
 from website.project.model import Comment
 
-from admin.common_auth.logs import OSFLogEntry
+from osf.models.admin_log_entry import AdminLogEntry
 from admin.spam.forms import ConfirmForm
 from tests.base import AdminTestCase
-from tests.factories import CommentFactory, AuthUserFactory, ProjectFactory
+from tests.factories import AuthUserFactory, ProjectFactory
+from osf_tests.factories import CommentFactory, UserFactory
 from admin_tests.utilities import setup_view, setup_form_view
-from admin_tests.factories import UserFactory
 
 from admin.spam.views import (
     SpamList,
@@ -34,7 +35,7 @@ class TestSpamListView(AdminTestCase):
         self.project.save()
         self.user_1.save()
         self.user_2.save()
-        date = datetime.utcnow()
+        date = timezone.now()
         self.comment_1 = CommentFactory(node=self.project, user=self.user_1)
         self.comment_2 = CommentFactory(node=self.project, user=self.user_1)
         self.comment_3 = CommentFactory(node=self.project, user=self.user_1)
@@ -118,7 +119,7 @@ class TestSpamDetail(AdminTestCase):
             view, self.request, form, spam_id=self.comment._id)
         with transaction.atomic():
             view.form_valid(form)
-        obj = OSFLogEntry.objects.latest(field_name='action_time')
+        obj = AdminLogEntry.objects.latest(field_name='action_time')
         nt.assert_equal(obj.object_id, self.comment._id)
         nt.assert_in('Confirmed SPAM:', obj.message())
 
@@ -131,7 +132,7 @@ class TestSpamDetail(AdminTestCase):
             view, self.request, form, spam_id=self.comment._id)
         with transaction.atomic():
             view.form_valid(form)
-        obj = OSFLogEntry.objects.latest(field_name='action_time')
+        obj = AdminLogEntry.objects.latest(field_name='action_time')
         nt.assert_equal(obj.object_id, self.comment._id)
         nt.assert_in('Confirmed HAM:', obj.message())
 

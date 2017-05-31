@@ -10,7 +10,7 @@ from website.util.sanitize import strip_html
 from api.base.settings.defaults import API_BASE
 
 from tests.base import ApiTestCase, fake
-from tests.factories import (
+from osf_tests.factories import (
     NodeFactory,
     ProjectFactory,
     RegistrationFactory,
@@ -105,7 +105,6 @@ class TestNodeChildrenList(ApiTestCase):
         ids = [node['id'] for node in res.json['data']]
         assert_in(self.public_component._id, ids)  # sanity check
 
-        assert_equal(len(ids), len([e for e in self.public_project.nodes if e.primary]))
         assert_not_in(pointed_to._id, ids)
 
 
@@ -170,7 +169,7 @@ class TestNodeChildCreate(ApiTestCase):
 
         self.project.reload()
         assert_equal(res.json['data']['id'], self.project.nodes[0]._id)
-        assert_equal(self.project.nodes[0].logs[0].action, NodeLog.PROJECT_CREATED)
+        assert_equal(self.project.nodes[0].logs.latest().action, NodeLog.PROJECT_CREATED)
 
     def test_creates_child_logged_in_write_contributor(self):
         self.project.add_contributor(self.user_two, permissions=[permissions.READ, permissions.WRITE], auth=Auth(self.user), save=True)
@@ -184,7 +183,7 @@ class TestNodeChildCreate(ApiTestCase):
         self.project.reload()
         child_id = res.json['data']['id']
         assert_equal(child_id, self.project.nodes[0]._id)
-        assert_equal(Node.load(child_id).logs[0].action, NodeLog.PROJECT_CREATED)
+        assert_equal(Node.load(child_id).logs.latest().action, NodeLog.PROJECT_CREATED)
 
     def test_creates_child_logged_in_read_contributor(self):
         self.project.add_contributor(self.user_two, permissions=[permissions.READ], auth=Auth(self.user), save=True)
@@ -228,7 +227,7 @@ class TestNodeChildCreate(ApiTestCase):
         self.project.reload()
         child_id = res.json['data']['id']
         assert_equal(child_id, self.project.nodes[0]._id)
-        assert_equal(Node.load(child_id).logs[0].action, NodeLog.PROJECT_CREATED)
+        assert_equal(Node.load(child_id).logs.latest().action, NodeLog.PROJECT_CREATED)
 
     def test_cannot_create_child_on_a_registration(self):
         registration = RegistrationFactory(project=self.project, creator=self.user)
@@ -347,11 +346,12 @@ class TestNodeChildrenBulkCreate(ApiTestCase):
         assert_equal(res.json['data'][1]['attributes']['category'], self.child_two['attributes']['category'])
 
         self.project.reload()
-        assert_equal(res.json['data'][0]['id'], self.project.nodes[0]._id)
-        assert_equal(res.json['data'][1]['id'], self.project.nodes[1]._id)
+        nodes = self.project.nodes
+        assert_equal(res.json['data'][0]['id'], nodes[0]._id)
+        assert_equal(res.json['data'][1]['id'], nodes[1]._id)
 
-        assert_equal(self.project.nodes[0].logs[0].action, NodeLog.PROJECT_CREATED)
-        assert_equal(self.project.nodes[1].logs[0].action, NodeLog.PROJECT_CREATED)
+        assert_equal(nodes[0].logs.latest().action, NodeLog.PROJECT_CREATED)
+        assert_equal(nodes[1].logs.latest().action, NodeLog.PROJECT_CREATED)
 
 
     def test_bulk_creates_children_child_logged_in_write_contributor(self):
@@ -369,11 +369,12 @@ class TestNodeChildrenBulkCreate(ApiTestCase):
         self.project.reload()
         child_id = res.json['data'][0]['id']
         child_two_id = res.json['data'][1]['id']
-        assert_equal(child_id, self.project.nodes[0]._id)
-        assert_equal(child_two_id, self.project.nodes[1]._id)
+        nodes = self.project.nodes
+        assert_equal(child_id, nodes[0]._id)
+        assert_equal(child_two_id, nodes[1]._id)
 
-        assert_equal(Node.load(child_id).logs[0].action, NodeLog.PROJECT_CREATED)
-        assert_equal(self.project.nodes[1].logs[0].action, NodeLog.PROJECT_CREATED)
+        assert_equal(Node.load(child_id).logs.latest().action, NodeLog.PROJECT_CREATED)
+        assert_equal(nodes[1].logs.latest().action, NodeLog.PROJECT_CREATED)
 
     def test_bulk_creates_children_logged_in_read_contributor(self):
         self.project.add_contributor(self.user_two, permissions=[permissions.READ], auth=Auth(self.user), save=True)
@@ -419,7 +420,7 @@ class TestNodeChildrenBulkCreate(ApiTestCase):
         self.project.reload()
         child_id = res.json['data']['id']
         assert_equal(child_id, self.project.nodes[0]._id)
-        assert_equal(Node.load(child_id).logs[0].action, NodeLog.PROJECT_CREATED)
+        assert_equal(Node.load(child_id).logs.latest().action, NodeLog.PROJECT_CREATED)
 
     def test_cannot_bulk_create_children_on_a_registration(self):
         registration = RegistrationFactory(project=self.project, creator=self.user)
@@ -491,3 +492,4 @@ class TestNodeChildrenBulkCreate(ApiTestCase):
 
         self.project.reload()
         assert_equal(len(self.project.nodes), 0)
+

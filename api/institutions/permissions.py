@@ -11,4 +11,4 @@ class UserIsAffiliated(permissions.BasePermission):
         if request.method in permissions.SAFE_METHODS or request.method == 'DELETE':
             return True
         else:
-            return obj['self'] in user.affiliated_institutions
+            return user.is_affiliated_with_institution(obj['self'])

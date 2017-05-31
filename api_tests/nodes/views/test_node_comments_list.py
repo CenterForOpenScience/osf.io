@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+import pytest
+import mock
 from nose.tools import *  # flake8: noqa
 
 from framework.auth import core
@@ -8,13 +10,13 @@ from api.base.settings.defaults import API_BASE
 from api.base.settings import osf_settings
 from api_tests import utils as test_utils
 from tests.base import ApiTestCase
-from tests.factories import (
+from osf_tests.factories import (
     ProjectFactory,
     RegistrationFactory,
     AuthUserFactory,
     CommentFactory,
-    NodeWikiFactory
 )
+from addons.wiki.tests.factories import NodeWikiFactory
 
 
 class NodeCommentsListMixin(object):
@@ -81,7 +83,7 @@ class NodeCommentsListMixin(object):
         assert_equal(len(comment_json), 1)
         assert_in(self.registration_comment._id, comment_ids)
 
-    def test_return_both_deleted_and_undeleted_comments(self):
+    def test_return_both_deleted_and_undeleted_comments(self, mock_update_search=None):
         self._set_up_private_project_with_comment()
         deleted_comment = CommentFactory(node=self.private_project, user=self.user, target=self.comment.target, is_deleted=True)
         res = self.app.get(self.private_url, auth=self.user.auth)
@@ -149,8 +151,8 @@ class TestNodeCommentsListFiles(NodeCommentsListMixin, ApiTestCase):
         # Delete commented file
         osfstorage = self.private_project.get_addon('osfstorage')
         root_node = osfstorage.get_root()
-        root_node.delete(self.file)
-
+        # root_node.delete(self.file)
+        self.file.delete(user=self.user)
         res = self.app.get(self.private_url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         comment_json = res.json['data']
@@ -178,7 +180,7 @@ class TestNodeCommentsListWiki(NodeCommentsListMixin, ApiTestCase):
         self.registration_comment = CommentFactory(node=self.registration, user=self.user, target=Guid.load(self.registration_wiki._id), page='wiki')
         self.registration_url = '/{}registrations/{}/comments/'.format(API_BASE, self.registration._id)
 
-    def test_comments_on_deleted_wikis_are_not_returned(self):
+    def test_comments_on_deleted_wikis_are_not_returned(self, mock_update_search=None):
         self._set_up_private_project_with_comment()
         # Delete wiki
         self.private_project.delete_node_wiki(self.wiki.page_name, core.Auth(self.user))
@@ -378,7 +380,7 @@ class TestNodeCommentCreate(NodeCommentsCreateMixin, ApiTestCase):
         self.private_project_with_public_comment_level = ProjectFactory(is_public=False, creator=self.user)
         self.private_project_with_public_comment_level.add_contributor(self.read_only_contributor, permissions=['read'])
         self.private_project_with_public_comment_level.save()
-        self.private_project_public_comments_url = '/{}nodes/{}/comments/'.format(API_BASE, self.private_project_with_public_comment_level)
+        self.private_project_public_comments_url = '/{}nodes/{}/comments/'.format(API_BASE, self.private_project_with_public_comment_level._id)
         self.private_project_public_comments_payload = self._set_up_payload(self.private_project_with_public_comment_level._id)
 
     def test_create_comment_invalid_data(self):
@@ -735,7 +737,7 @@ class TestFileCommentCreate(NodeCommentsCreateMixin, ApiTestCase):
         self.private_project_with_public_comment_level = ProjectFactory(is_public=False, creator=self.user)
         self.private_project_with_public_comment_level.add_contributor(self.read_only_contributor, permissions=['read'])
         self.private_project_with_public_comment_level.save()
-        self.private_project_public_comments_url = '/{}nodes/{}/comments/'.format(API_BASE, self.private_project_with_public_comment_level)
+        self.private_project_public_comments_url = '/{}nodes/{}/comments/'.format(API_BASE, self.private_project_with_public_comment_level._id)
         self.test_file = test_utils.create_test_file(self.private_project_with_public_comment_level, self.user)
         self.private_project_public_comments_payload = self._set_up_payload(self.test_file.get_guid()._id)
 
@@ -819,11 +821,11 @@ class TestWikiCommentCreate(NodeCommentsCreateMixin, ApiTestCase):
         self.private_project_with_public_comment_level = ProjectFactory(is_public=False, creator=self.user)
         self.private_project_with_public_comment_level.add_contributor(self.read_only_contributor, permissions=['read'])
         self.private_project_with_public_comment_level.save()
-        self.private_project_public_comments_url = '/{}nodes/{}/comments/'.format(API_BASE, self.private_project_with_public_comment_level)
+        self.private_project_public_comments_url = '/{}nodes/{}/comments/'.format(API_BASE, self.private_project_with_public_comment_level._id)
         self.wiki = NodeWikiFactory(node=self.private_project_with_public_comment_level, user=self.user)
         self.private_project_public_comments_payload = self._set_up_payload(self.wiki._id)
 
-    def test_create_wiki_comment_invalid_target_id(self):
+    def test_create_wiki_comment_invalid_target_id(self, mock_update_search=None):
         self._set_up_private_project_with_private_comment_level()
         wiki = NodeWikiFactory(node=ProjectFactory(), user=self.user)
         payload = self._set_up_payload(wiki._id)
@@ -831,7 +833,7 @@ class TestWikiCommentCreate(NodeCommentsCreateMixin, ApiTestCase):
         assert_equal(res.status_code, 400)
         assert_equal(res.json['errors'][0]['detail'], "Invalid comment target \'" + str(wiki._id) + "\'.")
 
-    def test_create_wiki_comment_invalid_target_type(self):
+    def test_create_wiki_comment_invalid_target_type(self, mock_update_search=None):
         self._set_up_private_project_with_private_comment_level()
         payload = {
             'data': {

@@ -1,0 +1,51 @@
+    <div class="col-md-9">
+        <form action="" method="post">
+            {% csrf_token %}
+            {{ form.non_field_errors }}
+            {% for field in form %}
+                {%  if field.label != 'Toplevel subjects' %}
+                    <div class="fieldWrapper">
+                        {{ field.errors }}
+                        <p>
+                            {{ field.label_tag }}
+                            {{ field }}
+                        </p>
+                    </div>
+                {% endif %}
+            {% endfor %}
+            {% if show_taxonomies %}
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="firstlevel_subjects">
+                        <ul style="list-style-type:none">
+                            {% for subject in form.toplevel_subjects %}
+                                <li>{{ subject }} <i class="subject-icon first-level glyphicon glyphicon-menu-right"></i></li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div id="secondlevel_subjects">
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div id="thirdlevel_subjects">
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            <input class="form-button" type="submit" value="Save" />
+        </form>
+    </div>
+    <div class="col-md-3">
+        <div>
+            <h4>Import from JSON</h4>
+            <p>Choose a JSON file that has been previously exported from another Preprint Provider detail page. This will
+                pre-populate the Preprint Provider change form with those details.</p>
+            <form id="import-form" action = {% url 'preprint_providers:import' %} method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                {{ import_form.as_p }}
+                <input class="form-button" type="submit" value="Import" />
+            </form>
+        </div>
+    </div>

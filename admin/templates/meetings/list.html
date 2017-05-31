@@ -6,7 +6,7 @@
     <title>OSF Admin | Meetings</title>
 {% endblock title %}
 {% block content %}
-    {%  if perms.auth.admin %}
+    {%  if perms.osf.change_conference %}
         <a href="{% url 'meetings:create' %}" class="btn btn-primary">
             Add meeting
         </a>
@@ -26,7 +26,7 @@
     <tbody>
     {% for meeting in meetings %}
         <tr>
-            {%  if perms.auth.admin %}
+            {%  if perms.osf.change_conference %}
                 <td>
                     <a href="{% url 'meetings:detail' endpoint=meeting.endpoint %}"
                        target="_blank" class="btn btn-primary">

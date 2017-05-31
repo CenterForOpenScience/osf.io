@@ -14,7 +14,7 @@ from framework.auth.decorators import must_be_logged_in
 from framework.exceptions import HTTPError
 from framework import sentry
 from website import language
-from website.models import Node, User
+from osf.models import OSFUser, AbstractNode
 from website.project.views.contributor import get_node_contributors_abbrev
 from website.search import exceptions
 import website.search.search as search
@@ -128,8 +128,16 @@ def search_projects_by_title(**kwargs):
     )
 
     matching_title = conditionally_add_query_item(matching_title, 'is_deleted', is_deleted)
-    matching_title = conditionally_add_query_item(matching_title, 'is_collection', is_collection)
-    matching_title = conditionally_add_query_item(matching_title, 'is_registration', is_registration)
+
+    # TODO: Why.
+    if is_registration == 'yes':
+        matching_title &= Q('type', 'eq', 'osf.registration')
+    elif is_registration == 'no':
+        matching_title &= Q('type', 'ne', 'osf.registration')
+    if is_collection == 'yes':
+        matching_title &= Q('type', 'eq', 'osf.collection')
+    elif is_collection == 'no':
+        matching_title &= Q('type', 'ne', 'osf.collection')
 
     if len(ignore_nodes) > 0:
         for node_id in ignore_nodes:
@@ -140,14 +148,14 @@ def search_projects_by_title(**kwargs):
     public_projects = []
 
     if include_contributed == 'yes':
-        my_projects = Node.find(
+        my_projects = AbstractNode.find(
             matching_title &
-            Q('contributors', 'eq', user._id)  # user is a contributor
+            Q('contributors', 'eq', user)  # user is a contributor
         ).limit(max_results)
         my_project_count = my_project_count
 
     if my_project_count < max_results and include_public == 'yes':
-        public_projects = Node.find(
+        public_projects = AbstractNode.find(
             matching_title &
             Q('is_public', 'eq', True)  # is public
         ).limit(max_results - my_project_count)
@@ -172,7 +180,7 @@ def process_project_search_results(results, **kwargs):
         authors = get_node_contributors_abbrev(project=project, auth=kwargs['auth'])
         authors_html = ''
         for author in authors['contributors']:
-            a = User.load(author['user_id'])
+            a = OSFUser.load(author['user_id'])
             authors_html += '<a href="%s">%s</a>' % (a.url, a.fullname)
             authors_html += author['separator'] + ' '
         authors_html += ' ' + authors['others_count']
@@ -192,7 +200,7 @@ def process_project_search_results(results, **kwargs):
 def search_contributor(auth):
     user = auth.user if auth else None
     nid = request.args.get('excludeNode')
-    exclude = Node.load(nid).contributors if nid else []
+    exclude = AbstractNode.load(nid).contributors if nid else []
     # TODO: Determine whether bleach is appropriate for ES payload. Also, inconsistent with website.sanitize.util.strip_html
     query = bleach.clean(request.args.get('query', ''), tags=[], strip=True)
     page = int(bleach.clean(request.args.get('page', '0'), tags=[], strip=True))

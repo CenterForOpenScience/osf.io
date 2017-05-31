@@ -2,7 +2,7 @@ from nose.tools import *  # flake8: noqa
 
 from api.base.settings.defaults import API_BASE
 from tests.base import ApiTestCase
-from tests.factories import (
+from osf_tests.factories import (
     ProjectFactory,
     AuthUserFactory,
     RegistrationFactory
@@ -19,7 +19,7 @@ class TestLogEmbeds(ApiTestCase):
         self.project = ProjectFactory(is_public=True, creator=self.user)
         self.registration = RegistrationFactory(project=self.project, creator=self.user, is_public=True)
 
-        self.first_reg_log = list(self.registration.logs)[0]
+        self.first_reg_log = self.registration.logs.order_by('date').first()
 
     def test_embed_original_node(self):
         registration_log_url = '/{}logs/{}/?embed=original_node'.format(API_BASE, self.first_reg_log._id)

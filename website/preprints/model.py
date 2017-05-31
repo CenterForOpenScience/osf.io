@@ -9,7 +9,6 @@ from framework.exceptions import PermissionsError
 from framework.guid.model import GuidStoredObject
 from framework.mongo import ObjectId, StoredObject
 from framework.mongo.utils import unique_on
-from website.files.models import StoredFileNode
 from website.preprints.tasks import on_preprint_updated
 from website.project.model import NodeLog
 from website.project.licenses import set_license
@@ -17,7 +16,6 @@ from website.project.taxonomies import Subject, validate_subject_hierarchy
 from website.util import api_v2_url
 from website.util.permissions import ADMIN
 from website import settings
-
 
 @unique_on(['node', 'provider'])
 class PreprintService(GuidStoredObject):
@@ -30,6 +28,7 @@ class PreprintService(GuidStoredObject):
     is_published = fields.BooleanField(default=False, index=True)
     date_published = fields.DateTimeField()
     license = fields.ForeignField('NodeLicenseRecord')
+    domain = fields.StringField()
 
     # This is a list of tuples of Subject id's. MODM doesn't do schema
     # validation for DictionaryFields, but would unsuccessfully attempt
@@ -63,15 +62,17 @@ class PreprintService(GuidStoredObject):
 
     @property
     def url(self):
-        if self.provider._id != 'osf':
-            # Note that this will change with Phase 2 of branded preprints.
-            return '/preprints/{}/{}/'.format(self.provider._id, self._id)
+        if self.provider.domain_redirect_enabled or self.provider._id == 'osf':
+            return '/{}/'.format(self._id)
 
-        return '/{}/'.format(self._id)
+        return '/preprints/{}/{}/'.format(self.provider._id, self._id)
 
     @property
     def absolute_url(self):
-        return urlparse.urljoin(settings.DOMAIN, self.url)
+        return urlparse.urljoin(
+            self.provider.domain if self.provider.domain_redirect_enabled else settings.DOMAIN,
+            self.url
+        )
 
     @property
     def absolute_api_v2_url(self):
@@ -112,9 +113,6 @@ class PreprintService(GuidStoredObject):
     def set_primary_file(self, preprint_file, auth, save=False):
         if not self.node.has_permission(auth.user, ADMIN):
             raise PermissionsError('Only admins can change a preprint\'s primary file.')
-
-        if not isinstance(preprint_file, StoredFileNode):
-            preprint_file = preprint_file.stored_object
 
         if preprint_file.node != self.node or preprint_file.provider != 'osfstorage':
             raise ValueError('This file is not a valid primary file for this preprint.')
@@ -206,6 +204,7 @@ class PreprintProvider(StoredObject):
     logo_name = fields.StringField()
     header_text = fields.StringField()
     description = fields.StringField()
+    domain = fields.StringField()
     banner_name = fields.StringField()
     external_url = fields.StringField()
     email_contact = fields.StringField()

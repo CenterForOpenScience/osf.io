@@ -1,9 +1,11 @@
 from nose.tools import *  # flake8: noqa
+import mock
+import pytest
 
 from api.base.settings.defaults import API_BASE
 
 from tests.base import ApiWikiTestCase
-from tests.factories import ProjectFactory, RegistrationFactory
+from osf_tests.factories import ProjectFactory, RegistrationFactory
 
 
 class TestWikiContentView(ApiWikiTestCase):

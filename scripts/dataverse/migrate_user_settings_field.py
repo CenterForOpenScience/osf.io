@@ -13,7 +13,7 @@ from scripts import utils as script_utils
 from framework.transactions.context import TokuTransaction
 
 from website.app import init_app
-from website.addons.dataverse.model import AddonDataverseNodeSettings
+from addons.dataverse.model import AddonDataverseNodeSettings
 
 logger = logging.getLogger('migrate_user_settings_field')
 

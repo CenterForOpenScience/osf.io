@@ -11,7 +11,7 @@ from tests.base import ApiTestCase
 from framework.status import push_status_message
 
 
-class TruthyFalsyTestCase(ApiTestCase):
+class TestTruthyFalsy:
     """Check that our copy/pasted representation of
     TRUTHY and FALSY match the DRF BooleanField's versions
     """
@@ -41,7 +41,7 @@ class TestIsDeprecated(unittest.TestCase):
         assert_equal(is_deprecated, False)
 
 
-class FlaskDjangoIntegrationTestCase(ApiTestCase):
+class TestFlaskDjangoIntegration:
     def test_push_status_message_no_response(self):
         status_message = 'This is a message'
         statuses = ['info', 'warning', 'warn', 'success', 'danger', 'default']

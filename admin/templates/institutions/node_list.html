@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% load render_bundle from webpack_loader %}
+{% load node_extras %}
+{% block top_includes %}
+  <link rel="stylesheet" type="text/css" href="/static/css/institutions.css" />
+{% endblock %}
+
+{% load static %}
+{% block title %}
+    <title>Affiliated Nodes</title>
+{% endblock title %}
+{% block content %}
+    <h2>List of Nodes for {{ institution.name }}
+        <img class="institution-logo" src="{{ logohost }}/static/img/institutions/shields/{{ institution.logo_name }}">
+    </h2>
+    {% include 'nodes/node_list.html' %}
+{% endblock content %}

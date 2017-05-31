@@ -23,5 +23,4 @@ def remove_session(session):
     :param session: Session
     :return:
     """
-
-    Session.remove(Q('_id', 'eq', session._id))
+    Session.remove_one(session)

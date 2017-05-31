@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import pytest
 
 from django.http import HttpResponse
 from tests.base import ApiTestCase, fake
@@ -10,9 +11,9 @@ from rest_framework.test import APIRequestFactory
 
 from website.util import api_v2_url
 from api.base import settings
-from api.base.middleware import TokuTransactionMiddleware, CorsMiddleware
+from api.base.middleware import CorsMiddleware
 from tests.base import ApiTestCase
-from tests import factories
+from osf_tests import factories
 
 class MiddlewareTestCase(ApiTestCase):
     MIDDLEWARE = None
@@ -23,24 +24,6 @@ class MiddlewareTestCase(ApiTestCase):
         self.mock_response = mock.Mock()
         self.request_factory = APIRequestFactory()
 
-class TestMiddlewareRollback(MiddlewareTestCase):
-    MIDDLEWARE = TokuTransactionMiddleware
-
-    @mock.patch('framework.transactions.handlers.commands')
-    def test_400_error_causes_rollback(self, mock_commands):
-
-        self.mock_response.status_code = 400
-        self.middleware.process_response(mock.Mock(), self.mock_response)
-
-        assert_true(mock_commands.rollback.called)
-
-    @mock.patch('framework.transactions.handlers.commands')
-    def test_200_OK_causes_commit(self, mock_commands):
-
-        self.mock_response.status_code = 200
-        self.middleware.process_response(mock.Mock(), self.mock_response)
-
-        assert_true(mock_commands.commit.called)
 
 class TestCorsMiddleware(MiddlewareTestCase):
     MIDDLEWARE = CorsMiddleware
@@ -49,10 +32,24 @@ class TestCorsMiddleware(MiddlewareTestCase):
         url = api_v2_url('users/me/')
         domain = urlparse("https://dinosaurs.sexy")
         institution = factories.InstitutionFactory(
-            institution_domains=[domain.netloc.lower()],
-            title="Institute for Sexy Lizards"
+            domains=[domain.netloc.lower()],
+            name="Institute for Sexy Lizards"
         )
-        settings.load_institutions()
+        settings.load_origins_whitelist()
+        request = self.request_factory.get(url, HTTP_ORIGIN=domain.geturl())
+        response = HttpResponse()
+        self.middleware.process_request(request)
+        processed = self.middleware.process_response(request, response)
+        assert_equal(response['Access-Control-Allow-Origin'], domain.geturl())
+
+    def test_institutions_added_to_cors_whitelist(self):
+        url = api_v2_url('users/me/')
+        domain = urlparse("https://dinoprints.sexy")
+        preprintprovider = factories.PreprintProviderFactory(
+            domain=domain.netloc.lower(),
+            _id="DinoXiv"
+        )
+        settings.load_origins_whitelist()
         request = self.request_factory.get(url, HTTP_ORIGIN=domain.geturl())
         response = HttpResponse()
         self.middleware.process_request(request)

@@ -3,6 +3,7 @@
 import datetime
 import logging
 
+from django.utils import timezone
 from modularodm import Q
 
 from website import models
@@ -28,7 +29,7 @@ def send_retraction_and_embargo_addition_message(contrib, label, mail, dry_run=T
     logger.info('Sending message to user {0!r}'.format(contrib))
     if not dry_run:
         send_mail(contrib.username, mail, user=contrib)
-        contrib.security_messages[MESSAGE_NAME] = datetime.datetime.utcnow()
+        contrib.security_messages[MESSAGE_NAME] = timezone.now()
         contrib.save()
 
 

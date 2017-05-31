@@ -5,7 +5,7 @@ from framework.auth.core import Auth
 
 from api.base.settings.defaults import API_BASE
 from tests.base import ApiTestCase
-from tests.factories import (
+from osf_tests.factories import (
     ProjectFactory,
     AuthUserFactory
 )
@@ -65,7 +65,7 @@ class TestNodeEmbeds(ApiTestCase):
             assert_in(contrib['id'], ids)
 
     def test_embed_children_filters_unauthorized(self):
-        url = '/{0}nodes/{1}/?embed=children'.format(API_BASE, self.root_node)
+        url = '/{0}nodes/{1}/?embed=children'.format(API_BASE, self.root_node._id)
 
         res = self.app.get(url, auth=self.contrib1.auth)
         embeds = res.json['data']['embeds']
@@ -74,14 +74,14 @@ class TestNodeEmbeds(ApiTestCase):
         assert_in(self.child1._id, ids)
 
     def test_embed_parent_unauthorized(self):
-        url = '/{0}nodes/{1}/?embed=parent'.format(API_BASE, self.subchild)
+        url = '/{0}nodes/{1}/?embed=parent'.format(API_BASE, self.subchild._id)
 
         res = self.app.get(url, auth=self.contrib1.auth)
         assert_in('errors', res.json['data']['embeds']['parent'])
         assert_equal(res.json['data']['embeds']['parent']['errors'][0]['detail'], 'You do not have permission to perform this action.')
 
     def test_embed_attributes_not_relationships(self):
-        url = '/{}nodes/{}/?embed=title'.format(API_BASE, self.root_node)
+        url = '/{}nodes/{}/?embed=title'.format(API_BASE, self.root_node._id)
 
         res = self.app.get(url, auth=self.contrib1.auth, expect_errors=True)
         assert_equal(res.status_code, 400)

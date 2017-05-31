@@ -2,7 +2,7 @@
 from nose.tools import *  # flake8: noqa
 
 from tests.base import ApiTestCase
-from tests.factories import AuthUserFactory
+from osf_tests.factories import AuthUserFactory
 
 from api.base.settings.defaults import API_BASE
 
@@ -12,7 +12,7 @@ class TestExceptionFormatting(ApiTestCase):
 
         super(TestExceptionFormatting, self).setUp()
 
-        self.user = AuthUserFactory.build(
+        self.user = AuthUserFactory(
             fullname='Martin Luther King Jr.',
             given_name='Martin',
             family_name='King',

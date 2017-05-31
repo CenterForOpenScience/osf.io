@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 import datetime
+
+from django.utils import timezone
 from nose.tools import *  # noqa
 
 from scripts.osfstorage.utils import ensure_osf_files
@@ -7,9 +9,9 @@ from website import settings
 ensure_osf_files(settings)
 
 # Hack: Must configure add-ons before importing `OsfTestCase`
-from website.addons.osfstorage.tests.factories import FileVersionFactory
-from website.addons.osfstorage.model import OsfStorageFileRecord
-from website.addons.osffiles.model import NodeFile
+from addons.osfstorage.tests.factories import FileVersionFactory
+from addons.osfstorage.model import OsfStorageFileRecord
+from addons.osffiles.model import NodeFile
 from tests.base import OsfTestCase
 from tests.factories import ProjectFactory
 
@@ -29,7 +31,7 @@ class TestMigrateDates(OsfTestCase):
         self.date = self.node_file.date_modified
         self.project.files_versions['old_pizza'] = [self.node_file._id]
         self.project.save()
-        self.version = FileVersionFactory(date_modified=datetime.datetime.now())
+        self.version = FileVersionFactory(date_modified=timezone.now())
         self.record, _ = OsfStorageFileRecord.get_or_create(self.node_file.path, self.node_settings)
         self.record.versions = [self.version]
         self.record.save()

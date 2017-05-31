@@ -8,7 +8,7 @@ from website.models import NodeLog
 from api.base.settings.defaults import API_BASE
 
 from tests.base import ApiTestCase
-from tests.factories import (
+from osf_tests.factories import (
     ProjectFactory,
     RegistrationFactory,
     AuthUserFactory

@@ -5,6 +5,8 @@
 import sys
 import logging
 
+from django.utils import timezone
+
 from website.app import init_app
 from website.models import User
 from scripts import utils as script_utils
@@ -54,7 +56,7 @@ def main():
 class TestMigrateNodeCategories(OsfTestCase):
 
     def test_get_targets(self):
-        today = dt.datetime.utcnow()
+        today = timezone.now()
         user1 = UserFactory.build(date_confirmed=today, date_last_login=today)
         user2 = UserFactory.build(date_confirmed=None, date_last_login=today)
         user1.save()
@@ -70,7 +72,7 @@ class TestMigrateNodeCategories(OsfTestCase):
         assert len(user_list) is 2
 
     def test_do_migration(self):
-        today = dt.datetime.utcnow()
+        today = timezone.now()
         user1 = UserFactory.build(date_confirmed=None, date_last_login=today, is_registered=False)
         user2 = UserFactory.build(date_confirmed=None, date_last_login=today, is_registered=True)
         user1.save()

@@ -1,3 +1,6 @@
+import django
+django.setup()
+
 from framework.celery_tasks import app as celery_app
 from scripts.analytics.user_summary import UserSummary
 from scripts.analytics.node_summary import NodeSummary

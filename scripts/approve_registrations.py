@@ -5,10 +5,11 @@ elapsed the pending approval time..
 import logging
 import datetime
 
+from django.utils import timezone
+from django.db import transaction
 from modularodm import Q
 
 from framework.celery_tasks import app as celery_app
-from framework.transactions.context import TokuTransaction
 
 from website.app import init_app
 from website import models, settings
@@ -38,7 +39,7 @@ def main(dry_run=True):
                     registration_approval.save()
                     continue
 
-                with TokuTransaction():
+                with transaction.atomic():
                     try:
                         # Ensure no `User` is associated with the final approval
                         registration_approval._on_complete(None)
@@ -51,7 +52,7 @@ def main(dry_run=True):
 
 def should_be_approved(pending_registration):
     """Returns true if pending_registration has surpassed its pending time."""
-    return (datetime.datetime.utcnow() - pending_registration.initiation_date) >= settings.REGISTRATION_APPROVAL_TIME
+    return (timezone.now() - pending_registration.initiation_date) >= settings.REGISTRATION_APPROVAL_TIME
 
 
 @celery_app.task(name='scripts.approve_registrations')

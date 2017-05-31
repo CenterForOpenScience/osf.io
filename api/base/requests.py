@@ -1,5 +1,8 @@
 from rest_framework.request import Request
 
+from osf.models import Node
+from osf.models import OSFUser
+
 
 class EmbeddedRequest(Request):
     """
@@ -9,8 +12,9 @@ class EmbeddedRequest(Request):
     authorized user from the original request.
     """
     def __init__(self, request, parsers=None, authenticators=None,
-                 negotiator=None, parser_context=None):
+                 negotiator=None, parser_context=None, parents=None):
         self.original_user = request.user
+        self.parents = parents or {Node: {}, OSFUser: {}}
         super(EmbeddedRequest, self).__init__(request, parsers, authenticators,
                                               negotiator, parser_context)
 

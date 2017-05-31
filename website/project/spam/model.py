@@ -1,7 +1,7 @@
 import abc
 import logging
-from datetime import datetime
 
+from django.utils import timezone
 from modularodm import fields
 from modularodm.exceptions import ValidationTypeError, ValidationValueError
 
@@ -111,7 +111,7 @@ class SpamMixin(StoredObject):
         if user == self.user:
             raise ValueError('User cannot report self.')
         self.flag_spam()
-        date = datetime.utcnow()
+        date = timezone.now()
         report = {'date': date, 'retracted': False}
         report.update(kwargs)
         if 'text' not in report:

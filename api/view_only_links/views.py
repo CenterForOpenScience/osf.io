@@ -14,7 +14,7 @@ from api.nodes.serializers import NodeSerializer, JSONAPISerializer
 from api.registrations.serializers import RegistrationSerializer
 from api.view_only_links.serializers import ViewOnlyLinkDetailSerializer, ViewOnlyLinkNodesSerializer
 
-from website.models import Node, PrivateLink
+from website.models import PrivateLink
 
 
 class ViewOnlyLinkDetail(JSONAPIBaseView, generics.RetrieveAPIView):
@@ -72,7 +72,7 @@ class ViewOnlyLinkDetail(JSONAPIBaseView, generics.RetrieveAPIView):
         view_only_link = PrivateLink.load(link_id)
         user = get_user_auth(self.request).user
 
-        for node in view_only_link.nodes:
+        for node in view_only_link.nodes.all():
             if not node.has_permission(user, 'admin'):
                 raise PermissionDenied
 
@@ -100,7 +100,7 @@ class ViewOnlyLinkNodes(JSONAPIBaseView, generics.ListAPIView):
     def get_serializer_class(self):
         if 'link_id' in self.kwargs:
             view_only_link = PrivateLink.load(self.kwargs['link_id'])
-            node = Node.load(view_only_link.nodes[0])
+            node = view_only_link.nodes.first()
             if node.is_registration:
                 return RegistrationSerializer
             return NodeSerializer
@@ -113,8 +113,7 @@ class ViewOnlyLinkNodes(JSONAPIBaseView, generics.ListAPIView):
         user = get_user_auth(self.request).user
 
         nodes = []
-        for node in view_only_link.nodes:
-            node = Node.load(node)
+        for node in view_only_link.nodes.all():
             if not node.has_permission(user, 'admin'):
                 raise PermissionDenied
             nodes.append(node)
@@ -179,7 +178,7 @@ class ViewOnlyLinkNodesRelationships(JSONAPIBaseView, generics.RetrieveUpdateDes
         link_id = self.kwargs['link_id']
         view_only_link = PrivateLink.load(link_id)
         return {
-            'data': [Node.load(node) for node in view_only_link.nodes],
+            'data': view_only_link.nodes.all(),
             'self': view_only_link
         }
 

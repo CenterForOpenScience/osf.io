@@ -1,22 +1,24 @@
 from rest_framework import generics
 from rest_framework import permissions as drf_permissions
 
-from modularodm import Q
+from modularodm import Q as MQ
+from django.db.models import Q
 
 from framework.auth.oauth_scopes import CoreScopes
 
 from website.models import Node, Subject, PreprintService, PreprintProvider
 
 from api.base import permissions as base_permissions
-from api.base.filters import ODMFilterMixin
+from api.base.filters import PreprintFilterMixin, ODMFilterMixin
 from api.base.views import JSONAPIBaseView
 from api.base.pagination import MaxSizePagination
-
+from api.base.utils import get_object_or_error, get_user_auth
 from api.licenses.views import LicenseList
 from api.taxonomies.serializers import TaxonomySerializer
 from api.preprint_providers.serializers import PreprintProviderSerializer
 from api.preprints.serializers import PreprintSerializer
 
+from api.preprints.permissions import PreprintPublishedOrAdmin
 
 class PreprintProviderList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
     """
@@ -28,12 +30,22 @@ class PreprintProviderList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin
 
     OSF Preprint Providers have the "preprint_providers" `type`.
 
-        name           type               description
-        =========================================================================
-        name           string             name of the preprint provider
-        logo_path      string             a path to the preprint provider's static logo
-        banner_path    string             a path to the preprint provider's banner
-        description    string             description of the preprint provider
+        name                     type                description
+        =============================================================================================================
+        name                     string              name of the preprint provider
+        logo_path                string              a path to the preprint provider's static logo
+        banner_path              string              a path to the preprint provider's banner
+        description              string              description of the preprint provider
+        advisory_board           string              HTML for the advisory board/steering committee section
+        email_contact            string              the contact email for the preprint provider
+        email_support            string              the support email for the preprint provider
+        subjects_acceptable      [[string],boolean]  the list of acceptable subjects for the preprint provider
+        social_facebook          string              the preprint provider's Facebook account
+        social_instagram         string              the preprint provider's Instagram account
+        social_twitter           string              the preprint provider's Twitter account
+        domain                   string              the domain name of the preprint provider
+        domain_redirect_enabled  boolean             whether or not redirects are enabled for the provider's domain
+        example                  string              an example guid for a preprint created for the preprint provider
 
     ##Relationships
 
@@ -64,8 +76,9 @@ class PreprintProviderList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin
 
     ordering = ('name', )
 
+    # implement ODMFilterMixin
     def get_default_odm_query(self):
-        return Q('is_deleted', 'ne', True)
+        return None
 
     # overrides ListAPIView
     def get_queryset(self):
@@ -81,12 +94,22 @@ class PreprintProviderDetail(JSONAPIBaseView, generics.RetrieveAPIView):
 
     OSF Preprint Providers have the "preprint_providers" `type`.
 
-        name           type               description
-        =========================================================================
-        name           string             name of the preprint provider
-        logo_path      string             a path to the preprint provider's static logo
-        banner_path    string             a path to the preprint provider's banner
-        description    string             description of the preprint provider
+        name                     type                description
+        =============================================================================================================
+        name                     string              name of the preprint provider
+        logo_path                string              a path to the preprint provider's static logo
+        banner_path              string              a path to the preprint provider's banner
+        description              string              description of the preprint provider
+        advisory_board           string              HTML for the advisory board/steering committee section
+        email_contact            string              the contact email for the preprint provider
+        email_support            string              the support email for the preprint provider
+        subjects_acceptable      [[string],boolean]  the list of acceptable subjects for the preprint provider
+        social_facebook          string              the preprint provider's Facebook account
+        social_instagram         string              the preprint provider's Instagram account
+        social_twitter           string              the preprint provider's Twitter account
+        domain                   string              the domain name of the preprint provider
+        domain_redirect_enabled  boolean             whether or not redirects are enabled for the provider's domain
+        example                  string              an example guid for a preprint created for the preprint provider
 
     ##Relationships
 
@@ -116,10 +139,10 @@ class PreprintProviderDetail(JSONAPIBaseView, generics.RetrieveAPIView):
     view_name = 'preprint_provider-detail'
 
     def get_object(self):
-        return PreprintProvider.load(self.kwargs['provider_id'])
+        return get_object_or_error(PreprintProvider, self.kwargs['provider_id'], display_name='PreprintProvider')
 
 
-class PreprintProviderPreprintList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
+class PreprintProviderPreprintList(JSONAPIBaseView, generics.ListAPIView, PreprintFilterMixin):
     """Preprints from a given preprint_provider. *Read Only*
 
     To update preprints with a given preprint_provider, see the `<node_id>/relationships/preprint_provider` endpoint
@@ -135,7 +158,7 @@ class PreprintProviderPreprintList(JSONAPIBaseView, generics.ListAPIView, ODMFil
         date_published                  iso8601 timestamp                   timestamp when the preprint was published
         is_published                    boolean                             whether or not this preprint is published
         is_preprint_orphan              boolean                             whether or not this preprint is orphaned
-        subjects                        array of tuples of dictionaries     ids of Subject in the PLOS taxonomy. Dictionary, containing the subject text and subject ID
+        subjects                        array of tuples of dictionaries     ids of Subject in the BePress taxonomy. Dictionary, containing the subject text and subject ID
         doi                             string                              bare DOI for the manuscript, as entered by the user
 
     ##Relationships
@@ -162,6 +185,7 @@ class PreprintProviderPreprintList(JSONAPIBaseView, generics.ListAPIView, ODMFil
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
+        PreprintPublishedOrAdmin,
     )
 
     ordering = ('-date_created')
@@ -175,20 +199,25 @@ class PreprintProviderPreprintList(JSONAPIBaseView, generics.ListAPIView, ODMFil
     view_category = 'preprint_providers'
     view_name = 'preprints-list'
 
-    # overrides ODMFilterMixin
-    def get_default_odm_query(self):
-        # TODO: this will return unpublished preprints so that users
-        # can find and resume the publishing workflow, but filtering
-        # public preprints should filter for `is_published`
-        provider = PreprintProvider.find_one(Q('_id', 'eq', self.kwargs['provider_id']))
-        return (
-            Q('provider', 'eq', provider)
-        )
+    # overrides DjangoFilterMixin
+    def get_default_django_query(self):
+        auth = get_user_auth(self.request)
+        auth_user = getattr(auth, 'user', None)
+        provider = get_object_or_error(PreprintProvider, self.kwargs['provider_id'], display_name='PreprintProvider')
+
+        # Permissions on the list objects are handled by the query
+        default_query = Q(node__isnull=False, node__is_deleted=False, provider___id=provider._id)
+        no_user_query = Q(is_published=True, node__is_public=True)
+
+        if auth_user:
+            contrib_user_query = Q(is_published=True, node__contributor__user_id=auth_user.id, node__contributor__read=True)
+            admin_user_query = Q(node__contributor__user_id=auth_user.id, node__contributor__admin=True)
+            return (default_query & (no_user_query | contrib_user_query | admin_user_query))
+        return (default_query & no_user_query)
 
     # overrides ListAPIView
     def get_queryset(self):
-        query = self.get_query_from_request()
-        return PreprintService.find(query)
+        return PreprintService.objects.filter(self.get_query_from_request()).distinct()
 
 
 class PreprintProviderSubjectList(JSONAPIBaseView, generics.ListAPIView):
@@ -206,26 +235,31 @@ class PreprintProviderSubjectList(JSONAPIBaseView, generics.ListAPIView):
     serializer_class = TaxonomySerializer
 
     def is_valid_subject(self, allows_children, allowed_parents, sub):
+        # TODO: Delet this when all PreprintProviders have a mapping
         if sub._id in allowed_parents:
             return True
-        for parent in sub.parents:
-            if parent._id in allows_children:
+        if sub.parent:
+            if sub.parent._id in allows_children:
                 return True
-            for grandpa in parent.parents:
-                if grandpa._id in allows_children:
+            if sub.parent.parent:
+                if sub.parent.parent._id in allows_children:
                     return True
         return False
 
     def get_queryset(self):
-        parent = self.request.query_params.get('filter[parents]', None)
-        provider = PreprintProvider.load(self.kwargs['provider_id'])
+        parent = self.request.query_params.get('filter[parents]', None) or self.request.query_params.get('filter[parent]', None)
+        provider = get_object_or_error(PreprintProvider, self.kwargs['provider_id'], display_name='PreprintProvider')
         if parent:
             if parent == 'null':
                 return provider.top_level_subjects
-            #  Calculate this here to only have to do it once.
-            allowed_parents = [id_ for sublist in provider.subjects_acceptable for id_ in sublist[0]]
-            allows_children = [subs[0][-1] for subs in provider.subjects_acceptable if subs[1]]
-            return [sub for sub in Subject.find(Q('parents', 'eq', parent)) if provider.subjects_acceptable == [] or self.is_valid_subject(allows_children=allows_children, allowed_parents=allowed_parents, sub=sub)]
+            if provider.subjects.exists():
+                return provider.subjects.filter(parent___id=parent)
+            else:
+                # TODO: Delet this when all PreprintProviders have a mapping
+                #  Calculate this here to only have to do it once.
+                allowed_parents = [id_ for sublist in provider.subjects_acceptable for id_ in sublist[0]]
+                allows_children = [subs[0][-1] for subs in provider.subjects_acceptable if subs[1]]
+                return [sub for sub in Subject.find(MQ('parent___id', 'eq', parent)) if provider.subjects_acceptable == [] or self.is_valid_subject(allows_children=allows_children, allowed_parents=allowed_parents, sub=sub)]
         return provider.all_subjects
 
 
@@ -234,5 +268,11 @@ class PreprintProviderLicenseList(LicenseList):
     view_category = 'preprint_providers'
 
     def get_queryset(self):
-        provider = PreprintProvider.load(self.kwargs['provider_id'])
-        return provider.licenses_acceptable if len(provider.licenses_acceptable) else super(PreprintProviderLicenseList, self).get_queryset()
+        provider = get_object_or_error(PreprintProvider, self.kwargs['provider_id'], display_name='PreprintProvider')
+        if not provider.licenses_acceptable.count():
+            if not provider.default_license:
+                return super(PreprintProviderLicenseList, self).get_queryset()
+            return [provider.default_license] + [license for license in super(PreprintProviderLicenseList, self).get_queryset() if license != provider.default_license]
+        if not provider.default_license:
+            return provider.licenses_acceptable.get_queryset()
+        return [provider.default_license] + [license for license in provider.licenses_acceptable.all() if license != provider.default_license]

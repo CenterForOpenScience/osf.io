@@ -7,8 +7,8 @@ from framework.auth import Auth
 from tests.base import OsfTestCase
 from tests.factories import ProjectFactory, UserFactory
 
-from website.addons.box.model import BoxUserSettings
-from website.addons.box.tests.factories import BoxAccountFactory
+from addons.box.model import BoxUserSettings
+from addons.box.tests.factories import BoxAccountFactory
 
 
 class TestBoxPostMergeMigration(OsfTestCase):

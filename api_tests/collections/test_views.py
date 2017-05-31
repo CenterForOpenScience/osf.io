@@ -1,12 +1,15 @@
 from urlparse import urlparse
 
+import pytest
 from nose.tools import *  # flake8: noqa
 
 from website.models import Node, NodeLog
 from website.util.sanitize import strip_html
+from website.util import disconnected_from_listeners
+from website.project.signals import contributor_removed
 from api.base.settings.defaults import API_BASE
 from tests.base import ApiTestCase
-from tests.factories import (
+from osf_tests.factories import (
     CollectionFactory,
     NodeFactory,
     RegistrationFactory,
@@ -106,7 +109,7 @@ class TestCollectionCreate(ApiTestCase):
         ids = [each['id'] for each in res.json['data']]
         assert_in(pid, ids)
         collection = Node.load(pid)
-        assert_equal(collection.logs[-1].action, NodeLog.PROJECT_CREATED)
+        assert_equal(collection.logs.order_by('date').first().action, NodeLog.PROJECT_CREATED)
         assert_equal(collection.title, self.title)
 
     def test_create_collection_creates_collection_and_sanitizes_html(self):
@@ -125,7 +128,7 @@ class TestCollectionCreate(ApiTestCase):
         assert_equal(res.content_type, 'application/vnd.api+json')
 
         collection = Node.load(collection_id)
-        assert_equal(collection.logs[-1].action, NodeLog.PROJECT_CREATED)
+        assert_equal(collection.logs.latest().action, NodeLog.PROJECT_CREATED)
         assert_equal(collection.title, strip_html(title))
 
     def test_creates_project_no_type(self):
@@ -204,7 +207,7 @@ class TestCollectionCreate(ApiTestCase):
                 }
             }
         }
-        res = self.app.post_json_api(self.url, collection, auth=self.user_one.auth, expect_errors=True)
+        res = self.app.post_json_api(self.url, collection, auth=self.user_one.auth)
         assert_equal(res.status_code, 201)
         res = self.app.post_json_api(self.url, collection, auth=self.user_one.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
@@ -573,14 +576,14 @@ class TestCollectionUpdate(CollectionCRUDTestCase):
 
     def test_multiple_patch_requests_with_same_title_generates_one_log(self):
         payload = make_collection_payload(collection=self.collection, attributes={'title': self.new_title})
-        original_n_logs = len(self.collection.logs)
+        original_n_logs = self.collection.logs.count()
 
         for x in range(0, 2):
             res = self.app.patch_json_api(self.url, payload, auth=self.user.auth)
             assert_equal(res.status_code, 200)
             self.collection.reload()
             assert_equal(self.collection.title, self.new_title)
-            assert_equal(len(self.collection.logs), original_n_logs + 1)  # sanity check
+            assert_equal(self.collection.logs.count(), original_n_logs + 1)  # sanity check
 
     def test_partial_update_invalid_id(self):
         res = self.app.patch_json_api(self.url, {
@@ -1019,7 +1022,7 @@ class TestCollectionNodeLinkDetail(ApiTestCase):
     def test_delete_node_link_no_permissions_for_target_node(self):
         pointer_project = CollectionFactory(creator=self.user_two)
         pointer = self.collection.add_pointer(pointer_project, auth=Auth(self.user_one), save=True)
-        assert_in(pointer, self.collection.nodes)
+        assert_in(pointer.child, self.collection.linked_nodes.all())
         url = '/{}collections/{}/node_links/{}/'.format(API_BASE, self.collection._id, pointer._id)
         res = self.app.delete_json_api(url, auth=self.user_one.auth)
         assert_equal(res.status_code, 204)
@@ -1030,7 +1033,7 @@ class TestCollectionNodeLinkDetail(ApiTestCase):
         assert_in('detail', res.json['errors'][0].keys())
 
     def test_can_not_delete_collection_public_node_pointer_unauthorized(self):
-        node_count_before = len(self.collection.nodes_pointer)
+        node_count_before = self.collection.nodes_pointer.count()
         res = self.app.delete(self.url_public, auth=self.user_two.auth, expect_errors=True)
         # This is could arguably be a 405, but we don't need to go crazy with status codes
         assert_equal(res.status_code, 403)
@@ -1040,15 +1043,15 @@ class TestCollectionNodeLinkDetail(ApiTestCase):
 
     @assert_logs(NodeLog.POINTER_REMOVED, 'collection')
     def test_delete_public_node_pointer_authorized(self):
-        node_count_before = len(self.collection.nodes_pointer)
+        node_count_before = self.collection.nodes_pointer.count()
         res = self.app.delete(self.url_public, auth=self.user_one.auth)
         self.collection.reload()
         assert_equal(res.status_code, 204)
-        assert_equal(node_count_before - 1, len(self.collection.nodes_pointer))
+        assert_equal(node_count_before - 1, self.collection.nodes_pointer.count())
 
     @assert_logs(NodeLog.POINTER_REMOVED, 'collection')
     def test_delete_public_registration_pointer_authorized(self):
-        node_count_before = len(self.collection.nodes_pointer)
+        node_count_before = self.collection.nodes_pointer.count()
         res = self.app.delete(self.reg_url_public, auth=self.user_one.auth)
         self.collection.reload()
         assert_equal(res.status_code, 204)
@@ -1056,7 +1059,7 @@ class TestCollectionNodeLinkDetail(ApiTestCase):
 
     @assert_logs(NodeLog.POINTER_REMOVED, 'collection')
     def test_delete_private_node_link_authorized(self):
-        node_count_before = len(self.collection.nodes_pointer)
+        node_count_before = self.collection.nodes_pointer.count()
         res = self.app.delete(self.url, auth=self.user_one.auth)
         self.collection.reload()
         assert_equal(res.status_code, 204)
@@ -1064,11 +1067,11 @@ class TestCollectionNodeLinkDetail(ApiTestCase):
 
     @assert_logs(NodeLog.POINTER_REMOVED, 'collection')
     def test_delete_private_registration_link_authorized(self):
-        node_count_before = len(self.collection.nodes_pointer)
+        node_count_before = self.collection.nodes_pointer.count()
         res = self.app.delete(self.reg_url, auth=self.user_one.auth)
         self.collection.reload()
         assert_equal(res.status_code, 204)
-        assert_equal(node_count_before - 1, len(self.collection.nodes_pointer))
+        assert_equal(node_count_before - 1, self.collection.nodes_pointer.count())
 
     def test_can_not_delete_collection_private_node_link_unauthorized(self):
         res = self.app.delete(self.url, auth=self.user_two.auth, expect_errors=True)
@@ -1369,7 +1372,7 @@ class TestCollectionBulkUpdate(ApiTestCase):
     def test_bulk_update_collections_one_not_found(self):
         empty_payload = {'data': [
             {
-                'id': 12345,
+                'id': '12345',
                 'type': 'collections',
                 'attributes': {
                     'title': self.new_title
@@ -1613,7 +1616,7 @@ class TestCollectionLinksBulkCreate(ApiTestCase):
             'data': [{
                 "type": "node_links",
                 "relationships": {
-                    'nodes': {
+                    'target_node': {
                         'data': {
                             "id": self.private_pointer_project._id,
                             "type": 'nodes'
@@ -1624,7 +1627,7 @@ class TestCollectionLinksBulkCreate(ApiTestCase):
             {
                 "type": "node_links",
                 "relationships": {
-                    'nodes': {
+                    'target_node': {
                         'data': {
                             "id": self.private_pointer_project_two._id,
                             "type": 'nodes'
@@ -1635,7 +1638,7 @@ class TestCollectionLinksBulkCreate(ApiTestCase):
             {
                 "type": "node_links",
                 "relationships": {
-                    'nodes': {
+                    'target_node': {
                         'data': {
                             "id": self.private_pointer_registration._id,
                             "type": 'nodes'
@@ -1646,7 +1649,7 @@ class TestCollectionLinksBulkCreate(ApiTestCase):
             {
                 "type": "node_links",
                 "relationships": {
-                    'nodes': {
+                    'target_node': {
                         'data': {
                             "id": self.private_pointer_registration_two._id,
                             "type": 'nodes'
@@ -1924,21 +1927,21 @@ class TestBulkDeleteCollectionNodeLinks(ApiTestCase):
         assert_in('detail', res.json['errors'][0])
 
     def test_bulk_deletes_collection_node_pointers_fails_if_bad_auth(self):
-        node_count_before = len(self.collection_two.nodes_pointer)
+        node_count_before = self.collection_two.nodes_pointer.count()
         res = self.app.delete_json_api(self.collection_two_url, self.collection_two_payload,
                                        auth=self.user_two.auth, expect_errors=True, bulk=True)
         # This is could arguably be a 405, but we don't need to go crazy with status codes
         assert_equal(res.status_code, 403)
         assert_in('detail', res.json['errors'][0])
         self.collection_two.reload()
-        assert_equal(node_count_before, len(self.collection_two.nodes_pointer))
+        assert_equal(node_count_before, self.collection_two.nodes_pointer.count())
 
     def test_bulk_deletes_collection_node_pointers_succeeds_as_owner(self):
-        node_count_before = len(self.collection_two.nodes_pointer)
+        node_count_before = self.collection_two.nodes_pointer.count()
         res = self.app.delete_json_api(self.collection_two_url, self.collection_two_payload, auth=self.user.auth, bulk=True)
         self.collection_two.reload()
         assert_equal(res.status_code, 204)
-        assert_equal(node_count_before - 2, len(self.collection_two.nodes_pointer))
+        assert_equal(node_count_before - 2, self.collection_two.nodes_pointer.count())
         self.collection_two.reload()
 
     def test_return_bulk_deleted_collection_node_pointer(self):
@@ -2211,7 +2214,7 @@ class TestCollectionRelationshipNodeLinks(ApiTestCase):
         assert_equal(res.json['data'], [])
 
     def test_delete_not_present(self):
-        number_of_links = len(self.collection.nodes)
+        number_of_links = self.collection.linked_nodes.count()
         res = self.app.delete_json_api(
             self.url, self.payload([self.other_node._id]),
             auth=self.user.auth
@@ -2366,7 +2369,7 @@ class TestCollectionLinkedNodes(ApiTestCase):
         self.collection.save()
         self.url = '/{}collections/{}/linked_nodes/'.format(API_BASE, self.collection._id)
         self.reg_url = '/{}collections/{}/linked_registrations/'.format(API_BASE, self.collection._id)
-        self.node_ids = [pointer.node._id for pointer in self.collection.nodes_pointer]
+        self.node_ids = list(self.collection.linked_nodes.values_list('guids___id', flat=True))
 
     def test_linked_nodes_returns_everything(self):
         res = self.app.get(self.url, auth=self.user.auth)
@@ -2419,10 +2422,13 @@ class TestCollectionLinkedNodes(ApiTestCase):
         for registration_returned in registrations_returned:
             assert_in(registration_returned, self.node_ids)
 
-        self.linked_node2.remove_contributor(user, auth=self.auth)
-        self.public_node.remove_contributor(user, auth=self.auth)
-        self.linked_registration2.remove_contributor(user, auth=self.auth)
-        self.public_registration.remove_contributor(user, auth=self.auth)
+        # Disconnect contributor_removed so that we don't check in files
+        # We can remove this when StoredFileNode is implemented in osf-models
+        with disconnected_from_listeners(contributor_removed):
+            self.linked_node2.remove_contributor(user, auth=self.auth)
+            self.public_node.remove_contributor(user, auth=self.auth)
+            self.linked_registration2.remove_contributor(user, auth=self.auth)
+            self.public_registration.remove_contributor(user, auth=self.auth)
 
         res = self.app.get(
             '/{}collections/{}/linked_nodes/'.format(API_BASE, collection._id),

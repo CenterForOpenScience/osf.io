@@ -4,7 +4,7 @@ from api.base.settings.defaults import API_BASE
 
 from api_tests.nodes.views.test_node_view_only_links_list import ViewOnlyLinkTestCase
 
-from tests.factories import NodeFactory
+from osf_tests.factories import NodeFactory
 
 
 class TestViewOnlyLinksNodes(ViewOnlyLinkTestCase):
@@ -61,8 +61,8 @@ class TestViewOnlyLinkNodesSet(ViewOnlyLinkTestCase):
         res = self.app.post_json_api(self.url, self.component_one_payload, auth=self.user.auth)
         self.view_only_link.reload()
         assert_equal(res.status_code, 201)
-        assert_in(self.public_project._id, self.view_only_link.nodes)
-        assert_in(self.component_one._id, self.view_only_link.nodes)
+        assert_in(self.public_project, self.view_only_link.nodes.all())
+        assert_in(self.component_one, self.view_only_link.nodes.all())
 
     def test_admin_can_set_multiple_nodes(self):
         payload = {
@@ -79,9 +79,9 @@ class TestViewOnlyLinkNodesSet(ViewOnlyLinkTestCase):
         res = self.app.post_json_api(self.url, payload, auth=self.user.auth)
         self.view_only_link.reload()
         assert_equal(res.status_code, 201)
-        assert_in(self.public_project._id, self.view_only_link.nodes)
-        assert_in(self.component_one._id, self.view_only_link.nodes)
-        assert_in(self.component_two._id, self.view_only_link.nodes)
+        assert_in(self.public_project, self.view_only_link.nodes.all())
+        assert_in(self.component_one, self.view_only_link.nodes.all())
+        assert_in(self.component_two, self.view_only_link.nodes.all())
 
     def test_set_nodes_does_not_duplicate_nodes(self):
         payload = {
@@ -101,9 +101,9 @@ class TestViewOnlyLinkNodesSet(ViewOnlyLinkTestCase):
         res = self.app.post_json_api(self.url, payload, auth=self.user.auth)
         self.view_only_link.reload()
         assert_equal(res.status_code, 201)
-        assert_equal(len(self.view_only_link.nodes), 2)
-        assert_in(self.public_project._id, self.view_only_link.nodes)
-        assert_in(self.component_one._id, self.view_only_link.nodes)
+        assert_equal(self.view_only_link.nodes.count(), 2)
+        assert_in(self.public_project, self.view_only_link.nodes.all())
+        assert_in(self.component_one, self.view_only_link.nodes.all())
 
     def test_set_node_not_component(self):
         """
@@ -142,9 +142,8 @@ class TestViewOnlyLinkNodesSet(ViewOnlyLinkTestCase):
         self.view_only_link.reload()
         assert_equal(res.status_code, 201)
         assert_equal(len(res.json['data']), 2)
-        assert_in(self.public_project._id, self.view_only_link.nodes)
-        assert_in(self.second_level_component._id, self.view_only_link.nodes)
-
+        assert_in(self.public_project, self.view_only_link.nodes.all())
+        assert_in(self.second_level_component, self.view_only_link.nodes.all())
 
     def test_set_node_second_level_component_with_first_level_parent(self):
         """
@@ -167,8 +166,8 @@ class TestViewOnlyLinkNodesSet(ViewOnlyLinkTestCase):
         res = self.app.post_json_api(self.url, payload, auth=self.user.auth)
         self.view_only_link.reload()
         assert_equal(res.status_code, 201)
-        assert_in(self.first_level_component._id, self.view_only_link.nodes)
-        assert_in(self.second_level_component._id, self.view_only_link.nodes)
+        assert_in(self.first_level_component, self.view_only_link.nodes.all())
+        assert_in(self.second_level_component, self.view_only_link.nodes.all())
 
     def test_invalid_nodes_in_payload(self):
         payload = {
@@ -234,8 +233,8 @@ class TestViewOnlyLinkNodesUpdate(TestViewOnlyLinkNodesSet):
         self.view_only_link.reload()
         assert_equal(res.status_code, 200)
         assert_equal(len(res.json['data']), 2)
-        assert_in(self.public_project._id, self.view_only_link.nodes)
-        assert_in(self.component_one._id, self.view_only_link.nodes)
+        assert_in(self.public_project, self.view_only_link.nodes.all())
+        assert_in(self.component_one, self.view_only_link.nodes.all())
 
     def test_admin_can_update_nodes_multiple_nodes_to_add(self):
         self.update_payload['data'].append({
@@ -246,50 +245,50 @@ class TestViewOnlyLinkNodesUpdate(TestViewOnlyLinkNodesSet):
         self.view_only_link.reload()
         assert_equal(res.status_code, 200)
         assert_equal(len(res.json['data']), 3)
-        assert_in(self.public_project._id, self.view_only_link.nodes)
-        assert_in(self.component_one._id, self.view_only_link.nodes)
-        assert_in(self.component_two._id, self.view_only_link.nodes)
+        assert_in(self.public_project, self.view_only_link.nodes.all())
+        assert_in(self.component_one, self.view_only_link.nodes.all())
+        assert_in(self.component_two, self.view_only_link.nodes.all())
 
     def test_admin_can_update_nodes_single_node_to_remove(self):
-        self.view_only_link.nodes.append(self.component_one._id)
+        self.view_only_link.nodes.add(self.component_one)
         self.view_only_link.save()
         self.update_payload['data'].pop()
         res = self.app.put_json_api(self.url, self.update_payload, auth=self.user.auth)
         self.view_only_link.reload()
         assert_equal(res.status_code, 200)
         assert_equal(len(res.json['data']), 1)
-        assert_in(self.public_project._id, self.view_only_link.nodes)
-        assert_not_in(self.component_one._id, self.view_only_link.nodes)
+        assert_in(self.public_project, self.view_only_link.nodes.all())
+        assert_not_in(self.component_one, self.view_only_link.nodes.all())
 
     def test_admin_can_update_nodes_multiple_nodes_to_remove(self):
-        self.view_only_link.nodes.append(self.component_one._id)
-        self.view_only_link.nodes.append(self.component_two._id)
+        self.view_only_link.nodes.add(self.component_one)
+        self.view_only_link.nodes.add(self.component_two)
         self.view_only_link.save()
         self.update_payload['data'].pop()
         res = self.app.put_json_api(self.url, self.update_payload, auth=self.user.auth)
         self.view_only_link.reload()
         assert_equal(res.status_code, 200)
         assert_equal(len(res.json['data']), 1)
-        assert_in(self.public_project._id, self.view_only_link.nodes)
-        assert_not_in(self.component_one._id, self.view_only_link.nodes)
-        assert_not_in(self.component_two._id, self.view_only_link.nodes)
+        assert_in(self.public_project, self.view_only_link.nodes.all())
+        assert_not_in(self.component_one, self.view_only_link.nodes.all())
+        assert_not_in(self.component_two, self.view_only_link.nodes.all())
 
 
     def test_admin_can_update_nodes_single_add_single_remove(self):
-        self.view_only_link.nodes.append(self.component_two._id)
+        self.view_only_link.nodes.add(self.component_two)
         self.view_only_link.save()
         res = self.app.put_json_api(self.url, self.update_payload, auth=self.user.auth)
         self.view_only_link.reload()
         assert_equal(res.status_code, 200)
         assert_equal(len(res.json['data']), 2)
-        assert_in(self.public_project._id, self.view_only_link.nodes)
-        assert_in(self.component_one._id, self.view_only_link.nodes)
-        assert_not_in(self.component_two._id, self.view_only_link.nodes)
+        assert_in(self.public_project, self.view_only_link.nodes.all())
+        assert_in(self.component_one, self.view_only_link.nodes.all())
+        assert_not_in(self.component_two, self.view_only_link.nodes.all())
 
 
     def test_admin_can_update_nodes_multiple_add_multiple_remove(self):
-        self.view_only_link.nodes.append(self.component_one._id)
-        self.view_only_link.nodes.append(self.component_two._id)
+        self.view_only_link.nodes.add(self.component_one)
+        self.view_only_link.nodes.add(self.component_two)
         self.view_only_link.save()
 
         component_three = NodeFactory(creator=self.user, parent=self.public_project)
@@ -312,11 +311,11 @@ class TestViewOnlyLinkNodesUpdate(TestViewOnlyLinkNodesSet):
         self.view_only_link.reload()
         assert_equal(res.status_code, 200)
         assert_equal(len(res.json['data']), 3)
-        assert_in(self.public_project._id, self.view_only_link.nodes)
-        assert_not_in(self.component_one._id, self.view_only_link.nodes)
-        assert_not_in(self.component_two._id, self.view_only_link.nodes)
-        assert_in(component_three._id, self.view_only_link.nodes)
-        assert_in(component_four._id, self.view_only_link.nodes)
+        assert_in(self.public_project, self.view_only_link.nodes.all())
+        assert_not_in(self.component_one, self.view_only_link.nodes.all())
+        assert_not_in(self.component_two, self.view_only_link.nodes.all())
+        assert_in(component_three, self.view_only_link.nodes.all())
+        assert_in(component_four, self.view_only_link.nodes.all())
 
     def test_update_nodes_no_changes(self):
         payload = {
@@ -329,7 +328,7 @@ class TestViewOnlyLinkNodesUpdate(TestViewOnlyLinkNodesSet):
         self.view_only_link.reload()
         assert_equal(res.status_code, 200)
         assert_equal(len(res.json['data']), 1)
-        assert_in(self.public_project._id, self.view_only_link.nodes)
+        assert_in(self.public_project, self.view_only_link.nodes.all())
 
     def test_update_nodes_top_level_node_not_included(self):
         """
@@ -376,8 +375,8 @@ class TestViewOnlyLinkNodesUpdate(TestViewOnlyLinkNodesSet):
         self.view_only_link.reload()
         assert_equal(res.status_code, 200)
         assert_equal(len(res.json['data']), 2)
-        assert_in(self.public_project._id, self.view_only_link.nodes)
-        assert_in(self.second_level_component._id, self.view_only_link.nodes)
+        assert_in(self.public_project, self.view_only_link.nodes.all())
+        assert_in(self.second_level_component, self.view_only_link.nodes.all())
 
     def test_update_node_second_level_component_with_first_level_parent(self):
         """
@@ -401,9 +400,9 @@ class TestViewOnlyLinkNodesUpdate(TestViewOnlyLinkNodesSet):
         self.view_only_link.reload()
         assert_equal(res.status_code, 200)
         assert_equal(len(res.json['data']), 3)
-        assert_in(self.public_project._id, self.view_only_link.nodes)
-        assert_in(self.first_level_component._id, self.view_only_link.nodes)
-        assert_in(self.second_level_component._id, self.view_only_link.nodes)
+        assert_in(self.public_project, self.view_only_link.nodes.all())
+        assert_in(self.first_level_component, self.view_only_link.nodes.all())
+        assert_in(self.second_level_component, self.view_only_link.nodes.all())
 
     def test_invalid_nodes_in_payload(self):
         payload = {

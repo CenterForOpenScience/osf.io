@@ -1,0 +1,61 @@
+# -*- coding: utf-8 -*-
+from nose.tools import assert_in, assert_equal
+import mock
+
+import httplib as http
+
+from addons.base.tests.views import (
+    OAuthAddonAuthViewsTestCaseMixin, OAuthAddonConfigViewsTestCaseMixin
+)
+from addons.fedora.model import FedoraProvider
+from addons.fedora.serializer import FedoraSerializer
+from addons.fedora.tests.utils import (FedoraAddonTestCase)
+from tests.base import OsfTestCase
+
+
+class TestAuthViews(OAuthAddonAuthViewsTestCaseMixin, FedoraAddonTestCase, OsfTestCase):
+
+    @property
+    def Provider(self):
+        return FedoraProvider
+
+    def test_oauth_start(self):
+        pass
+
+    def test_oauth_finish(self):
+        pass
+
+
+class TestConfigViews(FedoraAddonTestCase, OAuthAddonConfigViewsTestCaseMixin, OsfTestCase):
+    Serializer = FedoraSerializer
+    client = FedoraProvider
+
+    @property
+    def folder(self):
+        return {'name': '/Documents/', 'path': '/Documents/'}
+
+    def setUp(self):
+        super(TestConfigViews, self).setUp()
+        self.set_node_settings(self.node_settings)
+
+    def tearDown(self):
+        super(TestConfigViews, self).tearDown()
+
+    @mock.patch('addons.fedora.model.NodeSettings.get_folders')
+    def test_folder_list(self, mock_connection):
+        #test_get_datasets
+        mock_connection.return_value = ['/Documents/', '/Pictures/', '/Videos/']
+
+        super(TestConfigViews, self).test_folder_list()
+
+    def test_get_config(self):
+        url = self.project.api_url_for(
+            '{0}_get_config'.format(self.ADDON_SHORT_NAME))
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.status_code, http.OK)
+        assert_in('result', res.json)
+        serialized = self.Serializer().serialize_settings(
+            self.node_settings,
+            self.user,
+        )
+        assert_equal(serialized, res.json['result'])
