@@ -8,10 +8,10 @@ from include import IncludeQuerySet
 
 from website.util import api_v2_url
 
-from osf.models.base import BaseModel, MODMCompatibilityQuerySet, ObjectIDMixin
+from osf.models.base import BaseModel, ObjectIDMixin
 from osf.models.validators import validate_subject_hierarchy_length, validate_subject_provider_mapping
 
-class SubjectQuerySet(MODMCompatibilityQuerySet, IncludeQuerySet):
+class SubjectQuerySet(IncludeQuerySet):
     def include_children(self):
         # It would be more efficient to OR self with the latter two Q's,
         # but this breaks for certain querysets when relabeling aliases.
