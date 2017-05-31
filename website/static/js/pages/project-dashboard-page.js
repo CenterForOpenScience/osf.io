@@ -122,9 +122,8 @@ $(document).ready(function () {
         currentUserCanEdit: window.contextVars.currentUser.canEdit
     });
     var newComponentElem = document.getElementById('newComponent');
-    if (newComponentElem) {
-        m.mount(newComponentElem, AddComponentButton);
-    }
+
+    m.startComputation();
 
     if (ctx.node.institutions.length && !ctx.node.anonymous && !ctx.node.isRetracted) {
         m.mount(document.getElementById('instLogo'), m.component(institutionLogos, {institutions: window.contextVars.node.institutions}));
@@ -201,7 +200,16 @@ $(document).ready(function () {
                 }
             };
             var filebrowser = new Fangorn(fangornOpts);
+            if (newComponentElem) {
+                m.mount(newComponentElem, AddComponentButton);
+            };
+            m.endComputation();
         });
+    } else {
+        if (newComponentElem) {
+            m.mount(newComponentElem, AddComponentButton);
+        };
+        m.endComputation();
     }
 
     // Tooltips
