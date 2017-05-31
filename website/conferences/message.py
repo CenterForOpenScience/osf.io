@@ -5,6 +5,7 @@ import hmac
 import hashlib
 import logging
 
+from django.apps import apps
 from nameparser import HumanName
 from werkzeug.utils import cached_property
 
@@ -174,7 +175,7 @@ class ConferenceMessage(object):
 
     @property
     def allowed_types(self):
-        from .model import Conference
+        Conference = apps.get_model('osf.Conference')
         allowed_types = []
         for conf in Conference.find():
             allowed_types.extend([conf.field_names['submission1'], conf.field_names['submission2']])

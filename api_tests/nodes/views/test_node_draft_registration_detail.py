@@ -9,7 +9,7 @@ from website.settings import PREREG_ADMIN_TAG
 from website.project.model import ensure_schemas
 from test_node_draft_registration_list import DraftRegistrationTestCase
 
-from tests.factories import (
+from osf_tests.factories import (
     ProjectFactory,
     DraftRegistrationFactory,
     AuthUserFactory,
@@ -69,7 +69,7 @@ class TestDraftRegistrationDetail(DraftRegistrationTestCase):
 
     def test_reviewer_can_see_draft_registration(self):
         user = AuthUserFactory()
-        user.system_tags.append(PREREG_ADMIN_TAG)
+        user.add_system_tag(PREREG_ADMIN_TAG)
         user.save()
         res = self.app.get(self.url, auth=user.auth)
         assert_equal(res.status_code, 200)
@@ -268,7 +268,7 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
 
     def test_reviewer_can_update_draft_registration(self):
         user = AuthUserFactory()
-        user.system_tags.append(PREREG_ADMIN_TAG)
+        user.add_system_tag(PREREG_ADMIN_TAG)
         user.save()
 
         payload = {
@@ -295,7 +295,7 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
 
     def test_reviewer_can_only_update_comment_fields_draft_registration(self):
         user = AuthUserFactory()
-        user.system_tags.append(PREREG_ADMIN_TAG)
+        user.add_system_tag(PREREG_ADMIN_TAG)
         user.save()
 
         payload = {
@@ -320,7 +320,7 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
 
     def test_reviewer_can_update_nested_comment_fields_draft_registration(self):
         user = AuthUserFactory()
-        user.system_tags.append(PREREG_ADMIN_TAG)
+        user.add_system_tag(PREREG_ADMIN_TAG)
         user.save()
 
         payload = {
@@ -349,7 +349,7 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
 
     def test_reviewer_cannot_update_nested_value_fields_draft_registration(self):
         user = AuthUserFactory()
-        user.system_tags.append(PREREG_ADMIN_TAG)
+        user.add_system_tag(PREREG_ADMIN_TAG)
         user.save()
 
         payload = {
@@ -502,7 +502,7 @@ class TestDraftRegistrationDelete(DraftRegistrationTestCase):
 
     def test_reviewer_cannot_delete_draft_registration(self):
         user = AuthUserFactory()
-        user.system_tags.append(PREREG_ADMIN_TAG)
+        user.add_system_tag(PREREG_ADMIN_TAG)
         user.save()
 
         res = self.app.delete_json_api(self.url, auth=user.auth, expect_errors=True)

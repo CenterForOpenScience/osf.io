@@ -142,11 +142,12 @@ var FileViewPage = {
                         '. It needs to be checked in before any changes can be made.'
                     ])));
                 }
+                self.enableEditing();
             });
         };
         if (self.file.provider === 'osfstorage'){
             self.canEdit = function() {
-                return ((!self.file.checkoutUser) || (self.file.checkoutUser === self.context.currentUser.id)) ? self.context.currentUser.canEdit : false;
+                return (self.requestDone && ((!self.file.checkoutUser) || (self.file.checkoutUser === self.context.currentUser.id))) ? self.context.currentUser.canEdit : false;
             };
             self.isCheckoutUser();
         } else {
@@ -510,7 +511,7 @@ var FileViewPage = {
             // Special case to not show delete for public figshare files
             (
                 ctrl.canEdit() &&
-                !(ctrl.node.isPreprint && ctrl.node.preprintFileId === ctrl.file.id) &&
+                (ctrl.node.preprintFileId !== ctrl.file.id) &&
                     !(ctrl.file.provider === 'figshare' && ctrl.file.extra.status === 'public') &&
                 (ctrl.file.provider !== 'osfstorage' || !ctrl.file.checkoutUser) &&
                 ctrl.requestDone &&

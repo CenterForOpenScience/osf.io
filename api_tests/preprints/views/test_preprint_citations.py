@@ -1,14 +1,9 @@
 # -*- coding: utf-8 -*-
-from nose.tools import *  # flake8: noqa
-
 from api.base.settings.defaults import API_BASE
 from api.citations.utils import display_absolute_url
-
+from nose.tools import *  # flake8: noqa
+from osf_tests.factories import AuthUserFactory, PreprintFactory
 from tests.base import ApiTestCase
-from tests.factories import (
-    AuthUserFactory,
-    PreprintFactory,
-)
 
 
 class PreprintCitationsMixin(object):

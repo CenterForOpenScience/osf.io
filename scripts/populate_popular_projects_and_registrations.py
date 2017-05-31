@@ -3,14 +3,14 @@ This will update node links on POPULAR_LINKS_NODE, POPULAR_LINKS_REGISTRATIONS a
 """
 import sys
 import logging
+
+from django.db import transaction
 from modularodm import Q
+
 from website.app import init_app
-from website import models
 from framework.auth.core import Auth
 from scripts import utils as script_utils
 from framework.celery_tasks import app as celery_app
-from framework.transactions.context import TokuTransaction
-from website.project.utils import activity
 from website.settings import POPULAR_LINKS_NODE, POPULAR_LINKS_REGISTRATIONS
 
 logger = logging.getLogger(__name__)
@@ -34,13 +34,15 @@ def update_node_links(designated_node, target_nodes, description):
 
 def main(dry_run=True):
     init_app(routes=False)
+    from osf.models import AbstractNode
+    from website.project.utils import activity
 
     popular_activity = activity()
 
     popular_nodes = popular_activity['popular_public_projects']
-    popular_links_node = models.Node.find_one(Q('_id', 'eq', POPULAR_LINKS_NODE))
+    popular_links_node = AbstractNode.find_one(Q('_id', 'eq', POPULAR_LINKS_NODE))
     popular_registrations = popular_activity['popular_public_registrations']
-    popular_links_registrations = models.Node.find_one(Q('_id', 'eq', POPULAR_LINKS_REGISTRATIONS))
+    popular_links_registrations = AbstractNode.find_one(Q('_id', 'eq', POPULAR_LINKS_REGISTRATIONS))
 
     update_node_links(popular_links_node, popular_nodes, 'popular')
     update_node_links(popular_links_registrations, popular_registrations, 'popular registrations')
@@ -66,7 +68,7 @@ def main(dry_run=True):
 def run_main(dry_run=True):
     if not dry_run:
         script_utils.add_file_logger(logger, __file__)
-    with TokuTransaction():
+    with transaction.atomic():
         main(dry_run=dry_run)
 
 if __name__ == "__main__":

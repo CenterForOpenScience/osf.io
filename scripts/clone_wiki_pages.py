@@ -10,7 +10,7 @@ from modularodm import Q
 from framework.mongo import database as db
 from framework.transactions.context import TokuTransaction
 
-from website.addons.wiki.model import NodeWikiPage
+from addons.wiki.models import NodeWikiPage
 from website.models import Node
 from website.app import init_app
 from scripts import utils as script_utils

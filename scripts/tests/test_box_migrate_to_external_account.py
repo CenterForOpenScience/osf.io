@@ -8,8 +8,8 @@ from tests.base import OsfTestCase
 from tests.factories import ProjectFactory, UserFactory
 
 from website.oauth.models import ExternalAccount
-from website.addons.box.model import BoxUserSettings, BoxOAuthSettings
-from website.addons.box.tests.factories import BoxOAuthSettingsFactory, BoxUserSettingsFactory
+from addons.box.model import BoxUserSettings, BoxOAuthSettings
+from addons.box.tests.factories import BoxOAuthSettingsFactory, BoxUserSettingsFactory
 
 
 class TestBoxMigration(OsfTestCase):

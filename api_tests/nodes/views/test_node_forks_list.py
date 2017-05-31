@@ -8,7 +8,7 @@ from website.util import permissions
 from api.base.settings.defaults import API_BASE
 
 from tests.base import ApiTestCase
-from tests.factories import (
+from osf_tests.factories import (
     NodeFactory,
     ProjectFactory,
     RegistrationFactory,
@@ -105,21 +105,21 @@ class TestNodeForksList(ApiTestCase):
         assert_equal(fork_contributors['id'], self.user._id)
 
         forked_children = data['embeds']['children']['data'][0]
-        assert_equal(forked_children['id'], self.component.forks[0]._id)
+        assert_equal(forked_children['id'], self.component.forks.first()._id)
         assert_equal(forked_children['attributes']['title'], self.component.title)
 
         forked_node_links = data['embeds']['node_links']['data'][0]['embeds']['target_node']['data']
         assert_equal(forked_node_links['id'], self.pointer._id)
         assert_equal(forked_node_links['attributes']['title'], self.pointer.title)
 
-        expected_logs = [log.action for log in self.private_project.logs]
-        expected_logs.append(self.component.logs[0].action)
-        expected_logs.append('node_forked')
+        auth = Auth(self.user)
+        expected_logs = list(self.private_project.get_aggregate_logs_queryset(auth).values_list('action', flat=True))
         expected_logs.append('node_forked')
 
         forked_logs = data['embeds']['logs']['data']
-        assert_equal(set(expected_logs), set(log['attributes']['action'] for log in forked_logs))
-        assert_equal(len(forked_logs), 6)
+        forked_log_actions = [log['attributes']['action'] for log in forked_logs]
+        assert_equal(set(expected_logs), set(forked_log_actions))
+        assert_equal(len(set(forked_log_actions)), len(set(expected_logs)))
 
         forked_from = data['embeds']['forked_from']['data']
         assert_equal(forked_from['id'], self.private_project._id)
@@ -158,26 +158,22 @@ class TestNodeForkCreate(ApiTestCase):
         self.public_project = ProjectFactory(is_public=True, creator=self.user)
         self.public_project_url = '/{}nodes/{}/forks/'.format(API_BASE, self.public_project._id)
 
-    def tearDown(self):
-        super(TestNodeForkCreate, self).tearDown()
-        Node.remove()
-
     def test_create_fork_from_public_project_with_new_title(self):
         res = self.app.post_json_api(self.public_project_url, self.fork_data_with_title, auth=self.user.auth)
         assert_equal(res.status_code, 201)
-        assert_equal(res.json['data']['id'], self.public_project.forks[0]._id)
+        assert_equal(res.json['data']['id'], self.public_project.forks.first()._id)
         assert_equal(res.json['data']['attributes']['title'], self.fork_data_with_title['data']['attributes']['title'])
 
     def test_create_fork_from_private_project_with_new_title(self):
         res = self.app.post_json_api(self.private_project_url, self.fork_data_with_title, auth=self.user.auth)
         assert_equal(res.status_code, 201)
-        assert_equal(res.json['data']['id'], self.private_project.forks[0]._id)
+        assert_equal(res.json['data']['id'], self.private_project.forks.first()._id)
         assert_equal(res.json['data']['attributes']['title'], self.fork_data_with_title['data']['attributes']['title'])
 
     def test_can_fork_public_node_logged_in(self):
         res = self.app.post_json_api(self.public_project_url, self.fork_data, auth=self.user_two.auth)
         assert_equal(res.status_code, 201)
-        assert_equal(res.json['data']['id'], self.public_project.forks[0]._id)
+        assert_equal(res.json['data']['id'], self.public_project.forks.first()._id)
         assert_equal(res.json['data']['attributes']['title'], 'Fork of ' + self.public_project.title)
 
     def test_cannot_fork_public_node_logged_out(self):
@@ -188,7 +184,7 @@ class TestNodeForkCreate(ApiTestCase):
     def test_can_fork_public_node_logged_in_contributor(self):
         res = self.app.post_json_api(self.public_project_url, self.fork_data, auth=self.user.auth)
         assert_equal(res.status_code, 201)
-        assert_equal(res.json['data']['id'], self.public_project.forks[0]._id)
+        assert_equal(res.json['data']['id'], self.public_project.forks.first()._id)
         assert_equal(res.json['data']['attributes']['title'], 'Fork of ' + self.public_project.title)
 
     def test_cannot_fork_private_node_logged_out(self):
@@ -229,7 +225,7 @@ class TestNodeForkCreate(ApiTestCase):
         res = self.app.post_json_api(url, self.fork_data, auth=self.user.auth)
         assert_equal(res.status_code, 201)
         assert_equal(res.json['data']['embeds']['children']['links']['meta']['total'], 1)
-        assert_equal(res.json['data']['embeds']['children']['data'][0]['id'], new_component.forks[0]._id)
+        assert_equal(res.json['data']['embeds']['children']['data'][0]['id'], new_component.forks.first()._id)
         assert_equal(res.json['data']['embeds']['children']['data'][0]['attributes']['title'], new_component.title)
 
     def test_fork_private_node_links(self):
@@ -266,7 +262,7 @@ class TestNodeForkCreate(ApiTestCase):
         url = '/{}registrations/{}/forks/'.format(API_BASE, registration._id)
         res = self.app.post_json_api(url, self.fork_data, auth=self.user.auth)
         assert_equal(res.status_code, 201)
-        assert_equal(res.json['data']['id'], registration.forks[0]._id)
+        assert_equal(res.json['data']['id'], registration.forks.first()._id)
         assert_equal(res.json['data']['attributes']['title'], 'Fork of ' + registration.title)
 
     def test_read_only_contributor_can_fork_private_registration(self):
@@ -275,5 +271,5 @@ class TestNodeForkCreate(ApiTestCase):
         self.private_project.add_contributor(read_only_user, permissions=[permissions.READ], save=True)
         res = self.app.post_json_api(self.private_project_url, self.fork_data, auth=read_only_user.auth)
         assert_equal(res.status_code, 201)
-        assert_equal(res.json['data']['id'], self.private_project.forks[0]._id)
+        assert_equal(res.json['data']['id'], self.private_project.forks.first()._id)
         assert_equal(res.json['data']['attributes']['title'], 'Fork of ' + self.private_project.title)

@@ -74,7 +74,7 @@ def render_message(tpl_name, **context):
 
 
 def send_mail(to_addr, mail, mimetype='plain', from_addr=None, mailer=None,
-            username=None, password=None, callback=None, **context):
+            username=None, password=None, callback=None, attachment_name=None, attachment_content=None, **context):
     """Send an email from the OSF.
     Example: ::
 
@@ -112,12 +112,17 @@ def send_mail(to_addr, mail, mimetype='plain', from_addr=None, mailer=None,
         username=username,
         password=password,
         categories=mail.categories,
+        attachment_name=attachment_name,
+        attachment_content=attachment_content,
     )
 
+    logger.debug('Preparing to send...')
     if settings.USE_EMAIL:
         if settings.USE_CELERY:
+            logger.debug('Sending via celery...')
             return mailer.apply_async(kwargs=kwargs, link=callback)
         else:
+            logger.debug('Sending without celery')
             ret = mailer(**kwargs)
             if callback:
                 callback()
@@ -173,6 +178,10 @@ CONFIRM_EMAIL_ERPC = Mail(
 CONFIRM_EMAIL_PREPRINTS = lambda name, provider: Mail(
     'confirm_preprints_{}'.format(name),
     subject='Open Science Framework Account Verification, {} Preprints Service'.format(provider)
+)
+CONFIRM_EMAIL_REGISTRIES_OSF = Mail(
+    'confirm_registries_osf',
+    subject='Open Science Framework Account Verification, OSF Registries'
 )
 
 # Merge account, add or remove email confirmation emails.
@@ -280,7 +289,6 @@ FILE_OPERATION_FAILED = Mail(
 
 UNESCAPE = '<% from website.util.sanitize import unescape_entities %> ${unescape_entities(src.title)}'
 PROBLEM_REGISTERING = 'Problem registering ' + UNESCAPE
-PROBLEM_REGISTERING_STUCK = PROBLEM_REGISTERING + '- Stuck Registration'
 
 ARCHIVE_SIZE_EXCEEDED_DESK = Mail(
     'archive_size_exceeded_desk',
@@ -316,7 +324,7 @@ ARCHIVE_UNCAUGHT_ERROR_DESK = Mail(
 
 ARCHIVE_REGISTRATION_STUCK_DESK = Mail(
     'archive_registration_stuck_desk',
-    subject=PROBLEM_REGISTERING_STUCK
+    subject='[auto] Stuck registrations audit'
 )
 
 ARCHIVE_UNCAUGHT_ERROR_USER = Mail(

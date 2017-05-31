@@ -7,7 +7,7 @@ from citeproc import formatter
 from citeproc.source.json import CiteProcJSON
 
 from website.preprints.model import PreprintService
-from website.settings import CITATION_STYLES_PATH
+from website.settings import CITATION_STYLES_PATH, BASE_PATH, CUSTOM_CITATIONS
 
 
 def clean_up_common_errors(cit):
@@ -48,7 +48,9 @@ def render_citation(node, style='apa'):
 
     bib_source = CiteProcJSON(data)
 
-    bib_style = CitationStylesStyle(os.path.join(CITATION_STYLES_PATH, style), validate=False)
+    custom = CUSTOM_CITATIONS.get(style, False)
+    path = os.path.join(BASE_PATH, 'static', custom) if custom else os.path.join(CITATION_STYLES_PATH, style)
+    bib_style = CitationStylesStyle(path, validate=False)
 
     bibliography = CitationStylesBibliography(bib_style, bib_source, formatter.plain)
 
@@ -56,10 +58,6 @@ def render_citation(node, style='apa'):
 
     bibliography.register(citation)
 
-    def warn(citation_item):
-        pass
-
-    bibliography.cite(citation, warn)
     bib = bibliography.bibliography()
     cit = unicode(bib[0] if len(bib) else '')
 

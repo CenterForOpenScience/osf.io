@@ -5,7 +5,7 @@ from website.util import permissions
 from api.base.settings.defaults import API_BASE
 
 from tests.base import ApiTestCase
-from tests.factories import (
+from osf_tests.factories import (
     ProjectFactory,
     AuthUserFactory,
     PrivateLinkFactory
@@ -27,7 +27,7 @@ class ViewOnlyLinkTestCase(ApiTestCase):
         self.public_project.save()
 
         self.view_only_link = PrivateLinkFactory(name='testlink')
-        self.view_only_link.nodes.append(self.public_project)
+        self.view_only_link.nodes.add(self.public_project)
         self.view_only_link.save()
 
 
@@ -62,7 +62,7 @@ class TestViewOnlyLinksList(ViewOnlyLinkTestCase):
 
     def test_deleted_vols_not_returned(self):
         view_only_link = PrivateLinkFactory(name='testlink2')
-        view_only_link.nodes.append(self.public_project)
+        view_only_link.nodes.add(self.public_project)
         view_only_link.save()
 
         res = self.app.get(self.url, auth=self.user.auth)
@@ -134,7 +134,7 @@ class TestViewOnlyLinksCreate(ViewOnlyLinkTestCase):
         }
         res = self.app.post_json_api(url, {'data': payload}, auth=self.user.auth)
         assert_equal(res.status_code, 201)
-        assert_equal(len(self.public_project.private_links), 2)
+        assert_equal(self.public_project.private_links.count(), 2)
         data = res.json['data']
         assert_equal(data['attributes']['name'], 'testlink')
         assert_equal(data['attributes']['anonymous'], True)

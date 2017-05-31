@@ -15,7 +15,7 @@ from framework.transactions.context import TokuTransaction
 from website import settings
 from website.models import Node
 from website.app import init_app
-from website.addons.osfstorage.model import OsfStorageFileRecord
+from addons.osfstorage.model import OsfStorageFileRecord
 
 from scripts import utils as script_utils
 from scripts.osfstorage.utils import ensure_osf_files

@@ -54,7 +54,7 @@ def format_user(user):
         person.attrs['identifiers'].append(GraphNode('agentidentifier', agent=person, uri=user.profile_image_url()))
         person.attrs['identifiers'].append(GraphNode('agentidentifier', agent=person, uri=urlparse.urljoin(settings.DOMAIN, user.profile_url)))
 
-    person.attrs['related_agents'] = [GraphNode('isaffiliatedwith', subject=person, related=GraphNode('institution', name=institution.name)) for institution in user.affiliated_institutions]
+    person.attrs['related_agents'] = [GraphNode('isaffiliatedwith', subject=person, related=GraphNode('institution', name=institution.name)) for institution in user.affiliated_institutions.all()]
 
     return person
 

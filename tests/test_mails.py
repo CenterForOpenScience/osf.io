@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
 import mock
 from datetime import datetime, timedelta
+
+from django.utils import timezone
 from nose.tools import *  # PEP 8 sserts
 
 from website import mails, settings
-from tests import factories
+from osf_tests import factories
 from tests.base import OsfTestCase
 
 def test_plain_mail():
@@ -29,7 +31,7 @@ class TestQueuedMail(OsfTestCase):
     def queue_mail(self, mail, user=None, send_at=None, **kwargs):
         mail = mails.queue_mail(
             to_addr=user.username if user else self.user.username,
-            send_at=send_at or datetime.utcnow(),
+            send_at=send_at or timezone.now(),
             user=user or self.user,
             mail=mail,
             fullname=user.fullname if user else self.user.username,
@@ -41,7 +43,7 @@ class TestQueuedMail(OsfTestCase):
     def test_no_login_presend_for_active_user(self, mock_mail):
         user = factories.AuthUserFactory()
         mail = self.queue_mail(mail=mails.NO_LOGIN, user=user)
-        user.date_last_login = datetime.utcnow() + timedelta(seconds=10)
+        user.date_last_login = timezone.now() + timedelta(seconds=10)
         user.save()
         assert_false(mail.send_mail())
 
@@ -49,9 +51,9 @@ class TestQueuedMail(OsfTestCase):
     def test_no_login_presend_for_inactive_user(self, mock_mail):
         user = factories.AuthUserFactory()
         mail = self.queue_mail(mail=mails.NO_LOGIN, user=user)
-        user.date_last_login = datetime.utcnow() - timedelta(weeks=10)
+        user.date_last_login = timezone.now() - timedelta(weeks=10)
         user.save()
-        assert_true(datetime.utcnow() - timedelta(days=1) > user.date_last_login)
+        assert_true(timezone.now() - timedelta(days=1) > user.date_last_login)
         assert_true(mail.send_mail())
 
     @mock.patch('website.mails.queued_mails.send_mail')
@@ -82,7 +84,7 @@ class TestQueuedMail(OsfTestCase):
 
     @mock.patch('website.mails.queued_mails.send_mail')
     def test_welcome_osf4m_presend(self, mock_mail):
-        self.user.date_last_login = datetime.utcnow() - timedelta(days=13)
+        self.user.date_last_login = timezone.now() - timedelta(days=13)
         self.user.save()
         mail = self.queue_mail(
             mail=mails.WELCOME_OSF4M,
@@ -106,11 +108,11 @@ class TestQueuedMail(OsfTestCase):
     @mock.patch('website.mails.queued_mails.send_mail')
     def test_user_is_active(self, mock_mail):
         user = factories.UserFactory()
-        user.password = 'poo'
+        user.set_password('myprecious')
         user.is_registered = True
         user.merged_by = None
         user.date_disabled = None
-        user.date_confirmed = datetime.utcnow()
+        user.date_confirmed = timezone.now()
         user.save()
         mail = self.queue_mail(
             user=user,
@@ -121,7 +123,7 @@ class TestQueuedMail(OsfTestCase):
     @mock.patch('website.mails.queued_mails.send_mail')
     def test_user_is_not_active_no_password(self, mock_mail):
         user = factories.UserFactory()
-        user.password = None
+        user.set_unusable_password()
         user.save()
         mail = self.queue_mail(
             user=user,
@@ -155,7 +157,7 @@ class TestQueuedMail(OsfTestCase):
     @mock.patch('website.mails.queued_mails.send_mail')
     def test_user_is_not_active_is_disabled(self, mock_mail):
         user = factories.UserFactory()
-        user.date_disabled = datetime.utcnow()
+        user.date_disabled = timezone.now()
         user.save()
         mail = self.queue_mail(
             user=user,

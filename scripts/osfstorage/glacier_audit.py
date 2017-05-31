@@ -71,7 +71,7 @@ def get_targets(date):
         Q('status', 'ne', 'cached') &
         Q('metadata.archive', 'exists', True) &
         Q('location', 'ne', None)
-    )
+    ).iterator()
 
 
 def check_glacier_version(version, inventory):
@@ -111,9 +111,6 @@ def main(job_id=None):
         except AuditError as error:
             logger.error(str(error))
         if idx % 1000 == 0:
-            # clear modm cache so we don't run out of memory from the cursor enumeration
-            models.FileVersion._cache.clear()
-            models.FileVersion._object_cache.clear()
             gc.collect()
 
 

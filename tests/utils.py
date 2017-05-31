@@ -4,8 +4,9 @@ import mock
 import datetime
 
 from django.http import HttpRequest
+from django.utils import timezone
 from nose import SkipTest
-from nose.tools import assert_equal, assert_not_equal, assert_in
+from nose.tools import assert_equal, assert_not_equal
 
 from framework.auth import Auth
 from framework.celery_tasks.handlers import celery_teardown_request
@@ -15,7 +16,6 @@ from website.archiver import listeners as archiver_listeners
 from website.project.sanctions import Sanction
 
 from tests.base import get_default_metaschema
-DEFAULT_METASCHEMA = get_default_metaschema()
 
 def requires_module(module):
     def decorator(fn):
@@ -47,10 +47,10 @@ def assert_logs(log_action, node_key, index=-1):
         @functools.wraps(func)
         def wrapper(self, *args, **kwargs):
             node = getattr(self, node_key)
-            last_log = node.logs[-1]
+            last_log = node.logs.latest()
             func(self, *args, **kwargs)
             node.reload()
-            new_log = node.logs[index]
+            new_log = node.logs.order_by('-date')[-index - 1]
             assert_not_equal(last_log._id, new_log._id)
             assert_equal(new_log.action, log_action)
             node.save()
@@ -62,10 +62,10 @@ def assert_not_logs(log_action, node_key, index=-1):
         @functools.wraps(func)
         def wrapper(self, *args, **kwargs):
             node = getattr(self, node_key)
-            last_log = node.logs[-1]
+            last_log = node.logs.latest()
             func(self, *args, **kwargs)
             node.reload()
-            new_log = node.logs[index]
+            new_log = node.logs.order_by('-date')[-index - 1]
             assert_not_equal(new_log.action, log_action)
             assert_equal(last_log._id, new_log._id)
             node.save()
@@ -106,7 +106,7 @@ def mock_archive(project, schema=None, auth=None, data=None, parent=None,
         assert_false(registration.archiving)
         assert_false(registration.is_pending_registration)
     """
-    schema = schema or DEFAULT_METASCHEMA
+    schema = schema or get_default_metaschema()
     auth = auth or Auth(project.creator)
     data = data or ''
 
@@ -119,7 +119,7 @@ def mock_archive(project, schema=None, auth=None, data=None, parent=None,
         )
     if embargo:
         embargo_end_date = embargo_end_date or (
-            datetime.datetime.now() + datetime.timedelta(days=20)
+            timezone.now() + datetime.timedelta(days=20)
         )
         registration.root.embargo_registration(
             project.creator,
@@ -142,6 +142,8 @@ def mock_archive(project, schema=None, auth=None, data=None, parent=None,
     if autoapprove:
         sanction = registration.root.sanction
         sanction.state = Sanction.APPROVED
+        # save or _on_complete no worky
+        sanction.save()
         sanction._on_complete(project.creator)
         sanction.save()
 

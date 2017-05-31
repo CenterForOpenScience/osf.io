@@ -1,12 +1,14 @@
 from __future__ import absolute_import
 from datetime import datetime
+
+from django.utils import timezone
 from nose.tools import *  # noqa PEP8 asserts
-from modularodm.exceptions import ValidationValueError, ValidationTypeError
+from modularodm.exceptions import ValidationError
 
 from framework.auth import Auth
 
 from tests.base import OsfTestCase
-from tests.factories import UserFactory, CommentFactory
+from osf_tests.factories import UserFactory, CommentFactory
 from website.project.spam.model import SpamStatus
 
 
@@ -19,7 +21,7 @@ class TestSpamMixin(OsfTestCase):
 
     def test_report_abuse(self):
         user = UserFactory()
-        time = datetime.utcnow()
+        time = timezone.now()
         self.comment.report_abuse(
                 user, date=time, category='spam', text='ads', save=True)
         assert_equal(self.comment.spam_status, SpamStatus.FLAGGED)
@@ -43,7 +45,7 @@ class TestSpamMixin(OsfTestCase):
 
     def test_retract_report(self):
         user = UserFactory()
-        time = datetime.utcnow()
+        time = timezone.now()
         self.comment.report_abuse(
                 user, date=time, category='spam', text='ads', save=True
         )
@@ -72,7 +74,7 @@ class TestSpamMixin(OsfTestCase):
     def test_retract_one_report_of_many(self):
         user_1 = UserFactory()
         user_2 = UserFactory()
-        time = datetime.utcnow()
+        time = timezone.now()
         self.comment.report_abuse(
                 user_1, date=time, category='spam', text='ads', save=True
         )
@@ -121,15 +123,15 @@ class TestSpamMixin(OsfTestCase):
 
     def test_validate_reports_bad_key(self):
         self.comment.reports[None] = {'category': 'spam', 'text': 'ads'}
-        with assert_raises(ValidationValueError):
+        with assert_raises(ValidationError):
             self.comment.save()
 
     def test_validate_reports_bad_type(self):
         self.comment.reports[self.comment.user._id] = 'not a dict'
-        with assert_raises(ValidationTypeError):
+        with assert_raises(ValidationError):
             self.comment.save()
 
     def test_validate_reports_bad_value(self):
         self.comment.reports[self.comment.user._id] = {'foo': 'bar'}
-        with assert_raises(ValidationValueError):
+        with assert_raises(ValidationError):
             self.comment.save()

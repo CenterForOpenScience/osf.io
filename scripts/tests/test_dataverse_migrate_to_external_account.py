@@ -7,7 +7,7 @@ from framework.auth import Auth
 from tests.base import OsfTestCase
 from tests.factories import ProjectFactory, UserFactory
 
-from website.addons.dataverse.model import AddonDataverseUserSettings
+from addons.dataverse.model import AddonDataverseUserSettings
 
 
 class TestDatasetMigration(OsfTestCase):

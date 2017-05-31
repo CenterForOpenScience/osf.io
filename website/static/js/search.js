@@ -280,6 +280,7 @@ var ViewModel = function(params) {
 
     self.filter = function(alias) {
         self.searchStarted(false);
+        self.results([]);
         self.currentPage(1);
         self.category(alias);
         if (alias.name === 'SHARE') {
@@ -340,6 +341,8 @@ var ViewModel = function(params) {
     };
 
     self.search = function(noPush, validate) {
+
+        self.searching(true);
 
         // Check for NOTs and ANDs put spaces before the ones that don't have spaces
         var query = self.query().replace(/\s?NOT tags:/g, ' NOT tags:');
@@ -462,6 +465,8 @@ var ViewModel = function(params) {
                 self.shareCategory(new Category('SHARE', data.count, 'SHARE'));
             });
 
+            self.searching(false);
+
         }).fail(function(response){
             self.totalResults(0);
             self.currentPage(0);
@@ -469,6 +474,7 @@ var ViewModel = function(params) {
             self.tags([]);
             self.categories([]);
             self.searchStarted(false);
+            self.searching(false);
             $osf.handleJSONError(response);
         });
 

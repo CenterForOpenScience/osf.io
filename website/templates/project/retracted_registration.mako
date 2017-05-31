@@ -35,8 +35,18 @@
                   % endfor
                 </p>
                 <br />
-                Date Created: <span data-bind="text: dateCreated.local, tooltip: {title: dateCreated.utc}" class="date node-date-created"></span>
-                | Date Registered:  <span data-bind="text: dateRegistered.local, tooltip: {title: dateRegistered.utc}" class="date node-date-registered"></span>
+                Date Created:
+                <span data-bind="text: dateCreated.local, tooltip: {title: dateCreated.utc}" class="date node-date-created"></span>
+                <br/>
+                Date Registered:
+                <span data-bind="text: dateRegistered.local, tooltip: {title: dateRegistered.utc}" class="date node-date-registered"></span>
+                <br/>
+                Date Withdrawn:
+                % if node['date_retracted']:
+                    <span data-bind="text: dateRetracted.local, tooltip: {title: dateRetracted.utc}" class="date node-date-retracted"></span>
+                % else:
+                    Not available
+                % endif
 
                 % if parent_node['id']:
                     <br />Category: <span class="node-category">${ node['category'] }</span>

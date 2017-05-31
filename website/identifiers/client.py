@@ -54,3 +54,13 @@ class EzidClient(BaseClient):
             expects=(201, ),
         )
         return utils.from_anvl(resp.content)
+
+    def change_status_identifier(self, status, identifier, metadata=None):
+        metadata['_status'] = status
+        resp = self._make_request(
+            'POST',
+            self._build_url('id', identifier),
+            data=utils.to_anvl(metadata or {}),
+            expects=(200, ),
+        )
+        return utils.from_anvl(resp.content)

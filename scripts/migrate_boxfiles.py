@@ -1,6 +1,6 @@
 import logging
 from website.app import init_app
-from website.addons.box.model import BoxFile
+from addons.box.model import BoxFile
 from scripts import utils as scripts_utils
 from framework.transactions.context import TokuTransaction
 

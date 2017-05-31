@@ -1,11 +1,10 @@
 from babel import dates, core, Locale
 
+from osf.models import AbstractNode, OSFUser, NotificationDigest, NotificationSubscription
+
 from website import mails
-from website import models as website_models
 from website.notifications import constants
 from website.notifications import utils
-from website.notifications.model import NotificationDigest
-from website.notifications.model import NotificationSubscription
 from website.util import web_url_for
 
 
@@ -49,10 +48,14 @@ def notify_mentions(event, user, node, timestamp, **context):
     sent_users = []
     new_mentions = context.get('new_mentions', [])
     for m in new_mentions:
-        mentioned_user = website_models.User.load(m)
+        mentioned_user = OSFUser.load(m)
         subscriptions = get_user_subscriptions(mentioned_user, event_type)
         for notification_type in subscriptions:
-            if notification_type != 'none' and subscriptions[notification_type] and m in subscriptions[notification_type]:
+            if (
+                notification_type != 'none' and
+                subscriptions[notification_type] and
+                m in subscriptions[notification_type]
+            ):
                 store_emails([m], notification_type, 'mentions', user, node,
                                  timestamp, **context)
                 sent_users.extend([m])
@@ -72,6 +75,7 @@ def store_emails(recipient_ids, notification_type, event, user, node, timestamp,
     :param context:
     :return: --
     """
+
     if notification_type == 'none':
         return
 
@@ -82,7 +86,7 @@ def store_emails(recipient_ids, notification_type, event, user, node, timestamp,
     for user_id in recipient_ids:
         if user_id == user._id:
             continue
-        recipient = website_models.User.load(user_id)
+        recipient = OSFUser.load(user_id)
         context['localized_timestamp'] = localize_timestamp(timestamp, recipient)
         message = mails.render_message(template, **context)
 
@@ -90,7 +94,7 @@ def store_emails(recipient_ids, notification_type, event, user, node, timestamp,
             timestamp=timestamp,
             send_type=notification_type,
             event=event,
-            user_id=user_id,
+            user=recipient,
             message=message,
             node_lineage=node_lineage_ids
         )
@@ -112,7 +116,7 @@ def compile_subscriptions(node, event_type, event=None, level=0):
         parent_subscriptions = compile_subscriptions(node, event_type, level=level + 1)  # get node and parent subs
     elif node.parent_id:
         parent_subscriptions = \
-            compile_subscriptions(website_models.Node.load(node.parent_id), event_type, level=level + 1)
+            compile_subscriptions(AbstractNode.load(node.parent_id), event_type, level=level + 1)
     else:
         parent_subscriptions = check_node(None, event_type)
     for notification_type in parent_subscriptions:
@@ -134,15 +138,19 @@ def check_node(node, event):
         subscription = NotificationSubscription.load(utils.to_subscription_key(node._id, event))
         for notification_type in node_subscriptions:
             users = getattr(subscription, notification_type, [])
-            for user in users:
-                if node.has_permission(user, 'read'):
-                    node_subscriptions[notification_type].append(user._id)
+            if users:
+                for user in users.all():
+                    if node.has_permission(user, 'read'):
+                        node_subscriptions[notification_type].append(user._id)
     return node_subscriptions
 
 
 def get_user_subscriptions(user, event):
     user_subscription = NotificationSubscription.load(utils.to_subscription_key(user._id, event))
-    return {key: getattr(user_subscription, key, []) for key in constants.NOTIFICATION_TYPES}
+    if user_subscription:
+        return {key: list(getattr(user_subscription, key).all().values_list('guids___id', flat=True)) for key in constants.NOTIFICATION_TYPES}
+    else:
+        return {key: [] for key in constants.NOTIFICATION_TYPES}
 
 
 def get_node_lineage(node):
@@ -152,7 +160,7 @@ def get_node_lineage(node):
     lineage = [node._id]
 
     while node.parent_id:
-        node = website_models.Node.load(node.parent_id)
+        node = node.parent_node
         lineage = [node._id] + lineage
 
     return lineage
@@ -162,7 +170,7 @@ def get_settings_url(uid, user):
     if uid == user._id:
         return web_url_for('user_notifications', _absolute=True)
 
-    node = website_models.Node.load(uid)
+    node = AbstractNode.load(uid)
     assert node, 'get_settings_url recieved an invalid Node id'
     return node.web_url_for('node_setting', _guid=True, _absolute=True)
 

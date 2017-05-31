@@ -4,10 +4,9 @@ import logging
 import threading
 
 import pymongo
-from werkzeug.local import LocalProxy
-
+from pymongo.errors import ConnectionFailure
 from website import settings
-
+from werkzeug.local import LocalProxy
 
 logger = logging.getLogger(__name__)
 
@@ -86,14 +85,24 @@ handlers = {
 def _get_current_client():
     """Get the current mongodb client from the pool.
     """
+    if settings.USE_POSTGRES:
+        return None
     return CLIENT_POOL.acquire()
 
 
 def _get_current_database():
     """Getter for `database` proxy.
     """
-    return _get_current_client()[settings.DB_NAME]
-
+    if settings.USE_POSTGRES:
+        return None
+    try:
+        return _get_current_client()[settings.DB_NAME]
+    except ConnectionFailure:
+        if settings.DEBUG_MODE:
+            logger.warn('Cannot connect to database.')
+            return None
+        else:
+            raise
 
 # Set up `LocalProxy` objects
 client = LocalProxy(_get_current_client)
@@ -109,7 +118,7 @@ def set_up_storage(schemas, storage_class, prefix='', addons=None, **kwargs):
     ::
 
         >>> from pymongo import MongoClient
-        >>> from modularodm.storage import MongoStorage
+        >>> from framework.mongo.storage import MongoStorage
         >>> from models import User, Node, Tag
         >>> client = MongoClient(port=20771)
         >>> db = client['mydb']

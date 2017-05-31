@@ -1,5 +1,9 @@
 # -*- coding: utf-8 -*-
 import httplib as http
+import importlib
+import pkgutil
+
+import pytest
 from pytz import utc
 from datetime import datetime
 import urllib
@@ -8,15 +12,33 @@ from nose.tools import *  # flake8: noqa
 import re
 
 from tests.base import ApiTestCase, DbTestCase
-from tests import factories
+from osf_tests import factories
 from tests.utils import make_drf_request_with_version
 
 from api.base.settings.defaults import API_BASE
-from api.base.serializers import JSONAPISerializer
+from api.base.serializers import JSONAPISerializer, BaseAPISerializer
 from api.base import serializers as base_serializers
 from api.nodes.serializers import NodeSerializer, RelationshipField
 from api.registrations.serializers import RegistrationSerializer
 
+SER_MODULES = []
+for loader, name, _ in pkgutil.iter_modules(['api']):
+    if name != 'base' and name != 'test':
+        try:
+            SER_MODULES.append(importlib.import_module('api.{}.serializers'.format(name)))
+        except ImportError:
+            pass
+
+SER_CLASSES = []
+for mod in SER_MODULES:
+    for name, val in mod.__dict__.iteritems():
+        try:
+            if issubclass(val, BaseAPISerializer):
+                if 'JSONAPI' in name or 'BaseAPI' in name:
+                    continue
+                SER_CLASSES.append(val)
+        except TypeError:
+            pass
 
 class FakeModel(object):
 
@@ -53,6 +75,13 @@ class FakeSerializer(base_serializers.JSONAPISerializer):
 
     def valued_field(*args, **kwargs):
         return 'http://foo.com'
+
+
+class TestSerializerMetaType(ApiTestCase):
+    def test_expected_serializers_have_meta_types(self):
+        for ser in SER_CLASSES:
+            assert hasattr(ser, 'Meta'), 'Serializer {} has no Meta'.format(ser)
+            assert hasattr(ser.Meta, 'type_'), 'Serializer {} has no Meta.type_'.format(ser)
 
 
 class TestNodeSerializerAndRegistrationSerializerDifferences(ApiTestCase):
@@ -226,33 +255,35 @@ class TestApiBaseSerializers(ApiTestCase):
         assert_equal(res.json['errors'][0]['detail'], "Acceptable values for the related_counts query param are 'true', 'false', or any of the relationship fields; got 'title'")
 
 
-class TestRelationshipField(DbTestCase):
+
+@pytest.mark.django_db
+class TestRelationshipField:
 
     # We need a Serializer to test the Relationship field (needs context)
     class BasicNodeSerializer(JSONAPISerializer):
 
         parent = RelationshipField(
             related_view='nodes:node-detail',
-            related_view_kwargs={'node_id': '<pk>'}
+            related_view_kwargs={'node_id': '<_id>'}
         )
 
         parent_with_meta = RelationshipField(
             related_view='nodes:node-detail',
-            related_view_kwargs={'node_id': '<pk>'},
+            related_view_kwargs={'node_id': '<_id>'},
             related_meta={'count': 'get_count', 'extra': 'get_extra'},
         )
 
         self_and_related_field = RelationshipField(
             related_view='nodes:node-detail',
-            related_view_kwargs={'node_id': '<pk>'},
+            related_view_kwargs={'node_id': '<_id>'},
             self_view='nodes:node-contributors',
-            self_view_kwargs={'node_id': '<pk>'},
+            self_view_kwargs={'node_id': '<_id>'},
         )
 
         two_url_kwargs = RelationshipField(
             # fake url, for testing purposes
             related_view='nodes:node-pointer-detail',
-            related_view_kwargs={'node_id': '<pk>', 'node_link_id': '<pk>'},
+            related_view_kwargs={'node_id': '<_id>', 'node_link_id': '<_id>'},
         )
 
         not_attribute_on_target = RelationshipField(
@@ -266,13 +297,13 @@ class TestRelationshipField(DbTestCase):
         registered_from = RelationshipField(
             related_view=lambda n: 'registrations:registration-detail' if n and n.is_registration else 'nodes:node-detail',
             related_view_kwargs=lambda n: {
-                'node_id': '<registered_from_id>'
+                'node_id': '<registered_from._id>'
             }
         )
 
         field_with_filters = base_serializers.RelationshipField(
             related_view='nodes:node-detail',
-            related_view_kwargs={'node_id': '<pk>'},
+            related_view_kwargs={'node_id': '<_id>'},
             filter={'target': 'hello', 'woop': 'yea'}
         )
 
@@ -346,13 +377,7 @@ class TestRelationshipField(DbTestCase):
         field = data['relationships']['registered_from']['links']
         assert_in('/v2/nodes/{}/'.format(node._id), field['related']['href'])
 
-        registration_registration = factories.RegistrationFactory(project=registration)
-        data = self.BasicNodeSerializer(registration_registration, context={'request': req}).data['data']
-        field = data['relationships']['registered_from']['links']
-        assert_in('/v2/registrations/{}/'.format(registration._id), field['related']['href'])
-
-
-class TestShowIfVersion(DbTestCase):
+class TestShowIfVersion(ApiTestCase):
 
     def setUp(self):
         super(TestShowIfVersion, self).setUp()
