@@ -80,6 +80,25 @@ class AuthInstitution(JSONAPIBaseView, generics.CreateAPIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
+class AuthExternal(JSONAPIBaseView, generics.CreateAPIView):
+    """ Non-institution external login
+    """
+
+    view_category = 'cas'
+    view_name = 'auth-external'
+    permission_classes = (IsCasJweAuthentication,)
+    authentication_classes = (CasJweAuthentication,)
+    required_read_scopes = [CoreScopes.NULL]
+    required_write_scopes = [CoreScopes.NULL]
+
+    def post(self, request, *args, **kwargs):
+
+        content = {
+            "username": request.user.username
+        }
+        return Response(data=content, status=status.HTTP_200_OK)
+
+
 class AuthVerifyEmail(JSONAPIBaseView, generics.CreateAPIView):
     """ Verify the primary email for a new osf account.
     """

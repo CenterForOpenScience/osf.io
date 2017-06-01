@@ -46,12 +46,12 @@ def decrypt_payload(body):
     return payload
 
 
-def verify_user_status(user):
+def is_user_inactive(user):
     """
-    Verify the status of a given user/account.
+    Check if the user is inactive.
 
     :param user: the user instance
-    :return: the user's status in String
+    :return: the user's status in String if inactive
     """
 
     try:

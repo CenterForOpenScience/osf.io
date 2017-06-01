@@ -18,8 +18,8 @@ TOKEN_OWNER_NOT_FOUND = 'PAT owner not found.'
 
 
 # general server or client side exception messages
-INVALID_REQUEST = 'The server cannot understand the request.'
-REQUEST_FAILED = 'The server understands the request but fails to handle it.'
+INVALID_REQUEST = 'The API server cannot understand the CAS request.'
+REQUEST_FAILED = 'The API server understands the CAS request but fails to handle it.'
 
 
 # external messages: messages that will be displayed to user on CAS page

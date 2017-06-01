@@ -10,6 +10,7 @@ from api.cas import util, messages
 from framework import sentry
 from framework.auth import register_unconfirmed, get_or_create_user
 from framework.auth import campaigns
+from framework.auth.cas import validate_external_credential
 from framework.auth.core import generate_verification_key
 from framework.auth.exceptions import DuplicateEmailError, ChangePasswordError, InvalidTokenError, ExpiredTokenError
 
@@ -57,7 +58,7 @@ class CasJweAuthentication(BaseAuthentication):
             
             2.3 Institution Authenticate
                 "data", {
-                    "type": "INSTITUTION_LOGIN",
+                    "type": "INSTITUTION_AUTHENTICATE",
                     "provider": {
                         "idp": "https://login.exampleshibuniv.edu/idp/shibboleth",
                         "id": "esu",
@@ -72,7 +73,20 @@ class CasJweAuthentication(BaseAuthentication):
                     },
                 },
             
-            2.4 Reset Password
+            2.3 Non-institution External Authenticate
+                "data", {
+                    "type": "NON_INSTITUTION_EXTERNAL_AUTHENTICATE",
+                    "user": {
+                        "externalIdWithProvider": "ORCiDProfile#0000-0000-0000-0000",
+                        "attributes": {
+                            "given-names": "User",
+                            "family-name": "Test",
+                            ...
+                        },
+                    },
+                },
+            
+            2.5 Reset Password
                 "data": {
                     "type": "RESET_PASSWORD",
                     "user": {
@@ -82,7 +96,7 @@ class CasJweAuthentication(BaseAuthentication):
                     },
                 },
             
-            2.5 Verify Email (New Account)
+            2.6 Verify Email (New Account)
                 "data": {
                     "type": "VERIFY_EMAIL",
                     "user": {
@@ -118,8 +132,12 @@ class CasJweAuthentication(BaseAuthentication):
             return handle_register(data.get('user'))
 
         # institution login
-        if auth_type == 'INSTITUTION_LOGIN':
+        if auth_type == 'INSTITUTION_AUTHENTICATE':
             return handle_institution_authenticate(data.get('provider'))
+
+        # non-institution external login
+        if auth_type == 'NON_INSTITUTION_EXTERNAL_AUTHENTICATE':
+            return handle_non_institution_external_authenticate(data.get('user'))
 
         # reset password
         if auth_type == 'RESET_PASSWORD':
@@ -173,18 +191,18 @@ def handle_login(data_user):
 
     # authenticated by remote authentication
     if remote_authenticated:
-        return user, util.verify_two_factor(user, one_time_password), util.verify_user_status(user)
+        return user, util.verify_two_factor(user, one_time_password), util.is_user_inactive(user)
 
     # authenticated by verification key
     if verification_key:
         if verification_key == user.verification_key:
-            return user, util.verify_two_factor(user, one_time_password), util.verify_user_status(user)
+            return user, util.verify_two_factor(user, one_time_password), util.is_user_inactive(user)
         return None, messages.INVALID_KEY, None
 
     # authenticated by password
     if password:
         if user.check_password(password):
-            return user, util.verify_two_factor(user, one_time_password), util.verify_user_status(user)
+            return user, util.verify_two_factor(user, one_time_password), util.is_user_inactive(user)
         return None, messages.INVALID_PASSWORD, None
 
 
@@ -293,6 +311,29 @@ def handle_institution_authenticate(provider):
         user.affiliated_institutions.add(institution)
         user.save()
 
+    return user, None
+
+
+def handle_non_institution_external_authenticate(data_user):
+    """ Handle authentication through non-institution external identity provider
+    """
+
+    external_credential = validate_external_credential(data_user.get('externalIdWithProvider'))
+    if not external_credential:
+        return None, messages.REQUEST_FAILED
+
+    user = OSFUser.objects.filter(
+        external_identity__contains={
+            external_credential.get('provider'): {
+                external_credential.get('id'): 'VERIFIED'
+            }
+        }
+    ).first()
+
+    if not user:
+        raise PermissionDenied(messages.ACCOUNT_NOT_FOUND)
+    # no need to handle invalid user status in this view
+    # the final step of login is still handled by the login view
     return user, None
 
 
