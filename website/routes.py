@@ -553,6 +553,14 @@ def make_url_map(app):
 
     process_rules(app, [
 
+        # cas action
+        Rule(
+            '/cas/action/<uid>/',
+            'get',
+            auth_views.auth_cas_action,
+            notemplate
+        ),
+
         # confirm email
         Rule(
             '/confirm/<uid>/<token>/',
@@ -567,39 +575,6 @@ def make_url_map(app):
             'get',
             auth_views.external_login_confirm_email_get,
             notemplate
-        ),
-
-        # reset password get
-        Rule(
-            '/resetpassword/<uid>/<token>/',
-            'get',
-            auth_views.reset_password_get,
-            OsfWebRenderer('public/resetpassword.mako', render_mako_string, trust=False)
-        ),
-
-        # reset password post
-        Rule(
-            '/resetpassword/<uid>/<token>/',
-            'post',
-            auth_views.reset_password_post,
-            OsfWebRenderer('public/resetpassword.mako', render_mako_string, trust=False)
-        ),
-
-        # resend confirmation get
-        Rule(
-            '/resend/',
-            'get',
-            auth_views.resend_confirmation_get,
-            OsfWebRenderer('resend.mako', render_mako_string, trust=False)
-        ),
-
-        # resend confirmation post
-        Rule(
-            '/resend/',
-            'post',
-            auth_views.resend_confirmation_post,
-            OsfWebRenderer('resend.mako', render_mako_string, trust=False)
-
         ),
 
         # oauth user email get
@@ -651,22 +626,6 @@ def make_url_map(app):
             'get',
             auth_views.auth_logout,
             notemplate
-        ),
-
-        # forgot password get
-        Rule(
-            '/forgotpassword/',
-            'get',
-            auth_views.forgot_password_get,
-            OsfWebRenderer('public/forgot_password.mako', trust=False)
-        ),
-
-        # forgot password post
-        Rule(
-            '/forgotpassword/',
-            'post',
-            auth_views.forgot_password_post,
-            OsfWebRenderer('public/forgot_password.mako', trust=False)
         ),
 
         Rule(

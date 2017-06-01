@@ -1,9 +1,12 @@
 Hello ${user.fullname},
 
-Welcome to the Open Science Framework and OSF Registries. To continue, please verify your email address by visiting this link:
+Welcome to the Open Science Framework and OSF Registries.
 
-${confirmation_url}
+To continue, please verify your email address by entering the following verification code.
 
+OSF Verification Code: ${verification_code}
 
 Sincerely,
-Open Science Framework Robot
+The Open Science Framework Team
+
+Center for Open Science

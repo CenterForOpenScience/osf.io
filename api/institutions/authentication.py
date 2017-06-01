@@ -11,8 +11,8 @@ from api.base import settings
 from framework import sentry
 from framework.auth import get_or_create_user
 
-from website.models import Institution
 from website.mails import send_mail, WELCOME_OSF4I
+from website.models import Institution
 
 
 class InstitutionAuthentication(BaseAuthentication):

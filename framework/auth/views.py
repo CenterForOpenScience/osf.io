@@ -21,7 +21,7 @@ from framework.auth import get_user
 from framework.auth.exceptions import DuplicateEmailError, ExpiredTokenError, InvalidTokenError
 from framework.auth.core import generate_verification_key
 from framework.auth.decorators import block_bing_preview, collect_auth, must_be_logged_in
-from framework.auth.forms import ResendConfirmationForm, ForgotPasswordForm, ResetPasswordForm
+from framework.auth.forms import ResendConfirmationForm
 from framework.auth.utils import ensure_external_identity_uniqueness, validate_recaptcha
 from framework.exceptions import HTTPError
 from framework.flask import redirect  # VOL-aware redirect
@@ -31,173 +31,31 @@ from framework.sessions import get_session
 from website import settings, mails, language
 from website.models import User
 from website.util import web_url_for
-from website.util.time import throttle_period_expired
 from website.util.sanitize import strip_html
 from osf.models.preprint_provider import PreprintProvider
 
-@block_bing_preview
 @collect_auth
-def reset_password_get(auth, uid=None, token=None):
-    """
-    View for user to land on the reset password page.
-    HTTp Method: GET
+def auth_cas_action(auth, uid):
 
-    :param auth: the authentication state
-    :param uid: the user id
-    :param token: the token in verification key
-    :return
-    :raises: HTTPError(http.BAD_REQUEST) if verification key for the user is invalid, has expired or was used
-    """
+    if not auth or not auth.user or auth.user._id != uid:
+        raise HTTPError(http.FORBIDDEN)
 
-    # if users are logged in, log them out and redirect back to this page
-    if auth.logged_in:
-        return auth_logout(redirect_url=request.url)
+    if "verify-new-account" == auth.user.last_cas_action:
+        auth.user.last_cas_action = None
+        auth.user.save()
+        campaign = campaigns.campaign_for_user(auth.user)
+        if campaign:
+            return redirect(campaigns.campaign_url_for(campaign))
+        status.push_status_message(language.WELCOME_MESSAGE, kind='default', jumbotron=True, trust=True)
+        return redirect(web_url_for('index'))
 
-    # Check if request bears a valid pair of `uid` and `token`
-    user_obj = User.load(uid)
-    if not (user_obj and user_obj.verify_password_token(token=token)):
-        error_data = {
-            'message_short': 'Invalid Request.',
-            'message_long': 'The requested URL is invalid, has expired, or was already used',
-        }
-        raise HTTPError(http.BAD_REQUEST, data=error_data)
+    if "reset-password" == auth.user.last_cas_action:
+        auth.user.last_cas_action = None
+        auth.user.save()
+        status.push_status_message(language.PASSWORD_RESET_SUCCESS, kind='success', trust=True)
+        return redirect(web_url_for('user_account'))
 
-    # refresh the verification key (v2)
-    user_obj.verification_key_v2 = generate_verification_key(verification_type='password')
-    user_obj.save()
-
-    return {
-        'uid': user_obj._id,
-        'token': user_obj.verification_key_v2['token'],
-    }
-
-
-def reset_password_post(uid=None, token=None):
-    """
-    View for user to submit reset password form.
-    HTTP Method: POST
-
-    :param uid: the user id
-    :param token: the token in verification key
-    :return:
-    :raises: HTTPError(http.BAD_REQUEST) if verification key for the user is invalid, has expired or was used
-    """
-
-    form = ResetPasswordForm(request.form)
-
-    # Check if request bears a valid pair of `uid` and `token`
-    user_obj = User.load(uid)
-    if not (user_obj and user_obj.verify_password_token(token=token)):
-        error_data = {
-            'message_short': 'Invalid Request.',
-            'message_long': 'The requested URL is invalid, has expired, or was already used',
-        }
-        raise HTTPError(http.BAD_REQUEST, data=error_data)
-
-    if not form.validate():
-        # Don't go anywhere
-        forms.push_errors_to_status(form.errors)
-    else:
-        # clear verification key (v2)
-        user_obj.verification_key_v2 = {}
-        # new verification key (v1) for CAS
-        user_obj.verification_key = generate_verification_key(verification_type=None)
-        try:
-            user_obj.set_password(form.password.data)
-            user_obj.save()
-        except exceptions.ChangePasswordError as error:
-            for message in error.messages:
-                status.push_status_message(message, kind='warning', trust=False)
-        else:
-            status.push_status_message('Password reset', kind='success', trust=False)
-            # redirect to CAS and authenticate the user automatically with one-time verification key.
-            return redirect(cas.get_login_url(
-                web_url_for('user_account', _absolute=True),
-                username=user_obj.username,
-                verification_key=user_obj.verification_key
-            ))
-
-    return {
-        'uid': user_obj._id,
-        'token': user_obj.verification_key_v2['token'],
-    }
-
-
-@collect_auth
-def forgot_password_get(auth):
-    """
-    View for user to land on the forgot password page.
-    HTTP Method: GET
-
-    :param auth: the authentication context
-    :return
-    """
-
-    # if users are logged in, log them out and redirect back to this page
-    if auth.logged_in:
-        return auth_logout(redirect_url=request.url)
-
-    return {}
-
-
-def forgot_password_post():
-    """
-    View for user to submit forgot password form.
-    HTTP Method: POST
-    :return {}
-    """
-
-    form = ForgotPasswordForm(request.form, prefix='forgot_password')
-
-    if not form.validate():
-        # Don't go anywhere
-        forms.push_errors_to_status(form.errors)
-    else:
-        email = form.email.data
-        status_message = ('If there is an OSF account associated with {0}, an email with instructions on how to '
-                          'reset the OSF password has been sent to {0}. If you do not receive an email and believe '
-                          'you should have, please contact OSF Support. ').format(email)
-        kind = 'success'
-        # check if the user exists
-        user_obj = get_user(email=email)
-        if user_obj:
-            # rate limit forgot_password_post
-            if not throttle_period_expired(user_obj.email_last_sent, settings.SEND_EMAIL_THROTTLE):
-                status_message = 'You have recently requested to change your password. Please wait a few minutes ' \
-                                 'before trying again.'
-                kind = 'error'
-            else:
-                # TODO [OSF-6673]: Use the feature in [OSF-6998] for user to resend claim email.
-                # if the user account is not claimed yet
-                if (user_obj.is_invited and
-                        user_obj.unclaimed_records and
-                        not user_obj.date_last_login and
-                        not user_obj.is_claimed and
-                        not user_obj.is_registered):
-                    status_message = 'You cannot reset password on this account. Please contact OSF Support.'
-                    kind = 'error'
-                else:
-                    # new random verification key (v2)
-                    user_obj.verification_key_v2 = generate_verification_key(verification_type='password')
-                    user_obj.email_last_sent = timezone.now()
-                    user_obj.save()
-                    reset_link = furl.urljoin(
-                        settings.DOMAIN,
-                        web_url_for(
-                            'reset_password_get',
-                            uid=user_obj._id,
-                            token=user_obj.verification_key_v2['token']
-                        )
-                    )
-                    mails.send_mail(
-                        to_addr=email,
-                        mail=mails.FORGOT_PASSWORD,
-                        reset_link=reset_link
-                    )
-
-        status.push_status_message(status_message, kind=kind, trust=False)
-
-    return {}
+    raise HTTPError(http.BAD_REQUEST)
 
 
 def login_and_register_handler(auth, login=True, campaign=None, next_url=None, logout=None):
@@ -718,6 +576,7 @@ def send_confirm_email(user, email, renew=False, external_id_provider=None, exte
     :raises: KeyError if user does not have a confirmation token for the given email.
     """
 
+    # legacy design: user click the confirmation url, where HTTP GET request is used to change server state
     confirmation_url = user.get_confirmation_url(
         email,
         external=True,
@@ -726,6 +585,9 @@ def send_confirm_email(user, email, renew=False, external_id_provider=None, exte
         external_id_provider=external_id_provider,
         destination=destination
     )
+
+    # best-of-practice design: ask user to submit the verification code
+    verification_code = user.get_confirmation_token(email, force=True, renew=renew)
 
     try:
         merge_target = User.find_one(Q('emails', 'eq', email))
@@ -765,6 +627,7 @@ def send_confirm_email(user, email, renew=False, external_id_provider=None, exte
         'plain',
         user=user,
         confirmation_url=confirmation_url,
+        verification_code=verification_code,
         email=email,
         merge_target=merge_target,
         external_id_provider=external_id_provider,
@@ -839,65 +702,6 @@ def register_user(**kwargs):
         return {'message': message}
     else:
         return {'message': 'You may now log in.'}
-
-
-@collect_auth
-def resend_confirmation_get(auth):
-    """
-    View for user to land on resend confirmation page.
-    HTTP Method: GET
-    """
-
-    # If user is already logged in, log user out
-    if auth.logged_in:
-        return auth_logout(redirect_url=request.url)
-
-    form = ResendConfirmationForm(request.form)
-    return {
-        'form': form,
-    }
-
-
-@collect_auth
-def resend_confirmation_post(auth):
-    """
-    View for user to submit resend confirmation form.
-    HTTP Method: POST
-    """
-
-    # If user is already logged in, log user out
-    if auth.logged_in:
-        return auth_logout(redirect_url=request.url)
-
-    form = ResendConfirmationForm(request.form)
-
-    if form.validate():
-        clean_email = form.email.data
-        user = get_user(email=clean_email)
-        status_message = ('If there is an OSF account associated with this unconfirmed email {0}, '
-                          'a confirmation email has been resent to it. If you do not receive an email and believe '
-                          'you should have, please contact OSF Support.').format(clean_email)
-        kind = 'success'
-        if user:
-            if throttle_period_expired(user.email_last_sent, settings.SEND_EMAIL_THROTTLE):
-                try:
-                    send_confirm_email(user, clean_email, renew=True)
-                except KeyError:
-                    # already confirmed, redirect to dashboard
-                    status_message = 'This email {0} has already been confirmed.'.format(clean_email)
-                    kind = 'warning'
-                user.email_last_sent = timezone.now()
-                user.save()
-            else:
-                status_message = ('You have recently requested to resend your confirmation email. '
-                                 'Please wait a few minutes before trying again.')
-                kind = 'error'
-        status.push_status_message(status_message, kind=kind, trust=False)
-    else:
-        forms.push_errors_to_status(form.errors)
-
-    # Don't go anywhere
-    return {'form': form}
 
 
 def external_login_email_get():
