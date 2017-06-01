@@ -52,35 +52,10 @@ def ensure_licenses(*args, **kwargs):
 
 
 def remove_licenses(*args):
-    ndeleted = 0
-    with open(
-            os.path.join(
-                settings.APP_PATH,
-                'node_modules', 'list-of-licenses', 'dist', 'list-of-licenses.json'
-            )
-    ) as fp:
-        licenses = json.loads(fp.read())
-        for id, info in licenses.items():
-            name = info['name']
-            text = info['text']
-            properties = info.get('properties', [])
+    pre_count = NodeLicense.objects.all().count()
+    NodeLicense.objects.all().delete()
 
-            model_kwargs = dict(
-                license_id=id,
-                name=name,
-                text=text,
-                properties=properties
-            )
-
-            try:
-                node_license = NodeLicense.objects.get(**model_kwargs)
-                node_license.delete()
-                ndeleted += 1
-                logger.info('License {name} ({id}) removed from the database.'.format(name=name, id=id))
-            except NodeLicense.DoesNotExist:
-                pass
-
-    logger.info('{} licenses removed from the database.'.format(ndeleted))
+    logger.info('{} licenses removed from the database.'.format(pre_count))
 
 
 def ensure_schemas(*args):
@@ -103,14 +78,7 @@ def ensure_schemas(*args):
 
 
 def remove_schemas(*args):
-    removed_schemas = 0
-    for schema in OSF_META_SCHEMAS:
-        schema_obj = MetaSchema.objects.get(
-            schema=schema,
-            name=schema['name'],
-            schema_version=schema.get('version', 1)
-        )
-        schema_obj.delete()
-        removed_schemas += 1
+    pre_count = MetaSchema.objects.all().count()
+    MetaSchema.objects.all().delete()
 
-    logger.info('Removed {} schemas from the database'.format(removed_schemas))
+    logger.info('Removed {} schemas from the database'.format(pre_count))
