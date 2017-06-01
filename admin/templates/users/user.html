@@ -137,7 +137,11 @@
                     </td>
                 </tr>
                 <tr>
-                    <td>Email</td>
+                    <td>Username</td>
+                    <td>{{ user.username }}</td>
+                </tr>
+                <tr>
+                    <td>Emails</td>
                     <td>
                         {% for email in user.emails %}
                             <li>

@@ -4,6 +4,7 @@ import csv
 import pytz
 from furl import furl
 from datetime import datetime, timedelta
+from django.db.models import Q
 from django.views.defaults import page_not_found
 from django.views.generic import FormView, DeleteView, ListView, TemplateView
 from django.contrib.auth.mixins import PermissionRequiredMixin
@@ -278,7 +279,7 @@ class UserFormView(PermissionRequiredMixin, FormView):
         if guid or email:
             if email:
                 try:
-                    user = OSFUser.objects.get(emails__contains=[email])
+                    user = OSFUser.objects.filter(Q(username=email) | Q(emails__contains=[email])).get()
                     guid = user.guids.first()._id
                 except OSFUser.DoesNotExist:
                     return page_not_found(self.request, AttributeError('User with email address {} not found.'.format(email)))
