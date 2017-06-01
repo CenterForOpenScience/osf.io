@@ -24,27 +24,13 @@ class TestFileSerializer:
     def file(self, node, user):
         return utils.create_test_file(node, user)
 
-    @pytest.fixture()
-    def date_created(self, file):
-        return file.versions.first().date_created
+    def test_file_serializer(self, file):
+        date_created = file.versions.first().date_created
+        date_modified = file.versions.last().date_created
+        date_created_tz_aware = date_created.replace(tzinfo=utc)
+        date_modified_tz_aware = date_modified.replace(tzinfo=utc)
+        new_format = '%Y-%m-%dT%H:%M:%S.%fZ'
 
-    @pytest.fixture()
-    def date_modified(self, file):
-        return file.versions.last().date_created
-
-    @pytest.fixture()
-    def date_created_tz_aware(self, date_created):
-        return date_created.replace(tzinfo=utc)
-
-    @pytest.fixture()
-    def date_modified_tz_aware(self, date_modified):
-        return  date_modified.replace(tzinfo=utc)
-
-    @pytest.fixture()
-    def new_format(self):
-        return '%Y-%m-%dT%H:%M:%S.%fZ'
-
-    def test_file_serializer(self, file, date_modified_tz_aware, date_modified, date_created, date_created_tz_aware, new_format):
         # test_date_modified_formats_to_old_format
         req = make_drf_request_with_version(version='2.0')
         data = FileSerializer(file, context={'request': req}).data['data']

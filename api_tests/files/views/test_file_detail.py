@@ -51,8 +51,8 @@ class TestFileView:
         assert res.status_code == 401
 
         # test_must_be_contributor(self, app, file_url):
-        user = AuthUserFactory()
-        res = app.get(file_url, auth=user.auth, expect_errors=True)
+        non_contributor = AuthUserFactory()
+        res = app.get(file_url, auth=non_contributor.auth, expect_errors=True)
         assert res.status_code == 403
 
     def test_file_guid_guid_status(self, app, user, file, file_url):
@@ -191,9 +191,9 @@ class TestFileView:
             file_url,
             auth=user.auth
         )
-        assert node.logs.count(),2
-        assert node.logs.latest().action, NodeLog.CHECKED_OUT
-        assert node.logs.latest().user, user
+        assert node.logs.count() == 2
+        assert node.logs.latest().action == NodeLog.CHECKED_OUT
+        assert node.logs.latest().user == user
         assert user._id == res.json['data']['relationships']['checkout']['links']['related']['meta']['id']
 
         assert '/{}users/{}/'.format(API_BASE, user._id) in res.json['data']['relationships']['checkout']['links']['related']['href']
@@ -540,27 +540,27 @@ class TestFileTagging:
         return ProjectFactory(creator=user)
 
     @pytest.fixture()
-    def file1(self, user, node):
+    def file_one(self, user, node):
         return api_utils.create_test_file(
-            node, user, filename='file1')
+            node, user, filename='file_one')
 
     @pytest.fixture()
-    def payload(self, file1):
+    def payload(self, file_one):
         payload = {
-            "data": {
-                "type": "files",
-                "id": file1._id,
-                "attributes": {
-                    "checkout": None,
-                    "tags": ["goofy"]
+            'data': {
+                'type': 'files',
+                'id': file_one._id,
+                'attributes': {
+                    'checkout': None,
+                    'tags': ['goofy']
                 }
             }
         }
         return payload
 
     @pytest.fixture()
-    def url(self, file1):
-        return '/{}files/{}/'.format(API_BASE, file1._id)
+    def url(self, file_one):
+        return '/{}files/{}/'.format(API_BASE, file_one._id)
 
     def test_tags_add_and_update_properly(self, app, user, url, payload):
         # test_tags_add_properly
