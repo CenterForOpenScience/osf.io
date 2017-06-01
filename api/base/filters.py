@@ -86,8 +86,6 @@ class JSONAPIFilterSet(django_filters.FilterSet):
     QUERY_PATTERN = re.compile(r'^filter\[(?P<fields>((?:,*\s*\w+)*))\](\[(?P<op>\w+)\])?$')
     FILTER_FIELDS = re.compile(r'(?:,*\s*(\w+)+)')
 
-    or_fields = {}
-
     def __init__(self, data=None, *args, **kwargs):
         self.or_fields = {}
         field_names = []
@@ -98,12 +96,12 @@ class JSONAPIFilterSet(django_filters.FilterSet):
                 if match:
                     match_dict = match.groupdict()
                     fields = match_dict['fields']
-                    field_names = re.findall(self.FILTER_FIELDS, fields.strip())
+                    field_names = self.FILTER_FIELDS.findall(fields.strip())
                     values = value.split(',')
                     if len(field_names) > 1:
                         self.or_fields[frozenset(field_names)] = values
-                    for field in field_names:
-                        new_data.update({field: value})
+                    else:
+                        new_data.update({field_names[0]: value})
             data = new_data
         super(JSONAPIFilterSet, self).__init__(data=data, *args, **kwargs)
 
@@ -114,9 +112,6 @@ class JSONAPIFilterSet(django_filters.FilterSet):
     @property
     def qs(self, *args, **kwargs):
         self.form.is_valid()
-        or_keys = reduce(operator.or_, self.or_fields.keys(), set())
-        for key in or_keys:
-            self.form.cleaned_data.pop(key, None)
         qs = super(JSONAPIFilterSet, self).qs
         return self.filter_groups(qs)
 
