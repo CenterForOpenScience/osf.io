@@ -9,7 +9,7 @@ from api.base.serializers import (DateByVersion, HideIfRegistration, IDField,
                                   JSONAPISerializer, LinksField,
                                   NodeFileHyperLinkField, RelationshipField,
                                   ShowIfVersion, TargetTypeField, TypeField,
-                                  WaterbutlerLink, relationship_diff, PrefetchRelationshipsSerializer)
+                                  WaterbutlerLink, relationship_diff, BaseAPISerializer)
 from api.base.settings import ADDONS_FOLDER_CONFIGURABLE
 from api.base.utils import (absolute_reverse, get_object_or_error,
                             get_user_auth, is_truthy)
@@ -46,11 +46,13 @@ class NodeTagField(ser.Field):
         return data
 
 
-class NodeLicenseSerializer(PrefetchRelationshipsSerializer):
+class NodeLicenseSerializer(BaseAPISerializer):
 
     copyright_holders = ser.ListField(allow_empty=True)
     year = ser.CharField(allow_blank=True)
 
+    class Meta:
+        type_ = 'node_licenses'
 
 class NodeLicenseRelationshipField(RelationshipField):
 
@@ -956,7 +958,7 @@ class NodeProviderSerializer(JSONAPISerializer):
     provider = ser.CharField(read_only=True)
     files = NodeFileHyperLinkField(
         related_view='nodes:node-files',
-        related_view_kwargs={'node_id': '<node_id>', 'path': '<path>', 'provider': '<provider>'},
+        related_view_kwargs={'node_id': '<node._id>', 'path': '<path>', 'provider': '<provider>'},
         kind='folder',
         never_embed=True
     )
@@ -999,7 +1001,7 @@ class InstitutionRelated(JSONAPIRelationshipSerializer):
     class Meta:
         type_ = 'institutions'
 
-class NodeInstitutionsRelationshipSerializer(PrefetchRelationshipsSerializer):
+class NodeInstitutionsRelationshipSerializer(BaseAPISerializer):
     data = ser.ListField(child=InstitutionRelated())
     links = LinksField({'self': 'get_self_url',
                         'html': 'get_related_url'})

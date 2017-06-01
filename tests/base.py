@@ -438,6 +438,8 @@ def capture_signals():
     """Factory method that creates a ``CaptureSignals`` with all OSF signals."""
     return CaptureSignals(ALL_SIGNALS)
 
+def assert_dict_contains_subset(a, b):
+    assert set(a.items()).issubset( set(b.items()) )
 
 def assert_is_redirect(response, msg='Response is a redirect.'):
     assert 300 <= response.status_code < 400, msg
