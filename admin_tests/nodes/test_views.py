@@ -10,8 +10,6 @@ from admin.nodes.views import (
 )
 from admin_tests.utilities import setup_log_view, setup_view
 
-from framework.auth import User
-
 from nose import tools as nt
 from django.test import RequestFactory
 from django.core.urlresolvers import reverse
@@ -20,8 +18,6 @@ from django.contrib.auth.models import Permission
 
 from tests.base import AdminTestCase
 from osf_tests.factories import AuthUserFactory, ProjectFactory, RegistrationFactory
-
-
 
 
 class TestNodeView(AdminTestCase):
@@ -202,7 +198,28 @@ class TestRemoveContributor(AdminTestCase):
         view.delete(self.request)
         nt.assert_not_equal(self.node.logs.latest().action, NodeLog.CONTRIB_REMOVED)
 
-<<<<<<< HEAD
+    def test_no_user_permissions_raises_error(self):
+        guid = self.node._id
+        request = RequestFactory().get(self.url)
+        request.user = self.user
+
+        with nt.assert_raises(PermissionDenied):
+            self.view.as_view()(request, node_id=guid, user_id=self.user)
+
+    def test_correct_view_permissions(self):
+        change_permission = Permission.objects.get(codename='change_node')
+        view_permission = Permission.objects.get(codename='view_node')
+        self.user.user_permissions.add(change_permission)
+        self.user.user_permissions.add(view_permission)
+        self.user.save()
+
+        request = RequestFactory().get(self.url)
+        request.user = self.user
+
+        response = self.view.as_view()(request, node_id=self.node._id, user_id=self.user._id)
+        nt.assert_equal(response.status_code, 200)
+
+
 class TestNodeReindex(AdminTestCase):
     def setUp(self):
         super(TestNodeReindex, self).setUp()
@@ -268,25 +285,3 @@ class TestNodeReindex(AdminTestCase):
 
         nt.assert_true(self.mock_reindex_elastic.called)
         nt.assert_equal(AdminLogEntry.objects.count(), count + 1)
-=======
-    def test_no_user_permissions_raises_error(self):
-        guid = self.node._id
-        request = RequestFactory().get(self.url)
-        request.user = self.user
-
-        with nt.assert_raises(PermissionDenied):
-            self.view.as_view()(request, node_id=guid, user_id=self.user)
-
-    def test_correct_view_permissions(self):
-        change_permission = Permission.objects.get(codename='change_node')
-        view_permission = Permission.objects.get(codename='view_node')
-        self.user.user_permissions.add(change_permission)
-        self.user.user_permissions.add(view_permission)
-        self.user.save()
-
-        request = RequestFactory().get(self.url)
-        request.user = self.user
-
-        response = self.view.as_view()(request, node_id=self.node._id, user_id=self.user._id)
-        nt.assert_equal(response.status_code, 200)
->>>>>>> b7b2315b6887f23b5d94ce9814fd4965cd66cfb0

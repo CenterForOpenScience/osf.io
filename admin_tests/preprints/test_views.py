@@ -10,7 +10,7 @@ from osf.models import PreprintService
 from osf_tests.factories import AuthUserFactory, PreprintFactory, PreprintProviderFactory
 from osf.models.admin_log_entry import AdminLogEntry
 
-from admin_tests.utilities import setup_view
+from admin_tests.utilities import setup_view, setup_log_view
 
 from admin.preprints import views
 from admin.preprints.forms import ChangeProviderForm

@@ -719,4 +719,3 @@ class TestUserReindex(AdminTestCase):
 
         nt.assert_true(mock_reindex_elastic.called)
         nt.assert_equal(AdminLogEntry.objects.count(), count + 1)
-

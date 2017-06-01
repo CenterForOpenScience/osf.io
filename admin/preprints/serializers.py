@@ -1,4 +1,3 @@
-from website.project.taxonomies import Subject
 from admin.nodes.serializers import serialize_node
 
 
