@@ -1110,7 +1110,8 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
         assert_equal(res.status_code, 404)
         assert_equal(
             res.json['errors'][0]['detail'],
-            'Cannot add unconfirmed user {} to node {}'.format(unconfirmed_user._id, self.public_project._id)
+            'Cannot add unconfirmed user {} to node {} by guid. Add an unregistered contributor with fullname and email.'
+            .format(unconfirmed_user._id, self.public_project._id)
         )
 
 
