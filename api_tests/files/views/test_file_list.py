@@ -34,7 +34,6 @@ class TestNodeFileList:
         deleted_file.delete(user=user, save=True)
         return deleted_file
 
-    # file & deleted_file necessary in param for trash set up
     def test_does_not_return_trashed_files(self, app, user, node, file, deleted_file):
         res = app.get(
             '/{}nodes/{}/files/osfstorage/'.format(API_BASE, node._id),
@@ -78,7 +77,7 @@ class TestFileFiltering:
         data = res.json.get('data')
         assert len(data) == 4
 
-    def test_filter_on_general_tags_and_exact(self, app, user, node, file1, file2, file3, file4):
+    def test_filter_on_single_tag(self, app, user, node, file1, file2, file3, file4):
         file1.add_tag('new', Auth(user))
         file2.add_tag('new', Auth(user))
         file3.add_tag('news', Auth(user))
@@ -105,11 +104,9 @@ class TestFileFiltering:
         )
         assert len(res.json.get('data')) == 1
 
-    def test_filtering_tags_capitalized_query_and_tag(self, app, user, node, file1, file2, file3, file4):
         # test_filtering_tags_capitalized_query
-        file1.add_tag('cat', Auth(user))
         res = app.get(
-            '/{}nodes/{}/files/osfstorage/?filter[tags]=CAT'.format(
+            '/{}nodes/{}/files/osfstorage/?filter[tags]=NEWS'.format(
                 API_BASE, node._id
             ),
             auth=user.auth
@@ -117,9 +114,9 @@ class TestFileFiltering:
         assert len(res.json.get('data')) == 1
 
         # test_filtering_tags_capitalized_tag
-        file2.add_tag('NEW', Auth(user))
+        file4.add_tag('CAT', Auth(user))
         res = app.get(
-            '/{}nodes/{}/files/osfstorage/?filter[tags]=new'.format(
+            '/{}nodes/{}/files/osfstorage/?filter[tags]=cat'.format(
                 API_BASE, node._id
             ),
             auth=user.auth
