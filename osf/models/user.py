@@ -1351,15 +1351,13 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         :returns: The signed cookie
         """
         secret = secret or settings.SECRET_KEY
-        sessions = Session.find(
+        user_session = Session.find(
             Q('data.auth_user_id', 'eq', self._id)
-        ).sort(
+        ).order_by(
             '-date_modified'
-        ).limit(1)
+        ).first()
 
-        if sessions.exists():
-            user_session = sessions[0]
-        else:
+        if not user_session:
             user_session = Session(data={
                 'auth_user_id': self._id,
                 'auth_user_username': self.username,
