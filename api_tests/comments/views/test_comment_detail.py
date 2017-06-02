@@ -2,6 +2,7 @@ import pytest
 
 import mock
 from urlparse import urlparse
+
 from framework.auth import core
 from osf.models import Guid
 from api.base.settings.defaults import API_BASE
