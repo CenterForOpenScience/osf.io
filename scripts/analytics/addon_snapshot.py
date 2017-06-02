@@ -3,7 +3,10 @@ from __future__ import absolute_import
 import logging
 from modularodm import Q
 
+# App must be initialized before models or ADDONS_AVAILABLE are available
 from website.app import init_app
+init_app()
+
 from osf.models import OSFUser as User, AbstractNode as Node
 from framework.mongo.utils import paginated
 from scripts.analytics.base import SnapshotAnalytics
@@ -127,7 +130,6 @@ def get_class():
 
 
 if __name__ == '__main__':
-    init_app()
     addon_snapshot = AddonSnapshot()
     events = addon_snapshot.get_events()
     addon_snapshot.send_events(events)
