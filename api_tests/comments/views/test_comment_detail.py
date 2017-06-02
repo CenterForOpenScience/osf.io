@@ -34,7 +34,7 @@ class CommentDetailMixin(object):
     def non_contributor(self):
         return AuthUserFactory()
 
-    # private_project_with_comments
+    # check if all necessary fixtures are setup by subclass
     @pytest.fixture()
     def private_project(self):
         raise NotImplementedError

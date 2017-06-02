@@ -40,6 +40,35 @@ class CommentReportsMixin(object):
         }
         return payload
 
+    # check if all necessary features are setup in subclass
+    @pytest.fixture()
+    def private_project(self):
+        raise NotImplementedError
+
+    @pytest.fixture()
+    def comment(self):
+        raise NotImplementedError
+
+    @pytest.fixture()
+    def private_url(self):
+        raise NotImplementedError
+
+    @pytest.fixture()
+    def public_project(self):
+        raise NotImplementedError
+
+    @pytest.fixture()
+    def public_comment(self):
+        raise NotImplementedError
+
+    @pytest.fixture()
+    def public_url(self):
+        raise NotImplementedError
+
+    @pytest.fixture()
+    def comment_level(self):
+        raise NotImplementedError
+
     def test_private_node_view_reports_auth_misc(self, app, user, contributor, non_contributor, private_url):
         # test_private_node_logged_out_user_cannot_view_reports
         res = app.get(private_url, expect_errors=True)
