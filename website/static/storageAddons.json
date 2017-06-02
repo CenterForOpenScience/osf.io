@@ -34,5 +34,13 @@
     "s3": {
         "fullName": "Amazon S3",
         "externalView": false
+    },
+    "swift": {
+        "fullName": "Swift",
+        "externalView": false
+    },
+    "azureblobstorage": {
+        "fullName": "Azure Blob Storage",
+        "externalView": false
     }
 }

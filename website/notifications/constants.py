@@ -30,5 +30,7 @@ PROVIDERS = {
     'github': 'GitHub',
     'googledrive': 'Google Drive',
     'owncloud': 'ownCloud',
-    's3': 'Amazon S3'
+    's3': 'Amazon S3',
+    'swift': 'Swift',
+    'azureblobstorage': 'Azure Blob Storage'
 }
