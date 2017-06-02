@@ -4,8 +4,7 @@ import mock
 from urlparse import urlparse
 
 from framework.auth import core
-from framework.guid.model import Guid
-
+from osf.models import Guid
 from api.base.settings.defaults import API_BASE
 from api.base.settings import osf_settings
 from api_tests import utils as test_utils
