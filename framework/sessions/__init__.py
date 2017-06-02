@@ -167,7 +167,7 @@ def before_request():
                 OSFUser = apps.get_model('osf.OSFUser')
                 (
                     OSFUser.objects
-                    .filter(guids___id=user_session.data['auth_user_id'])
+                    .filter(guids___id__isnull=False, guids___id=user_session.data['auth_user_id'])
                     # Throttle updates
                     .filter(Q(date_last_login__isnull=True) | Q(date_last_login__lt=timezone.now() - dt.timedelta(seconds=settings.DATE_LAST_LOGIN_THROTTLE)))
                 ).update(date_last_login=timezone.now())

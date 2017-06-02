@@ -322,7 +322,7 @@ def get_user_from_cas_resp(cas_resp):
     """
     from osf.models import OSFUser
     if cas_resp.user:
-        user = OSFUser.objects.filter(guids___id=cas_resp.user).first()
+        user = User.load(cas_resp.user)
         # cas returns a valid OSF user id
         if user:
             return user, None, 'authenticate'
