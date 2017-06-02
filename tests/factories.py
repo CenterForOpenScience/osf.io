@@ -128,8 +128,11 @@ class UserFactory(ModularOdmFactory):
 
     @post_generation
     def set_emails(self, create, extracted):
-        if self.username not in self.emails:
-            self.emails.append(self.username)
+        if not self.emails.filter(address=self.username).exists():
+            if not self.id:
+                # Perform implicit save to populate M2M
+                self.save()
+            self.emails.create(address=self.username)
             self.save()
 
 

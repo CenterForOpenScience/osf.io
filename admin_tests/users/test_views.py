@@ -97,7 +97,7 @@ class TestResetPasswordView(AdminTestCase):
         view = setup_view(view, request, guid=guid)
         res = view.get_context_data()
         nt.assert_is_instance(res, dict)
-        nt.assert_in((user.emails[0], user.emails[0]), view.initial['emails'])
+        nt.assert_in((user.emails.first().address, user.emails.first().address), view.initial['emails'])
 
     def test_no_user_permissions_raises_error(self):
         user = UserFactory()
@@ -564,7 +564,7 @@ class TestUserSearchView(AdminTestCase):
         self.user_4 = AuthUserFactory(fullname='King Maxel Hardy')
 
         self.user_2_alternate_email = 'brothernero@delapidatedboat.com'
-        self.user_2.emails.append(self.user_2_alternate_email)
+        self.user_2.emails.create(address=self.user_2_alternate_email)
         self.user_2.save()
 
         self.request = RequestFactory().get('/fake_path')

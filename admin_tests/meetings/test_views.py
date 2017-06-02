@@ -68,7 +68,7 @@ class TestMeetingFormView(AdminTestCase):
         mod_data.update({
             'edit': 'True',
             'endpoint': self.conf.endpoint,
-            'admins': self.user.emails[0],
+            'admins': self.user.emails.first().address,
             'location': 'Timbuktu, Mali',
             'start date': 'Dec 11 2014',
             'end_date': 'Jan 12 2013'
@@ -108,7 +108,7 @@ class TestMeetingFormView(AdminTestCase):
         view.conf = self.conf
         view.form_valid(self.form)
         self.conf.reload()
-        nt.assert_equal(self.conf.admins.all()[0].emails[0], self.user.emails[0])
+        nt.assert_equal(self.conf.admins.all()[0].emails.first().address, self.user.emails.first().address)
         nt.assert_equal(self.conf.location, self.form.cleaned_data['location'])
         nt.assert_equal(self.conf.start_date, self.form.cleaned_data['start_date'])
 
@@ -140,7 +140,7 @@ class TestMeetingCreateFormView(AdminTestCase):
         self.request = RequestFactory().post('/fake_path')
         self.view = MeetingCreateFormView
         mod_data = dict(data)
-        mod_data.update({'admins': self.user.emails[0]})
+        mod_data.update({'admins': self.user.emails.first().address})
         self.form = MeetingForm(data=mod_data)
         self.form.is_valid()
 
@@ -190,7 +190,7 @@ class TestMeetingMisc(AdminTestCase):
         user_1 = AuthUserFactory()
         user_2 = AuthUserFactory()
         user_3 = AuthUserFactory()
-        emails = [user_1.emails[0], user_2.emails[0], user_3.emails[0]]
+        emails = [user_1.emails.first().address, user_2.emails.first().address, user_3.emails.first().address]
         res = get_admin_users(emails)
         nt.assert_in(user_1, res)
         nt.assert_in(user_2, res)

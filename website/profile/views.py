@@ -175,7 +175,7 @@ def update_user(auth):
 
         available_emails = [
             each.strip().lower() for each in
-            user.emails + user.unconfirmed_emails
+            list(user.emails.values_list('address', flat=True)) + user.unconfirmed_emails
         ]
         # removals
         removed_emails = [
@@ -188,7 +188,7 @@ def update_user(auth):
             raise HTTPError(httplib.FORBIDDEN)
 
         for address in removed_emails:
-            if address in user.emails:
+            if user.emails.filter(address=address):
                 try:
                     user.remove_email(address)
                 except PermissionsError as e:
@@ -231,12 +231,12 @@ def update_user(auth):
 
         if primary_email:
             primary_email_address = primary_email['address'].strip().lower()
-            if primary_email_address not in [each.strip().lower() for each in user.emails]:
+            if primary_email_address not in [each.strip().lower() for each in user.emails.values_list('address', flat=True)]:
                 raise HTTPError(httplib.FORBIDDEN)
             username = primary_email_address
 
         # make sure the new username has already been confirmed
-        if username and username in user.emails and username != user.username:
+        if username and username != user.username and user.emails.filter(address=username).exists():
             mails.send_mail(user.username,
                             mails.PRIMARY_EMAIL_CHANGED,
                             user=user,
