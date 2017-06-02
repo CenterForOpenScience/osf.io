@@ -12,7 +12,7 @@ from api.base.utils import (default_node_list_query,
                             get_user_auth)
 from api.base.views import JSONAPIBaseView
 from api.institutions.serializers import InstitutionSerializer
-from api.nodes.filters import NodesFilterMixin, NodesListFilterMixin, NodeODMFilterMixin
+from api.nodes.filters import NodesFilterMixin
 from api.nodes.serializers import NodeSerializer
 from api.preprints.serializers import PreprintSerializer
 from api.registrations.serializers import RegistrationSerializer
@@ -595,7 +595,7 @@ class UserInstitutions(JSONAPIBaseView, generics.ListAPIView, UserMixin):
 
 
 # TODO: This view should be a subclass of UserNodes (i.e. NodeODMFilterMixin and NodesListFilterMixin replaced with NodesFilterMixin)
-class UserRegistrations(JSONAPIBaseView, generics.ListAPIView, UserMixin, NodeODMFilterMixin, NodesListFilterMixin):
+class UserRegistrations(JSONAPIBaseView, generics.ListAPIView, UserMixin, NodesFilterMixin):
     """List of registrations that the user contributes to. *Read-only*.
 
     Paginated list of registrations that the user contributes to.  Each resource contains the full representation of the
@@ -690,8 +690,8 @@ class UserRegistrations(JSONAPIBaseView, generics.ListAPIView, UserMixin, NodeOD
     view_category = 'users'
     view_name = 'user-registrations'
 
-    # overrides ODMFilterMixin
-    def get_default_odm_query(self):
+    # overrides NodesFilterMixin
+    def get_default_queryset(self):
         user = self.get_user()
         current_user = self.request.user
 
@@ -704,11 +704,11 @@ class UserRegistrations(JSONAPIBaseView, generics.ListAPIView, UserMixin, NodeOD
         if not current_user.is_anonymous:
             permission_query = (permission_query | MQ('contributors', 'eq', current_user))
         query = query & permission_query
-        return query
+        return Node.find(query)
 
     # overrides ListAPIView
     def get_queryset(self):
-        return Node.find(self.get_query_from_request()).select_related('node_license').include('guids', 'contributor__user__guids', 'root__guids', limit_includes=10)
+        return self.get_queryset_from_request().select_related('node_license').include('guids', 'contributor__user__guids', 'root__guids', limit_includes=10)
 
 
 class UserInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveDestroyAPIView, UserMixin):
