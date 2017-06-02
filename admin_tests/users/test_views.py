@@ -452,7 +452,7 @@ class TestUserWorkshopFormView(AdminTestCase):
         nt.assert_equal(user_nodes_created_since_workshop, 0)
 
     def test_user_activity_after_workshop_only(self):
-        activity_date = timezone.now() + timedelta(days=1)
+        activity_date = timezone.now() + timedelta(hours=25)
         self._create_nodes_and_add_logs(first_activity_date=activity_date)
 
         result_csv = self._create_and_parse_test_file(self.data)
@@ -477,7 +477,7 @@ class TestUserWorkshopFormView(AdminTestCase):
         nt.assert_equal(user_nodes_created_since_workshop, 0)
 
     def test_user_activity_day_of_workshop_and_after(self):
-        activity_date = timezone.now() + timedelta(days=1)
+        activity_date = timezone.now() + timedelta(hours=25)
         self._create_nodes_and_add_logs(
             first_activity_date=self.workshop_date,
             second_activity_date=activity_date
@@ -492,7 +492,7 @@ class TestUserWorkshopFormView(AdminTestCase):
 
     def test_user_activity_before_workshop_and_after(self):
         before_activity_date = timezone.now() - timedelta(days=1)
-        after_activity_date = timezone.now() + timedelta(days=1)
+        after_activity_date = timezone.now() + timedelta(hours=25)
         self._create_nodes_and_add_logs(
             first_activity_date=before_activity_date,
             second_activity_date=after_activity_date
