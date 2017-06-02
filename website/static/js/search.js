@@ -156,7 +156,7 @@ var ViewModel = function(params) {
         if(self.shareCategory()){
             return self.categories().concat(self.shareCategory());
         }
-        return self.categories().concat(new Category('SHARE', 0, 'SHARE'));
+        return self.categories();
     });
 
     self.totalCount = ko.pureComputed(function() {
@@ -462,7 +462,10 @@ var ViewModel = function(params) {
             }
 
             $osf.postJSON(window.contextVars.shareUrl + 'api/v2/search/creativeworks/_count', shareQuery).success(function(data) {
-                self.shareCategory(new Category('SHARE', data.count, 'SHARE'));
+                if(data.count > 0){
+                    self.shareCategory(new Category('SHARE', data.count, 'SHARE'));
+                }
+                
             });
 
             self.searching(false);
