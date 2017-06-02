@@ -15,7 +15,7 @@ from framework.celery_tasks import app as celery_app
 
 from website.app import init_app
 from website import settings
-from osf.models import Embargo, Node, NodeLog
+from osf.models import Embargo, Registration, NodeLog
 
 from scripts import utils as scripts_utils
 
@@ -30,7 +30,7 @@ def main(dry_run=True):
         if should_be_embargoed(embargo):
             if dry_run:
                 logger.warn('Dry run mode')
-            parent_registration = Node.find_one(Q('embargo', 'eq', embargo))
+            parent_registration = Registration.find_one(Q('embargo', 'eq', embargo))
             logger.warn(
                 'Embargo {0} approved. Activating embargo for registration {1}'
                 .format(embargo._id, parent_registration._id)
@@ -66,7 +66,7 @@ def main(dry_run=True):
         if embargo.end_date < timezone.now():
             if dry_run:
                 logger.warn('Dry run mode')
-            parent_registration = Node.find_one(Q('embargo', 'eq', embargo))
+            parent_registration = Registration.find_one(Q('embargo', 'eq', embargo))
             logger.warn(
                 'Embargo {0} complete. Making registration {1} public'
                 .format(embargo._id, parent_registration._id)

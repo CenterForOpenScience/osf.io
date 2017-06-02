@@ -29,7 +29,7 @@ def main(dry_run=True):
         if should_be_approved(registration_approval):
             if dry_run:
                 logger.warn('Dry run mode')
-            pending_registration = models.Node.find_one(Q('registration_approval', 'eq', registration_approval))
+            pending_registration = models.Registration.find_one(Q('registration_approval', 'eq', registration_approval))
             logger.warn(
                 'RegistrationApproval {0} automatically approved by system. Making registration {1} public.'
                 .format(registration_approval._id, pending_registration._id)

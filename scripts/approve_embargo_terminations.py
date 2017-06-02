@@ -40,7 +40,7 @@ def main():
     pending_embargo_termination_requests = get_pending_embargo_termination_requests()
     count = 0
     for request in pending_embargo_termination_requests:
-        registration = models.Node.find_one(Q('embargo_termination_approval', 'eq', request))
+        registration = models.Registration.find_one(Q('embargo_termination_approval', 'eq', request))
         if not registration.is_embargoed:
             logger.warning("Registration {0} associated with this embargo termination request ({0}) is not embargoed.".format(
                 registration._id,
