@@ -3,8 +3,8 @@ from rest_framework import serializers as ser
 from modularodm.exceptions import ValidationValueError
 
 from api.base.exceptions import InvalidModelValueError
-from api.base.serializers import JSONAPIRelationshipSerializer, HideIfDisabled, PrefetchRelationshipsSerializer
-from website.models import User
+from api.base.serializers import JSONAPIRelationshipSerializer, HideIfDisabled, BaseAPISerializer
+from osf.models import OSFUser as User
 
 from api.base.serializers import (
     JSONAPISerializer, LinksField, RelationshipField, DevOnly, IDField, TypeField, ListDictField,
@@ -165,7 +165,7 @@ class RelatedInstitution(JSONAPIRelationshipSerializer):
         return obj.absolute_api_v2_url
 
 
-class UserInstitutionsRelationshipSerializer(PrefetchRelationshipsSerializer):
+class UserInstitutionsRelationshipSerializer(BaseAPISerializer):
 
     data = ser.ListField(child=RelatedInstitution())
     links = LinksField({'self': 'get_self_url',

@@ -13,7 +13,7 @@ from website.settings import PREPRINT_PROVIDER_DOMAINS, DOMAIN, PROTOCOL
 import django
 django.setup()
 
-from website.models import Subject, PreprintProvider, NodeLicense
+from osf.models import Subject, PreprintProvider, NodeLicense
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)

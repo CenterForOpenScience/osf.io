@@ -145,11 +145,12 @@
             <div class="panel-heading clearfix">
               <h3 class="panel-title" >Public projects</h3>
             </div>
-            <div class="panel-body">
-              ${ render_nodes.render_nodes(nodes=public_projects,
-                                           sortable=False, user=user,
-                                           pluralized_node_type='projects',
-                                           show_path=False, include_js=False) }
+            <div class="panel-body clearfix" id="publicProjects">
+                <div class="ball-pulse ball-scale-blue text-center">
+                  <div></div>
+                  <div></div>
+                  <div></div>
+                </div>
             </div>
         </div>
     </div>
@@ -158,8 +159,12 @@
             <div class="panel-heading clearfix">
                 <h3 class="panel-title">Public components</h3>
             </div>
-            <div class="panel-body">
-              ${ render_nodes.render_nodes(nodes=public_components, sortable=False, user=user, pluralized_node_type='components', show_path=True, include_js=True) }
+            <div class="panel-body clearfix" id="publicComponents">
+              <div class="ball-pulse ball-scale-blue text-center">
+                <div></div>
+                <div></div>
+                <div></div>
+              </div>
             </div>
         </div>
     </div>
@@ -183,7 +188,8 @@
       window.contextVars = $.extend(true, {}, window.contextVars, {
           socialUrls: socialUrls,
           jobsUrls: jobsUrls,
-          schoolsUrls: schoolsUrls
+          schoolsUrls: schoolsUrls,
+          user: ${ user | sjson, n },
       });
   })();
 </script>

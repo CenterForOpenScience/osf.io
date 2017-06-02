@@ -6,7 +6,7 @@ from citeproc import Citation, CitationItem
 from citeproc import formatter
 from citeproc.source.json import CiteProcJSON
 
-from website.preprints.model import PreprintService
+from osf.models import PreprintService
 from website.settings import CITATION_STYLES_PATH, BASE_PATH, CUSTOM_CITATIONS
 
 

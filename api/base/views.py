@@ -26,7 +26,6 @@ from api.nodes.permissions import ReadOnlyIfRegistration
 from api.users.serializers import UserSerializer
 from framework.auth.oauth_scopes import CoreScopes
 from osf.models.contributor import Contributor
-from website.models import Pointer
 from website import maintenance
 
 
@@ -96,7 +95,7 @@ class JSONAPIBaseView(generics.GenericAPIView):
             # Cache serializers. to_representation of a serializer should NOT augment it's fields so resetting the context
             # should be sufficient for reuse
             if not view.get_serializer_class() in cache:
-                cache[view.get_serializer_class()] = view.get_serializer_class()(many=isinstance(view, ListModelMixin))
+                cache[view.get_serializer_class()] = view.get_serializer_class()(many=isinstance(view, ListModelMixin), context=view.get_serializer_context())
             ser = cache[view.get_serializer_class()]
 
             try:
@@ -141,6 +140,12 @@ class JSONAPIBaseView(generics.GenericAPIView):
             embeds = self.request.query_params.getlist('embed')
 
         fields_check = self.serializer_class._declared_fields.copy()
+        if 'fields[{}]'.format(self.serializer_class.Meta.type_) in self.request.query_params:
+            # Check only requested and mandatory fields
+            sparse_fields = self.request.query_params['fields[{}]'.format(self.serializer_class.Meta.type_)]
+            for field in fields_check.copy().keys():
+                if field not in ('type', 'id', 'links') and field not in sparse_fields:
+                    fields_check.pop(field)
 
         for field in fields_check:
             if getattr(fields_check[field], 'field', None):
@@ -849,7 +854,8 @@ class BaseLinkedList(JSONAPIBaseView, generics.ListAPIView):
     view_category = None
     view_name = None
 
-    model_class = Pointer
+    # TODO: This class no longer exists
+    # model_class = Pointer
 
     def get_queryset(self):
         auth = get_user_auth(self.request)

@@ -5,7 +5,7 @@ from django.utils import timezone
 from nose import tools as nt
 from datetime import timedelta
 
-from website.project.model import Comment
+from osf.models import Comment, SpamStatus
 
 from osf.models.admin_log_entry import AdminLogEntry
 from admin.spam.forms import ConfirmForm
@@ -20,7 +20,6 @@ from admin.spam.views import (
     SpamDetail,
     EmailView,
 )
-from website.project.spam.model import SpamStatus
 
 
 class TestSpamListView(AdminTestCase):

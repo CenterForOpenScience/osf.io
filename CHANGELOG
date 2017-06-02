@@ -2,8 +2,21 @@
 Changelog
 *********
 
+0.112.0 (2017-06-01)
+====================
+
+- Render project lists on profile pages client-side for faster load times.
+
+0.111.0 (2017-05-31)
+====================
+
+- Automatically create DOIs for preprints.
+- API: Support sparse fieldsets.
+- Dev: Refactor API OAuth Application tests to use pytest fixtures for better performance.
+
 0.110.0 (2017-05-26)
 ====================
+
 - [production] Can't view file revisions/versions if sharejs is down
 - User can enter invalid Copyright year on projects with no license
 - Deactivated users can be added to a node via API

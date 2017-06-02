@@ -9,17 +9,18 @@ requests for which not all admins have responded within the 48 hour window.
 Makes the Embargoed Node and its components public.
 """
 
-import datetime
 import logging
-import sys
 
+import django
 from django.utils import timezone
 from django.db import transaction
 from modularodm import Q
+django.setup()
 
 from framework.celery_tasks import app as celery_app
 
-from website import models, settings
+from osf import models
+from website import settings
 from website.app import init_app
 
 from scripts import utils as scripts_utils

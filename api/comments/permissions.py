@@ -3,7 +3,7 @@ from rest_framework import permissions
 
 from api.base.utils import get_user_auth
 from api.comments.serializers import CommentReport
-from website.models import Node, Comment
+from osf.models import AbstractNode as Node, Comment
 
 class CanCommentOrPublic(permissions.BasePermission):
 

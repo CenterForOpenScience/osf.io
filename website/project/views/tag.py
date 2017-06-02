@@ -5,8 +5,8 @@ from modularodm import Q
 from modularodm.exceptions import ValidationError
 
 from framework.auth.decorators import collect_auth
+from osf.models import AbstractNode as Node, Tag
 from website.exceptions import InvalidTagError, NodeStateError, TagNotFoundError
-from website.project.model import Node, Tag
 from website.project.decorators import (
     must_be_valid_project, must_have_permission, must_not_be_registration
 )

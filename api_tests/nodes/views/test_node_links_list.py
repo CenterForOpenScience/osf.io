@@ -3,7 +3,7 @@ from nose.tools import *  # flake8: noqa
 from urlparse import urlparse
 from framework.auth.core import Auth
 
-from website.models import NodeLog
+from osf.models import NodeLog
 
 from api.base.settings.defaults import API_BASE
 
