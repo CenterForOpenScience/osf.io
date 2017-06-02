@@ -2,7 +2,6 @@ import pytest
 
 import mock
 from urlparse import urlparse
-
 from framework.auth import core
 from framework.guid.model import Guid
 
