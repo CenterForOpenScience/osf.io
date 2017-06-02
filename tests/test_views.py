@@ -8,7 +8,6 @@ import datetime as dt
 import httplib as http
 import json
 import time
-import pytz
 import unittest
 
 from flask import request
@@ -29,7 +28,6 @@ from framework import auth
 from framework.auth.campaigns import get_campaigns, is_institution_login, is_native_login, is_proxy_login, campaign_url_for
 from framework.auth import Auth
 from framework.auth.cas import get_login_url
-from framework.auth.core import generate_verification_key
 from framework.auth.exceptions import InvalidTokenError
 from framework.auth.utils import impute_names_model, ensure_external_identity_uniqueness
 from framework.auth.views import login_and_register_handler
@@ -40,7 +38,7 @@ from tests.factories import MockAddonNodeSettings
 from website import mailchimp_utils
 from website import mails, settings
 from addons.osfstorage import settings as osfstorage_settings
-from website.models import Node, NodeLog, Pointer
+from osf.models import AbstractNode as Node, NodeLog
 from website.profile.utils import add_contributor_json, serialize_unregistered
 from website.profile.views import fmt_date_or_none, update_osf_help_mails_subscription
 from website.project.decorators import check_can_access
@@ -2464,7 +2462,7 @@ class TestClaimViews(OsfTestCase):
         res = self.app.get(url, expect_errors=True).maybe_follow()
         assert_equal(res.status_code, 400)
 
-    @mock.patch('framework.auth.core.User.update_search_nodes')
+    @mock.patch('osf.models.OSFUser.update_search_nodes')
     def test_posting_to_claim_form_with_valid_data(self, mock_update_search_nodes):
         url = self.user.get_claim_url(self.project._primary_key)
         res = self.app.post(url, {
@@ -2485,7 +2483,7 @@ class TestClaimViews(OsfTestCase):
         assert_true(self.user.is_active)
         assert_not_in(self.project._primary_key, self.user.unclaimed_records)
 
-    @mock.patch('framework.auth.core.User.update_search_nodes')
+    @mock.patch('osf.models.OSFUser.update_search_nodes')
     def test_posting_to_claim_form_removes_all_unclaimed_data(self, mock_update_search_nodes):
         # user has multiple unclaimed records
         p2 = ProjectFactory(creator=self.referrer)
@@ -2502,7 +2500,7 @@ class TestClaimViews(OsfTestCase):
         self.user.reload()
         assert_equal(self.user.unclaimed_records, {})
 
-    @mock.patch('framework.auth.core.User.update_search_nodes')
+    @mock.patch('osf.models.OSFUser.update_search_nodes')
     def test_posting_to_claim_form_sets_fullname_to_given_name(self, mock_update_search_nodes):
         # User is created with a full name
         original_name = fake.name()
@@ -2940,11 +2938,9 @@ class TestPointerViews(OsfTestCase):
 
     def test_remove_pointer_not_in_nodes(self):
         url = self.project.api_url + 'pointer/'
-        node = NodeFactory()
-        pointer = Pointer()
         res = self.app.delete_json(
             url,
-            {'pointerId': pointer._id},
+            {'pointerId': 'somefakeid'},
             auth=self.user.auth,
             expect_errors=True
         )
@@ -2978,11 +2974,9 @@ class TestPointerViews(OsfTestCase):
 
     def test_fork_pointer_not_in_nodes(self):
         url = self.project.api_url + 'pointer/fork/'
-        node = NodeFactory()
-        pointer = Pointer()
         res = self.app.post_json(
             url,
-            {'pointerId': pointer._id},
+            {'pointerId': 'somefakeid'},
             auth=self.user.auth,
             expect_errors=True
         )
@@ -3222,7 +3216,7 @@ class TestAuthViews(OsfTestCase):
             )
             assert_equal(resp.status_code, http.BAD_REQUEST)
 
-    @mock.patch('framework.auth.core.User.update_search_nodes')
+    @mock.patch('osf.models.OSFUser.update_search_nodes')
     def test_register_after_being_invited_as_unreg_contributor(self, mock_update_search_nodes):
         # Regression test for:
         #    https://github.com/CenterForOpenScience/openscienceframework.org/issues/861

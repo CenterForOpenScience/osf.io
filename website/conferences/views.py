@@ -8,18 +8,17 @@ from bulk_update.helper import bulk_update
 from modularodm import Q
 from modularodm.exceptions import ModularOdmException
 
+from addons.osfstorage.models import OsfStorageFile
 from framework.auth import get_or_create_user
 from framework.exceptions import HTTPError
 from framework.flask import redirect
 from framework.transactions.handlers import no_auto_transaction
+from osf.models import AbstractNode as Node, Conference, Tag
 from website import settings
 from website.conferences import utils, signals
 from website.conferences.message import ConferenceMessage, ConferenceError
-from website.conferences.model import Conference
-from website.files.models import OsfStorageFile
 from website.mails import CONFERENCE_SUBMITTED, CONFERENCE_INACTIVE, CONFERENCE_FAILED
 from website.mails import send_mail
-from website.models import Node, Tag
 from website.util import web_url_for
 
 logger = logging.getLogger(__name__)

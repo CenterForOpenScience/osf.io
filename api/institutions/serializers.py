@@ -4,7 +4,7 @@ from rest_framework import exceptions
 
 from modularodm import Q
 
-from website.models import Node
+from osf.models import AbstractNode as Node
 from website.util import permissions as osf_permissions
 
 from api.base.serializers import JSONAPISerializer, RelationshipField, LinksField, JSONAPIRelationshipSerializer, \

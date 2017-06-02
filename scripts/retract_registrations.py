@@ -2,16 +2,18 @@
 
 import logging
 
+import django
 from django.db import transaction
 from django.utils import timezone
 from modularodm import Q
+django.setup()
 
 from framework.auth import Auth
 from framework.celery_tasks import app as celery_app
 
 from website.app import init_app
 from website import models, settings
-from website.project.model import NodeLog
+from osf.models import NodeLog
 
 from scripts import utils as scripts_utils
 

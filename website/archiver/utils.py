@@ -161,7 +161,7 @@ def aggregate_file_tree_metadata(addon_short_name, fileobj_metadata, user):
         )
 
 def before_archive(node, user):
-    from website.archiver.model import ArchiveJob
+    from osf.models import ArchiveJob
     link_archive_provider(node, user)
     job = ArchiveJob.objects.create(
         src_node=node.registered_from,

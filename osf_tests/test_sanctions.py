@@ -7,7 +7,7 @@ import datetime
 from django.utils import timezone
 
 from osf.modm_compat import Q
-from osf.models import DraftRegistrationApproval, MetaSchema
+from osf.models import DraftRegistrationApproval, MetaSchema, NodeLog
 from osf_tests import factories
 from osf_tests.utils import mock_archive
 
@@ -15,7 +15,6 @@ from framework.auth import Auth
 
 from website import settings
 from website.exceptions import NodeStateError
-from website.project.model import NodeLog
 from website.project.model import ensure_schemas
 
 

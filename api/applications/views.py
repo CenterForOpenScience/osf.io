@@ -11,7 +11,7 @@ from modularodm import Q
 from framework.auth import cas
 from framework.auth.oauth_scopes import CoreScopes
 
-from website.models import ApiOAuth2Application
+from osf.models import ApiOAuth2Application
 
 from api.base.filters import ODMFilterMixin
 from api.base.utils import get_object_or_error

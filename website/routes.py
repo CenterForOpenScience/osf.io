@@ -25,6 +25,7 @@ from framework.auth.core import _get_current_user
 from modularodm import Q
 from modularodm.exceptions import QueryException, NoResultsFound
 
+from osf.models import Institution
 from website import util
 from website import prereg
 from website import settings
@@ -33,7 +34,6 @@ from website.util import metrics
 from website.util import paths
 from website.util import sanitize
 from website import maintenance
-from website.models import Institution
 from website import landing_pages as landing_page_views
 from website import views as website_views
 from website.citations import views as citation_views
@@ -1560,22 +1560,6 @@ def make_url_map(app):
             '/project/<pid>/permissions/beforepublic/',
             '/project/<pid>/node/<nid>/permissions/beforepublic/',
         ], 'get', project_views.node.project_before_set_public, json_renderer),
-
-        ### Watching ###
-        Rule([
-            '/project/<pid>/watch/',
-            '/project/<pid>/node/<nid>/watch/'
-        ], 'post', project_views.node.watch_post, json_renderer),
-
-        Rule([
-            '/project/<pid>/unwatch/',
-            '/project/<pid>/node/<nid>/unwatch/'
-        ], 'post', project_views.node.unwatch_post, json_renderer),
-
-        Rule([
-            '/project/<pid>/togglewatch/',
-            '/project/<pid>/node/<nid>/togglewatch/'
-        ], 'post', project_views.node.togglewatch_post, json_renderer),
 
         # Combined files
         Rule(

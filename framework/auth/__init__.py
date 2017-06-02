@@ -3,7 +3,7 @@ import uuid
 
 from framework import bcrypt
 from framework.auth import signals
-from framework.auth.core import User, Auth
+from framework.auth.core import Auth
 from framework.auth.core import get_user, generate_verification_key
 from framework.auth.exceptions import DuplicateEmailError
 from framework.sessions import session, create_session
@@ -13,7 +13,6 @@ from framework.sessions.utils import remove_session
 __all__ = [
     'get_display_name',
     'Auth',
-    'User',
     'get_user',
     'check_password',
     'authenticate',
@@ -85,9 +84,10 @@ def logout():
 
 
 def register_unconfirmed(username, password, fullname, campaign=None):
+    from osf.models import OSFUser
     user = get_user(email=username)
     if not user:
-        user = User.create_unconfirmed(
+        user = OSFUser.create_unconfirmed(
             username=username,
             password=password,
             fullname=fullname,
@@ -103,7 +103,7 @@ def register_unconfirmed(username, password, fullname, campaign=None):
         user.update_guessed_names()
         user.save()
     else:
-        raise DuplicateEmailError('User {0!r} already exists'.format(username))
+        raise DuplicateEmailError('OSFUser {0!r} already exists'.format(username))
     return user
 
 
@@ -117,12 +117,13 @@ def get_or_create_user(fullname, address, reset_password=True, is_spam=False):
     :param bool is_spam: user flagged as potential spam
     :return: tuple of (user, created)
     """
+    from osf.models import OSFUser
     user = get_user(email=address)
     if user:
         return user, False
     else:
         password = str(uuid.uuid4())
-        user = User.create_confirmed(address, password, fullname)
+        user = OSFUser.create_confirmed(address, password, fullname)
         if reset_password:
             user.verification_key_v2 = generate_verification_key(verification_type='password')
         if is_spam:

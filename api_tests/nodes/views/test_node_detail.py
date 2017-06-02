@@ -8,7 +8,7 @@ from framework.auth.core import Auth
 from modularodm import Q
 import pytest
 
-from website.models import NodeLog
+from osf.models import NodeLog
 from website.views import find_bookmark_collection
 from website.util import permissions
 from website.util.sanitize import strip_html
@@ -29,7 +29,7 @@ from osf_tests.factories import (
 )
 
 from website.project.licenses import ensure_licenses
-from website.project.licenses import NodeLicense
+from osf.models.licenses import NodeLicense
 
 ensure_licenses = functools.partial(ensure_licenses, warn=False)
 

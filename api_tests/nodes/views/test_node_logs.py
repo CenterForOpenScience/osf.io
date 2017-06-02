@@ -6,7 +6,7 @@ from dateutil.parser import parse as parse_date
 import pytest
 
 from framework.auth.core import Auth
-from website.models import NodeLog
+from osf.models import NodeLog
 from website.util import disconnected_from_listeners
 from website.project.signals import contributor_removed
 from api.base.settings.defaults import API_BASE
