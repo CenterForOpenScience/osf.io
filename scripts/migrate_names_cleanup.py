@@ -72,7 +72,7 @@ import mock
 from nose.tools import *  # noqa
 
 from tests.base import OsfTestCase
-from website.addons.osfstorage.tests.factories import AuthUserFactory
+from addons.osfstorage.tests.factories import AuthUserFactory
 
 
 class TestMigrateUser(OsfTestCase):

@@ -1,24 +1,26 @@
 #!/usr/bin/env python
 # encoding: utf-8
 
-import datetime
 import logging
 import math
 import time
+from django.utils import timezone
 
+import django
 from modularodm import Q
 from oauthlib.oauth2 import OAuth2Error
 from dateutil.relativedelta import relativedelta
+django.setup()
 
 from framework.celery_tasks import app as celery_app
 
 from scripts import utils as scripts_utils
 
 from website.app import init_app
-from website.addons.box.model import Box
-from website.addons.googledrive.model import GoogleDriveProvider
-from website.addons.mendeley.model import Mendeley
-from website.oauth.models import ExternalAccount
+from addons.box.models import Provider as Box
+from addons.googledrive.models import GoogleDriveProvider
+from addons.mendeley.models import Mendeley
+from osf.models import ExternalAccount
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -36,7 +38,8 @@ def get_targets(delta, addon_short_name):
     # NOTE: expires_at is the  access_token's expiration date,
     # NOT the refresh token's
     return ExternalAccount.find(
-        Q('date_last_refreshed', 'lt', datetime.datetime.utcnow() - delta) &
+        Q('expires_at', 'lt', timezone.now() - delta) &
+        Q('date_last_refreshed', 'lt', timezone.now() - delta) &
         Q('provider', 'eq', addon_short_name)
     )
 
@@ -58,7 +61,7 @@ def main(delta, Provider, rate_limit, dry_run):
         )
         if not dry_run:
             if allowance < 1:
-                try: 
+                try:
                     time.sleep(rate_limit[1] - (time.time() - last_call))
                 except (ValueError, IOError):
                     pass  # Value/IOError indicates negative sleep time in Py 3.5/2.7, respectively

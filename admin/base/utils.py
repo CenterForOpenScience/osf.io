@@ -1,59 +1,95 @@
 """
 Utility functions and classes
 """
-from django.contrib.auth.views import redirect_to_login
-from django.core.exceptions import PermissionDenied
-from django.contrib.auth.mixins import UserPassesTestMixin
-from django.conf import settings
+from osf.models import Subject, NodeLicense
+
 from django.core.urlresolvers import reverse
 from django.utils.http import urlencode
-
-
-class OSFAdmin(UserPassesTestMixin):
-    login_url = settings.LOGIN_URL
-    permission_denied_message = 'You are not in the OSF admin group.'
-
-    def handle_no_permission(self):
-        if not self.request.user.is_authenticated():
-            return redirect_to_login(self.request.get_full_path(),
-                                     self.get_login_url(),
-                                     self.get_redirect_field_name())
-        else:
-            raise PermissionDenied(self.get_permission_denied_message())
-
-    def test_func(self):
-        return self.request.user.is_authenticated() and (self.request.user.is_in_group('osf_admin') or self.request.user.is_superuser)
-
-
-class NodesAndUsers(OSFAdmin):
-    """User needs to be in the nodes_and_users group to be able to access views with node
-    and user information. Specific admin permissions to be checked template side
-    """
-    permission_denied_message = 'You are not allowed to access information about Nodes and Users on the OSF Admin.'
-
-    def test_func(self):
-        return self.request.user.is_authenticated() and (self.request.user.is_in_group('nodes_and_users') or self.request.user.is_superuser)
-
-
-class SuperUser(OSFAdmin):
-    permission_denied_message = (
-        'You are not a superuser,'
-        ' please contact one in order to do this action.'
-    )
-
-    def test_func(self):
-        return self.request.user.is_authenticated() and self.request.user.is_superuser
-
-
-class Prereg(OSFAdmin):
-    """For testing for Prereg credentials of user."""
-    permission_denied_message = 'You are not in the Pre-reg admin group.'
-
-    def test_func(self):
-        return self.request.user.is_authenticated() and (self.request.user.is_in_group('prereg') or self.request.user.is_superuser)
 
 
 def reverse_qs(view, urlconf=None, args=None, kwargs=None, current_app=None, query_kwargs=None):
     base_url = reverse(view, urlconf=urlconf, args=args, kwargs=kwargs, current_app=current_app)
     if query_kwargs:
         return '{}?{}'.format(base_url, urlencode(query_kwargs))
+
+
+def osf_staff_check(user):
+    return user.is_authenticated and user.is_staff
+
+
+def get_subject_rules(subjects_selected):
+    """
+    Take a list of subjects, and parse them into rules consistent with preprpint provider
+    rules and subjects. A "rule" consists of a hierarchy of Subject _ids, and a boolean value
+    describing if the rest of the descendants of the last subject in the list are included or not.
+
+    Example:
+    rules = [
+        [
+            [u'58bdd0bfb081dc0811b9e0ae', u'58bdd099b081dc0811b9de09'],
+            True
+        ]
+    ]
+
+    :param subjects_selected: list of ids of subjects selected from the form
+    :return: subject "rules" properly formatted
+    """
+    new_rules = []
+    subjects_done = []
+    while len(subjects_done) < len(subjects_selected):
+        parents_left = [sub for sub in subjects_selected if not sub.parent and sub not in subjects_done]
+        subjects_left = [sub for sub in subjects_selected if sub not in subjects_done and sub.parent]
+        if subjects_left and not parents_left:
+            raise AttributeError('Error parsing  rules - should not be children with no parents to process')
+        for parent in parents_left:
+            parent_has_no_descendants_in_rules = True
+            used_children = []
+            all_grandchildren = False
+            potential_children_rules = []
+            for child in parent.children.all():
+                child_has_no_descendants_in_rules = True
+                if child in subjects_selected:
+                    used_children.append(child)
+                    used_grandchildren = []
+                    potential_grandchildren_rules = []
+                    parent_has_no_descendants_in_rules = False
+
+                    if child in subjects_left:
+                        for grandchild in child.children.all():
+                            if grandchild in subjects_selected:
+                                child_has_no_descendants_in_rules = False
+
+                                if grandchild in subjects_left:
+                                    potential_grandchildren_rules.append([[parent._id, child._id, grandchild._id], False])
+                                used_grandchildren.append(grandchild)
+
+                        if len(used_grandchildren) == child.children.count():
+                            all_grandchildren = True
+                            potential_children_rules.append([[parent._id, child._id], True])
+                        else:
+                            new_rules += potential_grandchildren_rules
+
+                        if child_has_no_descendants_in_rules:
+                            potential_children_rules.append([[parent._id, child._id], False])
+                        subjects_done += used_grandchildren
+                subjects_done += used_children
+
+            if parent_has_no_descendants_in_rules:
+                new_rules.append([[parent._id], False])
+
+            elif parent.children.count() == len(used_children) and all_grandchildren:
+                new_rules.append([[parent._id], True])
+            else:
+                new_rules += potential_children_rules
+
+            subjects_done.append(parent)
+
+    return new_rules
+
+
+def get_nodelicense_choices():
+    return NodeLicense.objects.values_list('id', 'name')
+
+
+def get_toplevel_subjects():
+    return Subject.objects.filter(parent__isnull=True).values_list('id', 'text')

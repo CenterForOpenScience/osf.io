@@ -1,7 +1,7 @@
 from nose.tools import *  # flake8: noqa
 
 from tests.base import ApiTestCase
-from tests.factories import InstitutionFactory
+from osf_tests.factories import InstitutionFactory
 
 from api.base.settings.defaults import API_BASE
 

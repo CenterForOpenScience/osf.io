@@ -85,14 +85,14 @@
             </td>
             <td>
                 {% for user in node.contributors %}
-                    <a href="{{ user.id | reverse_user }}">{{ user.id }}</a>{% if not forloop.last %}, {% endif %}
+                    <a href="{{ user.id | reverse_user }}">{{ user.username }}</a>{% if not forloop.last %}, {% endif %}
                 {% endfor %}
             </td>
         </tr>
         {% endfor %}
     </tbody>
 </table>
-{% if form_action %}
+{% if form_action and perms.osf.mark_spam %}
 <button class="btn btn-warning" type="button" data-toggle="modal" data-target="#confirmSpamListModal">
     Confirm Spam
 </button>

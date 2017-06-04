@@ -17,7 +17,7 @@ from dateutil.relativedelta import relativedelta
 from framework.celery_tasks import app as celery_app
 
 from website.app import init_app
-from website.files import models
+from osf.models import FileVersion
 
 from scripts import utils as scripts_utils
 from scripts.osfstorage import settings as storage_settings
@@ -66,12 +66,12 @@ def get_job(vault, job_id=None):
 
 
 def get_targets(date):
-    return models.FileVersion.find(
+    return FileVersion.find(
         Q('date_created', 'lt', date - DELTA_DATE) &
         Q('status', 'ne', 'cached') &
         Q('metadata.archive', 'exists', True) &
         Q('location', 'ne', None)
-    )
+    ).iterator()
 
 
 def check_glacier_version(version, inventory):
@@ -111,9 +111,6 @@ def main(job_id=None):
         except AuditError as error:
             logger.error(str(error))
         if idx % 1000 == 0:
-            # clear modm cache so we don't run out of memory from the cursor enumeration
-            models.FileVersion._cache.clear()
-            models.FileVersion._object_cache.clear()
             gc.collect()
 
 

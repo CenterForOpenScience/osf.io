@@ -21,7 +21,7 @@ def parent_dir(path):
 HERE = os.path.dirname(os.path.abspath(__file__))
 BASE_PATH = parent_dir(HERE)  # website/ directory
 APP_PATH = parent_dir(BASE_PATH)
-ADDON_PATH = os.path.join(BASE_PATH, 'addons')
+ADDON_PATH = os.path.join(APP_PATH, 'addons')
 STATIC_FOLDER = os.path.join(BASE_PATH, 'static')
 STATIC_URL_PATH = '/static'
 ASSET_HASH_PATH = os.path.join(APP_PATH, 'webpack-assets.json')
@@ -43,6 +43,9 @@ CITATION_STYLES_PATH = os.path.join(BASE_PATH, 'static', 'vendor', 'bower_compon
 # Minimum seconds between forgot password email attempts
 SEND_EMAIL_THROTTLE = 30
 
+# Seconds that must elapse before updating a user's date_last_login field
+DATE_LAST_LOGIN_THROTTLE = 60
+
 # Hours before pending embargo/retraction/registration automatically becomes active
 RETRACTION_PENDING_TIME = datetime.timedelta(days=2)
 EMBARGO_PENDING_TIME = datetime.timedelta(days=2)
@@ -57,6 +60,8 @@ ANONYMIZED_TITLES = ['Authors']
 LOAD_BALANCER = False
 PROXY_ADDRS = []
 
+USE_POSTGRES = True
+
 # May set these to True in local.py for development
 DEV_MODE = False
 DEBUG_MODE = False
@@ -64,8 +69,14 @@ SECURE_MODE = not DEBUG_MODE  # Set secure cookie
 
 PROTOCOL = 'https://' if SECURE_MODE else 'http://'
 DOMAIN = PROTOCOL + 'localhost:5000/'
+INTERNAL_DOMAIN = DOMAIN
 API_DOMAIN = PROTOCOL + 'localhost:8000/'
 
+PREPRINT_PROVIDER_DOMAINS = {
+    'enabled': False,
+    'prefix': PROTOCOL,
+    'suffix': '/'
+}
 # External Ember App Local Development
 USE_EXTERNAL_EMBER = False
 EXTERNAL_EMBER_APPS = {}
@@ -135,11 +146,6 @@ WELCOME_OSF4M_WAIT_TIME_GRACE = timedelta(days=12)
 
 # TODO: Override in local.py
 MAILGUN_API_KEY = None
-
-# TODO: Override in local.py in production
-UPLOADS_PATH = os.path.join(BASE_PATH, 'uploads')
-MFR_CACHE_PATH = os.path.join(BASE_PATH, 'mfrcache')
-MFR_TEMP_PATH = os.path.join(BASE_PATH, 'mfrtemp')
 
 # Use Celery for file rendering
 USE_CELERY = True
@@ -291,20 +297,19 @@ CONTRIBUTOR_ADDED_EMAIL_THROTTLE = 24 * 3600
 GOOGLE_ANALYTICS_ID = None
 GOOGLE_SITE_VERIFICATION = None
 
-# Pingdom
-PINGDOM_ID = None
-
 DEFAULT_HMAC_SECRET = 'changeme'
 DEFAULT_HMAC_ALGORITHM = hashlib.sha256
 WATERBUTLER_URL = 'http://localhost:7777'
+WATERBUTLER_INTERNAL_URL = WATERBUTLER_URL
 WATERBUTLER_ADDRS = ['127.0.0.1']
 
 # Test identifier namespaces
 DOI_NAMESPACE = 'doi:10.5072/FK2'
 ARK_NAMESPACE = 'ark:99999/fk4'
 
-EZID_USERNAME = 'changeme'
-EZID_PASSWORD = 'changeme'
+# For creating DOIs and ARKs through the EZID service
+EZID_USERNAME = None
+EZID_PASSWORD = None
 # Format for DOIs and ARKs
 EZID_FORMAT = '{namespace}osf.io/{guid}'
 
@@ -339,6 +344,7 @@ LOW_PRI_MODULES = {
     'framework.analytics.tasks',
     'framework.celery_tasks',
     'scripts.osfstorage.usage_audit',
+    'scripts.stuck_registration_audit',
     'scripts.osfstorage.glacier_inventory',
     'scripts.analytics.tasks',
     'scripts.osfstorage.files_audit',
@@ -414,6 +420,7 @@ CELERY_IMPORTS = (
     'scripts.analytics.run_keen_summaries',
     'scripts.analytics.run_keen_snapshots',
     'scripts.analytics.run_keen_events',
+    'scripts.generate_sitemap',
 )
 
 # Modules that need metrics and release requirements
@@ -421,6 +428,7 @@ CELERY_IMPORTS = (
 #     'scripts.osfstorage.glacier_inventory',
 #     'scripts.osfstorage.glacier_audit',
 #     'scripts.osfstorage.usage_audit',
+#     'scripts.stuck_registration_audit',
 #     'scripts.osfstorage.files_audit',
 #     'scripts.analytics.tasks',
 #     'scripts.analytics.upload',
@@ -506,6 +514,10 @@ else:
             'task': 'scripts.analytics.run_keen_events',
             'schedule': crontab(minute=0, hour=4),  # Daily 4:00 a.m.
             'kwargs': {'yesterday': True}
+        },
+        'generate_sitemap': {
+            'task': 'scripts.generate_sitemap',
+            'schedule': crontab(minute=0, hour=0),  # Daily 12:00 a.m.
         }
     }
 
@@ -515,6 +527,11 @@ else:
     #         'task': 'scripts.osfstorage.usage_audit',
     #         'schedule': crontab(minute=0, hour=0),  # Daily 12 a.m
     #         'kwargs': {'send_mail': True},
+    #     },
+    #     'stuck_registration_audit': {
+    #         'task': 'scripts.stuck_registration_audit',
+    #         'schedule': crontab(minute=0, hour=6),  # Daily 6 a.m
+    #         'kwargs': {},
     #     },
     #     'glacier_inventory': {
     #         'task': 'scripts.osfstorage.glacier_inventory',
@@ -546,16 +563,6 @@ else:
     #         'schedule': crontab(minute=0, hour=2, day_of_week=0),  # Sunday 2:00 a.m.
     #         'kwargs': {'num_of_workers': 4, 'dry_run': False},
     #     },
-    #     'analytics': {
-    #         'task': 'scripts.analytics.tasks',
-    #         'schedule': crontab(minute=0, hour=2),  # Daily 2:00 a.m.
-    #         'kwargs': {}
-    #     },
-    #     'analytics-upload': {
-    #         'task': 'scripts.analytics.upload',
-    #         'schedule': crontab(minute=0, hour=6),  # Daily 6:00 a.m.
-    #         'kwargs': {}
-    #     },
     # })
 
 
@@ -574,7 +581,8 @@ assert (DRAFT_REGISTRATION_APPROVAL_PERIOD > EMBARGO_END_DATE_MIN), 'The draft r
 
 PREREG_ADMIN_TAG = "prereg_admin"
 
-ENABLE_INSTITUTIONS = False
+# TODO: Remove references to this flag
+ENABLE_INSTITUTIONS = True
 
 ENABLE_VARNISH = False
 ENABLE_ESI = False
@@ -583,6 +591,10 @@ ESI_MEDIA_TYPES = {'application/vnd.api+json', 'application/json'}
 
 # Used for gathering meta information about the current build
 GITHUB_API_TOKEN = None
+
+# switch for disabling things that shouldn't happen during
+# the modm to django migration
+RUNNING_MIGRATION = False
 
 # External Identity Provider
 EXTERNAL_IDENTITY_PROFILE = {
@@ -1782,3 +1794,38 @@ INSTITUTION_DISPLAY_NODE_THRESHOLD = 5
 
 # refresh campaign every 5 minutes
 CAMPAIGN_REFRESH_THRESHOLD = 5 * 60  # 5 minutes in seconds
+
+
+AWS_ACCESS_KEY_ID = None
+AWS_SECRET_ACCESS_KEY = None
+
+# sitemap default settings
+SITEMAP_TO_S3 = False
+SITEMAP_AWS_BUCKET = None
+SITEMAP_URL_MAX = 25000
+SITEMAP_INDEX_MAX = 50000
+SITEMAP_STATIC_URLS = [
+    OrderedDict([('loc', ''), ('changefreq', 'yearly'), ('priority', '0.5')]),
+    OrderedDict([('loc', 'preprints'), ('changefreq', 'yearly'), ('priority', '0.5')]),
+    OrderedDict([('loc', 'prereg'), ('changefreq', 'yearly'), ('priority', '0.5')]),
+    OrderedDict([('loc', 'meetings'), ('changefreq', 'yearly'), ('priority', '0.5')]),
+    OrderedDict([('loc', 'registries'), ('changefreq', 'yearly'), ('priority', '0.5')]),
+    OrderedDict([('loc', 'explore/activity'), ('changefreq', 'weekly'), ('priority', '0.5')]),
+    OrderedDict([('loc', 'support'), ('changefreq', 'yearly'), ('priority', '0.5')]),
+    OrderedDict([('loc', 'faq'), ('changefreq', 'yearly'), ('priority', '0.5')]),
+
+]
+
+SITEMAP_USER_CONFIG = OrderedDict([('loc', ''), ('changefreq', 'yearly'), ('priority', '0.5')])
+SITEMAP_NODE_CONFIG = OrderedDict([('loc', ''), ('lastmod', ''), ('changefreq', 'monthly'), ('priority', '0.5')])
+SITEMAP_REGISTRATION_CONFIG = OrderedDict([('loc', ''), ('lastmod', ''), ('changefreq', 'never'), ('priority', '0.5')])
+SITEMAP_PREPRINT_CONFIG = OrderedDict([('loc', ''), ('lastmod', ''), ('changefreq', 'yearly'), ('priority', '0.5')])
+SITEMAP_PREPRINT_FILE_CONFIG = OrderedDict([('loc', ''), ('lastmod', ''), ('changefreq', 'yearly'), ('priority', '0.5')])
+
+CUSTOM_CITATIONS = {
+    'bluebook-law-review': 'bluebook',
+    'bluebook2': 'bluebook',
+    'bluebook-inline': 'bluebook'
+}
+
+PREPRINTS_ASSETS = '/static/img/preprints_assets/'

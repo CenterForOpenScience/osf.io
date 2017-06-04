@@ -53,7 +53,7 @@ class WikiSerializer(JSONAPISerializer):
         return obj.get_absolute_url()
 
     def get_path(self, obj):
-        return '/{}'.format(obj)
+        return '/{}'.format(obj._id)
 
     def get_kind(self, obj):
         return 'file'
@@ -63,7 +63,7 @@ class WikiSerializer(JSONAPISerializer):
 
     def get_current_user_can_comment(self, obj):
         user = self.context['request'].user
-        auth = Auth(user if not user.is_anonymous() else None)
+        auth = Auth(user if not user.is_anonymous else None)
         return obj.node.can_comment(auth)
 
     def get_content_type(self, obj):
@@ -92,7 +92,7 @@ class NodeWikiSerializer(WikiSerializer):
         related_view='nodes:node-comments',
         related_view_kwargs={'node_id': '<node._id>'},
         related_meta={'unread': 'get_unread_comments_count'},
-        filter={'target': '<pk>'}
+        filter={'target': '<_id>'}
     )
 
 
@@ -107,7 +107,7 @@ class RegistrationWikiSerializer(WikiSerializer):
         related_view='registrations:registration-comments',
         related_view_kwargs={'node_id': '<node._id>'},
         related_meta={'unread': 'get_unread_comments_count'},
-        filter={'target': '<pk>'}
+        filter={'target': '<_id>'}
     )
 
 

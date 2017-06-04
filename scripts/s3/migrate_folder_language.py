@@ -8,10 +8,10 @@ from framework.mongo import database
 from framework.transactions.context import TokuTransaction
 
 from website.app import init_app
-from website.addons.base.exceptions import InvalidAuthError, InvalidFolderError
-from website.addons.s3.utils import get_bucket_location_or_error
-from website.addons.s3.settings import BUCKET_LOCATIONS
-from website.addons.s3.model import S3NodeSettings
+from addons.base.exceptions import InvalidAuthError, InvalidFolderError
+from addons.s3.utils import get_bucket_location_or_error
+from addons.s3.settings import BUCKET_LOCATIONS
+from addons.s3.model import S3NodeSettings
 from scripts import utils as script_utils
 
 

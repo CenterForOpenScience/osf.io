@@ -8,7 +8,6 @@ import urllib
 from lxml import etree
 import requests
 
-from framework.auth import User
 from framework.auth import authenticate, external_first_login_authenticate
 from framework.auth.core import get_user, generate_verification_key
 from framework.flask import redirect
@@ -283,9 +282,10 @@ def make_response_from_ticket(ticket, service_url):
                 )))
 
             # if user is authenticated by CAS
+            # TODO [CAS-27]: Remove Access Token From Service Validation
             return authenticate(
                 user,
-                cas_resp.attributes['accessToken'],
+                cas_resp.attributes.get('accessToken', ''),
                 redirect(service_furl.url)
             )
         # first time login from external identity provider
@@ -295,11 +295,12 @@ def make_response_from_ticket(ticket, service_url):
             fullname = u'{} {}'.format(cas_resp.attributes.get('given-names', ''), cas_resp.attributes.get('family-name', '')).strip()
             if not fullname:
                 fullname = external_credential['id']
+            # TODO [CAS-27]: Remove Access Token From Service Validation
             user = {
                 'external_id_provider': external_credential['provider'],
                 'external_id': external_credential['id'],
                 'fullname': fullname,
-                'access_token': cas_resp.attributes['accessToken'],
+                'access_token': cas_resp.attributes.get('accessToken', ''),
                 'service_url': service_furl.url,
             }
             return external_first_login_authenticate(
@@ -313,13 +314,15 @@ def make_response_from_ticket(ticket, service_url):
 def get_user_from_cas_resp(cas_resp):
     """
     Given a CAS service validation response, attempt to retrieve user information and next action.
+    The `user` in `cas_resp` is the unique GUID of the user. Please do not use the primary key `id`
+    or the email `username`. This holds except for the first step of ORCiD login.
 
     :param cas_resp: the cas service validation response
     :return: the user, the external_credential, and the next action
     """
-
+    from osf.models import OSFUser
     if cas_resp.user:
-        user = User.load(cas_resp.user)
+        user = OSFUser.load(cas_resp.user)
         # cas returns a valid OSF user id
         if user:
             return user, None, 'authenticate'

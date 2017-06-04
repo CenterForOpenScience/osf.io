@@ -40,16 +40,16 @@ var NewAndNoteworthy = {
         };
 
         // Load new and noteworthy nodes
-        var newAndNoteworthyUrl = $osf.apiV2Url('nodes/' + window.contextVars.newAndNoteworthy + '/node_links/', {});
+        var newAndNoteworthyUrl = $osf.apiV2Url('nodes/' + window.contextVars.newAndNoteworthy + '/linked_nodes/', {});
         var newAndNoteworthyPromise = m.request({method: 'GET', url: newAndNoteworthyUrl, config: xhrconfig, background: true});
         newAndNoteworthyPromise.then(function(result){
             var numNew = result.data.length;
             for (var l = 0; l < numNew; l++) {
                 var data = result.data[l];
-                if (lodashGet(data, 'embeds.target_node.data', null)) {
-                    if (data.embeds.target_node.data.attributes.public === true) {
-                        self.newAndNoteworthyNodes().push(result.data[l]);
-                        self.fetchContributors(result.data[l]);
+                if (data) {
+                    if (data.attributes.public === true) {
+                        self.newAndNoteworthyNodes().push(data);
+                        self.fetchContributors(data);
                     }
                 }
                 if (self.newAndNoteworthyNodes().length === self.SHOW_TOTAL){
@@ -63,16 +63,16 @@ var NewAndNoteworthy = {
         });
 
         // Load popular nodes
-        var popularUrl = $osf.apiV2Url('nodes/' + window.contextVars.popular + '/node_links/', {});
+        var popularUrl = $osf.apiV2Url('nodes/' + window.contextVars.popular + '/linked_nodes/', {});
         var popularPromise = m.request({method: 'GET', url: popularUrl, config: xhrconfig, background: true});
         popularPromise.then(function(result){
             var numPopular = result.data.length;
             for (var l = 0; l < numPopular; l++) {
                 var data = result.data[l];
-                if (lodashGet(data, 'embeds.target_node.data', null)) {
-                    if (data.embeds.target_node.data.attributes.public === true) {
-                        self.popularNodes().push(result.data[l]);
-                        self.fetchContributors(result.data[l]);
+                if (data) {
+                    if (data.attributes.public === true) {
+                        self.popularNodes().push(data);
+                        self.fetchContributors(data);
                     }
                 }
                 if (self.popularNodes().length === self.SHOW_TOTAL){
@@ -87,7 +87,7 @@ var NewAndNoteworthy = {
 
         // Additional API call to fetch node link contributors
         self.fetchContributors = function(nodeLink) {
-            var url = lodashGet(nodeLink, 'embeds.target_node.data.relationships.contributors.links.related.href', null);
+            var url = lodashGet(nodeLink, 'relationships.contributors.links.related.href', null);
             var promise = m.request({method: 'GET', url : url, config: xhrconfig});
             promise.then(function(result){
                 var contribNames = [];
@@ -160,7 +160,7 @@ var NewAndNoteworthy = {
             return m('',[
                 m('.row',[
                     m('.col-xs-12.col-md-6', m('.public-projects-box.', m('h4.m-b-md','New and Noteworthy'), newAndNoteworthyProjectsTemplate())),
-                    m('.col-xs-12.col-md-6', m('.public-projects-box.', m('h4.m-b-md','Most Popular'), popularProjectsTemplate ()))
+                    m('.col-xs-12.col-md-6', m('.public-projects-box.', m('h4.m-b-md','Most Popular'), popularProjectsTemplate()))
                 ]),
                 m('.row', m('.text-center.col-sm-12', findMoreProjectsButton()))
         ]);
@@ -182,12 +182,12 @@ var NoteworthyNodeDisplay = {
         };
     },
     view: function(ctrl, args) {
-        var description = args.node.embeds.target_node.data.attributes.description;
+        var description = args.node.attributes.description;
         var tooltipDescription = description ? description.split(' ').splice(0,30).join(' ') + '...' : '';
-        var title = args.node.embeds.target_node.data.attributes.title;
+        var title = args.node.attributes.title;
         var numContrib = args.contributorsMapping[args.node.id] ? args.contributorsMapping[args.node.id].total : 0;
         var contributors = $osf.contribNameFormat(args.node, numContrib, args.getFamilyName);
-        var destination = '/' + args.node.embeds.target_node.data.id;
+        var destination = '/' + args.node.id;
 
         return m('a', {href: destination, onclick: function() {
             $osf.trackClick('discoverPublicProjects', 'navigate', 'navigate-to-specific-project');

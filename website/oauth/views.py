@@ -6,7 +6,7 @@ from flask import redirect
 
 from framework.auth.decorators import must_be_logged_in
 from framework.exceptions import HTTPError
-from website.oauth.models import ExternalAccount
+from osf.models import ExternalAccount
 from website.oauth.utils import get_service
 from website.oauth.signals import oauth_complete
 
@@ -18,7 +18,7 @@ def oauth_disconnect(external_account_id, auth):
     if account is None:
         raise HTTPError(http.NOT_FOUND)
 
-    if account not in user.external_accounts:
+    if not user.external_accounts.filter(id=account.id).exists():
         raise HTTPError(http.FORBIDDEN)
 
     # iterate AddonUserSettings for addons
@@ -48,8 +48,8 @@ def oauth_callback(service_name, auth):
     if not provider.auth_callback(user=user):
         return {}
 
-    if provider.account not in user.external_accounts:
-        user.external_accounts.append(provider.account)
+    if provider.account and not user.external_accounts.filter(id=provider.account.id).exists():
+        user.external_accounts.add(provider.account)
         user.save()
 
     oauth_complete.send(provider, account=provider.account, user=user)

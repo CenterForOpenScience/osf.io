@@ -18,14 +18,13 @@ import logging
 
 import pyrax
 
-from modularodm import Q
 from boto.glacier.layer2 import Layer2
 from pyrax.exceptions import NoSuchObject
 
 from framework.celery_tasks import app as celery_app
 
 from website.app import init_app
-from website.files import models
+from osf.models import FileVersion
 
 from scripts import utils as scripts_utils
 from scripts.osfstorage import utils as storage_utils
@@ -122,27 +121,21 @@ def ensure_backups(version, dry_run):
 
 
 def glacier_targets():
-    return models.FileVersion.find(
-        Q('status', 'ne', 'cached') &
-        Q('location.object', 'exists', True) &
-        Q('metadata.archive', 'eq', None)
-    )
+    return FileVersion.objects.filter(location__has_key='object', metadata__archive__isnull=True)
 
 
 def parity_targets():
     # TODO: Add metadata.parity information from wb so we do not need to check remote services
-    return models.FileVersion.find(
-        Q('status', 'ne', 'cached') &
-        Q('location.object', 'exists', True)
-        # & Q('metadata.parity', 'eq', None)
-    )
+    return FileVersion.objects.filter(location__has_key='object')
+        # & metadata__parity__isnull=True
 
 
 def audit(targets, num_of_workers, worker_id, dry_run):
     maxval = math.ceil(targets.count() / num_of_workers)
+    target_iterator = targets.iterator()
     idx = 0
     last_progress = -1
-    for version in targets:
+    for version in target_iterator:
         if hash(version._id) % num_of_workers == worker_id:
             if version.size == 0:
                 continue
@@ -152,9 +145,6 @@ def audit(targets, num_of_workers, worker_id, dry_run):
             if last_progress < 100 and last_progress < progress:
                 logger.info(str(progress) + '%')
                 last_progress = progress
-                # clear modm cache so we don't run out of memory from the cursor enumeration
-                models.FileVersion._cache.clear()
-                models.FileVersion._object_cache.clear()
                 gc.collect()
 
 

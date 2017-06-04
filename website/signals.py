@@ -2,7 +2,7 @@
 
 from framework.auth import signals as auth
 from website.project import signals as project
-from website.addons.base import signals as event
+from addons.base import signals as event
 from website.conferences import signals as conference
 
 ALL_SIGNALS = [

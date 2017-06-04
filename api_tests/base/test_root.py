@@ -5,7 +5,7 @@ from nose.tools import *  # flake8: noqa
 import unittest
 
 from tests.base import ApiTestCase
-from tests.factories import (
+from osf_tests.factories import (
     AuthUserFactory
 )
 
@@ -13,9 +13,8 @@ from api.base.settings.defaults import API_BASE
 
 from framework.auth.oauth_scopes import public_scopes
 from framework.auth.cas import CasResponse
-from framework.sessions.model import Session
 from website import settings
-from website.oauth.models import ApiOAuth2PersonalToken
+from osf.models import ApiOAuth2PersonalToken, Session
 
 class TestWelcomeToApi(ApiTestCase):
     def setUp(self):

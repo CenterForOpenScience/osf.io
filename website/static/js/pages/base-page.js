@@ -211,7 +211,9 @@ $(function() {
         $osf.initializeResponsiveAffix();
     }
     new NavbarControl('.osf-nav-wrapper');
-    new DevModeControls('#devModeControls', '/static/built/git_logs.json', '/static/built/git_branch.txt');
+    if (__ENABLE_DEV_MODE_CONTROLS) {
+        new DevModeControls('#devModeControls', '/static/built/git_logs.json', '/static/built/git_branch.txt');
+    }
     if (window.contextVars.keen){
         //Don't track PhantomJS visits with KeenIO
         if (!(/PhantomJS/.test(navigator.userAgent))){

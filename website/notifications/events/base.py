@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Basic Event handling for events that need subscriptions"""
 
-from datetime import datetime
+from django.utils import timezone
 
 from website.notifications import emails
 
@@ -29,7 +29,7 @@ class Event(object):
         self.gravatar_url = user.profile_image_url()
         self.node = node
         self.action = action
-        self.timestamp = datetime.utcnow()
+        self.timestamp = timezone.now()
 
     def perform(self):
         """Call emails.notify to notify users of an action"""

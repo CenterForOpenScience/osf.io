@@ -3,12 +3,10 @@
 import httplib as http
 
 from flask import request
-from modularodm import Q
 from modularodm.exceptions import ValidationError, ValidationValueError
 
 from framework import forms, status
 from framework.auth import cas
-from framework.auth import User
 from framework.auth.core import get_user, generate_verification_key
 from framework.auth.decorators import block_bing_preview, collect_auth, must_be_logged_in
 from framework.auth.forms import PasswordForm, SetEmailAndPasswordForm
@@ -18,8 +16,8 @@ from framework.exceptions import HTTPError
 from framework.flask import redirect  # VOL-aware redirect
 from framework.sessions import session
 from framework.transactions.handlers import no_auto_transaction
+from osf.models import AbstractNode as Node, OSFUser as User, PreprintService
 from website import mails, language, settings
-from website.models import Node, PreprintService
 from website.notifications.utils import check_if_all_global_subscriptions_are_none
 from website.profile import utils as profile_utils
 from website.project.decorators import (must_have_permission, must_be_valid_project, must_not_be_registration,
@@ -42,7 +40,7 @@ def get_node_contributors_abbrev(auth, node, **kwargs):
     if 'user_ids' in kwargs:
         users = [
             User.load(user_id) for user_id in kwargs['user_ids']
-            if user_id in node.visible_contributor_ids
+            if node.contributor_set.filter(user__guid__guid=user_id).exists()
         ]
     else:
         users = node.visible_contributors
@@ -179,7 +177,7 @@ def deserialize_contributors(node, user_dicts, auth, validate=False):
                     fullname=fullname,
                     email=email)
                 contributor.save()
-            except ValidationValueError:
+            except ValidationError:
                 ## FIXME: This suppresses an exception if ID not found & new validation fails; get_user will return None
                 contributor = get_user(email=email)
 
@@ -201,9 +199,13 @@ def deserialize_contributors(node, user_dicts, auth, validate=False):
 
 @unreg_contributor_added.connect
 def finalize_invitation(node, contributor, auth, email_template='default'):
-    record = contributor.get_unclaimed_record(node._primary_key)
-    if record['email']:
-        send_claim_email(record['email'], contributor, node, notify=True, email_template=email_template)
+    try:
+        record = contributor.get_unclaimed_record(node._primary_key)
+    except ValueError:
+        pass
+    else:
+        if record['email']:
+            send_claim_email(record['email'], contributor, node, notify=True, email_template=email_template)
 
 
 @must_be_valid_project
@@ -333,8 +335,8 @@ def project_remove_contributor(auth, **kwargs):
             if auth.user != contributor:
                 raise HTTPError(http.FORBIDDEN)
 
-        if len(node.visible_contributor_ids) == 1 \
-                and node.visible_contributor_ids[0] == contributor._id:
+        if node.visible_contributors.count() == 1 \
+                and node.visible_contributors[0] == contributor:
             raise HTTPError(http.FORBIDDEN, data={
                 'message_long': 'Must have at least one bibliographic contributor'
             })
@@ -567,7 +569,7 @@ def find_preprint_provider(node):
     """
 
     try:
-        preprint = PreprintService.find_one(Q('node', 'eq', node._id))
+        preprint = PreprintService.objects.get(node=node)
         provider = preprint.provider
         if provider._id == 'osf':
             return 'osf', provider.name
@@ -714,10 +716,11 @@ def claim_user_form(auth, **kwargs):
     user.update_guessed_names()
     # The email can be the original referrer email if no claimer email has been specified.
     claimer_email = unclaimed_record.get('claimer_email') or unclaimed_record.get('email')
-
     # If there is a registered user with this email, redirect to 're-enter password' page
-    found_by_email = User.find_by_email(claimer_email)
-    user_from_email = found_by_email[0] if found_by_email else None
+    try:
+        user_from_email = User.objects.get(emails__address=claimer_email.lower().strip()) if claimer_email else None
+    except User.DoesNotExist:
+        user_from_email = None
     if user_from_email and user_from_email.is_registered:
         return redirect(web_url_for('claim_user_registered', uid=uid, pid=pid, token=token))
 

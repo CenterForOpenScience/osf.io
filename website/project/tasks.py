@@ -1,3 +1,4 @@
+from django.apps import apps
 import logging
 import urlparse
 import requests
@@ -15,8 +16,8 @@ logger = logging.getLogger(__name__)
 def on_node_updated(node_id, user_id, first_save, saved_fields, request_headers=None):
     # WARNING: Only perform Read-Only operations in an asynchronous task, until Repeatable Read/Serializable
     # transactions are implemented in View and Task application layers.
-    from website.models import Node
-    node = Node.load(node_id)
+    AbstractNode = apps.get_model('osf.AbstractNode')
+    node = AbstractNode.load(node_id)
 
     if node.is_collection or node.archiving:
         return
@@ -74,16 +75,15 @@ def on_registration_updated(node):
     logger.debug(resp.content)
     resp.raise_for_status()
 
+
 def format_registration(node):
-    # TODO: Add parent and root info?
     registration_graph = GraphNode('registration', **{
         'title': node.title,
         'description': node.description or '',
-        'is_deleted': not node.is_public or 'qatest' in (node.tags or []) or node.is_deleted,
+        'is_deleted': not node.is_public or 'qatest' in (node.tags.all() or []) or node.is_deleted,
         'date_published': node.registered_date.isoformat() if node.registered_date else None,
-        'registration_type': node.registered_schema[0].name if node.registered_schema else None,
+        'registration_type': node.registered_schema.first().name if node.registered_schema else None,
         'withdrawn': node.is_retracted,
-        # TODO: Should this recurse up to the node's root or nah?
         'justification': node.retraction.justification if node.retraction else None,
     })
 
@@ -94,11 +94,11 @@ def format_registration(node):
 
     registration_graph.attrs['tags'] = [
         GraphNode('throughtags', creative_work=registration_graph, tag=GraphNode('tag', name=tag._id))
-        for tag in node.tags or [] if tag._id
+        for tag in node.tags.all() or [] if tag._id
     ]
 
     to_visit.extend(format_contributor(registration_graph, user, bool(user._id in node.visible_contributor_ids), i) for i, user in enumerate(node.contributors))
-    to_visit.extend(GraphNode('AgentWorkRelation', creative_work=registration_graph, agent=GraphNode('institution', name=institution.name)) for institution in node.affiliated_institutions)
+    to_visit.extend(GraphNode('AgentWorkRelation', creative_work=registration_graph, agent=GraphNode('institution', name=institution.name)) for institution in node.affiliated_institutions.all())
 
     visited = set()
     to_visit.extend(registration_graph.get_related())
@@ -111,4 +111,5 @@ def format_registration(node):
             continue
         visited.add(n)
         to_visit.extend(list(n.get_related()))
+
     return [node_.serialize() for node_ in visited]

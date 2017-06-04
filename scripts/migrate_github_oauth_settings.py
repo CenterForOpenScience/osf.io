@@ -23,8 +23,8 @@ from website.app import init_app
 from tests.base import OsfTestCase
 
 
-from website.addons.github.api import GitHub
-from website.addons.github.model import AddonGitHubOauthSettings, AddonGitHubUserSettings
+from addons.github.api import GitHub
+from addons.github.model import AddonGitHubOauthSettings, AddonGitHubUserSettings
 
 
 def do_migration(records, dry=True):

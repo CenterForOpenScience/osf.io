@@ -7,8 +7,8 @@ from framework.auth import Auth
 from tests.base import OsfTestCase
 from tests.factories import ProjectFactory, UserFactory
 
-from website.addons.googledrive.model import GoogleDriveUserSettings
-from website.addons.googledrive.tests.factories import GoogleDriveOAuthSettingsFactory
+from addons.googledrive.model import GoogleDriveUserSettings
+from addons.googledrive.tests.factories import GoogleDriveOAuthSettingsFactory
 
 
 class TestGoogleDriveMigration(OsfTestCase):

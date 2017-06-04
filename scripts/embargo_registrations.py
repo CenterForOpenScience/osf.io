@@ -4,16 +4,18 @@ embargo end dates have been passed.
 """
 
 import logging
-import datetime
 
+import django
+from django.utils import timezone
+from django.db import transaction
 from modularodm import Q
+django.setup()
 
 from framework.celery_tasks import app as celery_app
-from framework.transactions.context import TokuTransaction
 
 from website.app import init_app
-from website import models, settings
-from website.project.model import NodeLog
+from website import settings
+from osf.models import Embargo, Registration, NodeLog
 
 from scripts import utils as scripts_utils
 
@@ -23,12 +25,12 @@ logging.basicConfig(level=logging.INFO)
 
 
 def main(dry_run=True):
-    pending_embargoes = models.Embargo.find(Q('state', 'eq', models.Embargo.UNAPPROVED))
+    pending_embargoes = Embargo.find(Q('state', 'eq', Embargo.UNAPPROVED))
     for embargo in pending_embargoes:
         if should_be_embargoed(embargo):
             if dry_run:
                 logger.warn('Dry run mode')
-            parent_registration = models.Node.find_one(Q('embargo', 'eq', embargo))
+            parent_registration = Registration.find_one(Q('embargo', 'eq', embargo))
             logger.warn(
                 'Embargo {0} approved. Activating embargo for registration {1}'
                 .format(embargo._id, parent_registration._id)
@@ -40,13 +42,13 @@ def main(dry_run=True):
                     embargo.save()
                     continue
 
-                with TokuTransaction():
+                with transaction.atomic():
                     try:
-                        embargo.state = models.Embargo.APPROVED
+                        embargo.state = Embargo.APPROVED
                         parent_registration.registered_from.add_log(
                             action=NodeLog.EMBARGO_APPROVED,
                             params={
-                                'node': parent_registration.registered_from_id,
+                                'node': parent_registration.registered_from._id,
                                 'registration': parent_registration._id,
                                 'embargo_id': embargo._id,
                             },
@@ -59,12 +61,12 @@ def main(dry_run=True):
                             'registration {}. Continuing...'.format(parent_registration))
                         logger.exception(err)
 
-    active_embargoes = models.Embargo.find(Q('state', 'eq', models.Embargo.APPROVED))
+    active_embargoes = Embargo.find(Q('state', 'eq', Embargo.APPROVED))
     for embargo in active_embargoes:
-        if embargo.end_date < datetime.datetime.utcnow():
+        if embargo.end_date < timezone.now():
             if dry_run:
                 logger.warn('Dry run mode')
-            parent_registration = models.Node.find_one(Q('embargo', 'eq', embargo))
+            parent_registration = Registration.find_one(Q('embargo', 'eq', embargo))
             logger.warn(
                 'Embargo {0} complete. Making registration {1} public'
                 .format(embargo._id, parent_registration._id)
@@ -76,15 +78,18 @@ def main(dry_run=True):
                     embargo.save()
                     continue
 
-                with TokuTransaction():
+                with transaction.atomic():
                     try:
-                        embargo.state = models.Embargo.COMPLETED
+                        embargo.state = Embargo.COMPLETED
+                        # Need to save here for node.is_embargoed to return the correct
+                        # value in Node#set_privacy
+                        embargo.save()
                         for node in parent_registration.node_and_primary_descendants():
                             node.set_privacy('public', auth=None, save=True)
                         parent_registration.registered_from.add_log(
                             action=NodeLog.EMBARGO_COMPLETED,
                             params={
-                                'node': parent_registration.registered_from_id,
+                                'node': parent_registration.registered_from._id,
                                 'registration': parent_registration._id,
                                 'embargo_id': embargo._id,
                             },
@@ -100,7 +105,7 @@ def main(dry_run=True):
 
 def should_be_embargoed(embargo):
     """Returns true if embargo was initiated more than 48 hours prior."""
-    return (datetime.datetime.utcnow() - embargo.initiation_date) >= settings.EMBARGO_PENDING_TIME
+    return (timezone.now() - embargo.initiation_date) >= settings.EMBARGO_PENDING_TIME
 
 
 @celery_app.task(name='scripts.embargo_registrations')

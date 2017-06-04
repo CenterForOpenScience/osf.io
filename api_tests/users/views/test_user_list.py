@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
+from uuid import UUID
+
 import itsdangerous
 import mock
+import pytest
 from nose.tools import *  # flake8: noqa
 import unittest
 import urlparse
@@ -8,15 +11,13 @@ import urlparse
 from modularodm import Q
 
 from tests.base import ApiTestCase
-from tests.factories import AuthUserFactory, UserFactory, ProjectFactory, Auth
+from osf_tests.factories import AuthUserFactory, UserFactory, ProjectFactory, Auth
 
 from api.base.settings.defaults import API_BASE
 
 from framework.auth.cas import CasResponse
-from framework.sessions.model import Session
-from website.models import User
+from osf.models import OSFUser as User, Session, ApiOAuth2PersonalToken
 from website import settings
-from website.oauth.models import ApiOAuth2PersonalToken
 from website.util.permissions import CREATOR_PERMISSIONS
 
 
@@ -24,8 +25,8 @@ class TestUsers(ApiTestCase):
 
     def setUp(self):
         super(TestUsers, self).setUp()
-        self.user_one = AuthUserFactory()
-        self.user_two = AuthUserFactory()
+        self.user_one = AuthUserFactory(fullname='Freddie Mercury I')
+        self.user_two = AuthUserFactory(fullname='Freddie Mercury II')
 
     def tearDown(self):
         super(TestUsers, self).tearDown()
@@ -120,7 +121,7 @@ class TestUsers(ApiTestCase):
         res = self.app.get(url, auth=self.user_two.auth)
         user_json = res.json['data']
         for user in user_json:
-            if user['id'] == self.user_one._id or user['id'] == self.user_two._id:
+            if user['id'] == self.user_two._id:
                 meta = user['relationships']['nodes']['links']['related']['meta']
                 assert_in('projects_in_common', meta)
                 assert_equal(meta['projects_in_common'], 2)
@@ -222,12 +223,12 @@ class TestUsers(ApiTestCase):
             assert_equal(int(query_dict.get('s')[0]), size)
 
     def test_users_list_filter_multiple_field(self):
-        self.john_doe = UserFactory(full_name='John Doe')
+        self.john_doe = UserFactory(fullname='John Doe')
         self.john_doe.given_name = 'John'
         self.john_doe.family_name = 'Doe'
         self.john_doe.save()
 
-        self.doe_jane = UserFactory(full_name='Doe Jane')
+        self.doe_jane = UserFactory(fullname='Doe Jane')
         self.doe_jane.given_name = 'Doe'
         self.doe_jane.family_name = 'Jane'
         self.doe_jane.save()
@@ -238,19 +239,17 @@ class TestUsers(ApiTestCase):
         assert_equal(len(data), 2)
 
     def test_users_list_filter_multiple_fields_with_additional_filters(self):
-        self.john_doe = UserFactory(full_name='John Doe')
+        self.john_doe = UserFactory(fullname='John Doe')
         self.john_doe.given_name = 'John'
         self.john_doe.family_name = 'Doe'
-        self.john_doe._id = 'abcde'
         self.john_doe.save()
 
-        self.doe_jane = UserFactory(full_name='Doe Jane')
+        self.doe_jane = UserFactory(fullname='Doe Jane')
         self.doe_jane.given_name = 'Doe'
         self.doe_jane.family_name = 'Jane'
-        self.doe_jane._id = 'zyxwv'
         self.doe_jane.save()
 
-        url = "/{}users/?filter[given_name,family_name]=Doe&filter[id]=abcde".format(API_BASE)
+        url = "/{}users/?filter[given_name,family_name]=Doe&filter[id]={}".format(API_BASE, self.john_doe._id)
         res = self.app.get(url)
         data = res.json['data']
         assert_equal(len(data), 1)
@@ -261,7 +260,6 @@ class TestUsers(ApiTestCase):
         assert_equal(res.status_code, 400)
 
 
-@unittest.skip('Disabling user creation for now')
 class TestUsersCreate(ApiTestCase):
 
     def setUp(self):
@@ -311,6 +309,7 @@ class TestUsersCreate(ApiTestCase):
         assert_equal(User.find(Q('username', 'eq', self.unconfirmed_email)).count(), 0)
         assert_equal(mock_mail.call_count, 0)
 
+    @pytest.mark.skip
     @mock.patch('framework.auth.views.mails.send_mail')
     def test_cookied_requests_can_create_and_email(self, mock_mail):
         session = Session(data={'auth_user_id': self.user._id})
@@ -327,6 +326,7 @@ class TestUsersCreate(ApiTestCase):
         assert_equal(User.find(Q('username', 'eq', self.unconfirmed_email)).count(), 1)
         assert_equal(mock_mail.call_count, 1)
 
+    @pytest.mark.skip
     @mock.patch('framework.auth.views.mails.send_mail')
     @mock.patch('api.base.authentication.drf.OSFCASAuthentication.authenticate')
     @unittest.skipIf(not settings.DEV_MODE, 'DEV_MODE disabled, osf.users.create unavailable')  # TODO: Remove when available outside of DEV_MODE
@@ -359,6 +359,7 @@ class TestUsersCreate(ApiTestCase):
         assert_equal(User.find(Q('username', 'eq', self.unconfirmed_email)).count(), 1)
         assert_equal(mock_mail.call_count, 1)
 
+    @pytest.mark.skip
     @mock.patch('framework.auth.views.mails.send_mail')
     @mock.patch('api.base.authentication.drf.OSFCASAuthentication.authenticate')
     @unittest.skipIf(not settings.DEV_MODE, 'DEV_MODE disabled, osf.users.create unavailable')  # TODO: Remove when available outside of DEV_MODE
@@ -391,6 +392,7 @@ class TestUsersCreate(ApiTestCase):
         assert_equal(User.find(Q('username', 'eq', self.unconfirmed_email)).count(), 1)
         assert_equal(mock_mail.call_count, 0)
 
+    @pytest.mark.skip
     @mock.patch('framework.auth.views.mails.send_mail')
     @mock.patch('api.base.authentication.drf.OSFCASAuthentication.authenticate')
     @unittest.skipIf(not settings.DEV_MODE, 'DEV_MODE disabled, osf.users.create unavailable')  # TODO: Remove when available outside of DEV_MODE
@@ -421,7 +423,11 @@ class TestUsersCreate(ApiTestCase):
         )
 
         assert_equal(res.status_code, 201)
-        assert_equal(res.json['data']['attributes']['username'], None)
+        username = res.json['data']['attributes']['username']
+        try:
+            no_failure = UUID(username)
+        except ValueError:
+            raise AssertionError('Username is not a valid UUID')
         assert_equal(User.find(Q('fullname', 'eq', 'No Email')).count(), 1)
         assert_equal(mock_mail.call_count, 0)
 
@@ -456,6 +462,7 @@ class TestUsersCreate(ApiTestCase):
         assert_equal(User.find(Q('username', 'eq', self.unconfirmed_email)).count(), 0)
         assert_equal(mock_mail.call_count, 0)
 
+    @pytest.mark.skip
     @mock.patch('framework.auth.views.mails.send_mail')
     @mock.patch('api.base.authentication.drf.OSFCASAuthentication.authenticate')
     @unittest.skipIf(not settings.DEV_MODE, 'DEV_MODE disabled, osf.admin unavailable')  # TODO: Remove when available outside of DEV_MODE

@@ -34,7 +34,7 @@ def log_duplicate_acount(dry):
     count = 0
     if duplicate_emails:
         for email in duplicate_emails:
-            users = User.find(Q('emails', 'eq', email) & Q('merged_by', 'eq', None) & Q('username', 'ne', None))
+            users = User.find(Q('emails__address', 'eq', email) & Q('merged_by', 'eq', None) & Q('username', 'ne', None))
             for user in users:
                 count += 1
                 logger.info("User {}, username {}, id {}, email {} is a duplicate"

@@ -729,3 +729,9 @@ div.ball-scale-blue>div {
 .pv-darkbg .osf-box-lt {
     background-color: #a8bbc9
 }
+
+/* Maintenance alert  */
+#maintenance.alert {
+    margin-bottom: 0;
+}
+

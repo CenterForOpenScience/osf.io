@@ -1,12 +1,13 @@
 from nose.tools import *  # flake8: noqa
 
 from website.project.metadata.schemas import ACTIVE_META_SCHEMAS, LATEST_SCHEMA_VERSION
-from website.project.model import ensure_schemas, MetaSchema, Q
+from website.project.model import ensure_schemas, Q
+from osf.models import MetaSchema
 
 from api.base.settings.defaults import API_BASE
 
 from tests.base import ApiTestCase
-from tests.factories import (
+from osf_tests.factories import (
     AuthUserFactory
 )
 class TestMetaSchemaDetail(ApiTestCase):

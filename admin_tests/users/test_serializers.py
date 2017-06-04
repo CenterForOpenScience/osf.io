@@ -1,8 +1,10 @@
 from datetime import datetime
+
+from django.utils import timezone
 from nose import tools as nt
 
 from tests.base import AdminTestCase
-from tests.factories import NodeFactory, UserFactory
+from osf_tests.factories import NodeFactory, UserFactory
 
 from admin.users.serializers import serialize_user, serialize_simple_node
 
@@ -14,7 +16,7 @@ class TestUserSerializers(AdminTestCase):
         nt.assert_is_instance(info, dict)
         nt.assert_equal(info['name'], user.fullname)
         nt.assert_equal(info['id'], user._id)
-        nt.assert_equal(info['emails'], user.emails)
+        nt.assert_equal(list(info['emails']), list(user.emails.values_list('address', flat=True)))
         nt.assert_equal(info['last_login'], user.date_last_login)
         nt.assert_equal(len(info['nodes']), 0)
 
@@ -26,7 +28,7 @@ class TestUserSerializers(AdminTestCase):
         info = serialize_user(user)
         nt.assert_is_instance(info, dict)
         nt.assert_equal(info['name'], user.fullname)
-        nt.assert_equal(info['emails'], user.emails)
+        nt.assert_equal(list(info['emails']), list(user.emails.values_list('address', flat=True)))
         nt.assert_equal(info['last_login'], user.date_last_login)
         nt.assert_equal(len(info['nodes']), 0)
         nt.assert_true(info['two_factor'])
@@ -39,7 +41,7 @@ class TestUserSerializers(AdminTestCase):
         info = serialize_user(user)
         nt.assert_almost_equal(
             int(info['disabled'].strftime('%s')),
-            int(datetime.utcnow().strftime('%s')),
+            int(timezone.now().strftime('%s')),
             delta=50)
         nt.assert_is_instance(info['disabled'], datetime)
 

@@ -2,13 +2,14 @@
 """Attach callbacks to signals emitted by Celery. This module should only be
 imported by Celery and is not used elsewhere in the application.
 """
+import logging
 
 from celery import signals
-from modularodm import storage
 
-from framework.mongo import set_up_storage, StoredObject
+from framework.mongo import StoredObject
+from website import settings
 
-from website import models
+logger = logging.getLogger(__name__)
 
 
 @signals.task_prerun.connect
@@ -23,4 +24,6 @@ def clear_caches(*args, **kwargs):
 def attach_models(*args, **kwargs):
     """Attach models to database collections on worker initialization.
     """
-    set_up_storage(models.MODELS, storage.MongoStorage)
+    if settings.USE_POSTGRES:
+        return
+    logger.error('USE_POSTGRES must be set to True')

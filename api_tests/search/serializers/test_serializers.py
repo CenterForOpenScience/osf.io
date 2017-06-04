@@ -5,14 +5,14 @@ from api.search.serializers import SearchSerializer
 from api_tests import utils
 
 from tests.base import DbTestCase
-from tests.factories import (
+from osf_tests.factories import (
     AuthUserFactory,
     NodeFactory,
     ProjectFactory,
 )
 from tests.utils import make_drf_request_with_version, mock_archive
 
-from website.models import MetaSchema
+from osf.models import MetaSchema
 from website.project.model import ensure_schemas
 from website.project.metadata.schemas import LATEST_SCHEMA_VERSION
 from website.search import search

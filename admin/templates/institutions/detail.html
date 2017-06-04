@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+{% load static %}
+{% block top_includes %}
+  <link rel="stylesheet" type="text/css" href="/static/css/institutions.css" />
+{% endblock %}
+{% load user_extras %}
+{% load spam_extras %}
+{% block title %}
+    <title>Institution</title>
+{% endblock title %}
+{% block content %}
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-12">
+                <a class="btn btn-primary" href={% url 'institutions:export' institution.id %}>Export institution metadata</a>
+                {%  if perms.osf.delete_institution %}
+                <a class="btn btn-danger" href={% url 'institutions:delete' institution.id %}>Delete institution</a>
+                {%  endif %}
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-12 text-center">
+                <h2>{{ institution.name }}</h2>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-12">
+                <a class="btn btn-default" href="{% url 'institutions:nodes' institution.id %}">View {{ node_count }} affiliated nodes</a>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-2">
+                <h4>Logo:</h4>
+            </div>
+            <div class="col-md-2">
+                <img class="institution-logo" src="{{ logohost }}/static/img/institutions/shields/{{ institution.logo_name }}">
+            </div>
+            <div class="col-md-2">
+                <h4>Banner:</h4>
+            </div>
+            <div class="col-md-6">
+                <img class="institution-banner" src="{{ logohost }}/static/img/institutions/banners/{{ institution.banner_name }}">
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-12">
+                {% if perms.osf.change_institution %}
+                    <button id="show-modify-form" class="btn btn-link" type="button">
+                        Modify Institution
+                    </button>
+                {% endif %}
+            </div>
+        </div>
+        <div class="row" id="table-view">
+            <div class="col-md-12">
+                <table class="table table-striped">
+                    {% for field, value in institution.items %}
+                        <tr>
+                            <th>{{ field }}</th>
+                            <td>{{ value | safe }}</td>
+                        </tr>
+                    {% endfor %}
+                </table>
+            </div>
+        </div>
+        <div id="form-view" class="row" style="display:none;">
+            <div class="col-md-7">
+                <form action= {% url 'institutions:detail' institution.id %} method="post">
+                    {% csrf_token %}
+                    {{ change_form.as_p }}
+                    <input class="form-button" type="submit" value="Submit" />
+
+                </form>
+            </div>
+            <div class="col-md-5">
+                <div>
+                    <h4>Import from JSON</h4>
+                    <p>Choose a JSON file that has been previously exported from another Institution detail page. This will
+                    pre-populate the Institution change form with those details.</p>
+                    <form id="import-form" action = {% url 'institutions:import' %} method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        {{ import_form.as_p }}
+                        <input class="form-button" type="submit" value="Import" />
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock content %}
+
+{% block bottom_js %}
+    <script>
+        $(document).ready(function() {
+
+            $('#show-modify-form').click(function() {
+
+                $('#table-view').toggle();
+                $('#form-view').toggle();
+
+                var text = $('#show-modify-form').text();
+                var new_text = (text.trim() == "Modify Institution") ? "Hide Form" : "Modify Institution";
+                $('#show-modify-form').text(new_text);
+            });
+
+            $("#import-form").submit(function(event) {
+                event.preventDefault();
+                $.ajax({
+                    url: '{% url 'institutions:import' %}',
+                    type: "post",
+                    data: new FormData($(this)[0]),
+                    cache: false,
+                    contentType: false,
+                    processData: false,
+                    success: function(response) {
+                        for (var k in response){
+                            if (response.hasOwnProperty(k)) {
+                                var field = $('#id_' + k);
+                                field.val(response[k]);
+                            }
+                        }
+                    }
+                });
+            });
+        });
+    </script>
+{% endblock %}

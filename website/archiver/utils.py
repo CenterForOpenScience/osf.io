@@ -7,13 +7,14 @@ from website.archiver import (
     ARCHIVER_NETWORK_ERROR,
     ARCHIVER_SIZE_EXCEEDED,
     ARCHIVER_FILE_NOT_FOUND,
+    ARCHIVER_FORCED_FAILURE,
 )
-from website.archiver.model import ArchiveJob
 
 from website import (
     mails,
     settings
 )
+from website.util import sanitize
 
 def send_archiver_size_exceeded_mails(src, user, stat_result):
     mails.send_mail(
@@ -95,6 +96,8 @@ def handle_archive_fail(reason, src, dst, user, result):
         send_archiver_size_exceeded_mails(src, user, result)
     elif reason == ARCHIVER_FILE_NOT_FOUND:
         send_archiver_file_not_found_mails(src, user, result)
+    elif reason == ARCHIVER_FORCED_FAILURE:  # Forced failure using scripts.force_fail_registration
+        pass
     else:  # reason == ARCHIVER_UNCAUGHT_ERROR
         send_archiver_uncaught_error_mails(src, user, result)
     dst.root.sanction.forcibly_reject()
@@ -128,8 +131,9 @@ def link_archive_provider(node, user):
     :param user: target user (currently unused, but left in for future-proofing
     the code for use with archive providers other than OSF Storage)
     """
-    addon = node.get_or_add_addon(settings.ARCHIVE_PROVIDER, auth=Auth(user))
-    addon.on_add()
+    addon = node.get_or_add_addon(settings.ARCHIVE_PROVIDER, auth=Auth(user), log=False)
+    if hasattr(addon, 'on_add'):
+        addon.on_add()
     node.save()
 
 def aggregate_file_tree_metadata(addon_short_name, fileobj_metadata, user):
@@ -157,8 +161,9 @@ def aggregate_file_tree_metadata(addon_short_name, fileobj_metadata, user):
         )
 
 def before_archive(node, user):
+    from osf.models import ArchiveJob
     link_archive_provider(node, user)
-    job = ArchiveJob(
+    job = ArchiveJob.objects.create(
         src_node=node.registered_from,
         dst_node=node,
         initiator=user
@@ -203,10 +208,15 @@ def get_file_map(node, file_map):
             yield (key, value, node_id)
 
 def find_registration_file(value, node):
-    from website.models import Node
-
+    from osf.models import AbstractNode as Node
     orig_sha256 = value['sha256']
-    orig_name = value['selectedFileName']
+    orig_name = sanitize.unescape_entities(
+        value['selectedFileName'],
+        safe={
+            '&lt;': '<',
+            '&gt;': '>'
+        }
+    )
     orig_node = value['nodeId']
     file_map = get_file_map(node)
     for sha256, value, node_id in file_map:

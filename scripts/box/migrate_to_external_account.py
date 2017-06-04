@@ -20,8 +20,8 @@ from scripts import utils as script_utils
 from framework.transactions.context import TokuTransaction
 from framework.mongo import database
 
-from website.addons.box.model import BoxUserSettings
-from website.addons.box.model import BoxNodeSettings
+from addons.box.model import BoxUserSettings
+from addons.box.model import BoxNodeSettings
 from website.oauth.models import ExternalAccount
 
 logger = logging.getLogger(__name__)

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from rest_framework import permissions
-from website.addons.wiki.model import NodeWikiPage
+from addons.wiki.models import NodeWikiPage
 
 from api.base.utils import get_user_auth
 

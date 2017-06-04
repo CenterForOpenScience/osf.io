@@ -1,5 +1,5 @@
 from urlparse import urlparse
-from website.addons.osfstorage import settings as osfstorage_settings
+from addons.osfstorage import settings as osfstorage_settings
 
 
 def create_test_file(node, user, filename='test_file', create_guid=True):

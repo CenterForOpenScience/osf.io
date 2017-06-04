@@ -1,13 +1,16 @@
 from urlparse import urlparse
 from nose.tools import *  # flake8: noqa
+from modularodm import Q
 
 from api.base.settings.defaults import API_BASE
 from website.util import permissions
 
+from osf.models import Registration
 from tests.base import ApiTestCase
-from tests.factories import (
+from osf_tests.factories import (
     ProjectFactory,
     RegistrationFactory,
+    RegistrationApprovalFactory,
     AuthUserFactory,
 )
 
@@ -111,6 +114,10 @@ class TestRegistrationUpdate(ApiTestCase):
         self.user_two = AuthUserFactory()
         self.user_three = AuthUserFactory()
 
+        self.registration_approval = RegistrationApprovalFactory(state='unapproved', approve=False, user=self.user)
+        self.unapproved_registration = Registration.find_one(Q('registration_approval', 'eq', self.registration_approval))
+        self.unapproved_url = '/{}registrations/{}/'.format(API_BASE, self.unapproved_registration._id)
+
         self.public_project = ProjectFactory(title="Project One", is_public=True, creator=self.user)
         self.private_project = ProjectFactory(title="Project Two", is_public=False, creator=self.user)
         self.public_registration = RegistrationFactory(project=self.public_project, creator=self.user, is_public=True)
@@ -129,6 +136,15 @@ class TestRegistrationUpdate(ApiTestCase):
                 "attributes": {
                     "public": True,
                 }
+            }
+        }
+
+    def make_payload(self, registration_id, attributes):
+        return {
+            "data": {
+                "id": registration_id,
+                "type": "registrations",
+                "attributes": attributes
             }
         }
 
@@ -230,13 +246,8 @@ class TestRegistrationUpdate(ApiTestCase):
         assert_equal(res.status_code, 409)
 
     def test_turning_private_registrations_public(self):
-        node1 = ProjectFactory(creator=self.user, is_public=False)
         node2 = ProjectFactory(creator=self.user, is_public=False)
-
-        node1.is_registration = True
-        node1.registered_from = node2
-        node1.registered_date = node1.date_modified
-        node1.save()
+        node1 = RegistrationFactory(project=node2, creator=self.user, is_public=False)
 
         payload = {
             "data": {
@@ -251,6 +262,8 @@ class TestRegistrationUpdate(ApiTestCase):
         url = '/{}registrations/{}/'.format(API_BASE, node1._id)
         res = self.app.put_json_api(url, payload, auth=self.user.auth)
         assert_equal(res.json['data']['attributes']['public'], True)
+        node1.reload()
+        assert_true(node1.is_public)
 
     def test_registration_fields_are_read_only(self):
         writeable_fields = ['type', 'public', 'draft_registration', 'registration_choice', 'lift_embargo' ]
@@ -271,5 +284,14 @@ class TestRegistrationUpdate(ApiTestCase):
         res = self.app.delete_json_api(self.private_url, expect_errors=True, auth=self.user.auth)
         assert_equal(res.status_code, 405)
 
-
-
+    def test_make_public_unapproved_registration_raises_error(self):
+        payload = self.make_payload(
+            self.unapproved_registration._id,
+            {
+                "public": True,
+                "withdrawn": True
+            }
+        )
+        res = self.app.put_json_api(self.unapproved_url, payload, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], 'An unapproved registration cannot be made public.')

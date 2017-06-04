@@ -439,7 +439,7 @@ var LogPieces = {
     path: {
         controller: function(logObject){
             var self = this;
-            self.returnLinkForPath = function() {
+            self.returnLinkForPath = function(logObject) {
                 if (logObject) {
                     var action = logObject.attributes.action;
                     var acceptableLinkedItems = ['osf_storage_file_added', 'osf_storage_file_updated', 'file_tag_added', 'file_tag_removed',
@@ -453,7 +453,7 @@ var LogPieces = {
             };
         },
         view: function (ctrl, logObject) {
-            var url = ctrl.returnLinkForPath();
+            var url = ctrl.returnLinkForPath(logObject);
             return returnTextParams('path', 'a file', logObject, url);
         }
     },
@@ -461,7 +461,7 @@ var LogPieces = {
     filename: {
         controller: function(logObject) {
             var self = this;
-            self.returnLinkForPath = function(){
+            self.returnLinkForPath = function(logObject){
                 if (logObject){
                     var action = logObject.attributes.action;
                     var acceptableLinkedItems = ['dataverse_file_added'];
@@ -473,7 +473,7 @@ var LogPieces = {
             };
         },
         view: function (ctrl, logObject) {
-            var url = ctrl.returnLinkForPath();
+            var url = ctrl.returnLinkForPath(logObject);
             return returnTextParams('filename', 'a title', logObject, url);
         }
     },
@@ -557,7 +557,7 @@ var LogPieces = {
     googledrive_path: {
         controller: function(logObject){
             var self = this;
-            self.returnLinkForPath = function() {
+            self.returnLinkForPath = function(logObject) {
                 if (logObject) {
                     var action = logObject.attributes.action;
                     var acceptableLinkedItems = ['googledrive_file_added', 'googledrive_file_updated'];
@@ -569,10 +569,10 @@ var LogPieces = {
             };
         },
         view: function (ctrl, logObject) {
-            var url = ctrl.returnLinkForPath();
+            var url = ctrl.returnLinkForPath(logObject);
             var path = logObject.attributes.params.path;
             if(paramIsReturned(path, logObject)){
-                path = stripBackslash(decodeURIComponent(path));
+                path = stripBackslash(path);
                 if (url) {
                      return m('a', {href: $osf.toRelativeUrl(url, window)}, path);
                 }
@@ -598,7 +598,7 @@ var LogPieces = {
         view: function(ctrl, logObject){
             var folder = logObject.attributes.params.folder;
             if(paramIsReturned(folder, logObject)){
-                return m('span', folder === '/' ? '(Full Google Drive)' : decodeURIComponent(folder));
+                return m('span', folder === '/' ? '(Full Google Drive)' : folder);
             }
             return m('span', '');
         }
@@ -671,6 +671,15 @@ var LogPieces = {
             return m('span', '');
         }
     },
+    
+    anonymous_link: {
+        view: function(ctrl, logObject) {
+            if (logObject.attributes.params.anonymous_link) {
+                return m('span', 'an anonymous');
+            }
+            return m('span', 'a');
+        }
+    }
 };
 
 module.exports = LogText;
