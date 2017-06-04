@@ -2,7 +2,7 @@
 
     <div>
         <h4 class="addon-title">
-            <img class="addon-icon" src="${addon_icon_url}"></img>
+            <img class="addon-icon" src="${addon_icon_url}">
             GitHub
             <small class="authorized-by">
                 % if node_has_auth:
@@ -35,10 +35,11 @@
         <input type="hidden" id="githubUser" name="github_user" value="${github_user}" />
         <input type="hidden" id="githubRepo" name="github_repo" value="${github_repo}" />
 
-        <p><strong>Current Repo:</strong></p>
+        <p><strong>Current Repo: </strong>
 
+        % if is_owner and not is_registration:
+        </p>
         <div class="row">
-
             <div class="col-md-6 m-b-sm">
                 <select id="githubSelectRepo" class="form-control" ${'disabled' if not is_owner or is_registration else ''}>
                     <option>-----</option>
@@ -52,17 +53,18 @@
                 </select>
             </div>
 
-            % if is_owner and not is_registration:
-                <div class="col-md-6 m-b-sm">
-                    <a id="githubCreateRepo" class="btn btn-success">Create Repo</a>
-                    <button class="btn btn-success addon-settings-submit pull-right">
-                        Save
-                    </button>
-                </div>
-            % endif
-
+            <div class="col-md-6 m-b-sm">
+                <button class="btn btn-success addon-settings-submit">
+                    Save
+                </button>
+                <a id="githubCreateRepo" class="btn btn-success pull-right">Create Repo</a>
+            </div>
         </div>
-
+        % elif github_repo_full_name:
+            <a href="${files_url}">${github_repo_full_name}</a></p>
+        % else:
+            <span>None</span></p>
+        % endif
     % endif
 
     ${self.on_submit()}
@@ -86,6 +88,9 @@
 
 <%def name="on_submit()">
     <script type="text/javascript">
-        window.contextVars = $.extend({}, window.contextVars, {'githubSettingsSelector': '#addonSettings${addon_short_name.capitalize()}'});
+        window.contextVars = $.extend({}, window.contextVars, {
+            ## Short name never changes
+            'githubSettingsSelector': '#addonSettings${addon_short_name.capitalize()}'
+        });
     </script>
 </%def>

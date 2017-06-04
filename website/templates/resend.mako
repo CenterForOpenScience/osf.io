@@ -12,7 +12,7 @@
 
         <form id='resendForm' method='POST' class='form' role='form'>
             <div class='form-group'>
-                ${form.email(placeholder='Email address', autofocus=True)}
+                ${form.email(placeholder='Email address', autofocus=True) | unicode, n }
             </div>
 
             <button type='submit' class='btn btn-primary'>Send</button>

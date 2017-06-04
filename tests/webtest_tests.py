@@ -1,37 +1,44 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """Functional tests using WebTest."""
+import datetime as dt
 import httplib as http
 import logging
-import mock
-import re
 import unittest
 
 import markupsafe
+import mock
 from nose.tools import *  # flake8: noqa (PEP8 asserts)
+import re
 
 from framework.mongo.utils import to_mongo_key
+from framework.auth import cas
 from framework.auth import exceptions as auth_exc
 from framework.auth.core import Auth
-from tests.base import OsfTestCase, fake
-from tests.factories import (UserFactory, AuthUserFactory, ProjectFactory,
-                             WatchConfigFactory,
-                             NodeFactory, NodeWikiFactory, RegistrationFactory,
-                             UnregUserFactory, UnconfirmedUserFactory,
+from framework.auth.core import generate_verification_key
+from tests.base import OsfTestCase
+from tests.base import fake
+from tests.factories import (UserFactory, AuthUserFactory, ProjectFactory, WatchConfigFactory, NodeFactory,
+                             NodeWikiFactory, RegistrationFactory,  UnregUserFactory, UnconfirmedUserFactory,
                              PrivateLinkFactory)
-from tests.test_features import requires_piwik
+from website.project import Node
 from website import settings, language
-from website.security import random_string
-from website.project.metadata.schemas import OSF_META_SCHEMAS
-from website.project.model import ensure_schemas
 from website.util import web_url_for, api_url_for
 
 logging.getLogger('website.project.model').setLevel(logging.ERROR)
+
 
 def assert_in_html(member, container, **kwargs):
     """Looks for the specified member in markupsafe-escaped HTML output"""
     member = markupsafe.escape(member)
     return assert_in(member, container, **kwargs)
+
+
+def assert_not_in_html(member, container, **kwargs):
+    """Looks for the specified member in markupsafe-escaped HTML output"""
+    member = markupsafe.escape(member)
+    return assert_not_in(member, container, **kwargs)
+
 
 class TestDisabledUser(OsfTestCase):
 
@@ -73,8 +80,26 @@ class TestAUser(OsfTestCase):
         res = self.app.get('/').maybe_follow()  # Redirects
         assert_equal(res.status_code, 200)
 
-    def test_is_redirected_to_dashboard_already_logged_in_at_login_page(self):
+    # `GET /login/` without parameters is redirected to `/dashboard/` page which has `@must_be_logged_in` decorator
+    # if user is not logged in, she/he is further redirected to CAS login page
+    def test_is_redirected_to_cas_if_not_logged_in_at_login_page(self):
+        res = self.app.get('/login/').follow()
+        assert_equal(res.status_code, 302)
+        location = res.headers.get('Location')
+        assert_in('login?service=', location)
+
+    def test_is_redirected_to_dashboard_if_already_logged_in_at_login_page(self):
         res = self.app.get('/login/', auth=self.user.auth)
+        assert_equal(res.status_code, 302)
+        res = res.follow(auth=self.user.auth)
+        assert_equal(res.request.path, '/dashboard/')
+
+    def test_register_page(self):
+        res = self.app.get('/register/')
+        assert_equal(res.status_code, 200)
+
+    def test_is_redirected_to_dashboard_if_already_logged_in_at_register_page(self):
+        res = self.app.get('/register/', auth=self.user.auth)
         assert_equal(res.status_code, 302)
         res = res.follow(auth=self.user.auth)
         assert_equal(res.request.path, '/dashboard/')
@@ -84,11 +109,17 @@ class TestAUser(OsfTestCase):
         project = ProjectFactory(creator=self.user)
         project.add_contributor(self.user)
         project.save()
-        # Goes to homepage, already logged in
-        res = self.app.get('/', auth=self.user.auth).follow(auth=self.user.auth)
-        # Clicks Dashboard link in navbar
-        res = res.click('My Dashboard', index=0, auth=self.user.auth)
+        res = self.app.get('/myprojects/', auth=self.user.auth)
         assert_in('Projects', res)  # Projects heading
+
+    def test_logged_in_index_route_renders_home_template(self):
+        res = self.app.get('/', auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        assert_in('My Projects', res)  # Will change once home page populated
+
+    def test_logged_out_index_route_renders_landing_page(self):
+        res = self.app.get('/')
+        assert_in('Simplified Scholarly Collaboration', res)
 
     def test_does_not_see_osffiles_in_user_addon_settings(self):
         res = self.app.get('/settings/addons/', auth=self.auth, auto_follow=True)
@@ -131,9 +162,9 @@ class TestAUser(OsfTestCase):
 
     def test_sees_correct_title_on_dashboard(self):
         # User goes to dashboard
-        res = self.app.get('/dashboard/', auth=self.auth, auto_follow=True)
+        res = self.app.get('/myprojects/', auth=self.auth, auto_follow=True)
         title = res.html.title.string
-        assert_equal('OSF | Dashboard', title)
+        assert_equal('OSF | My Projects', title)
 
     def test_can_see_make_public_button_if_admin(self):
         # User is a contributor on a project
@@ -192,6 +223,8 @@ class TestAUser(OsfTestCase):
         res = self.app.get('/{0}/wiki/home/'.format(project._primary_key), auth=self.auth)
         # Sees a message indicating no content
         assert_in('No wiki content', res)
+        # Sees that edit panel is open by default when home wiki has no content
+        assert_in('panelsUsed: ["view", "menu", "edit"]', res)
 
     def test_wiki_content(self):
         project = ProjectFactory(creator=self.user)
@@ -204,6 +237,7 @@ class TestAUser(OsfTestCase):
         ), auth=self.auth)
         assert_not_in('No wiki content', res)
         assert_in(wiki_content, res)
+        assert_in('panelsUsed: ["view", "menu"]', res)
 
     def test_wiki_page_name_non_ascii(self):
         project = ProjectFactory(creator=self.user)
@@ -245,89 +279,6 @@ class TestAUser(OsfTestCase):
         td2 = td1.find_next_sibling('td')
         assert_equal(td2.text, user2.display_absolute_url)
 
-    # Regression test for https://github.com/CenterForOpenScience/osf.io/issues/1320
-    @mock.patch('framework.auth.views.mails.send_mail')
-    def test_can_reset_password(self, mock_send_mail):
-        # A registered user
-        user = UserFactory()
-        # goes to the login page
-        url = web_url_for('forgot_password_get')
-        res = self.app.get(url)
-        # and fills out forgot password form
-        form = res.forms['forgotPasswordForm']
-        form['forgot_password-email'] = user.username
-        # submits
-        res = form.submit()
-        # mail was sent
-        mock_send_mail.assert_called
-        # gets 200 response
-        assert_equal(res.status_code, 200)
-        # URL is /forgotpassword
-        assert_equal(res.request.path, web_url_for('forgot_password_post'))
-
-
-class TestRegistrations(OsfTestCase):
-
-    def setUp(self):
-        super(TestRegistrations, self).setUp()
-        ensure_schemas()
-        self.user = AuthUserFactory()
-        self.auth = self.user.auth
-        self.original = ProjectFactory(creator=self.user, is_public=True)
-        # A registration
-        self.project = RegistrationFactory(
-            creator=self.user,
-            project=self.original,
-            user=self.user,
-        )
-
-    def test_can_see_contributor(self):
-        # Goes to project's page
-        res = self.app.get(self.project.url, auth=self.auth).maybe_follow()
-        # Settings is not in the project navigation bar
-        subnav = res.html.select('#projectSubnav')[0]
-        assert_in('Sharing', subnav.text)
-
-    def test_sees_registration_templates(self):
-        # Browse to original project
-        res = self.app.get(
-            '{}register/'.format(self.original.url),
-            auth=self.auth
-        ).maybe_follow()
-
-        # Find registration options
-        options = res.html.find(
-            'select', id='select-registration-template'
-        ).find_all('option')
-
-        # Should see number of options equal to number of registration
-        # templates, plus one for 'Select...'
-        assert_equal(
-            len(options),
-            len(OSF_META_SCHEMAS) + 1
-        )
-
-        # First option should have empty value
-        assert_equal(options[0].get('value'), '')
-
-        # All registration templates should be listed in <option>
-        option_values = [
-            option.get('value')
-            for option in options[1:]
-        ]
-        for schema in OSF_META_SCHEMAS:
-            assert_in(
-                schema['name'],
-                option_values
-            )
-
-    def test_registration_nav_not_seen(self):
-        # Goes to project's page
-        res = self.app.get(self.project.url, auth=self.auth).maybe_follow()
-        # Settings is not in the project navigation bar
-        subnav = res.html.select('#projectSubnav')[0]
-        assert_not_in('Registrations', subnav.text)
-
 
 class TestComponents(OsfTestCase):
 
@@ -348,14 +299,6 @@ class TestComponents(OsfTestCase):
         self.component.set_privacy('private', self.consolidate_auth)
         self.project.save()
         self.project_url = self.project.web_url_for('view_project')
-
-    def test_can_create_component_from_a_project(self):
-        res = self.app.get(self.project.url, auth=self.user.auth).maybe_follow()
-        assert_in('Add Component', res)
-
-    def test_can_create_component_from_a_component(self):
-        res = self.app.get(self.component.url, auth=self.user.auth).maybe_follow()
-        assert_in('Add Component', res)
 
     def test_sees_parent(self):
         res = self.app.get(self.component.url, auth=self.user.auth).maybe_follow()
@@ -395,7 +338,7 @@ class TestComponents(OsfTestCase):
             self.component.url + 'settings/',
             auth=self.user.auth,
         ).maybe_follow()
-        assert_in('Configure Commenting', res)
+        assert_in('Commenting', res)
 
     def test_cant_configure_comments_if_not_admin(self):
         non_admin = AuthUserFactory()
@@ -409,18 +352,11 @@ class TestComponents(OsfTestCase):
             self.component.url + 'settings/',
             auth=non_admin.auth
         ).maybe_follow()
-        assert_not_in('Configure commenting', res)
+        assert_not_in('Commenting', res)
 
     def test_components_should_have_component_list(self):
         res = self.app.get(self.component.url, auth=self.user.auth)
         assert_in('Components', res)
-
-    def test_does_show_registration_button(self):
-        # No registrations on the component
-        url = self.component.web_url_for('node_registrations')
-        res = self.app.get(url, auth=self.user.auth)
-        # New registration button is hidden
-        assert_in('New Registration', res)
 
 
 class TestPrivateLinkView(OsfTestCase):
@@ -612,62 +548,6 @@ class TestShortUrls(OsfTestCase):
         assert_equal(
             self._url_to_body(self.wiki.deep_url),
             self._url_to_body(self.wiki.url),
-        )
-
-
-@requires_piwik
-class TestPiwik(OsfTestCase):
-
-    def setUp(self):
-        super(TestPiwik, self).setUp()
-        self.users = [
-            AuthUserFactory()
-            for _ in range(3)
-        ]
-        self.consolidate_auth = Auth(user=self.users[0])
-        self.project = ProjectFactory(creator=self.users[0], is_public=True)
-        self.project.add_contributor(contributor=self.users[1])
-        self.project.save()
-
-    def test_contains_iframe_and_src(self):
-        res = self.app.get(
-            '/{0}/statistics/'.format(self.project._primary_key),
-            auth=self.users[0].auth
-        ).maybe_follow()
-        assert_in('iframe', res)
-        assert_in('src', res)
-        assert_in(settings.PIWIK_HOST, res)
-
-    def test_anonymous_no_token(self):
-        res = self.app.get(
-            '/{0}/statistics/'.format(self.project._primary_key),
-            auth=self.users[2].auth
-        ).maybe_follow()
-        assert_in('token_auth=anonymous', res)
-
-    def test_contributor_token(self):
-        res = self.app.get(
-            '/{0}/statistics/'.format(self.project._primary_key),
-            auth=self.users[1].auth
-        ).maybe_follow()
-        assert_in(self.users[1].piwik_token, res)
-
-    def test_no_user_token(self):
-        res = self.app.get(
-            '/{0}/statistics/'.format(self.project._primary_key)
-        ).maybe_follow()
-        assert_in('token_auth=anonymous', res)
-
-    def test_private_alert(self):
-        self.project.set_privacy('private', auth=self.consolidate_auth)
-        self.project.save()
-        res = self.app.get(
-            '/{0}/statistics/'.format(self.project._primary_key),
-            auth=self.users[0].auth
-        ).maybe_follow().normal_body
-        assert_in(
-            'Usage statistics are collected only for public resources.',
-            res
         )
 
 
@@ -895,57 +775,325 @@ class TestExplorePublicActivity(OsfTestCase):
         self.project = ProjectFactory(is_public=True)
         self.registration = RegistrationFactory(project=self.project)
         self.private_project = ProjectFactory(title="Test private project")
+        self.popular_project = ProjectFactory(is_public=True)
+        self.popular_registration = RegistrationFactory(project=self.project)
 
-    def test_newest_public_project_and_registrations_show_in_explore_activity(self):
+        # Add project to new and noteworthy projects
+        self.new_and_noteworthy_links_node = ProjectFactory()
+        self.new_and_noteworthy_links_node._id = settings.NEW_AND_NOTEWORTHY_LINKS_NODE
+        self.new_and_noteworthy_links_node.add_pointer(self.project, auth=Auth(self.new_and_noteworthy_links_node.creator), save=True)
+
+        # Set up popular projects and registrations
+        self.popular_links_node = ProjectFactory()
+        self.popular_links_node._id = settings.POPULAR_LINKS_NODE
+        self.popular_links_node.add_pointer(self.popular_project, auth=Auth(self.popular_links_node.creator), save=True)
+
+        self.popular_links_registrations = ProjectFactory()
+        self.popular_links_registrations._id = settings.POPULAR_LINKS_REGISTRATIONS
+        self.popular_links_registrations.add_pointer(self.popular_registration, auth=Auth(self.popular_links_registrations.creator), save=True)
+
+    def tearDown(self):
+        super(TestExplorePublicActivity, self).tearDown()
+        Node.remove()
+
+    def test_explore_page_loads_when_settings_not_configured(self):
+
+        old_settings_values = settings.POPULAR_LINKS_NODE, settings.NEW_AND_NOTEWORTHY_LINKS_NODE, settings.POPULAR_LINKS_REGISTRATIONS
+
+        settings.POPULAR_LINKS_NODE = 'notanode'
+        settings.NEW_AND_NOTEWORTHY_LINKS_NODE = 'alsototallywrong'
+        settings.POPULAR_LINKS_REGISTRATIONS = 'nopenope'
+
+        url = self.project.web_url_for('activity')
+        res = self.app.get(url)
+        assert_equal(res.status_code, 200)
+
+        settings.POPULAR_LINKS_NODE, settings.NEW_AND_NOTEWORTHY_LINKS_NODE, settings.POPULAR_LINKS_REGISTRATIONS = old_settings_values
+
+    def test_new_and_noteworthy_and_popular_nodes_show_in_explore_activity(self):
+
         url = self.project.web_url_for('activity')
         res = self.app.get(url)
 
+        # New and Noteworthy
         assert_in(str(self.project.title), res)
         assert_in(str(self.project.date_created.date()), res)
         assert_in(str(self.registration.title), res)
         assert_in(str(self.registration.registered_date.date()), res)
         assert_not_in(str(self.private_project.title), res)
 
+        # Popular Projects and Registrations
+        assert_in(str(self.popular_project.title), res)
+        assert_in(str(self.popular_project.date_created.date()), res)
+        assert_in(str(self.popular_registration.title), res)
+        assert_in(str(self.popular_registration.registered_date.date()), res)
 
-class TestForgotAndResetPasswordViews(OsfTestCase):
+
+class TestResendConfirmation(OsfTestCase):
 
     def setUp(self):
-        super(TestForgotAndResetPasswordViews, self).setUp()
-        self.user = AuthUserFactory()
-        self.key = random_string(20)
-        # manually set verifification key
-        self.user.verification_key = self.key
+        super(TestResendConfirmation, self).setUp()
+        self.unconfirmed_user = UnconfirmedUserFactory()
+        self.confirmed_user = UserFactory()
+        self.get_url = web_url_for('resend_confirmation_get')
+        self.post_url = web_url_for('resend_confirmation_post')
+
+    # test that resend confirmation page is load correctly
+    def test_resend_confirmation_get(self):
+        res = self.app.get(self.get_url)
+        assert_equal(res.status_code, 200)
+        assert_in('Resend Confirmation', res.body)
+        assert_in('resendForm', res.forms)
+
+    # test that unconfirmed user can receive resend confirmation email
+    @mock.patch('framework.auth.views.mails.send_mail')
+    def test_can_receive_resend_confirmation_email(self, mock_send_mail):
+        # load resend confirmation page and submit email
+        res = self.app.get(self.get_url)
+        form = res.forms['resendForm']
+        form['email'] = self.unconfirmed_user.unconfirmed_emails[0]
+        res = form.submit()
+
+        # check email, request and response
+        assert_true(mock_send_mail.called)
+        assert_equal(res.status_code, 200)
+        assert_equal(res.request.path, self.post_url)
+        assert_in_html('If there is an OSF account', res)
+
+    # test that confirmed user cannot receive resend confirmation email
+    @mock.patch('framework.auth.views.mails.send_mail')
+    def test_cannot_receive_resend_confirmation_email_1(self, mock_send_mail):
+        # load resend confirmation page and submit email
+        res = self.app.get(self.get_url)
+        form = res.forms['resendForm']
+        form['email'] = self.confirmed_user.emails[0]
+        res = form.submit()
+
+        # check email, request and response
+        assert_false(mock_send_mail.called)
+        assert_equal(res.status_code, 200)
+        assert_equal(res.request.path, self.post_url)
+        assert_in_html('has already been confirmed', res)
+
+    # test that non-existing user cannot receive resend confirmation email
+    @mock.patch('framework.auth.views.mails.send_mail')
+    def test_cannot_receive_resend_confirmation_email_2(self, mock_send_mail):
+        # load resend confirmation page and submit email
+        res = self.app.get(self.get_url)
+        form = res.forms['resendForm']
+        form['email'] = 'random@random.com'
+        res = form.submit()
+
+        # check email, request and response
+        assert_false(mock_send_mail.called)
+        assert_equal(res.status_code, 200)
+        assert_equal(res.request.path, self.post_url)
+        assert_in_html('If there is an OSF account', res)
+
+    # test that user cannot submit resend confirmation request too quickly
+    @mock.patch('framework.auth.views.mails.send_mail')
+    def test_cannot_resend_confirmation_twice_quickly(self, mock_send_mail):
+        # load resend confirmation page and submit email
+        res = self.app.get(self.get_url)
+        form = res.forms['resendForm']
+        form['email'] = self.unconfirmed_user.email
+        res = form.submit()
+        res = form.submit()
+
+        # check request and response
+        assert_equal(res.status_code, 200)
+        assert_in_html('Please wait', res)
+
+
+class TestForgotPassword(OsfTestCase):
+
+    def setUp(self):
+        super(TestForgotPassword, self).setUp()
+        self.user = UserFactory()
+        self.auth_user = AuthUserFactory()
+        self.get_url = web_url_for('forgot_password_get')
+        self.post_url = web_url_for('forgot_password_post')
+        self.user.verification_key_v2 = {}
         self.user.save()
 
-        self.url = web_url_for('reset_password', verification_key=self.key)
+    # log users out before they land on forgot password page
+    def test_forgot_password_logs_out_user(self):
+        # visit forgot password link while another user is logged in
+        res = self.app.get(self.get_url, auth=self.auth_user.auth)
+        # check redirection to CAS logout
+        assert_equal(res.status_code, 302)
+        location = res.headers.get('Location')
+        assert_not_in('reauth', location)
+        assert_in('logout?service=', location)
+        assert_in('forgotpassword', location)
 
+    # test that forgot password page is loaded correctly
+    def test_get_forgot_password(self):
+        res = self.app.get(self.get_url)
+        assert_equal(res.status_code, 200)
+        assert_in('Forgot Password', res.body)
+        assert_in('forgotPasswordForm', res.forms)
+
+    # test that existing user can receive reset password email
+    @mock.patch('framework.auth.views.mails.send_mail')
+    def test_can_receive_reset_password_email(self, mock_send_mail):
+        # load forgot password page and submit email
+        res = self.app.get(self.get_url)
+        form = res.forms['forgotPasswordForm']
+        form['forgot_password-email'] = self.user.username
+        res = form.submit()
+
+        # check mail was sent
+        assert_true(mock_send_mail.called)
+        # check http 200 response
+        assert_equal(res.status_code, 200)
+        # check request URL is /forgotpassword
+        assert_equal(res.request.path, self.post_url)
+        # check push notification
+        assert_in_html('If there is an OSF account', res)
+        assert_not_in_html('Please wait', res)
+
+        # check verification_key_v2 is set
+        self.user.reload()
+        assert_not_equal(self.user.verification_key_v2, {})
+
+    # test that non-existing user cannot receive reset password email
+    @mock.patch('framework.auth.views.mails.send_mail')
+    def test_cannot_receive_reset_password_email(self, mock_send_mail):
+        # load forgot password page and submit email
+        res = self.app.get(self.get_url)
+        form = res.forms['forgotPasswordForm']
+        form['forgot_password-email'] = 'fake' + self.user.username
+        res = form.submit()
+
+        # check mail was not sent
+        assert_false(mock_send_mail.called)
+        # check http 200 response
+        assert_equal(res.status_code, 200)
+        # check request URL is /forgotpassword
+        assert_equal(res.request.path, self.post_url)
+        # check push notification
+        assert_in_html('If there is an OSF account', res)
+        assert_not_in_html('Please wait', res)
+
+        # check verification_key_v2 is not set
+        self.user.reload()
+        assert_equal(self.user.verification_key_v2, {})
+
+    # test that user cannot submit forgot password request too quickly
+    @mock.patch('framework.auth.views.mails.send_mail')
+    def test_cannot_reset_password_twice_quickly(self, mock_send_mail):
+        # load forgot password page and submit email
+        res = self.app.get(self.get_url)
+        form = res.forms['forgotPasswordForm']
+        form['forgot_password-email'] = self.user.username
+        res = form.submit()
+        res = form.submit()
+
+        # check http 200 response
+        assert_equal(res.status_code, 200)
+        # check push notification
+        assert_in_html('Please wait', res)
+        assert_not_in_html('If there is an OSF account', res)
+
+
+class TestResetPassword(OsfTestCase):
+
+    def setUp(self):
+        super(TestResetPassword, self).setUp()
+        self.user = AuthUserFactory()
+        self.another_user = AuthUserFactory()
+        self.osf_key_v2 = generate_verification_key(verification_type='password')
+        self.user.verification_key_v2 = self.osf_key_v2
+        self.user.verification_key = None
+        self.user.save()
+        self.get_url = web_url_for(
+            'reset_password_get',
+            uid=self.user._id,
+            token=self.osf_key_v2['token']
+        )
+        self.get_url_invalid_key = web_url_for(
+            'reset_password_get',
+            uid=self.user._id,
+            token=generate_verification_key()
+        )
+        self.get_url_invalid_user = web_url_for(
+            'reset_password_get',
+            uid=self.another_user._id,
+            token=self.osf_key_v2['token']
+        )
+
+    # successfully load reset password page
     def test_reset_password_view_returns_200(self):
-        res = self.app.get(self.url)
+        res = self.app.get(self.get_url)
         assert_equal(res.status_code, 200)
 
-    def test_can_reset_password_if_form_success(self):
-        res = self.app.get(self.url)
+    # raise http 400 error
+    def test_reset_password_view_raises_400(self):
+        res = self.app.get(self.get_url_invalid_key, expect_errors=True)
+        assert_equal(res.status_code, 400)
+
+        res = self.app.get(self.get_url_invalid_user, expect_errors=True)
+        assert_equal(res.status_code, 400)
+
+        self.user.verification_key_v2['expires'] = dt.datetime.utcnow()
+        self.user.save()
+        res = self.app.get(self.get_url, expect_errors=True)
+        assert_equal(res.status_code, 400)
+
+    # successfully reset password
+    @mock.patch('framework.auth.cas.CasClient.service_validate')
+    def test_can_reset_password_if_form_success(self, mock_service_validate):
+        # load reset password page and submit email
+        res = self.app.get(self.get_url)
         form = res.forms['resetPasswordForm']
         form['password'] = 'newpassword'
         form['password2'] = 'newpassword'
         res = form.submit()
 
-        # password was updated
+        # check request URL is /resetpassword with username and new verification_key_v2 token
+        request_url_path = res.request.path
+        assert_in('resetpassword', request_url_path)
+        assert_in(self.user._id, request_url_path)
+        assert_not_in(self.user.verification_key_v2['token'], request_url_path)
+
+        # check verification_key_v2 for OSF is destroyed and verification_key for CAS is in place
+        self.user.reload()
+        assert_equal(self.user.verification_key_v2, {})
+        assert_not_equal(self.user.verification_key, None)
+
+        # check redirection to CAS login with username and the new verification_key(CAS)
+        assert_equal(res.status_code, 302)
+        location = res.headers.get('Location')
+        assert_true('login?service=' in location)
+        assert_true('username={}'.format(self.user.username) in location)
+        assert_true('verification_key={}'.format(self.user.verification_key) in location)
+
+        # check if password was updated
         self.user.reload()
         assert_true(self.user.check_password('newpassword'))
 
-    @unittest.skip('TODO: Get this working with CAS setup')
+        # check if verification_key is destroyed after service validation
+        mock_service_validate.return_value = cas.CasResponse(
+            authenticated=True,
+            user=self.user._primary_key,
+            attributes={'accessToken': fake.md5()}
+        )
+        ticket = fake.md5()
+        service_url = 'http://accounts.osf.io/?ticket=' + ticket
+        cas.make_response_from_ticket(ticket, service_url)
+        assert_equal(self.user.verification_key, None)
+
+    #  log users out before they land on reset password page
     def test_reset_password_logs_out_user(self):
-        another_user = AuthUserFactory()
-        # visits reset password link while another user is logged in
-        res = self.app.get(self.url, auth=another_user.auth)
-        assert_equal(res.status_code, 200)
-        # We check if another_user is logged in by checking if
-        # their full name appears on the page (it should be in the navbar).
-        # Yes, this is brittle.
-        assert_not_in(another_user.fullname, res)
-        # make sure the form is on the page
-        assert_true(res.forms['resetPasswordForm'])
+        # visit reset password link while another user is logged in
+        res = self.app.get(self.get_url, auth=self.another_user.auth)
+        # check redirection to CAS logout
+        assert_equal(res.status_code, 302)
+        location = res.headers.get('Location')
+        assert_not_in('reauth', location)
+        assert_in('logout?service=', location)
+        assert_in('resetpassword', location)
 
 
 class TestAUserProfile(OsfTestCase):

@@ -37,6 +37,7 @@ class StorageTestCase(OsfTestCase):
         super(StorageTestCase, self).setUp()
 
         self.project = ProjectFactory()
+        self.node = self.project
         self.user = self.project.creator
         self.node_settings = self.project.get_addon('osfstorage')
         self.auth_obj = Auth(user=self.project.creator)
@@ -49,7 +50,7 @@ class StorageTestCase(OsfTestCase):
 def recursively_create_file(settings, path):
     path = path.split('/')
     final = path.pop(-1)
-    current = settings.root_node
+    current = settings.get_root()
     for subpath in path:
         current = current.append_folder(subpath)
     return current.append_file(final)

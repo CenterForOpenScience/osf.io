@@ -49,9 +49,9 @@ def main(dry=True):
 def update_users(users, dry=True):
     for user in get_users():
         if not dry:
-            if user.mailing_lists is None:
-                user.mailing_lists = {}
-            user.mailing_lists[GENERAL_LIST] = True
+            if user.mailchimp_mailing_lists is None:
+                user.mailchimp_mailing_lists = {}
+            user.mailchimp_mailing_lists[GENERAL_LIST] = True
             user.save()
         logger.info('User {}\'s mailing_lists dict updated.'.format(user._id))
 
@@ -114,11 +114,11 @@ class TestSyncEmail(OsfTestCase):
 
     def test_update_users(self):
         users = get_users()
-        assert_false(self.user.mailing_lists)
+        assert_false(self.user.mailchimp_mailing_lists)
 
         update_users(users, dry=False)
 
-        assert_equal(self.user.mailing_lists, {'Open Science Framework General': True})
+        assert_equal(self.user.mailchimp_mailing_lists, {'Open Science Framework General': True})
 
     def test_serialize_user(self):
         user = UserFactory()
@@ -158,11 +158,11 @@ class TestSyncEmail(OsfTestCase):
     def test_main(self, mock_subscribe, mock_list):
         mock_list.return_value = {'data': [{'id': 1, 'list_name': GENERAL_LIST}]}
 
-        assert_false(self.user.mailing_lists)
+        assert_false(self.user.mailchimp_mailing_lists)
 
         main(dry=False)
 
-        assert_true(self.user.mailing_lists[GENERAL_LIST])
+        assert_true(self.user.mailchimp_mailing_lists[GENERAL_LIST])
         mock_subscribe.assert_called()
 
 

@@ -6,7 +6,7 @@ from nose.tools import *  # noqa; PEP8 asserts
 from tests.factories import UserFactory
 import mailchimp
 
-from framework.tasks import handlers
+from framework.celery_tasks import handlers
 
 class TestMailChimpHelpers(OsfTestCase):
 
@@ -66,7 +66,7 @@ class TestMailChimpHelpers(OsfTestCase):
         mock_client.lists.subscribe.side_effect = mailchimp.ValidationError
         mailchimp_utils.subscribe_mailchimp(list_name, user._id)
         handlers.celery_teardown_request()
-        assert_false(user.mailing_lists[list_name])
+        assert_false(user.mailchimp_mailing_lists[list_name])
 
     @mock.patch('website.mailchimp_utils.get_mailchimp_api')
     def test_unsubscribe_called_with_correct_arguments(self, mock_get_mailchimp_api):
@@ -76,6 +76,7 @@ class TestMailChimpHelpers(OsfTestCase):
         mock_get_mailchimp_api.return_value = mock_client
         mock_client.lists.list.return_value = {'data': [{'id': 2, 'list_name': list_name}]}
         list_id = mailchimp_utils.get_list_id_from_name(list_name)
-        mailchimp_utils.unsubscribe_mailchimp(list_name, user._id)
+        mailchimp_utils.unsubscribe_mailchimp_async(list_name, user._id)
         handlers.celery_teardown_request()
-        mock_client.lists.unsubscribe.assert_called_with(id=list_id, email={'email': user.username})
+        mock_client.lists.unsubscribe.assert_called_with(id=list_id, email={'email': user.username}, send_goodbye=True)
+

@@ -110,15 +110,14 @@ class ArchiveJob(StoredObject):
         ]
 
     def archive_tree_finished(self):
-        if not self.pending:
-            return len(
-                [
-                    ret for ret in [
-                        child.archive_tree_finished()
-                        for child in self.children
-                    ] if ret]
-            ) if len(self.children) else True
-        return False
+        if self.pending:
+            return False
+        if not self.children:
+            return True
+        return all([
+            child.archive_tree_finished()
+            for child in self.children
+        ])
 
     def _fail_above(self):
         """Marks all ArchiveJob instances attached to Nodes above this as failed

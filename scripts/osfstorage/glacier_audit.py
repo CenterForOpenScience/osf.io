@@ -6,7 +6,7 @@ to the correct Glacier archive, and have an archive of the correct size.
 Should be run after `glacier_inventory.py`.
 """
 
-import sys
+import gc
 import logging
 
 from modularodm import Q
@@ -14,8 +14,10 @@ from boto.glacier.layer2 import Layer2
 from dateutil.parser import parse as parse_date
 from dateutil.relativedelta import relativedelta
 
+from framework.celery_tasks import app as celery_app
+
 from website.app import init_app
-from website.addons.osfstorage import model
+from website.files import models
 
 from scripts import utils as scripts_utils
 from scripts.osfstorage import settings as storage_settings
@@ -64,10 +66,11 @@ def get_job(vault, job_id=None):
 
 
 def get_targets(date):
-    return model.OsfStorageFileVersion.find(
+    return models.FileVersion.find(
         Q('date_created', 'lt', date - DELTA_DATE) &
         Q('status', 'ne', 'cached') &
-        Q('metadata.archive', 'exists', True)
+        Q('metadata.archive', 'exists', True) &
+        Q('location', 'ne', None)
     )
 
 
@@ -102,20 +105,21 @@ def main(job_id=None):
         each['ArchiveId']: each
         for each in output['ArchiveList']
     }
-    for version in get_targets(date):
+    for idx, version in enumerate(get_targets(date)):
         try:
             check_glacier_version(version, inventory)
         except AuditError as error:
             logger.error(str(error))
+        if idx % 1000 == 0:
+            # clear modm cache so we don't run out of memory from the cursor enumeration
+            models.FileVersion._cache.clear()
+            models.FileVersion._object_cache.clear()
+            gc.collect()
 
 
-if __name__ == '__main__':
-    dry_run = 'dry' in sys.argv
+@celery_app.task(name='scripts.osfstorage.glacier_audit')
+def run_main(job_id=None, dry_run=True):
     init_app(set_backends=True, routes=False)
     if not dry_run:
         scripts_utils.add_file_logger(logger, __file__)
-    try:
-        job_id = sys.argv[2]
-    except IndexError:
-        job_id = None
     main(job_id=job_id)

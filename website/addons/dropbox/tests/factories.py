@@ -1,39 +1,31 @@
 # -*- coding: utf-8 -*-
 """Factory boy factories for the Dropbox addon."""
 
-from framework.auth import Auth
-
-from factory import SubFactory, Sequence, post_generation
-from tests.factories import ModularOdmFactory, UserFactory, ProjectFactory
+from factory import SubFactory, Sequence
+from tests.factories import ModularOdmFactory, UserFactory, ProjectFactory, ExternalAccountFactory
 
 from website.addons.dropbox.model import (
-    DropboxUserSettings, DropboxNodeSettings, DropboxFile
+    DropboxUserSettings, DropboxNodeSettings
 )
 
 
-# TODO(sloria): make an abstract UserSettingsFactory that just includes the owner field
 class DropboxUserSettingsFactory(ModularOdmFactory):
-    FACTORY_FOR = DropboxUserSettings
+    class Meta:
+        model = DropboxUserSettings
 
     owner = SubFactory(UserFactory)
     access_token = Sequence(lambda n: 'abcdef{0}'.format(n))
 
 
 class DropboxNodeSettingsFactory(ModularOdmFactory):
-    FACTORY_FOR = DropboxNodeSettings
+    class Meta:
+        model = DropboxNodeSettings
 
     owner = SubFactory(ProjectFactory)
     user_settings = SubFactory(DropboxUserSettingsFactory)
     folder = 'Camera Uploads'
 
-
-class DropboxFileFactory(ModularOdmFactory):
-    FACTORY_FOR = DropboxFile
-
-    node = SubFactory(ProjectFactory)
-    path = 'foo.txt'
-
-    @post_generation
-    def add_dropbox_addon(self, created, extracted):
-        self.node.add_addon('dropbox', auth=Auth(user=self.node.creator))
-        self.node.save()
+class DropboxAccountFactory(ExternalAccountFactory):
+    provider = 'dropbox'
+    provider_id = Sequence(lambda n: 'id-{0}'.format(n))
+    oauth_key = Sequence(lambda n: 'key-{0}'.format(n))

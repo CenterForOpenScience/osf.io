@@ -1,1 +1,1 @@
-Pyzotero==1.1.1
+Pyzotero==1.1.9

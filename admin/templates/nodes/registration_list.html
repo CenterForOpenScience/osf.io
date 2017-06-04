@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% load render_bundle from webpack_loader %}
+{% load node_extras %}
+
+{% load static %}
+{% block title %}
+    <title>Registrations</title>
+{% endblock title %}
+{% block content %}
+    <h2>List of Registrations</h2>
+    {% include 'nodes/node_list.html' %}
+{% endblock content %}

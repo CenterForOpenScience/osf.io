@@ -1,0 +1,19 @@
+.category-group-item {
+    width: 45%;
+    padding: 5px 15px;
+    border: 1px solid #eee;
+    margin: 5px;
+    float: left;
+}
+
+.template-placeholder {
+    color: grey;
+}
+
+select option:first-child {
+    color: grey;
+}
+
+.help-text {
+    color: grey;
+}

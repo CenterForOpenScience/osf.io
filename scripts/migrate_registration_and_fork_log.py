@@ -42,7 +42,7 @@ def get_parent(node):
 
 def do_migration(records, dry=False):
     for node in records:
-        logs = list(NodeLog.find(Q('was_connected_to', 'contains', node)))
+        logs = list(NodeLog.find(Q('was_connected_to', 'eq', node)))
         existing_logs = node.logs
         for log in logs:
             if not log.node__logged:

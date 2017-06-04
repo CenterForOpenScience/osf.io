@@ -1,0 +1,10 @@
+{
+  "dropbox_file_added" : "${user} added file ${path} to Dropbox in ${node}",
+  "dropbox_file_removed" : "${user} removed ${path_type} ${path} from Dropbox in ${node}",
+  "dropbox_file_updated" : "${user}  updated file ${path} in Dropbox in ${node}",
+  "dropbox_folder_created" : "${user} created folder ${path} in Dropbox in ${node}",
+  "dropbox_folder_selected" : "${user} linked Dropbox folder ${dropbox_folder} to ${node}",
+  "dropbox_node_authorized" : "${user} authorized the Dropbox addon for ${node}",
+  "dropbox_node_deauthorized" : "${user} deauthorized the Dropbox addon for ${node}",
+  "dropbox_node_deauthorized_no_user" : "Dropbox addon for ${node} deauthorized"
+}

@@ -1,0 +1,10 @@
+{
+    "dropbox_file_added" : "A user added a file to Dropbox in a project",
+    "dropbox_file_removed" : "A user removed a file from Dropbox in a project",
+    "dropbox_file_updated" : "A user  updated a file in Dropbox in a project",
+    "dropbox_folder_created" : "A user created a folder in Dropbox in a project",
+    "dropbox_folder_selected" : "A user linked a Dropbox folder in a project",
+    "dropbox_node_authorized" : "A user authorized the Dropbox addon for a project",
+    "dropbox_node_deauthorized" : "A user deauthorized the Dropbox addon for a project",
+    "dropbox_node_deauthorized_no_user" : "Dropbox addon for a project deauthorized"
+}

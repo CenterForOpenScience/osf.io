@@ -17,7 +17,7 @@ var AddonPermissionsTable = {
             var apiUrl = $(this).attr('api-url')+ addonShortName + '/config/';
             bootbox.confirm({
                 title: 'Remove addon?',
-                message: 'Are you sure you want to disconnnect the ' + addonFullname + ' account from this project?',
+                message: 'Are you sure you want to disconnnect the ' + $osf.htmlEscape(addonFullname) + ' account from this project?',
                 callback: function (confirm) {
                     if (confirm) {
                         $.ajax({
@@ -51,18 +51,7 @@ var AddonPermissionsTable = {
                     }
                 }
             });
-    });
-
-    $('#' + addonShortName + '-more').on('click', function (event) {
-        $('#' + addonShortName + '-header').removeClass('table-less');
-        $('#' + addonShortName + '-more').hide();
-        $('#' + addonShortName + '-less').show();
-    });
-    $('#' + addonShortName + '-less').on('click', function (event) {
-        $('#' + addonShortName + '-header').addClass('table-less');
-        $('#' + addonShortName + '-less').hide();
-        $('#' + addonShortName + '-more').show();
-    });
+        });
     }
 };
 

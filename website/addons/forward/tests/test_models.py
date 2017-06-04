@@ -5,8 +5,24 @@ from nose.tools import *  # PEP8 asserts
 from modularodm.exceptions import ValidationError
 
 from tests.base import OsfTestCase
+from tests.factories import ProjectFactory, RegistrationFactory
 from website.addons.forward.tests.factories import ForwardSettingsFactory
 
+
+class TestNodeSettings(OsfTestCase):
+
+    def setUp(self):
+        super(TestNodeSettings, self).setUp()
+        self.node = ProjectFactory()
+        self.settings = ForwardSettingsFactory(owner=self.node)
+        self.node.save()
+
+    def test_forward_registered(self):
+        registration = RegistrationFactory(project=self.node)
+        assert registration.has_addon('forward')
+        
+        forward = registration.get_addon('forward')
+        assert_equal(forward.url, 'http://frozen.pizza.reviews/')
 
 class TestSettingsValidation(OsfTestCase):
 
@@ -26,29 +42,6 @@ class TestSettingsValidation(OsfTestCase):
         except ValidationError:
             assert 0
 
-    def test_validate_redirect_bool_bad(self):
-        self.settings.redirect_bool = 'notabool'
-        with assert_raises(ValidationError):
-            self.settings.save()
-
-    def test_validate_redirect_bool_good(self):
-        self.settings.redirect_bool = False
-        try:
-            self.settings.save()
-        except ValidationError:
-            assert 0
-
-    def test_validate_redirect_secs_bad(self):
-        self.settings.redirect_secs = -2
-        with assert_raises(ValidationError):
-            self.settings.save()
-
-    def test_validate_redirect_secs_good(self):
-        self.settings.redirect_secs = 20
-        try:
-            self.settings.save()
-        except ValidationError:
-            assert 0
 
     def test_label_sanitary(self):
         self.settings.label = 'safe'

@@ -5,6 +5,7 @@ import urllib2
 from PIL import Image
 from collections import defaultdict
 
+from modularodm import Q
 from website.addons.badges.settings import *  # noqa
 
 
@@ -51,7 +52,8 @@ def sort_badges(items):
 
 
 def get_node_badges(node):
-    return [assertion for assertion in node.badgeassertion__awarded if not assertion.revoked]
+    from .model import BadgeAssertion  # Circular import
+    return BadgeAssertion.find(Q('node', 'eq', node._id) & Q('revoked', 'ne', True))
 
 
 def get_sorted_node_badges(node):
@@ -60,7 +62,7 @@ def get_sorted_node_badges(node):
 
 #Lol list comprehensions
 def get_user_badges(user):
-    return [badge for node in user.node__contributed for badge in get_node_badges(node)]
+    return [badge for node in user.contributed for badge in get_node_badges(node)]
 
 
 def get_sorted_user_badges(user):

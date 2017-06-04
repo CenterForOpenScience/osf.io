@@ -76,12 +76,11 @@ function treebeardSelectView(item) {
     var templateUnchecked = m('input', {
         type: 'radio',
         onclick: setTempPicked.bind(tb),
-        onchange: function(evt) {
+        onmousedown: function(evt) {
             tb.options.onPickFolder(evt, item);
         },
         name: '#' + tb.options.divID + INPUT_NAME
     }, ' ');
-
     if (tb._tempPicked) {
         if (tb._tempPicked === item.id) {
             return templateChecked;
@@ -89,7 +88,7 @@ function treebeardSelectView(item) {
         return templateUnchecked;
     }
 
-    if (item.data.path === tb.options.folderPath || (tb.options.folderArray && tb.options.folderArray[tb.options.folderArray.length - 1] === item.data.name)) {
+    if (item.data.id === tb.options.folderPath || item.data.path === tb.options.folderPath || (tb.options.folderArray && tb.options.folderArray[tb.options.folderArray.length - 1] === item.data.name)) {
         return templateChecked;
     }
 
@@ -128,7 +127,7 @@ function treebeardOnload() {
 
     tb.options.folderIndex = 0;
     if (tb.options.folderPath) {
-        tb.options.folderArray = tb.options.folderPath.split('/');
+        tb.options.folderArray = tb.options.folderPath.toString().split('/');
         if (tb.options.folderArray.length > 1) {
             tb.options.folderArray.splice(0, 1);
         }
@@ -198,7 +197,7 @@ function FolderPicker(selector, opts) {
     self.options.rootName = opts.rootName;
 
     // Start up the grid
-    self.grid = new Treebeard(self.options).tbController;
+    self.grid = new Treebeard(self.options);
 }
 
 FolderPicker.prototype.destroy = function() {

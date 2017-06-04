@@ -73,14 +73,14 @@ h6 {
     /* W3C */
     filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#67a3bf', endColorstr='#000000', GradientType=1);
     /* IE6-9 fallback on horizontal gradient */
-    height: 800px;
+    height: 900px;
     color: #fff;
     padding-top: 100px;
     position: relative;
 }
 #home-hero h1 {
     font-size: 3.5em;
-    margin-bottom: -20px;
+    margin-bottom: -15px;
 }
 #home-hero h1, #home-hero h3 {
     z-index: 9;
@@ -105,12 +105,14 @@ h6 {
     top: 0;
     left: 0;
 }
-
+.hero-brand {
+    font-weight: bold;
+}
 #hero-signup {
     background: rgba(255, 255, 255, 0.15);
     position: absolute;
     bottom: 0;
-    height: 300px;
+    height: 400px;
     padding: 25px;
     margin-left: -15px;
 }
@@ -128,6 +130,20 @@ h6 {
 #hero-signup a:hover {
     text-decoration: none;
 }
+
+@media(max-width: 767px){
+
+    #home-hero {
+        height: 1000px;
+    }
+
+    .sign-up-div {
+        position: relative;
+        margin-top: -100px;
+    }
+
+}
+
 #signUpScope button, #signUpScope input, #signUpScope .help-block {
     z-index: 9;
     position: relative;
@@ -537,6 +553,11 @@ footer {
     #home-hero {
         padding-top: 0;
     }
+
+    #hero-signup {
+        height:400px;
+    }
+
     #hero-signup .icon {
         top: -20px;
     }

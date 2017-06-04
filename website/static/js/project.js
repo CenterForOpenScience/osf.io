@@ -6,12 +6,14 @@
 var $ = require('jquery');
 var bootbox = require('bootbox');
 var Raven = require('raven-js');
+var ko = require('knockout');
 
 var $osf = require('js/osfHelpers');
-var LogFeed = require('js/logFeed.js');
 
 var ctx = window.contextVars;
 var NodeActions = {}; // Namespace for NodeActions
+require('loaders.css/loaders.min.css');
+
 
 // TODO: move me to the NodeControl or separate module
 NodeActions.beforeForkNode = function(url, done) {
@@ -134,38 +136,10 @@ NodeActions.useAsTemplate = function() {
     });
 };
 
-
-$(function() {
-
-    $('#newComponent form').on('submit', function(e) {
-
-        $('#add-component-submit')
-            .attr('disabled', 'disabled')
-            .text('Adding');
-
-        if ($.trim($('#title').val()) === '') {
-
-            $('#newComponent .modal-alert').text('This field is required.');
-
-            $('#add-component-submit')
-                .removeAttr('disabled', 'disabled')
-                .text('Add');
-
-            e.preventDefault();
-        } else if ($(e.target).find('#title').val().length > 200) {
-            $('#newComponent .modal-alert').text('The new component title cannot be more than 200 characters.'); //This alert never appears...
-
-            $('#add-component-submit')
-                .removeAttr('disabled', 'disabled')
-                .text('Add');
-
-            e.preventDefault();
-
-        }
-    });
-});
-
-NodeActions._openCloseNode = function(nodeId) {
+/*
+Hide/show recent logs for for a node on the project view page.
+*/
+NodeActions.openCloseNode = function(nodeId) {
 
     var icon = $('#icon-' + nodeId);
     var body = $('#body-' + nodeId);
@@ -208,36 +182,19 @@ NodeActions.removePointer = function(pointerId, pointerElm) {
     );
 };
 
-
-/*
-Display recent logs for for a node on the project view page.
-*/
-NodeActions.openCloseNode = function(nodeId) {
-    var $logs = $('#logs-' + nodeId);
-    if (!$logs.hasClass('active')) {
-        if (!$logs.hasClass('served')) {
-            $.getJSON(
-                $logs.attr('data-uri'),
-                {count: 3}
-            ).done(function(response) {
-                new LogFeed('#logs-' + nodeId, response.logs);
-                $logs.addClass('served');
-            });
-        }
-        $logs.addClass('active');
-    } else {
-        $logs.removeClass('active');
-    }
-    // Hide/show the html
-    NodeActions._openCloseNode(nodeId);
-};
-
 // TODO: remove this
 $(document).ready(function() {
     var permissionInfoHtml = '<dl>' +
-        '<dt>Read</dt><dd>View project content and comment</dd>' +
-        '<dt>Read + Write</dt><dd>Read privileges plus add and configure components; add and edit content</dd>' +
-        '<dt>Administrator</dt><dd>Read and write privileges; manage contributors; delete and register project; public-private settings</dd>' +
+        '<dt>Read</dt>' +
+            '<dd><ul><li>View project content and comment</li></ul></dd>' +
+        '<dt>Read + Write</dt>' +
+            '<dd><ul><li>Read privileges</li> ' +
+                '<li>Add and configure components</li> ' +
+                '<li>Add and edit content</li></ul></dd>' +
+        '<dt>Administrator</dt><dd><ul>' +
+            '<li>Read and write privileges</li>' +
+            '<li>Manage contributor</li>' +
+            '<li>Delete and register project</li><li>Public-private settings</li></ul></dd>' +
         '</dl>';
 
     $('.permission-info').attr(
@@ -293,9 +250,10 @@ $(document).ready(function() {
     });
 
     $('body').on('click', '.tagsinput .tag > span', function(e) {
-        window.location = '/search/?q=(tags:' + $(e.target).text().toString().trim()+ ')';
+      if(e){
+        window.location = '/search/?q=(tags:"' + $(e.target).text().toString().trim()+ '")';
+      }
     });
-
 
     // Portlet feature for the dashboard, to be implemented in later versions.
     // $( ".osf-dash-col" ).sortable({
@@ -308,7 +266,7 @@ $(document).ready(function() {
     // Adds active class to current menu item
     $(function () {
         var path = window.location.pathname;
-        $('.project-nav a').each(function () {
+        $('.project-nav a:not(#commentsLink)').each(function () {
             var href = $(this).attr('href');
             if (path === href ||
                (path.indexOf('files') > -1 && href.indexOf('files') > -1) ||
@@ -316,6 +274,14 @@ $(document).ready(function() {
                 $(this).closest('li').addClass('active');
             }
         });
+
+        // Remove Comments link from project nav bar for pages not bound to the comment view model
+        var commentsLinkElm = document.getElementById('commentsLink');
+        if (commentsLinkElm) {
+            if(!ko.dataFor(commentsLinkElm)) {
+                commentsLinkElm.parentNode.removeChild(commentsLinkElm);
+            }
+        }
     });
 });
 

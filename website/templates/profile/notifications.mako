@@ -23,11 +23,20 @@
                     </br>
                     <form>
                         <div class="form-group">
-
                             <input type="checkbox"
-                                   data-bind="checked: subscribed"/>
-                            <label data-bind="text: list"></label>
+                                data-bind="checked: subscribed"
+                                value="${settings.MAILCHIMP_GENERAL_LIST}"/>
+                              <label>${settings.MAILCHIMP_GENERAL_LIST}</label>
                             <p class="text-muted" style="padding-left: 15px">Receive general notifications about the OSF every 2-3 weeks.</p>
+                        </div>
+                    </form>
+                    <form>
+                        <div class="form-group">
+                            <input type="checkbox"
+                                data-bind="checked: subscribed"
+                                value="${settings.OSF_HELP_LIST}"/>
+                              <label>${settings.OSF_HELP_LIST}</label>
+                            <p class="text-muted" style="padding-left: 15px">Receive helpful tips on how to make the most of the OSF, up to once per week.</p>
                         </div>
                         <div class="p-t-md p-b-md">
                         <button
@@ -45,6 +54,10 @@
         </div>
         <div class="panel panel-default">
             <div class="panel-heading clearfix"><h3 class="panel-title">Configure Notification Preferences</h3></div>
+            <div class="panel-body">
+                <div class="help-block">
+                     <p class="text-muted"> NOTE: Regardless of your selected preferences, OSF will continue to provide transactional and administrative service emails.</p>
+                </div>
                 <form id="selectNotifications" class="osf-treebeard-minimal">
                     <div id="grid">
                         <div class="spinner-loading-wrapper">
@@ -56,6 +69,7 @@
                             <p id="configureNotificationsMessage"></p>
                     </div>
                 </form>
+            </div>
         </div>
     </div>
 </div>
@@ -65,7 +79,9 @@
     <% import website %>
     ${parent.javascript()}
     <script type="text/javascript">
-        window.contextVars = $.extend({}, window.contextVars, {'mailingList': ${website.settings.MAILCHIMP_GENERAL_LIST | sjson, n }});
+        window.contextVars = $.extend({}, window.contextVars, {
+            'mailingLists': ${ [website.settings.MAILCHIMP_GENERAL_LIST, website.settings.OSF_HELP_LIST] | sjson, n }
+        });
     </script>
 </%def>
 

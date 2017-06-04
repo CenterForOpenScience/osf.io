@@ -1,0 +1,10 @@
+{
+  "name": "OSF_admin",
+  "dependencies": {
+    "jquery": "^1.11.2",
+    "jquery-ui": "~1.10.4",
+    "bootstrap": "^3.3.0",
+    "raven-js": "1.1.17",
+    "admin-lte": "~2.3.2"
+  }
+}

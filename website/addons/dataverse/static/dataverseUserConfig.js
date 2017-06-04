@@ -4,11 +4,10 @@
 */
 
 var ko = require('knockout');
-require('knockout.punches');
-ko.punches.enableAll();
 var $ = require('jquery');
 var Raven = require('raven-js');
 var bootbox = require('bootbox');
+require('js/osfToggleHeight');
 
 var language = require('js/osfLanguage').Addons.dataverse;
 var osfHelpers = require('js/osfHelpers');
@@ -49,7 +48,9 @@ function ViewModel(url) {
         return Boolean(self.selectedHost());
     });
     self.tokenUrl = ko.pureComputed(function() {
-       return self.host() ? 'https://' + self.host() + '/account/apitoken' : null;
+        var tokenPath = self.host() === 'dataverse.lib.virginia.edu'
+                ? '/account/apitoken' : '/dataverseuser.xhtml?selectTab=apiTokenTab';
+        return self.host() ? 'https://' + self.host() + tokenPath : null;
     });
 
     // Flashed messages
@@ -75,12 +76,15 @@ function ViewModel(url) {
                 externalAccount.dataverseUrl = account.host_url;
                 return externalAccount;
             }));
+            $('#dataverse-header').osfToggleHeight({height: 160});
         });
         request.fail(function(xhr, status, error) {
             Raven.captureMessage('Error while updating addon account', {
-                url: url,
-                status: status,
-                error: error
+                extra: {
+                    url: url,
+                    status: status,
+                    error: error
+                }
             });
         });
         return request;
@@ -94,7 +98,19 @@ function ViewModel(url) {
             return;
         }
 
+        if ( !self.useCustomHost() && !self.apiToken() ){
+            self.changeMessage("Please enter an API token.", 'text-danger');
+            return;
+        }
+
+        if ( self.useCustomHost() && ( !self.customHost() || !self.apiToken() ) )  {
+            self.changeMessage("Please enter a Dataverse host and an API token.", 'text-danger');
+            return;
+        }
+
+
         var url = self.urls().create;
+
         return osfHelpers.postJSON(
             url,
             ko.toJS({
@@ -105,13 +121,16 @@ function ViewModel(url) {
             self.clearModal();
             $modal.modal('hide');
             self.updateAccounts();
+
         }).fail(function(xhr, textStatus, error) {
             var errorMessage = (xhr.status === 401) ? language.authInvalid : language.authError;
             self.changeMessage(errorMessage, 'text-danger');
             Raven.captureMessage('Could not authenticate with Dataverse', {
-                url: url,
-                textStatus: textStatus,
-                error: error
+                extra: {
+                    url: url,
+                    textStatus: textStatus,
+                    error: error
+                }
             });
         });
     };
@@ -122,7 +141,7 @@ function ViewModel(url) {
             title: 'Disconnect Dataverse Account?',
             message: '<p class="overflow">' +
                 'Are you sure you want to disconnect the Dataverse account on <strong>' +
-                account.name + '</strong>? This will revoke access to Dataverse for all projects associated with this account.' +
+                osfHelpers.htmlEscape(account.name) + '</strong>? This will revoke access to Dataverse for all projects associated with this account.' +
                 '</p>',
             callback: function (confirm) {
                 if (confirm) {
@@ -150,9 +169,11 @@ function ViewModel(url) {
         });
         request.fail(function(xhr, status, error) {
             Raven.captureMessage('Error while removing addon authorization for ' + account.id, {
-                url: url,
-                status: status,
-                error: error
+                extra: {
+                    url: url,
+                    status: status,
+                    error: error
+                }
             });
         });
         return request;
@@ -187,9 +208,11 @@ function ViewModel(url) {
         }).fail(function (xhr, textStatus, error) {
             self.changeMessage(language.userSettingsError, 'text-danger');
             Raven.captureMessage('Could not GET Dataverse settings', {
-                url: url,
-                textStatus: textStatus,
-                error: error
+                extra: {
+                    url: url,
+                    textStatus: textStatus,
+                    error: error
+                }
             });
         });
     };

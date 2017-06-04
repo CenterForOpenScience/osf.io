@@ -1,3 +1,4 @@
+
 <div class="col-sm-12">
     <span id="links" class="anchor"></span>
     <h4 class="m-t-lg f-w-lg">Links</h4>
@@ -7,7 +8,7 @@
     <p>Any existing public project can be a link, be it your own project or someone else's. Linking is useful if
         you want to reference another person's work or indicate that something is part of a larger
         project.</p>
-    <p>A link can be created by visiting the project you want to add the link to. Click "Add Links" in the components
+    <p>A link can be created by visiting the project you want to add the link to. Click "Link Projects" in the components
         section of your project dashboard and search for the project you wish to link to.</p>
     <div class="row">
         <div class="col-md-8 col-md-offset-2 col-sm-12">

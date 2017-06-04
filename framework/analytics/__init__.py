@@ -4,19 +4,23 @@
 import functools
 from datetime import datetime
 
+from dateutil import parser
+
 from framework.mongo import database
+from framework.postcommit_tasks.handlers import run_postcommit
 from framework.sessions import session
+from framework.celery_tasks import app
 
 from flask import request
 
-
 collection = database['pagecounters']
 
-
-def increment_user_activity_counters(user_id, action, date, db=None):
+@run_postcommit(once_per_request=False, celery=True)
+@app.task(max_retries=5, default_retry_delay=60)
+def increment_user_activity_counters(user_id, action, date_string, db=None):
     db = db or database  # default to local proxy
     collection = database['useractivitycounters']
-    date = date.strftime('%Y/%m/%d')
+    date = parser.parse(date_string).strftime('%Y/%m/%d')
     query = {
         '$inc': {
             'total': 1,
@@ -71,8 +75,7 @@ def build_page(rex, kwargs):
     except KeyError:
         return None
 
-
-def update_counter(page, db=None):
+def update_counter(page, node_info=None, db=None):
     """Update counters for page.
 
     :param str page: Colon-delimited page key in analytics collection
@@ -114,10 +117,20 @@ def update_counter(page, db=None):
         visited.append(page)
         session.data['visited'] = visited
     d['$inc']['total'] = 1
+
+    # If a download counter is being updated, only perform the update
+    # if the user who is downloading isn't a contributor to the project
+    page_type = page.split(':')[0]
+    if page_type == 'download' and node_info:
+        contributors = node_info['contributors']
+        current_user = session.data.get('auth_user_id')
+        if current_user and current_user in contributors:
+            d['$inc']['unique'] = 0
+            d['$inc']['total'] = 0
+
     collection.update({'_id': page}, d, True, False)
 
-
-def update_counters(rex, db=None):
+def update_counters(rex, node_info=None, db=None):
     """Create a decorator that updates analytics in `pagecounters` when the
     decorated function is called. Note: call inner function before incrementing
     counters so that counters are not changed if inner function fails.
@@ -130,7 +143,7 @@ def update_counters(rex, db=None):
         def wrapped(*args, **kwargs):
             ret = func(*args, **kwargs)
             page = build_page(rex, kwargs)
-            update_counter(page, db or database)
+            update_counter(page, node_info, db)
             return ret
         return wrapped
     return wrapper

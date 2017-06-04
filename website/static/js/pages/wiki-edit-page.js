@@ -11,10 +11,12 @@ require('ace-noconflict');
 require('ace-mode-markdown');
 require('ace-ext-language_tools');
 require('addons/wiki/static/ace-markdown-snippets.js');
+require('../../vendor/ace-plugins/spellcheck_ace.js');
 
 var $osf = require('js/osfHelpers');
 
 var WikiMenu = require('../wikiMenu');
+var Comment = require('js/comment'); //jshint ignore:line
 
 var ctx = window.contextVars.wiki;  // mako context variables
 
@@ -75,9 +77,11 @@ if (ctx.canEditPageName) {
             } else {
                 // Log unexpected error with Raven
                 Raven.captureMessage('Error in renaming wiki', {
-                    url: ctx.urls.rename,
-                    responseText: response.responseText,
-                    statusText: response.statusText
+                    extra: {
+                        url: ctx.urls.rename,
+                        responseText: response.responseText,
+                        statusText: response.statusText
+                    }
                 });
                 return 'An unexpected error occurred. Please try again.';
             }
@@ -102,7 +106,7 @@ $(document).ready(function () {
         errorMsg.append('<p>Could not retrieve wiki pages. If this issue persists, ' +
             'please report it to <a href="mailto:support@osf.io">support@osf.io</a>.</p>');
         Raven.captureMessage('Could not GET wiki menu pages', {
-            url: ctx.urls.grid, status: status, error: error
+            extra: { url: ctx.urls.grid, status: status, error: error }
         });
     });
 
@@ -132,6 +136,9 @@ $(document).ready(function () {
                 title.toLowerCase(),
                 buttonState
             ]);
+            if (typeof editor !== 'undefined') { ace.edit(editor).resize(); } // jshint ignore: line
+        },
+        complete : function() {
             if (typeof editor !== 'undefined') { ace.edit(editor).resize(); } // jshint ignore: line
         }
     });
@@ -165,3 +172,21 @@ $(document).ready(function () {
     // Tooltip
     $('[data-toggle="tooltip"]').tooltip();
 });
+
+var $comments = $('.comments');
+if ($comments.length && window.contextVars.wiki.wikiID !== null) {
+    var options = {
+        nodeId: window.contextVars.node.id,
+        nodeApiUrl: window.contextVars.node.urls.api,
+        isRegistration: window.contextVars.node.isRegistration,
+        page: 'wiki',
+        rootId: window.contextVars.wiki.wikiID,
+        fileId: null,
+        canComment: window.contextVars.currentUser.canComment,
+        hasChildren: window.contextVars.node.hasChildren,
+        currentUser: window.contextVars.currentUser,
+        pageTitle: window.contextVars.wiki.wikiName,
+        inputSelector: '.atwho-input'
+    };
+    Comment.init('#commentsLink', '.comment-pane', options);
+}

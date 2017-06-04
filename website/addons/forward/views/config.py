@@ -18,8 +18,10 @@ from website.addons.forward.utils import serialize_settings
 
 @must_be_valid_project
 @must_have_addon('forward', 'node')
-def forward_config_get(node_addon, **kwargs):
-    return serialize_settings(node_addon)
+def forward_config_get(node, node_addon, **kwargs):
+    res = serialize_settings(node_addon)
+    res.update({'is_registration': node.is_registration})
+    return res
 
 
 @must_have_permission('write')
@@ -30,16 +32,12 @@ def forward_config_put(auth, node_addon, **kwargs):
     changed.
 
     :param-json str url: Forward URL
-    :param-json bool redirectBool: Auto-redirect
-    :param-json int redirectSecs: Auto-redirect timeout
     :raises: HTTPError(400) if values missing or invalid
 
     """
     try:
         node_addon.url = request.json['url']
         node_addon.label = request.json.get('label')
-        node_addon.redirect_bool = request.json['redirectBool']
-        node_addon.redirect_secs = int(request.json['redirectSecs'])
     except (KeyError, TypeError, ValueError):
         raise HTTPError(http.BAD_REQUEST)
 

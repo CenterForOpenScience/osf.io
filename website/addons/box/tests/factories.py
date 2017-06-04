@@ -2,52 +2,35 @@
 """Factory boy factories for the Box addon."""
 import mock
 from datetime import datetime
+from dateutil.relativedelta import relativedelta
 
-from framework.auth import Auth
-
-from factory import SubFactory, Sequence, post_generation
-from tests.factories import ModularOdmFactory, UserFactory, ProjectFactory
+from factory import SubFactory, Sequence
+from tests.factories import ModularOdmFactory, UserFactory, ProjectFactory, ExternalAccountFactory
 
 from website.addons.box.model import (
-    BoxOAuthSettings, BoxUserSettings,
-    BoxNodeSettings, BoxFile
+    BoxUserSettings,
+    BoxNodeSettings
 )
 
-# TODO(sloria): make an abstract UserSettingsFactory that just includes the owner field
-
-class BoxOAuthSettingsFactory(ModularOdmFactory):
-    FACTORY_FOR = BoxOAuthSettings
-
-    username = 'Den'
-    user_id = 'b4rn311'
-    expires_at = datetime(2045, 1, 1)
-    access_token = Sequence(lambda n: 'abcdef{0}'.format(n))
-    refresh_token = Sequence(lambda n: 'abcdef{0}'.format(n))
+class BoxAccountFactory(ExternalAccountFactory):
+    provider = 'box'
+    provider_id = Sequence(lambda n: 'id-{0}'.format(n))
+    oauth_key = Sequence(lambda n: 'key-{0}'.format(n))
+    expires_at = datetime.now() + relativedelta(seconds=3600)
 
 
 class BoxUserSettingsFactory(ModularOdmFactory):
-    FACTORY_FOR = BoxUserSettings
+    class Meta:
+        model = BoxUserSettings
 
     owner = SubFactory(UserFactory)
-    oauth_settings = SubFactory(BoxOAuthSettingsFactory)
 
 
 class BoxNodeSettingsFactory(ModularOdmFactory):
-    FACTORY_FOR = BoxNodeSettings
+    class Meta:
+        model = BoxNodeSettings
 
     owner = SubFactory(ProjectFactory)
     user_settings = SubFactory(BoxUserSettingsFactory)
     with mock.patch('website.addons.box.model.BoxNodeSettings.fetch_folder_name') as mock_folder:
         mock_folder.return_value = 'Camera Uploads'
-
-
-class BoxFileFactory(ModularOdmFactory):
-    FACTORY_FOR = BoxFile
-
-    node = SubFactory(ProjectFactory)
-    path = 'foo.txt'
-
-    @post_generation
-    def add_box_addon(self, created, extracted):
-        self.node.add_addon('box', auth=Auth(user=self.node.creator))
-        self.node.save()

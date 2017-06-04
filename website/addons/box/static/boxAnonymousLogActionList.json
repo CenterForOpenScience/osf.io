@@ -1,0 +1,10 @@
+{
+    "box_file_added" : "A user added a file to Box in a project",
+    "box_file_removed" : "A user removed a file from Box in a project",
+    "box_file_updated" : "A user updated a file in Box in a project",
+    "box_folder_created" : "A user created a folder in Box in a project",
+    "box_folder_selected" : "A user linked a Box folder to a project",
+    "box_node_authorized" : "A user authorized the Box addon for a project",
+    "box_node_deauthorized" : "A user deauthorized the Box addon for a project",
+    "box_node_deauthorized_no_user": "Box addon for a project deauthorized"
+}

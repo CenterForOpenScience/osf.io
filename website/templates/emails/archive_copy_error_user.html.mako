@@ -10,7 +10,7 @@
 </tr>
 <tr>
   <td style="border-collapse: collapse;">
-    We cannot archive ${src.title} at this time because there were errors copying files from some of the linked third-party services. It's possible that this is due to temporary unavailability of one or more of these services and that retrying the registration may resolve this issue. Our development team is investigating this failure. We're sorry for any inconvienence this may have caused.
+    We cannot archive ${src.title} at this time because there were errors copying files from some of the linked third-party services. It's possible that this is due to temporary unavailability of one or more of these services and that retrying the registration may resolve this issue. Our development team is investigating this failure. We're sorry for any inconvenience this may have caused.
   </td>
 </tr>
 </%def>

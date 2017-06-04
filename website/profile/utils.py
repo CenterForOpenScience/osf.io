@@ -6,35 +6,43 @@ from framework import auth
 
 from website import settings
 from website.filters import gravatar
+from website.project.model import Node
 from website.util.permissions import reduce_permissions
 
 
 def get_projects(user):
     """Return a list of user's projects, excluding registrations and folders."""
-    return list(user.node__contributed.find(
-        (
-            Q('category', 'eq', 'project') &
-            Q('is_registration', 'eq', False) &
-            Q('is_deleted', 'eq', False) &
-            Q('is_folder', 'eq', False)
-        )
-    ))
+    # Note: If the user is a contributor to a child (but does not have access to the parent), it will be
+    # excluded from this view
+    # Avoid circular import
+    from website.project.utils import TOP_LEVEL_PROJECT_QUERY
+
+    return Node.find_for_user(user, subquery=TOP_LEVEL_PROJECT_QUERY)
 
 def get_public_projects(user):
     """Return a list of a user's public projects."""
-    return [p for p in get_projects(user) if p.is_public]
+    # Avoid circular import
+    from website.project.utils import TOP_LEVEL_PROJECT_QUERY
+
+    return Node.find_for_user(
+        user,
+        subquery=(
+            Q('is_public', 'eq', True) &
+            TOP_LEVEL_PROJECT_QUERY
+        )
+    )
 
 
 def get_gravatar(user, size=None):
     if size is None:
-        size = settings.GRAVATAR_SIZE_PROFILE
+        size = settings.PROFILE_IMAGE_LARGE
     return gravatar(
         user, use_ssl=True,
         size=size
     )
 
 
-def serialize_user(user, node=None, admin=False, full=False):
+def serialize_user(user, node=None, admin=False, full=False, is_profile=False):
     """
     Return a dictionary representation of a registered user.
 
@@ -47,10 +55,10 @@ def serialize_user(user, node=None, admin=False, full=False):
         'registered': user.is_registered,
         'surname': user.family_name,
         'fullname': fullname,
-        'shortname': fullname if len(fullname) < 50 else fullname[:23] + "..." + fullname[-23:],
+        'shortname': fullname if len(fullname) < 50 else fullname[:23] + '...' + fullname[-23:],
         'gravatar_url': gravatar(
             user, use_ssl=True,
-            size=settings.GRAVATAR_SIZE_ADD_CONTRIBUTOR
+            size=settings.PROFILE_IMAGE_MEDIUM
         ),
         'active': user.is_active,
     }
@@ -71,25 +79,26 @@ def serialize_user(user, node=None, admin=False, full=False):
             'url': user.url,
             'absolute_url': user.absolute_url,
             'display_absolute_url': user.display_absolute_url,
-            'date_registered': user.date_registered.strftime("%Y-%m-%d"),
+            'date_registered': user.date_registered.strftime('%Y-%m-%d'),
         })
 
     if full:
         # Add emails
-        ret['emails'] = [
-            {
-                'address': each,
-                'primary': each == user.username,
-                'confirmed': True,
-            } for each in user.emails
-        ] + [
-            {
-                'address': each,
-                'primary': each == user.username,
-                'confirmed': False
-            }
-            for each in user.unconfirmed_emails
-        ]
+        if is_profile:
+            ret['emails'] = [
+                {
+                    'address': each,
+                    'primary': each.strip().lower() == user.username.strip().lower(),
+                    'confirmed': True,
+                } for each in user.emails
+            ] + [
+                {
+                    'address': each,
+                    'primary': each.strip().lower() == user.username.strip().lower(),
+                    'confirmed': False
+                }
+                for each in user.unconfirmed_emails
+            ]
 
         if user.is_merged:
             merger = user.merged_by
@@ -101,12 +110,12 @@ def serialize_user(user, node=None, admin=False, full=False):
         else:
             merged_by = None
         ret.update({
-            'number_projects': len(get_projects(user)),
-            'number_public_projects': len(get_public_projects(user)),
+            'number_projects': get_projects(user).count(),
+            'number_public_projects': get_public_projects(user).count(),
             'activity_points': user.get_activity_points(),
             'gravatar_url': gravatar(
                 user, use_ssl=True,
-                size=settings.GRAVATAR_SIZE_PROFILE
+                size=settings.PROFILE_IMAGE_LARGE
             ),
             'is_merged': user.is_merged,
             'merged_by': merged_by,
@@ -156,7 +165,7 @@ def add_contributor_json(user, current_user=None):
         'active': user.is_active,
         'gravatar_url': gravatar(
             user, use_ssl=True,
-            size=settings.GRAVATAR_SIZE_ADD_CONTRIBUTOR
+            size=settings.PROFILE_IMAGE_MEDIUM
         ),
         'profile_url': user.profile_url
     }
@@ -171,7 +180,7 @@ def serialize_unregistered(fullname, email):
             'registered': False,
             'active': False,
             'gravatar': gravatar(email, use_ssl=True,
-                                 size=settings.GRAVATAR_SIZE_ADD_CONTRIBUTOR),
+                                 size=settings.PROFILE_IMAGE_MEDIUM),
             'email': email,
         }
     else:

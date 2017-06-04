@@ -5,7 +5,6 @@ var SaveAssetsJson = require('assets-webpack-plugin');
 
 module.exports = assign(common, {
     debug: false,
-    devtool: false,
     stats: {reasons: false},
     plugins: common.plugins.concat([
         new webpack.optimize.DedupePlugin(),

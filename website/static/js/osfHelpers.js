@@ -6,11 +6,14 @@ var Raven = require('raven-js');
 var moment = require('moment');
 var URI = require('URIjs');
 var bootbox = require('bootbox');
-var iconmap = require('js/iconmap');
+var lodashGet = require('lodash.get');
+var KeenTracker = require('js/keen');
+var linkify = require('linkifyjs/html');
+
 
 // TODO: For some reason, this require is necessary for custom ko validators to work
 // Why?!
-require('./koHelpers');
+require('js/koHelpers');
 
 var GrowlBox = require('js/growlBox');
 
@@ -22,8 +25,8 @@ var GrowlBox = require('js/growlBox');
  * @param {String} type One of 'success', 'info', 'warning', or 'danger'. Defaults to danger.
  *
  */
-var growl = function(title, message, type) {
-    new GrowlBox(title, message, type || 'danger');
+var growl = function(title, message, type, delay) {
+    new GrowlBox(title, message, type || 'danger', delay);
 };
 
 
@@ -59,6 +62,129 @@ var apiV2Url = function (path, options){
     return apiUrl.toString();
 };
 
+/*
+ * Perform an ajax request (cross-origin if necessary) that sends and receives JSON
+ */
+var ajaxJSON = function(method, url, options) {
+    var defaults = {
+        data: {},  // Request body (required for PUT, PATCH, POST, etc)
+        isCors: false,  // Is this sending a cross-domain request? (if true, will also send any login credentials)
+        fields: {}  // Additional fields (settings) for the JQuery AJAX call; overrides any defaults set by function
+    };
+    var opts = $.extend({}, defaults, options);
+
+    var ajaxFields = {
+        url: url,
+        type: method,
+        contentType: 'application/json',
+        dataType: 'json'
+    };
+    // Add JSON payload if not a GET request
+    if (method.toLowerCase() !== 'get') {
+        ajaxFields.data = JSON.stringify(opts.data);
+    }
+    if(opts.isCors) {
+        ajaxFields.crossOrigin = true;
+        ajaxFields.xhrFields =  {
+            withCredentials: true
+        };
+    }
+    $.extend(true, ajaxFields, opts.fields);
+
+    return $.ajax(ajaxFields);
+};
+
+ /**
+  * Squashes APIv2 data.attributes to top level JSON for treebeard
+  *
+  * @param {Object} data JSON data
+  * @return {Object data}
+  */
+  var squashAPIAttributes = function(data) {
+    $.each(data.data, function(i, obj) {
+        var savedAttributes = obj.attributes;
+        delete obj.attributes;
+        $.extend(true, obj, savedAttributes);
+    });
+    return data;
+};
+
+/**
+ * Returns a promise of an array of ajaxJSON response objects
+ */
+var getAllPagesAjaxJSON = function(method, url, options) {
+    var responses = [];
+    var fetch = function(method, url, options) {
+        var request = ajaxJSON(method, url, options);
+        request.done(function(response) {
+            deferred.notify(response);
+            responses = responses.concat(response);
+            if (response.links.next !== null) {
+                fetch(method, response.links.next, options);
+            } else {
+                deferred.resolve(responses);
+            }
+        });
+        request.fail(function(xhr, status, error) {
+            deferred.reject(error);
+        });
+    };
+    var deferred = new $.Deferred();
+    fetch(method, url, options);
+    return deferred.promise();
+};
+
+/**
+ * Takes an array of response objects and returns a single object
+ * @param {Array of Objects}
+ * @return {Object data}
+ */
+var mergePagesAjaxJSON = function(pages) {
+    var mergedData = {};
+    $.each(pages, function(page) {
+        $.each(pages[page].data, function(n) {
+            var node = pages[page].data[n];
+            mergedData[node.id] = node;
+        });
+    });
+    return mergedData;
+};
+
+/**
+ * Takes an array of response objects and returns just the children from the parent
+ * @param {Array of Objects}`
+ * @return {Object data}
+ */
+var getAllNodeChildrenFromNodeList = function(parent, nodeList) {
+    var tree = {};
+    var re = /\/v2\/nodes\/(.*)\//;
+
+    $.each(nodeList, function(n) {
+        var parent = 'root';
+        if ('parent' in nodeList[n].relationships) {
+            parent = nodeList[n].relationships.parent.links.related.href.match(re)[1];
+        }
+        if (!(n in tree)) {
+            tree[n] = [];
+        }
+        if (!(parent in tree)) {
+            tree[parent] = [];
+        }
+        tree[parent].push(n);
+    });
+
+    var children = {};
+    var remaining = [parent];
+    while (remaining.length > 0) {
+        var node = remaining.pop();
+        for (var c in tree[node]){
+            var child = tree[node][c];
+            remaining.push([child]);
+            children[child] = nodeList[child];    
+        }
+    }
+    return children;
+};
 
 /**
 * Posts JSON data.
@@ -82,18 +208,17 @@ var apiV2Url = function (path, options){
 */
 var postJSON = function(url, data, success, error) {
     var ajaxOpts = {
-        url: url, type: 'post',
-        data: JSON.stringify(data),
-        contentType: 'application/json', dataType: 'json'
+        data: data,
+        fields: {}
     };
     // For backwards compatibility. Prefer the Promise interface to these callbacks.
     if (typeof success === 'function') {
-        ajaxOpts.success = success;
+        ajaxOpts.fields.success = success;
     }
     if (typeof error === 'function') {
-        ajaxOpts.error = error;
+        ajaxOpts.fields.error = error;
     }
-    return $.ajax(ajaxOpts);
+    return ajaxJSON('post', url, ajaxOpts);
 };
 
 /**
@@ -111,18 +236,17 @@ var postJSON = function(url, data, success, error) {
   */
 var putJSON = function(url, data, success, error) {
     var ajaxOpts = {
-        url: url, type: 'put',
-        data: JSON.stringify(data),
-        contentType: 'application/json', dataType: 'json'
+        data: data,
+        fields: {}
     };
     // For backwards compatibility. Prefer the Promise interface to these callbacks.
     if (typeof success === 'function') {
-        ajaxOpts.success = success;
+        ajaxOpts.fields.success = success;
     }
     if (typeof error === 'function') {
-        ajaxOpts.error = error;
+        ajaxOpts.fields.error = error;
     }
-    return $.ajax(ajaxOpts);
+    return ajaxJSON('put', url, ajaxOpts);
 };
 
 /**
@@ -146,9 +270,13 @@ var putJSON = function(url, data, success, error) {
 * @param  {Object} XML Http Request
 * @return {Object} xhr
 */
-var setXHRAuthorization = function (xhr) {
-    if (window.contextVars.accessToken) {
-        xhr.setRequestHeader('Authorization', 'Bearer ' + window.contextVars.accessToken);
+var setXHRAuthorization = function (xhr, options) {
+    if (navigator.appVersion.indexOf('MSIE 9.') === -1) {
+        xhr.withCredentials = true;
+        if (options) {
+            options.withCredentials = true;
+            options.xhrFields = {withCredentials:true};
+        }
     }
     return xhr;
 };
@@ -157,37 +285,60 @@ var errorDefaultShort = 'Unable to resolve';
 var errorDefaultLong = 'OSF was unable to resolve your request. If this issue persists, ' +
     'please report it to <a href="mailto:support@osf.io">support@osf.io</a>.';
 
+var handleAddonApiHTTPError = function(error){
+    var response;
+    try{
+        response = JSON.parse(error.response);
+    } catch (e){
+        response = '';
+    }
+    var title = response.message_short || errorDefaultShort;
+    var message = response.message_long || errorDefaultLong;
+
+    $.osf.growl(title, message);
+};
+
 var handleJSONError = function(response) {
     var title = (response.responseJSON && response.responseJSON.message_short) || errorDefaultShort;
     var message = (response.responseJSON && response.responseJSON.message_long) || errorDefaultLong;
-
-    $.osf.growl(title, message);
-
-    Raven.captureMessage('Unexpected error occurred in JSON request');
+    // We can reach this error handler when the user leaves a page while a request is pending. In that
+    // case, response.status === 0, and we don't want to show an error message.
+    if (response && response.status && response.status >= 400) {
+        $.osf.growl(title, message);
+        Raven.captureMessage('Unexpected error occurred in JSON request');
+    }
 };
 
 var handleEditableError = function(response) {
     Raven.captureMessage('Unexpected error occurred in an editable input');
-    return 'Unexpected error: ' + response.statusText;
+    return 'Error: ' + response.responseJSON.message_long;
 };
 
-var block = function(message) {
-    $.blockUI({
-        css: {
-            border: 'none',
-            padding: '15px',
-            backgroundColor: '#000',
-            '-webkit-border-radius': '10px',
-            '-moz-border-radius': '10px',
-            opacity: 0.5,
-            color: '#fff'
-        },
-        message: message || 'Please wait'
-    });
+var block = function(message, $element) {
+    ($element ? $element.block : $.blockUI).call(
+        $element || window,
+        {
+            css: {
+                border: 'none',
+                padding: '15px',
+                backgroundColor: '#000',
+                '-webkit-border-radius': '10px',
+                '-moz-border-radius': '10px',
+                opacity: 0.5,
+                color: '#fff'
+            },
+            message: message || 'Please wait'
+        }
+    );
 };
 
-var unblock = function() {
-    $.unblockUI();
+var unblock = function(element) {
+    if (element) {
+        $(element).unblock();
+    }
+    else {
+        $.unblockUI();
+    }
 };
 
 var joinPrompts = function(prompts, base) {
@@ -195,6 +346,7 @@ var joinPrompts = function(prompts, base) {
     if (prompts.length !==0) {
         prompt += '<hr />';
         prompt += '<ul>';
+        // Assumes prompts are pre-escaped before constructing this string
         for (var i=0; i<prompts.length; i++) {
             prompt += '<li>' + prompts[i] + '</li>';
         }
@@ -209,6 +361,16 @@ var mapByProperty = function(list, attr) {
     });
 };
 
+
+/** 
+ * Replaces encoded & with decoded values
+ */
+var decodeText = function(text) {
+    if(typeof text === 'string') {
+        return text.replace(/&amp;/g, '&');
+    }
+    return text;
+};
 
 /**
   * Return whether or not a value is an email address.
@@ -323,116 +485,6 @@ var debounce = function(func, wait, immediate) {
   };
 };
 
-///////////
-// Piwik //
-///////////
-
-var trackPiwik = function(host, siteId, cvars, useCookies) {
-    cvars = Array.isArray(cvars) ? cvars : [];
-    useCookies = typeof(useCookies) !== 'undefined' ? useCookies : false;
-    try {
-        var piwikTracker = window.Piwik.getTracker(host + 'piwik.php', siteId);
-        piwikTracker.enableLinkTracking(true);
-        for(var i=0; i<cvars.length;i++)
-        {
-            piwikTracker.setCustomVariable.apply(null, cvars[i]);
-        }
-        if (!useCookies) {
-            piwikTracker.disableCookies();
-        }
-        piwikTracker.trackPageView();
-
-    } catch(err) { return false; }
-    return true;
-};
-
-//////////////////
-// Data binders //
-//////////////////
-
-/**
- * Tooltip data binder. The value accessor should be an object containing
- * parameters for the tooltip.
- * Example:
- * <span data-bind='tooltip: {title: 'Tooltip text here'}'></span>
- */
-ko.bindingHandlers.tooltip = {
-    init: function(elem, valueAccessor) {
-        $(elem).tooltip(valueAccessor());
-    }
-};
-
-
-/**
- * Takes over anchor scrolling and scrolls to anchor positions within elements
- * Example:
- * <span data-bind='anchorScroll'></span>
- */
-ko.bindingHandlers.anchorScroll = {
-    init: function(elem, valueAccessor) {
-        var buffer = valueAccessor().buffer || 100;
-        var element = valueAccessor().elem || elem;
-        var offset;
-        $(element).on('click', 'a[href^="#"]', function (event) {
-            var $item = $(this);
-            var $element = $(element);
-            if(!$item.attr('data-model') && $item.attr('href') !== '#') {
-                event.preventDefault();
-                // get location of the target
-                var target = $item.attr('href');
-                // if target has a scrollbar scroll it, otherwise scroll the page
-                if ( $element.get(0).scrollHeight > $element.innerHeight() ) {
-                    offset = $(target).position();
-                    $element.scrollTop(offset.top - buffer);
-                } else {
-                    offset = $(target).offset();
-                    $(window).scrollTop(offset.top - 100); // This is fixed to 100 because of the fixed navigation menus on the page
-                }
-            }
-        });
-    }
-};
-
-/**
- * Adds class returned from iconmap to the element. The value accessor should be the
- * category of the node.
- * Example:
- * <span data-bind="getIcon: 'analysis'"></span>
- */
-ko.bindingHandlers.getIcon = {
-    init: function(elem, valueAccessor) {
-        var icon;
-        var category = valueAccessor();
-        if (Object.keys(iconmap.componentIcons).indexOf(category) >=0 ){
-            icon = iconmap.componentIcons[category];
-        }
-        else {
-            icon = iconmap.projectIcons[category];
-        }
-        $(elem).addClass(icon);
-    }
-};
-
-/**
- * Required in render_node.mako to call getIcon. As a result of modularity there
- * are overlapping scopes. To temporarily escape the parent scope and allow other binding
- * stopBinding can be used. Only other option was to redo the structure of the scopes.
- * Example:
- * <span data-bind="stopBinding: true"></span>
- */
-ko.bindingHandlers.stopBinding = {
-    init: function() {
-        return { controlsDescendantBindings: true };
-    }
-};
-
-/**
- * Allows data-bind to be called without a div so the layout of the page is not effected.
- * Example:
- * <!-- ko stopBinding: true -->
- */
-ko.virtualElements.allowedBindings.stopBinding = true;
-
 /**
   * A thin wrapper around ko.applyBindings that ensures that a view model
   * is bound to the expected element. Also shows the element (and child elements) if it was
@@ -503,14 +555,19 @@ var hasTimeComponent = function(dateString) {
   * A date object with two formats: local time or UTC time.
   * @param {String} date The original date as a string. Should be an standard
   *                      format such as RFC or ISO. If the date is a datetime string
-  *                      with no offset, an offset of UTC +00:00 will be assumed
+  *                      with no offset, an offset of UTC +00:00 will be assumed. However,
+  *                      if the date is just a date (no time component), the time
+  *                      component will be set to midnight local time.  Ergo, if date
+  *                      is '2016-04-08' the imputed time will be '2016-04-08 04:00 UTC'
+  *                      if run in EDT. But if date is '2016-04-08:00:00:00.000' it will
+  *                      always be '2016-04-08 00:00 UTC', regardless of the local timezone.
   */
 var LOCAL_DATEFORMAT = 'YYYY-MM-DD hh:mm A';
 var UTC_DATEFORMAT = 'YYYY-MM-DD HH:mm UTC';
 var FormattableDate = function(date) {
 
     if (typeof date === 'string') {
-        this.date = moment.utc(dateTimeWithoutOffset(date) ? forceUTC(date) : date).toDate();
+        this.date = moment(dateTimeWithoutOffset(date) ? forceUTC(date) : date).utc().toDate();
     } else {
         this.date = date;
     }
@@ -564,56 +621,6 @@ var tableResize = function(selector, checker) {
     }).resize(); // Trigger resize handler
 };
 
-/* A binding handler to convert lists into formatted lists, e.g.:
- * [dog] -> dog
- * [dog, cat] -> dog and cat
- * [dog, cat, fish] -> dog, cat, and fish
- *
- * This handler should not be used for user inputs.
- *
- * Example use:
- * <span data-bind="listing: {data: ['Alpha', 'Beta', 'Gamma'],
- *                            map: function(item) {return item.charAt(0) + '.';}}"></span>
- * yields
- * <span ...>A., B., and G.</span>
- */
-ko.bindingHandlers.listing = {
-    update: function(element, valueAccessor, allBindings, viewModel, bindingContext) {
-        var value = valueAccessor();
-        var valueUnwrapped = ko.unwrap(value);
-        var map = valueUnwrapped.map || function(item) {return item;};
-        var data = valueUnwrapped.data || [];
-        var keys = [];
-        if (!Array.isArray(data)) {
-            keys = Object.keys(data);
-        }
-        else {
-            keys = data;
-        }
-        var index = 1;
-        var list = ko.utils.arrayMap(keys, function(key) {
-            var ret;
-            if (index === 1){
-                ret = '';
-            }
-            else if (index === 2){
-                if (valueUnwrapped.length === 2) {
-                    ret = ' and ';
-                }
-                else {
-                    ret = ', ';
-                }
-            }
-            else {
-                ret = ', and ';
-            }
-            ret += map(key, data[key]);
-            index++;
-            return ret;
-        }).join('');
-        $(element).html(list);
-    }
-};
 
 /* Responsive Affix for side nav */
 var fixAffixWidth = function() {
@@ -625,8 +632,13 @@ var fixAffixWidth = function() {
 };
 
 var initializeResponsiveAffix = function (){
+    // Set nav-box width based on screem
+    fixAffixWidth();
+    // Show the nav box
+    $('.osf-affix').each(function (){
+        $(this).show();
+    });
     $(window).resize(debounce(fixAffixWidth, 20, true));
-    $('.osf-affix').one('affix.bs.affix', fixAffixWidth);
 };
 
 // Thanks to https://stackoverflow.com/questions/10420352/converting-file-size-in-bytes-to-human-readable
@@ -649,7 +661,7 @@ function humanFileSize(bytes, si) {
 /**
 *  returns a random name from this list to use as a confirmation string
 */
-var _confirmationString = function() {
+var getConfirmationString = function() {
     // TODO: Generate a random string here instead of using pre-set values
     //       per Jeff, use ~10 characters
     var scientists = [
@@ -716,7 +728,7 @@ var isSafari = function(userAgent) {
   * Confirm a dangerous action by requiring the user to enter specific text
   *
   * This is an abstraction over bootbox, and passes most options through to
-  * bootbox.dailog(). The exception to this is `callback`, which is called only
+  * bootbox.dialog(). The exception to this is `callback`, which is called only
   * if the user correctly confirms the action.
   *
   * @param  {Object} options
@@ -728,7 +740,7 @@ var confirmDangerousAction = function (options) {
     //       sustained attention and will prevent the user from copy/pasting a
     //       random string.
 
-    var confirmationString = _confirmationString();
+    var confirmationString = getConfirmationString();
 
     // keep the users' callback for re-use; we'll pass ours to bootbox
     var callback = options.callback;
@@ -766,31 +778,280 @@ var confirmDangerousAction = function (options) {
 
     bootboxOptions.message += [
         '<p>Type the following to continue: <strong>',
-        confirmationString,
+        htmlEscape(confirmationString),
         '</strong></p>',
         '<input id="bbConfirmText" class="form-control">'
     ].join('');
 
     bootbox.dialog(bootboxOptions);
 };
+/**
+ * Maps an object to an array of {key: KEY, value: VALUE} pairs
+ *
+ * @param {Object} obj
+ * @returns {Array} array of key, value pairs
+ **/
+var iterObject = function(obj) {
+    var ret = [];
+    $.each(obj, function(prop, value) {
+        ret.push({
+            key: prop,
+            value: value
+        });
+    });
+    return ret;
+};
+/** A future-proof getter for the current user
+**/
+var currentUser = function(){
+    return window.contextVars.currentUser;
+};
+
+/**
+ * Use a search function to get the index of an object in an array
+ *
+ * @param {Array} array
+ * @param {Function} searchFn: function that returns true when an item matching the search conditions is found
+ * @returns {Integer} index of matched item or -1 if no matching item is found
+ **/
+function indexOf(array, searchFn) {
+    var len = array.length;
+    for(var i = 0; i < len; i++) {
+        if(searchFn(array[i])) {
+            return i;
+        }
+    }
+    return -1;
+}
+
+/**
+ * Check if any of the values in an array are truthy
+ *
+ * @param {Array[Any]} listOfBools
+ * @returns {Boolean}
+ **/
+var any = function(listOfBools, check) {
+    var someTruthy = false;
+    for(var i = 0; i < listOfBools.length; i++){
+        if (check) {
+            someTruthy = someTruthy || Boolean(check(listOfBools[i]));
+        }
+        else {
+            someTruthy = someTruthy || Boolean(listOfBools[i]);
+        }
+        if (someTruthy) {
+            return someTruthy;
+        }
+    }
+    return false;
+};
+
+/**
+ * A helper for creating a style-guide conformant bootbox modal. Returns a promise.
+ * @param {String} title:
+ * @param {String} message:
+ * @param {String} actionButtonLabel:
+ * @param {Object} options: optional options
+ * @param {String} options.actionButtonClass: CSS class for action button, default 'btn-success'
+ * @param {String} options.cancelButtonLabel: label for cancel button, default 'Cancel'
+ * @param {String} options.cancelButtonClass: CSS class for cancel button, default 'btn-default'
+ *
+ * @example
+ * dialog('Hello', 'Just saying hello', 'Say hi').done(successCallback).fail(doNothing);
+ **/
+var dialog = function(title, message, actionButtonLabel, options) {
+    var ret = $.Deferred();
+    options = $.extend({}, {
+        actionButtonClass: 'btn-success',
+        cancelButtonLabel: 'Cancel',
+        cancelButtonClass: 'btn-default'
+    }, options || {});
+
+    bootbox.dialog({
+        title: title,
+        message: message,
+        buttons: {
+            cancel: {
+                label: options.cancelButtonLabel,
+                className: options.cancelButtonClass,
+                callback: function() {
+                    bootbox.hideAll();
+                    ret.reject();
+                }
+            },
+            approve: {
+                label: actionButtonLabel,
+                className: options.actionButtonClass,
+                callback: ret.resolve
+            }
+        }
+    });
+    return ret.promise();
+};
+
+// Formats contributor family names for display.  Takes in project, number of contributors, and getFamilyName function
+var contribNameFormat = function(node, number, getFamilyName) {
+    if (number === 1) {
+        return getFamilyName(0, node);
+    }
+    else if (number === 2) {
+        return getFamilyName(0, node) + ' and ' +
+            getFamilyName(1, node);
+    }
+    else if (number === 3) {
+        return getFamilyName(0, node) + ', ' +
+            getFamilyName(1, node) + ', and ' +
+            getFamilyName(2, node);
+    }
+    else {
+        return getFamilyName(0, node) + ', ' +
+            getFamilyName(1, node) + ', ' +
+            getFamilyName(2, node) + ' + ' + (number - 3);
+    }
+};
+
+// Returns single name representing contributor, First match found of family name, given name, middle names, full name.
+var findContribName = function (userAttributes) {
+    var names = [userAttributes.family_name, userAttributes.given_name, userAttributes.middle_names, userAttributes.full_name];
+    for (var n = 0; n < names.length; n++) {
+        if (names[n]) {
+            return names[n];
+        }
+    }
+};
+
+// For use in extracting contributor names from API v2 contributor response
+var extractContributorNamesFromAPIData = function(contributor){
+    var familyName = '';
+    var givenName = '';
+    var fullName = '';
+    var middleNames = '';
+
+    if (lodashGet(contributor, 'attributes.unregistered_contributor')){
+        fullName = contributor.attributes.unregistered_contributor;
+    }
+
+    else if (lodashGet(contributor, 'embeds.users.data')) {
+        var attributes = contributor.embeds.users.data.attributes;
+        familyName = attributes.family_name;
+        givenName = attributes.given_name;
+        fullName = attributes.full_name;
+        middleNames = attributes.middle_names;
+    }
+    else if (lodashGet(contributor, 'embeds.users.errors')) {
+        var meta = contributor.embeds.users.errors[0].meta;
+        familyName = meta.family_name;
+        givenName = meta.given_name;
+        fullName = meta.full_name;
+        middleNames = meta.middle_names;
+    }
+
+    return {
+        'familyName': familyName,
+        'givenName': givenName,
+        'fullName': fullName,
+        'middleNames': middleNames
+    };
+};
+
+
+// Google analytics event tracking on the dashboard/my projects pages
+var trackClick = function(category, action, label){
+    window.ga('send', 'event', category, action, label);
+
+    KeenTracker.getInstance().trackPrivateEvent(
+        'front-end-events', {
+            interaction: {
+                category: category,
+                action: action,
+                label: label,
+            },
+        }
+    );
+
+    //in order to make the href redirect work under knockout onclick binding
+    return true;
+};
+
+
+// Call a function when scrolled to the bottom of the element
+/// Useful for triggering an event at the bottom of a window, like infinite scroll
+function onScrollToBottom(element, callback) {
+    $(element).scroll(function() {
+        var $this = $(this);
+        if ($this.scrollTop() + $this.innerHeight() >= $this[0].scrollHeight) {
+            callback();
+        }
+    });
+}
+
+
+/**
+ * Return the current domain as a string, e.g. 'http://localhost:5000'
+ */
+function getDomain(location) {
+    var ret = '';
+    var loc = location || window.location;
+    var hostname = loc.hostname;
+    var protocol = hostname === 'localhost' ? 'http://' : 'https://';
+    var port = loc.port;
+    ret = protocol + hostname;
+    if (port) {
+        ret += ':' + port;
+    }
+    return ret;
+}
+
+/**
+ * Utility function to convert absolute URLs to relative urls
+ * See:
+ *      http://stackoverflow.com/questions/736513/how-do-i-parse-a-url-into-hostname-and-path-in-javascript
+ * This method have no effect on external urls.
+ * @param url {string} url to be converted
+ * @returns {string} converted relative url
+ */
+function toRelativeUrl(url, window) {
+    var parser = document.createElement('a');
+    parser.href = url;
+    var relative_url = url;
+    if (window.location.hostname === parser.hostname){
+        relative_url = parser.pathname + parser.search + parser.hash;
+    }
+    return relative_url;
+}
+
+/**
+ * Utility function to render links in plain text to HTML a tags
+ * @param content {string} text to be converted
+ * @returns {string} linkified text
+ */
+function linkifyText(content) {
+    var linkifyOpts = { target: function (href, type) { return type === 'url' ? '_top' : null; } };
+    return linkify(content);
+}
 
 // Also export these to the global namespace so that these can be used in inline
 // JS. This is used on the /goodbye page at the moment.
 module.exports = window.$.osf = {
     postJSON: postJSON,
     putJSON: putJSON,
+    ajaxJSON: ajaxJSON,
+    getAllPagesAjaxJSON: getAllPagesAjaxJSON,
+    mergePagesAjaxJSON: mergePagesAjaxJSON,
+    getAllNodeChildrenFromNodeList: getAllNodeChildrenFromNodeList,
+    squashAPIAttributes: squashAPIAttributes,
     setXHRAuthorization: setXHRAuthorization,
+    handleAddonApiHTTPError: handleAddonApiHTTPError,
     handleJSONError: handleJSONError,
     handleEditableError: handleEditableError,
     block: block,
+    unblock: unblock,
     growl: growl,
     apiV2Url: apiV2Url,
-    unblock: unblock,
     joinPrompts: joinPrompts,
     mapByProperty: mapByProperty,
     isEmail: isEmail,
     urlParams: urlParams,
-    trackPiwik: trackPiwik,
     applyBindings: applyBindings,
     FormattableDate: FormattableDate,
     throttle: throttle,
@@ -801,6 +1062,21 @@ module.exports = window.$.osf = {
     initializeResponsiveAffix: initializeResponsiveAffix,
     humanFileSize: humanFileSize,
     confirmDangerousAction: confirmDangerousAction,
+    iterObject: iterObject,
     isIE: isIE,
-    isSafari:isSafari
+    isSafari:isSafari,
+    indexOf: indexOf,
+    currentUser: currentUser,
+    any: any,
+    dialog: dialog,
+    contribNameFormat: contribNameFormat,
+    trackClick: trackClick,
+    findContribName: findContribName,
+    extractContributorNamesFromAPIData: extractContributorNamesFromAPIData,
+    onScrollToBottom: onScrollToBottom,
+    getDomain: getDomain,
+    toRelativeUrl: toRelativeUrl,
+    linkifyText: linkifyText,
+    getConfirmationString: getConfirmationString,
+    decodeText: decodeText,
 };

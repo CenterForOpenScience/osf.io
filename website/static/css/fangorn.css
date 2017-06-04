@@ -38,6 +38,9 @@
 .fangorn-selected > div span.text-muted {
 	color: #DDD;
 }
+.fangorn-preprint {
+    background-color: #e7f1f3;
+}
 .tb-disabled {
 	background: #eee;
 	color: #ccc;
@@ -80,10 +83,15 @@
     cursor: pointer !important;
     color: #333333;
 }
-.fg-file-links:hover {
+.fg-version-links {
+    cursor: pointer !important;
+    color: #337ab7;
+    font-weight: bold;
+}
+.fg-file-links:hover, .fg-version-links:hover {
     text-decoration: underline;
 }
-.fangorn-selected .fg-file-links {
+.fangorn-selected .fg-file-links, .fangorn-selected .fg-version-links {
     color: #FFFFFF;
 }
 .tb-row-titles {

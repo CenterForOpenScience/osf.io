@@ -17,6 +17,9 @@
                                 class="form-control private-link-name"
                                 placeholder='Optional link name (e.g., For peer review, Sharing data, Share project)' />
                         </div>
+                        <div class="help-block">
+                            <p data-bind="html: message, attr: {class: messageClass}"></p>
+                        </div>
                     </div>
 
                     <hr />
@@ -26,7 +29,7 @@
                             <input type="checkbox" data-bind="checked: anonymous"/>
                             <strong>Anonymize</strong> contributor list for this link (e.g., for blind peer review).
                             <br>
-                            <i>Ensure the wiki pages, files, registration supplements and add-ons do not contain identifying information.</i>
+                            <i>Ensure the wiki pages, files, registration forms and add-ons do not contain identifying information.</i>
                         </label>
                     </div>
 

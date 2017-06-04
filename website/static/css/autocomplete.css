@@ -1,0 +1,5 @@
+/* Force autocomplete results to have scrollbars */
+.tt-dropdown-menu {
+  max-height: 300px;
+  overflow-y: auto;
+}

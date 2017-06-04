@@ -28,14 +28,14 @@ function getClaimUrl() {
 }
 
 function alertFinished(email) {
-    $osf.growl('Email will arrive shortly', ['Please check <em>', email, '</em>'].join(''), 'success');
+    $osf.growl('Email will arrive shortly', ['Please check <em>', $osf.htmlEscape(email), '</em>'].join(''), 'success');
 }
 
 function onClickIfLoggedIn() {
     var pk = $(this).data('pk');
     if (pk !== currentUserId) {
         bootbox.confirm({
-            title: 'Claim as ' + global.contextVars.currentUser.username + '?',
+            title: 'Claim as ' + $osf.htmlEscape(global.contextVars.currentUser.username) + '?',
             message: 'If you claim this account, a contributor of this project ' +
                     'will be emailed to confirm your identity.',
             callback: function(confirmed) {

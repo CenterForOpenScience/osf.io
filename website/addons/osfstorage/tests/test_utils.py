@@ -19,7 +19,7 @@ class TestSerializeRevision(StorageTestCase):
     def setUp(self):
         super(TestSerializeRevision, self).setUp()
         self.path = 'kind-of-magic.webm'
-        self.record = self.node_settings.root_node.append_file(self.path)
+        self.record = self.node_settings.get_root().append_file(self.path)
         self.versions = [
             factories.FileVersionFactory(creator=self.user)
             for __ in range(3)
@@ -40,6 +40,8 @@ class TestSerializeRevision(StorageTestCase):
             },
             'date': self.versions[0].date_created.isoformat(),
             'downloads': 2,
+            'md5': None,
+            'sha256': None,
         }
         observed = utils.serialize_revision(
             self.project,
@@ -62,6 +64,8 @@ class TestSerializeRevision(StorageTestCase):
             'user': None,
             'date': self.versions[0].date_created.isoformat(),
             'downloads': 0,
+            'md5': None,
+            'sha256': None,
         }
         observed = utils.serialize_revision(
             self.project,

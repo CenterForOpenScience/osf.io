@@ -11,16 +11,10 @@ function removeEmpty(array) {
     return ret;
 }
 
-// Custom differ that includes newlines and sentence breaks
-var wikiDiff =  new jsdiff.Diff();
-wikiDiff.tokenize = function (value) {
-    return removeEmpty(value.split(/(\S.+?[.!?\n])(?=\s+|$)/));
-};
-
 var diff = function(beforeText, afterText) {
     beforeText = beforeText.replace(/(?:\r\n|\r|\n)/g, '\n');
     afterText = afterText.replace(/(?:\r\n|\r|\n)/g, '\n');
-    var diffList = wikiDiff.diff(beforeText, afterText);
+    var diffList = jsdiff.diffLines(beforeText, afterText, newlineIsToken=true);
     var fragment = document.createDocumentFragment();
 
     diffList.forEach(function(part) {

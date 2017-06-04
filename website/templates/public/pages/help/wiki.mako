@@ -1,10 +1,11 @@
+
 <div class="col-sm-12">
     <span id="wiki" class="anchor"></span>
     <h4 class="m-t-lg f-w-lg">Collaborative Wiki</h4>
     <p>The wiki is a versatile tool for interacting with your team or the people who view your work. Each project
    and component has a wiki and you can add more pages if you wish. For example, you might have a wiki page explaining
     the main points of your project, but also have a wiki page with lab notes, with contact information, or with
-    more indepth detail on one aspect of your project. You can also turn the wiki off completely in the
+    more in-depth detail on one aspect of your project. You can also turn the wiki off completely in the
     "Select Add-Ons" section of your project settings.</p>
 
     <p>The wiki supports collaborative editing. Your entire team can get online and write at the same time together.

@@ -27,6 +27,10 @@
         "fullName": "OSF Storage",
         "externalView": false
     },
+    "owncloud": {
+        "fullName": "ownCloud",
+        "externalView": false
+    },
     "s3": {
         "fullName": "Amazon S3",
         "externalView": false

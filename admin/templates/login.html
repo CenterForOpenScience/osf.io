@@ -1,0 +1,63 @@
+{% extends 'base.html' %}
+{% load render_bundle from webpack_loader %}
+
+{% block title %}
+<title>OSFAdmin | Log in</title>
+{% endblock %}
+
+<!-- hide navbar, sidebar, and User account menu -->
+{% block navbar %}
+{% endblock %}
+{% block sidebar %}
+{% endblock %}
+
+{% block content %}
+
+<div class="login-page">
+    <div class="login-box">
+        <div class="login-logo">
+            <b>OSF</b>Admin</a>
+        </div><!-- /.login-logo -->
+        <div class="login-box-body">
+            <p class="login-box-msg">Sign in to start your session</p>
+            <form action="" method="post">
+                {% csrf_token %}
+                {% if form.non_field_errors %}
+                <ul>
+                {% for error in form.non_field_errors %}
+                <li class="errorclass">{{ error }}</li>
+                {% endfor %}
+                </ul>
+                {% endif %}
+                <div class="form-group">
+                    <label for="username">Email:</label>
+                    <p>{{ form.email }}</p>
+                    {% if form.email.errors %}<span class="text-danger"> {{ form.email.errors }}</span>{% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="username">Password:</label>
+                    <p>{{ form.password }}</p>
+                    {% if form.password.errors %}<span class="text-danger"> {{ form.password.errors }}</span>{% endif %}
+                </div>
+                <div class="row">
+                    <div class="col-xs-4">
+                        <button type="submit" class="btn btn-primary btn-block btn-flat">Sign In</button>
+                    </div><!-- /.col -->
+                </div>
+                <a href="{% url 'password_reset_recover' %}">Forgot your password?</a>
+                <div>
+                    {% if messages %}
+                        <ul class="register_page_messages">
+                        {% for message in messages %}
+                            <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}
+                            </li>
+                        {% endfor %}
+                        </ul>
+                    {% endif %}
+                </div>
+            </form>
+        </div><!-- /.login-box-body -->
+      <br><!-- refactor  -->
+    </div><!-- /.login-box -->
+</div>
+{% endblock %}

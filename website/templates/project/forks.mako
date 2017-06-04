@@ -23,8 +23,21 @@
         <div class="col-xs-3 col-sm-4">
                 <div class="m-md">
                     % if user_name and (user['is_contributor'] or node['is_public']) and not disk_saving_mode:
-                        <a class="btn btn-success" type="button" onclick="NodeActions.forkNode();">New Fork</a>
+                        <a class="btn btn-success" type="button" onclick="NodeActions.forkNode();">New fork</a>
                     % endif
                 </div>
         </div>
 </div>
+
+<%def name="javascript_bottom()">
+  ${parent.javascript_bottom()}
+  <script type="text/javascript">
+   window.contextVars = window.contextVars || {};
+   window.contextVars.analyticsMeta = $.extend(true, {}, window.contextVars.analyticsMeta, {
+       pageMeta: {
+           title: 'Forks',
+           public: true,
+       },
+   });
+  </script>
+</%def>

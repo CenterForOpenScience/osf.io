@@ -1,15 +1,38 @@
 <script id="profileSocial" type="text/html">
 
+    <link rel="stylesheet" href='/static/css/pages/profile-page.css'>
+    <link rel="stylesheet" href="/static/vendor/bower_components/academicons/css/academicons.css"/>
+
     <div data-bind="if: mode() === 'edit'">
 
         <form role="form" data-bind="submit: submit">
 
-            <div class="form-group">
-                <label>Personal Site</label>
-                <div class="input-group">
-                <span class="input-group-addon"><i class="glyphicon glyphicon-globe"></i></span>
-                <input class="form-control" data-bind="value: personal" placeholder="http://personalsite.com"/>
+            <label>Your websites</label>
+            <div data-bind="sortable: {
+                        data: profileWebsites,
+                        options: {
+                            handle: '.sort-handle',
+                            containment: '#containDrag'
+                        }
+                    }">
+
+                <div>
+                    <div class="sort-handle">
+                        <i title="Click to remove" class="btn text-danger pull-right  fa fa-times fa" data-bind="click: $parent.removeWebsite"></i>
+                        <div class="input-group" >
+                            <span class="input-group-addon"><i title="Drag to reorder"  class="fa fa-bars"></i></span>
+                            <input type="url" class="form-control" data-bind="value: $parent.profileWebsites()[$index()]" placeholder="http://yourwebsite.com"/>
+                        </div>
+                    </div>
+                    <div class="form-group" data-bind="visible: $index() != ($parent.profileWebsites().length - 1)">
+                    </div>
                 </div>
+            </div>
+            <div data-bind="ifnot: hasValidWebsites" class="text-danger">Please enter a valid website</div>
+            <div class="p-t-sm p-b-sm">
+                <a class="btn btn-default" data-bind="click: addWebsiteInput">
+                    Add website
+                </a>
             </div>
 
             <div class="form-group">
@@ -74,6 +97,40 @@
                 </div>
             </div>
 
+            <div class="form-group">
+                <label>ResearchGate</label>
+                <div class="input-group">
+                <span class="input-group-addon">https://researchgate.net/profile/</span>
+                <input class="form-control" data-bind="value: researchGate" placeholder="profileID"/>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Academia</label>
+                <div class="input-group">
+                <span class="input-group-addon">https://</span>
+                <input class="form-control" data-bind="value: academiaInstitution" placeholder="institution" size="5"/>
+                <span class="input-group-addon">.academia.edu/</span>
+                <input class="form-control" data-bind="value: academiaProfileID" placeholder="profileID"/>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Baidu Scholar</label>
+                <div class="input-group">
+                <span class="input-group-addon">http://xueshu.baidu.com/scholarID/</span>
+                <input class="form-control" data-bind="value: baiduScholar" placeholder="profileID"/>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>SSRN</label>
+                <div class="input-group">
+                <span class="input-group-addon">http://papers.ssrn.com/sol3/cf_dev/AbsByAuth.cfm?per_id=</span>
+                <input class="form-control" data-bind="value: ssrn" placeholder="profileID"/>
+                </div>
+            </div>
+
             <div class="p-t-lg p-b-lg">
 
                 <button
@@ -83,16 +140,17 @@
                     >Discard changes</button>
 
                 <button
+                        data-bind="disable: saving(), text: saving() ? 'Saving' : 'Save'"
                         type="submit"
                         class="btn btn-success"
                     >Save</button>
-
             </div>
 
             <!-- Flashed Messages -->
-            <div class="help-block">
-                <p data-bind="html: message, attr.class: messageClass"></p>
+            <div class="help-block flashed-message">
+                <p data-bind="html: message, attr: {class: messageClass}"></p>
             </div>
+
 
         </form>
 
@@ -101,10 +159,19 @@
     <div data-bind="if: mode() === 'view'">
 
         <table class="table" data-bind="if: hasValues()">
+            <tbody>
+                <tr data-bind="if: hasProfileWebsites()">
+                    <td data-bind="visible: profileWebsites().length > 1">Personal websites</td>
+                    <td data-bind="visible: profileWebsites().length === 1">Personal website</td>
+                    <td data-bind="foreach: profileWebsites"><a data-bind="attr: {href: $data}, text: $data"></a><br></td>
+                </tr>
+            </tbody>
+
             <tbody data-bind="foreach: values">
                 <tr data-bind="if: value">
-                    <td>{{ label }}</td>
-                    <td><a target="_blank" data-bind="attr.href: value">{{ text }}</a></td>
+                    <td><a target="_blank" data-bind="attr: {href: value}"><span data-bind="html: iconName(label)"></span></a></td>
+                    <td><span data-bind="text: label"></span></td>
+                    <td><a target="_blank" data-bind="attr: {href: value}, text: text"></a></td>
                 </tr>
             </tbody>
         </table>
@@ -119,4 +186,22 @@
 
     </div>
 
+</script>
+<script>
+iconName = function(name) {
+    var nameToHtml = {
+        "ORCID": "<i class='ai ai-orcid-square ai-2x' />",
+        "ResearcherID": "<img src='http://tguillerme.github.io/images/logo-RID.png' class='icon-image'>",
+        "Twitter": "<i class='fa fa-twitter-square fa-2x' />",
+        "GitHub": "<i class='fa fa-github-square fa-2x' />",
+        "LinkedIn": "<i class='fa fa-linkedin-square fa-2x' />",
+        "ImpactStory": "<i class='ai ai-impactstory-square ai-2x' />",
+        "Google Scholar": "<i class='ai ai-google-scholar-square ai-2x' />",
+        "ResearchGate": "<i class='ai ai-researchgate-square ai-2x' />",
+        "Academia": "<i class='ai ai-academia-square ai-2x' />",
+        "Baidu Scholar": "<img src='http://www.baidu.com/favicon.ico' class='icon-image'>",
+        "SSRN": "<img src='https://www.google.com/s2/favicons?domain=http://www.ssrn.com/' class='icon-image'>"
+    };
+    return nameToHtml[name];
+}
 </script>

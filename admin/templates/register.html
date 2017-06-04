@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+{% load render_bundle from webpack_loader %}
+{% load staticfiles %}
+
+{% block content %}
+<div class="register-box">
+    <div class="register-box-body">
+        <h4>Add an OSF Admin user</h4>
+        <form action="" method="post">
+            {% csrf_token %}
+
+            {% if form.non_field_errors %}
+            <ul>
+            {% for error in form.non_field_errors %}
+            <li class="errorclass">{{ error }}</li>
+            {% endfor %}
+            </ul>
+            {% endif %}
+            <div class="form-group">
+                <label for="email">Email:</label>
+                <p>{{ form.email }}</p>
+                {% if form.email.errors %}<span class="text-danger"> {{ form.email.errors }}</span>{% endif %}
+            </div>
+            <div class="form-group">
+                <label for="first_name">First name:</label>
+                <p>{{ form.first_name }}</p>
+                {% if form.first_name.errors %}<span class="text-danger"> {{ form.first_name.errors }}</span>{% endif %}
+            </div>
+            <div class="form-group">
+                <label for="last_name">Last name:</label>
+                <p>{{ form.last_name }}</p>
+                {% if form.last_name.errors %}<span class="text-danger"> {{ form.last_name.errors }}</span>{% endif %}
+            </div>
+            <div class="form-group">
+                <label for="password1">Password:</label>
+                <p>{{ form.password1 }}</p>
+                {% if form.password1.errors %}<span class="text-danger"> {{ form.password1.errors }}</span>{% endif %}
+            </div>
+            <div class="form-group">
+                <label for="password2">Confirm Password:</label>
+                <p>{{ form.password2 }}</p>
+                {% if form.password2.errors %}<span class="text-danger"> {{ form.password2.errors }}</span>{% endif %}
+            </div>
+            <div class="form-group">
+                <label for="email">OSF ID:</label>
+                <p>{{ form.osf_id }}</p>
+                {% if form.osf_id.errors %}<span class="text-danger"> {{ form.osf_id.errors }}</span>{% endif %}
+            </div>
+            <div class="form-group">
+                <label for="perms">Select account Permissions:</label>
+                <p>{{ form.group_perms }}</p>
+                {% if form.group_perms.errors %}<span class="text-danger"> {{ form.group_perms.errors }}</span>{% endif %}
+            </div>
+            <div class="row">
+                <div class="col-xs-4">
+                    <button type="submit" class="btn btn-primary btn-block btn-flat">Register</button>
+                </div><!-- /.col -->
+            </div>
+        </form>
+        <div>
+          {% if messages %}
+            <ul class="login_page_messages">
+              {% for message in messages %}
+                   <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}
+                   </li>
+              {% endfor %}
+            </ul>
+          {% endif %}
+        </div>
+    </div><!-- /.form-box -->
+</div><!-- /.register-box -->
+{% endblock %}

@@ -3,16 +3,18 @@ elapsed the pending approval time and make public and registrations whose
 embargo end dates have been passed.
 """
 
-import datetime
 import logging
-import sys
+import datetime
 
 from modularodm import Q
 
+from framework.celery_tasks import app as celery_app
 from framework.transactions.context import TokuTransaction
-from website import models, settings
+
 from website.app import init_app
+from website import models, settings
 from website.project.model import NodeLog
+
 from scripts import utils as scripts_utils
 
 
@@ -44,7 +46,8 @@ def main(dry_run=True):
                         parent_registration.registered_from.add_log(
                             action=NodeLog.EMBARGO_APPROVED,
                             params={
-                                'node': parent_registration._id,
+                                'node': parent_registration.registered_from_id,
+                                'registration': parent_registration._id,
                                 'embargo_id': embargo._id,
                             },
                             auth=None,
@@ -75,12 +78,14 @@ def main(dry_run=True):
 
                 with TokuTransaction():
                     try:
-                        parent_registration.set_privacy('public')
                         embargo.state = models.Embargo.COMPLETED
+                        for node in parent_registration.node_and_primary_descendants():
+                            node.set_privacy('public', auth=None, save=True)
                         parent_registration.registered_from.add_log(
                             action=NodeLog.EMBARGO_COMPLETED,
                             params={
-                                'node': parent_registration._id,
+                                'node': parent_registration.registered_from_id,
+                                'registration': parent_registration._id,
                                 'embargo_id': embargo._id,
                             },
                             auth=None,
@@ -98,8 +103,8 @@ def should_be_embargoed(embargo):
     return (datetime.datetime.utcnow() - embargo.initiation_date) >= settings.EMBARGO_PENDING_TIME
 
 
-if __name__ == '__main__':
-    dry_run = 'dry' in sys.argv
+@celery_app.task(name='scripts.embargo_registrations')
+def run_main(dry_run=True):
     init_app(routes=False)
     if not dry_run:
         scripts_utils.add_file_logger(logger, __file__)

@@ -1,0 +1,18 @@
+<form class="well" method="post" action="{% url 'users:reset_password' guid %}">
+    <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal">x</button>
+        <h3>Choose email to send reset link</h3>
+    </div>
+    <div class="modal-body">
+        <h4>User: {{ guid }}</h4>
+        {% csrf_token %}
+        {{ form }}
+    </div>
+    <div class="modal-footer">
+        <input class="btn btn-primary" type="submit" value="Send" />
+        <button type="button" class="btn btn-default"
+                data-dismiss="modal">
+            Cancel
+        </button>
+    </div>
+</form>

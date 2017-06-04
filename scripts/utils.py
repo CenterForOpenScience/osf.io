@@ -13,6 +13,7 @@ def format_now():
 
 def add_file_logger(logger, script_name, suffix=None):
     _, name = os.path.split(script_name)
+    name = name.rstrip('c')
     if suffix is not None:
         name = '{0}-{1}'.format(name, suffix)
     file_handler = logging.FileHandler(

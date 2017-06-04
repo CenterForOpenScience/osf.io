@@ -7,6 +7,7 @@ from webtest_plus import TestApp
 
 from website.util import api_url_for, web_url_for
 from website.addons.base.testing import AddonTestCase
+from website.addons.badges.util import get_node_badges
 
 from tests.factories import AuthUserFactory
 from utils import create_mock_badger, create_badge_dict, get_garbage
@@ -77,13 +78,13 @@ class TestBadgesViews(AddonTestCase):
 
     def test_award_badge(self):
         badgeid = self.user_settings.badges[0]._id
-        initnum = len(self.project.badgeassertion__awarded)
+        initnum = get_node_badges(self.project).count()
         assert_true(self.user_settings.can_award)
         url = api_url_for('award_badge', pid=self.project._id)
         ret = self.app.post_json(url, {'badgeid': badgeid}, auth=self.user.auth)
         self.project.reload()
         assert_equals(ret.status_int, 200)
-        assert_equals(initnum + 1, len(self.project.badgeassertion__awarded))
+        assert_equals(initnum + 1, get_node_badges(self.project).count())
 
     def test_award_badge_bad_badge_id(self):
         badgeid = 'badid67'
@@ -125,15 +126,15 @@ class TestBadgesViews(AddonTestCase):
 
     def test_revoke_badge(self):
         badgeid = self.user_settings.badges[0]._id
-        initnum = len(self.project.badgeassertion__awarded)
+        initnum = get_node_badges(self.project).count()
         assert_true(self.user_settings.can_award)
         url = api_url_for('award_badge', pid=self.project._id)
         ret = self.app.post_json(url, {'badgeid': badgeid}, auth=self.user.auth)
         self.project.reload()
         assert_equals(ret.status_int, 200)
-        assert_equals(initnum + 1, len(self.project.badgeassertion__awarded))
+        assert_equals(initnum + 1, get_node_badges(self.project).count())
 
-        assertion = self.project.badgeassertion__awarded[0]
+        assertion = get_node_badges(self.project)[0]
 
         revoke = api_url_for('revoke_badge', pid=self.project._id)
         ret = self.app.post_json(revoke,
@@ -146,22 +147,22 @@ class TestBadgesViews(AddonTestCase):
         assertion.reload()
 
         assert_equals(ret.status_int, 200)
-        assert_true(self.project.badgeassertion__awarded[0]._id, assertion._id)
+        assert_true(get_node_badges(self.project)[0]._id, assertion._id)
         assert_true(assertion.revoked)
         assert_true(assertion._id in self.user_settings.revocation_list)
         assert_equals(len(self.user_settings.revocation_list), 1)
 
     def test_revoke_badge_reason(self):
         badgeid = self.user_settings.badges[0]._id
-        initnum = len(self.project.badgeassertion__awarded)
+        initnum = get_node_badges(self.project).count()
         assert_true(self.user_settings.can_award)
         url = api_url_for('award_badge', pid=self.project._id)
         ret = self.app.post_json(url, {'badgeid': badgeid}, auth=self.user.auth)
         self.project.reload()
         assert_equals(ret.status_int, 200)
-        assert_equals(initnum + 1, len(self.project.badgeassertion__awarded))
+        assert_equals(initnum + 1, get_node_badges(self.project).count())
 
-        assertion = self.project.badgeassertion__awarded[0]
+        assertion = get_node_badges(self.project)[0]
 
         revoke = api_url_for('revoke_badge', pid=self.project._id)
         ret = self.app.post_json(revoke,
@@ -174,7 +175,7 @@ class TestBadgesViews(AddonTestCase):
         assertion.reload()
 
         assert_equals(ret.status_int, 200)
-        assert_true(self.project.badgeassertion__awarded[0]._id, assertion._id)
+        assert_true(get_node_badges(self.project)[0]._id, assertion._id)
         assert_true(assertion._id in self.user_settings.revocation_list)
         assert_equals(len(self.user_settings.revocation_list), 1)
         assert_true(assertion.revoked)
@@ -182,15 +183,15 @@ class TestBadgesViews(AddonTestCase):
 
     def test_revoke_badge_no_addon(self):
         badgeid = self.user_settings.badges[0]._id
-        initnum = len(self.project.badgeassertion__awarded)
+        initnum = get_node_badges(self.project).count()
         assert_true(self.user_settings.can_award)
         url = api_url_for('award_badge', pid=self.project._id)
         ret = self.app.post_json(url, {'badgeid': badgeid}, auth=self.user.auth)
         self.project.reload()
         assert_equals(ret.status_int, 200)
-        assert_equals(initnum + 1, len(self.project.badgeassertion__awarded))
+        assert_equals(initnum + 1, get_node_badges(self.project).count())
 
-        assertion = self.project.badgeassertion__awarded[0]
+        assertion = get_node_badges(self.project)[0]
 
         revoke = api_url_for('revoke_badge', pid=self.project._id)
         self.user.delete_addon('badges')
@@ -208,20 +209,20 @@ class TestBadgesViews(AddonTestCase):
 
         assert_equals(ret.status_int, 400)
         assert_false(assertion.revoked)
-        assert_true(self.project.badgeassertion__awarded[0]._id, assertion._id)
+        assert_true(get_node_badges(self.project)[0]._id, assertion._id)
         assert_false(assertion._id in self.user_settings.revocation_list)
 
     def test_revoke_didnt_award(self):
         badgeid = self.user_settings.badges[0]._id
-        initnum = len(self.project.badgeassertion__awarded)
+        initnum = get_node_badges(self.project).count()
         assert_true(self.user_settings.can_award)
         url = api_url_for('award_badge', pid=self.project._id)
         ret = self.app.post_json(url, {'badgeid': badgeid}, auth=self.user.auth)
         self.project.reload()
         assert_equals(ret.status_int, 200)
-        assert_equals(initnum + 1, len(self.project.badgeassertion__awarded))
+        assert_equals(initnum + 1, get_node_badges(self.project).count())
 
-        assertion = self.project.badgeassertion__awarded[0]
+        assertion = get_node_badges(self.project)[0]
 
         revoke = api_url_for('revoke_badge', pid=self.project._id)
 
@@ -241,7 +242,7 @@ class TestBadgesViews(AddonTestCase):
 
         assert_equals(ret.status_int, 400)
         assert_false(assertion.revoked)
-        assert_true(self.project.badgeassertion__awarded[0]._id, assertion._id)
+        assert_true(get_node_badges(self.project)[0]._id, assertion._id)
         assert_false(assertion._id in self.user_settings.revocation_list)
 
     def test_issuer_html(self):
@@ -249,15 +250,15 @@ class TestBadgesViews(AddonTestCase):
 
     def test_revoke_bad_aid(self):
         badgeid = self.user_settings.badges[0]._id
-        initnum = len(self.project.badgeassertion__awarded)
+        initnum = get_node_badges(self.project).count()
         assert_true(self.user_settings.can_award)
         url = api_url_for('award_badge', pid=self.project._id)
         ret = self.app.post_json(url, {'badgeid': badgeid}, auth=self.user.auth)
         self.project.reload()
         assert_equals(ret.status_int, 200)
-        assert_equals(initnum + 1, len(self.project.badgeassertion__awarded))
+        assert_equals(initnum + 1, get_node_badges(self.project).count())
 
-        assertion = self.project.badgeassertion__awarded[0]
+        assertion = get_node_badges(self.project)[0]
 
         revoke = api_url_for('revoke_badge', pid=self.project._id)
 
@@ -272,34 +273,34 @@ class TestBadgesViews(AddonTestCase):
 
         assert_equals(ret.status_int, 400)
         assert_false(assertion.revoked)
-        assert_true(self.project.badgeassertion__awarded[0]._id, assertion._id)
+        assert_true(get_node_badges(self.project)[0]._id, assertion._id)
         assert_false(assertion._id in self.user_settings.revocation_list)
 
     def test_system_badge_awarder(self):
         badgeid = self.user_settings.badges[0]._id
         self.user_settings.badges[0].make_system_badge()
-        initnum = len(self.project.badgeassertion__awarded)
+        initnum = get_node_badges(self.project).count()
         assert_true(self.user_settings.can_award)
         url = api_url_for('award_badge', pid=self.project._id)
         ret = self.app.post_json(url, {'badgeid': badgeid}, auth=self.user.auth)
         self.project.reload()
         assert_equals(ret.status_int, 200)
-        assert_equals(initnum + 1, len(self.project.badgeassertion__awarded))
+        assert_equals(initnum + 1, get_node_badges(self.project).count())
 
-        assertion = self.project.badgeassertion__awarded[0]
+        assertion = get_node_badges(self.project)[0]
         assert_equals(assertion.awarder._id, self.user_settings._id)
 
     def test_badge_awarder(self):
         badgeid = self.user_settings.badges[0]._id
-        initnum = len(self.project.badgeassertion__awarded)
+        initnum = get_node_badges(self.project).count()
         assert_true(self.user_settings.can_award)
         url = api_url_for('award_badge', pid=self.project._id)
         ret = self.app.post_json(url, {'badgeid': badgeid}, auth=self.user.auth)
         self.project.reload()
         assert_equals(ret.status_int, 200)
-        assert_equals(initnum + 1, len(self.project.badgeassertion__awarded))
+        assert_equals(initnum + 1, get_node_badges(self.project).count())
 
-        assertion = self.project.badgeassertion__awarded[0]
+        assertion = get_node_badges(self.project)[0]
         assert_equals(assertion.awarder._id, self.user_settings._id)
 
     def test_award_times(self):

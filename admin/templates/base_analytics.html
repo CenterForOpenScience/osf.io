@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block top_includes %}
+    <script>
+        if ('{{ keen_ready }}' == 'True') {
+            var keenProjectId = '{{ keen_project_id }}';
+            var keenReadKey = '{{ keen_read_key }}';
+        }
+    </script>
+
+    {% block top_analytics %}
+    {% endblock top_analytics %}
+
+{% endblock top_includes %}
+
+{% block title %}
+    <title>OSF Sales Analytics</title>
+{% endblock title %}
+
+
+{% block content %}
+
+    {% block topmenu %}
+        <a href="{% url 'sales_analytics:dashboard' %}" class="btn btn-primary">
+            Analytics Dashboard
+        </a>
+    {% endblock topmenu %}
+
+    {% block title_analytics %}
+
+    {% endblock title_analytics %}
+
+    {% block content_analytics %}
+
+    {% endblock content_analytics %}
+
+{% endblock content %}

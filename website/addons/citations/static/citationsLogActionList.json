@@ -1,0 +1,5 @@
+{
+  "citation_added" : "${user} added a citation ${citation} to ${node}",
+  "citation_edited" : "${user} updated a citation ${citation} in ${node}",
+  "citation_removed" : "${user} removed a citation ${citation} in ${node}"
+}

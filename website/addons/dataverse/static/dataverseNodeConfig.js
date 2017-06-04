@@ -5,14 +5,12 @@
 
 var ko = require('knockout');
 var bootbox = require('bootbox');
-require('knockout.punches');
 var Raven = require('raven-js');
 
 var $osf = require('js/osfHelpers');
 
 var $modal = $('#dataverseInputCredentials');
 
-ko.punches.enableAll();
 
 function ViewModel(url) {
     var self = this;
@@ -63,7 +61,9 @@ function ViewModel(url) {
         return Boolean(self.selectedHost());
     });
     self.tokenUrl = ko.pureComputed(function() {
-       return self.host() ? 'https://' + self.host() + '/account/apitoken' : null;
+        var tokenPath = self.host() === 'dataverse.lib.virginia.edu'
+                ? '/account/apitoken' : '/dataverseuser.xhtml?selectTab=apiTokenTab';
+        return self.host() ? 'https://' + self.host() + tokenPath : null;
     });
     self.savedHostUrl = ko.pureComputed(function() {
         return 'https://' + self.savedHost();
@@ -88,7 +88,7 @@ function ViewModel(url) {
             return 'Could not disconnect because of an error. Please try again later.';
         }),
         authInvalid: ko.pureComputed(function() {
-            return 'The API token provided for ' + self.host() + ' is invalid.';
+            return 'The API token provided for ' + $osf.htmlEscape(self.host()) + ' is invalid.';
         }),
         authError: ko.pureComputed(function() {
             return 'Sorry, but there was a problem connecting to that instance of Dataverse. It ' +
@@ -118,7 +118,7 @@ function ViewModel(url) {
         }),
         setInfoSuccess: ko.pureComputed(function() {
             var filesUrl = window.contextVars.node.urls.web + 'files/';
-            return 'Successfully linked dataset \'' + self.savedDatasetTitle() + '\'. Go to the <a href="' +
+            return 'Successfully linked dataset \'' + $osf.htmlEscape(self.savedDatasetTitle()) + '\'. Go to the <a href="' +
                 filesUrl + '">Files page</a> to view your content.';
         }),
         setDatasetError: ko.pureComputed(function() {
@@ -223,9 +223,11 @@ function ViewModel(url) {
     }).fail(function(xhr, textStatus, error) {
         self.changeMessage(self.messages.userSettingsError, 'text-danger');
         Raven.captureMessage('Could not GET dataverse settings', {
-            url: url,
-            textStatus: textStatus,
-            error: error
+            extra: {
+                url: url,
+                textStatus: textStatus,
+                error: error
+            }
         });
     });
 
@@ -298,9 +300,11 @@ ViewModel.prototype.setInfo = function() {
             (xhr.status = 406) ? self.messages.forbiddenCharacters : self.messages.setDatasetError;
         self.changeMessage(errorMessage, 'text-danger');
         Raven.captureMessage('Could not authenticate with Dataverse', {
-            url: self.urls().set,
-            textStatus: textStatus,
-            error: error
+            extra: {
+                url: self.urls().set,
+                textStatus: textStatus,
+                error: error
+            }
         });
     });
 };
@@ -339,9 +343,11 @@ ViewModel.prototype.getDatasets = function() {
     }).fail(function(xhr, status, error) {
         self.changeMessage(self.messages.getDatasetsError, 'text-danger');
         Raven.captureMessage('Could not GET datasets', {
-            url: self.urls().getDatasets,
-            textStatus: status,
-            error: error
+            extra: {
+                url: self.urls().getDatasets,
+                textStatus: status,
+                error: error
+            }
         });
     });
 };
@@ -371,9 +377,11 @@ ViewModel.prototype.sendAuth = function() {
         var errorMessage = (xhr.status === 401) ? self.messages.authInvalid : self.messages.authError;
         self.changeMessage(errorMessage, 'text-danger');
         Raven.captureMessage('Could not authenticate with Dataverse', {
-            url: url,
-            textStatus: textStatus,
-            error: error
+            extra: {
+                url: url,
+                textStatus: textStatus,
+                error: error
+            }
         });
     });
 };
@@ -388,9 +396,11 @@ ViewModel.prototype.fetchAccounts = function() {
     request.fail(function(xhr, textStatus, error) {
         self.changeMessage(self.messages.updateAccountsError(), 'text-danger');
         Raven.captureMessage('Could not GET ' + self.addonName + ' accounts for user', {
-            url: self.url,
-            textStatus: textStatus,
-            error: error
+            extra: {
+                url: self.url,
+                textStatus: textStatus,
+                error: error
+            }
         });
         ret.reject(xhr, textStatus, error);
     });
@@ -424,9 +434,11 @@ ViewModel.prototype.onImportError = function(xhr, status, error) {
     var self = this;
     self.changeMessage(self.messages.tokenImportError(), 'text-danger');
     Raven.captureMessage('Failed to import ' + self.addonName + ' access token.', {
-        xhr: xhr,
-        status: status,
-        error: error
+        extra: {
+            xhr: xhr,
+            status: status,
+            error: error
+        }
     });
 };
 
@@ -463,13 +475,13 @@ ViewModel.prototype.importAuth = function() {
         .then(function(){
             if (self.accounts().length > 1) {
                 bootbox.prompt({
-                    title: 'Choose ' + self.addonName + ' Access Token to Import',
+                    title: 'Choose ' + $osf.htmlEscape(self.addonName) + ' Access Token to Import',
                     inputType: 'select',
                     inputOptions: ko.utils.arrayMap(
                         self.accounts(),
                         function(item) {
                             return {
-                                text: item.name,
+                                text: $osf.htmlEscape(item.name),
                                 value: item.id
                             };
                         }
@@ -488,7 +500,7 @@ ViewModel.prototype.importAuth = function() {
                 });
             } else {
                 bootbox.confirm({
-                    title: 'Import ' + self.addonName + ' Access Token?',
+                    title: 'Import ' + $osf.htmlEscape(self.addonName) + ' Access Token?',
                     message: self.messages.confirmAuth(),
                     callback: function(confirmed) {
                         if (confirmed) {
@@ -523,9 +535,11 @@ ViewModel.prototype._deauthorizeConfirm = function() {
     request.fail(function(xhr, textStatus, error) {
         self.changeMessage(self.messages.deauthorizeFail(), 'text-danger');
         Raven.captureMessage('Could not deauthorize ' + self.addonName + ' account from node', {
-            url: self.urls().deauthorize,
-            textStatus: textStatus,
-            error: error
+            extra: {
+                url: self.urls().deauthorize,
+                textStatus: textStatus,
+                error: error
+            }
         });
     });
     return request;
@@ -537,7 +551,7 @@ ViewModel.prototype._deauthorizeConfirm = function() {
 ViewModel.prototype.deauthorize = function() {
     var self = this;
     bootbox.confirm({
-        title: 'Disconnect ' + self.addonName + ' Account?',
+        title: 'Disconnect ' + $osf.htmlEscape(self.addonName) + ' Account?',
         message: self.messages.confirmDeauth(),
         callback: function(confirmed) {
             if (confirmed) {

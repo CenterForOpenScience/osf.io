@@ -1,15 +1,14 @@
 import os
 
-from .model import AddonDataverseUserSettings, AddonDataverseNodeSettings, \
-    DataverseFile
-from .routes import settings_routes, api_routes
+from .model import AddonDataverseUserSettings, AddonDataverseNodeSettings
+from .routes import api_routes
 import views
 
-MODELS = [AddonDataverseNodeSettings, AddonDataverseUserSettings, DataverseFile]
+MODELS = [AddonDataverseNodeSettings, AddonDataverseUserSettings]
 USER_SETTINGS_MODEL = AddonDataverseUserSettings
 NODE_SETTINGS_MODEL = AddonDataverseNodeSettings
 
-ROUTES = [settings_routes, api_routes]
+ROUTES = [api_routes]
 
 SHORT_NAME = 'dataverse'
 FULL_NAME = 'Dataverse'
@@ -36,7 +35,7 @@ INCLUDE_CSS = {
 }
 
 HAS_HGRID_FILES = True
-GET_HGRID_DATA = views.hgrid.dataverse_hgrid_root
+GET_HGRID_DATA = views._dataverse_root_folder
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 NODE_SETTINGS_TEMPLATE = os.path.join(HERE, 'templates', 'dataverse_node_settings.mako')

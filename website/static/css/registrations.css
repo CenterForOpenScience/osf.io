@@ -1,0 +1,42 @@
+.registrations-view {
+    min-height: 400px;
+}
+.btn-group-vertical {
+    width: 100%;
+}
+.registration-editor-question{
+    color: #333333;
+    cursor: pointer;
+}
+.registration-editor-question-current{
+    color: #337AB7;
+    font-weight: 900;
+    font-size: 120%;
+}
+.registration-editor-textarea-lg {
+    min-height: 80px;
+}
+.registration-editor-textarea-xl {
+    min-height: 160px;
+}
+#selectedFile{
+    font-weight: 500;
+}
+#fileName{
+	font-weight: 300;
+}
+.row-title{
+	font-weight: 300;
+}
+.schema-fulfillment{
+    margin: 20px;
+}
+.draft-status-badge{
+    padding: 8px;
+    border-radius: 2px;
+    display: inline-block;
+    margin-bottom: 10px;
+}
+.breaklines {
+    white-space: pre-wrap;
+}

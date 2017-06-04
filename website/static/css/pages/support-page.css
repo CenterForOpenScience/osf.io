@@ -1,0 +1,33 @@
+/* Support css */
+.support-wrapper {
+    background: #f8f8f8;
+}
+
+.support-col {
+    background: #FFF;
+    box-shadow: 0px 0px 2px #ccc;
+    min-height: 300px;
+    display: block;
+    color: #333;
+}
+
+.support-col-header, .support-col-body {
+    padding: 20px;
+}
+
+.support-col-header, .support-col-header a {
+    color: #FFF;
+}
+
+
+
+.footer{
+    margin-top:0;
+}
+
+@media (max-width: 767px ) {
+    .support-col {
+        margin: 15px;
+        min-height: 80px;
+    }
+}

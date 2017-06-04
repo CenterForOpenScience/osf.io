@@ -8,9 +8,6 @@ var oop = require('js/oop');
 var Raven = require('raven-js');
 var ChangeMessageMixin = require('js/changeMessage');
 
-require('knockout.punches');
-ko.punches.enableAll();
-
 
 var UserEmail = oop.defclass({
     constructor: function(params) {
@@ -81,9 +78,11 @@ var UserProfileClient = oop.defclass({
         request.fail(function(xhr, status, error) {
             $osf.growl('Error', 'Could not fetch user profile.', 'danger');
             Raven.captureMessage('Error fetching user profile', {
-                url: this.urls.fetch,
-                status: status,
-                error: error
+                extra: {
+                    url: this.urls.fetch,
+                    status: status,
+                    error: error
+                }
             });
             ret.reject(xhr, status, error);
         }.bind(this));
@@ -107,14 +106,16 @@ var UserProfileClient = oop.defclass({
 
             } else {
                 $osf.growl('Error', 'User profile not updated. Please refresh the page and try ' +
-                'again or contact <a href="mailto: support@cos.io">support@cos.io</a> ' +
+                'again or contact <a href="mailto: support@osf.io">support@osf.io</a> ' +
                 'if the problem persists.', 'danger');
             }
 
             Raven.captureMessage('Error fetching user profile', {
-                url: this.urls.update,
-                status: status,
-                error: error
+                extra: {
+                    url: this.urls.update,
+                    status: status,
+                    error: error
+                }
             });
             ret.reject(xhr, status, error);
         }.bind(this));
@@ -201,15 +202,28 @@ var UserProfileViewModel = oop.extend(ChangeMessageMixin, {
 
             this.client.update(this.profile()).done(function (profile) {
                 this.profile(profile);
-
                 var emails = profile.emails();
+                var emailAdded = false;
                 for (var i=0; i<emails.length; i++) {
                     if (emails[i].address() === email.address()) {
+                        emailAdded = true;
                         this.emailInput('');
-                        var addrText = $osf.htmlEscape(email.address());
-                        $osf.growl('<em>' + addrText  + '</em> added to your account.','You will receive a confirmation email at <em>' + addrText  + '</em>. Please check your email and confirm.', 'success');
-                        return;
                     }
+                }
+                if (emailAdded === true) {
+                    var safeAddr = $osf.htmlEscape(email.address());
+                    bootbox.alert({
+                                title: 'Confirmation email sent',
+                                message: '<em>' + safeAddr + '</em>' + ' was added to your account.' +
+                                ' You will receive a confirmation email at ' + '<em>' + safeAddr + '</em>.' +
+                                ' Please click the link in your email to confirm this action. You will be required to enter your password.',
+                                buttons: {
+                                    ok: {
+                                        label: 'Close',
+                                        className: 'btn-default'
+                                    }
+                                }
+                            });
                 }
             }.bind(this)).fail(function(){
                 this.profile().emails.remove(email);
@@ -221,16 +235,17 @@ var UserProfileViewModel = oop.extend(ChangeMessageMixin, {
     resendConfirmation: function(email){
         var self = this;
         self.changeMessage('', 'text-info');
-        var addrText = $osf.htmlEscape(email.address());
+        var safeAddr = $osf.htmlEscape(email.address());
         bootbox.confirm({
             title: 'Resend Email Confirmation?',
-            message: 'Are you sure that you want to resend email confirmation to ' + '<em>' + addrText + '</em>?',
+            message: 'Are you sure that you want to resend email confirmation to ' + '<em>' + safeAddr + '</em>?',
             callback: function (confirmed) {
                 if (confirmed) {
                     self.client.update(self.profile(), email).done(function () {
                         $osf.growl(
-                            'Email confirmation resent to <em>' + addrText + '</em>',
-                            'You will receive a new confirmation email at <em>' + addrText  + '</em>. Please check your email and confirm.',
+                            'Email confirmation resent to <em>' + safeAddr + '</em>',
+                            'You will receive a new confirmation email at <em>' + safeAddr  + '</em>.' +
+                            ' Please log out of this account and check your email to confirm this action.',
                             'success');
                     });
                 }
@@ -284,6 +299,51 @@ var UserProfileViewModel = oop.extend(ChangeMessageMixin, {
     }
 });
 
+var ExternalIdentityViewModel = oop.defclass({
+    constructor: function () {},
+    urls: {
+        'delete': '/api/v1/profile/logins/'
+    },
+    _removeIdentity: function(identity) {
+        var request = $osf.ajaxJSON('PATCH', this.urls.delete, {'data': {'identity': identity}});
+        request.done(function() {
+            $osf.growl('Success', 'You have revoked this connected identity.', 'success');
+            window.location.reload();
+        }.bind(this));
+        request.fail(function(xhr, status, error) {
+            $osf.growl('Error',
+                'Revocation request failed. Please contact <a href="mailto: support@osf.io">support@osf.io</a> if the problem persists.',
+                'danger'
+            );
+            Raven.captureMessage('Error revoking connected identity', {
+                extra: {
+                    url: this.urls.update,
+                    status: status,
+                    error: error
+                }
+            });
+        }.bind(this));
+        return request;
+    },
+    removeIdentity: function (identity) {
+        var self = this;
+        bootbox.confirm({
+            title: 'Remove authorization?',
+            message: 'Are you sure you want to remove this authorization?',
+            callback: function(confirmed) {
+                if (confirmed) {
+                    return self._removeIdentity(identity);
+                }
+            },
+            buttons:{
+                confirm:{
+                    label:'Remove',
+                    className:'btn-danger'
+                }
+            }
+        });
+    }
+});
 
 var DeactivateAccountViewModel = oop.defclass({
     constructor: function () {
@@ -299,14 +359,20 @@ var DeactivateAccountViewModel = oop.defclass({
             this.success(true);
         }.bind(this));
         request.fail(function(xhr, status, error) {
-            $osf.growl('Error',
-                'Deactivation request failed. Please contact <a href="mailto: support@cos.io">support@cos.io</a> if the problem persists.',
-                'danger'
-            );
+            if (xhr.responseJSON.error_type === 'throttle_error') {
+                $osf.growl('Error', xhr.responseJSON.message_long, 'danger');
+            } else {
+                $osf.growl('Error',
+                    'Deactivation request failed. Please contact <a href="mailto: support@osf.io">support@osf.io</a> if the problem persists.',
+                    'danger'
+                );
+            }
             Raven.captureMessage('Error requesting account deactivation', {
-                url: this.urls.update,
-                status: status,
-                error: error
+                extra: {
+                    url: this.urls.update,
+                    status: status,
+                    error: error
+                }
             });
         }.bind(this));
         return request;
@@ -332,7 +398,6 @@ var DeactivateAccountViewModel = oop.defclass({
     }
 });
 
-
 var ExportAccountViewModel = oop.defclass({
     constructor: function () {
         this.success = ko.observable(false);
@@ -347,14 +412,20 @@ var ExportAccountViewModel = oop.defclass({
             this.success(true);
         }.bind(this));
         request.fail(function(xhr, status, error) {
-            $osf.growl('Error',
-                'Export request failed. Please contact <a href="mailto: support@cos.io">support@cos.io</a> if the problem persists.',
-                'danger'
-            );
+            if (xhr.responseJSON.error_type === 'throttle_error') {
+                $osf.growl('Error', xhr.responseJSON.message_long, 'danger');
+            } else {
+                $osf.growl('Error',
+                    'Export request failed. Please contact <a href="mailto: support@osf.io">support@osf.io</a> if the problem persists.',
+                    'danger'
+                );
+            }
             Raven.captureMessage('Error requesting account export', {
-                url: this.urls.update,
-                status: status,
-                error: error
+                extra: {
+                    url: this.urls.update,
+                    status: status,
+                    error: error
+                }
             });
         }.bind(this));
         return request;
@@ -381,5 +452,6 @@ var ExportAccountViewModel = oop.defclass({
 module.exports = {
     UserProfileViewModel: UserProfileViewModel,
     DeactivateAccountViewModel: DeactivateAccountViewModel,
-    ExportAccountViewModel: ExportAccountViewModel
+    ExportAccountViewModel: ExportAccountViewModel,
+    ExternalIdentityViewModel: ExternalIdentityViewModel
 };

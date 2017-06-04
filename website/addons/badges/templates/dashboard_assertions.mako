@@ -6,13 +6,13 @@ $script.ready('hgrid', function() {
             %for assertion in assertions:
                 %if not assertion.revoked:
                     {
-                        date: '${assertion.issued_date}',
-                        badge: '${assertion.badge.name}',
-                        badge_id: '${assertion.badge._id}',
-                        project: '${assertion.node.title}',
-                        project_id:'${assertion.node._id}',
-                        assertion_id: '${assertion._id}',
-                        node_api_url: '${assertion.node.api_url}'
+                        date: ${ assertion.issued_date | sjson, n },
+                        badge: ${ assertion.badge.name | sjson, n },
+                        badge_id: ${ assertion.badge._id | sjson, n },
+                        project: ${ assertion.node.title | sjson, n },
+                        project_id: ${ assertion.node._id | sjson, n },
+                        assertion_id: ${ assertion._id | sjson, n },
+                        node_api_url: ${ assertion.node.api_url | sjson, n }
                     },
                 %endif
             %endfor

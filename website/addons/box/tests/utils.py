@@ -6,28 +6,27 @@ from modularodm import storage
 
 from framework.mongo import set_up_storage
 
-from website.addons.base.testing import AddonTestCase
+
+from website.addons.base.testing import OAuthAddonTestCaseMixin, AddonTestCase
 from website.addons.box import MODELS
-from website.addons.box.model import BoxOAuthSettings
+from website.addons.box.model import Box
+from website.addons.box.tests.factories import BoxAccountFactory
 
 
 def init_storage():
     set_up_storage(MODELS, storage_class=storage.MongoStorage)
 
 
-class BoxAddonTestCase(AddonTestCase):
+class BoxAddonTestCase(OAuthAddonTestCaseMixin, AddonTestCase):
 
     ADDON_SHORT_NAME = 'box'
-
-    def set_user_settings(self, settings):
-        self.oauth = BoxOAuthSettings(
-            user_id='test', access_token='test')
-        self.oauth.save()
-        settings.oauth_settings = self.oauth
+    ExternalAccountFactory = BoxAccountFactory
+    Provider = Box
 
     def set_node_settings(self, settings):
+        super(BoxAddonTestCase, self).set_node_settings(settings)
         settings.folder_id = '1234567890'
-
+        settings.folder_name = 'Foo'
 
 mock_responses = {
     'folder': {
@@ -196,7 +195,7 @@ def patch_client(target, mock_client=None):
 
     Usage: ::
 
-        with patch_client('website.addons.box.view.config.get_client') as client:
+        with patch_client('website.addons.box.views.BoxClient') as client:
             # test view that uses the box client.
     """
     with mock.patch(target) as client_getter:

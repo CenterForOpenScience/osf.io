@@ -1,3 +1,4 @@
+import mock
 from nose.tools import *
 
 from framework.auth.core import Auth
@@ -15,12 +16,29 @@ from tests.factories import ExternalAccountFactory
 from tests.factories import MockOAuth2Provider
 from tests.factories import ProjectFactory
 
+class MockConfig(AddonConfig):
+
+    def __init__(self):
+        super(MockConfig, self).__init__(
+            short_name='mockaddon',
+            full_name='Mock Addon',
+            owners=[],
+            categories=[]
+        )
 
 class MockNodeSettings(AddonOAuthNodeSettingsBase):
     oauth_provider = MockOAuth2Provider
+    config = MockConfig()
+    folder_id = 'foo'
+    folder_name = 'Foo'
+    folder_path = '/Foo'
+
+    def deauthorize(*args, **kwargs):
+        pass
 
 
 class MockUserSettings(AddonOAuthUserSettingsBase):
+    config = MockConfig
     oauth_provider = MockOAuth2Provider
 
 
@@ -78,27 +96,39 @@ class TestNodeSettings(OsfTestCase):
             external_account=self.external_account,
             user=self.user
         )
+        self.user_settings.reload()
 
         assert_equal(
             self.node_settings.external_account,
             self.external_account
         )
         assert_equal(
-            self.node_settings.user_settings,
-            self.user_settings
+            self.node_settings.user_settings._id,
+            self.user_settings._id
         )
         assert_in(
             self.project._id,
             self.user_settings.oauth_grants.keys()
         )
 
-    def test_revoke_auth(self):
+    @mock.patch('tests.test_addons_oauth.MockNodeSettings.deauthorize')
+    @mock.patch('framework.auth.core._get_current_user')
+    def test_revoke_auth(self, mock_decorator, mock_deauth):
+        mock_decorator.return_value = self.user
         self.node_settings.set_auth(
             external_account=self.external_account,
             user=self.user
         )
-        self.user_settings.revoke_oauth_access(self.external_account)
+        self.user_settings.reload()
+        assert_equal(
+            self.user_settings.oauth_grants,
+            {self.project._id: {self.external_account._id: {}}}
+        )
 
+        self.user_settings.revoke_oauth_access(self.external_account, auth=Auth(self.user))
+        self.user_settings.reload()
+
+        assert_true(mock_deauth.called)
         assert_equal(
             self.user_settings.oauth_grants,
             {self.project._id: {}}
@@ -270,6 +300,23 @@ class TestUserSettings(OsfTestCase):
                 }
             }
         )
+
+    @mock.patch('tests.test_addons_oauth.MockUserSettings.revoke_remote_oauth_access')
+    @mock.patch('framework.auth.core._get_current_user')
+    def test_revoke_remote_access_called(self, mock_decorator, mock_revoke):
+        mock_decorator.return_value = self.user
+        self.user_settings.delete()
+        assert_equal(mock_revoke.call_count, 1)
+
+    @mock.patch('tests.test_addons_oauth.MockUserSettings.revoke_remote_oauth_access')
+    @mock.patch('framework.auth.core._get_current_user')
+    def test_revoke_remote_access_not_called(self, mock_decorator, mock_revoke):
+        mock_decorator.return_value = self.user
+        user2 = AuthUserFactory()
+        user2.external_accounts.append(self.external_account)
+        user2.save()
+        self.user_settings.delete()
+        assert_equal(mock_revoke.call_count, 0)
 
     def test_on_delete(self):
         node_settings = self.project.get_or_add_addon(

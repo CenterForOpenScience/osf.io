@@ -1,10 +1,12 @@
 import httplib as http
 
 from flask import request
+from modularodm import Q
 from modularodm.exceptions import ValidationError
 
 from framework.auth.decorators import collect_auth
-from website.project.model import Tag
+from website.exceptions import InvalidTagError, NodeStateError, TagNotFoundError
+from website.project.model import Node, Tag
 from website.project.decorators import (
     must_be_valid_project, must_have_permission, must_not_be_registration
 )
@@ -15,7 +17,11 @@ from website.project.decorators import (
 @collect_auth
 def project_tag(tag, auth, **kwargs):
     tag_obj = Tag.load(tag)
-    nodes = tag_obj.node__tagged if tag_obj else []
+    if tag_obj:
+        nodes = Node.find(Q('tags', 'eq', tag_obj._id))
+    else:
+        nodes = []
+
     visible_nodes = [obj for obj in nodes if obj.can_view(auth)]
     return {
         'nodes': [
@@ -48,9 +54,12 @@ def project_add_tag(auth, node, **kwargs):
 @must_have_permission('write')
 @must_not_be_registration
 def project_remove_tag(auth, node, **kwargs):
-
     data = request.get_json()
-    tag = data['tag']
-    if tag:
-        node.remove_tag(tag=tag, auth=auth)
-        return {'status': 'success'}
+    try:
+        node.remove_tag(tag=data['tag'], auth=auth)
+    except TagNotFoundError:
+        return {'status': 'failure'}, http.CONFLICT
+    except (InvalidTagError, NodeStateError):
+        return {'status': 'failure'}, http.BAD_REQUEST
+    else:
+        return {'status': 'success'}, http.OK

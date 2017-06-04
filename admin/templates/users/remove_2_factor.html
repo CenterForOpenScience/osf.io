@@ -1,0 +1,21 @@
+<form class="well" method="post" action="{% url 'users:remove2factor' guid=guid %}">
+    <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal">x</button>
+        <h3>This will remove two factor auth.</h3>
+    </div>
+    <div class="modal-body">
+        Removing this will let the user log in
+        with only one form of authentication.
+        The only way to reverse this action is
+        for the user to re-enable the addon
+        after logging in.
+        {% csrf_token %}
+    </div>
+    <div class="modal-footer">
+        <input class="btn btn-danger" type="submit" value="Confirm" />
+        <button type="button" class="btn btn-default"
+                data-dismiss="modal">
+            Cancel
+        </button>
+    </div>
+</form>

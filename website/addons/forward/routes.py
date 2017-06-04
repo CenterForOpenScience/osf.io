@@ -36,7 +36,7 @@ api_routes = {
             ],
             'get',
             views.widget.forward_widget,
-            OsfWebRenderer('../addons/forward/templates/forward_widget.mako'),
+            OsfWebRenderer('../addons/forward/templates/forward_widget.mako', trust=False),
         )
 
     ],

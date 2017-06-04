@@ -1,0 +1,13 @@
+<form class="well" method="post" action="{% url 'nodes:confirm-ham' guid=guid %}">
+    <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal">x</button>
+        <h3>Are you sure this node is <strong>not</strong> spam? {{ guid }}</h3>
+    </div>
+    {% csrf_token %}
+    <div class="modal-footer">
+        <input class="btn btn-danger" type="submit" value="Confirm" />
+        <button type="button" class="btn btn-default" data-dismiss="modal">
+            Cancel
+        </button>
+    </div>
+</form>

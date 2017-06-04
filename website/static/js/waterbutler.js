@@ -3,51 +3,60 @@
 var $ = require('jquery');
 var $osf = require('./osfHelpers');
 
-function getViewOnly() {
-    return $osf.urlParams().view_only;
+function buildUrl(path, provider, nid, options) {
+    path = path || '/';
+    var baseUrl = window.contextVars.waterbutlerURL + 'v1/resources/' + nid + '/providers/' + provider + path + '?';
+    return baseUrl + $.param($.extend(getDefaultOptions(), options));
 }
 
-function getDefaultOptions(path, provider) {
-    var options = {
-        path: path,
-        provider: provider
-    };
+function getDefaultOptions() {
+    var options = {};
     var viewOnly = getViewOnly();
     if (viewOnly) {
         options.view_only = viewOnly;
     }
+    if (navigator.appVersion.indexOf('MSIE 9.') !== -1) {
+        options.cookie = (document.cookie.match(window.contextVars.cookieName + '=(.+?);|$')[1] || '');
+    }
     return options;
 }
 
-function buildUrl(suffix, path, provider, nid, options) {
-    path = path || '/';
-    var baseUrl = window.contextVars.waterbutlerURL + suffix;
-    return baseUrl + $.param($.extend(getDefaultOptions(path, provider), {nid: nid}, options));
+function getViewOnly() {
+    return $osf.urlParams().view_only;
 }
 
-var buildCrudUrl = buildUrl.bind(this, 'file?');
-var buildCopyUrl = buildUrl.bind(this, 'copy?');
-var buildMoveUrl = buildUrl.bind(this, 'move?');
-var buildMetadataUrl = buildUrl.bind(this, 'data?');
-var buildRevisionsUrl = buildUrl.bind(this, 'revisions?');
-var buildCreateFolderUrl = buildUrl.bind(this, 'folders?');
-
-
-function buildUploadUrl(path, provider, nid, file, options) {
-    path = (path || '/') + file.name;
-    return buildUrl('file?', path, provider, nid, options);
+function buildFromTreebeard(item, options) {
+    return buildUrl(item.data.path, item.data.provider, item.data.nodeId, options);
 }
 
-function buildFromTreebeard(suffix, item, options) {
-    return buildUrl(suffix, item.data.path, item.data.provider, item.data.nodeId, options);
+function addToken(options) {
+    var wb_options = $.extend({}, options || {}, {token: window.contextVars.accessToken});
+    return wb_options;
 }
 
-function buildFromTreebeardFile(item, file, options) {
-    return buildUploadUrl(item.data.path, item.data.provider, item.data.nodeId, file, options);
+function _promoteAttrs(obj_data) {
+    var saved_attributes = obj_data.attributes;
+    // delete before extending in case saved_attributes has its own
+    // attributes property
+    delete obj_data.attributes;
+    $.extend(true, obj_data, saved_attributes);
+    return obj_data;
 }
 
-function toJsonBlob(item, options) {
-    return $.extend(getDefaultOptions(item.data.path || '/', item.data.provider), {nid: item.data.nodeId}, options);
+// This function turns a WB structure into a TB structure
+// WB returns a structure like:
+//      data: { attributes: { name: 'foo', kind: 'file', ... } }
+// TB wants a structure like:
+//      data: { name: 'foo', kind: 'file', ... }
+function wbLazyLoadPreprocess(obj) {
+    if (!$.isArray(obj.data)) {
+        obj.data = _promoteAttrs(obj.data);
+        return obj;
+    }
+    for (var i = 0; i < obj.data.length; i++) {
+        obj.data[i] = _promoteAttrs(obj.data[i]);
+    }
+    return obj;
 }
 
 module.exports = {
@@ -77,26 +86,14 @@ module.exports = {
         var wb_options = $.extend({}, options || {}, {meta: null});
         return buildFromTreebeard(item, wb_options);
     },
-    buildMetadataUrl: buildMetadataUrl,
-    buildCreateFolderUrl: buildCrudUrl,
-    buildRevisionsUrl: buildRevisionsUrl,
-    buildTreeBeardUpload: buildFromTreebeardFile,
-    buildTreeBeardCopy: buildFromTreebeard.bind(this, 'copy?'),
-    buildTreeBeardMove: buildFromTreebeard.bind(this, 'move?'),
-    buildTreeBeardDelete: buildFromTreebeard.bind(this, 'file?'),
-    buildTreeBeardDownload: function(item, options) {
-        if (window.contextVars.accessToken) {
-            options = $.extend(options || {}, {token: window.contextVars.accessToken});
-        }
-        return buildFromTreebeard('file?', item, options);
+    buildTreeBeardDownload: function _buildTreeBeardDownload(item, options) {
+        var wb_options = addToken(options);
+        return buildFromTreebeard(item, wb_options);
     },
-    buildTreeBeardMetadata: buildFromTreebeard.bind(this, 'data?'),
-    buildTreeBeardDownloadZip: function(item, options) {
-        if (window.contextVars.accessToken) {
-            options = $.extend(options || {}, {token: window.contextVars.accessToken});
-        }
-        return buildFromTreebeard('zip?', item, options);
+    buildTreeBeardDownloadZip: function _buildTreeBeardDownloadZip(item, options) {
+        var wb_options = addToken(options);
+        $.extend(wb_options, {zip: null});
+        return buildFromTreebeard(item, wb_options);
     },
-    copyUrl: function(){return window.contextVars.waterbutlerURL + 'ops/copy';},
-    moveUrl: function(){return window.contextVars.waterbutlerURL + 'ops/move';}
+    wbLazyLoadPreprocess: wbLazyLoadPreprocess
 };

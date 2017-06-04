@@ -34,7 +34,7 @@ class HTTPError(FrameworkError):
         },
         http.GONE: {
             'message_short': 'Resource deleted',
-            'message_long': ('The requested resource has been deleted. If this should '
+            'message_long': ('User has deleted this content. If this should '
                 'not have occurred and the issue persists, please report it to '
                 '<a href="mailto:support@osf.io">support@osf.io</a>.'),
         },
@@ -43,6 +43,10 @@ class HTTPError(FrameworkError):
             'message_long': ('The requested service is unavailable. If this should '
                 'not have occurred and the issue persists, please report it to '
                 '<a href="mailto:support@osf.io">support@osf.io</a>.'),
+        },
+        451: {
+            'message_short': 'Content removed',
+            'message_long': ('This content has been removed'),
         },
     }
 
@@ -67,6 +71,9 @@ class HTTPError(FrameworkError):
             data=self.to_data(),
         )
 
+    def __str__(self):
+        return repr(self)
+
     def to_data(self):
 
         data = copy.deepcopy(self.data)
@@ -77,9 +84,10 @@ class HTTPError(FrameworkError):
             }
         else:
             data['message_short'] = 'Unable to resolve'
-            data['message_long'] = ('OSF was unable to resolve your request. If this '
-                'issue persists, please report it to '
-                '<a href="mailto:support@osf.io">support@osf.io</a>.')
+            data['message_long'] = (
+                'OSF was unable to resolve your request. If this issue persists, please report it to '
+                '<a href="mailto:support@osf.io">support@osf.io</a>.'
+            )
         data.update(self.data)
         data['code'] = self.code
         data['referrer'] = self.referrer

@@ -41,10 +41,11 @@ class BootstrapTextArea(TextArea):
 
 
 def push_errors_to_status(errors):
+    # TODO: Review whether errors contain custom HTML. If so this change might cause some display anomalies.
     if errors:
         for field, _ in errors.items():
             for error in errors[field]:
-                status.push_status_message(error)
+                status.push_status_message(error, trust=False)
 
 
 class NoHtmlCharacters(object):
@@ -54,7 +55,7 @@ class NoHtmlCharacters(object):
     TODO: This could still post a problem if we output an email address to a
     Javascript literal.
     """
-
+    # TODO: Improve this for a post-bleach world
     def __init__(self, message=None):
         self.message = message or u'HTML is not allowed in form field'
 

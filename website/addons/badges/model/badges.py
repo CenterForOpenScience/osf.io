@@ -18,7 +18,7 @@ class Badge(GuidStoredObject):
 
     _id = fields.StringField(primary=True)
 
-    creator = fields.ForeignField('badgesusersettings', backref='creator')
+    creator = fields.ForeignField('badgesusersettings')
 
     is_system_badge = fields.BooleanField(default=False)
 
@@ -68,7 +68,7 @@ class Badge(GuidStoredObject):
 
     @property
     def assertions(self):
-        return self.badgeassertion__assertion
+        return BadgeAssertion.find(Q('badge', 'eq', self._id))
 
     @property
     def awarded_count(self):
@@ -120,8 +120,8 @@ class BadgeAssertion(StoredObject):
     _id = fields.StringField(default=lambda: str(ObjectId()))
 
     #Backrefs
-    badge = fields.ForeignField('badge', backref='assertion')
-    node = fields.ForeignField('node', backref='awarded')
+    badge = fields.ForeignField('badge')
+    node = fields.ForeignField('node')
     _awarder = fields.ForeignField('badgesusersettings')
 
     #Custom fields
@@ -161,7 +161,7 @@ class BadgeAssertion(StoredObject):
     @property
     def recipient(self):
         return {
-            'idenity': self.node._id,
+            'idenity': self.node._id,  # TODO: An unknown amount of code may depend on this typo
             'type': 'osfnode',  # TODO Could be an email?
             'hashed': False
         }

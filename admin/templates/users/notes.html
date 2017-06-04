@@ -1,0 +1,19 @@
+<form class="well" method="post" action="{% url 'users:notes' osf_id %}">
+    <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal">x</button>
+        <h3>Notes for OSF User</h3>
+    </div>
+    <div class="modal-body">
+        <h4>User: {{ osf_id }}</h4>
+        {% csrf_token %}
+        <label for="{{ form.notes.id_for_label }}">
+            <strong>Notes for OSF user:</strong>
+        </label>
+        <br>
+        {{ form.notes }}
+    </div>
+    <div class="modal-footer">
+        <input class="btn btn-primary" type="submit" value="Save" />
+        <button type="button" class="btn" data-dismiss="modal" >Cancel</button>
+    </div>
+</form>

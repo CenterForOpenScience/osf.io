@@ -12,7 +12,85 @@ var $osf = require('../osfHelpers');
 sinon.assert.expose(assert, {prefix: ''});
 
 describe('osfHelpers', () => {
+    describe('getAllNodeChildrenFromNodeList', () => {
+         var getItem = function(parent, id){
+             if (parent) {
+                 return {
+                     'relationships': {
+                         'parent': {
+                             'links': {
+                                 'related': {
+                                     'href': '/v2/nodes/' + parent + '/',
+                                 }
+                             }
+                         }
+                     },
+                     'id': id,
+                 };
+             }
+             else {
+                 return {
+                     'relationships': {},
+                     'id': id,
+                 };
+             }
+         };
+         var nodeList = {};
+         var a0 = getItem(null, 'a0');
+         var a1 = getItem('a0', 'a1');
+         var a2 = getItem('a1', 'a2');
+         var a3 = getItem('a2', 'a3');
+         var b = getItem('a0', 'b');
+         nodeList.a0 = a0;
+         nodeList.a1 = a1;
+         nodeList.a2 = a2;
+         nodeList.a3 = a3;
+         nodeList.b = b;
 
+         it('returns no children when there are no children', () => {
+             var a3List = $osf.getAllNodeChildrenFromNodeList('a3', nodeList);
+             assert.equal(a3List.a0, undefined);
+             assert.equal(a3List.a1, undefined);
+             assert.equal(a3List.a2, undefined);
+             assert.equal(a3List.a3, undefined);
+             assert.equal(a3List.b, undefined);
+             var bList = $osf.getAllNodeChildrenFromNodeList('b', nodeList);
+             assert.equal(bList.a0, undefined);
+             assert.equal(bList.a1, undefined);
+             assert.equal(bList.a2, undefined);
+             assert.equal(bList.a3, undefined);
+             assert.equal(bList.b, undefined);
+         });
+
+         it('returns one child when there is only one child', () => {
+             var a2List = $osf.getAllNodeChildrenFromNodeList('a2', nodeList);
+             assert.equal(a2List.a0, undefined);
+             assert.equal(a2List.a1, undefined);
+             assert.equal(a2List.a2, undefined);
+             assert.equal(a2List.a3.id, 'a3');
+             assert.equal(a2List.b, undefined);
+         });
+
+         it('returns two children when child has a child', () => {
+             var a1List = $osf.getAllNodeChildrenFromNodeList('a1', nodeList);
+             assert.equal(a1List.a0, undefined);
+             assert.equal(a1List.a1, undefined);
+             assert.equal(a1List.a2.id, 'a2');
+             assert.equal(a1List.a3.id, 'a3');
+             assert.equal(a1List.b, undefined);
+         });
+
+         it('returns all children except the root', () => {
+             var a0List = $osf.getAllNodeChildrenFromNodeList('a0', nodeList);
+             assert.equal(a0List.a0, undefined);
+             assert.equal(a0List.a1.id, 'a1');
+             assert.equal(a0List.a2.id, 'a2');
+             assert.equal(a0List.a3.id, 'a3');
+             assert.equal(a0List.b.id, 'b');
+         });
+     });
+
+    
     describe('growl', () => {
         it('calls $.growl with correct arguments', () => {
             var stub = new sinon.stub($, 'growl');
@@ -74,7 +152,8 @@ describe('osfHelpers', () => {
             responseJSON: {
                 message_short: 'Oh no!',
                 message_long: 'Something went wrong'
-            }
+            },
+            status: 400
         };
         it('uses the response body if available', () => {
             $osf.handleJSONError(response);
@@ -87,6 +166,32 @@ describe('osfHelpers', () => {
         it('logs error with Raven', () => {
             $osf.handleJSONError(response);
             assert.called(growlStub);
+            assert.called(ravenStub);
+        });
+    });
+
+    describe('handleEditableError', () => {
+
+        var ravenStub;
+        beforeEach(() => {
+            ravenStub = new sinon.stub(Raven, 'captureMessage');
+        });
+
+        afterEach(() => {
+            ravenStub.restore();
+        });
+        var response = {
+            responseJSON: {
+                message_short: 'Oh no!',
+                message_long: 'Something went wrong'
+            }
+        };
+        it('uses the response text if available', () => {
+            assert.equal('Error: ' + response.responseJSON.message_long, $osf.handleEditableError(response));
+        });
+
+        it('logs error with Raven', () => {
+            $osf.handleEditableError(response);
             assert.called(ravenStub);
         });
     });
@@ -151,6 +256,14 @@ describe('osfHelpers', () => {
         });
     });
 
+    describe('decodeText', () => {
+        it('returns properly decoded text', () => {
+            var text = '&amp;';
+            var ret = $osf.decodeText(text);
+            assert.equal(ret, '&');
+        });
+    });
+
     describe('isEmail', () => {
         it('returns true for valid emails', () => {
             var emails = [
@@ -195,6 +308,59 @@ describe('osfHelpers', () => {
         });
         afterEach(function() {
             stub.restore();
+        });
+
+        describe('ajaxJSON', () => {
+            it('calls $.ajax as GET request, not crossorigin by default', () => {
+                var url = '/foo';
+                $osf.ajaxJSON('GET', url);
+                assert.calledOnce(stub);
+                assert.calledWith(stub, {
+                    url: url,
+                    type: 'GET',
+                    contentType: 'application/json',
+                    dataType: 'json'
+                });
+            });
+            it('calls $.ajax as POST request, and isCors flags sends credentials by default', () => {
+                var url = '/foo';
+                var payload = {'bar': 42};
+
+                $osf.ajaxJSON('POST', url,
+                    {data: payload, isCors: true}
+                );
+                assert.calledOnce(stub);
+                assert.calledWith(stub, {
+                    url: url,
+                    type: 'POST',
+                    data: JSON.stringify(payload),
+                    contentType: 'application/json',
+                    dataType: 'json',
+                    crossOrigin: true,
+                    xhrFields:
+                        {withCredentials: true}
+                });
+            });
+            it('calls $.ajax as crossorigin PATCH request, omitting credentials when specified', () => {
+                var url = '/foo';
+                var payload = {'bar': 42};
+
+                $osf.ajaxJSON('PATCH', url,
+                    {data: payload, isCors: true,
+                     fields: {xhrFields: {withCredentials: false}}
+                    });
+                assert.calledOnce(stub);
+                assert.calledWith(stub, {
+                    url: url,
+                    type: 'PATCH',
+                    data: JSON.stringify(payload),
+                    contentType: 'application/json',
+                    dataType: 'json',
+                    crossOrigin: true,
+                    xhrFields:
+                        {withCredentials: false}
+                });
+            });
         });
 
         describe('postJSON', () => {
@@ -268,7 +434,13 @@ describe('osfHelpers', () => {
             var dateString = [year, month, day].join('-');
             var dateTimeString = dateString + 'T' + [hour, minute, second].join(':') + '.' + millisecond.toString();
 
-            var assertDateEqual = function(date, year, month, day, hour, minute, second, millisecond) {
+            var assertDateEqual = function(date, year, month, day) {
+                assert.equal(date.getUTCFullYear(), year);
+                assert.equal(date.getUTCMonth(), month - 1); // Javascript months count from 0
+                assert.equal(date.getUTCDate(), day);
+            };
+
+            var assertDateTimeEqual = function(date, year, month, day, hour, minute, second, millisecond) {
                 assert.equal(date.getUTCFullYear(), year);
                 assert.equal(date.getUTCMonth(), month - 1); // Javascript months count from 0
                 assert.equal(date.getUTCDate(), day);
@@ -289,20 +461,19 @@ describe('osfHelpers', () => {
         });
         it('should parse date strings', () => {
             var parsedDate = new $osf.FormattableDate(dateString).date;
-            var parsedDateTime = new $osf.FormattableDate(dateTimeString).date;
-            assertDateEqual(parsedDate, year, month, day, 0, 0, 0, 0);
+            assertDateEqual(parsedDate, year, month, day);
         });
         it('should parse datetime strings', () => {
             var parsedDateTime = new $osf.FormattableDate(dateTimeString).date;
-            assertDateEqual(parsedDateTime, year, month, day, hour, minute, second, millisecond);
+            assertDateTimeEqual(parsedDateTime, year, month, day, hour, minute, second, millisecond);
         });
         it('should allow datetimes with UTC offsets', () => {
             var parsedDateTime = null;
-            var UTCOffsets = ['+00', '+00:00', '+0000', 'Z'];
+            var UTCOffsets = ['+00', '-00', '+00:00', '-00:00', '+0000', '-0000', 'Z'];
 
             UTCOffsets.forEach(function(offset) {
                 parsedDateTime = new $osf.FormattableDate(dateTimeString + offset).date;
-                assertDateEqual(parsedDateTime, year, month, day, hour, minute, second, millisecond);
+                assertDateTimeEqual(parsedDateTime, year, month, day, hour, minute, second, millisecond);
             });
         });
         it('should allow datetimes with positive offsets', () => {
@@ -310,7 +481,7 @@ describe('osfHelpers', () => {
             var positiveOffset = '+02:00';
 
             parsedDateTime = new $osf.FormattableDate(dateTimeString + positiveOffset).date;
-            assertDateEqual(parsedDateTime, year, month, day, hour - 2, minute, second, millisecond);
+            assertDateTimeEqual(parsedDateTime, year, month, day, hour - 2, minute, second, millisecond);
 
         });
         it('should allow datetimes with negative offsets', () => {
@@ -318,7 +489,7 @@ describe('osfHelpers', () => {
             var negativeOffset = '-02:00';
 
             parsedDateTime = new $osf.FormattableDate(dateTimeString + negativeOffset).date;
-            assertDateEqual(parsedDateTime, year, month, day, hour + 2, minute, second, millisecond);
+            assertDateTimeEqual(parsedDateTime, year, month, day, hour + 2, minute, second, millisecond);
         });
     });
 
@@ -334,6 +505,281 @@ describe('osfHelpers', () => {
         it('should trigger bootbox', () => {
             $osf.confirmDangerousAction({callback: callbackStub});
             assert.calledOnce(bootboxStub);
+        });
+    });
+
+    describe('iterObject', () => {
+        var get = function(obj, key) {
+            return obj[key];
+        };
+
+        it('maps an object to an array {key: KEY, value: VALUE} pairs', () => {
+            var obj = {
+                foo: 'bar',
+                cat: 'dog'
+            };
+            var keys = Object.keys(obj);
+            var values = keys.map(get.bind(null, obj));
+            var iterable = $osf.iterObject(obj);
+            for(var i = 0; i < iterable.length; i++) {
+                var item = iterable[i];
+                assert.include(keys, item.key);
+                assert.include(values, item.value);
+                assert.equal(item.value, get(obj, keys[i]));
+            }
+        });
+    });
+
+    describe('indexOf', () => {
+        it('returns a positive integer index if it finds a matching item', () => {
+            var list = [];
+            for(var i = 0; i < 5; i++){
+                list.push({
+                    foo: 'bar' + i
+                });
+            }
+            var idx = Math.floor(Math.random() * 5);
+            var search = function(item) {
+                return item.foo === 'bar' + idx;
+            };
+            var found = $osf.indexOf(list, search);
+            assert.equal(idx, found);
+        });
+        it('returns -1 if no item is matched', () => {
+            var list = [];
+            for(var i = 0; i < 5; i++){
+                list.push({
+                    foo: 'bar' + i
+                });
+            }
+            var search = function(item) {
+                return item.foo === 42;
+            };
+            var found = $osf.indexOf(list, search);
+            assert.equal(-1, found);
+        });
+    });
+
+    describe('any', () => {
+        it('returns true if any of the values in an array are truthy', () => {
+            var TRUTHY = [true, {}, [], 42, 'foo', new Date()];
+            $.each(TRUTHY, function(_, item) {
+                assert.isTrue(
+                    $osf.any([false, item, false])
+                );
+            });
+        });
+        it('returns false if none of the values in an array are truthy', () => {
+            assert.isFalse(
+                $osf.any([false, null, undefined, 0, NaN, ''])
+            );
+        });
+        it('returns false if the array is empty', () => {
+            assert.isFalse(
+                $osf.any([])
+            );
+        });
+    });
+
+    describe('getDomain', () => {
+        it('uses http for localhost domains', () => {
+            var location = {hostname: 'localhost', port: '5000'};
+            assert.equal($osf.getDomain(location), 'http://localhost:5000');
+        });
+
+        it('uses https for non-localhost domains', () => {
+            var location = {hostname: 'osf.test', port: '5000'};
+            assert.equal($osf.getDomain(location), 'https://osf.test:5000');
+        });
+
+        it('uses window.location if object not passed', () => {
+            assert.include($osf.getDomain(), 'http');
+        });
+    });
+
+    describe('logTextParser', () => {
+        describe('Convert to relative urls', () => {
+            var testData = {
+                externalAbsoluteUrlHttp: 'http://externaldomin.com/some/external/path/',
+                externalAbsoluteUrlHttpWithSearch: 'http://externaldomin.com/some/external/path/?q=random',
+                externalAbsoluteUrlHttpWithHash: 'http://externaldomin.com/some/external/path/#hashhash',
+                externalAbsoluteUrlHttpWithSearchAndHash: 'http://externaldomin.com/some/external/path/?q=random#hashhash',
+                externalAbsoluteUrlProtocol: 'protocol://externaldomin.com/some/external/path/?q=random#hashhash',
+                externalAbsoluteUrlProtocolWithSearch: 'protocol://externaldomin.com/some/external/path/?q=random#hashhash',
+                externalAbsoluteUrlProtocolWithHash: 'protocol://externaldomin.com/some/external/path/?q=random#hashhash',
+                externalAbsoluteUrlProtocolWithSearchAndHash: 'protocol://externaldomin.com/some/external/path/?q=random#hashhash',
+                internalAbsoluteUrlHttp: window.location.origin + '/mst3k/files/',
+                internalAbsoluteUrlHttpWithSearch: window.location.origin + '/mst3k/files/?q=random',
+                internalAbsoluteUrlHttpWithHash: window.location.origin + '/mst3k/files/#hashhash',
+                internalAbsoluteUrlHttpWithSearchAndHash: window.location.origin + '/mst3k/files/?q=random#hashhash',
+                internalAbsoluteUrlProtocol: 'protocol://osf.io/mst3k/files/',
+                internalAbsoluteUrlProtocolWithSearch: 'protocol://osf.io/mst3k/files/?q=random',
+                internalAbsoluteUrlProtocolWithHash: 'protocol://osf.io/mst3k/files/#hashhash',
+                internalAbsoluteUrlProtocolWithSearchAndHash: 'protocol://osf.io/mst3k/files/?q=random#hashhash',
+                internalRelativeUrl: '/mst3k/files/',
+                internalRelativeUrlWithSearch: '/mst3k/files/?q=random',
+                internalRelativeUrlWithHash: '/mst3k/files/#hashhash',
+                internalRelativeUrlWithSearchAndHash: '/mst3k/files/?q=random#hashhash'
+            };
+    
+            describe('Does not affect external URLs with Http as protocol', () => {
+                it('URLs that does not contain search or hash', () => {
+                    assert.equal(
+                        $osf.toRelativeUrl(testData.externalAbsoluteUrlHttp, window),
+                        testData.externalAbsoluteUrlHttp
+                    );
+                });
+    
+                it('URLs that contain search, not hash', () => {
+                    assert.equal(
+                        $osf.toRelativeUrl(testData.externalAbsoluteUrlHttpWithSearch, window),
+                        testData.externalAbsoluteUrlHttpWithSearch
+                    );
+                });
+    
+                it('URLs that contain hash, not search', () => {
+                    assert.equal(
+                        $osf.toRelativeUrl(testData.externalAbsoluteUrlHttpWithHash, window),
+                        testData.externalAbsoluteUrlHttpWithHash
+                    );
+                });
+    
+                it('URLs that contain both search and hash', () => {
+                    assert.equal(
+                        $osf.toRelativeUrl(testData.externalAbsoluteUrlHttpWithSearchAndHash, window),
+                        testData.externalAbsoluteUrlHttpWithSearchAndHash
+                    );
+                });
+            });
+    
+            describe('Does not affect external URLs with other protocol', () => {
+                it('URLs that does not contain search or hash', () => {
+                    assert.equal(
+                        $osf.toRelativeUrl(testData.externalAbsoluteUrlProtocol, window),
+                        testData.externalAbsoluteUrlProtocol
+                    );
+                });
+    
+                it('URLs that contain search, not hash', () => {
+                    assert.equal(
+                        $osf.toRelativeUrl(testData.externalAbsoluteUrlProtocolWithSearch, window),
+                        testData.externalAbsoluteUrlProtocolWithSearch
+                    );
+                });
+    
+                it('URLs that contain hash, not search', () => {
+                    assert.equal(
+                        $osf.toRelativeUrl(testData.externalAbsoluteUrlProtocolWithHash, window),
+                        testData.externalAbsoluteUrlProtocolWithHash
+                    );
+                });
+    
+                it('URLs that contain both search and hash', () => {
+                    assert.equal(
+                        $osf.toRelativeUrl(testData.externalAbsoluteUrlProtocolWithSearchAndHash, window),
+                        testData.externalAbsoluteUrlProtocolWithSearchAndHash
+                    );
+                });
+            });
+    
+            describe('Does not affect relative URLs', () => {
+                it('URLs that does not contain search or hash', () => {
+                    assert.equal(
+                        $osf.toRelativeUrl(testData.internalRelativeUrl, window),
+                        testData.internalRelativeUrl
+                    );
+                });
+    
+                it('URLs that contain search, not hash', () => {
+                    assert.equal(
+                        $osf.toRelativeUrl(testData.internalRelativeUrlWithSearch, window),
+                        testData.internalRelativeUrlWithSearch
+                    );
+                });
+    
+                it('URLs that contain hash, not search', () => {
+                    assert.equal(
+                        $osf.toRelativeUrl(testData.internalRelativeUrlWithHash, window),
+                        testData.internalRelativeUrlWithHash
+                    );
+                });
+    
+                it('URLs that contain both search and hash', () => {
+                    assert.equal(
+                        $osf.toRelativeUrl(testData.internalRelativeUrlWithSearchAndHash, window),
+                        testData.internalRelativeUrlWithSearchAndHash
+                    );
+                });
+            });
+    
+            describe('works for internal absolute URLs with Http as protocol', () => {
+                it('URLs that does not contain search or hash', () => {
+                    assert.equal(
+                        $osf.toRelativeUrl(testData.internalAbsoluteUrlHttp, window),
+                        testData.internalRelativeUrl
+                    );
+                });
+    
+                it('URLs that contain search, not hash', () => {
+                    assert.equal(
+                        $osf.toRelativeUrl(testData.internalAbsoluteUrlHttpWithSearch, window),
+                        testData.internalRelativeUrlWithSearch
+                    );
+                });
+    
+                it('URLs that contain hash, not search', () => {
+                    assert.equal(
+                        $osf.toRelativeUrl(testData.internalAbsoluteUrlHttpWithHash, window),
+                        testData.internalRelativeUrlWithHash
+                    );
+                });
+    
+                it('URLs that contain both search and hash', () => {
+                    assert.equal(
+                        $osf.toRelativeUrl(testData.internalAbsoluteUrlHttpWithSearchAndHash, window),
+                        testData.internalRelativeUrlWithSearchAndHash
+                    );
+                });
+            });
+    
+            describe('works for internal absolute URLs with different protocol', () => {
+                var customWindow = {
+                    location:{
+                        hostname: 'osf.io',
+                        protocol: 'protocol:'
+                    }
+                };
+    
+                (function(window){
+                    it('URLs that does not contain search or hash', () => {
+                        assert.equal(
+                            $osf.toRelativeUrl(testData.internalAbsoluteUrlProtocol, window),
+                            testData.internalRelativeUrl
+                        );
+                    });
+    
+                    it('URLs that contain search, not hash', () => {
+                        assert.equal(
+                            $osf.toRelativeUrl(testData.internalAbsoluteUrlProtocolWithSearch, window),
+                            testData.internalRelativeUrlWithSearch
+                        );
+                    });
+    
+                    it('URLs that contain hash, not search', () => {
+                        assert.equal(
+                            $osf.toRelativeUrl(testData.internalAbsoluteUrlProtocolWithHash, window),
+                            testData.internalRelativeUrlWithHash
+                        );
+                    });
+    
+                    it('URLs that contain both search and hash', () => {
+                        assert.equal(
+                            $osf.toRelativeUrl(testData.internalAbsoluteUrlProtocolWithSearchAndHash, window),
+                            testData.internalRelativeUrlWithSearchAndHash
+                        );
+                    });
+                })(customWindow);
+            });
         });
     });
 });

@@ -12,6 +12,6 @@ Sincerely,
 
 The OSF Team
 
-More information? Visit http://osf.io/ and http://cos.io/ for information about the Open Science Framework and its supporting organization, the Center for Open Science.
+More information? Visit https://osf.io/ and https://cos.io/ for information about the Open Science Framework and its supporting organization, the Center for Open Science.
 
 Questions? Email contact@osf.io

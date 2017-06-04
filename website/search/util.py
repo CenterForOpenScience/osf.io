@@ -67,6 +67,11 @@ def build_query_string(qs):
         }
     }
 
+def clean_splitters(text):
+    new_text = text.replace('_', ' ').replace('-', ' ').replace('.', ' ')
+    if new_text == text:
+        return ''
+    return new_text
 
 def compute_start(page, size):
     try:
