@@ -109,16 +109,23 @@ class TestBitbucketViews(OsfTestCase):
             auth=self.consolidated_auth,
         )
         self.project.save()
+
+        self.external_account = BitbucketAccountFactory()
+
         self.project.add_addon('bitbucket', auth=self.consolidated_auth)
         self.project.creator.add_addon('bitbucket')
-        self.project.creator.external_accounts.append(BitbucketAccountFactory())
+        self.project.creator.external_accounts.append(self.external_account)
         self.project.creator.save()
 
         self.bitbucket = create_mock_bitbucket(user='fred', private=False)
 
+        self.user_settings = self.project.creator.get_addon('bitbucket')
+        self.user_settings.oauth_grants[self.project._id] = {self.external_account._id: []}
+        self.user_settings.save()
+
         self.node_settings = self.project.get_addon('bitbucket')
-        self.node_settings.user_settings = self.project.creator.get_addon('bitbucket')
-        # Set the node addon settings to correspond to the values of the mock repo
+        self.node_settings.user_settings = self.user_settings
+        self.node_settings.external_account = self.external_account
         self.node_settings.user = self.bitbucket.repo.return_value['owner']['username']
         self.node_settings.repo = self.bitbucket.repo.return_value['name']
         self.node_settings.save()
@@ -186,12 +193,10 @@ class TestBitbucketViews(OsfTestCase):
         res = self.app.get(url, auth=self.user.auth).maybe_follow()
         assert_equal(len(res.json['prompts']), 1)
 
-    # @mock.patch('website.addons.bitbucket.model.BitbucketUserSettings.has_auth')
-    # def test_before_register(self, mock_has_auth):
-    #     mock_has_auth.return_value = True
-    #     url = self.project.api_url + 'beforeregister/'
-    #     res = self.app.get(url, auth=self.user.auth).maybe_follow()
-    #     assert_true('Bitbucket' in res.json['prompts'][1])
+    def test_before_register(self):
+        url = self.project.api_url + 'beforeregister/'
+        res = self.app.get(url, auth=self.user.auth).maybe_follow()
+        assert_true('Bitbucket' in res.json['prompts'][1])
         
     @mock.patch('website.addons.bitbucket.model.BitbucketNodeSettings.external_account')
     def test_get_refs_sha_no_branch(self, mock_account):
