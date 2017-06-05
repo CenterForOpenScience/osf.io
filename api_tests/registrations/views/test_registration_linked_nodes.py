@@ -5,7 +5,6 @@ from framework.auth.core import Auth
 from website.util import disconnected_from_listeners
 from website.project.signals import contributor_removed
 from tests.base import ApiTestCase
-from tests.json_api_test_app import JSONAPITestApp
 from osf_tests.factories import (
     NodeFactory,
     AuthUserFactory,

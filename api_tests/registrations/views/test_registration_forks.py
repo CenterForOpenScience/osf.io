@@ -6,7 +6,7 @@ from osf.models import AbstractNode as Node
 from website.util import permissions
 from api.base.settings.defaults import API_BASE
 from tests.base import ApiTestCase
-from tests.json_api_test_app import JSONAPITestApp
+from rest_framework import exceptions
 from osf_tests.factories import (
     NodeFactory,
     ProjectFactory,
@@ -127,10 +127,10 @@ class TestRegistrationForksList:
     #   test_cannot_access_private_registration_forks_list_unauthenticated
         res = app.get(private_registration_url, expect_errors=True)
         assert res.status_code == 401
-        assert res.json['errors'][0]['detail'] == 'Authentication credentials were not provided.'
+        assert res.json['errors'][0]['detail'] == exceptions.NotAuthenticated.default_detail
 
     #   test_authenticated_contributor_can_access_private_registration_forks_list
-        res = app.get(private_registration_url + '?embed=children&embed=node_links&embed=logs&embed=contributors&embed=forked_from', auth=user.auth)
+        res = app.get('{}?embed=children&embed=node_links&embed=logs&embed=contributors&embed=forked_from'.format(private_registration_url), auth=user.auth)
         assert res.status_code == 200
         assert len(res.json['data']) == 1
         data = res.json['data'][0]
@@ -168,7 +168,7 @@ class TestRegistrationForksList:
 
         res = app.get(private_registration_url, auth=non_contributor.auth, expect_errors=True)
         assert res.status_code == 403
-        assert res.json['errors'][0]['detail'] == 'You do not have permission to perform this action.'
+        assert res.json['errors'][0]['detail'] == exceptions.PermissionDenied.default_detail
 
 @pytest.mark.django_db
 class TestRegistrationForkCreate:
@@ -208,8 +208,9 @@ class TestRegistrationForkCreate:
         return {
             'data': {
                 'type': 'nodes',
-                'attributes':
-                    {'title': 'My Forked Project'}
+                'attributes': {
+                    'title': 'My Forked Project'
+                }
             }
         }
 
@@ -259,7 +260,7 @@ class TestRegistrationForkCreate:
     def test_cannot_fork_public_registration_logged_out(self, app, public_registration_url, fork_data):
         res = app.post_json_api(public_registration_url, fork_data, expect_errors=True)
         assert res.status_code == 401
-        assert res.json['errors'][0]['detail'] == 'Authentication credentials were not provided.'
+        assert res.json['errors'][0]['detail'] == exceptions.NotAuthenticated.default_detail
 
     def test_can_fork_public_registration_logged_in_contributor(self, app, user, public_registration, public_registration_url, fork_data):
         res = app.post_json_api(public_registration_url, fork_data, auth=user.auth)
@@ -273,15 +274,15 @@ class TestRegistrationForkCreate:
     def test_cannot_fork_private_registration_logged_out(self, app, private_registration_url, fork_data):
         res = app.post_json_api(private_registration_url, fork_data, expect_errors=True)
         assert res.status_code == 401
-        assert res.json['errors'][0]['detail'] == 'Authentication credentials were not provided.'
+        assert res.json['errors'][0]['detail'] == exceptions.NotAuthenticated.default_detail
 
     def test_cannot_fork_private_registration_logged_in_non_contributor(self, app, user_two, private_registration_url, fork_data):
         res = app.post_json_api(private_registration_url, fork_data, auth=user_two.auth, expect_errors=True)
         assert res.status_code == 403
-        assert res.json['errors'][0]['detail'] == 'You do not have permission to perform this action.'
+        assert res.json['errors'][0]['detail'] == exceptions.PermissionDenied.default_detail
 
     def test_can_fork_private_registration_logged_in_contributor(self, app, user, private_registration, private_registration_url, fork_data):
-        res = app.post_json_api(private_registration_url + '?embed=children&embed=node_links&embed=logs&embed=contributors&embed=forked_from', fork_data, auth=user.auth)
+        res = app.post_json_api('{}?embed=children&embed=node_links&embed=logs&embed=contributors&embed=forked_from'.format(private_registration_url), fork_data, auth=user.auth)
         assert res.status_code == 201
 
         data = res.json['data']
@@ -297,7 +298,7 @@ class TestRegistrationForkCreate:
         assert forked_from['id'] == private_registration._id
 
     def test_fork_private_components_no_access(self, app, user_two, user_three, public_registration, public_registration_url, fork_data):
-        url = public_registration_url + '?embed=children'
+        url = '{}?embed=children'.format(public_registration_url)
         private_component = NodeFactory(parent=public_registration, creator=user_two, is_public=False)
         res = app.post_json_api(url, fork_data, auth=user_three.auth)
         assert res.status_code == 201
@@ -305,7 +306,7 @@ class TestRegistrationForkCreate:
         assert res.json['data']['embeds']['children']['links']['meta']['total'] == 0
 
     def test_fork_components_you_can_access(self, app, user, private_registration, private_registration_url, fork_data):
-        url = private_registration_url + '?embed=children'
+        url = '{}?embed=children'.format(private_registration_url)
         new_component = NodeFactory(parent=private_registration, creator=user)
         res = app.post_json_api(url, fork_data, auth=user.auth)
         assert res.status_code == 201
@@ -314,11 +315,11 @@ class TestRegistrationForkCreate:
 
     def test_fork_private_node_links(self, app, user, private_registration_url, fork_data):
 
-        url = private_registration_url + '?embed=node_links'
+        url = '{}?embed=node_links'.format(private_registration_url)
 
         # Node link is forked, but shows up as a private node link
         res = app.post_json_api(url, fork_data, auth=user.auth)
-        assert res.json['data']['embeds']['node_links']['data'][0]['embeds']['target_node']['errors'][0]['detail'] == 'You do not have permission to perform this action.'
+        assert res.json['data']['embeds']['node_links']['data'][0]['embeds']['target_node']['errors'][0]['detail'] == exceptions.PermissionDenied.default_detail
         assert res.json['data']['embeds']['node_links']['links']['meta']['total'] == 1
 
     def test_fork_node_links_you_can_access(self, app, user, private_project, fork_data):
@@ -327,7 +328,7 @@ class TestRegistrationForkCreate:
 
         new_registration = RegistrationFactory(project = private_project, creator=user)
 
-        url = '/{}registrations/{}/forks/'.format(API_BASE, new_registration._id) + '?embed=node_links'
+        url = '/{}registrations/{}/forks/{}'.format(API_BASE, new_registration._id, '?embed=node_links')
 
         res = app.post_json_api(url, fork_data, auth=user.auth)
         assert res.json['data']['embeds']['node_links']['data'][1]['embeds']['target_node']['data']['id'] == pointer._id
@@ -336,7 +337,7 @@ class TestRegistrationForkCreate:
     def test_cannot_fork_retractions(self, app, user, private_registration, fork_data):
         with mock.patch('osf.models.AbstractNode.update_search'):
             retraction = WithdrawnRegistrationFactory(registration=private_registration, user=user)
-        url = '/{}registrations/{}/forks/'.format(API_BASE, private_registration._id) + '?embed=forked_from'
+        url = '/{}registrations/{}/forks/{}'.format(API_BASE, private_registration._id, '?embed=forked_from')
 
         res = app.post_json_api(url, fork_data, auth=user.auth, expect_errors=True)
         assert res.status_code == 403

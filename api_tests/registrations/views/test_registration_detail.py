@@ -2,11 +2,11 @@ import pytest
 from urlparse import urlparse
 from modularodm import Q
 
+from rest_framework import exceptions
 from api.base.settings.defaults import API_BASE
 from website.util import permissions
 from osf.models import Registration
 from tests.base import ApiTestCase
-from tests.json_api_test_app import JSONAPITestApp
 from api.registrations.serializers import RegistrationSerializer, RegistrationDetailSerializer
 from osf_tests.factories import (
     ProjectFactory,
@@ -24,11 +24,11 @@ class TestRegistrationDetail:
 
     @pytest.fixture()
     def public_project(self, user):
-        return ProjectFactory(title='Project One', is_public=True, creator=user)
+        return ProjectFactory(title='Public Project', is_public=True, creator=user)
 
     @pytest.fixture()
     def private_project(self, user):
-        return ProjectFactory(title='Project Two', is_public=False, creator=user)
+        return ProjectFactory(title='Private Project', creator=user)
 
     @pytest.fixture()
     def public_registration(self, user, public_project):
@@ -90,19 +90,19 @@ class TestRegistrationDetail:
         url = '/{}registrations/{}/'.format(API_BASE, public_project._id)
         res = app.get(url, auth=user.auth, expect_errors=True)
         assert res.status_code == 404
-        assert res.json['errors'][0]['detail'] == 'Not found.'
+        assert res.json['errors'][0]['detail'] == exceptions.NotFound.default_detail
 
     #   test_do_not_return_node_detail_in_sub_view
         url = '/{}registrations/{}/contributors/'.format(API_BASE, public_project._id)
         res = app.get(url, auth=user.auth, expect_errors=True)
         assert res.status_code == 404
-        assert res.json['errors'][0]['detail'] == 'Not found.'
+        assert res.json['errors'][0]['detail'] == exceptions.NotFound.default_detail
 
     #   test_do_not_return_registration_in_node_detail
         url = '/{}nodes/{}/'.format(API_BASE, public_registration._id)
         res = app.get(url, auth=user.auth, expect_errors=True)
         assert res.status_code == 404
-        assert res.json['errors'][0]['detail'] == 'Not found.'
+        assert res.json['errors'][0]['detail'] == exceptions.NotFound.default_detail
 
     #   test_registration_shows_specific_related_counts
         url = '/{}registrations/{}/?related_counts=children'.format(API_BASE, private_registration._id)
@@ -147,11 +147,11 @@ class TestRegistrationUpdate:
 
     @pytest.fixture()
     def public_project(self, user):
-        return ProjectFactory(title='Project One', is_public=True, creator=user)
+        return ProjectFactory(title='Public Project', is_public=True, creator=user)
 
     @pytest.fixture()
     def private_project(self, user):
-        return ProjectFactory(title='Project Two', is_public=False, creator=user)
+        return ProjectFactory(title='Private Project', creator=user)
 
     @pytest.fixture()
     def public_registration(self, user, public_project):
