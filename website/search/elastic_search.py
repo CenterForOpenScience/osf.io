@@ -22,11 +22,11 @@ from framework.mongo.utils import paginated
 from modularodm import Q
 from osf.models import AbstractNode as Node
 from osf.models import OSFUser as User
-from osf.models import FileNode
+from osf.models import BaseFileNode
 from osf.models import Institution
 from website import settings
 from website.filters import gravatar
-from website.project.licenses import serialize_node_license_record
+from osf.models.licenses import serialize_node_license_record
 from website.search import exceptions
 from website.search.util import build_query, clean_splitters
 from website.util import sanitize
@@ -51,7 +51,7 @@ DOC_TYPE_TO_MODEL = {
     'project': Node,
     'registration': Node,
     'user': User,
-    'file': FileNode,
+    'file': BaseFileNode,
     'institution': Institution
 }
 

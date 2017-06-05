@@ -307,8 +307,9 @@ WATERBUTLER_ADDRS = ['127.0.0.1']
 DOI_NAMESPACE = 'doi:10.5072/FK2'
 ARK_NAMESPACE = 'ark:99999/fk4'
 
-EZID_USERNAME = 'changeme'
-EZID_PASSWORD = 'changeme'
+# For creating DOIs and ARKs through the EZID service
+EZID_USERNAME = None
+EZID_PASSWORD = None
 # Format for DOIs and ARKs
 EZID_FORMAT = '{namespace}osf.io/{guid}'
 
@@ -343,6 +344,7 @@ LOW_PRI_MODULES = {
     'framework.analytics.tasks',
     'framework.celery_tasks',
     'scripts.osfstorage.usage_audit',
+    'scripts.stuck_registration_audit',
     'scripts.osfstorage.glacier_inventory',
     'scripts.analytics.tasks',
     'scripts.osfstorage.files_audit',
@@ -426,6 +428,7 @@ CELERY_IMPORTS = (
 #     'scripts.osfstorage.glacier_inventory',
 #     'scripts.osfstorage.glacier_audit',
 #     'scripts.osfstorage.usage_audit',
+#     'scripts.stuck_registration_audit',
 #     'scripts.osfstorage.files_audit',
 #     'scripts.analytics.tasks',
 #     'scripts.analytics.upload',
@@ -524,6 +527,11 @@ else:
     #         'task': 'scripts.osfstorage.usage_audit',
     #         'schedule': crontab(minute=0, hour=0),  # Daily 12 a.m
     #         'kwargs': {'send_mail': True},
+    #     },
+    #     'stuck_registration_audit': {
+    #         'task': 'scripts.stuck_registration_audit',
+    #         'schedule': crontab(minute=0, hour=6),  # Daily 6 a.m
+    #         'kwargs': {},
     #     },
     #     'glacier_inventory': {
     #         'task': 'scripts.osfstorage.glacier_inventory',
@@ -1819,3 +1827,5 @@ CUSTOM_CITATIONS = {
     'bluebook2': 'bluebook',
     'bluebook-inline': 'bluebook'
 }
+
+PREPRINTS_ASSETS = '/static/img/preprints_assets/'

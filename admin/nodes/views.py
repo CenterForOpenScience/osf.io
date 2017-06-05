@@ -9,13 +9,14 @@ from django.contrib.auth.mixins import PermissionRequiredMixin
 from modularodm import Q
 
 from website import search
-from website.models import NodeLog
+from osf.models import NodeLog
 from osf.models.user import OSFUser
 from osf.models.node import Node
 from osf.models.registrations import Registration
+from osf.models import SpamStatus
 from admin.base.views import GuidFormView, GuidView
 from osf.models.admin_log_entry import (
-    update_admin_log,
+    update_admin_log
     NODE_REMOVED,
     NODE_RESTORED,
     CONTRIBUTOR_REMOVED,

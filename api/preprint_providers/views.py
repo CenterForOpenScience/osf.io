@@ -6,7 +6,7 @@ from django.db.models import Q
 
 from framework.auth.oauth_scopes import CoreScopes
 
-from website.models import Node, Subject, PreprintService, PreprintProvider
+from osf.models import AbstractNode as Node, Subject, PreprintService, PreprintProvider
 
 from api.base import permissions as base_permissions
 from api.base.filters import PreprintFilterMixin, ODMFilterMixin
@@ -158,7 +158,7 @@ class PreprintProviderPreprintList(JSONAPIBaseView, generics.ListAPIView, Prepri
         date_published                  iso8601 timestamp                   timestamp when the preprint was published
         is_published                    boolean                             whether or not this preprint is published
         is_preprint_orphan              boolean                             whether or not this preprint is orphaned
-        subjects                        array of tuples of dictionaries     ids of Subject in the PLOS taxonomy. Dictionary, containing the subject text and subject ID
+        subjects                        array of tuples of dictionaries     ids of Subject in the BePress taxonomy. Dictionary, containing the subject text and subject ID
         doi                             string                              bare DOI for the manuscript, as entered by the user
 
     ##Relationships

@@ -8,7 +8,7 @@ from api.base.utils import has_admin_scope
 from framework.auth import oauth_scopes
 from framework.auth.cas import CasResponse
 
-from website.models import ApiOAuth2Application, ApiOAuth2PersonalToken
+from osf.models import ApiOAuth2Application, ApiOAuth2PersonalToken
 from website.util.sanitize import is_iterable_but_not_string
 
 

@@ -2,7 +2,7 @@
 # encoding: utf-8
 
 from website.conferences.model import Conference
-from website.models import User
+from osf.models import OSFUser as User
 from modularodm import Q
 from modularodm.exceptions import ModularOdmException
 from website.app import init_app

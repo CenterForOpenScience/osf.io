@@ -22,7 +22,7 @@ from admin.pre_reg.forms import DraftRegistrationForm
 from admin.pre_reg.utils import sort_drafts, SORT_BY
 from framework.exceptions import PermissionsError
 from website.exceptions import NodeStateError
-from osf.models.files import FileNode
+from osf.models.files import BaseFileNode
 from osf.models.node import Node
 from osf.models.registrations import DraftRegistration
 from website.prereg.utils import get_prereg_schema
@@ -233,7 +233,7 @@ class CommentUpdateView(PermissionRequiredMixin, UpdateView):
 
 
 def view_file(request, node_id, provider, file_id):
-    fp = FileNode.load(file_id)
+    fp = BaseFileNode.load(file_id)
     wb_url = fp.generate_waterbutler_url()
     return redirect(wb_url)
 
@@ -253,16 +253,16 @@ def get_metadata_files(draft):
                 if not file_guid:
                     node = Node.load(file_info.get('nodeId'))
                     path = file_info['data'].get('path')
-                    item = FileNode.resolve_class(
+                    item = BaseFileNode.resolve_class(
                         provider,
-                        FileNode.FILE
+                        BaseFileNode.FILE
                     ).get_or_create(node, path)
                     file_guid = item.get_guid(create=True)._id
                     data[q]['extra'][i]['fileId'] = file_guid
                     draft.update_metadata(data)
                     draft.save()
                 else:
-                    item = FileNode.load(file_info['data']['path'].replace('/', ''))
+                    item = BaseFileNode.load(file_info['data']['path'].replace('/', ''))
                 if item is None:
                     raise Http404(
                         'File with guid "{}" in "{}" does not exist'.format(
@@ -281,16 +281,16 @@ def get_metadata_files(draft):
             if not file_guid:
                 node = Node.load(file_info.get('nodeId'))
                 path = file_info['data'].get('path')
-                item = FileNode.resolve_class(
+                item = BaseFileNode.resolve_class(
                     provider,
-                    FileNode.FILE
+                    BaseFileNode.FILE
                 ).get_or_create(node, path)
                 file_guid = item.get_guid(create=True)._id
                 data[q]['value']['uploader']['extra'][i]['fileId'] = file_guid
                 draft.update_metadata(data)
                 draft.save()
             else:
-                item = FileNode.load(file_info['data']['path'].replace('/', ''))
+                item = BaseFileNode.load(file_info['data']['path'].replace('/', ''))
             if item is None:
                 raise Http404(
                     'File with guid "{}" in "{}" does not exist'.format(

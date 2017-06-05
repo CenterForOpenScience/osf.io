@@ -24,12 +24,11 @@ from website.exceptions import (
     InvalidSanctionRejectionToken, InvalidSanctionApprovalToken, NodeStateError,
 )
 from website import tokens
-from website.models import Embargo, Node, User
+from osf.models import AbstractNode as Node
 from website.project.model import ensure_schemas
 from osf.models.sanctions import PreregCallbackMixin, Embargo
 from website.util import permissions
-from website.project.spam.model import SpamStatus
-from osf.models import Registration, Contributor
+from osf.models import Registration, Contributor, OSFUser as User, SpamStatus
 
 DUMMY_TOKEN = tokens.encode({
     'dummy': 'token'

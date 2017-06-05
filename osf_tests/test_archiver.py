@@ -18,7 +18,7 @@ from modularodm.exceptions import KeyExistsException
 import pytest
 from nose.tools import *  # flake8: noqa
 
-from scripts import cleanup_failed_registrations as scripts
+from scripts.stuck_registration_audit import find_failed_registrations
 
 from framework.auth import Auth
 from framework.celery_tasks import handlers
@@ -43,7 +43,7 @@ from website import mails
 from website import settings
 from website.util import waterbutler_url_for
 from website.util.sanitize import strip_html
-from website.project.model import MetaSchema
+from osf.models import MetaSchema
 from addons.base.models import BaseStorageAddon
 
 from osf_tests import factories
@@ -1126,7 +1126,7 @@ class TestArchiverScripts(ArchiverTestCase):
             archive_job.update_target('osfstorage', ARCHIVER_INITIATED)
             archive_job.save()
             pending.append(reg)
-        failed = scripts.find_failed_registrations()
+        failed = find_failed_registrations()
         assert_equal(len(failed), 5)
         assert_items_equal([f._id for f in failed], failures)
         for pk in legacy:
@@ -1150,14 +1150,14 @@ class TestArchiverDecorators(ArchiverTestCase):
 
 class TestArchiverBehavior(OsfTestCase):
 
-    @mock.patch('website.project.model.Node.update_search')
+    @mock.patch('osf.models.AbstractNode.update_search')
     def test_archiving_registrations_not_added_to_search_before_archival(self, mock_update_search):
         proj = factories.ProjectFactory()
         reg = factories.RegistrationFactory(project=proj)
         reg.save()
         assert_false(mock_update_search.called)
 
-    @mock.patch('website.project.model.Node.update_search')
+    @mock.patch('osf.models.AbstractNode.update_search')
     @mock.patch('website.mails.send_mail')
     @mock.patch('website.archiver.tasks.archive_success.delay')
     def test_archiving_nodes_added_to_search_on_archive_success_if_public(self, mock_update_search, mock_send, mock_archive_success):
@@ -1184,13 +1184,13 @@ class TestArchiverBehavior(OsfTestCase):
             listeners.archive_callback(reg)
         assert_true(mock_delete_index_node.called)
 
-    @mock.patch('website.project.model.Node.update_search')
+    @mock.patch('osf.models.AbstractNode.update_search')
     @mock.patch('website.mails.send_mail')
     def test_archiving_nodes_not_added_to_search_on_archive_incomplete(self, mock_send, mock_update_search):
         proj = factories.ProjectFactory()
         reg = factories.RegistrationFactory(project=proj)
         reg.save()
-        with mock.patch('website.archiver.model.ArchiveJob.archive_tree_finished', mock.Mock(return_value=False)):
+        with mock.patch('osf.models.ArchiveJob.archive_tree_finished', mock.Mock(return_value=False)):
             listeners.archive_callback(reg)
         assert_false(mock_update_search.called)
 

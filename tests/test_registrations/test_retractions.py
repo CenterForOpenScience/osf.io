@@ -23,8 +23,7 @@ from website.exceptions import (
     InvalidSanctionApprovalToken, InvalidSanctionRejectionToken,
     NodeStateError,
 )
-from website.models import Retraction
-from osf.models import Contributor
+from osf.models import Contributor, Retraction
 
 
 class RegistrationRetractionModelsTestCase(OsfTestCase):

@@ -6,7 +6,7 @@ from modularodm.exceptions import NoResultsFound, ValidationValueError
 from tests.base import OsfTestCase
 from osf_tests.factories import SubjectFactory, PreprintFactory, PreprintProviderFactory
 
-from website.project.taxonomies import validate_subject_hierarchy
+from osf.models.validators import validate_subject_hierarchy
 
 
 class TestSubjectTreeValidation(OsfTestCase):

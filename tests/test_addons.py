@@ -13,7 +13,6 @@ from django.utils import timezone
 from framework.auth import cas, signing
 from framework.auth.core import Auth
 from framework.exceptions import HTTPError
-from framework.sessions.model import Session
 from modularodm import Q
 from nose.tools import *  # noqa
 from osf_tests import factories
@@ -25,10 +24,11 @@ from addons.base import views
 from addons.github.exceptions import ApiError
 from addons.github.models import GithubFolder, GithubFile, GithubFileNode
 from addons.github.tests.factories import GitHubAccountFactory
+from osf.models import Session, MetaSchema
 from osf.models import files as file_models
-from osf.models.files import StoredFileNode, TrashedFileNode
+from osf.models.files import BaseFileNode, TrashedFileNode
 from website.project import new_private_link
-from website.project.model import MetaSchema, ensure_schemas
+from website.project.model import ensure_schemas
 from website.project.views.node import _view_project as serialize_node
 from website.util import api_url_for, rubeus
 
@@ -713,7 +713,7 @@ class TestAddonFileViews(OsfTestCase):
 
             self.app.get(url + '?version=invalid', auth=self.user.auth, expect_errors=True)
 
-            assert_is_not_none(StoredFileNode.load(file_node._id))
+            assert_is_not_none(BaseFileNode.load(file_node._id))
             assert_is_none(TrashedFileNode.load(file_node._id))
 
     def test_unauthorized_addons_raise(self):

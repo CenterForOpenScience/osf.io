@@ -5,14 +5,15 @@ from django.core.urlresolvers import reverse_lazy
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.shortcuts import redirect
 
+from osf.models.preprint_service import PreprintService
 from osf.models.admin_log_entry import update_admin_log, REINDEX_SHARE
 from website import settings
-from website.preprints.model import PreprintService
 from website.preprints.tasks import on_preprint_updated
+
 from framework.exceptions import PermissionsError
 from admin.base.views import GuidFormView, GuidView
 from admin.nodes.templatetags.node_extras import reverse_preprint
-from admin.preprints.serializers import serialize_preprint, serialize_subjects
+from admin.preprints.serializers import serialize_preprint
 from admin.preprints.forms import ChangeProviderForm
 
 
@@ -58,7 +59,6 @@ class PreprintView(PermissionRequiredMixin, UpdateView, GuidView):
         # TODO - we shouldn't need this serialized_preprint value -- https://openscience.atlassian.net/browse/OSF-7743
         kwargs['serialized_preprint'] = serialize_preprint(preprint)
         kwargs['change_provider_form'] = ChangeProviderForm(instance=preprint)
-        kwargs['subjects'] = serialize_subjects(preprint.subject_hierarchy)
         return super(PreprintView, self).get_context_data(**kwargs)
 
 

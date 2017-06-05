@@ -9,11 +9,11 @@ from django.db import transaction
 from modularodm import Q
 from modularodm.exceptions import NoResultsFound
 from website.app import init_app
-from website.settings import PREPRINT_PROVIDER_DOMAINS, DOMAIN
+from website.settings import PREPRINT_PROVIDER_DOMAINS, DOMAIN, PROTOCOL
 import django
 django.setup()
 
-from website.models import Subject, PreprintProvider, NodeLicense
+from osf.models import Subject, PreprintProvider, NodeLicense
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -28,8 +28,8 @@ def get_subject_id(name):
     if name not in SUBJECTS_CACHE:
         subject = None
         try:
-            subject = Subject.find_one(Q('text', 'eq', name))
-        except NoResultsFound:
+            subject = Subject.objects.get(provider___id='osf', text=name)
+        except Subject.DoesNotExist:
             raise Exception('Subject: "{}" not found'.format(name))
         else:
             SUBJECTS_CACHE[name] = subject._id
@@ -47,7 +47,10 @@ def get_license(name):
 
 def update_or_create(provider_data):
     provider = PreprintProvider.load(provider_data['_id'])
+    provider_data['domain_redirect_enabled'] &= PREPRINT_PROVIDER_DOMAINS['enabled'] and bool(provider_data['domain'])
     licenses = [get_license(name) for name in provider_data.pop('licenses_acceptable', [])]
+    default_license = provider_data.pop('default_license', False)
+
     if provider:
         provider_data['subjects_acceptable'] = map(
             lambda rule: (map(get_subject_id, rule[0]), rule[1]),
@@ -55,7 +58,6 @@ def update_or_create(provider_data):
         )
         if licenses:
             provider.licenses_acceptable.add(*licenses)
-        default_license = provider_data.pop('default_license', False)
         if default_license:
             provider.default_license = get_license(default_license)
         for key, val in provider_data.iteritems():
@@ -69,14 +71,19 @@ def update_or_create(provider_data):
         new_provider.save()
         if licenses:
             new_provider.licenses_acceptable.add(*licenses)
+        if default_license:
+            new_provider.default_license = get_license(default_license)
+            new_provider.save()
         provider = PreprintProvider.load(new_provider._id)
         print('Added new preprint provider: {}'.format(provider._id))
         return new_provider, True
 
 
 def format_domain_url(domain):
-    return ''.join((PREPRINT_PROVIDER_DOMAINS['prefix'], str(domain), PREPRINT_PROVIDER_DOMAINS['suffix'])) if \
-        PREPRINT_PROVIDER_DOMAINS['enabled'] else ''
+    prefix = PREPRINT_PROVIDER_DOMAINS['prefix'] or PROTOCOL
+    suffix = PREPRINT_PROVIDER_DOMAINS['suffix'] or '/'
+
+    return '{}{}{}'.format(prefix, str(domain), suffix)
 
 
 def main(env):

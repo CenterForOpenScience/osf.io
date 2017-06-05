@@ -17,17 +17,17 @@ from framework.exceptions import HTTPError
 from framework.auth.decorators import must_be_signed
 
 from osf.exceptions import InvalidTagError, TagNotFoundError
-from osf.models import OSFUser
+from osf.models import FileVersion, OSFUser
 from website.project.decorators import (
     must_not_be_registration, must_have_addon, must_have_permission
 )
 from website.project.model import has_anonymous_link
 
-from website.files import models
 from website.files import exceptions
 from addons.osfstorage import utils
 from addons.osfstorage import decorators
 from addons.osfstorage import settings as osf_storage_settings
+from addons.osfstorage.models import OsfStorageFolder
 
 
 logger = logging.getLogger(__name__)
@@ -51,7 +51,7 @@ def osfstorage_update_metadata(node_addon, payload, **kwargs):
     except KeyError:
         raise HTTPError(httplib.BAD_REQUEST)
 
-    version = models.FileVersion.load(version_id)
+    version = FileVersion.load(version_id)
 
     if version is None:
         raise HTTPError(httplib.NOT_FOUND)
@@ -108,7 +108,7 @@ def osfstorage_move_hook(source, destination, name=None, **kwargs):
 @decorators.autoload_filenode(default_root=True)
 def osfstorage_get_lineage(file_node, node_addon, **kwargs):
     #TODO Profile
-    list(models.OsfStorageFolder.find(Q('node', 'eq', node_addon.owner)))
+    list(OsfStorageFolder.find(Q('node', 'eq', node_addon.owner)))
 
     lineage = []
 

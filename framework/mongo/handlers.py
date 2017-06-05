@@ -59,29 +59,6 @@ class ClientPool(object):
 
 CLIENT_POOL = ClientPool()
 
-
-def connection_before_request():
-    """Acquire a MongoDB client from the pool.
-    """
-    CLIENT_POOL.acquire()
-
-
-def connection_teardown_request(error=None):
-    """Release the MongoDB client back into the pool.
-    """
-    try:
-        CLIENT_POOL.release()
-    except ClientPool.ExtraneousReleaseError:
-        if not settings.DEBUG_MODE:
-            raise
-
-
-handlers = {
-    'before_request': connection_before_request,
-    'teardown_request': connection_teardown_request,
-}
-
-
 def _get_current_client():
     """Get the current mongodb client from the pool.
     """
@@ -107,39 +84,3 @@ def _get_current_database():
 # Set up `LocalProxy` objects
 client = LocalProxy(_get_current_client)
 database = LocalProxy(_get_current_database)
-
-
-def set_up_storage(schemas, storage_class, prefix='', addons=None, **kwargs):
-    '''Setup the storage backend for each schema in ``schemas``.
-    note::
-        ``**kwargs`` are passed to the constructor of ``storage_class``
-
-    Example usage with modular-odm and pymongo:
-    ::
-
-        >>> from pymongo import MongoClient
-        >>> from framework.mongo.storage import MongoStorage
-        >>> from models import User, Node, Tag
-        >>> client = MongoClient(port=20771)
-        >>> db = client['mydb']
-        >>> models = [User, Node, Tag]
-        >>> set_up_storage(models, MongoStorage)
-    '''
-    _schemas = []
-    _schemas.extend(schemas)
-
-    for addon in (addons or []):
-        _schemas.extend(addon.models)
-
-    for schema in _schemas:
-        collection = '{0}{1}'.format(prefix, schema._name)
-        schema.set_storage(
-            storage_class(
-                db=database,
-                collection=collection,
-                **kwargs
-            )
-        )
-        # Allow models to define extra indices
-        for index in getattr(schema, '__indices__', []):
-            database[collection].ensure_index(**index)

@@ -36,6 +36,7 @@ from __future__ import print_function, absolute_import
 
 import ast
 import sys
+import mock
 import argparse
 import logging
 
@@ -314,6 +315,8 @@ def create_fake_project(creator, n_users, privacy, n_components, name, n_tags, p
         if not provider:
             provider = PreprintProviderFactory(name=fake.science_word())
         privacy = 'public'
+        mock_change_identifier = mock.patch('website.identifiers.client.EzidClient.change_status_identifier')
+        mock_change_identifier.start()
         project = PreprintFactory(title=project_title, description=fake.science_paragraph(), creator=creator, provider=provider)
         node = project.node
     elif is_registration:

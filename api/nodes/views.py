@@ -99,7 +99,7 @@ from api.wikis.serializers import NodeWikiSerializer
 from framework.auth.oauth_scopes import CoreScopes
 from framework.postcommit_tasks.handlers import enqueue_postcommit_task
 from osf.models import AbstractNode
-from osf.models import (Node, PrivateLink, NodeLog, Institution, Comment, DraftRegistration, PreprintService, FileNode)
+from osf.models import (Node, PrivateLink, NodeLog, Institution, Comment, DraftRegistration, PreprintService)
 from osf.models import OSFUser as User
 from osf.models import NodeRelation, AlternativeCitation, Guid
 from osf.models import BaseFileNode
@@ -177,10 +177,10 @@ class WaterButlerMixin(object):
 
     def get_file_item(self, item):
         attrs = item['attributes']
-        file_node = FileNode.resolve_class(
+        file_node = BaseFileNode.resolve_class(
             attrs['provider'],
-            FileNode.FOLDER if attrs['kind'] == 'folder'
-            else FileNode.FILE
+            BaseFileNode.FOLDER if attrs['kind'] == 'folder'
+            else BaseFileNode.FILE
         ).get_or_create(self.get_node(check_object_permissions=False), attrs['path'])
 
         file_node.update(None, attrs, user=self.request.user)
@@ -1981,7 +1981,7 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
             provider = self.kwargs[self.provider_lookup_url_kwarg]
             # Resolve to a provider-specific subclass, so that
             # trashed file nodes are filtered out automatically
-            ConcreteFileNode = BaseFileNode.resolve_class(provider, FileNode.ANY)
+            ConcreteFileNode = BaseFileNode.resolve_class(provider, BaseFileNode.ANY)
             return ConcreteFileNode.objects.filter(
                 id__in=[self.get_file_item(file).id for file in files_list],
             )
@@ -3494,6 +3494,26 @@ class NodeIdentifierList(NodeMixin, IdentifierList):
     """
 
     serializer_class = NodeIdentifierSerializer
+    node_lookup_url_kwarg = 'node_id'
+
+    # overrides IdentifierList
+    def get_object(self, check_object_permissions=True):
+        return self.get_node(check_object_permissions=check_object_permissions)
+
+    def get_node(self, check_object_permissions=True):
+        node = get_object_or_error(
+            Node,
+            self.kwargs[self.node_lookup_url_kwarg],
+            display_name='node'
+        )
+        # Nodes that are folders/collections are treated as a separate resource, so if the client
+        # requests a collection through a node endpoint, we return a 404
+        if node.is_collection:
+            raise NotFound
+        # May raise a permission denied
+        if check_object_permissions:
+            self.check_object_permissions(self.request, node)
+        return node
 
 
 class NodePreprintsList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, PreprintFilterMixin):
@@ -3516,7 +3536,7 @@ class NodePreprintsList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, Prepri
         date_published                  iso8601 timestamp                   timestamp when the preprint was published
         is_published                    boolean                             whether or not this preprint is published
         is_preprint_orphan              boolean                             whether or not this preprint is orphaned
-        subjects                        list of lists of dictionaries       ids of Subject in the PLOS taxonomy. Dictrionary, containing the subject text and subject ID
+        subjects                        list of lists of dictionaries       ids of Subject in the BePress taxonomy. Dictrionary, containing the subject text and subject ID
         provider                        string                              original source of the preprint
         doi                             string                              bare DOI for the manuscript, as entered by the user
 

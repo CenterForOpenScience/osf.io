@@ -17,7 +17,7 @@ import website.search.search as search
 from website.search import elastic_search
 from website.search.util import build_query
 from website.search_migration.migrate import migrate
-from website.models import Retraction, NodeLicense, Tag
+from osf.models import Retraction, NodeLicense, Tag
 from addons.osfstorage.models import OsfStorageFile
 
 from scripts.populate_institutions import main as populate_institutions
