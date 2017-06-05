@@ -6,9 +6,11 @@ import math
 import time
 from django.utils import timezone
 
+import django
 from modularodm import Q
 from oauthlib.oauth2 import OAuth2Error
 from dateutil.relativedelta import relativedelta
+django.setup()
 
 from framework.celery_tasks import app as celery_app
 
@@ -18,7 +20,7 @@ from website.app import init_app
 from addons.box.models import Provider as Box
 from addons.googledrive.models import GoogleDriveProvider
 from addons.mendeley.models import Mendeley
-from website.oauth.models import ExternalAccount
+from osf.models import ExternalAccount
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)

@@ -18,7 +18,8 @@ from dateutil.parser import parse as parse_date
 from modularodm import Q
 from modularodm.exceptions import ModularOdmException
 
-from website.models import User, Node, NodeLog
+from osf.models import OSFUser as User
+from website.models import Node, NodeLog
 
 
 logging.basicConfig(level=logging.INFO)

@@ -12,7 +12,7 @@ from osf_tests.factories import (
 )
 from tests.utils import make_drf_request_with_version, mock_archive
 
-from website.models import MetaSchema
+from osf.models import MetaSchema
 from website.project.model import ensure_schemas
 from website.project.metadata.schemas import LATEST_SCHEMA_VERSION
 from website.search import search

@@ -11,7 +11,7 @@ from osf_tests.factories import (
 
 from framework.auth.core import Auth
 
-from website.models import NodeLog
+from osf.models import NodeLog
 from website.util import permissions as osf_permissions
 from api.base.settings.defaults import API_BASE
 from api_tests import utils as api_utils

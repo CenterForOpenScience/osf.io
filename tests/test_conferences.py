@@ -15,8 +15,8 @@ from modularodm.exceptions import ValidationError
 from framework.auth import get_or_create_user
 from framework.auth.core import Auth
 
+from osf.models import OSFUser as User, AbstractNode as Node
 from website import settings
-from website.models import User, Node
 from website.conferences import views
 from website.conferences import utils, message
 from website.util import api_url_for, web_url_for

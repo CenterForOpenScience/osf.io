@@ -21,7 +21,7 @@ pytestmark = pytest.mark.django_db
 
 
 @pytest.fixture(autouse=True)
-def _ensure_schemas(patched_models):
+def _ensure_schemas():
     return ensure_schemas()
 
 

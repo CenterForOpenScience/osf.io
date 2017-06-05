@@ -460,3 +460,41 @@ class ExternalProvider(object):
         if self.expiry_time and self.account.expires_at:
             return (timezone.now() - self.account.expires_at).total_seconds() > self.expiry_time
         return False
+
+class BasicAuthProviderMixin(object):
+    """
+        Providers utilizing BasicAuth can utilize this class to implement the
+        storage providers framework by subclassing this mixin. This provides
+        a translation between the oauth parameters and the BasicAuth parameters.
+
+        The password here is kept decrypted by default.
+    """
+
+    def __init__(self, account=None, host=None, username=None, password=None):
+        super(BasicAuthProviderMixin, self).__init__()
+        if account:
+            self.account = account
+        elif not account and host and password and username:
+            self.account = ExternalAccount(
+                display_name=username,
+                oauth_key=password,
+                oauth_secret=host.lower(),
+                provider_id='{}:{}'.format(host.lower(), username),
+                profile_url=host.lower(),
+                provider=self.short_name,
+                provider_name=self.name
+            )
+        else:
+            self.account = None
+
+    @property
+    def host(self):
+        return self.account.profile_url
+
+    @property
+    def username(self):
+        return self.account.display_name
+
+    @property
+    def password(self):
+        return self.account.oauth_key

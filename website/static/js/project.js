@@ -150,6 +150,11 @@ NodeActions.beforeTemplate = function(url, done) {
     });
 };
 
+NodeActions.redirectForkPage = function(){
+    window.location.href = '/project/' + ctx.node.id + '/forks/';
+    return true;
+};
+
 NodeActions.addonFileRedirect = function(item) {
     window.location.href = item.params.urls.view;
     return false;

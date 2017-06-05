@@ -31,12 +31,12 @@ from website import mails
 from website import settings
 from addons.base import exceptions
 from addons.base import signals as file_signals
-from osf.models import BaseFileNode, TrashedFileNode
-from website.models import Node, NodeLog, User
+from osf.models import (BaseFileNode, TrashedFileNode,
+                        OSFUser as User, AbstractNode as Node,
+                        NodeLog, DraftRegistration, MetaSchema)
 from website.profile.utils import get_gravatar
 from website.project import decorators
 from website.project.decorators import must_be_contributor_or_public, must_be_valid_project
-from website.project.model import DraftRegistration, MetaSchema
 from website.project.utils import serialize_node
 from website.settings import MFR_SERVER_URL
 from website.util import rubeus

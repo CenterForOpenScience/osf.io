@@ -2,7 +2,7 @@ from nose.tools import *  # flake8: noqa
 import functools
 
 from tests.base import ApiTestCase
-from website.project.licenses import NodeLicense
+from osf.models.licenses import NodeLicense
 from website.project.licenses import ensure_licenses
 from api.base.settings.defaults import API_BASE
 

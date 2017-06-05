@@ -14,7 +14,7 @@ from osf_tests.factories import InstitutionFactory, UserFactory
 from api.base import settings
 from api.base.settings.defaults import API_BASE
 from framework.auth import signals
-from website.models import User
+from osf.models import OSFUser as User
 
 
 class TestInstitutionAuth(ApiTestCase):

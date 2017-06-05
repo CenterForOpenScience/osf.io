@@ -6,6 +6,7 @@ import datetime
 
 import pytest
 from nose.tools import *  # noqa
+from dateutil.parser import parse as parse_datetime
 
 from addons.osfstorage.models import OsfStorageFileNode
 from framework.auth.core import Auth
@@ -18,8 +19,8 @@ from addons.osfstorage.tests import factories
 from framework.auth import signing
 from website.util import rubeus
 
-from website.models import Tag
-from website.files import models
+from osf.models import Tag
+from osf.models import files as models
 from addons.osfstorage.apps import osf_storage_root
 from addons.osfstorage import utils
 from addons.base.views import make_auth
@@ -84,10 +85,24 @@ class TestGetMetadataHook(HookTestCase):
             {},
         )
         assert_equal(len(res.json), 1)
-        assert_equal(
-            res.json[0],
-            record.serialize()
-        )
+        res_data = res.json[0]
+        expected_data = record.serialize()
+
+        # Datetimes in response might not be exactly the same as in record.serialize
+        # because of the way Postgres serializes dates. For example,
+        # '2017-06-05T17:32:20.964950+00:00' will be
+        # serialized as '2017-06-05T17:32:20.96495+00:00' by postgres
+        # Therefore, we parse the dates then compare them
+        expected_date_modified = parse_datetime(expected_data.pop('modified'))
+        expected_date_created = parse_datetime(expected_data.pop('created'))
+
+        res_date_modified = parse_datetime(res_data.pop('modified'))
+        res_date_created = parse_datetime(res_data.pop('created'))
+
+        assert_equal(res_date_modified, expected_date_modified)
+        assert_equal(res_date_created, expected_date_created)
+        assert_equal(res_data, expected_data)
+
 
     def test_osf_storage_root(self):
         auth = Auth(self.project.creator)
@@ -571,7 +586,8 @@ class TestDeleteHook(HookTestCase):
         assert_equal(resp.json, {'status': 'success'})
         fid = file._id
         del file
-        assert_is(models.OsfStorageFileNode.load(fid), None)
+        # models.StoredFileNode._clear_object_cache()
+        assert_is(OsfStorageFileNode.load(fid), None)
         assert_true(models.TrashedFileNode.load(fid))
 
     def test_delete_deleted(self):

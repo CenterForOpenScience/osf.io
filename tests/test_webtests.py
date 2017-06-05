@@ -23,7 +23,7 @@ from osf_tests.factories import (UserFactory, AuthUserFactory, ProjectFactory, N
 from addons.wiki.tests.factories import NodeWikiFactory
 from osf.models import AbstractNode as Node
 from website import settings, language
-from website.files.models.osfstorage import OsfStorageFile
+from addons.osfstorage.models import OsfStorageFile
 from website.util import web_url_for, api_url_for, permissions
 
 from api_tests import utils as test_utils
@@ -699,7 +699,7 @@ class TestConfirmingEmail(OsfTestCase):
         user1 = AuthUserFactory()
         user2 = AuthUserFactory()
         email = 'test@cos.io'
-        user1.emails.append(email)
+        user1.emails.create(address=email)
         user1.save()
         url = api_url_for('update_user')
         header = {'id': user1.username,
@@ -866,7 +866,7 @@ class TestResendConfirmation(OsfTestCase):
         # load resend confirmation page and submit email
         res = self.app.get(self.get_url)
         form = res.forms['resendForm']
-        form['email'] = self.confirmed_user.emails[0]
+        form['email'] = self.confirmed_user.emails.first().address
         res = form.submit()
 
         # check email, request and response
@@ -997,6 +997,7 @@ class TestForgotPassword(OsfTestCase):
         assert_not_in_html('If there is an OSF account', res)
 
 
+@unittest.skip('Public projects/components are dynamically loaded now.')
 class TestAUserProfile(OsfTestCase):
 
     def setUp(self):

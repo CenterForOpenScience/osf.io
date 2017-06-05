@@ -14,8 +14,7 @@ from api.base.serializers import is_anonymized
 from api.base.settings import MAX_PAGE_SIZE
 from api.base.utils import absolute_reverse
 
-from framework.guid.model import Guid
-from website.project.model import Node, Comment
+from osf.models import AbstractNode as Node, Comment, Guid
 from website.search.elastic_search import DOC_TYPE_TO_MODEL
 
 

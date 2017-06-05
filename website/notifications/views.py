@@ -6,11 +6,10 @@ from framework import sentry
 from framework.auth.decorators import must_be_logged_in
 from framework.exceptions import HTTPError
 
+from osf.models import AbstractNode as Node, NotificationSubscription
 from website.notifications import utils
 from website.notifications.constants import NOTIFICATION_TYPES
-from website.notifications.model import NotificationSubscription
 from website.project.decorators import must_be_valid_project
-from website.project.model import Node
 
 
 @must_be_logged_in
