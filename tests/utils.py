@@ -11,7 +11,7 @@ from framework.auth import Auth
 from framework.celery_tasks.handlers import celery_teardown_request
 from website.archiver import ARCHIVER_SUCCESS
 from website.archiver import listeners as archiver_listeners
-from website.project.sanctions import Sanction
+from osf.models import Sanction
 from tests.base import get_default_metaschema
 
 def requires_module(module):

@@ -2,9 +2,11 @@ import pytest
 
 from api.base.settings.defaults import API_BASE
 from tests.base import ApiTestCase
+from website.util import permissions
 from osf_tests.factories import (
     ProjectFactory,
     AuthUserFactory,
+    PrivateLinkFactory,
 )
 
 @pytest.fixture()
@@ -98,95 +100,134 @@ class TestNodeSparseFieldsList:
         assert set(res.json['data'].keys()) == set(['links', 'type', 'id', 'attributes'])
         assert res.json['data']['attributes'] == {}
 
-# class TestNodeSparseFieldsDetail(ApiTestCase):
+@pytest.mark.django_db
+class TestNodeSparseFieldsDetail:
 
-#     def setUp(self):
-#         super(TestNodeSparseFieldsDetail, self).setUp()
-#         self.user = AuthUserFactory()
-#         self.node = ProjectFactory(is_public=True, creator=self.user)
-#         self.url = '/{}nodes/{}/'.format(API_BASE, self.node._id)
+    @pytest.fixture()
+    def node(self, user):
+        return ProjectFactory(is_public=True, creator=user)
 
-#     def test_empty_fields_returns_no_attributes(self):
-#         res = self.app.get(self.url + '?fields[nodes]=')
-#         node_json = res.json['data']
+    @pytest.fixture()
+    def url(self, node):
+        return '/{}nodes/{}/'.format(API_BASE, node._id)
 
-#         assert node_json['attributes'] == {}
-#         assert set(node_json.keys()) == set(['links', 'type', 'id', 'attributes'])
+    def test_node_sparse_fields_detail_non_mutating_tests(self, app, user, node, url):
 
-#     def test_embed_sparse_same_type(self):
-#         child = ProjectFactory(parent=self.node, is_public=True, creator=self.user)
-#         url = '{}?embed=children&fields[nodes]=title,children'.format(self.url)
-#         res = self.app.get(url)
-#         node_json = res.json['data']
+    # def test_empty_fields_returns_no_attributes(self, app, url):
+        res = app.get(url + '?fields[nodes]=')
+        node_json = res.json['data']
 
-#         assert set(node_json.keys()) == set(['links', 'type', 'id', 'attributes', 'relationships', 'embeds'])
-#         assert node_json['attributes'].keys() == ['title']
-#         assert set(node_json['embeds']['children']['data'][0].keys()) == set(['links', 'type', 'id', 'attributes', 'relationships'])
-#         assert node_json['embeds']['children']['data'][0]['attributes'].keys() == ['title']
-#         assert node_json['embeds']['children']['data'][0]['attributes']['title'] == child.title
+        assert node_json['attributes'] == {}
+        assert set(node_json.keys()) == set(['links', 'type', 'id', 'attributes'])
 
-#     def test_embed_sparse_different_types(self):
-#         url = '{}?embed=contributors&fields[nodes]=title,contributors'.format(self.url)
-#         res = self.app.get(url)
-#         node_json = res.json['data']
+    # def test_embed_sparse_same_type(self, app, user, node, url):
+        child = ProjectFactory(parent=node, is_public=True, creator=user)
+        res_url = '{}?embed=children&fields[nodes]=title,children'.format(url)
+        res = app.get(res_url)
+        node_json = res.json['data']
 
-#         assert set(node_json.keys()) == set(['links', 'type', 'id', 'attributes', 'embeds', 'relationships'])
-#         assert node_json['attributes'].keys() == ['title']
-#         assert len(node_json['embeds']['contributors']['data']) == 1
-#         assert node_json['embeds']['contributors']['data'][0]['id'] == '{}-{}'.format(self.node._id, self.user._id)
-#         assert len(node_json['embeds']['contributors']['data'][0]['attributes']) > 1
+        assert set(node_json.keys()) == set(['links', 'type', 'id', 'attributes', 'relationships', 'embeds'])
+        assert node_json['attributes'].keys() == ['title']
+        assert set(node_json['embeds']['children']['data'][0].keys()) == set(['links', 'type', 'id', 'attributes', 'relationships'])
+        assert node_json['embeds']['children']['data'][0]['attributes'].keys() == ['title']
+        assert node_json['embeds']['children']['data'][0]['attributes']['title'] == child.title
 
-#     def test_sparse_embedded_type(self):
-#         url = '{}?embed=contributors&fields[contributors]='.format(self.url)
-#         res = self.app.get(url)
-#         node_json = res.json['data']
+    # def test_embed_sparse_different_types(self, app, user, node, url):
+        res_url = '{}?embed=contributors&fields[nodes]=title,contributors'.format(url)
+        res = app.get(res_url)
+        node_json = res.json['data']
 
-#         assert set(node_json.keys()) == set(['links', 'type', 'id', 'attributes', 'embeds', 'relationships'])
-#         assert len(node_json['attributes'].keys()) > 1
-#         assert len(node_json['embeds']['contributors']['data']) == 1
-#         assert node_json['embeds']['contributors']['data'][0]['id'] == '{}-{}'.format(self.node._id, self.user._id)
-#         assert len(node_json['embeds']['contributors']['data'][0]['attributes']) == 0
+        assert set(node_json.keys()) == set(['links', 'type', 'id', 'attributes', 'embeds', 'relationships'])
+        assert node_json['attributes'].keys() == ['title']
+        assert len(node_json['embeds']['contributors']['data']) == 1
+        assert node_json['embeds']['contributors']['data'][0]['id'] == '{}-{}'.format(node._id, user._id)
+        assert len(node_json['embeds']['contributors']['data'][0]['attributes']) > 1
 
-#     def test_multiple_sparse_types(self):
-#         url = '{}?fields[nodes]=contributors,title&embed=contributors&fields[contributors]=bibliographic'.format(self.url)
-#         res = self.app.get(url)
-#         node_json = res.json['data']
+    # def test_sparse_embedded_type(self):
+        res_url = '{}?embed=contributors&fields[contributors]='.format(url)
+        res = app.get(res_url)
+        node_json = res.json['data']
 
-#         assert set(node_json.keys()) == set(['links', 'type', 'id', 'attributes', 'embeds', 'relationships'])
-#         assert node_json['attributes'].keys() == ['title']
-#         assert len(node_json['embeds']['contributors']['data']) == 1
-#         assert node_json['embeds']['contributors']['data'][0]['id'] == '{}-{}'.format(self.node._id, self.user._id)
-#         assert node_json['embeds']['contributors']['data'][0]['attributes'].keys() == ['bibliographic']
+        assert set(node_json.keys()) == set(['links', 'type', 'id', 'attributes', 'embeds', 'relationships'])
+        assert len(node_json['attributes'].keys()) > 1
+        assert len(node_json['embeds']['contributors']['data']) == 1
+        assert node_json['embeds']['contributors']['data'][0]['id'] == '{}-{}'.format(node._id, user._id)
+        assert len(node_json['embeds']['contributors']['data'][0]['attributes']) == 0
 
-#     def test_update_with_sparse_fields(self):
-#         url = '{}?fields[nodes]='.format(self.url)
-#         old_title = self.node.title
-#         payload = {'data': {
-#             'id': self.node._id,
-#             'type': 'nodes',
-#             'attributes': {
-#                 'title': 'new title'
-#             }
-#         }}
-#         res = self.app.patch_json_api(url, payload, auth=self.user.auth)
-#         assert res.status_code == 200
-#         assert res.json['data']['attributes'] == {}
-#         self.node.reload()
-#         assert self.node.title != old_title
+    # def test_multiple_sparse_types(self):
+        res_url = '{}?fields[nodes]=contributors,title&embed=contributors&fields[contributors]=bibliographic'.format(url)
+        res = app.get(res_url)
+        node_json = res.json['data']
 
+        assert set(node_json.keys()) == set(['links', 'type', 'id', 'attributes', 'embeds', 'relationships'])
+        assert node_json['attributes'].keys() == ['title']
+        assert len(node_json['embeds']['contributors']['data']) == 1
+        assert node_json['embeds']['contributors']['data'][0]['id'] == '{}-{}'.format(node._id, user._id)
+        assert node_json['embeds']['contributors']['data'][0]['attributes'].keys() == ['bibliographic']
 
-# class TestSparseViewOnlyLinks(ViewOnlyTestCase):
+    def test_update_with_sparse_fields(self, app, user, node, url):
+        res_url = '{}?fields[nodes]='.format(url)
+        old_title = node.title
+        payload = {'data': {
+            'id': node._id,
+            'type': 'nodes',
+            'attributes': {
+                'title': 'new title'
+            }
+        }}
+        res = app.patch_json_api(res_url, payload, auth=user.auth)
+        assert res.status_code == 200
+        assert res.json['data']['attributes'] == {}
+        node.reload()
+        assert node.title != old_title
 
-#     def test_sparse_fields_with_anonymous_link(self):
-#         res = self.app.get(self.private_node_one_url, {
-#             'view_only': self.private_node_one_anonymous_link.key,
-#             'fields[nodes]': 'title,current_user_can_comment,contributors',
-#             'fields[contributors]': 'id',
-#             'embed': 'contributors'
-#         })  # current_user_can_comment is an anonymized field, should be removed
-#         assert res.status_code == 200
-#         assert res.json['data']['attributes'].keys() == ['title']
+@pytest.mark.django_db
+class TestSparseViewOnlyLinks:
 
-#         for contrib in res.json['data']['embeds']['contributors']['data']:
-#             assert contrib['id'] == ''
-#             assert contrib['attributes'] == {}
+    @pytest.fixture()
+    def creation_user(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def viewing_user(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def contributing_read_user(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def contributing_write_user(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def private_node_one(self, creation_user, contributing_read_user, contributing_write_user):
+        private_node_one = ProjectFactory(is_public=False, creator=creation_user, title='Private One')
+        private_node_one.add_contributor(contributing_read_user, permissions=[permissions.READ], save=True)
+        private_node_one.add_contributor(contributing_write_user, permissions=[permissions.WRITE], save=True)
+        return private_node_one
+
+    @pytest.fixture()
+    def private_node_one_anonymous_link(self, private_node_one):
+        private_node_one_anonymous_link = PrivateLinkFactory(anonymous=True)
+        private_node_one_anonymous_link.nodes.add(private_node_one)
+        private_node_one_anonymous_link.save()
+        return private_node_one_anonymous_link
+
+    @pytest.fixture()
+    def private_node_one_url(self, private_node_one):
+        return '/{}nodes/{}/'.format(API_BASE, private_node_one._id)
+
+    def test_sparse_fields_with_anonymous_link(self, app, private_node_one_url, private_node_one_anonymous_link):
+        res = app.get(private_node_one_url, {
+            'view_only': private_node_one_anonymous_link.key,
+            'fields[nodes]': 'title,current_user_can_comment,contributors',
+            'fields[contributors]': 'id',
+            'embed': 'contributors'
+        })  # current_user_can_comment is an anonymized field, should be removed
+        assert res.status_code == 200
+        assert res.json['data']['attributes'].keys() == ['title']
+
+        for contrib in res.json['data']['embeds']['contributors']['data']:
+            assert contrib['id'] == ''
+            assert contrib['attributes'] == {}

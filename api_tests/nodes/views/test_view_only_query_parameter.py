@@ -3,7 +3,7 @@ import pytest
 from website.util import permissions
 from api.base.settings.defaults import API_BASE
 from tests.base import ApiTestCase
-from website.models import Node
+from osf.models import AbstractNode as Node
 from osf_tests.factories import (
     ProjectFactory,
     AuthUserFactory,

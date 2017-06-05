@@ -1,8 +1,8 @@
 import pytest
 from urlparse import urlparse
 
-from framework.auth.core import Auth
-from website.models import NodeLog
+from framework.auth.core import Auth # possibly deleted?
+from osf.models import NodeLog
 from api.base.settings.defaults import API_BASE
 from tests.json_api_test_app import JSONAPITestApp
 from tests.base import ApiTestCase

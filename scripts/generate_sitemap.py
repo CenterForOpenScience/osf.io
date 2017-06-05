@@ -4,23 +4,19 @@
 import boto3
 import datetime
 import gzip
-import math
 import os
 import shutil
 import sys
-import urllib
 import urlparse
 import xml
 
 import django
 django.setup()
-from django.db import transaction
 import logging
 
 from framework import sentry
 from framework.celery_tasks import app as celery_app
-from osf.models import OSFUser, AbstractNode, Registration
-from osf.models.preprint_service import PreprintService
+from osf.models import OSFUser, AbstractNode, PreprintService
 from scripts import utils as script_utils
 from website import settings
 from website.app import init_app
@@ -31,12 +27,12 @@ logging.basicConfig(level=logging.INFO)
 class Progress(object):
     def __init__(self, bar_len=50):
         self.bar_len = bar_len
-    
+
     def start(self, total, prefix):
         self.total = total
         self.count = 0
         self.prefix = prefix
-    
+
     def increment(self, inc=1):
         self.count += inc
         filled_len = int(round(self.bar_len * self.count / float(self.total)))
@@ -136,7 +132,7 @@ class Sitemap(object):
         for f in range(self.sitemap_count):
             sitemap = doc.createElement('sitemap')
             sitemap_index.appendChild(sitemap)
-            
+
             loc = doc.createElement('loc')
             sitemap.appendChild(loc)
             loc_text = self.doc.createTextNode(urlparse.urljoin(settings.DOMAIN, 'sitemaps/sitemap_{}.xml'.format(str(f))))
@@ -194,7 +190,7 @@ class Sitemap(object):
         progress.stop()
 
         # AbstractNode urls (Nodes and Registrations, no colelctions)
-        objs = AbstractNode.objects.filter(is_public=True, is_deleted=False, retraction_id__isnull=True).exclude(type="osf.collection") 
+        objs = AbstractNode.objects.filter(is_public=True, is_deleted=False, retraction_id__isnull=True).exclude(type="osf.collection")
         progress.start(objs.count(), 'NODE: ')
         for obj in objs.iterator():
             try:
@@ -221,12 +217,14 @@ class Sitemap(object):
                 # Preprint file urls
                 try:
                     file_config = settings.SITEMAP_PREPRINT_FILE_CONFIG
-                    file_config['loc'] = urlparse.urljoin(settings.DOMAIN, 
-                        os.path.join('project', 
-                            obj.primary_file.node._id, # Parent node id
+                    file_config['loc'] = urlparse.urljoin(
+                        settings.DOMAIN,
+                        os.path.join(
+                            'project',
+                            obj.primary_file.node._id,  # Parent node id
                             'files',
                             'osfstorage',
-                            obj.primary_file._id, # Preprint file deep_url
+                            obj.primary_file._id,  # Preprint file deep_url
                             '?action=download'
                         )
                     )

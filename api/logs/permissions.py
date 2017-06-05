@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from rest_framework import permissions
 
-from website.models import NodeLog
+from osf.models import NodeLog
 
 from api.nodes.permissions import ContributorOrPublic
 

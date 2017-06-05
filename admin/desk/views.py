@@ -32,7 +32,7 @@ class DeskCaseList(PermissionRequiredMixin, ListView):
     def get_queryset(self):
         customer_id = self.kwargs.get('user_id', None)
         customer = OSFUser.load(customer_id)
-        email = customer.emails[0]
+        email = customer.emails.values_list('address', flat=True).first()
         desk = DeskClient(self.request.user)
         params = {
             'email': email,
@@ -77,7 +77,7 @@ class DeskCustomer(PermissionRequiredMixin, DetailView):
     def get_object(self, queryset=None):
         customer_id = self.kwargs.get('user_id', None)
         customer = OSFUser.load(customer_id)
-        email = customer.emails[0]
+        email = customer.emails.values_list('address', flat=True).first()
         desk = DeskClient(self.request.user)
         params = {'email': email}
         customer = desk.find_customer(params)

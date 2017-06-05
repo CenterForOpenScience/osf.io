@@ -15,7 +15,7 @@ from framework.exceptions import HTTPError
 from framework.auth.decorators import collect_auth
 from framework.mongo.utils import get_or_http_error
 
-from website.models import Node
+from osf.models import AbstractNode as Node
 from website import settings
 
 _load_node_or_fail = lambda pk: get_or_http_error(Node, pk)
@@ -225,7 +225,7 @@ def _must_be_contributor_factory(include_public, include_view_only_anon=True):
             kwargs['auth'].private_key = key
             link_anon = None
             if not include_view_only_anon:
-                from website.models import PrivateLink
+                from osf.models import PrivateLink
                 try:
                     link_anon = PrivateLink.find_one(Q('key', 'eq', key)).anonymous
                 except ModularOdmException:

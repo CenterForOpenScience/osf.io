@@ -7,7 +7,7 @@ import unittest
 from modularodm import Q
 
 from framework.auth import Auth
-from website.models import Node, NodeLog
+from osf.models import AbstractNode as Node, NodeLog
 
 from tests.base import OsfTestCase
 from tests.factories import ProjectFactory

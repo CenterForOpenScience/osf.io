@@ -14,7 +14,7 @@ from datetime import datetime
 
 from framework import analytics, sessions
 from framework.sessions import session
-from osf.models import PageCounter
+from osf.models import PageCounter, Session
 
 from tests.base import OsfTestCase
 from osf_tests.factories import UserFactory, ProjectFactory
@@ -51,7 +51,7 @@ class UpdateCountersTestCase(OsfTestCase):
         self.ctx = decoratorapp.test_request_context()
         self.ctx.push()
         # TODO: Think of something better @sloria @jmcarp
-        sessions.set_session(sessions.Session())
+        sessions.set_session(Session())
 
     def tearDown(self):
         self.ctx.pop()

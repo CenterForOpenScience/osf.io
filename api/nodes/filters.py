@@ -8,8 +8,7 @@ from api.base.exceptions import InvalidFilterError, InvalidFilterOperator, Inval
 from api.base.filters import ListFilterMixin, ODMFilterMixin
 from api.base import utils
 
-from osf.models import NodeRelation
-from website.models import Node
+from osf.models import NodeRelation, AbstractNode as Node
 
 
 class NodesListFilterMixin(ODMFilterMixin):

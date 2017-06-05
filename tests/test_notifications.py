@@ -1,7 +1,5 @@
 import collections
-import datetime
 import mock
-import pytz
 from babel import dates, Locale
 from schema import Schema, And, Use, Or
 from django.utils import timezone
@@ -11,7 +9,7 @@ from modularodm.exceptions import NoResultsFound
 from nose.tools import *  # noqa PEP8 asserts
 
 from framework.auth import Auth
-from osf.models import Node, Comment, NotificationDigest, NotificationSubscription, Guid, OSFUser
+from osf.models import Comment, NotificationDigest, NotificationSubscription, Guid, OSFUser
 
 from website.notifications.tasks import get_users_emails, send_users_email, group_by_node, remove_notifications
 from website.notifications import constants

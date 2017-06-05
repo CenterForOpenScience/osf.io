@@ -21,11 +21,10 @@ from website.project.decorators import (
     must_have_permission,
     must_not_be_registration, must_be_registration,
 )
-from website.identifiers.model import Identifier
 from website.identifiers.utils import get_or_create_identifiers, build_ezid_metadata
+from osf.models import Identifier, MetaSchema, NodeLog
 from website.project.utils import serialize_node
 from website.util.permissions import ADMIN
-from website.models import MetaSchema, NodeLog
 from website import language
 from website.project import signals as project_signals
 from website.project.metadata.schemas import _id_to_name

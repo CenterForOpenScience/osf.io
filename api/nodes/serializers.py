@@ -23,12 +23,12 @@ from rest_framework import serializers as ser
 from rest_framework import exceptions
 from addons.base.exceptions import InvalidAuthError, InvalidFolderError
 from website.exceptions import NodeStateError
-from website.models import (Comment, DraftRegistration, Institution,
-                            MetaSchema, Node, PrivateLink)
-from website.oauth.models import ExternalAccount
-from website.preprints.model import PreprintService
+from osf.models import (Comment, DraftRegistration, Institution,
+                        MetaSchema, AbstractNode as Node, PrivateLink)
+from osf.models.external import ExternalAccount
+from osf.models.licenses import NodeLicense
+from osf.models.preprint_service import PreprintService
 from website.project import new_private_link
-from website.project.licenses import NodeLicense
 from website.project.metadata.schemas import (ACTIVE_META_SCHEMAS,
                                               LATEST_SCHEMA_VERSION)
 from website.project.metadata.utils import is_prereg_admin_not_project_admin
@@ -958,7 +958,7 @@ class NodeProviderSerializer(JSONAPISerializer):
     provider = ser.CharField(read_only=True)
     files = NodeFileHyperLinkField(
         related_view='nodes:node-files',
-        related_view_kwargs={'node_id': '<node_id>', 'path': '<path>', 'provider': '<provider>'},
+        related_view_kwargs={'node_id': '<node._id>', 'path': '<path>', 'provider': '<provider>'},
         kind='folder',
         never_embed=True
     )
