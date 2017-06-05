@@ -53,10 +53,10 @@ class BitbucketClient(BaseClient):
         res = self._make_request(
             'GET',
             self._build_url(settings.BITBUCKET_V2_API_URL, 'repositories', user, repo),
-            expects=(200, ),
+            expects=(200, 404, ),
             throws=HTTPError(401)
         )
-        return res.json()
+        return None if res.status_code == 404 else res.json()
 
     def repos(self):
         """Return a list of repository objects owned by the user

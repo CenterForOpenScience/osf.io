@@ -302,65 +302,48 @@ class TestBitbucketSettings(OsfTestCase):
 
         assert_equal(len(self.project.logs), log_count)
 
-    # TODO: borken ATM because client.repo doesn't handle non-existing repos
-    # @mock.patch('website.addons.bitbucket.api.BitbucketClient.repo')
-    # @mock.patch('website.addons.bitbucket.model.BitbucketNodeSettings.external_account')
-    # def test_link_repo_non_existent(self, mock_account, mock_repo):
-    #     bitbucket_mock = self.bitbucket
-    #     mock_account.return_value = mock.Mock()
-    #     mock_repo.return_value = bitbucket_mock.repo.return_value
+    @mock.patch('website.addons.bitbucket.api.BitbucketClient.repo')
+    @mock.patch('website.addons.bitbucket.model.BitbucketNodeSettings.external_account')
+    def test_link_repo_non_existent(self, mock_account, mock_repo):
+        mock_account.return_value = mock.Mock()
+        mock_repo.return_value = None
 
-    #     url = self.project.api_url + 'bitbucket/settings/'
-    #     res = self.app.post_json(
-    #         url,
-    #         {
-    #             'bitbucket_user': 'queen',
-    #             'bitbucket_repo': 'night at the opera',
-    #         },
-    #         auth=self.auth,
-    #         expect_errors=True
-    #     ).maybe_follow()
+        url = self.project.api_url + 'bitbucket/settings/'
+        res = self.app.post_json(
+            url,
+            {
+                'bitbucket_user': 'queen',
+                'bitbucket_repo': 'night at the opera',
+            },
+            auth=self.auth,
+            expect_errors=True
+        ).maybe_follow()
 
-    #     assert_equal(res.status_code, 400)
+        assert_equal(res.status_code, 400)
 
-    # @mock.patch('website.addons.bitbucket.api.BitbucketClient.branches')
-    # def test_link_repo_registration(self, mock_branches):
+    @mock.patch('website.addons.bitbucket.api.BitbucketClient.branches')
+    def test_link_repo_registration(self, mock_branches):
+        bitbucket_mock = self.bitbucket
+        mock_branches.return_value = bitbucket_mock.branches.return_value
 
-    #     mock_branches.return_value = [
-    #         Branch.from_json({
-    #             'name': 'master',
-    #             'commit': {
-    #                 'sha': '6dcb09b5b57875f334f61aebed695e2e4193db5e',
-    #                 'url': 'https://api.bitbucket.com/repos/octocat/Hello-World/commits/c5b97d5ae6c19d5c5df71a34c7fbeeda2479ccbc',
-    #             }
-    #         }),
-    #         Branch.from_json({
-    #             'name': 'develop',
-    #             'commit': {
-    #                 'sha': '6dcb09b5b57875asdasedawedawedwedaewdwdass',
-    #                 'url': 'https://api.bitbucket.com/repos/octocat/Hello-World/commits/cdcb09b5b57875asdasedawedawedwedaewdwdass',
-    #             }
-    #         })
-    #     ]
+        registration = self.project.register_node(
+            schema=get_default_metaschema(),
+            auth=self.consolidated_auth,
+            data=''
+        )
 
-    #     registration = self.project.register_node(
-    #         schema=get_default_metaschema(),
-    #         auth=self.consolidated_auth,
-    #         data=''
-    #     )
+        url = registration.api_url + 'bitbucket/settings/'
+        res = self.app.post_json(
+            url,
+            {
+                'bitbucket_user': 'queen',
+                'bitbucket_repo': 'night at the opera',
+            },
+            auth=self.auth,
+            expect_errors=True
+        ).maybe_follow()
 
-    #     url = registration.api_url + 'bitbucket/settings/'
-    #     res = self.app.post_json(
-    #         url,
-    #         {
-    #             'bitbucket_user': 'queen',
-    #             'bitbucket_repo': 'night at the opera',
-    #         },
-    #         auth=self.auth,
-    #         expect_errors=True
-    #     ).maybe_follow()
-
-#         assert_equal(res.status_code, 400)
+        assert_equal(res.status_code, 400)
 
     def test_deauthorize(self):
 
