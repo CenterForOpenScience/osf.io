@@ -1,11 +1,13 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import
+import datetime as dt
 import os
 import httplib as http
 
 from flask import request
 from flask import send_from_directory
 
+import pytz
 from geoip import geolite2
 
 from framework import status
@@ -33,7 +35,6 @@ from website import language
 from website.util import metrics
 from website.util import paths
 from website.util import sanitize
-from website import maintenance
 from website import landing_pages as landing_page_views
 from website import views as website_views
 from website.citations import views as citation_views
@@ -119,7 +120,10 @@ def get_globals():
                 'write_key': settings.KEEN['private']['write_key'],
             },
         },
-        'maintenance': maintenance.get_maintenance(),
+        'maintenance': {
+            'start': dt.datetime(2017, 6, 6, 1, tzinfo=pytz.utc).isoformat(),
+            'end': dt.datetime(2017, 6, 6, 2, tzinfo=pytz.utc).isoformat(),
+        },
         'recaptcha_site_key': settings.RECAPTCHA_SITE_KEY,
         'custom_citations': settings.CUSTOM_CITATIONS
     }
