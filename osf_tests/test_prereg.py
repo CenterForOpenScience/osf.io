@@ -2,9 +2,10 @@ from nose.tools import *  # noqa
 
 from modularodm import Q
 
+from osf.models import MetaSchema
 from website.prereg import prereg_landing_page as landing_page
 from website.prereg.utils import drafts_for_user, get_prereg_schema
-from website.project.model import ensure_schemas, MetaSchema
+from website.project.model import ensure_schemas
 
 from tests.base import OsfTestCase
 from osf_tests import factories

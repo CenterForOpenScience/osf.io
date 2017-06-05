@@ -6,7 +6,7 @@ from nose.tools import *  # flake8: noqa
 
 from api.base.settings.defaults import API_BASE
 
-from framework.guid.model import Guid
+from osf.models import Guid
 
 from addons.wiki.models import NodeWikiPage
 

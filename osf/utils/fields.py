@@ -21,6 +21,17 @@ class LowercaseCharField(models.CharField):
             value = value.lower()
         return value
 
+class LowercaseEmailField(models.EmailField):
+    # Note: This is technically not compliant with RFC 822, which requires
+    #       that case be preserved in the "local-part" of an address. From
+    #       a practical standpoint, the vast majority of email servers do
+    #       not preserve case.
+    #       ref: https://tools.ietf.org/html/rfc822#section-6
+    def get_prep_value(self, value):
+        value = super(models.EmailField, self).get_prep_value(value)
+        if value is not None:
+            value = value.lower().strip()
+        return value
 
 class EncryptedTextField(models.TextField):
     '''

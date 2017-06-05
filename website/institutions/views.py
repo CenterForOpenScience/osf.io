@@ -1,10 +1,11 @@
 import httplib as http
 
-from .model import Institution
 from framework.exceptions import HTTPError
 
 from modularodm import Q
 from modularodm.exceptions import NoResultsFound
+
+from osf.models import Institution
 
 def serialize_institution(inst):
     return {

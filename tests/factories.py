@@ -13,7 +13,6 @@ Example usage: ::
 Factory boy docs: http://factoryboy.readthedocs.org/
 
 """
-import datetime
 import functools
 
 from django.utils import timezone
@@ -23,41 +22,27 @@ from mock import patch, Mock
 from modularodm import Q
 from modularodm.exceptions import NoResultsFound
 
-from framework.auth import User, Auth
+from framework.auth import Auth
 from framework.auth.utils import impute_names_model, impute_names
-from framework.guid.model import Guid
 from framework.mongo import StoredObject
-from framework.sessions.model import Session
 from tests.base import fake
 from tests.base import get_default_metaschema
 from tests import mock_addons as addons_base
 from addons.wiki.models import NodeWikiPage
-from website.oauth.models import (
-    ApiOAuth2Application,
-    ApiOAuth2PersonalToken,
-    ExternalAccount,
-    ExternalProvider
-)
-from website.preprints.model import PreprintProvider, PreprintService
-from website.project.model import (
-    Comment, DraftRegistration, MetaSchema, Node, NodeLog, Pointer,
-    PrivateLink, Tag, WatchConfig, AlternativeCitation,
-    ensure_schemas, Institution
-)
-from website.project.sanctions import (
-    Embargo,
-    RegistrationApproval,
-    Retraction,
-    Sanction,
-)
-from website.project.taxonomies import Subject
-from website.notifications.model import NotificationSubscription, NotificationDigest
-from website.archiver.model import ArchiveTarget, ArchiveJob
-from website.identifiers.model import Identifier
+from website.project.model import ensure_schemas
+from addons.osfstorage.models import OsfStorageFile
+from osf.models import (Subject, NotificationSubscription, NotificationDigest,
+                        ArchiveJob, ArchiveTarget, Identifier, NodeLicense,
+                        NodeLicenseRecord, Embargo, RegistrationApproval,
+                        Retraction, Sanction, Comment, DraftRegistration,
+                        MetaSchema, AbstractNode as Node, NodeLog,
+                        PrivateLink, Tag, AlternativeCitation, Institution,
+                        ApiOAuth2PersonalToken, ApiOAuth2Application, ExternalAccount,
+                        ExternalProvider, OSFUser as User, PreprintService,
+                        PreprintProvider, Session, Guid)
 from website.archiver import ARCHIVER_SUCCESS
-from website.project.licenses import NodeLicense, NodeLicenseRecord, ensure_licenses
+from website.project.licenses import ensure_licenses
 from website.util import permissions
-from website.files.models.osfstorage import OsfStorageFile
 from website.exceptions import InvalidSanctionApprovalToken
 
 ensure_licenses = functools.partial(ensure_licenses, warn=False)
@@ -143,8 +128,11 @@ class UserFactory(ModularOdmFactory):
 
     @post_generation
     def set_emails(self, create, extracted):
-        if self.username not in self.emails:
-            self.emails.append(self.username)
+        if not self.emails.filter(address=self.username).exists():
+            if not self.id:
+                # Perform implicit save to populate M2M
+                self.save()
+            self.emails.create(address=self.username)
             self.save()
 
 
@@ -437,23 +425,11 @@ class ForkFactory(ModularOdmFactory):
         return fork
 
 
-class PointerFactory(ModularOdmFactory):
-    class Meta:
-        model = Pointer
-    node = SubFactory(NodeFactory)
-
-
 class NodeLogFactory(ModularOdmFactory):
     class Meta:
         model = NodeLog
     action = 'file_added'
     user = SubFactory(UserFactory)
-
-
-class WatchConfigFactory(ModularOdmFactory):
-    class Meta:
-        model = WatchConfig
-    node = SubFactory(NodeFactory)
 
 
 class SanctionFactory(ModularOdmFactory):

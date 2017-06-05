@@ -4,11 +4,11 @@ from rest_framework import exceptions
 
 from modularodm import Q
 
-from website.models import Node
+from osf.models import AbstractNode as Node
 from website.util import permissions as osf_permissions
 
 from api.base.serializers import JSONAPISerializer, RelationshipField, LinksField, JSONAPIRelationshipSerializer, \
-    PrefetchRelationshipsSerializer
+    BaseAPISerializer
 from api.base.exceptions import RelationshipPostMakesNoChanges
 
 
@@ -57,7 +57,7 @@ class NodeRelated(JSONAPIRelationshipSerializer):
     class Meta:
         type_ = 'nodes'
 
-class InstitutionNodesRelationshipSerializer(PrefetchRelationshipsSerializer):
+class InstitutionNodesRelationshipSerializer(BaseAPISerializer):
     data = ser.ListField(child=NodeRelated())
     links = LinksField({'self': 'get_self_url',
                         'html': 'get_related_url'})
