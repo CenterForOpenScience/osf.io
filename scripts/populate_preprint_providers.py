@@ -255,7 +255,7 @@ def main(env):
             '_id': 'psyarxiv',
             'name': 'PsyArXiv',
             'logo_name': 'psyarxiv-logo.png',
-            'description': 'A free preprint service for the psychological sciences.',
+            'description': 'A free preprint service for the psychological sciences.<div>Maintained by <a href="http://improvingpsych.org">The Society for the Improvement of Psychological Science</a>.</div>',
             'banner_name': 'psyarxiv-banner.png',
             'domain': format_domain_url('psyarxiv.com'),
             'domain_redirect_enabled': False,
