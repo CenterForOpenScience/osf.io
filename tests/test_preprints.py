@@ -258,7 +258,7 @@ class TestPreprintProvider(OsfTestCase):
         self.preprint.save()
         self.preprint.reload()
 
-        assert ('branded', 'WWEArxiv') == find_preprint_provider(self.preprint.node)
+        assert ('branded', self.provider) == find_preprint_provider(self.preprint.node)
 
     def test_top_level_subjects(self):
         subj_a = SubjectFactory(provider=self.provider, text='A')
