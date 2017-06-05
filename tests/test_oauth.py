@@ -13,12 +13,7 @@ from oauthlib.oauth2 import OAuth2Error
 from framework.auth import authenticate
 from framework.exceptions import PermissionsError, HTTPError
 from framework.sessions import session
-from website.oauth.models import (
-    ExternalAccount,
-    ExternalProvider,
-    OAUTH1,
-    OAUTH2,
-)
+from osf.models.external import ExternalAccount, ExternalProvider, OAUTH1, OAUTH2
 from website.util import api_url_for, web_url_for
 
 from tests.base import OsfTestCase

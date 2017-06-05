@@ -572,7 +572,7 @@ var LogPieces = {
             var url = ctrl.returnLinkForPath(logObject);
             var path = logObject.attributes.params.path;
             if(paramIsReturned(path, logObject)){
-                path = stripBackslash(decodeURIComponent(path));
+                path = stripBackslash(path);
                 if (url) {
                      return m('a', {href: $osf.toRelativeUrl(url, window)}, path);
                 }
@@ -598,7 +598,7 @@ var LogPieces = {
         view: function(ctrl, logObject){
             var folder = logObject.attributes.params.folder;
             if(paramIsReturned(folder, logObject)){
-                return m('span', folder === '/' ? '(Full Google Drive)' : decodeURIComponent(folder));
+                return m('span', folder === '/' ? '(Full Google Drive)' : folder);
             }
             return m('span', '');
         }
@@ -671,6 +671,15 @@ var LogPieces = {
             return m('span', '');
         }
     },
+    
+    anonymous_link: {
+        view: function(ctrl, logObject) {
+            if (logObject.attributes.params.anonymous_link) {
+                return m('span', 'an anonymous');
+            }
+            return m('span', 'a');
+        }
+    }
 };
 
 module.exports = LogText;

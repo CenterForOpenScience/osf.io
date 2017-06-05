@@ -15,6 +15,7 @@ from framework.utils import iso8601format
 from framework.flask import redirect
 from framework.auth.decorators import must_be_logged_in, collect_auth
 from framework.exceptions import HTTPError
+from osf.models.nodelog import NodeLog
 
 from website import language
 
@@ -35,12 +36,12 @@ from website.util.rubeus import collect_addon_js
 from website.project.model import has_anonymous_link, NodeUpdateError, validate_title
 from website.project.forms import NewNodeForm
 from website.project.metadata.utils import serialize_meta_schemas
-from website.models import Node, WatchConfig, PrivateLink, Comment
+from osf.models import AbstractNode as Node, PrivateLink, Comment
+from osf.models.licenses import serialize_node_license_record
 from website import settings
 from website.views import find_bookmark_collection, validate_page_num
 from website.views import serialize_node_summary
 from website.profile import utils
-from website.project.licenses import serialize_node_license_record
 from website.util.sanitize import strip_html
 from website.util import rapply
 
@@ -459,75 +460,6 @@ def project_set_privacy(auth, node, **kwargs):
         'permissions': permissions,
     }
 
-
-@must_be_valid_project
-@must_be_contributor_or_public
-@must_not_be_registration
-def watch_post(auth, node, **kwargs):
-    user = auth.user
-    watch_config = WatchConfig(node=node,
-                               digest=request.json.get('digest', False),
-                               immediate=request.json.get('immediate', False))
-    try:
-        user.watch(watch_config)
-    except ValueError:  # Node is already being watched
-        raise HTTPError(http.BAD_REQUEST)
-
-    user.save()
-
-    return {
-        'status': 'success',
-        'watchCount': node.watches.count()
-    }
-
-
-@must_be_valid_project
-@must_be_contributor_or_public
-@must_not_be_registration
-def unwatch_post(auth, node, **kwargs):
-    user = auth.user
-    watch_config = WatchConfig(node=node,
-                               digest=request.json.get('digest', False),
-                               immediate=request.json.get('immediate', False))
-    try:
-        user.unwatch(watch_config)
-    except ValueError:  # Node isn't being watched
-        raise HTTPError(http.BAD_REQUEST)
-
-    return {
-        'status': 'success',
-        'watchCount': node.watches.count()
-    }
-
-
-@must_be_valid_project
-@must_be_contributor_or_public
-@must_not_be_registration
-def togglewatch_post(auth, node, **kwargs):
-    '''View for toggling watch mode for a node.'''
-    # TODO: refactor this, watch_post, unwatch_post (@mambocab)
-    user = auth.user
-    watch_config = WatchConfig(
-        node=node,
-        digest=request.json.get('digest', False),
-        immediate=request.json.get('immediate', False)
-    )
-    try:
-        if user.is_watching(node):
-            user.unwatch(watch_config)
-        else:
-            user.watch(watch_config)
-    except ValueError:
-        raise HTTPError(http.BAD_REQUEST)
-
-    user.save()
-
-    return {
-        'status': 'success',
-        'watchCount': node.watches.count(),
-        'watched': user.is_watching(node)
-    }
-
 @must_be_valid_project
 @must_not_be_registration
 @must_have_permission(WRITE)
@@ -596,6 +528,21 @@ def remove_private_link(*args, **kwargs):
         link = PrivateLink.load(link_id)
         link.is_deleted = True
         link.save()
+
+        for node in link.nodes.all():
+            log_dict = {
+                'project': node.parent_id,
+                'node': node._id,
+                'user': kwargs.get('auth').user._id,
+                'anonymous_link': link.anonymous,
+            }
+
+            node.add_log(
+                NodeLog.VIEW_ONLY_LINK_REMOVED,
+                log_dict,
+                auth=kwargs.get('auth', None)
+            )
+
     except ModularOdmException:
         raise HTTPError(http.NOT_FOUND)
 

@@ -8,10 +8,6 @@ from django.conf import settings
 from raven.contrib.django.raven_compat.models import sentry_exception_handler
 import corsheaders.middleware
 
-from framework.mongo.handlers import (
-    connection_before_request,
-    connection_teardown_request
-)
 from framework.postcommit_tasks.handlers import (
     postcommit_after_request,
     postcommit_before_request
@@ -23,17 +19,6 @@ from framework.celery_tasks.handlers import (
 )
 from .api_globals import api_globals
 from api.base import settings as api_settings
-
-
-class MongoConnectionMiddleware(object):
-    """MongoDB Connection middleware."""
-
-    def process_request(self, request):
-        connection_before_request()
-
-    def process_response(self, request, response):
-        connection_teardown_request()
-        return response
 
 
 class CeleryTaskMiddleware(object):

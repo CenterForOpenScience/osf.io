@@ -101,7 +101,7 @@
                         <td>Subjects</td>
                         <td>
                             <ul>
-                                {%  for subject in subjects %}
+                                {%  for subject in serialized_preprint.subjects %}
                                 <li>{{ subject.text }}</li>
                                 {%  endfor %}
                             </ul>

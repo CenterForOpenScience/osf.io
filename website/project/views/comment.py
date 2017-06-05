@@ -10,7 +10,7 @@ from framework.postcommit_tasks.handlers import enqueue_postcommit_task
 from modularodm import Q
 from website import settings
 from addons.base.signals import file_updated
-from osf.models import FileNode, TrashedFileNode
+from osf.models import BaseFileNode, TrashedFileNode
 from osf.models import Comment
 from website.notifications.constants import PROVIDERS
 from website.notifications.emails import notify, notify_mentions
@@ -35,7 +35,7 @@ def update_file_guid_referent(self, node, event_type, payload, user=None):
         if source['provider'] == destination['provider'] and source_node == destination_node:
             return  # Node has not changed and provider has not changed
 
-    file_guids = FileNode.resolve_class(source['provider'], FileNode.ANY).get_file_guids(
+    file_guids = BaseFileNode.resolve_class(source['provider'], BaseFileNode.ANY).get_file_guids(
         materialized_path=source['materialized'] if source['provider'] != 'osfstorage' else source['path'],
         provider=source['provider'],
         node=source_node
@@ -47,7 +47,7 @@ def update_file_guid_referent(self, node, event_type, payload, user=None):
             update_comment_node(guid, source_node, destination_node)
 
         if source['provider'] != destination['provider'] or source['provider'] != 'osfstorage':
-            old_file = FileNode.load(obj.referent._id)
+            old_file = BaseFileNode.load(obj.referent._id)
             obj.referent = create_new_file(obj, source, destination, destination_node)
             obj.save()
             if old_file and not TrashedFileNode.load(old_file._id):
@@ -63,7 +63,7 @@ def create_new_file(obj, source, destination, destination_node):
 
     if not source['path'].endswith('/'):
         data = dict(destination)
-        new_file = FileNode.resolve_class(destination['provider'], FileNode.FILE).get_or_create(destination_node, destination['path'])
+        new_file = BaseFileNode.resolve_class(destination['provider'], BaseFileNode.FILE).get_or_create(destination_node, destination['path'])
         if destination['provider'] != 'osfstorage':
             new_file.update(revision=None, data=data)
     else:
@@ -73,7 +73,7 @@ def create_new_file(obj, source, destination, destination_node):
                 new_path = obj.referent.path
             else:
                 new_path = obj.referent.materialized_path.replace(source['materialized'], destination['materialized'])
-            new_file = FileNode.resolve_class(destination['provider'], FileNode.FILE).get_or_create(destination_node, new_path)
+            new_file = BaseFileNode.resolve_class(destination['provider'], BaseFileNode.FILE).get_or_create(destination_node, new_path)
             new_file.name = new_path.split('/')[-1]
             new_file.materialized_path = new_path
     new_file.save()
@@ -82,7 +82,7 @@ def create_new_file(obj, source, destination, destination_node):
 
 def find_and_create_file_from_metadata(children, source, destination, destination_node, obj):
     """ Given a Guid obj, recursively search for the metadata of its referent (a file obj)
-    in the waterbutler response. If found, create a new addon FileNode with that metadata
+    in the waterbutler response. If found, create a new addon BaseFileNode with that metadata
     and return the new file.
     """
     for item in children:
@@ -94,7 +94,7 @@ def find_and_create_file_from_metadata(children, source, destination, destinatio
             return find_and_create_file_from_metadata(item.get('children', []), source, destination, destination_node, obj)
         elif item['kind'] == 'file' and item['materialized'].replace(destination['materialized'], source['materialized']) == obj.referent.materialized_path:
             data = dict(item)
-            new_file = FileNode.resolve_class(destination['provider'], FileNode.FILE).get_or_create(destination_node, item['path'])
+            new_file = BaseFileNode.resolve_class(destination['provider'], BaseFileNode.FILE).get_or_create(destination_node, item['path'])
             if destination['provider'] != 'osfstorage':
                 new_file.update(revision=None, data=data)
             return new_file

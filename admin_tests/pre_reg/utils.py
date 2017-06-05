@@ -1,6 +1,7 @@
 from modularodm import Q
 
-from website.project.model import DraftRegistration, ensure_schemas, MetaSchema
+from osf.models import DraftRegistration, MetaSchema
+from website.project.model import ensure_schemas
 
 
 def draft_reg_util():

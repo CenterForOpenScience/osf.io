@@ -112,6 +112,9 @@ class NodeLog(ObjectIDMixin, BaseModel):
     PREPRINT_FILE_UPDATED = 'preprint_file_updated'
     PREPRINT_LICENSE_UPDATED = 'preprint_license_updated'
 
+    VIEW_ONLY_LINK_ADDED = 'view_only_link_added'
+    VIEW_ONLY_LINK_REMOVED = 'view_only_link_removed'
+
     actions = ([CHECKED_IN, CHECKED_OUT, FILE_TAG_REMOVED, FILE_TAG_ADDED, CREATED_FROM, PROJECT_CREATED,
                 PROJECT_REGISTERED, PROJECT_DELETED, NODE_CREATED, NODE_FORKED, NODE_REMOVED,
                 NODE_LINK_CREATED, NODE_LINK_FORKED, NODE_LINK_REMOVED, WIKI_UPDATED,
@@ -128,7 +131,8 @@ class NodeLog(ObjectIDMixin, BaseModel):
                 REGISTRATION_APPROVAL_INITIATED, REGISTRATION_APPROVAL_APPROVED,
                 PREREG_REGISTRATION_INITIATED,
                 CITATION_ADDED, CITATION_EDITED, CITATION_REMOVED,
-                AFFILIATED_INSTITUTION_ADDED, AFFILIATED_INSTITUTION_REMOVED, PREPRINT_INITIATED, PREPRINT_FILE_UPDATED, PREPRINT_LICENSE_UPDATED] + list(sum([
+                AFFILIATED_INSTITUTION_ADDED, AFFILIATED_INSTITUTION_REMOVED, PREPRINT_INITIATED,
+                PREPRINT_FILE_UPDATED, PREPRINT_LICENSE_UPDATED, VIEW_ONLY_LINK_ADDED, VIEW_ONLY_LINK_REMOVED] + list(sum([
                     config.actions for config in apps.get_app_configs() if config.name.startswith('addons.')
                 ], tuple())))
     action_choices = [(action, action.upper()) for action in actions]

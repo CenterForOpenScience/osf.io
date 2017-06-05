@@ -16,7 +16,7 @@ from api.institutions.serializers import InstitutionSerializer
 
 from framework.auth.oauth_scopes import CoreScopes
 
-from osf.models import Institution, FileNode, AbstractNode as Node, OSFUser as User
+from osf.models import Institution, BaseFileNode, AbstractNode as Node, OSFUser as User
 from website.search import search
 from website.search.exceptions import MalformedQueryError
 from website.search.util import build_query
@@ -306,7 +306,7 @@ class SearchFiles(BaseSearchView):
 
     """
 
-    model_class = FileNode
+    model_class = BaseFileNode
     serializer_class = FileSerializer
 
     doc_type = 'file'

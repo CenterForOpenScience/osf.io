@@ -221,18 +221,13 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         'title',
         'category',
         'description',
-        'visible_contributor_ids',
-        'tags',
         'is_fork',
-        'is_registration',
         'retraction',
         'embargo',
         'is_public',
         'is_deleted',
         'wiki_pages_current',
-        'is_retracted',
         'node_license',
-        'affiliated_institutions',
         'preprint_file',
     }
 
@@ -720,6 +715,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             raise UserNotAffiliatedError('User is not affiliated with {}'.format(inst.name))
         if not self.is_affiliated_with_institution(inst):
             self.affiliated_institutions.add(inst)
+            self.update_search()
         if log:
             NodeLog = apps.get_model('osf.NodeLog')
 
@@ -752,6 +748,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 )
             if save:
                 self.save()
+            self.update_search()
             return True
         return False
 
@@ -1105,6 +1102,9 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
         # If user is merged into another account, use master account
         contrib_to_add = contributor.merged_by if contributor.is_merged else contributor
+        if contrib_to_add.is_disabled:
+            raise ValidationValueError('Deactivated users cannot be added as contributors.')
+
         if not self.is_contributor(contrib_to_add):
 
             contributor_obj, created = Contributor.objects.get_or_create(user=contrib_to_add, node=self)
@@ -1148,7 +1148,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 project_signals.contributor_added.send(self,
                                                        contributor=contributor,
                                                        auth=auth, email_template=send_email)
-
+            self.update_search()
             return contrib_to_add, True
 
         # Permissions must be overridden if changed when contributor is
@@ -1363,7 +1363,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             )
 
         self.save()
-
+        self.update_search()
         # send signal to remove this user from project subscriptions
         project_signals.contributor_removed.send(self, user=contributor)
 
@@ -2310,13 +2310,14 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             }
         enqueue_task(node_tasks.on_node_updated.s(self._id, user_id, first_save, saved_fields, request_headers))
 
-        if self.preprint_file and bool(self.SEARCH_UPDATE_FIELDS.intersection(saved_fields)):
+        if self.preprint_file:
             # avoid circular imports
             from website.preprints.tasks import on_preprint_updated
             PreprintService = apps.get_model('osf.PreprintService')
+            update_share = bool(self.SEARCH_UPDATE_FIELDS.intersection(saved_fields))
             # .preprints wouldn't return a single deleted preprint
             for preprint in PreprintService.objects.filter(node_id=self.id, is_published=True):
-                enqueue_task(on_preprint_updated.s(preprint._id))
+                enqueue_task(on_preprint_updated.s(preprint._id, update_share=update_share))
 
         user = User.load(user_id)
         if user and self.check_spam(user, saved_fields, request_headers):

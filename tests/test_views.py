@@ -8,7 +8,6 @@ import datetime as dt
 import httplib as http
 import json
 import time
-import pytz
 import unittest
 
 from flask import request
@@ -29,7 +28,6 @@ from framework import auth
 from framework.auth.campaigns import get_campaigns, is_institution_login, is_native_login, is_proxy_login, campaign_url_for
 from framework.auth import Auth
 from framework.auth.cas import get_login_url
-from framework.auth.core import generate_verification_key
 from framework.auth.exceptions import InvalidTokenError
 from framework.auth.utils import impute_names_model, ensure_external_identity_uniqueness
 from framework.auth.views import login_and_register_handler
@@ -40,7 +38,7 @@ from tests.factories import MockAddonNodeSettings
 from website import mailchimp_utils
 from website import mails, settings
 from addons.osfstorage import settings as osfstorage_settings
-from website.models import Node, NodeLog, Pointer
+from osf.models import AbstractNode as Node, NodeLog
 from website.profile.utils import add_contributor_json, serialize_unregistered
 from website.profile.views import fmt_date_or_none, update_osf_help_mails_subscription
 from website.project.decorators import check_can_access
@@ -302,8 +300,8 @@ class TestProjectViews(OsfTestCase):
         inst2 = InstitutionFactory(email_domains=['baz.qux'])
 
         user = AuthUserFactory()
-        user.emails.append('queen@foo.bar')
-        user.emails.append('brian@baz.qux')
+        user.emails.create(address='queen@foo.bar')
+        user.emails.create(address='brian@baz.qux')
         user.save()
         project = ProjectFactory(creator=user)
 
@@ -812,6 +810,36 @@ class TestProjectViews(OsfTestCase):
         link.reload()
         assert_true(link.is_deleted)
 
+    def test_remove_private_link_log(self):
+        link = PrivateLinkFactory()
+        link.nodes.add(self.project)
+        link.save()
+        url = self.project.api_url_for('remove_private_link')
+        self.app.delete_json(
+            url,
+            {'private_link_id': link._id},
+            auth=self.auth,
+        ).maybe_follow()
+
+        last_log = self.project.logs.latest()
+        assert last_log.action == NodeLog.VIEW_ONLY_LINK_REMOVED
+        assert not last_log.params.get('anonymous_link')
+
+    def test_remove_private_link_anonymous_log(self):
+        link = PrivateLinkFactory(anonymous=True)
+        link.nodes.add(self.project)
+        link.save()
+        url = self.project.api_url_for('remove_private_link')
+        self.app.delete_json(
+            url,
+            {'private_link_id': link._id},
+            auth=self.auth,
+        ).maybe_follow()
+
+        last_log = self.project.logs.latest()
+        assert last_log.action == NodeLog.VIEW_ONLY_LINK_REMOVED
+        assert last_log.params.get('anonymous_link')
+
     def test_remove_component(self):
         node = NodeFactory(parent=self.project, creator=self.user1)
         url = node.api_url
@@ -1054,8 +1082,9 @@ class TestUserProfile(OsfTestCase):
     def test_making_email_primary_is_not_case_sensitive(self):
         user = AuthUserFactory(username='fred@queen.test')
         # make confirmed email have different casing
-        user.emails[0] = user.emails[0].capitalize()
-        user.save()
+        email = user.emails.first()
+        email.address = email.address.capitalize()
+        email.save()
         url = api_url_for('update_user')
         res = self.app.put_json(
             url,
@@ -1286,48 +1315,6 @@ class TestUserProfile(OsfTestCase):
         res = self.app.put_json(url, payload, auth=self.user.auth)
         assert_equal(res.status_code, 200)
 
-    def test_get_current_user_gravatar_default_size(self):
-        url = api_url_for('current_user_gravatar')
-        res = self.app.get(url, auth=self.user.auth)
-        current_user_gravatar = res.json['gravatar_url']
-        assert_true(current_user_gravatar is not None)
-        url = api_url_for('get_gravatar', uid=self.user._id)
-        res = self.app.get(url, auth=self.user.auth)
-        my_user_gravatar = res.json['gravatar_url']
-        assert_equal(current_user_gravatar, my_user_gravatar)
-
-    def test_get_other_user_gravatar_default_size(self):
-        user2 = AuthUserFactory()
-        url = api_url_for('current_user_gravatar')
-        res = self.app.get(url, auth=self.user.auth)
-        current_user_gravatar = res.json['gravatar_url']
-        url = api_url_for('get_gravatar', uid=user2._id)
-        res = self.app.get(url, auth=self.user.auth)
-        user2_gravatar = res.json['gravatar_url']
-        assert_true(user2_gravatar is not None)
-        assert_not_equal(current_user_gravatar, user2_gravatar)
-
-    def test_get_current_user_gravatar_specific_size(self):
-        url = api_url_for('current_user_gravatar')
-        res = self.app.get(url, auth=self.user.auth)
-        current_user_default_gravatar = res.json['gravatar_url']
-        url = api_url_for('current_user_gravatar', size=11)
-        res = self.app.get(url, auth=self.user.auth)
-        current_user_small_gravatar = res.json['gravatar_url']
-        assert_true(current_user_small_gravatar is not None)
-        assert_not_equal(current_user_default_gravatar, current_user_small_gravatar)
-
-    def test_get_other_user_gravatar_specific_size(self):
-        user2 = AuthUserFactory()
-        url = api_url_for('get_gravatar', uid=user2._id)
-        res = self.app.get(url, auth=self.user.auth)
-        gravatar_default_size = res.json['gravatar_url']
-        url = api_url_for('get_gravatar', uid=user2._id, size=11)
-        res = self.app.get(url, auth=self.user.auth)
-        gravatar_small = res.json['gravatar_url']
-        assert_true(gravatar_small is not None)
-        assert_not_equal(gravatar_default_size, gravatar_small)
-
     def test_update_user_timezone(self):
         assert_equal(self.user.timezone, 'Etc/UTC')
         payload = {'timezone': 'America/New_York', 'id': self.user._id}
@@ -1399,7 +1386,7 @@ class TestUserProfile(OsfTestCase):
     @mock.patch('website.mailchimp_utils.get_mailchimp_api')
     def test_update_user_mailing_lists(self, mock_get_mailchimp_api, send_mail):
         email = fake.email()
-        self.user.emails.append(email)
+        self.user.emails.create(address=email)
         list_name = 'foo'
         self.user.mailchimp_mailing_lists[list_name] = True
         self.user.save()
@@ -1438,7 +1425,7 @@ class TestUserProfile(OsfTestCase):
     @mock.patch('website.mailchimp_utils.get_mailchimp_api')
     def test_unsubscribe_mailchimp_not_called_if_user_not_subscribed(self, mock_get_mailchimp_api, send_mail):
         email = fake.email()
-        self.user.emails.append(email)
+        self.user.emails.create(address=email)
         list_name = 'foo'
         self.user.mailchimp_mailing_lists[list_name] = False
         self.user.save()
@@ -2270,7 +2257,7 @@ class TestClaimViews(OsfTestCase):
 
         # unregistered user then goes and makes an account with same email, before claiming themselves as contributor
         registered_user = UserFactory(username=email, fullname=name)
-        registered_user.emails.append(secondary_email)
+        registered_user.emails.create(address=secondary_email)
         registered_user.save()
 
         # claim link for the now registered email is accessed while not logged in
@@ -2434,7 +2421,7 @@ class TestClaimViews(OsfTestCase):
         res = self.app.get(url, expect_errors=True).maybe_follow()
         assert_equal(res.status_code, 400)
 
-    @mock.patch('framework.auth.core.User.update_search_nodes')
+    @mock.patch('osf.models.OSFUser.update_search_nodes')
     def test_posting_to_claim_form_with_valid_data(self, mock_update_search_nodes):
         url = self.user.get_claim_url(self.project._primary_key)
         res = self.app.post(url, {
@@ -2455,7 +2442,7 @@ class TestClaimViews(OsfTestCase):
         assert_true(self.user.is_active)
         assert_not_in(self.project._primary_key, self.user.unclaimed_records)
 
-    @mock.patch('framework.auth.core.User.update_search_nodes')
+    @mock.patch('osf.models.OSFUser.update_search_nodes')
     def test_posting_to_claim_form_removes_all_unclaimed_data(self, mock_update_search_nodes):
         # user has multiple unclaimed records
         p2 = ProjectFactory(creator=self.referrer)
@@ -2472,7 +2459,7 @@ class TestClaimViews(OsfTestCase):
         self.user.reload()
         assert_equal(self.user.unclaimed_records, {})
 
-    @mock.patch('framework.auth.core.User.update_search_nodes')
+    @mock.patch('osf.models.OSFUser.update_search_nodes')
     def test_posting_to_claim_form_sets_fullname_to_given_name(self, mock_update_search_nodes):
         # User is created with a full name
         original_name = fake.name()
@@ -2910,11 +2897,9 @@ class TestPointerViews(OsfTestCase):
 
     def test_remove_pointer_not_in_nodes(self):
         url = self.project.api_url + 'pointer/'
-        node = NodeFactory()
-        pointer = Pointer()
         res = self.app.delete_json(
             url,
-            {'pointerId': pointer._id},
+            {'pointerId': 'somefakeid'},
             auth=self.user.auth,
             expect_errors=True
         )
@@ -2948,11 +2933,9 @@ class TestPointerViews(OsfTestCase):
 
     def test_fork_pointer_not_in_nodes(self):
         url = self.project.api_url + 'pointer/fork/'
-        node = NodeFactory()
-        pointer = Pointer()
         res = self.app.post_json(
             url,
-            {'pointerId': pointer._id},
+            {'pointerId': 'somefakeid'},
             auth=self.user.auth,
             expect_errors=True
         )
@@ -3192,7 +3175,7 @@ class TestAuthViews(OsfTestCase):
             )
             assert_equal(resp.status_code, http.BAD_REQUEST)
 
-    @mock.patch('framework.auth.core.User.update_search_nodes')
+    @mock.patch('osf.models.OSFUser.update_search_nodes')
     def test_register_after_being_invited_as_unreg_contributor(self, mock_update_search_nodes):
         # Regression test for:
         #    https://github.com/CenterForOpenScience/openscienceframework.org/issues/861
@@ -3327,7 +3310,7 @@ class TestAuthViews(OsfTestCase):
         res = self.app.put_json(put_email_url, email_verifications[0], auth=self.user.auth)
         self.user.reload()
         assert_equal(res.json_body['status'], 'success')
-        assert_equal(self.user.emails[1], 'test@mail.com')
+        assert_equal(self.user.emails.last().address, 'test@mail.com')
 
     def test_remove_email(self):
         email = 'test@mail.com'
@@ -3392,7 +3375,6 @@ class TestAuthViews(OsfTestCase):
         email = "copy@cat.com"
         dupe = UserFactory(
             username=email,
-            emails=[email]
         )
         dupe.save()
         token = self.user.add_unconfirmed_email(email)
@@ -3407,7 +3389,7 @@ class TestAuthViews(OsfTestCase):
         res = self.app.put_json(put_email_url, email_verifications[0], auth=self.user.auth)
         self.user.reload()
         assert_equal(res.json_body['status'], 'success')
-        assert_equal(self.user.emails[1], 'copy@cat.com')
+        assert_equal(self.user.emails.last().address, 'copy@cat.com')
 
     def test_resend_confirmation_without_user_id(self):
         email = 'test@mail.com'
@@ -4694,7 +4676,6 @@ class TestResetPassword(OsfTestCase):
         assert_in('logout?service=', location)
         assert_in('resetpassword', location)
 
-@unittest.skip('Unskip when institution hiding code is reimplemented')
 class TestIndexView(OsfTestCase):
 
     def setUp(self):
@@ -4709,46 +4690,44 @@ class TestIndexView(OsfTestCase):
         self.user = AuthUserFactory()
         self.user.affiliated_institutions.add(self.inst_one)
         self.user.affiliated_institutions.add(self.inst_two)
-        self.user.save()
 
         # tests 5 affiliated, non-registered, public projects
         for i in range(settings.INSTITUTION_DISPLAY_NODE_THRESHOLD):
             node = ProjectFactory(creator=self.user, is_public=True)
             node.affiliated_institutions.add(self.inst_one)
-            node.save()
 
         # tests 4 affiliated, non-registered, public projects
         for i in range(settings.INSTITUTION_DISPLAY_NODE_THRESHOLD - 1):
             node = ProjectFactory(creator=self.user, is_public=True)
             node.affiliated_institutions.add(self.inst_two)
-            node.save()
 
         # tests 5 affiliated, registered, public projects
         for i in range(settings.INSTITUTION_DISPLAY_NODE_THRESHOLD):
             registration = RegistrationFactory(creator=self.user, is_public=True)
             registration.affiliated_institutions.add(self.inst_three)
-            registration.save()
 
         # tests 5 affiliated, non-registered public components
         for i in range(settings.INSTITUTION_DISPLAY_NODE_THRESHOLD):
             node = NodeFactory(creator=self.user, is_public=True)
             node.affiliated_institutions.add(self.inst_four)
-            node.save()
 
         # tests 5 affiliated, non-registered, private projects
         for i in range(settings.INSTITUTION_DISPLAY_NODE_THRESHOLD):
             node = ProjectFactory(creator=self.user)
             node.affiliated_institutions.add(self.inst_five)
-            node.save()
 
     def test_dashboard_institutions(self):
-        dashboard_institutions = index()['dashboard_institutions']
-        assert_equal(len(dashboard_institutions), 1)
-        assert_equal(dashboard_institutions[0]['id'], self.inst_one._id)
-        assert_not_equal(dashboard_institutions[0]['id'], self.inst_two._id)
-        assert_not_equal(dashboard_institutions[0]['id'], self.inst_three._id)
-        assert_not_equal(dashboard_institutions[0]['id'], self.inst_four._id)
-        assert_not_equal(dashboard_institutions[0]['id'], self.inst_five._id)
+        with mock.patch('website.views.get_current_user_id', return_value=self.user._id):
+            institution_ids = [
+                institution['id']
+                for institution in index()['dashboard_institutions']
+            ]
+            assert_equal(len(institution_ids), 2)
+            assert_in(self.inst_one._id, institution_ids)
+            assert_not_in(self.inst_two._id, institution_ids)
+            assert_not_in(self.inst_three._id, institution_ids)
+            assert_in(self.inst_four._id, institution_ids)
+            assert_not_in(self.inst_five._id, institution_ids)
 
 
 class TestResolveGuid(OsfTestCase):

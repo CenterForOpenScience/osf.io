@@ -1,7 +1,7 @@
 from nose.tools import *  # flake8: noqa
 
 from website.project.model import ensure_schemas
-from website.models import MetaSchema
+from osf.models import MetaSchema
 from website.project.metadata.schemas import LATEST_SCHEMA_VERSION
 from website.project.metadata.utils import create_jsonschema_from_metaschema
 from modularodm import Q

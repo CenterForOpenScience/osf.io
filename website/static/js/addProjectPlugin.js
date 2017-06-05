@@ -235,6 +235,16 @@ var AddProject = {
                                 m('i', ' Admins of ', m('b', options.parentTitle), ' will have read access to this component.')
                             )
                         ]) : '',
+                        ctrl.options.parentID !== null ? m('.span', [
+                                m('label.f-w-lg.text-bigger', 'License'),
+                                m('p',
+                                    m('i', ' This component will inherit the same license as ',
+                                        m('b', options.parentTitle),
+                                        '. ',
+                                        m('a[href="http://help.osf.io/m/sharing/l/524050-licenses?id=524050-licenses"]', 'Learn more.' )
+                                    )
+                                )
+                        ]): '',
                         m('.text-muted.pointer', { onclick : function(){
                             ctrl.showMore(!ctrl.showMore());
                             $osf.trackClick(options.trackingCategory, options.trackingAction, 'show-more-or-less');
