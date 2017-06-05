@@ -23,8 +23,8 @@ def create_mock_bitbucket(user='octo-cat', private=False):
     """
 
     bitbucket_mock = mock.create_autospec(BitbucketClient)
-    bitbucket_mock.get_username.return_value = user
-    bitbucket_mock.get_user.return_value = {  # TODO: needs filling out
+    bitbucket_mock.username.return_value = user
+    bitbucket_mock.user.return_value = {  # TODO: needs filling out
         'username': user,
         'uuid': '1234-3324',
         'links': {'html': {'ref': 'https://nope.example.org/profile.html'}},
@@ -47,7 +47,7 @@ def create_mock_bitbucket(user='octo-cat', private=False):
 
     ]
 
-    bitbucket_mock.get_repo_default_branch.return_value = 'master'
+    bitbucket_mock.repo_default_branch.return_value = 'master'
     bitbucket_mock.branches.return_value = [
         {'name': 'master',  'target': {'hash': 'a1b2c3d4'}},
         {'name': 'develop', 'target': {'hash': '0f9e8d7c'}},

@@ -52,7 +52,7 @@ class BitbucketProvider(ExternalProvider):
         """
 
         client = BitbucketClient(access_token=response['access_token'])
-        user_info = client.get_user()
+        user_info = client.user()
 
         return {
             'provider_id': user_info['uuid'],

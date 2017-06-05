@@ -10,7 +10,6 @@ class BitbucketClient(BaseClient):
 
     def __init__(self, access_token=None):
         self.access_token = access_token
-        self.username = None
 
     @property
     def _default_headers(self):
@@ -18,12 +17,11 @@ class BitbucketClient(BaseClient):
             return {'Authorization': 'Bearer {}'.format(self.access_token)}
         return {}
 
-    def get_username(self):
-        if not self.username:
-            self.username = self.get_user()['username']
-        return self.username
+    @property
+    def username(self):
+        return self.user()['username']
 
-    def get_user(self):
+    def user(self):
         """Fetch the user identified by ``self.access_token``.
 
         API docs::
@@ -72,7 +70,7 @@ class BitbucketClient(BaseClient):
         """
         res = self._make_request(
             'GET',
-            self._build_url(settings.BITBUCKET_V2_API_URL, 'repositories', self.get_username()),
+            self._build_url(settings.BITBUCKET_V2_API_URL, 'repositories', self.username),
             expects=(200, ),
             throws=HTTPError(401)
         )
@@ -111,7 +109,7 @@ class BitbucketClient(BaseClient):
 
         return team_repos
 
-    def get_repo_default_branch(self, user, repo):
+    def repo_default_branch(self, user, repo):
         """Return the default branch for a BB repository (what they call the
         "main branch").  They do not provide this via their v2 API,
         but there is a v1 endpoint that will return it.

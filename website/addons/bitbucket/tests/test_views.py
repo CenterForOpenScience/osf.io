@@ -135,7 +135,7 @@ class TestBitbucketViews(OsfTestCase):
         if mock_branches is None:
             mock_branches = bitbucket_mock.branches
         if branch is None:  # Get default branch name
-            branch = self.bitbucket.get_repo_default_branch.return_value
+            branch = self.bitbucket.repo_default_branch.return_value
         for each in mock_branches.return_value:
             if each['name'] == branch:
                 branch_sha = each['target']['hash']
@@ -144,19 +144,19 @@ class TestBitbucketViews(OsfTestCase):
     # Tests for _get_refs
     @mock.patch('website.addons.bitbucket.api.BitbucketClient.branches')
     @mock.patch('website.addons.bitbucket.api.BitbucketClient.repo')
-    @mock.patch('website.addons.bitbucket.api.BitbucketClient.get_repo_default_branch')
+    @mock.patch('website.addons.bitbucket.api.BitbucketClient.repo_default_branch')
     @mock.patch('website.addons.bitbucket.model.BitbucketNodeSettings.external_account')
     def test_get_refs_defaults(self, mock_account, mock_default_branch, mock_repo, mock_branches):
         bitbucket_mock = self.bitbucket
         mock_account.return_value = mock.Mock()
-        mock_default_branch.return_value = bitbucket_mock.get_repo_default_branch.return_value
+        mock_default_branch.return_value = bitbucket_mock.repo_default_branch.return_value
         mock_repo.return_value = bitbucket_mock.repo.return_value
         mock_branches.return_value = bitbucket_mock.branches.return_value
 
         branch, sha, branches = utils.get_refs(self.node_settings)
         assert_equal(
             branch,
-            bitbucket_mock.get_repo_default_branch.return_value
+            bitbucket_mock.repo_default_branch.return_value
         )
         assert_equal(sha, self._get_sha_for_branch(branch=None))  # Get refs for default branch
 
@@ -168,12 +168,12 @@ class TestBitbucketViews(OsfTestCase):
 
     @mock.patch('website.addons.bitbucket.api.BitbucketClient.branches')
     @mock.patch('website.addons.bitbucket.api.BitbucketClient.repo')
-    @mock.patch('website.addons.bitbucket.api.BitbucketClient.get_repo_default_branch')
+    @mock.patch('website.addons.bitbucket.api.BitbucketClient.repo_default_branch')
     @mock.patch('website.addons.bitbucket.model.BitbucketNodeSettings.external_account')
     def test_get_refs_branch(self, mock_account, mock_default_branch, mock_repo, mock_branches):
         bitbucket_mock = self.bitbucket
         mock_account.return_value = mock.Mock()
-        mock_default_branch.return_value = bitbucket_mock.get_repo_default_branch.return_value
+        mock_default_branch.return_value = bitbucket_mock.repo_default_branch.return_value
         mock_repo.return_value = bitbucket_mock.repo.return_value
         mock_branches.return_value = bitbucket_mock.branches.return_value
 

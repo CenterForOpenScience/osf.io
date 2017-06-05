@@ -30,7 +30,7 @@ def get_refs(addon, branch=None, sha=None, connection=None):
 
     # Get default branch if not provided
     if not branch:
-        branch = connection.get_repo_default_branch(addon.user, addon.repo)
+        branch = connection.repo_default_branch(addon.user, addon.repo)
         if branch is None:
             return None, None, None
 
