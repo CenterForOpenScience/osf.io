@@ -1,37 +1,45 @@
 import pytest
 
 from tests.base import ApiTestCase
-from tests.json_api_test_app import JSONAPITestApp
 from osf_tests.factories import InstitutionFactory, NodeFactory, AuthUserFactory
 from api.base.settings.defaults import API_BASE
+
+@pytest.fixture()
+def user():
+    return AuthUserFactory()
 
 @pytest.mark.django_db
 class TestNodeInstitutionDetail:
 
-    @pytest.fixture(autouse=True)
-    def setUp(self):
-        self.app = JSONAPITestApp()
-        self.institution = InstitutionFactory()
-        self.node = NodeFactory(is_public=True)
-        self.node.affiliated_institutions.add(self.institution)
-        self.node.save()
-        self.user = AuthUserFactory()
-        self.node2 = NodeFactory(creator=self.user)
+    @pytest.fixture()
+    def institution(self):
+        return InstitutionFactory()
 
-    def test_node_institution_detail(self):
+    @pytest.fixture()
+    def node_one(self, institution):
+        node_one = NodeFactory(is_public=True)
+        node_one.affiliated_institutions.add(institution)
+        node_one.save()
+        return node_one
+
+    @pytest.fixture()
+    def node_two(self, user):
+        return NodeFactory(creator=user)
+
+    def test_node_institution_detail(self, app, user, institution, node_one, node_two,):
 
     #   test_return_institution
-        url = '/{0}nodes/{1}/institutions/'.format(API_BASE, self.node._id)
-        res = self.app.get(url)
+        url = '/{0}nodes/{1}/institutions/'.format(API_BASE, node_one._id)
+        res = app.get(url)
 
         assert res.status_code == 200
-        assert res.json['data'][0]['attributes']['name'] == self.institution.name
-        assert res.json['data'][0]['id'] == self.institution._id
+        assert res.json['data'][0]['attributes']['name'] == institution.name
+        assert res.json['data'][0]['id'] == institution._id
 
     #   test_return_no_institution
-        url = '/{0}nodes/{1}/institution/'.format(API_BASE, self.node2._id)
-        res = self.app.get(
-                url, auth=self.user.auth,
+        url = '/{0}nodes/{1}/institution/'.format(API_BASE, node_two._id)
+        res = app.get(
+                url, auth=user.auth,
                 expect_errors=True
         )
 

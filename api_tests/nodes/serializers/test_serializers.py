@@ -1,5 +1,4 @@
 import pytest
-
 from urlparse import urlparse
 from dateutil.parser import parse as parse_date
 
@@ -11,16 +10,18 @@ from api.nodes.serializers import NodeSerializer
 from api.registrations.serializers import RegistrationSerializer
 from api.base.settings.defaults import API_BASE
 
+@pytest.fixture()
+def user():
+    return UserFactory()
+
 @pytest.mark.django_db
 class TestNodeSerializer:
 
-    @pytest.fixture(autouse=True)
-    def setUp(self):
-        self.user = UserFactory()
+    def test_node_serializer(self, user):
 
-    def test_node_serialization(self):
-        parent = ProjectFactory(creator=self.user)
-        node = NodeFactory(creator=self.user, parent=parent)
+    #   test_node_serialization
+        parent = ProjectFactory(creator=user)
+        node = NodeFactory(creator=user, parent=parent)
         req = make_drf_request_with_version(version='2.0')
         result = NodeSerializer(node, context={'request': req}).data
         data = result['data']
@@ -54,8 +55,8 @@ class TestNodeSerializer:
         # Not a fork, so forked_from is removed entirely
         assert 'forked_from' not in relationships
 
-    def test_fork_serialization(self):
-        node = NodeFactory(creator=self.user)
+    #   test_fork_serialization
+        node = NodeFactory(creator=user)
         fork = node.fork_node(auth=Auth(user=node.creator))
         req = make_drf_request_with_version(version='2.0')
         result = NodeSerializer(fork, context={'request': req}).data
@@ -68,8 +69,8 @@ class TestNodeSerializer:
             urlparse(forked_from).path ==
             '/{}nodes/{}/'.format(API_BASE, node._id))
 
-    def test_template_serialization(self):
-        node = NodeFactory(creator=self.user)
+    #   test_template_serialization
+        node = NodeFactory(creator=user)
         fork = node.use_as_template(auth=Auth(user=node.creator))
         req = make_drf_request_with_version(version='2.0')
         result = NodeSerializer(fork, context={'request': req}).data
@@ -82,7 +83,8 @@ class TestNodeSerializer:
             urlparse(templated_from).path ==
             '/{}nodes/{}/'.format(API_BASE, node._id))
 
-class TestNodeRegistrationSerializer(DbTestCase):
+@pytest.mark.django_db
+class TestNodeRegistrationSerializer:
 
     def test_serialization(self):
         user = UserFactory()

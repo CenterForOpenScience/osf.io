@@ -7,14 +7,11 @@ from django.http import HttpRequest
 from django.utils import timezone
 from nose import SkipTest
 from nose.tools import assert_equal, assert_not_equal
-
 from framework.auth import Auth
 from framework.celery_tasks.handlers import celery_teardown_request
-
 from website.archiver import ARCHIVER_SUCCESS
 from website.archiver import listeners as archiver_listeners
 from website.project.sanctions import Sanction
-
 from tests.base import get_default_metaschema
 
 def requires_module(module):
@@ -46,7 +43,7 @@ def assert_logs(log_action, node_key, index=-1):
     def outer_wrapper(func):
         @functools.wraps(func)
         def wrapper(self, *args, **kwargs):
-            node = getattr(self, node_key)
+            node =  getattr(self, node_key)
             last_log = node.logs.latest()
             func(self, *args, **kwargs)
             node.reload()
@@ -71,6 +68,16 @@ def assert_not_logs(log_action, node_key, index=-1):
             node.save()
         return wrapper
     return outer_wrapper
+
+@contextlib.contextmanager
+def assert_latest_log(log_action, node_key, index=-1):
+    node =  node_key
+    last_log = node.logs.latest()
+    node.reload()
+    yield
+    new_log = node.logs.order_by('-date')[-index - 1]
+    assert last_log._id != new_log._id
+    assert new_log.action == log_action
 
 @contextlib.contextmanager
 def mock_archive(project, schema=None, auth=None, data=None, parent=None,
