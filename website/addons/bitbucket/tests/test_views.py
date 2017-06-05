@@ -75,26 +75,6 @@ class TestBitbucketConfigViews(BitbucketAddonTestCase, OAuthAddonConfigViewsTest
         )
 
 
-# # TODO: Test remaining CRUD methods
-# # TODO: Test exception handling
-# class TestCRUD(OsfTestCase):
-
-#     def setUp(self):
-#         super(TestCRUD, self).setUp()
-#         self.bitbucket = create_mock_bitbucket(user='fred', private=False)
-#         self.user = AuthUserFactory()
-#         self.consolidated_auth = Auth(user=self.user)
-#         self.project = ProjectFactory(creator=self.user)
-#         self.project.add_addon('bitbucket', auth=self.consolidated_auth)
-#         self.project.creator.add_addon('bitbucket')
-#         self.node_settings = self.project.get_addon('bitbucket')
-#         self.node_settings.user_settings = self.project.creator.get_addon('bitbucket')
-#         # Set the node addon settings to correspond to the values of the mock repo
-#         self.node_settings.user = self.bitbucket.repo.return_value.owner.login
-#         self.node_settings.repo = self.bitbucket.repo.return_value.name
-#         self.node_settings.save()
-
-
 class TestBitbucketViews(OsfTestCase):
 
     def setUp(self):
@@ -212,26 +192,6 @@ class TestBitbucketViews(OsfTestCase):
 
         assert_equal(urls['view'], expected_urls['view'])
         assert_equal(urls['download'], expected_urls['download'])
-
-
-# TODO: No tests?
-# class TestRegistrationsWithBitbucket(OsfTestCase):
-
-#     def setUp(self):
-
-#         super(TestRegistrationsWithBitbucket, self).setUp()
-#         self.project = ProjectFactory.build()
-#         self.project.save()
-#         self.consolidated_auth = Auth(user=self.project.creator)
-
-#         self.project.add_addon('bitbucket', auth=self.consolidated_auth)
-#         self.project.creator.add_addon('bitbucket')
-#         self.node_settings = self.project.get_addon('bitbucket')
-#         self.user_settings = self.project.creator.get_addon('bitbucket')
-#         self.node_settings.user_settings = self.user_settings
-#         self.node_settings.user = 'Queen'
-#         self.node_settings.repo = 'Sheer-Heart-Attack'
-#         self.node_settings.save()
 
 
 class TestBitbucketSettings(OsfTestCase):
