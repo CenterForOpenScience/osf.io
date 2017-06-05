@@ -21,15 +21,3 @@ class TestBitbucketSerializer(StorageAddonSerializerTestSuiteMixin, OsfTestCase)
 
     def set_provider_id(self, pid):
         self.node_settings.repo = pid
-    
-    ## Overrides ##
-
-    def setUp(self):
-        super(TestBitbucketSerializer, self).setUp()
-        self.mock_api_user = mock.patch("website.addons.bitbucket.api.BitbucketClient.user")
-        self.mock_api_user.return_value = mock.Mock()
-        self.mock_api_user.start()
-
-    def tearDown(self):
-        self.mock_api_user.stop()
-        super(TestBitbucketSerializer, self).tearDown()

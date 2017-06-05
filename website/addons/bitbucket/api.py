@@ -41,29 +41,6 @@ class BitbucketClient(BaseClient):
         )
         return res.json()
 
-    def user(self, username=None):
-        """Fetch a user or the authenticated user.
-
-        API docs::
-
-        * https://developer.atlassian.com/bitbucket/api/2/reference/resource/users
-
-        :param user: Optional Bitbucket user name; will fetch authenticated
-            user if omitted
-        :rtype: dict
-        :return: user metadata object
-        """
-        if username is None:
-            username = self.get_username
-
-        res = self._make_request(
-            'GET',
-            self._build_url(settings.BITBUCKET_V2_API_URL, 'users', username),
-            expects=(200, ),
-            throws=HTTPError(401)
-        )
-        return res.json()
-
     def repo(self, user, repo):
         """Get a single Bitbucket repo's info.
 

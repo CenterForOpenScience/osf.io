@@ -29,8 +29,6 @@ def create_mock_bitbucket(user='octo-cat', private=False):
         'uuid': '1234-3324',
         'links': {'html': {'ref': 'https://nope.example.org/profile.html'}},
     }
-    bitbucket_mock.user.return_value = {'username': user}
-    bitbucket_mock.user.return_value = {'username': user}
 
     bitbucket_mock.repo.return_value = {
         'name': 'cow-problems-app',
@@ -56,21 +54,3 @@ def create_mock_bitbucket(user='octo-cat', private=False):
     ]
 
     return bitbucket_mock
-
-def mock_get_user():
-    pass
-
-def mock_user():
-    pass
-
-def mock_repo():
-    pass
-
-def mock_repos():
-    pass
-
-def mock_get_repo_default_branch():
-    pass
-
-def mock_branches():
-    pass
