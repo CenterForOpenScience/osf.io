@@ -4,7 +4,6 @@ import mock
 from django.utils import timezone
 from nose.tools import *  # noqa
 from tests.base import fake, OsfTestCase
-from website.project.spam.model import SpamStatus
 from osf_tests.factories import (
     EmbargoFactory, NodeFactory, ProjectFactory,
     RegistrationFactory, UserFactory, UnconfirmedUserFactory
@@ -21,7 +20,7 @@ from osf.models.sanctions import (
     RegistrationApproval,
 )
 from framework.auth import Auth
-from osf.models import Contributor
+from osf.models import Contributor, SpamStatus
 
 
 DUMMY_TOKEN = tokens.encode({

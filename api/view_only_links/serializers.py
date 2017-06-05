@@ -9,7 +9,7 @@ from api.base.serializers import (
     BaseAPISerializer)
 from api.base.utils import absolute_reverse
 
-from website.project.model import Node
+from osf.models import AbstractNode as Node
 
 
 class ViewOnlyLinkDetailSerializer(JSONAPISerializer):

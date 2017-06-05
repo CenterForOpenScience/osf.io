@@ -10,6 +10,7 @@ class MetaSchemaSerializer(JSONAPISerializer):
     name = ser.CharField(read_only=True)
     schema_version = ser.IntegerField(read_only=True)
     schema = ser.DictField(read_only=True)
+    active = ser.BooleanField(read_only=True)
 
     links = LinksField({
         'self': 'get_absolute_url'

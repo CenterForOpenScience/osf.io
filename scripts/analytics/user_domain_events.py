@@ -4,7 +4,7 @@ from modularodm import Q
 from dateutil.parser import parse
 from datetime import datetime, timedelta
 
-from website.models import User
+from osf.models import OSFUser
 from website.app import init_app
 from framework.mongo.utils import paginated
 from scripts.analytics.base import EventAnalytics
@@ -34,7 +34,7 @@ class UserDomainEvents(EventAnalytics):
         user_query = (Q('date_confirmed', 'lt', date + timedelta(1)) &
                       Q('date_confirmed', 'gte', date) &
                       Q('username', 'ne', None))
-        users = paginated(User, query=user_query)
+        users = paginated(OSFUser, query=user_query)
         user_domain_events = []
         for user in users:
             user_date = user.date_confirmed.replace(tzinfo=pytz.UTC)

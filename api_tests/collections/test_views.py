@@ -3,7 +3,7 @@ from urlparse import urlparse
 import pytest
 from nose.tools import *  # flake8: noqa
 
-from website.models import Node, NodeLog
+from osf.models import AbstractNode as Node, NodeLog
 from website.util.sanitize import strip_html
 from website.util import disconnected_from_listeners
 from website.project.signals import contributor_removed

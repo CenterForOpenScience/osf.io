@@ -4,14 +4,15 @@
 import os
 import sys
 
+import django
 from modularodm import Q
 from modularodm.exceptions import ModularOdmException
+django.setup()
 
-from framework.auth.core import User
+from osf.models import Conference, OSFUser as User
 
 from website import settings
 from website.app import init_app
-from website.conferences.model import Conference
 from datetime import datetime
 
 

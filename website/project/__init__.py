@@ -3,7 +3,6 @@ import uuid
 
 from django.apps import apps
 
-from .model import PrivateLink
 from framework.auth.core import Auth
 from framework.mongo.utils import from_mongo
 from modularodm import Q
@@ -103,6 +102,7 @@ def new_private_link(name, user, nodes, anonymous):
     :return PrivateLink: Created private link
 
     """
+    PrivateLink = apps.get_model('osf.PrivateLink')
     NodeLog = apps.get_model('osf.NodeLog')
 
     key = str(uuid.uuid4()).replace('-', '')

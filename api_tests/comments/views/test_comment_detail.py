@@ -5,7 +5,7 @@ import pytest
 from nose.tools import *  # flake8: noqa
 
 from framework.auth import core
-from framework.guid.model import Guid
+from osf.models import Guid
 
 from api.base.settings.defaults import API_BASE
 from api.base.settings import osf_settings

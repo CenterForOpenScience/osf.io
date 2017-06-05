@@ -18,7 +18,7 @@ pytestmark = pytest.mark.django_db
 
 class TestAuthViews(ZoteroTestCase, views.OAuthAddonAuthViewsTestCaseMixin, OsfTestCase):
 
-    @mock.patch('website.oauth.models.OAuth1Session.fetch_request_token')
+    @mock.patch('osf.models.external.OAuth1Session.fetch_request_token')
     def test_oauth_start(self, mock_token):
         mock_token.return_value = {
             'oauth_token': 'token',

@@ -405,7 +405,7 @@ function _fangornResolveToggle(item) {
     }
     if (item.data.provider === 'osfstorage' && item.kind === 'file') {
         if (item.data.extra && item.data.extra.checkout) {
-            if (item.data.extra.checkout === window.contextVars.currentUser.id){
+            if (item.data.extra.checkout._id === window.contextVars.currentUser.id){
                 return checkedByUser;
             }
             return checkedByOther;
@@ -910,25 +910,30 @@ var DEFAULT_ERROR_MESSAGE = 'Could not upload file. The file may be invalid ' +
     'or the file folder has been deleted.';
 function _fangornDropzoneError(treebeard, file, message, xhr) {
     var tb = treebeard;
-    // File may either be a webkit Entry or a file object, depending on the browser
-    // On Chrome we can check if a directory is being uploaded
     var msgText;
-    var isChrome = !!window.chrome && !!window.chrome.webstore;
+
     // Unpatched Dropzone silently does nothing when folders are uploaded on Windows IE and Firefox
     // Patched Dropzone.prototype.drop to emit error with file = 'None' to catch the error
     if (file === 'None'){
         $osf.growl('Error', 'Cannot upload folders.');
         return;
     }
-    if (isChrome && file.isDirectory) {
-        msgText = 'Cannot upload folders.';
-    } else if(!isChrome && file.treebeardParent.kind === 'folder') {
+
+    if (file.isDirectory) {
         msgText = 'Cannot upload folders.';
     } else if (xhr && xhr.status === 507) {
         msgText = 'Cannot upload file due to insufficient storage.';
     } else if (xhr && xhr.status === 0) {
-        msgText = 'Unable to reach the provider, please try again later. If the ' +
-            'problem persists, please contact support@osf.io.';
+        // There is no way for Safari to know if it was a folder at present
+        if (navigator.userAgent.indexOf('Safari') !== -1 && navigator.userAgent.indexOf('Chrome') === -1) {
+            msgText = 'Could not upload file. Possilbe reasons: <br>' + 
+                '1. Cannot upload folders. <br>' +
+                '2. Unable to reach the provider, please try again later. <br>' +
+                'If the problem persists, please contact support@osf.io.';
+        } else {
+            msgText = 'Unable to reach the provider, please try again later. If the ' +
+                'problem persists, please contact support@osf.io.';
+        }
     } else {
         //Osfstorage and most providers store message in {Object}message.{string}message,
         //but some, like Dataverse, have it in {string} message.
@@ -938,9 +943,8 @@ function _fangornDropzoneError(treebeard, file, message, xhr) {
             msgText = DEFAULT_ERROR_MESSAGE;
         }
     }
-    if (!isChrome) {
+    if (!file.isDirectory) {
         var parent = file.treebeardParent || treebeardParent.dropzoneItemCache; // jshint ignore:line
-        // Parent may be undefined, e.g. in Chrome, where file is an entry object
         var item;
         var child;
         var destroyItem = false;
@@ -1866,7 +1870,7 @@ var FGItemButtons = {
                                     icon: 'fa fa-sign-out',
                                     className : 'text-warning'
                                 }, 'Check out file'));
-                        } else if (item.data.extra.checkout === window.contextVars.currentUser.id) {
+                        } else if (item.data.extra.checkout && item.data.extra.checkout._id === window.contextVars.currentUser.id) {
                             rowButtons.push(
                                 m.component(FGButton, {
                                     onclick: function(event) {
