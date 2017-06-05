@@ -10,7 +10,6 @@ from osf.models import NodeLog
 from website.util import disconnected_from_listeners
 from website.project.signals import contributor_removed
 from api.base.settings.defaults import API_BASE
-from tests.json_api_test_app import JSONAPITestApp
 from tests.base import ApiTestCase, assert_datetime_equal
 from osf_tests.factories import (
     ProjectFactory,

@@ -54,8 +54,6 @@ class TestViewOnlyLinksList:
         res = app.get(url, auth=user.auth)
         assert res.status_code == 200
         data = res.json['data']
-        print data
-        print url
         assert len(data) == 1
         assert data[0]['attributes']['name'] == 'testlink'
 

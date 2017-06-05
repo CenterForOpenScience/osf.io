@@ -1,7 +1,7 @@
 import pytest
 from urlparse import urlparse
 
-from framework.auth.core import Auth # possibly deleted?
+from framework.auth.core import Auth 
 from osf.models import NodeLog
 from api.base.settings.defaults import API_BASE
 from tests.base import ApiTestCase
