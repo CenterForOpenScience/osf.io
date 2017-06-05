@@ -19,3 +19,8 @@ p textarea {
 form p label {
     width: 10%;
 }
+
+.sidebar-menu-inner {
+    position:relative;
+    margin-left: 30px;
+}

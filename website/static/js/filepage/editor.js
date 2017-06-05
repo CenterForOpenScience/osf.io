@@ -44,6 +44,10 @@ var FileEditor = {
         self.loaded = false;
         self.initialText = '';
         self.editorMeta = editorMeta;
+        self.sharejs_running = true;
+        if (typeof sharejs === 'undefined') {
+            self.sharejs_running = false;
+        }        
 
         self.observables = observables;
 
@@ -141,7 +145,7 @@ var FileEditor = {
         return self;
     },
     view: function(ctrl) {
-        if (!ctrl.loaded) {
+        if (!ctrl.loaded || !ctrl.sharejs_running) {
             return util.Spinner;
         }
         return m('.editor-pane.panel-body', [

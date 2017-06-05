@@ -1,8 +1,9 @@
 from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import ValidationError, NotFound
 from framework.auth.oauth_scopes import CoreScopes
+from modularodm import Q
 
-from website.project.model import Q, Node, Pointer
+from osf.models import AbstractNode as Node
 from api.base import permissions as base_permissions
 from api.base.views import JSONAPIBaseView, BaseContributorDetail, BaseContributorList, BaseNodeLinksDetail, BaseNodeLinksList
 
@@ -13,7 +14,7 @@ from api.base.parsers import JSONAPIRelationshipParserForRegularJSON
 from api.base.utils import get_user_auth
 from api.comments.serializers import RegistrationCommentSerializer, CommentCreateSerializer
 from api.identifiers.serializers import RegistrationIdentifierSerializer
-from api.identifiers.views import IdentifierList
+from api.nodes.views import NodeIdentifierList
 from api.users.views import UserMixin
 
 from api.nodes.permissions import (
@@ -771,7 +772,8 @@ class RegistrationNodeLinksList(BaseNodeLinksList, RegistrationMixin):
     required_read_scopes = [CoreScopes.NODE_REGISTRATIONS_READ]
     required_write_scopes = [CoreScopes.NULL]
 
-    model_class = Pointer
+    # TODO: This class doesn't exist
+    # model_class = Pointer
 
 
 class RegistrationNodeLinksDetail(BaseNodeLinksDetail, RegistrationMixin):
@@ -826,7 +828,8 @@ class RegistrationNodeLinksDetail(BaseNodeLinksDetail, RegistrationMixin):
     required_read_scopes = [CoreScopes.NODE_REGISTRATIONS_READ]
     required_write_scopes = [CoreScopes.NULL]
 
-    model_class = Pointer
+    # TODO: this class doesn't exist
+    # model_class = Pointer
 
     # overrides RetrieveAPIView
     def get_object(self):
@@ -1051,7 +1054,7 @@ class RegistrationViewOnlyLinkDetail(NodeViewOnlyLinkDetail, RegistrationMixin):
     view_name = 'registration-view-only-link-detail'
 
 
-class RegistrationIdentifierList(RegistrationMixin, IdentifierList):
+class RegistrationIdentifierList(RegistrationMixin, NodeIdentifierList):
     """List of identifiers for a specified node. *Read-only*.
 
     ##Identifier Attributes

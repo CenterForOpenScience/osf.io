@@ -31,12 +31,12 @@ from website import mails
 from website import settings
 from addons.base import exceptions
 from addons.base import signals as file_signals
-from osf.models import FileNode, StoredFileNode, TrashedFileNode
-from website.models import Node, NodeLog, User
+from osf.models import (BaseFileNode, TrashedFileNode,
+                        OSFUser as User, AbstractNode as Node,
+                        NodeLog, DraftRegistration, MetaSchema)
 from website.profile.utils import get_gravatar
 from website.project import decorators
 from website.project.decorators import must_be_contributor_or_public, must_be_valid_project
-from website.project.model import DraftRegistration, MetaSchema
 from website.project.utils import serialize_node
 from website.settings import MFR_SERVER_URL
 from website.util import rubeus
@@ -439,7 +439,7 @@ def create_waterbutler_log(payload, **kwargs):
 
 @file_signals.file_updated.connect
 def addon_delete_file_node(self, node, user, event_type, payload):
-    """ Get addon StoredFileNode(s), move it into the TrashedFileNode collection
+    """ Get addon BaseFileNode(s), move it into the TrashedFileNode collection
     and remove it from StoredFileNode.
 
     Required so that the guids of deleted addon files are not re-pointed when an
@@ -450,7 +450,7 @@ def addon_delete_file_node(self, node, user, event_type, payload):
         path = payload['metadata']['path']
         materialized_path = payload['metadata']['materialized']
         if path.endswith('/'):
-            folder_children = FileNode.resolve_class(provider, FileNode.ANY).find(
+            folder_children = BaseFileNode.resolve_class(provider, BaseFileNode.ANY).find(
                 Q('provider', 'eq', provider) &
                 Q('node', 'eq', node) &
                 Q('_materialized_path', 'startswith', materialized_path)
@@ -459,10 +459,10 @@ def addon_delete_file_node(self, node, user, event_type, payload):
                 if item.kind == 'file' and not TrashedFileNode.load(item._id):
                     item.delete(user=user)
                 elif item.kind == 'folder':
-                    StoredFileNode.remove_one(item)
+                    BaseFileNode.remove_one(item)
         else:
             try:
-                file_node = FileNode.resolve_class(provider, FileNode.FILE).find_one(
+                file_node = BaseFileNode.resolve_class(provider, BaseFileNode.FILE).find_one(
                     Q('node', 'eq', node) &
                     Q('_materialized_path', 'eq', materialized_path)
                 )
@@ -628,7 +628,7 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
         })
 
     savepoint_id = transaction.savepoint()
-    file_node = FileNode.resolve_class(provider, FileNode.FILE).get_or_create(node, path)
+    file_node = BaseFileNode.resolve_class(provider, BaseFileNode.FILE).get_or_create(node, path)
 
     # Note: Cookie is provided for authentication to waterbutler
     # it is overriden to force authentication as the current user

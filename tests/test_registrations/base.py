@@ -6,7 +6,7 @@ from modularodm import Q
 from framework.auth import Auth
 
 from website.util import permissions
-from website.models import MetaSchema
+from osf.models import MetaSchema
 from website.project.model import ensure_schemas
 
 from tests.base import OsfTestCase

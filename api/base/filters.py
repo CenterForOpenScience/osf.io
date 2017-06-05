@@ -18,6 +18,7 @@ from modularodm import Q as MQ
 from modularodm.query import queryset as modularodm_queryset
 from rest_framework import serializers as ser
 from rest_framework.filters import OrderingFilter
+from osf.models import Subject
 
 
 def lowercase(lower):
@@ -449,8 +450,7 @@ class DjangoFilterMixin(FilterMixin):
         return query
 
     def _operation_to_query(self, operation):
-        print operation
-        if operation['op'] in ['lt', 'lte', 'gt', 'gte', 'in']:
+        if operation['op'] in ['lt', 'lte', 'gt', 'gte', 'in', 'iexact', 'exact']:
             operation['source_field_name'] = '{}__{}'.format(operation['source_field_name'], operation['op'])
         return Q(**{operation['source_field_name']: operation['value']})
 
@@ -636,3 +636,25 @@ class ListFilterMixin(FilterMixin):
         serializer = self.get_serializer()
         serializer_method_name = 'get_' + field_name
         return getattr(serializer, serializer_method_name)
+
+
+class PreprintFilterMixin(DjangoFilterMixin):
+    """View mixin that uses DjangoFilterMixin, adding postprocessing for preprint querying
+
+       Subclasses must define `get_default_django_query()`.
+
+    """
+    def postprocess_query_param(self, key, field_name, operation):
+        if field_name == 'provider':
+            operation['source_field_name'] = 'provider___id'
+
+        if field_name == 'id':
+            operation['source_field_name'] = 'guids___id'
+
+        if field_name == 'subjects':
+            try:
+                Subject.objects.get(_id=operation['value'])
+                operation['source_field_name'] = 'subjects___id'
+            except Subject.DoesNotExist:
+                operation['source_field_name'] = 'subjects__text'
+                operation['op'] = 'iexact'

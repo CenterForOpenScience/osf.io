@@ -8,7 +8,7 @@ from nose.tools import *  # flake8: noqa
 
 from website.project.model import ensure_schemas
 from website.project.metadata.schemas import LATEST_SCHEMA_VERSION
-from website.models import Node, MetaSchema, DraftRegistration
+from osf.models import AbstractNode as Node, MetaSchema, DraftRegistration
 from website.views import find_bookmark_collection
 from framework.auth.core import Auth, Q
 from api.base.settings.defaults import API_BASE

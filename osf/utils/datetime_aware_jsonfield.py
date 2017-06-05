@@ -4,7 +4,6 @@ import datetime as dt
 import json
 import logging
 from decimal import Decimal
-from functools import partial
 
 import pytz
 import ciso8601
@@ -13,7 +12,6 @@ from django.contrib.postgres.fields.jsonb import JSONField
 from django.contrib.postgres.forms.jsonb import JSONField as JSONFormField
 from django.core.serializers.json import DjangoJSONEncoder
 from osf.exceptions import NaiveDatetimeException, ValidationError
-from psycopg2.extras import Json
 
 logger = logging.getLogger(__name__)
 
@@ -76,18 +74,15 @@ def decode_datetime_objects(nested_value):
     return nested_value
 
 
-# TODO: This might not be necessary in Django 1.11, which allows JSONField to use
-# custom JSON encoders.
 class DateTimeAwareJSONField(JSONField):
+
+    def __init__(self, verbose_name=None, name=None, encoder=DateTimeAwareJSONEncoder, **kwargs):
+        super(DateTimeAwareJSONField, self).__init__(verbose_name, name, encoder, **kwargs)
+
     def formfield(self, **kwargs):
         defaults = {'form_class': DateTimeAwareJSONFormField}
         defaults.update(kwargs)
         return super(DateTimeAwareJSONField, self).formfield(**defaults)
-
-    def get_prep_value(self, value):
-        if value is not None:
-            return Json(value, dumps=partial(json.dumps, cls=DateTimeAwareJSONEncoder))
-        return value
 
     def from_db_value(self, value, expression, connection, context):
         if value is None:
@@ -97,20 +92,8 @@ class DateTimeAwareJSONField(JSONField):
     def get_prep_lookup(self, lookup_type, value):
         if lookup_type in ('has_key', 'has_keys', 'has_any_keys'):
             return value
-        if isinstance(value, (dict, list)):
-            return Json(value, dumps=partial(json.dumps, cls=DateTimeAwareJSONEncoder))
         return super(JSONField, self).get_prep_lookup(lookup_type, value)
 
-    def validate(self, value, model_instance):
-        super(JSONField, self).validate(value, model_instance)
-        try:
-            json.dumps(value, cls=DateTimeAwareJSONEncoder)
-        except TypeError:
-            raise ValidationError(
-                self.error_messages['invalid'],
-                code='invalid',
-                params={'value': value},
-            )
 
 class DateTimeAwareJSONFormField(JSONFormField):
     def to_python(self, value):

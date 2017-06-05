@@ -336,7 +336,7 @@ class RegistrationFileSerializer(OsfStorageFileSerializer):
 
     files = NodeFileHyperLinkField(
         related_view='registrations:registration-files',
-        related_view_kwargs={'node_id': '<node_id>', 'path': '<path>', 'provider': '<provider>'},
+        related_view_kwargs={'node_id': '<node._id>', 'path': '<path>', 'provider': '<provider>'},
         kind='folder'
     )
 
@@ -357,7 +357,7 @@ class RegistrationProviderSerializer(NodeProviderSerializer):
     """
     files = NodeFileHyperLinkField(
         related_view='registrations:registration-files',
-        related_view_kwargs={'node_id': '<node_id>', 'path': '<path>', 'provider': '<provider>'},
+        related_view_kwargs={'node_id': '<node._id>', 'path': '<path>', 'provider': '<provider>'},
         kind='folder',
         never_embed=True
     )
