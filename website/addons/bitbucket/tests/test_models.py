@@ -131,7 +131,8 @@ class TestCallbacks(OsfTestCase):
         self.node_settings.external_account = self.external_account
         self.node_settings.save()
         self.node_settings.set_auth
-
+        self.user_settings.oauth_grants[self.project._id] = {self.external_account._id: []}
+        self.user_settings.save()
 
     @mock.patch('website.addons.bitbucket.api.BitbucketClient.repo')
     def test_before_make_public(self, mock_repo):
