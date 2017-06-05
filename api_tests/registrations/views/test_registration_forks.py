@@ -2,7 +2,7 @@ import pytest
 import mock
 
 from framework.auth.core import Auth
-from website.models import Node
+from osf.models import AbstractNode as Node
 from website.util import permissions
 from api.base.settings.defaults import API_BASE
 from tests.base import ApiTestCase

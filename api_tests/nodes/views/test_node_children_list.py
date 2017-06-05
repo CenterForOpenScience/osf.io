@@ -3,7 +3,7 @@ from nose.tools import *  # flake8: noqa
 
 from framework.auth.core import Auth
 
-from website.models import Node, NodeLog
+from osf.models import AbstractNode as Node, NodeLog
 from website.util import permissions
 from website.util.sanitize import strip_html
 

@@ -2,7 +2,7 @@
 import urlparse
 from nose.tools import *  # flake8: noqa
 
-from website.models import Node
+from osf.models import AbstractNode as Node
 from website.util.sanitize import strip_html
 from website.views import find_bookmark_collection
 

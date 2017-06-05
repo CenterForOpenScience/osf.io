@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 import mock
-import pytest
 from django.utils import timezone
 from modularodm import Q
 from nose.tools import *  # noqa
@@ -14,7 +13,6 @@ from osf.models.files import BaseFileNode
 from tests.base import OsfTestCase
 from tests.factories import AuthUserFactory, ProjectFactory
 from website.files import exceptions
-from website.files import utils
 from osf import models
 
 
@@ -531,7 +529,7 @@ class TestFileObj(FilesTestCase):
         v1.refresh_from_db()
         assert_equal(v1.size, 1337)
 
-    @mock.patch('website.files.models.base.requests.get')
+    @mock.patch('osf.models.files.requests.get')
     def test_touch(self, mock_requests):
         file = TestFile(
             _path='/afile',
@@ -560,7 +558,7 @@ class TestFileObj(FilesTestCase):
         assert_equals(v.size, 0xDEADBEEF)
         assert_equals(file.versions.count(), 0)
 
-    @mock.patch('website.files.models.base.requests.get')
+    @mock.patch('osf.models.files.requests.get')
     def test_touch_caching(self, mock_requests):
         file = TestFile(
             _path='/afile',
@@ -587,7 +585,7 @@ class TestFileObj(FilesTestCase):
         assert_equals(file.versions.count(), 1)
         assert_equals(file.touch(None, revision='foo'), v)
 
-    @mock.patch('website.files.models.base.requests.get')
+    @mock.patch('osf.models.files.requests.get')
     def test_touch_auth(self, mock_requests):
         file = TestFile(
             _path='/afile',

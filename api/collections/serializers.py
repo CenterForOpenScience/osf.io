@@ -3,8 +3,7 @@ from rest_framework import serializers as ser
 from rest_framework import exceptions
 from framework.exceptions import PermissionsError
 
-from website.models import Node
-from osf.models import Collection
+from osf.models import AbstractNode as Node, Collection
 from osf.exceptions import ValidationError
 from api.base.serializers import LinksField, RelationshipField
 from api.base.serializers import JSONAPISerializer, IDField, TypeField, DateByVersion

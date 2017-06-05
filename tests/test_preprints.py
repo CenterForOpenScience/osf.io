@@ -4,7 +4,7 @@ import mock
 import urlparse
 
 from framework.celery_tasks import handlers
-from website.files.models.osfstorage import OsfStorageFile
+from addons.osfstorage.models import OsfStorageFile
 from website.preprints.tasks import format_preprint
 from website.util import permissions
 

@@ -1,7 +1,7 @@
 from rest_framework import serializers as ser
 
 from api.base.serializers import JSONAPISerializer, LinksField, ShowIfVersion
-from website.models import Subject
+from osf.models import Subject
 
 class TaxonomyField(ser.Field):
     def to_representation(self, subject):

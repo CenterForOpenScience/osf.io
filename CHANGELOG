@@ -2,6 +2,11 @@
 Changelog
 *********
 
+0.112.0 (2017-06-01)
+====================
+
+- Render project lists on profile pages client-side for faster load times.
+
 0.111.0 (2017-05-31)
 ====================
 

@@ -7,7 +7,7 @@ from framework.forms.utils import process_payload
 from modularodm.exceptions import ValidationError
 from modularodm import Q
 
-from website.project.model import MetaSchema
+from osf.models import MetaSchema
 from website.project.model import ensure_schemas
 from website.project.metadata.schemas import OSF_META_SCHEMAS
 

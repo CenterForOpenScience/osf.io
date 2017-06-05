@@ -95,10 +95,7 @@ class OSFSessionAuthentication(authentication.BaseAuthentication):
         if not session:
             return None
         user_id = session.data.get('auth_user_id')
-        try:
-            user = OSFUser.objects.get(guids___id=user_id)
-        except OSFUser.DoesNotExist:
-            user = None
+        user = OSFUser.load(user_id)
         if user:
             check_user(user)
             return user, None
@@ -202,10 +199,7 @@ class OSFCASAuthentication(authentication.BaseAuthentication):
         if cas_auth_response.authenticated is False:
             raise exceptions.NotAuthenticated(_('CAS server failed to authenticate this token'))
 
-        try:
-            user = OSFUser.objects.get(guids___id=cas_auth_response.user)
-        except OSFUser.DoesNotExist:
-            user = None
+        user = OSFUser.load(cas_auth_response.user)
         if not user:
             raise exceptions.AuthenticationFailed(_('Could not find the user associated with this token'))
 

@@ -7,7 +7,6 @@ from modularodm.exceptions import ValidationError, ValidationValueError
 
 from framework import forms, status
 from framework.auth import cas
-from framework.auth import User
 from framework.auth.core import get_user, generate_verification_key
 from framework.auth.decorators import block_bing_preview, collect_auth, must_be_logged_in
 from framework.auth.forms import PasswordForm, SetEmailAndPasswordForm
@@ -17,8 +16,8 @@ from framework.exceptions import HTTPError
 from framework.flask import redirect  # VOL-aware redirect
 from framework.sessions import session
 from framework.transactions.handlers import no_auto_transaction
+from osf.models import AbstractNode as Node, OSFUser as User, PreprintService
 from website import mails, language, settings
-from website.models import Node, PreprintService
 from website.notifications.utils import check_if_all_global_subscriptions_are_none
 from website.profile import utils as profile_utils
 from website.project.decorators import (must_have_permission, must_be_valid_project, must_not_be_registration,
@@ -719,7 +718,7 @@ def claim_user_form(auth, **kwargs):
     claimer_email = unclaimed_record.get('claimer_email') or unclaimed_record.get('email')
     # If there is a registered user with this email, redirect to 're-enter password' page
     try:
-        user_from_email = User.objects.get(emails__icontains=claimer_email) if claimer_email else None
+        user_from_email = User.objects.get(emails__address=claimer_email.lower().strip()) if claimer_email else None
     except User.DoesNotExist:
         user_from_email = None
     if user_from_email and user_from_email.is_registered:

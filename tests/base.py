@@ -4,10 +4,7 @@ import abc
 import datetime as dt
 import functools
 import logging
-import os
 import re
-import shutil
-import tempfile
 import unittest
 import uuid
 
@@ -20,23 +17,21 @@ from addons.wiki.models import NodeWikiPage
 from django.test.utils import override_settings
 from django.test import TestCase as DjangoTestCase
 from faker import Factory
-from framework.auth import User
 from framework.auth.core import Auth
 from framework.celery_tasks.handlers import celery_before_request
 from framework.django.handlers import handlers as django_handlers
 from framework.flask import rm_handlers
-from framework.guid.model import Guid
 from framework.mongo import client as client_proxy
 from framework.mongo import database as database_proxy
-from framework.sessions.model import Session
 from framework.transactions import commands, messages, utils
+from osf.models import OSFUser as User, Guid, Session
+from osf.models import MetaSchema, AbstractNode as Node, NodeLog, Tag
 from pymongo.errors import OperationFailure
 from website import settings
 from website.app import init_app
 from website.notifications.listeners import (subscribe_contributor,
                                              subscribe_creator)
-from website.project.model import (MetaSchema, Node, NodeLog, Tag, WatchConfig,
-                                   ensure_schemas)
+from website.project.model import ensure_schemas
 from website.project.signals import contributor_added, project_created
 from website.project.views.contributor import notify_added_contributor
 from website.signals import ALL_SIGNALS
@@ -94,7 +89,7 @@ fake = Factory.create()
 
 # All Models
 MODELS = (User, Node, NodeLog, NodeWikiPage,
-          Tag, WatchConfig, Session, Guid)
+          Tag, Session, Guid)
 
 
 def teardown_database(client=None, database=None):

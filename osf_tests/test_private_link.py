@@ -2,7 +2,6 @@ import pytest
 
 from website.project import new_private_link
 from website.project.model import ensure_schemas
-from website.project.views.node import remove_private_link
 
 from .factories import PrivateLinkFactory, NodeFactory
 from osf.models import MetaSchema, DraftRegistration, NodeLog
