@@ -922,13 +922,16 @@ function _fangornDropzoneError(treebeard, file, message, xhr) {
     }
     if (file.isDirectory) {
         msgText = 'Cannot upload folders.';
-    } else if(file.treebeardParent && file.treebeardParent.kind === 'folder') {
-        msgText = 'Cannot upload folders.';
     } else if (xhr && xhr.status === 507) {
         msgText = 'Cannot upload file due to insufficient storage.';
     } else if (xhr && xhr.status === 0) {
-        msgText = 'Unable to reach the provider, please try again later. If the ' +
-            'problem persists, please contact support@osf.io.';
+        msgText = '';
+        if ($osf.isSafari()) {
+            msgText += 'Could not upload file. Possible reasons: <br>';
+            msgText += '1. Cannot upload folders. <br>2. ';
+        }
+        msgText += 'Cannot reach the provider, please try again later. ';
+        msgText += 'If the problem persists, please contact support@osf.io.';
     } else {
         //Osfstorage and most providers store message in {Object}message.{string}message,
         //but some, like Dataverse, have it in {string} message.
