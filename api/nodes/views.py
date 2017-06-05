@@ -2428,7 +2428,7 @@ class NodeProviderDetail(JSONAPIBaseView, generics.RetrieveAPIView, NodeMixin):
     view_name = 'node-provider-detail'
 
     def get_object(self):
-        return NodeProvider(self.kwargs['provider'], Node.load(self.kwargs['node_id']))
+        return NodeProvider(self.kwargs['provider'], self.get_node())
 
 
 class NodeAlternativeCitationsList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin):
