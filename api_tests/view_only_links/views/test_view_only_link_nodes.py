@@ -43,6 +43,37 @@ def view_only_link(public_project):
     view_only_link.save()
     return view_only_link
 
+@pytest.fixture()
+def component_one(user, public_project):
+    return NodeFactory(creator=user, parent=public_project, is_public=True)
+
+@pytest.fixture()
+def component_two(user, public_project):
+    return NodeFactory(creator=user, parent=public_project, is_public=False)
+
+@pytest.fixture()
+def project_two(user):
+    return NodeFactory(creator=user)
+
+@pytest.fixture()
+def first_level_component(user, public_project):
+    return NodeFactory(creator=user, parent=public_project)
+
+@pytest.fixture()
+def second_level_component(user, first_level_component):
+    return NodeFactory(creator=user, parent=first_level_component)
+
+@pytest.fixture()
+def component_one_payload(component_one):
+    return {
+        'data': [
+            {
+                'type': 'nodes',
+                'id': component_one._id
+            }
+        ]
+    }
+
 @pytest.mark.django_db
 class TestViewOnlyLinksNodes:
 
@@ -74,37 +105,6 @@ class TestViewOnlyLinksNodes:
 
 @pytest.mark.django_db
 class TestViewOnlyLinkNodesSet:
-
-    @pytest.fixture()
-    def component_one(self, user, public_project):
-        return NodeFactory(creator=user, parent=public_project, is_public=True)
-
-    @pytest.fixture()
-    def component_two(self, user, public_project):
-        return NodeFactory(creator=user, parent=public_project, is_public=False)
-
-    @pytest.fixture()
-    def project_two(self, user):
-        return NodeFactory(creator=user)
-
-    @pytest.fixture()
-    def first_level_component(self, user, public_project):
-        return NodeFactory(creator=user, parent=public_project)
-
-    @pytest.fixture()
-    def second_level_component(self, user, first_level_component):
-        return NodeFactory(creator=user, parent=first_level_component)
-
-    @pytest.fixture()
-    def component_one_payload(self, component_one):
-        return {
-            'data': [
-                {
-                    'type': 'nodes',
-                    'id': component_one._id
-                }
-            ]
-        }
 
     @pytest.fixture()
     def url(self, view_only_link):
@@ -268,90 +268,95 @@ class TestViewOnlyLinkNodesSet:
         res = app.post_json_api(url, component_one_payload, expect_errors=True)
         assert res.status_code == 401
 
-class TestViewOnlyLinkNodesUpdate(TestViewOnlyLinkNodesSet):
+@pytest.mark.django_db
+class TestViewOnlyLinkNodesUpdate:
 
-    def setUp(self):
-        super(TestViewOnlyLinkNodesUpdate, self).setUp()
-        self.update_payload = {
+    @pytest.fixture()
+    def url(self, view_only_link):
+        return '/{}view_only_links/{}/relationships/nodes/'.format(API_BASE, view_only_link._id)
+
+    @pytest.fixture()
+    def update_payload(self, public_project, component_one):
+        return {
             'data': [{
                 'type': 'nodes',
-                'id': self.public_project._id
+                'id': public_project._id
             }, {
                 'type': 'nodes',
-                'id': self.component_one._id
+                'id': component_one._id
             }]
         }
 
-    def test_admin_can_update_nodes_single_node_to_add(self):
-        res = self.app.put_json_api(self.url, self.update_payload, auth=self.user.auth)
-        self.view_only_link.reload()
-        assert_equal(res.status_code, 200)
-        assert_equal(len(res.json['data']), 2)
-        assert_in(self.public_project, self.view_only_link.nodes.all())
-        assert_in(self.component_one, self.view_only_link.nodes.all())
+    def test_admin_can_update_nodes_single_node_to_add(self, app, user, url, public_project, component_one, view_only_link, update_payload):
+        res = app.put_json_api(url, update_payload, auth=user.auth)
+        view_only_link.reload()
+        assert res.status_code == 200
+        assert len(res.json['data']) == 2
+        assert public_project in view_only_link.nodes.all()
+        assert component_one in view_only_link.nodes.all()
 
-    def test_admin_can_update_nodes_multiple_nodes_to_add(self):
-        self.update_payload['data'].append({
+    def test_admin_can_update_nodes_multiple_nodes_to_add(self, app, user, public_project, component_one, component_two, view_only_link, url, update_payload):
+        update_payload['data'].append({
             'type': 'nodes',
-            'id': self.component_two._id
+            'id': component_two._id
         })
-        res = self.app.put_json_api(self.url, self.update_payload, auth=self.user.auth)
-        self.view_only_link.reload()
-        assert_equal(res.status_code, 200)
-        assert_equal(len(res.json['data']), 3)
-        assert_in(self.public_project, self.view_only_link.nodes.all())
-        assert_in(self.component_one, self.view_only_link.nodes.all())
-        assert_in(self.component_two, self.view_only_link.nodes.all())
+        res = app.put_json_api(url, update_payload, auth=user.auth)
+        view_only_link.reload()
+        assert res.status_code == 200
+        assert len(res.json['data']) == 3
+        assert public_project in view_only_link.nodes.all()
+        assert component_one in view_only_link.nodes.all()
+        assert component_two in view_only_link.nodes.all()
 
-    def test_admin_can_update_nodes_single_node_to_remove(self):
-        self.view_only_link.nodes.add(self.component_one)
-        self.view_only_link.save()
-        self.update_payload['data'].pop()
-        res = self.app.put_json_api(self.url, self.update_payload, auth=self.user.auth)
-        self.view_only_link.reload()
-        assert_equal(res.status_code, 200)
-        assert_equal(len(res.json['data']), 1)
-        assert_in(self.public_project, self.view_only_link.nodes.all())
-        assert_not_in(self.component_one, self.view_only_link.nodes.all())
+    def test_admin_can_update_nodes_single_node_to_remove(self, app, user, public_project, component_one, view_only_link, update_payload, url):
+        view_only_link.nodes.add(component_one)
+        view_only_link.save()
+        update_payload['data'].pop()
+        res = app.put_json_api(url, update_payload, auth=user.auth)
+        view_only_link.reload()
+        assert res.status_code == 200
+        assert len(res.json['data']) == 1
+        assert public_project in view_only_link.nodes.all()
+        assert component_one not in view_only_link.nodes.all()
 
-    def test_admin_can_update_nodes_multiple_nodes_to_remove(self):
-        self.view_only_link.nodes.add(self.component_one)
-        self.view_only_link.nodes.add(self.component_two)
-        self.view_only_link.save()
-        self.update_payload['data'].pop()
-        res = self.app.put_json_api(self.url, self.update_payload, auth=self.user.auth)
-        self.view_only_link.reload()
-        assert_equal(res.status_code, 200)
-        assert_equal(len(res.json['data']), 1)
-        assert_in(self.public_project, self.view_only_link.nodes.all())
-        assert_not_in(self.component_one, self.view_only_link.nodes.all())
-        assert_not_in(self.component_two, self.view_only_link.nodes.all())
-
-
-    def test_admin_can_update_nodes_single_add_single_remove(self):
-        self.view_only_link.nodes.add(self.component_two)
-        self.view_only_link.save()
-        res = self.app.put_json_api(self.url, self.update_payload, auth=self.user.auth)
-        self.view_only_link.reload()
-        assert_equal(res.status_code, 200)
-        assert_equal(len(res.json['data']), 2)
-        assert_in(self.public_project, self.view_only_link.nodes.all())
-        assert_in(self.component_one, self.view_only_link.nodes.all())
-        assert_not_in(self.component_two, self.view_only_link.nodes.all())
+    def test_admin_can_update_nodes_multiple_nodes_to_remove(self, app, user, public_project, component_one, component_two, view_only_link, update_payload, url,):
+        view_only_link.nodes.add(component_one)
+        view_only_link.nodes.add(component_two)
+        view_only_link.save()
+        update_payload['data'].pop()
+        res = app.put_json_api(url, update_payload, auth=user.auth)
+        view_only_link.reload()
+        assert res.status_code == 200
+        assert len(res.json['data']) == 1
+        assert public_project in view_only_link.nodes.all()
+        assert component_one not in view_only_link.nodes.all()
+        assert component_two not in view_only_link.nodes.all()
 
 
-    def test_admin_can_update_nodes_multiple_add_multiple_remove(self):
-        self.view_only_link.nodes.add(self.component_one)
-        self.view_only_link.nodes.add(self.component_two)
-        self.view_only_link.save()
+    def test_admin_can_update_nodes_single_add_single_remove(self, app, user, public_project, component_one, component_two, view_only_link, update_payload, url):
+        view_only_link.nodes.add(component_two)
+        view_only_link.save()
+        res = app.put_json_api(url, update_payload, auth=user.auth)
+        view_only_link.reload()
+        assert res.status_code == 200
+        assert len(res.json['data']) == 2
+        assert public_project in view_only_link.nodes.all()
+        assert component_one in view_only_link.nodes.all()
+        assert component_two not in view_only_link.nodes.all()
 
-        component_three = NodeFactory(creator=self.user, parent=self.public_project)
-        component_four = NodeFactory(creator=self.user, parent=self.public_project)
+
+    def test_admin_can_update_nodes_multiple_add_multiple_remove(self, app, user, public_project, component_one, component_two, view_only_link, url):
+        view_only_link.nodes.add(component_one)
+        view_only_link.nodes.add(component_two)
+        view_only_link.save()
+
+        component_three = NodeFactory(creator=user, parent=public_project)
+        component_four = NodeFactory(creator=user, parent=public_project)
 
         payload = {
             'data': [{
                 'type': 'nodes',
-                'id': self.public_project._id,
+                'id': public_project._id,
             }, {
                 'type': 'nodes',
                 'id': component_three._id
@@ -361,30 +366,30 @@ class TestViewOnlyLinkNodesUpdate(TestViewOnlyLinkNodesSet):
             }]
         }
 
-        res = self.app.put_json_api(self.url, payload, auth=self.user.auth)
-        self.view_only_link.reload()
-        assert_equal(res.status_code, 200)
-        assert_equal(len(res.json['data']), 3)
-        assert_in(self.public_project, self.view_only_link.nodes.all())
-        assert_not_in(self.component_one, self.view_only_link.nodes.all())
-        assert_not_in(self.component_two, self.view_only_link.nodes.all())
-        assert_in(component_three, self.view_only_link.nodes.all())
-        assert_in(component_four, self.view_only_link.nodes.all())
+        res = app.put_json_api(url, payload, auth=user.auth)
+        view_only_link.reload()
+        assert res.status_code == 200
+        assert len(res.json['data']) == 3
+        assert public_project in view_only_link.nodes.all()
+        assert component_one not in view_only_link.nodes.all()
+        assert component_two not in view_only_link.nodes.all()
+        assert component_three in view_only_link.nodes.all()
+        assert component_four in view_only_link.nodes.all()
 
-    def test_update_nodes_no_changes(self):
+    def test_update_nodes_no_changes(self, app, user, public_project, view_only_link, url):
         payload = {
             'data': [{
                 'type': 'nodes',
-                'id': self.public_project._id,
+                'id': public_project._id,
             }]
         }
-        res = self.app.put_json_api(self.url, payload, auth=self.user.auth, expect_errors=True)
-        self.view_only_link.reload()
-        assert_equal(res.status_code, 200)
-        assert_equal(len(res.json['data']), 1)
-        assert_in(self.public_project, self.view_only_link.nodes.all())
+        res = app.put_json_api(url, payload, auth=user.auth, expect_errors=True)
+        view_only_link.reload()
+        assert res.status_code == 200
+        assert len(res.json['data']) == 1
+        assert public_project in view_only_link.nodes.all()
 
-    def test_update_nodes_top_level_node_not_included(self):
+    def test_update_nodes_top_level_node_not_included(self, app, user, component_one, url):
         """
         Parent Project (NOT included)
             ->  First Level Component (included) -- NOT ALLOWED
@@ -392,25 +397,25 @@ class TestViewOnlyLinkNodesUpdate(TestViewOnlyLinkNodesSet):
         payload = {
             'data': [{
                 'type': 'nodes',
-                'id': self.component_one._id
+                'id': component_one._id
             }]
         }
-        res = self.app.put_json_api(self.url, payload, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['detail'], 'The node {0} cannot be affiliated with this View Only Link because the node you\'re trying to affiliate is not descended from the node that the View Only Link is attached to.'.format(self.component_one._id))
+        res = app.put_json_api(url, payload, auth=user.auth, expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'The node {0} cannot be affiliated with this View Only Link because the node you\'re trying to affiliate is not descended from the node that the View Only Link is attached to.'.format(component_one._id)
 
-    def test_update_node_not_component(self):
+    def test_update_node_not_component(self, app, user, project_two, component_two, url):
         payload = {
             'data': [{
                 'type': 'nodes',
-                'id': self.project_two._id
+                'id': project_two._id
             }]
         }
-        res = self.app.put_json_api(self.url, payload, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['detail'], 'The node {0} cannot be affiliated with this View Only Link because the node you\'re trying to affiliate is not descended from the node that the View Only Link is attached to.'.format(self.project_two._id))
+        res = app.put_json_api(url, payload, auth=user.auth, expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'The node {0} cannot be affiliated with this View Only Link because the node you\'re trying to affiliate is not descended from the node that the View Only Link is attached to.'.format(project_two._id)
 
-    def test_update_node_second_level_component_without_first_level_parent(self):
+    def test_update_node_second_level_component_without_first_level_parent(self, app, user, public_project, second_level_component, view_only_link, url):
         """
         Parent Project (included)
             ->  First Level Component (NOT included)
@@ -419,20 +424,20 @@ class TestViewOnlyLinkNodesUpdate(TestViewOnlyLinkNodesSet):
         payload = {
             'data': [{
                 'type': 'nodes',
-                'id': self.public_project._id
+                'id': public_project._id
             }, {
                 'type': 'nodes',
-                'id': self.second_level_component._id
+                'id': second_level_component._id
             }]
         }
-        res = self.app.put_json_api(self.url, payload, auth=self.user.auth, expect_errors=True)
-        self.view_only_link.reload()
-        assert_equal(res.status_code, 200)
-        assert_equal(len(res.json['data']), 2)
-        assert_in(self.public_project, self.view_only_link.nodes.all())
-        assert_in(self.second_level_component, self.view_only_link.nodes.all())
+        res = app.put_json_api(url, payload, auth=user.auth, expect_errors=True)
+        view_only_link.reload()
+        assert res.status_code == 200
+        assert len(res.json['data']) == 2
+        assert public_project in view_only_link.nodes.all()
+        assert second_level_component in view_only_link.nodes.all()
 
-    def test_update_node_second_level_component_with_first_level_parent(self):
+    def test_update_node_second_level_component_with_first_level_parent(self, app, user, public_project, first_level_component, second_level_component, view_only_link, url):
         """
         Parent Project (included)
             ->  First Level Component (included)
@@ -441,72 +446,74 @@ class TestViewOnlyLinkNodesUpdate(TestViewOnlyLinkNodesSet):
         payload = {
             'data': [{
                 'type': 'nodes',
-                'id': self.public_project._id
+                'id': public_project._id
             }, {
                 'type': 'nodes',
-                'id': self.first_level_component._id
+                'id': first_level_component._id
             }, {
                 'type': 'nodes',
-                'id': self.second_level_component._id
+                'id': second_level_component._id
             }]
         }
-        res = self.app.put_json_api(self.url, payload, auth=self.user.auth, expect_errors=True)
-        self.view_only_link.reload()
-        assert_equal(res.status_code, 200)
-        assert_equal(len(res.json['data']), 3)
-        assert_in(self.public_project, self.view_only_link.nodes.all())
-        assert_in(self.first_level_component, self.view_only_link.nodes.all())
-        assert_in(self.second_level_component, self.view_only_link.nodes.all())
+        res = app.put_json_api(url, payload, auth=user.auth, expect_errors=True)
+        view_only_link.reload()
+        assert res.status_code == 200
+        assert len(res.json['data']) == 3
+        assert public_project in view_only_link.nodes.all()
+        assert first_level_component in view_only_link.nodes.all()
+        assert second_level_component in view_only_link.nodes.all()
 
-    def test_invalid_nodes_in_payload(self):
+    def test_view_only_link_nodes_update_errors(self, app, user, read_write_user, read_only_user, non_contributor, public_project, component_one, update_payload, url):
+
+    #   test_invalid_nodes_in_payload
         payload = {
             'data': [{
                 'type': 'nodes',
-                'id': self.public_project._id
+                'id': public_project._id
             }, {
                 'type': 'nodes',
                 'id': 'abcde'
             }]
         }
-        res = self.app.put_json_api(self.url, payload, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 404)
+        res = app.put_json_api(url, payload, auth=user.auth, expect_errors=True)
+        assert res.status_code == 404
 
-    def test_type_required_in_payload(self):
+    #   test_type_required_in_payload
         payload = {
             'data': [{
                 'type': 'nodes',
-                'id': self.public_project._id
+                'id': public_project._id
             }, {
-                'id': self.component_one._id
+                'id': component_one._id
             }]
         }
-        res = self.app.put_json_api(self.url, payload, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 400)
+        res = app.put_json_api(url, payload, auth=user.auth, expect_errors=True)
+        assert res.status_code == 400
 
-    def test_id_required_in_payload(self):
+    #   test_id_required_in_payload
         payload = {
             'data': [{
                 'type': 'nodes',
-                'id': self.public_project._id
+                'id': public_project._id
             }, {
                 'type': 'nodes'
             }]
         }
-        res = self.app.put_json_api(self.url, payload, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 400)
+        res = app.put_json_api(url, payload, auth=user.auth, expect_errors=True)
+        assert res.status_code == 400
 
-    def test_read_write_contributor_cannot_update_nodes(self):
-        res = self.app.put_json_api(self.url, self.update_payload, auth=self.read_write_user.auth, expect_errors=True)
-        assert_equal(res.status_code, 403)
+    #   test_read_write_contributor_cannot_update_nodes
+        res = app.put_json_api(url, update_payload, auth=read_write_user.auth, expect_errors=True)
+        assert res.status_code == 403
 
-    def test_read_only_contributor_cannot_update_nodes(self):
-        res = self.app.put_json_api(self.url, self.update_payload, auth=self.read_only_user.auth, expect_errors=True)
-        assert_equal(res.status_code, 403)
+    #   test_read_only_contributor_cannot_update_nodes
+        res = app.put_json_api(url, update_payload, auth=read_only_user.auth, expect_errors=True)
+        assert res.status_code == 403
 
-    def test_logged_in_user_cannot_update_nodes(self):
-        res = self.app.put_json_api(self.url, self.update_payload, auth=self.non_contributor.auth, expect_errors=True)
-        assert_equal(res.status_code, 403)
+    #   test_logged_in_user_cannot_update_nodes
+        res = app.put_json_api(url, update_payload, auth=non_contributor.auth, expect_errors=True)
+        assert res.status_code == 403
 
-    def test_unauthenticated_user_cannot_update_nodes(self):
-        res = self.app.put_json_api(self.url, self.update_payload, expect_errors=True)
-        assert_equal(res.status_code, 401)
+    #   test_unauthenticated_user_cannot_update_nodes
+        res = app.put_json_api(url, update_payload, expect_errors=True)
+        assert res.status_code == 401
