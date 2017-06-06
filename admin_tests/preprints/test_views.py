@@ -128,6 +128,8 @@ class TestPreprintReindex(AdminTestCase):
         self.preprint = PreprintFactory(creator=self.user)
 
     @mock.patch('admin.preprints.views.on_preprint_updated')
+    @mock.patch('website.settings.SHARE_URL', 'ima_real_website')
+    @mock.patch('website.settings.SHARE_API_TOKEN', 'ima_real_token')
     def test_reindex_preprint_share(self, mock_reindex_preprint):
         count = AdminLogEntry.objects.count()
         view = views.PreprintReindexShare()
