@@ -21,6 +21,8 @@ volumes:
     external: false
   wb_tmp_vol:
     external: false
+  wb_redis_data_vol:
+    external: false
   osfstoragecache_vol:
     external: false
   osf_requirements_vol:
@@ -126,6 +128,7 @@ services:
       - .docker-compose.mfr.env
     volumes:
       - mfr_requirements_vol:/usr/local/lib/python3.5
+      - wb_tmp_vol:/tmp
     stdin_open: true
 
   ###############
@@ -166,6 +169,7 @@ services:
     depends_on:
       - wb
       - rabbitmq
+      - wb_redis
     environment:
       C_FORCE_ROOT: 1
     env_file:
@@ -174,6 +178,16 @@ services:
       - wb_requirements_vol:/usr/local/lib/python3.5
       - osfstoragecache_vol:/code/website/osfstoragecache
       - wb_tmp_vol:/tmp
+    stdin_open: true
+
+  # Using non-default port so as not to conflict with osf-cache instance
+  wb_redis:
+    image: redis:alpine
+    command: redis-server --appendonly yes --port 6479
+    ports:
+      - 6479:6479
+    volumes:
+      - wb_redis_data_vol:/data
     stdin_open: true
 
   ##################################
