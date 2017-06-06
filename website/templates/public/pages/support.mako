@@ -78,8 +78,8 @@
                 <h4 class="m-t-md f-w-xl"> Other ways to get help </h4>
                 <a href="https://twitter.com/OSFramework" class="btn btn-link"><i class="fa fa-twitter"></i> Ask us a question on twitter </a>
                 <a href="https://groups.google.com/forum/#!forum/openscienceframework" class="btn btn-link"><i class="fa fa-users"></i> Join our mailing list </a>
-                <a href="https://www.facebook.com/OpenScienceFramework" class="btn btn-link"><i class="fa fa-facebook"></i> Follow us on Facebook </a>
-                <a href="https://github.com/centerforopenscience" class="btn btn-link"><i class="fa fa-github"></i> Connect with COS on GitHub</a>
+                <a href="https://www.facebook.com/CenterForOpenScience/" class="btn btn-link"><i class="fa fa-facebook"></i> Follow us on Facebook </a>
+                <a href="https://github.com/centerforopenscience" class="btn btn-link"><i class="fa fa-github"></i> Connect with COS on Github</a>
             </div>
         </div>
 

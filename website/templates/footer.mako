@@ -24,7 +24,7 @@
             <div class="col-sm-4 col-md-3">
                 <h4>Socialize</h4>
                 <a href="http://twitter.com/OSFramework" aria-label="Twitter"><i class="fa fa-twitter fa-2x"></i></a>
-                <a href="https://www.facebook.com/OpenScienceFramework" aria-label="Facebook"><i class="fa fa-facebook fa-2x"></i></a>
+                <a href="https://www.facebook.com/CenterForOpenScience/" aria-label="Facebook"><i class="fa fa-facebook fa-2x"></i></a>
                 <a href="https://groups.google.com/forum/#!forum/openscienceframework" aria-label="Google Group"><i class="fa fa-group fa-2x"></i></a>
                 <a href="https://www.github.com/centerforopenscience" aria-label="GitHub"><i class="fa fa-github fa-2x"></i></a>
                 <a href="https://plus.google.com/b/104751442909573665859" aria-label="Google Plus" rel="publisher"><i class="fa fa-google-plus fa-2x"></i></a>
