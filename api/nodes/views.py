@@ -57,7 +57,7 @@ from api.identifiers.serializers import NodeIdentifierSerializer
 from api.identifiers.views import IdentifierList
 from api.institutions.serializers import InstitutionSerializer
 from api.logs.serializers import NodeLogSerializer
-from api.nodes.filters import NodeODMFilterMixin, NodesListFilterMixin
+from api.nodes.filters import NodeODMFilterMixin, NodesFilterMixin
 from api.nodes.permissions import (
     IsAdmin,
     IsPublic,
@@ -203,7 +203,7 @@ class WaterButlerMixin(object):
         return obj
 
 
-class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.BulkDestroyJSONAPIView, bulk_views.ListBulkCreateJSONAPIView, NodeODMFilterMixin, NodesListFilterMixin, WaterButlerMixin):
+class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.BulkDestroyJSONAPIView, bulk_views.ListBulkCreateJSONAPIView, NodesFilterMixin, WaterButlerMixin):
     """Nodes that represent projects and components. *Writeable*.
 
     Paginated list of nodes ordered by their `date_modified`.  Each resource contains the full representation of the
@@ -308,29 +308,12 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
 
     ordering = ('-date_modified', )  # default ordering
 
-    # overrides FilterMixin
-    def postprocess_query_param(self, key, field_name, operation):
-        # tag queries will usually be on Tag.name,
-        # ?filter[tags]=foo should be translated to MQ('tags__name', 'eq', 'foo')
-        # But queries on lists should be tags, e.g.
-        # ?filter[tags]=foo,bar should be translated to MQ('tags', 'isnull', True)
-        # ?filter[tags]=[] should be translated to MQ('tags', 'isnull', True)
-        if field_name == 'tags':
-            if operation['value'] not in (list(), tuple()):
-                operation['source_field_name'] = 'tags__name'
-                operation['op'] = 'iexact'
-        # contributors iexact because guid matching
-        if field_name == 'contributors':
-            if operation['value'] not in (list(), tuple()):
-                operation['source_field_name'] = '_contributors__guids___id'
-                operation['op'] = 'iexact'
-
-    # overrides ODMFilterMixin
-    def get_default_odm_query(self):
+    # overrides NodesFilterMixin
+    def get_default_queryset(self):
         user = self.request.user
         base_query = default_node_list_query()
         permissions_query = default_node_permission_query(user)
-        return base_query & permissions_query
+        return Node.find(base_query & permissions_query)
 
     # overrides ListBulkCreateJSONAPIView, BulkUpdateJSONAPIView
     def get_queryset(self):
@@ -357,8 +340,7 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
                     raise PermissionDenied
             return nodes
         else:
-            query = self.get_query_from_request()
-            return AbstractNode.find(query).distinct()
+            return self.get_queryset_from_request().distinct()
 
     # overrides ListBulkCreateJSONAPIView, BulkUpdateJSONAPIView, BulkDestroyJSONAPIView
     def get_serializer_class(self):
