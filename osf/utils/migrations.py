@@ -65,7 +65,11 @@ def ensure_schemas(*args):
     for schema in OSF_META_SCHEMAS:
         schema_obj, created = MetaSchema.objects.get_or_create(
             name=schema['name'],
-            schema_version=schema.get('version', 1)
+            schema_version=schema.get('version', 1),
+            defaults={
+                'schema': schema,
+                'active': schema.get('active', True)
+            }
         )
         schema_obj.schema = schema
         schema_obj.save()
