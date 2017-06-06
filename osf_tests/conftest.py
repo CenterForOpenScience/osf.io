@@ -34,6 +34,7 @@ SILENT_LOGGERS = [
     'rest_framework.pagination',
     'tests.base',
     'website.project',
+    'django.db.models.fields',
 ]
 for logger_name in SILENT_LOGGERS:
     logging.getLogger(logger_name).setLevel(logging.CRITICAL)
