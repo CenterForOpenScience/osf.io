@@ -2,7 +2,7 @@ import hashlib, binascii
 from nose.tools import *  # flake8: noqa
 
 from modularodm import Q
-from website.models import MetaSchema
+from osf.models import MetaSchema
 from website.project.metadata.schemas import LATEST_SCHEMA_VERSION
 from api.base.settings.defaults import API_BASE
 from website.settings import PREREG_ADMIN_TAG

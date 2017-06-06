@@ -1,5 +1,4 @@
 import pytest
-
 import mock
 from urlparse import urlparse
 

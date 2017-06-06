@@ -10,13 +10,11 @@ from elasticsearch import helpers
 from modularodm.query.querydialect import DefaultQueryDialect as Q
 
 import website.search.search as search
-from framework.auth import User
 from framework.mongo.utils import paginated
 from scripts import utils as script_utils
+from osf.models import OSFUser as User, Institution, AbstractNode as Node
 from website import settings
 from website.app import init_app
-from website.institutions.model import Institution
-from website.models import Node
 from website.search.elastic_search import client as es_client
 from website.search.search import update_institution
 

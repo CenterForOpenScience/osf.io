@@ -7,8 +7,9 @@ from tests.base import ApiTestCase
 from api.base.settings.defaults import API_BASE
 from api_tests.preprints.filters.test_filters import PreprintsListFilteringMixin
 from api_tests.preprints.views.test_preprint_list_mixin import PreprintIsPublishedListMixin, PreprintIsValidListMixin
-from website.preprints.model import PreprintService
-from website.files.models.osfstorage import OsfStorageFile
+
+from osf.models import PreprintService
+from addons.osfstorage.models import OsfStorageFile
 from osf_tests.factories import PreprintFactory, AuthUserFactory, ProjectFactory, SubjectFactory, PreprintProviderFactory
 from api_tests import utils as test_utils
 

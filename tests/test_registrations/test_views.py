@@ -14,8 +14,8 @@ from modularodm import Q
 
 from framework.exceptions import HTTPError
 
-from website.models import Node, MetaSchema, DraftRegistration
-from website.project.metadata.schemas import ACTIVE_META_SCHEMAS, _name_to_id
+from osf.models import MetaSchema, DraftRegistration
+from website.project.metadata.schemas import _name_to_id, LATEST_SCHEMA_VERSION
 from website.util import permissions, api_url_for
 from website.project.views import drafts as draft_views
 
@@ -144,7 +144,7 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
         )
         assert_equal(res.status_code, http.FORBIDDEN)
 
-    @mock.patch('website.project.model.DraftRegistration.register', autospec=True)
+    @mock.patch('osf.models.DraftRegistration.register', autospec=True)
     def test_register_draft_registration(self, mock_register_draft):
 
         url = self.node.api_url_for('register_draft_registration', draft_id=self.draft._id)
@@ -453,18 +453,19 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
     def test_get_metaschemas(self):
         url = api_url_for('get_metaschemas')
         res = self.app.get(url).json
-        assert_equal(len(res['meta_schemas']), len(ACTIVE_META_SCHEMAS))
+        assert_equal(
+            len(res['meta_schemas']),
+            MetaSchema.objects.filter(active=True, schema_version=LATEST_SCHEMA_VERSION).count()
+        )
 
     def test_get_metaschemas_all(self):
         url = api_url_for('get_metaschemas', include='all')
         res = self.app.get(url)
         assert_equal(res.status_code, http.OK)
-        assert_equal(len(res.json['meta_schemas']), len(
-            [
-                schema for schema in MetaSchema.find()
-                if schema.name in ACTIVE_META_SCHEMAS
-            ]
-        ))
+        assert_equal(
+            len(res.json['meta_schemas']),
+            MetaSchema.objects.filter(active=True).count()
+        )
 
     def test_validate_embargo_end_date_too_soon(self):
         registration = RegistrationFactory(project=self.node)
@@ -550,7 +551,7 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
         reg.is_deleted = True
         reg.save()
 
-        with mock.patch('website.project.model.DraftRegistration.is_approved', mock.PropertyMock(return_value=True)):
+        with mock.patch('osf.models.DraftRegistration.is_approved', mock.PropertyMock(return_value=True)):
             try:
                 draft_views.check_draft_state(self.draft)
             except HTTPError:

@@ -17,9 +17,6 @@ from api.base import settings as api_settings
 from modularodm import Q
 from modularodm.exceptions import NoResultsFound
 
-# Keep me: Makes rubeus importable from website.util
-from . import rubeus  # noqa
-
 logger = logging.getLogger(__name__)
 
 
@@ -211,7 +208,7 @@ def disconnected_from_listeners(signal):
 
 
 def check_private_key_for_anonymized_link(private_key):
-    from website.project.model import PrivateLink
+    from osf.models import PrivateLink
 
     is_anonymous = False
     if private_key is not None:

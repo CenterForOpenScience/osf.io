@@ -25,7 +25,7 @@ def build_preprint_create_payload(node_id=None, provider_id=None, file_id=None, 
     payload = {
         "data": {
             "attributes": attrs,
-            "relationships": {},            
+            "relationships": {},
             "type": "preprints"
         }
     }

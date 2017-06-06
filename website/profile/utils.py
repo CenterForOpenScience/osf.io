@@ -69,7 +69,7 @@ def serialize_user(user, node=None, admin=False, full=False, is_profile=False, i
                     'address': each,
                     'primary': each.strip().lower() == user.username.strip().lower(),
                     'confirmed': True,
-                } for each in user.emails
+                } for each in user.emails.values_list('address', flat=True)
             ] + [
                 {
                     'address': each,

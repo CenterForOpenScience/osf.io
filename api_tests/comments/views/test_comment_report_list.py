@@ -1,5 +1,4 @@
 import pytest
-
 import mock
 from django.utils import timezone
 from datetime import datetime

@@ -455,6 +455,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         """For v1 compat"""
         if (not self.is_preprint) and self._is_preprint_orphan:
             return True
+        if self.preprint_file:
+            return self.preprint_file.is_deleted
         return False
 
     @property

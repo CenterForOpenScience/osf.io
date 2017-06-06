@@ -7,7 +7,7 @@ from api.base.utils import get_object_or_error
 from api.licenses.serializers import LicenseSerializer
 from api.base.views import JSONAPIBaseView
 
-from website.project.licenses import NodeLicense
+from osf.models import NodeLicense
 
 
 class LicenseDetail(JSONAPIBaseView, generics.RetrieveAPIView):

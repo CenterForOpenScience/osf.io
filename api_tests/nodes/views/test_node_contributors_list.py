@@ -23,7 +23,7 @@ from osf_tests.factories import (
 )
 from tests.utils import assert_logs
 
-from website.models import NodeLog
+from osf.models import NodeLog
 from website.project.signals import contributor_added, unreg_contributor_added, contributor_removed
 from website.util import permissions, disconnected_from_listeners
 

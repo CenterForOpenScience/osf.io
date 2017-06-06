@@ -8,10 +8,11 @@ from django.views.defaults import page_not_found
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from modularodm import Q
 
-from website.models import NodeLog
+from osf.models import NodeLog
 from osf.models.user import OSFUser
 from osf.models.node import Node
 from osf.models.registrations import Registration
+from osf.models import SpamStatus
 from admin.base.views import GuidFormView, GuidView
 from osf.models.admin_log_entry import (
     update_admin_log,
@@ -21,7 +22,6 @@ from osf.models.admin_log_entry import (
     CONFIRM_SPAM, CONFIRM_HAM)
 from admin.nodes.templatetags.node_extras import reverse_node
 from admin.nodes.serializers import serialize_node, serialize_simple_user_and_node_permissions
-from website.project.spam.model import SpamStatus
 from website.project.views.register import osf_admin_change_status_identifier
 
 
