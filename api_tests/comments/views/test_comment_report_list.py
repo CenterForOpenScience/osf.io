@@ -3,6 +3,7 @@ import mock
 from django.utils import timezone
 from datetime import datetime
 
+from rest_framework import exceptions
 from osf.models import Guid
 from api.base.settings.defaults import API_BASE
 from api_tests import utils as test_utils
@@ -27,7 +28,7 @@ class CommentReportsMixin(object):
 
     @pytest.fixture()
     def payload(self, user):
-        payload = {
+        return {
             'data': {
                 'id': user._id,
                 'type': 'comment_reports',
@@ -37,7 +38,6 @@ class CommentReportsMixin(object):
                 }
             }
         }
-        return payload
 
     # check if all necessary features are setup in subclass
     @pytest.fixture()
@@ -141,7 +141,7 @@ class CommentReportsMixin(object):
     def test_public_node_private_comment_level_non_contributor_cannot_see_reports(self, app, non_contributor, public_url, comment_level):
         res = app.get(public_url, auth=non_contributor.auth, expect_errors=True)
         assert res.status_code == 403
-        assert res.json['errors'][0]['detail'] == 'You do not have permission to perform this action.'
+        assert res.json['errors'][0]['detail'] == exceptions.PermissionDenied.default_detail
 
     def test_invalid_report_comment(self, app, user, private_url):
         # test_report_comment_invalid_type
@@ -259,7 +259,7 @@ class CommentReportsMixin(object):
     def test_public_node_private_comment_level_non_contributor_cannot_report_comment(self, app, non_contributor, comment_level, public_url):
         res = app.get(public_url, auth=non_contributor.auth, expect_errors=True)
         assert res.status_code == 403
-        assert res.json['errors'][0]['detail'] == 'You do not have permission to perform this action.'
+        assert res.json['errors'][0]['detail'] == exceptions.PermissionDenied.default_detail
 
 class TestCommentReportsView(CommentReportsMixin):
     # private_project_comment_reports

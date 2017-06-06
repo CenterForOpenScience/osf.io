@@ -27,7 +27,7 @@ class ReportDetailViewMixin(object):
 
     @pytest.fixture()
     def payload(self, user):
-        payload = {
+        return {
             'data': {
                 'id': user._id,
                 'type': 'comment_reports',
@@ -37,7 +37,6 @@ class ReportDetailViewMixin(object):
                 }
             }
         }
-        return payload
 
     # check if all necessary features are setup in subclass
     @pytest.fixture()

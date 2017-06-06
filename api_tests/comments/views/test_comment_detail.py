@@ -2,6 +2,7 @@ import pytest
 import mock
 from urlparse import urlparse
 
+from rest_framework import exceptions
 from framework.auth import core
 from osf.models import Guid
 from api.base.settings.defaults import API_BASE
@@ -95,21 +96,39 @@ class CommentDetailMixin(object):
     def replies_url(self):
         raise NotImplementedError
 
-
-    def _set_up_payload(self, target_id, content='test', has_content=True):
-        payload = {
-            'data': {
-                'id': target_id,
-                'type': 'comments',
-                'attributes': {
-                    'content': 'Updating this comment',
-                    'deleted': False
+    @pytest.fixture()
+    def set_up_payload(self):
+        def payload(target_id, content='test', has_content=True):
+            payload = {
+                'data': {
+                    'id': target_id,
+                    'type': 'comments',
+                    'attributes': {
+                        'content': 'Updating this comment',
+                        'deleted': False
+                    }
                 }
             }
-        }
-        if has_content:
-            payload['data']['attributes']['content'] = content
+            if has_content:
+                payload['data']['attributes']['content'] = content
+            return payload
         return payload
+
+
+    # def _set_up_payload(self, target_id, content='test', has_content=True):
+    #     payload = {
+    #         'data': {
+    #             'id': target_id,
+    #             'type': 'comments',
+    #             'attributes': {
+    #                 'content': 'Updating this comment',
+    #                 'deleted': False
+    #             }
+    #         }
+    #     }
+    #     if has_content:
+    #         payload['data']['attributes']['content'] = content
+    #     return payload
 
     def test_private_node_comments_related_auth(self, app, user, contributor, non_contributor, comment, private_url):
         # test_private_node_logged_in_contributor_can_view_comment
@@ -121,12 +140,12 @@ class CommentDetailMixin(object):
         # def test_private_node_logged_in_non_contributor_cannot_view_comment
         res = app.get(private_url, auth=non_contributor.auth, expect_errors=True)
         assert res.status_code == 403
-        assert res.json['errors'][0]['detail'] == 'You do not have permission to perform this action.'
+        assert res.json['errors'][0]['detail'] == exceptions.PermissionDenied.default_detail
 
         # def test_private_node_logged_out_user_cannot_view_comment
         res = app.get(private_url, expect_errors=True)
         assert res.status_code == 401
-        assert res.json['errors'][0]['detail'] == 'Authentication credentials were not provided.'
+        assert res.json['errors'][0]['detail'] == exceptions.NotAuthenticated.default_detail
 
     def test_private_node_user_with_private_and_anonymous_link_misc(self, app, private_project, comment):
         # def test_private_node_user_with_private_link_can_see_comment
@@ -230,12 +249,12 @@ class CommentDetailMixin(object):
         # test_private_node_logged_in_non_contributor_cannot_update_comment
         res = app.put_json_api(private_url, payload, auth=non_contributor.auth, expect_errors=True)
         assert res.status_code == 403
-        assert res.json['errors'][0]['detail'] == 'You do not have permission to perform this action.'
+        assert res.json['errors'][0]['detail'] == exceptions.PermissionDenied.default_detail
 
         # test_private_node_logged_out_user_cannot_update_comment
         res = app.put_json_api(private_url, payload, expect_errors=True)
         assert res.status_code == 401
-        assert res.json['errors'][0]['detail'] == 'Authentication credentials were not provided.'
+        assert res.json['errors'][0]['detail'] == exceptions.NotAuthenticated.default_detail
 
     def test_public_node_comment_auth_misc(self, app, user, contributor, non_contributor, public_url, public_comment, public_comment_payload):
         # test_public_node_only_contributor_commenter_can_update_comment
@@ -246,29 +265,29 @@ class CommentDetailMixin(object):
         # test_public_node_contributor_cannot_update_other_users_comment
         res = app.put_json_api(public_url, public_comment_payload, auth=contributor.auth, expect_errors=True)
         assert res.status_code == 403
-        assert res.json['errors'][0]['detail'] == 'You do not have permission to perform this action.'
+        assert res.json['errors'][0]['detail'] == exceptions.PermissionDenied.default_detail
 
         # test_public_node_non_contributor_cannot_update_other_users_comment
         res = app.put_json_api(public_url, public_comment_payload, auth=non_contributor.auth, expect_errors=True)
         assert res.status_code == 403
-        assert res.json['errors'][0]['detail'] == 'You do not have permission to perform this action.'
+        assert res.json['errors'][0]['detail'] == exceptions.PermissionDenied.default_detail
 
         # test_public_node_logged_out_user_cannot_update_comment
         res = app.put_json_api(public_url, public_comment_payload, expect_errors=True)
         assert res.status_code == 401
-        assert res.json['errors'][0]['detail'] == 'Authentication credentials were not provided.'
+        assert res.json['errors'][0]['detail'] == exceptions.NotAuthenticated.default_detail
 
-    def test_update_comment_misc(self, app, user, private_url, comment):
+    def test_update_comment_misc(self, app, user, private_url, comment, set_up_payload):
         # test_update_comment_cannot_exceed_max_length
         content = ('c' * (osf_settings.COMMENT_MAXLENGTH + 3))
-        payload = self._set_up_payload(comment._id, content=content)
+        payload = set_up_payload(comment._id, content=content)
         res = app.put_json_api(private_url, payload, auth=user.auth, expect_errors=True)
         assert res.status_code == 400
         assert (res.json['errors'][0]['detail'] ==
                      'Ensure this field has no more than {} characters.'.format(str(osf_settings.COMMENT_MAXLENGTH)))
 
         # test_update_comment_cannot_be_empty
-        payload = self._set_up_payload(comment._id, content='')
+        payload = set_up_payload(comment._id, content='')
         res = app.put_json_api(private_url, payload, auth=user.auth, expect_errors=True)
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'This field may not be blank.'
@@ -284,13 +303,13 @@ class CommentDetailMixin(object):
         res = app.delete_json_api(reply_url, auth=user.auth)
         assert res.status_code == 204
 
-    def test_private_node_only_logged_in_contributor_commenter_can_undelete_own_reply(self, app, user, private_project, comment):
+    def test_private_node_only_logged_in_contributor_commenter_can_undelete_own_reply(self, app, user, private_project, comment, set_up_payload):
         reply_target = Guid.load(comment._id)
         reply = CommentFactory(node=private_project, target=reply_target, user=user)
         reply_url = '/{}comments/{}/'.format(API_BASE, reply._id)
         reply.is_deleted = True
         reply.save()
-        payload = self._set_up_payload(reply._id, has_content=False)
+        payload = set_up_payload(reply._id, has_content=False)
         res = app.patch_json_api(reply_url, payload, auth=user.auth)
         assert res.status_code == 200
         assert not res.json['data']['attributes']['deleted']
@@ -300,12 +319,12 @@ class CommentDetailMixin(object):
     # def test_private_node_contributor_cannot_delete_other_users_comment(self):
         res = app.delete_json_api(private_url, auth=contributor.auth, expect_errors=True)
         assert res.status_code == 403
-        assert res.json['errors'][0]['detail'] == 'You do not have permission to perform this action.'
+        assert res.json['errors'][0]['detail'] == exceptions.PermissionDenied.default_detail
 
     # def test_private_node_non_contributor_cannot_delete_comment(self):
         res = app.delete_json_api(private_url, auth=non_contributor.auth, expect_errors=True)
         assert res.status_code == 403
-        assert res.json['errors'][0]['detail'] == 'You do not have permission to perform this action.'
+        assert res.json['errors'][0]['detail'] == exceptions.PermissionDenied.default_detail
 
     # def test_private_node_logged_out_user_cannot_delete_comment(self):
         res = app.delete_json_api(private_url, expect_errors=True)
@@ -318,21 +337,21 @@ class CommentDetailMixin(object):
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'Comment already deleted.'
 
-    def test_private_node_only_logged_in_contributor_commenter_can_undelete_comment(self, app, user, comment):
+    def test_private_node_only_logged_in_contributor_commenter_can_undelete_comment(self, app, user, comment, set_up_payload):
         comment.is_deleted = True
         comment.save()
         url = '/{}comments/{}/'.format(API_BASE, comment._id)
-        payload = self._set_up_payload(comment._id, has_content=False)
+        payload = set_up_payload(comment._id, has_content=False)
         res = app.patch_json_api(url, payload, auth=user.auth)
         assert res.status_code == 200
         assert not res.json['data']['attributes']['deleted']
         assert res.json['data']['attributes']['content'] == comment.content
 
-    def test_private_node_cannot_undelete_comment_situation(self, app, user, contributor, non_contributor, comment):
+    def test_private_node_cannot_undelete_comment_situation(self, app, user, contributor, non_contributor, comment, set_up_payload):
         comment.is_deleted = True
         comment.save()
         url = '/{}comments/{}/'.format(API_BASE, comment._id)
-        payload = self._set_up_payload(comment._id, has_content=False)
+        payload = set_up_payload(comment._id, has_content=False)
 
         # test_private_node_contributor_cannot_undelete_other_users_comment
         res = app.patch_json_api(url, payload, auth=contributor.auth, expect_errors=True)
@@ -354,17 +373,17 @@ class CommentDetailMixin(object):
         # test_public_node_contributor_cannot_delete_other_users_comment
         res = app.delete_json_api(public_url, auth=contributor.auth, expect_errors=True)
         assert res.status_code == 403
-        assert res.json['errors'][0]['detail'] == 'You do not have permission to perform this action.'
+        assert res.json['errors'][0]['detail'] == exceptions.PermissionDenied.default_detail
 
         # test_public_node_non_contributor_cannot_delete_other_users_comment
         res = app.delete_json_api(public_url, auth=non_contributor.auth, expect_errors=True)
         assert res.status_code == 403
-        assert res.json['errors'][0]['detail'] == 'You do not have permission to perform this action.'
+        assert res.json['errors'][0]['detail'] == exceptions.PermissionDenied.default_detail
 
         # test_public_node_logged_out_user_cannot_delete_comment
         res = app.delete_json_api(public_url, expect_errors=True)
         assert res.status_code == 401
-        assert res.json['errors'][0]['detail'] == 'Authentication credentials were not provided.'
+        assert res.json['errors'][0]['detail'] == exceptions.NotAuthenticated.default_detail
 
         # test_public_node_user_cannot_delete_already_deleted_comment
         public_comment.is_deleted = True
@@ -393,7 +412,7 @@ class CommentDetailMixin(object):
         url = '/{}comments/{}/'.format(API_BASE, comment._id)
         res = app.get(url, expect_errors=True)
         assert res.status_code == 401
-        assert res.json['errors'][0]['detail'] == 'Authentication credentials were not provided.'
+        assert res.json['errors'][0]['detail'] == exceptions.NotAuthenticated.default_detail
 
         # test_private_node_view_only_link_user_cannot_see_deleted_comment
         private_link = PrivateLinkFactory(anonymous=False)
@@ -467,8 +486,8 @@ class TestCommentDetailView(CommentDetailMixin):
         return '/{}comments/{}/'.format(API_BASE, comment._id)
 
     @pytest.fixture()
-    def payload(self, comment):
-        return self._set_up_payload(comment._id)
+    def payload(self, comment, set_up_payload):
+        return set_up_payload(comment._id)
 
     # public_project_with_comments
     @pytest.fixture()
@@ -491,8 +510,8 @@ class TestCommentDetailView(CommentDetailMixin):
         return '/{}comments/{}/'.format(API_BASE, public_comment._id)
 
     @pytest.fixture()
-    def public_comment_payload(self, public_comment):
-        return self._set_up_payload(public_comment._id)
+    def public_comment_payload(self, public_comment, set_up_payload):
+        return set_up_payload(public_comment._id)
 
     # registration_with_comments
     @pytest.fixture()
@@ -531,25 +550,25 @@ class TestCommentDetailView(CommentDetailMixin):
         assert urlparse(url).path == expected_url
         assert target_type == expected_type
 
-    def test_public_node_non_contributor_commenter_can_update_comment(self, app, non_contributor):
+    def test_public_node_non_contributor_commenter_can_update_comment(self, app, non_contributor, set_up_payload):
         project = ProjectFactory(is_public=True, comment_level='public')
         comment = CommentFactory(node=project, user=non_contributor)
         url = '/{}comments/{}/'.format(API_BASE, comment._id)
-        payload = self._set_up_payload(comment._id)
+        payload = set_up_payload(comment._id)
         res = app.put_json_api(url, payload, auth=non_contributor.auth)
         assert res.status_code == 200
         assert payload['data']['attributes']['content'] == res.json['data']['attributes']['content']
 
-    def test_public_node_non_contributor_commenter_cannot_update_own_comment_if_comment_level_private(self, app, non_contributor):
+    def test_public_node_non_contributor_commenter_cannot_update_own_comment_if_comment_level_private(self, app, non_contributor, set_up_payload):
         project = ProjectFactory(is_public=True, comment_level='public')
         comment = CommentFactory(node=project, user=non_contributor)
         project.comment_level = 'private'
         project.save()
         url = '/{}comments/{}/'.format(API_BASE, comment._id)
-        payload = self._set_up_payload(comment._id)
+        payload = set_up_payload(comment._id)
         res = app.put_json_api(url, payload, auth=non_contributor.auth, expect_errors=True)
         assert res.status_code == 403
-        assert res.json['errors'][0]['detail'] == 'You do not have permission to perform this action.'
+        assert res.json['errors'][0]['detail'] == exceptions.PermissionDenied.default_detail
 
     def test_public_node_non_contributor_commenter_can_delete_comment(self, app, non_contributor):
         project = ProjectFactory(is_public=True)
@@ -605,8 +624,8 @@ class TestFileCommentDetailView(CommentDetailMixin):
         return '/{}comments/{}/'.format(API_BASE, comment._id)
 
     @pytest.fixture()
-    def payload(self, comment):
-        return self._set_up_payload(comment._id)
+    def payload(self, comment, set_up_payload):
+        return set_up_payload(comment._id)
 
     # public_project_with_comments
     @pytest.fixture()
@@ -633,8 +652,8 @@ class TestFileCommentDetailView(CommentDetailMixin):
         return '/{}comments/{}/'.format(API_BASE, public_comment._id)
 
     @pytest.fixture()
-    def public_comment_payload(self, public_comment):
-        return self._set_up_payload(public_comment._id)
+    def public_comment_payload(self, public_comment, set_up_payload):
+        return set_up_payload(public_comment._id)
 
     # registration_with_comments
     @pytest.fixture()
@@ -669,27 +688,27 @@ class TestFileCommentDetailView(CommentDetailMixin):
         assert urlparse(url).path == expected_url
         assert target_type == expected_type
 
-    def test_public_node_non_contributor_commenter_can_update_file_comment(self, app, non_contributor):
+    def test_public_node_non_contributor_commenter_can_update_file_comment(self, app, non_contributor, set_up_payload):
         project = ProjectFactory(is_public=True)
         test_file = test_utils.create_test_file(project, project.creator)
         comment = CommentFactory(node=project, target=test_file.get_guid(), user=non_contributor)
         url = '/{}comments/{}/'.format(API_BASE, comment._id)
-        payload = self._set_up_payload(comment._id)
+        payload = set_up_payload(comment._id)
         res = app.put_json_api(url, payload, auth=non_contributor.auth)
         assert res.status_code == 200
         assert payload['data']['attributes']['content'] == res.json['data']['attributes']['content']
 
-    def test_public_node_non_contributor_commenter_cannot_update_own_file_comment_if_comment_level_private(self, app, non_contributor):
+    def test_public_node_non_contributor_commenter_cannot_update_own_file_comment_if_comment_level_private(self, app, non_contributor, set_up_payload):
         project = ProjectFactory(is_public=True)
         test_file = test_utils.create_test_file(project, project.creator)
         comment = CommentFactory(node=project, target=test_file.get_guid(), user=non_contributor)
         project.comment_level = 'private'
         project.save()
         url = '/{}comments/{}/'.format(API_BASE, comment._id)
-        payload = self._set_up_payload(comment._id)
+        payload = set_up_payload(comment._id)
         res = app.put_json_api(url, payload, auth=non_contributor.auth, expect_errors=True)
         assert res.status_code == 403
-        assert res.json['errors'][0]['detail'] == 'You do not have permission to perform this action.'
+        assert res.json['errors'][0]['detail'] == exceptions.PermissionDenied.default_detail
 
     def test_public_node_non_contributor_commenter_can_delete_file_comment(self, app, non_contributor):
         project = ProjectFactory(is_public=True, comment_level='public')
@@ -730,8 +749,8 @@ class TestWikiCommentDetailView(CommentDetailMixin):
         return '/{}comments/{}/'.format(API_BASE, comment._id)
 
     @pytest.fixture()
-    def payload(self, comment):
-        return self._set_up_payload(comment._id)
+    def payload(self, comment, set_up_payload):
+        return set_up_payload(comment._id)
 
     # public_project_with_comments
     @pytest.fixture()
@@ -759,8 +778,8 @@ class TestWikiCommentDetailView(CommentDetailMixin):
         return '/{}comments/{}/'.format(API_BASE, public_comment._id)
 
     @pytest.fixture()
-    def public_comment_payload(self, public_comment):
-        return self._set_up_payload(public_comment._id)
+    def public_comment_payload(self, public_comment, set_up_payload):
+        return set_up_payload(public_comment._id)
 
     # registration_with_comments
     @pytest.fixture()
@@ -795,27 +814,27 @@ class TestWikiCommentDetailView(CommentDetailMixin):
         assert url == expected_url
         assert target_type == expected_type
 
-    def test_public_node_non_contributor_commenter_can_update_wiki_comment(self, app, user, non_contributor, ):
+    def test_public_node_non_contributor_commenter_can_update_wiki_comment(self, app, user, non_contributor, set_up_payload):
         project = ProjectFactory(is_public=True)
         test_wiki = NodeWikiFactory(node=project, user=user)
         comment = CommentFactory(node=project, target=Guid.load(test_wiki._id), user=non_contributor)
         url = '/{}comments/{}/'.format(API_BASE, comment._id)
-        payload = self._set_up_payload(comment._id)
+        payload = set_up_payload(comment._id)
         res = app.put_json_api(url, payload, auth=non_contributor.auth)
         assert res.status_code == 200
         assert payload['data']['attributes']['content'] == res.json['data']['attributes']['content']
 
-    def test_public_node_non_contributor_commenter_cannot_update_own_wiki_comment_if_comment_level_private(self, app, user, non_contributor):
+    def test_public_node_non_contributor_commenter_cannot_update_own_wiki_comment_if_comment_level_private(self, app, user, non_contributor, set_up_payload):
         project = ProjectFactory(is_public=True)
         test_wiki = NodeWikiFactory(node=project, user=user)
         comment = CommentFactory(node=project, target=Guid.load(test_wiki._id), user=non_contributor)
         project.comment_level = 'private'
         project.save()
         url = '/{}comments/{}/'.format(API_BASE, comment._id)
-        payload = self._set_up_payload(comment._id)
+        payload = set_up_payload(comment._id)
         res = app.put_json_api(url, payload, auth=non_contributor.auth, expect_errors=True)
         assert res.status_code == 403
-        assert res.json['errors'][0]['detail'] == 'You do not have permission to perform this action.'
+        assert res.json['errors'][0]['detail'] == exceptions.PermissionDenied.default_detail
 
     def test_public_node_non_contributor_commenter_can_delete_wiki_comment(self, app, user, non_contributor):
         project = ProjectFactory(is_public=True, comment_level='public')
