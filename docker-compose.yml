@@ -17,7 +17,11 @@ volumes:
     external: false
   mfr_requirements_vol:
     external: false
+  mfr_requirements_local_bin_vol:
+    external: false
   wb_requirements_vol:
+    external: false
+  wb_requirements_local_bin_vol:
     external: false
   wb_tmp_vol:
     external: false
@@ -115,6 +119,7 @@ services:
     restart: 'no'
     volumes:
       - mfr_requirements_vol:/python3.5
+      - mfr_requirements_local_bin_vol:/usr/local/bin
 
   mfr:
     image: quay.io/centerforopenscience/mfr:develop
@@ -126,6 +131,7 @@ services:
       - .docker-compose.mfr.env
     volumes:
       - mfr_requirements_vol:/usr/local/lib/python3.5
+      - mfr_requirements_local_bin_vol:/usr/local/bin
     stdin_open: true
 
   ###############
@@ -144,6 +150,7 @@ services:
     restart: 'no'
     volumes:
       - wb_requirements_vol:/python3.5
+      - wb_requirements_local_bin_vol:/usr/local/bin
 
   wb:
     image: quay.io/centerforopenscience/waterbutler:develop
@@ -155,6 +162,7 @@ services:
       - .docker-compose.wb.env
     volumes:
       - wb_requirements_vol:/usr/local/lib/python3.5
+      - wb_requirements_local_bin_vol:/usr/local/bin
       - osfstoragecache_vol:/code/website/osfstoragecache
       - wb_tmp_vol:/tmp
     stdin_open: true

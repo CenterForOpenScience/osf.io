@@ -3,10 +3,9 @@ import logging
 import re
 
 from django.apps import apps
-from django.core.exceptions import ValidationError
 
 from modularodm import Q
-from modularodm.exceptions import KeyExistsException, ValidationValueError
+from modularodm.exceptions import ValidationValueError
 
 from website import settings
 from website.project.metadata.schemas import OSF_META_SCHEMAS
@@ -27,28 +26,22 @@ def has_anonymous_link(node, auth):
     return False
 
 
-def ensure_schema(schema, name, version=1):
+def ensure_schema(schema, name, version=1, active=True):
     MetaSchema = apps.get_model('osf.MetaSchema')
-    try:
-        MetaSchema(
-            name=name,
-            schema_version=version,
-            schema=schema
-        ).save()
-    except (KeyExistsException, ValidationError):
-        schema_obj = MetaSchema.find_one(
-            Q('name', 'eq', name) &
-            Q('schema_version', 'eq', version)
-        )
-        schema_obj.schema = schema
-        schema_obj.save()
-
+    MetaSchema.objects.update_or_create(
+        name=name,
+        schema_version=version,
+        defaults={
+            'schema': schema,
+            'active': active
+        }
+    )
 
 def ensure_schemas():
     """Import meta-data schemas from JSON to database if not already loaded
     """
     for schema in OSF_META_SCHEMAS:
-        ensure_schema(schema, schema['name'], version=schema.get('version', 1))
+        ensure_schema(schema, schema['name'], version=schema.get('version', 1), active=schema.get('active', True))
 
 
 def validate_contributor(guid, contributors):

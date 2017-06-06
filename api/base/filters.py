@@ -557,7 +557,9 @@ class ListFilterMixin(FilterMixin):
             }
         """
         query_field_name = operation['source_field_name']
-        if operation['op'] != 'eq':
+        if operation['op'] == 'ne':
+            return queryset.exclude(**{query_field_name: operation['value']})
+        elif operation['op'] != 'eq':
             query_field_name = '{}__{}'.format(query_field_name, operation['op'])
         return queryset.filter(**{query_field_name: operation['value']})
 
@@ -571,6 +573,9 @@ class ListFilterMixin(FilterMixin):
             if operation['value'] not in (list(), tuple()):
                 operation['source_field_name'] = 'tags__name'
                 operation['op'] = 'iexact'
+            elif operation['value'] == []:
+                operation['source_field_name'] = 'tags__isnull'
+                operation['value'] = True
         # contributors iexact because guid matching
         if field_name == 'contributors':
             if operation['value'] not in (list(), tuple()):
@@ -584,6 +589,9 @@ class ListFilterMixin(FilterMixin):
             operation['op'] = 'exact'
         if field_name == 'permission':
             operation['op'] = 'exact'
+        if field_name == 'id':
+            operation['source_field_name'] = 'guids___id'
+            operation['op'] = 'in'
 
     def get_filtered_queryset(self, field_name, params, default_queryset):
         """filters default queryset based on the serializer field type"""

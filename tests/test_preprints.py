@@ -123,6 +123,12 @@ class TestSetPreprintFile(OsfTestCase):
         with assert_raises(AttributeError):
             self.preprint.set_primary_file('inatlanta', auth=self.auth, save=True)
 
+    def test_deleted_file_creates_orphan(self):
+        self.preprint.set_primary_file(self.file, auth=self.auth, save=True)
+        self.file.is_deleted = True
+        self.file.save()
+        assert_true(self.project.is_preprint_orphan)
+
     def test_preprint_created_date(self):
         self.preprint.set_primary_file(self.file, auth=self.auth, save=True)
         assert_equal(self.project.preprint_file._id, self.file._id)
@@ -252,7 +258,7 @@ class TestPreprintProvider(OsfTestCase):
         self.preprint.save()
         self.preprint.reload()
 
-        assert ('branded', 'WWEArxiv') == find_preprint_provider(self.preprint.node)
+        assert ('branded', self.provider) == find_preprint_provider(self.preprint.node)
 
     def test_top_level_subjects(self):
         subj_a = SubjectFactory(provider=self.provider, text='A')

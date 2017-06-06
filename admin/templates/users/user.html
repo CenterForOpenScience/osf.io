@@ -145,7 +145,7 @@
                 <tr>
                     <td>Email</td>
                     <td>
-                        {% for email in user.emails.values_list('address', flat=True) %}
+                        {% for email in emails %}
                             <li>
                                 {% if email == user.username %}
                                     <strong>Primary: </strong>

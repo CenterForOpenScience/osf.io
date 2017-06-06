@@ -76,6 +76,7 @@ class ShowIfVersion(ser.Field):
         self.read_only = field.read_only
         self.min_version = min_version
         self.max_version = max_version
+        self.help_text = 'This field is deprecated as of version {}'.format(self.max_version) or kwargs.get('help_text')
 
     def get_attribute(self, instance):
         request = self.context.get('request')
