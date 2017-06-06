@@ -31,6 +31,8 @@ SILENT_LOGGERS = [
     'osf.migrations',
     'osf.models',
     'addons.osfstorage.models',
+    'rest_framework.pagination',
+    'tests.base',
 ]
 for logger_name in SILENT_LOGGERS:
     logging.getLogger(logger_name).setLevel(logging.CRITICAL)
