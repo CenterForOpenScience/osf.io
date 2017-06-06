@@ -18,11 +18,12 @@ SILENT_LOGGERS = [
     'website.search.elastic_search',
     'website.search_migration.migrate',
     'website.util.paths',
-    'osf.migrations',
+    'osf.migrations.0001_initial',
     'osf.models',
     'addons.osfstorage.models',
     'rest_framework.pagination',
     'tests.base',
+    'website.project',
 ]
 for logger_name in SILENT_LOGGERS:
     logging.getLogger(logger_name).setLevel(logging.CRITICAL)

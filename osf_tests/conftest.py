@@ -28,11 +28,12 @@ SILENT_LOGGERS = [
     'requests_oauthlib.oauth2_session',
     'raven.base.Client',
     'raven.contrib.django.client.DjangoClient',
-    'osf.migrations',
+    'osf.migrations.0001_initial',
     'osf.models',
     'addons.osfstorage.models',
     'rest_framework.pagination',
     'tests.base',
+    'website.project',
 ]
 for logger_name in SILENT_LOGGERS:
     logging.getLogger(logger_name).setLevel(logging.CRITICAL)
