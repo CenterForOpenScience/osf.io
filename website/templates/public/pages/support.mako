@@ -26,8 +26,8 @@
                     </div>
                     <div class="support-col-body clearfix">
                         <p> How can it be free? How will the OSF be useful to my research? What is a registration?
-                        Get your questions about the Open Science Framework answered on our <a href="/faq"> FAQ page. </a></p>
-                        <a href="/faq" class="btn btn-info m-t-lg pull-right" > Visit FAQ <i class="fa fa-angle-right"></i></a>
+                        Get your questions about the Open Science Framework answered on our <a href="http://help.osf.io/m/faqs"> FAQ page. </a></p>
+                        <a href="http://help.osf.io/m/faqs" class="btn btn-info m-t-lg pull-right" > Visit FAQ <i class="fa fa-angle-right"></i></a>
                     </div>
 
                </div>
@@ -79,7 +79,7 @@
                 <a href="https://twitter.com/OSFramework" class="btn btn-link"><i class="fa fa-twitter"></i> Ask us a question on twitter </a>
                 <a href="https://groups.google.com/forum/#!forum/openscienceframework" class="btn btn-link"><i class="fa fa-users"></i> Join our mailing list </a>
                 <a href="https://www.facebook.com/OpenScienceFramework" class="btn btn-link"><i class="fa fa-facebook"></i> Follow us on Facebook </a>
-                <a href="https://github.com/centerforopenscience" class="btn btn-link"><i class="fa fa-github"></i> Connect with COS on Github</a>
+                <a href="https://github.com/centerforopenscience" class="btn btn-link"><i class="fa fa-github"></i> Connect with COS on GitHub</a>
             </div>
         </div>
 
