@@ -14,7 +14,7 @@ logger = logging.getLogger(__file__)
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0034_rename_email_user_relation'),
+        ('osf', '0036_auto_20170605_1520'),
     ]
 
     operations = [

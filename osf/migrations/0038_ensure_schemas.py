@@ -14,7 +14,7 @@ logger = logging.getLogger(__file__)
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0035_ensure_licenses'),
+        ('osf', '0037_ensure_licenses'),
     ]
 
     operations = [
