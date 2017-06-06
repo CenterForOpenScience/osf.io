@@ -63,7 +63,7 @@ def ensure_schemas(*args):
     """
     schema_count = 0
     for schema in OSF_META_SCHEMAS:
-        schema_obj, created = MetaSchema.objects.get_or_create(
+        schema_obj, created = MetaSchema.objects.update_or_create(
             name=schema['name'],
             schema_version=schema.get('version', 1),
             defaults={
@@ -71,8 +71,6 @@ def ensure_schemas(*args):
                 'active': schema.get('active', True)
             }
         )
-        schema_obj.schema = schema
-        schema_obj.save()
         schema_count += 1
 
         if created:
